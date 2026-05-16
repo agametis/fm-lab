@@ -4,6 +4,7 @@ const { buildSuccess } = require('../utils/response-builder');
 const referenceService = require('../services/reference.service');
 const helpService = require('../services/help.service');
 const templateService = require('../services/template.service');
+const dashboardService = require('../services/dashboard.service');
 
 /**
  * Admin Controller
@@ -47,6 +48,7 @@ async function reload(req, res, next) {
     referenceService.clearCaches();
     helpService.clearCache();
     templateService.clearCache();
+    dashboardService.clearCache();
     console.log(`Admin reload complete: ${result.tables} tables from ${result.path}`);
 
     res.json(buildSuccess({

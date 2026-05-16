@@ -1,0 +1,56 @@
+{
+  "id": "external_apis",
+  "version": "1.0.0",
+  "title": "APIs & externe Schnittstellen",
+  "description": "Zeigt alle URL-Aufrufe (Open URL, Insert from URL, cURL/MBS, calculated URLs) klassifiziert nach API-Familie sowie alle externen FileMaker-Datenquellen.",
+  "author": "fm-lab custom",
+  "icon": "globe",
+  "tags": [
+    "custom",
+    "api",
+    "integration"
+  ],
+  "entry": "layout.json",
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "api_families",
+      "source": "bundle:data/api_families.sql"
+    },
+    {
+      "id": "url_details",
+      "source": "bundle:data/url_details.sql",
+      "params": {
+        "limit": 200
+      }
+    },
+    {
+      "id": "external_sources",
+      "source": "bundle:data/external_sources.sql",
+      "params": {
+        "limit": 30
+      }
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optionaler Dateifilter — leitet sich aus dem App-Filter ab."
+    },
+    {
+      "name": "api_family",
+      "type": "string",
+      "required": false,
+      "description": "Filtert die Detail-Liste auf eine bestimmte API-Familie."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

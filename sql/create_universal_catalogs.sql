@@ -82,14 +82,28 @@ WHERE Chunk_Type IS NULL
 -- ========================================
 -- A.3: DDR VariableReference Chunks → VariableUsages
 -- ========================================
+-- Vorab-Aggregation: pro (Calc_Hash, File_Name, Variable_Name) genau eine Zeile.
+-- Verhindert Inflation durch (a) mehrfache Verwendung derselben Variable in einer
+-- Formel (mehrere Chunk-Rows) und (b) shared Calc_Hashes über mehrere Calc_UUIDs
+-- (z.B. wenn viele Felder dieselbe Formel haben → identischer Hash).
+
+DROP TABLE IF EXISTS _DDR_VarRefs_Distinct;
+CREATE TEMP TABLE _DDR_VarRefs_Distinct AS
+SELECT DISTINCT
+    Calc_Hash,
+    File_Name,
+    regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) as Variable_Name
+FROM DDR_Calculations
+WHERE Chunk_Type = 'VariableReference'
+  AND regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) IS NOT NULL;
 
 -- 3a: Variablen in Calculated Fields (FieldsForTables.DDR_Hash)
 INSERT INTO VariableUsages
 SELECT
-    regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) as Variable_Name,
+    vr.Variable_Name,
     CASE
-        WHEN regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$$%' THEN 'global'
-        WHEN regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$%' THEN 'local'
+        WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
+        WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
     END as Variable_Scope,
     'read' as Usage_Type,
@@ -101,21 +115,19 @@ SELECT
     NULL as Step_Index,
     f.Table_Name,
     f.Field_Name,
-    dc.Calc_Hash,
+    vr.Calc_Hash,
     'ddr_chunk' as Source,
-    dc.File_Name
-FROM DDR_Calculations dc
-JOIN FieldsForTables f ON dc.Calc_Hash = f.DDR_Hash AND dc.File_Name = f.File_Name
-WHERE dc.Chunk_Type = 'VariableReference'
-  AND regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) IS NOT NULL;
+    vr.File_Name
+FROM _DDR_VarRefs_Distinct vr
+JOIN FieldsForTables f ON vr.Calc_Hash = f.DDR_Hash AND vr.File_Name = f.File_Name;
 
 -- 3b: Variablen in AutoEnter Calculated Fields (FieldsForTables.AE_Calc_Hash)
 INSERT INTO VariableUsages
 SELECT
-    regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) as Variable_Name,
+    vr.Variable_Name,
     CASE
-        WHEN regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$$%' THEN 'global'
-        WHEN regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$%' THEN 'local'
+        WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
+        WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
     END as Variable_Scope,
     'read' as Usage_Type,
@@ -127,22 +139,20 @@ SELECT
     NULL as Step_Index,
     f.Table_Name,
     f.Field_Name,
-    dc.Calc_Hash,
+    vr.Calc_Hash,
     'ddr_chunk' as Source,
-    dc.File_Name
-FROM DDR_Calculations dc
-JOIN FieldsForTables f ON dc.Calc_Hash = f.AE_Calc_Hash AND dc.File_Name = f.File_Name
-WHERE dc.Chunk_Type = 'VariableReference'
-  AND f.AE_Calc_Hash IS NOT NULL
-  AND regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) IS NOT NULL;
+    vr.File_Name
+FROM _DDR_VarRefs_Distinct vr
+JOIN FieldsForTables f ON vr.Calc_Hash = f.AE_Calc_Hash AND vr.File_Name = f.File_Name
+WHERE f.AE_Calc_Hash IS NOT NULL;
 
 -- 3c: Variablen in CustomFunctions (CustomFunctionsCatalog.DDR_Hash)
 INSERT INTO VariableUsages
 SELECT
-    regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) as Variable_Name,
+    vr.Variable_Name,
     CASE
-        WHEN regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$$%' THEN 'global'
-        WHEN regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$%' THEN 'local'
+        WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
+        WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
     END as Variable_Scope,
     'read' as Usage_Type,
@@ -154,23 +164,30 @@ SELECT
     NULL as Step_Index,
     NULL as Table_Name,
     NULL as Field_Name,
-    dc.Calc_Hash,
+    vr.Calc_Hash,
     'ddr_chunk' as Source,
-    dc.File_Name
-FROM DDR_Calculations dc
-JOIN CustomFunctionsCatalog cf ON dc.Calc_Hash = cf.DDR_Hash AND dc.File_Name = cf.File_Name
-WHERE dc.Chunk_Type = 'VariableReference'
-  AND cf.DDR_Hash IS NOT NULL
-  AND regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) IS NOT NULL;
+    vr.File_Name
+FROM _DDR_VarRefs_Distinct vr
+JOIN CustomFunctionsCatalog cf ON vr.Calc_Hash = cf.DDR_Hash AND vr.File_Name = cf.File_Name
+WHERE cf.DDR_Hash IS NOT NULL;
 
 -- 3d: Variablen in Script-Schritt-Formeln
 -- StepsForScripts.Parameters_XML enthält ChunkList-Hashes → DDR_Calculations.Calc_Hash
 INSERT INTO VariableUsages
+WITH step_hashes AS (
+    SELECT
+        Script_Name, Script_UUID, Step_Index, File_Name,
+        unnest(regexp_extract_all(CAST(Parameters_XML AS VARCHAR),
+            'kind="ChunkList" hash="([A-F0-9]+)"', 1)) as calc_hash
+    FROM StepsForScripts
+    WHERE Parameters_XML IS NOT NULL
+      AND CAST(Parameters_XML AS VARCHAR) LIKE '%ChunkList%'
+)
 SELECT
-    regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) as Variable_Name,
+    vr.Variable_Name,
     CASE
-        WHEN regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$$%' THEN 'global'
-        WHEN regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$%' THEN 'local'
+        WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
+        WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
     END as Variable_Scope,
     'read' as Usage_Type,
@@ -182,29 +199,19 @@ SELECT
     s.Step_Index,
     NULL as Table_Name,
     NULL as Field_Name,
-    dc.Calc_Hash,
+    vr.Calc_Hash,
     'ddr_chunk' as Source,
-    dc.File_Name
-FROM DDR_Calculations dc
-JOIN (
-    SELECT
-        Script_Name, Script_UUID, Step_Index, File_Name,
-        unnest(regexp_extract_all(CAST(Parameters_XML AS VARCHAR),
-            'kind="ChunkList" hash="([A-F0-9]+)"', 1)) as calc_hash
-    FROM StepsForScripts
-    WHERE Parameters_XML IS NOT NULL
-      AND CAST(Parameters_XML AS VARCHAR) LIKE '%ChunkList%'
-) s ON dc.Calc_Hash = s.calc_hash AND dc.File_Name = s.File_Name
-WHERE dc.Chunk_Type = 'VariableReference'
-  AND regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) IS NOT NULL;
+    vr.File_Name
+FROM _DDR_VarRefs_Distinct vr
+JOIN step_hashes s ON vr.Calc_Hash = s.calc_hash AND vr.File_Name = s.File_Name;
 
 -- 3e: DDR-Variablen ohne zuordenbaren Kontext
 INSERT INTO VariableUsages
 SELECT
-    regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) as Variable_Name,
+    vr.Variable_Name,
     CASE
-        WHEN regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$$%' THEN 'global'
-        WHEN regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$%' THEN 'local'
+        WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
+        WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
     END as Variable_Scope,
     'read' as Usage_Type,
@@ -216,32 +223,30 @@ SELECT
     NULL as Step_Index,
     NULL as Table_Name,
     NULL as Field_Name,
-    dc.Calc_Hash,
+    vr.Calc_Hash,
     'ddr_chunk' as Source,
-    dc.File_Name
-FROM DDR_Calculations dc
-WHERE dc.Chunk_Type = 'VariableReference'
-  AND regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) IS NOT NULL
-  AND NOT EXISTS (
+    vr.File_Name
+FROM _DDR_VarRefs_Distinct vr
+WHERE NOT EXISTS (
       SELECT 1 FROM FieldsForTables f
-      WHERE (dc.Calc_Hash = f.DDR_Hash OR dc.Calc_Hash = f.AE_Calc_Hash)
-        AND dc.File_Name = f.File_Name
+      WHERE (vr.Calc_Hash = f.DDR_Hash OR vr.Calc_Hash = f.AE_Calc_Hash)
+        AND vr.File_Name = f.File_Name
   )
   AND NOT EXISTS (
       SELECT 1 FROM CustomFunctionsCatalog cf
-      WHERE dc.Calc_Hash = cf.DDR_Hash AND dc.File_Name = cf.File_Name
+      WHERE vr.Calc_Hash = cf.DDR_Hash AND vr.File_Name = cf.File_Name
   )
   AND NOT EXISTS (
       SELECT 1 FROM StepsForScripts s
       WHERE s.Parameters_XML IS NOT NULL
-        AND CAST(s.Parameters_XML AS VARCHAR) LIKE '%' || dc.Calc_Hash || '%'
-        AND dc.File_Name = s.File_Name
+        AND CAST(s.Parameters_XML AS VARCHAR) LIKE '%' || vr.Calc_Hash || '%'
+        AND vr.File_Name = s.File_Name
   )
   AND NOT EXISTS (
       SELECT 1 FROM LayoutObjects lo
       WHERE lo.Object_XML IS NOT NULL
-        AND CAST(lo.Object_XML AS VARCHAR) LIKE '%' || dc.Calc_Hash || '%'
-        AND lo.File_Name = dc.File_Name
+        AND CAST(lo.Object_XML AS VARCHAR) LIKE '%' || vr.Calc_Hash || '%'
+        AND lo.File_Name = vr.File_Name
   );
 
 -- ========================================
@@ -256,40 +261,37 @@ WHERE dc.Chunk_Type = 'VariableReference'
 -- Der Hash wird gegen DDR_Calculations aufgelöst um VariableReference-Chunks zu finden.
 
 INSERT INTO VariableUsages
+WITH lo_hashes AS (
+    SELECT
+        Object_UUID, Object_Type, Layout_ID, File_Name,
+        unnest(regexp_extract_all(CAST(Object_XML AS VARCHAR),
+            'kind="ChunkList" hash="([A-F0-9]+)"', 1)) as calc_hash
+    FROM LayoutObjects
+    WHERE Object_XML IS NOT NULL
+      AND CAST(Object_XML AS VARCHAR) LIKE '%ChunkList%'
+)
 SELECT
-    regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) as Variable_Name,
+    vr.Variable_Name,
     CASE
-        WHEN regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$$%' THEN 'global'
-        WHEN regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$%' THEN 'local'
+        WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
+        WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
     END as Variable_Scope,
     'read' as Usage_Type,
     'layout_object' as Context_Type,
     lo.Object_UUID as Context_UUID,
-    l.L_Name || ' → ' || lo.Object_Type || COALESCE(' (' || lo.formula_context || ')', '') as Context_Name,
+    l.L_Name || ' → ' || lo.Object_Type as Context_Name,
     NULL as Script_Name,
     NULL as Script_UUID,
     NULL as Step_Index,
     NULL as Table_Name,
     NULL as Field_Name,
-    dc.Calc_Hash,
+    vr.Calc_Hash,
     'ddr_chunk' as Source,
-    dc.File_Name
-FROM DDR_Calculations dc
-JOIN (
-    SELECT
-        Object_UUID, Object_Type, Layout_ID, File_Name,
-        unnest(regexp_extract_all(CAST(Object_XML AS VARCHAR),
-            'kind="ChunkList" hash="([A-F0-9]+)"', 1)) as calc_hash,
-        unnest(regexp_extract_all(CAST(Object_XML AS VARCHAR),
-            'kind="ChunkList" hash="[A-F0-9]+">[^<]*_([A-Za-z_]+\d*)</DDRREF>', 1)) as formula_context
-    FROM LayoutObjects
-    WHERE Object_XML IS NOT NULL
-      AND CAST(Object_XML AS VARCHAR) LIKE '%ChunkList%'
-) lo ON dc.Calc_Hash = lo.calc_hash AND dc.File_Name = lo.File_Name
-JOIN Layouts l ON lo.Layout_ID = l.L_ID AND l.File_Name = lo.File_Name
-WHERE dc.Chunk_Type = 'VariableReference'
-  AND regexp_extract(dc.Chunk_Content, '>([^<]+)</Chunk>', 1) IS NOT NULL;
+    vr.File_Name
+FROM _DDR_VarRefs_Distinct vr
+JOIN lo_hashes lo ON vr.Calc_Hash = lo.calc_hash AND vr.File_Name = lo.File_Name
+JOIN Layouts l ON lo.Layout_ID = l.L_ID AND l.File_Name = lo.File_Name;
 
 
 -- ========================================

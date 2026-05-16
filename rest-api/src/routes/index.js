@@ -9,6 +9,7 @@ const pluginsRoutes = require('./plugins.routes');
 const pluginDocsRoutes = require('./plugin-docs.routes');
 const relationshipGraphRoutes = require('./relationshipGraph.routes');
 const referenceRoutes = require('./reference.routes');
+const dashboardRoutes = require('./dashboard.routes');
 const { loadPlugins } = require('../plugins/loader');
 
 /**
@@ -39,6 +40,9 @@ router.use('/', relationshipGraphRoutes);
 
 // Reference-DB (Script Steps + Functions + Claris-Hilfe-Mirror)
 router.use('/', referenceRoutes);
+
+// Dashboards (deklarative Bundles aus templates/dashboards/)
+router.use('/', dashboardRoutes);
 
 // Plugin routes (dynamically discovered)
 loadPlugins(router);

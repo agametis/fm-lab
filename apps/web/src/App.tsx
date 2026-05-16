@@ -12,6 +12,9 @@ import { VirtualList, DetailView, SearchOptions, FolderTree, ThemeToggle, Pseudo
 import { SettingsView } from './views/SettingsView';
 import { RelationshipGraphView } from './views/RelationshipGraphView';
 import { LayoutView } from './views/LayoutView';
+import { DashboardHost } from './dashboard/DashboardHost';
+import { DashboardView } from './dashboard/DashboardView';
+import { QueryView } from './dashboard/QueryView';
 import type { SortOption, GroupOption, VirtualListRow, FMObject } from './types';
 import './App.css';
 
@@ -78,8 +81,52 @@ function SearchView() {
     objectType,
   });
 
-  // Sync filter state to URL (replace to avoid polluting history)
+  // Zwei-Wege-Sync zwischen URL und Filter-State. Die Implementierung muss zwei
+  // Falle vermeiden:
+  //   1) Beim Mount oder externen navigate() sollen URL→State greifen, nicht
+  //      State→URL die URL mit altem State überschreiben.
+  //   2) Wenn der User in den Inputs tippt, soll State→URL die URL aktualisieren,
+  //      ohne dass URL→State daraufhin den gerade gesetzten State zurücksetzt.
+  // Lösung: ein Ref, das markiert, dass der letzte State-Change *aus der URL*
+  // stammt — in diesem Fall überspringt State→URL einen Tick.
+  const internalSyncRef = useRef(false);
+  // Tracks the last label URL→State has seen. Allows detecting when a
+  // ?label=... param arrives externally (dashboard click) so State→URL
+  // doesn't immediately strip it on mount.
+  const prevLabelRef = useRef('');
+  const searchParamsString = searchParams.toString();
+
+  // URL → State
   useEffect(() => {
+    const qName = searchParams.get('q') || '';
+    const qFile = searchParams.get('file') || '';
+    const qType = searchParams.get('type') || '';
+    const qMode: ViewMode = searchParams.get('mode') === 'tree' ? 'tree' : 'search';
+    const qLabel = searchParams.get('label') || '';
+    const changed =
+      qName !== searchName ||
+      qFile !== selectedFile ||
+      qType !== objectType ||
+      qMode !== mode ||
+      qLabel !== prevLabelRef.current;
+    if (changed) {
+      prevLabelRef.current = qLabel;
+      internalSyncRef.current = true;
+      if (qName !== searchName) setSearchName(qName);
+      if (qFile !== selectedFile) setSelectedFile(qFile);
+      if (qType !== objectType) setObjectType(qType);
+      if (qMode !== mode) setMode(qMode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParamsString]);
+
+  // State → URL
+  useEffect(() => {
+    if (internalSyncRef.current) {
+      // Dieser State-Change kommt gerade aus der URL — nicht zurückschreiben.
+      internalSyncRef.current = false;
+      return;
+    }
     const params = new URLSearchParams();
     if (mode === 'tree') {
       params.set('mode', 'tree');
@@ -93,8 +140,17 @@ function SearchView() {
       if (sortBy !== 'standard') params.set('sort', sortBy);
       if (groupBy !== 'none') params.set('group', groupBy);
     }
-    setSearchParams(params, { replace: true });
-  }, [mode, treeSubtype, debouncedSearchName, selectedFile, objectType, sortBy, groupBy, setSearchParams]);
+    const nextString = params.toString();
+    // ?label=... ist ein externer Dekorations-Param (kommt aus Dashboard-Navigation),
+    // der nicht von diesem Effekt verwaltet wird. Beim Vergleich ignorieren, damit
+    // State→URL den Label-Param nicht beim nächsten Mount-Tick strippt.
+    const currentWithoutLabel = new URLSearchParams(searchParamsString);
+    currentWithoutLabel.delete('label');
+    if (nextString !== currentWithoutLabel.toString()) {
+      setSearchParams(params, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, treeSubtype, debouncedSearchName, selectedFile, objectType, sortBy, groupBy]);
 
   // Load available files on mount
   useEffect(() => {
@@ -188,12 +244,17 @@ function SearchView() {
     return rows;
   }, [items, sortBy, groupBy, expandedGroups]);
 
-  // Reset scroll position when sort/group changes
+  // Scroll-Reset bei Filter-/Sort-/Group-Wechsel. Sonst bleibt nach einem weit
+  // gescrollten Ergebnis die alte Scroll-Position stehen, während die neue
+  // (oft viel kleinere) Trefferliste oben rendert — das Fenster wirkt leer.
+  // Guard: wenn bereits oben, nichts tun (kein erzwungenes Scroll-Event,
+  // kein Konflikt mit useScrollRestore beim Back-Navigieren).
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
+    const el = scrollContainerRef.current;
+    if (el && el.scrollTop > 0) {
+      el.scrollTop = 0;
     }
-  }, [sortBy, groupBy]);
+  }, [sortBy, groupBy, debouncedSearchName, selectedFile, objectType]);
 
   const handleToggleGroup = useCallback((groupKey: string) => {
     setExpandedGroups(prev => {
@@ -211,6 +272,20 @@ function SearchView() {
     saveScrollPosition('search-list', scrollContainerRef.current);
     navigate(`/object/${uuid}`);
   }, [navigate, saveScrollPosition]);
+
+  // Pseudo-Token-Drilldown: PluginComponent → PluginFunction (Hierarchie
+  // aus PSEUDO_TYPE_DRILLDOWN in shared/constants). Statt zur DetailView
+  // navigieren wir auf die Filteransicht des Kind-Typs mit dem Container-
+  // Namen als Category-Filter — File-/Sort-Kontext bleibt erhalten.
+  const handlePseudoDrilldown = useCallback((d: { type: string; via: 'category'; value: string }) => {
+    const params = new URLSearchParams();
+    params.set('type', d.type);
+    params.set(d.via, d.value);
+    if (selectedFile) params.set('file', selectedFile);
+    const currentSort = searchParams.get('sort');
+    if (currentSort) params.set('sort', currentSort);
+    setSearchParams(params, { replace: false });
+  }, [selectedFile, searchParams, setSearchParams]);
 
   const isTreeMode = mode === 'tree';
   const filterLabel = isTreeMode ? 'Filter:' : 'Suche nach Name:';
@@ -237,6 +312,18 @@ function SearchView() {
       </div>
 
       <nav className="app-mode-tabs" role="tablist" aria-label="Ansichts-Modus">
+        <button
+          type="button"
+          className={`tab-button tab-button--home${!debouncedSearchName && !selectedFile && !objectType && mode === 'search' ? ' active' : ''}`}
+          onClick={() => navigate('/')}
+          title="Startseite (Filter zurücksetzen)"
+          aria-label="Startseite"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </button>
         <button
           type="button"
           role="tab"
@@ -356,6 +443,16 @@ function SearchView() {
         )}
       </div>
 
+      {/* Context-Label — gesetzt wenn via Dashboard-Action mit ?label=... navigiert */}
+      {!isTreeMode && (debouncedSearchName || selectedFile || objectType) && searchParams.get('label') && (
+        <div className="search-context-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          {searchParams.get('label')}
+        </div>
+      )}
+
       {/* Error message (search mode only) */}
       {!isTreeMode && error && objectType !== 'RelationshipGraph' && (
         <div className="error-message">
@@ -391,13 +488,19 @@ function SearchView() {
           objectType={objectType}
           file={selectedFile || undefined}
           onItemClick={handleItemClick}
+          onDrilldown={handlePseudoDrilldown}
           initialCategory={searchParams.get('category') || undefined}
           initialSort={(searchParams.get('sort') as 'usage' | 'name' | 'category') || undefined}
         />
       )}
 
-      {/* Search mode: Virtual list (Standard-Typen) */}
-      {!isTreeMode && !error && objectType !== 'RelationshipGraph' && !PSEUDO_TYPE_SET.has(objectType) && (
+      {/* Search mode: Default-Dashboard — sichtbar wenn KEINE Filter aktiv (PRD §8) */}
+      {!isTreeMode && !debouncedSearchName && !selectedFile && !objectType && (
+        <DashboardHost id="home" />
+      )}
+
+      {/* Search mode: Virtual list — nur wenn Filter aktiv und kein Spezial-Typ */}
+      {!isTreeMode && (debouncedSearchName || selectedFile || objectType) && !error && objectType !== 'RelationshipGraph' && !PSEUDO_TYPE_SET.has(objectType) && (
         <VirtualList
           rows={processedRows}
           itemCount={items.length}
@@ -412,7 +515,7 @@ function SearchView() {
       )}
 
       {/* Search mode: Initial loading state (nicht für Pseudo-Typen — eigener Loader) */}
-      {!isTreeMode && objectType !== 'RelationshipGraph' && !PSEUDO_TYPE_SET.has(objectType) && loading && items.length === 0 && (
+      {!isTreeMode && (debouncedSearchName || selectedFile || objectType) && objectType !== 'RelationshipGraph' && !PSEUDO_TYPE_SET.has(objectType) && loading && items.length === 0 && (
         <div className="virtual-list-empty">
           Lade Objekte...
         </div>
@@ -439,6 +542,8 @@ function App() {
       <Route path="/relationship-graph/:fileName" element={<RelationshipGraphView />} />
       <Route path="/relationship-graph" element={<RelationshipGraphView />} />
       <Route path="/layout/:uuid" element={<LayoutView />} />
+      <Route path="/dashboard/:id" element={<DashboardView />} />
+      <Route path="/query/:queryName" element={<QueryView />} />
     </Routes>
   );
 }

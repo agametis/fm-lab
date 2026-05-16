@@ -111,6 +111,39 @@ export const CATEGORY_LABEL_DE: Record<PseudoTokenType, string> = {
 };
 
 /**
+ * Drilldown-Hierarchie zwischen Pseudo-Object-Types.
+ *
+ * Einige Pseudo-Typen sind selbst Kategorie-Ebenen über anderen Typen
+ * (z.B. PluginComponent → PluginFunction). Beim Klick auf einen Eintrag
+ * erwartet der Nutzer aus UX-Sicht die enthaltenen Kinder im
+ * gleichen Filter-Kontext (Datei-Scope, Sortierung) zu sehen — nicht
+ * die DetailView des Container-Objekts.
+ *
+ * - `type`: Ziel-Object-Type, auf den umgeschaltet wird.
+ * - `via`:  URL-Parameter, der mit dem Namen des angeklickten Eintrags
+ *           befüllt wird (entspricht dem Kategorie-Filter-Mechanismus).
+ * - `mapValue`: optionale Transformation des Object_Name, falls der
+ *   Container-Name nicht 1:1 dem Kategorie-Wert des Kind-Typs entspricht
+ *   (z.B. PluginComponent "MBS::QuickList" → PluginFunction-Kategorie
+ *   "QuickList" — Backend strippt das Prefix in cat_agg).
+ *
+ * Für Typen, die hier nicht vorkommen, gilt das Default-Verhalten
+ * (DetailView öffnen).
+ */
+export interface PseudoTypeDrilldown {
+  type: ObjectType;
+  via: 'category';
+  mapValue?: (objectName: string) => string;
+}
+export const PSEUDO_TYPE_DRILLDOWN: Partial<Record<ObjectType, PseudoTypeDrilldown>> = {
+  PluginComponent: {
+    type: 'PluginFunction',
+    via: 'category',
+    mapValue: (name) => name.replace(/^MBS::/, ''),
+  },
+};
+
+/**
  * Link Types (from ObjectLinks)
  */
 export const LINK_TYPES = {

@@ -1,0 +1,34 @@
+{
+  "id": "home",
+  "version": "1.0.0",
+  "title": "Projektüberblick",
+  "description": "Einstiegsseite mit Kennzahlen, Top-Objekten, Health-Indikatoren und Navigation.",
+  "author": "fm-lab core",
+  "icon": "home",
+  "tags": ["home"],
+  "entry": "layout.json",
+  "datasets": [
+    { "id": "project_summary",       "source": "bundle:data/project_summary.sql" },
+    { "id": "object_counts",         "source": "bundle:data/object_counts.sql" },
+    { "id": "files_overview",        "source": "bundle:data/files_overview.sql" },
+    { "id": "top_scripts",           "source": "bundle:data/top_scripts.sql",
+      "params": { "limit": 5 } },
+    { "id": "top_tables",            "source": "bundle:data/top_tables.sql",
+      "params": { "limit": 5 } },
+    { "id": "top_layouts",           "source": "bundle:data/top_layouts.sql",
+      "params": { "limit": 5 } },
+    { "id": "top_custom_functions",  "source": "bundle:data/top_custom_functions.sql",
+      "params": { "limit": 5 } },
+    { "id": "variable_hotspots",     "source": "bundle:data/variable_hotspots.sql",
+      "params": { "limit": 10 } },
+    { "id": "health_indicators",     "source": "bundle:data/health_indicators.sql" },
+    { "id": "nav_dashboards",        "source": "builtin:list_dashboards",
+      "params": { "excludeTags": ["home", "nav", "internal"] } },
+    { "id": "nav_custom_queries",    "source": "builtin:list_custom_queries" }
+  ],
+  "params": [
+    { "name": "file", "type": "string", "required": false,
+      "description": "Optionaler Dateifilter — leitet sich aus dem App-Filter ab." }
+  ],
+  "permissions": { "read_only": true, "allow_navigation": true }
+}

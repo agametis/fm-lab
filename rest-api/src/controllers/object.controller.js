@@ -89,9 +89,9 @@ async function list(req, res, next) {
  */
 async function listCategories(req, res, next) {
   try {
-    const { type, format = 'json', meta, debug } = req.query;
+    const { type, file, format = 'json', meta, debug } = req.query;
 
-    const result = await objectService.listCategorySummary({ type });
+    const result = await objectService.listCategorySummary({ type, file });
 
     const formattedData = formatters.format(result.data, format);
 
@@ -100,7 +100,7 @@ async function listCategories(req, res, next) {
       formattedData,
       format,
       meta ? result.meta : null,
-      debug ? `list-categories type=${type}` : null
+      debug ? `list-categories type=${type} file=${file || ''}` : null
     );
   } catch (error) {
     next(error);

@@ -25,7 +25,13 @@ const templateCache = new LRUCache({
 function parseTemplateMetadata(templateContent) {
   const metadata = {
     template_type: 'report', // Default to report for max flexibility
+    title: null,
     description: null,
+    icon: null,
+    category: null,
+    display: null,
+    click_action: null,
+    click_args: null,
     params: [],
     output_format: null,
     author: null,
@@ -33,28 +39,57 @@ function parseTemplateMetadata(templateContent) {
     tags: [],
   };
 
+  // Generischer Frontmatter-Parser: "-- @key: value"
   const lines = templateContent.split('\n');
-
   for (const line of lines) {
-    const trimmed = line.trim();
+    const m = line.match(/^\s*--\s*@([a-zA-Z_][\w-]*)\s*:\s*(.*)$/);
+    if (!m) continue;
+    const key = m[1].toLowerCase();
+    const value = m[2].trim();
 
-    // Parse metadata comments
-    if (trimmed.startsWith('-- @template_type:')) {
-      metadata.template_type = trimmed.substring(18).trim();
-    } else if (trimmed.startsWith('-- @description:')) {
-      metadata.description = trimmed.substring(16).trim();
-    } else if (trimmed.startsWith('-- @params:')) {
-      const paramsStr = trimmed.substring(11).trim();
-      metadata.params = paramsStr.split(',').map(p => p.trim()).filter(p => p.length > 0);
-    } else if (trimmed.startsWith('-- @output_format:')) {
-      metadata.output_format = trimmed.substring(18).trim();
-    } else if (trimmed.startsWith('-- @author:')) {
-      metadata.author = trimmed.substring(11).trim();
-    } else if (trimmed.startsWith('-- @version:')) {
-      metadata.version = trimmed.substring(12).trim();
-    } else if (trimmed.startsWith('-- @tags:')) {
-      const tagsStr = trimmed.substring(9).trim();
-      metadata.tags = tagsStr.split(',').map(t => t.trim()).filter(t => t.length > 0);
+    switch (key) {
+      case 'template_type':
+        metadata.template_type = value;
+        break;
+      case 'title':
+        metadata.title = value;
+        break;
+      case 'description':
+        metadata.description = value;
+        break;
+      case 'icon':
+        metadata.icon = value;
+        break;
+      case 'category':
+        metadata.category = value;
+        break;
+      case 'display':
+        metadata.display = value;
+        break;
+      case 'click_action':
+        metadata.click_action = value;
+        break;
+      case 'click_args':
+        metadata.click_args = value;
+        break;
+      case 'params':
+        metadata.params = value.split(',').map(p => p.trim()).filter(Boolean);
+        break;
+      case 'output_format':
+        metadata.output_format = value;
+        break;
+      case 'author':
+        metadata.author = value;
+        break;
+      case 'version':
+        metadata.version = value;
+        break;
+      case 'tags':
+        metadata.tags = value.split(',').map(t => t.trim()).filter(Boolean);
+        break;
+      default:
+        // unbekannte Keys ignorieren — zukünftige Erweiterungen
+        break;
     }
   }
 
@@ -68,17 +103,23 @@ function parseTemplateMetadata(templateContent) {
  * @returns {Promise<Object>} Template content and metadata
  */
 async function loadTemplate(templateName, templateDir) {
-  // Check cache first (only if caching is enabled)
   const cacheKey = `${templateDir}:${templateName}`;
+  const templatePath = path.join(templateDir, `${templateName}.sql`);
+
+  // mtime-Check für Cache-Invalidation — analog zu dashboard.service.loadBundle().
+  // Damit wirken Änderungen an sql/*.sql und sql-custom/*.sql ohne /api/admin/reload.
+  let mtime = 0;
   if (environment.templates.cacheEnabled) {
+    try {
+      mtime = (await fs.stat(templatePath)).mtimeMs;
+    } catch {
+      // Datei nicht (mehr) vorhanden — Fehler überlassen wir readFile unten
+    }
     const cached = templateCache.get(cacheKey);
-    if (cached) {
+    if (cached && cached.mtime === mtime) {
       return cached;
     }
   }
-
-  // Load template from file
-  const templatePath = path.join(templateDir, `${templateName}.sql`);
 
   try {
     const content = await fs.readFile(templatePath, 'utf-8');
@@ -89,9 +130,9 @@ async function loadTemplate(templateName, templateDir) {
       content,
       metadata,
       path: templatePath,
+      mtime,
     };
 
-    // Cache the template (only if caching is enabled)
     if (environment.templates.cacheEnabled) {
       templateCache.set(cacheKey, template);
     }
@@ -296,8 +337,14 @@ async function listTemplates(source = 'query') {
           const template = await loadTemplate(templateName, templateDir);
           return {
             name: templateName,
+            title: template.metadata.title,
             description: template.metadata.description,
             template_type: template.metadata.template_type,
+            icon: template.metadata.icon,
+            category: template.metadata.category,
+            display: template.metadata.display,
+            click_action: template.metadata.click_action,
+            click_args: template.metadata.click_args,
             params: template.metadata.params,
             tags: template.metadata.tags,
           };

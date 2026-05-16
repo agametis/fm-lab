@@ -140,6 +140,60 @@ function tokenFromChunk(chunk, idx, allChunks) {
 }
 
 /**
+ * Versöhnt eine Token-Liste mit dem Plain-Text-Counterpart. FileMaker lässt im
+ * DDR-XML-Export gelegentlich NoRef-Chunks weg (insbesondere zwischen einer
+ * VariableReference und einem nachfolgenden PluginFunctionRef, z.B. `c = MBS(…)`),
+ * sodass die Tokens beim reinen Konkatenieren Operator/Whitespace verlieren.
+ *
+ * Strategie: sequenzielles Vorwärts-Matching. Jedes Token wird ab der letzten
+ * End-Position im Plain-Text gesucht; liegt es weiter rechts als erwartet, füllt
+ * ein synthetisches `text`-Token die Lücke. Wird ein Token nicht gefunden
+ * (mehrdeutiger Match, FieldRef ohne TO-Präfix im CDATA o.ä.), wird die
+ * ursprüngliche Liste unverändert zurückgegeben — kein Regressionsrisiko.
+ *
+ * Normalisierung: CRLF/CR → LF auf beiden Seiten, weil DDR-Chunks per
+ * `decodeXmlEntities` CR enthalten, das CDATA-Plain-Text aber LF.
+ */
+function reconcileTokensWithPlainText(tokens, plainText) {
+  if (!plainText || !Array.isArray(tokens) || tokens.length === 0) return tokens;
+
+  const norm = (s) => (typeof s === 'string' ? s.replace(/\r\n?/g, '\n') : '');
+  const normPlain = norm(plainText);
+
+  const positioned = [];
+  let cursor = 0;
+
+  for (const tok of tokens) {
+    const needle = norm(tok.content);
+    if (!needle) {
+      positioned.push({ tok, start: cursor, end: cursor });
+      continue;
+    }
+    const pos = normPlain.indexOf(needle, cursor);
+    if (pos === -1) {
+      // Token nicht im Plain-Text auffindbar — Reconcile abbrechen.
+      return tokens;
+    }
+    positioned.push({ tok, start: pos, end: pos + needle.length });
+    cursor = pos + needle.length;
+  }
+
+  const out = [];
+  let prevEnd = 0;
+  for (const { tok, start, end } of positioned) {
+    if (start > prevEnd) {
+      out.push({ type: 'text', content: normPlain.slice(prevEnd, start) });
+    }
+    out.push(tok);
+    prevEnd = end;
+  }
+  if (prevEnd < normPlain.length) {
+    out.push({ type: 'text', content: normPlain.slice(prevEnd) });
+  }
+  return out;
+}
+
+/**
  * Sucht den fachlichen MBS-Funktionsnamen in den Nachbar-NoRef-Chunks. Die
  * Calc-Engine schreibt den Aufruf-Token (`MBS`) und den ersten Argument-NoRef
  * `( "Foo.Bar"; ` direkt nebeneinander, allerdings nicht immer in derselben
@@ -282,7 +336,11 @@ function formatCustomFunction(rows, { object }) {
   const chunkRows = rows
     .filter(r => r.chunk_index !== null && r.chunk_index !== undefined)
     .map(r => ({ chunk_type: r.chunk_type, chunk_content: r.chunk_content }));
-  const tokens = chunkRows.map((c, i, arr) => tokenFromChunk(c, i, arr));
+  const rawTokens = chunkRows.map((c, i, arr) => tokenFromChunk(c, i, arr));
+
+  const tokens = head.plain_text != null
+    ? reconcileTokensWithPlainText(rawTokens, head.plain_text)
+    : rawTokens;
 
   const plainText = head.plain_text != null
     ? head.plain_text
@@ -329,7 +387,11 @@ function formatField(rows, { object }) {
   const chunkRows = rows
     .filter(r => r.chunk_index !== null && r.chunk_index !== undefined)
     .map(r => ({ chunk_type: r.chunk_type, chunk_content: r.chunk_content }));
-  const tokens = chunkRows.map((c, i, arr) => tokenFromChunk(c, i, arr));
+  const rawTokens = chunkRows.map((c, i, arr) => tokenFromChunk(c, i, arr));
+
+  const tokens = head.plain_text != null
+    ? reconcileTokensWithPlainText(rawTokens, head.plain_text)
+    : rawTokens;
 
   const plainText = head.plain_text != null
     ? head.plain_text
@@ -392,5 +454,6 @@ module.exports = {
   tokenFromChunk,
   stripChunkWrap,
   decodeXmlEntities,
+  reconcileTokensWithPlainText,
   CHUNK_TYPE_MAP,
 };

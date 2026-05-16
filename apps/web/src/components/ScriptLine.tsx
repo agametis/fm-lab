@@ -2,7 +2,7 @@ import React from 'react';
 import type { ScriptLineToken, FoldRange, MarginRole } from '../script/types';
 import { stepNameClass, getStepRole } from '../script/stepRoles';
 import { ScriptLineContent } from './ScriptLineContent';
-import { isUuidHighlighted, useHighlightRefUuids } from '../script/highlightContext';
+import { isUuidHighlighted, useHighlightRefUuids, useScriptSearchQuery } from '../script/highlightContext';
 
 interface ScriptLineProps {
   line: ScriptLineToken;
@@ -97,8 +97,14 @@ ScriptLine.displayName = 'ScriptLine';
  * Jede Sub-Zeile bekommt das führende '#' als visuelles Präfix — das Backend
  * liefert den Inhalt ohne Markierung. Im gefolderten Zustand zeigen wir nur
  * die erste Sub-Zeile + '…'.
+ *
+ * Such-Highlight: Comments enthalten keine Refs und werden vom Token-Match
+ * nicht erfasst. Wenn der ScriptSearchQueryContext einen Query liefert,
+ * splitten wir den Sub-Zeilen-Text case-insensitive und markieren Treffer
+ * per <mark class="fm-comment-search-match">.
  */
 const CommentBody: React.FC<{ text: string; folded?: boolean }> = ({ text, folded }) => {
+  const query = useScriptSearchQuery();
   const subLines = text.split(/\r\n|\r|\n/);
   const visible = folded && subLines.length > 1 ? subLines.slice(0, 1) : subLines;
   return (
@@ -107,10 +113,33 @@ const CommentBody: React.FC<{ text: string; folded?: boolean }> = ({ text, folde
         <span key={i} className={`fm-comment-line${i > 0 ? ' fm-comment-line--cont' : ''}`}>
           <span className="fm-comment-prefix">#</span>
           {' '}
-          {sub}
+          {renderCommentText(sub, query)}
         </span>
       ))}
       {folded && subLines.length > 1 && <span className="fm-fold-ellipsis"> …</span>}
     </span>
   );
 };
+
+function renderCommentText(text: string, query: string | null): React.ReactNode {
+  if (!query) return text;
+  const lower = text.toLowerCase();
+  const out: React.ReactNode[] = [];
+  let pos = 0;
+  let n = 0;
+  while (pos < text.length) {
+    const idx = lower.indexOf(query, pos);
+    if (idx < 0) {
+      out.push(text.slice(pos));
+      break;
+    }
+    if (idx > pos) out.push(text.slice(pos, idx));
+    out.push(
+      <mark key={`m-${n++}`} className="fm-comment-search-match">
+        {text.slice(idx, idx + query.length)}
+      </mark>,
+    );
+    pos = idx + query.length;
+  }
+  return out;
+}

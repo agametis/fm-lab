@@ -46,10 +46,21 @@ const USAGE_TYPES = [...PSEUDO_TOKEN_TYPES, 'PluginComponent'];
 
 /**
  * Baut die `usage_agg`-CTE für einen Pseudo-Typ.
+ *
+ * Wenn `file` gesetzt ist, werden die Counts auf Verwendungen in der
+ * angegebenen Datei beschränkt — und die CTE enthält einen positionalen
+ * Parameter (`?`) für den Dateinamen. Aufrufer müssen den Param dann
+ * in `cteParams` einreihen.
+ *
  * @param {string} dbType - 'ScriptStepType' | 'BuiltinFunction' | 'PluginFunction' | 'PluginComponent'
+ * @param {string} [file] - optionaler File-Scope; wenn gesetzt, taucht ein `?` in der CTE auf.
  * @returns {string|null} SQL-Snippet (CTE-Body) oder null wenn nicht unterstützt.
  */
-function buildUsageCTE(dbType) {
+function buildUsageCTE(dbType, file) {
+  const fileClauseSteps = file ? 'AND s.File_Name = ?' : '';
+  const fileClauseLinks = file ? 'AND ol.Source_File = ?' : '';
+  const fileClauseCallScope = file ? 'AND call.Source_File = ?' : '';
+
   switch (dbType) {
     case 'ScriptStepType':
       // Autoritative Quelle: StepsForScripts.Step_Name (kein ObjectLinks-Spiegelung).
@@ -60,6 +71,7 @@ function buildUsageCTE(dbType) {
             COUNT(*) AS usage_count
           FROM StepsForScripts s
           WHERE s.Step_Name IS NOT NULL AND s.Step_Name != ''
+            ${fileClauseSteps}
           GROUP BY s.Step_Name
         )
       `;
@@ -72,6 +84,7 @@ function buildUsageCTE(dbType) {
             COUNT(*) AS usage_count
           FROM ObjectLinks ol
           WHERE ol.Link_Role = 'calls_function'
+            ${fileClauseLinks}
           GROUP BY ol.Target_UUID
         )
       `;
@@ -84,6 +97,7 @@ function buildUsageCTE(dbType) {
             COUNT(*) AS usage_count
           FROM ObjectLinks ol
           WHERE ol.Link_Role = 'calls_pluginfunction'
+            ${fileClauseLinks}
           GROUP BY ol.Target_UUID
         )
       `;
@@ -91,6 +105,25 @@ function buildUsageCTE(dbType) {
     case 'PluginComponent':
       // Zwei-Stufen-Aggregation: groups_into bringt PluginFunctions
       // einer Component zusammen; calls_pluginfunction zählt deren Aufrufer.
+      // Bei file-Scope: nur Calls aus der angegebenen Datei zählen — über
+      // INNER JOIN, damit Components ohne lokale Calls eine usage_count=0
+      // bekommen (statt fälschlich Global-Calls).
+      if (file) {
+        return `
+          usage_agg AS (
+            SELECT
+              gi.Target_UUID AS Object_UUID,
+              COUNT(call.Source_UUID) AS usage_count
+            FROM ObjectLinks gi
+            JOIN ObjectLinks call
+              ON call.Target_UUID = gi.Source_UUID
+             AND call.Link_Role = 'calls_pluginfunction'
+             ${fileClauseCallScope}
+            WHERE gi.Link_Role = 'groups_into'
+            GROUP BY gi.Target_UUID
+          )
+        `;
+      }
       return `
         usage_agg AS (
           SELECT
@@ -225,6 +258,71 @@ function buildCategoryCTE(dbType, refAttached) {
 }
 
 /* ============================================================
+ * FILE-FILTER FÜR PSEUDO-TOKEN-TYPEN
+ * ============================================================
+ * Pseudo-Token-Objekte (ScriptStepType, BuiltinFunction, PluginFunction,
+ * PluginComponent) sind globale Pseudo-Objekte ohne File_Name in ObjectCatalog.
+ * Ein file-Filter muss daher über die *Verwendungen* in der jeweiligen Datei
+ * erfolgen (StepsForScripts.File_Name bzw. ObjectLinks.Source_File).
+ *
+ * Liefert ein CTE-Snippet `file_filter(Object_UUID)` mit einem positionalen
+ * Parameter (`?`) für den Dateinamen — oder null, wenn der Typ keinen
+ * Verwendungs-File-Filter unterstützt.
+ */
+function buildFileFilterCTE(dbType) {
+  switch (dbType) {
+    case 'ScriptStepType':
+      return `
+        file_filter AS (
+          SELECT DISTINCT md5('ScriptStepType::' || s.Step_Name) AS Object_UUID
+          FROM StepsForScripts s
+          WHERE s.File_Name = ?
+            AND s.Step_Name IS NOT NULL
+            AND s.Step_Name != ''
+        )
+      `;
+
+    case 'BuiltinFunction':
+      return `
+        file_filter AS (
+          SELECT DISTINCT ol.Target_UUID AS Object_UUID
+          FROM ObjectLinks ol
+          WHERE ol.Link_Role = 'calls_function'
+            AND ol.Source_File = ?
+        )
+      `;
+
+    case 'PluginFunction':
+      return `
+        file_filter AS (
+          SELECT DISTINCT ol.Target_UUID AS Object_UUID
+          FROM ObjectLinks ol
+          WHERE ol.Link_Role = 'calls_pluginfunction'
+            AND ol.Source_File = ?
+        )
+      `;
+
+    case 'PluginComponent':
+      // Zwei-Stufen: PluginFunctions, die in der Datei aufgerufen werden →
+      // ihre groups_into-Targets sind die Components, die wir behalten.
+      return `
+        file_filter AS (
+          SELECT DISTINCT gi.Target_UUID AS Object_UUID
+          FROM ObjectLinks gi
+          JOIN ObjectLinks call
+            ON call.Target_UUID = gi.Source_UUID
+           AND call.Link_Role = 'calls_pluginfunction'
+           AND call.Source_File = ?
+          WHERE gi.Link_Role = 'groups_into'
+        )
+      `;
+
+    default:
+      return null;
+  }
+}
+
+/* ============================================================
  * LIST QUERY BUILDER
  * ============================================================
  * Kombiniert Basis-Liste mit optionaler Usage- und Category-Anreicherung
@@ -257,13 +355,33 @@ function buildListQuery(dbType, opts = {}) {
   } = opts;
 
   const cteParts = [];
+  // Parameter werden in derselben Reihenfolge gesammelt, in der die
+  // zugehörigen `?` im finalen SQL erscheinen:
+  // [ ...cteParams, dbType, ...categoryParams, ...whereFileParam, limit ]
+  const cteParams = [];
   const selectExtraCols = [];
   const joinExtra = [];
   const whereExtra = [];
-  const params = [dbType];
+  const whereExtraParams = [];
+
+  // Pseudo-Token-Typen haben keinen File_Name in ObjectCatalog. Wenn `file`
+  // gesetzt ist, blenden wir den File-Filter über ein CTE auf den
+  // Verwendungstabellen ein (INNER JOIN). Für klassische Typen bleibt der
+  // direkte oc.File_Name-Filter unten.
+  const usesPseudoFileFilter = file && USAGE_TYPES.includes(dbType);
+  if (usesPseudoFileFilter) {
+    cteParts.push(buildFileFilterCTE(dbType));
+    cteParams.push(file);
+    joinExtra.push('JOIN file_filter ff ON ff.Object_UUID = oc.Object_UUID');
+  }
 
   if (withUsage) {
-    cteParts.push(buildUsageCTE(dbType));
+    // Bei file-Scope wird usage_count auf Verwendungen in der Datei beschränkt
+    // (kohärent mit dem file_filter, der die Token-Menge bereits einschränkt).
+    cteParts.push(buildUsageCTE(dbType, file));
+    if (file && USAGE_TYPES.includes(dbType)) {
+      cteParams.push(file);
+    }
     selectExtraCols.push('COALESCE(u.usage_count, 0) AS usage_count');
     joinExtra.push('LEFT JOIN usage_agg u ON u.Object_UUID = oc.Object_UUID');
   }
@@ -286,7 +404,7 @@ function buildListQuery(dbType, opts = {}) {
       // OR-Filter: c.category IN (?, ?, ?)
       const placeholders = categories.map(() => '?').join(', ');
       whereExtra.push(`c.category IN (${placeholders})`);
-      params.push(...categories);
+      whereExtraParams.push(...categories);
     }
   }
 
@@ -305,9 +423,10 @@ function buildListQuery(dbType, opts = {}) {
     WHERE oc.Object_Type = ?
   `;
 
-  if (file) {
+  const whereFileParams = [];
+  if (file && !usesPseudoFileFilter) {
     sql += ' AND oc.File_Name = ?';
-    params.push(file);
+    whereFileParams.push(file);
   }
 
   if (whereExtra.length > 0) {
@@ -316,10 +435,21 @@ function buildListQuery(dbType, opts = {}) {
 
   sql += '\n    ' + buildSortOrder(sort, withUsage, withCategory, dbType);
 
+  const limitParams = [];
   if (limit > 0) {
     sql += ' LIMIT ?';
-    params.push(limit);
+    limitParams.push(limit);
   }
+
+  // Reihenfolge muss exakt der SQL-Text-Reihenfolge der `?` entsprechen:
+  // CTE-Params → dbType → WHERE-File → WHERE-Category → LIMIT
+  const params = [
+    ...cteParams,
+    dbType,
+    ...whereFileParams,
+    ...whereExtraParams,
+    ...limitParams,
+  ];
 
   return { sql, params };
 }
@@ -364,26 +494,43 @@ function buildSortOrder(sort, hasUsage, hasCategory, dbType) {
  * Liefert: { category, token_count, total_usage } pro Kategorie.
  * NULL-Categories werden als "Sonstige" zusammengefasst (Object_Name='__null__').
  */
-function buildCategorySummaryQuery(dbType, refAttached) {
+function buildCategorySummaryQuery(dbType, refAttached, file) {
   if (!PSEUDO_TOKEN_TYPES.includes(dbType)) {
     return null;
   }
-  const usageCTE = buildUsageCTE(dbType);
+  const usageCTE = buildUsageCTE(dbType, file);
   const catCTE = buildCategoryCTE(dbType, refAttached);
+  const ctes = [usageCTE, catCTE];
 
-  return `
-    WITH ${usageCTE}, ${catCTE}
+  // Reihenfolge der `?` muss der CTE-Reihenfolge im SQL entsprechen:
+  // file_filter (wenn file) → usage_agg (wenn file) → cat_agg (keine).
+  const params = [];
+  let fileJoin = '';
+  if (file) {
+    // file_filter wird VOR usage_agg eingereiht (siehe ctes.unshift unten),
+    // sein Param muss daher auch zuerst gebunden werden.
+    ctes.unshift(buildFileFilterCTE(dbType));
+    fileJoin = 'JOIN file_filter ff ON ff.Object_UUID = oc.Object_UUID';
+    params.push(file);     // für file_filter
+    params.push(file);     // für usage_agg
+  }
+
+  const sql = `
+    WITH ${ctes.join(', ')}
     SELECT
       c.category AS category,
       COUNT(*) AS token_count,
       COALESCE(SUM(u.usage_count), 0) AS total_usage
     FROM ObjectCatalog oc
+    ${fileJoin}
     JOIN cat_agg c ON c.Object_UUID = oc.Object_UUID
     LEFT JOIN usage_agg u ON u.Object_UUID = oc.Object_UUID
     WHERE oc.Object_Type = '${dbType}'
     GROUP BY c.category
     ORDER BY total_usage DESC NULLS LAST, c.category ASC NULLS LAST
   `;
+
+  return { sql, params };
 }
 
 module.exports = {
@@ -391,6 +538,7 @@ module.exports = {
   USAGE_TYPES,
   buildUsageCTE,
   buildCategoryCTE,
+  buildFileFilterCTE,
   buildListQuery,
   buildSortOrder,
   buildCategorySummaryQuery,

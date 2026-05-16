@@ -1,0 +1,19 @@
+{
+  "id": "script_todos",
+  "version": "1.0.0",
+  "title": "TO-DOs in Scripts",
+  "description": "Zählt Kommentar-Schritte mit TO-DO-Markern und zeigt alle betroffenen Scripts pro Datei.",
+  "author": "fm-lab custom",
+  "icon": "list-todo",
+  "tags": ["custom", "scripts", "quality"],
+  "entry": "layout.json",
+  "datasets": [
+    { "id": "todo_kpi",     "source": "bundle:data/todo_kpi.sql" },
+    { "id": "todo_scripts", "source": "bundle:data/todo_scripts.sql" }
+  ],
+  "params": [
+    { "name": "file", "type": "string", "required": false,
+      "description": "Optionaler Dateifilter — leitet sich aus dem App-Filter ab." }
+  ],
+  "permissions": { "read_only": true, "allow_navigation": true }
+}

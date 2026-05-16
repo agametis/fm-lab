@@ -1,9 +1,13 @@
 -- @template_type: report
--- @description: Script complexity statistics by file
+-- @title: Script-Komplexität pro Datei
+-- @description: Aggregierte Script-Statistiken (Anzahl, durchschn./max. Schritte).
+-- @icon: chart
+-- @category: Scripts
+-- @display: table
 -- @params: none
 -- @output_format: file_name, script_count, avg_steps, max_steps, total_steps
 -- @author: Marcel
--- @version: 1.0
+-- @version: 1.1
 -- @tags: scripts, statistics, complexity
 
 SELECT

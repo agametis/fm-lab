@@ -10,6 +10,12 @@ type Props = {
   onQueryChange: (value: string) => void;
   matchCount: number;
   totalCount: number;
+  /** Optionale Pseudo-Pill für Kommentar-Zeilen (kein RefType, daher separat). */
+  commentPill?: {
+    count: number;
+    active: boolean;
+    onToggle: () => void;
+  };
 };
 
 /**
@@ -48,6 +54,7 @@ export function ScriptSearchFilter({
   onQueryChange,
   matchCount,
   totalCount,
+  commentPill,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -58,7 +65,7 @@ export function ScriptSearchFilter({
       .sort((a, b) => b[1] - a[1] || TYPE_LABELS[a[0]].localeCompare(TYPE_LABELS[b[0]]));
   }, [typeCounts]);
 
-  const hasAnyActive = activeTypes.size > 0;
+  const hasAnyActive = activeTypes.size > 0 || (commentPill?.active ?? false);
   const filterActive = hasAnyActive || query !== '';
 
   return (
@@ -78,7 +85,7 @@ export function ScriptSearchFilter({
           </span>
         )}
       </div>
-      {sortedTypes.length > 0 && (
+      {(sortedTypes.length > 0 || commentPill) && (
         <div className="references-filter-pills">
           {sortedTypes.map(([type, count]) => {
             const active = activeTypes.has(type);
@@ -95,6 +102,18 @@ export function ScriptSearchFilter({
               </button>
             );
           })}
+          {commentPill && (
+            <button
+              key="__comment"
+              type="button"
+              className={`references-filter-pill${commentPill.active ? ' active' : ''}`}
+              onClick={commentPill.onToggle}
+              title={`Kommentar (${commentPill.count})`}
+            >
+              Kommentar
+              <span className="references-filter-pill-count">({commentPill.count})</span>
+            </button>
+          )}
           {hasAnyActive && (
             <button
               type="button"

@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": { "columns": 12, "gap": 16 },
+    "children": [
+      {
+        "type": "Card",
+        "props": { "span": 12, "title": "APIs & externe Schnittstellen", "variant": "hero" },
+        "data": { "dataset": "summary" },
+        "children": [
+          { "type": "KPIStrip",
+            "props": {
+              "items": [
+                { "label": "Open URL",          "field": "open_url_steps",       "format": "number" },
+                { "label": "Insert from URL",   "field": "insert_url_steps",     "format": "number" },
+                { "label": "MBS cURL-Chunks",   "field": "mbs_curl_chunks",      "format": "number" },
+                { "label": "Eindeutige URLs",   "field": "distinct_urls",        "format": "number" },
+                { "label": "Externe Quellen",   "field": "external_sources",    "format": "number" },
+                { "label": "Import Records",    "field": "import_records_steps", "format": "number" }
+              ]
+            }
+          }
+        ]
+      },
+
+      {
+        "type": "Card",
+        "props": { "span": 6, "title": "API-Familien" },
+        "data": { "dataset": "api_families" },
+        "children": [
+          { "type": "Table",
+            "props": {
+              "rowKey": "api_family",
+              "density": "comfortable",
+              "columns": [
+                { "field": "api_family", "label": "Familie" },
+                { "field": "hits",       "label": "Hits",   "align": "right" },
+                { "field": "hosts",      "label": "Hosts",  "align": "right" },
+                { "field": "urls",       "label": "URLs",   "align": "right" },
+                { "field": "files",      "label": "Dateien","align": "right" }
+              ],
+              "onRowClick": { "action": "openDashboard",
+                              "args": { "id": "external_apis",
+                                        "params": { "api_family": "{{api_family}}" } } }
+            }
+          }
+        ]
+      },
+
+      {
+        "type": "Card",
+        "props": { "span": 6, "title": "Externe Datenquellen (FileMaker Multi-File)" },
+        "data": { "dataset": "external_sources" },
+        "children": [
+          { "type": "Table",
+            "props": {
+              "rowKey": "name",
+              "density": "compact",
+              "columns": [
+                { "field": "name",          "label": "Ziel" },
+                { "field": "type",          "label": "Typ",     "format": "badge" },
+                { "field": "used_in_files", "label": "Dateien", "align": "right" }
+              ]
+            }
+          }
+        ]
+      },
+
+      {
+        "type": "Card",
+        "props": { "span": 12, "title": "URL-Detailliste" },
+        "data": { "dataset": "url_details" },
+        "children": [
+          { "type": "Table",
+            "props": {
+              "rowKey": "url",
+              "density": "compact",
+              "columns": [
+                { "field": "api_family",  "label": "Familie",      "format": "badge" },
+                { "field": "host",        "label": "Host" },
+                { "field": "source_type", "label": "Quelle",       "format": "badge" },
+                { "field": "name",        "label": "Script/Kontext" },
+                { "field": "file",        "label": "Datei" },
+                { "field": "context",     "label": "Step/Typ" },
+                { "field": "url",         "label": "URL" }
+              ],
+              "onRowClick": { "action": "openObject",
+                              "args": { "uuid": "{{uuid}}", "type": "Script", "file": "{{file}}" } }
+            }
+          }
+        ]
+      },
+
+      {
+        "type": "Markdown",
+        "props": {
+          "span": 12,
+          "content": "## Hinweise\n\n- **Klassifizierung**: URLs werden anhand des Hostnamens automatisch einer API-Familie zugeordnet. Unklassifizierte landen in *Andere*.\n- **Quellen**: Berücksichtigt werden `Open URL`/`Insert from URL`-Schritte sowie alle in Calculations enthaltenen `http(s)://`-Literale (Custom Functions, Calculated Fields, AutoEnter-Berechnungen).\n- **MBS cURL**: Die Zahl der cURL-Chunks zählt jede Verwendung von `CURL.*`-Funktionen in Formel-Bestandteilen — eine Anfrage erzeugt typischerweise mehrere Chunks (SetOption, Perform, GetResult).\n- **Externe Quellen**: Aktuell sind nur FileMaker-Verweise (Multi-File-Lösung) registriert; ODBC/JDBC-Quellen würden hier ebenfalls erscheinen.\n- **Filter**: Ein Klick auf eine API-Familie filtert die Detail-Liste auf diese Gruppe."
+        }
+      }
+    ]
+  }
+}

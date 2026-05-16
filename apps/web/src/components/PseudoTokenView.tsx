@@ -1,12 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { components } from '@packages/shared/types';
-import { CATEGORY_LABEL_DE, type PseudoTokenType } from '@packages/shared/constants';
+import {
+  CATEGORY_LABEL_DE,
+  PSEUDO_TYPE_DRILLDOWN,
+  type PseudoTokenType,
+} from '@packages/shared/constants';
 import {
   PseudoTokenFilterToolbar,
   type CategoryEntry,
   type SortMode,
 } from './PseudoTokenFilterToolbar';
 import { ObjectListItem } from './ObjectListItem';
+
+export interface PseudoTokenDrilldown {
+  type: string;
+  via: 'category';
+  value: string;
+}
 
 type FMObject = components['schemas']['FMObject'];
 type AggObject = FMObject & {
@@ -30,6 +40,13 @@ interface Props {
   objectType: string;
   file?: string;
   onItemClick: (uuid: string) => void;
+  /**
+   * Optionaler Drilldown-Handler für Pseudo-Typen, die laut
+   * PSEUDO_TYPE_DRILLDOWN eine Hierarchie über einem anderen Typ bilden
+   * (z.B. PluginComponent → PluginFunction). Wird bei Item-Klick statt
+   * onItemClick aufgerufen, sofern ein Drilldown-Mapping existiert.
+   */
+  onDrilldown?: (drilldown: PseudoTokenDrilldown) => void;
   initialCategory?: string;
   initialSort?: SortMode;
   onUrlStateChange?: (state: { category?: string; sort?: SortMode }) => void;
@@ -63,6 +80,7 @@ export const PseudoTokenView: React.FC<Props> = ({
   objectType,
   file,
   onItemClick,
+  onDrilldown,
   initialCategory,
   initialSort,
   onUrlStateChange,
@@ -88,12 +106,19 @@ export const PseudoTokenView: React.FC<Props> = ({
     });
   }, [activeCategories, sort, onUrlStateChange]);
 
-  // Reset wenn der Typ wechselt
+  // Reset wenn der Typ wechselt. Category/Sort werden aus den initial-Props
+  // re-hydratisiert, damit ein Drilldown-Wechsel (z.B. PluginComponent →
+  // PluginFunction mit category=<Component>) die URL-Vorgaben übernehmen kann.
+  // initialCategory/initialSort bewusst NICHT in den deps — sonst würde der
+  // Effekt während eines aktiven Type-Kontexts den User-Filter überschreiben.
   useEffect(() => {
     setItems([]);
-    setActiveCategories([]);
+    setActiveCategories(
+      initialCategory ? initialCategory.split(',').filter(Boolean) : []
+    );
     setSearchText('');
-    setSort('usage');
+    setSort(initialSort || 'usage');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [objectType]);
 
   // Categories laden (nur für Token-Typen)
@@ -170,6 +195,23 @@ export const PseudoTokenView: React.FC<Props> = ({
   const handleClearCategories = () => {
     setActiveCategories([]);
   };
+
+  // Bei Pseudo-Typen mit Drilldown-Hierarchie (z.B. PluginComponent →
+  // PluginFunction) leiten wir den Klick auf onDrilldown um — der User
+  // erwartet die enthaltenen Kinder im selben Filter-Kontext, nicht die
+  // DetailView des Container-Objekts. Default: DetailView öffnen.
+  const drilldown = PSEUDO_TYPE_DRILLDOWN[objectType as keyof typeof PSEUDO_TYPE_DRILLDOWN];
+  const handleItemClickInternal = useCallback((uuid: string) => {
+    if (drilldown && onDrilldown) {
+      const item = items.find((it) => it.Object_UUID === uuid);
+      if (item && item.Object_Name) {
+        const value = drilldown.mapValue ? drilldown.mapValue(item.Object_Name) : item.Object_Name;
+        onDrilldown({ type: drilldown.type, via: drilldown.via, value });
+        return;
+      }
+    }
+    onItemClick(uuid);
+  }, [drilldown, onDrilldown, items, onItemClick]);
 
   const handleListItemCategoryClick = (cat: string) => {
     // Toggling-Verhalten: Klick auf Pille im Listenelement aktiviert sie.
@@ -248,7 +290,7 @@ export const PseudoTokenView: React.FC<Props> = ({
           <ObjectListItem
             key={obj.Object_UUID}
             object={obj}
-            onClick={onItemClick}
+            onClick={handleItemClickInternal}
             onCategoryClick={isTokenType ? handleListItemCategoryClick : undefined}
           />
         ))}

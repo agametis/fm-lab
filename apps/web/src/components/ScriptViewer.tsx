@@ -6,7 +6,7 @@ import { ScriptLine } from './ScriptLine';
 import { ScriptViewerHeader, type FilterStyle } from './ScriptViewerHeader';
 import { ScriptSearchFilter } from './ScriptSearchFilter';
 import { useUrlState, stringSetCodec } from '../hooks/useUrlState';
-import { HighlightRefContext, ScriptSearchContext, type ScriptSearchPredicate } from '../script/highlightContext';
+import { HighlightRefContext, ScriptSearchContext, ScriptSearchQueryContext, type ScriptSearchPredicate } from '../script/highlightContext';
 import './ScriptViewer.css';
 
 interface ScriptViewerProps {
@@ -62,13 +62,22 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
   // Suche/Filter-State analog zur Referenzen-Filterleiste (HierarchyTree).
   // Eigene Param-Namen 'sq'/'stypes', damit sie nicht mit den 'q'/'types'-
   // Params der Referenzen-Tab kollidieren — beide Tabs leben in derselben URL.
+  // Im stypes-Set lebt zusätzlich der Pseudo-Type 'comment' für die
+  // Kommentar-Pill (siehe unten) — wir trennen ihn unten ab.
   const [searchQuery, setSearchQuery] = useUrlState<string>('sq', '');
   const [activeRefTypes, setActiveRefTypes] = useUrlState<Set<string>>(
     'stypes',
     EMPTY_TYPES as Set<string>,
     stringSetCodec,
   );
-  const activeTypes = activeRefTypes as Set<RefType>;
+  const activeTypes = useMemo<Set<RefType>>(() => {
+    const out = new Set<RefType>();
+    for (const t of activeRefTypes) {
+      if (t !== 'comment') out.add(t as RefType);
+    }
+    return out;
+  }, [activeRefTypes]);
+  const activeCommentFilter = activeRefTypes.has('comment');
 
   // Alle Refs des Scripts in einer flachen Liste — Basis für Type-Counts und Match-Logik.
   const allRefs = useMemo<ScriptRef[]>(() => {
@@ -87,36 +96,97 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
     return m;
   }, [allRefs]);
 
-  const queryLower = searchQuery.trim().toLowerCase();
+  // Anzahl Comment-Zeilen — fürs Pill-Label.
+  const commentCount = useMemo(() => {
+    let n = 0;
+    for (const line of lines) if (line.kind === 'comment') n++;
+    return n;
+  }, [lines]);
 
-  // Predicate: ein Ref matched, wenn ALLE aktiven Filter zustimmen.
-  // - Aktive Typ-Pillen: Ref-Type muss enthalten sein (sonst kein Treffer)
-  // - Sucheingabe: Substring-Match (case-insensitive) auf Ref-Name oder Sub-Funktion
-  // Wenn weder Query noch Pillen aktiv: predicate ist `null` → kein Highlight.
+  const queryLower = searchQuery.trim().toLowerCase();
+  const hasQuery = queryLower !== '';
+  const hasTypeFilter = activeTypes.size > 0;
+  const hasAnyFilter = hasTypeFilter || activeCommentFilter;
+
+  // Scope-Definition: welche Items zählen für matchCount/totalCount?
+  // - Ohne Pill: alle Refs UND alle Comments (Default)
+  // - Mit Type-Pill: nur Refs der aktiven Types (Comments raus, außer Comment-Pill auch aktiv)
+  // - Mit Comment-Pill: Comments im Scope (Refs nur falls auch Type-Pills aktiv)
+  // Damit verhält sich die Comment-Pill konsistent zu den Type-Pills.
+  const refsInScope = useMemo<ScriptRef[]>(() => {
+    if (!hasAnyFilter) return allRefs;
+    if (!hasTypeFilter) return []; // nur Comment-Pill aktiv
+    return allRefs.filter(r => activeTypes.has(r.type));
+  }, [allRefs, activeTypes, hasAnyFilter, hasTypeFilter]);
+
+  const commentsInScope = useMemo(() => {
+    const all = lines.filter(l => l.kind === 'comment');
+    if (!hasAnyFilter) return all;
+    if (activeCommentFilter) return all;
+    return [];
+  }, [lines, hasAnyFilter, activeCommentFilter]);
+
+  // Predicate: ein Ref bekommt Such-Highlight, wenn er im Scope liegt UND
+  // (falls Query gesetzt) der Substring-Match greift. Ohne Query und ohne
+  // Pillen kein Highlight (predicate = null).
   const searchPredicate = useMemo<ScriptSearchPredicate | null>(() => {
-    const hasTypeFilter = activeTypes.size > 0;
-    const hasQuery = queryLower !== '';
-    if (!hasTypeFilter && !hasQuery) return null;
+    if (!hasAnyFilter && !hasQuery) return null;
     return (ref: ScriptRef) => {
-      if (hasTypeFilter && !activeTypes.has(ref.type)) return false;
+      // Scope-Check inline (refsInScope re-filtern wäre teuer pro Token-Render)
+      if (hasAnyFilter) {
+        if (!hasTypeFilter) return false; // nur Comment-Pill → keine Refs
+        if (!activeTypes.has(ref.type)) return false;
+      }
       if (hasQuery) {
         const haystack = `${ref.name ?? ''} ${ref.subFunction ?? ''}`.toLowerCase();
         if (!haystack.includes(queryLower)) return false;
       }
       return true;
     };
-  }, [activeTypes, queryLower]);
+  }, [activeTypes, queryLower, hasAnyFilter, hasTypeFilter, hasQuery]);
 
-  const matchCount = useMemo(() => {
-    if (!searchPredicate) return 0;
-    return allRefs.filter(searchPredicate).length;
-  }, [allRefs, searchPredicate]);
+  // Comment-Highlight (Substring im Kommentartext) nur wenn Comments im
+  // Scope sind UND ein Query gesetzt ist — ohne Query gibt es nichts zu
+  // unterstreichen.
+  const commentSearchQuery = (hasQuery && commentsInScope.length > 0) ? queryLower : null;
+
+  // Match-Counts: innerhalb des Scopes. Ohne Query zählt alles im Scope
+  // (konsistent mit Type-Pills, wo die Pill-Aktivierung allein bereits die
+  // Refs des Types als "Match" zählt).
+  const refMatchCount = useMemo(() => {
+    if (!hasQuery) return refsInScope.length;
+    return refsInScope.filter(r => {
+      const haystack = `${r.name ?? ''} ${r.subFunction ?? ''}`.toLowerCase();
+      return haystack.includes(queryLower);
+    }).length;
+  }, [refsInScope, queryLower, hasQuery]);
+
+  const commentMatchCount = useMemo(() => {
+    if (!hasQuery) return commentsInScope.length;
+    let n = 0;
+    for (const c of commentsInScope) {
+      if ((c.text ?? '').toLowerCase().includes(queryLower)) n++;
+    }
+    return n;
+  }, [commentsInScope, queryLower, hasQuery]);
+
+  const matchCount = refMatchCount + commentMatchCount;
+  const totalCount = refsInScope.length + commentsInScope.length;
 
   const toggleRefType = useCallback((type: RefType) => {
     setActiveRefTypes(prev => {
       const next = new Set(prev);
       if (next.has(type)) next.delete(type);
       else next.add(type);
+      return next;
+    });
+  }, [setActiveRefTypes]);
+
+  const toggleComment = useCallback(() => {
+    setActiveRefTypes(prev => {
+      const next = new Set(prev);
+      if (next.has('comment')) next.delete('comment');
+      else next.add('comment');
       return next;
     });
   }, [setActiveRefTypes]);
@@ -159,9 +229,24 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
     return () => cancelAnimationFrame(id);
   }, [highlightSig]);
 
+  // Auch beim Search-Match (orange) zum ersten Treffer scrollen. Greift sowohl
+  // bei Ref-Matches (.fm-ref--search-match) als auch bei Comment-Substring-
+  // Matches (.fm-comment-search-match).
+  useEffect(() => {
+    if (!queryLower || !rootRef.current) return;
+    const id = requestAnimationFrame(() => {
+      const first = rootRef.current?.querySelector(
+        '.fm-ref--search-match, .fm-comment-search-match',
+      );
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [queryLower]);
+
   return (
     <HighlightRefContext.Provider value={highlightRefUuids ?? null}>
       <ScriptSearchContext.Provider value={searchPredicate}>
+       <ScriptSearchQueryContext.Provider value={commentSearchQuery}>
         <div ref={rootRef} className="object-detail fm-script-root" aria-label="Script-Text">
           <ScriptViewerHeader
             stepCount={stepCount}
@@ -173,7 +258,7 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
             onCollapseAll={collapseAll}
             onCollapseMultiline={collapseMultiline}
           />
-          {allRefs.length > 0 && (
+          {(allRefs.length > 0 || commentCount > 0) && (
             <ScriptSearchFilter
               typeCounts={typeCounts}
               activeTypes={activeTypes}
@@ -182,7 +267,12 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
               query={searchQuery}
               onQueryChange={setSearchQuery}
               matchCount={matchCount}
-              totalCount={allRefs.length}
+              totalCount={totalCount}
+              commentPill={commentCount > 0 ? {
+                count: commentCount,
+                active: activeCommentFilter,
+                onToggle: toggleComment,
+              } : undefined}
             />
           )}
           <ol className={`fm-script fm-mode--${mode} fm-filter--${filterStyle}`}>
@@ -204,6 +294,7 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
             })}
           </ol>
         </div>
+       </ScriptSearchQueryContext.Provider>
       </ScriptSearchContext.Provider>
     </HighlightRefContext.Provider>
   );

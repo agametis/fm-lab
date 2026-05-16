@@ -198,7 +198,7 @@ function normalizeCategories(category) {
  * Pseudo-Token-Typs { category, token_count, total_usage }, sortiert nach
  * total_usage desc.
  */
-async function listCategorySummary({ type }) {
+async function listCategorySummary({ type, file }) {
   try {
     const dbType = OBJECT_TYPE_MAP[type] || type;
     if (!PSEUDO_TOKEN_TYPES.includes(dbType)) {
@@ -208,15 +208,19 @@ async function listCategorySummary({ type }) {
         { type, supported: PSEUDO_TOKEN_TYPES }
       );
     }
-    const sql = aggregations.buildCategorySummaryQuery(dbType, db.isReferenceAttached());
-    const result = await db.executeQuery(sql, []);
+    const { sql, params } = aggregations.buildCategorySummaryQuery(
+      dbType,
+      db.isReferenceAttached(),
+      file
+    );
+    const result = await db.executeQuery(sql, params);
     return {
       data: convertBigInts(result.rows),
       meta: result.meta,
     };
   } catch (error) {
     if (error.code) throw error;
-    throw createError('DATABASE_ERROR', error.message, { type });
+    throw createError('DATABASE_ERROR', error.message, { type, file });
   }
 }
 

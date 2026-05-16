@@ -328,6 +328,29 @@
   color: var(--fm-color-default);
 }
 
+/* Such-Highlight in Kommentartexten — visuell analog zu .fm-ref--search-match
+ * (orange Ring), zusätzlich mit gelblichem Hintergrund, weil der Comment-Text
+ * kein eigenes Ref-Hintergrund-Pattern trägt. Bricht die italic-Optik des
+ * Kommentars nicht. */
+.fm-comment-search-match {
+  background-color: #fff3a8;
+  color: #5b3a00;
+  font-style: normal;
+  box-shadow:
+    0 0 0 2px #fb923c,
+    0 0 0 3px rgba(251, 146, 60, 0.20);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+[data-theme="dark"] .fm-comment-search-match {
+  background-color: #6b4a00;
+  color: #ffe680;
+  box-shadow:
+    0 0 0 2px #ffa552,
+    0 0 0 3px rgba(255, 165, 82, 0.25);
+}
+
 /* ============================================================================
  * Step-Typ-Färbung (über data-step-name am <li>)
  * ========================================================================== */

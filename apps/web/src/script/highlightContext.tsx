@@ -45,3 +45,15 @@ export const ScriptSearchContext = createContext<ScriptSearchPredicate | null>(n
 export function useScriptSearchPredicate(): ScriptSearchPredicate | null {
   return useContext(ScriptSearchContext);
 }
+
+/**
+ * Raw Query-String aus der Suchleiste (lowercase, trimmed) oder null.
+ * Wird von CommentBody konsumiert: Kommentartexte haben keine Refs und
+ * können vom Prädikat-basierten Such-Highlight nicht erfasst werden —
+ * Substring-Matches auf dem rohen Text brauchen den Query selbst.
+ */
+export const ScriptSearchQueryContext = createContext<string | null>(null);
+
+export function useScriptSearchQuery(): string | null {
+  return useContext(ScriptSearchQueryContext);
+}

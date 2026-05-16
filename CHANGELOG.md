@@ -12,6 +12,43 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.7.0] — 2026-05-16
+
+Dashboards as a first-class extension surface: bundled, declarative, data-driven views — with a Home dashboard as the new entry point and a generic renderer for every custom SQL query.
+
+- **Dashboard bundles** as a new top-level concept: each dashboard lives in its own folder under `rest-api/templates/dashboards/<id>/` with a `manifest.json` (id, title, datasets, params, permissions), a declarative `layout.json` (primitive tree), bundled SQL datasets in `data/`, and optional static assets — fully self-contained and shippable
+- **Home dashboard** as the new entry point: project summary, object-count KPIs, files overview, top-N scripts / tables / layouts / custom functions, variable hotspots, health indicators, and navigation tiles for further dashboards and custom queries
+- **Custom-Queries dashboard**: navigation overview of every `sql-custom` template, grouped and searchable
+- **Generic `_generic` dashboard**: any `sql-custom` template can be rendered as a full-page result view without writing a dedicated dashboard — auto-table with sortable columns, type-aware filters, virtual scrolling, scroll-reset on filter change, and full viewport-height usage
+- **14 layout primitives** in the frontend (`apps/web/src/dashboard/primitives/`): `Card`, `Grid`, `Row`, `Stack`, `Spacer`, `KPI`, `KPIStrip`, `List`, `Table`, `AutoTable`, `TileGrid`, `NavButton`, `MarkdownBlock`, `Empty` — composable via the layout tree, with token substitution (`{{row.field}}`) for repeating contexts
+- **Dashboard backend**: new `dashboard.controller` / `dashboard.service` / `dashboard-schemas` / routes; bundle discovery, manifest validation, dataset resolution from three sources (`bundle:` SQL files, `builtin:` server-provided datasets, `custom:` sql-custom templates), and parameter-bound query execution
+- **Built-in datasets**: `list_dashboards`, `list_custom_queries`, `query_meta` — drive navigation and metadata views without per-bundle SQL
+- New **`create-custom-dashboard`** skill: guides the user through dashboard creation interactively — clarifies the desired content, drafts SQL queries, shows sample results, suggests a presentation form, and generates the complete bundle directory
+- New `sql-custom` templates: `find_undocumented_fields.sql`, `find_unused_scripts.sql`, `list_global_variables.sql`; existing templates (`cross_file_links.sql`, `find_unused_fields.sql`, `script_complexity_stats.sql`) refined for dashboard use
+- **`VariablesCatalog` fix**: corrected read-count inflation caused by double-counting variable references from LayoutObject formula hashes — counts now match actual usage across scripts, calculations, and layouts
+- **Pseudo object types** (MBS-Components, MBS-Functions): optimizations and fixes for filters and navigation
+- **Scripts detail view**: optimizations and fixes
+- **Frontend polish**: `SubPageHeader` component for consistent sub-page chrome, `PseudoTokenView` improvements, scroll-reset on filter change in result lists, and full viewport-height layouts across detail views
+- Bugfix: CORS handling for plugin settings endpoint
+
+---
+
+Documentation for FM-Lab
+
+## [0.6.10] — 2026-05-15
+
+- **Documentation** — first round of project-level documentation under `docs/fm-lab/` of the public repo. The initial set covers the conceptual layer of fm-lab:
+  - `Documentation.md` — top-level index and table of contents
+  - `Wiki/Introduction.md` — what fm-lab is and the problem it solves
+  - `Wiki/Vision.md` — long-term goal and direction
+  - `Wiki/How it works.md` — end-to-end walkthrough from XML ingestion to agentic workflows (with diagrams)
+  - `Wiki/Architecture.md` — system architecture and component boundaries (with diagram)
+  - `Wiki/Workflow.md` — typical developer workflows on top of fm-lab (with diagrams)
+  - `Wiki/Features.md` — feature inventory grouped by capability
+  - `Wiki/Components.md` — directory-by-directory tour of the codebase
+
+---
+
 ## [0.6.9] — 2026-05-13
 
 Reference-DB distribution via `install-claris-docs` and consolidation of the function-reference skills.
