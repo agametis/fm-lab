@@ -1,5 +1,6 @@
 import type { PrimitiveProps } from '../types';
 import { substituteString } from '../tokens';
+import { useRowSearch } from './_useRowSearch';
 import { dispatchAction } from '../actions';
 import type { ActionSpec } from '../actions';
 
@@ -16,13 +17,40 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
   const empty = node.props?.empty as { message?: string } | undefined;
   const rows = dataset?.data ?? [];
 
+  const search = useRowSearch(rows, {
+    searchable: node.props?.searchable as boolean | 'auto' | undefined,
+    autoThreshold: node.props?.searchAutoThreshold as number | undefined,
+    placeholder: node.props?.searchPlaceholder as string | undefined,
+  });
+
   if (rows.length === 0) {
     return <div className="dash-list__empty">{empty?.message ?? 'Keine Einträge.'}</div>;
   }
 
+  const hasQuery = search.query.trim() !== '';
+
   return (
-    <ul className="dash-list">
-      {rows.map((row, i) => {
+    <div className="dash-list-wrap">
+      {search.visible && (
+        <div className="dash-search-bar">
+          <span className="dash-search-bar__count">
+            {search.filtered.length.toLocaleString('de-DE')}{' '}
+            {search.filtered.length === 1 ? 'Eintrag' : 'Einträge'}
+            {hasQuery && search.filtered.length !== search.totalCount && (
+              <> · gefiltert aus {search.totalCount.toLocaleString('de-DE')}</>
+            )}
+          </span>
+          <input
+            type="search"
+            className="dash-search-bar__input"
+            placeholder={search.placeholder}
+            value={search.query}
+            onChange={e => search.setQuery(e.target.value)}
+          />
+        </div>
+      )}
+      <ul className="dash-list">
+        {search.filtered.map((row, i) => {
         const primary = substituteString(rowTemplate.primary, row);
         const secondary = rowTemplate.secondary
           ? substituteString(rowTemplate.secondary, row)
@@ -62,7 +90,13 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
           </li>
         );
       })}
-    </ul>
+      </ul>
+      {hasQuery && search.filtered.length === 0 && (
+        <div className="dash-search-bar__empty">
+          Keine Treffer für „{search.query}".
+        </div>
+      )}
+    </div>
   );
 }
 

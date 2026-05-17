@@ -1,5 +1,6 @@
 import type { PrimitiveProps } from '../types';
 import { substituteString } from '../tokens';
+import { useRowSearch } from './_useRowSearch';
 import { dispatchAction } from '../actions';
 import type { ActionSpec } from '../actions';
 
@@ -17,9 +18,17 @@ export function TileGrid({ node, dataset, navigate }: PrimitiveProps) {
   const empty = node.props?.empty as { message?: string } | undefined;
   const rows = dataset?.data ?? [];
 
+  const search = useRowSearch(rows, {
+    searchable: node.props?.searchable as boolean | 'auto' | undefined,
+    autoThreshold: node.props?.searchAutoThreshold as number | undefined,
+    placeholder: node.props?.searchPlaceholder as string | undefined,
+  });
+
   if (rows.length === 0) {
     return <div className="dash-tilegrid__empty">{empty?.message ?? 'Keine Einträge.'}</div>;
   }
+
+  const hasQuery = search.query.trim() !== '';
 
   const style: React.CSSProperties = {
     display: 'grid',
@@ -28,8 +37,27 @@ export function TileGrid({ node, dataset, navigate }: PrimitiveProps) {
   };
 
   return (
-    <div className="dash-tilegrid" style={style}>
-      {rows.map((row, i) => {
+    <div className="dash-tilegrid-wrap">
+      {search.visible && (
+        <div className="dash-search-bar">
+          <span className="dash-search-bar__count">
+            {search.filtered.length.toLocaleString('de-DE')}{' '}
+            {search.filtered.length === 1 ? 'Eintrag' : 'Einträge'}
+            {hasQuery && search.filtered.length !== search.totalCount && (
+              <> · gefiltert aus {search.totalCount.toLocaleString('de-DE')}</>
+            )}
+          </span>
+          <input
+            type="search"
+            className="dash-search-bar__input"
+            placeholder={search.placeholder}
+            value={search.query}
+            onChange={e => search.setQuery(e.target.value)}
+          />
+        </div>
+      )}
+      <div className="dash-tilegrid" style={style}>
+        {search.filtered.map((row, i) => {
         const title = substituteString(tile.title, row);
         const subtitle = tile.subtitle ? substituteString(tile.subtitle, row) : '';
         const badge = tile.badge ? substituteString(tile.badge, row) : '';
@@ -48,6 +76,12 @@ export function TileGrid({ node, dataset, navigate }: PrimitiveProps) {
           </button>
         );
       })}
+      </div>
+      {hasQuery && search.filtered.length === 0 && (
+        <div className="dash-search-bar__empty">
+          Keine Treffer für „{search.query}".
+        </div>
+      )}
     </div>
   );
 }

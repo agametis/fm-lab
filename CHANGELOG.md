@@ -12,6 +12,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.7.1] — 2026-05-17
+
+Dashboard polish, first batch of example custom dashboards, and refinements to the Script detail view.
+
+- **Example custom dashboards** as reference implementations and immediately useful views on top of the catalog:
+  - `dashboards/` — meta dashboard listing all available dashboards
+  - `external_apis/` — analyzes outbound API usage in the solution: aggregated API families, individual external sources, URL-level details, and a summary card; built around the existing variable/calculation tracking
+  - `script_todos/` — surfaces scripts marked as TODO / WIP with KPI block and grouped script list
+- **Dashboard primitives upgraded** for interactive use:
+  - Per-primitive **row search and filter** via the new `_useRowSearch` hook — applied to `List`, `Table`, `TileGrid`, and `KPIStrip`
+  - **Action state** (`actionState.ts`): primitives can carry navigation/filter state across user interactions
+  - Dashboard results are interactive: click navigation to the objects detail view for further code exploration
+- **Script detail view** — optimizations and bugfixes:
+  - New `highlightContext` provider for shared highlight state between viewer, search, and reference panels
+
+---
+
 ## [0.7.0] — 2026-05-16
 
 Dashboards as a first-class extension surface: bundled, declarative, data-driven views — with a Home dashboard as the new entry point and a generic renderer for every custom SQL query.

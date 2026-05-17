@@ -4,6 +4,7 @@
     "type": "Grid",
     "props": { "columns": 12, "gap": 16 },
     "children": [
+
       {
         "type": "Card",
         "props": { "span": 12, "title": "APIs & externe Schnittstellen", "variant": "hero" },
@@ -12,12 +13,32 @@
           { "type": "KPIStrip",
             "props": {
               "items": [
-                { "label": "Open URL",          "field": "open_url_steps",       "format": "number" },
-                { "label": "Insert from URL",   "field": "insert_url_steps",     "format": "number" },
-                { "label": "MBS cURL-Chunks",   "field": "mbs_curl_chunks",      "format": "number" },
-                { "label": "Eindeutige URLs",   "field": "distinct_urls",        "format": "number" },
-                { "label": "Externe Quellen",   "field": "external_sources",    "format": "number" },
-                { "label": "Import Records",    "field": "import_records_steps", "format": "number" }
+                { "label": "Open URL",        "field": "open_url_steps",       "format": "number",
+                  "onClick": { "action": "openDashboard",
+                               "args": { "id": "external_apis",
+                                         "params": { "step_name": "Open URL" } } } },
+                { "label": "Insert from URL", "field": "insert_url_steps",     "format": "number",
+                  "onClick": { "action": "openDashboard",
+                               "args": { "id": "external_apis",
+                                         "params": { "step_name": "Insert from URL" } } } },
+                { "label": "Import Records",  "field": "import_records_steps", "format": "number",
+                  "onClick": { "action": "openDashboard",
+                               "args": { "id": "external_apis",
+                                         "params": { "step_name": "Import Records" } } } },
+                { "label": "MBS / Plugin",    "field": "mbs_plugin_hits",      "format": "number",
+                  "onClick": { "action": "openDashboard",
+                               "args": { "id": "external_apis",
+                                         "params": { "ref_type": "Plugin" } } } },
+                { "label": "Web Viewer",      "field": "web_viewer_hits",      "format": "number",
+                  "onClick": { "action": "openDashboard",
+                               "args": { "id": "external_apis",
+                                         "params": { "context": "Web Viewer" } } } },
+                { "label": "Calculations",    "field": "calc_step_hits",       "format": "number",
+                  "onClick": { "action": "openDashboard",
+                               "args": { "id": "external_apis",
+                                         "params": { "source_type": "Script (Calc Step)" } } } },
+                { "label": "Eindeutige URLs", "field": "distinct_urls",        "format": "number" },
+                { "label": "Externe Quellen", "field": "external_sources",     "format": "number" }
               ]
             }
           }
@@ -26,42 +47,29 @@
 
       {
         "type": "Card",
-        "props": { "span": 6, "title": "API-Familien" },
+        "props": { "span": 12, "title": "API-Familien" },
         "data": { "dataset": "api_families" },
         "children": [
           { "type": "Table",
             "props": {
               "rowKey": "api_family",
               "density": "comfortable",
+              "sortable": true,
               "columns": [
-                { "field": "api_family", "label": "Familie" },
-                { "field": "hits",       "label": "Hits",   "align": "right" },
-                { "field": "hosts",      "label": "Hosts",  "align": "right" },
-                { "field": "urls",       "label": "URLs",   "align": "right" },
-                { "field": "files",      "label": "Dateien","align": "right" }
+                { "field": "api_family",      "label": "Familie" },
+                { "field": "hits",            "label": "Hits",            "align": "right" },
+                { "field": "hosts",           "label": "Hosts",           "align": "right" },
+                { "field": "urls",            "label": "URLs",            "align": "right" },
+                { "field": "files",           "label": "Dateien",         "align": "right" },
+                { "field": "script_step",     "label": "Script Step",     "align": "right", "format": "count" },
+                { "field": "plugin",          "label": "Plugin",          "align": "right", "format": "count" },
+                { "field": "layout_object",   "label": "Layout Object",   "align": "right", "format": "count" },
+                { "field": "field",           "label": "Field",           "align": "right", "format": "count" },
+                { "field": "custom_function", "label": "Custom Function", "align": "right", "format": "count" }
               ],
               "onRowClick": { "action": "openDashboard",
                               "args": { "id": "external_apis",
                                         "params": { "api_family": "{{api_family}}" } } }
-            }
-          }
-        ]
-      },
-
-      {
-        "type": "Card",
-        "props": { "span": 6, "title": "Externe Datenquellen (FileMaker Multi-File)" },
-        "data": { "dataset": "external_sources" },
-        "children": [
-          { "type": "Table",
-            "props": {
-              "rowKey": "name",
-              "density": "compact",
-              "columns": [
-                { "field": "name",          "label": "Ziel" },
-                { "field": "type",          "label": "Typ",     "format": "badge" },
-                { "field": "used_in_files", "label": "Dateien", "align": "right" }
-              ]
             }
           }
         ]
@@ -76,17 +84,48 @@
             "props": {
               "rowKey": "url",
               "density": "compact",
+              "sortable": true,
               "columns": [
                 { "field": "api_family",  "label": "Familie",      "format": "badge" },
+                { "field": "ref_type",    "label": "Ref-Typ",      "format": "badge" },
                 { "field": "host",        "label": "Host" },
-                { "field": "source_type", "label": "Quelle",       "format": "badge" },
                 { "field": "name",        "label": "Script/Kontext" },
                 { "field": "file",        "label": "Datei" },
                 { "field": "context",     "label": "Step/Typ" },
+                { "field": "step_index",  "label": "#",            "align": "right" },
                 { "field": "url",         "label": "URL" }
               ],
               "onRowClick": { "action": "openObject",
-                              "args": { "uuid": "{{uuid}}", "type": "Script", "file": "{{file}}" } }
+                              "args": { "uuid": "{{target_uuid}}",
+                                        "type": "{{target_type}}",
+                                        "file": "{{file}}",
+                                        "params": { "step":  "{{step_uuid}}",
+                                                    "types": "{{layout_filter_types}}" } } }
+            }
+          }
+        ]
+      },
+
+      {
+        "type": "Card",
+        "props": { "span": 12, "title": "Externe Datenquellen (FileMaker / ODBC)" },
+        "data": { "dataset": "external_sources" },
+        "children": [
+          { "type": "Table",
+            "props": {
+              "rowKey": "name",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                { "field": "name",            "label": "Ziel" },
+                { "field": "type",            "label": "Typ",          "format": "badge" },
+                { "field": "used_in_files",   "label": "Dateien",      "align": "right" },
+                { "field": "to_count",        "label": "TOs",          "align": "right" },
+                { "field": "sample_to_name",  "label": "Beispiel-TO" }
+              ],
+              "onRowClick": { "action": "openObject",
+                              "args": { "uuid": "{{sample_to_uuid}}",
+                                        "type": "TableOccurrence" } }
             }
           }
         ]
@@ -96,7 +135,7 @@
         "type": "Markdown",
         "props": {
           "span": 12,
-          "content": "## Hinweise\n\n- **Klassifizierung**: URLs werden anhand des Hostnamens automatisch einer API-Familie zugeordnet. Unklassifizierte landen in *Andere*.\n- **Quellen**: Berücksichtigt werden `Open URL`/`Insert from URL`-Schritte sowie alle in Calculations enthaltenen `http(s)://`-Literale (Custom Functions, Calculated Fields, AutoEnter-Berechnungen).\n- **MBS cURL**: Die Zahl der cURL-Chunks zählt jede Verwendung von `CURL.*`-Funktionen in Formel-Bestandteilen — eine Anfrage erzeugt typischerweise mehrere Chunks (SetOption, Perform, GetResult).\n- **Externe Quellen**: Aktuell sind nur FileMaker-Verweise (Multi-File-Lösung) registriert; ODBC/JDBC-Quellen würden hier ebenfalls erscheinen.\n- **Filter**: Ein Klick auf eine API-Familie filtert die Detail-Liste auf diese Gruppe."
+          "content": "## Hinweise\n\nDieses Dashboard ist eine **generische Vorlage** zur Übernahme in andere FileMaker-Projekte. Die API-Familien-Klassifikation deckt typische Cloud-/SaaS-/Communication-/AI-Anbieter ab. Für projektspezifische Familien die `CASE WHEN url ILIKE …`-Blöcke in `data/url_details.sql` und `data/api_families.sql` synchron anpassen (siehe Kopfkommentar in `url_details.sql`).\n\n- **KPIs als Filter** (über alle API-Familien hinweg): *Open URL*, *Insert from URL* zählen Script-Steps des jeweiligen Typs mit URL im Step-Text. *Import Records* zählt **alle** Import-Records-Steps, unabhängig von der Quelle (file/URL/Variable) — als Schnittstellen-Indikator. *MBS / Plugin* zählt URLs in Calcs mit MBS-/CURL-/Files-Aufrufen. *Web Viewer* zählt Web-Viewer-Quellen aus Layouts. *Calculations* zählt Script-Step-Formeln (Set Variable, Set Field, If …). *Eindeutige URLs* und *Externe Quellen* sind reine Statistik-Tiles ohne Filter.\n- **API-Familien-Tabelle**: Klick auf eine Familien-Zeile filtert die Detailliste. Klick auf *Alle* setzt den Filter zurück. Die Spalten *Script Step*, *Plugin*, *Layout Object*, *Field*, *Custom Function* zeigen, wie sich die URLs einer Familie auf die Referenztypen verteilen; 0-Werte sind ausgeblendet.\n- **Ref-Typ**: `Plugin` überschreibt den Container-Typ, wenn der Calc-Text MBS- oder Plugin-Funktionen aufruft (`CURL.*`, `MBS(…)`, `Files.*`, `Plugin.*`).\n- **Quellen**: `Script (URL Step)` = `Open URL`/`Insert from URL`. `Script (Import)` = alle `Import Records`. `Script (Calc Step)` = Schritte mit URL im Formelausdruck. `Custom Function` = URL im CF-Body. `Field` = Calculated- oder AutoEnter-Formel. `Layout Object` = Hide/Tooltip/Label/Trigger-Param oder Web-Viewer-Quelle.\n- **Secret-Maskierung**: Query-Parameter `api_key`, `token`, `password`, `secret`, `auth`, `signature` werden in der URL-Spalte auf `[masked]` reduziert.\n- **Navigation**: Klick auf eine Detail-Zeile öffnet das passende Objekt (Script + Step-Anchor, Custom Function, Field, Layout — bei Web Viewer zusätzlich mit Layout-Filter `Container,Web Viewer`). Klick auf eine externe Datenquelle öffnet die alphabetisch erste TableOccurrence dieser Quelle.\n- **Sortierung**: Spaltenüberschriften in API-Familien, URL-Detailliste und Externen Datenquellen sind klickbar (▲▼)."
         }
       }
     ]

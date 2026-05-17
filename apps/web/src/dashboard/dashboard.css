@@ -107,6 +107,22 @@
   background: var(--color-hover-bg);
   border-color: var(--color-border);
 }
+/* Active-Filter-Highlight — dezentes Orange (komplementär zur App-Akzent-
+ * Farbe), kein Spalten-Trenner, nur sanfter Hintergrund + leichter Rahmen. */
+.dash-kpi--active {
+  background: rgba(255, 160, 60, 0.16);
+  border-color: rgba(255, 140, 40, 0.55);
+}
+.dash-kpi--active .dash-kpi__label {
+  color: rgb(200, 110, 30);
+}
+[data-theme="dark"] .dash-kpi--active {
+  background: rgba(255, 175, 80, 0.18);
+  border-color: rgba(255, 175, 80, 0.5);
+}
+[data-theme="dark"] .dash-kpi--active .dash-kpi__label {
+  color: rgb(255, 195, 130);
+}
 .dash-kpi__label {
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -224,6 +240,20 @@
 .dash-table__row--clickable:hover {
   background: var(--color-hover-bg);
 }
+/* Active-Filter-Row — Hintergrund-only, keine Spaltentrenner, kein Inset-Balken.
+ * Dezentes Orange als komplementäre Highlight-Farbe. */
+.dash-table__row--active > td {
+  background: rgba(255, 160, 60, 0.14);
+}
+.dash-table__row--active:hover > td {
+  background: rgba(255, 160, 60, 0.22);
+}
+[data-theme="dark"] .dash-table__row--active > td {
+  background: rgba(255, 175, 80, 0.16);
+}
+[data-theme="dark"] .dash-table__row--active:hover > td {
+  background: rgba(255, 175, 80, 0.24);
+}
 .dash-table__empty {
   padding: 8px 0;
   color: var(--color-text-muted);
@@ -232,6 +262,45 @@
 }
 
 /* --- AutoTable (Phase 2) --- */
+/* --- Generische Search-Bar für Listen-Primitives (Table/List/TileGrid) ---
+ * Visuell identisch zur AutoTable-Header-Zeile, aber semantisch neutral.
+ * Genutzt von `useRowSearch` über alle Listen-Primitives. */
+.dash-search-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 0 0 8px 0;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+.dash-search-bar__count {
+  font-weight: 500;
+}
+.dash-search-bar__input {
+  flex: 0 1 240px;
+  min-width: 140px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 4px;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.dash-search-bar__input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-soft-bg);
+}
+.dash-search-bar__empty {
+  padding: 12px 8px;
+  color: var(--color-text-muted);
+  font-style: italic;
+  text-align: center;
+}
+
 .dash-autotable {
   display: flex;
   flex-direction: column;

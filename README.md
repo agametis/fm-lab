@@ -4,6 +4,12 @@ A **DuckDB**-based tool for analyzing **FileMaker SaXML exports**. Converts the 
 
 ![FM-Lab](Banner.jpg)
 
+## Highlights
+
+> "Using **agentic analytics** with FM-Lab feels less like searching through metadata and more like asking a senior developer who already understands the structure of the solution in every little detail."
+
+> "DuckDB is a key enabler here. Its role in this architecture is hard to overstate. It turns code analysis from digging through static files into querying a live map of the solution in memory. **This RAM-accelerated, in-process architecture** removes the drag of disk-heavy workflows and makes **deep catalog and graph analysis** practical."
+
 ## Prologue
 
 FileMaker development is facing a new paradigm: **solution structure must be readable and understandable by both humans and AI agents**. While many major programming environments have well-established ecosystems for code analysis, documentation and refactoring, FileMaker's proprietary format makes it hard to participate in that ecosystem — there is no native API to query a solution's structure programmatically.

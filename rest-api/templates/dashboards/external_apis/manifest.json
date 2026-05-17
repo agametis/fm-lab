@@ -2,11 +2,11 @@
   "id": "external_apis",
   "version": "1.0.0",
   "title": "APIs & externe Schnittstellen",
-  "description": "Zeigt alle URL-Aufrufe (Open URL, Insert from URL, cURL/MBS, calculated URLs) klassifiziert nach API-Familie sowie alle externen FileMaker-Datenquellen.",
-  "author": "fm-lab custom",
+  "description": "Generische Vorlage: URL-Aufrufe (Open URL, Insert from URL, Import Records, cURL/MBS, Web Viewer, calculated URLs) klassifiziert nach API-Familie sowie externe FileMaker-/ODBC-Datenquellen. Die API-Familien-Patterns sind eine breit gefasste Cloud-/SaaS-Default-Liste — für projektspezifische Klassifikationen die WHEN-Zweige in `data/url_details.sql` + `data/api_families.sql` anpassen.",
+  "author": "fm-lab",
   "icon": "globe",
   "tags": [
-    "custom",
+    "template",
     "api",
     "integration"
   ],
@@ -46,7 +46,31 @@
       "name": "api_family",
       "type": "string",
       "required": false,
-      "description": "Filtert die Detail-Liste auf eine bestimmte API-Familie."
+      "description": "Filtert die Detail-Liste auf eine bestimmte API-Familie. 'Alle' (oder leer) hebt den Filter auf."
+    },
+    {
+      "name": "ref_type",
+      "type": "string",
+      "required": false,
+      "description": "Filtert die Detail-Liste auf einen Referenztyp: 'Script Step', 'Plugin', 'Layout Object', 'Field' oder 'Custom Function'."
+    },
+    {
+      "name": "step_name",
+      "type": "string",
+      "required": false,
+      "description": "Filtert die Detail-Liste auf einen Script-Schritt-Namen (z.B. 'Open URL', 'Insert from URL', 'Import Records')."
+    },
+    {
+      "name": "context",
+      "type": "string",
+      "required": false,
+      "description": "Filtert die Detail-Liste auf einen Kontext-Wert (z.B. 'Web Viewer', 'Custom Function', 'Hide Calc')."
+    },
+    {
+      "name": "source_type",
+      "type": "string",
+      "required": false,
+      "description": "Filtert die Detail-Liste auf einen Quelltyp ('Script (URL Step)', 'Script (Calc Step)', 'Custom Function', 'Field', 'Layout Object')."
     }
   ],
   "permissions": {

@@ -61,6 +61,7 @@ export const ScriptLine: React.FC<ScriptLineProps> = React.memo(({
       data-kind={line.kind}
       data-role={role}
       data-step-name={line.stepName ?? ''}
+      data-step-uuid={line.stepUuid ?? ''}
     >
       <span className={`fm-margin-bar ${marginClass}`} aria-hidden="true" />
       <span className="fm-line-num">{line.line}</span>

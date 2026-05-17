@@ -243,6 +243,36 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
     return () => cancelAnimationFrame(id);
   }, [queryLower]);
 
+  // Step-Anchor (Deep-Link): wenn die URL einen `step`-Param trägt — z.B. aus
+  // einem Dashboard-Klick mit { params: { step: '<step_uuid>' } } — scrollen
+  // wir zur passenden Zeile und blenden temporär eine Anchor-Markierung ein.
+  // Der Param bleibt in der URL erhalten, damit ein Reload die Position
+  // reproduziert; das visuelle Highlight ist auf ~2.5s begrenzt.
+  const [stepAnchor] = useUrlState<string>('step', '');
+  useEffect(() => {
+    if (!stepAnchor || !rootRef.current) return;
+    let cleanup: (() => void) | null = null;
+    const raf = requestAnimationFrame(() => {
+      const el = rootRef.current?.querySelector(
+        `li[data-step-uuid="${CSS.escape(stepAnchor)}"]`,
+      ) as HTMLElement | null;
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('fm-line--step-anchor');
+      const timer = window.setTimeout(() => {
+        el.classList.remove('fm-line--step-anchor');
+      }, 2500);
+      cleanup = () => {
+        window.clearTimeout(timer);
+        el.classList.remove('fm-line--step-anchor');
+      };
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      if (cleanup) cleanup();
+    };
+  }, [stepAnchor, lines]);
+
   return (
     <HighlightRefContext.Provider value={highlightRefUuids ?? null}>
       <ScriptSearchContext.Provider value={searchPredicate}>

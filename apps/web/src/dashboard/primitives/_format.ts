@@ -17,6 +17,15 @@ export function formatKpiValue(value: unknown, format: string | undefined): stri
     return Number.isFinite(n) ? n.toLocaleString('de-DE') : String(value);
   }
 
+  // 'count' verhält sich wie 'number', unterdrückt aber den Wert 0.
+  // Nützlich für Pivot-Tabellen, in denen viele Zellen 0 sind und 0er
+  // visuelles Grundrauschen erzeugen würden.
+  if (format === 'count') {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n === 0) return '';
+    return n.toLocaleString('de-DE');
+  }
+
   if (format === 'badge') {
     return String(value);
   }

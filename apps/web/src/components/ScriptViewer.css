@@ -520,6 +520,31 @@ a.fm-ref {
   box-shadow: inset 3px 0 0 0 #ff5555;
 }
 
+/* Step-Anchor (Deep-Link via ?step=<uuid>): temporäre Hervorhebung der
+ * angesprungenen Zeile. Klasse wird im ScriptViewer per Effekt gesetzt und
+ * nach ~2.5s wieder entfernt — visuell ein gelb leuchtender Rahmen, damit
+ * der Sprung-Ziel-Step nach dem scrollIntoView() sofort ins Auge fällt.
+ * Kollidiert nicht mit fm-line--ref-highlighted (anderer Farbkanal). */
+.fm-line--step-anchor {
+  animation: fm-line-step-anchor-pulse 2.5s ease-out 1;
+}
+
+@keyframes fm-line-step-anchor-pulse {
+  0%   { background-color: rgba(255, 196, 0, 0.45); box-shadow: inset 3px 0 0 0 #ffaa00, 0 0 0 2px rgba(255, 170, 0, 0.55); }
+  60%  { background-color: rgba(255, 196, 0, 0.30); box-shadow: inset 3px 0 0 0 #ffaa00, 0 0 0 2px rgba(255, 170, 0, 0.35); }
+  100% { background-color: transparent;             box-shadow: none; }
+}
+
+[data-theme="dark"] .fm-line--step-anchor {
+  animation: fm-line-step-anchor-pulse-dark 2.5s ease-out 1;
+}
+
+@keyframes fm-line-step-anchor-pulse-dark {
+  0%   { background-color: rgba(255, 210, 80, 0.32); box-shadow: inset 3px 0 0 0 #ffcc55, 0 0 0 2px rgba(255, 200, 60, 0.55); }
+  60%  { background-color: rgba(255, 210, 80, 0.20); box-shadow: inset 3px 0 0 0 #ffcc55, 0 0 0 2px rgba(255, 200, 60, 0.30); }
+  100% { background-color: transparent;              box-shadow: none; }
+}
+
 /* ============================================================================
  * View-Modes — Filter-Stile (dim/hide)
  * ========================================================================== */
