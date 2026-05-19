@@ -1,8 +1,8 @@
 {
   "id": "_generic",
   "version": "1.0.0",
-  "title": "Custom-Query-Ergebnis",
-  "description": "Generischer Renderer für ein beliebiges sql-custom-Template.",
+  "title": "Custom query result",
+  "description": "Generic renderer for any sql-custom template.",
   "author": "fm-lab core",
   "icon": "query",
   "tags": ["internal", "generic"],
@@ -13,9 +13,9 @@
   ],
   "params": [
     { "name": "query", "type": "string", "required": true,
-      "description": "Name des sql-custom-Templates (ohne .sql)" },
+      "description": "Name of the sql-custom template (without .sql)" },
     { "name": "file",  "type": "string", "required": false,
-      "description": "Optionaler Dateifilter — wird an das Template weitergereicht." }
+      "description": "Optional file filter — forwarded to the template." }
   ],
   "permissions": { "read_only": true, "allow_navigation": true }
 }

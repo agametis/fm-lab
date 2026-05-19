@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { FieldTokens } from '../script/calcTokens';
 import { HighlightRefContext } from '../script/highlightContext';
 import { CalcTokenSpan } from './CalcTokenSpan';
@@ -22,6 +23,7 @@ interface FieldViewerProps {
  * bekommen ihre jeweilige Highlight-Klasse.
  */
 export const FieldViewer: React.FC<FieldViewerProps> = ({ data, highlightRefUuids }) => {
+  const { t } = useTranslation(['detail']);
   const rootRef = useRef<HTMLDivElement>(null);
   const highlightSig = highlightRefUuids ? Array.from(highlightRefUuids).sort().join(',') : '';
   useEffect(() => {
@@ -36,12 +38,12 @@ export const FieldViewer: React.FC<FieldViewerProps> = ({ data, highlightRefUuid
   const field = data.field;
   const hasFormula = data.tokens && data.tokens.length > 0;
   const formulaLabel = field?.autoEnterType === 'Calculated'
-    ? 'Auto-Enter Calculation'
-    : 'Calculation Formula';
+    ? t('detail:fieldViewer.autoEnterCalculation')
+    : t('detail:fieldViewer.calculationFormula');
 
   return (
     <HighlightRefContext.Provider value={highlightRefUuids ?? null}>
-      <div ref={rootRef} className="fm-customfunction fm-field" aria-label="Feld-Details">
+      <div ref={rootRef} className="fm-customfunction fm-field" aria-label={t('detail:fieldViewer.ariaLabel') as string}>
         <div className="fm-customfunction-header">
           <h2 className="type-detail-heading">
             {field?.table && (
@@ -54,31 +56,31 @@ export const FieldViewer: React.FC<FieldViewerProps> = ({ data, highlightRefUuid
 
         {field && (
           <dl className="fm-field-props">
-            <dt>Field Type</dt>
+            <dt>{t('detail:fieldViewer.fieldType')}</dt>
             <dd>{field.fieldType ?? '-'}</dd>
-            <dt>Data Type</dt>
+            <dt>{t('detail:fieldViewer.dataType')}</dt>
             <dd>{field.dataType ?? '-'}</dd>
             {field.isGlobal && (
               <>
-                <dt>Global</dt>
-                <dd>Yes</dd>
+                <dt>{t('detail:fieldViewer.global')}</dt>
+                <dd>{t('detail:fieldViewer.yes')}</dd>
               </>
             )}
             {field.maxRepetitions > 1 && (
               <>
-                <dt>Repetitions</dt>
+                <dt>{t('detail:fieldViewer.repetitions')}</dt>
                 <dd>{field.maxRepetitions}</dd>
               </>
             )}
             {field.autoEnterType && (
               <>
-                <dt>Auto-Enter</dt>
+                <dt>{t('detail:fieldViewer.autoEnter')}</dt>
                 <dd>{field.autoEnterType}</dd>
               </>
             )}
             {field.comment && (
               <>
-                <dt>Comment</dt>
+                <dt>{t('detail:fieldViewer.comment')}</dt>
                 <dd className="fm-field-comment">{field.comment}</dd>
               </>
             )}

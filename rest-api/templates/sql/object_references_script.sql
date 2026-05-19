@@ -18,6 +18,11 @@
 --   - Plugin-Funktion-Refs liefern `sub_function` aus XMLCalcReferences.Ref_SubName
 --     (fachlicher MBS-Funktionsname, z.B. 'List.AddPrefix'). NULL für nicht-Container-
 --     Plugins (Standard-Plugins ohne MBS-Container-Verhalten).
+-- v2.3 Variable-UUIDs:
+--   - Variable-Refs (Set + Read) liefern jetzt die synthetische ObjectCatalog-UUID
+--     (md5(Scope || '::' || Scope_Anchor || '::' || Name)) statt NULL, damit
+--     RefSpan den Cross-Reference-Highlight per UUID-Match anwenden kann.
+--     Scope_Anchor-Konvention spiegelt VariableUsages (siehe create_universal_catalogs.sql A.7e).
 --
 -- Source-Priorität: Step-Direkt-Refs (0) gewinnen gegen identische Treffer aus
 -- DDR-Calc-Chunks (1+) durch first-wins-Dedup im Formatter.
@@ -36,7 +41,18 @@ SELECT
   0 AS source_priority,
   xsr.Ref_Type AS type,
   xsr.Ref_Name AS name,
-  xsr.Ref_UUID AS uuid,
+  -- Variable-Refs (Set Variable Step): synthetische UUID aus Scope/Anchor/Name
+  -- (parallel zu VariablesCatalog.Object_UUID), damit Cross-Reference-Highlight
+  -- per UUID-Match greift. Set Variable hat immer ein Script — kein __file-Fallback.
+  CASE
+    WHEN xsr.Ref_Type = 'variable' AND xsr.Variable_Scope = 'global'
+      THEN md5('global::' || xsr.File_Name || '::' || xsr.Ref_Name)
+    WHEN xsr.Ref_Type = 'variable' AND xsr.Variable_Scope = 'local'
+      THEN md5('local::' || xsr.Script_UUID || '::' || xsr.Ref_Name)
+    WHEN xsr.Ref_Type = 'variable' AND xsr.Variable_Scope = 'superglobal'
+      THEN md5('superglobal::__global::' || xsr.Ref_Name)
+    ELSE xsr.Ref_UUID
+  END AS uuid,
   -- Heimat-Datei pro Ref_Type:
   --   field           → ObjectHomes.Home_File via Field_UUID
   --   script          → ObjectHomes.Home_File via Script_UUID, Fallback auf Data_Source_Name
@@ -175,12 +191,22 @@ UNION ALL
 
 -- (5) Variable-Lesungen aus Calc-Chunks (immer 'read').
 --     Set-Variable-Definitionen kommen über Block 1 (XMLStepReferences mit usage='set').
+--     UUID-Berechnung parallel zu Block (1) — Source_Type='Script' garantiert,
+--     dass xcr.Source_UUID ein Script_UUID ist (Scope_Anchor für 'local').
 SELECT
   CAST(xcr.Source_Subkey AS INTEGER) AS line_index,
   4 AS source_priority,
   'variable' AS type,
   xcr.Ref_Name AS name,
-  CAST(NULL AS VARCHAR) AS uuid,
+  CASE
+    WHEN xcr.Variable_Scope = 'global'
+      THEN md5('global::' || xcr.File_Name || '::' || xcr.Ref_Name)
+    WHEN xcr.Variable_Scope = 'local'
+      THEN md5('local::' || xcr.Source_UUID || '::' || xcr.Ref_Name)
+    WHEN xcr.Variable_Scope = 'superglobal'
+      THEN md5('superglobal::__global::' || xcr.Ref_Name)
+    ELSE CAST(NULL AS VARCHAR)
+  END AS uuid,
   xcr.File_Name AS field_file,
   CAST(NULL AS VARCHAR) AS field_basetable,
   CAST(NULL AS VARCHAR) AS to_name,

@@ -1,0 +1,36 @@
+{
+  "objectTypes": {
+    "BaseTable": "Base Table",
+    "TableOccurrence": "Table Occurrence",
+    "Relationship": "Relationship",
+    "Field": "Field",
+    "ValueList": "Value List",
+    "CustomFunction": "Custom Function",
+    "Script": "Script",
+    "ScriptStep": "Script Step",
+    "Layout": "Layout",
+    "LayoutObject": "Layout Object",
+    "LayoutPart": "Layout Part",
+    "Account": "Account",
+    "PrivilegeSet": "Privilege Set",
+    "ExtendedPrivilege": "Extended Privilege",
+    "Theme": "Theme",
+    "CustomMenu": "Custom Menu",
+    "ScriptTrigger": "Script Trigger",
+    "ExternalDataSource": "External Data Source",
+    "BaseDirectory": "Base Directory",
+    "Variable": "Variable",
+    "ScriptFolder": "Script Folder",
+    "LayoutFolder": "Layout Folder",
+    "RelationshipGraph": "Relationship Graph",
+    "BuiltinFunction": "Functions",
+    "PluginFunction": "MBS Functions",
+    "ScriptStepType": "Script Steps",
+    "PluginComponent": "MBS Components"
+  },
+  "categoryHeader": {
+    "ScriptStepType": "Category",
+    "BuiltinFunction": "Category",
+    "PluginFunction": "Component"
+  }
+}

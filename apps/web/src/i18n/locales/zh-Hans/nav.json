@@ -1,0 +1,97 @@
+{
+  "modeTabsAriaLabel": "查看模式",
+  "breadcrumbs": {
+    "search": "搜索",
+    "analyses": "分析",
+    "ariaLabel": "面包屑导航",
+    "linkAria": "导航到 {{label}}"
+  },
+  "errors": {
+    "noDashboardId": "未提供仪表板 ID。",
+    "noQueryName": "未提供查询名称。"
+  },
+  "home": {
+    "title": "首页(重置筛选器)",
+    "ariaLabel": "首页"
+  },
+  "settings": {
+    "title": "插件设置",
+    "ariaLabel": "插件设置"
+  },
+  "tabs": {
+    "search": "搜索",
+    "tree": "层级"
+  },
+  "form": {
+    "searchLabel": "按名称搜索:",
+    "filterLabel": "筛选器:",
+    "searchPlaceholder": "例如 Import、Email(留空 = 所有对象)",
+    "filterPlaceholder": "按名称筛选层级",
+    "searchTitle": "通配符 * 匹配任意字符(例如 *Import、Email*)。留空表示所有对象。",
+    "filterTitle": "包含此文本的条目将被高亮(包括父级文件夹)",
+    "fileLabel": "文件:",
+    "allFiles": "所有文件",
+    "typeLabel": "类型:",
+    "objectTypeLabel": "对象类型:",
+    "allTypes": "所有类型",
+    "usedTokensGroup": "已使用的 Token",
+    "optionsClosed": "选项…",
+    "optionsOpen": "选项 ▴"
+  },
+  "relationshipGraph": {
+    "openCardTitle": "打开关系图",
+    "selectFilePrompt": "请在上方选择一个文件以查看关系图。"
+  },
+  "list": {
+    "loading": "正在加载对象…",
+    "loadingTokens": "正在加载 Token…",
+    "loadingMore": "正在加载更多对象…",
+    "allLoaded": "所有对象已加载",
+    "noObjects": "未找到对象"
+  },
+  "detailView": {
+    "backAria": "返回搜索列表",
+    "backLabel": "返回",
+    "objectNotFound": "未找到对象",
+    "loadingDetails": "正在加载对象详情…",
+    "tabsAria": "对象视图",
+    "noName": "(无名称)",
+    "tabs": {
+      "detail":     "详情",
+      "references": "引用",
+      "graph":      "图表",
+      "versions":   "版本",
+      "notes":      "备注"
+    }
+  },
+  "pseudoToolbar": {
+    "searchLabel": "搜索:",
+    "searchPlaceholder": "筛选组件…",
+    "sortLabel": "排序:",
+    "sortByUsage": "↓ 频次",
+    "sortByName": "A → Z",
+    "tokenSearchPlaceholder": "筛选 Token 名称…",
+    "otherCategory": "其他",
+    "uncategorisedTooltip": "没有类别的 Token(无法筛选)",
+    "categoryTooltip": "{{label}} — {{tokens}} 个 Token、{{usages}} 次使用",
+    "showLess": "更少 ▴",
+    "showMore": "详情 ▾ ({{count}})",
+    "clearFilters": "清除筛选器"
+  },
+  "treeSubtypes": {
+    "ScriptCatalog": "脚本",
+    "Layouts": "布局",
+    "CustomFunctionsCatalog": "自定义函数"
+  },
+  "folderTree": {
+    "loading": "正在加载层级…",
+    "empty": "没有条目",
+    "statsFiltered": "{{visibleEntries}} / {{totalEntries}} 条,{{visibleFolders}} / {{totalFolders}} 个文件夹",
+    "stats": "{{entries}} 条,{{folders}} 个文件夹",
+    "expandAll": "全部展开",
+    "collapseAll": "全部折叠",
+    "disabledDuringFilter": "筛选过程中已禁用",
+    "folderDetailsTitle": "显示文件夹详情",
+    "noName": "(无名称)"
+  }
+}

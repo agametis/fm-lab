@@ -1,0 +1,73 @@
+{
+  "appTitle": "FileMaker Object Browser",
+  "loading": "Laddar…",
+  "retry": "Försök igen",
+  "back": "Tillbaka",
+  "backToPrevious": "Tillbaka till föregående vy",
+  "open": "Öppna",
+  "close": "Stäng",
+  "empty": "Inget att visa.",
+  "noData": "Inga data tillgängliga.",
+  "noEntries": "Inga poster.",
+  "unknown": "(okänd)",
+  "all": "Alla",
+  "filter": "Filter",
+  "search": "Sök",
+  "searchPlaceholder": "Sök…",
+  "yes": "Ja",
+  "no": "Nej",
+  "loadError": "Det gick inte att läsa in: {{message}}",
+  "language": {
+    "label": "Språk",
+    "selectorAriaLabel": "Välj gränssnittsspråk"
+  },
+  "theme": {
+    "switchToLight": "Växla till ljust läge",
+    "switchToDark":  "Växla till mörkt läge"
+  },
+  "actions": {
+    "openInFileMaker": "Öppna i FileMaker",
+    "copyUuid": "Kopiera UUID",
+    "expandAll": "Expandera alla",
+    "collapseAll": "Fäll ihop alla",
+    "collapseMultilineCalcs": "Fäll ihop flerradiga beräkningar",
+    "fitToViewport": "Anpassa till vyn",
+    "fitGraph": "Anpassa diagrammet",
+    "resetLayout": "Återställ layouten",
+    "clearPreselection": "Rensa förval",
+    "showInRelationshipGraph": "Visa i filens relationsdiagram",
+    "fit": "Anpassa",
+    "reset": "Återställ",
+    "fullscreen": "Helskärm ↗",
+    "openLayoutFullscreen": "Öppna layouten i helskärm",
+    "originalSize": "100 % originalstorlek"
+  },
+  "refOriginPill": {
+    "loading": "Löser referens…"
+  },
+  "hierarchy": {
+    "structurallyContains": "Innehåller strukturellt"
+  },
+  "layout": {
+    "empty": "Denna layout har inga objekt.",
+    "selectFile": "Välj en fil…",
+    "title": "Layout"
+  },
+  "relationshipGraph": {
+    "title": "Relationsdiagram",
+    "fileLabel": "Fil:",
+    "selectFile": "Välj en fil…",
+    "selectFilePrompt": "Välj en fil i väljaren.",
+    "loading": "Läser in relationsdiagrammet…",
+    "noTOs": "Den här filen har inga tabellförekomster.",
+    "notImported": "Relationsdiagrammet är inte importerat ännu. Kör convert-xml --batch på nytt."
+  },
+  "dependency": {
+    "empty": "Inga beroenden."
+  },
+  "dashboard": {
+    "loading": "Läser in dashboard…",
+    "loadError": "Det gick inte att läsa in: {{message}}",
+    "noData": "Inga data tillgängliga."
+  }
+}

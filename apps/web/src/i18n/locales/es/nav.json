@@ -1,0 +1,97 @@
+{
+  "modeTabsAriaLabel": "Modo de vista",
+  "breadcrumbs": {
+    "search": "Buscar",
+    "analyses": "Análisis",
+    "ariaLabel": "Migas de pan",
+    "linkAria": "Navegar a {{label}}"
+  },
+  "errors": {
+    "noDashboardId": "No se ha proporcionado el id del dashboard.",
+    "noQueryName": "No se ha proporcionado el nombre de la consulta."
+  },
+  "home": {
+    "title": "Inicio (restablecer filtros)",
+    "ariaLabel": "Inicio"
+  },
+  "settings": {
+    "title": "Ajustes de plugins",
+    "ariaLabel": "Ajustes de plugins"
+  },
+  "tabs": {
+    "search": "Buscar",
+    "tree": "Jerarquía"
+  },
+  "form": {
+    "searchLabel": "Buscar por nombre:",
+    "filterLabel": "Filtro:",
+    "searchPlaceholder": "p. ej. Import, Email (vacío = todos los objetos)",
+    "filterPlaceholder": "Filtrar la jerarquía por nombre",
+    "searchTitle": "El comodín * coincide con cualquier carácter (p. ej. *Import, Email*). Deja vacío para todos los objetos.",
+    "filterTitle": "Los elementos que contienen este texto se resaltan (incluidas las carpetas padre)",
+    "fileLabel": "Archivo:",
+    "allFiles": "Todos los archivos",
+    "typeLabel": "Tipo:",
+    "objectTypeLabel": "Tipo de objeto:",
+    "allTypes": "Todos los tipos",
+    "usedTokensGroup": "Tokens usados",
+    "optionsClosed": "Opciones…",
+    "optionsOpen": "Opciones ▴"
+  },
+  "relationshipGraph": {
+    "openCardTitle": "Abrir grafo de relaciones",
+    "selectFilePrompt": "Selecciona un archivo arriba para ver el grafo de relaciones."
+  },
+  "list": {
+    "loading": "Cargando objetos…",
+    "loadingTokens": "Cargando tokens…",
+    "loadingMore": "Cargando más objetos…",
+    "allLoaded": "Todos los objetos cargados",
+    "noObjects": "No se encontraron objetos"
+  },
+  "detailView": {
+    "backAria": "Volver a la lista de búsqueda",
+    "backLabel": "Atrás",
+    "objectNotFound": "Objeto no encontrado",
+    "loadingDetails": "Cargando detalles del objeto…",
+    "tabsAria": "Vistas del objeto",
+    "noName": "(sin nombre)",
+    "tabs": {
+      "detail":     "Detalles",
+      "references": "Referencias",
+      "graph":      "Grafo",
+      "versions":   "Versiones",
+      "notes":      "Notas"
+    }
+  },
+  "pseudoToolbar": {
+    "searchLabel": "Buscar:",
+    "searchPlaceholder": "Filtrar componente…",
+    "sortLabel": "Ordenar:",
+    "sortByUsage": "↓ Frecuencia",
+    "sortByName": "A → Z",
+    "tokenSearchPlaceholder": "Filtrar nombre del token…",
+    "otherCategory": "Otros",
+    "uncategorisedTooltip": "Tokens sin categoría (no se pueden filtrar)",
+    "categoryTooltip": "{{label}} — {{tokens}} tokens, {{usages}} usos",
+    "showLess": "Menos ▴",
+    "showMore": "Detalles ▾ ({{count}})",
+    "clearFilters": "Limpiar filtros"
+  },
+  "treeSubtypes": {
+    "ScriptCatalog": "Scripts",
+    "Layouts": "Layouts",
+    "CustomFunctionsCatalog": "Funciones personalizadas"
+  },
+  "folderTree": {
+    "loading": "Cargando jerarquía…",
+    "empty": "Sin entradas",
+    "statsFiltered": "{{visibleEntries}} / {{totalEntries}} entradas, {{visibleFolders}} / {{totalFolders}} carpetas",
+    "stats": "{{entries}} entradas, {{folders}} carpetas",
+    "expandAll": "Expandir todo",
+    "collapseAll": "Contraer todo",
+    "disabledDuringFilter": "Desactivado durante el filtrado",
+    "folderDetailsTitle": "Mostrar detalles de la carpeta",
+    "noName": "(sin nombre)"
+  }
+}

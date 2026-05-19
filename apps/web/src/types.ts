@@ -79,12 +79,17 @@ export interface TabDefinition {
  * Sub-navigation tabs for the detail view.
  * Disabled tabs are shown but not clickable.
  */
+/**
+ * Sub-navigation tab definitions. The `label` carries the i18n key path inside
+ * the `nav` namespace (e.g. `detailView.tabs.detail`). Consumers translate it
+ * via `t(`nav:${tab.label}`)`.
+ */
 export const DETAIL_TABS: readonly TabDefinition[] = [
-  { id: 'detail', label: 'Details', enabled: true },
-  { id: 'references', label: 'Referenzen', enabled: true },
-  { id: 'graph', label: 'Graph', enabled: true },
-  { id: 'versions', label: 'Versions', enabled: false },
-  { id: 'notes', label: 'Notes', enabled: false },
+  { id: 'detail',     label: 'detailView.tabs.detail',     enabled: true },
+  { id: 'references', label: 'detailView.tabs.references', enabled: true },
+  { id: 'graph',      label: 'detailView.tabs.graph',      enabled: true },
+  { id: 'versions',   label: 'detailView.tabs.versions',   enabled: false },
+  { id: 'notes',      label: 'detailView.tabs.notes',      enabled: false },
 ];
 
 /**

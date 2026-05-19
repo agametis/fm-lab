@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "TO-DO’s in scripts",
+    "description": "Telt commentaarsstappen met TO-DO-markeringen en toont alle betrokken scripts per bestand."
+  },
+  "layout": {
+    "root.children[0].props.title": "TO-DO-overzicht",
+    "root.children[0].children[0].props.items[0].label": "TO-DO-regels",
+    "root.children[0].children[0].props.items[1].label": "Scripts",
+    "root.children[0].children[0].props.items[2].label": "Bestanden",
+
+    "root.children[1].props.title": "Scripts met TO-DO’s",
+    "root.children[1].children[0].props.columns[0].label": "Bestand",
+    "root.children[1].children[0].props.columns[1].label": "Scriptnaam",
+    "root.children[1].children[0].props.columns[2].label": "Aantal"
+  }
+}

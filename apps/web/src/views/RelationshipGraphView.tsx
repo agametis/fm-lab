@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import { useRelationshipGraph } from '../hooks/useRelationshipGraph';
 import { RelationshipGraph, type RelationshipGraphHandle } from '../components/RelationshipGraph';
@@ -10,6 +11,7 @@ import './RelationshipGraphView.css';
 type FileInfo = { File_Name?: string };
 
 export function RelationshipGraphView() {
+  const { t } = useTranslation(['common', 'errors']);
   const { fileName } = useParams<{ fileName: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,11 +43,11 @@ export function RelationshipGraphView() {
           setFiles(response.data.solution.files as FileInfo[]);
         }
       } catch (err) {
-        console.error('Fehler beim Laden der Dateien:', err);
+        console.error(t('errors:loadFiles'), err);
       }
     }
     loadFiles();
-  }, []);
+  }, [t]);
 
   const handleFileChange = (newFile: string) => {
     if (newFile) navigate(`/relationship-graph/${encodeURIComponent(newFile)}`);
@@ -81,19 +83,19 @@ export function RelationshipGraphView() {
           type="button"
           onClick={handleBack}
           className="relationship-graph-back"
-          title="Zurück zur vorherigen Ansicht"
+          title={t('common:backToPrevious') as string}
         >
-          ← Zurück
+          ← {t('common:back')}
         </button>
-        <h1>Beziehungsdiagramm</h1>
+        <h1>{t('common:relationshipGraph.title')}</h1>
         <div className="relationship-graph-file-selector">
-          <label htmlFor="rg-file">Datei:</label>
+          <label htmlFor="rg-file">{t('common:relationshipGraph.fileLabel')}</label>
           <select
             id="rg-file"
             value={fileName ?? ''}
             onChange={e => handleFileChange(e.target.value)}
           >
-            <option value="" disabled>Datei auswählen…</option>
+            <option value="" disabled>{t('common:relationshipGraph.selectFile')}</option>
             {files.map(f => (
               <option key={f.File_Name || ''} value={f.File_Name || ''}>{f.File_Name}</option>
             ))}
@@ -105,30 +107,30 @@ export function RelationshipGraphView() {
       <div className="relationship-graph-body">
         {!fileName && (
           <div className="relationship-graph-empty">
-            Bitte eine Datei aus der Auswahl wählen.
+            {t('common:relationshipGraph.selectFilePrompt')}
           </div>
         )}
 
         {fileName && loading && (
-          <div className="relationship-graph-empty">Lade Beziehungsdiagramm…</div>
+          <div className="relationship-graph-empty">{t('common:relationshipGraph.loading')}</div>
         )}
 
         {fileName && error && (
           <div className="relationship-graph-error">
-            Fehler: {error}
+            {t('common:loadError', { message: error })}
           </div>
         )}
 
         {fileName && data && data.tableOccurrences.length === 0 && (
           <div className="relationship-graph-empty">
-            Diese Datei enthält keine Table Occurrences.
+            {t('common:relationshipGraph.noTOs')}
           </div>
         )}
 
         {fileName && data && data.tableOccurrences.length > 0 &&
           data.tableOccurrences.every(t => t.bounds.left == null) && (
             <div className="relationship-graph-empty">
-              Beziehungsdiagramm noch nicht importiert. Bitte <code>convert-xml --batch</code> neu ausführen.
+              {t('common:relationshipGraph.notImported')}
             </div>
           )}
 

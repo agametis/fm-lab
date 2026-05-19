@@ -1,0 +1,73 @@
+{
+  "appTitle": "FileMaker Object Browser",
+  "loading": "Laden…",
+  "retry": "Opnieuw proberen",
+  "back": "Terug",
+  "backToPrevious": "Terug naar de vorige weergave",
+  "open": "Openen",
+  "close": "Sluiten",
+  "empty": "Niets te tonen.",
+  "noData": "Geen gegevens beschikbaar.",
+  "noEntries": "Geen vermeldingen.",
+  "unknown": "(onbekend)",
+  "all": "Alles",
+  "filter": "Filter",
+  "search": "Zoeken",
+  "searchPlaceholder": "Zoeken…",
+  "yes": "Ja",
+  "no": "Nee",
+  "loadError": "Laden mislukt: {{message}}",
+  "language": {
+    "label": "Taal",
+    "selectorAriaLabel": "Interfacetaal kiezen"
+  },
+  "theme": {
+    "switchToLight": "Schakelen naar lichte modus",
+    "switchToDark":  "Schakelen naar donkere modus"
+  },
+  "actions": {
+    "openInFileMaker": "Openen in FileMaker",
+    "copyUuid": "UUID kopiëren",
+    "expandAll": "Alles uitvouwen",
+    "collapseAll": "Alles invouwen",
+    "collapseMultilineCalcs": "Berekeningen op meerdere regels invouwen",
+    "fitToViewport": "Aanpassen aan venster",
+    "fitGraph": "Grafiek aanpassen",
+    "resetLayout": "Indeling herstellen",
+    "clearPreselection": "Voorselectie wissen",
+    "showInRelationshipGraph": "Toon in de relatiegrafiek van het bestand",
+    "fit": "Passend",
+    "reset": "Herstellen",
+    "fullscreen": "Volledig scherm ↗",
+    "openLayoutFullscreen": "Layout openen in volledig scherm",
+    "originalSize": "100 % originele grootte"
+  },
+  "refOriginPill": {
+    "loading": "Referentie wordt opgezocht…"
+  },
+  "hierarchy": {
+    "structurallyContains": "Bevat structureel"
+  },
+  "layout": {
+    "empty": "Dit layout bevat geen objecten.",
+    "selectFile": "Selecteer een bestand…",
+    "title": "Layout"
+  },
+  "relationshipGraph": {
+    "title": "Relatiegrafiek",
+    "fileLabel": "Bestand:",
+    "selectFile": "Selecteer een bestand…",
+    "selectFilePrompt": "Selecteer een bestand in de keuzelijst.",
+    "loading": "Relatiegrafiek wordt geladen…",
+    "noTOs": "Dit bestand bevat geen table occurrences.",
+    "notImported": "Relatiegrafiek nog niet geïmporteerd. Voer convert-xml --batch opnieuw uit."
+  },
+  "dependency": {
+    "empty": "Geen afhankelijkheden."
+  },
+  "dashboard": {
+    "loading": "Dashboard wordt geladen…",
+    "loadError": "Laden mislukt: {{message}}",
+    "noData": "Geen gegevens beschikbaar."
+  }
+}

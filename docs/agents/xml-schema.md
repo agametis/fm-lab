@@ -1,15 +1,15 @@
 ## FileMaker SaveAsXML
 
-Das **Save a Copy as XML** (oft kurz _SaveAsXML_ genannt) ist eine Funktion in Claris FileMaker zum Exportieren einer offenen FileMaker-Datei in Form einer XML-Datei. Dieses XML enthält sämtliche Schema- und Strukturdetails der FileMaker-Lösung – Tabellen, Felddefinitionen, Layouts, Skripte, Wertelisten, Sicherheitsberechtigungen usw. – jedoch keine Daten aus den Tabellen . Die XML-Datei dient somit der Dokumentation der Anwendung und ermöglicht es Entwicklern, Änderungen im Aufbau der FileMaker-Datei nachzuvollziehen.
+**Save a Copy as XML** (often shortened to _SaveAsXML_) is a function in Claris FileMaker for exporting an open FileMaker file as an XML document. The XML contains all schema and structural details of the FileMaker solution — tables, field definitions, layouts, scripts, value lists, security privileges, etc. — but does not include any record data from the tables. The XML file therefore serves as documentation of the application and lets developers track changes to the structure of the FileMaker file.
 
 
-## XML-Struktur
+## XML structure
 
-Hier ist die High-Level-Struktur des XML Exports aus der FileMaker Datei.
+This is the high-level structure of the XML export produced from a FileMaker file.
 
 ```XML
 <?xml version="1.0" encoding="utf-8"?>
-<FMSaveAsXML version="2.2.0.0" Source="19.6.3" File="Dateiname.fmp12" UUID="3577981F-2DDF-45FC-9720-9570570760DB" locale="German">
+<FMSaveAsXML version="2.2.0.0" Source="19.6.3" File="Filename.fmp12" UUID="3577981F-2DDF-45FC-9720-9570570760DB" locale="German">
     <Structure membercount="1">
         <AddAction membercount="18">
             <BaseDirectoryCatalog membercount="1" generate="True" temporary="True">...</BaseDirectoryCatalog>
@@ -34,57 +34,57 @@ Hier ist die High-Level-Struktur des XML Exports aus der FileMaker Datei.
     </Structure>
 ```
 
-## AutoEnter-Knoten (innerhalb von Field-Elementen)
+## AutoEnter node (inside Field elements)
 
-Jedes `<Field>`-Element in `FieldsForTables` kann ein `<AutoEnter>`-Kind enthalten:
+Each `<Field>` element in `FieldsForTables` may contain an `<AutoEnter>` child:
 
 ```xml
 <AutoEnter type="<TYPE>" prohibitModification="True|False">
-    <!-- typ-spezifische Kinder -->
+    <!-- type-specific children -->
 </AutoEnter>
 ```
 
-### AutoEnter-Typen
+### AutoEnter types
 
-| Typ | Kinder |
+| Type | Children |
 |-----|--------|
 | `SerialNumber` | `<SerialNumber increment="1" nextvalue="207782" generate="OnCreation"/>` |
-| `Looked_up` | `<Looked_up>` mit FieldReference (siehe unten) |
-| `Calculated` | `<Calculated>` mit Calculation/Text (Formel) und DDRREF (Hash) |
-| `ConstantData` | `<ConstantData>Wert</ConstantData>` |
-| `CreationDate`, `CreationTime`, `CreationTimestamp`, `CreationName`, `CreationAccountName` | keine |
-| `ModificationDate`, `ModificationTime`, `ModificationTimestamp`, `ModificationName`, `ModificationAccountName` | keine |
+| `Looked_up` | `<Looked_up>` with FieldReference (see below) |
+| `Calculated` | `<Calculated>` with Calculation/Text (formula) and DDRREF (hash) |
+| `ConstantData` | `<ConstantData>Value</ConstantData>` |
+| `CreationDate`, `CreationTime`, `CreationTimestamp`, `CreationName`, `CreationAccountName` | none |
+| `ModificationDate`, `ModificationTime`, `ModificationTimestamp`, `ModificationName`, `ModificationAccountName` | none |
 
-### Lookup-Struktur (Looked_up)
+### Lookup structure (Looked_up)
 
 ```xml
 <AutoEnter type="Looked_up" prohibitModification="False">
     <Looked_up dontCopyIfEmpty="False" noMatchCopyOption="DoNotCopy">
-        <FieldReference id="12" name="Vorgabe 9" UUID="3082C86A-...">
-            <TableOccurrenceReference id="1065097" name="Artikel Sortiment" UUID="11A6B529-..."/>
+        <FieldReference id="12" name="Default 9" UUID="3082C86A-...">
+            <TableOccurrenceReference id="1065097" name="Article Range" UUID="11A6B529-..."/>
         </FieldReference>
         <Context>
-            <TableOccurrenceReference id="1065089" name="Artikel" UUID="73ECAA67-..."/>
+            <TableOccurrenceReference id="1065089" name="Article" UUID="73ECAA67-..."/>
         </Context>
     </Looked_up>
 </AutoEnter>
 ```
 
-### AutoEnter Calculated-Struktur
+### AutoEnter Calculated structure
 
 ```xml
 <AutoEnter type="Calculated" prohibitModification="False" overwriteExisting="True" alwaysEvaluate="False">
     <Calculated>
         <Calculation>
-            <TableOccurrenceReference id="1065089" name="Bestaende" UUID="0DD01566-..."/>
+            <TableOccurrenceReference id="1065089" name="Stocks" UUID="0DD01566-..."/>
             <DDRREF kind="ChunkList" hash="5754CB6D...">...</DDRREF>
-            <Text><![CDATA[Regale::Index]]></Text>
+            <Text><![CDATA[Shelves::Index]]></Text>
         </Calculation>
     </Calculated>
 </AutoEnter>
 ```
 
-### ConstantData-Struktur
+### ConstantData structure
 
 ```xml
 <AutoEnter type="ConstantData" prohibitModification="False">

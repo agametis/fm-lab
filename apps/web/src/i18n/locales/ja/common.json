@@ -1,0 +1,73 @@
+{
+  "appTitle": "FileMaker Object Browser",
+  "loading": "読み込み中…",
+  "retry": "再試行",
+  "back": "戻る",
+  "backToPrevious": "前のビューに戻る",
+  "open": "開く",
+  "close": "閉じる",
+  "empty": "表示できる項目はありません。",
+  "noData": "データがありません。",
+  "noEntries": "エントリがありません。",
+  "unknown": "(不明)",
+  "all": "すべて",
+  "filter": "フィルター",
+  "search": "検索",
+  "searchPlaceholder": "検索…",
+  "yes": "はい",
+  "no": "いいえ",
+  "loadError": "読み込みに失敗しました: {{message}}",
+  "language": {
+    "label": "言語",
+    "selectorAriaLabel": "インターフェースの言語を選択"
+  },
+  "theme": {
+    "switchToLight": "ライトモードに切り替え",
+    "switchToDark":  "ダークモードに切り替え"
+  },
+  "actions": {
+    "openInFileMaker": "FileMaker で開く",
+    "copyUuid": "UUID をコピー",
+    "expandAll": "すべて展開",
+    "collapseAll": "すべて折りたたむ",
+    "collapseMultilineCalcs": "複数行の計算式を折りたたむ",
+    "fitToViewport": "ビューに合わせる",
+    "fitGraph": "グラフをフィット",
+    "resetLayout": "レイアウトをリセット",
+    "clearPreselection": "事前選択を解除",
+    "showInRelationshipGraph": "ファイルのリレーショングラフに表示",
+    "fit": "フィット",
+    "reset": "リセット",
+    "fullscreen": "全画面表示 ↗",
+    "openLayoutFullscreen": "レイアウトを全画面で開く",
+    "originalSize": "100% 原寸大"
+  },
+  "refOriginPill": {
+    "loading": "参照を解決中…"
+  },
+  "hierarchy": {
+    "structurallyContains": "構造的に含む"
+  },
+  "layout": {
+    "empty": "このレイアウトにはオブジェクトがありません。",
+    "selectFile": "ファイルを選択…",
+    "title": "レイアウト"
+  },
+  "relationshipGraph": {
+    "title": "リレーショングラフ",
+    "fileLabel": "ファイル:",
+    "selectFile": "ファイルを選択…",
+    "selectFilePrompt": "セレクターからファイルを選択してください。",
+    "loading": "リレーショングラフを読み込み中…",
+    "noTOs": "このファイルにはテーブルオカレンスがありません。",
+    "notImported": "リレーショングラフはまだインポートされていません。convert-xml --batch を再実行してください。"
+  },
+  "dependency": {
+    "empty": "依存関係はありません。"
+  },
+  "dashboard": {
+    "loading": "ダッシュボードを読み込み中…",
+    "loadError": "読み込みに失敗しました: {{message}}",
+    "noData": "データがありません。"
+  }
+}

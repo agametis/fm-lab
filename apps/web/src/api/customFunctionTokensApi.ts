@@ -13,7 +13,7 @@ export interface CustomFunctionTokensResponse {
 
 export async function fetchCustomFunctionTokens(
   uuid: string,
-  lang: string = 'de',
+  lang: string,
 ): Promise<CustomFunctionTokens> {
   const params = new URLSearchParams({ uuid, format: 'tokens', enrich: lang });
   const response = await fetch(`${baseUrl}/api/get-details?${params}`);

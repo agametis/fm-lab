@@ -1,0 +1,97 @@
+{
+  "modeTabsAriaLabel": "Ansichts-Modus",
+  "breadcrumbs": {
+    "search": "Suche",
+    "analyses": "Analysen",
+    "ariaLabel": "Breadcrumb",
+    "linkAria": "Navigiere zu {{label}}"
+  },
+  "errors": {
+    "noDashboardId": "Keine Dashboard-ID angegeben.",
+    "noQueryName": "Kein Query-Name angegeben."
+  },
+  "home": {
+    "title": "Startseite (Filter zurücksetzen)",
+    "ariaLabel": "Startseite"
+  },
+  "settings": {
+    "title": "Plugin-Einstellungen",
+    "ariaLabel": "Plugin-Einstellungen"
+  },
+  "tabs": {
+    "search": "Suche",
+    "tree": "Hierarchie"
+  },
+  "form": {
+    "searchLabel": "Suche nach Name:",
+    "filterLabel": "Filter:",
+    "searchPlaceholder": "z.B. Import, Email (leer = alle Objekte)",
+    "filterPlaceholder": "Filtere die Hierarchie nach Namen",
+    "searchTitle": "Wildcard * für beliebige Zeichen (z.B. *Import, Email*). Leer lassen für alle Objekte.",
+    "filterTitle": "Items mit diesem Text im Namen werden hervorgehoben (inkl. Eltern-Folder)",
+    "fileLabel": "Datei:",
+    "allFiles": "Alle Dateien",
+    "typeLabel": "Typ:",
+    "objectTypeLabel": "Objekttyp:",
+    "allTypes": "Alle Typen",
+    "usedTokensGroup": "Verwendete Tokens",
+    "optionsClosed": "Optionen…",
+    "optionsOpen": "Optionen ▴"
+  },
+  "relationshipGraph": {
+    "openCardTitle": "Beziehungsdiagramm öffnen",
+    "selectFilePrompt": "Bitte oben eine Datei auswählen, um das Beziehungsdiagramm anzuzeigen."
+  },
+  "list": {
+    "loading": "Lade Objekte…",
+    "loadingTokens": "Lade Tokens…",
+    "loadingMore": "Lade weitere Objekte…",
+    "allLoaded": "Alle Objekte geladen",
+    "noObjects": "Keine Objekte gefunden"
+  },
+  "detailView": {
+    "backAria": "Zurück zur Suchliste",
+    "backLabel": "Zurück",
+    "objectNotFound": "Objekt nicht gefunden",
+    "loadingDetails": "Objekt-Details werden geladen…",
+    "tabsAria": "Objekt-Ansichten",
+    "noName": "(ohne Namen)",
+    "tabs": {
+      "detail":     "Details",
+      "references": "Referenzen",
+      "graph":      "Graph",
+      "versions":   "Versionen",
+      "notes":      "Notizen"
+    }
+  },
+  "pseudoToolbar": {
+    "searchLabel": "Suchen:",
+    "searchPlaceholder": "Komponente filtern…",
+    "sortLabel": "Sortierung:",
+    "sortByUsage": "↓ Häufigkeit",
+    "sortByName": "A → Z",
+    "tokenSearchPlaceholder": "Token-Name filtern…",
+    "otherCategory": "Sonstige",
+    "uncategorisedTooltip": "Tokens ohne Kategorie (nicht filterbar)",
+    "categoryTooltip": "{{label}} — {{tokens}} Tokens, {{usages}} Verwendungen",
+    "showLess": "Weniger ▴",
+    "showMore": "Details ▾ ({{count}})",
+    "clearFilters": "Filter zurücksetzen"
+  },
+  "treeSubtypes": {
+    "ScriptCatalog": "Scripts",
+    "Layouts": "Layouts",
+    "CustomFunctionsCatalog": "Custom Functions"
+  },
+  "folderTree": {
+    "loading": "Hierarchie wird geladen…",
+    "empty": "Keine Einträge",
+    "statsFiltered": "{{visibleEntries}} / {{totalEntries}} Einträge, {{visibleFolders}} / {{totalFolders}} Ordner",
+    "stats": "{{entries}} Einträge, {{folders}} Ordner",
+    "expandAll": "Alle aufklappen",
+    "collapseAll": "Alle zuklappen",
+    "disabledDuringFilter": "Im Filter-Modus deaktiviert",
+    "folderDetailsTitle": "Folder-Details anzeigen",
+    "noName": "(ohne Namen)"
+  }
+}

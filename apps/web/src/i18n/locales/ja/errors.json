@@ -1,0 +1,13 @@
+{
+  "loadFiles": "ファイルの読み込みに失敗しました。",
+  "loadObjects": "オブジェクトの読み込みに失敗しました。",
+  "loadFieldDetails": "フィールドの詳細を読み込めませんでした",
+  "loadScriptDetails": "スクリプトの詳細を読み込めませんでした",
+  "loadCustomFunctionDetails": "カスタム関数の詳細を読み込めませんでした",
+  "loadLayout": "レイアウトを読み込めませんでした",
+  "loadDashboard": "ダッシュボードを読み込めませんでした",
+  "generic": "問題が発生しました。もう一度お試しください。",
+  "loadHeading": "読み込みに失敗しました",
+  "retryAria": "再試行",
+  "retryLabel": "再試行"
+}

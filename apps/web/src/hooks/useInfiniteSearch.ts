@@ -56,6 +56,38 @@ export const useInfiniteSearch = ({
   // Prevent duplicate requests
   const isFetchingRef = useRef(false);
 
+  // Generation-Counter: jeder Reset (synchron im Render oder via useEffect)
+  // bumpt diesen Wert. In-flight Fetches (reset oder loadMore) vergleichen
+  // nach ihrem await gegen den aktuellen Stand und verwerfen ihre Response,
+  // wenn sich die Parameter inzwischen geändert haben. Verhindert, dass ein
+  // vor dem Filterwechsel gestarteter loadMore-Chunk nachträglich an die neue
+  // Trefferliste angehängt wird ("Fragmente" unterhalb von "All loaded").
+  const requestGenerationRef = useRef(0);
+
+  // Synchrone Param-Detection im Render. Wenn der Parent mit neuen Filter-
+  // Werten rendert, leeren wir items/Counter im SELBEN Render — bevor das
+  // Commit die alte Liste mit der neuen Filter-UI ans DOM bringt. Ohne das
+  // bleibt zwischen Render und useEffect-Callback ein Frame, in dem die alte
+  // (oft sehr lange) Liste sichtbar ist und der Virtualizer seinen Range
+  // basierend auf der alten Gesamthöhe rendert — sichtbar als "Fragmente".
+  // Pattern: "Adjusting state when a prop changes" (React-Docs).
+  const [lastParams, setLastParams] = useState({ searchName, selectedFile, objectType });
+  if (
+    lastParams.searchName !== searchName ||
+    lastParams.selectedFile !== selectedFile ||
+    lastParams.objectType !== objectType
+  ) {
+    setLastParams({ searchName, selectedFile, objectType });
+    setItems([]);
+    setOffset(0);
+    setTotalCount(null);
+    setLoading(true);
+    setLoadingMore(false);
+    setError(null);
+    isFetchingRef.current = false;
+    requestGenerationRef.current++;
+  }
+
   // Build search params (normalize to API format)
   const buildSearchParams = useCallback((withOffset: number = 0) => {
     // Wildcard-Mapping: * → % (SQL-Wildcard)
@@ -79,11 +111,17 @@ export const useInfiniteSearch = ({
    * Reset and load initial data
    */
   const reset = useCallback(async () => {
+    // Generation bumpen → eventuell in-flight loadMore-Calls werden ihre
+    // Response nach dem await verwerfen.
+    const generation = ++requestGenerationRef.current;
+
     // Reset state
     setItems([]);
     setOffset(0);
+    setTotalCount(null);
     setError(null);
     setLoading(true);
+    setLoadingMore(false);
     isFetchingRef.current = false;
 
     try {
@@ -99,12 +137,14 @@ export const useInfiniteSearch = ({
         }),
       ]);
 
+      if (generation !== requestGenerationRef.current) return;
+
       if (searchResponse.success && searchResponse.data) {
         const items = Array.isArray(searchResponse.data) ? searchResponse.data : [];
         setItems(items);
         setOffset(CHUNK_SIZE);
       } else {
-        setError('Suche fehlgeschlagen');
+        setError('Search failed');
       }
 
       // Extract total count
@@ -121,10 +161,13 @@ export const useInfiniteSearch = ({
         setTotalCount(null);
       }
     } catch (err) {
+      if (generation !== requestGenerationRef.current) return;
       console.error('Search failed:', err);
-      setError(err instanceof Error ? err.message : 'Fehler bei der Suche');
+      setError(err instanceof Error ? err.message : 'Search failed');
     } finally {
-      setLoading(false);
+      if (generation === requestGenerationRef.current) {
+        setLoading(false);
+      }
     }
   }, [buildSearchParams]);
 
@@ -141,6 +184,9 @@ export const useInfiniteSearch = ({
       return; // No more items to load
     }
 
+    // Generation merken — kommt vor dem await ein reset() dazwischen, wird
+    // unsere Response verworfen statt an die neue Liste angehängt zu werden.
+    const generation = requestGenerationRef.current;
     isFetchingRef.current = true;
     setLoadingMore(true);
     setError(null);
@@ -150,19 +196,24 @@ export const useInfiniteSearch = ({
 
       const response = await api.search(searchParams);
 
+      if (generation !== requestGenerationRef.current) return;
+
       if (response.success && response.data) {
         const newItems = Array.isArray(response.data) ? response.data : [];
         setItems((prev) => [...prev, ...newItems]);
         setOffset((prev) => prev + CHUNK_SIZE);
       } else {
-        setError('Laden fehlgeschlagen');
+        setError('Loading failed');
       }
     } catch (err) {
+      if (generation !== requestGenerationRef.current) return;
       console.error('Load more failed:', err);
-      setError(err instanceof Error ? err.message : 'Fehler beim Laden');
+      setError(err instanceof Error ? err.message : 'Failed to load');
     } finally {
-      isFetchingRef.current = false;
-      setLoadingMore(false);
+      if (generation === requestGenerationRef.current) {
+        isFetchingRef.current = false;
+        setLoadingMore(false);
+      }
     }
   }, [buildSearchParams, offset, items.length, totalCount, loadingMore, loading]);
 

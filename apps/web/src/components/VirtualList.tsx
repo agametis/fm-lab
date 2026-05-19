@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useTranslation } from 'react-i18next';
 import type { VirtualListRow } from '../types';
 import { ObjectListItem } from './ObjectListItem';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -40,6 +41,7 @@ export const VirtualList: React.FC<VirtualListProps> = ({
   onToggleGroup,
   scrollContainerRef,
 }) => {
+  const { t } = useTranslation(['nav']);
   const internalRef = useRef<HTMLDivElement>(null);
   const parentRef = scrollContainerRef || internalRef;
 
@@ -137,19 +139,19 @@ export const VirtualList: React.FC<VirtualListProps> = ({
       </div>
 
       {/* Loading indicator at bottom */}
-      {isLoading && <LoadingSpinner message="Lade weitere Objekte..." />}
+      {isLoading && <LoadingSpinner message={t('nav:list.loadingMore') as string} />}
 
       {/* No more results indicator */}
       {!hasMore && itemCount > 0 && (
         <div className="virtual-list-footer">
-          Alle Objekte geladen
+          {t('nav:list.allLoaded')}
         </div>
       )}
 
       {/* Empty state */}
       {itemCount === 0 && !isLoading && (
         <div className="virtual-list-empty">
-          Keine Objekte gefunden
+          {t('nav:list.noObjects')}
         </div>
       )}
     </div>

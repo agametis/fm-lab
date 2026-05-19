@@ -1,21 +1,21 @@
 ## FileMaker SaveAsXML
 
-Das **Save a Copy as XML** (oft kurz _SaveAsXML_ genannt) ist eine Funktion in Claris FileMaker zum Exportieren einer offenen FileMaker-Datei in Form einer XML-Datei. Dieses XML enthält sämtliche Schema- und Strukturdetails der FileMaker-Lösung – Tabellen, Felddefinitionen, Layouts, Skripte, Wertelisten, Sicherheitsberechtigungen usw. – jedoch keine Daten aus den Tabellen . Die XML-Datei dient somit der Dokumentation der Anwendung und ermöglicht es Entwicklern, Änderungen im Aufbau der FileMaker-Datei nachzuvollziehen.
+**Save a Copy as XML** (often shortened to _SaveAsXML_) is a function in Claris FileMaker for exporting an open FileMaker file as an XML document. The XML contains all schema and structural details of the FileMaker solution — tables, field definitions, layouts, scripts, value lists, security privileges, etc. — but does not include any record data from the tables. The XML file therefore serves as documentation of the application and lets developers track changes to the structure of the FileMaker file.
 
-Wenn man die Option "Include details for analysis tools" auswählt, werden zusätzliche Informationen in das XML Schema aufgenommen. 
+When the option "Include details for analysis tools" is selected, additional information is included in the XML schema.
 
 
-## XML-Struktur erweitert
+## Extended XML structure
 
-Hier ist die High-Level-Struktur des XML Exports aus der FileMaker Datei.
-Wesentlicher Unterschied ist der Katalog `<DDR_INFO>` welcher Informationen zu Formeln als Chunk-Liste und zu Script-Schritten im Klartext enthält.
+This is the high-level structure of the XML export produced from a FileMaker file.
+The key difference is the `<DDR_INFO>` catalog, which contains information about calculations as a chunk list and about script steps in plain text.
 
-Um festzustellen, ob die erweiterten Einträge vorhanden sind, ist das Attribut `Has_DDR_INFO="True"` im Root-Element `<FMSaveAsXML>` gesetzt.
+To determine whether the extended entries are present, check the `Has_DDR_INFO="True"` attribute on the root element `<FMSaveAsXML>`.
 
 
 ```XML
 <?xml version="1.0" encoding="utf-8"?>
-<FMSaveAsXML version="2.2.3.0" Source="22.0.4" File="Preise.fmp12" UUID="0ED9DE59-5F50-4AC7-9559-523C13442ED5" locale="English" Has_DDR_INFO="True">
+<FMSaveAsXML version="2.2.3.0" Source="22.0.4" File="Prices.fmp12" UUID="0ED9DE59-5F50-4AC7-9559-523C13442ED5" locale="English" Has_DDR_INFO="True">
     <Structure membercount="2">
         <AddAction membercount="18">
             <BaseDirectoryCatalog membercount="1" generate="True" temporary="True">...</BaseDirectoryCatalog>
@@ -56,7 +56,7 @@ Um festzustellen, ob die erweiterten Einträge vorhanden sind, ist das Attribut 
 		<Calculation>
 			<ObjectList>
 				<_7AF3C07C-BDD6-4710-B81C-0FDBEF81858A_0 hash="027637D0F9A46FCD9BFCA8738C3FA47B" datatype="ChunkList">
-					<TableOccurrenceReference id="1065089" name="Preise" UUID="7ED28AAE-2DA6-4357-B4F5-4821D4FE96F0"></TableOccurrenceReference>
+					<TableOccurrenceReference id="1065089" name="Prices" UUID="7ED28AAE-2DA6-4357-B4F5-4821D4FE96F0"></TableOccurrenceReference>
 					<ChunkList hash="027637D0F9A46FCD9BFCA8738C3FA47B">
 						<Chunk type="FunctionRef">If</Chunk>
 						<Chunk type="NoRef">( </Chunk>
@@ -65,14 +65,14 @@ Um festzustellen, ob die erweiterten Einträge vorhanden sind, ist das Attribut 
 						<Chunk type="FunctionRef">IsEmpty</Chunk>
 						<Chunk type="NoRef">(</Chunk>
 						<Chunk type="FieldRef">
-							<FieldReference id="5" name="Lieferanten Nr" repetition="1" UUID="D550B213-FC57-4F53-A112-22259B0870B5">
-								<TableOccurrenceReference id="1065089" name="Preise" UUID="7ED28AAE-2DA6-4357-B4F5-4821D4FE96F0"></TableOccurrenceReference>
+							<FieldReference id="5" name="Supplier No" repetition="1" UUID="D550B213-FC57-4F53-A112-22259B0870B5">
+								<TableOccurrenceReference id="1065089" name="Prices" UUID="7ED28AAE-2DA6-4357-B4F5-4821D4FE96F0"></TableOccurrenceReference>
 							</FieldReference>
 						</Chunk>
 						<Chunk type="NoRef">);</Chunk>
 						<Chunk type="FieldRef">
-							<FieldReference id="2" name="Artikel Nr" repetition="1" UUID="D19C9476-B58D-405E-B8C7-876BB2684EB5">
-								<TableOccurrenceReference id="1065089" name="Preise" UUID="7ED28AAE-2DA6-4357-B4F5-4821D4FE96F0"></TableOccurrenceReference>
+							<FieldReference id="2" name="Article No" repetition="1" UUID="D19C9476-B58D-405E-B8C7-876BB2684EB5">
+								<TableOccurrenceReference id="1065089" name="Prices" UUID="7ED28AAE-2DA6-4357-B4F5-4821D4FE96F0"></TableOccurrenceReference>
 							</FieldReference>
 						</Chunk>
 						<Chunk type="NoRef">;&quot;&quot;)</Chunk>
@@ -83,8 +83,8 @@ Um festzustellen, ob die erweiterten Einträge vorhanden sind, ist das Attribut 
 		</Calculation>
 		<Script>
 			<ObjectList>
-				<_6A6C19D0-77D3-4E00-A18A-5A0DE39A59D6 hash="0A981E7C3F8DB44B097FDEF591767932" datatype="StepText">Perform Script [ “Ablage: Schliessen” ]</_6A6C19D0-77D3-4E00-A18A-5A0DE39A59D6>
-				<_2F1D9460-94F9-45B6-A96B-43E06ABC1CAB hash="0FA1049AA7A69EEAB05D9C107CE4CFE5" datatype="StepText">Perform Script [ “Module: Übersicht” from file: “Hauptmenu” ]</_2F1D9460-94F9-45B6-A96B-43E06ABC1CAB>
+				<_6A6C19D0-77D3-4E00-A18A-5A0DE39A59D6 hash="0A981E7C3F8DB44B097FDEF591767932" datatype="StepText">Perform Script [ “Filing: Close” ]</_6A6C19D0-77D3-4E00-A18A-5A0DE39A59D6>
+				<_2F1D9460-94F9-45B6-A96B-43E06ABC1CAB hash="0FA1049AA7A69EEAB05D9C107CE4CFE5" datatype="StepText">Perform Script [ “Modules: Overview” from file: “MainMenu” ]</_2F1D9460-94F9-45B6-A96B-43E06ABC1CAB>
                 ...
             </ObjectList>
 		</Script>

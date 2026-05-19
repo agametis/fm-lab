@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "TO-DO negli script",
+    "description": "Conta i passi di commento con marcatori TO-DO e mostra tutti gli script interessati per ciascun file."
+  },
+  "layout": {
+    "root.children[0].props.title": "Panoramica TO-DO",
+    "root.children[0].children[0].props.items[0].label": "Righe TO-DO",
+    "root.children[0].children[0].props.items[1].label": "Script",
+    "root.children[0].children[0].props.items[2].label": "File",
+
+    "root.children[1].props.title": "Script con TO-DO",
+    "root.children[1].children[0].props.columns[0].label": "File",
+    "root.children[1].children[0].props.columns[1].label": "Nome script",
+    "root.children[1].children[0].props.columns[2].label": "Quantità"
+  }
+}

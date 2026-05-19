@@ -1,6 +1,13 @@
 const { buildSuccess } = require('../utils/response-builder');
 const { getLoadedPlugins } = require('../plugins/loader');
 const settingsStore = require('../plugins/settings-store');
+const pluginI18nService = require('../plugins/plugin-i18n.service');
+const environment = require('../config/environment');
+const {
+  SUPPORTED_LANGUAGE_CODES,
+  DEFAULT_LANGUAGE,
+  resolveLanguage,
+} = require('../config/languages');
 
 /**
  * Plugins Controller
@@ -12,15 +19,27 @@ const settingsStore = require('../plugins/settings-store');
  * this via `requires_restart: true` so the UI can show a hint.
  */
 
-function serializePlugin(manifest) {
+function pickLang(query) {
+  const raw = query && typeof query.lang === 'string' ? query.lang : null;
+  if (!raw) {
+    return resolveLanguage(environment.reference.defaultLang) || DEFAULT_LANGUAGE;
+  }
+  if (!SUPPORTED_LANGUAGE_CODES.includes(raw)) {
+    return resolveLanguage(raw);
+  }
+  return raw;
+}
+
+function serializePlugin(manifest, lang) {
+  const localised = pluginI18nService.resolvePluginForLanguage(manifest, lang);
   return {
     name: manifest.name,
     version: manifest.version,
-    description: manifest.description,
+    description: localised.description,
     enabled: manifest.enabled,
     routes_prefix: manifest.routes_prefix,
     settings: manifest.config || {},
-    settings_schema: manifest.settings_schema || null,
+    settings_schema: localised.settings_schema,
     ui: manifest.ui || null,
   };
 }
@@ -29,8 +48,9 @@ function serializePlugin(manifest) {
  * GET /api/plugins — list all installed plugins
  */
 function list(req, res) {
+  const lang = pickLang(req.query);
   const plugins = getLoadedPlugins();
-  const data = Object.values(plugins).map(serializePlugin);
+  const data = Object.values(plugins).map((m) => serializePlugin(m, lang));
   res.json(buildSuccess(data));
 }
 
@@ -38,6 +58,7 @@ function list(req, res) {
  * GET /api/plugins/:name — details for a single plugin
  */
 function get(req, res) {
+  const lang = pickLang(req.query);
   const plugins = getLoadedPlugins();
   const manifest = plugins[req.params.name];
   if (!manifest) {
@@ -46,7 +67,7 @@ function get(req, res) {
       error: { code: 'PLUGIN_NOT_FOUND', message: `Unknown plugin: ${req.params.name}` },
     });
   }
-  res.json(buildSuccess(serializePlugin(manifest)));
+  res.json(buildSuccess(serializePlugin(manifest, lang)));
 }
 
 /**
@@ -54,6 +75,7 @@ function get(req, res) {
  * Body: { enabled?: boolean, settings?: object }
  */
 function patch(req, res) {
+  const lang = pickLang(req.query);
   const plugins = getLoadedPlugins();
   const manifest = plugins[req.params.name];
   if (!manifest) {
@@ -90,7 +112,7 @@ function patch(req, res) {
   }
 
   res.json(buildSuccess({
-    ...serializePlugin(manifest),
+    ...serializePlugin(manifest, lang),
     requires_restart: requiresRestart,
   }));
 }

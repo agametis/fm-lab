@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { PrimitiveProps } from '../types';
 import { formatTableCell } from './_format';
+import { translateCellValue } from './_cellTranslate';
 import { useRowSearch } from './_useRowSearch';
 import { dispatchAction } from '../actions';
 import { isActionActive } from '../actionState';
@@ -15,6 +17,8 @@ interface ColumnSpec {
 }
 
 export function Table({ node, dataset, navigate }: PrimitiveProps) {
+  const { t, i18n } = useTranslation(['common', 'detail', 'dashboard']);
+  const lang = i18n.language;
   const props = node.props ?? {};
   const columns = (props.columns as ColumnSpec[]) ?? [];
   const rowKey = (props.rowKey as string) ?? undefined;
@@ -44,12 +48,12 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
     if (!sortField) return search.filtered;
     const dir = sortDir === 'asc' ? 1 : -1;
     return [...search.filtered].sort(
-      (a, b) => compareValues(a[sortField], b[sortField]) * dir,
+      (a, b) => compareValues(a[sortField], b[sortField], lang) * dir,
     );
-  }, [search.filtered, sortField, sortDir]);
+  }, [search.filtered, sortField, sortDir, lang]);
 
   if (rows.length === 0) {
-    return <div className="dash-table__empty">{empty?.message ?? 'Keine Einträge.'}</div>;
+    return <div className="dash-table__empty">{empty?.message ?? t('common:noEntries')}</div>;
   }
 
   const clickable = !!onRowClick;
@@ -70,10 +74,9 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
       {search.visible && (
         <div className="dash-search-bar">
           <span className="dash-search-bar__count">
-            {sortedRows.length.toLocaleString('de-DE')}{' '}
-            {sortedRows.length === 1 ? 'Eintrag' : 'Einträge'}
+            {t('detail:autoTable.rowCount', { count: sortedRows.length })}
             {hasQuery && sortedRows.length !== search.totalCount && (
-              <> · gefiltert aus {search.totalCount.toLocaleString('de-DE')}</>
+              <> · {t('detail:autoTable.filteredFrom', { count: search.totalCount })}</>
             )}
           </span>
           <input
@@ -129,9 +132,13 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
                 aria-current={isActive ? 'true' : undefined}
               >
                 {columns.map(c => {
-                  const value = row[c.field];
-                  const formatted = formatTableCell(value, c.format);
+                  const rawValue = row[c.field];
+                  // Categorical cells (badges) frequently carry canonical
+                  // English keys emitted from SQL — translate them so the UI
+                  // matches the active language. Unknown values pass through.
                   const isBadge = c.format === 'badge';
+                  const value = isBadge ? translateCellValue(rawValue, t) : rawValue;
+                  const formatted = formatTableCell(value, c.format, lang);
                   return (
                     <td
                       key={c.field}
@@ -139,7 +146,7 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
                     >
                       {isBadge ? (
                         <span
-                          className={`dash-badge dash-badge--${slugify(String(value ?? ''))}`}
+                          className={`dash-badge dash-badge--${slugify(String(rawValue ?? ''))}`}
                         >
                           {formatted}
                         </span>
@@ -156,7 +163,7 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
       </table>
       {hasQuery && sortedRows.length === 0 && (
         <div className="dash-search-bar__empty">
-          Keine Treffer für „{search.query}".
+          {t('detail:autoTable.noMatches', { query: search.query })}
         </div>
       )}
     </div>
@@ -167,7 +174,7 @@ function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-function compareValues(a: unknown, b: unknown): number {
+function compareValues(a: unknown, b: unknown, lang: string): number {
   if (a === b) return 0;
   if (a === null || a === undefined) return 1;
   if (b === null || b === undefined) return -1;
@@ -175,5 +182,5 @@ function compareValues(a: unknown, b: unknown): number {
   if (typeof a === 'bigint' && typeof b === 'bigint') {
     return a < b ? -1 : a > b ? 1 : 0;
   }
-  return String(a).localeCompare(String(b), 'de', { numeric: true, sensitivity: 'base' });
+  return String(a).localeCompare(String(b), lang, { numeric: true, sensitivity: 'base' });
 }

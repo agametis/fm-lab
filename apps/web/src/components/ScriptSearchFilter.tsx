@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { RefType } from '../script/types';
 
 type Props = {
@@ -16,23 +17,6 @@ type Props = {
     active: boolean;
     onToggle: () => void;
   };
-};
-
-/**
- * Anzeige-Labels pro RefType — analog zur Layout-/Referenzen-Filterleiste.
- * Bewusst sprechende deutsche Begriffe statt der raw camelCase-RefType-Werte,
- * damit die Pills im UI lesbar bleiben.
- */
-const TYPE_LABELS: Record<RefType, string> = {
-  field:           'Feld',
-  script:          'Script',
-  layout:          'Layout',
-  customFunction:  'Custom Function',
-  pluginFunction:  'Plugin-Funktion',
-  function:        'Funktion',
-  variable:        'Variable',
-  valueList:       'Werteliste',
-  tableOccurrence: 'TableOccurrence',
 };
 
 /**
@@ -56,14 +40,17 @@ export function ScriptSearchFilter({
   totalCount,
   commentPill,
 }: Props) {
+  const { t, i18n } = useTranslation(['detail']);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typeLabel = (rt: RefType) => t(`detail:scriptSearchFilter.typeLabels.${rt}`, { defaultValue: rt }) as string;
 
-  // Sortierung: nach Anzahl absteigend, dann alphabetisch nach Label.
-  // Konsistent mit ReferencesFilter — häufigster Typ links.
+  // Sort by count descending, then alphabetically by label. Same as
+  // ReferencesFilter — most frequent type first.
   const sortedTypes = useMemo(() => {
     return Array.from(typeCounts.entries())
-      .sort((a, b) => b[1] - a[1] || TYPE_LABELS[a[0]].localeCompare(TYPE_LABELS[b[0]]));
-  }, [typeCounts]);
+      .sort((a, b) => b[1] - a[1] || typeLabel(a[0]).localeCompare(typeLabel(b[0]), i18n.language));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeCounts, i18n.language]);
 
   const hasAnyActive = activeTypes.size > 0 || (commentPill?.active ?? false);
   const filterActive = hasAnyActive || query !== '';
@@ -74,10 +61,10 @@ export function ScriptSearchFilter({
         <input
           ref={inputRef}
           type="search"
-          placeholder="Refs durchsuchen…"
+          placeholder={t('detail:scriptSearchFilter.searchPlaceholder') as string}
           value={query}
           onChange={e => onQueryChange(e.target.value)}
-          aria-label="Refs durchsuchen"
+          aria-label={t('detail:scriptSearchFilter.searchAria') as string}
         />
         {filterActive && (
           <span className="references-filter-count">
@@ -89,15 +76,16 @@ export function ScriptSearchFilter({
         <div className="references-filter-pills">
           {sortedTypes.map(([type, count]) => {
             const active = activeTypes.has(type);
+            const label = typeLabel(type);
             return (
               <button
                 key={type}
                 type="button"
                 className={`references-filter-pill${active ? ' active' : ''}`}
                 onClick={() => onToggleType(type)}
-                title={`${TYPE_LABELS[type]} (${count})`}
+                title={`${label} (${count})`}
               >
-                {TYPE_LABELS[type]}
+                {label}
                 <span className="references-filter-pill-count">({count})</span>
               </button>
             );
@@ -108,9 +96,9 @@ export function ScriptSearchFilter({
               type="button"
               className={`references-filter-pill${commentPill.active ? ' active' : ''}`}
               onClick={commentPill.onToggle}
-              title={`Kommentar (${commentPill.count})`}
+              title={t('detail:scriptSearchFilter.commentTitle', { count: commentPill.count }) as string}
             >
-              Kommentar
+              {t('detail:scriptSearchFilter.commentLabel')}
               <span className="references-filter-pill-count">({commentPill.count})</span>
             </button>
           )}
@@ -119,9 +107,9 @@ export function ScriptSearchFilter({
               type="button"
               className="references-filter-link"
               onClick={onClearTypes}
-              title="Alle Typ-Filter aufheben"
+              title={t('detail:scriptSearchFilter.clearTitle') as string}
             >
-              Filter zurücksetzen
+              {t('detail:scriptSearchFilter.clearLabel')}
             </button>
           )}
         </div>

@@ -31,6 +31,15 @@ const environment = {
   templates: {
     dir: process.env.TEMPLATE_DIR || path.resolve(__dirname, '../../templates/sql'),
     customDir: process.env.TEMPLATE_CUSTOM_DIR || path.resolve(__dirname, '../../templates/sql-custom'),
+    // Detail-View-Templates (intern, von UI-Hooks/Controllern via /api/query geladen,
+    // erscheinen aber nicht im "Custom Queries"-Dashboard). Rekursiver Fallback-Lookup
+    // im Template-Service, wenn ein Template nicht in customDir gefunden wird.
+    detailsDir: process.env.TEMPLATE_DETAILS_DIR || path.resolve(__dirname, '../../templates/sql-custom-details'),
+    // Dashboard-Bundles: System-Bundles (home, _generic, Navigation) liegen in dashboardsDir,
+    // Custom-/Plugin-Bundles in dashboardsCustomDir. Custom-Bundles haben Vorrang bei
+    // ID-Kollisionen (Override-Pattern für lokale Erweiterungen).
+    dashboardsDir: process.env.DASHBOARDS_DIR || path.resolve(__dirname, '../../templates/dashboards'),
+    dashboardsCustomDir: process.env.DASHBOARDS_CUSTOM_DIR || path.resolve(__dirname, '../../templates/dashboards-custom'),
     cacheEnabled: process.env.TEMPLATE_CACHE_ENABLED !== 'false',
     cacheTTL: parseInt(process.env.TEMPLATE_CACHE_TTL) || 3600000, // 1 hour
   },
@@ -65,7 +74,7 @@ const environment = {
     htmlSubdir:    'content',                                  // <lang>/content/<slug>.html
     cacheTtlMs:    parseInt(process.env.REFERENCE_CACHE_TTL_MS) || 3600000,       // DB-Meta 1h
     htmlCacheTtlMs: parseInt(process.env.REFERENCE_HTML_CACHE_TTL_MS) || 86400000, // HTML 24h
-    defaultLang:   process.env.REFERENCE_DEFAULT_LANG || 'de',
+    defaultLang:   process.env.REFERENCE_DEFAULT_LANG || 'en',
   },
 
   // API Configuration

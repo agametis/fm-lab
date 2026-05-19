@@ -1,0 +1,279 @@
+{
+  "autoTable": {
+    "rowCount_one": "{{count}} 条",
+    "rowCount_other": "{{count}} 条",
+    "filteredFrom": "从 {{count}} 条中筛选",
+    "page": "第 {{current}} / {{total}} 页",
+    "noMatches": "没有与“{{query}}”匹配的结果。",
+    "prev": "← 上一页",
+    "next": "下一页 →"
+  },
+  "layoutPreview": {
+    "heading": "布局视图",
+    "loading": "正在加载布局…",
+    "empty": "此布局没有对象。"
+  },
+  "headings": {
+    "Script": "脚本文本",
+    "Layout": "布局视图",
+    "Field": "字段详情",
+    "BaseTable": "表详情",
+    "CustomFunction": "函数详情",
+    "ValueList": "值列表详情"
+  },
+  "layoutCanvas": {
+    "searchPlaceholder": "搜索布局对象…",
+    "searchTitle": "Tab:下一个匹配 · Shift+Tab:上一个 · Enter:打开 · Esc:重置",
+    "searchAria": "搜索布局对象",
+    "matchCount_one": "{{count}} 项匹配",
+    "matchCount_other": "{{count}} 项匹配",
+    "labelGroupAria": "标签",
+    "labelName": "名称",
+    "labelNameTitle": "描述性标签(字段名 / 标题 / 对象名)",
+    "labelType": "类型",
+    "labelTypeTitle": "将对象类型显示为标签",
+    "stats_one": "{{count}} 个对象 · 缩放 {{zoom}}%",
+    "stats_other": "{{count}} 个对象 · 缩放 {{zoom}}%"
+  },
+  "relationshipGraphCanvas": {
+    "searchPlaceholder": "搜索表实例…",
+    "searchTitle": "Tab:下一个匹配 · Shift+Tab:上一个 · Esc:重置",
+    "searchAria": "搜索表实例",
+    "matchCount_one": "{{count}} 项匹配",
+    "matchCount_other": "{{count}} 项匹配",
+    "preselectChipTitle": "清除预选",
+    "preselectChipAria": "清除预选",
+    "preselectLabel": "预选:",
+    "stats_one": "{{tos}} TO · {{rels}} 个关系 · 缩放 {{zoom}}%",
+    "stats_other": "{{tos}} TO · {{rels}} 个关系 · 缩放 {{zoom}}%"
+  },
+  "dependencyGraph": {
+    "empty": "没有依赖项",
+    "fitTitle": "适配整个图",
+    "fitAria": "适配图表",
+    "resetTitle": "重置布局",
+    "resetAria": "重置布局",
+    "fit": "适配",
+    "reset": "重置",
+    "legendCurrent": "当前对象",
+    "legendParent": "父级",
+    "legendChild": "子级",
+    "legendCrossFile": "跨文件",
+    "hint": "单击 = 导航 · {{modKey}}+单击 = 详情 · 拖动 = 移动",
+    "graphAriaLabel": "{{object}} 的依赖图"
+  },
+  "layoutTypeFilter": {
+    "categories": {
+      "Input":    "输入",
+      "Display":  "显示",
+      "Viewer":   "查看器",
+      "Action":   "动作",
+      "Controls": "控件",
+      "Groups":   "分组",
+      "Graphic":  "图形"
+    },
+    "types": {
+      "Edit Box":            "编辑框",
+      "Drop-down List":      "下拉列表",
+      "Pop-up Menu":         "弹出菜单",
+      "Radio Button Set":    "单选按钮组",
+      "Checkbox Set":        "复选框组",
+      "Drop-down Calendar":  "下拉日历",
+      "Concealed Edit Box":  "隐藏编辑框",
+      "Text":                "文本",
+      "Graphic":             "图形",
+      "Container":           "容器",
+      "Web Viewer":          "Web 查看器",
+      "Button":              "按钮",
+      "Grouped Button":      "组合按钮",
+      "Button Bar":          "按钮栏",
+      "Popover Button":      "弹出框按钮",
+      "Portal":              "门户",
+      "Panel":               "面板",
+      "Slide Control":       "滑动控件",
+      "Tab Control":         "选项卡控件",
+      "Group":               "分组",
+      "Rectangle":           "矩形",
+      "Line":                "线条",
+      "Oval":                "椭圆",
+      "Rounded Rectangle":   "圆角矩形"
+    },
+    "detailsToggleToGroups": "折叠为分组",
+    "detailsToggleToDetails": "显示各个类型",
+    "groupsLabel": "分组",
+    "detailsLabel": "详情",
+    "clearTitle": "清除所有类型筛选器",
+    "clearLabel": "清除筛选器"
+  },
+  "referencesFilter": {
+    "searchPlaceholder": "搜索引用…",
+    "searchTitle": "Esc:清空输入",
+    "searchAria": "搜索引用",
+    "clearTypesTitle": "清除所有类型筛选器",
+    "clearTypesLabel": "清除筛选器"
+  },
+  "hierarchyTree": {
+    "ariaLabel": "对象层级",
+    "usedBy": "使用方 ({{count}})",
+    "usedByFiltered": "使用方 ({{count}} / {{total}})",
+    "uses": "使用 ({{count}})",
+    "usesFiltered": "使用 ({{count}} / {{total}})",
+    "structurallyContainedBy": "结构上被包含 ({{count}})",
+    "structurallyContainedByFiltered": "结构上被包含 ({{count}} / {{total}})",
+    "structurallyContains": "结构上包含 ({{count}})",
+    "structurallyContainsFiltered": "结构上包含 ({{count}} / {{total}})",
+    "noReferences": "未找到引用",
+    "noFilterMatches": "没有符合当前筛选器的结果",
+    "crossFileBadge": "跨文件",
+    "itemAriaLabel": "导航到 {{type}}:{{name}}"
+  },
+  "searchOptions": {
+    "regionAria": "排序和分组选项",
+    "sortLabel": "排序:",
+    "groupLabel": "分组:",
+    "sortStandard": "标准",
+    "sortName": "名称",
+    "sortType": "类型",
+    "sortFile": "文件",
+    "groupNone": "无",
+    "groupType": "类型",
+    "groupFile": "文件"
+  },
+  "fieldViewer": {
+    "ariaLabel": "字段详情",
+    "fieldType": "字段类型",
+    "dataType": "数据类型",
+    "global": "全局",
+    "yes": "是",
+    "repetitions": "重复次数",
+    "autoEnter": "自动输入",
+    "comment": "注释",
+    "calculationFormula": "计算公式",
+    "autoEnterCalculation": "自动输入计算式"
+  },
+  "typeDetail": {
+    "loading": "加载中…",
+    "loadError": "加载失败:{{message}}",
+    "noData": "暂无详情。"
+  },
+  "refTitle": {
+    "table": "表:",
+    "baseTable": "基础表:",
+    "scope": "作用域:",
+    "usage": "用法:",
+    "file": "文件:",
+    "crossFile": "跨文件"
+  },
+  "scriptStepLink": {
+    "navigateEnriched": "转到伪对象:ScriptStepType '{{name}}'",
+    "navigateFallback": "{{name}}(打开伪对象详情页)"
+  },
+  "helpLinks": {
+    "openLocalClarisHelp": "打开本地帮助 ↗",
+    "openOnlineClarisHelp": "打开 Claris 帮助 ↗",
+    "openLocalMbsHelp": "打开本地 MBS 文档 ↗",
+    "openOnlineMbsHelp": "打开 MBS 文档 ↗",
+    "noDocs": "未找到文档。",
+    "canonical": "规范:"
+  },
+  "objectListItem": {
+    "usageBadge_one": "{{count}} 次使用",
+    "usageBadge_other": "{{count}} 次使用",
+    "showAria": "{{type}}:{{name}} — 显示",
+    "noName": "(无名称)",
+    "filterByCategory": "按 {{category}} 筛选"
+  },
+  "scriptSearchFilter": {
+    "searchAria": "搜索引用",
+    "searchPlaceholder": "搜索引用…",
+    "clearTitle": "清除所有类型筛选器",
+    "clearLabel": "清除筛选器",
+    "commentLabel": "注释",
+    "commentTitle": "注释 ({{count}})",
+    "typeLabels": {
+      "field":           "字段",
+      "script":          "脚本",
+      "layout":          "布局",
+      "customFunction":  "自定义函数",
+      "pluginFunction":  "插件函数",
+      "function":        "函数",
+      "variable":        "变量",
+      "valueList":       "值列表",
+      "tableOccurrence": "表实例"
+    }
+  },
+  "settingsView": {
+    "backAria": "返回搜索",
+    "backLabel": "返回",
+    "title": "插件管理",
+    "loading": "正在加载插件…",
+    "empty": "没有已安装的插件。",
+    "loadError": "加载失败",
+    "saveError": "保存失败",
+    "statusActive": "已启用",
+    "statusInactive": "已停用",
+    "restartRequired": "需要重新启动才能使新状态生效。",
+    "settingsHeading": "设置",
+    "saveLabel": "保存设置",
+    "savingLabel": "保存中…"
+  },
+  "objectHeader": {
+    "noName": "(无名称)",
+    "source": "来源:",
+    "relationshipGraphLink": "↗ 关系图",
+    "copyUuidAria": "将 UUID 复制到剪贴板"
+  },
+  "scriptLine": {
+    "expand": "展开",
+    "collapse": "折叠"
+  },
+  "scriptViewer": {
+    "title": "脚本文本",
+    "stepCount_one": "({{count}} 步)",
+    "stepCount_other": "({{count}} 步)",
+    "viewLabel": "视图:",
+    "viewAria": "查看模式",
+    "filterStyleAria": "筛选样式",
+    "filterStyleTitleEnabled": "已筛选的行:淡显或隐藏",
+    "filterStyleTitleDisabled": "仅在筛选器激活时有意义",
+    "filterDim": "淡显",
+    "filterHide": "隐藏",
+    "modes": {
+      "normal": "普通",
+      "compact": "紧凑",
+      "commentsOnly": "仅注释",
+      "controlOnly": "仅控制结构",
+      "subscriptOnly": "仅子脚本调用",
+      "assignmentsOnly": "仅赋值",
+      "executiveOnly": "仅可执行代码"
+    }
+  },
+  "refPill": {
+    "loading": "正在解析引用…",
+    "notFound": "未找到引用:",
+    "couldNotResolve": "无法解析引用:{{message}}",
+    "label": "引用:",
+    "highlightsCount_one": "已高亮 {{count}} 处匹配",
+    "highlightsCount_other": "已高亮 {{count}} 处匹配",
+    "dismissAria": "移除引用高亮",
+    "dismissTitle": "移除引用高亮(Esc)"
+  },
+  "tableDetails": "表详情",
+  "scriptDetails": "脚本详情",
+  "fieldDetails": "字段详情",
+  "layoutDetails": "布局详情",
+  "valueListDetails": "值列表详情",
+  "customFunctionDetails": "自定义函数详情",
+  "loadingObject": "正在加载对象…",
+  "loadingFunction": "正在加载函数…",
+  "noReferences": "没有引用",
+  "references": "引用",
+  "backReferences": "使用方",
+  "forwardReferences": "使用",
+  "dependencies": "依赖项",
+  "dependents": "被依赖项",
+  "definition": "定义",
+  "metadata": "元数据",
+  "rowCount_one": "{{count}} 条",
+  "rowCount_other": "{{count}} 条"
+}

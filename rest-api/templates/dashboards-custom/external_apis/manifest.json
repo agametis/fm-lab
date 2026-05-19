@@ -1,0 +1,80 @@
+{
+  "id": "external_apis",
+  "version": "1.0.0",
+  "title": "APIs & external interfaces",
+  "description": "Generic template: URL invocations (Open URL, Insert from URL, Import Records, cURL/MBS, Web Viewer, calculated URLs) classified by API family, plus external FileMaker / ODBC data sources. The API-family patterns are a broadly chosen cloud / SaaS default list — adjust the WHEN branches in `data/url_details.sql` + `data/api_families.sql` for project-specific classifications.",
+  "author": "fm-lab",
+  "icon": "globe",
+  "tags": [
+    "template",
+    "api",
+    "integration"
+  ],
+  "entry": "layout.json",
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "api_families",
+      "source": "bundle:data/api_families.sql"
+    },
+    {
+      "id": "url_details",
+      "source": "bundle:data/url_details.sql",
+      "params": {
+        "limit": 200
+      }
+    },
+    {
+      "id": "external_sources",
+      "source": "bundle:data/external_sources.sql",
+      "params": {
+        "limit": 30
+      }
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter — derived from the app-level filter."
+    },
+    {
+      "name": "api_family",
+      "type": "string",
+      "required": false,
+      "description": "Restricts the detail list to a specific API family. 'All' (or empty) lifts the filter."
+    },
+    {
+      "name": "ref_type",
+      "type": "string",
+      "required": false,
+      "description": "Restricts the detail list to a reference type: 'Script Step', 'Plugin', 'Layout Object', 'Field' or 'Custom Function'."
+    },
+    {
+      "name": "step_name",
+      "type": "string",
+      "required": false,
+      "description": "Restricts the detail list to a script-step name (e.g. 'Open URL', 'Insert from URL', 'Import Records')."
+    },
+    {
+      "name": "context",
+      "type": "string",
+      "required": false,
+      "description": "Restricts the detail list to a specific context (e.g. 'Web Viewer', 'Custom Function', 'Hide Calc')."
+    },
+    {
+      "name": "source_type",
+      "type": "string",
+      "required": false,
+      "description": "Restricts the detail list to a source type ('Script (URL Step)', 'Script (Calc Step)', 'Custom Function', 'Field', 'Layout Object')."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

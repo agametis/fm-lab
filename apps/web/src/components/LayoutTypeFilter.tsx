@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { LayoutObject } from '../hooks/useLayoutData';
 import { useLayoutObjectPalette } from './layoutObjectTheme';
 
@@ -55,6 +56,7 @@ export function LayoutTypeFilter({
   detailsMode,
   onToggleDetailsMode,
 }: Props) {
+  const { t } = useTranslation(['detail']);
   const palette = useLayoutObjectPalette();
   const counts = useMemo(() => {
     const m = new Map<string, number>();
@@ -82,6 +84,11 @@ export function LayoutTypeFilter({
           const fill = palette.fillFor(visible[0]);
           const stroke = palette.strokeFor(visible[0]);
           const targetActive = state !== 'all';
+          const catLabel = t(`detail:layoutTypeFilter.categories.${cat.label}`, { defaultValue: cat.label });
+          // Übersetzte Typennamen für den Tooltip ("Edit Box" → "Eingabefeld" etc.)
+          const visibleLabels = visible.map(typ =>
+            t(`detail:layoutTypeFilter.types.${typ}`, { defaultValue: typ }) as string
+          );
           return (
             <button
               key={cat.label}
@@ -91,9 +98,9 @@ export function LayoutTypeFilter({
                 ? { background: fill, borderColor: stroke, color: stroke }
                 : undefined}
               onClick={() => onSetTypes(visible, targetActive)}
-              title={`${cat.label}: ${visible.join(', ')} (${groupCount})`}
+              title={`${catLabel}: ${visibleLabels.join(', ')} (${groupCount})`}
             >
-              {cat.label}<span className="layout-type-pill-count">({groupCount})</span>
+              {catLabel}<span className="layout-type-pill-count">({groupCount})</span>
             </button>
           );
         }
@@ -101,12 +108,13 @@ export function LayoutTypeFilter({
         // Stufe 2: detaillierte Einzel-Typen mit Gruppen-Header.
         return (
           <div key={cat.label} className="layout-type-filter-group">
-            <span className="layout-type-filter-cat">{cat.label}</span>
+            <span className="layout-type-filter-cat">{t(`detail:layoutTypeFilter.categories.${cat.label}`, { defaultValue: cat.label })}</span>
             {visible.map(type => {
               const count = counts.get(type) ?? 0;
               const active = activeTypes.has(type);
               const fill = palette.fillFor(type);
               const stroke = palette.strokeFor(type);
+              const typeLabel = t(`detail:layoutTypeFilter.types.${type}`, { defaultValue: type }) as string;
               return (
                 <button
                   key={type}
@@ -116,9 +124,9 @@ export function LayoutTypeFilter({
                     ? { background: fill, borderColor: stroke, color: stroke }
                     : undefined}
                   onClick={() => onToggle(type)}
-                  title={`${type} (${count})`}
+                  title={`${typeLabel} (${count})`}
                 >
-                  {type}<span className="layout-type-pill-count">({count})</span>
+                  {typeLabel}<span className="layout-type-pill-count">({count})</span>
                 </button>
               );
             })}
@@ -130,18 +138,20 @@ export function LayoutTypeFilter({
           type="button"
           className="layout-type-filter-link"
           onClick={onToggleDetailsMode}
-          title={detailsMode ? 'Auf Gruppen-Übersicht reduzieren' : 'Einzelne Typen anzeigen'}
+          title={(detailsMode
+            ? t('detail:layoutTypeFilter.detailsToggleToGroups')
+            : t('detail:layoutTypeFilter.detailsToggleToDetails')) as string}
         >
-          {detailsMode ? 'Gruppen' : 'Details'}
+          {detailsMode ? t('detail:layoutTypeFilter.groupsLabel') : t('detail:layoutTypeFilter.detailsLabel')}
         </button>
         {hasAnyActive && (
           <button
             type="button"
             className="layout-type-filter-link"
             onClick={onClear}
-            title="Alle Typ-Filter aufheben"
+            title={t('detail:layoutTypeFilter.clearTitle') as string}
           >
-            Filter zurücksetzen
+            {t('detail:layoutTypeFilter.clearLabel')}
           </button>
         )}
       </div>

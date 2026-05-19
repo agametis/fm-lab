@@ -1,0 +1,13 @@
+{
+  "loadFiles": "Det gick inte att läsa in filerna.",
+  "loadObjects": "Det gick inte att läsa in objekten.",
+  "loadFieldDetails": "Det gick inte att läsa in fältdetaljerna",
+  "loadScriptDetails": "Det gick inte att läsa in skriptdetaljerna",
+  "loadCustomFunctionDetails": "Det gick inte att läsa in detaljerna för den anpassade funktionen",
+  "loadLayout": "Det gick inte att läsa in layouten",
+  "loadDashboard": "Det gick inte att läsa in dashboarden",
+  "generic": "Något gick fel. Försök igen.",
+  "loadHeading": "Det gick inte att läsa in",
+  "retryAria": "Försök igen",
+  "retryLabel": "Försök igen"
+}

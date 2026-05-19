@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useTranslation } from 'react-i18next';
 import { useTemplateQuery } from '../hooks/useTemplateQuery';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
@@ -108,6 +109,7 @@ function computeFilteredVisibleRows(rows: TreeRow[], filterLower: string): TreeR
 }
 
 export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter }) => {
+  const { t } = useTranslation(['nav']);
   const navigate = useNavigate();
   const params = useMemo(() => {
     const p: Record<string, string> = { subtype };
@@ -187,13 +189,13 @@ export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter })
   }, [navigate]);
 
   if (loading) {
-    return <LoadingSpinner message="Hierarchie wird geladen..." />;
+    return <LoadingSpinner message={t('nav:folderTree.loading') as string} />;
   }
   if (error) {
     return <ErrorMessage message={error} onRetry={retry} />;
   }
   if (!rows.length) {
-    return <div className="folder-tree-empty">Keine Eintraege</div>;
+    return <div className="folder-tree-empty">{t('nav:folderTree.empty')}</div>;
   }
 
   const folderCount = rows.filter(r => r.subtype === 'Folder').length;
@@ -206,14 +208,17 @@ export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter })
       <div className="folder-tree-toolbar">
         <span className="folder-tree-stats">
           {filterActive ? (
-            <>
-              {visibleItemCount.toLocaleString('de-DE')} / {itemCount.toLocaleString('de-DE')} Eintraege,{' '}
-              {visibleFolderCount.toLocaleString('de-DE')} / {folderCount.toLocaleString('de-DE')} Ordner
-            </>
+            t('nav:folderTree.statsFiltered', {
+              visibleEntries: visibleItemCount,
+              totalEntries: itemCount,
+              visibleFolders: visibleFolderCount,
+              totalFolders: folderCount,
+            })
           ) : (
-            <>
-              {itemCount.toLocaleString('de-DE')} Eintraege, {folderCount.toLocaleString('de-DE')} Ordner
-            </>
+            t('nav:folderTree.stats', {
+              entries: itemCount,
+              folders: folderCount,
+            })
           )}
         </span>
         <button
@@ -221,18 +226,18 @@ export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter })
           onClick={expandAll}
           className="folder-tree-toolbar-button"
           disabled={filterActive}
-          title={filterActive ? 'Im Filter-Modus deaktiviert' : 'Alle aufklappen'}
+          title={(filterActive ? t('nav:folderTree.disabledDuringFilter') : t('nav:folderTree.expandAll')) as string}
         >
-          Alle aufklappen
+          {t('nav:folderTree.expandAll')}
         </button>
         <button
           type="button"
           onClick={collapseAll}
           className="folder-tree-toolbar-button"
           disabled={filterActive}
-          title={filterActive ? 'Im Filter-Modus deaktiviert' : 'Alle zuklappen'}
+          title={(filterActive ? t('nav:folderTree.disabledDuringFilter') : t('nav:folderTree.collapseAll')) as string}
         >
-          Alle zuklappen
+          {t('nav:folderTree.collapseAll')}
         </button>
       </div>
 
@@ -295,13 +300,13 @@ export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter })
                     <span className={`folder-tree-badge folder-tree-badge-${row.type.toLowerCase()}`}>
                       {badgeForType(row.type)}
                     </span>
-                    <span className="folder-tree-name">{row.name || '(ohne Namen)'}</span>
+                    <span className="folder-tree-name">{row.name || (t('nav:folderTree.noName') as string)}</span>
                     <span className="folder-tree-file">{row.file}</span>
                     {isFolder && (
                       <button
                         type="button"
                         className="folder-tree-detail-link"
-                        title="Folder-Details anzeigen"
+                        title={t('nav:folderTree.folderDetailsTitle') as string}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleItemClick(row);

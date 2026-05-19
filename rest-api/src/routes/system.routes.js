@@ -14,4 +14,7 @@ router.get('/version', systemController.version);
 // GET /api/info - Solution information
 router.get('/info', validate('info'), systemController.info);
 
+// GET /api/system/config - Public client configuration (default language, …)
+router.get('/system/config', systemController.config);
+
 module.exports = router;

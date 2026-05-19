@@ -1,0 +1,10 @@
+{
+  "manifest": {
+    "title": "Tableaux de bord",
+    "description": "Aperçu de tous les tableaux de bord disponibles."
+  },
+  "layout": {
+    "root.children[0].props.title": "Tableaux de bord",
+    "root.children[0].props.subtitle": "Un clic ouvre le tableau de bord sélectionné."
+  }
+}

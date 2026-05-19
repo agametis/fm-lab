@@ -1,6 +1,6 @@
 ---
 name: convert-fm-xml
-description: Convert FileMaker XML export to DuckDB database. Automatically handles UTF-8 encoding conversion and creates analyzed database tables.
+description: Convert FileMaker XML export to DuckDB database. Automatically handles UTF-8 encoding conversion and creates analyzed database tables. Triggers (English): "convert XML", "import the FileMaker XML", "/convert-xml", "batch import all XML files". Triggers (German): "konvertiere die XML", "importiere die FileMaker-XML", "alle XML-Dateien importieren". Triggers (Spanish): "convertir el XML", "importar el XML de FileMaker". Triggers (French): "convertir le XML", "importer le XML FileMaker". Triggers (Italian): "converti l'XML", "importa l'XML FileMaker". Triggers (Dutch): "converteer de XML", "importeer de FileMaker-XML". Triggers (Portuguese): "converter o XML", "importar o XML do FileMaker". Triggers (Swedish): "konvertera XML", "importera FileMaker-XML". Triggers (Japanese): "XMLを変換", "FileMaker XMLをインポート". Triggers (Korean): "XML 변환", "FileMaker XML 가져오기". Triggers (Chinese): "转换 XML", "导入 FileMaker XML".
 ---
 
 # FileMaker XML to DuckDB Conversion Skill
@@ -19,10 +19,10 @@ The skill accepts **one required parameter**:
 - **XML filename** - The name of the XML file in the `xml/` directory (e.g., "MyDatabase.xml")
 - **--batch** or **--all** - Process all XML files in the `xml/` directory
 
-Optional flags (alle beliebig kombinierbar):
+Optional flags (any combination is allowed):
 - **--fail-fast** - Stop immediately on first error (batch/test mode only)
-- **--force-rebuild** - Löscht die DB vor dem Import und baut komplett neu auf
-- **--no-auto-heal** - Bei erkannter Schema-Drift abbrechen statt automatisch zu rebuilden
+- **--force-rebuild** - Delete the DB before importing and rebuild from scratch
+- **--no-auto-heal** - On detected schema drift, abort instead of auto-rebuilding
 
 **Single-File Mode:**
 ```bash
@@ -39,7 +39,7 @@ convert-xml --batch
 convert-xml --batch --fail-fast
 ```
 
-**Force Rebuild (Recovery nach Schema-Update oder DB-Inkonsistenz):**
+**Force Rebuild (recovery after schema update or DB inconsistency):**
 ```bash
 convert-xml --batch --force-rebuild
 ```
@@ -48,20 +48,20 @@ File paths are fixed:
 - Input: `xml/` directory
 - Output: `db/fm_catalog.duckdb`
 
-## Schema-Versionierung & Auto-Heal
+## Schema versioning & auto-heal
 
-Vor jedem Import vergleicht das Skript die `@SCHEMA_VERSION` aus
-[sql/convert_xml.sql](../../../sql/convert_xml.sql) mit der in der
-DB-Tabelle `SchemaInfo` persistierten Version. Möglichkeiten:
+Before each import, the script compares the `@SCHEMA_VERSION` from
+[sql/convert_xml.sql](../../../sql/convert_xml.sql) with the version
+persisted in the DB table `SchemaInfo`. Possible outcomes:
 
-| Detection-Action | Verhalten Default                                                                   | Mit `--force-rebuild`    | Mit `--no-auto-heal`     |
-|------------------|-------------------------------------------------------------------------------------|--------------------------|--------------------------|
-| `fresh_build`    | DB existiert nicht → normaler Import                                                | DB löschen + Import      | wie Default              |
-| `incremental`    | Schema OK → normaler Import                                                         | DB löschen + Rebuild     | wie Default              |
-| `rebuild`        | Batch: Auto-Heal (DB löschen, alle XMLs neu importieren). Single: Abbruch, Exit 6   | DB löschen + Rebuild     | Abbruch, Exit 6          |
-| `warn`           | Hash-Drift ohne Versions-Bump: Warnung loggen, normaler Import                      | DB löschen + Rebuild     | wie Default + Warnung    |
+| Detection action | Default behavior                                                                  | With `--force-rebuild`   | With `--no-auto-heal`    |
+|------------------|------------------------------------------------------------------------------------|--------------------------|--------------------------|
+| `fresh_build`    | DB does not exist → normal import                                                  | Delete DB + import       | Same as default          |
+| `incremental`    | Schema OK → normal import                                                          | Delete DB + rebuild      | Same as default          |
+| `rebuild`        | Batch: auto-heal (delete DB, re-import all XMLs). Single: abort, exit 6            | Delete DB + rebuild      | Abort, exit 6            |
+| `warn`           | Hash drift without version bump: log warning, normal import                        | Delete DB + rebuild      | Same as default + warning |
 
-Siehe [project/prd_schema_versioning_auto_heal.md](../../../project/prd_schema_versioning_auto_heal.md) für die vollständige Spezifikation.
+See [project/prd_schema_versioning_auto_heal.md](../../../project/prd_schema_versioning_auto_heal.md) for the full specification.
 
 ## Workflow
 
@@ -141,10 +141,10 @@ Suggest checking file integrity.
 ### Unsupported XML Format (Skipped)
 Files using the legacy `FMDynamicTemplate` root element (SaXML v2.0.0.0, FileMaker 18.x) are automatically skipped with a warning. Only `FMSaveAsXML` (SaXML v2.1.0.0+, FileMaker 19+) is supported.
 
-### Schema-Drift (Exit 6)
-Wird ausgelöst, wenn die DB mit einer älteren `@SCHEMA_VERSION` gebaut wurde als das aktuelle SQL-Template und der User keinen Auto-Heal-Pfad gewählt hat:
-- **Single-File-Modus mit Drift** → Automatischer Abbruch (Auto-Heal würde andere Dateien aus der DB verlieren). Empfehlung: `convert-xml --batch --force-rebuild`.
-- **`--no-auto-heal`-Flag aktiv** → Manueller Eingriff erwartet.
+### Schema drift (exit 6)
+Triggered when the DB was built with an older `@SCHEMA_VERSION` than the current SQL template and the user did not choose an auto-heal path:
+- **Single-file mode with drift** → automatic abort (auto-heal would lose other files from the DB). Recommendation: `convert-xml --batch --force-rebuild`.
+- **`--no-auto-heal` flag active** → manual intervention expected.
 
 ### DuckDB Conversion Failed
 If DuckDB fails, possible causes:

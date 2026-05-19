@@ -1,0 +1,36 @@
+{
+  "objectTypes": {
+    "BaseTable": "ベーステーブル",
+    "TableOccurrence": "テーブルオカレンス",
+    "Relationship": "リレーション",
+    "Field": "フィールド",
+    "ValueList": "値一覧",
+    "CustomFunction": "カスタム関数",
+    "Script": "スクリプト",
+    "ScriptStep": "スクリプトステップ",
+    "Layout": "レイアウト",
+    "LayoutObject": "レイアウトオブジェクト",
+    "LayoutPart": "レイアウトパート",
+    "Account": "アカウント",
+    "PrivilegeSet": "アクセス権セット",
+    "ExtendedPrivilege": "拡張アクセス権",
+    "Theme": "テーマ",
+    "CustomMenu": "カスタムメニュー",
+    "ScriptTrigger": "スクリプトトリガー",
+    "ExternalDataSource": "外部データソース",
+    "BaseDirectory": "ベースディレクトリ",
+    "Variable": "変数",
+    "ScriptFolder": "スクリプトフォルダー",
+    "LayoutFolder": "レイアウトフォルダー",
+    "RelationshipGraph": "リレーショングラフ",
+    "BuiltinFunction": "関数",
+    "PluginFunction": "MBS 関数",
+    "ScriptStepType": "スクリプトステップ",
+    "PluginComponent": "MBS コンポーネント"
+  },
+  "categoryHeader": {
+    "ScriptStepType": "カテゴリ",
+    "BuiltinFunction": "カテゴリ",
+    "PluginFunction": "コンポーネント"
+  }
+}

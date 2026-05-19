@@ -1,0 +1,13 @@
+{
+  "loadFiles": "Falha ao carregar os ficheiros.",
+  "loadObjects": "Falha ao carregar os objetos.",
+  "loadFieldDetails": "Falha ao carregar os detalhes do campo",
+  "loadScriptDetails": "Falha ao carregar os detalhes do script",
+  "loadCustomFunctionDetails": "Falha ao carregar os detalhes da função personalizada",
+  "loadLayout": "Falha ao carregar o layout",
+  "loadDashboard": "Falha ao carregar o dashboard",
+  "generic": "Algo correu mal. Tente novamente.",
+  "loadHeading": "Falha ao carregar",
+  "retryAria": "Tentar novamente",
+  "retryLabel": "Tentar novamente"
+}

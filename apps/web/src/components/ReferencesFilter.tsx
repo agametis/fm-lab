@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   typeCounts: Map<string, number>;
@@ -29,14 +30,15 @@ export function ReferencesFilter({
   totalCount,
   onJumpToList,
 }: Props) {
+  const { t, i18n } = useTranslation(['detail']);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sortierung: nach Anzahl absteigend, danach alphabetisch — der häufigste
-  // Typ steht links und ist am schnellsten erreichbar.
+  // Sort by count descending, then alphabetically — the most frequent type
+  // ends up on the left and is the quickest to reach.
   const sortedTypes = useMemo(() => {
     return Array.from(typeCounts.entries())
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  }, [typeCounts]);
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], i18n.language));
+  }, [typeCounts, i18n.language]);
 
   const hasAnyActive = activeTypes.size > 0;
   const filterActive = hasAnyActive || query !== '';
@@ -60,12 +62,12 @@ export function ReferencesFilter({
         <input
           ref={inputRef}
           type="search"
-          placeholder="Referenzen durchsuchen…"
+          placeholder={t('detail:referencesFilter.searchPlaceholder') as string}
           value={query}
           onChange={e => onQueryChange(e.target.value)}
           onKeyDown={onKeyDown}
-          title="Esc: Eingabe leeren"
-          aria-label="Referenzen durchsuchen"
+          title={t('detail:referencesFilter.searchTitle') as string}
+          aria-label={t('detail:referencesFilter.searchAria') as string}
         />
         {filterActive && (
           <span className="references-filter-count">
@@ -95,9 +97,9 @@ export function ReferencesFilter({
               type="button"
               className="references-filter-link"
               onClick={onClearTypes}
-              title="Alle Typ-Filter aufheben"
+              title={t('detail:referencesFilter.clearTypesTitle') as string}
             >
-              Filter zurücksetzen
+              {t('detail:referencesFilter.clearTypesLabel')}
             </button>
           )}
         </div>

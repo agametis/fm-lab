@@ -1,0 +1,10 @@
+{
+  "manifest": {
+    "title": "Analyser och anpassade frågor",
+    "description": "Alla förberedda SQL-analyser i ett enda överblicksläge."
+  },
+  "layout": {
+    "root.children[0].props.title": "Analyser och anpassade frågor",
+    "root.children[0].props.subtitle": "Klicket öppnar analysen i den generiska renderaren."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "loadFiles": "Impossibile caricare i file.",
+  "loadObjects": "Impossibile caricare gli oggetti.",
+  "loadFieldDetails": "Impossibile caricare i dettagli del campo",
+  "loadScriptDetails": "Impossibile caricare i dettagli dello script",
+  "loadCustomFunctionDetails": "Impossibile caricare i dettagli della funzione personalizzata",
+  "loadLayout": "Impossibile caricare il layout",
+  "loadDashboard": "Impossibile caricare il dashboard",
+  "generic": "Qualcosa è andato storto. Riprova.",
+  "loadHeading": "Caricamento non riuscito",
+  "retryAria": "Riprova",
+  "retryLabel": "Riprova"
+}

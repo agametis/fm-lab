@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Filter-Toolbar für Pseudo-Token-Listen (PRD prd_pseudo_object_types_filter.md §8.2).
@@ -51,6 +52,7 @@ export const PseudoTokenFilterToolbar: React.FC<Props> = ({
   totalCount,
   categoryLabel,
 }) => {
+  const { t } = useTranslation(['nav']);
   const [expanded, setExpanded] = useState(false);
 
   // Pillen-Sortierung: aktiv → nach total_usage desc; Pseudo-NULL ("Sonstige") ganz hinten
@@ -70,27 +72,27 @@ export const PseudoTokenFilterToolbar: React.FC<Props> = ({
     <div className="pseudo-token-toolbar">
       <div className="pseudo-token-toolbar-row1">
         <div className="pseudo-token-toolbar-search">
-          <label htmlFor="pseudo-token-search-input">Suchen:</label>
+          <label htmlFor="pseudo-token-search-input">{t('nav:pseudoToolbar.searchLabel')}</label>
           <input
             id="pseudo-token-search-input"
             type="text"
             value={searchText}
             onChange={(e) => onSearchTextChange(e.target.value)}
-            placeholder="Token-Name filtern…"
+            placeholder={t('nav:pseudoToolbar.tokenSearchPlaceholder') as string}
           />
           <span className="pseudo-token-count">
             {filteredCount} / {totalCount}
           </span>
         </div>
         <div className="pseudo-token-toolbar-sort">
-          <label htmlFor="pseudo-token-sort-select">Sortierung:</label>
+          <label htmlFor="pseudo-token-sort-select">{t('nav:pseudoToolbar.sortLabel')}</label>
           <select
             id="pseudo-token-sort-select"
             value={sort}
             onChange={(e) => onSortChange(e.target.value as SortMode)}
           >
-            <option value="usage">↓ Häufigkeit</option>
-            <option value="name">A → Z</option>
+            <option value="usage">{t('nav:pseudoToolbar.sortByUsage')}</option>
+            <option value="name">{t('nav:pseudoToolbar.sortByName')}</option>
             <option value="category">{categoryLabel}</option>
           </select>
         </div>
@@ -103,7 +105,7 @@ export const PseudoTokenFilterToolbar: React.FC<Props> = ({
           </span>
           <div className="pseudo-token-toolbar-pills">
             {visibleCategories.map((c) => {
-              const label = c.category ?? 'Sonstige';
+              const label = c.category ?? (t('nav:pseudoToolbar.otherCategory') as string);
               const active = c.category != null && activeSet.has(c.category);
               return (
                 <button
@@ -117,8 +119,12 @@ export const PseudoTokenFilterToolbar: React.FC<Props> = ({
                   disabled={c.category == null}
                   title={
                     c.category == null
-                      ? 'Tokens ohne Kategorie (nicht filterbar)'
-                      : `${label} — ${c.token_count} Tokens, ${c.total_usage} Verwendungen`
+                      ? (t('nav:pseudoToolbar.uncategorisedTooltip') as string)
+                      : (t('nav:pseudoToolbar.categoryTooltip', {
+                          label,
+                          tokens: c.token_count,
+                          usages: c.total_usage,
+                        }) as string)
                   }
                 >
                   {label} ({c.token_count})
@@ -131,7 +137,9 @@ export const PseudoTokenFilterToolbar: React.FC<Props> = ({
                 className="pseudo-token-pill pseudo-token-pill-toggle"
                 onClick={() => setExpanded((e) => !e)}
               >
-                {expanded ? 'Weniger ▴' : `Details ▾ (${sortedCategories.length - VISIBLE_THRESHOLD})`}
+                {expanded
+                  ? t('nav:pseudoToolbar.showLess')
+                  : t('nav:pseudoToolbar.showMore', { count: sortedCategories.length - VISIBLE_THRESHOLD })}
               </button>
             )}
             {activeCategories.length > 0 && (
@@ -140,7 +148,7 @@ export const PseudoTokenFilterToolbar: React.FC<Props> = ({
                 className="pseudo-token-pill pseudo-token-pill-clear"
                 onClick={onClearCategories}
               >
-                Filter zurücksetzen
+                {t('nav:pseudoToolbar.clearFilters')}
               </button>
             )}
           </div>

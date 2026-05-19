@@ -1,0 +1,97 @@
+{
+  "modeTabsAriaLabel": "보기 모드",
+  "breadcrumbs": {
+    "search": "검색",
+    "analyses": "분석",
+    "ariaLabel": "이동 경로",
+    "linkAria": "{{label}}(으)로 이동"
+  },
+  "errors": {
+    "noDashboardId": "대시보드 ID가 지정되지 않았습니다.",
+    "noQueryName": "쿼리 이름이 지정되지 않았습니다."
+  },
+  "home": {
+    "title": "홈 (필터 초기화)",
+    "ariaLabel": "홈"
+  },
+  "settings": {
+    "title": "플러그인 설정",
+    "ariaLabel": "플러그인 설정"
+  },
+  "tabs": {
+    "search": "검색",
+    "tree": "계층"
+  },
+  "form": {
+    "searchLabel": "이름으로 검색:",
+    "filterLabel": "필터:",
+    "searchPlaceholder": "예: Import, Email (비어 있음 = 모든 오브젝트)",
+    "filterPlaceholder": "이름으로 계층 필터링",
+    "searchTitle": "와일드카드 *는 모든 문자에 일치합니다 (예: *Import, Email*). 모든 오브젝트를 보려면 비워 두세요.",
+    "filterTitle": "이 텍스트를 포함하는 항목이 강조됩니다 (상위 폴더 포함)",
+    "fileLabel": "파일:",
+    "allFiles": "모든 파일",
+    "typeLabel": "유형:",
+    "objectTypeLabel": "오브젝트 유형:",
+    "allTypes": "모든 유형",
+    "usedTokensGroup": "사용 중인 토큰",
+    "optionsClosed": "옵션…",
+    "optionsOpen": "옵션 ▴"
+  },
+  "relationshipGraph": {
+    "openCardTitle": "관계 그래프 열기",
+    "selectFilePrompt": "관계 그래프를 보려면 위에서 파일을 선택하세요."
+  },
+  "list": {
+    "loading": "오브젝트 로딩 중…",
+    "loadingTokens": "토큰 로딩 중…",
+    "loadingMore": "더 많은 오브젝트 로딩 중…",
+    "allLoaded": "모든 오브젝트를 로딩했습니다",
+    "noObjects": "오브젝트를 찾을 수 없습니다"
+  },
+  "detailView": {
+    "backAria": "검색 목록으로 돌아가기",
+    "backLabel": "뒤로",
+    "objectNotFound": "오브젝트를 찾을 수 없습니다",
+    "loadingDetails": "오브젝트 세부 정보 로딩 중…",
+    "tabsAria": "오브젝트 보기",
+    "noName": "(이름 없음)",
+    "tabs": {
+      "detail":     "세부 정보",
+      "references": "참조",
+      "graph":      "그래프",
+      "versions":   "버전",
+      "notes":      "메모"
+    }
+  },
+  "pseudoToolbar": {
+    "searchLabel": "검색:",
+    "searchPlaceholder": "컴포넌트 필터…",
+    "sortLabel": "정렬:",
+    "sortByUsage": "↓ 빈도",
+    "sortByName": "A → Z",
+    "tokenSearchPlaceholder": "토큰 이름 필터…",
+    "otherCategory": "기타",
+    "uncategorisedTooltip": "카테고리가 없는 토큰 (필터링 불가)",
+    "categoryTooltip": "{{label}} — {{tokens}}개 토큰, {{usages}}회 사용",
+    "showLess": "간단히 ▴",
+    "showMore": "세부 정보 ▾ ({{count}})",
+    "clearFilters": "필터 지우기"
+  },
+  "treeSubtypes": {
+    "ScriptCatalog": "스크립트",
+    "Layouts": "레이아웃",
+    "CustomFunctionsCatalog": "사용자 정의 함수"
+  },
+  "folderTree": {
+    "loading": "계층 로딩 중…",
+    "empty": "항목 없음",
+    "statsFiltered": "{{visibleEntries}} / {{totalEntries}}개 항목, {{visibleFolders}} / {{totalFolders}}개 폴더",
+    "stats": "{{entries}}개 항목, {{folders}}개 폴더",
+    "expandAll": "모두 펼치기",
+    "collapseAll": "모두 접기",
+    "disabledDuringFilter": "필터링 중에는 비활성화됨",
+    "folderDetailsTitle": "폴더 세부 정보 표시",
+    "noName": "(이름 없음)"
+  }
+}

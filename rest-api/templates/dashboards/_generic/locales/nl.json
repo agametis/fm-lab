@@ -1,0 +1,7 @@
+{
+  "manifest": {
+    "title": "Aangepast queryresultaat",
+    "description": "Generieke renderer voor elk sql-custom-template."
+  },
+  "layout": {}
+}

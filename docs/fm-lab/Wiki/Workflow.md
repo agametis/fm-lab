@@ -25,7 +25,7 @@ The downside is the limited flexibility when it comes to new questions that are 
 
 ![FM-Lab-Workflow-2.jpg](../Assets/FM-Lab-Workflow-2.jpg)
 
-Agentic code analysis takes a very different approach. You ask your question in plain English (with or without relevant anchors to the solution at hand). The AI Agent will then find and collect all relevant information and tries to draw its own conclusion that it will provide to you as an answer. You can then continue the conversation with your agent to dig deeper and refine the answer.
+Agentic code analysis takes a very different approach. You ask your question in natural language (with or without relevant anchors to the solution at hand). The AI Agent will then find and collect all relevant information and tries to draw its own conclusion that it will provide to you as an answer. You can then continue the conversation with your agent to dig deeper and refine the answer.
 
 The agent does not replace the underlying metadata. It changes the way you interact with it.
 

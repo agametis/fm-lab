@@ -1,186 +1,215 @@
 ---
 name: create-custom-dashboard
-description: Erstellt interaktiv ein neues Custom-Dashboard-Bundle für das fm-lab Dashboard-System. Befragt den Benutzer nach dem gewünschten Dashboard-Inhalt, entwirft SQL-Queries, zeigt Musterergebnisse, schlägt eine Darstellungsform vor, fragt nach einem Namen und erzeugt das vollständige Bundle-Verzeichnis unter `rest-api/templates/dashboards/<id>/`. Wird ausgelöst durch `/create-custom-dashboard` oder Anfragen wie "erstelle ein neues Dashboard für X", "neues Dashboard", "baue ein Dashboard das X zeigt".
+description: Interactively creates a new custom dashboard bundle for the fm-lab dashboard system. Asks the user about the desired dashboard content, drafts SQL queries, shows sample results, proposes a presentation format, asks for a name, and generates the full bundle directory under `rest-api/templates/dashboards-custom/<id>/`. Triggers (English): "/create-custom-dashboard", "create a new dashboard for X", "new dashboard", "build a dashboard that shows X". Triggers (German): "erstelle ein neues Dashboard für X", "neues Dashboard", "baue ein Dashboard das X zeigt".
 ---
 
-# Custom Dashboard erstellen
+# Create a custom dashboard
 
-Führe den Benutzer interaktiv durch die Erstellung eines neuen Dashboard-Bundles. Das Ergebnis ist ein vollständiges Bundle-Verzeichnis unter `rest-api/templates/dashboards/<id>/` mit `manifest.json`, `layout.json` und mindestens einer SQL-Datei unter `data/`.
+Guide the user interactively through the creation of a new dashboard bundle. The result is a complete bundle directory under `rest-api/templates/dashboards-custom/<id>/` containing `manifest.json`, `layout.json`, and at least one SQL file under `data/`.
 
-## Grundregeln
+## System vs. Custom directory split
 
-- **Sprache**: Deutsch
-- **Datenbank**: `db/fm_catalog.duckdb` (Master — NICHT `rest-api/db/`)
-- **Read-Only**: Niemals UPDATE/INSERT/DELETE auf der Datenbank
-- **Interaktiv**: Schritt 3 und 4 warten auf Bestätigung des Benutzers, bevor Dateien geschrieben werden
-- **SQL-Stil**: analog zu `rest-api/templates/dashboards/home/data/*.sql`
-- **DuckDB-Path**: Wenn `duckdb` nicht im PATH, bekannte Orte prüfen: `~/.duckdb/cli/latest/duckdb`, `/opt/homebrew/bin/duckdb`, `/usr/local/bin/duckdb`
+The dashboard system distinguishes between two bundle sources:
+
+| Directory | Content | Who writes? |
+|---|---|---|
+| `rest-api/templates/dashboards/` | **System bundles** (`home`, `_generic`, `custom_queries`, `dashboards`) | core team only |
+| `rest-api/templates/dashboards-custom/` | **Custom/plugin bundles** | this skill, user plugins |
+
+The dashboard resolver searches both directories; in case of an ID collision the custom directory wins (override pattern for local extensions). This skill writes **exclusively** to `dashboards-custom/`.
+
+## Ground rules
+
+- **Language**:
+  - **Dialogue** (steps 1–4): conduct in the user's input language — if the user writes in German, ask back in German; if in English, English; etc.
+  - **SQL templates** (step 5.2): English only — filenames, parameter names, column aliases, comments. Language-agnostic, never translated.
+  - **manifest.json / layout.json** (steps 5.3, 5.4): English defaults for `title`, `description`, card titles, KPI/column labels.
+  - **Localization** (step 5.5): for every other supported language create a `locales/<lang>.json` file with translated `title`, `description` and (optionally) layout labels.
+- **Database**: `db/fm_catalog.duckdb` (master — NOT `rest-api/db/`)
+- **Read-only**: never UPDATE/INSERT/DELETE on the database
+- **Interactive**: steps 3 and 4 wait for user confirmation before files are written
+- **SQL style**: analogous to `rest-api/templates/dashboards/home/data/*.sql` (system reference) and `rest-api/templates/dashboards-custom/script_todos/data/*.sql` (custom reference)
+- **DuckDB path**: if `duckdb` is not in PATH, check the known locations: `~/.duckdb/cli/latest/duckdb`, `/opt/homebrew/bin/duckdb`, `/usr/local/bin/duckdb`
 
 ---
 
 ## Workflow
 
-### Schritt 1 — Dashboard-Ziel klären
+### Step 1 — Clarify the dashboard goal
 
-Falls der Benutzer beim Aufruf bereits ein Thema mitgegeben hat (z.B. `/create-custom-dashboard Variablen-Analyse`), dieses direkt als Ausgangspunkt nehmen: "Für ein Variablen-Dashboard würde ich folgende Daten zeigen: …" und direkt Schritt 2 beginnen.
+If the user already provided a topic when invoking the skill (e.g. `/create-custom-dashboard Variable analysis`), use it directly as the starting point: "For a variable dashboard I would show the following data: …" and proceed directly to step 2.
 
-Falls kein Thema mitgegeben wurde, **eine** kurze Frage stellen:
-> "Was soll das Dashboard zeigen? (z.B.: Variablen-Überblick, Scripts ohne Kommentar, Lookup-Felder, Beziehungs-Statistiken, …)"
+If no topic was provided, ask **one** short question:
+> "What should the dashboard show? (e.g. variable overview, scripts without comment, lookup fields, relationship statistics, …)"
 
-**BLOCKIEREND** falls kein Thema vorhanden: Auf Antwort warten.
+**BLOCKING** if no topic is available: wait for the answer.
 
 ---
 
-### Schritt 2 — SQL-Query entwerfen, ausführen und Ergebnis zeigen
+### Step 2 — Draft SQL query, execute it and show the result
 
-Anhand des Ziels einen SQL-Query entwerfen, der die relevanten Daten aus `db/fm_catalog.duckdb` liefert.
+Based on the goal, draft a SQL query that returns the relevant data from `db/fm_catalog.duckdb`.
 
-#### Query-Designregeln
+#### Query design rules
 
-- Spaltennamen: kurz, lowercase, ohne Leerzeichen (`script_count`, `name`, `uuid`, `file`)
-- Bei Multi-Zeilen-Ergebnissen immer Spalte `uuid` einschließen, wenn das Objekt im ObjectCatalog existiert — ermöglicht `openObject`-Navigation
-- Parametrisierung via `getvariable('param_name')` für optionale Filter (z.B. `file`, `limit`)
-- Parameter mit Default: `CAST(COALESCE(getvariable('limit'), '25') AS INTEGER)` bzw. `(getvariable('file') IS NULL OR File_Name = getvariable('file'))`
-- CTEs für Zwischenergebnisse bevorzugen
-- Orientierung an `sql/sample_queries.sql` und den bestehenden Bundle-SQLs
+- Column names: short, lowercase, no spaces (`script_count`, `name`, `uuid`, `file`)
+- For multi-row results, always include a `uuid` column if the object exists in the ObjectCatalog — this enables `openObject` navigation
+- Parameterise via `getvariable('param_name')` for optional filters (e.g. `file`, `limit`)
+- Parameter with default: `CAST(COALESCE(getvariable('limit'), '25') AS INTEGER)` or `(getvariable('file') IS NULL OR File_Name = getvariable('file'))`
+- Prefer CTEs for intermediate results
+- Orient yourself on `sql/sample_queries.sql` and the existing bundle SQL files
 
-#### Query ausführen (LIMIT 10 für Preview)
+#### Execute the query (LIMIT 10 for preview)
 
 ```bash
-~/.duckdb/cli/latest/duckdb db/fm_catalog.duckdb -c "<SQL mit LIMIT 10>"
+~/.duckdb/cli/latest/duckdb db/fm_catalog.duckdb -c "<SQL with LIMIT 10>"
 ```
 
-Bei Query-Fehler: einmal korrigieren und erneut ausführen. Nach zwei Fehlern den Benutzer einbinden.
+On query error: correct it once and re-run. After two failures, involve the user.
 
-#### Ergebnis aufbereiten
+#### Prepare the result
 
-| Situation | Ausgabe |
+| Situation | Output |
 |-----------|---------|
-| ≤ 10 Zeilen, ≤ 8 Spalten | Ergebnis vollständig als Markdown-Tabelle |
-| > 10 Zeilen | "Query liefert viele Ergebnisse. Erste 10 als Vorschau:" + Tabelle |
-| > 8 Spalten | Wichtigste Spalten zeigen, Rest erwähnen |
-| 0 Zeilen | Benutzer informieren, alternativen Query oder anderen Datenbankinhalt vorschlagen |
+| ≤ 10 rows, ≤ 8 columns | full result as a Markdown table |
+| > 10 rows | "Query returns many results. First 10 as preview:" + table |
+| > 8 columns | show the most important columns, mention the rest |
+| 0 rows | inform the user, suggest an alternative query or different database content |
 
-Abschließend eine kurze Einschätzung: "Das sind N Zeilen mit X Spalten — das Ergebnis eignet sich gut für [Primitive]."
+Finally provide a short assessment: "That's N rows with X columns — the result is well suited for [primitive]."
 
 ---
 
-### Schritt 3 — Darstellungsform vorschlagen (BLOCKIEREND)
+### Step 3 — Propose a presentation format (BLOCKING)
 
-Basierend auf dem Query-Ergebnis eine Darstellungsform empfehlen:
+Based on the query result, recommend a presentation format:
 
-#### Entscheidungslogik
+#### Decision logic
 
-| Bedingung | Empfehlung |
+| Condition | Recommendation |
 |-----------|------------|
-| 1 Zeile, 1–6 numerische/aggregierte Spalten | **KPIStrip** |
-| 1 Spalte `content` (Freitext) | **Markdown** |
-| Mehrere Zeilen, enthält `uuid` + `name`, primär zur Navigation | **List** (klickbar via `openObject`) |
-| Mehrere Zeilen, 3–8 gemischte Spalten, Analyse-Fokus | **Table** |
-| Viele Zeilen (>50), uuid vorhanden | **Table** mit `onRowClick` |
-| Viele Objekte zur Navigation (Queries, Dashboards) | **TileGrid** |
+| 1 row, 1–6 numeric/aggregated columns | **KPIStrip** |
+| 1 column `content` (free text) | **Markdown** |
+| Multiple rows, contains `uuid` + `name`, primarily for navigation | **List** (clickable via `openObject`) |
+| Multiple rows, 3–8 mixed columns, analysis focus | **Table** |
+| Many rows (>50), uuid present | **Table** with `onRowClick` |
+| Many objects for navigation (queries, dashboards) | **TileGrid** |
 
-Wenn List und Table beide passen, beide vorschlagen:
-> "**List**: kompakt, gut für Navigation (Klick → Detailansicht). **Table**: zeigt alle Spalten, besser für Datenanalyse."
+If List and Table both fit, suggest both:
+> "**List**: compact, good for navigation (click → detail view). **Table**: shows all columns, better for data analysis."
 
-Ausgabe:
-1. Empfehlung mit kurzem Grund
-2. Ggf. Alternative mit Beschreibung
-3. Frage: "Soll ich [Empfehlung] verwenden, oder bevorzugst Du eine andere Darstellung?"
+Output:
+1. Recommendation with a short reason
+2. Optional alternative with description
+3. Question: "Should I use [recommendation], or do you prefer a different presentation?"
 
-**BLOCKIEREND**: Auf Antwort des Benutzers warten.
-
----
-
-### Schritt 4 — Dashboard-Name vorschlagen (BLOCKIEREND)
-
-Einen kompakten, aussagekräftigen Namen vorschlagen:
-
-**Regeln für die ID** (= Verzeichnisname):
-- Lowercase, nur ASCII (a–z, 0–9, `_`), max. 30 Zeichen
-- Keine Präfixe `home_`, `_generic`, `home` (reserviert)
-- Gut: `variable_hotspots`, `unused_scripts`, `lookup_fields`, `relation_overview`
-
-**Regeln für den Titel**:
-- Deutsch, max. 50 Zeichen, menschenlesbar
-- Gut: "Variablen-Hotspots", "Scripts ohne Aufrufer", "Lookup-Felder"
-
-Ausgabe:
-> "Vorgeschlagener Name: `<id>` / Titel: „<title>""
-> "Passt das so, oder möchtest Du einen anderen Namen?"
-
-**BLOCKIEREND**: Auf Antwort des Benutzers warten. Bei eigenem Namen: in konforme ID konvertieren (lowercase, Leerzeichen → `_`, ä→ae, ö→oe, ü→ue, ß→ss).
+**BLOCKING**: wait for the user's answer.
 
 ---
 
-### Schritt 5 — Bundle erzeugen
+### Step 4 — Propose a dashboard name (BLOCKING)
 
-Erst wenn Inhalt, Darstellung **und** Name bestätigt sind, die Dateien schreiben.
+Suggest an ID + an English title. Conduct the dialogue in the user's input language (per the Language ground rule), but the ID and the manifest title themselves stay language-agnostic / English.
 
-#### 5.1 Verzeichnis prüfen
+**Rules for the ID** (= directory name, language-agnostic):
+- Lowercase ASCII only (a–z, 0–9, `_`), max. 30 characters
+- Avoid reserved system IDs: `home`, `_generic`, `custom_queries`, `dashboards` (those would override the system bundle in `dashboards/`)
+- Good: `variable_hotspots`, `unused_scripts`, `lookup_fields`, `relation_overview`
+
+**Rules for the title** (= default for `manifest.json`):
+- **English**, max. 50 characters, human-readable
+- Good: "Variable hotspots", "Scripts without callers", "Lookup fields"
+- The title in the user's input language is **not** asked separately — it gets generated automatically in step 5.5 as part of the matching `locales/<lang>.json` file (alongside the other 9 languages).
+
+Output (phrased in the user's input language; ID and English title verbatim):
+> "Suggested ID: `<id>` / Title (EN, manifest default): "<title>""
+> "If the user's input language ≠ English, additionally show the localized title for transparency:"
+> "Title (<user-lang>): "<title in user language>" — will be written to `locales/<user-lang>.json`"
+> "Does that work, or do you want a different name?"
+
+**BLOCKING**: wait for the user's answer.
+
+**If the user supplies a name in their own language**: derive both
+1. the **English title** for `manifest.json` (translate),
+2. the **ASCII-conform ID** (lowercase, spaces → `_`, ä→ae, ö→oe, ü→ue, ß→ss, é→e, ñ→n, etc., strip everything outside [a-z0-9_]).
+
+The user-language title is preserved and reused in step 5.5 for the corresponding locale file.
+
+---
+
+### Step 5 — Generate the bundle
+
+Only when content, presentation **and** name are confirmed, write the files.
+
+#### 5.1 Check the directory
 
 ```bash
+ls "rest-api/templates/dashboards-custom/"
 ls "rest-api/templates/dashboards/"
 ```
 
-Falls eine Bundle mit der gewählten ID bereits existiert: Benutzer fragen, ob überschrieben oder die ID umbenannt werden soll.
+List both directories so that ID collisions with system bundles are ruled out (system IDs are reserved, see step 4). If a bundle with the chosen ID already exists in `dashboards-custom/`: ask the user whether to overwrite or to rename the ID.
 
-#### 5.2 SQL-Datei erstellen
+#### 5.2 Create the SQL file
 
-Pfad: `rest-api/templates/dashboards/<id>/data/<dataset_name>.sql`
+Path: `rest-api/templates/dashboards-custom/<id>/data/<dataset_name>.sql`
 
 ```sql
 -- @template_type: report
--- @description: <kurze Beschreibung des Datasets>
--- @params: <param_name> (optional, default <wert>), ...
+-- @description: <short description of the dataset>
+-- @params: <param_name> (optional, default <value>), ...
 
-<finaler SQL-Query — ohne LIMIT-Beschränkung des Previews, aber mit parametrisiertem LIMIT>
+<final SQL query — without the preview LIMIT, but with a parameterised LIMIT>
 ```
 
-Falls mehrere logisch getrennte Datasets sinnvoll sind (z.B. ein Aggregat-KPI + eine Detailliste), separate SQL-Dateien erstellen.
+If several logically separate datasets make sense (e.g. an aggregate KPI plus a detail list), create separate SQL files.
 
-#### 5.3 manifest.json erstellen
+#### 5.3 Create manifest.json
 
-Pfad: `rest-api/templates/dashboards/<id>/manifest.json`
+Path: `rest-api/templates/dashboards-custom/<id>/manifest.json`
 
 ```json
 {
   "id": "<id>",
   "version": "1.0.0",
   "title": "<title>",
-  "description": "<1-2 Sätze, was das Dashboard zeigt>",
+  "description": "<1-2 sentences describing what the dashboard shows>",
   "author": "fm-lab custom",
-  "icon": "<Lucide-Icon-Name>",
-  "tags": ["custom", "<thematisches Tag>"],
+  "icon": "<Lucide icon name>",
+  "tags": ["custom", "<thematic tag>"],
   "entry": "layout.json",
   "datasets": [
     { "id": "<dataset_name>", "source": "bundle:data/<dataset_name>.sql" }
   ],
   "params": [
     { "name": "file", "type": "string", "required": false,
-      "description": "Optionaler Dateifilter." }
+      "description": "Optional file filter." }
   ],
   "permissions": { "read_only": true, "allow_navigation": true }
 }
 ```
 
-**Icon-Auswahl** (Lucide React Icons — passende Beispiele):
+**Icon selection** (Lucide React icons — suitable examples):
 `database`, `code`, `layout-list`, `git-fork`, `table-2`, `search`, `variable`, `function-square`, `tag`, `alert-triangle`, `link`, `box`, `layers`, `filter`
-Bei Unsicherheit: `database` als sicherer Default.
+When in doubt: `database` as a safe default.
 
-**Datasets-Quellen**:
-- `bundle:data/<name>.sql` — SQL im selben Bundle (Standard)
-- `custom:<template-name>` — bestehendes Template aus `rest-api/templates/sql-custom/`
-- `report:<template-name>` — bestehendes Template aus `rest-api/templates/sql/`
-- `builtin:list_dashboards` / `builtin:list_custom_queries` / `builtin:files` — Server-Builtins
+**Dataset sources**:
+- `bundle:data/<name>.sql` — SQL in the same bundle (standard, **preferred** for self-contained custom bundles)
+- `custom:<template-name>` — template resolver with fallback search in the following order:
+  1. `rest-api/templates/sql-custom/` (standalone custom queries)
+  2. `rest-api/templates/sql-custom-details/**/` (detail-view templates for UI hooks)
+  3. `rest-api/templates/dashboards-custom/<bundle>/queries/` (bundle-owned drilldowns)
+  4. `rest-api/templates/dashboards/<bundle>/queries/` (system-bundle drilldowns)
+- `report:<template-name>` — existing template from `rest-api/templates/sql/`
+- `builtin:list_dashboards` / `builtin:list_custom_queries` / `builtin:files` / `builtin:query_meta` — server builtins
 
-#### 5.4 layout.json erstellen
+#### 5.4 Create layout.json
 
-Pfad: `rest-api/templates/dashboards/<id>/layout.json`
+Path: `rest-api/templates/dashboards-custom/<id>/layout.json`
 
-Immer `Grid(columns:12)` als Root. Jede inhaltliche Einheit in eine `Card` wrappen.
+Always `Grid(columns:12)` as root. Wrap every content unit in a `Card`.
 
-**Grundstruktur**:
+**Base structure**:
 ```json
 {
   "schemaVersion": 1,
@@ -190,7 +219,7 @@ Immer `Grid(columns:12)` als Root. Jede inhaltliche Einheit in eine `Card` wrapp
     "children": [
       {
         "type": "Card",
-        "props": { "span": 12, "title": "<Kartentitel>" },
+        "props": { "span": 12, "title": "<card title>" },
         "data": { "dataset": "<dataset_name>" },
         "children": [
           { "type": "<Primitive>", "props": { ... } }
@@ -201,45 +230,45 @@ Immer `Grid(columns:12)` als Root. Jede inhaltliche Einheit in eine `Card` wrapp
 }
 ```
 
-**Primitive-Props-Vorlagen**:
+**Primitive props templates**:
 
-*KPIStrip* (1-Zeilen-Aggregat):
+*KPIStrip* (single-row aggregate):
 ```json
 { "type": "KPIStrip", "props": { "items": [
-  { "label": "Scripts",      "field": "scripts",      "format": "number" },
-  { "label": "Ohne Aufruf",  "field": "unused_count", "format": "number" }
+  { "label": "Scripts",       "field": "scripts",      "format": "number" },
+  { "label": "Without calls", "field": "unused_count", "format": "number" }
 ]}}
 ```
 
-*List* (klickbar, benötigt `uuid`-Spalte im Query):
+*List* (clickable, requires a `uuid` column in the query):
 ```json
 { "type": "List", "props": {
   "rowTemplate": {
     "primary":   "{{name}}",
-    "secondary": "{{file}} · {{step_count}} Schritte",
+    "secondary": "{{file}} · {{step_count}} steps",
     "onClick":   { "action": "openObject",
                    "args": { "uuid": "{{uuid}}", "type": "Script" } }
   },
-  "empty": { "message": "Keine Einträge gefunden." }
+  "empty": { "message": "No entries found." }
 }}
 ```
 
-*Table* (analyse-fokussiert):
+*Table* (analysis-focused):
 ```json
 { "type": "Table", "props": {
-  "rowKey": "<eindeutige Spalte>",
+  "rowKey": "<unique column>",
   "density": "comfortable",
   "columns": [
     { "field": "name",  "label": "Name" },
-    { "field": "count", "label": "Anzahl", "align": "right" },
-    { "field": "file",  "label": "Datei" }
+    { "field": "count", "label": "Count", "align": "right" },
+    { "field": "file",  "label": "File" }
   ],
   "onRowClick": { "action": "openObject",
                   "args": { "uuid": "{{uuid}}", "type": "{{type}}" } }
 }}
 ```
 
-*TileGrid* (Navigation):
+*TileGrid* (navigation):
 ```json
 { "type": "TileGrid", "props": { "tile": {
   "title":    "{{name}}",
@@ -250,82 +279,128 @@ Immer `Grid(columns:12)` als Root. Jede inhaltliche Einheit in eine `Card` wrapp
 }}}
 ```
 
-**Span-Werte**: `12` = volle Breite, `6` = halbe Breite, `4` = Drittel, `8` + `4` = zwei Drittel + Drittel. Mehrere gleichbreite Cards nebeneinander: `Stack` oder direkte Kinder im Grid.
+**Span values**: `12` = full width, `6` = half width, `4` = one-third, `8` + `4` = two-thirds + one-third. Several equally wide cards next to each other: `Stack` or direct children inside the grid.
 
-#### 5.5 Abschlussmeldung ausgeben
+#### 5.5 Create localization files
+
+The dashboard system resolves UI labels at request time. The bundle files (`manifest.json`, `layout.json`) hold the English defaults; every other supported language lives in `locales/<lang>.json`.
+
+**Languages to create** (10 total): `de`, `es`, `fr`, `it`, `nl`, `pt`, `sv`, `ja`, `ko`, `zh-Hans`. Do **not** create `en.json` — English is the bundle default and resolves directly from `manifest.json` / `layout.json`.
+
+Path: `rest-api/templates/dashboards-custom/<id>/locales/<lang>.json`
+
+**Structure** — two sections:
+
+- `manifest`: translates the user-visible manifest fields (`title`, `description`).
+- `layout` (optional but recommended): dot-path overrides into `layout.json`. The key is the JSON path to a string value; array indices use `[0]`, `[1]`, …
+
+```json
+{
+  "manifest": {
+    "title": "<title in target language>",
+    "description": "<description in target language>"
+  },
+  "layout": {
+    "root.children[0].props.title": "<card title>",
+    "root.children[0].children[0].props.items[0].label": "<KPI label>",
+    "root.children[1].children[0].props.columns[0].label": "<column label>"
+  }
+}
+```
+
+**Only override user-visible literals**: card titles, KPI labels, column headers, list `primary`/`secondary` text, empty-state messages. **Never translate**: dataset IDs, field names, parameter names, `format` values, icon names, action arguments.
+
+Reference: `rest-api/templates/dashboards-custom/script_todos/locales/de.json` (compact) and `rest-api/templates/dashboards-custom/external_apis/locales/fr.json` (with `layout` overrides).
+
+Generate all 10 files in one pass. Keep the JSON-pointer structure of the `layout` section identical across languages — only the values change.
+
+---
+
+#### 5.6 Emit the closing message
 
 ```
-Dashboard-Bundle erstellt: rest-api/templates/dashboards/<id>/
+Dashboard bundle created: rest-api/templates/dashboards-custom/<id>/
   ├── manifest.json
   ├── layout.json
-  └── data/
-      └── <dataset_name>.sql
+  ├── data/
+  │   └── <dataset_name>.sql
+  └── locales/
+      ├── de.json
+      ├── es.json
+      ├── fr.json
+      ├── it.json
+      ├── nl.json
+      ├── pt.json
+      ├── sv.json
+      ├── ja.json
+      ├── ko.json
+      └── zh-Hans.json
 
-Dashboard-ID:  <id>
-Titel:         <title>
-Darstellung:   <Primitive>
-Dataset:       <dataset_name> (Preview: N Zeilen)
+Dashboard ID:   <id>
+Title:          <title> (English default; 10 translations available)
+Presentation:   <Primitive>
+Dataset:        <dataset_name> (Preview: N rows)
 
-Das Dashboard ist sofort unter /api/dashboards/<id> verfügbar — Browser-Reload (Ctrl+R) reicht.
-Server-Neustart ist nicht nötig: Bundles und SQL-Templates werden mtime-basiert hot-reloaded.
+The dashboard is immediately available at /api/dashboards/<id> — a browser reload (Ctrl+R) is enough.
+A server restart is not required: bundles, SQL templates and locale files are hot-reloaded based on mtime.
 ```
 
 ---
 
-## Konventionen auf einen Blick
+## Conventions at a glance
 
-### Primitive-Registry (v1)
+### Primitive registry (v1)
 
-| Primitive  | Wann verwenden                              | Wichtige Props               |
-|------------|---------------------------------------------|------------------------------|
-| Grid       | Root-Container (immer)                      | `columns`, `gap`             |
-| Card       | Rahmen mit Titel um jeden Inhalt            | `span`, `title`, `variant`   |
-| Stack      | Mehrere Cards vertikal stapeln              | `gap`, `align`               |
-| Row        | Horizontale Gruppe                          | `gap`, `align`               |
-| KPI        | Eine einzelne Kennzahl                      | `label`, `field`, `format`   |
-| KPIStrip   | 2–8 Kennzahlen nebeneinander                | `items[]`                    |
-| List       | Klickbare Liste (uuid im Query nötig)       | `rowTemplate`, `empty`       |
-| TileGrid   | Kachel-Navigation                           | `tile`, `minTileWidth`       |
-| Table      | Tabellarische Anzeige, mehrere Spalten      | `columns[]`, `rowKey`, `density` |
-| Markdown   | Hilfetext, statischer Inhalt                | `content`                    |
-| NavButton  | Navigationsschaltfläche                     | `label`, `icon`, `onClick`   |
-| Spacer     | Leerraum                                    | `size`                       |
-| Image      | Bild aus Bundle (`asset:`)                  | `src`, `alt`, `width`        |
-| Empty      | Platzhalter bei leerem Dataset              | `message`                    |
+| Primitive  | When to use                                  | Important props              |
+|------------|----------------------------------------------|------------------------------|
+| Grid       | Root container (always)                      | `columns`, `gap`             |
+| Card       | Frame with title around each piece of content | `span`, `title`, `variant`   |
+| Stack      | Stack multiple cards vertically              | `gap`, `align`               |
+| Row        | Horizontal group                             | `gap`, `align`               |
+| KPI        | A single key figure                          | `label`, `field`, `format`   |
+| KPIStrip   | 2–8 key figures next to each other           | `items[]`                    |
+| List       | Clickable list (uuid required in the query)  | `rowTemplate`, `empty`       |
+| TileGrid   | Tile-based navigation                        | `tile`, `minTileWidth`       |
+| Table      | Tabular display, multiple columns            | `columns[]`, `rowKey`, `density` |
+| Markdown   | Help text, static content                    | `content`                    |
+| NavButton  | Navigation button                            | `label`, `icon`, `onClick`   |
+| Spacer     | Whitespace                                   | `size`                       |
+| Image      | Image from the bundle (`asset:`)             | `src`, `alt`, `width`        |
+| Empty      | Placeholder for an empty dataset             | `message`                    |
 
-### Click-Actions (Whitelist)
+### Click actions (whitelist)
 
-| Action            | Args                             | Effekt                                    |
+| Action            | Args                             | Effect                                    |
 |-------------------|----------------------------------|-------------------------------------------|
-| `openObject`      | `uuid`, `type`, `file?`          | Detail-View des Objekts öffnen            |
-| `openDashboard`   | `id`, `params?`                  | Anderes Dashboard laden                   |
-| `applyFilter`     | `q?`, `type?`, `file?`           | Suchfilter im Header setzen               |
-| `runQuery`        | `query`, `params?`               | Custom-Template im `_generic`-Bundle öffnen |
-| `openUrl`         | `url` (nur https://)             | Externe URL mit Bestätigung               |
-| `copyToClipboard` | `value`                          | Wert in Zwischenablage kopieren           |
+| `openObject`      | `uuid`, `type`, `file?`          | Open the object's detail view             |
+| `openDashboard`   | `id`, `params?`                  | Load another dashboard                    |
+| `applyFilter`     | `q?`, `type?`, `file?`           | Set the search filter in the header       |
+| `runQuery`        | `query`, `params?`               | Open a custom template in the `_generic` bundle |
+| `openUrl`         | `url` (https:// only)            | External URL with confirmation            |
+| `copyToClipboard` | `value`                          | Copy a value to the clipboard             |
 
-### Token-Substitution
+### Token substitution
 
-`{{field}}` wird zur Rendering-Zeit gegen den Feldwert der jeweiligen Datenzeile ersetzt.
-Optionale Filter: `{{ field | upper }}`, `{{ field | number:2 }}`, `{{ field | date:relative }}`, `{{ field | truncate:50 }}`, `{{ field | default:"-" }}`
+`{{field}}` is replaced at render time with the field value of the current data row.
+Optional filters: `{{ field | upper }}`, `{{ field | number:2 }}`, `{{ field | date:relative }}`, `{{ field | truncate:50 }}`, `{{ field | default:"-" }}`
 
-### Format-Werte für KPI/Table-Spalten
+### Format values for KPI/Table columns
 
 `number`, `badge`, `date:relative`, `date:short`, `boolean`
 
 ---
 
-## Beispiel-Durchlauf
+## Example run
 
-**Benutzer**: `/create-custom-dashboard Scripts ohne Kommentar`
+**User**: `/create-custom-dashboard Scripts without comment`
 
-**Schritt 1** — Thema klar, direkt weiter.
+**Step 1** — topic is clear, continue directly.
 
-**Schritt 2** — Query entwerfen:
+**Step 2** — draft the query:
 
 ```sql
 -- @template_type: report
--- @description: Scripts ohne Kommentar-Schritt an erster Position.
+-- @description: Scripts without a Comment step at the first position.
 -- @params: file (optional)
 
 SELECT
@@ -347,25 +422,26 @@ ORDER BY step_count DESC
 LIMIT CAST(COALESCE(getvariable('limit'), '50') AS INTEGER);
 ```
 
-Preview ausführen → Tabelle zeigen → "47 Scripts gefunden. Empfehle **List** (klickbar)."
+Run the preview → show the table → "47 scripts found. Recommend **List** (clickable)."
 
-**Schritt 3** — "List empfohlen, alternativ Table. Bitte bestätigen."
-→ Benutzer: "List passt."
+**Step 3** — "List recommended, alternative Table. Please confirm."
+→ User: "List works."
 
-**Schritt 4** — "Vorgeschlagener Name: `scripts_without_comment` / Titel: „Scripts ohne Kommentar""
-→ Benutzer: "Ja."
+**Step 4** — "Suggested name: `scripts_without_comment` / Title: "Scripts without comment""
+→ User: "Yes."
 
-**Schritt 5** — Bundle-Dateien erstellen:
-- `rest-api/templates/dashboards/scripts_without_comment/data/scripts_without_comment.sql`
-- `rest-api/templates/dashboards/scripts_without_comment/manifest.json`
-- `rest-api/templates/dashboards/scripts_without_comment/layout.json`
+**Step 5** — create the bundle files:
+- `rest-api/templates/dashboards-custom/scripts_without_comment/data/scripts_without_comment.sql`
+- `rest-api/templates/dashboards-custom/scripts_without_comment/manifest.json`
+- `rest-api/templates/dashboards-custom/scripts_without_comment/layout.json`
+- `rest-api/templates/dashboards-custom/scripts_without_comment/locales/{de,es,fr,it,nl,pt,sv,ja,ko,zh-Hans}.json`
 
 ---
 
-## Wichtige Hinweise
+## Important notes
 
-- **Erst Preview, dann speichern**: Dateien werden erst in Schritt 5 geschrieben, nach Bestätigung der Darstellung (Schritt 3) und des Namens (Schritt 4).
-- **Kein freier SQL im Bundle**: Queries ausschließlich als `.sql`-Dateien unter `data/`. Kein SQL-Code in `manifest.json` oder `layout.json`.
-- **Mehrere Datasets**: Falls der Benutzer mehr als eine Datenperspektive wünscht (z.B. Übersichts-KPI + Detailliste), mehrere SQL-Dateien und Datasets anlegen. In `layout.json` jedes Dataset in eine eigene `Card`.
-- **Cross-File**: Falls die Datenbank mehrere FileMaker-Dateien enthält, immer einen optionalen `file`-Parameter im Query einplanen.
-- **Schrittreihenfolge einhalten**: Der interaktive Dialog in Schritten 3 und 4 ist nicht optional — kein direktes Bundle-Schreiben ohne Bestätigung.
+- **Preview first, then save**: files are written only in step 5, after confirmation of the presentation (step 3) and the name (step 4).
+- **No free-form SQL in the bundle**: queries exclusively as `.sql` files under `data/`. No SQL code in `manifest.json` or `layout.json`.
+- **Multiple datasets**: if the user wants more than one data perspective (e.g. overview KPI + detail list), create multiple SQL files and datasets. In `layout.json` place each dataset in its own `Card`.
+- **Cross-file**: if the database contains multiple FileMaker files, always plan for an optional `file` parameter in the query.
+- **Keep the step order**: the interactive dialogue in steps 3 and 4 is not optional — no direct bundle writing without confirmation.

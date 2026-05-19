@@ -1,0 +1,73 @@
+{
+  "appTitle": "FileMaker Object Browser",
+  "loading": "Chargement…",
+  "retry": "Réessayer",
+  "back": "Retour",
+  "backToPrevious": "Retour à la vue précédente",
+  "open": "Ouvrir",
+  "close": "Fermer",
+  "empty": "Rien à afficher.",
+  "noData": "Aucune donnée disponible.",
+  "noEntries": "Aucune entrée.",
+  "unknown": "(inconnu)",
+  "all": "Tout",
+  "filter": "Filtre",
+  "search": "Rechercher",
+  "searchPlaceholder": "Rechercher…",
+  "yes": "Oui",
+  "no": "Non",
+  "loadError": "Échec du chargement : {{message}}",
+  "language": {
+    "label": "Langue",
+    "selectorAriaLabel": "Choisir la langue de l’interface"
+  },
+  "theme": {
+    "switchToLight": "Passer en mode clair",
+    "switchToDark":  "Passer en mode sombre"
+  },
+  "actions": {
+    "openInFileMaker": "Ouvrir dans FileMaker",
+    "copyUuid": "Copier l’UUID",
+    "expandAll": "Tout développer",
+    "collapseAll": "Tout réduire",
+    "collapseMultilineCalcs": "Réduire les calculs multilignes",
+    "fitToViewport": "Ajuster à la zone visible",
+    "fitGraph": "Ajuster le graphe",
+    "resetLayout": "Réinitialiser la disposition",
+    "clearPreselection": "Effacer la présélection",
+    "showInRelationshipGraph": "Afficher dans le graphe de relations du fichier",
+    "fit": "Ajuster",
+    "reset": "Réinitialiser",
+    "fullscreen": "Plein écran ↗",
+    "openLayoutFullscreen": "Ouvrir la mise en page en plein écran",
+    "originalSize": "100 % taille d’origine"
+  },
+  "refOriginPill": {
+    "loading": "Résolution de la référence…"
+  },
+  "hierarchy": {
+    "structurallyContains": "Contient structurellement"
+  },
+  "layout": {
+    "empty": "Cette mise en page ne contient aucun objet.",
+    "selectFile": "Sélectionner un fichier…",
+    "title": "Mise en page"
+  },
+  "relationshipGraph": {
+    "title": "Graphe de relations",
+    "fileLabel": "Fichier :",
+    "selectFile": "Sélectionner un fichier…",
+    "selectFilePrompt": "Veuillez choisir un fichier dans le sélecteur.",
+    "loading": "Chargement du graphe de relations…",
+    "noTOs": "Ce fichier ne contient aucune occurrence de table.",
+    "notImported": "Le graphe de relations n’est pas encore importé. Relancez convert-xml --batch."
+  },
+  "dependency": {
+    "empty": "Aucune dépendance."
+  },
+  "dashboard": {
+    "loading": "Chargement du tableau de bord…",
+    "loadError": "Échec du chargement : {{message}}",
+    "noData": "Aucune donnée disponible."
+  }
+}

@@ -13,6 +13,13 @@ interface ScriptViewerProps {
   tokens: ScriptTokens;
   /** Cross-Reference Highlight: Token-Match auf Tokens mit `ref.uuid ∈ Set`. */
   highlightRefUuids?: Set<string> | null;
+  /**
+   * Wird mit der Anzahl tatsächlich hervorgehobener Token-Vorkommen aufgerufen,
+   * wann immer sich Highlight-Set oder Token-Liste ändern. Für die RefOriginPill —
+   * der Container-basierte server-Match-Count (1 für Token-Container Self-Link)
+   * unterschätzt sonst die echte Anzahl Vorkommen im Script.
+   */
+  onLiveMatchCount?: (count: number) => void;
 }
 
 const VALID_MODES = new Set<ViewMode>([
@@ -29,7 +36,7 @@ const VALID_FILTER_STYLES = new Set<FilterStyle>(['dim', 'hide']);
 
 const EMPTY_TYPES: Set<RefType> = new Set();
 
-export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRefUuids }) => {
+export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRefUuids, onLiveMatchCount }) => {
   const lines = tokens.lines;
 
   const foldRanges = useMemo(() => computeFoldRanges(lines), [lines]);
@@ -220,6 +227,22 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
   // damit die DOM-Mutation der Highlight-Klassen bereits abgeschlossen ist.
   const rootRef = useRef<HTMLDivElement>(null);
   const highlightSig = highlightRefUuids ? Array.from(highlightRefUuids).sort().join(',') : '';
+
+  // Live-Match-Count: zählt Token-Refs mit UUID im Highlight-Set. Für die
+  // RefOriginPill — der server-seitige back_references-Count liefert für
+  // Token-Container nur einen Self-Link (1) als Repräsentant, nicht die
+  // tatsächliche Token-Anzahl im Script-Text.
+  const liveMatchCount = useMemo(() => {
+    if (!highlightRefUuids || highlightRefUuids.size === 0) return 0;
+    let n = 0;
+    for (const ref of allRefs) {
+      if (ref.uuid && highlightRefUuids.has(ref.uuid)) n++;
+    }
+    return n;
+  }, [allRefs, highlightRefUuids]);
+  useEffect(() => {
+    onLiveMatchCount?.(liveMatchCount);
+  }, [liveMatchCount, onLiveMatchCount]);
   useEffect(() => {
     if (!highlightSig || !rootRef.current) return;
     const id = requestAnimationFrame(() => {

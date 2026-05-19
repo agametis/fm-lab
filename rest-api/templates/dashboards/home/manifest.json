@@ -1,8 +1,8 @@
 {
   "id": "home",
   "version": "1.0.0",
-  "title": "Projektüberblick",
-  "description": "Einstiegsseite mit Kennzahlen, Top-Objekten, Health-Indikatoren und Navigation.",
+  "title": "Project overview",
+  "description": "Landing page with key metrics, top objects, health indicators and navigation.",
   "author": "fm-lab core",
   "icon": "home",
   "tags": ["home"],
@@ -28,7 +28,7 @@
   ],
   "params": [
     { "name": "file", "type": "string", "required": false,
-      "description": "Optionaler Dateifilter — leitet sich aus dem App-Filter ab." }
+      "description": "Optional file filter — derived from the app-level filter." }
   ],
   "permissions": { "read_only": true, "allow_navigation": true }
 }

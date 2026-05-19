@@ -1,0 +1,73 @@
+{
+  "appTitle": "FileMaker Object Browser",
+  "loading": "Lädt…",
+  "retry": "Erneut versuchen",
+  "back": "Zurück",
+  "backToPrevious": "Zurück zur vorherigen Ansicht",
+  "open": "Öffnen",
+  "close": "Schließen",
+  "empty": "Keine Einträge.",
+  "noData": "Keine Daten verfügbar.",
+  "noEntries": "Keine Einträge.",
+  "unknown": "(Unbekannt)",
+  "all": "Alle",
+  "filter": "Filter",
+  "search": "Suche",
+  "searchPlaceholder": "Suchen …",
+  "yes": "Ja",
+  "no": "Nein",
+  "loadError": "Fehler beim Laden: {{message}}",
+  "language": {
+    "label": "Sprache",
+    "selectorAriaLabel": "Sprache der Oberfläche wählen"
+  },
+  "theme": {
+    "switchToLight": "Zum Light-Mode wechseln",
+    "switchToDark":  "Zum Dark-Mode wechseln"
+  },
+  "actions": {
+    "openInFileMaker": "In FileMaker öffnen",
+    "copyUuid": "UUID kopieren",
+    "expandAll": "Alle aufklappen",
+    "collapseAll": "Alle zuklappen",
+    "collapseMultilineCalcs": "Mehrzeilige Calcs zuklappen",
+    "fitToViewport": "Auf Viewport zoomen",
+    "fitGraph": "Gesamten Graph einpassen",
+    "resetLayout": "Layout zurücksetzen",
+    "clearPreselection": "Vorauswahl aufheben",
+    "showInRelationshipGraph": "Im Beziehungsdiagramm der Datei anzeigen",
+    "fit": "Fit",
+    "reset": "Reset",
+    "fullscreen": "Vollbild ↗",
+    "openLayoutFullscreen": "Layout in Vollbild-Ansicht öffnen",
+    "originalSize": "100% Originalgröße"
+  },
+  "refOriginPill": {
+    "loading": "Referenz wird aufgelöst…"
+  },
+  "hierarchy": {
+    "structurallyContains": "Strukturell enthält"
+  },
+  "layout": {
+    "empty": "Dieses Layout enthält keine Objekte.",
+    "selectFile": "Datei auswählen…",
+    "title": "Layout"
+  },
+  "relationshipGraph": {
+    "title": "Beziehungsdiagramm",
+    "fileLabel": "Datei:",
+    "selectFile": "Datei auswählen…",
+    "selectFilePrompt": "Bitte eine Datei aus der Auswahl wählen.",
+    "loading": "Lade Beziehungsdiagramm…",
+    "noTOs": "Diese Datei enthält keine Table Occurrences.",
+    "notImported": "Beziehungsdiagramm noch nicht importiert. Bitte convert-xml --batch neu ausführen."
+  },
+  "dependency": {
+    "empty": "Keine Abhängigkeiten vorhanden."
+  },
+  "dashboard": {
+    "loading": "Dashboard wird geladen…",
+    "loadError": "Fehler beim Laden: {{message}}",
+    "noData": "Keine Daten verfügbar."
+  }
+}

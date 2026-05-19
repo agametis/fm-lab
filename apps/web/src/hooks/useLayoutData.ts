@@ -106,7 +106,7 @@ export function useLayoutData(uuid: string | undefined): Result {
       })
       .catch(err => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Fehler beim Laden des Layouts');
+        setError(err instanceof Error ? err.message : 'Failed to load layout');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

@@ -1,0 +1,279 @@
+{
+  "autoTable": {
+    "rowCount_one": "{{count}} entry",
+    "rowCount_other": "{{count}} entries",
+    "filteredFrom": "filtered from {{count}}",
+    "page": "Page {{current}} / {{total}}",
+    "noMatches": "No matches for “{{query}}”.",
+    "prev": "← Previous",
+    "next": "Next →"
+  },
+  "layoutPreview": {
+    "heading": "Layout view",
+    "loading": "Loading layout…",
+    "empty": "This layout has no objects."
+  },
+  "headings": {
+    "Script": "Script text",
+    "Layout": "Layout view",
+    "Field": "Field details",
+    "BaseTable": "Table details",
+    "CustomFunction": "Function details",
+    "ValueList": "Value list details"
+  },
+  "layoutCanvas": {
+    "searchPlaceholder": "Search layout object…",
+    "searchTitle": "Tab: next match · Shift+Tab: previous · Enter: open · Esc: reset",
+    "searchAria": "Search layout object",
+    "matchCount_one": "{{count}} match",
+    "matchCount_other": "{{count}} matches",
+    "labelGroupAria": "Label",
+    "labelName": "Name",
+    "labelNameTitle": "Descriptive label (field name / caption / object name)",
+    "labelType": "Type",
+    "labelTypeTitle": "Show object type as the label",
+    "stats_one": "{{count}} object · Zoom {{zoom}}%",
+    "stats_other": "{{count}} objects · Zoom {{zoom}}%"
+  },
+  "relationshipGraphCanvas": {
+    "searchPlaceholder": "Search table occurrence…",
+    "searchTitle": "Tab: next match · Shift+Tab: previous · Esc: reset",
+    "searchAria": "Search table occurrence",
+    "matchCount_one": "{{count}} match",
+    "matchCount_other": "{{count}} matches",
+    "preselectChipTitle": "Clear preselection",
+    "preselectChipAria": "Clear preselection",
+    "preselectLabel": "Preselection:",
+    "stats_one": "{{tos}} TO · {{rels}} relationship · Zoom {{zoom}}%",
+    "stats_other": "{{tos}} TOs · {{rels}} relationships · Zoom {{zoom}}%"
+  },
+  "dependencyGraph": {
+    "empty": "No dependencies present",
+    "fitTitle": "Fit the whole graph",
+    "fitAria": "Fit graph",
+    "resetTitle": "Reset layout",
+    "resetAria": "Reset layout",
+    "fit": "Fit",
+    "reset": "Reset",
+    "legendCurrent": "Current object",
+    "legendParent": "Parent",
+    "legendChild": "Child",
+    "legendCrossFile": "Cross-file",
+    "hint": "Click = navigate · {{modKey}}+Click = details · Drag = move",
+    "graphAriaLabel": "Dependency graph for {{object}}"
+  },
+  "layoutTypeFilter": {
+    "categories": {
+      "Input":    "Input",
+      "Display":  "Display",
+      "Viewer":   "Viewer",
+      "Action":   "Action",
+      "Controls": "Controls",
+      "Groups":   "Groups",
+      "Graphic":  "Graphic"
+    },
+    "types": {
+      "Edit Box":            "Edit Box",
+      "Drop-down List":      "Drop-down List",
+      "Pop-up Menu":         "Pop-up Menu",
+      "Radio Button Set":    "Radio Button Set",
+      "Checkbox Set":        "Checkbox Set",
+      "Drop-down Calendar":  "Drop-down Calendar",
+      "Concealed Edit Box":  "Concealed Edit Box",
+      "Text":                "Text",
+      "Graphic":             "Graphic",
+      "Container":           "Container",
+      "Web Viewer":          "Web Viewer",
+      "Button":              "Button",
+      "Grouped Button":      "Grouped Button",
+      "Button Bar":          "Button Bar",
+      "Popover Button":      "Popover Button",
+      "Portal":              "Portal",
+      "Panel":               "Panel",
+      "Slide Control":       "Slide Control",
+      "Tab Control":         "Tab Control",
+      "Group":               "Group",
+      "Rectangle":           "Rectangle",
+      "Line":                "Line",
+      "Oval":                "Oval",
+      "Rounded Rectangle":   "Rounded Rectangle"
+    },
+    "detailsToggleToGroups": "Collapse to groups",
+    "detailsToggleToDetails": "Show individual types",
+    "groupsLabel": "Groups",
+    "detailsLabel": "Details",
+    "clearTitle": "Clear all type filters",
+    "clearLabel": "Clear filters"
+  },
+  "referencesFilter": {
+    "searchPlaceholder": "Search references…",
+    "searchTitle": "Esc: clear input",
+    "searchAria": "Search references",
+    "clearTypesTitle": "Clear all type filters",
+    "clearTypesLabel": "Clear filters"
+  },
+  "hierarchyTree": {
+    "ariaLabel": "Object hierarchy",
+    "usedBy": "Used by ({{count}})",
+    "usedByFiltered": "Used by ({{count}} / {{total}})",
+    "uses": "Uses ({{count}})",
+    "usesFiltered": "Uses ({{count}} / {{total}})",
+    "structurallyContainedBy": "Structurally contained by ({{count}})",
+    "structurallyContainedByFiltered": "Structurally contained by ({{count}} / {{total}})",
+    "structurallyContains": "Structurally contains ({{count}})",
+    "structurallyContainsFiltered": "Structurally contains ({{count}} / {{total}})",
+    "noReferences": "No references found",
+    "noFilterMatches": "No matches for the current filters",
+    "crossFileBadge": "Cross-file",
+    "itemAriaLabel": "Navigate to {{type}}: {{name}}"
+  },
+  "searchOptions": {
+    "regionAria": "Sort and group options",
+    "sortLabel": "Sort:",
+    "groupLabel": "Group:",
+    "sortStandard": "Standard",
+    "sortName": "Name",
+    "sortType": "Type",
+    "sortFile": "File",
+    "groupNone": "None",
+    "groupType": "Type",
+    "groupFile": "File"
+  },
+  "fieldViewer": {
+    "ariaLabel": "Field details",
+    "fieldType": "Field type",
+    "dataType": "Data type",
+    "global": "Global",
+    "yes": "Yes",
+    "repetitions": "Repetitions",
+    "autoEnter": "Auto-enter",
+    "comment": "Comment",
+    "calculationFormula": "Calculation formula",
+    "autoEnterCalculation": "Auto-enter calculation"
+  },
+  "typeDetail": {
+    "loading": "Loading…",
+    "loadError": "Failed to load: {{message}}",
+    "noData": "No details available."
+  },
+  "refTitle": {
+    "table": "Table:",
+    "baseTable": "Base table:",
+    "scope": "Scope:",
+    "usage": "Usage:",
+    "file": "File:",
+    "crossFile": "cross-file"
+  },
+  "scriptStepLink": {
+    "navigateEnriched": "Go to pseudo object: ScriptStepType '{{name}}'",
+    "navigateFallback": "{{name}} (open pseudo-object detail page)"
+  },
+  "helpLinks": {
+    "openLocalClarisHelp": "Open local help ↗",
+    "openOnlineClarisHelp": "Open Claris help ↗",
+    "openLocalMbsHelp": "Open local MBS docs ↗",
+    "openOnlineMbsHelp": "Open MBS docs ↗",
+    "noDocs": "No documentation found.",
+    "canonical": "Canonical:"
+  },
+  "objectListItem": {
+    "usageBadge_one": "{{count}} usage",
+    "usageBadge_other": "{{count}} usages",
+    "showAria": "{{type}}: {{name}} — show",
+    "noName": "(no name)",
+    "filterByCategory": "Filter by {{category}}"
+  },
+  "scriptSearchFilter": {
+    "searchAria": "Search references",
+    "searchPlaceholder": "Search references…",
+    "clearTitle": "Clear all type filters",
+    "clearLabel": "Clear filters",
+    "commentLabel": "Comment",
+    "commentTitle": "Comment ({{count}})",
+    "typeLabels": {
+      "field":           "Field",
+      "script":          "Script",
+      "layout":          "Layout",
+      "customFunction":  "Custom Function",
+      "pluginFunction":  "Plugin function",
+      "function":        "Function",
+      "variable":        "Variable",
+      "valueList":       "Value list",
+      "tableOccurrence": "Table occurrence"
+    }
+  },
+  "settingsView": {
+    "backAria": "Back to search",
+    "backLabel": "Back",
+    "title": "Plugin management",
+    "loading": "Loading plugins…",
+    "empty": "No plugins installed.",
+    "loadError": "Failed to load",
+    "saveError": "Failed to save",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "restartRequired": "Restart required for the new status to take effect.",
+    "settingsHeading": "Settings",
+    "saveLabel": "Save settings",
+    "savingLabel": "Saving…"
+  },
+  "objectHeader": {
+    "noName": "(no name)",
+    "source": "Source:",
+    "relationshipGraphLink": "↗ Relationship graph",
+    "copyUuidAria": "Copy UUID to clipboard"
+  },
+  "scriptLine": {
+    "expand": "Expand",
+    "collapse": "Collapse"
+  },
+  "scriptViewer": {
+    "title": "Script text",
+    "stepCount_one": "({{count}} step)",
+    "stepCount_other": "({{count}} steps)",
+    "viewLabel": "View:",
+    "viewAria": "View mode",
+    "filterStyleAria": "Filter style",
+    "filterStyleTitleEnabled": "Filtered rows: dim or hide",
+    "filterStyleTitleDisabled": "Only relevant when a filter is active",
+    "filterDim": "Dim",
+    "filterHide": "Hide",
+    "modes": {
+      "normal": "Normal",
+      "compact": "Compact",
+      "commentsOnly": "Comments only",
+      "controlOnly": "Control structures only",
+      "subscriptOnly": "Sub-script calls only",
+      "assignmentsOnly": "Assignments only",
+      "executiveOnly": "Executable code only"
+    }
+  },
+  "refPill": {
+    "loading": "Resolving reference…",
+    "notFound": "Reference not found:",
+    "couldNotResolve": "Reference could not be resolved: {{message}}",
+    "label": "Reference:",
+    "highlightsCount_one": "{{count}} match highlighted",
+    "highlightsCount_other": "{{count}} matches highlighted",
+    "dismissAria": "Remove reference highlight",
+    "dismissTitle": "Remove reference highlight (Esc)"
+  },
+  "tableDetails": "Table details",
+  "scriptDetails": "Script details",
+  "fieldDetails": "Field details",
+  "layoutDetails": "Layout details",
+  "valueListDetails": "Value list details",
+  "customFunctionDetails": "Custom function details",
+  "loadingObject": "Loading object…",
+  "loadingFunction": "Loading function…",
+  "noReferences": "No references",
+  "references": "References",
+  "backReferences": "Used by",
+  "forwardReferences": "Uses",
+  "dependencies": "Dependencies",
+  "dependents": "Dependents",
+  "definition": "Definition",
+  "metadata": "Metadata",
+  "rowCount_one": "{{count}} entry",
+  "rowCount_other": "{{count}} entries"
+}

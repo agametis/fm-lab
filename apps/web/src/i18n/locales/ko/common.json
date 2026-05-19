@@ -1,0 +1,73 @@
+{
+  "appTitle": "FileMaker Object Browser",
+  "loading": "로딩 중…",
+  "retry": "다시 시도",
+  "back": "뒤로",
+  "backToPrevious": "이전 보기로 돌아가기",
+  "open": "열기",
+  "close": "닫기",
+  "empty": "표시할 항목이 없습니다.",
+  "noData": "사용 가능한 데이터가 없습니다.",
+  "noEntries": "항목이 없습니다.",
+  "unknown": "(알 수 없음)",
+  "all": "전체",
+  "filter": "필터",
+  "search": "검색",
+  "searchPlaceholder": "검색…",
+  "yes": "예",
+  "no": "아니요",
+  "loadError": "불러오기 실패: {{message}}",
+  "language": {
+    "label": "언어",
+    "selectorAriaLabel": "인터페이스 언어 선택"
+  },
+  "theme": {
+    "switchToLight": "라이트 모드로 전환",
+    "switchToDark":  "다크 모드로 전환"
+  },
+  "actions": {
+    "openInFileMaker": "FileMaker에서 열기",
+    "copyUuid": "UUID 복사",
+    "expandAll": "모두 펼치기",
+    "collapseAll": "모두 접기",
+    "collapseMultilineCalcs": "여러 줄 계산식 접기",
+    "fitToViewport": "뷰포트에 맞추기",
+    "fitGraph": "그래프 맞추기",
+    "resetLayout": "레이아웃 초기화",
+    "clearPreselection": "사전 선택 지우기",
+    "showInRelationshipGraph": "파일의 관계 그래프에 표시",
+    "fit": "맞춤",
+    "reset": "초기화",
+    "fullscreen": "전체 화면 ↗",
+    "openLayoutFullscreen": "레이아웃을 전체 화면으로 열기",
+    "originalSize": "100% 원본 크기"
+  },
+  "refOriginPill": {
+    "loading": "참조를 확인 중…"
+  },
+  "hierarchy": {
+    "structurallyContains": "구조적으로 포함"
+  },
+  "layout": {
+    "empty": "이 레이아웃에는 오브젝트가 없습니다.",
+    "selectFile": "파일 선택…",
+    "title": "레이아웃"
+  },
+  "relationshipGraph": {
+    "title": "관계 그래프",
+    "fileLabel": "파일:",
+    "selectFile": "파일 선택…",
+    "selectFilePrompt": "선택기에서 파일을 선택하세요.",
+    "loading": "관계 그래프 로딩 중…",
+    "noTOs": "이 파일에는 테이블 어커런스가 없습니다.",
+    "notImported": "관계 그래프가 아직 가져오지 않았습니다. convert-xml --batch를 다시 실행하세요."
+  },
+  "dependency": {
+    "empty": "의존성이 없습니다."
+  },
+  "dashboard": {
+    "loading": "대시보드 로딩 중…",
+    "loadError": "불러오기 실패: {{message}}",
+    "noData": "사용 가능한 데이터가 없습니다."
+  }
+}

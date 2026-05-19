@@ -5,6 +5,8 @@ const referenceService = require('../services/reference.service');
 const helpService = require('../services/help.service');
 const templateService = require('../services/template.service');
 const dashboardService = require('../services/dashboard.service');
+const dashboardI18nService = require('../services/dashboard-i18n.service');
+const pluginI18nService = require('../plugins/plugin-i18n.service');
 
 /**
  * Admin Controller
@@ -49,6 +51,8 @@ async function reload(req, res, next) {
     helpService.clearCache();
     templateService.clearCache();
     dashboardService.clearCache();
+    dashboardI18nService.clearCache();
+    pluginI18nService.clearCache();
     console.log(`Admin reload complete: ${result.tables} tables from ${result.path}`);
 
     res.json(buildSuccess({

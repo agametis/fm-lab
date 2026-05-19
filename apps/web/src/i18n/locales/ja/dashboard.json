@@ -1,0 +1,30 @@
+{
+  "cellValues": {
+    "All":          "すべて",
+    "Other":        "その他",
+    "Internal LAN": "内部 LAN",
+    "Local Import": "ローカルインポート",
+    "Localhost":    "Localhost",
+
+    "Fields without layout usage":    "レイアウトで使用されていないフィールド",
+    "Fields without comment":         "コメントのないフィールド",
+    "Scripts without callers":        "呼び出し元のないスクリプト",
+    "File-to-file relationships":     "ファイル間のリレーション",
+    "Global / superglobal variables": "グローバル / スーパーグローバル変数",
+
+    "Global and superglobal variables": "グローバルおよびスーパーグローバル変数",
+    "Script complexity per file":       "ファイルごとのスクリプト複雑度",
+
+    "Every field with an empty Field_Comment — candidates for documentation.": "Field_Comment が空のすべてのフィールド — ドキュメント化の候補。",
+    "Every field that is not displayed or read on any layout.":                "どのレイアウトにも表示・参照されないすべてのフィールド。",
+    "Scripts that are not invoked by any other script or trigger.":            "他のスクリプトやトリガーから呼び出されていないスクリプト。",
+    "Aggregated overview of cross-file references per file pair.":             "ファイルペアごとに集計したファイル間参照の概要。",
+    "Every $$ and $$$ variable with set/read statistics.":                     "すべての $$ および $$$ 変数の書込/読込統計。",
+    "Aggregated script statistics (count, average / max steps).":              "スクリプトの集計統計 (件数、平均 / 最大ステップ数)。",
+
+    "Dependencies": "依存関係",
+    "Fields":       "フィールド",
+    "Scripts":      "スクリプト",
+    "Variables":    "変数"
+  }
+}

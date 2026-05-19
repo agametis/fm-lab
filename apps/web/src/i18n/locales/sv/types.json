@@ -1,0 +1,36 @@
+{
+  "objectTypes": {
+    "BaseTable": "Bastabell",
+    "TableOccurrence": "Tabellförekomst",
+    "Relationship": "Relation",
+    "Field": "Fält",
+    "ValueList": "Värdelista",
+    "CustomFunction": "Anpassad funktion",
+    "Script": "Skript",
+    "ScriptStep": "Skriptsteg",
+    "Layout": "Layout",
+    "LayoutObject": "Layoutobjekt",
+    "LayoutPart": "Layoutsektion",
+    "Account": "Konto",
+    "PrivilegeSet": "Behörighetsuppsättning",
+    "ExtendedPrivilege": "Utökad behörighet",
+    "Theme": "Tema",
+    "CustomMenu": "Anpassad meny",
+    "ScriptTrigger": "Skriptutlösare",
+    "ExternalDataSource": "Extern datakälla",
+    "BaseDirectory": "Baskatalog",
+    "Variable": "Variabel",
+    "ScriptFolder": "Skriptmapp",
+    "LayoutFolder": "Layoutmapp",
+    "RelationshipGraph": "Relationsdiagram",
+    "BuiltinFunction": "Funktioner",
+    "PluginFunction": "MBS-funktioner",
+    "ScriptStepType": "Skriptsteg",
+    "PluginComponent": "MBS-komponenter"
+  },
+  "categoryHeader": {
+    "ScriptStepType": "Kategori",
+    "BuiltinFunction": "Kategori",
+    "PluginFunction": "Komponent"
+  }
+}

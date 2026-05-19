@@ -1,0 +1,97 @@
+{
+  "modeTabsAriaLabel": "Visningsläge",
+  "breadcrumbs": {
+    "search": "Sök",
+    "analyses": "Analyser",
+    "ariaLabel": "Brödsmulor",
+    "linkAria": "Navigera till {{label}}"
+  },
+  "errors": {
+    "noDashboardId": "Inget dashboard-id angivet.",
+    "noQueryName": "Inget frågenamn angivet."
+  },
+  "home": {
+    "title": "Hem (återställ filter)",
+    "ariaLabel": "Hem"
+  },
+  "settings": {
+    "title": "Plugin-inställningar",
+    "ariaLabel": "Plugin-inställningar"
+  },
+  "tabs": {
+    "search": "Sök",
+    "tree": "Hierarki"
+  },
+  "form": {
+    "searchLabel": "Sök efter namn:",
+    "filterLabel": "Filter:",
+    "searchPlaceholder": "t.ex. Import, Email (tomt = alla objekt)",
+    "filterPlaceholder": "Filtrera hierarkin efter namn",
+    "searchTitle": "Jokertecknet * matchar valfria tecken (t.ex. *Import, Email*). Lämna tomt för alla objekt.",
+    "filterTitle": "Objekt som innehåller den här texten markeras (även överordnade mappar)",
+    "fileLabel": "Fil:",
+    "allFiles": "Alla filer",
+    "typeLabel": "Typ:",
+    "objectTypeLabel": "Objekttyp:",
+    "allTypes": "Alla typer",
+    "usedTokensGroup": "Använda tokens",
+    "optionsClosed": "Alternativ…",
+    "optionsOpen": "Alternativ ▴"
+  },
+  "relationshipGraph": {
+    "openCardTitle": "Öppna relationsdiagrammet",
+    "selectFilePrompt": "Välj en fil ovan för att se relationsdiagrammet."
+  },
+  "list": {
+    "loading": "Läser in objekt…",
+    "loadingTokens": "Läser in tokens…",
+    "loadingMore": "Läser in fler objekt…",
+    "allLoaded": "Alla objekt inlästa",
+    "noObjects": "Inga objekt hittades"
+  },
+  "detailView": {
+    "backAria": "Tillbaka till söklistan",
+    "backLabel": "Tillbaka",
+    "objectNotFound": "Objektet hittades inte",
+    "loadingDetails": "Läser in objektdetaljer…",
+    "tabsAria": "Objektvyer",
+    "noName": "(inget namn)",
+    "tabs": {
+      "detail":     "Detaljer",
+      "references": "Referenser",
+      "graph":      "Diagram",
+      "versions":   "Versioner",
+      "notes":      "Anteckningar"
+    }
+  },
+  "pseudoToolbar": {
+    "searchLabel": "Sök:",
+    "searchPlaceholder": "Filtrera komponent…",
+    "sortLabel": "Sortera:",
+    "sortByUsage": "↓ Frekvens",
+    "sortByName": "A → Z",
+    "tokenSearchPlaceholder": "Filtrera tokennamn…",
+    "otherCategory": "Övrigt",
+    "uncategorisedTooltip": "Tokens utan kategori (kan inte filtreras)",
+    "categoryTooltip": "{{label}} — {{tokens}} tokens, {{usages}} användningar",
+    "showLess": "Mindre ▴",
+    "showMore": "Detaljer ▾ ({{count}})",
+    "clearFilters": "Rensa filter"
+  },
+  "treeSubtypes": {
+    "ScriptCatalog": "Skript",
+    "Layouts": "Layouter",
+    "CustomFunctionsCatalog": "Anpassade funktioner"
+  },
+  "folderTree": {
+    "loading": "Läser in hierarki…",
+    "empty": "Inga poster",
+    "statsFiltered": "{{visibleEntries}} / {{totalEntries}} poster, {{visibleFolders}} / {{totalFolders}} mappar",
+    "stats": "{{entries}} poster, {{folders}} mappar",
+    "expandAll": "Expandera alla",
+    "collapseAll": "Fäll ihop alla",
+    "disabledDuringFilter": "Avaktiverat vid filtrering",
+    "folderDetailsTitle": "Visa mappdetaljer",
+    "noName": "(inget namn)"
+  }
+}

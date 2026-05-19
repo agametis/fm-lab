@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "TO-DOs em scripts",
+    "description": "Conta passos de comentário com marcadores TO-DO e lista todos os scripts afetados por ficheiro."
+  },
+  "layout": {
+    "root.children[0].props.title": "Resumo de TO-DOs",
+    "root.children[0].children[0].props.items[0].label": "Linhas TO-DO",
+    "root.children[0].children[0].props.items[1].label": "Scripts",
+    "root.children[0].children[0].props.items[2].label": "Ficheiros",
+
+    "root.children[1].props.title": "Scripts com TO-DOs",
+    "root.children[1].children[0].props.columns[0].label": "Ficheiro",
+    "root.children[1].children[0].props.columns[1].label": "Nome do script",
+    "root.children[1].children[0].props.columns[2].label": "Quantidade"
+  }
+}

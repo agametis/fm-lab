@@ -49,7 +49,7 @@ export const useObjectDetails = (uuid: string | undefined): UseObjectDetailsResu
       setMeta(resultMeta);
     } catch (err) {
       console.error('Object details fetch failed:', err);
-      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Details');
+      setError(err instanceof Error ? err.message : 'Failed to load details');
     } finally {
       isFetchingRef.current = false;
       setLoading(false);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { FMObject } from '../types';
 import { Slot } from '../plugins';
 
@@ -27,6 +28,7 @@ function displayObjectType(objectType: string, sourceTable?: string | null): str
  * Plugins contribute action buttons via the `objectHeaderActions` slot.
  */
 export const ObjectHeader: React.FC<ObjectHeaderProps> = ({ object }) => {
+  const { t } = useTranslation(['common', 'detail']);
   const [copied, setCopied] = useState(false);
 
   const handleCopyUUID = async () => {
@@ -46,7 +48,7 @@ export const ObjectHeader: React.FC<ObjectHeaderProps> = ({ object }) => {
       </div>
       <div className="detail-title-row">
         <h1 id="object-title" className="detail-title">
-          {object.Object_Name || '(ohne Namen)'}
+          {object.Object_Name || t('detail:objectHeader.noName')}
         </h1>
         <Slot
           name="objectHeaderActions"
@@ -60,16 +62,16 @@ export const ObjectHeader: React.FC<ObjectHeaderProps> = ({ object }) => {
         <span className="object-type">{displayObjectType(object.Object_Type, object.Source_Table)}</span>
         {object.Source_Table && (
           <span className="detail-source">
-            Quelle: {object.Source_Table}
+            {t('detail:objectHeader.source')} {object.Source_Table}
           </span>
         )}
         {object.Object_Type === 'TableOccurrence' && object.File_Name && (
           <Link
             to={`/relationship-graph/${encodeURIComponent(object.File_Name)}?to=${encodeURIComponent(object.Object_UUID)}`}
             className="detail-rg-link"
-            title="Im Beziehungsdiagramm der Datei anzeigen"
+            title={t('common:actions.showInRelationshipGraph') as string}
           >
-            ↗ Beziehungsdiagramm
+            {t('detail:objectHeader.relationshipGraphLink')}
           </Link>
         )}
       </div>
@@ -80,8 +82,8 @@ export const ObjectHeader: React.FC<ObjectHeaderProps> = ({ object }) => {
         <button
           onClick={handleCopyUUID}
           className={`copy-button${copied ? ' copied' : ''}`}
-          aria-label="UUID in Zwischenablage kopieren"
-          title="UUID kopieren"
+          aria-label={t('detail:objectHeader.copyUuidAria') as string}
+          title={t('common:actions.copyUuid') as string}
         >
           {copied ? (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

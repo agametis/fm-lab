@@ -13,6 +13,7 @@ export { ObjectDetail } from './ObjectDetail';
 export { FolderTree } from './FolderTree';
 export type { FolderTreeSubtype } from './FolderTree';
 export { ThemeToggle } from './ThemeToggle';
+export { LanguageSelector } from './LanguageSelector';
 export { SubPageHeader } from './SubPageHeader';
 export { PseudoTokenView } from './PseudoTokenView';
 export { PseudoTokenFilterToolbar } from './PseudoTokenFilterToolbar';

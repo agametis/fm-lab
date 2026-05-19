@@ -1,0 +1,97 @@
+{
+  "modeTabsAriaLabel": "Weergavemodus",
+  "breadcrumbs": {
+    "search": "Zoeken",
+    "analyses": "Analyses",
+    "ariaLabel": "Kruimelpad",
+    "linkAria": "Navigeer naar {{label}}"
+  },
+  "errors": {
+    "noDashboardId": "Geen dashboard-id opgegeven.",
+    "noQueryName": "Geen querynaam opgegeven."
+  },
+  "home": {
+    "title": "Home (filters herstellen)",
+    "ariaLabel": "Home"
+  },
+  "settings": {
+    "title": "Plugin-instellingen",
+    "ariaLabel": "Plugin-instellingen"
+  },
+  "tabs": {
+    "search": "Zoeken",
+    "tree": "Hiërarchie"
+  },
+  "form": {
+    "searchLabel": "Zoeken op naam:",
+    "filterLabel": "Filter:",
+    "searchPlaceholder": "bv. Import, Email (leeg = alle objecten)",
+    "filterPlaceholder": "Hiërarchie filteren op naam",
+    "searchTitle": "Het wildcard * komt overeen met elk teken (bv. *Import, Email*). Laat leeg voor alle objecten.",
+    "filterTitle": "Items die deze tekst bevatten worden gemarkeerd (inclusief bovenliggende mappen)",
+    "fileLabel": "Bestand:",
+    "allFiles": "Alle bestanden",
+    "typeLabel": "Type:",
+    "objectTypeLabel": "Objecttype:",
+    "allTypes": "Alle typen",
+    "usedTokensGroup": "Gebruikte tokens",
+    "optionsClosed": "Opties…",
+    "optionsOpen": "Opties ▴"
+  },
+  "relationshipGraph": {
+    "openCardTitle": "Relatiegrafiek openen",
+    "selectFilePrompt": "Selecteer hierboven een bestand om de relatiegrafiek te zien."
+  },
+  "list": {
+    "loading": "Objecten worden geladen…",
+    "loadingTokens": "Tokens worden geladen…",
+    "loadingMore": "Meer objecten worden geladen…",
+    "allLoaded": "Alle objecten geladen",
+    "noObjects": "Geen objecten gevonden"
+  },
+  "detailView": {
+    "backAria": "Terug naar de zoeklijst",
+    "backLabel": "Terug",
+    "objectNotFound": "Object niet gevonden",
+    "loadingDetails": "Objectdetails worden geladen…",
+    "tabsAria": "Objectweergaven",
+    "noName": "(geen naam)",
+    "tabs": {
+      "detail":     "Details",
+      "references": "Referenties",
+      "graph":      "Grafiek",
+      "versions":   "Versies",
+      "notes":      "Notities"
+    }
+  },
+  "pseudoToolbar": {
+    "searchLabel": "Zoeken:",
+    "searchPlaceholder": "Component filteren…",
+    "sortLabel": "Sorteren:",
+    "sortByUsage": "↓ Frequentie",
+    "sortByName": "A → Z",
+    "tokenSearchPlaceholder": "Tokennaam filteren…",
+    "otherCategory": "Overig",
+    "uncategorisedTooltip": "Tokens zonder categorie (niet filterbaar)",
+    "categoryTooltip": "{{label}} — {{tokens}} tokens, {{usages}} gebruiken",
+    "showLess": "Minder ▴",
+    "showMore": "Details ▾ ({{count}})",
+    "clearFilters": "Filters wissen"
+  },
+  "treeSubtypes": {
+    "ScriptCatalog": "Scripts",
+    "Layouts": "Layouts",
+    "CustomFunctionsCatalog": "Aangepaste functies"
+  },
+  "folderTree": {
+    "loading": "Hiërarchie wordt geladen…",
+    "empty": "Geen vermeldingen",
+    "statsFiltered": "{{visibleEntries}} / {{totalEntries}} vermeldingen, {{visibleFolders}} / {{totalFolders}} mappen",
+    "stats": "{{entries}} vermeldingen, {{folders}} mappen",
+    "expandAll": "Alles uitvouwen",
+    "collapseAll": "Alles invouwen",
+    "disabledDuringFilter": "Uitgeschakeld tijdens filteren",
+    "folderDetailsTitle": "Mapdetails tonen",
+    "noName": "(geen naam)"
+  }
+}

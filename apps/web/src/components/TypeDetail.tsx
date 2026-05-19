@@ -20,6 +20,11 @@ interface TypeDetailProps {
    * Entfernt den ref-Param aus der URL.
    */
   onClearRef?: () => void;
+  /**
+   * Tatsächlich hervorgehobene Token-Vorkommen im jeweiligen Viewer — wird
+   * für die RefOriginPill durchgereicht (siehe ObjectDetail).
+   */
+  onLiveMatchCount?: (count: number) => void;
 }
 
 /**
@@ -33,6 +38,7 @@ export const TypeDetail: React.FC<TypeDetailProps> = ({
   highlightUuids,
   highlightText,
   onClearRef,
+  onLiveMatchCount,
 }) => {
   return (
     <ObjectDetail
@@ -41,6 +47,7 @@ export const TypeDetail: React.FC<TypeDetailProps> = ({
       highlightUuids={highlightUuids}
       highlightText={highlightText}
       onClearRef={onClearRef}
+      onLiveMatchCount={onLiveMatchCount}
     />
   );
 };

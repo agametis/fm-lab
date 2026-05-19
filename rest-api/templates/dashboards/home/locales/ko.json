@@ -1,0 +1,66 @@
+{
+  "manifest": {
+    "title": "프로젝트 개요",
+    "description": "주요 지표, 상위 오브젝트, 상태 지표 및 내비게이션을 포함한 시작 페이지입니다."
+  },
+  "layout": {
+    "root.children[0].props.title": "프로젝트 개요",
+    "root.children[0].children[0].props.items[0].label": "파일",
+    "root.children[0].children[0].props.items[1].label": "오브젝트",
+    "root.children[0].children[0].props.items[2].label": "FM 버전",
+    "root.children[0].children[0].props.items[3].label": "DDR 정보",
+    "root.children[0].children[0].props.items[4].label": "마지막 가져오기",
+
+    "root.children[1].props.title": "오브젝트",
+    "root.children[1].children[0].props.items[0].label": "스크립트",
+    "root.children[1].children[0].props.items[1].label": "필드",
+    "root.children[1].children[0].props.items[2].label": "테이블",
+    "root.children[1].children[0].props.items[3].label": "TO",
+    "root.children[1].children[0].props.items[4].label": "레이아웃",
+    "root.children[1].children[0].props.items[5].label": "사용자 함수",
+    "root.children[1].children[0].props.items[6].label": "값 목록",
+    "root.children[1].children[0].props.items[7].label": "관계",
+
+    "root.children[2].props.title": "파일",
+    "root.children[2].children[0].props.columns[0].label": "파일",
+    "root.children[2].children[0].props.columns[1].label": "FM 버전",
+    "root.children[2].children[0].props.columns[2].label": "스크립트",
+    "root.children[2].children[0].props.columns[3].label": "테이블",
+    "root.children[2].children[0].props.columns[4].label": "필드",
+    "root.children[2].children[0].props.columns[5].label": "레이아웃",
+    "root.children[2].children[0].props.columns[6].label": "CF",
+    "root.children[2].children[0].props.columns[7].label": "DDR",
+    "root.children[2].children[0].props.columns[8].label": "가져옴",
+
+    "root.children[3].children[0].props.title": "상위 스크립트",
+    "root.children[3].children[0].children[0].props.rowTemplate.secondary": "{{file}} · {{step_count}} 스텝",
+    "root.children[3].children[0].children[0].props.empty.message": "스크립트를 찾을 수 없습니다.",
+    "root.children[3].children[1].props.title": "상위 테이블",
+    "root.children[3].children[1].children[0].props.rowTemplate.secondary": "{{file}} · {{field_count}} 필드",
+    "root.children[3].children[1].children[0].props.empty.message": "테이블을 찾을 수 없습니다.",
+    "root.children[3].children[2].props.title": "상위 레이아웃",
+    "root.children[3].children[2].children[0].props.rowTemplate.secondary": "{{file}} · {{object_count}} 오브젝트",
+    "root.children[3].children[2].children[0].props.empty.message": "레이아웃을 찾을 수 없습니다.",
+    "root.children[3].children[3].props.title": "상위 사용자 정의 함수",
+    "root.children[3].children[3].children[0].props.rowTemplate.secondary": "{{file}} · {{reference_count}}회 참조됨",
+    "root.children[3].children[3].children[0].props.empty.message": "사용자 정의 함수를 찾을 수 없습니다.",
+
+    "root.children[4].props.title": "상태 및 안내",
+    "root.children[4].children[0].props.empty.message": "특이 사항이 없습니다.",
+
+    "root.children[5].props.title": "변수 핫스팟",
+    "root.children[5].children[0].props.columns[0].label": "변수",
+    "root.children[5].children[0].props.columns[1].label": "범위",
+    "root.children[5].children[0].props.columns[2].label": "쓰기",
+    "root.children[5].children[0].props.columns[3].label": "읽기",
+    "root.children[5].children[0].props.columns[4].label": "스크립트",
+    "root.children[5].children[0].props.columns[5].label": "파일",
+
+    "root.children[6].children[0].props.label": "대시보드",
+    "root.children[6].children[0].props.subtitle": "준비된 분석",
+    "root.children[7].children[0].props.label": "사용자 정의 쿼리",
+    "root.children[7].children[0].props.subtitle": "재사용 가능한 SQL 템플릿",
+
+    "root.children[8].props.content": "## 팁\n\n- **검색:** 검색창에 이름을 입력하면 오브젝트가 필터링됩니다 — 대시보드는 자동으로 숨겨집니다.\n- **파일:** 파일 표에서 행을 클릭하면 이후의 모든 보기에 파일 필터가 활성화됩니다.\n- **대시보드:** *대시보드* 타일에서는 큐레이션된 분석으로, *사용자 정의 쿼리*에서는 재사용 가능한 모든 SQL 템플릿으로 이동할 수 있습니다.\n- **세부 정보:** 상위 목록의 항목을 클릭하면 해당 오브젝트의 세부 보기가 열립니다."
+  }
+}

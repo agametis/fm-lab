@@ -1,91 +1,91 @@
 ---
 name: install-claris-docs
-description: Download and install Claris FileMaker Pro online help (help.claris.com) as a local mirror in `docs/claris-help/`. Supports 11 languages with English as the always-included reference language. Also copies the REST-API reference index DB (`fm_reference.duckdb`) into the docs directory for fast slug lookups. Maintains a manifest and per-language version markers and prompts before replacing existing language sets.
+description: Download and install Claris FileMaker Pro online help (help.claris.com) as a local mirror in `docs/claris-help/`. Supports 11 languages with English as the always-included reference language. Also copies the REST-API reference index DB (`fm_reference.duckdb`) into the docs directory for fast slug lookups. Maintains a manifest and per-language version markers and prompts before replacing existing language sets. Triggers (English): "install Claris docs", "install Claris help in German", "update the Claris help mirror". Triggers (German): "installiere die Claris-Hilfe", "Claris-Online-Hilfe auf Deutsch installieren", "Claris-Doku aktualisieren". Triggers (Spanish): "instalar la ayuda de Claris", "actualizar la ayuda Claris". Triggers (French): "installer l'aide Claris", "mettre à jour l'aide Claris". Triggers (Italian): "installa l'aiuto Claris", "aggiorna l'aiuto Claris". Triggers (Dutch): "installeer de Claris-help", "Claris-help bijwerken". Triggers (Portuguese): "instalar a ajuda Claris", "atualizar a ajuda Claris". Triggers (Swedish): "installera Claris-hjälpen", "uppdatera Claris-hjälpen". Triggers (Japanese): "Clarisヘルプをインストール", "Clarisヘルプを更新". Triggers (Korean): "Claris 도움말 설치", "Claris 도움말 업데이트". Triggers (Chinese): "安装 Claris 帮助", "更新 Claris 帮助".
 ---
 
-# Claris Online-Help Installations-Skill
+# Claris Online Help Installation Skill
 
-## Wann diesen Skill verwenden
+## When to use this skill
 
-Verwende diesen Skill, wenn:
+Use this skill when:
 
-- Die Claris-Online-Hilfe lokal als Referenz benötigt wird (für `filemaker-function-reference`, `fm-summarize`, `fm-analyze`, REST-API-Reference-Endpunkte etc.)
-- Eine neue Sprache zur bestehenden Installation hinzugefügt werden soll
-- Auf eine neuere Version der Claris-Hilfe aktualisiert werden soll
-- Nach Korruption oder versehentlichem Löschen die Doku neu installiert werden muss
-- Die Reference-Index-DB (`fm_reference.duckdb`) aktualisiert werden soll, damit Slug-Lookups (Funktion/ScriptStep → HTML-Datei) lokal per DuckDB-Query möglich sind
+- The Claris Online Help is needed locally as a reference (for `filemaker-function-reference`, `fm-summarize`, `fm-analyze`, REST API reference endpoints, etc.)
+- A new language should be added to an existing installation
+- An update to a newer version of the Claris help should be installed
+- The docs need to be reinstalled after corruption or accidental deletion
+- The reference index DB (`fm_reference.duckdb`) should be refreshed so that slug lookups (function / ScriptStep → HTML file) work locally via DuckDB queries
 
-Der Skill automatisiert:
-- Crawling der Claris-Online-Hilfe (`https://help.claris.com/<lang>/pro-help/content/index.html`)
-- Mehrsprachiger Download (10 verfügbare Sprachen plus Englisch als Referenz)
-- Mirroring inkl. CSS, JS, Bilder für offline-fähige Darstellung
-- Versions-Tracking via HTTP `Last-Modified` (pro Sprache)
-- Manifest-Pflege in `docs/claris-help/manifest.json`
-- User-Bestätigung beim Ersetzen vorhandener Sprach-Sets
-- **Kopieren der Reference-Index-DB** aus `rest-api/db/fm_reference.duckdb` nach `docs/claris-help/fm_reference.duckdb` (Standard-Schritt, deaktivierbar via `--skip-reference-db`)
+The skill automates:
+- Crawling the Claris Online Help (`https://help.claris.com/<lang>/pro-help/content/index.html`)
+- Multilingual downloads (10 available languages plus English as reference)
+- Mirroring including CSS, JS, images for offline-capable rendering
+- Version tracking via HTTP `Last-Modified` (per language)
+- Manifest maintenance in `docs/claris-help/manifest.json`
+- User confirmation when replacing existing language sets
+- **Copying the reference index DB** from `rest-api/db/fm_reference.duckdb` to `docs/claris-help/fm_reference.duckdb` (default step, can be disabled via `--skip-reference-db`)
 
-## Wichtig: Sprachauswahl
+## Important: language selection
 
-**Englisch (`en`) wird IMMER heruntergeladen** — unabhängig von der Benutzervorgabe. Das stellt sicher, dass eine konsistente Referenzsprache verfügbar ist (Slugs, kanonische Namen, Fallback bei fehlenden Übersetzungen).
+**English (`en`) is ALWAYS downloaded** — regardless of user input. This ensures a consistent reference language is available (slugs, canonical names, fallback when translations are missing).
 
-Drei Auswahl-Modi:
-- **a) Nur Englisch** — minimaler Set für CI / nicht-deutschsprachige Entwicklung
-- **b) Englisch + eine Sprache** — Standard für lokalisierte Entwicklung
-- **c) Alle Sprachen** — vollständiger Mirror (~10× Datenvolumen)
+Three selection modes:
+- **a) English only** — minimal set for CI / non-localized development
+- **b) English + one language** — default for localized development
+- **c) All languages** — full mirror (~10× the data volume)
 
-### Verfügbare Sprachen
+### Available languages
 
-| Code | Sprache              | Verfügbar | Hinweis                              |
-|------|----------------------|-----------|--------------------------------------|
-| `en` | Englisch             | immer     | Referenz, immer enthalten            |
-| `de` | Deutsch              | ✓         |                                      |
-| `es` | Spanisch             | ✓         |                                      |
-| `fr` | Französisch          | ✓         |                                      |
-| `it` | Italienisch          | ✓         |                                      |
-| `nl` | Niederländisch       | ✓         |                                      |
-| `pt` | Portugiesisch        | ✓         |                                      |
-| `sv` | Schwedisch           | ✓         |                                      |
-| `ja` | Japanisch            | ✓         |                                      |
-| `ko` | Koreanisch           | ✓         |                                      |
-| `zh` | Chinesisch (vereinf.)| ✓         | URL-Segment ist `zh` (nicht `zh-Hans`)|
+| Code | Language               | Available | Note                                     |
+|------|------------------------|-----------|------------------------------------------|
+| `en` | English                | always    | Reference, always included                |
+| `de` | German                 | ✓         |                                          |
+| `es` | Spanish                | ✓         |                                          |
+| `fr` | French                 | ✓         |                                          |
+| `it` | Italian                | ✓         |                                          |
+| `nl` | Dutch                  | ✓         |                                          |
+| `pt` | Portuguese             | ✓         |                                          |
+| `sv` | Swedish                | ✓         |                                          |
+| `ja` | Japanese               | ✓         |                                          |
+| `ko` | Korean                 | ✓         |                                          |
+| `zh` | Chinese (Simplified)   | ✓         | URL segment is `zh` (not `zh-Hans`)       |
 
 ## Workflow
 
-Wenn der Skill aufgerufen wird:
+When the skill is invoked:
 
-1. **Sprachpräferenz ermitteln** — Frage den Benutzer (per `AskUserQuestion`) nach der gewünschten Sprache, falls nicht explizit angegeben. Verfügbare Optionen:
-   - „Nur Englisch (en)"
-   - „Englisch + meine Hauptsprache" → konkrete Sprache nachfragen (de empfohlen)
-   - „Alle Sprachen"
+1. **Determine language preference** — Ask the user (via `AskUserQuestion`) for the desired language unless explicitly specified. Available options:
+   - "English only (en)"
+   - "English + my primary language" → ask which language (de recommended)
+   - "All languages"
 
-2. **Existing Docs prüfen** — Lies `docs/claris-help/manifest.json` (falls vorhanden) zur Bestimmung des aktuellen Stands.
+2. **Check existing docs** — Read `docs/claris-help/manifest.json` (if present) to determine the current state.
 
-3. **Versions-Check** — Vergleiche pro Sprache das gespeicherte Datum mit dem `Last-Modified` der `content/index.html`. Bei Update: User fragen (außer `--force`).
+3. **Version check** — Per language, compare the stored date with the `Last-Modified` of `content/index.html`. On update: ask the user (unless `--force`).
 
-4. **Crawl & Download** — Starte den Crawler pro Sprache, lade rekursiv alle `.html`-Dateien plus referenzierte Assets (CSS, JS, Bilder).
+4. **Crawl & download** — Start the crawler per language; recursively fetch all `.html` files plus referenced assets (CSS, JS, images).
 
-5. **Manifest aktualisieren** — Pro Sprache: Anzahl heruntergeladener Dateien, Zeitstempel, Quell-URL.
+5. **Update manifest** — Per language: count of downloaded files, timestamp, source URL.
 
-6. **Reporting** — Zusammenfassung mit Anzahl Sprachen, Gesamtdateien, Größe.
+6. **Reporting** — Summary with number of languages, total files, size.
 
-## Skill-Aufruf vom Assistenten
+## Skill invocation by the assistant
 
-Der Skill verwendet **AskUserQuestion** zur interaktiven Sprachauswahl. Wenn der Benutzer die Sprache explizit nennt (z.B. „install claris docs in German"), kann die Frage übersprungen werden.
+The skill uses **AskUserQuestion** for interactive language selection. If the user names the language explicitly (e.g. "install claris docs in German"), the question can be skipped.
 
-### Schritt 1: Sprachpräferenz klären
+### Step 1: Clarify language preference
 
-Verwende `AskUserQuestion` mit folgender Struktur (sofern nicht explizit angegeben):
+Use `AskUserQuestion` with the following structure (unless already specified):
 
 ```
-Question: "Welche Sprachen der Claris-Online-Hilfe sollen installiert werden? (Englisch ist immer enthalten)"
-Header:   "Sprachauswahl"
+Question: "Which Claris Online Help languages should be installed? (English is always included)"
+Header:   "Language selection"
 Options:
-  - "Englisch + Deutsch"      (Recommended)
-  - "Nur Englisch"
-  - "Alle Sprachen (10 + EN)"
+  - "English + German"          (Recommended)
+  - "English only"
+  - "All languages (10 + EN)"
 ```
 
-### Schritt 2: Skript ausführen
+### Step 2: Run the script
 
 ```bash
 # Nur Englisch
@@ -100,84 +100,84 @@ bash .claude/skills/install-claris-docs/scripts/install_claris_docs.sh --all
 # Force (Versions-Check überspringen)
 bash .claude/skills/install-claris-docs/scripts/install_claris_docs.sh --lang=de --force
 
-# Sprachen auflisten ohne zu installieren
+# List available languages without installing
 bash .claude/skills/install-claris-docs/scripts/install_claris_docs.sh --list-languages
 ```
 
-### Schritt 3: Ergebnis kommunizieren
+### Step 3: Communicate the result
 
-Das Skript gibt strukturiertes Logging aus. Berichte:
-- Welche Sprachen wurden installiert / aktualisiert / übersprungen
-- Anzahl der heruntergeladenen Seiten und Größe
-- Speicherort: `docs/claris-help/<lang>/`
+The script produces structured logging. Report:
+- Which languages were installed / updated / skipped
+- Number of downloaded pages and size
+- Location: `docs/claris-help/<lang>/`
 
-## Script-Parameter
+## Script parameters
 
-| Flag                  | Wirkung                                                                       |
+| Flag                  | Effect                                                                        |
 |-----------------------|-------------------------------------------------------------------------------|
-| `--lang=<code>`       | Eine zusätzliche Sprache zu Englisch (z.B. `--lang=de`)                       |
-| `--lang=all`          | Alle 10 verfügbaren Sprachen plus Englisch (Synonym für `--all`)              |
-| `--all`               | Alle 10 verfügbaren Sprachen plus Englisch                                    |
-| `--force`             | Versions-Check und Nachfrage überspringen — bestehende Sprach-Sets ersetzen   |
-| `--list-languages`    | Liste der verfügbaren Sprachen ausgeben (mit Verfügbarkeits-Check via HTTP)   |
-| `--max-workers=<n>`   | Anzahl paralleler Downloads pro Sprache (Default: 8)                          |
-| `--dry-run`           | Nur Crawling/Discovery durchführen, keine Dateien schreiben                   |
-| `--skip-reference-db` | Reference-DB-Kopie überspringen (Standard: immer kopieren)                    |
-| `--restart-server`    | API-Server zwingend stoppen/neustarten beim Ref-DB-Kopieren (für Edge-Cases)  |
+| `--lang=<code>`       | An additional language to English (e.g. `--lang=de`)                          |
+| `--lang=all`          | All 10 available languages plus English (synonym for `--all`)                 |
+| `--all`               | All 10 available languages plus English                                       |
+| `--force`             | Skip version check and prompt — replace existing language sets                |
+| `--list-languages`    | Print list of available languages (with availability check via HTTP)          |
+| `--max-workers=<n>`   | Number of parallel downloads per language (default: 8)                        |
+| `--dry-run`           | Only run crawling/discovery, do not write any files                           |
+| `--skip-reference-db` | Skip the reference DB copy (default: always copy)                             |
+| `--restart-server`    | Force stop/restart of the API server when copying the ref DB (for edge cases) |
 
-Ohne Parameter wird **nur Englisch** installiert (plus immer die Reference-DB, sofern vorhanden).
+Without parameters, **only English** is installed (plus always the reference DB, if present).
 
-## Verzeichnisstruktur
+## Directory structure
 
-Nach Installation:
+After installation:
 
 ```
 docs/claris-help/
-├── manifest.json                     # Globales Manifest
-├── fm_reference.duckdb               # Reference-Index-DB (Kopie aus rest-api/db/)
-├── en/                                # Englisch (Referenz, immer enthalten)
-│   ├── .version                       # JSON: Last-Modified + Datei-Counts
-│   ├── content/                       # Alle HTML-Seiten
+├── manifest.json                     # Global manifest
+├── fm_reference.duckdb               # Reference index DB (copy from rest-api/db/)
+├── en/                                # English (reference, always included)
+│   ├── .version                       # JSON: Last-Modified + file counts
+│   ├── content/                       # All HTML pages
 │   │   ├── index.html
 │   │   ├── functions-reference.html
 │   │   ├── set-variable.html
-│   │   └── ... (~1000 Dateien)
-│   ├── Resources/                     # Scripts, Templates aus ../Resources/
-│   ├── Skins/                         # CSS, Themes aus ../Skins/
-│   └── assets/                        # Globale Assets aus /assets/
-├── de/                                # Deutsch (analog)
+│   │   └── ... (~1000 files)
+│   ├── Resources/                     # Scripts, templates from ../Resources/
+│   ├── Skins/                         # CSS, themes from ../Skins/
+│   └── assets/                        # Global assets from /assets/
+├── de/                                # German (analogous)
 ├── es/
 └── ...
 ```
 
-## Reference-Index-DB
+## Reference index DB
 
-Zusätzlich zum HTML-Mirror kopiert der Skill standardmäßig die Reference-Index-Datenbank aus dem REST-API in das Docs-Verzeichnis:
+In addition to the HTML mirror, the skill by default copies the reference index database from the REST API into the docs directory:
 
 ```
 rest-api/db/fm_reference.duckdb  →  docs/claris-help/fm_reference.duckdb
 ```
 
-**Zweck:** Schnelle Identifikation relevanter HTML-Dokumente per DuckDB-Query — z.B. „Welche HTML-Datei dokumentiert die Funktion `MusterAnzahl`?" Statt Volltext-Suche im Mirror reicht ein Slug-Lookup gegen die Index-DB. Wird von `filemaker-function-reference`, `fm-summarize`, `fm-analyze` und anderen Skills genutzt, sobald sie eine Funktion oder einen ScriptStep zu einer HTML-Datei auflösen müssen.
+**Purpose:** Quickly identify relevant HTML documents via DuckDB queries — e.g. "Which HTML file documents the function `PatternCount`?" Instead of full-text searching the mirror, a slug lookup against the index DB is enough. Used by `filemaker-function-reference`, `fm-summarize`, `fm-analyze` and other skills whenever they need to resolve a function or ScriptStep to an HTML file.
 
-### Kopier-Strategie
+### Copy strategy
 
-Der REST-API-Server attached die Reference-DB im **READ\_ONLY-Modus** (`rest-api/src/config/database.js`), wodurch DuckDB keine WAL-Datei erzeugt und keinen Write-Lock hält. Eine direkte `cp`-Operation während des laufenden Servers ist daher unkritisch — der Server liest weiter aus der bisherigen Datei, das Zielverzeichnis (`docs/claris-help/`) ist unabhängig.
+The REST API server attaches the reference DB in **READ\_ONLY mode** (`rest-api/src/config/database.js`), so DuckDB does not create a WAL file and does not hold a write lock. A direct `cp` operation while the server is running is therefore safe — the server keeps reading from the existing file, and the target directory (`docs/claris-help/`) is independent.
 
-**Ablauf des Skripts:**
+**Script flow:**
 
-1. **Prüfung:** Existiert `rest-api/db/fm_reference.duckdb`?
-   - Nein → Schritt wird mit Warnung übersprungen (kein Fehler).
-2. **Direktkopie** (Standard): atomar via `*.tmp` + `mv`, ohne den Server zu berühren.
-3. **Fallback bei Fehler:** Schlägt die Direktkopie fehl und ein Server läuft auf Port 3003, werden automatisch `tools/stop-servers.sh` → Kopie → `tools/start-servers.sh` ausgeführt.
-4. **`--restart-server` Flag:** Erzwingt den Stop/Start-Zyklus auch dann, wenn die Direktkopie funktionieren würde (für Edge-Cases oder wenn der Server-Reload explizit gewünscht ist).
-5. **`--skip-reference-db` Flag:** Schritt komplett überspringen (z.B. wenn nur die HTML-Doku gespiegelt werden soll).
+1. **Check:** Does `rest-api/db/fm_reference.duckdb` exist?
+   - No → step is skipped with a warning (not an error).
+2. **Direct copy** (default): atomic via `*.tmp` + `mv`, without touching the server.
+3. **Fallback on error:** If the direct copy fails and a server is running on port 3003, automatically execute `tools/stop-servers.sh` → copy → `tools/start-servers.sh`.
+4. **`--restart-server` flag:** Force the stop/start cycle even when the direct copy would work (for edge cases or when an explicit server reload is desired).
+5. **`--skip-reference-db` flag:** Skip the step entirely (e.g. when only the HTML docs should be mirrored).
 
-### Quelle der Reference-DB
+### Source of the reference DB
 
-Die Reference-DB wird **nicht** von diesem Skill erzeugt — sie ist Teil des `rest-api/`-Setups und wird üblicherweise gemeinsam mit dem REST-API-Server verteilt. Ist `rest-api/db/fm_reference.duckdb` nicht vorhanden, ist das kein Fehlerfall: das Skript fährt mit den HTML-Downloads fort und meldet im Summary `Ref-DB: source not found — skipped`.
+The reference DB is **not** produced by this skill — it is part of the `rest-api/` setup and is typically distributed alongside the REST API server. If `rest-api/db/fm_reference.duckdb` is missing, that is not an error: the script continues with the HTML downloads and reports `Ref-DB: source not found — skipped` in the summary.
 
-### `manifest.json` Schema
+### `manifest.json` schema
 
 ```jsonc
 {
@@ -206,45 +206,45 @@ Die Reference-DB wird **nicht** von diesem Skill erzeugt — sie ist Teil des `r
 }
 ```
 
-## Voraussetzungen
+## Prerequisites
 
-- **Python 3** (für den Crawler, üblicherweise vorinstalliert auf macOS)
-- **curl** (für Version-Checks, vorinstalliert)
-- **Internet-Verbindung** zu `help.claris.com`
-- Schreibrechte auf `docs/claris-help/`
+- **Python 3** (for the crawler, usually pre-installed on macOS)
+- **curl** (for version checks, pre-installed)
+- **Internet connection** to `help.claris.com`
+- Write permissions on `docs/claris-help/`
 
-## Disk Space & Dauer
+## Disk space & duration
 
-| Set                    | Dateien | Größe (geschätzt) | Download-Dauer |
-|------------------------|---------|-------------------|----------------|
-| Nur Englisch           | ~1100   | ~50 MB            | 2-3 Minuten    |
-| Englisch + 1 Sprache   | ~2200   | ~100 MB           | 4-6 Minuten    |
-| Alle 11 Sprachen       | ~12000  | ~550 MB           | 20-30 Minuten  |
+| Set                    | Files   | Size (estimated)  | Download duration |
+|------------------------|---------|-------------------|-------------------|
+| English only           | ~1100   | ~50 MB            | 2-3 minutes       |
+| English + 1 language   | ~2200   | ~100 MB           | 4-6 minutes       |
+| All 11 languages       | ~12000  | ~550 MB           | 20-30 minutes     |
 
-Bei vorhandenem Cache (gleiche Version) wird das Re-Downloading übersprungen.
+With an existing cache (same version), re-downloading is skipped.
 
-## Error Handling
+## Error handling
 
-### Netzwerk-Fehler
-- Curl/Python urllib gibt detaillierte Fehler bei Unerreichbarkeit von `help.claris.com`
-- Pro Datei wird bis zu 3× retry (mit Backoff) versucht
-- Bei dauerhaftem Fehler einer Datei: Skript läuft weiter, markiert Sprache als `incomplete: true` im Manifest
+### Network errors
+- Curl/Python urllib reports detailed errors when `help.claris.com` is unreachable
+- Each file is retried up to 3× (with backoff)
+- On a persistent error for a file: the script continues and marks the language as `incomplete: true` in the manifest
 
-### Disk Space
-- Vor dem Download wird `df` geprüft, ob mindestens das doppelte des zu erwartenden Volumens frei ist
-- Bei Speichermangel: Abbruch mit klarer Fehlermeldung
+### Disk space
+- Before downloading, `df` is checked for at least twice the expected volume free
+- On insufficient space: abort with a clear error message
 
-### HTTP-Fehler (404, 5xx)
-- 404: einzelne fehlende Slugs werden geloggt aber nicht abgebrochen
-- 5xx: Retry; nach 3 Fehlversuchen wird die Sprache mit `incomplete: true` markiert
+### HTTP errors (404, 5xx)
+- 404: individual missing slugs are logged but do not abort
+- 5xx: retry; after 3 failed attempts the language is marked `incomplete: true`
 
-### Korrupte/unvollständige Downloads
-- Dateien werden zunächst nach `*.tmp` heruntergeladen, dann atomar umbenannt
-- Bei Abbruch verbleiben nur vollständige Dateien
+### Corrupted/incomplete downloads
+- Files are first downloaded to `*.tmp` and then renamed atomically
+- On abort, only complete files remain
 
-## Output-Format
+## Output format
 
-**Erfolgreiche Installation:**
+**Successful installation:**
 ```
 Installing Claris Online Help...
 Languages: en (always), de
@@ -267,7 +267,7 @@ SUCCESS: Claris documentation installed
   Manifest: docs/claris-help/manifest.json
 ```
 
-**Bereits aktuell:**
+**Already up to date:**
 ```
 Checking for updates...
 [en] Up to date (last-modified: Mon, 13 Jan 2026 10:15:30 GMT)
@@ -276,7 +276,7 @@ Checking for updates...
 No action needed.
 ```
 
-**Mit Update-Prompt:**
+**With update prompt:**
 ```
 Checking for updates...
 [en] Newer version available.
@@ -286,15 +286,15 @@ Replace existing 'en' docs? (y/n): y
 [en] Downloading...
 ```
 
-**Fehler:**
+**Error:**
 ```
-ERROR: [konkrete Fehlermeldung]
-[Hinweis zur Behebung]
+ERROR: [specific error message]
+[suggestion for resolution]
 ```
 
 ## Notes
 
-- Die heruntergeladenen Dateien stammen von einer öffentlich zugänglichen Quelle (Claris-Online-Hilfe). Lokale Nutzung ist üblicherweise von Claris-Doku-Lizenz gedeckt; öffentliches Re-Publishing ist NICHT zulässig.
-- Diese Dokumentation wird vom geplanten `fm_reference.duckdb`-Setup und den `/api/reference/...`-Endpunkten als HTML-Quelle für Volltext-Extraktion genutzt (siehe `project/plan_reference_data_architecture.md` im fm-lab-vscode-Repo).
-- Das Skript ist idempotent — mehrfaches Ausführen ist sicher.
-- Wenn nur einzelne Slugs fehlen oder veraltet sind, lohnt sich kein Komplett-Reinstall — der Crawler nutzt Last-Modified-Header pro Datei (HEAD-Request), um nur Geänderte zu aktualisieren.
+- The downloaded files come from a publicly accessible source (Claris Online Help). Local use is typically covered by Claris's documentation license; public re-publishing is NOT permitted.
+- This documentation is used by the `fm_reference.duckdb` setup and the `/api/reference/...` endpoints as the HTML source for full-text extraction (see `project/plan_reference_data_architecture.md` in the fm-lab-vscode repo).
+- The script is idempotent — running it multiple times is safe.
+- If only individual slugs are missing or outdated, a full reinstall is not necessary — the crawler uses Last-Modified headers per file (HEAD request) to update only changed files.

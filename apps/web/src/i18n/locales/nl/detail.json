@@ -1,0 +1,279 @@
+{
+  "autoTable": {
+    "rowCount_one": "{{count}} vermelding",
+    "rowCount_other": "{{count}} vermeldingen",
+    "filteredFrom": "gefilterd uit {{count}}",
+    "page": "Pagina {{current}} / {{total}}",
+    "noMatches": "Geen overeenkomsten voor „{{query}}”.",
+    "prev": "← Vorige",
+    "next": "Volgende →"
+  },
+  "layoutPreview": {
+    "heading": "Layout-weergave",
+    "loading": "Layout wordt geladen…",
+    "empty": "Dit layout bevat geen objecten."
+  },
+  "headings": {
+    "Script": "Scripttekst",
+    "Layout": "Layout-weergave",
+    "Field": "Velddetails",
+    "BaseTable": "Tabeldetails",
+    "CustomFunction": "Functiedetails",
+    "ValueList": "Waardelijstdetails"
+  },
+  "layoutCanvas": {
+    "searchPlaceholder": "Zoek layout-object…",
+    "searchTitle": "Tab: volgende match · Shift+Tab: vorige · Enter: openen · Esc: resetten",
+    "searchAria": "Zoek layout-object",
+    "matchCount_one": "{{count}} match",
+    "matchCount_other": "{{count}} matches",
+    "labelGroupAria": "Label",
+    "labelName": "Naam",
+    "labelNameTitle": "Beschrijvend label (veldnaam / bijschrift / objectnaam)",
+    "labelType": "Type",
+    "labelTypeTitle": "Toon objecttype als label",
+    "stats_one": "{{count}} object · Zoom {{zoom}}%",
+    "stats_other": "{{count}} objecten · Zoom {{zoom}}%"
+  },
+  "relationshipGraphCanvas": {
+    "searchPlaceholder": "Zoek table occurrence…",
+    "searchTitle": "Tab: volgende match · Shift+Tab: vorige · Esc: resetten",
+    "searchAria": "Zoek table occurrence",
+    "matchCount_one": "{{count}} match",
+    "matchCount_other": "{{count}} matches",
+    "preselectChipTitle": "Voorselectie wissen",
+    "preselectChipAria": "Voorselectie wissen",
+    "preselectLabel": "Voorselectie:",
+    "stats_one": "{{tos}} TO · {{rels}} relatie · Zoom {{zoom}}%",
+    "stats_other": "{{tos}} TO’s · {{rels}} relaties · Zoom {{zoom}}%"
+  },
+  "dependencyGraph": {
+    "empty": "Geen afhankelijkheden aanwezig",
+    "fitTitle": "Hele grafiek passend maken",
+    "fitAria": "Grafiek aanpassen",
+    "resetTitle": "Indeling herstellen",
+    "resetAria": "Indeling herstellen",
+    "fit": "Passend",
+    "reset": "Herstellen",
+    "legendCurrent": "Huidig object",
+    "legendParent": "Ouder",
+    "legendChild": "Kind",
+    "legendCrossFile": "Tussen bestanden",
+    "hint": "Klik = navigeren · {{modKey}}+Klik = details · Sleep = verplaatsen",
+    "graphAriaLabel": "Afhankelijkhedengrafiek voor {{object}}"
+  },
+  "layoutTypeFilter": {
+    "categories": {
+      "Input":    "Invoer",
+      "Display":  "Weergave",
+      "Viewer":   "Viewer",
+      "Action":   "Actie",
+      "Controls": "Bedieningselementen",
+      "Groups":   "Groepen",
+      "Graphic":  "Grafisch"
+    },
+    "types": {
+      "Edit Box":            "Invoervak",
+      "Drop-down List":      "Vervolgkeuzelijst",
+      "Pop-up Menu":         "Pop-upmenu",
+      "Radio Button Set":    "Keuzerondjes-groep",
+      "Checkbox Set":        "Selectievakjes-groep",
+      "Drop-down Calendar":  "Vervolgkeuzekalender",
+      "Concealed Edit Box":  "Verborgen invoervak",
+      "Text":                "Tekst",
+      "Graphic":             "Grafisch",
+      "Container":           "Container",
+      "Web Viewer":          "Web Viewer",
+      "Button":              "Knop",
+      "Grouped Button":      "Gegroepeerde knop",
+      "Button Bar":          "Knoppenbalk",
+      "Popover Button":      "Popover-knop",
+      "Portal":              "Portaal",
+      "Panel":               "Paneel",
+      "Slide Control":       "Schuifbediening",
+      "Tab Control":         "Tabbladbediening",
+      "Group":               "Groep",
+      "Rectangle":           "Rechthoek",
+      "Line":                "Lijn",
+      "Oval":                "Ovaal",
+      "Rounded Rectangle":   "Afgeronde rechthoek"
+    },
+    "detailsToggleToGroups": "Invouwen tot groepen",
+    "detailsToggleToDetails": "Toon individuele typen",
+    "groupsLabel": "Groepen",
+    "detailsLabel": "Details",
+    "clearTitle": "Alle typefilters wissen",
+    "clearLabel": "Filters wissen"
+  },
+  "referencesFilter": {
+    "searchPlaceholder": "Zoek referenties…",
+    "searchTitle": "Esc: invoer wissen",
+    "searchAria": "Zoek referenties",
+    "clearTypesTitle": "Alle typefilters wissen",
+    "clearTypesLabel": "Filters wissen"
+  },
+  "hierarchyTree": {
+    "ariaLabel": "Objecthiërarchie",
+    "usedBy": "Gebruikt door ({{count}})",
+    "usedByFiltered": "Gebruikt door ({{count}} / {{total}})",
+    "uses": "Gebruikt ({{count}})",
+    "usesFiltered": "Gebruikt ({{count}} / {{total}})",
+    "structurallyContainedBy": "Structureel bevat door ({{count}})",
+    "structurallyContainedByFiltered": "Structureel bevat door ({{count}} / {{total}})",
+    "structurallyContains": "Bevat structureel ({{count}})",
+    "structurallyContainsFiltered": "Bevat structureel ({{count}} / {{total}})",
+    "noReferences": "Geen referenties gevonden",
+    "noFilterMatches": "Geen matches voor de huidige filters",
+    "crossFileBadge": "Tussen bestanden",
+    "itemAriaLabel": "Navigeer naar {{type}}: {{name}}"
+  },
+  "searchOptions": {
+    "regionAria": "Sorteer- en groepeeropties",
+    "sortLabel": "Sorteren:",
+    "groupLabel": "Groeperen:",
+    "sortStandard": "Standaard",
+    "sortName": "Naam",
+    "sortType": "Type",
+    "sortFile": "Bestand",
+    "groupNone": "Geen",
+    "groupType": "Type",
+    "groupFile": "Bestand"
+  },
+  "fieldViewer": {
+    "ariaLabel": "Velddetails",
+    "fieldType": "Veldtype",
+    "dataType": "Gegevenstype",
+    "global": "Globaal",
+    "yes": "Ja",
+    "repetitions": "Herhalingen",
+    "autoEnter": "Auto-invoer",
+    "comment": "Commentaar",
+    "calculationFormula": "Berekeningsformule",
+    "autoEnterCalculation": "Auto-invoer-berekening"
+  },
+  "typeDetail": {
+    "loading": "Laden…",
+    "loadError": "Laden mislukt: {{message}}",
+    "noData": "Geen details beschikbaar."
+  },
+  "refTitle": {
+    "table": "Tabel:",
+    "baseTable": "Basistabel:",
+    "scope": "Bereik:",
+    "usage": "Gebruik:",
+    "file": "Bestand:",
+    "crossFile": "tussen bestanden"
+  },
+  "scriptStepLink": {
+    "navigateEnriched": "Ga naar pseudo-object: ScriptStepType '{{name}}'",
+    "navigateFallback": "{{name}} (open detailpagina van pseudo-object)"
+  },
+  "helpLinks": {
+    "openLocalClarisHelp": "Lokale help openen ↗",
+    "openOnlineClarisHelp": "Claris-help openen ↗",
+    "openLocalMbsHelp": "Lokale MBS-docs openen ↗",
+    "openOnlineMbsHelp": "MBS-docs openen ↗",
+    "noDocs": "Geen documentatie gevonden.",
+    "canonical": "Canoniek:"
+  },
+  "objectListItem": {
+    "usageBadge_one": "{{count}} gebruik",
+    "usageBadge_other": "{{count}} gebruiken",
+    "showAria": "{{type}}: {{name}} — tonen",
+    "noName": "(geen naam)",
+    "filterByCategory": "Filteren op {{category}}"
+  },
+  "scriptSearchFilter": {
+    "searchAria": "Zoek referenties",
+    "searchPlaceholder": "Zoek referenties…",
+    "clearTitle": "Alle typefilters wissen",
+    "clearLabel": "Filters wissen",
+    "commentLabel": "Commentaar",
+    "commentTitle": "Commentaar ({{count}})",
+    "typeLabels": {
+      "field":           "Veld",
+      "script":          "Script",
+      "layout":          "Layout",
+      "customFunction":  "Aangepaste functie",
+      "pluginFunction":  "Plugin-functie",
+      "function":        "Functie",
+      "variable":        "Variabele",
+      "valueList":       "Waardelijst",
+      "tableOccurrence": "Table occurrence"
+    }
+  },
+  "settingsView": {
+    "backAria": "Terug naar zoeken",
+    "backLabel": "Terug",
+    "title": "Pluginbeheer",
+    "loading": "Plugins worden geladen…",
+    "empty": "Geen plugins geïnstalleerd.",
+    "loadError": "Laden mislukt",
+    "saveError": "Opslaan mislukt",
+    "statusActive": "Actief",
+    "statusInactive": "Inactief",
+    "restartRequired": "Herstart vereist om de nieuwe status door te voeren.",
+    "settingsHeading": "Instellingen",
+    "saveLabel": "Instellingen opslaan",
+    "savingLabel": "Opslaan…"
+  },
+  "objectHeader": {
+    "noName": "(geen naam)",
+    "source": "Bron:",
+    "relationshipGraphLink": "↗ Relatiegrafiek",
+    "copyUuidAria": "UUID kopiëren naar klembord"
+  },
+  "scriptLine": {
+    "expand": "Uitvouwen",
+    "collapse": "Invouwen"
+  },
+  "scriptViewer": {
+    "title": "Scripttekst",
+    "stepCount_one": "({{count}} stap)",
+    "stepCount_other": "({{count}} stappen)",
+    "viewLabel": "Weergave:",
+    "viewAria": "Weergavemodus",
+    "filterStyleAria": "Filterstijl",
+    "filterStyleTitleEnabled": "Gefilterde rijen: vervagen of verbergen",
+    "filterStyleTitleDisabled": "Alleen relevant met actief filter",
+    "filterDim": "Vervagen",
+    "filterHide": "Verbergen",
+    "modes": {
+      "normal": "Normaal",
+      "compact": "Compact",
+      "commentsOnly": "Alleen commentaar",
+      "controlOnly": "Alleen controlestructuren",
+      "subscriptOnly": "Alleen sub-scriptaanroepen",
+      "assignmentsOnly": "Alleen toekenningen",
+      "executiveOnly": "Alleen uitvoerbare code"
+    }
+  },
+  "refPill": {
+    "loading": "Referentie wordt opgezocht…",
+    "notFound": "Referentie niet gevonden:",
+    "couldNotResolve": "Referentie kon niet worden opgelost: {{message}}",
+    "label": "Referentie:",
+    "highlightsCount_one": "{{count}} match gemarkeerd",
+    "highlightsCount_other": "{{count}} matches gemarkeerd",
+    "dismissAria": "Markering van referentie verwijderen",
+    "dismissTitle": "Markering van referentie verwijderen (Esc)"
+  },
+  "tableDetails": "Tabeldetails",
+  "scriptDetails": "Scriptdetails",
+  "fieldDetails": "Velddetails",
+  "layoutDetails": "Layoutdetails",
+  "valueListDetails": "Waardelijstdetails",
+  "customFunctionDetails": "Details aangepaste functie",
+  "loadingObject": "Object wordt geladen…",
+  "loadingFunction": "Functie wordt geladen…",
+  "noReferences": "Geen referenties",
+  "references": "Referenties",
+  "backReferences": "Gebruikt door",
+  "forwardReferences": "Gebruikt",
+  "dependencies": "Afhankelijkheden",
+  "dependents": "Afhankelijken",
+  "definition": "Definitie",
+  "metadata": "Metadata",
+  "rowCount_one": "{{count}} vermelding",
+  "rowCount_other": "{{count}} vermeldingen"
+}

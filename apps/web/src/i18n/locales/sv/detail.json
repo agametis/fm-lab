@@ -1,0 +1,279 @@
+{
+  "autoTable": {
+    "rowCount_one": "{{count}} post",
+    "rowCount_other": "{{count}} poster",
+    "filteredFrom": "filtrerat från {{count}}",
+    "page": "Sida {{current}} / {{total}}",
+    "noMatches": "Inga träffar för ”{{query}}”.",
+    "prev": "← Föregående",
+    "next": "Nästa →"
+  },
+  "layoutPreview": {
+    "heading": "Layoutvy",
+    "loading": "Läser in layouten…",
+    "empty": "Denna layout har inga objekt."
+  },
+  "headings": {
+    "Script": "Skripttext",
+    "Layout": "Layoutvy",
+    "Field": "Fältdetaljer",
+    "BaseTable": "Tabelldetaljer",
+    "CustomFunction": "Funktionsdetaljer",
+    "ValueList": "Värdelistedetaljer"
+  },
+  "layoutCanvas": {
+    "searchPlaceholder": "Sök layoutobjekt…",
+    "searchTitle": "Tab: nästa träff · Skift+Tab: föregående · Enter: öppna · Esc: återställ",
+    "searchAria": "Sök layoutobjekt",
+    "matchCount_one": "{{count}} träff",
+    "matchCount_other": "{{count}} träffar",
+    "labelGroupAria": "Etikett",
+    "labelName": "Namn",
+    "labelNameTitle": "Beskrivande etikett (fältnamn / rubrik / objektnamn)",
+    "labelType": "Typ",
+    "labelTypeTitle": "Visa objekttypen som etikett",
+    "stats_one": "{{count}} objekt · Zoom {{zoom}}%",
+    "stats_other": "{{count}} objekt · Zoom {{zoom}}%"
+  },
+  "relationshipGraphCanvas": {
+    "searchPlaceholder": "Sök tabellförekomst…",
+    "searchTitle": "Tab: nästa träff · Skift+Tab: föregående · Esc: återställ",
+    "searchAria": "Sök tabellförekomst",
+    "matchCount_one": "{{count}} träff",
+    "matchCount_other": "{{count}} träffar",
+    "preselectChipTitle": "Rensa förval",
+    "preselectChipAria": "Rensa förval",
+    "preselectLabel": "Förval:",
+    "stats_one": "{{tos}} TO · {{rels}} relation · Zoom {{zoom}}%",
+    "stats_other": "{{tos}} TO · {{rels}} relationer · Zoom {{zoom}}%"
+  },
+  "dependencyGraph": {
+    "empty": "Inga beroenden",
+    "fitTitle": "Anpassa hela diagrammet",
+    "fitAria": "Anpassa diagram",
+    "resetTitle": "Återställ layout",
+    "resetAria": "Återställ layout",
+    "fit": "Anpassa",
+    "reset": "Återställ",
+    "legendCurrent": "Aktuellt objekt",
+    "legendParent": "Förälder",
+    "legendChild": "Barn",
+    "legendCrossFile": "Mellan filer",
+    "hint": "Klick = navigera · {{modKey}}+klick = detaljer · Dra = flytta",
+    "graphAriaLabel": "Beroendediagram för {{object}}"
+  },
+  "layoutTypeFilter": {
+    "categories": {
+      "Input":    "Inmatning",
+      "Display":  "Visning",
+      "Viewer":   "Visare",
+      "Action":   "Åtgärd",
+      "Controls": "Kontroller",
+      "Groups":   "Grupper",
+      "Graphic":  "Grafik"
+    },
+    "types": {
+      "Edit Box":            "Inmatningsruta",
+      "Drop-down List":      "Listruta",
+      "Pop-up Menu":         "Popup-meny",
+      "Radio Button Set":    "Alternativknappsgrupp",
+      "Checkbox Set":        "Kryssrutegrupp",
+      "Drop-down Calendar":  "Listkalender",
+      "Concealed Edit Box":  "Dold inmatningsruta",
+      "Text":                "Text",
+      "Graphic":             "Grafik",
+      "Container":           "Behållare",
+      "Web Viewer":          "Webbvisare",
+      "Button":              "Knapp",
+      "Grouped Button":      "Grupperad knapp",
+      "Button Bar":          "Knapprad",
+      "Popover Button":      "Popover-knapp",
+      "Portal":              "Portal",
+      "Panel":               "Panel",
+      "Slide Control":       "Bildkontroll",
+      "Tab Control":         "Flikkontroll",
+      "Group":               "Grupp",
+      "Rectangle":           "Rektangel",
+      "Line":                "Linje",
+      "Oval":                "Oval",
+      "Rounded Rectangle":   "Rundad rektangel"
+    },
+    "detailsToggleToGroups": "Fäll ihop till grupper",
+    "detailsToggleToDetails": "Visa enskilda typer",
+    "groupsLabel": "Grupper",
+    "detailsLabel": "Detaljer",
+    "clearTitle": "Rensa alla typfilter",
+    "clearLabel": "Rensa filter"
+  },
+  "referencesFilter": {
+    "searchPlaceholder": "Sök referenser…",
+    "searchTitle": "Esc: rensa fält",
+    "searchAria": "Sök referenser",
+    "clearTypesTitle": "Rensa alla typfilter",
+    "clearTypesLabel": "Rensa filter"
+  },
+  "hierarchyTree": {
+    "ariaLabel": "Objekthierarki",
+    "usedBy": "Används av ({{count}})",
+    "usedByFiltered": "Används av ({{count}} / {{total}})",
+    "uses": "Använder ({{count}})",
+    "usesFiltered": "Använder ({{count}} / {{total}})",
+    "structurallyContainedBy": "Strukturellt innesluten av ({{count}})",
+    "structurallyContainedByFiltered": "Strukturellt innesluten av ({{count}} / {{total}})",
+    "structurallyContains": "Innehåller strukturellt ({{count}})",
+    "structurallyContainsFiltered": "Innehåller strukturellt ({{count}} / {{total}})",
+    "noReferences": "Inga referenser hittades",
+    "noFilterMatches": "Inga träffar för aktuella filter",
+    "crossFileBadge": "Mellan filer",
+    "itemAriaLabel": "Navigera till {{type}}: {{name}}"
+  },
+  "searchOptions": {
+    "regionAria": "Sorterings- och grupperingsalternativ",
+    "sortLabel": "Sortera:",
+    "groupLabel": "Gruppera:",
+    "sortStandard": "Standard",
+    "sortName": "Namn",
+    "sortType": "Typ",
+    "sortFile": "Fil",
+    "groupNone": "Ingen",
+    "groupType": "Typ",
+    "groupFile": "Fil"
+  },
+  "fieldViewer": {
+    "ariaLabel": "Fältdetaljer",
+    "fieldType": "Fälttyp",
+    "dataType": "Datatyp",
+    "global": "Global",
+    "yes": "Ja",
+    "repetitions": "Upprepningar",
+    "autoEnter": "Auto-inmatning",
+    "comment": "Kommentar",
+    "calculationFormula": "Beräkningsformel",
+    "autoEnterCalculation": "Auto-inmatningsberäkning"
+  },
+  "typeDetail": {
+    "loading": "Laddar…",
+    "loadError": "Det gick inte att läsa in: {{message}}",
+    "noData": "Inga detaljer tillgängliga."
+  },
+  "refTitle": {
+    "table": "Tabell:",
+    "baseTable": "Bastabell:",
+    "scope": "Omfång:",
+    "usage": "Användning:",
+    "file": "Fil:",
+    "crossFile": "mellan filer"
+  },
+  "scriptStepLink": {
+    "navigateEnriched": "Gå till pseudoobjekt: ScriptStepType '{{name}}'",
+    "navigateFallback": "{{name}} (öppna detaljsidan för pseudoobjektet)"
+  },
+  "helpLinks": {
+    "openLocalClarisHelp": "Öppna lokal hjälp ↗",
+    "openOnlineClarisHelp": "Öppna Claris-hjälpen ↗",
+    "openLocalMbsHelp": "Öppna lokal MBS-dokumentation ↗",
+    "openOnlineMbsHelp": "Öppna MBS-dokumentation ↗",
+    "noDocs": "Ingen dokumentation hittades.",
+    "canonical": "Kanonisk:"
+  },
+  "objectListItem": {
+    "usageBadge_one": "{{count}} användning",
+    "usageBadge_other": "{{count}} användningar",
+    "showAria": "{{type}}: {{name}} — visa",
+    "noName": "(inget namn)",
+    "filterByCategory": "Filtrera efter {{category}}"
+  },
+  "scriptSearchFilter": {
+    "searchAria": "Sök referenser",
+    "searchPlaceholder": "Sök referenser…",
+    "clearTitle": "Rensa alla typfilter",
+    "clearLabel": "Rensa filter",
+    "commentLabel": "Kommentar",
+    "commentTitle": "Kommentar ({{count}})",
+    "typeLabels": {
+      "field":           "Fält",
+      "script":          "Skript",
+      "layout":          "Layout",
+      "customFunction":  "Anpassad funktion",
+      "pluginFunction":  "Plugin-funktion",
+      "function":        "Funktion",
+      "variable":        "Variabel",
+      "valueList":       "Värdelista",
+      "tableOccurrence": "Tabellförekomst"
+    }
+  },
+  "settingsView": {
+    "backAria": "Tillbaka till sök",
+    "backLabel": "Tillbaka",
+    "title": "Plugin-hantering",
+    "loading": "Läser in plugins…",
+    "empty": "Inga plugins installerade.",
+    "loadError": "Det gick inte att läsa in",
+    "saveError": "Det gick inte att spara",
+    "statusActive": "Aktiv",
+    "statusInactive": "Inaktiv",
+    "restartRequired": "Omstart krävs för att den nya statusen ska träda i kraft.",
+    "settingsHeading": "Inställningar",
+    "saveLabel": "Spara inställningar",
+    "savingLabel": "Sparar…"
+  },
+  "objectHeader": {
+    "noName": "(inget namn)",
+    "source": "Källa:",
+    "relationshipGraphLink": "↗ Relationsdiagram",
+    "copyUuidAria": "Kopiera UUID till urklipp"
+  },
+  "scriptLine": {
+    "expand": "Expandera",
+    "collapse": "Fäll ihop"
+  },
+  "scriptViewer": {
+    "title": "Skripttext",
+    "stepCount_one": "({{count}} steg)",
+    "stepCount_other": "({{count}} steg)",
+    "viewLabel": "Vy:",
+    "viewAria": "Visningsläge",
+    "filterStyleAria": "Filterstil",
+    "filterStyleTitleEnabled": "Filtrerade rader: tona ner eller dölj",
+    "filterStyleTitleDisabled": "Relevant endast när ett filter är aktivt",
+    "filterDim": "Tona ner",
+    "filterHide": "Dölj",
+    "modes": {
+      "normal": "Normal",
+      "compact": "Kompakt",
+      "commentsOnly": "Endast kommentarer",
+      "controlOnly": "Endast kontrollstrukturer",
+      "subscriptOnly": "Endast subskript-anrop",
+      "assignmentsOnly": "Endast tilldelningar",
+      "executiveOnly": "Endast körbar kod"
+    }
+  },
+  "refPill": {
+    "loading": "Löser referens…",
+    "notFound": "Referens hittades inte:",
+    "couldNotResolve": "Kunde inte lösa referensen: {{message}}",
+    "label": "Referens:",
+    "highlightsCount_one": "{{count}} träff markerad",
+    "highlightsCount_other": "{{count}} träffar markerade",
+    "dismissAria": "Ta bort referensmarkering",
+    "dismissTitle": "Ta bort referensmarkering (Esc)"
+  },
+  "tableDetails": "Tabelldetaljer",
+  "scriptDetails": "Skriptdetaljer",
+  "fieldDetails": "Fältdetaljer",
+  "layoutDetails": "Layoutdetaljer",
+  "valueListDetails": "Värdelistedetaljer",
+  "customFunctionDetails": "Anpassade funktionens detaljer",
+  "loadingObject": "Läser in objekt…",
+  "loadingFunction": "Läser in funktion…",
+  "noReferences": "Inga referenser",
+  "references": "Referenser",
+  "backReferences": "Används av",
+  "forwardReferences": "Använder",
+  "dependencies": "Beroenden",
+  "dependents": "Beroende av",
+  "definition": "Definition",
+  "metadata": "Metadata",
+  "rowCount_one": "{{count}} post",
+  "rowCount_other": "{{count}} poster"
+}

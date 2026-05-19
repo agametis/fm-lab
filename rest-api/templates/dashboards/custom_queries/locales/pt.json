@@ -1,0 +1,10 @@
+{
+  "manifest": {
+    "title": "Análises e consultas personalizadas",
+    "description": "Todas as análises SQL preparadas num só ecrã."
+  },
+  "layout": {
+    "root.children[0].props.title": "Análises e consultas personalizadas",
+    "root.children[0].props.subtitle": "Clique abre a análise no renderizador genérico."
+  }
+}

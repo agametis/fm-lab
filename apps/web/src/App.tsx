@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Routes, Route, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from './api/client';
-import { OBJECT_TYPES, OBJECT_TYPE_LABELS_DE } from '@packages/shared/constants';
+import { OBJECT_TYPES } from '@packages/shared/constants';
 
-// PRD prd_pseudo_object_types_filter.md §8.1 — vier Pseudo-Typen für
-// die Sektion "Verwendete Tokens" im Type-Dropdown.
+// PRD prd_pseudo_object_types_filter.md §8.1 — four pseudo types displayed
+// in the "Used tokens" optgroup of the type dropdown.
 const PSEUDO_TYPE_GROUP = ['ScriptStepType', 'BuiltinFunction', 'PluginComponent', 'PluginFunction'] as const;
 const PSEUDO_TYPE_SET = new Set<string>(PSEUDO_TYPE_GROUP);
 import { useInfiniteSearch, useDebounce, useScrollRestore } from './hooks';
-import { VirtualList, DetailView, SearchOptions, FolderTree, ThemeToggle, PseudoTokenView, type FolderTreeSubtype } from './components';
+import { VirtualList, DetailView, SearchOptions, FolderTree, ThemeToggle, LanguageSelector, PseudoTokenView, type FolderTreeSubtype } from './components';
 import { SettingsView } from './views/SettingsView';
 import { RelationshipGraphView } from './views/RelationshipGraphView';
 import { LayoutView } from './views/LayoutView';
@@ -28,12 +29,6 @@ type FileInfo = {
 
 type ViewMode = 'search' | 'tree';
 
-const TREE_SUBTYPE_LABELS: Record<FolderTreeSubtype, string> = {
-  ScriptCatalog: 'Scripts',
-  Layouts: 'Layouts',
-  CustomFunctionsCatalog: 'Custom Functions',
-};
-
 const TREE_SUBTYPE_URL: Record<FolderTreeSubtype, string> = {
   ScriptCatalog: 'script',
   Layouts: 'layout',
@@ -50,6 +45,7 @@ function urlToSubtype(value: string | null): FolderTreeSubtype {
 
 function SearchView() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation(['common', 'nav', 'errors', 'types']);
   const [searchParams, setSearchParams] = useSearchParams();
   const { saveScrollPosition, restoreScrollPosition } = useScrollRestore();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -161,11 +157,11 @@ function SearchView() {
           setFiles(response.data.solution.files);
         }
       } catch (err) {
-        console.error('Fehler beim Laden der Dateien:', err);
+        console.error(t('errors:loadFiles'), err);
       }
     }
     loadFiles();
-  }, []);
+  }, [t]);
 
   // Restore focus to search input after loading states change
   useEffect(() => {
@@ -194,6 +190,8 @@ function SearchView() {
   }, [groupBy]);
 
   // Sort and group items for the virtual list
+  const lang = i18n.language;
+  const unknownLabel = t('common:unknown');
   const processedRows: VirtualListRow[] = useMemo(() => {
     let sorted: FMObject[];
     if (sortBy === 'standard') {
@@ -202,13 +200,13 @@ function SearchView() {
       sorted = [...items].sort((a, b) => {
         switch (sortBy) {
           case 'name':
-            return (a.Object_Name || '').localeCompare(b.Object_Name || '', 'de');
+            return (a.Object_Name || '').localeCompare(b.Object_Name || '', lang);
           case 'type':
-            return (a.Object_Type || '').localeCompare(b.Object_Type || '', 'de')
-              || (a.Object_Name || '').localeCompare(b.Object_Name || '', 'de');
+            return (a.Object_Type || '').localeCompare(b.Object_Type || '', lang)
+              || (a.Object_Name || '').localeCompare(b.Object_Name || '', lang);
           case 'file':
-            return (a.File_Name || '').localeCompare(b.File_Name || '', 'de')
-              || (a.Object_Name || '').localeCompare(b.Object_Name || '', 'de');
+            return (a.File_Name || '').localeCompare(b.File_Name || '', lang)
+              || (a.Object_Name || '').localeCompare(b.Object_Name || '', lang);
           default:
             return 0;
         }
@@ -222,13 +220,13 @@ function SearchView() {
     const groups = new Map<string, FMObject[]>();
     for (const obj of sorted) {
       const key = groupBy === 'type'
-        ? (obj.Object_Type || '(Unbekannt)')
-        : (obj.File_Name || '(Unbekannt)');
+        ? (obj.Object_Type || unknownLabel)
+        : (obj.File_Name || unknownLabel);
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(obj);
     }
 
-    const sortedKeys = [...groups.keys()].sort((a, b) => a.localeCompare(b, 'de'));
+    const sortedKeys = [...groups.keys()].sort((a, b) => a.localeCompare(b, lang));
 
     const rows: VirtualListRow[] = [];
     for (const key of sortedKeys) {
@@ -242,7 +240,7 @@ function SearchView() {
       }
     }
     return rows;
-  }, [items, sortBy, groupBy, expandedGroups]);
+  }, [items, sortBy, groupBy, expandedGroups, lang, unknownLabel]);
 
   // Scroll-Reset bei Filter-/Sort-/Group-Wechsel. Sonst bleibt nach einem weit
   // gescrollten Ergebnis die alte Scroll-Position stehen, während die neue
@@ -288,21 +286,22 @@ function SearchView() {
   }, [selectedFile, searchParams, setSearchParams]);
 
   const isTreeMode = mode === 'tree';
-  const filterLabel = isTreeMode ? 'Filter:' : 'Suche nach Name:';
+  const filterLabel = isTreeMode ? t('nav:form.filterLabel') : t('nav:form.searchLabel');
   const filterPlaceholder = isTreeMode
-    ? 'Filtere die Hierarchie nach Namen'
-    : 'z.B. Import, Email (leer = alle Objekte)';
+    ? t('nav:form.filterPlaceholder')
+    : t('nav:form.searchPlaceholder');
   const filterTitle = isTreeMode
-    ? 'Items mit diesem Text im Namen werden hervorgehoben (inkl. Eltern-Folder)'
-    : 'Wildcard * fuer beliebige Zeichen (z.B. *Import, Email*). Leer lassen fuer alle Objekte.';
+    ? t('nav:form.filterTitle')
+    : t('nav:form.searchTitle');
 
   return (
     <div className="app">
       <div className="app-title-row">
-        <h1>FileMaker Object Browser</h1>
+        <h1>{t('common:appTitle')}</h1>
         <div className="app-title-actions">
+          <LanguageSelector />
           <ThemeToggle />
-          <Link to="/settings" className="app-settings-link" aria-label="Plugin-Einstellungen" title="Plugin-Einstellungen">
+          <Link to="/settings" className="app-settings-link" aria-label={t('nav:settings.ariaLabel') as string} title={t('nav:settings.title') as string}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -311,13 +310,13 @@ function SearchView() {
         </div>
       </div>
 
-      <nav className="app-mode-tabs" role="tablist" aria-label="Ansichts-Modus">
+      <nav className="app-mode-tabs" role="tablist" aria-label={t('nav:modeTabsAriaLabel') as string}>
         <button
           type="button"
           className={`tab-button tab-button--home${!debouncedSearchName && !selectedFile && !objectType && mode === 'search' ? ' active' : ''}`}
           onClick={() => navigate('/')}
-          title="Startseite (Filter zurücksetzen)"
-          aria-label="Startseite"
+          title={t('nav:home.title') as string}
+          aria-label={t('nav:home.ariaLabel') as string}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -331,7 +330,7 @@ function SearchView() {
           className={`tab-button${mode === 'search' ? ' active' : ''}`}
           onClick={() => setMode('search')}
         >
-          Suche
+          {t('nav:tabs.search')}
         </button>
         <button
           type="button"
@@ -340,7 +339,7 @@ function SearchView() {
           className={`tab-button${mode === 'tree' ? ' active' : ''}`}
           onClick={() => setMode('tree')}
         >
-          Hierarchie
+          {t('nav:tabs.tree')}
         </button>
       </nav>
 
@@ -368,13 +367,13 @@ function SearchView() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="file-name">Datei:</label>
+            <label htmlFor="file-name">{t('nav:form.fileLabel')}</label>
             <select
               id="file-name"
               value={selectedFile}
               onChange={(e) => setSelectedFile(e.target.value)}
             >
-              <option value="">Alle Dateien</option>
+              <option value="">{t('nav:form.allFiles')}</option>
               {files.map((file) => (
                 <option key={file.File_Name || ''} value={file.File_Name || ''}>
                   {file.File_Name}
@@ -385,35 +384,35 @@ function SearchView() {
 
           {isTreeMode ? (
             <div className="form-group">
-              <label htmlFor="tree-subtype">Typ:</label>
+              <label htmlFor="tree-subtype">{t('nav:form.typeLabel')}</label>
               <select
                 id="tree-subtype"
                 value={treeSubtype}
                 onChange={(e) => setTreeSubtype(e.target.value as FolderTreeSubtype)}
               >
-                {(Object.keys(TREE_SUBTYPE_LABELS) as FolderTreeSubtype[]).map(st => (
-                  <option key={st} value={st}>{TREE_SUBTYPE_LABELS[st]}</option>
+                {(['ScriptCatalog', 'Layouts', 'CustomFunctionsCatalog'] as FolderTreeSubtype[]).map(st => (
+                  <option key={st} value={st}>{t(`nav:treeSubtypes.${st}`)}</option>
                 ))}
               </select>
             </div>
           ) : (
             <div className="form-group">
-              <label htmlFor="object-type">Objekttyp:</label>
+              <label htmlFor="object-type">{t('nav:form.objectTypeLabel')}</label>
               <select
                 id="object-type"
                 value={objectType}
                 onChange={(e) => setObjectType(e.target.value)}
               >
-                <option value="">Alle Typen</option>
-                {OBJECT_TYPES.filter(t => !PSEUDO_TYPE_SET.has(t)).map((type) => (
+                <option value="">{t('nav:form.allTypes')}</option>
+                {OBJECT_TYPES.filter(type => !PSEUDO_TYPE_SET.has(type)).map((type) => (
                   <option key={type} value={type}>
-                    {type}
+                    {t(`types:objectTypes.${type}`, { defaultValue: type })}
                   </option>
                 ))}
-                <optgroup label="Verwendete Tokens">
+                <optgroup label={t('nav:form.usedTokensGroup') as string}>
                   {PSEUDO_TYPE_GROUP.map((type) => (
                     <option key={type} value={type}>
-                      {OBJECT_TYPE_LABELS_DE[type] ?? type}
+                      {t(`types:objectTypes.${type}`, { defaultValue: type })}
                     </option>
                   ))}
                 </optgroup>
@@ -428,7 +427,7 @@ function SearchView() {
               aria-expanded={optionsOpen}
               type="button"
             >
-              {optionsOpen ? 'Optionen ▴' : 'Optionen...'}
+              {optionsOpen ? t('nav:form.optionsOpen') : t('nav:form.optionsClosed')}
             </button>
           )}
         </div>
@@ -460,7 +459,7 @@ function SearchView() {
         </div>
       )}
 
-      {/* RelationshipGraph: Spezial-Einstiegspunkt — keine Liste, sondern Direktlink */}
+      {/* RelationshipGraph: direct-entry card — no list, just a deep link */}
       {!isTreeMode && objectType === 'RelationshipGraph' && (
         <div className="relationship-graph-entry">
           {selectedFile ? (
@@ -469,14 +468,14 @@ function SearchView() {
               className="relationship-graph-entry-card"
             >
               <span className="relationship-graph-entry-title">
-                Beziehungsdiagramm öffnen
+                {t('nav:relationshipGraph.openCardTitle')}
               </span>
               <span className="relationship-graph-entry-file">{selectedFile}</span>
               <span className="relationship-graph-entry-hint">→</span>
             </Link>
           ) : (
             <div className="relationship-graph-entry-empty">
-              Bitte oben eine Datei auswählen, um das Beziehungsdiagramm anzuzeigen.
+              {t('nav:relationshipGraph.selectFilePrompt')}
             </div>
           )}
         </div>
@@ -500,8 +499,16 @@ function SearchView() {
       )}
 
       {/* Search mode: Virtual list — nur wenn Filter aktiv und kein Spezial-Typ */}
+      {/*
+        key bindet das Komponenten-Lifecycle an die aktiven Filter. Beim Wechsel
+        eines Filter-Werts (File, Type, Suchbegriff) unmountet React die alte
+        VirtualList vollständig und mountet eine frische — inklusive Virtualizer-
+        Range/Measurement-State. Verhindert Restbilder ("Fragmente") wenn die
+        neue Trefferliste deutlich kürzer ist als die alte.
+      */}
       {!isTreeMode && (debouncedSearchName || selectedFile || objectType) && !error && objectType !== 'RelationshipGraph' && !PSEUDO_TYPE_SET.has(objectType) && (
         <VirtualList
+          key={`${selectedFile}::${objectType}::${debouncedSearchName}`}
           rows={processedRows}
           itemCount={items.length}
           isLoading={loading || loadingMore}
@@ -514,10 +521,10 @@ function SearchView() {
         />
       )}
 
-      {/* Search mode: Initial loading state (nicht für Pseudo-Typen — eigener Loader) */}
+      {/* Search mode: initial loading state (pseudo types have their own loader) */}
       {!isTreeMode && (debouncedSearchName || selectedFile || objectType) && objectType !== 'RelationshipGraph' && !PSEUDO_TYPE_SET.has(objectType) && loading && items.length === 0 && (
         <div className="virtual-list-empty">
-          Lade Objekte...
+          {t('nav:list.loading')}
         </div>
       )}
 

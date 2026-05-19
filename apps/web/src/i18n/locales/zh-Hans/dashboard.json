@@ -1,0 +1,30 @@
+{
+  "cellValues": {
+    "All":          "全部",
+    "Other":        "其他",
+    "Internal LAN": "内部 LAN",
+    "Local Import": "本地导入",
+    "Localhost":    "Localhost",
+
+    "Fields without layout usage":    "未在布局中使用的字段",
+    "Fields without comment":         "没有注释的字段",
+    "Scripts without callers":        "没有调用者的脚本",
+    "File-to-file relationships":     "文件间关系",
+    "Global / superglobal variables": "全局 / 超全局变量",
+
+    "Global and superglobal variables": "全局和超全局变量",
+    "Script complexity per file":       "每个文件的脚本复杂度",
+
+    "Every field with an empty Field_Comment — candidates for documentation.": "所有 Field_Comment 为空的字段 — 文档化候选项。",
+    "Every field that is not displayed or read on any layout.":                "所有在任何布局中均未显示或读取的字段。",
+    "Scripts that are not invoked by any other script or trigger.":            "未被其他脚本或触发器调用的脚本。",
+    "Aggregated overview of cross-file references per file pair.":             "按文件对汇总的文件间引用概览。",
+    "Every $$ and $$$ variable with set/read statistics.":                     "所有 $$ 和 $$$ 变量及其写入/读取统计。",
+    "Aggregated script statistics (count, average / max steps).":              "聚合的脚本统计(数量、平均 / 最大步骤数)。",
+
+    "Dependencies": "依赖项",
+    "Fields":       "字段",
+    "Scripts":      "脚本",
+    "Variables":    "变量"
+  }
+}

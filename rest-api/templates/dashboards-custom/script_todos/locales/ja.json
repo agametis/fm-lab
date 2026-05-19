@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "スクリプト内の TO-DO",
+    "description": "TO-DO マーカー付きのコメントステップを集計し、ファイルごとに該当するスクリプトをすべて表示します。"
+  },
+  "layout": {
+    "root.children[0].props.title": "TO-DO 概要",
+    "root.children[0].children[0].props.items[0].label": "TO-DO 行数",
+    "root.children[0].children[0].props.items[1].label": "スクリプト",
+    "root.children[0].children[0].props.items[2].label": "ファイル",
+
+    "root.children[1].props.title": "TO-DO を含むスクリプト",
+    "root.children[1].children[0].props.columns[0].label": "ファイル",
+    "root.children[1].children[0].props.columns[1].label": "スクリプト名",
+    "root.children[1].children[0].props.columns[2].label": "件数"
+  }
+}

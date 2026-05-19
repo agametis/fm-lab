@@ -1,0 +1,73 @@
+{
+  "appTitle": "FileMaker Object Browser",
+  "loading": "A carregar…",
+  "retry": "Tentar novamente",
+  "back": "Voltar",
+  "backToPrevious": "Voltar à vista anterior",
+  "open": "Abrir",
+  "close": "Fechar",
+  "empty": "Nada para mostrar.",
+  "noData": "Nenhum dado disponível.",
+  "noEntries": "Sem entradas.",
+  "unknown": "(desconhecido)",
+  "all": "Tudo",
+  "filter": "Filtro",
+  "search": "Pesquisar",
+  "searchPlaceholder": "Pesquisar…",
+  "yes": "Sim",
+  "no": "Não",
+  "loadError": "Falha ao carregar: {{message}}",
+  "language": {
+    "label": "Idioma",
+    "selectorAriaLabel": "Escolher o idioma da interface"
+  },
+  "theme": {
+    "switchToLight": "Mudar para modo claro",
+    "switchToDark":  "Mudar para modo escuro"
+  },
+  "actions": {
+    "openInFileMaker": "Abrir no FileMaker",
+    "copyUuid": "Copiar UUID",
+    "expandAll": "Expandir tudo",
+    "collapseAll": "Recolher tudo",
+    "collapseMultilineCalcs": "Recolher cálculos de várias linhas",
+    "fitToViewport": "Ajustar à área visível",
+    "fitGraph": "Ajustar o grafo",
+    "resetLayout": "Repor disposição",
+    "clearPreselection": "Limpar pré-seleção",
+    "showInRelationshipGraph": "Mostrar no grafo de relações do ficheiro",
+    "fit": "Ajustar",
+    "reset": "Repor",
+    "fullscreen": "Ecrã inteiro ↗",
+    "openLayoutFullscreen": "Abrir o layout em ecrã inteiro",
+    "originalSize": "100 % tamanho original"
+  },
+  "refOriginPill": {
+    "loading": "A resolver a referência…"
+  },
+  "hierarchy": {
+    "structurallyContains": "Contém estruturalmente"
+  },
+  "layout": {
+    "empty": "Este layout não tem objetos.",
+    "selectFile": "Selecionar um ficheiro…",
+    "title": "Layout"
+  },
+  "relationshipGraph": {
+    "title": "Grafo de relações",
+    "fileLabel": "Ficheiro:",
+    "selectFile": "Selecionar um ficheiro…",
+    "selectFilePrompt": "Selecione um ficheiro no seletor.",
+    "loading": "A carregar o grafo de relações…",
+    "noTOs": "Este ficheiro não tem ocorrências de tabela.",
+    "notImported": "Grafo de relações ainda não importado. Execute novamente convert-xml --batch."
+  },
+  "dependency": {
+    "empty": "Sem dependências."
+  },
+  "dashboard": {
+    "loading": "A carregar o dashboard…",
+    "loadError": "Falha ao carregar: {{message}}",
+    "noData": "Nenhum dado disponível."
+  }
+}

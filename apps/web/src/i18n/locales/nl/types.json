@@ -1,0 +1,36 @@
+{
+  "objectTypes": {
+    "BaseTable": "Basistabel",
+    "TableOccurrence": "Table occurrence",
+    "Relationship": "Relatie",
+    "Field": "Veld",
+    "ValueList": "Waardelijst",
+    "CustomFunction": "Aangepaste functie",
+    "Script": "Script",
+    "ScriptStep": "Scriptstap",
+    "Layout": "Layout",
+    "LayoutObject": "Layout-object",
+    "LayoutPart": "Layout-sectie",
+    "Account": "Account",
+    "PrivilegeSet": "Privilegeset",
+    "ExtendedPrivilege": "Uitgebreid privilege",
+    "Theme": "Thema",
+    "CustomMenu": "Aangepast menu",
+    "ScriptTrigger": "Scripttrigger",
+    "ExternalDataSource": "Externe gegevensbron",
+    "BaseDirectory": "Basismap",
+    "Variable": "Variabele",
+    "ScriptFolder": "Scriptmap",
+    "LayoutFolder": "Layoutmap",
+    "RelationshipGraph": "Relatiegrafiek",
+    "BuiltinFunction": "Functies",
+    "PluginFunction": "MBS-functies",
+    "ScriptStepType": "Scriptstappen",
+    "PluginComponent": "MBS-componenten"
+  },
+  "categoryHeader": {
+    "ScriptStepType": "Categorie",
+    "BuiltinFunction": "Categorie",
+    "PluginFunction": "Component"
+  }
+}

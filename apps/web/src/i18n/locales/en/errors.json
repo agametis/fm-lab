@@ -1,0 +1,13 @@
+{
+  "loadFiles": "Failed to load files.",
+  "loadObjects": "Failed to load objects.",
+  "loadFieldDetails": "Failed to load field details",
+  "loadScriptDetails": "Failed to load script details",
+  "loadCustomFunctionDetails": "Failed to load custom function details",
+  "loadLayout": "Failed to load layout",
+  "loadDashboard": "Failed to load dashboard",
+  "generic": "Something went wrong. Please try again.",
+  "loadHeading": "Failed to load",
+  "retryAria": "Retry",
+  "retryLabel": "Retry"
+}

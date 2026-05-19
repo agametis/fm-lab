@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PrimitiveProps } from '../types';
 import { formatTableCell } from './_format';
 import { dispatchAction } from '../actions';
@@ -29,6 +30,8 @@ import type { ActionSpec } from '../actions';
  *   density          'compact' | 'comfortable' (Default).
  */
 export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps) {
+  const { t, i18n } = useTranslation(['common', 'detail']);
+  const lang = i18n.language;
   const props = node.props ?? {};
   const metaDatasetId = props.metaDataset as string | undefined;
   const density = (props.density as string) ?? 'comfortable';
@@ -93,8 +96,8 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
   const sorted = useMemo(() => {
     if (!sortField) return filtered;
     const dir = sortDir === 'asc' ? 1 : -1;
-    return [...filtered].sort((a, b) => compareValues(a[sortField], b[sortField]) * dir);
-  }, [filtered, sortField, sortDir]);
+    return [...filtered].sort((a, b) => compareValues(a[sortField], b[sortField], lang) * dir);
+  }, [filtered, sortField, sortDir, lang]);
 
   const total = sorted.length;
   const pageCount = paginate ? Math.max(1, Math.ceil(total / pageSize)) : 1;
@@ -120,7 +123,7 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
   }
 
   if (rows.length === 0) {
-    return <div className="dash-table__empty">Keine Einträge.</div>;
+    return <div className="dash-table__empty">{t('common:noEntries')}</div>;
   }
 
   const wrapStyle = paginate ? undefined : { maxHeight };
@@ -132,19 +135,19 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
     <div className="dash-autotable">
       <div className="dash-autotable__head">
         <span className="dash-autotable__count">
-          {total.toLocaleString('de-DE')} {total === 1 ? 'Eintrag' : 'Einträge'}
+          {t('detail:autoTable.rowCount', { count: total })}
           {search.trim() && total !== rows.length && (
-            <> · gefiltert aus {rows.length.toLocaleString('de-DE')}</>
+            <> · {t('detail:autoTable.filteredFrom', { count: rows.length })}</>
           )}
           {paginate && pageCount > 1 && (
-            <> · Seite {safePage + 1} / {pageCount}</>
+            <> · {t('detail:autoTable.page', { current: safePage + 1, total: pageCount })}</>
           )}
         </span>
         {searchable && (
           <input
             type="search"
             className="dash-autotable__search"
-            placeholder="Suchen …"
+            placeholder={t('common:searchPlaceholder') as string}
             value={search}
             onChange={e => {
               setSearch(e.target.value);
@@ -183,7 +186,7 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
                   onClick={clickable ? () => dispatchAction(clickSpec, row, { navigate }) : undefined}
                 >
                   {columns.map(c => (
-                    <td key={c.field}>{formatTableCell(row[c.field], c.format)}</td>
+                    <td key={c.field}>{formatTableCell(row[c.field], c.format, lang)}</td>
                   ))}
                 </tr>
               );
@@ -191,7 +194,7 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
             {visible.length === 0 && (
               <tr>
                 <td colSpan={columns.length} className="dash-autotable__noresult">
-                  Keine Treffer für „{search}".
+                  {t('detail:autoTable.noMatches', { query: search })}
                 </td>
               </tr>
             )}
@@ -205,7 +208,7 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
             onClick={() => setPage(p => Math.max(0, p - 1))}
             disabled={safePage === 0}
           >
-            ← Zurück
+            {t('detail:autoTable.prev')}
           </button>
           <span>{safePage + 1} / {pageCount}</span>
           <button
@@ -213,7 +216,7 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
             onClick={() => setPage(p => Math.min(pageCount - 1, p + 1))}
             disabled={safePage >= pageCount - 1}
           >
-            Weiter →
+            {t('detail:autoTable.next')}
           </button>
         </div>
       )}
@@ -235,14 +238,14 @@ function guessFormat(key: string, value: unknown): string | undefined {
   return undefined;
 }
 
-function compareValues(a: unknown, b: unknown): number {
+function compareValues(a: unknown, b: unknown, lang: string): number {
   if (a === b) return 0;
   if (a === null || a === undefined) return 1;
   if (b === null || b === undefined) return -1;
   if (typeof a === 'number' && typeof b === 'number') return a - b;
-  // BigInt aus DuckDB-Counts
+  // BigInt from DuckDB counts
   if (typeof a === 'bigint' && typeof b === 'bigint') {
     return a < b ? -1 : a > b ? 1 : 0;
   }
-  return String(a).localeCompare(String(b), 'de', { numeric: true, sensitivity: 'base' });
+  return String(a).localeCompare(String(b), lang, { numeric: true, sensitivity: 'base' });
 }

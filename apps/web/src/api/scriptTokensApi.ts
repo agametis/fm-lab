@@ -13,7 +13,7 @@ export interface ScriptTokensResponse {
 
 export async function fetchScriptTokens(
   uuid: string,
-  lang: string = 'de',
+  lang: string,
 ): Promise<ScriptTokens> {
   // ?enrich=<lang> liefert pro Script-Step die Reference-Daten
   // (stepDisplayName, stepDescription, stepHelpUrl etc.) und reichert

@@ -1,5 +1,6 @@
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { GroupedReferences, ReferenceItem } from '../types';
 import { ReferencesFilter } from './ReferencesFilter';
 import { useUrlState, stringSetCodec } from '../hooks/useUrlState';
@@ -38,6 +39,7 @@ function buildSearchText(ref: ReferenceItem): string {
  * Includes a type-filter pill bar and a live search input above the lists.
  */
 export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>(({ references }, externalRef) => {
+  const { t } = useTranslation(['detail']);
   const navigate = useNavigate();
   const { uuid: currentUuid } = useParams<{ uuid: string }>();
   // URL als Single Source of Truth — Stack erhält Such- und Filterstand
@@ -221,7 +223,10 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
       onKeyDown={(e) => handleItemKeyDown(e, ref)}
       tabIndex={0}
       role="button"
-      aria-label={`Navigiere zu ${ref.Object_Type}: ${ref.Object_Name}`}
+      aria-label={t('detail:hierarchyTree.itemAriaLabel', {
+        type: ref.Object_Type,
+        name: ref.Object_Name,
+      }) as string}
     >
       <span className="object-type">
         {ref.Object_Type}
@@ -234,7 +239,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
       </span>
       {ref.Is_Cross_File && (
         <span className="cross-file-badge">
-          Cross-File
+          {t('detail:hierarchyTree.crossFileBadge')}
         </span>
       )}
       <span className="ref-role">
@@ -269,12 +274,14 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
       <nav
         ref={treeRef}
         className="hierarchy-tree"
-        aria-label="Objekt-Hierarchie"
+        aria-label={t('detail:hierarchyTree.ariaLabel') as string}
         onKeyDown={handleTreeKeyDown}
       >
         {hasParents && (
           <section className="hierarchy-section">
-            <h2>Wird verwendet von ({matches.parent.length}{filterActive ? ` / ${references.parent.length}` : ''})</h2>
+            <h2>{filterActive
+              ? t('detail:hierarchyTree.usedByFiltered', { count: matches.parent.length, total: references.parent.length })
+              : t('detail:hierarchyTree.usedBy', { count: matches.parent.length })}</h2>
             <ul className="reference-list">
               {matches.parent.map(renderReferenceItem)}
             </ul>
@@ -283,7 +290,9 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
 
         {hasChildren && (
           <section className="hierarchy-section">
-            <h2>Verwendet ({matches.child.length}{filterActive ? ` / ${references.child.length}` : ''})</h2>
+            <h2>{filterActive
+              ? t('detail:hierarchyTree.usesFiltered', { count: matches.child.length, total: references.child.length })
+              : t('detail:hierarchyTree.uses', { count: matches.child.length })}</h2>
             <ul className="reference-list">
               {matches.child.map(renderReferenceItem)}
             </ul>
@@ -292,7 +301,9 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
 
         {hasStructParents && (
           <section className="hierarchy-section">
-            <h2>Strukturell enthalten in ({matches.structuralParent.length}{filterActive ? ` / ${references.structuralParent.length}` : ''})</h2>
+            <h2>{filterActive
+              ? t('detail:hierarchyTree.structurallyContainedByFiltered', { count: matches.structuralParent.length, total: references.structuralParent.length })
+              : t('detail:hierarchyTree.structurallyContainedBy', { count: matches.structuralParent.length })}</h2>
             <ul className="reference-list">
               {matches.structuralParent.map(renderReferenceItem)}
             </ul>
@@ -301,7 +312,9 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
 
         {hasStructChildren && (
           <section className="hierarchy-section">
-            <h2>Strukturell enthält ({matches.structuralChild.length}{filterActive ? ` / ${references.structuralChild.length}` : ''})</h2>
+            <h2>{filterActive
+              ? t('detail:hierarchyTree.structurallyContainsFiltered', { count: matches.structuralChild.length, total: references.structuralChild.length })
+              : t('detail:hierarchyTree.structurallyContains', { count: matches.structuralChild.length })}</h2>
             <ul className="reference-list">
               {matches.structuralChild.map(renderReferenceItem)}
             </ul>
@@ -310,13 +323,13 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
 
         {!hasAny && hasAnyTotal && (
           <div className="no-references">
-            Keine Treffer für die aktuellen Filter
+            {t('detail:hierarchyTree.noFilterMatches')}
           </div>
         )}
 
         {!hasAnyTotal && (
           <div className="no-references">
-            Keine Referenzen gefunden
+            {t('detail:hierarchyTree.noReferences')}
           </div>
         )}
       </nav>

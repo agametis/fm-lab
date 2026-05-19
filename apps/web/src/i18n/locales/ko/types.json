@@ -1,0 +1,36 @@
+{
+  "objectTypes": {
+    "BaseTable": "베이스 테이블",
+    "TableOccurrence": "테이블 어커런스",
+    "Relationship": "관계",
+    "Field": "필드",
+    "ValueList": "값 목록",
+    "CustomFunction": "사용자 정의 함수",
+    "Script": "스크립트",
+    "ScriptStep": "스크립트 스텝",
+    "Layout": "레이아웃",
+    "LayoutObject": "레이아웃 오브젝트",
+    "LayoutPart": "레이아웃 파트",
+    "Account": "계정",
+    "PrivilegeSet": "권한 세트",
+    "ExtendedPrivilege": "확장 권한",
+    "Theme": "테마",
+    "CustomMenu": "사용자 정의 메뉴",
+    "ScriptTrigger": "스크립트 트리거",
+    "ExternalDataSource": "외부 데이터 소스",
+    "BaseDirectory": "베이스 디렉터리",
+    "Variable": "변수",
+    "ScriptFolder": "스크립트 폴더",
+    "LayoutFolder": "레이아웃 폴더",
+    "RelationshipGraph": "관계 그래프",
+    "BuiltinFunction": "함수",
+    "PluginFunction": "MBS 함수",
+    "ScriptStepType": "스크립트 스텝",
+    "PluginComponent": "MBS 컴포넌트"
+  },
+  "categoryHeader": {
+    "ScriptStepType": "카테고리",
+    "BuiltinFunction": "카테고리",
+    "PluginFunction": "컴포넌트"
+  }
+}

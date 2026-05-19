@@ -1,107 +1,128 @@
 ---
 name: fm-summarize
-description: Erzeugt eine technische Zusammenfassung eines FileMaker-Objekts (Script, Field, Layout, CustomFunction, ValueList, BaseTable, TableOccurrence, Relationship, etc.) aus der DuckDB-Datenbank `db/fm_catalog.duckdb`. Verwendet ObjectCatalog/ObjectLinks für Auflösung und Abhängigkeiten und erzeugt eine strukturierte Markdown-Beschreibung in deutscher Sprache. Unterstützt zwei Modi — Standard (vollständig mit Ablauf und Abhängigkeiten) und Kurz (1-2 Absätze Fließtext, via `--short` Flag oder Trigger-Wörter wie "kurz", "knapp", "1-2 Sätze", "Kurzbeschreibung", "TL;DR"). Wird ausgelöst durch Anfragen wie "beschreibe Script X", "fasse das Feld X zusammen", "/fm-summarize", "erkläre mir das Layout X technisch", oder wenn ein zuvor identifiziertes FileMaker-Objekt dokumentiert werden soll.
+description: Generates a technical summary of a FileMaker object (Script, Field, Layout, CustomFunction, ValueList, BaseTable, TableOccurrence, Relationship, etc.) from the DuckDB database `db/fm_catalog.duckdb`. Uses ObjectCatalog/ObjectLinks for resolution and dependencies and produces a structured Markdown description. Supports two modes — Standard (complete with flow and dependencies) and Short (1-2 paragraphs of prose, via `--short` flag or trigger words). Triggers (English): "describe script X", "summarize field X", "/fm-summarize", "explain layout X technically". Triggers (German): "beschreibe Script X", "fasse das Feld X zusammen", "erkläre mir das Layout X technisch". Triggers (Spanish): "describe el script X", "resume el campo X". Triggers (French): "décris le script X", "résume le champ X". Triggers (Italian): "descrivi lo script X", "riassumi il campo X". Triggers (Dutch): "beschrijf script X", "vat veld X samen". Triggers (Portuguese): "descreva o script X", "resuma o campo X". Triggers (Swedish): "beskriv skript X", "sammanfatta fältet X". Triggers (Japanese): "スクリプトXを説明して", "フィールドXを要約して". Triggers (Korean): "스크립트 X 설명해 줘", "필드 X 요약해 줘". Triggers (Chinese): "描述脚本 X", "总结字段 X".
 ---
 
-# FileMaker Objekt-Zusammenfassung
+# FileMaker Object Summary
 
-Erzeuge eine strukturierte, technische Beschreibung eines FileMaker-Objekts auf Basis der DuckDB-Datenbank `db/fm_catalog.duckdb`.
+Produce a structured, technical description of a FileMaker object based on the DuckDB database `db/fm_catalog.duckdb`.
 
-## Grundregeln
+## Ground rules
 
-- **Sprache**: Deutsch
-- **Datenbank**: `db/fm_catalog.duckdb` (DuckDB CLI, NICHT MotherDuck MCP)
-- **Aufruf**: `duckdb db/fm_catalog.duckdb -c "<SQL>"` via Bash
-- **Datei-Referenzen**: Markdown-Links (z.B. `[Script_Name](db/fm_catalog.duckdb)`)
-- **Vor jeder DB-Abfrage**: Sicherstellen, dass das Objekt eindeutig identifiziert ist (siehe Schritt 1)
+- **Database / SQL**: English — table and column names of `db/fm_catalog.duckdb` are English DDL identifiers; never translate them
+- **Database**: `db/fm_catalog.duckdb` — the master catalog file, accessed read-only via the local DuckDB CLI binary (`duckdb` in PATH; fallbacks `~/.duckdb/cli/latest/duckdb`, `/opt/homebrew/bin/duckdb`, `/usr/local/bin/duckdb` — VS Code does not inherit the shell PATH). Never read from `rest-api/db/fm_catalog.duckdb` — that copy is API-internal and may be stale.
+- **Call**: `duckdb db/fm_catalog.duckdb -c "<SQL>"` via Bash
+- **File references**: Markdown links (e.g. `[Script_Name](db/fm_catalog.duckdb)`)
+- **Before every DB query**: make sure the object is uniquely identified (see Step 1)
+- **Response language**: follows the user's prompt language — see next section
 
-## Ausgabe-Modi
+## Response language
 
-Es gibt zwei Modi, die unterschiedlich umfangreiche Ausgaben erzeugen:
+Reply in the language the user used for their prompt — that is the primary signal (e.g. an English question → English answer, a Spanish question → Spanish answer, even if the project default is German). Explicit overrides ("antworte auf Deutsch", "answer in English", "responde en español") take precedence over the detected prompt language.
 
-### Standard-Modus (Default)
+**What gets translated to the response language**:
+- Markdown section headers of the report (e.g. EN `### Purpose` ↔ DE `### Zweck` ↔ ES `### Propósito` ↔ FR `### Objectif` ↔ IT `### Scopo` ↔ NL `### Doel` ↔ PT `### Propósito` ↔ SV `### Syfte` ↔ JA `### 目的` ↔ KO `### 목적` ↔ ZH `### 目的`)
+- Prose: Purpose, Notes, descriptive remarks, hedging vocabulary
+- Generic table column headings (Field / Action / Comment, etc.)
 
-Ausführliche Markdown-Zusammenfassung mit allen Sektionen — Header, Zweck, technische Details, Ablauf (bei Scripts nummeriert), Verwendet, Wird verwendet von, Hinweise. Genaues Format siehe Schritt 4.
+**What stays original / English regardless of response language**:
+- **FileMaker identifiers** (script, field, layout, table, TO, relationship names) — must match the actual FileMaker source 1:1
+- **`Link_Role` values** (`calls_script`, `sets_field`, `displays_field`, `navigates_to_layout`, …) — technical labels of the data model
+- **SQL queries, column names, table names of the DuckDB catalog** — always English (DDL identifiers)
+- **CLI flags** (`--short`) and skill-call tokens (`/fm-summarize`)
 
-### Kurz-Modus (`--short`)
+## Output modes
 
-1-2 Absätze **Fließtext**, **keine** Markdown-Sektionen, **keine** Tabellen, **keine** Code-Blöcke. Enthält nur den Kern: was das Objekt ist und was es bewirkt, optional mit grobem Aufrufer-/Aufgerufenes-Hinweis.
+There are two modes that produce outputs of differing scope:
 
-**Aktivierung des Kurz-Modus**:
+### Standard mode (default)
 
-1. **Explizites Flag** in der Skill-Aufrufung — Position frei (vor oder nach dem Objektnamen):
+Detailed Markdown summary with all sections — header, purpose, technical details, flow (numbered for scripts), Uses, Used by, notes. For the exact format see Step 4.
+
+### Short mode (`--short`)
+
+1-2 paragraphs of **prose**, **no** Markdown sections, **no** tables, **no** code blocks. Contains only the essentials: what the object is and what it does, optionally with a rough caller / callee hint.
+
+**Activating short mode**:
+
+1. **Explicit flag** in the skill call — position is free (before or after the object name):
    ```
-   /fm-summarize Faktura_RechnungDrucken --short
-   /fm-summarize --short Faktura_RechnungDrucken
+   /fm-summarize Accounting_PrintInvoice --short
+   /fm-summarize --short Accounting_PrintInvoice
    /fm-summarize --short <UUID>
    ```
 
-2. **Natürliche Sprache** — Wenn die Benutzer-Anfrage einen der folgenden Begriffe enthält, automatisch den Kurz-Modus aktivieren, auch ohne explizites `--short`:
-   - "kurz" (z.B. "beschreibe das Script X kurz")
-   - "knapp", "knappe Zusammenfassung"
-   - "1-2 Sätze", "in wenigen Sätzen"
-   - "Kurzbeschreibung"
-   - "TL;DR", "TLDR"
-   - "grob", "überblicksartig"
+2. **Natural language** — if the user request contains one of the following terms, automatically activate short mode, even without an explicit `--short`. Detection is **case-insensitive** and language-agnostic; the keyword may appear anywhere in the prompt:
+   - **English**: short, brief, brief summary, short description, concise, 1-2 sentences, in a few sentences, rough, overview, TL;DR, TLDR
+   - **German**: kurz, knapp, knappe Zusammenfassung, Kurzbeschreibung, 1-2 Sätze, in wenigen Sätzen, grob, überblicksartig
+   - **Spanish**: breve, corto, resumen breve, descripción breve, conciso, en pocas frases, 1-2 frases
+   - **French**: bref, court, résumé bref, description brève, concis, en quelques phrases, 1-2 phrases
+   - **Italian**: breve, corto, riepilogo breve, descrizione breve, conciso, in poche frasi, 1-2 frasi
+   - **Dutch**: kort, beknopt, korte samenvatting, korte beschrijving, in een paar zinnen, 1-2 zinnen
+   - **Portuguese**: breve, curto, resumo breve, descrição breve, conciso, em poucas frases, 1-2 frases
+   - **Swedish**: kort, kortfattat, kort sammanfattning, kort beskrivning, koncis, med några meningar, 1-2 meningar
+   - **Japanese**: 短く, 簡潔に, 簡単に, 要約, 短い説明, 概要, 1-2文で
+   - **Korean**: 짧게, 간단히, 간략히, 요약, 짧은 설명, 개요, 1-2문장으로
+   - **Chinese**: 简短, 简要, 简单介绍, 简短说明, 概要, 1-2句话
 
-**Modus-Unterschiede**:
+**Mode differences**:
 
-| Sektion | Standard | `--short` |
+| Section | Standard | `--short` |
 |---------|----------|-----------|
-| Header (Name, Typ, Datei, UUID) | ✓ | ✗ (nur Inline-Erwähnung im Fließtext) |
-| Zweck | ✓ | ✓ (Kern des Kurz-Outputs) |
-| Technische Details | ✓ | ✗ |
-| Ablauf (bei Scripts) | nummeriert, vollständig | ✗ (höchstens 1 Halbsatz: "Ruft 4 Sub-Scripts auf") |
-| Verwendet | gruppiert nach Link_Role | ✗ |
-| Wird verwendet von | gruppiert | ✗ (höchstens "von 3 Stellen aufgerufen") |
-| Hinweise | ✓ | nur kritisch (z.B. "DDR-Info fehlt") |
+| Header (Name, Type, File, UUID) | ✓ | ✗ (only inline mention in prose) |
+| Purpose | ✓ | ✓ (core of the short output) |
+| Technical details | ✓ | ✗ |
+| Flow (for scripts) | numbered, complete | ✗ (at most a half-sentence: "Calls 4 sub-scripts") |
+| Uses | grouped by Link_Role | ✗ |
+| Used by | grouped | ✗ (at most "called from 3 places") |
+| Notes | ✓ | only critical (e.g. "DDR-Info missing") |
 
-**Query-Effizienz im Kurz-Modus**: Im Kurz-Modus werden nur die Header-Query und ein Aggregations-Count für Aufrufer/Aufgerufenes ausgeführt. Die teuren Detail-Queries (alle Schritte mit DDR_ScriptSteps, alle Field-Verwendungen mit Kommentaren, alle Lookup-Quellen) entfallen — das spart Laufzeit und Tokens beim Lesen der Tool-Ergebnisse.
+**Query efficiency in short mode**: In short mode only the header query and an aggregation count for callers / callees are executed. The expensive detail queries (all steps with DDR_ScriptSteps, all field usages with comments, all lookup sources) are skipped — this saves runtime and tokens when reading the tool results.
 
-**Identifikation läuft in beiden Modi gleich** — auch im Kurz-Modus muss das Objekt zuerst eindeutig sein (Schritt 1 ist unverzichtbar).
+**Identification is the same in both modes** — in short mode too the object must first be unique (Step 1 is indispensable).
 
 ## Workflow
 
-### Schritt 1 — Objekt identifizieren (BLOCKIEREND)
+### Step 1 — Identify the object (BLOCKING)
 
-Bevor irgendeine Datenbankabfrage zur Beschreibung läuft, MUSS das zu beschreibende Objekt eindeutig sein.
+Before any database query for the description runs, the object to be described MUST be unique.
 
-**Eingabequellen für die Identifikation**:
-1. Explizit übergebene UUID — direkt verwendbar
-2. Explizit übergebener Name + (optional) Typ + (optional) Datei
-3. Aus dem vorherigen Konversationskontext ableitbar (z.B. ein zuvor in einer Liste angezeigtes Objekt)
+**Input sources for identification**:
+1. Explicitly passed UUID — directly usable
+2. Explicitly passed name + (optional) type + (optional) file
+3. Derivable from the previous conversation context (e.g. an object previously shown in a list)
 
-**Ablauf**:
+**Process**:
 
-1. **Wenn UUID vorliegt** → ObjectCatalog auflösen:
+1. **If a UUID is provided** → resolve via ObjectCatalog:
    ```sql
    SELECT Object_UUID, Object_Type, Object_Name, File_Name, Source_Table, Object_ID
    FROM ObjectCatalog
    WHERE Object_UUID = '<UUID>';
    ```
-   Bei Treffer: weiter mit Schritt 2.
-   Bei keinem Treffer: dem Benutzer mitteilen und nachfragen.
+   On hit: continue with Step 2.
+   On no hit: inform the user and ask back.
 
-2. **Wenn nur ein Name vorliegt** → Suche im ObjectCatalog (case-insensitive, exakte Treffer bevorzugt):
+2. **If only a name is provided** → search in ObjectCatalog (case-insensitive, exact matches preferred):
    ```sql
    SELECT Object_UUID, Object_Type, Object_Name, File_Name, Source_Table
    FROM ObjectCatalog
    WHERE LOWER(Object_Name) = LOWER('<Name>')
    ORDER BY Object_Type, File_Name;
    ```
-   - **0 Treffer**: LIKE-Fallback `LOWER(Object_Name) LIKE LOWER('%<Name>%')`. Wenn weiterhin nichts → Benutzer informieren, ähnliche Objekte vorschlagen, NICHT raten.
-   - **Genau 1 Treffer**: weiter mit Schritt 2.
-   - **>1 Treffer**: Liste aller Treffer (Typ, Name, Datei) ausgeben und Benutzer um Auswahl bitten. **NICHT** automatisch das erste Objekt nehmen.
+   - **0 matches**: LIKE fallback `LOWER(Object_Name) LIKE LOWER('%<Name>%')`. If still nothing → inform the user, suggest similar objects, DO NOT guess.
+   - **Exactly 1 match**: continue with Step 2.
+   - **>1 matches**: print a list of all matches (type, name, file) and ask the user to choose. Do **NOT** automatically take the first object.
 
-3. **Wenn Kontext mehrdeutig ist** (z.B. der Benutzer sagt "beschreibe das Script" ohne klare Referenz): Nachfragen, welches Objekt gemeint ist. Lieber einmal zu viel fragen als das falsche Objekt beschreiben.
+3. **If the context is ambiguous** (e.g. the user says "describe the script" without a clear reference): ask which object is meant. Better to ask once too often than to describe the wrong object.
 
-4. **Wenn Typ-Hint vorliegt** (z.B. "beschreibe das Layout 'Kunden'"): Filter `Object_Type = '<Type>'` ergänzen.
+4. **If a type hint is provided** (e.g. "describe the layout 'Customers'"): add the filter `Object_Type = '<Type>'`.
 
-**Wichtig**: Erst nach eindeutiger Identifikation darf der typspezifische Beschreibungs-Workflow starten.
+**Important**: Only after unique identification may the type-specific description workflow start.
 
-### Schritt 2 — Typspezifische Daten abrufen
+### Step 2 — Retrieve type-specific data
 
-Anhand von `Object_Type` den passenden Workflow wählen. Alle Queries verwenden `File_Name` UND die jeweilige Typ-UUID, weil Namen über Dateien hinweg nicht eindeutig sind.
+Based on `Object_Type` pick the matching workflow. All queries use `File_Name` AND the respective type UUID, because names are not unique across files.
 
 #### Script
 
@@ -109,14 +130,14 @@ Anhand von `Object_Type` den passenden Workflow wählen. Alle Queries verwenden 
 -- Header
 SELECT * FROM ScriptCatalog WHERE Script_UUID = '<UUID>' AND File_Name = '<File>';
 
--- Schritte (DDR_ScriptSteps liefert lesbaren Text falls vorhanden)
+-- Steps (DDR_ScriptSteps provides readable text if available)
 SELECT
     s.Step_Index,
     s.Step_Name,
     s.Is_Enabled,
     s.Variable_Name,
     s.Calculation_Text,
-    ddr.Step_Text  -- bevorzugt für Anzeige falls NOT NULL
+    ddr.Step_Text  -- preferred for display if NOT NULL
 FROM StepsForScripts s
 LEFT JOIN DDR_ScriptSteps ddr
     ON s.DDR_UUID = ddr.Step_UUID
@@ -125,11 +146,11 @@ WHERE s.Script_UUID = '<UUID>' AND s.File_Name = '<File>'
 ORDER BY s.Step_Index;
 ```
 
-Anschließend Abhängigkeiten via ObjectLinks (siehe Schritt 3). Relevante Link_Roles für Scripts:
-- **Aufgerufen vom Script**: Source_UUID = Script-UUID, Link_Role IN (`calls_script`, `sets_field`, `navigates_to_field`, `navigates_to_layout`, `sets_variable`, `reads_variable`)
-- **Wer ruft dieses Script auf**: Target_UUID = Script-UUID, Link_Role IN (`calls_script`, `triggers_script`, `trigger_script`)
+Then dependencies via ObjectLinks (see Step 3). Relevant Link_Roles for scripts:
+- **Called from the script**: Source_UUID = Script-UUID, Link_Role IN (`calls_script`, `sets_field`, `navigates_to_field`, `navigates_to_layout`, `sets_variable`, `reads_variable`)
+- **Who calls this script**: Target_UUID = Script-UUID, Link_Role IN (`calls_script`, `triggers_script`, `trigger_script`)
 
-Bei Scripts ist der Schritt-für-Schritt-Ablauf das Kernstück der Zusammenfassung. Jeden Schritt mit `Step_Index` durchnummerieren. Disabled Steps mit `(deaktiviert)` markieren.
+For scripts, the step-by-step flow is the centrepiece of the summary. Number each step with `Step_Index`. Mark disabled steps with `(disabled)`.
 
 #### Field
 
@@ -139,49 +160,49 @@ FROM FieldsForTables
 WHERE Field_UUID = '<UUID>' AND File_Name = '<File>';
 ```
 
-Auswertung der Spalten:
-- **Basis**: `Field_Name`, `Table_Name`, `Field_Type` (Normal/Calculated/Summary), `Data_Type`, `Field_Comment`, `Is_Global`, `Max_Repetitions`
-- **Calculated Field**: `Calculation_Text` (Klartext), `DDR_Hash` für JOIN auf DDR_Calculations
-- **AutoEnter**: `AutoEnter_Type` bestimmt die anzuzeigenden Detailspalten
+Evaluating the columns:
+- **Basics**: `Field_Name`, `Table_Name`, `Field_Type` (Normal/Calculated/Summary), `Data_Type`, `Field_Comment`, `Is_Global`, `Max_Repetitions`
+- **Calculated Field**: `Calculation_Text` (plain text), `DDR_Hash` for JOIN to DDR_Calculations
+- **AutoEnter**: `AutoEnter_Type` determines the detail columns to display
   - `Looked_up`: `Lookup_Field_Name`, `Lookup_TO_Name`, `Lookup_DontCopyIfEmpty`, `Lookup_NoMatchOption`
   - `Calculated`: `AE_Calc_Text`, `AE_Calc_Hash`, `AE_Calc_OverwriteExisting`, `AE_Calc_AlwaysEvaluate`
   - `ConstantData`: `AE_ConstantData`
-  - `SerialNumber`, `CreationDate`, etc.: nur Typ ausweisen
+  - `SerialNumber`, `CreationDate`, etc.: only report the type
 
-Optional (wenn `DDR_Hash` oder `AE_Calc_Hash` vorhanden): Formel-Chunks aus DDR_Calculations:
+Optional (if `DDR_Hash` or `AE_Calc_Hash` is present): formula chunks from DDR_Calculations:
 ```sql
 SELECT Chunk_Index, Chunk_Type, Chunk_Content
 FROM DDR_Calculations
-WHERE Calc_Hash = '<DDR_Hash oder AE_Calc_Hash>'
+WHERE Calc_Hash = '<DDR_Hash or AE_Calc_Hash>'
   AND File_Name = '<File>'
 ORDER BY Chunk_Index;
 ```
 
-Verwendungen via ObjectLinks: `Target_UUID = Field-UUID` zeigt, wo das Feld benutzt wird (`displays_field`, `sets_field`, `lookup_source`, `left_field`/`right_field` in Relationships, `source_field` in ValueLists, etc.).
+Usages via ObjectLinks: `Target_UUID = Field-UUID` shows where the field is used (`displays_field`, `sets_field`, `lookup_source`, `left_field`/`right_field` in Relationships, `source_field` in ValueLists, etc.).
 
 #### Layout
 
 ```sql
--- Layout selbst
+-- Layout itself
 SELECT L_ID, L_Name, L_TO_Name, File_Name FROM Layouts
 WHERE L_UUID = '<UUID>' AND File_Name = '<File>';
 
--- Sektionen (Header/Body/Footer/...)
+-- Sections (Header/Body/Footer/...)
 SELECT * FROM LayoutParts WHERE Layout_ID = <L_ID> AND File_Name = '<File>';
 
--- Objekt-Statistik (nicht alle Objekte einzeln auflisten — kann hunderte sein)
+-- Object statistics (do not list every object individually — can be hundreds)
 SELECT Object_Type, COUNT(*) AS Anzahl, MAX(Nesting_Level) AS Max_Tiefe
 FROM LayoutObjects
 WHERE Layout_ID = <L_ID> AND File_Name = '<File>'
 GROUP BY Object_Type
 ORDER BY Anzahl DESC;
 
--- Script-Trigger des Layouts
+-- Script triggers of the layout
 SELECT * FROM ScriptTriggers
 WHERE Object_UUID = '<L_UUID>' AND File_Name = '<File>';
 ```
 
-Über ObjectLinks ermitteln, welche Felder/Scripts/Wertelisten das Layout referenziert (Source_File = Layout-Datei, Source_Type = `LayoutObject`, parent_layout zeigt auf das Layout).
+Use ObjectLinks to determine which fields/scripts/value lists the layout references (Source_File = Layout file, Source_Type = `LayoutObject`, parent_layout points to the layout).
 
 #### CustomFunction
 
@@ -192,14 +213,14 @@ WHERE CF_UUID = '<UUID>' AND File_Name = '<File>';
 SELECT Calculation_Code FROM CalcsForCustomFunctions
 WHERE CF_UUID = '<UUID>' AND File_Name = '<File>';
 
--- Falls DDR_Hash vorhanden: Chunks mit aufgelösten Referenzen
+-- If DDR_Hash present: chunks with resolved references
 SELECT Chunk_Index, Chunk_Type, Chunk_Content
 FROM DDR_Calculations
 WHERE Calc_Hash = '<DDR_Hash>' AND File_Name = '<File>'
 ORDER BY Chunk_Index;
 ```
 
-Verwendungen: ObjectLinks mit Target_UUID = CF-UUID zeigt, wer die CF aufruft.
+Usages: ObjectLinks with Target_UUID = CF-UUID shows who calls the CF.
 
 #### ValueList
 
@@ -211,19 +232,19 @@ LEFT JOIN OptionsForValueLists o
 WHERE vl.VL_UUID = '<UUID>' AND vl.File_Name = '<File>';
 ```
 
-Verwendungen: ObjectLinks `Target_UUID = VL-UUID`, Link_Role `uses_valuelist` zeigt Layout-Objekte, die diese ValueList nutzen.
+Usages: ObjectLinks `Target_UUID = VL-UUID`, Link_Role `uses_valuelist` shows layout objects that use this value list.
 
 #### BaseTable
 
 ```sql
 SELECT * FROM BaseTableCatalog WHERE BT_UUID = '<UUID>' AND File_Name = '<File>';
 
--- Felder
+-- Fields
 SELECT Field_Name, Field_Type, Data_Type, Is_Global, Field_Comment
 FROM FieldsForTables WHERE Table_UUID = '<UUID>' AND File_Name = '<File>'
 ORDER BY Field_ID;
 
--- Tabellen-Vorkommnisse
+-- Table occurrences
 SELECT TO_Name, TO_ID FROM TableOccurrenceCatalog
 WHERE BT_UUID = '<UUID>' AND File_Name = '<File>';
 ```
@@ -233,7 +254,7 @@ WHERE BT_UUID = '<UUID>' AND File_Name = '<File>';
 ```sql
 SELECT * FROM TableOccurrenceCatalog WHERE TO_UUID = '<UUID>' AND File_Name = '<File>';
 
--- Beziehungen, an denen dieses TO beteiligt ist
+-- Relationships this TO participates in
 SELECT * FROM RelationshipCatalog
 WHERE Left_TO_UUID = '<UUID>' OR Right_TO_UUID = '<UUID>'
   AND File_Name = '<File>';
@@ -245,24 +266,24 @@ WHERE Left_TO_UUID = '<UUID>' OR Right_TO_UUID = '<UUID>'
 SELECT * FROM RelationshipCatalog WHERE Rel_ID = <ID> AND File_Name = '<File>';
 ```
 
-Beziehungs-Predikate sind in den `Left_*` / `Right_*` Spalten enthalten, Operator in `Operator`.
+Relationship predicates are contained in the `Left_*` / `Right_*` columns, operator in `Operator`.
 
-#### Generischer Fallback (alle anderen Object_Types)
+#### Generic fallback (all other Object_Types)
 
-Wenn kein typspezifischer Workflow definiert ist:
+If no type-specific workflow is defined:
 
 ```sql
--- Basisinfos
+-- Basic info
 SELECT * FROM ObjectCatalog WHERE Object_UUID = '<UUID>';
 
--- Eingehende Verknüpfungen (was nutzt das Objekt)
+-- Incoming links (what uses the object)
 SELECT Source_Type, Source_File, Link_Role,
        (SELECT Object_Name FROM ObjectCatalog WHERE Object_UUID = ol.Source_UUID) AS Source_Name
 FROM ObjectLinks ol
 WHERE Target_UUID = '<UUID>'
 ORDER BY Source_Type;
 
--- Ausgehende Verknüpfungen (was nutzt das Objekt)
+-- Outgoing links (what the object uses)
 SELECT Target_Type, Target_File, Link_Role,
        (SELECT Object_Name FROM ObjectCatalog WHERE Object_UUID = ol.Target_UUID) AS Target_Name
 FROM ObjectLinks ol
@@ -270,12 +291,12 @@ WHERE Source_UUID = '<UUID>'
 ORDER BY Target_Type;
 ```
 
-### Schritt 3 — Abhängigkeiten (für alle Typen)
+### Step 3 — Dependencies (for all types)
 
-Standard-Abfrage für eingehende und ausgehende Links. **Wichtig**: Nur `Link_Type = 'operational'` filtern, um strukturelles Hierarchie-Rauschen (parent_object, parent_layout, parent_script) auszublenden. Strukturelle Links nur einbeziehen, wenn sie für den Objekttyp inhaltlich relevant sind.
+Standard query for incoming and outgoing links. **Important**: filter only on `Link_Type = 'operational'` to hide structural hierarchy noise (parent_object, parent_layout, parent_script). Include structural links only when they are substantively relevant for the object type.
 
 ```sql
--- Was dieses Objekt verwendet (ausgehend)
+-- What this object uses (outgoing)
 SELECT
     ol.Link_Role,
     ol.Target_Type,
@@ -288,7 +309,7 @@ WHERE ol.Source_UUID = '<UUID>'
   AND ol.Link_Type = 'operational'
 ORDER BY ol.Link_Role, oc.Object_Name;
 
--- Wer dieses Objekt verwendet (eingehend)
+-- Who uses this object (incoming)
 SELECT
     ol.Link_Role,
     ol.Source_Type,
@@ -302,177 +323,186 @@ WHERE ol.Target_UUID = '<UUID>'
 ORDER BY ol.Link_Role, oc.Object_Name;
 ```
 
-### Schritt 4 — Markdown-Zusammenfassung erzeugen
+### Step 4 — Produce the Markdown summary
 
-**Im Kurz-Modus** (`--short` oder Trigger-Wort): Direkt zum Abschnitt "Kurz-Modus-Output" am Ende dieses Schritts springen. Die ausführliche Sektion-Struktur unten gilt nur für den Standard-Modus.
+**In short mode** (`--short` or trigger word): jump directly to the "Short-mode output" section at the end of this step. The detailed section structure below only applies in standard mode.
 
-Die Standard-Ausgabe folgt diesem Schema. Abschnitte ohne Inhalt weglassen.
+The standard output follows this schema. Omit sections without content.
 
 ```markdown
-## <Objekt_Typ>: <Name>
+## <Object_Type>: <Name>
 
-**Datei**: <File_Name>
+**File**: <File_Name>
 **UUID**: `<Object_UUID>`
-**Interne ID**: <Object_ID> (falls relevant)
+**Internal ID**: <Object_ID> (if relevant)
 
-### Zweck
-<Aus Field_Comment / sonstigen Kommentaren, oder kurze Ableitung aus Name + Kontext.
-Falls kein Kommentar vorhanden: "Kein Kommentar im Objekt hinterlegt." und Hinweis,
-dass der Zweck aus dem Verhalten abgeleitet wurde.>
+### Purpose
+<From Field_Comment / other comments, or a brief derivation from name + context.
+If no comment is present: "No comment stored in the object." and a note
+that the purpose was derived from the behaviour.>
 
-### Technische Details
-<Typspezifisch — siehe unten>
+### Technical details
+<Type-specific — see below>
 
-### Ablauf  *(nur bei Scripts)*
-1. **<Step_Name>** — <DDR_Step_Text falls vorhanden, sonst Step_Name + Calculation_Text>
+### Flow  *(scripts only)*
+1. **<Step_Name>** — <DDR_Step_Text if present, otherwise Step_Name + Calculation_Text>
 2. ...
-   *(deaktivierte Schritte mit `(deaktiviert)` markieren)*
+   *(mark disabled steps with `(disabled)`)*
 
-### Verwendet
-<Liste der Objekte, die dieses Objekt aufruft / referenziert, gruppiert nach Link_Role>
+### Uses
+<List of objects this object calls / references, grouped by Link_Role>
 - **calls_script**: ScriptA, ScriptB
-- **sets_field**: Tabelle::Feld
+- **sets_field**: Table::Field
 - ...
 
-### Wird verwendet von
-<Liste der Objekte, die dieses Objekt aufrufen / referenzieren>
-- **LayoutObject** (displays_field): Layout "Kunden"
+### Used by
+<List of objects that call / reference this object>
+- **LayoutObject** (displays_field): Layout "Customers"
 - ...
 
-### Hinweise
-<Optional: Auffälligkeiten, z.B. Cross-File-Links, sehr viele Verwendungen, fehlende Kommentare,
-deaktivierte Schritte, ungewöhnliche Konstruktionen>
+### Notes
+<Optional: notable items, e.g. cross-file links, very many usages, missing comments,
+disabled steps, unusual constructions>
 ```
 
-**Format-Regeln (Standard-Modus)**:
-- Markdown-Tabellen nur, wenn sie wirklich Mehrwert haben (>5 Zeilen, mehrere Spalten)
-- Bei sehr langen Listen (>20 Einträge): zusammenfassen ("12 weitere Felder ...") und auf Nachfrage Details liefern
-- Alle Bezeichner in der Originalsprache der FileMaker-Lösung lassen
-- Bei Scripts: Bei vorhandenem `DDR_ScriptSteps.Step_Text` IMMER den lesbaren Text bevorzugen — er enthält aufgelöste Feldnamen, Variableninhalte und Parameter
+**Format rules (standard mode)**:
+- Markdown tables only when they really add value (>5 rows, multiple columns)
+- For very long lists (>20 entries): summarise ("12 more fields ...") and provide details on request
+- Keep all FileMaker identifiers in the original language of the solution (script/field/table names are not translated)
+- **Section headers and prose are produced in the response language** (see the "Response language" section near the top); the English headers in the template above are illustrative
+- For scripts: when `DDR_ScriptSteps.Step_Text` is present, ALWAYS prefer the readable text — it contains resolved field names, variable contents and parameters
 
-#### Kurz-Modus-Output (`--short`)
+#### Short-mode output (`--short`)
 
-Im Kurz-Modus entfällt die obige Sektions-Struktur komplett. Stattdessen: **1-2 Absätze Fließtext**, der die folgenden Fragen kompakt beantwortet:
+In short mode the section structure above is dropped entirely. Instead: **1-2 paragraphs of prose** that compactly answer the following questions:
 
-1. **Was ist das Objekt?** — Typ, Name, Datei (inline, z.B. "Das Script **Faktura_RechnungDrucken** in der Datei `Rechnungen`")
-2. **Was tut es?** — 1-3 Sätze, Kern-Funktion in eigenen Worten
-3. **(Optional) Wie ist es eingebunden?** — höchstens 1 Halbsatz zu Aufrufern oder Sub-Aufrufen, NUR wenn es den Kontext wesentlich erhellt
+1. **What is the object?** — type, name, file (inline, e.g. "The script **Accounting_PrintInvoice** in the file `Invoices`")
+2. **What does it do?** — 1-3 sentences, core function in your own words
+3. **(Optional) How is it embedded?** — at most one half-sentence about callers or sub-calls, ONLY if it materially illuminates the context
 
-**Verbote im Kurz-Modus**:
-- Keine Markdown-Header (`##`, `###`)
-- Keine Listen, keine Aufzählungen
-- Keine Tabellen
-- Keine Code-Blöcke
-- Keine UUID-Anzeige (technische Detail-Information gehört in den Standard-Modus)
-- Kein "Ablauf" (auch nicht verkürzt)
+**Prohibitions in short mode**:
+- No Markdown headers (`##`, `###`)
+- No lists, no bullet points
+- No tables
+- No code blocks
+- No UUID display (technical detail information belongs in standard mode)
+- No "Flow" (not even shortened)
 
-**Reduzierte Query-Liste im Kurz-Modus**:
+**Reduced query list in short mode**:
 
-| Object_Type | Standard-Modus Queries | Kurz-Modus Queries |
+| Object_Type | Standard-mode queries | Short-mode queries |
 |-------------|------------------------|---------------------|
-| Script | ScriptCatalog + StepsForScripts + DDR_ScriptSteps + alle ObjectLinks | Nur ScriptCatalog + COUNT(*) Aufrufer + COUNT(*) Sub-Calls |
-| Field | FieldsForTables + DDR_Calculations + alle Verwendungen | Nur FieldsForTables (Field_Comment + Field_Type + AutoEnter_Type) |
-| Layout | Layouts + LayoutParts + LayoutObjects-Aggregation + Trigger | Nur Layouts + COUNT(*) der LayoutObjects |
-| CustomFunction | CustomFunctionsCatalog + CalcsForCustomFunctions + DDR + Aufrufer | Nur CustomFunctionsCatalog + COUNT(*) Aufrufer |
-| Sonstige | Typ-spezifische Queries + ObjectLinks bidirektional | Nur ObjectCatalog-Eintrag + COUNT(*) eingehende/ausgehende Links |
+| Script | ScriptCatalog + StepsForScripts + DDR_ScriptSteps + all ObjectLinks | Only ScriptCatalog + COUNT(*) callers + COUNT(*) sub-calls |
+| Field | FieldsForTables + DDR_Calculations + all usages | Only FieldsForTables (Field_Comment + Field_Type + AutoEnter_Type) |
+| Layout | Layouts + LayoutParts + LayoutObjects aggregation + triggers | Only Layouts + COUNT(*) of LayoutObjects |
+| CustomFunction | CustomFunctionsCatalog + CalcsForCustomFunctions + DDR + callers | Only CustomFunctionsCatalog + COUNT(*) callers |
+| Other | Type-specific queries + ObjectLinks bidirectional | Only ObjectCatalog entry + COUNT(*) incoming/outgoing links |
 
-**Beispiel-Output (Kurz-Modus, Script)**:
+**Example output (short mode, script)**:
 
-> Das Script **Faktura_RechnungDrucken** in der Datei `Rechnungen` erzeugt eine PDF-Ausgabe einer einzelnen Rechnung am übergebenen Speicherort. Es wird von 2 Stellen aufgerufen (manuell aus der Rechnungs-Bearbeitung sowie aus der Stapelverarbeitung) und nutzt 2 Hilfs-Scripts.
+> The script **Accounting_PrintInvoice** in the file `Invoices` produces a PDF output of a single invoice at the supplied storage location. It is called from 2 places (manually from invoice editing and from the batch processing) and uses 2 helper scripts.
 
-**Beispiel-Output (Kurz-Modus, Field)**:
+**Example output (short mode, field)**:
 
-> Das Feld **Email** in der Tabelle `Kunden` ist ein Text-Feld mit AutoEnter Calculated `Lower(Self)`. Laut Field-Kommentar dient die Normalisierung der eindeutigen Vergleichbarkeit beim Email-Versand.
+> The field **Email** in the table `Customers` is a text field with AutoEnter Calculated `Lower(Self)`. According to the field comment the normalisation serves unique comparability for email dispatch.
 
-**Wenn der Kurz-Modus zu wenig Information liefert**: Am Ende des Fließtexts EINEN Hinweissatz anhängen wie *"Für die vollständigen Schritte und Abhängigkeiten `/fm-summarize <Name>` ohne `--short` aufrufen."*
+**If short mode delivers too little information**: append a single hint sentence at the end of the prose, such as *"For the full steps and dependencies call `/fm-summarize <Name>` without `--short`."*
 
-### Schritt 5 — Ausgabe
+### Step 5 — Output
 
-Die Markdown-Zusammenfassung im Chat ausgeben. KEINE Datei schreiben (außer im Rahmen der unten beschriebenen geplanten Erweiterung).
+Print the Markdown summary in chat. Do NOT write a file (except as part of the planned extension described below).
 
-## Wichtige Hinweise
+## Important notes
 
-- **DDR-Verfügbarkeit prüfen**: `SELECT Has_DDR_INFO FROM XMLMetadata WHERE Filename = '<File>';` Falls `False`, sind `DDR_ScriptSteps` und `DDR_Calculations` leer und liefern keine Klartext-Texte. In diesem Fall auf `Step_Name`, `Calculation_Text` und `Variable_Name` zurückfallen.
-- **Multi-File**: Wenn das Objekt Cross-File-Abhängigkeiten hat (`Is_Cross_File = TRUE`), diese explizit hervorheben.
-- **Performance**: Bei Layouts mit hunderten Objekten NICHT alle LayoutObjects einzeln auflisten — immer aggregieren.
-- **Keine Spekulation**: Wenn die Daten unvollständig sind, das ehrlich vermerken statt zu vermuten.
-- **Read vs. Write**: Diese Skill liest nur. Niemals UPDATE/INSERT/DELETE auf der Datenbank ausführen.
-- **Reihenfolge der Aktionen**: Identifikation → Bestätigung (falls mehrdeutig) → typspezifische Queries → Abhängigkeiten → Ausgabe. Nicht abkürzen.
+- **Check DDR availability**: `SELECT Has_DDR_INFO FROM XMLMetadata WHERE Filename = '<File>';` If `False`, `DDR_ScriptSteps` and `DDR_Calculations` are empty and deliver no plain-text texts. In that case fall back to `Step_Name`, `Calculation_Text` and `Variable_Name`.
+- **Multi-file**: If the object has cross-file dependencies (`Is_Cross_File = TRUE`), call them out explicitly.
+- **Performance**: For layouts with hundreds of objects do NOT list all LayoutObjects individually — always aggregate.
+- **No speculation**: If the data is incomplete, note that honestly instead of guessing.
+- **Read vs. write**: This skill only reads. Never execute UPDATE/INSERT/DELETE on the database.
+- **Order of actions**: identification → confirmation (if ambiguous) → type-specific queries → dependencies → output. Do not cut corners.
 
-## Beispiele
+## Examples
 
-### Beispiel 1: Eindeutiger Script-Name
+### Example 1: Unambiguous script name
 
-**Benutzer**: "Beschreibe das Script 'Kunde anlegen'"
+**User (English, primary)**: "Describe the script 'Kunde anlegen'"
+**User (German, equivalent)**: "Beschreibe das Script 'Kunde anlegen'"
+**User (French, equivalent)**: "Décris le script 'Kunde anlegen'"
 
-1. Suche im ObjectCatalog → 1 Treffer (Object_Type = `Script`, File_Name = `KundenDB`)
-2. ScriptCatalog + StepsForScripts + DDR_ScriptSteps abfragen
-3. ObjectLinks für eingehende/ausgehende Links abfragen
-4. Markdown-Zusammenfassung mit nummeriertem Ablauf ausgeben
+Note: the object name `Kunde anlegen` stays as-is in any language — it is the FileMaker source identifier.
 
-### Beispiel 2: Mehrdeutiger Name
+1. Search in ObjectCatalog → 1 match (Object_Type = `Script`, File_Name = `KundenDB`)
+2. Query ScriptCatalog + StepsForScripts + DDR_ScriptSteps
+3. Query ObjectLinks for incoming/outgoing links
+4. Produce the Markdown summary with numbered flow, headers and prose in the response language (English/German/French depending on the prompt)
 
-**Benutzer**: "Was macht 'Suchen'?"
+### Example 2: Ambiguous name
 
-1. Suche im ObjectCatalog → 4 Treffer (1× Script in `KundenDB`, 1× Script in `RechnungenDB`, 1× CustomFunction in `KundenDB`, 1× Layout in `KundenDB`)
-2. **Ausgabe an den Benutzer**:
+**User**: "What does 'Suchen' do?"
+
+1. Search in ObjectCatalog → 4 matches (1× Script in `KundenDB`, 1× Script in `RechnungenDB`, 1× CustomFunction in `KundenDB`, 1× Layout in `KundenDB`)
+2. **Output to the user**:
    ```
-   Es gibt mehrere Objekte mit dem Namen 'Suchen'. Welches meinst du?
+   There are several objects named 'Suchen'. Which one do you mean?
    1. Script "Suchen" in KundenDB
    2. Script "Suchen" in RechnungenDB
    3. CustomFunction "Suchen" in KundenDB
    4. Layout "Suchen" in KundenDB
    ```
-3. Erst nach Antwort des Benutzers mit Schritt 2 fortfahren.
+3. Only continue with Step 2 after the user's answer.
 
-### Beispiel 3: Kontextableitung
+### Example 3: Context derivation
 
-**Konversationskontext**: Eine vorherige Query hat fünf Felder gelistet, das letzte war `Kunden::Telefon` (UUID `abc-123`).
+**Conversation context**: a previous query listed five fields; the last one was `Kunden::Telefon` (UUID `abc-123`).
 
-**Benutzer**: "Beschreibe das letzte Feld davon"
+**User**: "Describe the last of those fields"
 
-1. Aus dem Kontext UUID `abc-123` ableiten
-2. Direkt mit FieldsForTables-Query starten (kein Nachfragen nötig)
-3. AutoEnter-Spalten auswerten, ggf. DDR_Calculations einbinden
-4. Verwendungen via ObjectLinks
-5. Zusammenfassung ausgeben
+1. Derive UUID `abc-123` from the context
+2. Start directly with the FieldsForTables query (no follow-up needed)
+3. Evaluate AutoEnter columns, include DDR_Calculations if applicable
+4. Usages via ObjectLinks
+5. Print summary
 
-### Beispiel 4: Kurz-Modus
+### Example 4: Short mode
 
-**Benutzer**: "/fm-summarize Faktura_RechnungDrucken --short"
-*(alternativ: "Beschreibe Faktura_RechnungDrucken kurz")*
+**User (flag form)**: "/fm-summarize Accounting_PrintInvoice --short"
+**User (English, natural)**: "Describe Accounting_PrintInvoice briefly"
+**User (German, natural)**: "Beschreibe Accounting_PrintInvoice kurz"
+**User (French, natural)**: "Décris brièvement Accounting_PrintInvoice"
 
-1. Identifikation wie üblich → 1 Treffer (Script in `Rechnungen`)
-2. **Reduzierte Queries**: Nur ScriptCatalog-Header + zwei COUNT(*)-Aggregationen über ObjectLinks (Aufrufer / Sub-Calls). KEINE Schritte, KEINE DDR_ScriptSteps, KEINE Field-Verwendungen.
-3. **Output** (1-2 Absätze Fließtext, ohne Sektionen):
+All four prompts activate short mode; the response is produced in the prompt's language.
 
-   > Das Script **Faktura_RechnungDrucken** in der Datei `Rechnungen` erzeugt eine PDF-Ausgabe einer einzelnen Rechnung. Es wird von 2 Stellen aufgerufen und ruft 2 Hilfs-Scripts auf.
+1. Identification as usual → 1 match (Script in `Invoices`)
+2. **Reduced queries**: only ScriptCatalog header + two COUNT(*) aggregations over ObjectLinks (callers / sub-calls). NO steps, NO DDR_ScriptSteps, NO field usages.
+3. **Output** (1-2 paragraphs of prose, no sections):
+
+   > The script **Accounting_PrintInvoice** in the file `Invoices` produces a PDF output of a single invoice. It is called from 2 places and calls 2 helper scripts.
    >
-   > Für die vollständigen Schritte und Abhängigkeiten `/fm-summarize Faktura_RechnungDrucken` ohne `--short` aufrufen.
+   > For the full steps and dependencies call `/fm-summarize Accounting_PrintInvoice` without `--short`.
 
-### Beispiel 5: Nicht gefunden
+### Example 5: Not found
 
-**Benutzer**: "Beschreibe das Script 'KundeAnlegenV2'"
+**User**: "Describe the script 'KundeAnlegenV2'"
 
-1. Suche im ObjectCatalog → 0 Treffer
-2. LIKE-Fallback `%Kunde%anlegen%` → 1 Treffer: "KundeAnlegen"
-3. **Ausgabe**: "Ein Script namens 'KundeAnlegenV2' existiert nicht. Meintest du eventuell 'KundeAnlegen'? Soll ich dieses beschreiben?"
+1. Search in ObjectCatalog → 0 matches
+2. LIKE fallback `%Kunde%anlegen%` → 1 match: "KundeAnlegen"
+3. **Output**: "A script named 'KundeAnlegenV2' does not exist. Did you perhaps mean 'KundeAnlegen'? Should I describe that one?"
 
-## Geplante Erweiterungen (zukünftige Ausbaustufe)
+## Planned extensions (future stage)
 
-> **Status**: Dokumentation only — nicht implementiert. Aktivierung erfolgt, wenn der Obsidian Vault eingerichtet ist.
+> **Status**: Documentation only — not implemented. Activation happens once the Obsidian vault is set up.
 
-Nach Erzeugung der Zusammenfassung soll der Skill den Benutzer fragen, ob die Beschreibung als Notiz zum FileMaker-Objekt gespeichert werden soll. Spezifikation:
+After producing the summary, the skill should ask the user whether the description should be stored as a note for the FileMaker object. Specification:
 
-- **Zielort**: Obsidian Vault, der alle Projektnotizen zur FileMaker-Lösung enthält. Pfad noch zu konfigurieren (vermutlich in einer projektlokalen Konfigurationsdatei oder Umgebungsvariable, z.B. `FM_OBSIDIAN_VAULT`).
-- **Ablagestruktur**: Unterordner pro Objekt-Typ (`Scripts/`, `Fields/`, `Layouts/`, `CustomFunctions/`, …).
-- **Dateinamen**: Müssen die Objekt-UUID enthalten, damit das Objekt eindeutig referenzierbar ist, auch wenn der FileMaker-Name sich ändert. Vorschlag: `<sanitized-name>__<uuid-short>.md`.
-- **Update-Verhalten**: Bestehende Notizen werden NICHT überschrieben. Stattdessen wird die neue Zusammenfassung an die bestehende Datei angehängt (append) — typischerweise mit einem Trennabschnitt `## Update <Datum>`. Begründung: vom Benutzer manuell ergänzte Inhalte (z.B. Designentscheidungen, ToDos) sollen nicht verloren gehen. Vergleiche Memory `feedback_obsidian_updates`.
-- **Frontmatter**: Beim ersten Erstellen einer Notiz YAML-Frontmatter mit `object_uuid`, `object_type`, `file_name`, `created_at` setzen.
-- **Benutzerinteraktion**: Nach Ausgabe der Zusammenfassung im Chat fragen: "Soll ich diese Beschreibung im Obsidian Vault als Notiz zum Objekt speichern? (j/n)". Bei Ja: prüfen, ob bereits eine Notiz für die UUID existiert; entsprechend `create` oder `append`.
+- **Target location**: Obsidian vault containing all project notes for the FileMaker solution. Path still to be configured (presumably in a project-local configuration file or environment variable, e.g. `FM_OBSIDIAN_VAULT`).
+- **Storage structure**: one sub-folder per object type (`Scripts/`, `Fields/`, `Layouts/`, `CustomFunctions/`, …).
+- **File names**: must contain the object UUID so the object remains uniquely referenceable even if the FileMaker name changes. Proposal: `<sanitized-name>__<uuid-short>.md`.
+- **Update behaviour**: existing notes are NOT overwritten. Instead the new summary is appended to the existing file (append) — typically with a separator section `## Update <date>`. Rationale: content manually added by the user (e.g. design decisions, ToDos) must not be lost. Compare memory `feedback_obsidian_updates`.
+- **Frontmatter**: when creating a note for the first time, set YAML frontmatter with `object_uuid`, `object_type`, `file_name`, `created_at`.
+- **User interaction**: after printing the summary in chat, ask: "Should I store this description as a note in the Obsidian vault for the object? (y/n)". On yes: check whether a note already exists for the UUID; `create` or `append` accordingly.
 
-**TODOs vor Aktivierung**:
-1. Konfigurationsmechanismus für Vault-Pfad festlegen
-2. Append-Logik (Erkennung existierender Datei + Trennabschnitt) implementieren
-3. Sanitizing-Funktion für Dateinamen aus FileMaker-Namen (Sonderzeichen, Leerzeichen)
-4. Frontmatter-Schema mit dem Benutzer abstimmen
+**TODOs before activation**:
+1. Decide on a configuration mechanism for the vault path
+2. Implement append logic (detection of existing file + separator section)
+3. Sanitising function for file names derived from FileMaker names (special characters, spaces)
+4. Align frontmatter schema with the user

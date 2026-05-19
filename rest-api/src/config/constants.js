@@ -150,7 +150,7 @@ const ERROR_CODES = {
  * Für Functions in 'en' liefert der Service `canonical_name` als Display-Name (siehe PRD §9.4).
  */
 const REFERENCE_STEP_LANGUAGES     = ['en', 'de', 'es', 'fr', 'it', 'nl', 'pt', 'sv', 'ja', 'ko', 'zh-Hans'];
-const REFERENCE_FUNCTION_LANGUAGES = ['de', 'es', 'fr', 'it', 'nl', 'pt', 'sv', 'ja', 'ko'];
+const REFERENCE_FUNCTION_LANGUAGES = ['en', 'de', 'es', 'fr', 'it', 'nl', 'pt', 'sv', 'ja', 'ko'];
 const REFERENCE_CONTENT_LEVELS     = ['meta', 'summary', 'full'];
 
 /**

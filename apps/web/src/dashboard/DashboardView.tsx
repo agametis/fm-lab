@@ -1,18 +1,20 @@
 import { useParams, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { DashboardHost } from './DashboardHost';
 import { SubPageHeader } from '../components';
 import type { BreadcrumbItem } from '../types';
 
 /**
- * Route-View für `/dashboard/:id`. Verpackt nur Routing-Params und gibt sie
- * als Dashboard-Props weiter. PRD: prd_dashboards.md §8.
+ * Route view for `/dashboard/:id`. Forwards routing/query params to the
+ * dashboard host. PRD: prd_dashboards.md §8.
  */
 export function DashboardView() {
+  const { t } = useTranslation(['nav']);
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
 
   if (!id) {
-    return <div className="dash-host dash-host--error">Kein Dashboard-ID angegeben.</div>;
+    return <div className="dash-host dash-host--error">{t('nav:errors.noDashboardId')}</div>;
   }
 
   const params: Record<string, unknown> = {};
@@ -22,7 +24,7 @@ export function DashboardView() {
 
   const title = idToTitle(id);
   const breadcrumbs: BreadcrumbItem[] = [
-    { label: 'Suche', path: '/' },
+    { label: t('nav:breadcrumbs.search') as string, path: '/' },
     { label: title, path: null },
   ];
 

@@ -12,7 +12,7 @@ The ingestion pipeline converts FileMaker SaXML exports into a [DuckDB-powered O
 
 FM-Lab relies on an open-source tech stack that can run on different operating systems and in flexible deployment configurations.
 
-![FM-Lab-Architecture.jpg](../Assets/FM-Lab-Architecture.jpg)
+![FM-Lab-flexible-Architecture.jpg](../Assets/FM-Lab-flexible-Architecture.jpg)
 
 ---
 

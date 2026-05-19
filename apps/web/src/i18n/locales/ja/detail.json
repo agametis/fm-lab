@@ -1,0 +1,279 @@
+{
+  "autoTable": {
+    "rowCount_one": "{{count}} 件",
+    "rowCount_other": "{{count}} 件",
+    "filteredFrom": "{{count}} 件から絞り込み",
+    "page": "ページ {{current}} / {{total}}",
+    "noMatches": "「{{query}}」に一致する項目はありません。",
+    "prev": "← 前へ",
+    "next": "次へ →"
+  },
+  "layoutPreview": {
+    "heading": "レイアウトビュー",
+    "loading": "レイアウトを読み込み中…",
+    "empty": "このレイアウトにはオブジェクトがありません。"
+  },
+  "headings": {
+    "Script": "スクリプトテキスト",
+    "Layout": "レイアウトビュー",
+    "Field": "フィールド詳細",
+    "BaseTable": "テーブル詳細",
+    "CustomFunction": "関数の詳細",
+    "ValueList": "値一覧の詳細"
+  },
+  "layoutCanvas": {
+    "searchPlaceholder": "レイアウトオブジェクトを検索…",
+    "searchTitle": "Tab: 次の一致 · Shift+Tab: 前へ · Enter: 開く · Esc: リセット",
+    "searchAria": "レイアウトオブジェクトを検索",
+    "matchCount_one": "{{count}} 件の一致",
+    "matchCount_other": "{{count}} 件の一致",
+    "labelGroupAria": "ラベル",
+    "labelName": "名前",
+    "labelNameTitle": "説明ラベル (フィールド名 / キャプション / オブジェクト名)",
+    "labelType": "種類",
+    "labelTypeTitle": "オブジェクトの種類をラベルとして表示",
+    "stats_one": "{{count}} オブジェクト · ズーム {{zoom}}%",
+    "stats_other": "{{count}} オブジェクト · ズーム {{zoom}}%"
+  },
+  "relationshipGraphCanvas": {
+    "searchPlaceholder": "テーブルオカレンスを検索…",
+    "searchTitle": "Tab: 次の一致 · Shift+Tab: 前へ · Esc: リセット",
+    "searchAria": "テーブルオカレンスを検索",
+    "matchCount_one": "{{count}} 件の一致",
+    "matchCount_other": "{{count}} 件の一致",
+    "preselectChipTitle": "事前選択を解除",
+    "preselectChipAria": "事前選択を解除",
+    "preselectLabel": "事前選択:",
+    "stats_one": "{{tos}} TO · {{rels}} リレーション · ズーム {{zoom}}%",
+    "stats_other": "{{tos}} TO · {{rels}} リレーション · ズーム {{zoom}}%"
+  },
+  "dependencyGraph": {
+    "empty": "依存関係はありません",
+    "fitTitle": "グラフ全体に合わせる",
+    "fitAria": "グラフをフィット",
+    "resetTitle": "レイアウトをリセット",
+    "resetAria": "レイアウトをリセット",
+    "fit": "フィット",
+    "reset": "リセット",
+    "legendCurrent": "現在のオブジェクト",
+    "legendParent": "親",
+    "legendChild": "子",
+    "legendCrossFile": "ファイル間",
+    "hint": "クリック = 移動 · {{modKey}}+クリック = 詳細 · ドラッグ = 移動",
+    "graphAriaLabel": "{{object}} の依存関係グラフ"
+  },
+  "layoutTypeFilter": {
+    "categories": {
+      "Input":    "入力",
+      "Display":  "表示",
+      "Viewer":   "ビューア",
+      "Action":   "アクション",
+      "Controls": "コントロール",
+      "Groups":   "グループ",
+      "Graphic":  "グラフィック"
+    },
+    "types": {
+      "Edit Box":            "編集ボックス",
+      "Drop-down List":      "ドロップダウンリスト",
+      "Pop-up Menu":         "ポップアップメニュー",
+      "Radio Button Set":    "ラジオボタンセット",
+      "Checkbox Set":        "チェックボックスセット",
+      "Drop-down Calendar":  "ドロップダウンカレンダー",
+      "Concealed Edit Box":  "非表示編集ボックス",
+      "Text":                "テキスト",
+      "Graphic":             "グラフィック",
+      "Container":           "コンテナ",
+      "Web Viewer":          "Web ビューア",
+      "Button":              "ボタン",
+      "Grouped Button":      "グループ化ボタン",
+      "Button Bar":          "ボタンバー",
+      "Popover Button":      "ポップオーバーボタン",
+      "Portal":              "ポータル",
+      "Panel":               "パネル",
+      "Slide Control":       "スライドコントロール",
+      "Tab Control":         "タブコントロール",
+      "Group":               "グループ",
+      "Rectangle":           "長方形",
+      "Line":                "線",
+      "Oval":                "楕円",
+      "Rounded Rectangle":   "角丸長方形"
+    },
+    "detailsToggleToGroups": "グループに折りたたむ",
+    "detailsToggleToDetails": "個別の種類を表示",
+    "groupsLabel": "グループ",
+    "detailsLabel": "詳細",
+    "clearTitle": "すべての種類フィルターをクリア",
+    "clearLabel": "フィルターをクリア"
+  },
+  "referencesFilter": {
+    "searchPlaceholder": "参照を検索…",
+    "searchTitle": "Esc: 入力をクリア",
+    "searchAria": "参照を検索",
+    "clearTypesTitle": "すべての種類フィルターをクリア",
+    "clearTypesLabel": "フィルターをクリア"
+  },
+  "hierarchyTree": {
+    "ariaLabel": "オブジェクト階層",
+    "usedBy": "使用元 ({{count}})",
+    "usedByFiltered": "使用元 ({{count}} / {{total}})",
+    "uses": "使用先 ({{count}})",
+    "usesFiltered": "使用先 ({{count}} / {{total}})",
+    "structurallyContainedBy": "構造的に含まれる ({{count}})",
+    "structurallyContainedByFiltered": "構造的に含まれる ({{count}} / {{total}})",
+    "structurallyContains": "構造的に含む ({{count}})",
+    "structurallyContainsFiltered": "構造的に含む ({{count}} / {{total}})",
+    "noReferences": "参照が見つかりません",
+    "noFilterMatches": "現在のフィルターに一致する項目はありません",
+    "crossFileBadge": "ファイル間",
+    "itemAriaLabel": "{{type}}: {{name}} に移動"
+  },
+  "searchOptions": {
+    "regionAria": "並べ替えとグループ化のオプション",
+    "sortLabel": "並べ替え:",
+    "groupLabel": "グループ:",
+    "sortStandard": "標準",
+    "sortName": "名前",
+    "sortType": "種類",
+    "sortFile": "ファイル",
+    "groupNone": "なし",
+    "groupType": "種類",
+    "groupFile": "ファイル"
+  },
+  "fieldViewer": {
+    "ariaLabel": "フィールドの詳細",
+    "fieldType": "フィールドの種類",
+    "dataType": "データタイプ",
+    "global": "グローバル",
+    "yes": "はい",
+    "repetitions": "繰り返し",
+    "autoEnter": "自動入力",
+    "comment": "コメント",
+    "calculationFormula": "計算式",
+    "autoEnterCalculation": "自動入力の計算式"
+  },
+  "typeDetail": {
+    "loading": "読み込み中…",
+    "loadError": "読み込みに失敗しました: {{message}}",
+    "noData": "詳細は利用できません。"
+  },
+  "refTitle": {
+    "table": "テーブル:",
+    "baseTable": "ベーステーブル:",
+    "scope": "スコープ:",
+    "usage": "使用状況:",
+    "file": "ファイル:",
+    "crossFile": "ファイル間"
+  },
+  "scriptStepLink": {
+    "navigateEnriched": "疑似オブジェクトに移動: ScriptStepType '{{name}}'",
+    "navigateFallback": "{{name}} (疑似オブジェクトの詳細ページを開く)"
+  },
+  "helpLinks": {
+    "openLocalClarisHelp": "ローカルヘルプを開く ↗",
+    "openOnlineClarisHelp": "Claris ヘルプを開く ↗",
+    "openLocalMbsHelp": "ローカルの MBS ドキュメントを開く ↗",
+    "openOnlineMbsHelp": "MBS ドキュメントを開く ↗",
+    "noDocs": "ドキュメントが見つかりません。",
+    "canonical": "正規:"
+  },
+  "objectListItem": {
+    "usageBadge_one": "{{count}} 回使用",
+    "usageBadge_other": "{{count}} 回使用",
+    "showAria": "{{type}}: {{name}} — 表示",
+    "noName": "(名前なし)",
+    "filterByCategory": "{{category}} で絞り込む"
+  },
+  "scriptSearchFilter": {
+    "searchAria": "参照を検索",
+    "searchPlaceholder": "参照を検索…",
+    "clearTitle": "すべての種類フィルターをクリア",
+    "clearLabel": "フィルターをクリア",
+    "commentLabel": "コメント",
+    "commentTitle": "コメント ({{count}})",
+    "typeLabels": {
+      "field":           "フィールド",
+      "script":          "スクリプト",
+      "layout":          "レイアウト",
+      "customFunction":  "カスタム関数",
+      "pluginFunction":  "プラグイン関数",
+      "function":        "関数",
+      "variable":        "変数",
+      "valueList":       "値一覧",
+      "tableOccurrence": "テーブルオカレンス"
+    }
+  },
+  "settingsView": {
+    "backAria": "検索に戻る",
+    "backLabel": "戻る",
+    "title": "プラグイン管理",
+    "loading": "プラグインを読み込み中…",
+    "empty": "インストールされたプラグインはありません。",
+    "loadError": "読み込みに失敗しました",
+    "saveError": "保存に失敗しました",
+    "statusActive": "有効",
+    "statusInactive": "無効",
+    "restartRequired": "新しいステータスを反映するには再起動が必要です。",
+    "settingsHeading": "設定",
+    "saveLabel": "設定を保存",
+    "savingLabel": "保存中…"
+  },
+  "objectHeader": {
+    "noName": "(名前なし)",
+    "source": "ソース:",
+    "relationshipGraphLink": "↗ リレーショングラフ",
+    "copyUuidAria": "UUID をクリップボードにコピー"
+  },
+  "scriptLine": {
+    "expand": "展開",
+    "collapse": "折りたたむ"
+  },
+  "scriptViewer": {
+    "title": "スクリプトテキスト",
+    "stepCount_one": "({{count}} ステップ)",
+    "stepCount_other": "({{count}} ステップ)",
+    "viewLabel": "ビュー:",
+    "viewAria": "表示モード",
+    "filterStyleAria": "フィルタースタイル",
+    "filterStyleTitleEnabled": "フィルターされた行: 薄く表示するか非表示にする",
+    "filterStyleTitleDisabled": "フィルターが有効な場合にのみ意味があります",
+    "filterDim": "薄く表示",
+    "filterHide": "非表示",
+    "modes": {
+      "normal": "標準",
+      "compact": "コンパクト",
+      "commentsOnly": "コメントのみ",
+      "controlOnly": "制御構造のみ",
+      "subscriptOnly": "サブスクリプト呼び出しのみ",
+      "assignmentsOnly": "代入のみ",
+      "executiveOnly": "実行可能コードのみ"
+    }
+  },
+  "refPill": {
+    "loading": "参照を解決中…",
+    "notFound": "参照が見つかりません:",
+    "couldNotResolve": "参照を解決できませんでした: {{message}}",
+    "label": "参照:",
+    "highlightsCount_one": "{{count}} 件をハイライト",
+    "highlightsCount_other": "{{count}} 件をハイライト",
+    "dismissAria": "参照のハイライトを解除",
+    "dismissTitle": "参照のハイライトを解除 (Esc)"
+  },
+  "tableDetails": "テーブル詳細",
+  "scriptDetails": "スクリプト詳細",
+  "fieldDetails": "フィールド詳細",
+  "layoutDetails": "レイアウト詳細",
+  "valueListDetails": "値一覧詳細",
+  "customFunctionDetails": "カスタム関数詳細",
+  "loadingObject": "オブジェクトを読み込み中…",
+  "loadingFunction": "関数を読み込み中…",
+  "noReferences": "参照はありません",
+  "references": "参照",
+  "backReferences": "使用元",
+  "forwardReferences": "使用先",
+  "dependencies": "依存関係",
+  "dependents": "被依存関係",
+  "definition": "定義",
+  "metadata": "メタデータ",
+  "rowCount_one": "{{count}} 件",
+  "rowCount_other": "{{count}} 件"
+}

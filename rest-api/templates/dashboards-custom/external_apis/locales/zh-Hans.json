@@ -1,0 +1,48 @@
+{
+  "manifest": {
+    "title": "API 与外部接口",
+    "description": "通用模板:按 API 系列对 URL 调用(Open URL、Insert from URL、Import Records、cURL/MBS、Web Viewer、计算 URL)进行分类,并显示外部 FileMaker / ODBC 数据源。API 系列模式是面向云 / SaaS 提供商的宽泛默认列表 — 如果需要项目专有的分类,请同时调整 `data/url_details.sql` 和 `data/api_families.sql` 中的 WHEN 分支。"
+  },
+  "layout": {
+    "root.children[0].props.title": "API 与外部接口",
+    "root.children[0].children[0].props.items[0].label": "Open URL",
+    "root.children[0].children[0].props.items[1].label": "Insert from URL",
+    "root.children[0].children[0].props.items[2].label": "Import Records",
+    "root.children[0].children[0].props.items[3].label": "MBS / Plugin",
+    "root.children[0].children[0].props.items[4].label": "Web Viewer",
+    "root.children[0].children[0].props.items[5].label": "计算",
+    "root.children[0].children[0].props.items[6].label": "唯一 URL",
+    "root.children[0].children[0].props.items[7].label": "外部源",
+
+    "root.children[1].props.title": "API 系列",
+    "root.children[1].children[0].props.columns[0].label": "系列",
+    "root.children[1].children[0].props.columns[1].label": "命中",
+    "root.children[1].children[0].props.columns[2].label": "主机",
+    "root.children[1].children[0].props.columns[3].label": "URL",
+    "root.children[1].children[0].props.columns[4].label": "文件",
+    "root.children[1].children[0].props.columns[5].label": "脚本步骤",
+    "root.children[1].children[0].props.columns[6].label": "插件",
+    "root.children[1].children[0].props.columns[7].label": "布局对象",
+    "root.children[1].children[0].props.columns[8].label": "字段",
+    "root.children[1].children[0].props.columns[9].label": "自定义函数",
+
+    "root.children[2].props.title": "URL 详细列表",
+    "root.children[2].children[0].props.columns[0].label": "系列",
+    "root.children[2].children[0].props.columns[1].label": "引用类型",
+    "root.children[2].children[0].props.columns[2].label": "主机",
+    "root.children[2].children[0].props.columns[3].label": "脚本/上下文",
+    "root.children[2].children[0].props.columns[4].label": "文件",
+    "root.children[2].children[0].props.columns[5].label": "步骤/类型",
+    "root.children[2].children[0].props.columns[6].label": "#",
+    "root.children[2].children[0].props.columns[7].label": "URL",
+
+    "root.children[3].props.title": "外部数据源 (FileMaker / ODBC)",
+    "root.children[3].children[0].props.columns[0].label": "目标",
+    "root.children[3].children[0].props.columns[1].label": "类型",
+    "root.children[3].children[0].props.columns[2].label": "文件",
+    "root.children[3].children[0].props.columns[3].label": "TO",
+    "root.children[3].children[0].props.columns[4].label": "示例 TO",
+
+    "root.children[4].props.content": "## 说明\n\n本仪表板是可在其他 FileMaker 项目中复用的 **通用模板**。API 系列分类涵盖典型的云 / SaaS / 通信 / AI 服务提供商。对于项目专有的系列,请同步调整 `data/url_details.sql` 和 `data/api_families.sql` 中的 `CASE WHEN url ILIKE …` 代码块(参见 `url_details.sql` 的开头注释)。\n\n- **作为筛选器的 KPI**(跨所有 API 系列):*Open URL*、*Insert from URL* 统计该类型且步骤文本中包含 URL 的脚本步骤。*Import Records* 不论来源(文件/URL/变量)统计**所有** Import Records 步骤,作为接口指标。*MBS / Plugin* 统计调用了 MBS / CURL / Files 的计算中包含的 URL。*Web Viewer* 统计布局中的 Web Viewer 源。*计算* 统计脚本步骤公式(Set Variable、Set Field、If …)。*唯一 URL* 与 *外部源* 是不带筛选的纯统计磁贴。\n- **API 系列表**:单击系列行可筛选详细列表;单击 *全部* 取消筛选。*脚本步骤*、*插件*、*布局对象*、*字段*、*自定义函数* 这几列展示某系列的 URL 在各引用类型中的分布,值为 0 时隐藏。\n- **引用类型**:当计算文本调用 MBS 或插件函数(`CURL.*`、`MBS(…)`、`Files.*`、`Plugin.*`)时,容器类型将被 `Plugin` 覆盖。\n- **来源**:`Script (URL Step)` = `Open URL` / `Insert from URL`。`Script (Import)` = 所有 `Import Records`。`Script (Calc Step)` = 公式表达式中包含 URL 的步骤。`Custom Function` = CF 主体中的 URL。`Field` = Calculated 或 AutoEnter 公式。`Layout Object` = Hide / Tooltip / Label / Trigger 参数或 Web Viewer 源。\n- **密钥遮蔽**:查询参数 `api_key`、`token`、`password`、`secret`、`auth`、`signature` 在 URL 列中被缩减为 `[masked]`。\n- **导航**:单击详情行将打开匹配的对象(Script + 步骤锚点、Custom Function、Field、Layout — Web Viewer 还会附加布局筛选 `Container,Web Viewer`)。单击外部数据源将打开该源按字母顺序排列的第一个 TableOccurrence。\n- **排序**:API 系列、URL 详细列表与外部数据源中的列标题可点击(▲▼)。"
+  }
+}

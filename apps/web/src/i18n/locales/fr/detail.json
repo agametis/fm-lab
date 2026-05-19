@@ -1,0 +1,279 @@
+{
+  "autoTable": {
+    "rowCount_one": "{{count}} entrée",
+    "rowCount_other": "{{count}} entrées",
+    "filteredFrom": "filtré depuis {{count}}",
+    "page": "Page {{current}} / {{total}}",
+    "noMatches": "Aucun résultat pour « {{query}} ».",
+    "prev": "← Précédent",
+    "next": "Suivant →"
+  },
+  "layoutPreview": {
+    "heading": "Vue de la mise en page",
+    "loading": "Chargement de la mise en page…",
+    "empty": "Cette mise en page ne contient aucun objet."
+  },
+  "headings": {
+    "Script": "Texte du script",
+    "Layout": "Vue de la mise en page",
+    "Field": "Détails du champ",
+    "BaseTable": "Détails de la table",
+    "CustomFunction": "Détails de la fonction",
+    "ValueList": "Détails de la liste de valeurs"
+  },
+  "layoutCanvas": {
+    "searchPlaceholder": "Rechercher un objet de mise en page…",
+    "searchTitle": "Tab : résultat suivant · Maj+Tab : précédent · Entrée : ouvrir · Échap : réinitialiser",
+    "searchAria": "Rechercher un objet de mise en page",
+    "matchCount_one": "{{count}} résultat",
+    "matchCount_other": "{{count}} résultats",
+    "labelGroupAria": "Étiquette",
+    "labelName": "Nom",
+    "labelNameTitle": "Étiquette descriptive (nom du champ / libellé / nom de l’objet)",
+    "labelType": "Type",
+    "labelTypeTitle": "Afficher le type d’objet comme étiquette",
+    "stats_one": "{{count}} objet · Zoom {{zoom}} %",
+    "stats_other": "{{count}} objets · Zoom {{zoom}} %"
+  },
+  "relationshipGraphCanvas": {
+    "searchPlaceholder": "Rechercher une occurrence de table…",
+    "searchTitle": "Tab : résultat suivant · Maj+Tab : précédent · Échap : réinitialiser",
+    "searchAria": "Rechercher une occurrence de table",
+    "matchCount_one": "{{count}} résultat",
+    "matchCount_other": "{{count}} résultats",
+    "preselectChipTitle": "Effacer la présélection",
+    "preselectChipAria": "Effacer la présélection",
+    "preselectLabel": "Présélection :",
+    "stats_one": "{{tos}} TO · {{rels}} relation · Zoom {{zoom}} %",
+    "stats_other": "{{tos}} TO · {{rels}} relations · Zoom {{zoom}} %"
+  },
+  "dependencyGraph": {
+    "empty": "Aucune dépendance",
+    "fitTitle": "Ajuster tout le graphe",
+    "fitAria": "Ajuster le graphe",
+    "resetTitle": "Réinitialiser la disposition",
+    "resetAria": "Réinitialiser la disposition",
+    "fit": "Ajuster",
+    "reset": "Réinitialiser",
+    "legendCurrent": "Objet actuel",
+    "legendParent": "Parent",
+    "legendChild": "Enfant",
+    "legendCrossFile": "Inter-fichiers",
+    "hint": "Clic = naviguer · {{modKey}}+Clic = détails · Glisser = déplacer",
+    "graphAriaLabel": "Graphe de dépendances pour {{object}}"
+  },
+  "layoutTypeFilter": {
+    "categories": {
+      "Input":    "Saisie",
+      "Display":  "Affichage",
+      "Viewer":   "Visionneuse",
+      "Action":   "Action",
+      "Controls": "Contrôles",
+      "Groups":   "Groupes",
+      "Graphic":  "Graphique"
+    },
+    "types": {
+      "Edit Box":            "Zone de saisie",
+      "Drop-down List":      "Liste déroulante",
+      "Pop-up Menu":         "Menu local",
+      "Radio Button Set":    "Groupe de boutons radio",
+      "Checkbox Set":        "Groupe de cases à cocher",
+      "Drop-down Calendar":  "Calendrier déroulant",
+      "Concealed Edit Box":  "Zone de saisie masquée",
+      "Text":                "Texte",
+      "Graphic":             "Graphique",
+      "Container":           "Conteneur",
+      "Web Viewer":          "Visionneuse Web",
+      "Button":              "Bouton",
+      "Grouped Button":      "Bouton groupé",
+      "Button Bar":          "Barre de boutons",
+      "Popover Button":      "Bouton fenêtre contextuelle",
+      "Portal":              "Table externe",
+      "Panel":               "Panneau",
+      "Slide Control":       "Volet coulissant",
+      "Tab Control":         "Onglets",
+      "Group":               "Groupe",
+      "Rectangle":           "Rectangle",
+      "Line":                "Ligne",
+      "Oval":                "Ovale",
+      "Rounded Rectangle":   "Rectangle arrondi"
+    },
+    "detailsToggleToGroups": "Réduire en groupes",
+    "detailsToggleToDetails": "Afficher les types individuels",
+    "groupsLabel": "Groupes",
+    "detailsLabel": "Détails",
+    "clearTitle": "Effacer tous les filtres de type",
+    "clearLabel": "Effacer les filtres"
+  },
+  "referencesFilter": {
+    "searchPlaceholder": "Rechercher des références…",
+    "searchTitle": "Échap : effacer le champ",
+    "searchAria": "Rechercher des références",
+    "clearTypesTitle": "Effacer tous les filtres de type",
+    "clearTypesLabel": "Effacer les filtres"
+  },
+  "hierarchyTree": {
+    "ariaLabel": "Hiérarchie des objets",
+    "usedBy": "Utilisé par ({{count}})",
+    "usedByFiltered": "Utilisé par ({{count}} / {{total}})",
+    "uses": "Utilise ({{count}})",
+    "usesFiltered": "Utilise ({{count}} / {{total}})",
+    "structurallyContainedBy": "Structurellement contenu par ({{count}})",
+    "structurallyContainedByFiltered": "Structurellement contenu par ({{count}} / {{total}})",
+    "structurallyContains": "Contient structurellement ({{count}})",
+    "structurallyContainsFiltered": "Contient structurellement ({{count}} / {{total}})",
+    "noReferences": "Aucune référence trouvée",
+    "noFilterMatches": "Aucun résultat pour les filtres actuels",
+    "crossFileBadge": "Inter-fichiers",
+    "itemAriaLabel": "Naviguer vers {{type}} : {{name}}"
+  },
+  "searchOptions": {
+    "regionAria": "Options de tri et de regroupement",
+    "sortLabel": "Trier :",
+    "groupLabel": "Grouper :",
+    "sortStandard": "Standard",
+    "sortName": "Nom",
+    "sortType": "Type",
+    "sortFile": "Fichier",
+    "groupNone": "Aucun",
+    "groupType": "Type",
+    "groupFile": "Fichier"
+  },
+  "fieldViewer": {
+    "ariaLabel": "Détails du champ",
+    "fieldType": "Type de champ",
+    "dataType": "Type de donnée",
+    "global": "Global",
+    "yes": "Oui",
+    "repetitions": "Répétitions",
+    "autoEnter": "Auto-saisie",
+    "comment": "Commentaire",
+    "calculationFormula": "Formule de calcul",
+    "autoEnterCalculation": "Calcul d’auto-saisie"
+  },
+  "typeDetail": {
+    "loading": "Chargement…",
+    "loadError": "Échec du chargement : {{message}}",
+    "noData": "Aucun détail disponible."
+  },
+  "refTitle": {
+    "table": "Table :",
+    "baseTable": "Table de base :",
+    "scope": "Portée :",
+    "usage": "Usage :",
+    "file": "Fichier :",
+    "crossFile": "inter-fichiers"
+  },
+  "scriptStepLink": {
+    "navigateEnriched": "Aller au pseudo-objet : ScriptStepType '{{name}}'",
+    "navigateFallback": "{{name}} (ouvrir la page de détails du pseudo-objet)"
+  },
+  "helpLinks": {
+    "openLocalClarisHelp": "Ouvrir l’aide locale ↗",
+    "openOnlineClarisHelp": "Ouvrir l’aide Claris ↗",
+    "openLocalMbsHelp": "Ouvrir la doc MBS locale ↗",
+    "openOnlineMbsHelp": "Ouvrir la doc MBS ↗",
+    "noDocs": "Aucune documentation trouvée.",
+    "canonical": "Canonique :"
+  },
+  "objectListItem": {
+    "usageBadge_one": "{{count}} usage",
+    "usageBadge_other": "{{count}} usages",
+    "showAria": "{{type}} : {{name}} — afficher",
+    "noName": "(sans nom)",
+    "filterByCategory": "Filtrer par {{category}}"
+  },
+  "scriptSearchFilter": {
+    "searchAria": "Rechercher des références",
+    "searchPlaceholder": "Rechercher des références…",
+    "clearTitle": "Effacer tous les filtres de type",
+    "clearLabel": "Effacer les filtres",
+    "commentLabel": "Commentaire",
+    "commentTitle": "Commentaire ({{count}})",
+    "typeLabels": {
+      "field":           "Champ",
+      "script":          "Script",
+      "layout":          "Mise en page",
+      "customFunction":  "Fonction personnalisée",
+      "pluginFunction":  "Fonction de plugin",
+      "function":        "Fonction",
+      "variable":        "Variable",
+      "valueList":       "Liste de valeurs",
+      "tableOccurrence": "Occurrence de table"
+    }
+  },
+  "settingsView": {
+    "backAria": "Retour à la recherche",
+    "backLabel": "Retour",
+    "title": "Gestion des plugins",
+    "loading": "Chargement des plugins…",
+    "empty": "Aucun plugin installé.",
+    "loadError": "Échec du chargement",
+    "saveError": "Échec de l’enregistrement",
+    "statusActive": "Actif",
+    "statusInactive": "Inactif",
+    "restartRequired": "Un redémarrage est nécessaire pour que le nouvel état prenne effet.",
+    "settingsHeading": "Réglages",
+    "saveLabel": "Enregistrer les réglages",
+    "savingLabel": "Enregistrement…"
+  },
+  "objectHeader": {
+    "noName": "(sans nom)",
+    "source": "Source :",
+    "relationshipGraphLink": "↗ Graphe de relations",
+    "copyUuidAria": "Copier l’UUID dans le presse-papiers"
+  },
+  "scriptLine": {
+    "expand": "Développer",
+    "collapse": "Réduire"
+  },
+  "scriptViewer": {
+    "title": "Texte du script",
+    "stepCount_one": "({{count}} étape)",
+    "stepCount_other": "({{count}} étapes)",
+    "viewLabel": "Vue :",
+    "viewAria": "Mode d’affichage",
+    "filterStyleAria": "Style de filtre",
+    "filterStyleTitleEnabled": "Lignes filtrées : atténuer ou masquer",
+    "filterStyleTitleDisabled": "Pertinent uniquement avec un filtre actif",
+    "filterDim": "Atténuer",
+    "filterHide": "Masquer",
+    "modes": {
+      "normal": "Normal",
+      "compact": "Compact",
+      "commentsOnly": "Commentaires uniquement",
+      "controlOnly": "Structures de contrôle uniquement",
+      "subscriptOnly": "Appels de sous-scripts uniquement",
+      "assignmentsOnly": "Affectations uniquement",
+      "executiveOnly": "Code exécutable uniquement"
+    }
+  },
+  "refPill": {
+    "loading": "Résolution de la référence…",
+    "notFound": "Référence introuvable :",
+    "couldNotResolve": "Impossible de résoudre la référence : {{message}}",
+    "label": "Référence :",
+    "highlightsCount_one": "{{count}} résultat mis en évidence",
+    "highlightsCount_other": "{{count}} résultats mis en évidence",
+    "dismissAria": "Supprimer la mise en évidence de la référence",
+    "dismissTitle": "Supprimer la mise en évidence de la référence (Échap)"
+  },
+  "tableDetails": "Détails de la table",
+  "scriptDetails": "Détails du script",
+  "fieldDetails": "Détails du champ",
+  "layoutDetails": "Détails de la mise en page",
+  "valueListDetails": "Détails de la liste de valeurs",
+  "customFunctionDetails": "Détails de la fonction personnalisée",
+  "loadingObject": "Chargement de l’objet…",
+  "loadingFunction": "Chargement de la fonction…",
+  "noReferences": "Aucune référence",
+  "references": "Références",
+  "backReferences": "Utilisé par",
+  "forwardReferences": "Utilise",
+  "dependencies": "Dépendances",
+  "dependents": "Dépendants",
+  "definition": "Définition",
+  "metadata": "Métadonnées",
+  "rowCount_one": "{{count}} entrée",
+  "rowCount_other": "{{count}} entrées"
+}

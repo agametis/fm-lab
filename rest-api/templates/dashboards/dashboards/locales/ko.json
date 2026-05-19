@@ -1,0 +1,10 @@
+{
+  "manifest": {
+    "title": "대시보드",
+    "description": "사용 가능한 모든 대시보드의 개요입니다."
+  },
+  "layout": {
+    "root.children[0].props.title": "대시보드",
+    "root.children[0].props.subtitle": "클릭하면 선택한 대시보드가 열립니다."
+  }
+}

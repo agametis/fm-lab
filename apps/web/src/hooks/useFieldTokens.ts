@@ -14,7 +14,7 @@ const cache = new Map<string, FieldTokens>();
 
 export const useFieldTokens = (
   uuid: string | undefined,
-  lang: string = 'de',
+  lang: string,
 ): UseFieldTokensResult => {
   const [data, setData] = useState<FieldTokens | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,8 +43,8 @@ export const useFieldTokens = (
       cache.set(cacheKey, tokens);
       setData(tokens);
     } catch (err) {
-      console.error('Field-Token-Fetch fehlgeschlagen:', err);
-      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Field-Details');
+      console.error('Field token fetch failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load field details');
     } finally {
       isFetchingRef.current = false;
       setLoading(false);

@@ -1,30 +1,33 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useCustomFunctionTokens } from '../hooks/useCustomFunctionTokens';
+import { useApiLang } from '../hooks/useApiLang';
 import { CustomFunctionViewer } from './CustomFunctionViewer';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
 
 interface CustomFunctionDetailProps {
   uuid: string;
-  /** Cross-Reference Highlight (PRD §7.2): UUIDs auf Tokens highlighten. */
+  /** Cross-reference highlight (PRD §7.2): highlight tokens that match these UUIDs. */
   highlightRefUuids?: Set<string> | null;
 }
 
 /**
- * Wrapper für die token-basierte CustomFunction-Anzeige. Lädt
- * /api/get-details?format=tokens&enrich=de (PRD §5.2) und rendert die
- * Token-Sequenz inkl. Reference-DB-Tooltips für Engine-Funktionen.
+ * Wrapper for the token-based custom-function view. Loads
+ * `/api/get-details?format=tokens&enrich=<lang>` (PRD §5.2) and renders the
+ * token sequence with reference-DB tooltips for engine functions.
  *
- * Sprache aktuell auf 'de' fixiert — kann später aus einer Settings-Quelle
- * (UI-Locale, /reference/categories?lang=...) bezogen werden.
+ * The language tracks the active i18n language via `useApiLang()`.
  */
 export const CustomFunctionDetail: React.FC<CustomFunctionDetailProps> = ({ uuid, highlightRefUuids }) => {
-  const { data, loading, error, retry } = useCustomFunctionTokens(uuid, 'de');
+  const { t } = useTranslation(['detail']);
+  const lang = useApiLang();
+  const { data, loading, error, retry } = useCustomFunctionTokens(uuid, lang);
 
-  if (loading) return <LoadingSpinner message="Funktion wird geladen..." />;
+  if (loading) return <LoadingSpinner message={t('detail:loadingFunction') as string} />;
   if (error) return <ErrorMessage message={error} onRetry={retry} />;
   if (!data || !data.tokens || data.tokens.length === 0) {
-    return <div className="no-references">Diese Funktion enthält keinen Formel-Text.</div>;
+    return <div className="no-references">{t('detail:noReferences')}</div>;
   }
 
   return <CustomFunctionViewer data={data} highlightRefUuids={highlightRefUuids} />;

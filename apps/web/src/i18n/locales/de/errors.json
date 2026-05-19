@@ -1,0 +1,13 @@
+{
+  "loadFiles": "Fehler beim Laden der Dateien.",
+  "loadObjects": "Fehler beim Laden der Objekte.",
+  "loadFieldDetails": "Fehler beim Laden der Feld-Details",
+  "loadScriptDetails": "Fehler beim Laden der Script-Details",
+  "loadCustomFunctionDetails": "Fehler beim Laden der Custom-Function-Details",
+  "loadLayout": "Fehler beim Laden des Layouts",
+  "loadDashboard": "Fehler beim Laden des Dashboards",
+  "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+  "loadHeading": "Fehler beim Laden",
+  "retryAria": "Erneut versuchen",
+  "retryLabel": "Erneut versuchen"
+}

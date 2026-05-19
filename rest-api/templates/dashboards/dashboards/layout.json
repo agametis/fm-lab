@@ -6,7 +6,7 @@
     "children": [
       {
         "type": "Card",
-        "props": { "span": 12, "title": "Dashboards", "subtitle": "Klick öffnet das gewählte Dashboard." },
+        "props": { "span": 12, "title": "Dashboards", "subtitle": "Click a tile to open the selected dashboard." },
         "data": { "dataset": "dashboards" },
         "children": [
           {

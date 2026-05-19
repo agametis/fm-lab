@@ -1,0 +1,13 @@
+{
+  "loadFiles": "Bestanden konden niet worden geladen.",
+  "loadObjects": "Objecten konden niet worden geladen.",
+  "loadFieldDetails": "Velddetails konden niet worden geladen",
+  "loadScriptDetails": "Scriptdetails konden niet worden geladen",
+  "loadCustomFunctionDetails": "Details van aangepaste functie konden niet worden geladen",
+  "loadLayout": "Layout kon niet worden geladen",
+  "loadDashboard": "Dashboard kon niet worden geladen",
+  "generic": "Er is iets misgegaan. Probeer het opnieuw.",
+  "loadHeading": "Laden mislukt",
+  "retryAria": "Opnieuw proberen",
+  "retryLabel": "Opnieuw proberen"
+}

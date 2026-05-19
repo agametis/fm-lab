@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ViewMode } from '../script/types';
 
 export type FilterStyle = 'dim' | 'hide';
@@ -14,15 +15,25 @@ interface ScriptViewerHeaderProps {
   onCollapseMultiline: () => void;
 }
 
-const MODE_OPTIONS: Array<{ id: ViewMode; label: string }> = [
-  { id: 'normal',           label: 'Normal' },
-  { id: 'compact',          label: 'Kompakt' },
-  { id: 'comments-only',    label: 'Nur Kommentare' },
-  { id: 'control-only',     label: 'Nur Kontrollstrukturen' },
-  { id: 'subscript-only',   label: 'Nur Sub-Aufrufe' },
-  { id: 'assignments-only', label: 'Nur Zuweisungen' },
-  { id: 'executive-only',   label: 'Nur ausführbarer Code' },
+const MODE_IDS: ViewMode[] = [
+  'normal',
+  'compact',
+  'comments-only',
+  'control-only',
+  'subscript-only',
+  'assignments-only',
+  'executive-only',
 ];
+
+const MODE_TO_KEY: Record<ViewMode, string> = {
+  'normal':           'normal',
+  'compact':          'compact',
+  'comments-only':    'commentsOnly',
+  'control-only':     'controlOnly',
+  'subscript-only':   'subscriptOnly',
+  'assignments-only': 'assignmentsOnly',
+  'executive-only':   'executiveOnly',
+};
 
 export const ScriptViewerHeader: React.FC<ScriptViewerHeaderProps> = ({
   stepCount,
@@ -34,33 +45,34 @@ export const ScriptViewerHeader: React.FC<ScriptViewerHeaderProps> = ({
   onCollapseAll,
   onCollapseMultiline,
 }) => {
+  const { t } = useTranslation(['common', 'detail']);
   const filterDisabled = mode === 'normal';
   return (
     <div className="fm-script-header">
       <h2 className="type-detail-heading fm-script-title">
-        Script-Text <span className="fm-script-count">({stepCount} Schritte)</span>
+        {t('detail:scriptViewer.title')} <span className="fm-script-count">{t('detail:scriptViewer.stepCount', { count: stepCount })}</span>
       </h2>
       <div className="fm-script-actions">
         <label className="fm-script-mode">
-          <span className="fm-script-mode-label">Ansicht:</span>
+          <span className="fm-script-mode-label">{t('detail:scriptViewer.viewLabel')}</span>
           <select
             value={mode}
             onChange={(e) => onModeChange(e.target.value as ViewMode)}
-            aria-label="View-Mode"
+            aria-label={t('detail:scriptViewer.viewAria') as string}
           >
-            {MODE_OPTIONS.map(opt => (
-              <option key={opt.id} value={opt.id}>{opt.label}</option>
+            {MODE_IDS.map(id => (
+              <option key={id} value={id}>{t(`detail:scriptViewer.modes.${MODE_TO_KEY[id]}`)}</option>
             ))}
           </select>
         </label>
         <div
           className={`fm-filter-toggle${filterDisabled ? ' fm-filter-toggle--disabled' : ''}`}
           role="radiogroup"
-          aria-label="Filter-Stil"
+          aria-label={t('detail:scriptViewer.filterStyleAria') as string}
           aria-disabled={filterDisabled}
-          title={filterDisabled
-            ? 'Nur relevant, wenn ein Filter aktiv ist'
-            : 'Gefilterte Zeilen: dimmen oder ausblenden'}
+          title={(filterDisabled
+            ? t('detail:scriptViewer.filterStyleTitleDisabled')
+            : t('detail:scriptViewer.filterStyleTitleEnabled')) as string}
         >
           <button
             type="button"
@@ -70,7 +82,7 @@ export const ScriptViewerHeader: React.FC<ScriptViewerHeaderProps> = ({
             onClick={() => onFilterStyleChange('dim')}
             disabled={filterDisabled}
           >
-            Dimmen
+            {t('detail:scriptViewer.filterDim')}
           </button>
           <button
             type="button"
@@ -80,18 +92,18 @@ export const ScriptViewerHeader: React.FC<ScriptViewerHeaderProps> = ({
             onClick={() => onFilterStyleChange('hide')}
             disabled={filterDisabled}
           >
-            Ausblenden
+            {t('detail:scriptViewer.filterHide')}
           </button>
         </div>
         <div className="fm-script-fold-buttons">
-          <button type="button" onClick={onExpandAll} title="Alle aufklappen">
-            ⌄ Alle auf
+          <button type="button" onClick={onExpandAll} title={t('common:actions.expandAll') as string}>
+            ⌄ {t('common:actions.expandAll')}
           </button>
-          <button type="button" onClick={onCollapseAll} title="Alle zuklappen">
-            ⌃ Alle zu
+          <button type="button" onClick={onCollapseAll} title={t('common:actions.collapseAll') as string}>
+            ⌃ {t('common:actions.collapseAll')}
           </button>
-          <button type="button" onClick={onCollapseMultiline} title="Mehrzeilige Calcs zuklappen">
-            ⌃ Mehrzeilige
+          <button type="button" onClick={onCollapseMultiline} title={t('common:actions.collapseMultilineCalcs') as string}>
+            ⌃ {t('common:actions.collapseMultilineCalcs')}
           </button>
         </div>
       </div>

@@ -6,7 +6,7 @@
     "children": [
       {
         "type": "Card",
-        "props": { "span": 12, "title": "Analysen & Custom-Queries", "subtitle": "Klick öffnet die Analyse im Generischen Renderer." },
+        "props": { "span": 12, "title": "Analyses & custom queries", "subtitle": "Clicking a tile opens the analysis in the generic renderer." },
         "data": { "dataset": "queries" },
         "children": [
           {

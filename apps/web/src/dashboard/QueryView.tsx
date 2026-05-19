@@ -1,21 +1,23 @@
 import { useParams, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { DashboardHost } from './DashboardHost';
 import { SubPageHeader } from '../components';
 import type { BreadcrumbItem } from '../types';
 
 /**
- * Route-View für `/query/:queryName`. Ist ein dünner Wrapper um das
- * `_generic`-Dashboard mit dem Query-Namen als Param. URL-Suchparameter
- * (z.B. `?file=...`) werden zusätzlich an das Dashboard weitergereicht.
+ * Route view for `/query/:queryName`. Thin wrapper around the `_generic`
+ * dashboard with the query name as a parameter. Additional URL search
+ * params (e.g. `?file=...`) are forwarded to the dashboard.
  *
  * PRD: project/prd_dashboards_phase2.md §AP6.
  */
 export function QueryView() {
+  const { t } = useTranslation(['nav']);
   const { queryName } = useParams<{ queryName: string }>();
   const [searchParams] = useSearchParams();
 
   if (!queryName) {
-    return <div className="dash-host dash-host--error">Kein Query-Name angegeben.</div>;
+    return <div className="dash-host dash-host--error">{t('nav:errors.noQueryName')}</div>;
   }
 
   const params: Record<string, unknown> = { query: queryName };
@@ -25,8 +27,8 @@ export function QueryView() {
 
   const title = titleize(queryName);
   const breadcrumbs: BreadcrumbItem[] = [
-    { label: 'Suche', path: '/' },
-    { label: 'Analysen', path: '/dashboard/custom_queries' },
+    { label: t('nav:breadcrumbs.search') as string, path: '/' },
+    { label: t('nav:breadcrumbs.analyses') as string, path: '/dashboard/custom_queries' },
     { label: title, path: null },
   ];
 

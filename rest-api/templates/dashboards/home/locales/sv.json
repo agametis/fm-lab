@@ -1,0 +1,66 @@
+{
+  "manifest": {
+    "title": "Projektöversikt",
+    "description": "Startsida med nyckeltal, topp-objekt, hälsoindikatorer och navigering."
+  },
+  "layout": {
+    "root.children[0].props.title": "Projektöversikt",
+    "root.children[0].children[0].props.items[0].label": "Filer",
+    "root.children[0].children[0].props.items[1].label": "Objekt",
+    "root.children[0].children[0].props.items[2].label": "FM-version",
+    "root.children[0].children[0].props.items[3].label": "DDR-info",
+    "root.children[0].children[0].props.items[4].label": "Senaste import",
+
+    "root.children[1].props.title": "Objekt",
+    "root.children[1].children[0].props.items[0].label": "Skript",
+    "root.children[1].children[0].props.items[1].label": "Fält",
+    "root.children[1].children[0].props.items[2].label": "Tabeller",
+    "root.children[1].children[0].props.items[3].label": "TO",
+    "root.children[1].children[0].props.items[4].label": "Layouter",
+    "root.children[1].children[0].props.items[5].label": "Anpassade fns",
+    "root.children[1].children[0].props.items[6].label": "Värdelistor",
+    "root.children[1].children[0].props.items[7].label": "Relationer",
+
+    "root.children[2].props.title": "Filer",
+    "root.children[2].children[0].props.columns[0].label": "Fil",
+    "root.children[2].children[0].props.columns[1].label": "FM-version",
+    "root.children[2].children[0].props.columns[2].label": "Skript",
+    "root.children[2].children[0].props.columns[3].label": "Tabeller",
+    "root.children[2].children[0].props.columns[4].label": "Fält",
+    "root.children[2].children[0].props.columns[5].label": "Layouter",
+    "root.children[2].children[0].props.columns[6].label": "CF",
+    "root.children[2].children[0].props.columns[7].label": "DDR",
+    "root.children[2].children[0].props.columns[8].label": "Importerad",
+
+    "root.children[3].children[0].props.title": "Topp-skript",
+    "root.children[3].children[0].children[0].props.rowTemplate.secondary": "{{file}} · {{step_count}} steg",
+    "root.children[3].children[0].children[0].props.empty.message": "Inga skript hittades.",
+    "root.children[3].children[1].props.title": "Topp-tabeller",
+    "root.children[3].children[1].children[0].props.rowTemplate.secondary": "{{file}} · {{field_count}} fält",
+    "root.children[3].children[1].children[0].props.empty.message": "Inga tabeller hittades.",
+    "root.children[3].children[2].props.title": "Topp-layouter",
+    "root.children[3].children[2].children[0].props.rowTemplate.secondary": "{{file}} · {{object_count}} objekt",
+    "root.children[3].children[2].children[0].props.empty.message": "Inga layouter hittades.",
+    "root.children[3].children[3].props.title": "Topp anpassade funktioner",
+    "root.children[3].children[3].children[0].props.rowTemplate.secondary": "{{file}} · refererad {{reference_count}}×",
+    "root.children[3].children[3].children[0].props.empty.message": "Inga anpassade funktioner hittades.",
+
+    "root.children[4].props.title": "Hälsa och tips",
+    "root.children[4].children[0].props.empty.message": "Inga avvikelser.",
+
+    "root.children[5].props.title": "Variabel-hotspots",
+    "root.children[5].children[0].props.columns[0].label": "Variabel",
+    "root.children[5].children[0].props.columns[1].label": "Omfång",
+    "root.children[5].children[0].props.columns[2].label": "Set",
+    "root.children[5].children[0].props.columns[3].label": "Read",
+    "root.children[5].children[0].props.columns[4].label": "Skript",
+    "root.children[5].children[0].props.columns[5].label": "Filer",
+
+    "root.children[6].children[0].props.label": "Dashboards",
+    "root.children[6].children[0].props.subtitle": "Förberedda analyser",
+    "root.children[7].children[0].props.label": "Anpassade frågor",
+    "root.children[7].children[0].props.subtitle": "Återanvändbara SQL-mallar",
+
+    "root.children[8].props.content": "## Tips\n\n- **Sökning:** skriv ett namn i sökrutan för att filtrera objekt — dashboarden döljs automatiskt.\n- **Filer:** klick på en rad i fil-tabellen aktiverar fil-filtret för alla efterföljande vyer.\n- **Dashboards:** brickan *Dashboards* leder till kuraterade analyser, *Anpassade frågor* listar alla återanvändbara SQL-mallar.\n- **Detaljer:** klick på en post i en topplista öppnar detaljvyn för objektet."
+  }
+}

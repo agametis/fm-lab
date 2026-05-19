@@ -3,6 +3,11 @@ const { buildSuccess } = require('../utils/response-builder');
 const environment = require('../config/environment');
 const packageJson = require('../../package.json');
 const { getLoadedPlugins } = require('../plugins/loader');
+const {
+  DEFAULT_LANGUAGE,
+  SUPPORTED_LANGUAGES,
+  resolveLanguage,
+} = require('../config/languages');
 
 /**
  * Convert BigInt to Number for JSON serialization
@@ -147,7 +152,31 @@ async function info(req, res, next) {
   }
 }
 
+/**
+ * GET /api/system/config — Public client configuration.
+ *
+ * Returns the server-side default language and the list of supported
+ * languages. The web frontend reads this on startup (before the user has
+ * touched the language selector) and falls back to its own detection only
+ * when no server default is configured. Lets local installations ship
+ * their own default (e.g. `de`) via `REFERENCE_DEFAULT_LANG`.
+ */
+async function config(req, res, next) {
+  try {
+    const defaultLang = resolveLanguage(environment.reference.defaultLang) || DEFAULT_LANGUAGE;
+    res.json(buildSuccess({
+      languages: {
+        default: defaultLang,
+        supported: SUPPORTED_LANGUAGES,
+      },
+    }));
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   version,
   info,
+  config,
 };

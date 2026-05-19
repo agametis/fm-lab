@@ -1,0 +1,279 @@
+{
+  "autoTable": {
+    "rowCount_one": "{{count}}개 항목",
+    "rowCount_other": "{{count}}개 항목",
+    "filteredFrom": "{{count}}개에서 필터링됨",
+    "page": "{{current}} / {{total}} 페이지",
+    "noMatches": "「{{query}}」에 대한 일치 항목이 없습니다.",
+    "prev": "← 이전",
+    "next": "다음 →"
+  },
+  "layoutPreview": {
+    "heading": "레이아웃 보기",
+    "loading": "레이아웃 로딩 중…",
+    "empty": "이 레이아웃에는 오브젝트가 없습니다."
+  },
+  "headings": {
+    "Script": "스크립트 텍스트",
+    "Layout": "레이아웃 보기",
+    "Field": "필드 세부 정보",
+    "BaseTable": "테이블 세부 정보",
+    "CustomFunction": "함수 세부 정보",
+    "ValueList": "값 목록 세부 정보"
+  },
+  "layoutCanvas": {
+    "searchPlaceholder": "레이아웃 오브젝트 검색…",
+    "searchTitle": "Tab: 다음 일치 · Shift+Tab: 이전 · Enter: 열기 · Esc: 재설정",
+    "searchAria": "레이아웃 오브젝트 검색",
+    "matchCount_one": "{{count}}개 일치",
+    "matchCount_other": "{{count}}개 일치",
+    "labelGroupAria": "레이블",
+    "labelName": "이름",
+    "labelNameTitle": "설명 레이블(필드명 / 캡션 / 오브젝트명)",
+    "labelType": "유형",
+    "labelTypeTitle": "오브젝트 유형을 레이블로 표시",
+    "stats_one": "{{count}}개 오브젝트 · 줌 {{zoom}}%",
+    "stats_other": "{{count}}개 오브젝트 · 줌 {{zoom}}%"
+  },
+  "relationshipGraphCanvas": {
+    "searchPlaceholder": "테이블 어커런스 검색…",
+    "searchTitle": "Tab: 다음 일치 · Shift+Tab: 이전 · Esc: 재설정",
+    "searchAria": "테이블 어커런스 검색",
+    "matchCount_one": "{{count}}개 일치",
+    "matchCount_other": "{{count}}개 일치",
+    "preselectChipTitle": "사전 선택 지우기",
+    "preselectChipAria": "사전 선택 지우기",
+    "preselectLabel": "사전 선택:",
+    "stats_one": "{{tos}}개 TO · {{rels}}개 관계 · 줌 {{zoom}}%",
+    "stats_other": "{{tos}}개 TO · {{rels}}개 관계 · 줌 {{zoom}}%"
+  },
+  "dependencyGraph": {
+    "empty": "의존성이 없습니다",
+    "fitTitle": "그래프 전체 맞춤",
+    "fitAria": "그래프 맞춤",
+    "resetTitle": "레이아웃 초기화",
+    "resetAria": "레이아웃 초기화",
+    "fit": "맞춤",
+    "reset": "초기화",
+    "legendCurrent": "현재 오브젝트",
+    "legendParent": "상위",
+    "legendChild": "하위",
+    "legendCrossFile": "파일 간",
+    "hint": "클릭 = 이동 · {{modKey}}+클릭 = 세부 정보 · 드래그 = 이동",
+    "graphAriaLabel": "{{object}}의 의존성 그래프"
+  },
+  "layoutTypeFilter": {
+    "categories": {
+      "Input":    "입력",
+      "Display":  "표시",
+      "Viewer":   "뷰어",
+      "Action":   "동작",
+      "Controls": "컨트롤",
+      "Groups":   "그룹",
+      "Graphic":  "그래픽"
+    },
+    "types": {
+      "Edit Box":            "편집 상자",
+      "Drop-down List":      "드롭다운 목록",
+      "Pop-up Menu":         "팝업 메뉴",
+      "Radio Button Set":    "라디오 버튼 세트",
+      "Checkbox Set":        "체크박스 세트",
+      "Drop-down Calendar":  "드롭다운 캘린더",
+      "Concealed Edit Box":  "숨겨진 편집 상자",
+      "Text":                "텍스트",
+      "Graphic":             "그래픽",
+      "Container":           "컨테이너",
+      "Web Viewer":          "웹 뷰어",
+      "Button":              "버튼",
+      "Grouped Button":      "그룹 버튼",
+      "Button Bar":          "버튼 바",
+      "Popover Button":      "팝오버 버튼",
+      "Portal":              "포털",
+      "Panel":               "패널",
+      "Slide Control":       "슬라이드 컨트롤",
+      "Tab Control":         "탭 컨트롤",
+      "Group":               "그룹",
+      "Rectangle":           "사각형",
+      "Line":                "선",
+      "Oval":                "타원",
+      "Rounded Rectangle":   "둥근 사각형"
+    },
+    "detailsToggleToGroups": "그룹으로 접기",
+    "detailsToggleToDetails": "개별 유형 표시",
+    "groupsLabel": "그룹",
+    "detailsLabel": "세부 정보",
+    "clearTitle": "모든 유형 필터 지우기",
+    "clearLabel": "필터 지우기"
+  },
+  "referencesFilter": {
+    "searchPlaceholder": "참조 검색…",
+    "searchTitle": "Esc: 입력 지우기",
+    "searchAria": "참조 검색",
+    "clearTypesTitle": "모든 유형 필터 지우기",
+    "clearTypesLabel": "필터 지우기"
+  },
+  "hierarchyTree": {
+    "ariaLabel": "오브젝트 계층",
+    "usedBy": "사용처 ({{count}})",
+    "usedByFiltered": "사용처 ({{count}} / {{total}})",
+    "uses": "사용 ({{count}})",
+    "usesFiltered": "사용 ({{count}} / {{total}})",
+    "structurallyContainedBy": "구조적으로 포함됨 ({{count}})",
+    "structurallyContainedByFiltered": "구조적으로 포함됨 ({{count}} / {{total}})",
+    "structurallyContains": "구조적으로 포함 ({{count}})",
+    "structurallyContainsFiltered": "구조적으로 포함 ({{count}} / {{total}})",
+    "noReferences": "참조를 찾을 수 없습니다",
+    "noFilterMatches": "현재 필터에 일치하는 항목이 없습니다",
+    "crossFileBadge": "파일 간",
+    "itemAriaLabel": "{{type}}: {{name}}로 이동"
+  },
+  "searchOptions": {
+    "regionAria": "정렬 및 그룹 옵션",
+    "sortLabel": "정렬:",
+    "groupLabel": "그룹:",
+    "sortStandard": "표준",
+    "sortName": "이름",
+    "sortType": "유형",
+    "sortFile": "파일",
+    "groupNone": "없음",
+    "groupType": "유형",
+    "groupFile": "파일"
+  },
+  "fieldViewer": {
+    "ariaLabel": "필드 세부 정보",
+    "fieldType": "필드 유형",
+    "dataType": "데이터 유형",
+    "global": "전역",
+    "yes": "예",
+    "repetitions": "반복",
+    "autoEnter": "자동 입력",
+    "comment": "주석",
+    "calculationFormula": "계산 수식",
+    "autoEnterCalculation": "자동 입력 계산식"
+  },
+  "typeDetail": {
+    "loading": "로딩 중…",
+    "loadError": "불러오기 실패: {{message}}",
+    "noData": "사용 가능한 세부 정보가 없습니다."
+  },
+  "refTitle": {
+    "table": "테이블:",
+    "baseTable": "베이스 테이블:",
+    "scope": "범위:",
+    "usage": "사용:",
+    "file": "파일:",
+    "crossFile": "파일 간"
+  },
+  "scriptStepLink": {
+    "navigateEnriched": "의사 오브젝트로 이동: ScriptStepType '{{name}}'",
+    "navigateFallback": "{{name}} (의사 오브젝트의 세부 페이지 열기)"
+  },
+  "helpLinks": {
+    "openLocalClarisHelp": "로컬 도움말 열기 ↗",
+    "openOnlineClarisHelp": "Claris 도움말 열기 ↗",
+    "openLocalMbsHelp": "로컬 MBS 문서 열기 ↗",
+    "openOnlineMbsHelp": "MBS 문서 열기 ↗",
+    "noDocs": "문서를 찾을 수 없습니다.",
+    "canonical": "표준:"
+  },
+  "objectListItem": {
+    "usageBadge_one": "{{count}}회 사용",
+    "usageBadge_other": "{{count}}회 사용",
+    "showAria": "{{type}}: {{name}} — 표시",
+    "noName": "(이름 없음)",
+    "filterByCategory": "{{category}}로 필터링"
+  },
+  "scriptSearchFilter": {
+    "searchAria": "참조 검색",
+    "searchPlaceholder": "참조 검색…",
+    "clearTitle": "모든 유형 필터 지우기",
+    "clearLabel": "필터 지우기",
+    "commentLabel": "주석",
+    "commentTitle": "주석 ({{count}})",
+    "typeLabels": {
+      "field":           "필드",
+      "script":          "스크립트",
+      "layout":          "레이아웃",
+      "customFunction":  "사용자 정의 함수",
+      "pluginFunction":  "플러그인 함수",
+      "function":        "함수",
+      "variable":        "변수",
+      "valueList":       "값 목록",
+      "tableOccurrence": "테이블 어커런스"
+    }
+  },
+  "settingsView": {
+    "backAria": "검색으로 돌아가기",
+    "backLabel": "뒤로",
+    "title": "플러그인 관리",
+    "loading": "플러그인 로딩 중…",
+    "empty": "설치된 플러그인이 없습니다.",
+    "loadError": "불러오기 실패",
+    "saveError": "저장 실패",
+    "statusActive": "활성",
+    "statusInactive": "비활성",
+    "restartRequired": "새 상태를 적용하려면 재시작이 필요합니다.",
+    "settingsHeading": "설정",
+    "saveLabel": "설정 저장",
+    "savingLabel": "저장 중…"
+  },
+  "objectHeader": {
+    "noName": "(이름 없음)",
+    "source": "출처:",
+    "relationshipGraphLink": "↗ 관계 그래프",
+    "copyUuidAria": "UUID를 클립보드에 복사"
+  },
+  "scriptLine": {
+    "expand": "펼치기",
+    "collapse": "접기"
+  },
+  "scriptViewer": {
+    "title": "스크립트 텍스트",
+    "stepCount_one": "({{count}}개 스텝)",
+    "stepCount_other": "({{count}}개 스텝)",
+    "viewLabel": "보기:",
+    "viewAria": "보기 모드",
+    "filterStyleAria": "필터 스타일",
+    "filterStyleTitleEnabled": "필터된 행: 흐리게 또는 숨기기",
+    "filterStyleTitleDisabled": "필터가 활성화된 경우에만 의미가 있습니다",
+    "filterDim": "흐리게",
+    "filterHide": "숨기기",
+    "modes": {
+      "normal": "일반",
+      "compact": "간단히",
+      "commentsOnly": "주석만",
+      "controlOnly": "제어 구조만",
+      "subscriptOnly": "서브스크립트 호출만",
+      "assignmentsOnly": "대입만",
+      "executiveOnly": "실행 가능한 코드만"
+    }
+  },
+  "refPill": {
+    "loading": "참조를 확인 중…",
+    "notFound": "참조를 찾을 수 없습니다:",
+    "couldNotResolve": "참조를 확인할 수 없습니다: {{message}}",
+    "label": "참조:",
+    "highlightsCount_one": "{{count}}개 일치 하이라이트됨",
+    "highlightsCount_other": "{{count}}개 일치 하이라이트됨",
+    "dismissAria": "참조 하이라이트 제거",
+    "dismissTitle": "참조 하이라이트 제거 (Esc)"
+  },
+  "tableDetails": "테이블 세부 정보",
+  "scriptDetails": "스크립트 세부 정보",
+  "fieldDetails": "필드 세부 정보",
+  "layoutDetails": "레이아웃 세부 정보",
+  "valueListDetails": "값 목록 세부 정보",
+  "customFunctionDetails": "사용자 정의 함수 세부 정보",
+  "loadingObject": "오브젝트 로딩 중…",
+  "loadingFunction": "함수 로딩 중…",
+  "noReferences": "참조 없음",
+  "references": "참조",
+  "backReferences": "사용처",
+  "forwardReferences": "사용",
+  "dependencies": "의존성",
+  "dependents": "피의존",
+  "definition": "정의",
+  "metadata": "메타데이터",
+  "rowCount_one": "{{count}}개 항목",
+  "rowCount_other": "{{count}}개 항목"
+}

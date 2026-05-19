@@ -1,94 +1,127 @@
 ---
 name: fm-analyze
-description: Analysiert die Business-Logik und den semantischen Zweck eines FileMaker-Objekts (Script, Field, Layout, CustomFunction, ValueList, etc.) aus der DuckDB-Datenbank `db/fm_catalog.duckdb`. Im Gegensatz zu fm-summarize (rein technische Beschreibung) betrachtet diese Analyse den Kontext: Variablen-Benennungen, Layout-Bezeichnungen, vor- und nachgelagerte Scripts in der Call-Chain, Trigger-Quellen, Feldkommentare verknüpfter Objekte. Daraus wird der vermutete fachliche Zweck abgeleitet und beschrieben. Unterstützt zwei Modi — Standard (vollständiger Bericht mit Call-Chain und semantischen Signalen) und Kurz (1-2 Absätze Fließtext, via `--short` Flag oder Trigger-Wörter wie "kurz", "knapp", "1-2 Sätze", "TL;DR"). Wird ausgelöst durch Anfragen wie "/fm-analyze", "analysiere Script X", "was ist der Zweck von X", "welche Business-Logik steckt hinter X", "erkläre den fachlichen Sinn von X".
+description: Analyzes the business logic and semantic purpose of a FileMaker object (Script, Field, Layout, CustomFunction, ValueList, etc.) from the DuckDB database `db/fm_catalog.duckdb`. Unlike fm-summarize (purely technical description), this analysis considers the context: variable naming, layout labels, upstream and downstream scripts in the call chain, trigger sources, and field comments of linked objects. From these, the presumed business purpose is derived and described. Supports two modes — Standard (full report with call chain and semantic signals) and Short (1-2 paragraphs of prose, via `--short` flag or trigger words). Triggers (English): "/fm-analyze", "analyze script X", "what is the purpose of X", "explain the business intent of X". Triggers (German): "analysiere Script X", "was ist der Zweck von X", "welche Business-Logik steckt hinter X". Triggers (Spanish): "analiza el script X", "¿cuál es el propósito de X?". Triggers (French): "analyse le script X", "quel est l'objectif de X ?". Triggers (Italian): "analizza lo script X", "qual è lo scopo di X?". Triggers (Dutch): "analyseer script X", "wat is het doel van X?". Triggers (Portuguese): "analise o script X", "qual é o propósito de X?". Triggers (Swedish): "analysera skript X", "vad är syftet med X?". Triggers (Japanese): "スクリプトXを分析して", "Xの目的は何ですか". Triggers (Korean): "스크립트 X 분석해 줘", "X의 목적이 무엇인가요". Triggers (Chinese): "分析脚本 X", "X 的目的是什么".
 ---
 
-# FileMaker Objekt-Analyse (Business-Logik)
+# FileMaker Object Analysis (Business Logic)
 
-Analysiere ein FileMaker-Objekt nicht nur technisch, sondern leite den **fachlichen Zweck** und die **Business-Logik** aus dem Kontext ab — Variablen-Namen, verbundene Scripts, Layout-Bezeichnungen, Feldkommentare, Auslöser und nachgelagerte Effekte.
+Analyze a FileMaker object not only technically, but derive its **business purpose** and **business logic** from the context — variable names, connected scripts, layout labels, field comments, trigger sources, and downstream effects.
 
-## Abgrenzung zu fm-summarize
+## Differences from fm-summarize
 
-| Aspekt | fm-summarize | fm-analyze |
+| Aspect | fm-summarize | fm-analyze |
 |--------|-------------|------------|
-| Fokus | Was tut das Objekt technisch? | Warum existiert es fachlich? |
-| Tiefe | Direktes Objekt + 1 Hop | Mehrere Hops (Call-Chain, Aufrufer-Aufrufer, ...) |
-| Quellen | StepsForScripts, FieldsForTables, ObjectLinks | + Variablennamen, Layoutnamen, Feldkommentare verknüpfter Objekte, Trigger-Kontext |
-| Ergebnis | Strukturierte Faktenliste | Narrative Beschreibung mit Schlussfolgerungen |
-| Typische Frage | "Welche Schritte hat das Script?" | "Welche Geschäftslogik implementiert dieses Script?" |
+| Focus | What does the object do technically? | Why does it exist from a business perspective? |
+| Depth | Direct object + 1 hop | Multiple hops (call chain, caller-of-caller, ...) |
+| Sources | StepsForScripts, FieldsForTables, ObjectLinks | + variable names, layout names, field comments of linked objects, trigger context |
+| Result | Structured fact list | Narrative description with conclusions |
+| Typical question | "What steps does the script have?" | "What business logic does this script implement?" |
 
-**Faustregel**: Wenn der Benutzer wissen will, was das Objekt **macht** → fm-summarize. Wenn er wissen will, was das Objekt **bedeutet** oder **bezweckt** → fm-analyze.
+**Rule of thumb**: If the user wants to know what the object **does** → fm-summarize. If they want to know what the object **means** or its **purpose** → fm-analyze.
 
-Die beiden Skills schließen sich nicht aus: fm-analyze nutzt intern viele der gleichen Queries wie fm-summarize, wertet die Ergebnisse aber semantisch aus und erweitert sie um Kontext-Hops.
+The two skills are not mutually exclusive: fm-analyze internally uses many of the same queries as fm-summarize, but evaluates the results semantically and extends them with context hops.
 
-## Grundregeln
+## Ground rules
 
-- **Sprache**: Deutsch
-- **Datenbank**: `db/fm_catalog.duckdb` (DuckDB CLI, NICHT MotherDuck MCP)
-- **Aufruf**: `duckdb db/fm_catalog.duckdb -c "<SQL>"` via Bash
-- **Read-Only**: Niemals UPDATE/INSERT/DELETE
-- **Vor jeder Analyse**: Objekt eindeutig identifizieren (siehe Schritt 1 — gleiche Regeln wie in fm-summarize)
-- **Schlussfolgerungen kennzeichnen**: Was Faktum ist (aus DB) und was Interpretation ist (aus Benennung/Kontext) klar trennen. Interpretationen mit Wörtern wie "vermutlich", "deutet darauf hin", "spricht dafür" markieren.
+- **Database / SQL**: English — table and column names of `db/fm_catalog.duckdb` are English DDL identifiers; never translate them
+- **Database**: `db/fm_catalog.duckdb` — the master catalog file, accessed read-only via the local DuckDB CLI binary (`duckdb` in PATH; fallbacks `~/.duckdb/cli/latest/duckdb`, `/opt/homebrew/bin/duckdb`, `/usr/local/bin/duckdb` — VS Code does not inherit the shell PATH). Never read from `rest-api/db/fm_catalog.duckdb` — that copy is API-internal and may be stale.
+- **Invocation**: `duckdb db/fm_catalog.duckdb -c "<SQL>"` via Bash
+- **Read-only**: Never UPDATE/INSERT/DELETE
+- **Before every analysis**: Uniquely identify the object (see Step 1 — same rules as in fm-summarize)
+- **Mark conclusions**: Clearly separate what is fact (from DB) and what is interpretation (from naming/context). Mark interpretations with hedging vocabulary (see Response language section for per-language equivalents).
+- **Response language**: follows the user's prompt language — see next section
 
-## Ausgabe-Modi
+## Response language
 
-Identisch zur Konvention in [fm-summarize](../fm-summarize/SKILL.md):
+Reply in the language the user used for their prompt — that is the primary signal (e.g. an English question → English response, a Spanish question → Spanish response, even if the project default is German). Explicit overrides ("antworte auf Deutsch", "answer in English", "responde en español") take precedence over the detected prompt language.
 
-### Standard-Modus (Default)
+**What gets translated to the response language**:
+- Markdown section headers of the report (e.g. EN `### Presumed purpose` ↔ DE `### Vermuteter Zweck` ↔ ES `### Propósito presunto` ↔ FR `### Objectif présumé` ↔ IT `### Scopo presunto` ↔ NL `### Vermoedelijk doel` ↔ PT `### Propósito presumido` ↔ SV `### Antaget syfte` ↔ JA `### 推定される目的` ↔ KO `### 추정 목적` ↔ ZH `### 推测目的`)
+- Prose: Presumed purpose, Business context, Notes, Open questions
+- **Hedging vocabulary** in the response language:
+  - EN: "presumably", "indicates", "suggests", "appears to"
+  - DE: "vermutlich", "deutet darauf hin", "weist auf … hin", "wirkt wie"
+  - ES: "presumiblemente", "indica", "sugiere", "parece"
+  - FR: "vraisemblablement", "indique", "suggère", "semble"
+  - IT: "presumibilmente", "indica", "suggerisce", "sembra"
+  - NL: "vermoedelijk", "wijst op", "suggereert", "lijkt"
+  - PT: "presumivelmente", "indica", "sugere", "parece"
+  - SV: "förmodligen", "tyder på", "antyder", "verkar"
+  - JA: "おそらく", "示唆している", "～と思われる"
+  - KO: "아마도", "시사한다", "～로 보인다"
+  - ZH: "可能", "表明", "暗示", "似乎"
 
-Vollständiger Markdown-Bericht mit Vermuteter Zweck, Fachlicher Einordnung, Semantischen Signalen, Call-Chain (eingehend + ausgehend rekursiv), Berührten Objekten, Auffälligkeiten und offenen Fragen. Genaues Format siehe Schritt 5.
+**What stays original / English regardless of response language**:
+- **FileMaker identifiers** (script, field, layout, table, TO, variable names like `$$Modul`, `$kundenID`) — must match the actual FileMaker source 1:1
+- **`Link_Role` values** (`calls_script`, `sets_field`, `triggers_script`, …) — technical labels of the data model
+- **SQL queries, column names, table names of the DuckDB catalog** — always English (DDL identifiers)
+- **CLI flags** (`--short`) and skill-call tokens (`/fm-analyze`)
 
-### Kurz-Modus (`--short`)
+## Output modes
 
-1-2 Absätze **Fließtext**, **keine** Markdown-Sektionen, **keine** Tabellen, **keine** Code-Blöcke. Enthält nur den Kern-Schluss der Analyse: was das Objekt fachlich tut und in welchem Modul es operiert.
+Identical to the convention in [fm-summarize](../fm-summarize/SKILL.md):
 
-**Aktivierung des Kurz-Modus**:
+### Standard mode (default)
 
-1. **Explizites Flag** (Position frei):
+Full Markdown report with Presumed Purpose, Business Context, Semantic Signals, Call Chain (incoming + outgoing, recursive), Touched Objects, Noteworthy Observations and Open Questions. See Step 5 for the exact format.
+
+### Short mode (`--short`)
+
+1-2 paragraphs of **prose**, **no** Markdown sections, **no** tables, **no** code blocks. Contains only the core conclusion of the analysis: what the object does from a business perspective and in which module it operates.
+
+**Activation of short mode**:
+
+1. **Explicit flag** (position free):
    ```
    /fm-analyze Faktura_RechnungDrucken --short
    /fm-analyze --short Faktura_RechnungDrucken
    ```
 
-2. **Natürliche Sprache** — automatische Aktivierung bei Trigger-Wörtern in der Anfrage:
-   - "kurz", "knapp", "knappe Analyse"
-   - "1-2 Sätze", "in wenigen Sätzen"
-   - "Kurzanalyse"
-   - "TL;DR", "TLDR"
-   - "grob", "überblicksartig"
+2. **Natural language** — automatic activation on trigger words in the request. Detection is **case-insensitive** and language-agnostic; the keyword may appear anywhere in the prompt:
+   - **English**: short, brief, concise analysis, brief analysis, 1-2 sentences, in a few sentences, rough, overview, TL;DR, TLDR
+   - **German**: kurz, knapp, knappe Analyse, Kurzanalyse, 1-2 Sätze, in wenigen Sätzen, grob, überblicksartig
+   - **Spanish**: breve, corto, análisis breve, conciso, en pocas frases, 1-2 frases
+   - **French**: bref, court, analyse brève, concis, en quelques phrases, 1-2 phrases
+   - **Italian**: breve, corto, analisi breve, conciso, in poche frasi, 1-2 frasi
+   - **Dutch**: kort, beknopt, korte analyse, in een paar zinnen, 1-2 zinnen
+   - **Portuguese**: breve, curto, análise breve, conciso, em poucas frases, 1-2 frases
+   - **Swedish**: kort, kortfattat, kort analys, koncis, med några meningar, 1-2 meningar
+   - **Japanese**: 短く, 簡潔に, 簡単に, 簡易分析, 概要, 1-2文で
+   - **Korean**: 짧게, 간단히, 간략히, 간단 분석, 개요, 1-2문장으로
+   - **Chinese**: 简短, 简要, 简要分析, 概要, 1-2句话
 
-**Modus-Unterschiede**:
+**Mode differences**:
 
-| Sektion | Standard | `--short` |
+| Section | Standard | `--short` |
 |---------|----------|-----------|
-| Header (Name, Typ, Datei, UUID) | ✓ | ✗ (nur inline im Fließtext) |
-| Vermuteter Zweck | ✓ ausführlich | ✓ Kern (1-2 Sätze) |
-| Fachliche Einordnung (Modul/Rolle/Auslöser) | ✓ als Liste | ✓ inline im Fließtext (1 Halbsatz) |
-| Semantische Signale | ✓ als Liste | ✗ |
-| Call-Chain (eingehend/ausgehend) | ✓ rekursiv mit Pfaden | ✗ (höchstens "wird von 3 Stellen aufgerufen") |
-| Berührte Objekte (Tabelle) | ✓ | ✗ |
-| Auffälligkeiten | ✓ | nur kritisch (z.B. "DDR-Info fehlt") |
-| Offene Fragen | ✓ | ✗ |
+| Header (name, type, file, UUID) | ✓ | ✗ (only inline in prose) |
+| Presumed purpose | ✓ detailed | ✓ core (1-2 sentences) |
+| Business context (module/role/trigger source) | ✓ as list | ✓ inline in prose (1 half-sentence) |
+| Semantic signals | ✓ as list | ✗ |
+| Call chain (incoming/outgoing) | ✓ recursive with paths | ✗ (at most "is called from 3 places") |
+| Touched objects (table) | ✓ | ✗ |
+| Noteworthy observations | ✓ | only critical (e.g. "DDR-Info missing") |
+| Open questions | ✓ | ✗ |
 
-**Reduzierte Query-Liste im Kurz-Modus**: Statt alle Kontext-Hops aus Schritt 3 abzufragen, reichen:
-- Kerndaten des Objekts (Name, Kommentar, Typ)
-- Aggregierte Aufrufer-/Aufgerufenes-Counts (1 Hop, kein rekursives CTE)
-- Top-3 berührte Tabellen/Layouts als Modul-Hinweis
-- KEINE rekursiven Call-Chains, KEINE per-Variable-Aggregation, KEINE Field-Comment-Joins
+**Reduced query list in short mode**: Instead of querying all context hops from Step 3, the following are sufficient:
+- Core data of the object (name, comment, type)
+- Aggregated caller/callee counts (1 hop, no recursive CTE)
+- Top-3 touched tables/layouts as a module hint
+- NO recursive call chains, NO per-variable aggregation, NO field-comment joins
 
-**Hedging bleibt Pflicht**: Auch im Kurz-Modus müssen Interpretationen mit "vermutlich" / "deutet darauf hin" / "spricht dafür" gekennzeichnet sein. Lieber kein Modul angeben als ein falsches.
+**Hedging remains mandatory**: Even in short mode, interpretations must be marked with "presumably" / "indicates" / "suggests". Better to give no module than a wrong one.
 
-**Identifikation läuft in beiden Modi gleich** — auch im Kurz-Modus muss das Objekt zuerst eindeutig sein (Schritt 1 ist unverzichtbar).
+**Identification works the same in both modes** — even in short mode, the object must first be unique (Step 1 is indispensable).
 
 ## Workflow
 
-### Schritt 1 — Objekt identifizieren (BLOCKIEREND)
+### Step 1 — Identify object (BLOCKING)
 
-Identisch zu fm-summarize. Vor jeder weiteren Aktion MUSS das Objekt eindeutig sein:
+Identical to fm-summarize. Before any further action, the object MUST be unique:
 
-1. UUID gegeben → direkt im ObjectCatalog auflösen.
-2. Name gegeben → ObjectCatalog-Suche (case-insensitive). Bei mehreren Treffern Auswahlliste anbieten und auf Antwort warten. NICHT raten.
-3. Kontextableitung erlaubt, wenn klar.
+1. UUID given → resolve directly in ObjectCatalog.
+2. Name given → ObjectCatalog search (case-insensitive). On multiple hits, offer a selection list and wait for an answer. DO NOT guess.
+3. Context derivation allowed if clear.
 
 ```sql
 SELECT Object_UUID, Object_Type, Object_Name, File_Name, Source_Table, Object_ID
@@ -97,33 +130,33 @@ WHERE LOWER(Object_Name) = LOWER('<Name>')
 ORDER BY Object_Type, File_Name;
 ```
 
-### Schritt 2 — Kerndaten des Objekts laden
+### Step 2 — Load core data of the object
 
-Je nach Object_Type die typspezifischen Basisdaten holen — die SQL-Templates aus [fm-summarize](../fm-summarize/SKILL.md) wiederverwenden. Hier reicht meist:
+Depending on Object_Type, fetch the type-specific base data — reuse the SQL templates from [fm-summarize](../fm-summarize/SKILL.md). Usually this is sufficient:
 
-- **Script**: ScriptCatalog + StepsForScripts JOIN DDR_ScriptSteps (Step_Text bevorzugt)
-- **Field**: FieldsForTables (inkl. Field_Comment, Calculation_Text, AE_Calc_Text)
-- **Layout**: Layouts + LayoutParts + LayoutObjects (aggregiert)
+- **Script**: ScriptCatalog + StepsForScripts JOIN DDR_ScriptSteps (Step_Text preferred)
+- **Field**: FieldsForTables (incl. Field_Comment, Calculation_Text, AE_Calc_Text)
+- **Layout**: Layouts + LayoutParts + LayoutObjects (aggregated)
 - **CustomFunction**: CustomFunctionsCatalog + CalcsForCustomFunctions + DDR_Calculations
 
-**Wichtig für fm-analyze**: Im Gegensatz zu fm-summarize ist hier der **Field_Comment** Goldstaub — wenn vorhanden, ist er die direkteste Quelle für den fachlichen Zweck. Auch Script-Kommentare im ersten Schritt (`Step_Type = 'Comment'`) sollten gelesen werden, da Entwickler Scripts oft mit einem Kopfkommentar dokumentieren.
+**Important for fm-analyze**: In contrast to fm-summarize, the **Field_Comment** is gold dust here — if present, it is the most direct source for the business purpose. Script comments in the first step (`Step_Type = 'Comment'`) should also be read, since developers often document scripts with a header comment.
 
-### Schritt 3 — Semantische Signale sammeln (das Herzstück)
+### Step 3 — Collect semantic signals (the core)
 
-Über Schritt 2 hinaus die folgenden Kontext-Quellen abfragen. Welche relevant sind, hängt vom Object_Type ab.
+Beyond Step 2, query the following context sources. Which are relevant depends on the Object_Type.
 
-#### 3a — Variablen-Semantik
+#### 3a — Variable semantics
 
-Variablennamen sind oft sprechend (`$kundenID`, `$$Modul`, `$rechnungsdatum`). Über `VariableUsages` und `VariablesCatalog` herausfinden, welche Variablen das Objekt setzt/liest:
+Variable names are often meaningful (`$customerID`, `$$Modul`, `$invoiceDate`). Via `VariableUsages` and `VariablesCatalog`, find out which variables the object sets/reads:
 
 ```sql
--- Welche Variablen werden in diesem Script gesetzt/gelesen?
+-- Which variables are set/read in this script?
 SELECT
     Variable_Name,
     Variable_Scope,
     Usage_Type,
     Source,
-    COUNT(*) AS Anzahl
+    COUNT(*) AS Count
 FROM VariableUsages
 WHERE Script_UUID = '<Script_UUID>' AND File_Name = '<File>'
 GROUP BY ALL
@@ -131,28 +164,28 @@ ORDER BY Variable_Name, Usage_Type;
 ```
 
 ```sql
--- Wo wird eine spezifische Variable noch verwendet (gibt Hinweise auf Modulkontext)?
+-- Where else is a specific variable used (gives hints about module context)?
 SELECT Context_Type, Context_Name, Script_Name, Usage_Type, File_Name
 FROM VariableUsages
 WHERE Variable_Name = '<$$Modul>'
 ORDER BY Context_Type, Context_Name;
 ```
 
-**Auswertung**: Sprechende Namen wie `$$AktuellerKunde`, `$rechnungsBetrag`, `$$IstAdmin` deuten auf den fachlichen Zweck. Globale Variablen (`$$`) zeigen oft Modul- oder Sitzungskontext an. Superglobale (`$$$` über MBS) deuten auf systemweite Konfigurationen hin.
+**Evaluation**: Meaningful names like `$$selectedCustomer`, `$invoiceAmount`, `$$isAdmin` indicate the business purpose. Global variables (`$$`) often indicate module or session context. Superglobals (`$$$` via MBS) suggest system-wide configurations.
 
-#### 3b — Script-Call-Chain (rückwärts und vorwärts)
+#### 3b — Script call chain (backward and forward)
 
-**Vorwärts** — was ruft dieses Script auf?
+**Forward** — what does this script call?
 
 ```sql
 WITH RECURSIVE chain AS (
-    -- Start: dieses Script
+    -- Start: this script
     SELECT
         ol.Source_UUID, ol.Target_UUID,
         oc_t.Object_Name AS Target_Name,
         oc_t.File_Name AS Target_File,
-        1 AS Tiefe,
-        oc_t.Object_Name AS Pfad
+        1 AS Depth,
+        oc_t.Object_Name AS Path
     FROM ObjectLinks ol
     JOIN ObjectCatalog oc_t ON ol.Target_UUID = oc_t.Object_UUID
     WHERE ol.Source_UUID = '<Script_UUID>'
@@ -164,19 +197,19 @@ WITH RECURSIVE chain AS (
         ol.Source_UUID, ol.Target_UUID,
         oc_t.Object_Name,
         oc_t.File_Name,
-        c.Tiefe + 1,
-        c.Pfad || ' → ' || oc_t.Object_Name
+        c.Depth + 1,
+        c.Path || ' → ' || oc_t.Object_Name
     FROM chain c
     JOIN ObjectLinks ol ON c.Target_UUID = ol.Source_UUID
     JOIN ObjectCatalog oc_t ON ol.Target_UUID = oc_t.Object_UUID
     WHERE ol.Link_Role = 'calls_script'
-      AND c.Tiefe < 5  -- Tiefenbegrenzung gegen Zyklen
+      AND c.Depth < 5  -- depth limit to prevent cycles
 )
-SELECT DISTINCT Tiefe, Target_Name, Target_File, Pfad FROM chain
-ORDER BY Tiefe, Target_Name;
+SELECT DISTINCT Depth, Target_Name, Target_File, Path FROM chain
+ORDER BY Depth, Target_Name;
 ```
 
-**Rückwärts** — wer ruft dieses Script auf? (analog mit umgekehrter Richtung)
+**Backward** — who calls this script? (analogous, with reversed direction)
 
 ```sql
 WITH RECURSIVE callers AS (
@@ -184,8 +217,8 @@ WITH RECURSIVE callers AS (
         ol.Source_UUID,
         oc_s.Object_Name AS Source_Name,
         oc_s.File_Name AS Source_File,
-        1 AS Tiefe,
-        oc_s.Object_Name AS Pfad
+        1 AS Depth,
+        oc_s.Object_Name AS Path
     FROM ObjectLinks ol
     JOIN ObjectCatalog oc_s ON ol.Source_UUID = oc_s.Object_UUID
     WHERE ol.Target_UUID = '<Script_UUID>'
@@ -197,28 +230,28 @@ WITH RECURSIVE callers AS (
         ol.Source_UUID,
         oc_s.Object_Name,
         oc_s.File_Name,
-        c.Tiefe + 1,
-        oc_s.Object_Name || ' → ' || c.Pfad
+        c.Depth + 1,
+        oc_s.Object_Name || ' → ' || c.Path
     FROM callers c
     JOIN ObjectLinks ol ON c.Source_UUID = ol.Target_UUID
     JOIN ObjectCatalog oc_s ON ol.Source_UUID = oc_s.Object_UUID
     WHERE ol.Link_Role = 'calls_script'
-      AND c.Tiefe < 5
+      AND c.Depth < 5
 )
-SELECT DISTINCT Tiefe, Source_Name, Source_File, Pfad FROM callers
-ORDER BY Tiefe, Source_Name;
+SELECT DISTINCT Depth, Source_Name, Source_File, Path FROM callers
+ORDER BY Depth, Source_Name;
 ```
 
-**Auswertung**: Die rückwärts-Chain (Aufrufer) verrät den fachlichen Anlass: "Wird von 'Rechnung erstellen' aufgerufen" → das Script gehört zur Faktura. Die vorwärts-Chain zeigt, welche weiteren fachlichen Bausteine angefasst werden.
+**Evaluation**: The backward chain (callers) reveals the business trigger: "Called by 'Create invoice'" → the script belongs to invoicing. The forward chain shows which further business building blocks are touched.
 
-**Tiefenbegrenzung**: max. 5 Hops, sonst explodiert die Ausgabe. Bei hohem Verzweigungsgrad ggf. nur die unmittelbaren Nachbarn mit Beispielpfaden zeigen.
+**Depth limit**: max. 5 hops, otherwise the output explodes. With a high branching factor, show only the immediate neighbours with example paths if needed.
 
-#### 3c — Trigger-Quellen (Layout-Trigger, Script-Trigger, LayoutObject-Trigger)
+#### 3c — Trigger sources (layout triggers, script triggers, LayoutObject triggers)
 
-Wenn das Script über einen Trigger statt einen direkten Aufruf gestartet wird, ist der Trigger-Kontext entscheidend für die Bedeutung:
+If the script is started via a trigger rather than a direct call, the trigger context is decisive for its meaning:
 
 ```sql
--- Eingehende Trigger-Links
+-- Incoming trigger links
 SELECT ol.Link_Role, ol.Source_Type,
        oc.Object_Name AS Trigger_Source, oc.File_Name
 FROM ObjectLinks ol
@@ -227,18 +260,18 @@ WHERE ol.Target_UUID = '<Script_UUID>'
   AND ol.Link_Role IN ('triggers_script', 'trigger_script');
 ```
 
-Falls die Tabelle `ScriptTriggers` eine direkte Verknüpfung zum Script-UUID enthält, zusätzlich:
+If the `ScriptTriggers` table contains a direct link to the Script UUID, additionally:
 
 ```sql
 SELECT * FROM ScriptTriggers WHERE File_Name = '<File>' LIMIT 5;
--- Schema vor Verwendung prüfen — Spalten variieren je nach Datenbank-Version
+-- Check schema before use — columns vary by database version
 ```
 
-**Auswertung**: Trigger wie `OnRecordCommit` auf Layout "Rechnung" deuten auf eine Validierung oder Folgeaktion vor dem Speichern hin. `OnObjectExit` auf einem Eingabefeld deutet auf eine Berechnung nach Eingabe.
+**Evaluation**: Triggers like `OnRecordCommit` on layout "Invoices" indicate a validation or follow-up action before saving. `OnObjectExit` on an input field indicates a calculation after entry.
 
-#### 3d — Berührte Felder und ihre Kommentare
+#### 3d — Touched fields and their comments
 
-Felder, die das Script setzt oder liest, plus deren Kommentare:
+Fields the script sets or reads, plus their comments:
 
 ```sql
 SELECT DISTINCT
@@ -256,16 +289,16 @@ WHERE ol.Source_UUID = '<Script_UUID>'
 ORDER BY f.Table_Name, f.Field_Name;
 ```
 
-**Auswertung**: Die Tabellennamen (`Kunden`, `Rechnungen`, `Lieferadressen`) zeigen, welche fachlichen Entitäten betroffen sind. Field_Comments — falls vorhanden — sind fachliche Beschreibungen aus erster Hand.
+**Evaluation**: The table names (`Customers`, `Invoices`, `ShippingAddresses`) show which business entities are affected. Field_Comments — if present — are first-hand business descriptions.
 
-#### 3e — Berührte Layouts
+#### 3e — Touched layouts
 
-Welche Layouts ruft das Script auf? Layoutnamen sind häufig sprechend.
+Which layouts does the script navigate to? Layout names are often meaningful.
 
 ```sql
 SELECT DISTINCT
     l.L_Name AS Layout_Name,
-    l.L_TO_Name AS Kontext_TO,
+    l.L_TO_Name AS Context_TO,
     l.File_Name
 FROM ObjectLinks ol
 JOIN Layouts l ON ol.Target_UUID = l.L_UUID
@@ -273,11 +306,11 @@ WHERE ol.Source_UUID = '<Script_UUID>'
   AND ol.Link_Role = 'navigates_to_layout';
 ```
 
-**Auswertung**: Wenn ein Script auf "Rechnung_Druck" wechselt, ist der Druck-Workflow plausibel. Der `L_TO_Name` (Kontext-Tabellenvorkommnis) verrät die fachliche Datenbasis.
+**Evaluation**: If a script switches to "Invoice_Print", a print workflow is plausible. The `L_TO_Name` (context table occurrence) reveals the business data basis.
 
-#### 3f — Tabellen-Kontext
+#### 3f — Table context
 
-Bei Felder/TOs/Relationships die Felder der zugehörigen Tabelle anschauen — die Feldnamen einer Tabelle zusammen ergeben oft das fachliche Modell:
+For fields/TOs/relationships, look at the fields of the associated table — the field names of a table together often reveal the business model:
 
 ```sql
 SELECT Field_Name, Field_Type, Field_Comment
@@ -286,7 +319,7 @@ WHERE Table_UUID = '<BT_UUID>' AND File_Name = '<File>'
 ORDER BY Field_ID;
 ```
 
-#### 3g — Bei CustomFunctions: Wer ruft sie auf?
+#### 3g — For CustomFunctions: who calls them?
 
 ```sql
 SELECT
@@ -300,185 +333,196 @@ WHERE ol.Target_UUID = '<CF_UUID>'
   AND ol.Link_Type = 'operational';
 ```
 
-Die Aufrufer geben Hinweis darauf, in welchem fachlichen Bereich die Funktion operiert.
+The callers give a hint about the business area in which the function operates.
 
-### Schritt 4 — Semantische Auswertung
+### Step 4 — Semantic evaluation
 
-Aus den gesammelten Signalen Schlussfolgerungen ableiten. **Vorgehen**:
+Derive conclusions from the collected signals. **Procedure**:
 
-1. **Namens-Heuristik**: Achte auf wiederkehrende Begriffe in Objekt-, Variablen-, Feld-, Tabellen- und Layoutnamen. Tauchen "Rechnung", "Faktura", "Invoice" mehrfach auf? → Rechnungswesen-Modul. "Kunde", "Customer", "Account"? → Stammdatenpflege.
-2. **Aktions-Heuristik**: Welche Verben tauchen im Script-Namen und in den Step-Texten auf? `Anlegen`, `Erstellen`, `Drucken`, `Importieren`, `Validieren`, `Berechnen` — sie geben den primären Zweck vor.
-3. **Datenfluss-Heuristik**: Liest das Script mehr als es schreibt → vermutlich Berechnung/Auswertung. Schreibt es mehr als es liest → vermutlich Anlage/Update. Wechselt Layouts → Navigationssteuerung.
-4. **Trigger-Heuristik**: Wird das Script ausschließlich von einem Trigger aufgerufen → es ist eine Reaktion auf ein Ereignis, nicht ein vom Benutzer gestarteter Workflow.
-5. **Modul-Zuordnung**: Aus den berührten Tabellen und Layouts das fachliche Modul ableiten (Faktura, CRM, Lager, Buchhaltung, Berechtigung, Stammdaten, Reporting, ...).
-6. **Wiederverwendung erkennen**: Wird ein Script von vielen unterschiedlichen Aufrufern in unterschiedlichen Modulen genutzt → es ist eine Utility/Helper-Funktion. Wird es nur von einer einzigen Stelle aufgerufen → es ist ein spezifischer Workflow-Schritt.
-7. **Inkonsistenzen markieren**: Wenn der Name etwas suggeriert, was die Implementation nicht widerspiegelt (z.B. Script "Kunde anlegen", das aber nur ein Layout wechselt), dies als Hinweis ausgeben.
+1. **Naming heuristic**: Look for recurring terms in object, variable, field, table and layout names. Do "Invoice", "Billing", "Invoice" appear multiple times? → invoicing module. "Customer", "Account"? → master-data management.
+2. **Action heuristic**: Which verbs appear in the script name and in the step texts? `Create`, `Generate`, `Print`, `Import`, `Validate`, `Calculate` — they indicate the primary purpose.
+3. **Data-flow heuristic**: Does the script read more than it writes → presumably calculation/evaluation. Does it write more than it reads → presumably creation/update. Does it switch layouts → navigation control.
+4. **Trigger heuristic**: If the script is called exclusively from a trigger → it is a reaction to an event, not a workflow started by the user.
+5. **Module mapping**: From the touched tables and layouts, derive the business module (invoicing, CRM, inventory, accounting, permissions, master data, reporting, ...).
+6. **Recognize reuse**: If a script is called by many different callers in different modules → it is a utility/helper function. If it is called from only one place → it is a specific workflow step.
+7. **Flag inconsistencies**: If the name suggests something that the implementation does not reflect (e.g. script "Create Customer" that only switches a layout), report this as a hint.
 
-**Trennung von Fakten und Interpretation**:
-- Fakten: "Das Script ruft 4 Sub-Scripts auf und schreibt in die Felder Rechnungen::Status und Rechnungen::Bezahlt_am."
-- Interpretation: "Diese Kombination spricht dafür, dass das Script den Zahlungseingang einer Rechnung verbucht."
+**Separation of facts and interpretation**:
+- Facts: "The script calls 4 sub-scripts and writes to the fields Invoices::Status and Invoices::Paid_on."
+- Interpretation: "This combination suggests that the script books the payment receipt of an invoice."
 
-### Schritt 5 — Markdown-Bericht erzeugen
+### Step 5 — Generate Markdown report
 
-**Im Kurz-Modus** (`--short` oder Trigger-Wort): Direkt zum Abschnitt "Kurz-Modus-Output" am Ende dieses Schritts springen. Die ausführliche Sektion-Struktur unten gilt nur für den Standard-Modus.
+**In short mode** (`--short` or trigger word): Jump directly to the "Short-mode output" section at the end of this step. The detailed section structure below applies only to standard mode.
 
-Standard-Format:
+Standard format:
 
 ```markdown
-## Analyse: <Object_Type> "<Name>"
+## Analysis: <Object_Type> "<Name>"
 
-**Datei**: <File_Name>
+**File**: <File_Name>
 **UUID**: `<Object_UUID>`
 
-### Vermuteter Zweck
-<2-4 Sätze in eigener Sprache, was das Objekt fachlich bewirkt. Verwende Hedging
-("vermutlich", "deutet darauf hin"), wenn die Schlussfolgerung nicht 100% sicher ist.>
+### Presumed purpose
+<2-4 sentences in your own words on what the object does from a business perspective. Use hedging
+("presumably", "indicates") if the conclusion is not 100% certain.>
 
-### Fachliche Einordnung
-- **Modul / Domäne**: <z.B. Faktura, CRM, Berechtigung — abgeleitet aus berührten Tabellen/Layouts/Variablen>
-- **Rolle**: <z.B. Workflow-Hauptscript, Utility-Funktion, Validierung, Trigger-Reaktion, Druck-Vorbereitung>
-- **Auslöser**: <Wie wird das Objekt typischerweise gestartet? Direkter Aufruf, Trigger, Button, Menü>
+### Business context
+- **Module / domain**: <e.g. invoicing, CRM, permissions — derived from touched tables/layouts/variables>
+- **Role**: <e.g. main workflow script, utility function, validation, trigger reaction, print preparation>
+- **Trigger source**: <How is the object typically started? Direct call, trigger, button, menu>
 
-### Semantische Signale
-- **Sprechende Variablen**: $$AktuellerKunde, $rechnungsBetrag → deuten auf Kunden-/Rechnungs-Kontext
-- **Berührte Tabellen**: Kunden, Rechnungen, Rechnungspositionen → Faktura
-- **Layouts**: "Rechnung_Bearbeitung", "Rechnung_Druck" → Druck-Workflow plausibel
-- **Aufrufer**: Wird ausschließlich von "Faktura starten" aufgerufen → Schritt im Faktura-Workflow
-- **Aufgerufene Sub-Scripts**: "Rechnungsnummer vergeben", "Steuern berechnen" → strukturierter Anlage-Workflow
+### Semantic signals
+- **Meaningful variables**: $$SelectedCustomer, $invoiceAmount → indicate customer/invoice context
+- **Touched tables**: Customers, Invoices, InvoiceItems → invoicing
+- **Layouts**: "Invoice_Edit", "Invoice_Print" → print workflow plausible
+- **Callers**: Called exclusively from "Start Invoice" → step in invoicing workflow
+- **Called sub-scripts**: "Assign Invoice Number", "Calculate Taxes" → structured creation workflow
 
-### Call-Chain
-**Eingehend** (wer ruft dieses Objekt auf):
+### Call chain
+**Incoming** (who calls this object):
 \`\`\`
-Faktura starten → Rechnung anlegen (dieses Script)
-Stapelverarbeitung → Rechnung anlegen
-\`\`\`
-
-**Ausgehend** (was ruft dieses Objekt auf):
-\`\`\`
-Rechnung anlegen → Rechnungsnummer vergeben
-                → Steuern berechnen → MwSt-Tabelle laden
-                → Layout wechseln auf "Rechnung_Bearbeitung"
+Start Invoice → Create Invoice (this script)
+Batch Processing → Create Invoice
 \`\`\`
 
-### Berührte Objekte (Auswahl)
-| Tabelle | Feld | Aktion | Kommentar im Feld |
-|---------|------|--------|-------------------|
-| Rechnungen | Status | sets_field | Workflow-Status der Rechnung |
+**Outgoing** (what does this object call):
+\`\`\`
+Create Invoice → Assign Invoice Number
+                → Calculate Taxes → Load VAT Table
+                → Switch Layout to "Invoice_Edit"
+\`\`\`
+
+### Touched objects (selection)
+| Table | Field | Action | Field comment |
+|-------|-------|--------|---------------|
+| Invoices | Status | sets_field | Workflow status of the invoice |
+| Invoices | Paid_on | sets_field | Date when the invoice was paid |
 | ... | ... | ... | ... |
 
-### Auffälligkeiten / Hinweise
-<Optional: Inkonsistenzen, fehlende Kommentare, ungewöhnliche Konstrukte, sehr breite
-Wiederverwendung, deaktivierte Schritte, dead code, Cross-File-Abhängigkeiten>
+### Noteworthy observations / hints
+<Optional: inconsistencies, missing comments, unusual constructs, very wide
+reuse, disabled steps, dead code, cross-file dependencies>
 
-### Offene Fragen
-<Optional: Wenn die Analyse Lücken hinterlässt, die nur der Entwickler beantworten kann —
-formuliere konkrete Rückfragen, statt zu spekulieren.>
+### Open questions
+<Optional: If the analysis leaves gaps that only the developer can answer —
+formulate concrete follow-up questions instead of speculating.>
 ```
 
-**Format-Regeln (Standard-Modus)**:
-- Maximal 1-2 Markdown-Tabellen pro Bericht (nur dort, wo sie wirklich Mehrwert bringen)
-- Listen ab >15 Einträgen kürzen mit "(weitere X)"
-- Code-Blöcke nur für Call-Chain-Pfade
-- Hedging konsequent: "vermutlich", "deutet darauf hin", "spricht dafür" — niemals als Faktum behaupten, was nur eine Interpretation ist
-- Bei Scripts ohne DDR-Info (Step_Text NULL) explizit erwähnen, dass die Analyse durch fehlende Klartexte begrenzt ist
+**Format rules (standard mode)**:
+- Maximum 1-2 Markdown tables per report (only where they really add value)
+- Lists with >15 entries: truncate with "(further X)"
+- Code blocks only for call chain paths
+- Consistent hedging in the response language (see Response language section for per-language vocabulary) — never assert as fact what is only an interpretation
+- **Section headers and prose are produced in the response language** (see the "Response language" section near the top); the English headers in the template above are illustrative — FileMaker identifiers stay original
+- For scripts without DDR-Info (Step_Text NULL), explicitly mention that the analysis is limited by missing plain-text descriptions
 
-#### Kurz-Modus-Output (`--short`)
+#### Short-mode output (`--short`)
 
-Im Kurz-Modus entfällt die obige Sektions-Struktur komplett. Stattdessen: **1-2 Absätze Fließtext**, der die folgenden Fragen kompakt beantwortet:
+In short mode, the section structure above is completely omitted. Instead: **1-2 paragraphs of prose** that compactly answer the following questions:
 
-1. **Was ist das Objekt fachlich?** — Typ, Name, Datei (inline) + 1-2 Sätze zum vermuteten Zweck
-2. **In welchem Modul / welcher Domäne?** — höchstens 1 Halbsatz (z.B. "im Faktura-Modul")
-3. **(Optional) Wie ist es eingebunden?** — höchstens 1 Halbsatz zur Aufruferklasse, NUR wenn es den fachlichen Zweck wesentlich erklärt
+1. **What is the object from a business perspective?** — type, name, file (inline) + 1-2 sentences on the presumed purpose
+2. **In which module / domain?** — at most one half-sentence (e.g. "in the invoicing module")
+3. **(Optional) How is it integrated?** — at most one half-sentence on the caller class, ONLY if it substantially explains the business purpose
 
-**Verbote im Kurz-Modus**:
-- Keine Markdown-Header, keine Listen, keine Tabellen, keine Code-Blöcke
-- Keine UUID-Anzeige
-- Keine Call-Chain-Pfade
-- Keine Aufzählung semantischer Signale
-- Keine separate "Offene Fragen"-Sektion (offene Fragen ggf. als ein abschließender Halbsatz im Fließtext)
+**Prohibitions in short mode**:
+- No Markdown headers, no lists, no tables, no code blocks
+- No UUID display
+- No call chain paths
+- No enumeration of semantic signals
+- No separate "Open questions" section (open questions, if any, as a final half-sentence in the prose)
 
-**Hedging bleibt Pflicht**: "Vermutlich", "spricht dafür", "deutet darauf hin" — Interpretationen müssen auch im Kurz-Modus als solche gekennzeichnet sein.
+**Hedging remains mandatory**: "Presumably", "suggests", "indicates" — interpretations must also be marked as such in short mode.
 
-**Beispiel-Output (Kurz-Modus, Script)**:
+**Example output (short mode, script)**:
 
-> **Faktura_RechnungDrucken** (Datei `Rechnungen`) ist vermutlich der Druck-/PDF-Workflow für eine einzelne Rechnung im Faktura-Modul. Die berührten Tabellen (`Rechnungen`, `Rechnungspositionen`) und die Layout-Namen ("Rechnung_Druck", "Rechnung_PDF") sprechen dafür. Wird sowohl manuell aus der Rechnungsbearbeitung als auch aus einem Stapel-Workflow aufgerufen.
+> **Accounting_PrintInvoice** (file `Invoices`) is presumably the print / PDF workflow for a single invoice in the invoicing module. The touched tables (`Invoices`, `InvoiceItems`) and the layout names ("Invoice_Print", "Invoice_PDF") suggest this. It is called both manually from invoice editing and from a batch workflow.
 
-**Beispiel-Output (Kurz-Modus, Field)**:
+**Example output (short mode, field)**:
 
-> Das Feld **Email** in `Kunden` speichert vermutlich eine normalisierte (kleingeschriebene) Form der Email-Adresse zur eindeutigen Vergleichbarkeit — der Field-Kommentar bestätigt das. Die AutoEnter-Berechnung `Lower(Self)` und die Verwendung im Email-Versand-Workflow deuten auf den Stammdaten-/Kommunikations-Kontext hin.
+> The field **Email** in `Customers` presumably stores a normalized (lower-cased) form of the email address for unambiguous comparison — the field comment confirms this. The AutoEnter calculation `Lower(Self)` and its use in the email-dispatch workflow indicate the master-data / communication context.
 
-**Wenn der Kurz-Modus zu wenig Information liefert**: Am Ende des Fließtexts EINEN Hinweissatz anhängen wie *"Für die vollständige Call-Chain und semantischen Signale `/fm-analyze <Name>` ohne `--short` aufrufen."*
+**If short mode does not provide enough information**: Append ONE hint sentence at the end of the prose such as *"For the full call chain and semantic signals, run `/fm-analyze <Name>` without `--short`."*
 
-### Schritt 6 — Ausgabe
+### Step 6 — Output
 
-Bericht im Chat ausgeben. Nicht in Dateien schreiben (außer im Rahmen der unten beschriebenen geplanten Erweiterung — diese ist identisch zu fm-summarize).
+Output the report in the chat. Do not write to files (except as part of the planned extension described below — this is identical to fm-summarize).
 
-## Wichtige Hinweise
+## Important notes
 
-- **DDR-Verfügbarkeit**: Ohne DDR-Info (`XMLMetadata.Has_DDR_INFO = 'False'`) sind `DDR_ScriptSteps.Step_Text` und `DDR_Calculations.Chunk_Content` leer. Dann wird die semantische Analyse deutlich schwächer, weil aufgelöste Feld-/Variablen-Referenzen fehlen. Diese Limitation explizit im Bericht erwähnen.
-- **Tiefenbegrenzung**: Recursive CTEs immer mit `c.Tiefe < 5` (oder kleiner) absichern, um Zyklen und Explosion zu vermeiden.
-- **Performance**: Bei Scripts mit hunderten von berührten Feldern aggregieren statt einzeln auflisten.
-- **Hedging ist Pflicht**: Diese Skill liefert Interpretationen. Als Interpretation kennzeichnen, was Interpretation ist. Falsche Sicherheit ist schlimmer als ehrliche Unsicherheit.
-- **Generischer Fallback**: Für Object_Types ohne spezifischen Workflow (Theme, CustomMenu, Account, etc.) reicht oft der ObjectLinks-Hop-Out und die Auswertung der Aufrufer/Verwender, um den Zweck einzuordnen.
-- **Skill-Komposition**: Wenn der Benutzer NUR die Schritte sehen will, statt einer Analyse — fm-summarize verwenden, nicht beide.
+- **DDR availability**: Without DDR-Info (`XMLMetadata.Has_DDR_INFO = 'False'`), `DDR_ScriptSteps.Step_Text` and `DDR_Calculations.Chunk_Content` are empty. In that case the semantic analysis becomes significantly weaker because resolved field/variable references are missing. Mention this limitation explicitly in the report.
+- **Depth limit**: Always guard recursive CTEs with `c.Depth < 5` (or smaller) to avoid cycles and explosion.
+- **Performance**: For scripts with hundreds of touched fields, aggregate instead of listing individually.
+- **Hedging is mandatory**: This skill delivers interpretations. Mark as interpretation what is interpretation. False certainty is worse than honest uncertainty.
+- **Generic fallback**: For Object_Types without a specific workflow (Theme, CustomMenu, Account, etc.), the ObjectLinks hop-out and the evaluation of callers/users is often sufficient to classify the purpose.
+- **Skill composition**: If the user wants ONLY to see the steps instead of an analysis — use fm-summarize, not both.
 
-## Beispiele
+## Examples
 
-### Beispiel 1: Script mit klarem Modul-Kontext
+### Example 1: Script with clear module context
 
-**Benutzer**: "Was ist der fachliche Zweck von 'Faktura_RechnungDrucken'?"
+**User (English, primary)**: "What is the business purpose of 'Accounting_PrintInvoice'?"
+**User (German, equivalent)**: "Was ist der fachliche Zweck von 'Accounting_PrintInvoice'?"
+**User (French, equivalent)**: "Quel est l'objectif métier de 'Accounting_PrintInvoice' ?"
 
-1. ObjectCatalog → 1 Treffer (Script in `Rechnungen.fmp12`)
-2. Schritte laden, Variablen, berührte Felder, Layouts, Aufrufer
-3. Erkenntnisse:
-   - Berührte Tabellen: nur `Rechnungen`, `Rechnungspositionen`
-   - Variablen: `$rechnungsID`, `$ausgabe_pdf_pfad`
-   - Layouts: "Rechnung_Druck", "Rechnung_PDF"
-   - Aufgerufene Sub-Scripts: "PDF speichern", "Drucken"
-   - Aufrufer: Button auf "Rechnung_Bearbeitung", "Stapeldruck Rechnungen"
-4. Schlussfolgerung: "Druck-/PDF-Ausgabe einer einzelnen Rechnung. Wird sowohl manuell aus der Rechnungs-Bearbeitung als auch aus einem Stapelverarbeitungs-Workflow aufgerufen."
+Note: the object name `Accounting_PrintInvoice` stays as-is in any language — it is the FileMaker source identifier. The analysis report (Presumed purpose, Business context, etc.) is produced in the prompt's language.
 
-### Beispiel 2: Script ohne aussagekräftige Namen
+1. ObjectCatalog → 1 hit (Script in `Invoices.fmp12`)
+2. Load steps, variables, touched fields, layouts, callers
+3. Findings:
+   - Touched tables: only `Invoices`, `InvoiceItems`
+   - Variables: `$invoiceID`, `$output_pdf_path`
+   - Layouts: "Invoice_Print", "Invoice_PDF"
+   - Called sub-scripts: "Save PDF", "Print"
+   - Callers: Button on "Invoice_Edit", "Batch Print Invoices"
+4. Conclusion: "Print / PDF output of a single invoice. Called both manually from invoice editing and from a batch-processing workflow."
 
-**Benutzer**: "/fm-analyze ScriptXYZ_Util_v2"
+### Example 2: Script without meaningful names
 
-1. Identifikation OK
-2. Schritte zeigen primär `Set Variable`, `Loop`, `Get(...)`-Ausdrücke
-3. Berührte Felder: keine
-4. Aufrufer: 23 verschiedene Scripts in 4 verschiedenen Dateien
-5. Schlussfolgerung: "Vermutlich eine Utility-Funktion ohne fachliche Bindung — die hohe und breite Wiederverwendung deutet auf einen Helper hin (z.B. String-Verarbeitung, Datums-Berechnung, Plausibilitätsprüfung). Ohne sprechende Variablen oder Berührung von Datenfeldern lässt sich der genaue Zweck aus dem Kontext nicht ermitteln. Empfehlung: Schritt-für-Schritt-Code via `/fm-summarize` ansehen."
+**User (flag form)**: "/fm-analyze ScriptXYZ_Util_v2"
+**User (English, natural)**: "Analyze ScriptXYZ_Util_v2 briefly"
+**User (German, natural)**: "Analysiere ScriptXYZ_Util_v2 kurz"
+**User (French, natural)**: "Analyse brièvement ScriptXYZ_Util_v2"
 
-### Beispiel 3: Trigger-Reaktion auf Feld
+The natural-language variants additionally trigger short mode through the keyword "briefly / kurz / brièvement".
 
-**Benutzer**: "Analysiere das Feld 'Kunden::Email'"
+1. Identification OK
+2. Steps mainly show `Set Variable`, `Loop`, `Get(...)` expressions
+3. Touched fields: none
+4. Callers: 23 different scripts in 4 different files
+5. Conclusion: "Presumably a utility function without business affiliation — the high and broad reuse indicates a helper (e.g. string processing, date calculation, plausibility check). Without meaningful variables or contact with data fields, the exact purpose cannot be determined from the context. Recommendation: review the step-by-step code via `/fm-summarize`."
 
-1. FieldsForTables liefert: AutoEnter Calculated mit `AE_Calc_Text = "Lower(Self)"`, Field_Comment = "Email muss klein geschrieben sein für eindeutigen Vergleich"
-2. ObjectLinks: Wird auf Layouts "Kunden_Bearbeitung" und "Kunden_Liste" angezeigt, von Script "Email_Versand" gelesen
-3. Schlussfolgerung: "Speichert die Email-Adresse des Kunden in normalisierter (kleingeschriebener) Form. Der Field-Kommentar bestätigt: das dient der eindeutigen Vergleichbarkeit. Wird im Versand-Workflow aktiv genutzt."
+### Example 3: Trigger reaction on a field
 
-### Beispiel 4: Mehrdeutiger Name
+**User**: "Analyze the field 'Customers::Email'"
 
-**Benutzer**: "Analysiere 'Init'"
+1. FieldsForTables returns: AutoEnter Calculated with `AE_Calc_Text = "Lower(Self)"`, Field_Comment = "Email must be lower-cased for unambiguous comparison"
+2. ObjectLinks: Displayed on layouts "Customers_Edit" and "Customers_List", read by script "Email_Dispatch"
+3. Conclusion: "Stores the customer's email address in normalized (lower-cased) form. The field comment confirms: this serves unambiguous comparison. Actively used in the dispatch workflow."
 
-1. ObjectCatalog → 7 Scripts namens "Init" in 7 verschiedenen Dateien
-2. **Ausgabe**: Liste anbieten, fragen welches gemeint ist. Erst nach Antwort fortfahren.
+### Example 4: Ambiguous name
 
-## Geplante Erweiterungen (zukünftige Ausbaustufe)
+**User**: "Analyze 'Init'"
 
-> **Status**: Dokumentation only — nicht implementiert. Aktivierung erfolgt, wenn der Obsidian Vault eingerichtet ist. Spezifikation identisch zu fm-summarize.
+1. ObjectCatalog → 7 scripts named "Init" in 7 different files
+2. **Output**: Offer list, ask which one is meant. Proceed only after the answer.
 
-Nach Erzeugung der Analyse soll der Skill den Benutzer fragen, ob der Bericht als Notiz zum FileMaker-Objekt im Obsidian Vault gespeichert werden soll.
+## Planned extensions (future expansion stage)
 
-- **Zielort**: Obsidian Vault mit allen Projektnotizen zur FileMaker-Lösung (Pfad noch zu konfigurieren)
-- **Ablagestruktur**: Unterordner pro Object_Type
-- **Dateinamen**: Müssen die Object_UUID enthalten (eindeutige Referenzierung auch bei Umbenennung in FileMaker)
-- **Update-Verhalten**: Bestehende Notizen werden NIEMALS überschrieben — neue Analysen werden via Append (z.B. unter `## Analyse <Datum>`) angehängt. Begründung: vom Benutzer manuell ergänzte Inhalte (Designentscheidungen, Hintergründe, ToDos) müssen erhalten bleiben. Vergleiche Memory `feedback_obsidian_updates`.
-- **Frontmatter**: YAML mit `object_uuid`, `object_type`, `file_name`, `created_at`, plus eine `analysis_versions`-Liste, die jede Analyse-Iteration vermerkt
-- **Koexistenz mit fm-summarize**: Beide Skills schreiben in dieselbe Notizdatei pro Objekt. Unterschiedliche Sektionen (`## Technische Beschreibung` von fm-summarize vs. `## Analyse` von fm-analyze) im selben Dokument bündeln den gesamten Wissensstand pro Objekt an einem Ort.
+> **Status**: Documentation only — not implemented. Activation will happen once the Obsidian Vault is set up. Specification identical to fm-summarize.
 
-**TODOs vor Aktivierung**:
-1. Konfigurationsmechanismus für Vault-Pfad festlegen (gemeinsam mit fm-summarize)
-2. Append-Logik (Erkennung existierender Datei + Trennabschnitt mit Datum)
-3. Sanitizing für Dateinamen aus FileMaker-Namen (Sonderzeichen, Leerzeichen)
-4. Frontmatter-Schema mit dem Benutzer abstimmen
-5. Konvention klären: Wenn fm-summarize und fm-analyze beide Sektionen schreiben, wer entscheidet die Reihenfolge im Dokument?
+After generating the analysis, the skill is intended to ask the user whether the report should be saved as a note for the FileMaker object in the Obsidian Vault.
+
+- **Target location**: Obsidian Vault with all project notes for the FileMaker solution (path still to be configured)
+- **Storage structure**: Subfolder per Object_Type
+- **File names**: Must contain the Object_UUID (unambiguous referencing even after renaming in FileMaker)
+- **Update behaviour**: Existing notes are NEVER overwritten — new analyses are appended via append (e.g. under `## Analysis <date>`). Reason: content manually added by the user (design decisions, background, ToDos) must be preserved. Compare memory `feedback_obsidian_updates`.
+- **Frontmatter**: YAML with `object_uuid`, `object_type`, `file_name`, `created_at`, plus an `analysis_versions` list that records every analysis iteration
+- **Coexistence with fm-summarize**: Both skills write into the same note file per object. Different sections (`## Technical description` from fm-summarize vs. `## Analysis` from fm-analyze) in the same document bundle the entire body of knowledge per object in one place.
+
+**TODOs before activation**:
+1. Define configuration mechanism for the vault path (jointly with fm-summarize)
+2. Append logic (detection of existing file + separator section with date)
+3. Sanitizing for file names derived from FileMaker names (special characters, spaces)
+4. Coordinate the frontmatter schema with the user
+5. Clarify convention: if fm-summarize and fm-analyze both write sections, who decides the order in the document?

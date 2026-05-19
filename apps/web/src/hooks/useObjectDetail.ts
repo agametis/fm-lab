@@ -85,7 +85,7 @@ export const useObjectDetail = (uuid: string | undefined): UseObjectDetailResult
       setReferences(grouped);
     } catch (err) {
       console.error('Detail fetch failed:', err);
-      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Objekt-Details');
+      setError(err instanceof Error ? err.message : 'Failed to load object details');
     } finally {
       isFetchingRef.current = false;
       setLoading(false);

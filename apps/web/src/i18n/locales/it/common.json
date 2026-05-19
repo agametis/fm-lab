@@ -1,0 +1,73 @@
+{
+  "appTitle": "FileMaker Object Browser",
+  "loading": "Caricamento…",
+  "retry": "Riprova",
+  "back": "Indietro",
+  "backToPrevious": "Torna alla vista precedente",
+  "open": "Apri",
+  "close": "Chiudi",
+  "empty": "Niente da mostrare.",
+  "noData": "Nessun dato disponibile.",
+  "noEntries": "Nessuna voce.",
+  "unknown": "(sconosciuto)",
+  "all": "Tutto",
+  "filter": "Filtro",
+  "search": "Cerca",
+  "searchPlaceholder": "Cerca…",
+  "yes": "Sì",
+  "no": "No",
+  "loadError": "Caricamento non riuscito: {{message}}",
+  "language": {
+    "label": "Lingua",
+    "selectorAriaLabel": "Scegli la lingua dell’interfaccia"
+  },
+  "theme": {
+    "switchToLight": "Passa alla modalità chiara",
+    "switchToDark":  "Passa alla modalità scura"
+  },
+  "actions": {
+    "openInFileMaker": "Apri in FileMaker",
+    "copyUuid": "Copia UUID",
+    "expandAll": "Espandi tutto",
+    "collapseAll": "Comprimi tutto",
+    "collapseMultilineCalcs": "Comprimi i calcoli multiriga",
+    "fitToViewport": "Adatta alla vista",
+    "fitGraph": "Adatta il grafico",
+    "resetLayout": "Reimposta layout",
+    "clearPreselection": "Cancella la preselezione",
+    "showInRelationshipGraph": "Mostra nel grafo delle relazioni del file",
+    "fit": "Adatta",
+    "reset": "Reimposta",
+    "fullscreen": "Schermo intero ↗",
+    "openLayoutFullscreen": "Apri il layout a schermo intero",
+    "originalSize": "100 % dimensione originale"
+  },
+  "refOriginPill": {
+    "loading": "Risoluzione del riferimento…"
+  },
+  "hierarchy": {
+    "structurallyContains": "Contiene strutturalmente"
+  },
+  "layout": {
+    "empty": "Questo layout non contiene oggetti.",
+    "selectFile": "Seleziona un file…",
+    "title": "Layout"
+  },
+  "relationshipGraph": {
+    "title": "Grafo delle relazioni",
+    "fileLabel": "File:",
+    "selectFile": "Seleziona un file…",
+    "selectFilePrompt": "Seleziona un file dal selettore.",
+    "loading": "Caricamento del grafo delle relazioni…",
+    "noTOs": "Questo file non contiene occorrenze di tabella.",
+    "notImported": "Grafo delle relazioni non ancora importato. Riesegui convert-xml --batch."
+  },
+  "dependency": {
+    "empty": "Nessuna dipendenza."
+  },
+  "dashboard": {
+    "loading": "Caricamento del dashboard…",
+    "loadError": "Caricamento non riuscito: {{message}}",
+    "noData": "Nessun dato disponibile."
+  }
+}

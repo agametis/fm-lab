@@ -1,5 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { LayoutData, LayoutObject } from '../hooks/useLayoutData';
 import { useLayoutSearch } from '../hooks/useLayoutSearch';
 import { HighlightRing, LayoutObjectShape, SelectionRing, type LabelMode } from './LayoutObjectShape';
@@ -81,6 +82,7 @@ const PART_FILL: Record<string, string> = {
 };
 
 export const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(({ data, externalMatchUuids, onClearRef }, externalRef) => {
+  const { t } = useTranslation(['common', 'detail']);
   const navigate = useNavigate();
   // Aktuelle Detail-View-UUID — wird als Origin für Cross-Nav-Klicks mitgegeben.
   // Auf der Vollbild-Layout-View (/layout/:uuid) ist es das Layout selbst;
@@ -270,39 +272,42 @@ export const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(({ data, exter
             <input
               ref={searchInputRef}
               type="search"
-              placeholder="Layout-Objekt suchen…"
+              placeholder={t('detail:layoutCanvas.searchPlaceholder') as string}
               value={search.query}
               onChange={onSearchChange}
               onKeyDown={onSearchKeyDown}
-              title="Tab: nächster Treffer · Shift+Tab: voriger · Enter: öffnen · Esc: Reset"
-              aria-label="Layout-Objekt suchen"
+              title={t('detail:layoutCanvas.searchTitle') as string}
+              aria-label={t('detail:layoutCanvas.searchAria') as string}
             />
             {filterActive && (
               <span className="layout-match-count">
-                {search.matches.length} Treffer
+                {t('detail:layoutCanvas.matchCount', { count: search.matches.length })}
               </span>
             )}
           </div>
 
-          <div className="layout-label-toggle" role="group" aria-label="Beschriftung">
+          <div className="layout-label-toggle" role="group" aria-label={t('detail:layoutCanvas.labelGroupAria') as string}>
             <button
               type="button"
               className={`layout-toggle-btn${labelMode === 'name' ? ' active' : ''}`}
               onClick={() => setLabelMode('name')}
-              title="Sprechende Bezeichnung (Feldname / Caption / Object-Name)"
-            >Name</button>
+              title={t('detail:layoutCanvas.labelNameTitle') as string}
+            >{t('detail:layoutCanvas.labelName')}</button>
             <button
               type="button"
               className={`layout-toggle-btn${labelMode === 'type' ? ' active' : ''}`}
               onClick={() => setLabelMode('type')}
-              title="Object-Typ als Beschriftung"
-            >Typ</button>
+              title={t('detail:layoutCanvas.labelTypeTitle') as string}
+            >{t('detail:layoutCanvas.labelType')}</button>
           </div>
 
-          <button onClick={fitToViewport} type="button" title="Auf Viewport zoomen">Fit</button>
-          <button onClick={reset100} type="button" title="100% Originalgröße">100%</button>
+          <button onClick={fitToViewport} type="button" title={t('common:actions.fitToViewport') as string}>{t('common:actions.fit')}</button>
+          <button onClick={reset100} type="button" title={t('common:actions.originalSize') as string}>100%</button>
           <span className="layout-stats">
-            {data.objects.length} Objekte · Zoom {(transform.scale * 100).toFixed(0)}%
+            {t('detail:layoutCanvas.stats', {
+              count: data.objects.length,
+              zoom: (transform.scale * 100).toFixed(0),
+            })}
           </span>
         </div>
 

@@ -1,0 +1,13 @@
+{
+  "loadFiles": "加载文件失败。",
+  "loadObjects": "加载对象失败。",
+  "loadFieldDetails": "加载字段详情失败",
+  "loadScriptDetails": "加载脚本详情失败",
+  "loadCustomFunctionDetails": "加载自定义函数详情失败",
+  "loadLayout": "加载布局失败",
+  "loadDashboard": "加载仪表板失败",
+  "generic": "出现了问题。请重试。",
+  "loadHeading": "加载失败",
+  "retryAria": "重试",
+  "retryLabel": "重试"
+}

@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { components } from '@packages/shared/types';
 import {
-  CATEGORY_LABEL_DE,
   PSEUDO_TYPE_DRILLDOWN,
-  type PseudoTokenType,
 } from '@packages/shared/constants';
 import {
   PseudoTokenFilterToolbar,
@@ -85,6 +84,7 @@ export const PseudoTokenView: React.FC<Props> = ({
   initialSort,
   onUrlStateChange,
 }) => {
+  const { t } = useTranslation(['types', 'nav']);
   const isTokenType = PSEUDO_TOKEN_TYPES.has(objectType);
   const isComponentType = objectType === 'PluginComponent';
 
@@ -220,9 +220,10 @@ export const PseudoTokenView: React.FC<Props> = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const fallbackCategoryLabel = t('types:categoryHeader.ScriptStepType', { defaultValue: 'Category' });
   const categoryLabel = isTokenType
-    ? CATEGORY_LABEL_DE[objectType as PseudoTokenType] || 'Kategorie'
-    : 'Kategorie';
+    ? t(`types:categoryHeader.${objectType}`, { defaultValue: fallbackCategoryLabel })
+    : fallbackCategoryLabel;
 
   return (
     <div className="pseudo-token-view">
@@ -246,27 +247,27 @@ export const PseudoTokenView: React.FC<Props> = ({
         <div className="pseudo-token-toolbar pseudo-token-toolbar-component">
           <div className="pseudo-token-toolbar-row1">
             <div className="pseudo-token-toolbar-search">
-              <label htmlFor="pseudo-token-search-input">Suchen:</label>
+              <label htmlFor="pseudo-token-search-input">{t('nav:pseudoToolbar.searchLabel', { ns: 'nav' })}</label>
               <input
                 id="pseudo-token-search-input"
                 type="text"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                placeholder="Komponente filtern…"
+                placeholder={t('nav:pseudoToolbar.searchPlaceholder', { ns: 'nav' }) as string}
               />
               <span className="pseudo-token-count">
                 {filteredItems.length} / {items.length}
               </span>
             </div>
             <div className="pseudo-token-toolbar-sort">
-              <label htmlFor="pseudo-token-sort-select">Sortierung:</label>
+              <label htmlFor="pseudo-token-sort-select">{t('nav:pseudoToolbar.sortLabel', { ns: 'nav' })}</label>
               <select
                 id="pseudo-token-sort-select"
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortMode)}
               >
-                <option value="usage">↓ Häufigkeit</option>
-                <option value="name">A → Z</option>
+                <option value="usage">{t('nav:pseudoToolbar.sortByUsage', { ns: 'nav' })}</option>
+                <option value="name">{t('nav:pseudoToolbar.sortByName', { ns: 'nav' })}</option>
               </select>
             </div>
           </div>
@@ -274,7 +275,7 @@ export const PseudoTokenView: React.FC<Props> = ({
       )}
 
       {loading && items.length === 0 && (
-        <div className="virtual-list-empty">Lade Tokens…</div>
+        <div className="virtual-list-empty">{t('nav:list.loadingTokens', { ns: 'nav' })}</div>
       )}
 
       {error && (

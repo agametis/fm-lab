@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ScriptLineToken, FoldRange, MarginRole } from '../script/types';
 import { stepNameClass, getStepRole } from '../script/stepRoles';
 import { ScriptLineContent } from './ScriptLineContent';
@@ -21,6 +22,7 @@ export const ScriptLine: React.FC<ScriptLineProps> = React.memo(({
   folded,
   onToggleFold,
 }) => {
+  const { t } = useTranslation(['detail']);
   const isFoldable = !!foldStarts && foldStarts.length > 0;
   const role = getStepRole(line.stepName);
   const stepClass = line.stepName ? `fm-step--${stepNameClass(line.stepName)}` : '';
@@ -71,8 +73,8 @@ export const ScriptLine: React.FC<ScriptLineProps> = React.memo(({
             type="button"
             className="fm-fold-btn"
             onClick={handleFoldClick}
-            aria-label={folded ? 'Aufklappen' : 'Zuklappen'}
-            title={folded ? 'Aufklappen' : 'Zuklappen'}
+            aria-label={(folded ? t('detail:scriptLine.expand') : t('detail:scriptLine.collapse')) as string}
+            title={(folded ? t('detail:scriptLine.expand') : t('detail:scriptLine.collapse')) as string}
           >
             {folded ? '▸' : '▾'}
           </button>

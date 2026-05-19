@@ -1,96 +1,96 @@
 # MBS Function Reference Skill
 
-Dieser Skill ermöglicht Claude den Zugriff auf die offizielle Dokumentation des MonkeyBread Software (MBS) FileMaker Plugins über lokal gespeicherte HTML Dateien.
+This skill enables Claude to access the official documentation of the MonkeyBread Software (MBS) FileMaker Plugin through locally stored HTML files.
 
-## Zweck
+## Purpose
 
-Das MBS Plugin für FileMaker bietet tausende zusätzliche Funktionen für FileMaker-Entwickler. Dieser Skill hilft bei der Analyse von FileMaker Scripts, die MBS Funktionen verwenden, indem er automatisch die offizielle Dokumentation abruft und kontextbezogene Erklärungen liefert.
+The MBS Plugin for FileMaker provides thousands of additional functions for FileMaker developers. This skill assists with the analysis of FileMaker scripts that use MBS functions by automatically retrieving the official documentation and providing context-aware explanations.
 
-## Verwendung
+## Usage
 
-### Automatische Aktivierung
+### Automatic activation
 
-Der Skill wird automatisch aktiviert, wenn:
-- Du nach einer MBS Funktion fragst
-- Script-Analysen MBS Funktionen enthalten
-- Du explizit fragst: "Erkläre mir die MBS Funktion X"
+The skill is activated automatically when:
+- You ask about an MBS function
+- Script analyses include MBS functions
+- You explicitly ask: "Explain the MBS function X"
 
-### Manuelle Aktivierung
+### Manual activation
 
 ```bash
-# In Claude Code CLI
+# In the Claude Code CLI
 /skill mbs-function-reference MBS.SQL.Execute
 ```
 
-### Beispiel-Anfragen
+### Example requests
 
-1. **Einzelne Funktion nachschlagen**:
+1. **Look up a single function**:
    ```
-   Was macht die Funktion MBS.SQL.Execute?
-   ```
-
-2. **Im Script-Kontext**:
-   ```
-   Analysiere das Script "Datenimport" und erkläre die verwendeten MBS Funktionen
+   What does the function MBS.SQL.Execute do?
    ```
 
-3. **Best Practices**:
+2. **In a script context**:
    ```
-   Wie verwende ich MBS.Dialog.Alert richtig?
+   Analyse the script "Data Import" and explain the MBS functions used
    ```
 
-## Funktionsweise
+3. **Best practices**:
+   ```
+   How do I use MBS.Dialog.Alert correctly?
+   ```
 
-1. Der Skill identifiziert MBS Funktionsnamen im Text oder in Script-Analysen
-2. Er ruft die Dokumentation von `https://www.mbsplugins.eu/` ab
-3. Die Dokumentation wird analysiert und strukturiert aufbereitet
-4. Eine deutsche, kontextbezogene Erklärung wird generiert
+## How it works
 
-## URL-Muster
+1. The skill identifies MBS function names in the text or in script analyses
+2. It retrieves the documentation from `https://www.mbsplugins.eu/`
+3. The documentation is parsed and structured
+4. A context-aware explanation is generated
 
-Die MBS Dokumentation folgt diesem Muster:
+## URL pattern
+
+The MBS documentation follows this pattern:
 ```
 https://www.mbsplugins.eu/component_<FunctionName>.shtml
 ```
 
-Beispiele:
+Examples:
 - `MBS.SQL.Execute` → `https://www.mbsplugins.eu/component_MBS-SQL-Execute.shtml`
 - `FM.Dialog.Alert` → `https://www.mbsplugins.eu/component_FM-Dialog-Alert.shtml`
 
-## Ausgabe
+## Output
 
-Der Skill liefert strukturierte Informationen:
-- Funktionszweck und Beschreibung
-- Syntax mit Parametern
-- Rückgabewerte
-- Verfügbarkeit (MBS Version, Plattformen)
-- Beispielcode
-- Best Practices und häufige Fehler
+The skill provides structured information:
+- Function purpose and description
+- Syntax with parameters
+- Return values
+- Availability (MBS version, platforms)
+- Example code
+- Best practices and common pitfalls
 
-## Fehlerbehebung
+## Troubleshooting
 
-### Dokumentation nicht gefunden
-- Das Skill sollte automatisch die richtige Dokumentation im Projektverzeichnis unter `/docs/mbs` finden
-- Falls nicht, prüfe die Schreibweise des Funktionsnamens
+### Documentation not found
+- The skill should automatically find the correct documentation in the project directory under `/docs/mbs`
+- If not, check the spelling of the function name
 
-### Claude aktiviert den Skill nicht
-- Verwende explizit "MBS" im Funktionsnamen
-- Aktiviere den Skill manuell: `/skill mbs-function-reference`
+### Claude does not invoke the skill
+- Explicitly use "MBS" in the function name
+- Manually invoke the skill: `/skill mbs-function-reference`
 
-## Erweiterungen
+## Extensions
 
-Du kannst den Skill erweitern für:
-- Lokale Kopien der MBS Dokumentation
-- Cached Dokumentations-Lookups
-- Integration mit FileMaker DDR (Database Design Report)
-- Automatische Code-Beispiele in FileMaker-Syntax
+You can extend the skill with:
+- Local copies of the MBS documentation
+- Cached documentation lookups
+- Integration with the FileMaker DDR (Database Design Report)
+- Automatic code examples in FileMaker syntax
 
-## Ressourcen
+## Resources
 
-- [MBS Plugin Dokumentation](https://www.mbsplugins.eu/)
-- [MBS Plugin Homepage](https://www.mbsplugins.com/)
+- [MBS Plugin documentation](https://www.mbsplugins.eu/)
+- [MBS Plugin homepage](https://www.mbsplugins.com/)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 
-## Lizenz
+## License
 
-Dieser Skill ist Teil des fm-lab Projekts.
+This skill is part of the fm-lab project.

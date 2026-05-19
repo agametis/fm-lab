@@ -1,0 +1,66 @@
+{
+  "manifest": {
+    "title": "Panoramica del progetto",
+    "description": "Pagina iniziale con metriche chiave, oggetti principali, indicatori di salute e navigazione."
+  },
+  "layout": {
+    "root.children[0].props.title": "Panoramica del progetto",
+    "root.children[0].children[0].props.items[0].label": "File",
+    "root.children[0].children[0].props.items[1].label": "Oggetti",
+    "root.children[0].children[0].props.items[2].label": "Versione FM",
+    "root.children[0].children[0].props.items[3].label": "Info DDR",
+    "root.children[0].children[0].props.items[4].label": "Ultimo import",
+
+    "root.children[1].props.title": "Oggetti",
+    "root.children[1].children[0].props.items[0].label": "Script",
+    "root.children[1].children[0].props.items[1].label": "Campi",
+    "root.children[1].children[0].props.items[2].label": "Tabelle",
+    "root.children[1].children[0].props.items[3].label": "TO",
+    "root.children[1].children[0].props.items[4].label": "Layout",
+    "root.children[1].children[0].props.items[5].label": "Funzioni pers.",
+    "root.children[1].children[0].props.items[6].label": "Elenchi valori",
+    "root.children[1].children[0].props.items[7].label": "Relazioni",
+
+    "root.children[2].props.title": "File",
+    "root.children[2].children[0].props.columns[0].label": "File",
+    "root.children[2].children[0].props.columns[1].label": "Versione FM",
+    "root.children[2].children[0].props.columns[2].label": "Script",
+    "root.children[2].children[0].props.columns[3].label": "Tabelle",
+    "root.children[2].children[0].props.columns[4].label": "Campi",
+    "root.children[2].children[0].props.columns[5].label": "Layout",
+    "root.children[2].children[0].props.columns[6].label": "CF",
+    "root.children[2].children[0].props.columns[7].label": "DDR",
+    "root.children[2].children[0].props.columns[8].label": "Importato",
+
+    "root.children[3].children[0].props.title": "Top script",
+    "root.children[3].children[0].children[0].props.rowTemplate.secondary": "{{file}} · {{step_count}} passi",
+    "root.children[3].children[0].children[0].props.empty.message": "Nessuno script trovato.",
+    "root.children[3].children[1].props.title": "Top tabelle",
+    "root.children[3].children[1].children[0].props.rowTemplate.secondary": "{{file}} · {{field_count}} campi",
+    "root.children[3].children[1].children[0].props.empty.message": "Nessuna tabella trovata.",
+    "root.children[3].children[2].props.title": "Top layout",
+    "root.children[3].children[2].children[0].props.rowTemplate.secondary": "{{file}} · {{object_count}} oggetti",
+    "root.children[3].children[2].children[0].props.empty.message": "Nessun layout trovato.",
+    "root.children[3].children[3].props.title": "Top funzioni personalizzate",
+    "root.children[3].children[3].children[0].props.rowTemplate.secondary": "{{file}} · referenziato {{reference_count}}×",
+    "root.children[3].children[3].children[0].props.empty.message": "Nessuna funzione personalizzata trovata.",
+
+    "root.children[4].props.title": "Salute e segnalazioni",
+    "root.children[4].children[0].props.empty.message": "Nessuna anomalia.",
+
+    "root.children[5].props.title": "Hotspot variabili",
+    "root.children[5].children[0].props.columns[0].label": "Variabile",
+    "root.children[5].children[0].props.columns[1].label": "Ambito",
+    "root.children[5].children[0].props.columns[2].label": "Scrittura",
+    "root.children[5].children[0].props.columns[3].label": "Lettura",
+    "root.children[5].children[0].props.columns[4].label": "Script",
+    "root.children[5].children[0].props.columns[5].label": "File",
+
+    "root.children[6].children[0].props.label": "Dashboard",
+    "root.children[6].children[0].props.subtitle": "Analisi preimpostate",
+    "root.children[7].children[0].props.label": "Query personalizzate",
+    "root.children[7].children[0].props.subtitle": "Template SQL riutilizzabili",
+
+    "root.children[8].props.content": "## Suggerimenti\n\n- **Ricerca:** digita un nome nella casella di ricerca per filtrare gli oggetti — il dashboard si nasconde automaticamente.\n- **File:** un clic su una riga della tabella dei file attiva il filtro file per tutte le viste successive.\n- **Dashboard:** il riquadro *Dashboard* porta alle analisi curate, *Query personalizzate* elenca tutti i template SQL riutilizzabili.\n- **Dettagli:** un clic su una voce di una top list apre la vista di dettaglio dell’oggetto."
+  }
+}

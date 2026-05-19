@@ -2,7 +2,7 @@
   "id": "dashboards",
   "version": "1.0.0",
   "title": "Dashboards",
-  "description": "Übersicht aller verfügbaren Dashboards.",
+  "description": "Overview of every available dashboard.",
   "author": "fm-lab core",
   "icon": "layout-dashboard",
   "tags": ["nav"],

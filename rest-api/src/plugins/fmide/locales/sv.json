@@ -1,0 +1,13 @@
+{
+  "manifest": {
+    "description": "fmIDE Thingamajig URI-navigering"
+  },
+  "settings_schema": {
+    "fmp_protocol.label":         "FMP-protokoll",
+    "fmp_protocol.description":   "fmp eller fmps (TLS)",
+    "server_address.label":       "Serveradress",
+    "server_address.description": "$ för aktuell fil, annars värd/IP",
+    "script_name.label":          "Skriptnamn",
+    "script_name.description":    "Namn på målskriptet i FileMaker-filen"
+  }
+}

@@ -100,20 +100,24 @@ async function getJson<T>(path: string): Promise<T> {
   return body.data as T;
 }
 
-export async function listDashboards(): Promise<DashboardListItem[]> {
-  return getJson<DashboardListItem[]>('/dashboards');
+export async function listDashboards(lang?: string): Promise<DashboardListItem[]> {
+  return getJson<DashboardListItem[]>(`/dashboards${buildQuery(lang ? { lang } : undefined)}`);
 }
 
-export async function getDashboard(id: string): Promise<DashboardEnvelope> {
-  return getJson<DashboardEnvelope>(`/dashboards/${encodeURIComponent(id)}`);
+export async function getDashboard(id: string, lang?: string): Promise<DashboardEnvelope> {
+  return getJson<DashboardEnvelope>(
+    `/dashboards/${encodeURIComponent(id)}${buildQuery(lang ? { lang } : undefined)}`,
+  );
 }
 
 export async function getDashboardData(
   id: string,
-  params?: Record<string, unknown>
+  params?: Record<string, unknown>,
+  lang?: string,
 ): Promise<DashboardDataResponse> {
+  const merged = lang ? { ...(params || {}), lang } : params;
   const wrapper = await getJson<{ datasets: DashboardDataResponse }>(
-    `/dashboards/${encodeURIComponent(id)}/data${buildQuery(params)}`
+    `/dashboards/${encodeURIComponent(id)}/data${buildQuery(merged)}`
   );
   return wrapper.datasets;
 }
@@ -121,9 +125,11 @@ export async function getDashboardData(
 export async function getDashboardDataset(
   id: string,
   dataset: string,
-  params?: Record<string, unknown>
+  params?: Record<string, unknown>,
+  lang?: string,
 ): Promise<DatasetResult> {
+  const merged = lang ? { ...(params || {}), lang } : params;
   return getJson<DatasetResult>(
-    `/dashboards/${encodeURIComponent(id)}/data/${encodeURIComponent(dataset)}${buildQuery(params)}`
+    `/dashboards/${encodeURIComponent(id)}/data/${encodeURIComponent(dataset)}${buildQuery(merged)}`
   );
 }

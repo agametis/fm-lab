@@ -1,10 +1,12 @@
+import { useTranslation } from 'react-i18next';
 import type { PrimitiveProps } from '../types';
 
 /**
- * Card — Rahmen mit optionalem Titel.
- * Belegt `span` Spalten im umschließenden Grid (per CSS grid-column).
+ * Card — frame with optional title.
+ * Spans `span` columns in the enclosing grid (via CSS grid-column).
  */
 export function Card({ node, dataset, renderChildren }: PrimitiveProps) {
+  const { t } = useTranslation();
   const props = node.props ?? {};
   const span = (props.span as number) ?? 12;
   const title = props.title as string | undefined;
@@ -41,10 +43,10 @@ export function Card({ node, dataset, renderChildren }: PrimitiveProps) {
       )}
       <div className="dash-card__body">
         {datasetError && (
-          <div className="dash-card__error">Fehler beim Laden: {datasetError}</div>
+          <div className="dash-card__error">{t('loadError', { message: datasetError })}</div>
         )}
         {!datasetError && datasetIsEmpty && (
-          <div className="dash-card__empty">Keine Daten verfügbar.</div>
+          <div className="dash-card__empty">{t('noData')}</div>
         )}
         {!datasetError && !datasetIsEmpty && renderChildren(node.children, singleRow)}
       </div>

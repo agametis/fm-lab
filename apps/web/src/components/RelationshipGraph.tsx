@@ -1,5 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { RelationshipGraphData, TableOccurrence } from '../hooks/useRelationshipGraph';
 import { useGraphSearch } from '../hooks/useGraphSearch';
 import { TOBox, SelectionRing } from './TOBox';
@@ -46,6 +47,7 @@ function computeViewport(tos: TableOccurrence[]) {
 }
 
 export const RelationshipGraph = forwardRef<RelationshipGraphHandle, Props>(({ data, initialPreSelectUuid = null, onPreSelectExit }, externalRef) => {
+  const { t } = useTranslation(['common', 'detail']);
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -214,34 +216,38 @@ export const RelationshipGraph = forwardRef<RelationshipGraphHandle, Props>(({ d
           <input
             ref={searchInputRef}
             type="search"
-            placeholder="TO suchen…"
+            placeholder={t('detail:relationshipGraphCanvas.searchPlaceholder') as string}
             value={search.query}
             onChange={onSearchChange}
             onKeyDown={onSearchKeyDown}
-            title="Tab: nächster Treffer · Shift+Tab: voriger · Esc: Reset"
-            aria-label="Table Occurrence suchen"
+            title={t('detail:relationshipGraphCanvas.searchTitle') as string}
+            aria-label={t('detail:relationshipGraphCanvas.searchAria') as string}
           />
           {search.isPreSelectActive && search.preSelectName && (
-            <span className="relationship-graph-preselect-chip" title="Vorauswahl aufheben">
-              Vorauswahl: <strong>{search.preSelectName}</strong>
+            <span className="relationship-graph-preselect-chip" title={t('detail:relationshipGraphCanvas.preselectChipTitle') as string}>
+              {t('detail:relationshipGraphCanvas.preselectLabel')} <strong>{search.preSelectName}</strong>
               <button
                 type="button"
                 onClick={handleExitPreSelectChip}
-                aria-label="Vorauswahl entfernen"
+                aria-label={t('detail:relationshipGraphCanvas.preselectChipAria') as string}
               >✕</button>
             </span>
           )}
           {filterActive && (
             <span className="relationship-graph-match-count">
-              {search.matches.length} {search.matches.length === 1 ? 'Treffer' : 'Treffer'}
+              {t('detail:relationshipGraphCanvas.matchCount', { count: search.matches.length })}
             </span>
           )}
         </div>
-        <button onClick={fitToViewport} type="button" title="Auf Viewport zoomen">Fit</button>
-        <button onClick={reset100} type="button" title="100% Originalgröße">100%</button>
+        <button onClick={fitToViewport} type="button" title={t('common:actions.fitToViewport') as string}>{t('common:actions.fit')}</button>
+        <button onClick={reset100} type="button" title={t('common:actions.originalSize') as string}>100%</button>
         <span className="relationship-graph-stats">
-          {data.tableOccurrences.length} TOs · {data.relationships.length} Beziehungen
-          · Zoom {(transform.scale * 100).toFixed(0)}%
+          {t('detail:relationshipGraphCanvas.stats', {
+            count: data.tableOccurrences.length,
+            tos: data.tableOccurrences.length,
+            rels: data.relationships.length,
+            zoom: (transform.scale * 100).toFixed(0),
+          })}
         </span>
       </div>
       <div

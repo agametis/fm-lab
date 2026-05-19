@@ -1,0 +1,73 @@
+{
+  "appTitle": "FileMaker Object Browser",
+  "loading": "Loading…",
+  "retry": "Retry",
+  "back": "Back",
+  "backToPrevious": "Back to the previous view",
+  "open": "Open",
+  "close": "Close",
+  "empty": "Nothing to display.",
+  "noData": "No data available.",
+  "noEntries": "No entries.",
+  "unknown": "(unknown)",
+  "all": "All",
+  "filter": "Filter",
+  "search": "Search",
+  "searchPlaceholder": "Search…",
+  "yes": "Yes",
+  "no": "No",
+  "loadError": "Failed to load: {{message}}",
+  "language": {
+    "label": "Language",
+    "selectorAriaLabel": "Choose interface language"
+  },
+  "theme": {
+    "switchToLight": "Switch to light mode",
+    "switchToDark":  "Switch to dark mode"
+  },
+  "actions": {
+    "openInFileMaker": "Open in FileMaker",
+    "copyUuid": "Copy UUID",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "collapseMultilineCalcs": "Collapse multi-line calculations",
+    "fitToViewport": "Fit to viewport",
+    "fitGraph": "Fit graph",
+    "resetLayout": "Reset layout",
+    "clearPreselection": "Clear preselection",
+    "showInRelationshipGraph": "Show in the relationship graph of the file",
+    "fit": "Fit",
+    "reset": "Reset",
+    "fullscreen": "Fullscreen ↗",
+    "openLayoutFullscreen": "Open the layout in fullscreen view",
+    "originalSize": "100% original size"
+  },
+  "refOriginPill": {
+    "loading": "Resolving reference…"
+  },
+  "hierarchy": {
+    "structurallyContains": "Structurally contains"
+  },
+  "layout": {
+    "empty": "This layout has no objects.",
+    "selectFile": "Select a file…",
+    "title": "Layout"
+  },
+  "relationshipGraph": {
+    "title": "Relationship Graph",
+    "fileLabel": "File:",
+    "selectFile": "Select a file…",
+    "selectFilePrompt": "Please pick a file from the selector.",
+    "loading": "Loading the relationship graph…",
+    "noTOs": "This file has no table occurrences.",
+    "notImported": "Relationship graph not yet imported. Run convert-xml --batch again."
+  },
+  "dependency": {
+    "empty": "No dependencies."
+  },
+  "dashboard": {
+    "loading": "Loading dashboard…",
+    "loadError": "Failed to load: {{message}}",
+    "noData": "No data available."
+  }
+}

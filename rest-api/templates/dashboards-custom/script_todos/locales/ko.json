@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "스크립트의 TO-DO",
+    "description": "TO-DO 마커가 있는 주석 스텝의 개수를 세고, 파일별로 영향을 받는 모든 스크립트를 보여줍니다."
+  },
+  "layout": {
+    "root.children[0].props.title": "TO-DO 개요",
+    "root.children[0].children[0].props.items[0].label": "TO-DO 라인",
+    "root.children[0].children[0].props.items[1].label": "스크립트",
+    "root.children[0].children[0].props.items[2].label": "파일",
+
+    "root.children[1].props.title": "TO-DO가 있는 스크립트",
+    "root.children[1].children[0].props.columns[0].label": "파일",
+    "root.children[1].children[0].props.columns[1].label": "스크립트 이름",
+    "root.children[1].children[0].props.columns[2].label": "개수"
+  }
+}

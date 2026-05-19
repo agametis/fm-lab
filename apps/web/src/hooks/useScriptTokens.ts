@@ -9,18 +9,24 @@ interface UseScriptTokensResult {
   retry: () => void;
 }
 
+// Cache per (uuid, lang) — a language switch must refetch enriched tokens
 const cache = new Map<string, ScriptTokens>();
 
-export const useScriptTokens = (uuid: string | undefined): UseScriptTokensResult => {
+export const useScriptTokens = (
+  uuid: string | undefined,
+  lang: string,
+): UseScriptTokensResult => {
   const [data, setData] = useState<ScriptTokens | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isFetchingRef = useRef(false);
 
+  const cacheKey = uuid ? `${uuid}::${lang}` : '';
+
   const fetchData = useCallback(async () => {
     if (!uuid || isFetchingRef.current) return;
 
-    const cached = cache.get(uuid);
+    const cached = cache.get(cacheKey);
     if (cached) {
       setData(cached);
       setLoading(false);
@@ -33,17 +39,17 @@ export const useScriptTokens = (uuid: string | undefined): UseScriptTokensResult
     setError(null);
 
     try {
-      const tokens = await fetchScriptTokens(uuid);
-      cache.set(uuid, tokens);
+      const tokens = await fetchScriptTokens(uuid, lang);
+      cache.set(cacheKey, tokens);
       setData(tokens);
     } catch (err) {
-      console.error('Script-Token-Fetch fehlgeschlagen:', err);
-      setError(err instanceof Error ? err.message : 'Fehler beim Laden des Scripts');
+      console.error('Script token fetch failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load the script');
     } finally {
       isFetchingRef.current = false;
       setLoading(false);
     }
-  }, [uuid]);
+  }, [uuid, lang, cacheKey]);
 
   useEffect(() => {
     if (uuid) {

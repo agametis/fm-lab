@@ -22,7 +22,6 @@ fm-lab/
 ├── Banner.jpg                  Repo banner
 ├── CHANGELOG.md                Version history
 ├── CLAUDE.md                   Project instructions for Claude
-├── FM-Lab-Architecture.jpg     Architecture diagram
 ├── LICENSE                     License
 ├── README.md                   Project overview
 └── package.json                Node.js workspace configuration

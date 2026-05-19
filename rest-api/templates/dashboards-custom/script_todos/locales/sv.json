@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "TO-DO:n i skript",
+    "description": "Räknar kommentarsteg med TO-DO-markörer och visar alla berörda skript per fil."
+  },
+  "layout": {
+    "root.children[0].props.title": "TO-DO-översikt",
+    "root.children[0].children[0].props.items[0].label": "TO-DO-rader",
+    "root.children[0].children[0].props.items[1].label": "Skript",
+    "root.children[0].children[0].props.items[2].label": "Filer",
+
+    "root.children[1].props.title": "Skript med TO-DO:n",
+    "root.children[1].children[0].props.columns[0].label": "Fil",
+    "root.children[1].children[0].props.columns[1].label": "Skriptnamn",
+    "root.children[1].children[0].props.columns[2].label": "Antal"
+  }
+}

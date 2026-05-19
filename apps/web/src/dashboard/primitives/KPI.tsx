@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { PrimitiveProps } from '../types';
 import { formatKpiValue } from './_format';
 import { dispatchAction } from '../actions';
@@ -11,6 +12,7 @@ export interface KpiItem {
 }
 
 export function KPI({ node, row, navigate }: PrimitiveProps) {
+  const { i18n } = useTranslation();
   const props = node.props ?? {};
   const label = props.label as string;
   const field = props.field as string;
@@ -18,7 +20,7 @@ export function KPI({ node, row, navigate }: PrimitiveProps) {
   const onClick = props.onClick as ActionSpec | undefined;
 
   const value = row?.[field];
-  const formatted = formatKpiValue(value, format);
+  const formatted = formatKpiValue(value, format, i18n.language);
   const clickable = !!onClick;
 
   return (

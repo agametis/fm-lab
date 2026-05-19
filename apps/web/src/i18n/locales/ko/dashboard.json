@@ -1,0 +1,30 @@
+{
+  "cellValues": {
+    "All":          "전체",
+    "Other":        "기타",
+    "Internal LAN": "내부 LAN",
+    "Local Import": "로컬 가져오기",
+    "Localhost":    "Localhost",
+
+    "Fields without layout usage":    "레이아웃에서 사용되지 않는 필드",
+    "Fields without comment":         "주석이 없는 필드",
+    "Scripts without callers":        "호출자가 없는 스크립트",
+    "File-to-file relationships":     "파일 간 관계",
+    "Global / superglobal variables": "전역 / 슈퍼 전역 변수",
+
+    "Global and superglobal variables": "전역 및 슈퍼 전역 변수",
+    "Script complexity per file":       "파일별 스크립트 복잡도",
+
+    "Every field with an empty Field_Comment — candidates for documentation.": "Field_Comment가 비어 있는 모든 필드 — 문서화 후보입니다.",
+    "Every field that is not displayed or read on any layout.":                "어떤 레이아웃에도 표시되거나 읽히지 않는 모든 필드입니다.",
+    "Scripts that are not invoked by any other script or trigger.":            "다른 스크립트나 트리거에서 호출되지 않는 스크립트입니다.",
+    "Aggregated overview of cross-file references per file pair.":             "파일 쌍별 파일 간 참조의 집계 개요입니다.",
+    "Every $$ and $$$ variable with set/read statistics.":                     "모든 $$ 및 $$$ 변수의 쓰기/읽기 통계입니다.",
+    "Aggregated script statistics (count, average / max steps).":              "스크립트 통계 집계(개수, 평균 / 최대 스텝 수).",
+
+    "Dependencies": "의존성",
+    "Fields":       "필드",
+    "Scripts":      "스크립트",
+    "Variables":    "변수"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "manifest": {
+    "title": "분석 및 사용자 정의 쿼리",
+    "description": "준비된 모든 SQL 분석을 한눈에 보여줍니다."
+  },
+  "layout": {
+    "root.children[0].props.title": "분석 및 사용자 정의 쿼리",
+    "root.children[0].props.subtitle": "클릭하면 범용 렌더러에서 분석이 열립니다."
+  }
+}

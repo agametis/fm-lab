@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useLayoutData } from '../hooks/useLayoutData';
 import { LayoutCanvas, type LayoutCanvasHandle } from '../components/LayoutCanvas';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -7,6 +8,7 @@ import { useEscapeStack } from '../hooks/useEscapeStack';
 import './LayoutView.css';
 
 export function LayoutView() {
+  const { t } = useTranslation(['common', 'errors']);
   const { uuid } = useParams<{ uuid: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,9 +62,9 @@ export function LayoutView() {
           type="button"
           onClick={handleBack}
           className="layout-view-back"
-          title="Zurück zur vorherigen Ansicht"
+          title={t('common:backToPrevious') as string}
         >
-          ← Zurück
+          ← {t('common:back')}
         </button>
         <h1>
           Layout
@@ -80,10 +82,10 @@ export function LayoutView() {
       </header>
 
       <div className="layout-view-body">
-        {loading && <div className="layout-view-empty">Lade Layout…</div>}
-        {error && <div className="layout-view-error">Fehler: {error}</div>}
+        {loading && <div className="layout-view-empty">{t('common:loading')}</div>}
+        {error && <div className="layout-view-error">{t('common:loadError', { message: error })}</div>}
         {!loading && !error && data && data.objects.length === 0 && (
-          <div className="layout-view-empty">Dieses Layout enthält keine Objekte.</div>
+          <div className="layout-view-empty">{t('common:layout.empty')}</div>
         )}
         {!loading && !error && data && data.objects.length > 0 && (
           <LayoutCanvas ref={canvasRef} data={data} />

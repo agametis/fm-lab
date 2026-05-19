@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { ScriptLineToken } from '../script/types';
 import { buildObjectPath } from '../lib/navigation';
 
@@ -20,6 +21,7 @@ interface ScriptStepSpanProps {
  *   - nicht enriched → Browser-Tooltip als Fallback mit dem Step-Text
  */
 export const ScriptStepSpan: React.FC<ScriptStepSpanProps> = ({ text, line }) => {
+  const { t } = useTranslation(['detail']);
   const [open, setOpen] = useState(false);
   const hoverTimer = useRef<number | null>(null);
   const isEnriched = !!line.stepDisplayName;
@@ -60,7 +62,9 @@ export const ScriptStepSpan: React.FC<ScriptStepSpanProps> = ({ text, line }) =>
     <Link
       to={stepTypePath}
       className="fm-stepname-link"
-      title={isEnriched ? `Zu Pseudo-Objekt navigieren: ScriptStepType '${line.stepName ?? text}'` : `${text} (zur Pseudo-Objekt-Detailseite)`}
+      title={(isEnriched
+        ? t('detail:scriptStepLink.navigateEnriched', { name: line.stepName ?? text })
+        : t('detail:scriptStepLink.navigateFallback', { name: text })) as string}
       // Klick auf den Link soll das Popover sofort schließen.
       onClick={() => setOpen(false)}
     >
@@ -104,7 +108,7 @@ export const ScriptStepSpan: React.FC<ScriptStepSpanProps> = ({ text, line }) =>
               target="_blank"
               rel="noopener noreferrer"
             >
-              {line.stepLocalHelpUrl ? 'Lokale Hilfe öffnen ↗' : 'Claris-Hilfe öffnen ↗'}
+              {line.stepLocalHelpUrl ? t('detail:helpLinks.openLocalClarisHelp') : t('detail:helpLinks.openOnlineClarisHelp')}
             </a>
           )}
         </span>

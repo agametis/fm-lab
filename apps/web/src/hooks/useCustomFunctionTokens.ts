@@ -14,7 +14,7 @@ const cache = new Map<string, CustomFunctionTokens>();
 
 export const useCustomFunctionTokens = (
   uuid: string | undefined,
-  lang: string = 'de',
+  lang: string,
 ): UseCustomFunctionTokensResult => {
   const [data, setData] = useState<CustomFunctionTokens | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,8 +43,8 @@ export const useCustomFunctionTokens = (
       cache.set(cacheKey, tokens);
       setData(tokens);
     } catch (err) {
-      console.error('CustomFunction-Token-Fetch fehlgeschlagen:', err);
-      setError(err instanceof Error ? err.message : 'Fehler beim Laden der CustomFunction');
+      console.error('CustomFunction token fetch failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load custom function');
     } finally {
       isFetchingRef.current = false;
       setLoading(false);

@@ -1,0 +1,279 @@
+{
+  "autoTable": {
+    "rowCount_one": "{{count}} entrada",
+    "rowCount_other": "{{count}} entradas",
+    "filteredFrom": "filtrado de {{count}}",
+    "page": "Página {{current}} / {{total}}",
+    "noMatches": "Sem correspondências para «{{query}}».",
+    "prev": "← Anterior",
+    "next": "Seguinte →"
+  },
+  "layoutPreview": {
+    "heading": "Vista do layout",
+    "loading": "A carregar o layout…",
+    "empty": "Este layout não tem objetos."
+  },
+  "headings": {
+    "Script": "Texto do script",
+    "Layout": "Vista do layout",
+    "Field": "Detalhes do campo",
+    "BaseTable": "Detalhes da tabela",
+    "CustomFunction": "Detalhes da função",
+    "ValueList": "Detalhes da lista de valores"
+  },
+  "layoutCanvas": {
+    "searchPlaceholder": "Procurar objeto do layout…",
+    "searchTitle": "Tab: próxima correspondência · Shift+Tab: anterior · Enter: abrir · Esc: reiniciar",
+    "searchAria": "Procurar objeto do layout",
+    "matchCount_one": "{{count}} correspondência",
+    "matchCount_other": "{{count}} correspondências",
+    "labelGroupAria": "Etiqueta",
+    "labelName": "Nome",
+    "labelNameTitle": "Etiqueta descritiva (nome do campo / legenda / nome do objeto)",
+    "labelType": "Tipo",
+    "labelTypeTitle": "Mostrar o tipo de objeto como etiqueta",
+    "stats_one": "{{count}} objeto · Zoom {{zoom}}%",
+    "stats_other": "{{count}} objetos · Zoom {{zoom}}%"
+  },
+  "relationshipGraphCanvas": {
+    "searchPlaceholder": "Procurar ocorrência de tabela…",
+    "searchTitle": "Tab: próxima correspondência · Shift+Tab: anterior · Esc: reiniciar",
+    "searchAria": "Procurar ocorrência de tabela",
+    "matchCount_one": "{{count}} correspondência",
+    "matchCount_other": "{{count}} correspondências",
+    "preselectChipTitle": "Limpar pré-seleção",
+    "preselectChipAria": "Limpar pré-seleção",
+    "preselectLabel": "Pré-seleção:",
+    "stats_one": "{{tos}} TO · {{rels}} relação · Zoom {{zoom}}%",
+    "stats_other": "{{tos}} TOs · {{rels}} relações · Zoom {{zoom}}%"
+  },
+  "dependencyGraph": {
+    "empty": "Sem dependências",
+    "fitTitle": "Ajustar todo o grafo",
+    "fitAria": "Ajustar grafo",
+    "resetTitle": "Repor disposição",
+    "resetAria": "Repor disposição",
+    "fit": "Ajustar",
+    "reset": "Repor",
+    "legendCurrent": "Objeto atual",
+    "legendParent": "Pai",
+    "legendChild": "Filho",
+    "legendCrossFile": "Entre ficheiros",
+    "hint": "Clique = navegar · {{modKey}}+Clique = detalhes · Arrastar = mover",
+    "graphAriaLabel": "Grafo de dependências para {{object}}"
+  },
+  "layoutTypeFilter": {
+    "categories": {
+      "Input":    "Entrada",
+      "Display":  "Apresentação",
+      "Viewer":   "Visualizador",
+      "Action":   "Ação",
+      "Controls": "Controlos",
+      "Groups":   "Grupos",
+      "Graphic":  "Gráfico"
+    },
+    "types": {
+      "Edit Box":            "Caixa de edição",
+      "Drop-down List":      "Lista pendente",
+      "Pop-up Menu":         "Menu pop-up",
+      "Radio Button Set":    "Grupo de botões de opção",
+      "Checkbox Set":        "Grupo de caixas de verificação",
+      "Drop-down Calendar":  "Calendário pendente",
+      "Concealed Edit Box":  "Caixa de edição oculta",
+      "Text":                "Texto",
+      "Graphic":             "Gráfico",
+      "Container":           "Contentor",
+      "Web Viewer":          "Visualizador Web",
+      "Button":              "Botão",
+      "Grouped Button":      "Botão agrupado",
+      "Button Bar":          "Barra de botões",
+      "Popover Button":      "Botão popover",
+      "Portal":              "Portal",
+      "Panel":               "Painel",
+      "Slide Control":       "Controlo deslizante",
+      "Tab Control":         "Controlo de separadores",
+      "Group":               "Grupo",
+      "Rectangle":           "Retângulo",
+      "Line":                "Linha",
+      "Oval":                "Oval",
+      "Rounded Rectangle":   "Retângulo arredondado"
+    },
+    "detailsToggleToGroups": "Recolher em grupos",
+    "detailsToggleToDetails": "Mostrar tipos individuais",
+    "groupsLabel": "Grupos",
+    "detailsLabel": "Detalhes",
+    "clearTitle": "Limpar todos os filtros de tipo",
+    "clearLabel": "Limpar filtros"
+  },
+  "referencesFilter": {
+    "searchPlaceholder": "Procurar referências…",
+    "searchTitle": "Esc: limpar campo",
+    "searchAria": "Procurar referências",
+    "clearTypesTitle": "Limpar todos os filtros de tipo",
+    "clearTypesLabel": "Limpar filtros"
+  },
+  "hierarchyTree": {
+    "ariaLabel": "Hierarquia de objetos",
+    "usedBy": "Usado por ({{count}})",
+    "usedByFiltered": "Usado por ({{count}} / {{total}})",
+    "uses": "Usa ({{count}})",
+    "usesFiltered": "Usa ({{count}} / {{total}})",
+    "structurallyContainedBy": "Contido estruturalmente por ({{count}})",
+    "structurallyContainedByFiltered": "Contido estruturalmente por ({{count}} / {{total}})",
+    "structurallyContains": "Contém estruturalmente ({{count}})",
+    "structurallyContainsFiltered": "Contém estruturalmente ({{count}} / {{total}})",
+    "noReferences": "Não foram encontradas referências",
+    "noFilterMatches": "Sem correspondências para os filtros atuais",
+    "crossFileBadge": "Entre ficheiros",
+    "itemAriaLabel": "Navegar para {{type}}: {{name}}"
+  },
+  "searchOptions": {
+    "regionAria": "Opções de ordenação e agrupamento",
+    "sortLabel": "Ordenar:",
+    "groupLabel": "Agrupar:",
+    "sortStandard": "Padrão",
+    "sortName": "Nome",
+    "sortType": "Tipo",
+    "sortFile": "Ficheiro",
+    "groupNone": "Nenhum",
+    "groupType": "Tipo",
+    "groupFile": "Ficheiro"
+  },
+  "fieldViewer": {
+    "ariaLabel": "Detalhes do campo",
+    "fieldType": "Tipo de campo",
+    "dataType": "Tipo de dado",
+    "global": "Global",
+    "yes": "Sim",
+    "repetitions": "Repetições",
+    "autoEnter": "Auto-introdução",
+    "comment": "Comentário",
+    "calculationFormula": "Fórmula de cálculo",
+    "autoEnterCalculation": "Cálculo de auto-introdução"
+  },
+  "typeDetail": {
+    "loading": "A carregar…",
+    "loadError": "Falha ao carregar: {{message}}",
+    "noData": "Nenhum detalhe disponível."
+  },
+  "refTitle": {
+    "table": "Tabela:",
+    "baseTable": "Tabela base:",
+    "scope": "Âmbito:",
+    "usage": "Utilização:",
+    "file": "Ficheiro:",
+    "crossFile": "entre ficheiros"
+  },
+  "scriptStepLink": {
+    "navigateEnriched": "Ir para pseudo-objeto: ScriptStepType '{{name}}'",
+    "navigateFallback": "{{name}} (abrir página de detalhes do pseudo-objeto)"
+  },
+  "helpLinks": {
+    "openLocalClarisHelp": "Abrir ajuda local ↗",
+    "openOnlineClarisHelp": "Abrir ajuda da Claris ↗",
+    "openLocalMbsHelp": "Abrir documentação MBS local ↗",
+    "openOnlineMbsHelp": "Abrir documentação MBS ↗",
+    "noDocs": "Documentação não encontrada.",
+    "canonical": "Canónico:"
+  },
+  "objectListItem": {
+    "usageBadge_one": "{{count}} utilização",
+    "usageBadge_other": "{{count}} utilizações",
+    "showAria": "{{type}}: {{name}} — mostrar",
+    "noName": "(sem nome)",
+    "filterByCategory": "Filtrar por {{category}}"
+  },
+  "scriptSearchFilter": {
+    "searchAria": "Procurar referências",
+    "searchPlaceholder": "Procurar referências…",
+    "clearTitle": "Limpar todos os filtros de tipo",
+    "clearLabel": "Limpar filtros",
+    "commentLabel": "Comentário",
+    "commentTitle": "Comentário ({{count}})",
+    "typeLabels": {
+      "field":           "Campo",
+      "script":          "Script",
+      "layout":          "Layout",
+      "customFunction":  "Função personalizada",
+      "pluginFunction":  "Função de plugin",
+      "function":        "Função",
+      "variable":        "Variável",
+      "valueList":       "Lista de valores",
+      "tableOccurrence": "Ocorrência de tabela"
+    }
+  },
+  "settingsView": {
+    "backAria": "Voltar à pesquisa",
+    "backLabel": "Voltar",
+    "title": "Gestão de plugins",
+    "loading": "A carregar plugins…",
+    "empty": "Nenhum plugin instalado.",
+    "loadError": "Falha ao carregar",
+    "saveError": "Falha ao guardar",
+    "statusActive": "Ativo",
+    "statusInactive": "Inativo",
+    "restartRequired": "É necessário reiniciar para que o novo estado entre em vigor.",
+    "settingsHeading": "Definições",
+    "saveLabel": "Guardar definições",
+    "savingLabel": "A guardar…"
+  },
+  "objectHeader": {
+    "noName": "(sem nome)",
+    "source": "Origem:",
+    "relationshipGraphLink": "↗ Grafo de relações",
+    "copyUuidAria": "Copiar UUID para a área de transferência"
+  },
+  "scriptLine": {
+    "expand": "Expandir",
+    "collapse": "Recolher"
+  },
+  "scriptViewer": {
+    "title": "Texto do script",
+    "stepCount_one": "({{count}} passo)",
+    "stepCount_other": "({{count}} passos)",
+    "viewLabel": "Vista:",
+    "viewAria": "Modo de visualização",
+    "filterStyleAria": "Estilo de filtro",
+    "filterStyleTitleEnabled": "Linhas filtradas: esbater ou ocultar",
+    "filterStyleTitleDisabled": "Relevante apenas com um filtro ativo",
+    "filterDim": "Esbater",
+    "filterHide": "Ocultar",
+    "modes": {
+      "normal": "Normal",
+      "compact": "Compacto",
+      "commentsOnly": "Apenas comentários",
+      "controlOnly": "Apenas estruturas de controlo",
+      "subscriptOnly": "Apenas chamadas de sub-script",
+      "assignmentsOnly": "Apenas atribuições",
+      "executiveOnly": "Apenas código executável"
+    }
+  },
+  "refPill": {
+    "loading": "A resolver a referência…",
+    "notFound": "Referência não encontrada:",
+    "couldNotResolve": "Não foi possível resolver a referência: {{message}}",
+    "label": "Referência:",
+    "highlightsCount_one": "{{count}} correspondência realçada",
+    "highlightsCount_other": "{{count}} correspondências realçadas",
+    "dismissAria": "Remover o realce da referência",
+    "dismissTitle": "Remover o realce da referência (Esc)"
+  },
+  "tableDetails": "Detalhes da tabela",
+  "scriptDetails": "Detalhes do script",
+  "fieldDetails": "Detalhes do campo",
+  "layoutDetails": "Detalhes do layout",
+  "valueListDetails": "Detalhes da lista de valores",
+  "customFunctionDetails": "Detalhes da função personalizada",
+  "loadingObject": "A carregar objeto…",
+  "loadingFunction": "A carregar função…",
+  "noReferences": "Sem referências",
+  "references": "Referências",
+  "backReferences": "Usado por",
+  "forwardReferences": "Usa",
+  "dependencies": "Dependências",
+  "dependents": "Dependentes",
+  "definition": "Definição",
+  "metadata": "Metadados",
+  "rowCount_one": "{{count}} entrada",
+  "rowCount_other": "{{count}} entradas"
+}

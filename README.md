@@ -39,7 +39,7 @@ The first release focuses on this core: reliable **XML conversion**, a comprehen
 
 ## [Architecture](docs/fm-lab/Wiki/Architecture.md)
 
-[![Architecture](docs/fm-lab/Assets/FM-Lab-Architecture.jpg)](docs/fm-lab/Wiki/Architecture.md)
+[![Architecture](docs/fm-lab/Assets/FM-Lab-base-Architecture.jpg)](docs/fm-lab/Wiki/Architecture.md)
 
 ```
 SaveAsXML → Parser → DuckDB → REST API ←→ Tools
@@ -156,11 +156,13 @@ Test data and tools for fm-lab developers are available for validation (will be 
 
 Some rough edges, but the core architecture is in place and ready for real-world use and feedback. Future updates will focus on stability, UI optimizations, and expanding the feature set.
 
-**v0.6.2** to **v0.6.7** — Optimizations for XML-Parser, REST-API and web client.
+**v0.6.2** to **v0.7.1** — Optimizations for XML parser, REST API and web client.
 
-Further improvements to the foundation of the project to lay the groundwork for upcoming features. Web client now supports more detailed exploration of the object catalog and dependencies.
+Further improvements to the foundation of the project to lay the groundwork for upcoming features. Web client now supports more detailed exploration of the object catalog and dependencies, as well as flexible dashboard extensions for custom views.
 
-**Note:** `CLAUDE.md` and the Claude Skills are currently in German. An English version is planned for the next release.
+**v0.7.2** — `CLAUDE.md` and the Claude Skills as well as the web client are now ready for multi-language support.
+
+This opens up the toolkit to non-English speaking developers while keeping all technical identifiers intact.
 
 Many more features are under current development... stay tuned for updates! 😎
 

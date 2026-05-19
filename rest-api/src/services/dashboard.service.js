@@ -13,7 +13,11 @@ const { schemas: dashboardSchemas } = require('./dashboard-schemas');
  * Dashboard Service
  *
  * Lädt Dashboard-Bundles (manifest.json + layout.json + data/*.sql + style.css + assets/*)
- * aus `rest-api/templates/dashboards/` und führt die referenzierten Datasets aus.
+ * aus zwei Verzeichnissen:
+ *   - templates/dashboards/         → System-Bundles (home, _generic, Navigation)
+ *   - templates/dashboards-custom/  → Custom-/Plugin-Bundles
+ *
+ * Bei ID-Kollision hat das Custom-Verzeichnis Vorrang (Override-Pattern für lokale Erweiterungen).
  *
  * Dataset-Quellen (manifest.datasets[].source):
  *   bundle:<rel-path>       → SQL im selben Bundle (data/*.sql)
@@ -24,8 +28,11 @@ const { schemas: dashboardSchemas } = require('./dashboard-schemas');
  * PRD: project/prd_dashboards.md §3, §7.
  */
 
-const DASHBOARDS_DIR =
-  process.env.DASHBOARDS_DIR || path.resolve(__dirname, '../../templates/dashboards');
+// Suchreihenfolge: Custom zuerst, damit lokale Bundles System-Bundles bei ID-Kollision überschreiben.
+const DASHBOARDS_DIRS = [
+  environment.templates.dashboardsCustomDir,
+  environment.templates.dashboardsDir,
+];
 
 // Discovery-Cache: ID → { manifest, layout, dir, mtime }
 const bundleCache = new LRUCache({
@@ -57,12 +64,31 @@ async function tryStatMtime(filePath) {
 }
 
 /**
+ * Findet das Verzeichnis eines Bundles. Sucht in DASHBOARDS_DIRS in der definierten
+ * Reihenfolge (Custom zuerst) und gibt den ersten Treffer zurück (Override-Pattern).
+ * Liefert null, wenn keine `manifest.json` gefunden wird.
+ */
+async function findBundleDir(id) {
+  for (const base of DASHBOARDS_DIRS) {
+    const candidate = path.join(base, id);
+    try {
+      const stat = await fs.stat(path.join(candidate, 'manifest.json'));
+      if (stat.isFile()) return candidate;
+    } catch {
+      // weiterprobieren
+    }
+  }
+  return null;
+}
+
+/**
  * Lädt ein einzelnes Bundle (manifest + layout). Validiert beides per Joi.
  * Bei Fehler: gibt null zurück und loggt — App soll nicht crashen.
  */
 async function loadBundle(id) {
   const cacheKey = id;
-  const dir = path.join(DASHBOARDS_DIR, id);
+  const dir = await findBundleDir(id);
+  if (!dir) return null;
   const manifestPath = path.join(dir, 'manifest.json');
   const layoutPath = path.join(dir, 'layout.json');
 
@@ -137,22 +163,29 @@ async function loadBundle(id) {
 }
 
 /**
- * Listet alle gefundenen Dashboard-Bundles. Fehlerhafte Bundles werden übersprungen.
+ * Listet alle gefundenen Dashboard-Bundles aus allen DASHBOARDS_DIRS.
+ * Custom-Verzeichnis hat Vorrang (gleicher Override wie loadBundle).
+ * Fehlerhafte Bundles werden übersprungen.
  */
 async function listBundles() {
-  let entries;
-  try {
-    entries = await fs.readdir(DASHBOARDS_DIR, { withFileTypes: true });
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      return [];
-    }
-    throw err;
-  }
+  const seen = new Set();
+  const dirs = [];
 
-  const dirs = entries
-    .filter(e => e.isDirectory() && !e.name.startsWith('.'))
-    .map(e => e.name);
+  for (const base of DASHBOARDS_DIRS) {
+    let entries;
+    try {
+      entries = await fs.readdir(base, { withFileTypes: true });
+    } catch (err) {
+      if (err.code === 'ENOENT') continue;
+      throw err;
+    }
+    for (const e of entries) {
+      if (!e.isDirectory() || e.name.startsWith('.')) continue;
+      if (seen.has(e.name)) continue; // erste Quelle (Custom) gewinnt
+      seen.add(e.name);
+      dirs.push(e.name);
+    }
+  }
 
   const bundles = await Promise.all(dirs.map(loadBundle));
   return bundles.filter(b => b !== null);
@@ -283,8 +316,9 @@ async function builtinQueryMeta(params = {}) {
   if (!queryName) {
     throw createError('VALIDATION_ERROR', 'builtin:query_meta requires param "query"');
   }
-  const templates = await templateService.listTemplates('query');
-  const t = templates.find(x => x.name === queryName);
+  // Wichtig: auch Bundle-eigene Templates aus dashboards*/<bundle>/queries/
+  // auflösen — listTemplates('query') würde nur sql-custom/ scannen.
+  const t = await templateService.getTemplateMeta(queryName, 'query');
   if (!t) {
     // Leere Zeile statt Fehler — Dashboard soll trotzdem rendern können
     return [{
@@ -452,7 +486,7 @@ async function executeSingleDataset(bundle, datasetId, requestParams = {}) {
 }
 
 module.exports = {
-  DASHBOARDS_DIR,
+  DASHBOARDS_DIRS,
   listBundles,
   getBundle,
   executeAllDatasets,

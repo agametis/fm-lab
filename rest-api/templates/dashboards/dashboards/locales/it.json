@@ -1,0 +1,10 @@
+{
+  "manifest": {
+    "title": "Dashboard",
+    "description": "Panoramica di tutti i dashboard disponibili."
+  },
+  "layout": {
+    "root.children[0].props.title": "Dashboard",
+    "root.children[0].props.subtitle": "Un clic apre il dashboard selezionato."
+  }
+}

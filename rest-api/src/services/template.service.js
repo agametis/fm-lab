@@ -256,6 +256,63 @@ function validateTemplateOutput(rows, metadata) {
 }
 
 /**
+ * Recursively walk a directory tree looking for `<templateName>.sql`.
+ * Returns the directory containing the file, or null if not found.
+ */
+async function findTemplateDirRecursive(rootDir, templateName) {
+  const filename = `${templateName}.sql`;
+  let entries;
+  try {
+    entries = await fs.readdir(rootDir, { withFileTypes: true });
+  } catch {
+    return null;
+  }
+  for (const entry of entries) {
+    const full = path.join(rootDir, entry.name);
+    if (entry.isDirectory()) {
+      const found = await findTemplateDirRecursive(full, templateName);
+      if (found) return found;
+    } else if (entry.name === filename) {
+      return rootDir;
+    }
+  }
+  return null;
+}
+
+/**
+ * Sucht ein Template in den `queries/`-Subordnern aller Dashboard-Bundles.
+ * Damit können System- und Custom-Bundles eigene Drilldown-Templates mitbringen,
+ * die per `custom:<name>` (z.B. aus `_generic`) auflösbar sind — ohne dass die
+ * Templates im globalen `sql-custom/` liegen müssen.
+ *
+ * Erwartete Layout: `<bundle-root>/<bundle-id>/queries/<templateName>.sql`
+ * Pfad-Traversal-Schutz: `templateName` muss `[a-zA-Z0-9_-]+` matchen.
+ */
+async function findInBundleQueries(bundleRoots, templateName) {
+  if (!/^[a-zA-Z0-9_-]+$/.test(templateName)) return null;
+  const filename = `${templateName}.sql`;
+  for (const root of bundleRoots) {
+    let bundles;
+    try {
+      bundles = await fs.readdir(root, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const b of bundles) {
+      if (!b.isDirectory() || b.name.startsWith('.')) continue;
+      const queriesDir = path.join(root, b.name, 'queries');
+      try {
+        await fs.access(path.join(queriesDir, filename));
+        return queriesDir;
+      } catch {
+        // weiterprobieren
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * Execute SQL template with parameters
  * @param {string} templateName - Template name (without .sql extension)
  * @param {Object} params - Template parameters
@@ -270,8 +327,37 @@ async function executeTemplate(templateName, params = {}, source = 'query') {
         ? environment.templates.dir // Standard templates for /report
         : environment.templates.customDir; // Custom templates for /query
 
-    // Load template
-    const template = await loadTemplate(templateName, templateDir);
+    // Load template — bei 'query' wird in dieser Reihenfolge gesucht:
+    //   1. templates/sql-custom/               (standalone Custom-Queries)
+    //   2. templates/sql-custom-details/**/    (rekursiv — Detail-View-Templates für UI-Hooks)
+    //   3. templates/dashboards*/<bundle>/queries/  (Bundle-eigene Drilldown-Templates,
+    //                                                damit Dashboards self-contained sind)
+    // Damit erscheinen Detail- und Bundle-Templates nicht im "Custom Queries"-Listing,
+    // sind aber per `custom:<name>` aus _generic resolvbar.
+    let template;
+    try {
+      template = await loadTemplate(templateName, templateDir);
+    } catch (loadErr) {
+      if (loadErr.code !== 'TEMPLATE_NOT_FOUND' || source !== 'query') {
+        throw loadErr;
+      }
+      let foundDir = null;
+      if (environment.templates.detailsDir) {
+        foundDir = await findTemplateDirRecursive(
+          environment.templates.detailsDir,
+          templateName
+        );
+      }
+      if (!foundDir) {
+        const bundleRoots = [
+          environment.templates.dashboardsCustomDir,
+          environment.templates.dashboardsDir,
+        ].filter(Boolean);
+        foundDir = await findInBundleQueries(bundleRoots, templateName);
+      }
+      if (!foundDir) throw loadErr;
+      template = await loadTemplate(templateName, foundDir);
+    }
 
     // Interpolate parameters
     const sql = interpolateTemplate(template.content, params);
@@ -365,6 +451,49 @@ async function listTemplates(source = 'query') {
 }
 
 /**
+ * Lädt die Metadaten eines Templates über alle Such-Pfade (sql-custom →
+ * sql-custom-details → bundle queries). Gibt null zurück, wenn nichts gefunden.
+ *
+ * Im Unterschied zu `listTemplates('query')` (das nur sql-custom enumeriert)
+ * kann diese Funktion gezielt jedes auflösbare Template adressieren — wichtig
+ * für `builtin:query_meta`, das Drilldown-Metadaten aus Bundle-eigenen Queries
+ * lesen können muss.
+ */
+async function getTemplateMeta(templateName, source = 'query') {
+  const templateDir =
+    source === 'report'
+      ? environment.templates.dir
+      : environment.templates.customDir;
+  let template;
+  try {
+    template = await loadTemplate(templateName, templateDir);
+  } catch (err) {
+    if (err.code !== 'TEMPLATE_NOT_FOUND' || source !== 'query') return null;
+    let foundDir = null;
+    if (environment.templates.detailsDir) {
+      foundDir = await findTemplateDirRecursive(
+        environment.templates.detailsDir,
+        templateName
+      );
+    }
+    if (!foundDir) {
+      const bundleRoots = [
+        environment.templates.dashboardsCustomDir,
+        environment.templates.dashboardsDir,
+      ].filter(Boolean);
+      foundDir = await findInBundleQueries(bundleRoots, templateName);
+    }
+    if (!foundDir) return null;
+    try {
+      template = await loadTemplate(templateName, foundDir);
+    } catch {
+      return null;
+    }
+  }
+  return { name: templateName, ...template.metadata };
+}
+
+/**
  * Clear template cache (useful for development/testing)
  */
 function clearCache() {
@@ -374,6 +503,7 @@ function clearCache() {
 module.exports = {
   executeTemplate,
   listTemplates,
+  getTemplateMeta,
   clearCache,
   // Export for testing
   parseTemplateMetadata,

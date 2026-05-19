@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import cytoscape from 'cytoscape';
 // @ts-expect-error cytoscape-dagre has no type declarations
 import dagre from 'cytoscape-dagre';
@@ -131,6 +132,7 @@ const cytoscapeStyles: cytoscape.StylesheetStyle[] = [
  * - Drag on node moves it, drag on background pans, scroll zooms
  */
 export const DependencyGraph: React.FC<DependencyGraphProps> = ({ object, references }) => {
+  const { t } = useTranslation(['detail']);
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<cytoscape.Core | null>(null);
   const navigate = useNavigate();
@@ -313,7 +315,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ object, refere
   if (references.parent.length === 0 && references.child.length === 0) {
     return (
       <div className="tab-placeholder" role="status">
-        <p>Keine Abhängigkeiten vorhanden</p>
+        <p>{t('detail:dependencyGraph.empty')}</p>
       </div>
     );
   }
@@ -324,34 +326,40 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ object, refere
         <button
           className="graph-control-button"
           onClick={handleFit}
-          title="Gesamten Graph einpassen"
-          aria-label="Graph einpassen"
+          title={t('detail:dependencyGraph.fitTitle') as string}
+          aria-label={t('detail:dependencyGraph.fitAria') as string}
         >
-          Fit
+          {t('detail:dependencyGraph.fit')}
         </button>
         <button
           className="graph-control-button"
           onClick={handleResetLayout}
-          title="Layout zurücksetzen"
-          aria-label="Layout zurücksetzen"
+          title={t('detail:dependencyGraph.resetTitle') as string}
+          aria-label={t('detail:dependencyGraph.resetAria') as string}
         >
-          Reset
+          {t('detail:dependencyGraph.reset')}
         </button>
       </div>
       <div className="graph-legend">
         <span className="legend-item">
-          <span className="legend-dot" style={{ background: '#646cff' }} /> Aktuelles Objekt
+          <span className="legend-dot" style={{ background: '#646cff' }} /> {t('detail:dependencyGraph.legendCurrent')}
         </span>
         <span className="legend-item">
-          <span className="legend-dot legend-dot-dashed" style={{ borderColor: '#ff9800' }} /> Cross-File
+          <span className="legend-dot legend-dot-dashed" style={{ borderColor: '#ff9800' }} /> {t('detail:dependencyGraph.legendCrossFile')}
         </span>
-        <span className="legend-hint">Klick = Graph-Navigation | {navigator.platform.includes('Mac') ? '\u2318' : 'Ctrl'}+Klick = Details | Ziehen = Verschieben</span>
+        <span className="legend-hint">{t('detail:dependencyGraph.hint', {
+          modKey: navigator.platform.includes('Mac') ? '\u2318' : 'Ctrl',
+          defaultValue: 'Click = navigate \u00b7 {{modKey}}+Click = details \u00b7 Drag = move',
+        })}</span>
       </div>
       <div
         ref={containerRef}
         className="dependency-graph-container"
         role="img"
-        aria-label={`Dependency Graph für ${object.Object_Name}`}
+        aria-label={t('detail:dependencyGraph.graphAriaLabel', {
+          object: object.Object_Name,
+          defaultValue: 'Dependency graph for {{object}}',
+        }) as string}
       />
     </div>
   );

@@ -1,0 +1,36 @@
+{
+  "objectTypes": {
+    "BaseTable": "基础表",
+    "TableOccurrence": "表实例",
+    "Relationship": "关系",
+    "Field": "字段",
+    "ValueList": "值列表",
+    "CustomFunction": "自定义函数",
+    "Script": "脚本",
+    "ScriptStep": "脚本步骤",
+    "Layout": "布局",
+    "LayoutObject": "布局对象",
+    "LayoutPart": "布局部分",
+    "Account": "账户",
+    "PrivilegeSet": "权限集",
+    "ExtendedPrivilege": "扩展权限",
+    "Theme": "主题",
+    "CustomMenu": "自定义菜单",
+    "ScriptTrigger": "脚本触发器",
+    "ExternalDataSource": "外部数据源",
+    "BaseDirectory": "基础目录",
+    "Variable": "变量",
+    "ScriptFolder": "脚本文件夹",
+    "LayoutFolder": "布局文件夹",
+    "RelationshipGraph": "关系图",
+    "BuiltinFunction": "函数",
+    "PluginFunction": "MBS 函数",
+    "ScriptStepType": "脚本步骤",
+    "PluginComponent": "MBS 组件"
+  },
+  "categoryHeader": {
+    "ScriptStepType": "类别",
+    "BuiltinFunction": "类别",
+    "PluginFunction": "组件"
+  }
+}

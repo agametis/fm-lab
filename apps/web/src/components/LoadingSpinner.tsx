@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface LoadingSpinnerProps {
   message?: string;
@@ -8,7 +9,9 @@ interface LoadingSpinnerProps {
  * Loading Spinner Component
  * Simple loading indicator for async operations
  */
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message = 'Lädt...' }) => {
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message }) => {
+  const { t } = useTranslation();
+  const text = message ?? (t('loading') as string);
   return (
     <div style={{
       padding: '20px',
@@ -27,7 +30,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message = 'Lädt
         marginRight: '10px',
         verticalAlign: 'middle'
       }} />
-      <span>{message}</span>
+      <span>{text}</span>
 
       <style>{`
         @keyframes spin {

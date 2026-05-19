@@ -88,29 +88,6 @@ export const OBJECT_TYPE_MAP: Record<string, ObjectType> = {
 };
 
 /**
- * Deutsche Anzeige-Labels für Pseudo-Typen (Filter-Menü).
- * Andere Typen behalten ihren PascalCase-Namen.
- * PRD §8.1.
- */
-export const OBJECT_TYPE_LABELS_DE: Partial<Record<ObjectType, string>> = {
-  ScriptStepType:  'Script-Schritte',
-  BuiltinFunction: 'Funktionen',
-  PluginComponent: 'MBS-Komponenten',
-  PluginFunction:  'MBS-Funktionen',
-};
-
-/**
- * Welcher Begriff wird in der Inline-Filter-Toolbar als Kategorie-Header
- * angezeigt — bei PluginFunctions sprechen wir von "Komponente" (MBS-Konvention),
- * sonst von "Kategorie". PRD §8.1.
- */
-export const CATEGORY_LABEL_DE: Record<PseudoTokenType, string> = {
-  ScriptStepType:  'Kategorie',
-  BuiltinFunction: 'Kategorie',
-  PluginFunction:  'Komponente',
-};
-
-/**
  * Drilldown-Hierarchie zwischen Pseudo-Object-Types.
  *
  * Einige Pseudo-Typen sind selbst Kategorie-Ebenen über anderen Typen

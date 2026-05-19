@@ -1,0 +1,13 @@
+{
+  "manifest": {
+    "description": "fmIDE Thingamajig URI 导航"
+  },
+  "settings_schema": {
+    "fmp_protocol.label":         "FMP 协议",
+    "fmp_protocol.description":   "fmp 或 fmps (TLS)",
+    "server_address.label":       "服务器地址",
+    "server_address.description": "$ 表示当前文件,否则为主机/IP",
+    "script_name.label":          "脚本名称",
+    "script_name.description":    "FileMaker 文件中目标脚本的名称"
+  }
+}

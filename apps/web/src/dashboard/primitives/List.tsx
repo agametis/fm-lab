@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import type { PrimitiveProps } from '../types';
 import { substituteString } from '../tokens';
 import { useRowSearch } from './_useRowSearch';
 import { dispatchAction } from '../actions';
+import { translateCellValue } from './_cellTranslate';
 import type { ActionSpec } from '../actions';
 
 interface RowTemplate {
@@ -13,6 +15,11 @@ interface RowTemplate {
 }
 
 export function List({ node, dataset, navigate }: PrimitiveProps) {
+  const { t } = useTranslation(['common', 'detail', 'dashboard']);
+  // Pipe substituted row strings through the dashboard cell-value translator
+  // so canonical English labels emitted from SQL (e.g. health indicators)
+  // render in the active UI language. Unknown strings pass through.
+  const tx = (s: string) => String(translateCellValue(s, t));
   const rowTemplate = (node.props?.rowTemplate as RowTemplate) ?? { primary: '{{name}}' };
   const empty = node.props?.empty as { message?: string } | undefined;
   const rows = dataset?.data ?? [];
@@ -24,7 +31,7 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
   });
 
   if (rows.length === 0) {
-    return <div className="dash-list__empty">{empty?.message ?? 'Keine Einträge.'}</div>;
+    return <div className="dash-list__empty">{empty?.message ?? t('common:noEntries')}</div>;
   }
 
   const hasQuery = search.query.trim() !== '';
@@ -34,10 +41,9 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
       {search.visible && (
         <div className="dash-search-bar">
           <span className="dash-search-bar__count">
-            {search.filtered.length.toLocaleString('de-DE')}{' '}
-            {search.filtered.length === 1 ? 'Eintrag' : 'Einträge'}
+            {t('detail:autoTable.rowCount', { count: search.filtered.length })}
             {hasQuery && search.filtered.length !== search.totalCount && (
-              <> · gefiltert aus {search.totalCount.toLocaleString('de-DE')}</>
+              <> · {t('detail:autoTable.filteredFrom', { count: search.totalCount })}</>
             )}
           </span>
           <input
@@ -51,14 +57,14 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
       )}
       <ul className="dash-list">
         {search.filtered.map((row, i) => {
-        const primary = substituteString(rowTemplate.primary, row);
+        const primary = tx(substituteString(rowTemplate.primary, row));
         const secondary = rowTemplate.secondary
-          ? substituteString(rowTemplate.secondary, row)
+          ? tx(substituteString(rowTemplate.secondary, row))
           : '';
         const tertiary = rowTemplate.tertiary
-          ? substituteString(rowTemplate.tertiary, row)
+          ? tx(substituteString(rowTemplate.tertiary, row))
           : '';
-        const badgeText = rowTemplate.badge ? substituteString(rowTemplate.badge, row) : '';
+        const badgeText = rowTemplate.badge ? tx(substituteString(rowTemplate.badge, row)) : '';
         const clickable = !!rowTemplate.onClick;
 
         return (
@@ -93,7 +99,7 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
       </ul>
       {hasQuery && search.filtered.length === 0 && (
         <div className="dash-search-bar__empty">
-          Keine Treffer für „{search.query}".
+          {t('detail:autoTable.noMatches', { query: search.query })}
         </div>
       )}
     </div>

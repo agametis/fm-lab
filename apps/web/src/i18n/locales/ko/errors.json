@@ -1,0 +1,13 @@
+{
+  "loadFiles": "파일을 불러오지 못했습니다.",
+  "loadObjects": "오브젝트를 불러오지 못했습니다.",
+  "loadFieldDetails": "필드 세부 정보를 불러오지 못했습니다",
+  "loadScriptDetails": "스크립트 세부 정보를 불러오지 못했습니다",
+  "loadCustomFunctionDetails": "사용자 정의 함수 세부 정보를 불러오지 못했습니다",
+  "loadLayout": "레이아웃을 불러오지 못했습니다",
+  "loadDashboard": "대시보드를 불러오지 못했습니다",
+  "generic": "문제가 발생했습니다. 다시 시도해 주세요.",
+  "loadHeading": "불러오기 실패",
+  "retryAria": "다시 시도",
+  "retryLabel": "다시 시도"
+}

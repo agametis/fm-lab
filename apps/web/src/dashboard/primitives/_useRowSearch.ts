@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Optionen für `useRowSearch`.
@@ -31,7 +32,6 @@ export interface RowSearchResult<T> {
 }
 
 const DEFAULT_THRESHOLD = 10;
-const DEFAULT_PLACEHOLDER = 'Suchen …';
 
 /**
  * Generischer Volltext-Filter für Listen-Primitives (Table, List, TileGrid).
@@ -46,7 +46,9 @@ export function useRowSearch<T extends Record<string, unknown>>(
   rows: T[],
   options: RowSearchOptions = {},
 ): RowSearchResult<T> {
-  const { searchable, autoThreshold = DEFAULT_THRESHOLD, placeholder = DEFAULT_PLACEHOLDER } = options;
+  const { t } = useTranslation();
+  const { searchable, autoThreshold = DEFAULT_THRESHOLD, placeholder } = options;
+  const effectivePlaceholder = placeholder ?? (t('searchPlaceholder') as string);
   const [query, setQuery] = useState('');
 
   const visible =
@@ -68,7 +70,7 @@ export function useRowSearch<T extends Record<string, unknown>>(
     query,
     setQuery,
     filtered,
-    placeholder,
+    placeholder: effectivePlaceholder,
     totalCount: rows.length,
   };
 }

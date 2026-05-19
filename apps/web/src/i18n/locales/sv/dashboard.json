@@ -1,0 +1,30 @@
+{
+  "cellValues": {
+    "All":          "Alla",
+    "Other":        "Övrigt",
+    "Internal LAN": "Internt LAN",
+    "Local Import": "Lokal import",
+    "Localhost":    "Localhost",
+
+    "Fields without layout usage":    "Fält utan användning i layouter",
+    "Fields without comment":         "Fält utan kommentar",
+    "Scripts without callers":        "Skript utan anropare",
+    "File-to-file relationships":     "Relationer mellan filer",
+    "Global / superglobal variables": "Globala / superglobala variabler",
+
+    "Global and superglobal variables": "Globala och superglobala variabler",
+    "Script complexity per file":       "Skriptkomplexitet per fil",
+
+    "Every field with an empty Field_Comment — candidates for documentation.": "Alla fält med tom Field_Comment — kandidater för dokumentation.",
+    "Every field that is not displayed or read on any layout.":                "Alla fält som varken visas eller läses i någon layout.",
+    "Scripts that are not invoked by any other script or trigger.":            "Skript som inte anropas av något annat skript eller utlösare.",
+    "Aggregated overview of cross-file references per file pair.":             "Sammanställd översikt över referenser mellan filer per filpar.",
+    "Every $$ and $$$ variable with set/read statistics.":                     "Alla $$- och $$$-variabler med skriv-/läs-statistik.",
+    "Aggregated script statistics (count, average / max steps).":              "Sammanställd skriptstatistik (antal, genomsnittliga / max steg).",
+
+    "Dependencies": "Beroenden",
+    "Fields":       "Fält",
+    "Scripts":      "Skript",
+    "Variables":    "Variabler"
+  }
+}

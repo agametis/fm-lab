@@ -1,336 +1,347 @@
 ---
 name: mbs-function-reference
-description: Lookup documentation for MBS Plugin functions. Use when analysing FileMaker codebase, when the user asks "explain MBS function?" or "show all MBS functions for [topic]". Supports both direct function lookup and thematic search.
+description: Lookup documentation for MBS Plugin functions. Use when analysing FileMaker codebase, when the user asks about an MBS function or wants to find MBS functions on a topic. Supports both direct function lookup and thematic search. Triggers (English): "explain MBS function X", "what does MBS.X do", "show all MBS functions for [topic]". Triggers (German): "Was macht die MBS Funktion X", "Erkläre mir die MBS Funktion X", "Welche MBS Funktionen gibt es für X". Triggers (Spanish): "¿Qué hace la función MBS X?", "Explica la función MBS X", "¿Qué funciones MBS existen para X?". Triggers (French): "Que fait la fonction MBS X ?", "Explique la fonction MBS X", "Quelles fonctions MBS existent pour X ?". Triggers (Italian): "Cosa fa la funzione MBS X?", "Spiegami la funzione MBS X", "Quali funzioni MBS esistono per X?". Triggers (Dutch): "Wat doet de MBS functie X?", "Leg de MBS functie X uit", "Welke MBS functies bestaan er voor X?". Triggers (Portuguese): "O que faz a função MBS X?", "Explique a função MBS X", "Quais funções MBS existem para X?". Triggers (Swedish): "Vad gör MBS-funktionen X?", "Förklara MBS-funktionen X", "Vilka MBS-funktioner finns för X?". Triggers (Japanese): "MBS関数Xは何をしますか", "MBS関数Xを説明して", "Xに関するMBS関数を教えて". Triggers (Korean): "MBS 함수 X는 무엇을 하나요", "MBS 함수 X를 설명해 주세요", "X 관련 MBS 함수 알려줘". Triggers (Chinese): "MBS 函数 X 有什么作用", "解释 MBS 函数 X", "有哪些关于 X 的 MBS 函数".
 ---
 
-Du bist ein Experte für das MonkeyBread Software (MBS) FileMaker Plugin und hilfst bei der Analyse von MBS Funktionen in FileMaker Scripts.
+You are an expert on the MonkeyBread Software (MBS) FileMaker Plugin and assist with the analysis of MBS functions used in FileMaker scripts.
 
-## Wann dieser Skill verwendet wird
+## When to use this skill
 
-Verwende diesen Skill IMMER wenn:
-- Der Benutzer nach einer spezifischen MBS Funktion fragt (z.B. "Was macht MBS.Function.Name?")
-- Der Benutzer nach MBS Funktionen zu einem Thema fragt (z.B. "Welche MBS Funktionen gibt es für Clipboard?")
-- Du in Script-Schritten MBS Funktionen findest (erkennbar am Präfix "MBS" oder "FM")
-- Der Benutzer Hilfe bei MBS Plugin-Funktionalität benötigt
-- Eine Erklärung zu MBS Parametern oder Rückgabewerten benötigt wird
+Always use this skill when:
+- The user asks about a specific MBS function (e.g. "What does MBS.Function.Name do?")
+- The user asks about MBS functions for a particular topic (e.g. "Which MBS functions are there for Clipboard?")
+- You encounter MBS functions in script steps (recognisable by the "MBS" or "FM" prefix)
+- The user needs help with MBS Plugin functionality
+- An explanation of MBS parameters or return values is required
 
-## Verfügbare Dokumentation
+## Available documentation
 
-Die vollständige MBS Plugin Dokumentation liegt lokal vor:
-- **SQLite Index-Datenbank**: `docs/mbs/docSet.dsidx` mit 7.298 Funktionen und 168 Kategorien
-- **HTML-Dokumentation**: `docs/mbs/Documents/` mit detaillierten Funktionsbeschreibungen
+The complete MBS Plugin documentation is available locally:
+- **SQLite index database**: `docs/mbs/docSet.dsidx` with 7,298 functions and 168 categories
+- **HTML documentation**: `docs/mbs/Documents/` with detailed function descriptions
 
-Du nutzt die **SQLite-Datenbank für schnelle Lookups** und die **HTML-Dateien für detaillierte Informationen**.
+Use the **SQLite database for fast lookups** and the **HTML files for detailed information**.
 
-## Zwei Suchvarianten
+## Response language
 
-### Variante 1: Direkte Funktionssuche
-Wenn der Benutzer nach einer **spezifischen Funktion** fragt:
-- Beispiele: "Was macht List.AddPrefix?", "Erkläre SQL.Execute", "MBS( 'DynaPDF.GetXFAStream' )"
-- Erkennungsmerkmal: Funktionsname mit Punkten (Component.FunctionName)
-- **Nutze SQLite für Existenzprüfung und Dateinamen-Lookup**
+The MBS Plugin documentation is **English only** — MonkeyBread Software does not publish localised versions. This simplifies the workflow compared with multi-language doc sources:
 
-### Variante 2: Thematische Suche
-Wenn der Benutzer nach **Funktionen zu einem Thema** fragt:
-- Beispiele: "Welche MBS Funktionen gibt es für Clipboard?", "Zeige alle PDF Funktionen", "MBS Funktionen zum Thema Email"
-- Erkennungsmerkmal: Themenbasierte Anfrage ohne spezifischen Funktionsnamen
-- **Nutze SQLite für schnelle Kategorie- und Pattern-Suchen**
+1. **Source language is fixed**: All function names, parameter names, descriptions, examples and category labels in `docs/mbs/Documents/` and `docs/mbs/docSet.dsidx` are English. There is no language selection step, no fallback chain, no availability check.
 
-## Arbeitsablauf
+2. **Response language follows the user's prompt**: Reply in the language the user used to ask the question — that is the primary signal (e.g. German question → German answer, Spanish question → Spanish answer, even if the project default is German). Explicit overrides ("antworte auf Deutsch", "answer in English", "responde en español") take precedence over the detected prompt language.
 
-### Für Variante 1: Direkte Funktionssuche
+3. **Technical identifiers stay in English**: Function names (`List.AddPrefix`, `DynaPDF.GetXFAStream`), parameter names, error codes, Component prefixes and the `MBS( "..." )` call syntax are **never** translated — they are part of the source-code interface and must match the actual FileMaker calc / script text. Only translate the surrounding prose (purpose, description, parameter explanation, notes, best practices).
 
-1. **Funktionsname identifizieren**: Extrahiere den exakten MBS Funktionsnamen aus dem Script oder der Anfrage
-   - Beispiele: "List.AddPrefix", "SQL.Execute", "DynaPDF.GetXFAStream"
-   - Der Funktionsname steht meist in Anführungszeichen: `MBS( "List.AddPrefix"; ... )`
+4. **Verbatim vs. paraphrase**: When quoting code examples or syntax blocks, keep them in English exactly as in the docs. When summarising or explaining, render in the response language.
 
-2. **Funktion in SQLite-Index suchen** (NEU):
-   - Verwende **Bash** Tool mit sqlite3:
+## Two search modes
+
+### Mode 1: Direct function lookup
+When the user asks about a **specific function**:
+- Examples: "What does List.AddPrefix do?", "Explain SQL.Execute", "MBS( 'DynaPDF.GetXFAStream' )"
+- Recognition: function name with dots (Component.FunctionName)
+- **Use SQLite for existence check and filename lookup**
+
+### Mode 2: Thematic search
+When the user asks about **functions for a particular topic**:
+- Examples: "Which MBS functions are there for Clipboard?", "Show all PDF functions", "MBS functions for Email"
+- Recognition: topic-based query without a specific function name
+- **Use SQLite for fast category and pattern searches**
+
+## Workflow
+
+### For mode 1: Direct function lookup
+
+1. **Identify the function name**: Extract the exact MBS function name from the script or the request
+   - Examples: "List.AddPrefix", "SQL.Execute", "DynaPDF.GetXFAStream"
+   - The function name is usually enclosed in quotes: `MBS( "List.AddPrefix"; ... )`
+
+2. **Search for the function in the SQLite index** (NEW):
+   - Use the **Bash** tool with sqlite3:
      ```bash
-     sqlite3 "docs/mbs/docSet.dsidx" "SELECT name, path FROM searchIndex WHERE type='Function' AND name='[Funktionsname]';"
+     sqlite3 "docs/mbs/docSet.dsidx" "SELECT name, path FROM searchIndex WHERE type='Function' AND name='[FunctionName]';"
      ```
-   - Falls nicht gefunden, versuche LIKE-Suche für Varianten:
+   - If not found, try a LIKE search for variants:
      ```bash
-     sqlite3 "docs/mbs/docSet.dsidx" "SELECT name, path FROM searchIndex WHERE type='Function' AND name LIKE '%[Teilname]%' LIMIT 10;"
+     sqlite3 "docs/mbs/docSet.dsidx" "SELECT name, path FROM searchIndex WHERE type='Function' AND name LIKE '%[PartialName]%' LIMIT 10;"
      ```
-   - Die `path` Spalte enthält den exakten Dateinamen (z.B. "ListAddPrefix.html")
+   - The `path` column contains the exact filename (e.g. "ListAddPrefix.html")
 
-3. **Dokumentation laden**:
-   - Verwende das **Read** Tool mit dem gefundenen Pfad: `docs/mbs/Documents/[path]`
-   - Beispiel: `docs/mbs/Documents/ListAddPrefix.html`
-   - Falls SQLite-Suche fehlschlägt: Konstruiere Dateinamen manuell (Punkte entfernen + .html)
+3. **Load the documentation**:
+   - Use the **Read** tool with the path you found: `docs/mbs/Documents/[path]`
+   - Example: `docs/mbs/Documents/ListAddPrefix.html`
+   - If the SQLite search fails: construct the filename manually (remove dots + .html)
 
-4. **Dokumentation analysieren**: Extrahiere aus der HTML-Dokumentation:
-   - Funktionsbeschreibung und Zweck
-   - Parameter mit Datentypen und Bedeutung
-   - Rückgabewerte
-   - Beispielcode (falls vorhanden)
-   - Versionsinformationen (ab welcher MBS Version verfügbar)
-   - Plattform-Kompatibilität (FileMaker Pro, Server, WebDirect, iOS, etc.)
+4. **Analyse the documentation**: Extract from the HTML documentation:
+   - Function description and purpose
+   - Parameters with data types and meaning
+   - Return values
+   - Example code (if available)
+   - Version information (from which MBS version onwards it is available)
+   - Platform compatibility (FileMaker Pro, Server, WebDirect, iOS, etc.)
 
-### Für Variante 2: Thematische Suche
+### For mode 2: Thematic search
 
-1. **Suchbegriff identifizieren**: Extrahiere das Thema aus der Benutzeranfrage
-   - Beispiele: "Clipboard", "PDF", "Email", "SQL", "JSON"
-   - Der Begriff kann in verschiedenen Formen vorliegen (z.B. "PDF-Funktionen" → "PDF")
+1. **Identify the search term**: Extract the topic from the user's request
+   - Examples: "Clipboard", "PDF", "Email", "SQL", "JSON"
+   - The term may appear in various forms (e.g. "PDF functions" → "PDF")
 
-2. **Kategorien in SQLite suchen** (NEU - PRIMÄR):
-   - Prüfe zuerst, ob es eine passende Kategorie gibt:
+2. **Search categories in SQLite** (NEW - PRIMARY):
+   - First check whether a matching category exists:
      ```bash
-     sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Category' AND name LIKE '%[Suchbegriff]%';"
+     sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Category' AND name LIKE '%[SearchTerm]%';"
      ```
-   - Falls Kategorie gefunden: Zeige alle Funktionen dieser Kategorie an
+   - If a category is found: list all functions in that category
 
-3. **Funktionen nach Pattern suchen** (NEU - SEHR SCHNELL):
-   - Suche nach Funktionen, die mit dem Suchbegriff beginnen:
+3. **Search for functions by pattern** (NEW - VERY FAST):
+   - Search for functions starting with the search term:
      ```bash
-     sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Function' AND name LIKE '[Suchbegriff].%' ORDER BY name;"
+     sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Function' AND name LIKE '[SearchTerm].%' ORDER BY name;"
      ```
-   - Beispiel: "JSON.%" findet alle JSON-Funktionen in Millisekunden
-   - Beispiel: "DynaPDF.%" findet alle DynaPDF-Funktionen
+   - Example: "JSON.%" finds all JSON functions in milliseconds
+   - Example: "DynaPDF.%" finds all DynaPDF functions
 
-4. **Fuzzy-Suche bei Bedarf**:
-   - Falls direkte Suche keine Ergebnisse liefert, verwende LIKE mit Wildcard:
+4. **Fuzzy search if needed**:
+   - If the direct search returns no results, use LIKE with wildcards:
      ```bash
-     sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Function' AND name LIKE '%[Suchbegriff]%' ORDER BY name LIMIT 50;"
+     sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Function' AND name LIKE '%[SearchTerm]%' ORDER BY name LIMIT 50;"
      ```
 
-5. **Kompakte Übersicht erstellen**:
-   - Gruppiere Funktionen nach Component-Präfix (Text vor dem ersten Punkt)
-   - Zeige Anzahl gefundener Funktionen
-   - Begrenze Ausgabe auf 30-50 relevante Funktionen
-   - Biete an, einzelne Funktionen detailliert zu erklären (dann Read Tool nutzen)
+5. **Produce a compact overview**:
+   - Group functions by Component prefix (text before the first dot)
+   - Show the number of functions found
+   - Limit output to 30-50 relevant functions
+   - Offer to explain individual functions in detail (then use the Read tool)
 
-### Nützliche SQLite-Queries (NEU)
+### Useful SQLite queries (NEW)
 
-**Alle verfügbaren Kategorien auflisten:**
+**List all available categories:**
 ```bash
 sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Category' ORDER BY name;"
 ```
 
-**Funktionen zählen nach Präfix (Top 20 Components):**
+**Count functions by prefix (top 20 Components):**
 ```bash
 sqlite3 "docs/mbs/docSet.dsidx" "SELECT SUBSTR(name, 1, INSTR(name || '.', '.') - 1) AS component, COUNT(*) as count FROM searchIndex WHERE type='Function' GROUP BY component ORDER BY count DESC LIMIT 20;"
 ```
 
-**Alle Funktionen einer Component:**
+**All functions of a Component:**
 ```bash
 sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Function' AND name LIKE 'JSON.%' ORDER BY name;"
 ```
 
-**Funktion existiert (mit exaktem Namen):**
+**Function exists (with exact name):**
 ```bash
 sqlite3 "docs/mbs/docSet.dsidx" "SELECT name, path FROM searchIndex WHERE type='Function' AND name='List.AddPrefix';"
 ```
 
-**Ähnliche Funktionen finden (Fuzzy):**
+**Find similar functions (fuzzy):**
 ```bash
 sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Function' AND name LIKE '%Clipboard%' ORDER BY name LIMIT 20;"
 ```
 
-### HTML-Struktur verstehen
+### Understanding the HTML structure
 
-Die HTML-Dateien enthalten:
-- `<h2>`: Funktionsname
-- Tabelle mit Component, Version und Plattform-Informationen
-- `div#PrototypeSmall`: Syntax der Funktion
-- Tabelle mit Parameter-Details
-- `<h3>Result</h3>`: Rückgabewert
-- `<h3>Examples</h3>`: Beispielcode
-- `<h3>See also</h3>`: Verwandte Funktionen
+The HTML files contain:
+- `<h2>`: function name
+- Table with Component, version and platform information
+- `div#PrototypeSmall`: function syntax
+- Table with parameter details
+- `<h3>Result</h3>`: return value
+- `<h3>Examples</h3>`: example code
+- `<h3>See also</h3>`: related functions
 
-### Kontext-bezogene Erklärung
+### Context-aware explanation
 
-Wenn die Funktion im Kontext eines Scripts analysiert wird:
-- Erkläre, wie die Funktion im konkreten Script verwendet wird
-- Weise auf mögliche Fehlerquellen hin
-- Gib Best-Practice-Hinweise
+When the function is analysed in the context of a script:
+- Explain how the function is used in the specific script
+- Point out potential sources of error
+- Provide best practice guidance
 
-## Ausgabeformat
+## Output format
 
-### Für Variante 1: Direkte Funktionssuche
+### For mode 1: Direct function lookup
 
-Strukturiere die Antwort wie folgt:
+Structure the response as follows:
 
-#### MBS Funktion: [Funktionsname]
+#### MBS function: [FunctionName]
 
-**Zweck**: [Kurzbeschreibung]
+**Purpose**: [Brief description]
 
 **Syntax**:
 ```
-MBS( "FunktionsName"; Parameter1 ; Parameter2 ; ... )
+MBS( "FunctionName"; Parameter1 ; Parameter2 ; ... )
 ```
 
-**Parameter**:
-- `Parameter1` (Typ): Beschreibung
-- `Parameter2` (Typ): Beschreibung
+**Parameters**:
+- `Parameter1` (type): description
+- `Parameter2` (type): description
 
-**Rückgabewert**: Beschreibung des Rückgabewerts
+**Return value**: description of the return value
 
-**Verfügbar seit**: MBS Version X.X
+**Available since**: MBS version X.X
 
-**Plattformen**: FileMaker Pro / Server / WebDirect / iOS / etc.
+**Platforms**: FileMaker Pro / Server / WebDirect / iOS / etc.
 
-**Beispiel**:
+**Example**:
 ```filemaker
-// Beispielcode aus der Dokumentation
+// Example code from the documentation
 ```
 
-**Hinweise**:
-- Besondere Beachtungspunkte
-- Häufige Fehler
-- Best Practices
+**Notes**:
+- Particular points to watch
+- Common pitfalls
+- Best practices
 
-### Für Variante 2: Thematische Suche
+### For mode 2: Thematic search
 
-Strukturiere die Antwort wie folgt:
+Structure the response as follows:
 
-#### MBS Funktionen zum Thema: [Thema]
+#### MBS functions for topic: [Topic]
 
-**Gefundene Components**: [Liste der relevanten Components]
+**Components found**: [list of relevant Components]
 
-**Anzahl Funktionen**: [X Funktionen gefunden]
+**Number of functions**: [X functions found]
 
-**Funktionsübersicht**:
+**Function overview**:
 
-##### Component: [Component-Name]
-- **[FunktionsName1]**: Kurzbeschreibung (1 Zeile)
-- **[FunktionsName2]**: Kurzbeschreibung (1 Zeile)
-- **[FunktionsName3]**: Kurzbeschreibung (1 Zeile)
+##### Component: [Component name]
+- **[FunctionName1]**: brief description (1 line)
+- **[FunctionName2]**: brief description (1 line)
+- **[FunctionName3]**: brief description (1 line)
 
-##### Component: [Component-Name]
-- **[FunktionsName4]**: Kurzbeschreibung (1 Zeile)
-- **[FunktionsName5]**: Kurzbeschreibung (1 Zeile)
+##### Component: [Component name]
+- **[FunctionName4]**: brief description (1 line)
+- **[FunctionName5]**: brief description (1 line)
 
-**Häufig verwendete Funktionen**:
-- Liste der 3-5 wichtigsten/häufigsten Funktionen für dieses Thema
+**Commonly used functions**:
+- List of the 3-5 most important/most frequently used functions for this topic
 
-**Nächste Schritte**:
-Frage den Benutzer, ob er Details zu einer spezifischen Funktion benötigt.
+**Next steps**:
+Ask the user whether they need details on a specific function.
 
-## Wichtige Hinweise
+## Important notes
 
-- **SQLite-Index nutzen**: Immer zuerst SQLite für Suchen verwenden - deutlich schneller als Grep
-- **Hybrid-Ansatz**: SQLite für Lookups, Read Tool für detaillierte Dokumentation
-- MBS Funktionen beginnen immer mit "MBS" oder "FM" Präfix im FileMaker Script
-- Die Dokumentation ist auf Englisch verfügbar
-- Bei komplexen Funktionen kann es mehrere Varianten oder überladene Versionen geben
-- Achte auf die Versionsnummer - ältere FileMaker-Versionen unterstützen möglicherweise neuere MBS Funktionen nicht
-- Die HTML-Dateien und SQLite-Datenbank sind lokal verfügbar - kein Internetzugriff erforderlich
-- **Grep nur als Fallback**: Nutze Grep nur wenn SQLite keine Ergebnisse liefert
-- Components fassen thematisch verwandte Funktionen zusammen (z.B. Clipboard, DynaPDF, SQL)
-- **7.298 Funktionen** und **168 Kategorien** verfügbar im SQLite-Index
+- **Use the SQLite index**: always use SQLite first for searches - significantly faster than Grep
+- **Hybrid approach**: SQLite for lookups, Read tool for detailed documentation
+- MBS functions in a FileMaker script always begin with the "MBS" or "FM" prefix
+- Complex functions may have multiple variants or overloaded versions
+- Pay attention to the version number - older FileMaker versions may not support newer MBS functions
+- The HTML files and the SQLite database are available locally - no internet access required
+- **Grep only as fallback**: use Grep only when SQLite returns no results
+- Components group thematically related functions (e.g. Clipboard, DynaPDF, SQL)
+- **7,298 functions** and **168 categories** available in the SQLite index
 
-## Fehlerbehandlung
+## Error handling
 
-### Für Variante 1: Direkte Funktionssuche
+### For mode 1: Direct function lookup
 
-Falls die Funktion nicht gefunden wird:
+If the function is not found:
 
-1. **Suche in SQLite mit exaktem Namen** (NEU - ERSTER SCHRITT):
+1. **Search in SQLite by exact name** (NEW - FIRST STEP):
    ```bash
-   sqlite3 "docs/mbs/docSet.dsidx" "SELECT name, path FROM searchIndex WHERE type='Function' AND name='[Funktionsname]';"
+   sqlite3 "docs/mbs/docSet.dsidx" "SELECT name, path FROM searchIndex WHERE type='Function' AND name='[FunctionName]';"
    ```
 
-2. **Fuzzy-Suche in SQLite** (NEU - ZWEITER SCHRITT):
+2. **Fuzzy search in SQLite** (NEW - SECOND STEP):
    ```bash
-   sqlite3 "docs/mbs/docSet.dsidx" "SELECT name, path FROM searchIndex WHERE type='Function' AND name LIKE '%[Teilname]%' LIMIT 10;"
+   sqlite3 "docs/mbs/docSet.dsidx" "SELECT name, path FROM searchIndex WHERE type='Function' AND name LIKE '%[PartialName]%' LIMIT 10;"
    ```
 
-3. **Fallback auf thematische Suche**: Wenn direkte Suche fehlschlägt
-   - Extrahiere Component-Namen aus dem Funktionsnamen (z.B. "List" aus "List.AddPrefix")
-   - Suche nach allen Funktionen dieser Component:
+3. **Fall back to thematic search**: if the direct search fails
+   - Extract the Component name from the function name (e.g. "List" from "List.AddPrefix")
+   - Search for all functions of that Component:
      ```bash
      sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Function' AND name LIKE 'List.%' ORDER BY name;"
      ```
 
-4. **Letzter Fallback: Grep** (nur wenn SQLite nichts findet):
+4. **Last fallback: Grep** (only when SQLite finds nothing):
    ```
-   Grep: pattern="<h2.*[Teilname]" path="docs/mbs/Documents/" -i
+   Grep: pattern="<h2.*[PartialName]" path="docs/mbs/Documents/" -i
    ```
 
-5. **Informiere den Benutzer**: Wenn die Funktion nicht gefunden wurde
-   - Zeige ähnliche Funktionen aus SQLite-Suche
-   - Hinweis auf mögliche Schreibweisenvarianten
-   - Empfehle manuelle Suche auf https://www.mbsplugins.eu
+5. **Inform the user**: when the function was not found
+   - Show similar functions from the SQLite search
+   - Point out possible spelling variants
+   - Recommend a manual search at https://www.mbsplugins.eu
 
-### Für Variante 2: Thematische Suche
+### For mode 2: Thematic search
 
-Falls keine Ergebnisse gefunden werden:
+If no results are found:
 
-1. **Erweitere Suchbegriff mit SQLite** (NEU):
-   - "PDF" → suche auch nach "DynaPDF":
+1. **Broaden the search term with SQLite** (NEW):
+   - "PDF" → also search for "DynaPDF":
      ```bash
      sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Function' AND (name LIKE 'PDF.%' OR name LIKE 'DynaPDF.%') ORDER BY name;"
      ```
-   - "Clipboard" → suche auch nach "Pasteboard"
-   - "Email" → suche auch nach "Mail", "SMTP", "EmailMessage"
+   - "Clipboard" → also search for "Pasteboard"
+   - "Email" → also search for "Mail", "SMTP", "EmailMessage"
 
-2. **Zeige verfügbare Kategorien** (NEU):
+2. **Show available categories** (NEW):
    ```bash
    sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Category' ORDER BY name;"
    ```
 
-3. **Fallback: Grep in Beschreibungen** (nur wenn SQLite nichts findet):
+3. **Fallback: Grep in descriptions** (only when SQLite finds nothing):
    ```
-   Grep: pattern="[Suchbegriff]" path="docs/mbs/Documents/" -i output_mode="files_with_matches" head_limit=20
+   Grep: pattern="[SearchTerm]" path="docs/mbs/Documents/" -i output_mode="files_with_matches" head_limit=20
    ```
 
-4. **Informiere den Benutzer**:
-   - Welche Suchbegriffe verwendet wurden
-   - Zeige Liste aller verfügbaren Kategorien
-   - Vorschläge für alternative Suchbegriffe
+4. **Inform the user**:
+   - Which search terms were used
+   - Show a list of all available categories
+   - Suggestions for alternative search terms
 
-## Praxisbeispiele mit SQLite
+## Practical examples with SQLite
 
-### Beispiel 1: Direkte Funktionssuche
-**Benutzer fragt**: "Was macht List.AddPrefix?"
+### Example 1: Direct function lookup
+**User asks**: "What does List.AddPrefix do?"
 
-**Vorgehen**:
-1. SQLite-Suche nach exaktem Namen:
+**Approach**:
+1. SQLite search by exact name:
    ```bash
    sqlite3 "docs/mbs/docSet.dsidx" "SELECT name, path FROM searchIndex WHERE type='Function' AND name='List.AddPrefix';"
    ```
-2. Ergebnis: `List.AddPrefix|ListAddPrefix.html`
-3. Dokumentation laden:
+2. Result: `List.AddPrefix|ListAddPrefix.html`
+3. Load the documentation:
    ```
    Read: docs/mbs/Documents/ListAddPrefix.html
    ```
-4. Detaillierte Antwort mit Parametern, Beispielen, etc.
+4. Detailed response with parameters, examples, etc.
 
-### Beispiel 2: Thematische Suche
-**Benutzer fragt**: "Zeige mir alle JSON-Funktionen"
+### Example 2: Thematic search
+**User asks**: "Show me all JSON functions"
 
-**Vorgehen**:
-1. SQLite-Pattern-Suche:
+**Approach**:
+1. SQLite pattern search:
    ```bash
    sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Function' AND name LIKE 'JSON.%' ORDER BY name;"
    ```
-2. Ergebnis in <1ms: Liste aller JSON-Funktionen
-3. Gruppierte Ausgabe mit Funktionsnamen
-4. Angebot: Details zu spezifischen Funktionen
+2. Result in <1ms: list of all JSON functions
+3. Grouped output with function names
+4. Offer: details on specific functions
 
-### Beispiel 3: Fuzzy-Suche
-**Benutzer fragt**: "Gibt es MBS-Funktionen für die Zwischenablage?"
+### Example 3: Fuzzy search
+**User asks**: "Are there MBS functions for the clipboard?"
 
-**Vorgehen**:
-1. Kategorie-Suche:
+**Approach**:
+1. Category search:
    ```bash
    sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Category' AND name LIKE '%Clipboard%';"
    ```
-2. Funktionen-Suche:
+2. Function search:
    ```bash
    sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Function' AND name LIKE 'Clipboard.%' ORDER BY name;"
    ```
-3. Auch nach "Pasteboard" suchen (Mac-Synonym)
-4. Kompakte Liste mit allen gefundenen Funktionen
+3. Also search for "Pasteboard" (macOS synonym)
+4. Compact list of all functions found
 
-### Beispiel 4: Top Components finden
-**Benutzer fragt**: "Welche MBS Components gibt es?"
+### Example 4: Find top Components
+**User asks**: "Which MBS Components are there?"
 
-**Vorgehen**:
+**Approach**:
 ```bash
 sqlite3 "docs/mbs/docSet.dsidx" "SELECT SUBSTR(name, 1, INSTR(name || '.', '.') - 1) AS component, COUNT(*) as count FROM searchIndex WHERE type='Function' GROUP BY component ORDER BY count DESC LIMIT 30;"
 ```
 
-Zeigt die 30 größten Components mit Anzahl der Funktionen.
+Shows the 30 largest Components with the number of functions.

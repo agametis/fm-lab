@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface SettingsSchemaField {
   type: 'string' | 'select' | 'boolean' | 'number';
@@ -31,6 +32,7 @@ interface PluginCardProps {
 }
 
 export const PluginCard: React.FC<PluginCardProps> = ({ plugin, restartPending, expanded, onToggleExpand, onUpdate }) => {
+  const { t } = useTranslation(['detail']);
   const [draft, setDraft] = useState<Record<string, string | number | boolean>>(plugin.settings);
   const [saving, setSaving] = useState(false);
   const [toggling, setToggling] = useState(false);
@@ -106,7 +108,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({ plugin, restartPending, 
             onChange={(e) => handleToggle(e.target.checked)}
             onClick={(e) => e.stopPropagation()}
           />
-          <span>{plugin.enabled ? 'Aktiv' : 'Inaktiv'}</span>
+          <span>{plugin.enabled ? t('detail:settingsView.statusActive') : t('detail:settingsView.statusInactive')}</span>
         </label>
       </div>
 
@@ -116,13 +118,13 @@ export const PluginCard: React.FC<PluginCardProps> = ({ plugin, restartPending, 
 
       {expanded && restartPending && (
         <div className="plugin-card-restart-badge">
-          Neustart erforderlich, damit der neue Status wirksam wird.
+          {t('detail:settingsView.restartRequired')}
         </div>
       )}
 
       {expanded && schemaEntries.length > 0 && (
         <div className="plugin-card-settings">
-          <h3>Einstellungen</h3>
+          <h3>{t('detail:settingsView.settingsHeading')}</h3>
           {schemaEntries.map(([key, field]) => (
             <div key={key} className="plugin-card-field">
               <label htmlFor={`${plugin.name}-${key}`}>
@@ -173,7 +175,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({ plugin, restartPending, 
               disabled={!isDirty || saving}
               className="plugin-card-save"
             >
-              {saving ? 'Speichere...' : 'Einstellungen speichern'}
+              {saving ? t('detail:settingsView.savingLabel') : t('detail:settingsView.saveLabel')}
             </button>
           </div>
         </div>

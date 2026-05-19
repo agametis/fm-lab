@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Breadcrumbs } from './Breadcrumbs';
 import { ThemeToggle } from './ThemeToggle';
 import type { BreadcrumbItem } from '../types';
@@ -8,29 +9,27 @@ interface SubPageHeaderProps {
   title: string;
   subtitle?: ReactNode;
   breadcrumbs?: BreadcrumbItem[];
-  /**
-   * Custom Back-Handler. Default: History zurück, mit Fallback auf "/".
-   */
+  /** Custom back handler. Default: navigate(-1), fallback to "/". */
   onBack?: () => void;
   /**
-   * Optionale Slot-Elemente, die zwischen Breadcrumb und ThemeToggle in der
-   * oberen Aktionsleiste landen (z.B. zusätzliche Toggle-Buttons).
+   * Optional slot rendered between the breadcrumb and the ThemeToggle in the
+   * top action bar (e.g. additional toggle buttons).
    */
   actions?: ReactNode;
 }
 
 /**
- * SubPageHeader — einheitlicher Kopfbereich für Sub-Pages (Dashboards,
- * Queries, ggf. weitere Detail-Ansichten).
+ * SubPageHeader — unified top bar for sub pages (dashboards, queries, and
+ * other detail views).
  *
  * Layout:
  *   ┌──────────────────────────────────────────────────────────────────┐
- *   │ ← Zurück   Crumb / Crumb / Page          [actions] [ThemeToggle] │
+ *   │ ← Back   Crumb / Crumb / Page          [actions] [ThemeToggle]   │
  *   │ Title                                                            │
  *   │ optional subtitle                                                │
  *   └──────────────────────────────────────────────────────────────────┘
  *
- * Konsistent zum Pattern der `DetailView` (Back + Breadcrumb + ThemeToggle).
+ * Mirrors the pattern of `DetailView` (back + breadcrumb + ThemeToggle).
  */
 export function SubPageHeader({
   title,
@@ -39,6 +38,7 @@ export function SubPageHeader({
   onBack,
   actions,
 }: SubPageHeaderProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -49,6 +49,8 @@ export function SubPageHeader({
       else navigate('/');
     });
 
+  const backLabel = t('backToPrevious');
+
   return (
     <header className="sub-page-header">
       <div className="sub-page-header__nav">
@@ -56,10 +58,10 @@ export function SubPageHeader({
           type="button"
           onClick={handleBack}
           className="back-button"
-          aria-label="Zurück zur vorherigen Ansicht"
-          title="Zurück zur vorherigen Ansicht"
+          aria-label={backLabel as string}
+          title={backLabel as string}
         >
-          ← Zurück
+          ← {t('back')}
         </button>
         {breadcrumbs && breadcrumbs.length > 0 && <Breadcrumbs items={breadcrumbs} />}
         <div className="sub-page-header__actions">

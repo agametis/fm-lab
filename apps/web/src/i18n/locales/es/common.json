@@ -1,0 +1,73 @@
+{
+  "appTitle": "FileMaker Object Browser",
+  "loading": "Cargando…",
+  "retry": "Reintentar",
+  "back": "Atrás",
+  "backToPrevious": "Volver a la vista anterior",
+  "open": "Abrir",
+  "close": "Cerrar",
+  "empty": "Nada que mostrar.",
+  "noData": "No hay datos disponibles.",
+  "noEntries": "Sin entradas.",
+  "unknown": "(desconocido)",
+  "all": "Todo",
+  "filter": "Filtro",
+  "search": "Buscar",
+  "searchPlaceholder": "Buscar…",
+  "yes": "Sí",
+  "no": "No",
+  "loadError": "Error al cargar: {{message}}",
+  "language": {
+    "label": "Idioma",
+    "selectorAriaLabel": "Elegir idioma de la interfaz"
+  },
+  "theme": {
+    "switchToLight": "Cambiar a modo claro",
+    "switchToDark":  "Cambiar a modo oscuro"
+  },
+  "actions": {
+    "openInFileMaker": "Abrir en FileMaker",
+    "copyUuid": "Copiar UUID",
+    "expandAll": "Expandir todo",
+    "collapseAll": "Contraer todo",
+    "collapseMultilineCalcs": "Contraer cálculos multilínea",
+    "fitToViewport": "Ajustar al área visible",
+    "fitGraph": "Ajustar gráfico",
+    "resetLayout": "Restablecer disposición",
+    "clearPreselection": "Limpiar preselección",
+    "showInRelationshipGraph": "Mostrar en el grafo de relaciones del archivo",
+    "fit": "Ajustar",
+    "reset": "Restablecer",
+    "fullscreen": "Pantalla completa ↗",
+    "openLayoutFullscreen": "Abrir el layout en pantalla completa",
+    "originalSize": "100 % tamaño original"
+  },
+  "refOriginPill": {
+    "loading": "Resolviendo referencia…"
+  },
+  "hierarchy": {
+    "structurallyContains": "Contiene estructuralmente"
+  },
+  "layout": {
+    "empty": "Este layout no tiene objetos.",
+    "selectFile": "Seleccionar un archivo…",
+    "title": "Layout"
+  },
+  "relationshipGraph": {
+    "title": "Grafo de relaciones",
+    "fileLabel": "Archivo:",
+    "selectFile": "Seleccionar un archivo…",
+    "selectFilePrompt": "Por favor selecciona un archivo en el selector.",
+    "loading": "Cargando el grafo de relaciones…",
+    "noTOs": "Este archivo no tiene ocurrencias de tabla.",
+    "notImported": "El grafo de relaciones aún no se ha importado. Ejecuta convert-xml --batch de nuevo."
+  },
+  "dependency": {
+    "empty": "Sin dependencias."
+  },
+  "dashboard": {
+    "loading": "Cargando dashboard…",
+    "loadError": "Error al cargar: {{message}}",
+    "noData": "No hay datos disponibles."
+  }
+}

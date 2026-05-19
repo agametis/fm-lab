@@ -1,7 +1,7 @@
 {
   "name": "fmide",
   "version": "1.0.0",
-  "description": "fmIDE Thingamajig URI Navigation",
+  "description": "fmIDE Thingamajig URI navigation",
   "enabled": true,
   "routes_prefix": "/fmide",
   "config": {
@@ -12,21 +12,21 @@
   "settings_schema": {
     "fmp_protocol": {
       "type": "select",
-      "label": "FMP-Protokoll",
-      "description": "fmp oder fmps (TLS)",
+      "label": "FMP protocol",
+      "description": "fmp or fmps (TLS)",
       "options": ["fmp", "fmps"],
       "default": "fmp"
     },
     "server_address": {
       "type": "string",
-      "label": "Server-Adresse",
-      "description": "$ für aktuelle Datei, sonst Host/IP",
+      "label": "Server address",
+      "description": "$ for the current file, otherwise a host/IP",
       "default": "$"
     },
     "script_name": {
       "type": "string",
-      "label": "Script-Name",
-      "description": "Name des Ziel-Scripts in der FileMaker-Datei",
+      "label": "Script name",
+      "description": "Name of the target script in the FileMaker file",
       "default": "fmIDE"
     }
   },

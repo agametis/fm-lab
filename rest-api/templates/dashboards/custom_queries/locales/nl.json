@@ -1,0 +1,10 @@
+{
+  "manifest": {
+    "title": "Analyses & aangepaste queries",
+    "description": "Alle voorbereide SQL-analyses in één overzicht."
+  },
+  "layout": {
+    "root.children[0].props.title": "Analyses & aangepaste queries",
+    "root.children[0].props.subtitle": "Klik opent de analyse in de generieke renderer."
+  }
+}

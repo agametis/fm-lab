@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { ScriptRef } from '../script/types';
 import { fetchPluginDoc, type PluginDoc } from '../script/pluginDocsApi';
 import { sanitizePluginHtml } from '../script/sanitize';
@@ -24,6 +25,7 @@ const FunctionRefSpan: React.FC<RefSpanProps & { className: string; navPath: str
   className,
   navPath,
 }) => {
+  const { t } = useTranslation(['detail']);
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const hoverTimer = useRef<number | null>(null);
@@ -101,13 +103,13 @@ const FunctionRefSpan: React.FC<RefSpanProps & { className: string; navPath: str
               target="_blank"
               rel="noopener noreferrer"
             >
-              {reference.functionLocalHelpUrl ? 'Lokale Hilfe öffnen ↗' : 'Claris-Hilfe öffnen ↗'}
+              {reference.functionLocalHelpUrl ? t('detail:helpLinks.openLocalClarisHelp') : t('detail:helpLinks.openOnlineClarisHelp')}
             </a>
           )}
           {reference.functionCanonical && reference.functionDisplayName
             && reference.functionCanonical !== reference.functionDisplayName && (
             <span className="fm-stepname-popover-canonical">
-              Kanonisch: {reference.functionCanonical}
+              {t('detail:helpLinks.canonical')} {reference.functionCanonical}
             </span>
           )}
         </span>
@@ -116,17 +118,25 @@ const FunctionRefSpan: React.FC<RefSpanProps & { className: string; navPath: str
   );
 };
 
-function buildTitle(ref: ScriptRef): string {
+/**
+ * Build the popover/title string for a script-ref. Receives the i18n `t`
+ * function so the label fragments ("Table:", "Scope:", "Usage:", "File:",
+ * "cross-file") follow the active UI language.
+ */
+function buildTitle(
+  ref: ScriptRef,
+  t: (key: string, opts?: Record<string, unknown>) => string,
+): string {
   const parts: string[] = [];
   parts.push(ref.type);
   if (ref.subFunction) parts.push(`${ref.name}: ${ref.subFunction}`);
   else parts.push(ref.name);
-  if (ref.table) parts.push(`Tabelle: ${ref.table}`);
-  if (ref.baseTable && ref.baseTable !== ref.table) parts.push(`BaseTable: ${ref.baseTable}`);
-  if (ref.scope) parts.push(`Scope: ${ref.scope}`);
-  if (ref.usage) parts.push(`Usage: ${ref.usage}`);
-  if (ref.file) parts.push(`Datei: ${ref.file}`);
-  if (ref.crossFile) parts.push('cross-file');
+  if (ref.table) parts.push(`${t('detail:refTitle.table')} ${ref.table}`);
+  if (ref.baseTable && ref.baseTable !== ref.table) parts.push(`${t('detail:refTitle.baseTable')} ${ref.baseTable}`);
+  if (ref.scope) parts.push(`${t('detail:refTitle.scope')} ${ref.scope}`);
+  if (ref.usage) parts.push(`${t('detail:refTitle.usage')} ${ref.usage}`);
+  if (ref.file) parts.push(`${t('detail:refTitle.file')} ${ref.file}`);
+  if (ref.crossFile) parts.push(t('detail:refTitle.crossFile'));
   return parts.join(' • ');
 }
 
@@ -167,6 +177,7 @@ const PluginRefSpan: React.FC<RefSpanProps & { className: string; title: string;
   title,
   navPath,
 }) => {
+  const { t } = useTranslation(['detail']);
   const navigate = useNavigate();
   const { uuid: currentUuid } = useParams<{ uuid: string }>();
   const [open, setOpen] = useState(false);
@@ -287,13 +298,13 @@ const PluginRefSpan: React.FC<RefSpanProps & { className: string; title: string;
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    {localHref ? 'Lokale MBS-Doku öffnen ↗' : 'MBS-Doku öffnen ↗'}
+                    {localHref ? t('detail:helpLinks.openLocalMbsHelp') : t('detail:helpLinks.openOnlineMbsHelp')}
                   </a>
                 );
               })()}
             </span>
           )}
-          {doc && !doc.found && <span className="plugin-doc-error">Keine Doku gefunden.</span>}
+          {doc && !doc.found && <span className="plugin-doc-error">{t('detail:helpLinks.noDocs')}</span>}
         </span>
       )}
     </span>
@@ -301,6 +312,7 @@ const PluginRefSpan: React.FC<RefSpanProps & { className: string; title: string;
 };
 
 export const RefSpan: React.FC<RefSpanProps> = ({ reference, text }) => {
+  const { t } = useTranslation(['detail']);
   const highlightSet = useHighlightRefUuids();
   const searchPredicate = useScriptSearchPredicate();
   const { uuid: currentUuid } = useParams<{ uuid: string }>();
@@ -319,7 +331,7 @@ export const RefSpan: React.FC<RefSpanProps> = ({ reference, text }) => {
   const hl = highlighted ? ' fm-ref--highlighted' : '';
   const sm = searchMatch ? ' fm-ref--search-match' : '';
   const className = `${baseClass}${crossFile}${hl}${sm}`;
-  const title = buildTitle(reference);
+  const title = buildTitle(reference, t);
   // Helper: refTargetPath erzeugt nur einen Pfad, wenn die UUID einem unterstützten
   // Type angehört — wenn buildObjectPath direkt verwendet wird, wäre für Plugin/
   // Function-Types fälschlich ein Link erzeugt. Daher explizit prüfen.

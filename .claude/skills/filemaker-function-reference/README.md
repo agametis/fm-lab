@@ -1,134 +1,134 @@
 # FileMaker Function Reference Skill
 
-Dieser Skill ermöglicht Claude den Zugriff auf die offizielle Dokumentation der aktuell veröffentlichten Version von FileMaker Pro (Claris-Online-Hilfe). Die Dokumentation wird bevorzugt aus einem lokalen Cache geladen und nur dann online abgerufen, wenn kein passender Cache vorhanden ist.
+This skill provides Claude with access to the official documentation of the currently released version of FileMaker Pro (Claris online help). The documentation is preferably loaded from a local cache and is only retrieved online when no matching cache is available.
 
-## Zweck
+## Purpose
 
-FileMaker Pro ist eine Entwicklungsumgebung für individuelle Anwendungen. Dieser Skill hilft bei der Analyse von FileMaker Scripts, indem er automatisch die offizielle Dokumentation abruft und kontextbezogene Erklärungen für FileMaker Entwickler liefert.
+FileMaker Pro is a development environment for custom applications. This skill assists with the analysis of FileMaker scripts by automatically retrieving the official documentation and providing context-aware explanations for FileMaker developers.
 
-## Verwendung
+## Usage
 
-### Automatische Aktivierung
+### Automatic activation
 
-Der Skill wird automatisch aktiviert, wenn:
-- Du nach einer FileMaker Funktion fragst
-- Script-Analysen Befehle (Script-Schritte) enthalten, die erklärt werden sollen
-- Formelfeld-Analysen oder CustomFunction-Analysen Funktionen enthalten, die erklärt werden sollen
-- Du explizit fragst: "Erkläre mir die FileMaker Funktion X"
+The skill is activated automatically when:
+- The user asks about a FileMaker function
+- Script analyses contain commands (script steps) that need to be explained
+- Calculation field analyses or CustomFunction analyses contain functions that need to be explained
+- The user explicitly asks: "Explain the FileMaker function X"
 
-### Manuelle Aktivierung
+### Manual activation
 
 ```bash
 # In Claude Code CLI
 /skill filemaker-function-reference floor
 ```
 
-### Beispiel-Anfragen
+### Example requests
 
-1. **Einzelne Funktion nachschlagen**:
+1. **Look up a single function**:
    ```
-   Was macht die Funktion floor?
-   ```
-
-2. **Im Formel-Kontext**:
-   ```
-   Analysiere die Berechnung im Feld "Individualpreis" und erkläre die verwendeten Funktionen
+   What does the function floor do?
    ```
 
-3. **Im Script-Kontext**:
+2. **In a calculation context**:
    ```
-   Analysiere das Script "Datenimport" und erkläre die verwendeten Script-Schritte
-   ```
-
-4. **Best Practices**:
-   ```
-   Wie verwende ich das Favoriten Fenster in FileMaker richtig?
+   Analyse the calculation in the field "Individual price" and explain the functions used
    ```
 
-## Funktionsweise
+3. **In a script context**:
+   ```
+   Analyse the script "Data import" and explain the script steps used
+   ```
 
-1. Der Skill identifiziert FileMaker Funktions-Namen und ScriptStep-Namen im Text oder in Script-Analysen
-2. Er versucht zuerst, die Dokumentation aus dem lokalen Cache unter [docs/claris-help/](../../../docs/claris-help/) zu laden — in der vom Benutzer bevorzugten Sprache, mit Fallback auf Englisch
-3. Falls kein lokaler Cache vorhanden ist (oder die gewünschte Sprache nicht installiert ist), wird die Online-Hilfe von `help.claris.com` abgerufen
-4. Die Dokumentation wird analysiert und strukturiert aufbereitet
-5. Eine kontextbezogene Erklärung in der Sprache des Benutzers wird generiert
+4. **Best practices**:
+   ```
+   How do I use the Favorites window in FileMaker correctly?
+   ```
 
-## Dokumentationsquellen — Reihenfolge
+## How it works
 
-### 1. Lokaler Cache (bevorzugt)
+1. The skill identifies FileMaker function names and script step names in the text or in script analyses
+2. It first tries to load the documentation from the local cache under [docs/claris-help/](../../../docs/claris-help/) — in the user's preferred language, with fallback to English
+3. If no local cache is available (or the desired language is not installed), the online help is retrieved from `help.claris.com`
+4. The documentation is analysed and presented in a structured form
+5. A context-aware explanation in the user's language is generated
 
-Der Skill prüft zunächst, ob die Claris-Online-Hilfe lokal gespiegelt wurde:
+## Documentation sources — order
+
+### 1. Local cache (preferred)
+
+The skill first checks whether the Claris online help has been mirrored locally:
 
 ```
 docs/claris-help/<lang>/content/<FunctionName>.html
 ```
 
-Beispiele:
+Examples:
 - `docs/claris-help/de/content/patterncount.html`
 - `docs/claris-help/en/content/patterncount.html`
 
-**Sprach-Fallback:** Ist die Datei in der bevorzugten Sprache nicht vorhanden, wird automatisch auf Englisch (`en`) zurückgegriffen — Englisch ist immer Teil der Installation (siehe Skill `install-claris-docs`).
+**Language fallback:** If the file is not available in the preferred language, the skill automatically falls back to English (`en`) — English is always part of the installation (see the skill `install-claris-docs`).
 
-**Prüfung:** Vor dem Online-Abruf prüft der Skill mit `ls docs/claris-help/<lang>/content/<slug>.html`, ob die Datei lokal verfügbar ist.
+**Check:** Before the online retrieval, the skill verifies with `ls docs/claris-help/<lang>/content/<slug>.html` whether the file is available locally.
 
-### 2. Online-Hilfe (Fallback)
+### 2. Online help (fallback)
 
-Ist kein lokaler Cache vorhanden oder die gewünschte Funktion nicht gespiegelt, fällt der Skill auf die Online-Quelle zurück:
+If no local cache is available or the desired function has not been mirrored, the skill falls back to the online source:
 
 ```
 https://help.claris.com/<lang>/pro-help/content/<FunctionName>.html
 ```
 
-Beispiele auf Deutsch:
-- `Code` → `https://help.claris.com/de/pro-help/content/code.html`
-- `MusterAnzahl` → `https://help.claris.com/de/pro-help/content/patterncount.html`
-- `LiesAlsDatum` → `https://help.claris.com/de/pro-help/content/getasdate.html`
-
-Beispiele auf Englisch:
+Examples in English:
 - `Code` → `https://help.claris.com/en/pro-help/content/code.html`
 - `PatternCount` → `https://help.claris.com/en/pro-help/content/patterncount.html`
 - `GetAsDate` → `https://help.claris.com/en/pro-help/content/getasdate.html`
 
-**Hinweis:** Die Slugs im Pfad sind sprachunabhängig immer englisch (z.B. `patterncount.html`, nicht `musteranzahl.html`).
+Examples in German:
+- `Code` → `https://help.claris.com/de/pro-help/content/code.html`
+- `MusterAnzahl` → `https://help.claris.com/de/pro-help/content/patterncount.html`
+- `LiesAlsDatum` → `https://help.claris.com/de/pro-help/content/getasdate.html`
 
-## Verfügbare Sprachversionen
+**Note:** The slugs in the path are always English, regardless of language (e.g. `patterncount.html`, not `musteranzahl.html`).
 
-Die Claris-Online-Hilfe wird in 11 Sprachen angeboten. Englisch ist die Referenzsprache und immer verfügbar; weitere Sprachen können bei Bedarf lokal installiert werden.
+## Available language versions
 
-| Code | Sprache               | Standardmäßig lokal | Hinweis                              |
-|------|-----------------------|---------------------|--------------------------------------|
-| `en` | Englisch              | immer               | Referenz, Fallback bei fehlendem Slug |
-| `de` | Deutsch               | optional            | Empfohlen für deutschsprachige Devs  |
-| `es` | Spanisch              | optional            |                                      |
-| `fr` | Französisch           | optional            |                                      |
-| `it` | Italienisch           | optional            |                                      |
-| `nl` | Niederländisch        | optional            |                                      |
-| `pt` | Portugiesisch         | optional            |                                      |
-| `sv` | Schwedisch            | optional            |                                      |
-| `ja` | Japanisch             | optional            |                                      |
-| `ko` | Koreanisch            | optional            |                                      |
-| `zh` | Chinesisch (vereinf.) | optional            | URL-Segment `zh` (nicht `zh-Hans`)   |
+The Claris online help is offered in 11 languages. English is the reference language and always available; further languages can be installed locally on demand.
 
-**Lokale Installation der Sprach-Sets:** Verwende den separaten Skill [`install-claris-docs`](../install-claris-docs/SKILL.md) zum Herunterladen weiterer Sprachen in `docs/claris-help/`. Englisch wird dabei stets mitinstalliert.
+| Code | Language              | Locally by default  | Note                                  |
+|------|-----------------------|---------------------|---------------------------------------|
+| `en` | English               | always              | Reference, fallback for missing slug  |
+| `de` | German                | optional            | Recommended for German-speaking devs  |
+| `es` | Spanish               | optional            |                                       |
+| `fr` | French                | optional            |                                       |
+| `it` | Italian               | optional            |                                       |
+| `nl` | Dutch                 | optional            |                                       |
+| `pt` | Portuguese            | optional            |                                       |
+| `sv` | Swedish               | optional            |                                       |
+| `ja` | Japanese              | optional            |                                       |
+| `ko` | Korean                | optional            |                                       |
+| `zh` | Chinese (simplified)  | optional            | URL segment `zh` (not `zh-Hans`)      |
 
-## Ausgabe
+**Local installation of language sets:** Use the separate skill [`install-claris-docs`](../install-claris-docs/SKILL.md) to download additional languages into `docs/claris-help/`. English is always installed alongside them.
 
-Der Skill liefert strukturierte Informationen:
-- Funktionszweck und Beschreibung
-- Syntax mit Parametern
-- Rückgabewerte
-- Verfügbarkeit (FileMaker Version, Plattformen)
-- Beschreibung
-- Beispielcode
+## Output
+
+The skill returns structured information:
+- Function purpose and description
+- Syntax with parameters
+- Return values
+- Availability (FileMaker version, platforms)
+- Description
+- Example code
 
 
-## Ressourcen
+## Resources
 
-- Lokaler Cache: [docs/claris-help/](../../../docs/claris-help/)
-- Installations-Skill: [install-claris-docs](../install-claris-docs/SKILL.md)
-- FileMaker Hilfe deutsch (online): [help.claris.com/de/pro-help/content/index.html](https://help.claris.com/de/pro-help/content/index.html)
-- FileMaker Hilfe englisch (online): [help.claris.com/en/pro-help/content/index.html](https://help.claris.com/en/pro-help/content/index.html)
+- Local cache: [docs/claris-help/](../../../docs/claris-help/)
+- Installation skill: [install-claris-docs](../install-claris-docs/SKILL.md)
+- FileMaker help German (online): [help.claris.com/de/pro-help/content/index.html](https://help.claris.com/de/pro-help/content/index.html)
+- FileMaker help English (online): [help.claris.com/en/pro-help/content/index.html](https://help.claris.com/en/pro-help/content/index.html)
 
-## Lizenz
+## License
 
-Dieser Skill ist Teil des fm-lab Projekts.
+This skill is part of the fm-lab project.

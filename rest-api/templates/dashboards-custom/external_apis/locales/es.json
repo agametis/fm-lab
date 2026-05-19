@@ -1,0 +1,48 @@
+{
+  "manifest": {
+    "title": "APIs e interfaces externas",
+    "description": "Plantilla genérica: invocaciones a URL (Open URL, Insert from URL, Import Records, cURL/MBS, Web Viewer, URLs calculadas) clasificadas por familia de API, además de fuentes de datos externas FileMaker / ODBC. Los patrones de familia son una lista por defecto amplia de proveedores de cloud / SaaS — para clasificaciones específicas del proyecto, ajusta las ramas WHEN en `data/url_details.sql` + `data/api_families.sql`."
+  },
+  "layout": {
+    "root.children[0].props.title": "APIs e interfaces externas",
+    "root.children[0].children[0].props.items[0].label": "Open URL",
+    "root.children[0].children[0].props.items[1].label": "Insert from URL",
+    "root.children[0].children[0].props.items[2].label": "Import Records",
+    "root.children[0].children[0].props.items[3].label": "MBS / Plugin",
+    "root.children[0].children[0].props.items[4].label": "Web Viewer",
+    "root.children[0].children[0].props.items[5].label": "Cálculos",
+    "root.children[0].children[0].props.items[6].label": "URLs únicas",
+    "root.children[0].children[0].props.items[7].label": "Fuentes externas",
+
+    "root.children[1].props.title": "Familias de API",
+    "root.children[1].children[0].props.columns[0].label": "Familia",
+    "root.children[1].children[0].props.columns[1].label": "Aciertos",
+    "root.children[1].children[0].props.columns[2].label": "Hosts",
+    "root.children[1].children[0].props.columns[3].label": "URLs",
+    "root.children[1].children[0].props.columns[4].label": "Archivos",
+    "root.children[1].children[0].props.columns[5].label": "Paso de script",
+    "root.children[1].children[0].props.columns[6].label": "Plugin",
+    "root.children[1].children[0].props.columns[7].label": "Objeto de layout",
+    "root.children[1].children[0].props.columns[8].label": "Campo",
+    "root.children[1].children[0].props.columns[9].label": "Función personalizada",
+
+    "root.children[2].props.title": "Lista detallada de URLs",
+    "root.children[2].children[0].props.columns[0].label": "Familia",
+    "root.children[2].children[0].props.columns[1].label": "Tipo de ref.",
+    "root.children[2].children[0].props.columns[2].label": "Host",
+    "root.children[2].children[0].props.columns[3].label": "Script/contexto",
+    "root.children[2].children[0].props.columns[4].label": "Archivo",
+    "root.children[2].children[0].props.columns[5].label": "Paso/tipo",
+    "root.children[2].children[0].props.columns[6].label": "#",
+    "root.children[2].children[0].props.columns[7].label": "URL",
+
+    "root.children[3].props.title": "Fuentes de datos externas (FileMaker / ODBC)",
+    "root.children[3].children[0].props.columns[0].label": "Destino",
+    "root.children[3].children[0].props.columns[1].label": "Tipo",
+    "root.children[3].children[0].props.columns[2].label": "Archivos",
+    "root.children[3].children[0].props.columns[3].label": "TOs",
+    "root.children[3].children[0].props.columns[4].label": "TO de ejemplo",
+
+    "root.children[4].props.content": "## Notas\n\nEste dashboard es una **plantilla genérica** para reutilizar en otros proyectos FileMaker. La clasificación por familias de API cubre proveedores típicos de cloud / SaaS / comunicación / IA. Para familias específicas del proyecto, ajusta de forma sincronizada los bloques `CASE WHEN url ILIKE …` en `data/url_details.sql` y `data/api_families.sql` (ver comentario de cabecera en `url_details.sql`).\n\n- **KPIs como filtros** (a través de todas las familias): *Open URL*, *Insert from URL* cuentan pasos de script de ese tipo con URL en el texto del paso. *Import Records* cuenta **todos** los pasos de Import Records, sin importar el origen (file/URL/Variable) — como indicador de interfaz. *MBS / Plugin* cuenta URLs en calculaciones con llamadas a MBS/CURL/Files. *Web Viewer* cuenta orígenes de Web Viewer en layouts. *Cálculos* cuenta fórmulas de script (Set Variable, Set Field, If …). *URLs únicas* y *Fuentes externas* son tarjetas estadísticas puras sin filtro.\n- **Tabla de familias**: al hacer clic en una fila de familia se filtra la lista detallada. Al hacer clic en *Todo* se quita el filtro. Las columnas *Paso de script*, *Plugin*, *Objeto de layout*, *Campo*, *Función personalizada* muestran cómo se distribuyen las URLs de una familia entre los tipos de referencia; los valores 0 quedan ocultos.\n- **Tipo de ref.**: `Plugin` reemplaza al tipo contenedor cuando el texto de cálculo invoca funciones MBS o de plugin (`CURL.*`, `MBS(…)`, `Files.*`, `Plugin.*`).\n- **Orígenes**: `Script (URL Step)` = `Open URL` / `Insert from URL`. `Script (Import)` = todos los `Import Records`. `Script (Calc Step)` = pasos con URL en la expresión. `Custom Function` = URL en el cuerpo del CF. `Field` = fórmula Calculada o AutoEnter. `Layout Object` = parámetro de Hide/Tooltip/Label/Trigger o fuente de Web Viewer.\n- **Enmascaramiento de secretos**: los parámetros `api_key`, `token`, `password`, `secret`, `auth`, `signature` se reducen a `[masked]` en la columna URL.\n- **Navegación**: al hacer clic en una fila detallada se abre el objeto correspondiente (Script + ancla de paso, Custom Function, Field, Layout — para Web Viewer adicionalmente con el filtro de layout `Container,Web Viewer`). Al hacer clic en una fuente externa se abre la primera TableOccurrence (alfabéticamente) de esa fuente.\n- **Orden**: las cabeceras de columna en Familias de API, Lista detallada de URLs y Fuentes externas son clicables (▲▼)."
+  }
+}

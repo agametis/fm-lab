@@ -12,3 +12,4 @@ export { useGraphSearch } from './useGraphSearch';
 export type { GraphSearchAPI } from './useGraphSearch';
 export { useTheme } from './useTheme';
 export type { Theme } from './useTheme';
+export { useApiLang } from './useApiLang';

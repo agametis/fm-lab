@@ -1,0 +1,73 @@
+{
+  "appTitle": "FileMaker Object Browser",
+  "loading": "加载中…",
+  "retry": "重试",
+  "back": "返回",
+  "backToPrevious": "返回上一个视图",
+  "open": "打开",
+  "close": "关闭",
+  "empty": "没有可显示的内容。",
+  "noData": "暂无数据。",
+  "noEntries": "没有条目。",
+  "unknown": "(未知)",
+  "all": "全部",
+  "filter": "筛选",
+  "search": "搜索",
+  "searchPlaceholder": "搜索…",
+  "yes": "是",
+  "no": "否",
+  "loadError": "加载失败:{{message}}",
+  "language": {
+    "label": "语言",
+    "selectorAriaLabel": "选择界面语言"
+  },
+  "theme": {
+    "switchToLight": "切换到浅色模式",
+    "switchToDark":  "切换到深色模式"
+  },
+  "actions": {
+    "openInFileMaker": "在 FileMaker 中打开",
+    "copyUuid": "复制 UUID",
+    "expandAll": "全部展开",
+    "collapseAll": "全部折叠",
+    "collapseMultilineCalcs": "折叠多行计算式",
+    "fitToViewport": "适配视口",
+    "fitGraph": "适配图表",
+    "resetLayout": "重置布局",
+    "clearPreselection": "清除预选",
+    "showInRelationshipGraph": "在文件的关系图中显示",
+    "fit": "适配",
+    "reset": "重置",
+    "fullscreen": "全屏 ↗",
+    "openLayoutFullscreen": "全屏打开布局",
+    "originalSize": "100% 原始大小"
+  },
+  "refOriginPill": {
+    "loading": "正在解析引用…"
+  },
+  "hierarchy": {
+    "structurallyContains": "结构上包含"
+  },
+  "layout": {
+    "empty": "此布局没有对象。",
+    "selectFile": "选择一个文件…",
+    "title": "布局"
+  },
+  "relationshipGraph": {
+    "title": "关系图",
+    "fileLabel": "文件:",
+    "selectFile": "选择一个文件…",
+    "selectFilePrompt": "请从选择器中选择一个文件。",
+    "loading": "正在加载关系图…",
+    "noTOs": "此文件没有表实例。",
+    "notImported": "关系图尚未导入。请重新运行 convert-xml --batch。"
+  },
+  "dependency": {
+    "empty": "没有依赖项。"
+  },
+  "dashboard": {
+    "loading": "正在加载仪表板…",
+    "loadError": "加载失败:{{message}}",
+    "noData": "暂无数据。"
+  }
+}

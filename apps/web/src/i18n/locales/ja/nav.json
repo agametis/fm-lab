@@ -1,0 +1,97 @@
+{
+  "modeTabsAriaLabel": "表示モード",
+  "breadcrumbs": {
+    "search": "検索",
+    "analyses": "分析",
+    "ariaLabel": "パンくずリスト",
+    "linkAria": "{{label}} に移動"
+  },
+  "errors": {
+    "noDashboardId": "ダッシュボード ID が指定されていません。",
+    "noQueryName": "クエリ名が指定されていません。"
+  },
+  "home": {
+    "title": "ホーム (フィルターをリセット)",
+    "ariaLabel": "ホーム"
+  },
+  "settings": {
+    "title": "プラグイン設定",
+    "ariaLabel": "プラグイン設定"
+  },
+  "tabs": {
+    "search": "検索",
+    "tree": "階層"
+  },
+  "form": {
+    "searchLabel": "名前で検索:",
+    "filterLabel": "フィルター:",
+    "searchPlaceholder": "例: Import、Email (空 = すべてのオブジェクト)",
+    "filterPlaceholder": "階層を名前で絞り込む",
+    "searchTitle": "ワイルドカード * は任意の文字に一致します (例: *Import、Email*)。空のままにするとすべてのオブジェクトが対象です。",
+    "filterTitle": "このテキストを含む項目はハイライト表示されます (親フォルダーを含む)",
+    "fileLabel": "ファイル:",
+    "allFiles": "すべてのファイル",
+    "typeLabel": "種類:",
+    "objectTypeLabel": "オブジェクトの種類:",
+    "allTypes": "すべての種類",
+    "usedTokensGroup": "使用中のトークン",
+    "optionsClosed": "オプション…",
+    "optionsOpen": "オプション ▴"
+  },
+  "relationshipGraph": {
+    "openCardTitle": "リレーショングラフを開く",
+    "selectFilePrompt": "リレーショングラフを表示するには、上でファイルを選択してください。"
+  },
+  "list": {
+    "loading": "オブジェクトを読み込み中…",
+    "loadingTokens": "トークンを読み込み中…",
+    "loadingMore": "さらにオブジェクトを読み込み中…",
+    "allLoaded": "すべてのオブジェクトを読み込みました",
+    "noObjects": "オブジェクトが見つかりません"
+  },
+  "detailView": {
+    "backAria": "検索リストに戻る",
+    "backLabel": "戻る",
+    "objectNotFound": "オブジェクトが見つかりません",
+    "loadingDetails": "オブジェクトの詳細を読み込み中…",
+    "tabsAria": "オブジェクトのビュー",
+    "noName": "(名前なし)",
+    "tabs": {
+      "detail":     "詳細",
+      "references": "参照",
+      "graph":      "グラフ",
+      "versions":   "バージョン",
+      "notes":      "メモ"
+    }
+  },
+  "pseudoToolbar": {
+    "searchLabel": "検索:",
+    "searchPlaceholder": "コンポーネントを絞り込む…",
+    "sortLabel": "並べ替え:",
+    "sortByUsage": "↓ 頻度",
+    "sortByName": "A → Z",
+    "tokenSearchPlaceholder": "トークン名を絞り込む…",
+    "otherCategory": "その他",
+    "uncategorisedTooltip": "カテゴリのないトークン (フィルターできません)",
+    "categoryTooltip": "{{label}} — {{tokens}} トークン、{{usages}} 回使用",
+    "showLess": "簡易表示 ▴",
+    "showMore": "詳細 ▾ ({{count}})",
+    "clearFilters": "フィルターをクリア"
+  },
+  "treeSubtypes": {
+    "ScriptCatalog": "スクリプト",
+    "Layouts": "レイアウト",
+    "CustomFunctionsCatalog": "カスタム関数"
+  },
+  "folderTree": {
+    "loading": "階層を読み込み中…",
+    "empty": "エントリはありません",
+    "statsFiltered": "{{visibleEntries}} / {{totalEntries}} 件、{{visibleFolders}} / {{totalFolders}} フォルダー",
+    "stats": "{{entries}} 件、{{folders}} フォルダー",
+    "expandAll": "すべて展開",
+    "collapseAll": "すべて折りたたむ",
+    "disabledDuringFilter": "フィルタリング中は無効",
+    "folderDetailsTitle": "フォルダーの詳細を表示",
+    "noName": "(名前なし)"
+  }
+}

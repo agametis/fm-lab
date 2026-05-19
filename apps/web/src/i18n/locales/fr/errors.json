@@ -1,0 +1,13 @@
+{
+  "loadFiles": "Échec du chargement des fichiers.",
+  "loadObjects": "Échec du chargement des objets.",
+  "loadFieldDetails": "Échec du chargement des détails du champ",
+  "loadScriptDetails": "Échec du chargement des détails du script",
+  "loadCustomFunctionDetails": "Échec du chargement des détails de la fonction personnalisée",
+  "loadLayout": "Échec du chargement de la mise en page",
+  "loadDashboard": "Échec du chargement du tableau de bord",
+  "generic": "Une erreur est survenue. Veuillez réessayer.",
+  "loadHeading": "Échec du chargement",
+  "retryAria": "Réessayer",
+  "retryLabel": "Réessayer"
+}

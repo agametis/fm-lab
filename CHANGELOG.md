@@ -12,6 +12,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.7.2] — 2026-05-19
+
+Internationalization across the whole stack: 11 languages in the web client, localized dashboards, English as the new primary language for the codebase, CLAUDE.md, and all skills.
+
+- **Web client i18n** (`apps/web/src/i18n/`) — react-i18next-based translation infrastructure
+  - **11 languages**: English (default), German, Spanish, French, Italian, Japanese, Korean, Dutch, Portuguese, Swedish, Chinese (Simplified)
+  - 6 translation namespaces per language: `common`, `dashboard`, `detail`, `errors`, `nav`, `types`
+  - New `LanguageSelector` component and `useApiLang` hook for synchronising UI language with API requests
+  - Practically every frontend component migrated to `t()` calls — Breadcrumbs, DetailView, FieldDetail/Viewer, ObjectDetail, ScriptDetail/Viewer, SearchOptions, FolderTree, HierarchyTree, DependencyGraph, RelationshipGraph, LayoutCanvas, ReferencesFilter, SettingsView, ErrorMessage, LoadingSpinner, ThemeToggle, plugins, and more
+- **Localized dashboards** — translations live alongside the dashboards
+  - Each dashboard bundle now carries a `locales/<lang>.json` file (10 non-English locales) — applies to `home`, `_generic`, `custom_queries`, `dashboards`, `external_apis`, `external_apis_skandix`, `script_todos`
+  - New `dashboard-i18n.service` in the REST-API resolves manifest, layout, and dataset labels against the active language with English fallback
+  - Dashboard primitives translate cell content through the new `_cellTranslate` helper, with extended formatters in `_format.ts`
+- **REST-API language plumbing**
+  - `rest-api/src/config/languages.js` and shared `packages/shared/src/languages.ts` — single source of truth for the supported language set
+  - New `system.controller` / `system.routes` with a `GET /api/system/languages` endpoint
+  - `dashboard.controller` and routes accept and forward the requested language
+- **Codebase primary language switched to English**
+  - `claude.md` fully rewritten in English
+  - All skill `SKILL.md` files translated to English
+  - **Multi-language trigger phrases** added to every skill (English + 10 other locales) — skills now fire reliably regardless of the user's working language
+  - **XML schema docs** (`docs/agents/xml-schema.md`, `xml-schema-extended.md`) translated to English
+- **Inline help in the frontend** — help text inside `DetailView`, `ObjectDetail`, `ScriptDetail`, `ScriptViewer`, and `TypeDetail` rewritten in English; `object_references_script.sql` adjusted accordingly
+- **Custom dashboards moved to their own directory**
+  - `external_apis`, `external_apis_skandix`, `script_todos` relocated from `templates/dashboards/` to `templates/dashboards-custom/` — clean separation between core and user-authored bundles
+  - SQL templates reorganized: home-dashboard analyses moved into `dashboards/home/queries/`, layout-specific SQL into `dashboards/home/layout/`
+  - Home dashboard gained navigation tiles for sub-templates
+  - `create-custom-dashboard` skill updated for the new target directory and structure
+- **Tooling**: `tools/claude-language-hint.mjs` — emits a localized hint so Claude Code picks up the user's preferred language automatically; `.fmlab/user.local.example.json` extended with language preference example
+- Bugfix: list scroll-position reset in `useInfiniteSearch` after filter/query change
+
+---
+
 ## [0.7.1] — 2026-05-17
 
 Dashboard polish, first batch of example custom dashboards, and refinements to the Script detail view.

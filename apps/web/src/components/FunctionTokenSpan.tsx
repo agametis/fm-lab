@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { CalcToken } from '../script/calcTokens';
 import { buildObjectPath } from '../lib/navigation';
 
@@ -21,6 +22,7 @@ interface FunctionTokenSpanProps {
  *     Tooltip als Fallback mit dem Token-Content selbst.
  */
 export const FunctionTokenSpan: React.FC<FunctionTokenSpanProps> = ({ token, text }) => {
+  const { t } = useTranslation(['detail']);
   const navigate = useNavigate();
   const { uuid: currentUuid } = useParams<{ uuid: string }>();
   const [open, setOpen] = useState(false);
@@ -110,13 +112,13 @@ export const FunctionTokenSpan: React.FC<FunctionTokenSpanProps> = ({ token, tex
               target="_blank"
               rel="noopener noreferrer"
             >
-              {token.functionLocalHelpUrl ? 'Lokale Hilfe öffnen ↗' : 'Claris-Hilfe öffnen ↗'}
+              {token.functionLocalHelpUrl ? t('detail:helpLinks.openLocalClarisHelp') : t('detail:helpLinks.openOnlineClarisHelp')}
             </a>
           )}
           {token.functionCanonical && token.functionDisplayName
             && token.functionCanonical !== token.functionDisplayName && (
             <span className="fm-function-popover-canonical">
-              Kanonisch: <code>{token.functionCanonical}</code>
+              {t('detail:helpLinks.canonical')} <code>{token.functionCanonical}</code>
             </span>
           )}
         </span>

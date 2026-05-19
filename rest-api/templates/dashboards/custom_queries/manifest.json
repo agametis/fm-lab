@@ -1,8 +1,8 @@
 {
   "id": "custom_queries",
   "version": "1.0.0",
-  "title": "Analysen & Custom-Queries",
-  "description": "Alle vorbereiteten SQL-Analysen auf einen Blick.",
+  "title": "Analyses & custom queries",
+  "description": "All prepared SQL analyses at a glance.",
   "author": "fm-lab core",
   "icon": "database",
   "tags": ["nav"],

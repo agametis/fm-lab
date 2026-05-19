@@ -6,6 +6,9 @@
 // Constants
 export * from './constants.js';
 
+// Languages (i18n single source of truth)
+export * from './languages.js';
+
 // Types (generated from OpenAPI)
 export type * from '../generated/types.js';
 

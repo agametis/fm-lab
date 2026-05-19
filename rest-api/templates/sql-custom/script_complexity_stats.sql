@@ -1,6 +1,6 @@
 -- @template_type: report
--- @title: Script-Komplexität pro Datei
--- @description: Aggregierte Script-Statistiken (Anzahl, durchschn./max. Schritte).
+-- @title: Script complexity per file
+-- @description: Aggregated script statistics (count, average / max steps).
 -- @icon: chart
 -- @category: Scripts
 -- @display: table

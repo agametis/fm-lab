@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useObjectDetails } from '../hooks/useObjectDetails';
 import { useLayoutData } from '../hooks/useLayoutData';
 import { LayoutCanvas } from './LayoutCanvas';
@@ -30,43 +31,42 @@ interface ObjectDetailProps {
    * gefeuert, um den ref-Param aus der URL zu entfernen.
    */
   onClearRef?: () => void;
+  /**
+   * Liefert die im jeweiligen Viewer tatsächlich hervorgehobenen Token-
+   * Vorkommen — Grundlage für die RefOriginPill, wenn der server-seitige
+   * Container-Self-Link-Count die echte Anzahl unterschätzt (Script /
+   * CustomFunction / Field als Token-Container).
+   */
+  onLiveMatchCount?: (count: number) => void;
 }
 
-const DETAIL_HEADINGS: Record<string, string> = {
-  'Script': 'Script-Text',
-  'Layout': 'Layout-Darstellung',
-  'Field': 'Feld-Details',
-  'BaseTable': 'Tabellen-Details',
-  'CustomFunction': 'Funktions-Details',
-  'ValueList': 'Wertelisten-Details',
-};
-
 /**
- * Embedded Layout viewer used inside DetailView. Lädt Layout-Daten und rendert
- * die interaktive LayoutCanvas — gleiche Komponente wie /layout/:uuid Vollbild,
- * nur in einem festhöhigen Container mit Vollbild-Link.
+ * Embedded layout viewer used inside DetailView. Loads layout data and renders
+ * the interactive LayoutCanvas — same component as the /layout/:uuid fullscreen
+ * route, just inside a fixed-height container with a fullscreen link.
  */
 const EmbeddedLayoutView: React.FC<{
   uuid: string;
   highlightUuids?: Set<string>;
   onClearRef?: () => void;
 }> = ({ uuid, highlightUuids, onClearRef }) => {
+  const { t } = useTranslation(['common', 'detail']);
   const { data, loading, error } = useLayoutData(uuid);
-  if (loading) return <LoadingSpinner message="Layout wird geladen..." />;
+  if (loading) return <LoadingSpinner message={t('detail:layoutPreview.loading') as string} />;
   if (error) return <ErrorMessage message={error} />;
   if (!data || data.objects.length === 0) {
-    return <div className="no-references">Dieses Layout enthält keine Objekte.</div>;
+    return <div className="no-references">{t('detail:layoutPreview.empty')}</div>;
   }
   return (
-    <div className="object-detail" aria-label="Layout-Darstellung">
+    <div className="object-detail" aria-label={t('detail:layoutPreview.heading') as string}>
       <div className="layout-detail-header">
-        <h2 className="type-detail-heading">Layout-Darstellung</h2>
+        <h2 className="type-detail-heading">{t('detail:layoutPreview.heading')}</h2>
         <Link
           to={`/layout/${uuid}`}
           className="layout-detail-fullscreen"
-          title="Layout in Vollbild-Ansicht öffnen"
+          title={t('common:actions.openLayoutFullscreen') as string}
         >
-          Vollbild ↗
+          {t('common:actions.fullscreen')}
         </Link>
       </div>
       <div className="layout-detail-canvas">
@@ -113,6 +113,7 @@ function highlightSubstring(text: string, needle: string | null | undefined): Re
  * `highlightText` legt einen Substring-Highlight über alle Zeilen.
  */
 const GenericObjectDetail: React.FC<ObjectDetailProps> = ({ uuid, objectType, highlightText }) => {
+  const { t } = useTranslation(['common', 'detail']);
   const { data, loading, error, retry } = useObjectDetails(uuid);
 
   const renderedLines = useMemo(() => {
@@ -125,17 +126,17 @@ const GenericObjectDetail: React.FC<ObjectDetailProps> = ({ uuid, objectType, hi
     ));
   }, [data, highlightText]);
 
-  if (loading) return <LoadingSpinner message="Details werden geladen..." />;
+  if (loading) return <LoadingSpinner message={t('common:loading') as string} />;
   if (error) return <ErrorMessage message={error} onRetry={retry} />;
   if (!data || data.length === 0) {
-    return <div className="no-references">Keine Details verfuegbar</div>;
+    return <div className="no-references">{t('common:noData')}</div>;
   }
 
-  const heading = DETAIL_HEADINGS[objectType] || 'Details';
-  const countLabel = objectType === 'Script' ? ` (${data.length} Schritte)` : '';
+  const heading = t(`detail:headings.${objectType}`, { defaultValue: 'Details' });
+  const countLabel = objectType === 'Script' ? ` ${t('detail:scriptViewer.stepCount', { count: data.length })}` : '';
 
   return (
-    <div className="object-detail" aria-label={heading}>
+    <div className="object-detail" aria-label={heading as string}>
       <h2 className="type-detail-heading">{heading}{countLabel}</h2>
       <pre className="content-text">
         <code>{renderedLines}</code>
@@ -155,6 +156,7 @@ export const ObjectDetail: React.FC<ObjectDetailProps> = ({
   highlightUuids,
   highlightText,
   onClearRef,
+  onLiveMatchCount,
 }) => {
   if (objectType === 'Layout') {
     return (
@@ -166,7 +168,7 @@ export const ObjectDetail: React.FC<ObjectDetailProps> = ({
     );
   }
   if (objectType === 'Script') {
-    return <ScriptDetail uuid={uuid} highlightRefUuids={highlightUuids} />;
+    return <ScriptDetail uuid={uuid} highlightRefUuids={highlightUuids} onLiveMatchCount={onLiveMatchCount} />;
   }
   if (objectType === 'CustomFunction') {
     return <CustomFunctionDetail uuid={uuid} highlightRefUuids={highlightUuids} />;

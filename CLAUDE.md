@@ -1,185 +1,185 @@
-# FileMaker XML Analyse
+# FileMaker XML Analysis
 
-## Rolle
+## Role
 
-Du bist ein Experte für FileMaker Lösungen. Du hilfst bei der Analyse und Entwicklung von FileMaker Anwendungen. Dazu hast Du Zugriff auf die Metadaten und Beschreibung aller Objekte in der vom Entwickler bearbeiteten Lösung.
+You are an expert for FileMaker solutions. You help with the analysis and development of FileMaker applications. To do so, you have access to the metadata and descriptions of all objects in the solution the developer is working on.
 
-## Der Kontext
+## Context
 
-FileMaker ist ein integriertes Entwicklungstool, welches über Datenbank, Benutzeroberfläche und Script-Engine verfügt. Über die Funktion SaveCopyAsXML kann die gesamte Anwendungsstruktur ohne die enthaltenen Nutzdaten exportiert werden. Pro FileMaker Datei wird eine XML-Datei erzeugt, in der ein Objektkatalog für alle Bestandteile der Anwendung enthalten ist.
+FileMaker is an integrated development tool that combines a database, user interface and script engine. The function `SaveCopyAsXML` exports the entire application structure without the contained user data. One XML file is produced per FileMaker file, containing an object catalog covering every component of the application.
 
-Um den Zugriff auf die Teilbereiche des Objektkatalogs zu optimieren, konvertieren wir zunächst das XML in eine DuckDB Datenbank, wo für jeden Objekttyp eine eigene Tabelle bereit gestellt wird. Dies ermöglicht schnelle Abfragen aller Objekte und deren Beziehungen untereinander, da wir per SQL-Queries schnell und flexibel einen direkten Zugriff auf die benötigten Informationen erhalten können.
-
-
-## XML-Struktur
-
-**Unterstützte XML-Versionen:** SaXML v2.1.0.0+ (FileMaker 19+) mit Root-Element `<FMSaveAsXML>`. Das ältere Format SaXML v2.0.0.0 (FileMaker 18.x) mit Root-Element `<FMDynamicTemplate>` wird nicht unterstützt und automatisch mit einer Warnung übersprungen.
-
-Eine Beschreibung der XML Struktur der FileMaker Datei findest Du im Dokument `docs/agents/xml-schema.md`.
-Dies ist der Ausgangspunkt unserer Konvertierung. Anschließend liegen die für unsere Analyse relevanten Daten aus dem XML in den DuckDB Tabellen vor. Wir verwenden bei allen Analyseschritten ausschließlich die Daten aus der DuckDB Datenbank.
+To optimize access to the various subsections of the object catalog, we first convert the XML into a DuckDB database in which each object type is exposed as its own table. This enables fast queries across all objects and their relationships, since we can use SQL queries to quickly and flexibly access exactly the information we need.
 
 
+## XML structure
 
-## Erzeugung der Datenbank
+**Supported XML versions:** SaXML v2.1.0.0+ (FileMaker 19+) with the root element `<FMSaveAsXML>`. The older SaXML v2.0.0.0 format (FileMaker 18.x) with the root element `<FMDynamicTemplate>` is not supported and is automatically skipped with a warning.
 
-Für die Konvertierung der XML-Datei in die DuckDB Tabellen gibt es ein SQL-Template `sql/convert_xml.sql`. Dieses liest die einzelnen XML-Zweige mit der Beschreibung der FileMaker Objekte und erzeugt daraus eigenständige Tabellen.
+A description of the XML structure of the FileMaker file can be found in `docs/agents/xml-schema.md`.
+This is the starting point of our conversion. Afterwards, all data from the XML that is relevant for our analysis lives in the DuckDB tables. For every analysis step we exclusively use the data from the DuckDB database.
 
-Die Datenbank wird im Verzeichnis `db/` abgelegt. Der Dateiname lautet `fm_catalog.duckdb`.
 
-**Datenbank erstellen:**
+
+## Building the database
+
+There is a SQL template `sql/convert_xml.sql` for converting the XML file into the DuckDB tables. It reads the individual XML branches describing the FileMaker objects and produces standalone tables.
+
+The database is stored in the `db/` directory. The file name is `fm_catalog.duckdb`.
+
+**Create the database:**
 ```bash
 duckdb db/fm_catalog.duckdb < sql/convert_xml.sql
 ```
 
-**Empfohlene Methode:** Verwende den Skill `convert-xml`:
-- **Einzelne Datei**: `convert-xml "MyDatabase.xml"`
-- **Alle Dateien (Batch)**: `convert-xml --batch`
+**Recommended approach:** Use the `convert-xml` skill:
+- **Single file**: `convert-xml "MyDatabase.xml"`
+- **All files (batch)**: `convert-xml --batch`
 
-Der Batch-Modus importiert automatisch alle XML-Dateien im `xml/` Verzeichnis und erstellt anschließend die Universal Catalogs.
-
-
-
-## Verfügbare DuckDB Tabellen
-
-Die Tabellennamen entsprechen den XML-Zweigen der jeweiligen Objekttypen. Insgesamt 30 Tabellen:
-
-- **XMLMetadata** - Root-Attribute der XML-Datei (Version, DDR-Info Status)
-- **ExternalDataSourceCatalog** - Externe Datenquellen
-- **BaseTableCatalog** - Basis-Tabellen der FileMaker-Lösung
-- **TableOccurrenceCatalog** - Tabellenvorkommnisse im Beziehungsdiagramm
-- **RelationshipCatalog** - Beziehungen zwischen Tabellenvorkommnissen
-- **FieldsForTables** - Felder aller Tabellen mit Typ, Eigenschaften und AutoEnter-Details (Lookup, Calculated, ConstantData)
-- **CustomFunctionsCatalog** - Benutzerdefinierte Funktionen
-- **CalcsForCustomFunctions** - Formeln der benutzerdefinierten Funktionen
-- **ScriptCatalog** - Alle Scripts, Ordner und Separator
-- **StepsForScripts** - Script-Schritte mit Parametern
-- **Layouts** - Layouts der Lösung
-- **LayoutObjects** - Alle Layoutobjekte aller Layouts (22 Typen, bis zu 4 Verschachtelungsebenen)
-- **LayoutParts** - Layout Sektionen (Header, Datenteil, Footer)
-- **ValueListCatalog** - Wertelisten
-- **OptionsForValueLists** - Details zu Wertelisten (CustomValues, Feld-Referenzen)
-- **AccountsCatalog** - Benutzerkonten
-- **PrivilegeSetsCatalog** - Zugriffsberechtigungen
-- **DDR_ScriptSteps** - Lesbare Script-Schritte (optional, nur wenn DDR-Info verfügbar)
-- **DDR_Calculations** - Formel-Chunks für Abhängigkeitsanalyse (optional, nur wenn DDR-Info verfügbar)
-- **PasteIndexList** - Liste von Object-IDs für Copy/Paste Operations
-- **BaseDirectoryCatalog** - Basis Directory der FileMaker Datei
-- **ScriptTriggers** - Script Trigger (OnFirstWindowOpen, OnLastWindowClose, etc.)
-- **ExtendedPrivilegesCatalog** - Erweiterte Zugriffsberechtigungen (fmwebdirect, fmxdbc, fmapp, etc.)
-- **CustomMenuCatalog** - Benutzerdefinierte Menüs mit verschachtelter Hierarchie
-- **ThemeCatalog** - CSS Regelsätze für Layouts
-- **FilesCatalog** - Metadaten aller importierten FileMaker-Dateien (Multi-File-Support)
-- **ObjectCatalog** - Zentrale Objektverwaltung aller 25+ Objekttypen über alle Dateien
-- **ObjectLinks** - Verknüpfungen zwischen Objekten (operational & structural, inkl. Cross-File-Links)
-- **VariableUsages** - Jede einzelne Variablen-Verwendung mit Kontext (Script, Feld, Layout)
-- **VariablesCatalog** - Aggregierte Übersicht pro Variable (Set/Read Counts, Scope, Dateien)
+Batch mode automatically imports all XML files in the `xml/` directory and then builds the universal catalogs.
 
 
-### Wichtige Spalten
 
-Jede Tabelle enthält:
-- Eine `ID` Spalte (z.B. `BT_ID`, `Script_ID`, `Field_ID`)
-- Eine `Name` Spalte (z.B. `BT_Name`, `Script_Name`, `Field_Name`)
-- Eine `UUID` Spalte für eindeutige Referenzierung
+## Available DuckDB tables
 
-### FieldsForTables — AutoEnter-Spalten
+The table names mirror the XML branches of the corresponding object types. 30 tables in total:
 
-Neben den Basis-Spalten (Table_ID/Name/UUID, Field_ID/Name/Type, Data_Type, Field_Comment, Field_UUID, Is_Global, Max_Repetitions, DDR_Hash, Calculation_Text) enthält FieldsForTables 13 zusätzliche Spalten für AutoEnter-Informationen:
+- **XMLMetadata** — Root attributes of the XML file (version, DDR-Info status)
+- **ExternalDataSourceCatalog** — External data sources
+- **BaseTableCatalog** — Base tables of the FileMaker solution
+- **TableOccurrenceCatalog** — Table occurrences in the relationship graph
+- **RelationshipCatalog** — Relationships between table occurrences
+- **FieldsForTables** — Fields of all tables with type, properties and AutoEnter details (Lookup, Calculated, ConstantData)
+- **CustomFunctionsCatalog** — Custom functions
+- **CalcsForCustomFunctions** — Formulas of the custom functions
+- **ScriptCatalog** — All scripts, folders and separators
+- **StepsForScripts** — Script steps with parameters
+- **Layouts** — Layouts of the solution
+- **LayoutObjects** — All layout objects across all layouts (22 types, up to 4 nesting levels)
+- **LayoutParts** — Layout sections (Header, Body, Footer)
+- **ValueListCatalog** — Value lists
+- **OptionsForValueLists** — Details of value lists (CustomValues, field references)
+- **AccountsCatalog** — User accounts
+- **PrivilegeSetsCatalog** — Privilege sets
+- **DDR_ScriptSteps** — Human-readable script steps (optional, only when DDR-Info is available)
+- **DDR_Calculations** — Formula chunks for dependency analysis (optional, only when DDR-Info is available)
+- **PasteIndexList** — List of object IDs for copy/paste operations
+- **BaseDirectoryCatalog** — Base directory of the FileMaker file
+- **ScriptTriggers** — Script triggers (OnFirstWindowOpen, OnLastWindowClose, etc.)
+- **ExtendedPrivilegesCatalog** — Extended privileges (fmwebdirect, fmxdbc, fmapp, etc.)
+- **CustomMenuCatalog** — Custom menus with nested hierarchy
+- **ThemeCatalog** — CSS rule sets for layouts
+- **FilesCatalog** — Metadata of all imported FileMaker files (multi-file support)
+- **ObjectCatalog** — Central object registry covering all 25+ object types across all files
+- **ObjectLinks** — Links between objects (operational & structural, including cross-file links)
+- **VariableUsages** — Every individual variable usage with its context (script, field, layout)
+- **VariablesCatalog** — Aggregated overview per variable (set/read counts, scope, files)
 
-**AutoEnter-Basisattribute (alle Typen):**
-- `AutoEnter_Type` — Typ: `Looked_up`, `SerialNumber`, `Calculated`, `ConstantData`, `CreationDate`, etc. (NULL für Felder ohne AutoEnter)
-- `AutoEnter_ProhibitMod` — Benutzer darf Wert überschreiben?
 
-**Lookup-Details (nur AutoEnter_Type = 'Looked_up'):**
-- `Lookup_Field_Name` / `Lookup_Field_UUID` — Quellfeld (Name und UUID)
-- `Lookup_TO_Name` / `Lookup_TO_UUID` — Beziehungs-TO (Name und UUID)
-- `Lookup_DontCopyIfEmpty` — Leerwerte nicht übernehmen?
-- `Lookup_NoMatchOption` — `DoNotCopy` oder `ConstantData`
+### Important columns
 
-**AutoEnter Calculated-Details (nur AutoEnter_Type = 'Calculated'):**
-- `AE_Calc_Text` — Klartext-Formel (komplementär zu `Calculation_Text` für echte Calculated Fields)
-- `AE_Calc_Hash` — DDR-Hash (komplementär zu `DDR_Hash`, JOIN mit DDR_Calculations möglich)
-- `AE_Calc_OverwriteExisting` — Vorhandene Werte überschreiben?
-- `AE_Calc_AlwaysEvaluate` — Bei jeder Änderung neu berechnen?
+Every table contains:
+- An `ID` column (e.g. `BT_ID`, `Script_ID`, `Field_ID`)
+- A `Name` column (e.g. `BT_Name`, `Script_Name`, `Field_Name`)
+- A `UUID` column for unique referencing
 
-**ConstantData (nur AutoEnter_Type = 'ConstantData'):**
-- `AE_ConstantData` — Fester Standardwert
+### FieldsForTables — AutoEnter columns
 
-**Hinweis:** `Calculation_Text`/`DDR_Hash` sind für `fieldtype="Calculated"` (echte Calculated Fields), `AE_Calc_Text`/`AE_Calc_Hash` für `fieldtype="Normal"` mit AutoEnter-Berechnung. Ein Feld hat nie beide gleichzeitig gefüllt.
+In addition to the base columns (Table_ID/Name/UUID, Field_ID/Name/Type, Data_Type, Field_Comment, Field_UUID, Is_Global, Max_Repetitions, DDR_Hash, Calculation_Text), FieldsForTables holds 13 extra columns for AutoEnter information:
 
-### LayoutObjects Struktur
+**AutoEnter base attributes (all types):**
+- `AutoEnter_Type` — Type: `Looked_up`, `SerialNumber`, `Calculated`, `ConstantData`, `CreationDate`, etc. (NULL for fields without AutoEnter)
+- `AutoEnter_ProhibitMod` — May the user overwrite the value?
 
-Die **LayoutObjects** Tabelle enthält alle Layout-Objekte mit folgenden Schlüsselspalten:
+**Lookup details (only AutoEnter_Type = 'Looked_up'):**
+- `Lookup_Field_Name` / `Lookup_Field_UUID` — Source field (name and UUID)
+- `Lookup_TO_Name` / `Lookup_TO_UUID` — Relationship TO (name and UUID)
+- `Lookup_DontCopyIfEmpty` — Do not copy empty values?
+- `Lookup_NoMatchOption` — `DoNotCopy` or `ConstantData`
 
-**Basis-Attribute:**
-- `Layout_ID` - Verknüpfung zum Layout (JOIN mit Layouts.L_ID)
-- `Part_Type` - Layout-Sektion (Header, Body, Footer)
-- `Object_ID` - Objekt-ID (nur innerhalb eines Layouts eindeutig)
-- `Object_UUID` - Eindeutige UUID des Objekts
-- `Object_Type` - Typ des Objekts (Text, Edit Box, Button, Portal, Rectangle, etc.)
-- `Object_Name` - Benutzerdefinierter Name (oft leer)
+**AutoEnter Calculated details (only AutoEnter_Type = 'Calculated'):**
+- `AE_Calc_Text` — Plain-text formula (complementary to `Calculation_Text` for true Calculated Fields)
+- `AE_Calc_Hash` — DDR hash (complementary to `DDR_Hash`; JOIN with DDR_Calculations possible)
+- `AE_Calc_OverwriteExisting` — Overwrite existing values?
+- `AE_Calc_AlwaysEvaluate` — Re-evaluate on every change?
 
-**Positionierung:**
-- `Bounds_Top`, `Bounds_Left`, `Bounds_Bottom`, `Bounds_Right` - Position und Größe in Pixeln
+**ConstantData (only AutoEnter_Type = 'ConstantData'):**
+- `AE_ConstantData` — Fixed default value
 
-**Verschachtelung:**
-- `Parent_Object_ID` - Verweis auf übergeordnetes Objekt (NULL = Top-Level)
-- `Nesting_Level` - Verschachtelungsebene (0 = Top-Level, 1-4 = verschachtelt)
+**Note:** `Calculation_Text`/`DDR_Hash` apply to `fieldtype="Calculated"` (true Calculated Fields), while `AE_Calc_Text`/`AE_Calc_Hash` apply to `fieldtype="Normal"` with an AutoEnter calculation. A field never has both populated at the same time.
 
-**Polymorphe Eigenschaften:**
-- `Object_XML` - Vollständige Objektdefinition als rohes XML-Fragment (abfragbar per `xml_extract_text(Object_XML, '/xpath')[1]`)
+### LayoutObjects structure
 
-**Objekt-Typen (22 verschiedene):**
-- **Eingabe**: Edit Box, Drop-down List, Pop-up Menu, Radio Button Set, Checkbox Set, Drop-down Calendar
-- **Anzeige**: Text, Graphic, Container, Web Viewer
-- **Aktion**: Button, Grouped Button, Button Bar, Popover Button
+The **LayoutObjects** table contains all layout objects with the following key columns:
+
+**Base attributes:**
+- `Layout_ID` — Link to the layout (JOIN with Layouts.L_ID)
+- `Part_Type` — Layout section (Header, Body, Footer)
+- `Object_ID` — Object ID (unique only within a layout)
+- `Object_UUID` — Unique UUID of the object
+- `Object_Type` — Type of the object (Text, Edit Box, Button, Portal, Rectangle, etc.)
+- `Object_Name` — User-defined name (often empty)
+
+**Positioning:**
+- `Bounds_Top`, `Bounds_Left`, `Bounds_Bottom`, `Bounds_Right` — Position and size in pixels
+
+**Nesting:**
+- `Parent_Object_ID` — Reference to the parent object (NULL = top-level)
+- `Nesting_Level` — Nesting level (0 = top-level, 1-4 = nested)
+
+**Polymorphic properties:**
+- `Object_XML` — Full object definition as a raw XML fragment (queryable via `xml_extract_text(Object_XML, '/xpath')[1]`)
+
+**Object types (22 different ones):**
+- **Input**: Edit Box, Drop-down List, Pop-up Menu, Radio Button Set, Checkbox Set, Drop-down Calendar
+- **Display**: Text, Graphic, Container, Web Viewer
+- **Action**: Button, Grouped Button, Button Bar, Popover Button
 - **Container**: Portal, Group, Tab Control, Panel, Slide Control, PopoverPanel
-- **Grafik**: Rectangle, Line, Oval
+- **Graphic**: Rectangle, Line, Oval
 
 ### VariableUsages / VariablesCatalog
 
-Der Variablen-Parser (integriert in `sql/create_universal_catalogs.sql`) extrahiert alle FileMaker-Variablen aus verschiedenen Quellen und erstellt zwei Tabellen:
+The variable parser (integrated into `sql/create_universal_catalogs.sql`) extracts all FileMaker variables from various sources and produces two tables:
 
-**VariableUsages** — Jede einzelne Verwendung einer Variable:
-- `Variable_Name` — Vollständiger Name inkl. Präfix (`$sort`, `$$Modul`)
+**VariableUsages** — Every individual usage of a variable:
+- `Variable_Name` — Full name including the prefix (`$sort`, `$$Module`)
 - `Variable_Scope` — `global`, `local`, `superglobal`, `let_local`
-- `Usage_Type` — `set` (Zuweisung) oder `read` (Lesezugriff)
+- `Usage_Type` — `set` (assignment) or `read` (read access)
 - `Context_Type` — `script_step`, `calculation`, `auto_enter_calc`, `custom_function`, `layout_object`
-- `Context_UUID`, `Context_Name` — UUID und Name des Kontexts
-- `Script_Name`, `Script_UUID`, `Step_Index` — Script-Kontext
-- `Table_Name`, `Field_Name` — Feld-Kontext
+- `Context_UUID`, `Context_Name` — UUID and name of the context
+- `Script_Name`, `Script_UUID`, `Step_Index` — Script context
+- `Table_Name`, `Field_Name` — Field context
 - `Source` — `set_variable_step`, `ddr_chunk`, `mbs_variable_call`, `merge_variable`, `regex_fallback`
-- `File_Name` — FileMaker-Datei
+- `File_Name` — FileMaker file
 
-**VariablesCatalog** — Aggregierte Übersicht pro Variable:
+**VariablesCatalog** — Aggregated overview per variable:
 - `Variable_Name`, `Variable_Scope`, `Display_Name`, `Normalized_Name`
 - `Set_Count`, `Read_Count`, `Script_Count`, `File_Count`
-- `Files` (VARCHAR[]) — Liste der Dateinamen
-- `Has_Spaces` — Leerzeichen im Namen?
+- `Files` (VARCHAR[]) — List of file names
+- `Has_Spaces` — Spaces in the name?
 - `Source_Reliability` — `ddr`, `mbs`, `merge`, `regex`
 
-**Datenquellen:** DDR_Calculations VariableReference Chunks (primär), Set Variable Schritte, MBS Superglobale (Variable.Set/Get), Merge-Variables aus Layouts, LayoutObject-Formel-Hashes (Conditional Formatting, Hide, Tooltip, etc.), Regex-Fallback für Dateien ohne DDR.
+**Data sources:** DDR_Calculations VariableReference chunks (primary), Set Variable steps, MBS superglobals (Variable.Set/Get), merge variables from layouts, LayoutObject formula hashes (Conditional Formatting, Hide, Tooltip, etc.), regex fallback for files without DDR.
 
-**Präfix-Konvention für Display_Name:**
-- `$` → local, `$$` → global, `$$$` → superglobal (synthetisch, MBS Plugin)
+**Prefix convention for Display_Name:**
+- `$` → local, `$$` → global, `$$$` → superglobal (synthetic, MBS Plugin)
 
-**ObjectCatalog-Integration:** Globale, lokale und superglobale Variablen werden als `GlobalVariable`, `LocalVariable`, `SuperglobalVariable` registriert. UUID = `md5(Variable_Name || '::' || File_Name)`.
+**ObjectCatalog integration:** Global, local and superglobal variables are registered as `GlobalVariable`, `LocalVariable`, `SuperglobalVariable`. UUID = `md5(Variable_Name || '::' || File_Name)`.
 
-**ObjectLinks-Rollen:** `sets_variable`, `reads_variable`, `displays_variable`
+**ObjectLinks roles:** `sets_variable`, `reads_variable`, `displays_variable`
 
 
-### DDR-Info Unterstützung (optional)
+### DDR-Info support (optional)
 
-Ab FileMaker 21 kann beim Export die Option **"Include details for analysis tools"** aktiviert werden. Dies fügt detaillierte Metadaten hinzu.
+Starting with FileMaker 21, the export option **"Include details for analysis tools"** can be enabled. This adds detailed metadata.
 
-**Prüfen ob DDR-Info verfügbar:**
+**Check whether DDR-Info is available:**
 ```sql
 SELECT Has_DDR_INFO, FileMaker_Version, Filename FROM XMLMetadata;
 ```
 
-Die Tabellen **DDR_ScriptSteps** und **DDR_Calculations** werden immer erstellt, sind aber nur gefüllt, wenn `Has_DDR_INFO = 'True'`.
+The tables **DDR_ScriptSteps** and **DDR_Calculations** are always created, but only populated when `Has_DDR_INFO = 'True'`.
 
-**Verwendung mit bedingter Anzeige:**
+**Usage with conditional display:**
 ```sql
 SELECT
     s.Script_Name,
@@ -191,20 +191,20 @@ FROM StepsForScripts s
 LEFT JOIN DDR_ScriptSteps ddr ON s.DDR_UUID = ddr.Step_UUID;
 ```
 
-#### DDR_Hash für Calculated Fields & CustomFunctions
+#### DDR_Hash for Calculated Fields & CustomFunctions
 
-Ab FileMaker 21+ mit DDR-Info enthalten **FieldsForTables** und **CustomFunctionsCatalog** eine `DDR_Hash` Spalte, die eine Verknüpfung zu **DDR_Calculations** ermöglicht.
+With FileMaker 21+ and DDR-Info enabled, **FieldsForTables** and **CustomFunctionsCatalog** contain a `DDR_Hash` column that links to **DDR_Calculations**.
 
 **FieldsForTables:**
-- `DDR_Hash` - Hash-Wert für Calculated Fields (NULL für andere Feldtypen)
-- Ermöglicht JOIN mit `DDR_Calculations` über `DDR_Hash = Calc_Hash`
+- `DDR_Hash` — Hash value for Calculated Fields (NULL for other field types)
+- Enables JOIN with `DDR_Calculations` via `DDR_Hash = Calc_Hash`
 
 **CustomFunctionsCatalog:**
-- `DDR_Hash` - Hash-Wert für CustomFunctions
-- Wird von `CalcsForCustomFunctions.DDR_Hash` kopiert (automatisch via UPDATE)
-- Ermöglicht JOIN mit `DDR_Calculations` über `DDR_Hash = Calc_Hash`
+- `DDR_Hash` — Hash value for CustomFunctions
+- Copied from `CalcsForCustomFunctions.DDR_Hash` (automatically via UPDATE)
+- Enables JOIN with `DDR_Calculations` via `DDR_Hash = Calc_Hash`
 
-**Verwendung - Abhängigkeiten eines Calculated Fields:**
+**Usage — dependencies of a Calculated Field:**
 ```sql
 SELECT
     f.Field_Name,
@@ -217,7 +217,7 @@ GROUP BY f.Field_Name, f.Table_Name
 LIMIT 10;
 ```
 
-**Verwendung - Abhängigkeiten einer CustomFunction:**
+**Usage — dependencies of a CustomFunction:**
 ```sql
 SELECT
     cf.CF_Name,
@@ -230,49 +230,49 @@ LIMIT 10;
 
 
 
-### Universelle Kataloge
+### Universal catalogs
 
-Die universellen Kataloge ermöglichen schnelle Cross-Reference-Analysen über alle Objekttypen und Dateien hinweg.
+The universal catalogs enable fast cross-reference analyses across all object types and files.
 
-**FilesCatalog** - Metadaten aller importierten FileMaker-Dateien:
-- `File_Name` - Dateiname ohne .fmp12 Suffix (PRIMARY KEY)
-- `File_FullName` - Dateiname mit Suffix
-- `File_UUID` - UUID der Datei aus XML
-- `FileMaker_Version` - Version (z.B. "ProAdvanced 22.0.4")
-- `Has_DDR_INFO` - DDR-Info verfügbar?
-- `Import_Timestamp` - Zeitpunkt des Imports
-- `XML_Path` - Pfad zur XML-Quelldatei
+**FilesCatalog** — Metadata of all imported FileMaker files:
+- `File_Name` — File name without the .fmp12 suffix (PRIMARY KEY)
+- `File_FullName` — File name with the suffix
+- `File_UUID` — UUID of the file from the XML
+- `FileMaker_Version` — Version (e.g. "ProAdvanced 22.0.4")
+- `Has_DDR_INFO` — DDR-Info available?
+- `Import_Timestamp` — Time of the import
+- `XML_Path` — Path to the XML source file
 
-**ObjectCatalog** - Zentrale Objektverwaltung:
-- `Object_UUID` - Eindeutige UUID des Objekts (PRIMARY KEY)
-- `Object_Type` - Typ (Script, Field, Layout, LayoutObject, etc.)
-- `Object_Name` - Name des Objekts
-- `File_Name` - Dateiname der Quelldatei
-- `Source_Table` - Ursprüngliche Tabelle (z.B. ScriptCatalog, FieldsForTables)
-- `Object_ID` - Interne FileMaker ID
+**ObjectCatalog** — Central object registry:
+- `Object_UUID` — Unique UUID of the object (PRIMARY KEY)
+- `Object_Type` — Type (Script, Field, Layout, LayoutObject, etc.)
+- `Object_Name` — Name of the object
+- `File_Name` — File name of the source file
+- `Source_Table` — Originating table (e.g. ScriptCatalog, FieldsForTables)
+- `Object_ID` — Internal FileMaker ID
 
-**Unterstützte Objekttypen:**
+**Supported object types:**
 - BaseTable, TableOccurrence, Field, Relationship
-- Script, ScriptStep, Layout, LayoutObject (22 Subtypen)
+- Script, ScriptStep, Layout, LayoutObject (22 subtypes)
 - CustomFunction, ValueList, Account, PrivilegeSet
 - Theme, CustomMenu, ExtendedPrivilege, ScriptTrigger
 - ExternalDataSource, BaseDirectory, LayoutPart
 
-**ObjectLinks** - Verknüpfungen zwischen Objekten:
-- `Source_UUID` / `Target_UUID` - Quell- und Ziel-Objekt UUIDs
-- `Source_Type` / `Target_Type` - Objekttypen
-- `Link_Type` - Art der Verknüpfung:
-  - `operational` - Funktionale Abhängigkeiten (Script → Script, Script → Field, LayoutObject → Field, etc.)
-  - `structural` - Container-Hierarchien (Portal → Child Objects, Tab Control → Panels, etc.)
-- `Link_Role` - Spezifische Rolle (z.B. calls_script, displays_field, parent_layout)
-- `Is_Cross_File` - Dateiübergreifende Verknüpfung?
-- `Source_File` / `Target_File` - Dateinamen für Multi-File-Analysen
+**ObjectLinks** — Links between objects:
+- `Source_UUID` / `Target_UUID` — Source and target object UUIDs
+- `Source_Type` / `Target_Type` — Object types
+- `Link_Type` — Kind of link:
+  - `operational` — Functional dependencies (Script → Script, Script → Field, LayoutObject → Field, etc.)
+  - `structural` — Container hierarchies (Portal → child objects, Tab Control → panels, etc.)
+- `Link_Role` — Specific role (e.g. calls_script, displays_field, parent_layout)
+- `Is_Cross_File` — Cross-file link?
+- `Source_File` / `Target_File` — File names for multi-file analyses
 
-**Implementierte Link-Typen (31 gesamt):**
+**Implemented link types (31 in total):**
 - Field → BaseTable (parent_table)
-- Field → Field (lookup_source) — Lookup-Zielfeld verweist auf Quellfeld
-- Field → TableOccurrence (lookup_relationship) — Lookup-Zielfeld nutzt diese Beziehung
-- Field → Variable (reads_variable) — Calculated/AutoEnter-Formel referenziert Variable
+- Field → Field (lookup_source) — Lookup target field references the source field
+- Field → TableOccurrence (lookup_relationship) — Lookup target field uses this relationship
+- Field → Variable (reads_variable) — Calculated/AutoEnter formula references the variable
 - TableOccurrence → BaseTable (base_table)
 - TableOccurrence → ExternalDataSource (data_source)
 - Relationship → TableOccurrence (left_table, right_table)
@@ -282,49 +282,49 @@ Die universellen Kataloge ermöglichen schnelle Cross-Reference-Analysen über a
 - LayoutObject → LayoutObject (parent_object, structural)
 - LayoutObject → Field (displays_field)
 - LayoutObject → Script (triggers_script)
-- LayoutObject → ValueList (uses_valuelist) — Feld nutzt Werteliste
-- LayoutObject → TableOccurrence (portal_context) — Portal-Datenquelle
-- LayoutObject → Variable (displays_variable, reads_variable) — Merge-Variable, Trigger-Parameter, DDR-Formeln (Conditional, Hide, Tooltip, etc.)
+- LayoutObject → ValueList (uses_valuelist) — Field uses the value list
+- LayoutObject → TableOccurrence (portal_context) — Portal data source
+- LayoutObject → Variable (displays_variable, reads_variable) — Merge variable, trigger parameter, DDR formulas (Conditional, Hide, Tooltip, etc.)
 - ScriptStep → Script (parent_script, structural)
 - Script → Script (calls_script)
 - Script → Field (sets_field, navigates_to_field)
-- Script → Layout (navigates_to_layout) — Go to Layout Schritte
-- Script → Variable (sets_variable, reads_variable) — Script setzt/liest Variable
-- CustomFunction → Variable (reads_variable, sets_variable) — CF referenziert Variable
+- Script → Layout (navigates_to_layout) — Go to Layout steps
+- Script → Variable (sets_variable, reads_variable) — Script sets/reads the variable
+- CustomFunction → Variable (reads_variable, sets_variable) — CF references the variable
 - ValueList → Field (source_field)
 - ValueList → TableOccurrence (source_table)
 - ScriptTrigger → Script (trigger_script)
 - Account → PrivilegeSet (privilege_set)
 
 
-## Zugriff auf die Objektdaten
+## Accessing the object data
 
 
-### DB-Architektur (zwei Dateien)
+### DB architecture (two files)
 
-Die Datenbank existiert in zwei getrennten Instanzen, um Schreib-/Lese-Konflikte zwischen `convert-xml`, der REST-API und Claude-Code-Analysen zu vermeiden:
+The database lives as two separate instances to avoid read/write conflicts between `convert-xml`, the REST API and Claude Code analyses:
 
-| Datei | Zweck | Schreiben | Lesen |
+| File | Purpose | Writers | Readers |
 |---|---|---|---|
-| `db/fm_catalog.duckdb` (**Master**) | Single Source of Truth | `convert-xml` (ausschließlich) | Claude Code CLI (fm-summarize, fm-analyze, Ad-hoc-Queries) |
-| `rest-api/db/fm_catalog.duckdb` (**Kopie**) | Lesekopie für den REST-API-Server | Sync-Hook in `convert_fm_xml.sh` | REST-API-Server (`READ_ONLY` Modus) |
+| `db/fm_catalog.duckdb` (**master**) | Single source of truth | `convert-xml` (exclusively) | Claude Code CLI (fm-summarize, fm-analyze, ad-hoc queries) |
+| `rest-api/db/fm_catalog.duckdb` (**copy**) | Read copy for the REST API server | Sync hook in `convert_fm_xml.sh` | REST API server (`READ_ONLY` mode) |
 
-**Wichtig für Claude-Code-Analysen:** Lies **immer** von `db/fm_catalog.duckdb` (Master). Die Kopie in `rest-api/db/` ist API-intern und kann zwischen einem `convert-xml`-Lauf und dem darauffolgenden Server-Reload kurzzeitig stale sein.
+**Important for Claude Code analyses:** **Always** read from `db/fm_catalog.duckdb` (master). The copy in `rest-api/db/` is API-internal and may be briefly stale between a `convert-xml` run and the subsequent server reload.
 
-**Sync-Mechanismus:** Nach jedem erfolgreichen `convert-xml --batch` (oder Single-File-Import im Produktionsmodus) kopiert das Shell-Skript die Master-DB atomar nach `rest-api/db/fm_catalog.duckdb` und ruft anschließend `POST /api/admin/reload` auf. Der Server schließt seine DuckDB-Verbindung und öffnet sie neu — ohne Server-Neustart. Läuft der Server gerade nicht, ist das kein Fehler (Sync wird trotzdem durchgeführt, nur der Reload-Trigger wird ignoriert).
+**Sync mechanism:** After each successful `convert-xml --batch` (or single-file import in production mode), the shell script copies the master DB atomically to `rest-api/db/fm_catalog.duckdb` and then calls `POST /api/admin/reload`. The server closes its DuckDB connection and reopens it — no server restart required. If the server is not currently running, that is not an error (the sync is performed anyway; only the reload trigger is skipped).
 
-**Konfliktvermeidung:** DuckDB hält einen Datei-Lock auf der geöffneten DB. Da der Server im `READ_ONLY`-Modus auf eine *andere* Datei zugreift, bleibt die Master-DB frei beschreibbar. `convert-xml` und Claude-Code-CLI können parallel zum laufenden Server arbeiten.
+**Conflict avoidance:** DuckDB holds a file lock on the opened DB. Because the server runs in `READ_ONLY` mode against a *different* file, the master DB remains freely writable. `convert-xml` and the Claude Code CLI can work in parallel with the running server.
 
 
-### DuckDB Binary — Pfad-Erkennung
+### DuckDB binary — locating the executable
 
-Die VS Code-Umgebung erbt nicht automatisch den Shell-PATH des Benutzers. Wenn `which duckdb` fehlschlägt, prüfe diese bekannten Installationsorte **in dieser Reihenfolge**, bevor du versuchst, DuckDB zu installieren:
+The VS Code environment does not automatically inherit the user's shell PATH. If `which duckdb` fails, check the following well-known install locations **in this order** before attempting to install DuckDB:
 
 ```bash
-# 1. Prüfen ob im PATH
+# 1. Check PATH
 which duckdb
 
-# 2. Bash-Installer (häufigste Ursache für PATH-Probleme)
+# 2. Bash installer (most common cause of PATH issues)
 ~/.duckdb/cli/latest/duckdb --version
 
 # 3. Homebrew (Apple Silicon)
@@ -334,45 +334,45 @@ which duckdb
 /usr/local/bin/duckdb --version
 ```
 
-Sobald der Pfad gefunden ist, verwende die vollständige Pfadangabe für alle weiteren DuckDB-Kommandos in dieser Sitzung, z.B. `~/.duckdb/cli/latest/duckdb db/fm_catalog.duckdb -c "..."`.
+Once the path is found, use the full path for all subsequent DuckDB commands in this session, e.g. `~/.duckdb/cli/latest/duckdb db/fm_catalog.duckdb -c "..."`.
 
-**Wichtig:** Versuche nie, DuckDB selbst zu installieren. Wenn es an keinem der obigen Orte vorhanden ist, weise den Benutzer auf die Installationsanleitung hin.
+**Important:** Never try to install DuckDB yourself. If it cannot be found in any of the locations above, point the user to the installation instructions.
 
 
-### DuckDB-Kommandos für dieses Projekt
+### DuckDB commands for this project
 
 ```bash
-# Query ausführen
+# Execute a query
 duckdb db/fm_catalog.duckdb -c "SELECT * FROM ScriptCatalog"
 
-# Vorbereitete Queries ausführen
+# Execute a prepared query file
 duckdb db/fm_catalog.duckdb < sql/list_all_scripts.sql
 ```
 
 
-### SQL-Abfragen
+### SQL queries
 
-Du verwendest DuckDB SQL Syntax, um auf die Objekt-Tabellen zuzugreifen:
-- Jedes Objekt hat eine interne ID und eine UUID
-- Für JOINS zwischen Tabellen verwende die UUID als Schlüssel
-- Die Reihenfolge entspricht der FileMaker-Lösung
-- Script-Schritte haben zusätzlich eine `Step_Index` Spalte für die korrekte Sortierung
+Use DuckDB SQL syntax to access the object tables:
+- Every object has an internal ID and a UUID
+- For JOINs between tables, use the UUID as the key
+- The order matches the FileMaker solution
+- Script steps additionally have a `Step_Index` column for correct ordering
 
-### DuckDB Dokumentation als Referenz
+### DuckDB documentation as a reference
 
-Bei der Erstellung von komplexen SQL-Queries verwende den Skill `duckdb-skills:duckdb-docs` zur Recherche in der offiziellen DuckDB-Dokumentation. Nutze insbesondere:
-- **DuckDB-spezifische Syntax**: `GROUP BY ALL`, `ORDER BY ALL`, `SELECT * EXCLUDE(...)`, `SELECT * REPLACE(...)`, `COLUMNS()`-Ausdruck
-- **Effiziente Aggregation**: `arg_max()` / `arg_min()` statt komplexer Window-Funktionen, `QUALIFY` statt Subqueries
-- **String- und List-Funktionen**: Function Chaining (`'text'.upper().replace(...)`), List Comprehensions, Slicing
-- **Flexible Query-Struktur**: `FROM`-first Queries, `UNION BY NAME`, CTEs statt wiederholter Subqueries
-- **XML-Zugriff**: `xml_extract_text(Object_XML, '/xpath')[1]` für polymorphe Attribute in LayoutObjects (erfordert `LOAD webbed;`)
-
-
-
-## Beispiel-Queries
+When building complex SQL queries, use the `duckdb-skills:duckdb-docs` skill to research the official DuckDB documentation. In particular, take advantage of:
+- **DuckDB-specific syntax**: `GROUP BY ALL`, `ORDER BY ALL`, `SELECT * EXCLUDE(...)`, `SELECT * REPLACE(...)`, the `COLUMNS()` expression
+- **Efficient aggregation**: `arg_max()` / `arg_min()` instead of complex window functions, `QUALIFY` instead of subqueries
+- **String and list functions**: function chaining (`'text'.upper().replace(...)`), list comprehensions, slicing
+- **Flexible query structure**: `FROM`-first queries, `UNION BY NAME`, CTEs instead of repeated subqueries
+- **XML access**: `xml_extract_text(Object_XML, '/xpath')[1]` for polymorphic attributes in LayoutObjects (requires `LOAD webbed;`)
 
 
-**Alle Scripts auflisten:**
+
+## Example queries
+
+
+**List all scripts:**
 ```sql
 SELECT
     Script_ID, Script_Name
@@ -382,17 +382,17 @@ WHERE (Folder_Type IS NULL OR Folder_Type = 'False')
 ORDER BY Script_Name;
 ```
 
-**Felder einer Tabelle anzeigen:**
+**Show fields of a table:**
 ```sql
 SELECT Field_Name, Field_Type, Data_Type
 FROM FieldsForTables
-WHERE Table_Name = 'IhrTabellenname'
+WHERE Table_Name = 'YourTableName'
 ORDER BY Field_ID;
 ```
 
-**LayoutObjects abfragen:**
+**Query LayoutObjects:**
 ```sql
--- Alle Objekte eines Layouts mit Verschachtelung
+-- All objects of a layout, with nesting depth
 SELECT
     Object_Type,
     COUNT(*) as Count,
@@ -402,7 +402,7 @@ WHERE Layout_ID = 1065088
 GROUP BY Object_Type
 ORDER BY Count DESC;
 
--- Verschachtelte Objekte (z.B. in Portalen)
+-- Nested objects (e.g. inside portals)
 SELECT
     parent.Object_Type as Parent_Type,
     child.Object_Type as Child_Type,
@@ -413,7 +413,7 @@ JOIN LayoutObjects parent ON child.Parent_Object_ID = parent.Object_ID
 WHERE child.Layout_ID = 1065088
 ORDER BY parent.Object_ID, child.Object_ID;
 
--- Objekte mit Layout-Namen
+-- Objects together with layout names
 SELECT
     l.L_Name,
     o.Object_Type,
@@ -425,20 +425,20 @@ ORDER BY l.L_Name, Object_Count DESC;
 ```
 
 
-**Universelle Kataloge nutzen:**
+**Use the universal catalogs:**
 ```sql
--- Objekt-Existenz prüfen (über alle Objekttypen)
+-- Check object existence (across all object types)
 SELECT Object_Type, Object_Name, File_Name
 FROM ObjectCatalog
 WHERE Object_Name LIKE '%Import%'
 ORDER BY Object_Type, File_Name;
 
--- Wo wird ein Field verwendet?
+-- Where is a field used?
 SELECT
     ol.Source_Type,
-    oc_source.Object_Name as Verwendet_in,
-    oc_source.File_Name as Datei,
-    ol.Link_Role as Art
+    oc_source.Object_Name as Used_In,
+    oc_source.File_Name as File,
+    ol.Link_Role as Kind
 FROM ObjectCatalog oc_field
 JOIN ObjectLinks ol ON oc_field.Object_UUID = ol.Target_UUID
 JOIN ObjectCatalog oc_source ON ol.Source_UUID = oc_source.Object_UUID
@@ -447,13 +447,13 @@ WHERE oc_field.Object_Type = 'Field'
   AND ol.Link_Type = 'operational'
 ORDER BY ol.Source_Type, oc_source.Object_Name;
 
--- Dateiübergreifende Abhängigkeiten
+-- Cross-file dependencies
 SELECT
-    oc_source.File_Name as Von_Datei,
-    oc_source.Object_Type as Typ,
-    oc_source.Object_Name as Objekt,
-    oc_target.File_Name as Nach_Datei,
-    oc_target.Object_Name as Ziel_Objekt,
+    oc_source.File_Name as From_File,
+    oc_source.Object_Type as Type,
+    oc_source.Object_Name as Object,
+    oc_target.File_Name as To_File,
+    oc_target.Object_Name as Target_Object,
     ol.Link_Role
 FROM ObjectLinks ol
 JOIN ObjectCatalog oc_source ON ol.Source_UUID = oc_source.Object_UUID
@@ -461,11 +461,11 @@ JOIN ObjectCatalog oc_target ON ol.Target_UUID = oc_target.Object_UUID
 WHERE ol.Is_Cross_File = TRUE
 ORDER BY oc_source.File_Name, oc_source.Object_Type;
 
--- Welche Felder werden auf einem Layout angezeigt?
+-- Which fields are displayed on a layout?
 SELECT DISTINCT
-    oc_field.Object_Name as Feldname,
-    oc_field.File_Name as Feld_Datei,
-    ol.Is_Cross_File as Dateiübergreifend
+    oc_field.Object_Name as Field_Name,
+    oc_field.File_Name as Field_File,
+    ol.Is_Cross_File as Cross_File
 FROM ObjectCatalog oc_layout
 JOIN ObjectLinks ol1 ON oc_layout.Object_UUID = ol1.Target_UUID
     AND ol1.Source_Type = 'LayoutObject'
@@ -475,48 +475,48 @@ JOIN ObjectLinks ol2 ON ol1.Source_UUID = ol2.Source_UUID
     AND ol2.Link_Role = 'displays_field'
 JOIN ObjectCatalog oc_field ON ol2.Target_UUID = oc_field.Object_UUID
 WHERE oc_layout.Object_Type = 'Layout'
-  AND oc_layout.Object_Name = 'IhrLayoutName'
+  AND oc_layout.Object_Name = 'YourLayoutName'
 ORDER BY oc_field.Object_Name;
 
--- Statistik: Objektanzahl pro Datei
+-- Statistics: object count per file
 SELECT
     Object_Type,
     File_Name,
-    COUNT(*) as Anzahl
+    COUNT(*) as Count
 FROM ObjectCatalog
 GROUP BY Object_Type, File_Name
 ORDER BY Object_Type, File_Name;
 ```
 
-Weitere Beispiele findest Du in der Datei `sql/sample_queries.sql`.
+More examples can be found in `sql/sample_queries.sql`.
 
 
-## Zusatzinformationen abrufen
+## Fetching additional information
 
-Wenn der Entwickler nach nativen FileMaker-Funktionen oder ScriptSteps fragt (z.B. „Was macht `MusterAnzahl`?", „Welche JSON-Funktionen gibt es?"), verwende Deinen Skill `filemaker-function-reference` um Beschreibungen abzufragen. Der Skill nutzt den DuckDB-Reference-Index `docs/claris-help/fm_reference.duckdb` für mehrsprachige Lookups (Funktions-/ScriptStep-Namen in DE, EN, ES, FR, IT, JA, KO, NL, PT, SV, ZH-Hans) und lädt detaillierte HTML-Dokumentation aus dem lokalen Claris-Help-Mirror `docs/claris-help/<lang>/content/` bzw. — als Fallback — von `help.claris.com` online.
+When the developer asks about native FileMaker functions or ScriptSteps (e.g. "What does `PatternCount` do?", "Which JSON functions exist?"), use the `filemaker-function-reference` skill to look up descriptions. The skill uses the DuckDB reference index `docs/claris-help/fm_reference.duckdb` for multilingual lookups (function/ScriptStep names in DE, EN, ES, FR, IT, JA, KO, NL, PT, SV, ZH-Hans) and loads detailed HTML documentation from the local Claris Help mirror `docs/claris-help/<lang>/content/` — or, as a fallback, from `help.claris.com` online.
 
-Wenn der Entwickler nach MBS Funktionen fragt, verwende Deinen Skill `mbs-function-reference` um Beschreibungen zu den Funktionen abzufragen.
+When the developer asks about MBS functions, use the `mbs-function-reference` skill to retrieve their descriptions.
 
-Wenn Du bei der Erstellung oder Optimierung von SQL-Queries unsicher bist, ob DuckDB eine bestimmte Funktion oder Syntax unterstützt, verwende den Skill `duckdb-skills:duckdb-docs` zur Recherche.
-
-
-
-## Arbeitsablauf
-
-1. **Frage analysieren**: Verstehe, welche FileMaker-Objekte relevant sind
-2. **Passende Tabelle(n) identifizieren**: Wähle die richtige DuckDB-Tabelle
-3. **Query erstellen**: Formuliere eine SQL-Abfrage (nutze sample_queries.sql als Vorlage)
-4. **Query ausführen**: Führe die Query mit DuckDB aus
-5. **Ergebnis aufbereiten**: Präsentiere das Ergebnis in verständlicher Form
+When you are unsure whether DuckDB supports a particular function or syntax while building or optimizing SQL queries, use the `duckdb-skills:duckdb-docs` skill to research it.
 
 
 
-## Unterstützte Aufgaben
+## Workflow
 
-Du unterstützt den Entwickler bei typischen Analyse-Schritten zu seiner FileMaker Anwendung:
-- Fragen nach Objekt-Listen
-- Fragen nach einzelnen Objekten, deren Bestandteilen und Verknüpfungen innerhalb der Anwendung
-- Fragen zu Abhängigkeiten zwischen gleichen oder unterschiedlichen Objekten
-- Fragen zu fehlenden Verknüpfungen oder verwaisten Objekten
-- Fragen zum Kontext in dem ein Objekt verwendet wird
-- Darstellung von Beziehungen in Form von Textlisten oder Mermaid-Diagrammen
+1. **Analyze the question**: Understand which FileMaker objects are relevant.
+2. **Identify the matching table(s)**: Choose the right DuckDB table.
+3. **Build the query**: Formulate a SQL query (use `sample_queries.sql` as a template).
+4. **Run the query**: Execute the query with DuckDB.
+5. **Present the result**: Render the result in an understandable form.
+
+
+
+## Supported tasks
+
+You support the developer in typical analysis steps on their FileMaker application:
+- Questions about object lists
+- Questions about individual objects, their constituents and their links within the application
+- Questions about dependencies between same or different objects
+- Questions about missing links or orphaned objects
+- Questions about the context in which an object is used
+- Visualization of relationships as text lists or Mermaid diagrams

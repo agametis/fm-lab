@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useApiLang } from '../hooks/useApiLang';
 import { getDashboard, getDashboardData } from '../api/dashboardApi';
 import type {
   DashboardEnvelope,
@@ -17,6 +19,8 @@ interface Props {
  * PRD: prd_dashboards.md §8.1.
  */
 export function DashboardHost({ id, params }: Props) {
+  const { t } = useTranslation();
+  const lang = useApiLang();
   const [envelope, setEnvelope] = useState<DashboardEnvelope | null>(null);
   const [datasets, setDatasets] = useState<DashboardDataResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,8 +36,8 @@ export function DashboardHost({ id, params }: Props) {
     (async () => {
       try {
         const [env, data] = await Promise.all([
-          getDashboard(id),
-          getDashboardData(id, params),
+          getDashboard(id, lang),
+          getDashboardData(id, params, lang),
         ]);
         if (cancelled) return;
         setEnvelope(env);
@@ -50,21 +54,21 @@ export function DashboardHost({ id, params }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [id, JSON.stringify(params || {})]);
+  }, [id, JSON.stringify(params || {}), lang]);
 
   if (loading) {
-    return <div className="dash-host dash-host--loading">Dashboard wird geladen …</div>;
+    return <div className="dash-host dash-host--loading">{t('dashboard.loading')}</div>;
   }
   if (error) {
     return (
       <div className="dash-host dash-host--error">
-        <strong>Dashboard konnte nicht geladen werden:</strong>
+        <strong>{t('dashboard.loadError', { message: '' }).replace(/:\s*$/, ':')}</strong>
         <pre>{error}</pre>
       </div>
     );
   }
   if (!envelope || !datasets) {
-    return <div className="dash-host">Keine Daten.</div>;
+    return <div className="dash-host">{t('dashboard.noData')}</div>;
   }
 
   return (

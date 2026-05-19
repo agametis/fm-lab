@@ -1,5 +1,6 @@
-import React, { useMemo, useRef, useCallback } from 'react';
+import React, { useMemo, useRef, useCallback, useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useObjectDetail } from '../hooks/useObjectDetail';
 import { useRefOrigin } from '../hooks/useRefOrigin';
 import { ObjectHeader } from './ObjectHeader';
@@ -33,6 +34,7 @@ function displayObjectType(objectType: string, sourceTable?: string | null): str
  * Details | Referenzen | Graph | Versions | Notes
  */
 export const DetailView: React.FC = () => {
+  const { t } = useTranslation(['nav', 'errors']);
   const { uuid } = useParams<{ uuid: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,6 +60,13 @@ export const DetailView: React.FC = () => {
   const [refParam, setRefParam] = useUrlState<string>('ref', '');
   const refOrigin = useRefOrigin(uuid, refParam || null);
   const dismissRefOrigin = useCallback(() => setRefParam(''), [setRefParam]);
+
+  // Live-Match-Count aus Token-Container-Viewern (Script / CustomFunction /
+  // Field). back_references zählt für diese Container nur 1 Self-Link, daher
+  // korrigiert der Viewer die Anzeige der RefOriginPill mit der echten Anzahl
+  // hervorgehobener Token-Vorkommen. Reset beim Wechsel von uuid oder ref-Param.
+  const [liveMatchCount, setLiveMatchCount] = useState<number | undefined>(undefined);
+  useEffect(() => { setLiveMatchCount(undefined); }, [uuid, refParam]);
 
   const handleBack = () => {
     // Falls die DetailView per Direkt-Link/Bookmark geöffnet wurde, gibt es
@@ -92,7 +101,7 @@ export const DetailView: React.FC = () => {
   if (loading) {
     return (
       <div className="app">
-        <LoadingSpinner message="Objekt-Details werden geladen..." />
+        <LoadingSpinner message={t('nav:detailView.loadingDetails') as string} />
       </div>
     );
   }
@@ -100,8 +109,8 @@ export const DetailView: React.FC = () => {
   if (error) {
     return (
       <div className="app">
-        <button onClick={handleBack} className="back-button" aria-label="Zurueck zur Suchliste">
-          &larr; Zurueck
+        <button onClick={handleBack} className="back-button" aria-label={t('nav:detailView.backAria') as string}>
+          &larr; {t('nav:detailView.backLabel')}
         </button>
         <div style={{ marginTop: '1rem' }}>
           <ErrorMessage message={error} onRetry={retry} />
@@ -113,16 +122,16 @@ export const DetailView: React.FC = () => {
   if (!object) {
     return (
       <div className="app">
-        <ErrorMessage message="Objekt nicht gefunden" />
+        <ErrorMessage message={t('nav:detailView.objectNotFound') as string} />
       </div>
     );
   }
 
   const breadcrumbType = displayObjectType(object.Object_Type, object.Source_Table);
   const breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Suche', path: '/' },
+    { label: t('nav:breadcrumbs.search') as string, path: '/' },
     { label: breadcrumbType, path: `/?type=${breadcrumbType}` },
-    { label: object.Object_Name || '(ohne Namen)', path: null },
+    { label: object.Object_Name || (t('nav:detailView.noName') as string), path: null },
   ];
 
   const renderTabContent = () => {
@@ -135,6 +144,7 @@ export const DetailView: React.FC = () => {
             highlightUuids={refOrigin.matchUuids}
             highlightText={refOrigin.origin?.name ?? null}
             onClearRef={dismissRefOrigin}
+            onLiveMatchCount={setLiveMatchCount}
           />
         );
       case 'references':
@@ -150,8 +160,8 @@ export const DetailView: React.FC = () => {
     <div className="app" role="main" aria-labelledby="object-title">
       {/* Navigation bar */}
       <div className="detail-nav">
-        <button onClick={handleBack} className="back-button" aria-label="Zurueck zur Suchliste">
-          &larr; Zurueck
+        <button onClick={handleBack} className="back-button" aria-label={t('nav:detailView.backAria') as string}>
+          &larr; {t('nav:detailView.backLabel')}
         </button>
         <Breadcrumbs items={breadcrumbItems} />
         <div style={{ marginLeft: 'auto' }}>
@@ -163,17 +173,20 @@ export const DetailView: React.FC = () => {
       <ObjectHeader object={object} />
 
       {/* Origin-Indikator-Pill (Cross-Reference Highlight) — nur sichtbar,
-          wenn ein `ref`-Parameter in der URL gesetzt ist. */}
+          wenn ein `ref`-Parameter in der URL gesetzt ist. liveMatchCount
+          überschreibt den server-seitigen Container-Self-Link-Count für
+          Token-Container-Detail-Tabs (Script / CustomFunction / Field). */}
       {refParam && (
         <RefOriginPill
           state={refOrigin}
           rawRef={refParam}
           onDismiss={dismissRefOrigin}
+          liveMatchCount={activeTab === 'detail' ? liveMatchCount : undefined}
         />
       )}
 
       {/* Sub-navigation tabs */}
-      <nav className="detail-tab-nav" role="tablist" aria-label="Objekt-Ansichten">
+      <nav className="detail-tab-nav" role="tablist" aria-label={t('nav:detailView.tabsAria') as string}>
         {DETAIL_TABS.map((tab) => (
           <button
             key={tab.id}
@@ -184,7 +197,7 @@ export const DetailView: React.FC = () => {
             aria-disabled={!tab.enabled}
             tabIndex={tab.enabled ? 0 : -1}
           >
-            {tab.label}
+            {t(`nav:${tab.label}`)}
           </button>
         ))}
       </nav>

@@ -52,7 +52,7 @@ export const useTemplateQuery = (
       setData(response.data);
     } catch (err) {
       console.error('Template query failed:', err);
-      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Details');
+      setError(err instanceof Error ? err.message : 'Failed to load details');
     } finally {
       isFetchingRef.current = false;
       setLoading(false);

@@ -1,28 +1,29 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { RefOriginState } from '../hooks/useRefOrigin';
 
 interface RefOriginPillProps {
   state: RefOriginState;
-  /** Roher Wert des `?ref=`-Parameters (für Anzeige im unresolved-Fall). */
+  /** Raw value of the `?ref=` parameter (shown when unresolved). */
   rawRef: string;
-  /** Vom Aufrufer bereitgestellter Dismiss-Handler — entfernt `ref` aus der URL. */
+  /** Dismiss handler — removes `ref` from the URL. */
   onDismiss: () => void;
   /**
-   * Optional: tatsächliche Treffer-Anzahl im aktiven View. Wenn unbekannt,
-   * fällt die Pill auf `state.matchCount` (Server-Lookup) zurück.
+   * Optional: actual match count in the active view. When unknown the pill
+   * falls back to `state.matchCount` (server lookup).
    */
   liveMatchCount?: number;
 }
 
 /**
- * Origin-Indikator-Pill für Cross-Reference Highlight (PRD §7.1).
+ * Origin indicator pill for cross-reference highlighting (PRD §7.1).
  *
- * Rendert oberhalb der Tab-Leiste eine schmale Zeile:
- *   ▶ Referenz: <Type> · <Name>    [✕]
- *     <N> Treffer hervorgehoben
+ * Renders a thin strip above the tab bar:
+ *   ▶ Reference: <Type> · <Name>    [✕]
+ *     <N> matches highlighted
  *
- * Klick auf den Pfeil führt zum Origin-Detail-View; Klick auf das X
- * entfernt den `ref`-Parameter aus der URL.
+ * Clicking the arrow opens the origin detail view; clicking the ✕ removes
+ * the `ref` parameter from the URL.
  */
 export const RefOriginPill: React.FC<RefOriginPillProps> = ({
   state,
@@ -30,18 +31,19 @@ export const RefOriginPill: React.FC<RefOriginPillProps> = ({
   onDismiss,
   liveMatchCount,
 }) => {
+  const { t } = useTranslation(['detail']);
   if (state.status === 'idle') return null;
 
   if (state.status === 'loading') {
     return (
       <div className="ref-pill ref-pill--loading" role="status" aria-live="polite">
-        <span className="ref-pill-label">Referenz wird aufgelöst…</span>
+        <span className="ref-pill-label">{t('detail:refPill.loading')}</span>
         <button
           type="button"
           className="ref-pill-dismiss"
           onClick={onDismiss}
-          aria-label="Referenz-Highlight entfernen"
-          title="Referenz-Highlight entfernen"
+          aria-label={t('detail:refPill.dismissAria') as string}
+          title={t('detail:refPill.dismissAria') as string}
         >
           ✕
         </button>
@@ -53,14 +55,14 @@ export const RefOriginPill: React.FC<RefOriginPillProps> = ({
     return (
       <div className="ref-pill ref-pill--error" role="alert">
         <span className="ref-pill-label">
-          Referenz konnte nicht aufgelöst werden: {state.error}
+          {t('detail:refPill.couldNotResolve', { message: state.error })}
         </span>
         <button
           type="button"
           className="ref-pill-dismiss"
           onClick={onDismiss}
-          aria-label="Referenz-Highlight entfernen"
-          title="Referenz-Highlight entfernen"
+          aria-label={t('detail:refPill.dismissAria') as string}
+          title={t('detail:refPill.dismissAria') as string}
         >
           ✕
         </button>
@@ -73,14 +75,14 @@ export const RefOriginPill: React.FC<RefOriginPillProps> = ({
       <div className="ref-pill ref-pill--unresolved" role="status">
         <span className="ref-pill-icon" aria-hidden="true">⚠</span>
         <span className="ref-pill-label">
-          Referenz nicht gefunden: <code>{rawRef}</code>
+          {t('detail:refPill.notFound')} <code>{rawRef}</code>
         </span>
         <button
           type="button"
           className="ref-pill-dismiss"
           onClick={onDismiss}
-          aria-label="Referenz-Highlight entfernen"
-          title="Referenz-Highlight entfernen"
+          aria-label={t('detail:refPill.dismissAria') as string}
+          title={t('detail:refPill.dismissAria') as string}
         >
           ✕
         </button>
@@ -89,15 +91,15 @@ export const RefOriginPill: React.FC<RefOriginPillProps> = ({
   }
 
   const count = liveMatchCount ?? state.matchCount;
-  // Ohne Treffer in der aktuellen Ansicht ist die Pill nur Lärm — der `?ref=`
-  // Parameter bleibt erhalten (Tab-Wechsel kann wieder Treffer ergeben), aber
-  // der visuelle Indikator wird unterdrückt. ESC räumt den Param weiterhin auf.
+  // Without matches in the current view the pill is just noise — the `?ref=`
+  // parameter is preserved (switching tabs may produce matches again) but the
+  // visual indicator is suppressed. Pressing Esc still clears the param.
   if (count === 0) return null;
   const o = state.origin;
   return (
     <div className="ref-pill ref-pill--resolved" role="status" aria-live="polite">
       <span className="ref-pill-label">
-        Referenz: <span className="ref-pill-type">{o.type}</span>
+        {t('detail:refPill.label')} <span className="ref-pill-type">{o.type}</span>
         <span className="ref-pill-sep"> · </span>
         <span className="ref-pill-name">{o.name}</span>
         {o.file && (
@@ -105,14 +107,14 @@ export const RefOriginPill: React.FC<RefOriginPillProps> = ({
         )}
       </span>
       <span className="ref-pill-count">
-        {`${count} ${count === 1 ? 'Treffer' : 'Treffer'} hervorgehoben`}
+        {t('detail:refPill.highlightsCount', { count })}
       </span>
       <button
         type="button"
         className="ref-pill-dismiss"
         onClick={onDismiss}
-        aria-label="Referenz-Highlight entfernen"
-        title="Referenz-Highlight entfernen (Esc)"
+        aria-label={t('detail:refPill.dismissAria') as string}
+        title={t('detail:refPill.dismissTitle') as string}
       >
         ✕
       </button>

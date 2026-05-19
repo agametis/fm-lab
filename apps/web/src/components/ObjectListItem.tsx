@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { components } from '@packages/shared/types';
 import { Slot } from '../plugins';
 
@@ -30,7 +31,9 @@ interface ObjectListItemProps {
  * Plugins contribute quick-actions via the `objectListItemActions` slot.
  */
 export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, onClick, onCategoryClick }) => {
+  const { t } = useTranslation(['detail']);
   const aggObject = object as FMObjectWithAggregates;
+  const noName = t('detail:objectListItem.noName') as string;
   const handleClick = () => {
     onClick?.(object.Object_UUID);
   };
@@ -53,11 +56,14 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
         onKeyDown={handleKeyDown}
         tabIndex={0}
         role="button"
-        aria-label={`${object.Object_Type}: ${object.Object_Name || '(ohne Namen)'} anzeigen`}
+        aria-label={t('detail:objectListItem.showAria', {
+          type: object.Object_Type,
+          name: object.Object_Name || noName,
+        }) as string}
       >
         <div className="object-header">
           <strong className="object-name">
-            {object.Object_Name || '(ohne Namen)'}
+            {object.Object_Name || noName}
           </strong>
           {hasCategory && (
             <span
@@ -77,7 +83,9 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
                   onCategoryClick(aggObject.category as string);
                 }
               }}
-              title={onCategoryClick ? `Filter auf ${aggObject.category}` : aggObject.category as string}
+              title={onCategoryClick
+                ? (t('detail:objectListItem.filterByCategory', { category: aggObject.category }) as string)
+                : (aggObject.category as string)}
             >
               {aggObject.category}
             </span>
@@ -86,7 +94,7 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
             {object.Object_Type}
           </span>
           {hasUsage && (
-            <span className="object-usage-badge" title={`${aggObject.usage_count} Verwendung${aggObject.usage_count === 1 ? '' : 'en'}`}>
+            <span className="object-usage-badge" title={t('detail:objectListItem.usageBadge', { count: aggObject.usage_count }) as string}>
               {aggObject.usage_count}
             </span>
           )}

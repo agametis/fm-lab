@@ -1,0 +1,30 @@
+{
+  "cellValues": {
+    "All":          "Alle",
+    "Other":        "Andere",
+    "Internal LAN": "Internes LAN",
+    "Local Import": "Lokaler Import",
+    "Localhost":    "Localhost",
+
+    "Fields without layout usage":    "Felder ohne Layout-Verwendung",
+    "Fields without comment":         "Felder ohne Kommentar",
+    "Scripts without callers":        "Scripts ohne Aufrufer",
+    "File-to-file relationships":     "Datei-zu-Datei-Beziehungen",
+    "Global / superglobal variables": "Globale/Superglobale Variablen",
+
+    "Global and superglobal variables": "Globale und Superglobale Variablen",
+    "Script complexity per file":       "Script-Komplexität pro Datei",
+
+    "Every field with an empty Field_Comment — candidates for documentation.": "Alle Felder ohne Field_Comment — Kandidaten für Dokumentation.",
+    "Every field that is not displayed or read on any layout.":                "Alle Felder, die auf keinem Layout angezeigt oder gelesen werden.",
+    "Scripts that are not invoked by any other script or trigger.":            "Scripts, die von keinem anderen Script oder Trigger aufgerufen werden.",
+    "Aggregated overview of cross-file references per file pair.":             "Aggregierte Übersicht der Cross-File-Referenzen pro Datei-Paar.",
+    "Every $$ and $$$ variable with set/read statistics.":                     "Alle $$- und $$$-Variablen mit Set/Read-Statistik.",
+    "Aggregated script statistics (count, average / max steps).":              "Aggregierte Script-Statistiken (Anzahl, durchschn./max. Schritte).",
+
+    "Dependencies": "Abhängigkeiten",
+    "Fields":       "Felder",
+    "Scripts":      "Scripts",
+    "Variables":    "Variablen"
+  }
+}

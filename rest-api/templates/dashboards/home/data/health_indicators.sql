@@ -1,9 +1,14 @@
 -- @template_type: report
--- @description: Kuratierte Health-Indikatoren — je eine Zeile pro Indikator.
+-- @description: Curated health indicators — one row per indicator.
 -- @params: none
+--
+-- The `label` column carries an English default text. The web frontend
+-- additionally looks it up under `dashboard.cellValues.<label>` so locale
+-- packs can present the row in any active language. A missing translation
+-- falls back to the English default.
 
--- Effiziente Variante via LEFT JOIN statt korrelierter NOT-EXISTS-Subqueries.
--- Jede Lookup-Menge wird einmal materialisiert und dann gejoint.
+-- Efficient variant via LEFT JOIN instead of correlated NOT-EXISTS subqueries.
+-- Every lookup set is materialised once and then joined.
 WITH field_usage AS (
     SELECT DISTINCT Target_UUID
     FROM ObjectLinks
@@ -33,8 +38,8 @@ unused_scripts AS (
       AND NOT s.Is_Separator
       AND sc.Target_UUID IS NULL
 ),
--- KPI zählt Datei-Paare mit operationalen Cross-File-Links — passend zur
--- Detail-Query `cross_file_links.sql`, die ebenfalls pro Datei-Paar aggregiert.
+-- KPI counts file pairs with operational cross-file links — matches the detail
+-- query `cross_file_links.sql`, which also aggregates per file pair.
 cross_file AS (
     SELECT COUNT(*) AS n FROM (
         SELECT 1
@@ -51,19 +56,19 @@ global_vars AS (
     FROM VariablesCatalog
     WHERE Variable_Scope IN ('global', 'superglobal')
 )
-SELECT 'unused_fields'    AS key, 'Felder ohne Layout-Verwendung'    AS label,
+SELECT 'unused_fields'    AS key, 'Fields without layout usage'      AS label,
        (SELECT n FROM unused_fields)   AS value, 'info'    AS severity,
        'runQuery'         AS action,
        'query=find_unused_fields'      AS action_args
-UNION ALL SELECT 'undoc_fields',    'Felder ohne Kommentar',
+UNION ALL SELECT 'undoc_fields',    'Fields without comment',
        (SELECT n FROM undoc_fields),    'info',
        'runQuery', 'query=find_undocumented_fields'
-UNION ALL SELECT 'unused_scripts',  'Scripts ohne Aufrufer',
+UNION ALL SELECT 'unused_scripts',  'Scripts without callers',
        (SELECT n FROM unused_scripts),  'warn',
        'runQuery', 'query=find_unused_scripts'
-UNION ALL SELECT 'cross_file_refs', 'Datei-zu-Datei-Beziehungen',
+UNION ALL SELECT 'cross_file_refs', 'File-to-file relationships',
        (SELECT n FROM cross_file),      'info',
        'runQuery', 'query=cross_file_links'
-UNION ALL SELECT 'global_vars',     'Globale/Superglobale Variablen',
+UNION ALL SELECT 'global_vars',     'Global / superglobal variables',
        (SELECT n FROM global_vars),     'info',
        'runQuery', 'query=list_global_variables';

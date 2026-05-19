@@ -14,7 +14,7 @@ export interface FieldTokensResponse {
 
 export async function fetchFieldTokens(
   uuid: string,
-  lang: string = 'de',
+  lang: string,
 ): Promise<FieldTokens> {
   const params = new URLSearchParams({ uuid, format: 'tokens', enrich: lang });
   const response = await fetch(`${baseUrl}/api/get-details?${params}`);
