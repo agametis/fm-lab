@@ -394,6 +394,114 @@ async function respondWithTokens(req, res, { uuid, meta, debug, enrich }) {
       references_template: 'object_references_script',
     };
     debugSql = debug ? `${stepsResult.sql}\n\n-- references:\n${refsResult.sql}` : null;
+  } else if (objectType === 'ScriptStep') {
+    // ScriptStep-Detail: 1-Zeilen-Variante des Script-Tokens-Payloads. Der
+    // Step wird über Step_UUID aufgelöst und der Parent-Script-Kontext in
+    // object.parentScript abgelegt, damit das Frontend einen Sprung-Link
+    // zum Skript und die Step-Position anzeigen kann.
+    const stepResult = await templateService.executeTemplate(
+      'object_details_scriptstep_tokens',
+      { uuid },
+      'report'
+    );
+
+    if (!stepResult.data || stepResult.data.length === 0) {
+      throw createError('OBJECT_NOT_FOUND', `ScriptStep with UUID '${uuid}' not found`, { uuid });
+    }
+
+    const stepRow = stepResult.data[0];
+    const parentScriptUuid = stepRow.parent_script_uuid;
+    const parentStepIndex  = Number(stepRow.parent_step_index);
+
+    // Refs des Parent-Scripts holen, dann auf den einen Step filtern und
+    // line_index auf 0 mappen (im 1-Zeilen-Payload liegt unsere Zeile bei 0).
+    // Das vermeidet eine Duplikation des 265-Zeilen-Refs-Templates.
+    const refsResult = await templateService.executeTemplate(
+      'object_references_script',
+      { uuid: parentScriptUuid },
+      'report'
+    );
+    const filteredRefs = (refsResult.data || [])
+      .filter(r => Number(r.line_index) === parentStepIndex)
+      .map(r => ({ ...r, line_index: 0 }));
+
+    const enrichedObject = {
+      ...baseObject,
+      parentScript: {
+        uuid: parentScriptUuid,
+        name: stepRow.parent_script_name,
+        file: stepRow.parent_file_name,
+      },
+      stepIndex: parentStepIndex,
+    };
+
+    payload = formatters.format(stepResult.data, 'tokens', {
+      kind: 'script',
+      object: enrichedObject,
+      refs: filteredRefs,
+    });
+
+    // Enrich-Pipeline: identisch zum Script-Case (Step-Meta + Function-Refs).
+    if (enrich) {
+      try {
+        const enrichLang = referenceService.resolveStepLang(enrich);
+        const stepMeta = await referenceService.getStepMetaMap(enrichLang);
+
+        const fnRefs = [];
+        for (const line of payload.lines) {
+          if (line.stepId != null) {
+            const m = stepMeta.get(line.stepId);
+            if (m) {
+              line.stepDisplayName = m.displayName;
+              line.stepDescription = m.description;
+              line.stepHelpUrl     = m.helpUrl;
+              line.stepLocalHelpUrl = m.localHelpUrl;
+              line.stepCategoryId  = m.categoryId;
+            }
+          }
+          if (Array.isArray(line.refs)) {
+            for (const r of line.refs) {
+              if (r.type === 'function') fnRefs.push(r);
+            }
+          }
+        }
+        if (fnRefs.length > 0) {
+          const adapted = fnRefs.map((r) => ({ type: 'function', content: r.name, __ref: r }));
+          await referenceService.enrichFunctionTokens(adapted, enrichLang);
+          for (const a of adapted) {
+            if (typeof a.functionId === 'number') {
+              const r = a.__ref;
+              r.functionId          = a.functionId;
+              r.functionCanonical   = a.functionCanonical;
+              if (a.functionSubParameter) r.functionSubParameter = a.functionSubParameter;
+              r.functionDisplayName = a.functionDisplayName;
+              r.functionSignature   = a.functionSignature;
+              r.functionPurpose     = a.functionPurpose;
+              r.functionReturnType  = a.functionReturnType;
+              r.functionHelpUrl     = a.functionHelpUrl;
+              r.functionLocalHelpUrl = a.functionLocalHelpUrl;
+            }
+          }
+        }
+        metaInfo = { ...metaInfo, enrich: enrichLang };
+      } catch (e) {
+        if (e.code === 'REF_LANG_INVALID') {
+          throw createError('VALIDATION_ERROR', e.message, e.details || {});
+        }
+        if (e.code === 'REF_NOT_ATTACHED') {
+          metaInfo = { ...metaInfo, enrich: null, enrich_error: e.code };
+        } else {
+          throw e;
+        }
+      }
+    }
+
+    metaInfo = {
+      ...metaInfo,
+      template_used: 'object_details_scriptstep_tokens',
+      references_template: 'object_references_script',
+    };
+    debugSql = debug ? `${stepResult.sql}\n\n-- references:\n${refsResult.sql}` : null;
   } else if (objectType === 'CustomFunction') {
     const cfResult = await templateService.executeTemplate(
       'object_details_customfunction_tokens',
@@ -470,7 +578,7 @@ async function respondWithTokens(req, res, { uuid, meta, debug, enrich }) {
     throw createError(
       'VALIDATION_ERROR',
       `format=tokens is not supported for object type '${objectType}'`,
-      { uuid, objectType, supported: ['Script', 'CustomFunction', 'Field'] }
+      { uuid, objectType, supported: ['Script', 'ScriptStep', 'CustomFunction', 'Field'] }
     );
   }
 

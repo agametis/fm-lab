@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Credenciais em scripts",
+    "description": "Encontra passos de script que fazem referência a palavras-chave de credenciais (senha, segredo, apikey, token, …) em todos os arquivos. Os valores reais são mascarados com ***** para que o painel nunca exponha segredos em texto simples."
+  },
+  "layout": {
+    "root.children[0].props.title": "Visão geral de credenciais",
+    "root.children[0].children[0].props.items[0].label": "Ocorrências",
+    "root.children[0].children[0].props.items[1].label": "Scripts",
+    "root.children[0].children[0].props.items[2].label": "Arquivos",
+    "root.children[1].props.title": "Ocorrências",
+    "root.children[1].children[0].props.columns[0].label": "Arquivo",
+    "root.children[1].children[0].props.columns[1].label": "Script",
+    "root.children[1].children[0].props.columns[2].label": "Passo",
+    "root.children[1].children[0].props.columns[3].label": "Tipo de passo",
+    "root.children[1].children[0].props.columns[4].label": "Palavra-chave",
+    "root.children[1].children[0].props.columns[5].label": "Trecho (mascarado)",
+    "root.children[1].children[0].props.empty.message": "Nenhuma palavra-chave de credencial encontrada em passos de script."
+  }
+}

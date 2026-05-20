@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "脚本中的凭据",
+    "description": "在所有文件中查找引用凭据相关关键字(密码、密钥、API Key、Token 等)的脚本步骤。实际值用 ***** 屏蔽,因此仪表板永远不会泄露明文机密。"
+  },
+  "layout": {
+    "root.children[0].props.title": "凭据概览",
+    "root.children[0].children[0].props.items[0].label": "命中数",
+    "root.children[0].children[0].props.items[1].label": "脚本",
+    "root.children[0].children[0].props.items[2].label": "文件",
+    "root.children[1].props.title": "命中",
+    "root.children[1].children[0].props.columns[0].label": "文件",
+    "root.children[1].children[0].props.columns[1].label": "脚本",
+    "root.children[1].children[0].props.columns[2].label": "步骤",
+    "root.children[1].children[0].props.columns[3].label": "步骤类型",
+    "root.children[1].children[0].props.columns[4].label": "关键字",
+    "root.children[1].children[0].props.columns[5].label": "片段(已屏蔽)",
+    "root.children[1].children[0].props.empty.message": "在脚本步骤中未找到凭据关键字。"
+  }
+}

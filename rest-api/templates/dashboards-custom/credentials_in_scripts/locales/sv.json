@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Inloggningsuppgifter i skript",
+    "description": "Hittar skriptsteg som refererar till inloggningsrelaterade nyckelord (lösenord, hemlighet, apikey, token, …) i alla filer. Faktiska värden maskeras med ***** så att panelen aldrig avslöjar hemligheter i klartext."
+  },
+  "layout": {
+    "root.children[0].props.title": "Översikt över inloggningsuppgifter",
+    "root.children[0].children[0].props.items[0].label": "Träffar",
+    "root.children[0].children[0].props.items[1].label": "Skript",
+    "root.children[0].children[0].props.items[2].label": "Filer",
+    "root.children[1].props.title": "Träffar",
+    "root.children[1].children[0].props.columns[0].label": "Fil",
+    "root.children[1].children[0].props.columns[1].label": "Skript",
+    "root.children[1].children[0].props.columns[2].label": "Steg",
+    "root.children[1].children[0].props.columns[3].label": "Stegtyp",
+    "root.children[1].children[0].props.columns[4].label": "Nyckelord",
+    "root.children[1].children[0].props.columns[5].label": "Utdrag (maskerat)",
+    "root.children[1].children[0].props.empty.message": "Inga nyckelord för inloggningsuppgifter hittades i skriptsteg."
+  }
+}

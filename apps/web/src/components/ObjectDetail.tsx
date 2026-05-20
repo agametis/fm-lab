@@ -7,6 +7,7 @@ import { LayoutCanvas } from './LayoutCanvas';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
 import { ScriptDetail } from './ScriptDetail';
+import { ScriptStepDetail } from './ScriptStepDetail';
 import { CustomFunctionDetail } from './CustomFunctionDetail';
 import { FieldDetail } from './FieldDetail';
 import '../views/LayoutView.css';
@@ -169,6 +170,9 @@ export const ObjectDetail: React.FC<ObjectDetailProps> = ({
   }
   if (objectType === 'Script') {
     return <ScriptDetail uuid={uuid} highlightRefUuids={highlightUuids} onLiveMatchCount={onLiveMatchCount} />;
+  }
+  if (objectType === 'ScriptStep') {
+    return <ScriptStepDetail uuid={uuid} highlightRefUuids={highlightUuids} onLiveMatchCount={onLiveMatchCount} />;
   }
   if (objectType === 'CustomFunction') {
     return <CustomFunctionDetail uuid={uuid} highlightRefUuids={highlightUuids} />;

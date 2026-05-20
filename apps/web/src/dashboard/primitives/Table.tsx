@@ -16,6 +16,30 @@ interface ColumnSpec {
   format?: string;
 }
 
+interface ChipFilterGroup {
+  label: string;
+  values: string[];
+}
+
+interface ChipFilterSpec {
+  field: string;
+  allLabel?: string;
+  // Gruppierung mehrerer Feld-Werte unter einem gemeinsamen Chip (z.B.
+  // "If / Else If" → values ["If", "Else If"]). Ein Wert in mehreren
+  // Gruppen würde mehrfach erscheinen — vermeiden. Werte, die in keiner
+  // Gruppe stehen, erhalten weiterhin einen eigenen Chip.
+  groups?: ChipFilterGroup[];
+}
+
+interface ChipOption {
+  // Stabile ID des Chips. Bei Gruppen: "group:<label>", sonst der Wert selbst.
+  id: string;
+  label: string;
+  count: number;
+  // Welche Feld-Werte filtert dieser Chip? Bei Einzel-Chip: [value], bei Gruppe: alle Mitglieder.
+  values: string[];
+}
+
 export function Table({ node, dataset, navigate }: PrimitiveProps) {
   const { t, i18n } = useTranslation(['common', 'detail', 'dashboard']);
   const lang = i18n.language;
@@ -29,13 +53,60 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
   // bewusster Reihenfolge (z.B. die führende "Alle"-Zeile in api_families)
   // ihre Sortierung nicht verlieren, sobald sie einen Sort-State bekämen.
   const sortable = (props.sortable as boolean) ?? false;
+  const chipFilter = props.chipFilter as ChipFilterSpec | undefined;
   const rows = dataset?.data ?? [];
   const [searchParams] = useSearchParams();
+
+  // Chip-Filter: Werte des konfigurierten Felds plus Counts, sortiert nach
+  // Häufigkeit. Wird VOR der Volltextsuche angewendet, damit Counts und
+  // Suchresultate konsistent bleiben. `chipValue` hält die Chip-ID (nicht den
+  // Roh-Wert), damit Gruppen-Chips eindeutig adressierbar sind.
+  const [chipValue, setChipValue] = useState<string | null>(null);
+  const chipOptions = useMemo<ChipOption[]>(() => {
+    if (!chipFilter) return [];
+
+    // 1) Roh-Counts pro Wert.
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+      const v = row[chipFilter.field];
+      if (v == null) continue;
+      const key = String(v);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+
+    // 2) Gruppen vorne anstellen, alle gruppierten Werte aus counts entfernen.
+    const grouped = new Set<string>();
+    const groupChips: ChipOption[] = (chipFilter.groups ?? []).map(g => {
+      const sum = g.values.reduce((acc, v) => {
+        grouped.add(v);
+        return acc + (counts.get(v) ?? 0);
+      }, 0);
+      return { id: `group:${g.label}`, label: g.label, count: sum, values: g.values };
+    }).filter(c => c.count > 0);
+
+    // 3) Einzelne Chips für nicht-gruppierte Werte.
+    const singleChips: ChipOption[] = Array.from(counts.entries())
+      .filter(([value]) => !grouped.has(value))
+      .map(([value, count]) => ({ id: value, label: value, count, values: [value] }));
+
+    // 4) Sortierung: alle Chips gemeinsam nach Count (desc), bei Tie alphabetisch.
+    return [...groupChips, ...singleChips].sort(
+      (a, b) => b.count - a.count || a.label.localeCompare(b.label, lang),
+    );
+  }, [rows, chipFilter, lang]);
+
+  const chipFiltered = useMemo(() => {
+    if (!chipFilter || !chipValue) return rows;
+    const active = chipOptions.find(c => c.id === chipValue);
+    if (!active) return rows;
+    const allowed = new Set(active.values);
+    return rows.filter(r => allowed.has(String(r[chipFilter.field] ?? '')));
+  }, [rows, chipFilter, chipValue, chipOptions]);
 
   // Generischer Volltext-Filter — sichtbar je nach `searchable`-Prop (true /
   // false / 'auto', Default 'auto' → ab >10 Rows). Greift VOR Sortierung,
   // damit der sortierte Output dem Suchergebnis entspricht.
-  const search = useRowSearch(rows, {
+  const search = useRowSearch(chipFiltered, {
     searchable: props.searchable as boolean | 'auto' | undefined,
     autoThreshold: props.searchAutoThreshold as number | undefined,
     placeholder: props.searchPlaceholder as string | undefined,
@@ -71,6 +142,29 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
 
   return (
     <div className={`dash-table-wrap dash-table--${density}`}>
+      {chipFilter && chipOptions.length > 0 && (
+        <div className="dash-chip-bar" role="group" aria-label={chipFilter.allLabel ?? t('common:all') as string}>
+          <button
+            type="button"
+            className={`dash-chip${chipValue === null ? ' dash-chip--active' : ''}`}
+            onClick={() => setChipValue(null)}
+          >
+            {chipFilter.allLabel ?? (t('common:all') as string)}
+            <span className="dash-chip__count">{rows.length}</span>
+          </button>
+          {chipOptions.map(opt => (
+            <button
+              key={opt.id}
+              type="button"
+              className={`dash-chip${chipValue === opt.id ? ' dash-chip--active' : ''}`}
+              onClick={() => setChipValue(opt.id)}
+            >
+              {opt.label}
+              <span className="dash-chip__count">{opt.count}</span>
+            </button>
+          ))}
+        </div>
+      )}
       {search.visible && (
         <div className="dash-search-bar">
           <span className="dash-search-bar__count">

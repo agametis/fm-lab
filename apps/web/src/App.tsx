@@ -518,6 +518,7 @@ function SearchView() {
           onItemClick={handleItemClick}
           onToggleGroup={handleToggleGroup}
           scrollContainerRef={scrollContainerRef}
+          searchTerm={debouncedSearchName}
         />
       )}
 

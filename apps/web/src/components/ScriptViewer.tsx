@@ -20,6 +20,12 @@ interface ScriptViewerProps {
    * unterschätzt sonst die echte Anzahl Vorkommen im Script.
    */
   onLiveMatchCount?: (count: number) => void;
+  /**
+   * Wenn true, werden View-Mode-Header und Such-/Filter-Leiste nicht gerendert.
+   * Gedacht für 1-Zeilen-Darstellungen wie den ScriptStep-Detail-View, in dem
+   * Folding, View-Modes und Ref-Type-Filter keinen Sinn ergeben.
+   */
+  hideToolbar?: boolean;
 }
 
 const VALID_MODES = new Set<ViewMode>([
@@ -36,7 +42,7 @@ const VALID_FILTER_STYLES = new Set<FilterStyle>(['dim', 'hide']);
 
 const EMPTY_TYPES: Set<RefType> = new Set();
 
-export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRefUuids, onLiveMatchCount }) => {
+export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRefUuids, onLiveMatchCount, hideToolbar }) => {
   const lines = tokens.lines;
 
   const foldRanges = useMemo(() => computeFoldRanges(lines), [lines]);
@@ -243,75 +249,92 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
   useEffect(() => {
     onLiveMatchCount?.(liveMatchCount);
   }, [liveMatchCount, onLiveMatchCount]);
-  useEffect(() => {
-    if (!highlightSig || !rootRef.current) return;
-    const id = requestAnimationFrame(() => {
-      const first = rootRef.current?.querySelector('.fm-ref--highlighted');
-      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
-    return () => cancelAnimationFrame(id);
-  }, [highlightSig]);
 
-  // Auch beim Search-Match (orange) zum ersten Treffer scrollen. Greift sowohl
-  // bei Ref-Matches (.fm-ref--search-match) als auch bei Comment-Substring-
-  // Matches (.fm-comment-search-match).
-  useEffect(() => {
-    if (!queryLower || !rootRef.current) return;
-    const id = requestAnimationFrame(() => {
-      const first = rootRef.current?.querySelector(
-        '.fm-ref--search-match, .fm-comment-search-match',
-      );
-      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
-    return () => cancelAnimationFrame(id);
-  }, [queryLower]);
-
-  // Step-Anchor (Deep-Link): wenn die URL einen `step`-Param trägt — z.B. aus
-  // einem Dashboard-Klick mit { params: { step: '<step_uuid>' } } — scrollen
-  // wir zur passenden Zeile und blenden temporär eine Anchor-Markierung ein.
-  // Der Param bleibt in der URL erhalten, damit ein Reload die Position
-  // reproduziert; das visuelle Highlight ist auf ~2.5s begrenzt.
+  // Step-Anchor (Deep-Link via ?step=<uuid>) — bleibt URL-getragen, damit ein
+  // Reload die Sprungposition reproduziert.
   const [stepAnchor] = useUrlState<string>('step', '');
+
+  // Vereinheitlichter Zeilen-Scroll für ?step= und ?ref=. Zielzeile in
+  // Prioritätsreihenfolge:
+  //   1. ?step=<uuid>        → li[data-step-uuid="<uuid>"]
+  //   2. ?ref=<uuid> (Step)  → erste li.fm-line--ref-highlighted
+  //   3. ?ref=<uuid> (Token) → closest('li.fm-line') des ersten .fm-ref--highlighted
+  //
+  // Beide Trigger lösen dieselbe gelbe Puls-Animation (fm-line--step-anchor)
+  // aus. Da die Animation auf `background: transparent` endet, bleibt der rote
+  // Hintergrund aus fm-line--ref-highlighted danach sichtbar — das ergibt das
+  // Muster „erst gelb pulsen, dann rot stehen lassen". Bei reinem ?step= ohne
+  // ref-Treffer verblasst die Zeile nach der Animation auf Default.
   useEffect(() => {
-    if (!stepAnchor || !rootRef.current) return;
+    if (!stepAnchor && !highlightSig) return;
+    if (!rootRef.current) return;
     let cleanup: (() => void) | null = null;
     const raf = requestAnimationFrame(() => {
-      const el = rootRef.current?.querySelector(
-        `li[data-step-uuid="${CSS.escape(stepAnchor)}"]`,
-      ) as HTMLElement | null;
-      if (!el) return;
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('fm-line--step-anchor');
+      const root = rootRef.current;
+      if (!root) return;
+      let line: HTMLElement | null = null;
+      if (stepAnchor) {
+        line = root.querySelector(
+          `li[data-step-uuid="${CSS.escape(stepAnchor)}"]`,
+        );
+      }
+      if (!line && highlightSig) {
+        line = root.querySelector('li.fm-line--ref-highlighted');
+        if (!line) {
+          const tok = root.querySelector('.fm-ref--highlighted');
+          line = (tok?.closest('li.fm-line') as HTMLElement | null) ?? null;
+        }
+      }
+      if (!line) return;
+      line.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      line.classList.add('fm-line--step-anchor');
       const timer = window.setTimeout(() => {
-        el.classList.remove('fm-line--step-anchor');
+        line!.classList.remove('fm-line--step-anchor');
       }, 2500);
       cleanup = () => {
         window.clearTimeout(timer);
-        el.classList.remove('fm-line--step-anchor');
+        line!.classList.remove('fm-line--step-anchor');
       };
     });
     return () => {
       cancelAnimationFrame(raf);
       if (cleanup) cleanup();
     };
-  }, [stepAnchor, lines]);
+  }, [stepAnchor, highlightSig, lines]);
+
+  // Such-Match-Scroll: bei Query-Änderung zur Zeile des ersten Treffers (Ref-
+  // Match oder Comment-Substring). Keine Puls-Animation — die orange Token-
+  // Outline reicht als Anker.
+  useEffect(() => {
+    if (!queryLower || !rootRef.current) return;
+    const id = requestAnimationFrame(() => {
+      const hit = rootRef.current?.querySelector(
+        '.fm-ref--search-match, .fm-comment-search-match',
+      );
+      const target = (hit?.closest('li.fm-line') as HTMLElement | null) ?? hit;
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [queryLower]);
 
   return (
     <HighlightRefContext.Provider value={highlightRefUuids ?? null}>
       <ScriptSearchContext.Provider value={searchPredicate}>
        <ScriptSearchQueryContext.Provider value={commentSearchQuery}>
         <div ref={rootRef} className="object-detail fm-script-root" aria-label="Script-Text">
-          <ScriptViewerHeader
-            stepCount={stepCount}
-            mode={mode}
-            onModeChange={setMode}
-            filterStyle={filterStyle}
-            onFilterStyleChange={setFilterStyle}
-            onExpandAll={expandAll}
-            onCollapseAll={collapseAll}
-            onCollapseMultiline={collapseMultiline}
-          />
-          {(allRefs.length > 0 || commentCount > 0) && (
+          {!hideToolbar && (
+            <ScriptViewerHeader
+              stepCount={stepCount}
+              mode={mode}
+              onModeChange={setMode}
+              filterStyle={filterStyle}
+              onFilterStyleChange={setFilterStyle}
+              onExpandAll={expandAll}
+              onCollapseAll={collapseAll}
+              onCollapseMultiline={collapseMultiline}
+            />
+          )}
+          {!hideToolbar && (allRefs.length > 0 || commentCount > 0) && (
             <ScriptSearchFilter
               typeCounts={typeCounts}
               activeTypes={activeTypes}

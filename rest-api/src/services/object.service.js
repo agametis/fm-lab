@@ -303,6 +303,132 @@ async function countObjects(options) {
 }
 
 /**
+ * COALESCE-Ausdruck für den vollständigen Step_Text einer ScriptStep-Reihe.
+ * Wird sowohl in SELECT (Anzeige) als auch in WHERE (Volltextsuche) verwendet.
+ * Quellen-Priorität: DDR_ScriptSteps.Step_Text → Comment aus Parameters_XML
+ * → generischer Step_Name. Identisch zu SCRIPTSTEP_SEARCH_CTE (siehe unten).
+ */
+const STEP_TEXT_EXPR = `
+  COALESCE(
+    ddr.Step_Text,
+    CASE WHEN s.Step_Name = '# (comment)'
+         THEN NULLIF('# ' || regexp_extract(s.Parameters_XML, '<Comment value="([^"]*)"', 1), '# ')
+         ELSE NULL
+    END,
+    s.Step_Name
+  )
+`;
+
+/**
+ * Baut den Standard-Such-SQL und die Parameter-Liste.
+ *
+ * Drei Pfade je nach Filter-Konstellation:
+ *  - dbType gesetzt (≠ ScriptStep): plain ObjectCatalog-Match auf Object_Name.
+ *  - dbType nicht gesetzt, name selektiv: UNION ALL (non-ScriptStep via Object_Name)
+ *    + (ScriptStep via Step_Text). Beide Branches schließen DDR-Internals aus.
+ *  - dbType nicht gesetzt, name = '%'-only: nur non-ScriptStep — Initial-Load,
+ *    keine 196k Steps in der Default-Liste.
+ *
+ * @param {Object} opts - {name, dbType, file, limit, offset, countOnly?}
+ * @returns {{sql: string, params: Array}}
+ */
+function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false }) {
+  const params = [];
+
+  // Pfad A: expliziter Type-Filter (nicht ScriptStep — der wird oben abgefangen)
+  if (dbType) {
+    const typeFilter = buildTypeFilter(dbType);
+    let inner = `
+      SELECT Object_UUID, Object_Type, Object_Name, File_Name, Source_Table, Object_ID,
+             CAST(NULL AS VARCHAR) AS Step_Text,
+             CAST(NULL AS VARCHAR) AS Script_Name,
+             CAST(NULL AS INTEGER) AS Step_Index
+      FROM ObjectCatalog
+      WHERE Object_Name ILIKE ?
+        AND Object_Type NOT IN ('DDR_ScriptStep', 'DDR_Calculation')
+        AND ${typeFilter.sqlNoAlias}
+    `;
+    params.push(name, ...typeFilter.params);
+    if (file) {
+      inner += ' AND File_Name = ?';
+      params.push(file);
+    }
+    if (countOnly) {
+      return { sql: `SELECT COUNT(*) AS count FROM (${inner}) c`, params };
+    }
+    let sql = `${inner} ORDER BY Object_Name`;
+    if (limit > 0) {
+      sql += ' LIMIT ? OFFSET ?';
+      params.push(limit, offset);
+    }
+    return { sql, params };
+  }
+
+  // Pfad B/C: kein Type-Filter
+  // Non-ScriptStep-Branch (Object_Name-Match, ScriptSteps explizit ausgeschlossen)
+  let nonStepInner = `
+    SELECT Object_UUID, Object_Type, Object_Name, File_Name, Source_Table, Object_ID,
+           CAST(NULL AS VARCHAR) AS Step_Text,
+           CAST(NULL AS VARCHAR) AS Script_Name,
+           CAST(NULL AS INTEGER) AS Step_Index
+    FROM ObjectCatalog
+    WHERE Object_Name ILIKE ?
+      AND Object_Type NOT IN ('DDR_ScriptStep', 'DDR_Calculation', 'ScriptStep')
+  `;
+  params.push(name);
+  if (file) {
+    nonStepInner += ' AND File_Name = ?';
+    params.push(file);
+  }
+
+  // Wildcard-only ('%' bzw. nur Wildcards): ScriptStep-Branch weglassen, sonst
+  // landen 196k Steps in der Default-Liste ohne erkennbaren Nutzen.
+  const isWildcardOnly = !name.replace(/%/g, '').trim();
+  if (isWildcardOnly) {
+    if (countOnly) {
+      return { sql: `SELECT COUNT(*) AS count FROM (${nonStepInner}) c`, params };
+    }
+    let sql = `${nonStepInner} ORDER BY Object_Name`;
+    if (limit > 0) {
+      sql += ' LIMIT ? OFFSET ?';
+      params.push(limit, offset);
+    }
+    return { sql, params };
+  }
+
+  // ScriptStep-Branch (Step_Text-Match, mit Anreicherung der Step-Spalten)
+  let stepInner = `
+    SELECT
+      oc.Object_UUID, oc.Object_Type, oc.Object_Name, oc.File_Name,
+      oc.Source_Table, oc.Object_ID,
+      ${STEP_TEXT_EXPR} AS Step_Text,
+      s.Script_Name,
+      s.Step_Index
+    FROM ObjectCatalog oc
+    LEFT JOIN StepsForScripts s ON s.Step_UUID = oc.Object_UUID
+    LEFT JOIN DDR_ScriptSteps ddr ON ddr.Step_UUID = oc.Object_UUID
+    WHERE oc.Object_Type = 'ScriptStep'
+      AND ${STEP_TEXT_EXPR} ILIKE ?
+  `;
+  params.push(name);
+  if (file) {
+    stepInner += ' AND oc.File_Name = ?';
+    params.push(file);
+  }
+
+  const combined = `(${nonStepInner}) UNION ALL (${stepInner})`;
+  if (countOnly) {
+    return { sql: `SELECT COUNT(*) AS count FROM (${combined}) c`, params };
+  }
+  let sql = `SELECT * FROM (${combined}) c ORDER BY Object_Name`;
+  if (limit > 0) {
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+  }
+  return { sql, params };
+}
+
+/**
  * Search objects by name pattern
  * @param {Object} searchOptions - Search options {name, type, file, limit, offset}
  * @returns {Promise<Object>} Search results with metadata
@@ -314,30 +440,24 @@ async function searchObjects(searchOptions) {
     // Normalize type to PascalCase for database
     const dbType = type ? (OBJECT_TYPE_MAP[type] || type) : null;
 
-    // Use ILIKE for case-insensitive pattern matching
-    // Exclude DDR-specific object types from search results
-    let sql = `SELECT * FROM ObjectCatalog
-               WHERE Object_Name ILIKE ?
-               AND Object_Type NOT IN ('DDR_ScriptStep', 'DDR_Calculation')`;
-    const params = [name];
-
-    if (dbType) {
-      const typeFilter = buildTypeFilter(dbType);
-      sql += ' AND ' + typeFilter.sqlNoAlias;
-      params.push(...typeFilter.params);
+    // ScriptStep-Spezialpfad: Volltextsuche im DDR_Step_Text + Comment-Inhalt
+    // aus Parameters_XML, mit Script_Name/Step_Index/Step_Text in der Response.
+    if (dbType === 'ScriptStep') {
+      return await searchScriptSteps({ name, file, limit, offset });
     }
 
-    if (file) {
-      sql += ' AND File_Name = ?';
-      params.push(file);
-    }
-
-    sql += ' ORDER BY Object_Name';
-
-    if (limit > 0) {
-      sql += ' LIMIT ? OFFSET ?';
-      params.push(limit, offset);
-    }
+    // Suchstrategie (PRD ScriptStep-Filtering):
+    //   1. dbType === 'ScriptStep'  → searchScriptSteps (oben abgefangen).
+    //   2. dbType ist ein anderer Typ → ObjectCatalog mit Type-Filter; ScriptSteps
+    //      kommen hier nicht vor.
+    //   3. Kein dbType-Filter        → UNION ALL:
+    //        a) Non-ScriptStep mit Object_Name-Match.
+    //        b) ScriptStep mit Step_Text-Match (Skriptname-Treffer würden
+    //           sonst die Trefferliste überschwemmen — der Script-Treffer
+    //           selbst erscheint ja schon in (a)).
+    //      Wildcard-only-Suche ('%') überspringt (b), weil dann sonst 196k
+    //      Steps in die Initial-Liste flössen.
+    const { sql, params } = buildSearchSql({ name, dbType, file, limit, offset });
 
     const result = await db.executeQuery(sql, params);
 
@@ -352,6 +472,93 @@ async function searchObjects(searchOptions) {
 }
 
 /**
+ * ScriptStep-Spezial-CTE: löst den vollen Klartext einer Skriptzeile auf.
+ * Priorität:
+ *   1. DDR_ScriptSteps.Step_Text  (FileMaker 21+ DDR_INFO — fertig gerendert
+ *      mit Parametern/Formeln/Referenzen)
+ *   2. "# " + Comment-value aus StepsForScripts.Parameters_XML  (Fallback für
+ *      Comment-Steps ohne DDR-Text)
+ *   3. StepsForScripts.Step_Name  (generischer Step-Typ als Last-Resort)
+ *
+ * Liefert außerdem Script_Name und Step_Index, damit das Frontend einen
+ * "Datei ▸ Skript ▸ Step N"-Breadcrumb unter dem Step-Text anzeigen kann.
+ */
+const SCRIPTSTEP_SEARCH_CTE = `
+  WITH script_steps AS (
+    SELECT
+      oc.Object_UUID,
+      oc.Object_Type,
+      oc.Object_Name,
+      oc.File_Name,
+      oc.Source_Table,
+      oc.Object_ID,
+      COALESCE(
+        ddr.Step_Text,
+        CASE WHEN s.Step_Name = '# (comment)'
+             THEN NULLIF('# ' || regexp_extract(s.Parameters_XML, '<Comment value="([^"]*)"', 1), '# ')
+             ELSE NULL
+        END,
+        s.Step_Name
+      ) AS Step_Text,
+      s.Script_Name,
+      s.Step_Index
+    FROM ObjectCatalog oc
+    LEFT JOIN StepsForScripts s ON s.Step_UUID = oc.Object_UUID
+    LEFT JOIN DDR_ScriptSteps ddr ON ddr.Step_UUID = oc.Object_UUID
+    WHERE oc.Object_Type = 'ScriptStep'
+  )
+`;
+
+async function searchScriptSteps({ name, file, limit, offset }) {
+  // Filter NUR auf Step_Text. Object_Name enthält bei ScriptSteps auch den
+  // Skriptnamen ("<Script> [<Index>] <StepType>") — wenn wir den mitdurch-
+  // suchen würden, käme jeder Skriptnamen-Treffer als rauschende Step-Liste
+  // zurück. Skriptnamen-Suche gehört in den Typ=Script-Filter, nicht hier.
+  let sql = `${SCRIPTSTEP_SEARCH_CTE}
+    SELECT *
+    FROM script_steps
+    WHERE Step_Text ILIKE ?`;
+  const params = [name];
+
+  if (file) {
+    sql += ' AND File_Name = ?';
+    params.push(file);
+  }
+
+  sql += ' ORDER BY File_Name, Script_Name, Step_Index';
+
+  if (limit > 0) {
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+  }
+
+  const result = await db.executeQuery(sql, params);
+  return {
+    data: convertBigInts(result.rows),
+    meta: result.meta,
+  };
+}
+
+async function countScriptSteps({ name, file }) {
+  let sql = `${SCRIPTSTEP_SEARCH_CTE}
+    SELECT COUNT(*) AS count
+    FROM script_steps
+    WHERE Step_Text ILIKE ?`;
+  const params = [name];
+
+  if (file) {
+    sql += ' AND File_Name = ?';
+    params.push(file);
+  }
+
+  const result = await db.executeQuery(sql, params);
+  return {
+    data: convertBigInts(result.rows),
+    meta: result.meta,
+  };
+}
+
+/**
  * Count search results by name pattern
  * @param {Object} searchOptions - Search options {name, type, file}
  * @returns {Promise<Object>} Count result with metadata
@@ -363,23 +570,15 @@ async function countSearchResults(searchOptions) {
     // Normalize type to PascalCase for database
     const dbType = type ? (OBJECT_TYPE_MAP[type] || type) : null;
 
-    // Use ILIKE for case-insensitive pattern matching
-    // Exclude DDR-specific object types from count
-    let sql = `SELECT COUNT(*) as count FROM ObjectCatalog
-               WHERE Object_Name ILIKE ?
-               AND Object_Type NOT IN ('DDR_ScriptStep', 'DDR_Calculation')`;
-    const params = [name];
-
-    if (dbType) {
-      const typeFilter = buildTypeFilter(dbType);
-      sql += ' AND ' + typeFilter.sqlNoAlias;
-      params.push(...typeFilter.params);
+    // ScriptStep-Spezialpfad: muss denselben WHERE-Filter wie searchScriptSteps
+    // verwenden, sonst weicht der Total-Count von der gepaginierten Liste ab.
+    if (dbType === 'ScriptStep') {
+      return await countScriptSteps({ name, file });
     }
 
-    if (file) {
-      sql += ' AND File_Name = ?';
-      params.push(file);
-    }
+    // Identische Filterlogik wie searchObjects (UNION ALL bei Volltextsuche
+    // ohne Type-Filter). Gemeinsamer Builder, damit Count == List-Total.
+    const { sql, params } = buildSearchSql({ name, dbType, file, countOnly: true });
 
     const result = await db.executeQuery(sql, params);
 
@@ -416,6 +615,14 @@ async function getPseudoTypeReferences(uuid, direction, link_type, limit) {
   );
   if (typeLookup.rows.length === 0) return null;
   const objType = typeLookup.rows[0].Object_Type;
+
+  // Pseudo-Type-Gate: dieser Resolver ist NUR für Aggregate (ScriptStepType,
+  // PluginComponent) zuständig. Für alle anderen Typen sofort durchreichen
+  // an den Standard-References-Pfad — sonst würde der frühe structural-Filter
+  // unten z.B. parent_script-Links für ScriptStep verschlucken.
+  if (objType !== 'ScriptStepType' && objType !== 'PluginComponent') {
+    return null;
+  }
 
   // 'child'-direction macht für Aggregate keinen Sinn — sie haben keine
   // Downstream-Abhängigkeiten. 'parent' und 'all' liefern die Aufrufer-Liste.

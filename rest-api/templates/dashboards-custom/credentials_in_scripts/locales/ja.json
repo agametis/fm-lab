@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "スクリプト内の認証情報",
+    "description": "すべてのファイルにわたって、認証情報関連のキーワード(パスワード、シークレット、APIキー、トークンなど)を参照するスクリプトステップを検出します。実際の値は ***** でマスクされ、ダッシュボードが平文の秘密情報を漏らすことはありません。"
+  },
+  "layout": {
+    "root.children[0].props.title": "認証情報の概要",
+    "root.children[0].children[0].props.items[0].label": "ヒット数",
+    "root.children[0].children[0].props.items[1].label": "スクリプト",
+    "root.children[0].children[0].props.items[2].label": "ファイル",
+    "root.children[1].props.title": "ヒット",
+    "root.children[1].children[0].props.columns[0].label": "ファイル",
+    "root.children[1].children[0].props.columns[1].label": "スクリプト",
+    "root.children[1].children[0].props.columns[2].label": "ステップ",
+    "root.children[1].children[0].props.columns[3].label": "ステップ種別",
+    "root.children[1].children[0].props.columns[4].label": "キーワード",
+    "root.children[1].children[0].props.columns[5].label": "抜粋(マスク済み)",
+    "root.children[1].children[0].props.empty.message": "スクリプトステップに認証情報のキーワードは見つかりませんでした。"
+  }
+}

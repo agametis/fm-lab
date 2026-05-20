@@ -72,7 +72,15 @@ export interface ScriptLineToken {
 
 export interface ScriptTokens {
   kind: 'script';
-  object: { uuid: string; name: string; file: string };
+  object: {
+    uuid: string;
+    name: string;
+    file: string;
+    // Nur bei ScriptStep-Detail gesetzt: Kontext zum übergeordneten Skript,
+    // damit der Detail-Header eine Karte mit Sprung-Link rendern kann.
+    parentScript?: { uuid: string; name: string; file: string };
+    stepIndex?: number;
+  };
   lines: ScriptLineToken[];
   plainText?: string;
 }

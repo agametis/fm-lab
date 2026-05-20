@@ -93,7 +93,16 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
     //   LayoutObject → Layout), wird transparent der Container geöffnet und
     //   der Sub-Knoten als ref gesetzt — der spezifischere Treffer ist die
     //   nützlichere Hervorhebung.
-    navigate(buildNavigablePath(ref.uuid, currentUuid ?? null, ref.Container_UUID ?? null));
+    //
+    // Sonderfall parent_script: aus einer ScriptStep-Detail-Seite springt der
+    // Klick auf den "enthalten in Script"-Eintrag zur Script-Detail-Seite.
+    // Wir hängen `?step=<currentUuid>` an, damit der ScriptViewer dort direkt
+    // zur passenden Zeile scrollt und sie kurz hervorhebt (siehe
+    // ScriptViewer.tsx stepAnchor-useEffect).
+    const extras = ref.Link_Role === 'parent_script' && currentUuid
+      ? { step: currentUuid }
+      : undefined;
+    navigate(buildNavigablePath(ref.uuid, currentUuid ?? null, ref.Container_UUID ?? null, extras));
   };
 
   // Item-Handler: Enter/Space löst Navigation aus. Pfeiltasten werden hier

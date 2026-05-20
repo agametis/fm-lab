@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Assimetria de blocos If/Else",
+    "description": "Lista scripts com blocos If/Else cujo ramo If é significativamente mais longo que o ramo Else. Candidatos à refatoração para early returns ou guard clauses."
+  },
+  "layout": {
+    "root.children[0].props.title": "Visão geral da assimetria If/Else",
+    "root.children[0].children[0].props.items[0].label": "Blocos assimétricos",
+    "root.children[0].children[0].props.items[1].label": "Scripts afetados",
+    "root.children[0].children[0].props.items[2].label": "Arquivos afetados",
+    "root.children[0].children[0].props.items[3].label": "Ramo If mais longo",
+
+    "root.children[1].props.title": "Scripts com If longo / Else curto",
+    "root.children[1].children[0].props.columns[0].label": "Arquivo",
+    "root.children[1].children[0].props.columns[1].label": "Nome do script",
+    "root.children[1].children[0].props.columns[2].label": "Posição do If",
+    "root.children[1].children[0].props.columns[3].label": "Passos do If",
+    "root.children[1].children[0].props.columns[4].label": "Passos do Else",
+    "root.children[1].children[0].props.columns[5].label": "Pontuação",
+    "root.children[1].children[0].props.empty.message": "Nenhum bloco If/Else assimétrico encontrado."
+  }
+}

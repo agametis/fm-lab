@@ -68,14 +68,25 @@ export const useObjectDetail = (uuid: string | undefined): UseObjectDetailResult
       // Extract object data
       const objectData = objectResponse.data as FMObject;
 
-      // Split flat reference arrays into parent/child groups
+      // Split flat reference arrays into parent/child groups.
+      // Sonderfall für `parent_*`-Roles: in ObjectLinks ist die Beziehung als
+      // Sub→Container modelliert (Source=ScriptStep → Target=Script, Source=
+      // LayoutObject → Target=Layout). Der Endpoint kennzeichnet das als
+      // direction='child' — semantisch ist es aber eine Parent-Beziehung
+      // ("Step ist ENTHALTEN IM Script"). Wir reklassifizieren diese Rollen
+      // in structuralParent, damit die UI "Strukturell enthalten in" rendert.
+      const PARENT_ROLES = new Set(['parent_script', 'parent_layout', 'parent_object']);
       const opRefs = (opRefsResponse.data ?? []) as unknown as ReferenceItem[];
       const structRefs = (structRefsResponse.data ?? []) as unknown as ReferenceItem[];
       const grouped: GroupedReferences = {
         parent: opRefs.filter(r => r.direction === 'parent'),
         child: opRefs.filter(r => r.direction === 'child'),
-        structuralParent: structRefs.filter(r => r.direction === 'parent'),
-        structuralChild: structRefs.filter(r => r.direction === 'child'),
+        structuralParent: structRefs.filter(r =>
+          r.direction === 'parent' || (r.direction === 'child' && PARENT_ROLES.has(r.Link_Role))
+        ),
+        structuralChild: structRefs.filter(r =>
+          r.direction === 'child' && !PARENT_ROLES.has(r.Link_Role)
+        ),
       };
 
       // Cache the result

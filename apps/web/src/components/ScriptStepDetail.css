@@ -1,0 +1,110 @@
+/* ScriptStepDetail — Kontext-Karte über dem 1-Zeilen-ScriptViewer */
+
+.script-step-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.script-step-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-bg-surface-2, var(--color-bg-surface));
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.script-step-card__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.script-step-card__type-badge {
+  padding: 0.2rem 0.6rem;
+  background-color: var(--color-accent);
+  color: var(--color-text-inverse);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.script-step-card__position {
+  padding: 0.15rem 0.55rem;
+  background-color: var(--color-bg-surface-2);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.script-step-card__disabled-badge {
+  padding: 0.15rem 0.55rem;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.script-step-card__help-link {
+  margin-left: auto;
+  padding: 0.2rem 0.7rem;
+  background-color: transparent;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.script-step-card__help-link:hover {
+  background-color: var(--color-accent);
+  color: var(--color-text-inverse);
+}
+
+.script-step-card__breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.script-step-card__file {
+  font-weight: 600;
+  color: var(--color-text-secondary, var(--color-text-muted));
+}
+
+.script-step-card__script-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-style: italic;
+  transition: color 0.15s;
+}
+
+.script-step-card__script-link:hover {
+  color: var(--color-accent-hover, var(--color-accent));
+  text-decoration: underline;
+}
+
+.script-step-card__separator {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+}
+
+.script-step-card__step-pos {
+  font-variant-numeric: tabular-nums;
+}

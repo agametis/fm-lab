@@ -18,6 +18,10 @@ interface VirtualListProps {
   onItemClick?: (uuid: string) => void;
   onToggleGroup?: (groupKey: string) => void;
   scrollContainerRef?: React.RefObject<HTMLDivElement>;
+  // Aktueller Volltext-Suchbegriff (vor Wildcard-Expansion). Wird an
+  // ObjectListItem weitergereicht für das Highlighting der Treffer im
+  // Step_Text bei ScriptStep-Ergebnissen.
+  searchTerm?: string;
 }
 
 /**
@@ -40,6 +44,7 @@ export const VirtualList: React.FC<VirtualListProps> = ({
   onItemClick,
   onToggleGroup,
   scrollContainerRef,
+  searchTerm,
 }) => {
   const { t } = useTranslation(['nav']);
   const internalRef = useRef<HTMLDivElement>(null);
@@ -131,7 +136,7 @@ export const VirtualList: React.FC<VirtualListProps> = ({
                   </span>
                 </div>
               ) : (
-                <ObjectListItem object={row.object} onClick={onItemClick} />
+                <ObjectListItem object={row.object} onClick={onItemClick} searchTerm={searchTerm} />
               )}
             </div>
           );

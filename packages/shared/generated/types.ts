@@ -547,7 +547,7 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /** @enum {string} */
-        ObjectType: "BaseTable" | "TableOccurrence" | "Relationship" | "Field" | "ValueList" | "CustomFunction" | "Script" | "ScriptStep" | "Layout" | "LayoutObject" | "LayoutPart" | "Account" | "PrivilegeSet" | "ExtendedPrivilege" | "Theme" | "CustomMenu" | "ScriptTrigger" | "ExternalDataSource" | "BaseDirectory";
+        ObjectType: "BaseTable" | "TableOccurrence" | "Relationship" | "Field" | "ValueList" | "CustomFunction" | "Script" | "ScriptStep" | "Layout" | "LayoutObject" | "LayoutPart" | "Account" | "PrivilegeSet" | "ExtendedPrivilege" | "Theme" | "CustomMenu" | "ScriptTrigger" | "ExternalDataSource" | "BaseDirectory" | "Variable";
         /** @enum {string} */
         OutputFormat: "json" | "raw" | "text" | "short" | "detailed" | "html" | "markdown" | "content" | "mermaid" | "mermaid-raw";
         /** @enum {string} */
@@ -566,6 +566,25 @@ export interface components {
             Source_Table?: string;
             /** @description Internal FileMaker ID */
             Object_ID?: number;
+            /**
+             * @description Full rendered text of a script step (ScriptStep results only).
+             *     Combines DDR_ScriptSteps.Step_Text (FileMaker 21+ DDR_INFO) with
+             *     a fallback that extracts comment values from Parameters_XML.
+             *     Used by full-text search on script-step contents and by the
+             *     search-result UI to display the step in its rendered form.
+             */
+            Step_Text?: string | null;
+            /**
+             * @description Name of the script containing this step (ScriptStep results only).
+             *     Used to render the "File ▸ Script ▸ Step N" breadcrumb context.
+             */
+            Script_Name?: string | null;
+            /**
+             * @description Zero-based position of the step within its script (ScriptStep
+             *     results only). The UI displays it 1-based to match FileMaker's
+             *     script editor numbering.
+             */
+            Step_Index?: number | null;
         };
         ObjectReference: {
             Target_UUID?: string;

@@ -301,6 +301,54 @@
   text-align: center;
 }
 
+/* --- Chip-Filter-Bar für Table (Opt-in via chipFilter-Prop) ---
+ * Bullet-Buttons über der Tabelle: "Alle" plus ein Chip pro Distinct-Wert
+ * eines konfigurierten Felds. Counts in der eigenen Pille rechts vom Label. */
+.dash-chip-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 0 8px 0;
+}
+.dash-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 12px;
+  font-size: 0.78rem;
+  font-family: inherit;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+.dash-chip:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text-primary);
+}
+.dash-chip--active {
+  background: var(--color-accent-soft-bg);
+  border-color: var(--color-accent);
+  color: var(--color-accent-soft-fg);
+  font-weight: 500;
+}
+.dash-chip__count {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0 6px;
+  font-size: 0.7rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  background: var(--color-bg-surface-2);
+  border-radius: 999px;
+}
+.dash-chip--active .dash-chip__count {
+  color: var(--color-accent-soft-fg);
+  background: var(--color-bg-surface);
+}
+
 .dash-autotable {
   display: flex;
   flex-direction: column;

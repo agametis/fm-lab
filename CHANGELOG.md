@@ -12,6 +12,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.7.3] — 2026-05-20
+
+ScriptStep full-text search, two new diagnostic custom dashboards, and plugin-layer internationalization.
+
+- **ScriptStep full-text search** — drill from any object into the script steps that reference it
+  - New `ScriptStepDetail` component with dedicated styling: renders an individual script step with full token interactivity, surrounding context, and back-navigation to the parent script
+  - New SQL template `object_details_scriptstep_tokens.sql` powers the tokenized step view
+  - `object.controller` / `object.service` extended with ScriptStep-aware lookup, search, and listing endpoints (OpenAPI spec updated, generated TS types regenerated)
+  - `ScriptViewer`, `HierarchyTree`, `ObjectListItem`, and the dashboard `Table` primitive refined to support the new step-level navigation and highlight model
+- **Two new diagnostic custom dashboards** under `templates/dashboards-custom/`
+  - **`credentials_in_scripts/`** — surfaces scripts that embed credentials / secrets in literal form: KPI block plus findings list with source script and context; localized in all 11 languages
+  - **`if_else_asymmetry/`** — detects asymmetric If / Else If / End If blocks (likely script-logic bugs) with KPI overview and per-block findings; localized in all 11 languages
+- **Plugin-layer i18n**
+  - New `plugin-i18n.service` in the REST-API: resolves plugin manifest and UI labels against the active language with English fallback — mirrors the dashboard i18n architecture
+  - `plugins.controller` and `plugins.routes` accept and forward the language parameter
+  - **fmIDE plugin** localized: `plugin.json` slimmed down to non-translatable metadata, with per-language `locales/<lang>.json` files for all 11 languages
+  - Frontend `PluginCard`, `LayoutTypeFilter`, and `SettingsView` migrated to `t()` calls; `detail.json` translation namespace extended in every language
+- **Documentation**: refinements and clarifications about the composability and extensibility of the underlying architecture
+
+---
+
 ## [0.7.2] — 2026-05-19
 
 Internationalization across the whole stack: 11 languages in the web client, localized dashboards, English as the new primary language for the codebase, CLAUDE.md, and all skills.

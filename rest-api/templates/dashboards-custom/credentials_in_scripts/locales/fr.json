@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Identifiants dans les scripts",
+    "description": "Détecte les étapes de script qui contiennent des mots-clés liés aux identifiants (mot de passe, secret, clé API, jeton, …) dans tous les fichiers. Les valeurs réelles sont masquées par ***** afin que le tableau de bord ne révèle jamais de secret en clair."
+  },
+  "layout": {
+    "root.children[0].props.title": "Aperçu des identifiants",
+    "root.children[0].children[0].props.items[0].label": "Correspondances",
+    "root.children[0].children[0].props.items[1].label": "Scripts",
+    "root.children[0].children[0].props.items[2].label": "Fichiers",
+    "root.children[1].props.title": "Correspondances",
+    "root.children[1].children[0].props.columns[0].label": "Fichier",
+    "root.children[1].children[0].props.columns[1].label": "Script",
+    "root.children[1].children[0].props.columns[2].label": "Étape",
+    "root.children[1].children[0].props.columns[3].label": "Type d'étape",
+    "root.children[1].children[0].props.columns[4].label": "Mot-clé",
+    "root.children[1].children[0].props.columns[5].label": "Extrait (masqué)",
+    "root.children[1].children[0].props.empty.message": "Aucun mot-clé d'identifiant trouvé dans les étapes de script."
+  }
+}
