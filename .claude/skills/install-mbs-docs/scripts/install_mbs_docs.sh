@@ -4,10 +4,15 @@
 # This script downloads and installs MBS Plugin documentation from MonkeyBread Software.
 # It handles version checking, user prompts, and automatic cleanup.
 #
-# Usage: install_mbs_docs.sh [--force]
+# Usage: install_mbs_docs.sh [--check|--install] [--quiet] [--force]
 #
 # Parameters:
-#   --force: Skip version check and prompts, force reinstallation
+#   --check:   Probe-only mode. Emits a single check-event with
+#              {installed, local_version, remote_version, update_available} and exits.
+#   --install: Run the installation workflow (default if no mode is given).
+#   --quiet:   Emit NDJSON events instead of plain log lines. Bypasses
+#              interactive prompts (treats every confirmation as yes).
+#   --force:   Skip version check and prompts, force reinstallation.
 #
 # Exit codes:
 #   0 - Success (installed or already up to date)
@@ -24,15 +29,31 @@ VERSION_FILE="$DOCS_DIR/.version"
 ZIP_URL="https://www.monkeybreadsoftware.com/filemaker/Dash/MBS.zip"
 DOCSET_PATH="MBS.docset/Contents/Resources"
 
-# Parse arguments
+# Shared mode helpers (--check/--install/--quiet + emit_log/emit_progress/...)
+# shellcheck source=/dev/null
+source "$PROJECT_ROOT/tools/install_modes.sh"
+
+# Parse arguments — split off shared modes first, then handle leftover flags.
+QUIET_MODE=false; CHECK_MODE=false; INSTALL_MODE=false
+REMAINING_ARGS=()
+parse_install_modes "$@"
+set -- "${REMAINING_ARGS[@]}"
+
 FORCE_INSTALL=false
-if [ "$1" == "--force" ]; then
-    FORCE_INSTALL=true
-fi
+for arg in "$@"; do
+    case "$arg" in
+        --force) FORCE_INSTALL=true ;;
+        '') ;;
+        *)
+            emit_error "Unknown argument: $arg"
+            exit 1
+            ;;
+    esac
+done
 
 # Create temporary working directory
 TEMP_DIR=$(mktemp -d) || {
-    echo "ERROR: Failed to create temporary directory"
+    emit_error "Failed to create temporary directory"
     exit 5
 }
 trap "rm -rf '$TEMP_DIR'" EXIT  # Ensure cleanup on exit
@@ -42,64 +63,84 @@ get_remote_timestamp() {
     curl -sI "$ZIP_URL" | grep -i "^last-modified:" | sed 's/last-modified: //i' | tr -d '\r'
 }
 
+# Function: Compare two RFC-1123 dates ("Mon, 12 May 2026 07:57:32 GMT").
+# Returns 0 (truthy) iff $1 (remote) is strictly newer than $2 (local).
+remote_newer_than_local() {
+    local remote="$1" local_v="$2"
+    [ -n "$remote" ] || return 1
+    [ -n "$local_v" ] || return 0
+    local rts lts
+    rts=$(date -j -f "%a, %d %b %Y %T %Z" "$remote" "+%s" 2>/dev/null || echo "")
+    lts=$(date -j -f "%a, %d %b %Y %T %Z" "$local_v" "+%s" 2>/dev/null || echo "")
+    [ -n "$rts" ] && [ -n "$lts" ] && [ "$rts" -gt "$lts" ]
+}
+
+# --check mode: probe installation + remote version, emit a check-event, exit.
+run_check_mode() {
+    local installed="false" local_version="" remote_version="" update_available="false"
+
+    if [ -f "$DOCS_DIR/docSet.dsidx" ]; then
+        installed="true"
+    fi
+    if [ -f "$VERSION_FILE" ]; then
+        local_version=$(cat "$VERSION_FILE")
+    fi
+    remote_version=$(get_remote_timestamp || true)
+
+    if [ "$installed" = "false" ]; then
+        update_available="true"  # nothing installed → install is "available"
+    elif remote_newer_than_local "$remote_version" "$local_version"; then
+        update_available="true"
+    fi
+
+    emit_check "$installed" "$local_version" "$remote_version" "$update_available"
+    exit 0
+}
+
+if $CHECK_MODE; then
+    run_check_mode
+fi
+
 # Function: Check if update is needed
 check_version() {
     if [ ! -f "$DOCS_DIR/docSet.dsidx" ]; then
-        # No existing docs found
-        echo "No existing docs found. Installing MBS documentation..."
-        return 0  # Proceed with installation
+        emit_log "No existing docs found. Installing MBS documentation..."
+        return 0
     fi
 
     if [ "$FORCE_INSTALL" = true ]; then
-        echo "Force installation requested. Reinstalling MBS documentation..."
-        return 0  # Proceed with installation
+        emit_log "Force installation requested. Reinstalling MBS documentation..."
+        return 0
     fi
 
-    # Check for newer version
-    echo "Checking for updates..."
+    emit_progress check 10 "Checking for updates..."
 
     REMOTE_DATE=$(get_remote_timestamp)
     if [ -z "$REMOTE_DATE" ]; then
-        echo "ERROR: Failed to retrieve remote version information"
+        emit_error "Failed to retrieve remote version information"
         exit 2
     fi
 
     if [ -f "$VERSION_FILE" ]; then
         LOCAL_DATE=$(cat "$VERSION_FILE")
 
-        # Convert dates to timestamps for comparison
-        REMOTE_TS=$(date -j -f "%a, %d %b %Y %T %Z" "$REMOTE_DATE" "+%s" 2>/dev/null)
-        LOCAL_TS=$(date -j -f "%a, %d %b %Y %T %Z" "$LOCAL_DATE" "+%s" 2>/dev/null)
-
-        if [ -n "$REMOTE_TS" ] && [ -n "$LOCAL_TS" ] && [ "$REMOTE_TS" -le "$LOCAL_TS" ]; then
-            echo "Docs are up to date (version: $LOCAL_DATE)"
-            echo "No action needed."
+        if ! remote_newer_than_local "$REMOTE_DATE" "$LOCAL_DATE"; then
+            emit_log "Docs are up to date (version: $LOCAL_DATE). No action needed."
+            emit_done true "Already up to date"
             exit 0
         fi
 
-        # Newer version available - prompt user
-        echo ""
-        echo "Newer version available."
-        echo "Current: $LOCAL_DATE"
-        echo "Remote:  $REMOTE_DATE"
-        echo ""
-        read -p "Replace existing docs? (y/n): " -n 1 -r
-        echo ""
-
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Installation cancelled by user"
+        emit_log "Newer version available. Current: $LOCAL_DATE — Remote: $REMOTE_DATE"
+        if ! confirm_or_quiet "Replace existing docs?"; then
+            emit_log "Installation cancelled by user"
+            emit_done false "Cancelled by user"
             exit 1
         fi
     else
-        # No version file but docs exist - prompt for safety
-        echo "Existing documentation found (no version information)."
-        echo "Remote version: $REMOTE_DATE"
-        echo ""
-        read -p "Replace existing docs? (y/n): " -n 1 -r
-        echo ""
-
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Installation cancelled by user"
+        emit_warn "Existing documentation found (no version information). Remote: $REMOTE_DATE"
+        if ! confirm_or_quiet "Replace existing docs?"; then
+            emit_log "Installation cancelled by user"
+            emit_done false "Cancelled by user"
             exit 1
         fi
     fi
@@ -109,75 +150,79 @@ check_version() {
 
 # Function: Download MBS documentation
 download_docs() {
-    echo "Downloading from $ZIP_URL..."
+    emit_progress download 20 "Downloading from $ZIP_URL"
 
-    curl -L -o "$TEMP_DIR/MBS.zip" "$ZIP_URL" 2>&1 | grep -v "^  "
+    if $QUIET_MODE; then
+        curl -sL -o "$TEMP_DIR/MBS.zip" "$ZIP_URL"
+        local rc=$?
+    else
+        curl -L -o "$TEMP_DIR/MBS.zip" "$ZIP_URL" 2>&1 | grep -v "^  "
+        local rc=${PIPESTATUS[0]}
+    fi
 
-    if [ ${PIPESTATUS[0]} -ne 0 ]; then
-        echo "ERROR: Download failed"
+    if [ $rc -ne 0 ]; then
+        emit_error "Download failed"
         exit 2
     fi
 
     # Verify file was downloaded and has reasonable size (should be > 1MB)
     FILE_SIZE=$(stat -f%z "$TEMP_DIR/MBS.zip" 2>/dev/null || echo "0")
     if [ "$FILE_SIZE" -lt 1000000 ]; then
-        echo "ERROR: Downloaded file is too small ($FILE_SIZE bytes). Download may have failed."
+        emit_error "Downloaded file is too small ($FILE_SIZE bytes). Download may have failed."
         exit 2
     fi
 
-    echo "Download complete ($(echo "scale=1; $FILE_SIZE / 1024 / 1024" | bc) MB)"
+    emit_progress download 40 "Download complete ($(echo "scale=1; $FILE_SIZE / 1024 / 1024" | bc) MB)"
 }
 
 # Function: Extract and validate archive
 extract_docs() {
-    echo "Extracting documentation..."
+    emit_progress extract 50 "Extracting documentation..."
 
     unzip -q "$TEMP_DIR/MBS.zip" -d "$TEMP_DIR"
 
     if [ $? -ne 0 ]; then
-        echo "ERROR: Extraction failed"
+        emit_error "Extraction failed"
         exit 3
     fi
 
     # Validate expected structure
     if [ ! -d "$TEMP_DIR/$DOCSET_PATH" ]; then
-        echo "ERROR: Unexpected archive structure"
-        echo "Expected path not found: $DOCSET_PATH"
+        emit_error "Unexpected archive structure — expected path not found: $DOCSET_PATH"
         exit 3
     fi
 
     if [ ! -d "$TEMP_DIR/$DOCSET_PATH/Documents" ]; then
-        echo "ERROR: Documents directory not found in archive"
+        emit_error "Documents directory not found in archive"
         exit 3
     fi
 
     if [ ! -f "$TEMP_DIR/$DOCSET_PATH/docSet.dsidx" ]; then
-        echo "ERROR: docSet.dsidx not found in archive"
+        emit_error "docSet.dsidx not found in archive"
         exit 3
     fi
 }
 
 # Function: Install documentation files
 install_docs() {
-    echo "Installing to $DOCS_DIR..."
+    emit_progress install 60 "Installing to $DOCS_DIR..."
 
     # SAFETY CHECK 1: Validate DOCS_DIR variable
     if [ -z "$DOCS_DIR" ]; then
-        echo "ERROR: DOCS_DIR is not set. Aborting for safety."
+        emit_error "DOCS_DIR is not set. Aborting for safety."
         exit 4
     fi
 
     # SAFETY CHECK 2: Ensure DOCS_DIR contains expected pattern
     if [[ ! "$DOCS_DIR" == *"/docs/mbs" ]]; then
-        echo "ERROR: DOCS_DIR does not match expected pattern (/docs/mbs). Aborting for safety."
-        echo "Current value: $DOCS_DIR"
+        emit_error "DOCS_DIR does not match expected pattern (/docs/mbs). Aborting for safety. Value: $DOCS_DIR"
         exit 4
     fi
 
     # SAFETY CHECK 3: Prevent deletion of root or system directories
     case "$DOCS_DIR" in
         /|/bin|/etc|/usr|/var|/System|/Library|/Applications|$HOME)
-            echo "ERROR: DOCS_DIR points to a protected directory. Aborting for safety."
+            emit_error "DOCS_DIR points to a protected directory. Aborting for safety."
             exit 4
             ;;
     esac
@@ -186,7 +231,7 @@ install_docs() {
     mkdir -p "$DOCS_DIR"
 
     if [ $? -ne 0 ]; then
-        echo "ERROR: Failed to create target directory: $DOCS_DIR"
+        emit_error "Failed to create target directory: $DOCS_DIR"
         exit 4
     fi
 
@@ -195,20 +240,17 @@ install_docs() {
         # Version file exists, proceed with deletion
         :
     elif [ -d "$DOCS_DIR/Documents" ] || [ -f "$DOCS_DIR/docSet.dsidx" ]; then
-        # Files exist but no version file - could be wrong directory
-        echo "WARNING: Target directory contains files but no version marker."
-        echo "This could indicate a wrong target directory."
-        read -p "Continue anyway? (y/n): " -n 1 -r
-        echo ""
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Installation cancelled for safety"
+        emit_warn "Target directory contains files but no version marker. Could be a wrong target directory."
+        if ! confirm_or_quiet "Continue anyway?"; then
+            emit_log "Installation cancelled for safety"
+            emit_done false "Cancelled for safety"
             exit 1
         fi
     fi
 
     # SAFETY CHECK 5: Change to target directory and use relative paths
     cd "$DOCS_DIR" || {
-        echo "ERROR: Cannot change to target directory: $DOCS_DIR"
+        emit_error "Cannot change to target directory: $DOCS_DIR"
         exit 4
     }
 
@@ -218,13 +260,13 @@ install_docs() {
     # Copy new files (back to using absolute path for source)
     cp -R "$TEMP_DIR/$DOCSET_PATH/Documents" "$DOCS_DIR/" 2>&1
     if [ $? -ne 0 ]; then
-        echo "ERROR: Failed to copy Documents directory"
+        emit_error "Failed to copy Documents directory"
         exit 4
     fi
 
     cp "$TEMP_DIR/$DOCSET_PATH/docSet.dsidx" "$DOCS_DIR/" 2>&1
     if [ $? -ne 0 ]; then
-        echo "ERROR: Failed to copy docSet.dsidx"
+        emit_error "Failed to copy docSet.dsidx"
         exit 4
     fi
 
@@ -233,8 +275,7 @@ install_docs() {
     echo "$REMOTE_DATE" > "$VERSION_FILE"
 
     if [ $? -ne 0 ]; then
-        echo "WARNING: Failed to create version marker file"
-        # Not a critical error, continue
+        emit_warn "Failed to create version marker file"
     fi
 }
 
@@ -245,6 +286,37 @@ get_stats() {
         DOC_COUNT=$(find "$DOCS_DIR/Documents" -name "*.html" 2>/dev/null | wc -l | tr -d ' ')
         echo "($DOC_COUNT HTML documentation files)"
     fi
+}
+
+# Function: Register the installed docs in .fmlab/docs.json
+register_docs() {
+    REGISTER_SCRIPT="$PROJECT_ROOT/tools/register_docs.py"
+    if [ ! -f "$REGISTER_SCRIPT" ]; then
+        echo "WARNING: register_docs.py not found at $REGISTER_SCRIPT — skipping manifest update."
+        return 0
+    fi
+    if ! command -v python3 &> /dev/null; then
+        echo "WARNING: python3 not available — skipping .fmlab/docs.json update."
+        return 0
+    fi
+
+    # Count categories from the SQLite index (type='Category').
+    CATEGORY_COUNT=$(sqlite3 "$DOCS_DIR/docSet.dsidx" \
+        "SELECT COUNT(*) FROM searchIndex WHERE type='Category';" 2>/dev/null || echo "")
+    FUNCTION_COUNT=$(sqlite3 "$DOCS_DIR/docSet.dsidx" \
+        "SELECT COUNT(*) FROM searchIndex WHERE type='Function';" 2>/dev/null || echo "")
+
+    python3 "$REGISTER_SCRIPT" \
+        --id mbs \
+        --name "MBS Plugin" \
+        --description "MonkeyBread Software plugin function reference." \
+        --directory "docs/mbs" \
+        --skill install-mbs-docs \
+        --source-url "https://www.monkeybreadsoftware.com" \
+        --categories "${CATEGORY_COUNT:-none}" \
+        --functions "${FUNCTION_COUNT:-none}" \
+        --languages en \
+        || echo "WARNING: register_docs.py failed (non-fatal)."
 }
 
 # Function: Parse MBS components and create exceptions table
@@ -302,17 +374,25 @@ main() {
     install_docs
 
     # Step 5: Parse components and create exceptions table
+    emit_progress parse 80 "Parsing MBS components..."
     parse_components
 
-    # Step 6: Report success
+    # Step 6: Register in .fmlab/docs.json (for web home dashboard)
+    emit_progress register 95 "Updating .fmlab/docs.json..."
+    register_docs
+
+    # Step 7: Report success
     REMOTE_DATE=$(get_remote_timestamp)
-    echo ""
-    echo "SUCCESS: MBS documentation installed successfully"
-    echo "Version: $REMOTE_DATE"
-    echo "Location: $DOCS_DIR"
     STATS=$(get_stats)
-    if [ -n "$STATS" ]; then
-        echo "Files: $STATS"
+
+    if $QUIET_MODE; then
+        emit_done true "MBS documentation installed (version $REMOTE_DATE)"
+    else
+        echo ""
+        echo "SUCCESS: MBS documentation installed successfully"
+        echo "Version: $REMOTE_DATE"
+        echo "Location: $DOCS_DIR"
+        [ -n "$STATS" ] && echo "Files: $STATS"
     fi
 
     exit 0

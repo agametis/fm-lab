@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": { "columns": 12, "gap": 16 },
+    "children": [
+      {
+        "type": "Card",
+        "props": { "span": 12, "title": "Docs", "subtitle": "Installed documentation sources. Click an entry to open the upstream documentation." },
+        "data": { "dataset": "docs" },
+        "children": [
+          { "type": "List",
+            "props": {
+              "rowTemplate": {
+                "primary":    "{{name}}",
+                "secondary":  "{{description}}",
+                "tertiary":   "{{categories}} categories · {{functions}} functions",
+                "quaternary": "{{languages_display}}",
+                "onClick":    { "action": "openDashboard",
+                                "args": { "id": "docset_home", "params": { "id": "{{id}}" } } }
+              },
+              "empty": { "message": "No documentation installed — run /install-claris-docs or /install-mbs-docs to register a source." }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

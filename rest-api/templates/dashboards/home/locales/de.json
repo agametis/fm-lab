@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Projektüberblick",
-    "description": "Einstiegsseite mit Kennzahlen, Top-Objekten, Health-Indikatoren und Navigation."
+    "description": "Einstiegsseite mit Kennzahlen, Datei-Übersicht und Navigation zu Dashboards, Custom-Queries und Dokumentation."
   },
   "layout": {
     "root.children[0].props.title": "Projektüberblick",
@@ -10,7 +10,6 @@
     "root.children[0].children[0].props.items[2].label": "FM-Version",
     "root.children[0].children[0].props.items[3].label": "DDR-Info",
     "root.children[0].children[0].props.items[4].label": "Letzter Import",
-
     "root.children[1].props.title": "Objekte",
     "root.children[1].children[0].props.items[0].label": "Scripts",
     "root.children[1].children[0].props.items[1].label": "Felder",
@@ -20,7 +19,6 @@
     "root.children[1].children[0].props.items[5].label": "Custom Fns",
     "root.children[1].children[0].props.items[6].label": "Wertelisten",
     "root.children[1].children[0].props.items[7].label": "Beziehungen",
-
     "root.children[2].props.title": "Dateien",
     "root.children[2].children[0].props.columns[0].label": "Datei",
     "root.children[2].children[0].props.columns[1].label": "FM-Version",
@@ -31,36 +29,12 @@
     "root.children[2].children[0].props.columns[6].label": "CFs",
     "root.children[2].children[0].props.columns[7].label": "DDR",
     "root.children[2].children[0].props.columns[8].label": "Import",
-
-    "root.children[3].children[0].props.title": "Top Scripts",
-    "root.children[3].children[0].children[0].props.rowTemplate.secondary": "{{file}} · {{step_count}} Schritte",
-    "root.children[3].children[0].children[0].props.empty.message": "Keine Scripts gefunden.",
-    "root.children[3].children[1].props.title": "Top Tabellen",
-    "root.children[3].children[1].children[0].props.rowTemplate.secondary": "{{file}} · {{field_count}} Felder",
-    "root.children[3].children[1].children[0].props.empty.message": "Keine Tabellen gefunden.",
-    "root.children[3].children[2].props.title": "Top Layouts",
-    "root.children[3].children[2].children[0].props.rowTemplate.secondary": "{{file}} · {{object_count}} Objekte",
-    "root.children[3].children[2].children[0].props.empty.message": "Keine Layouts gefunden.",
-    "root.children[3].children[3].props.title": "Top Custom Functions",
-    "root.children[3].children[3].children[0].props.rowTemplate.secondary": "{{file}} · {{reference_count}}× referenziert",
-    "root.children[3].children[3].children[0].props.empty.message": "Keine Custom Functions gefunden.",
-
-    "root.children[4].props.title": "Health & Hinweise",
-    "root.children[4].children[0].props.empty.message": "Keine Auffälligkeiten.",
-
-    "root.children[5].props.title": "Variable-Hotspots",
-    "root.children[5].children[0].props.columns[0].label": "Variable",
-    "root.children[5].children[0].props.columns[1].label": "Scope",
-    "root.children[5].children[0].props.columns[2].label": "Set",
-    "root.children[5].children[0].props.columns[3].label": "Read",
-    "root.children[5].children[0].props.columns[4].label": "Scripts",
-    "root.children[5].children[0].props.columns[5].label": "Dateien",
-
-    "root.children[6].children[0].props.label": "Dashboards",
-    "root.children[6].children[0].props.subtitle": "Vorbereitete Analysen",
-    "root.children[7].children[0].props.label": "Custom Queries",
-    "root.children[7].children[0].props.subtitle": "Wiederverwendbare SQL-Templates",
-
-    "root.children[8].props.content": "## Tipps\n\n- **Suche:** Tippe im Suchfeld einen Namen, um Objekte zu filtern — das Dashboard verschwindet automatisch.\n- **Dateien:** Klick auf eine Zeile in der Datei-Tabelle setzt den aktiven Datei-Filter für alle Folgesichten.\n- **Dashboards:** Über die Kachel *Dashboards* erreichst Du kuratierte Analysen, über *Custom Queries* alle wiederverwendbaren SQL-Templates.\n- **Details:** Klick auf einen Eintrag in einer Top-Liste öffnet die Detail-Ansicht des Objekts."
+    "root.children[3].children[0].props.label": "Dashboards",
+    "root.children[3].children[0].props.subtitle": "Vorbereitete Analysen",
+    "root.children[4].children[0].props.label": "Custom Queries",
+    "root.children[4].children[0].props.subtitle": "Wiederverwendbare SQL-Templates",
+    "root.children[6].props.content": "## Tipps\n\n- **Suche:** Tippe im Suchfeld einen Namen, um Objekte zu filtern — das Dashboard verschwindet automatisch.\n- **Dateien:** Klick auf eine Zeile in der Datei-Tabelle setzt den aktiven Datei-Filter für alle Folgesichten.\n- **Navigation:** *Dashboards* öffnet kuratierte Analysen, *Custom Queries* listet alle wiederverwendbaren SQL-Templates, *Dokumentation* zeigt installierte Doku-Quellen.",
+    "root.children[5].children[0].props.label": "Dokumentation",
+    "root.children[5].children[0].props.subtitle": "Installierte Doku-Quellen"
   }
 }

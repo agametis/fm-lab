@@ -323,6 +323,24 @@ mark.search-hit {
   min-width: 1.5rem;
   justify-content: center;
 }
+/* Klickbare Variante (Pseudo-Token-Liste): deep-link in den References-Tab
+ * der DetailView. Cursor + Hover-Helligkeit + Fokus-Ring signalisieren, dass
+ * die Pille eine separate Aktion vom Row-Click hat. */
+.object-usage-badge--clickable {
+  cursor: pointer;
+  transition: filter 0.12s ease, transform 0.12s ease;
+}
+.object-usage-badge--clickable:hover {
+  filter: brightness(1.06);
+  border-color: var(--color-accent);
+}
+.object-usage-badge--clickable:active {
+  transform: translateY(1px);
+}
+.object-usage-badge--clickable:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
 
 .object-category-pill {
   display: inline-flex;

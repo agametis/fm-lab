@@ -1,0 +1,23 @@
+{
+  "id": "docset_category",
+  "version": "1.0.0",
+  "title": "Docset category",
+  "description": "Function listing within a docset category.",
+  "author": "fm-lab core",
+  "icon": "list",
+  "tags": ["nav", "internal"],
+  "entry": "layout.json",
+  "datasets": [
+    { "id": "info",      "source": "builtin:docset_category_info" },
+    { "id": "functions", "source": "builtin:docset_functions_with_counts" }
+  ],
+  "params": [
+    { "name": "docset",   "type": "string", "required": true,
+      "description": "Docset identifier (claris-help, mbs, duckdb, fmide)." },
+    { "name": "category", "type": "string", "required": true,
+      "description": "Category identifier (MBS: component name; Claris: prefixed id 'fn:42' / 'ss:7')." },
+    { "name": "lang",     "type": "string", "required": false,
+      "description": "Language code for localized function names (default 'en')." }
+  ],
+  "permissions": { "read_only": true, "allow_navigation": true }
+}

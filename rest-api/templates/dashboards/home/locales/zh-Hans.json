@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "项目概览",
-    "description": "包含关键指标、热门对象、健康指标和导航的起始页。"
+    "description": "包含关键指标、文件总览以及指向仪表盘、自定义查询和文档的导航的起始页。"
   },
   "layout": {
     "root.children[0].props.title": "项目概览",
@@ -10,7 +10,6 @@
     "root.children[0].children[0].props.items[2].label": "FM 版本",
     "root.children[0].children[0].props.items[3].label": "DDR 信息",
     "root.children[0].children[0].props.items[4].label": "最近导入",
-
     "root.children[1].props.title": "对象",
     "root.children[1].children[0].props.items[0].label": "脚本",
     "root.children[1].children[0].props.items[1].label": "字段",
@@ -20,7 +19,6 @@
     "root.children[1].children[0].props.items[5].label": "自定义函数",
     "root.children[1].children[0].props.items[6].label": "值列表",
     "root.children[1].children[0].props.items[7].label": "关系",
-
     "root.children[2].props.title": "文件",
     "root.children[2].children[0].props.columns[0].label": "文件",
     "root.children[2].children[0].props.columns[1].label": "FM 版本",
@@ -31,36 +29,12 @@
     "root.children[2].children[0].props.columns[6].label": "CF",
     "root.children[2].children[0].props.columns[7].label": "DDR",
     "root.children[2].children[0].props.columns[8].label": "已导入",
-
-    "root.children[3].children[0].props.title": "热门脚本",
-    "root.children[3].children[0].children[0].props.rowTemplate.secondary": "{{file}} · {{step_count}} 步",
-    "root.children[3].children[0].children[0].props.empty.message": "未找到脚本。",
-    "root.children[3].children[1].props.title": "热门表",
-    "root.children[3].children[1].children[0].props.rowTemplate.secondary": "{{file}} · {{field_count}} 字段",
-    "root.children[3].children[1].children[0].props.empty.message": "未找到表。",
-    "root.children[3].children[2].props.title": "热门布局",
-    "root.children[3].children[2].children[0].props.rowTemplate.secondary": "{{file}} · {{object_count}} 对象",
-    "root.children[3].children[2].children[0].props.empty.message": "未找到布局。",
-    "root.children[3].children[3].props.title": "热门自定义函数",
-    "root.children[3].children[3].children[0].props.rowTemplate.secondary": "{{file}} · 引用 {{reference_count}} 次",
-    "root.children[3].children[3].children[0].props.empty.message": "未找到自定义函数。",
-
-    "root.children[4].props.title": "运行状态与提示",
-    "root.children[4].children[0].props.empty.message": "没有异常。",
-
-    "root.children[5].props.title": "变量热点",
-    "root.children[5].children[0].props.columns[0].label": "变量",
-    "root.children[5].children[0].props.columns[1].label": "作用域",
-    "root.children[5].children[0].props.columns[2].label": "写入",
-    "root.children[5].children[0].props.columns[3].label": "读取",
-    "root.children[5].children[0].props.columns[4].label": "脚本",
-    "root.children[5].children[0].props.columns[5].label": "文件",
-
-    "root.children[6].children[0].props.label": "仪表板",
-    "root.children[6].children[0].props.subtitle": "预备分析",
-    "root.children[7].children[0].props.label": "自定义查询",
-    "root.children[7].children[0].props.subtitle": "可重用 SQL 模板",
-
-    "root.children[8].props.content": "## 提示\n\n- **搜索:**在搜索框中输入名称即可筛选对象 — 仪表板会自动隐藏。\n- **文件:**单击文件表中的某一行会激活后续所有视图的文件筛选器。\n- **仪表板:**通过 *仪表板* 磁贴可进入精选分析,通过 *自定义查询* 可查看所有可重用的 SQL 模板。\n- **详情:**单击榜单中的条目可打开对象的详情视图。"
+    "root.children[3].children[0].props.label": "仪表盘",
+    "root.children[3].children[0].props.subtitle": "预设分析",
+    "root.children[4].children[0].props.label": "自定义查询",
+    "root.children[4].children[0].props.subtitle": "可复用 SQL 模板",
+    "root.children[6].props.content": "## 提示\n\n- **搜索:** 在搜索框输入名称以过滤对象 — 仪表盘会自动隐藏。\n- **文件:** 点击文件表中的一行可为后续所有视图设定文件过滤。\n- **导航:** *仪表盘* 打开精选分析,*自定义查询* 列出所有可复用 SQL 模板,*文档* 显示已安装的文档来源。",
+    "root.children[5].children[0].props.label": "文档",
+    "root.children[5].children[0].props.subtitle": "已安装的文档来源"
   }
 }

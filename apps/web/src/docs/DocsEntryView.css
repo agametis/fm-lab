@@ -1,0 +1,326 @@
+/* ------------------------------------------------------------------ *
+ * DocsEntryView — Volltext-Layout für /docs/:set/:category/:function
+ *
+ * Folgt der Hierarchie aus prd_docs_redesign.md §2:
+ *   header → nav row → title → meta → content → footer
+ *
+ * Theming: greift auf die Theme-Tokens aus styles/theme.css zurück
+ *   --color-text-primary / -secondary / -muted
+ *   --color-accent (Link-Farbe)
+ *   --color-border / --color-divider
+ *   --color-code-bg / -fg, --color-bg-surface
+ * — keine eigenen Farbwerte hartcodiert. Dark Mode greift automatisch über
+ *   :root[data-theme="dark"] in theme.css.
+ * ------------------------------------------------------------------ */
+
+.docs-entry {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 4rem;
+}
+
+/* Navigation row: Back-Button + Breadcrumb */
+.docs-entry__nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+}
+
+/* Breadcrumb */
+.docs-breadcrumb {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+}
+.docs-breadcrumb__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.docs-breadcrumb__item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.docs-breadcrumb__link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.docs-breadcrumb__link:hover {
+  text-decoration: underline;
+}
+.docs-breadcrumb__current {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+.docs-breadcrumb__sep {
+  color: var(--color-text-muted);
+  user-select: none;
+}
+
+/* Language fallback hint */
+.docs-entry__lang-fallback {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-fg);
+  border: 1px solid var(--color-warning-border);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+/* Title + metadata */
+.docs-entry__title {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  margin: 1.25rem 0 0.5rem;
+  color: var(--color-text-primary);
+}
+.docs-entry__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-divider);
+}
+.docs-entry__meta-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+.docs-entry__meta-label {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.docs-entry__meta-link {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.docs-entry__meta-link:hover {
+  text-decoration: underline;
+}
+
+/* Loading / error / empty states */
+.docs-entry__loading,
+.docs-entry__empty {
+  padding: 2rem 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+.docs-entry__error {
+  margin: 1rem 0;
+}
+
+/* ---------- .docs-content: rendered HTML body ---------- */
+.docs-content {
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  line-height: 1.65;
+  scroll-behavior: smooth;
+}
+.docs-content > *:first-child { margin-top: 0; }
+.docs-content > *:last-child  { margin-bottom: 0; }
+
+.docs-content h1,
+.docs-content h2,
+.docs-content h3,
+.docs-content h4,
+.docs-content h5,
+.docs-content h6 {
+  line-height: 1.25;
+  margin: 2em 0 0.6em;
+  color: var(--color-text-primary);
+}
+.docs-content h1 { font-size: 1.65rem; padding-bottom: 0.35em; border-bottom: 1px solid var(--color-border); }
+.docs-content h2 { font-size: 1.35rem; padding-bottom: 0.25em; border-bottom: 1px solid var(--color-divider); }
+.docs-content h3 { font-size: 1.15rem; }
+.docs-content h4 { font-size: 1.0rem; }
+.docs-content h5,
+.docs-content h6 { font-size: 0.9rem; color: var(--color-text-secondary); }
+
+.docs-content p { margin: 0 0 1em; color: var(--color-text-primary); }
+.docs-content li,
+.docs-content td,
+.docs-content th { color: var(--color-text-primary); }
+
+.docs-content a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.docs-content a:hover {
+  text-decoration: underline;
+}
+
+.docs-content strong { font-weight: 700; }
+.docs-content em     { font-style: italic; }
+
+.docs-content code {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
+  padding: 0.12em 0.35em;
+  border-radius: 3px;
+}
+
+.docs-content pre {
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.85em 1em;
+  margin: 1em 0;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.docs-content pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+.docs-content blockquote {
+  margin: 1em 0;
+  padding: 0.4em 1em;
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+}
+
+.docs-content ul,
+.docs-content ol {
+  margin: 0 0 1em;
+  padding-left: 1.75em;
+}
+.docs-content li { margin-bottom: 0.25em; }
+.docs-content li > p { margin: 0.25em 0; }
+
+.docs-content hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: 1.75em 0;
+}
+
+.docs-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  font-size: 0.9rem;
+}
+.docs-content th,
+.docs-content td {
+  border: 1px solid var(--color-border);
+  padding: 0.45em 0.75em;
+  text-align: left;
+  vertical-align: top;
+}
+.docs-content th {
+  background: var(--color-bg-surface);
+  font-weight: 600;
+}
+
+.docs-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 0.5em 0;
+}
+
+/* Anchor-Sprungziele: top-padding-Trick, damit der Sticky-Header sie nicht überdeckt */
+.docs-content :is(h1, h2, h3, h4, h5, h6)[id]::before {
+  content: '';
+  display: block;
+  height: 0.5rem;
+  margin-top: -0.5rem;
+  visibility: hidden;
+}
+
+/* ---------- MBS-spezifische Inline-Klassen ----------
+ * Die Dash-DocSet-HTML von MonkeyBread Software bringt eigene Klassen
+ * (.grau für graue Tabellenzellen, .copy etc.) und feste Inline-Hintergründe
+ * mit. Wir fangen die wichtigsten Stellen ab, damit sie sowohl in Light- als
+ * auch in Dark-Mode lesbar bleiben.
+ */
+.docs-content td.grau,
+.docs-content th.grau,
+.docs-content .grau {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+.docs-content [class~='copy'] {
+  font-family: ui-monospace, monospace;
+}
+
+/* Footer */
+.docs-entry__footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.825rem;
+  color: var(--color-text-muted);
+}
+.docs-entry__footer code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  color: var(--color-text-secondary);
+}
+.docs-entry__footer-actions {
+  display: inline-flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+.docs-entry__footer-link {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.docs-entry__footer-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Dark Mode: Inline-Style-Overrides ----------
+ * MBS-HTML hat hardgekodete Light-Mode-Farben (style="background-color: #fffedd",
+ * <font color="..."> usw.). In Dark Mode rendern wir die Boxen auf einer neutralen
+ * Surface neu und zwingen Textfarbe auf den primären Theme-Wert. !important ist
+ * hier unumgänglich, weil die Konkurrenz aus Inline-Styles kommt.
+ */
+:root[data-theme='dark'] .docs-content [style*='background-color'],
+:root[data-theme='dark'] .docs-content [style*='background:'] {
+  background: var(--color-bg-surface-2) !important;
+  color: var(--color-text-primary) !important;
+  border-color: var(--color-border) !important;
+}
+:root[data-theme='dark'] .docs-content [style*='background-color'] *,
+:root[data-theme='dark'] .docs-content [style*='background:'] * {
+  color: inherit;
+}
+:root[data-theme='dark'] .docs-content [color],
+:root[data-theme='dark'] .docs-content [style*='color:'] {
+  color: var(--color-text-primary) !important;
+}
+:root[data-theme='dark'] .docs-content [style*='color:'] a {
+  color: var(--color-accent) !important;
+}

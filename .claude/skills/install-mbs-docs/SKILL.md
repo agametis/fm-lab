@@ -202,3 +202,4 @@ ERROR: [specific error message]
 - Component parsing creates `data/mbs_component_exceptions.csv` automatically
 - Component exceptions table is used by the `mbs-function-reference` skill for improved function lookup
 - Python 3 is required for component parsing (gracefully skipped if not available)
+- After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.py`, so the web home dashboard's Docs card can list it.

@@ -194,6 +194,12 @@
   font-size: 0.75rem;
   color: var(--color-text-disabled);
 }
+.dash-list__quaternary {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .dash-list__empty {
   padding: 8px 0;
   color: var(--color-text-muted);
@@ -299,6 +305,28 @@
   color: var(--color-text-muted);
   font-style: italic;
   text-align: center;
+}
+
+/* Used-Filter-Toggle direkt hinter der Sucheingabe. Aktiviert sich nur, wenn
+ * der List-Container in seiner Spec `badgeOptions.filterable: true` setzt UND
+ * Rows mit/ohne Badge gemischt sind (siehe primitives/List.tsx). */
+.dash-search-bar__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.dash-search-bar__toggle input[type="checkbox"] {
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+.dash-search-bar__toggle:hover {
+  color: var(--color-text-primary);
 }
 
 /* --- Chip-Filter-Bar für Table (Opt-in via chipFilter-Prop) ---
@@ -437,6 +465,24 @@
   color: var(--color-info-fg);
   white-space: nowrap;
   text-transform: capitalize;
+}
+/* Klickbare Badge (counter-pill mit deep-link zur References-Ansicht).
+ * Hover-Indikation + Cursor-Hint, damit der User erkennt, dass die Pille
+ * eine separate Aktion vom Row-Click hat. */
+.dash-badge--clickable {
+  cursor: pointer;
+  transition: filter 0.12s ease, transform 0.12s ease;
+}
+.dash-badge--clickable:hover {
+  filter: brightness(1.06);
+  text-decoration: underline;
+}
+.dash-badge--clickable:active {
+  transform: translateY(1px);
+}
+.dash-badge--clickable:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 .dash-badge--warn,
 .dash-badge--warning {

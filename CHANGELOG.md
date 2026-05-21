@@ -12,6 +12,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.7.4] — 2026-05-21
+
+Home dashboard restructured around navigation, and a deep, first-class integration of doc sets (Claris Help, MBS, DuckDB, fmIDE) into the catalog and dashboard layer.
+
+- **Home dashboard restructured** — focused on orientation and entry rather than on data dumps
+  - Layout fully reworked: tighter navigation tiles for dashboards, custom queries, and doc sets; greeting / project summary block; cleaner KPI rhythm
+  - Top-N analyses (`top_scripts`, `top_tables`, `top_layouts`, `top_custom_functions`) moved out of the bundle and into `sql-custom/` — now reusable from any dashboard or the custom-queries surface; new `top_mbs_functions.sql` added
+  - Health metrics extracted into a dedicated **`health_hints` custom dashboard** (`dashboards-custom/health_hints/`) — collects `health_indicators`, `variable_hotspots`, `cross_file_links`, `find_undocumented_fields`, `find_unused_fields`, `find_unused_scripts`, `list_global_variables`
+  - Home locales refreshed across all 11 languages to match the new structure
+  - `dashboard.service` extended with navigation/sub-dashboard resolution; `actions.ts` and the `List` primitive support the new navigation patterns
+- **Deep doc-set integration** — doc sets become navigable catalog citizens, not just files on disk
+  - **New architecture**: every doc set declares itself through a manifest with metadata, categories, entries, references, and update info
+  - **REST-API doc layer**: `docs.controller` / `docs.routes` with endpoints for overview, doc-set home, categories, individual entries, references, and assets; supporting services `docs-manifest`, `docs-content`, `docs-references`, `docs-source`, `docs-install`, `system-reload`
+  - **Pluggable doc adapters** (`plugin-docs/adapters/`): `claris-duckdb` (Claris Help reference DB), `dash-sqlite` (legacy Dash docsets), `markdown-fs` (file-tree markdown sets) — uniform interface for arbitrary doc sources
+  - **Internal links and assets** resolve correctly across the adapter layer, so links inside doc entries route through the API instead of breaking
+  - **Doc dashboards** as the navigation surface: `docs/` (entry), `docs_overview/` (all installed sets), `docset_home/`, `docset_category/`, `docset_detail/` — all bundled, themed, and localized
+  - **Frontend doc components**: `DocsEntryView` with dedicated styling and `DocsBreadcrumb` — render entries with internal-link rewriting, asset proxying, and back-navigation
+  - **Doc installers redesigned** for the new manifest+index model: `install-claris-docs`, `install-duckdb-docs`, `install-fmide-docs`, `install-mbs-docs` — each installer now generates the manifest, builds/updates the index, and registers the doc set; shared logic in `tools/install_modes.sh` and `tools/register_docs.py`
+  - i18n: new dashboard / nav strings (en + de) for the doc surface
+- **New custom dashboard `script_comment_density/`** — code-quality metric surfacing scripts with low (or absent) comment coverage; KPI block plus findings list, localized in all 11 languages
+- **`create-custom-dashboard` skill** updated with refined conventions and guidance for the new dashboard layout (navigation tiles, locales, sub-dashboards)
+
+---
+
 ## [0.7.3] — 2026-05-20
 
 ScriptStep full-text search, two new diagnostic custom dashboards, and plugin-layer internationalization.

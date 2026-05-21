@@ -1,0 +1,126 @@
+{
+  "$schema_version": 2,
+  "catalog": [
+    {
+      "id": "claris-help",
+      "name": "Claris FileMaker",
+      "description": "Online help mirror for FileMaker Pro (help.claris.com).",
+      "source_url": "https://help.claris.com",
+      "skill": "install-claris-docs",
+      "languages": [
+        "en",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "nl",
+        "pt",
+        "sv",
+        "zh-Hans"
+      ],
+      "output_format": "html",
+      "download_format": "zip",
+      "content_dir": "{lang}/content",
+      "index_page": "{lang}/content/index.html",
+      "visible": true,
+      "references": true,
+      "index": {
+        "type": "duckdb",
+        "source": "generated",
+        "path": "fm_reference.duckdb",
+        "adapter": "claris-duckdb"
+      }
+    },
+    {
+      "id": "mbs",
+      "name": "MBS Plugin",
+      "description": "MonkeyBread Software plugin function reference.",
+      "source_url": "https://www.monkeybreadsoftware.com",
+      "skill": "install-mbs-docs",
+      "languages": [
+        "en"
+      ],
+      "output_format": "html",
+      "download_format": "dashdocset",
+      "content_dir": "Documents",
+      "index_page": "Documents/index.html",
+      "visible": true,
+      "references": true,
+      "index": {
+        "type": "sqlite-dash",
+        "source": "shipped",
+        "path": "docSet.dsidx",
+        "adapter": "dash-sqlite"
+      }
+    },
+    {
+      "id": "fmide",
+      "name": "fmIDE",
+      "description": "fmIDE GitHub Wiki — Deep Linking, Name-that-Thing API and conventions.",
+      "source_url": "https://github.com/fmide-org/fmide/wiki",
+      "skill": "install-fmide-docs",
+      "languages": [
+        "en"
+      ],
+      "output_format": "markdown",
+      "download_format": "html-archive",
+      "content_dir": ".",
+      "index_page": "Home.md",
+      "visible": true,
+      "references": false,
+      "index": {
+        "type": "fs-crawl",
+        "source": "none",
+        "path": null,
+        "adapter": "markdown-fs"
+      }
+    },
+    {
+      "id": "duckdb",
+      "name": "DuckDB",
+      "description": "DuckDB SQL reference, single-page documentation export.",
+      "source_url": "https://duckdb.org/docs",
+      "skill": "install-duckdb-docs",
+      "languages": [
+        "en"
+      ],
+      "output_format": "markdown",
+      "download_format": "duckdb-export",
+      "content_dir": ".",
+      "index_page": "duckdb-docs.md",
+      "visible": false,
+      "references": false,
+      "index": {
+        "type": "none",
+        "source": "none",
+        "path": null,
+        "adapter": null
+      }
+    },
+    {
+      "id": "fm-lab",
+      "name": "fm-lab",
+      "description": "Internal fm-lab documentation (architecture, workflows, conventions).",
+      "source_url": null,
+      "skill": null,
+      "languages": [
+        "en"
+      ],
+      "output_format": "markdown",
+      "download_format": null,
+      "content_dir": ".",
+      "index_page": "Documentation.md",
+      "visible": true,
+      "references": false,
+      "index": {
+        "type": "fs-crawl",
+        "source": "none",
+        "path": null,
+        "adapter": "markdown-fs"
+      }
+    }
+  ],
+  "installed": []
+}

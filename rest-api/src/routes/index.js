@@ -7,6 +7,7 @@ const queryRoutes = require('./query.routes');
 const adminRoutes = require('./admin.routes');
 const pluginsRoutes = require('./plugins.routes');
 const pluginDocsRoutes = require('./plugin-docs.routes');
+const docsRoutes = require('./docs.routes');
 const relationshipGraphRoutes = require('./relationshipGraph.routes');
 const referenceRoutes = require('./reference.routes');
 const dashboardRoutes = require('./dashboard.routes');
@@ -34,6 +35,9 @@ router.use('/', pluginsRoutes);
 
 // Plugin function documentation (/api/plugin-docs)
 router.use('/', pluginDocsRoutes);
+
+// Docs (catalog + installed + categories + entries) — neue v2-API
+router.use('/', docsRoutes);
 
 // Relationship Graph (/api/relationship-graph/:fileName)
 router.use('/', relationshipGraphRoutes);

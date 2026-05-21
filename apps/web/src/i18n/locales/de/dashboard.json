@@ -26,5 +26,9 @@
     "Fields":       "Felder",
     "Scripts":      "Scripts",
     "Variables":    "Variablen"
+  },
+  "list": {
+    "badgeFilter":        "verwendet",
+    "noFilteredEntries":  "Keine Einträge mit Treffern."
   }
 }

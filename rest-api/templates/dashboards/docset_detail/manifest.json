@@ -1,0 +1,21 @@
+{
+  "id": "docset_detail",
+  "version": "1.0.0",
+  "title": "Docset",
+  "description": "Generic detail view for a single documentation source.",
+  "author": "fm-lab core",
+  "icon": "book",
+  "tags": ["nav", "internal"],
+  "entry": "layout.json",
+  "datasets": [
+    { "id": "info",       "source": "builtin:docset_info" },
+    { "id": "categories", "source": "builtin:docset_categories" }
+  ],
+  "params": [
+    { "name": "id",   "type": "string", "required": true,
+      "description": "Docset identifier (claris-help, mbs, duckdb, fmide)." },
+    { "name": "lang", "type": "string", "required": false,
+      "description": "Language code for localized category names (default 'en')." }
+  ],
+  "permissions": { "read_only": true, "allow_navigation": true }
+}

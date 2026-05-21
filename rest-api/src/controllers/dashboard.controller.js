@@ -87,6 +87,9 @@ async function getDashboardData(req, res, next) {
     const { id } = req.params;
     const bundle = await dashboardService.getBundle(id);
     const params = extractDashboardParams(req.query);
+    // i18n language is filtered out of the user-facing param list but kept as
+    // `_lang` so builtin resolvers (e.g. localized doc categories) can use it.
+    params._lang = pickLang(req.query);
     const datasets = await dashboardService.executeAllDatasets(bundle, params);
     res.json({
       success: true,
@@ -103,6 +106,7 @@ async function getDashboardDataset(req, res, next) {
     const { id, dataset } = req.params;
     const bundle = await dashboardService.getBundle(id);
     const params = extractDashboardParams(req.query);
+    params._lang = pickLang(req.query);
     const result = await dashboardService.executeSingleDataset(bundle, dataset, params);
     res.json({
       success: true,

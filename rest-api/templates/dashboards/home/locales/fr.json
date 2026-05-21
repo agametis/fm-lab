@@ -1,7 +1,7 @@
 {
   "manifest": {
-    "title": "Vue d’ensemble du projet",
-    "description": "Page d’accueil avec indicateurs clés, objets phares, indicateurs de santé et navigation."
+    "title": "Vue d'ensemble du projet",
+    "description": "Page d'accueil avec indicateurs clés, vue des fichiers et navigation vers tableaux de bord, requêtes personnalisées et documentation."
   },
   "layout": {
     "root.children[0].props.title": "Vue d’ensemble du projet",
@@ -10,7 +10,6 @@
     "root.children[0].children[0].props.items[2].label": "Version FM",
     "root.children[0].children[0].props.items[3].label": "Info DDR",
     "root.children[0].children[0].props.items[4].label": "Dernier import",
-
     "root.children[1].props.title": "Objets",
     "root.children[1].children[0].props.items[0].label": "Scripts",
     "root.children[1].children[0].props.items[1].label": "Champs",
@@ -20,7 +19,6 @@
     "root.children[1].children[0].props.items[5].label": "Fonctions pers.",
     "root.children[1].children[0].props.items[6].label": "Listes de valeurs",
     "root.children[1].children[0].props.items[7].label": "Relations",
-
     "root.children[2].props.title": "Fichiers",
     "root.children[2].children[0].props.columns[0].label": "Fichier",
     "root.children[2].children[0].props.columns[1].label": "Version FM",
@@ -31,36 +29,12 @@
     "root.children[2].children[0].props.columns[6].label": "CF",
     "root.children[2].children[0].props.columns[7].label": "DDR",
     "root.children[2].children[0].props.columns[8].label": "Importé",
-
-    "root.children[3].children[0].props.title": "Top scripts",
-    "root.children[3].children[0].children[0].props.rowTemplate.secondary": "{{file}} · {{step_count}} étapes",
-    "root.children[3].children[0].children[0].props.empty.message": "Aucun script trouvé.",
-    "root.children[3].children[1].props.title": "Top tables",
-    "root.children[3].children[1].children[0].props.rowTemplate.secondary": "{{file}} · {{field_count}} champs",
-    "root.children[3].children[1].children[0].props.empty.message": "Aucune table trouvée.",
-    "root.children[3].children[2].props.title": "Top mises en page",
-    "root.children[3].children[2].children[0].props.rowTemplate.secondary": "{{file}} · {{object_count}} objets",
-    "root.children[3].children[2].children[0].props.empty.message": "Aucune mise en page trouvée.",
-    "root.children[3].children[3].props.title": "Top fonctions personnalisées",
-    "root.children[3].children[3].children[0].props.rowTemplate.secondary": "{{file}} · référencé {{reference_count}}×",
-    "root.children[3].children[3].children[0].props.empty.message": "Aucune fonction personnalisée trouvée.",
-
-    "root.children[4].props.title": "Santé et alertes",
-    "root.children[4].children[0].props.empty.message": "Rien à signaler.",
-
-    "root.children[5].props.title": "Points chauds des variables",
-    "root.children[5].children[0].props.columns[0].label": "Variable",
-    "root.children[5].children[0].props.columns[1].label": "Portée",
-    "root.children[5].children[0].props.columns[2].label": "Écriture",
-    "root.children[5].children[0].props.columns[3].label": "Lecture",
-    "root.children[5].children[0].props.columns[4].label": "Scripts",
-    "root.children[5].children[0].props.columns[5].label": "Fichiers",
-
-    "root.children[6].children[0].props.label": "Tableaux de bord",
-    "root.children[6].children[0].props.subtitle": "Analyses préparées",
-    "root.children[7].children[0].props.label": "Requêtes personnalisées",
-    "root.children[7].children[0].props.subtitle": "Modèles SQL réutilisables",
-
-    "root.children[8].props.content": "## Conseils\n\n- **Recherche :** saisis un nom dans le champ de recherche pour filtrer les objets — le tableau de bord se cache automatiquement.\n- **Fichiers :** un clic sur une ligne du tableau des fichiers active le filtre de fichier pour toutes les vues suivantes.\n- **Tableaux de bord :** la tuile *Tableaux de bord* mène aux analyses curatées, *Requêtes personnalisées* liste tous les modèles SQL réutilisables.\n- **Détails :** un clic sur une entrée d’une liste top ouvre la vue détaillée de l’objet."
+    "root.children[3].children[0].props.label": "Tableaux de bord",
+    "root.children[3].children[0].props.subtitle": "Analyses préparées",
+    "root.children[4].children[0].props.label": "Requêtes personnalisées",
+    "root.children[4].children[0].props.subtitle": "Modèles SQL réutilisables",
+    "root.children[6].props.content": "## Astuces\n\n- **Recherche :** saisissez un nom dans la barre de recherche pour filtrer les objets — le tableau de bord disparaît automatiquement.\n- **Fichiers :** cliquer sur une ligne de la table des fichiers active le filtre fichier pour toutes les vues suivantes.\n- **Navigation :** *Tableaux de bord* ouvre des analyses curatées, *Requêtes personnalisées* liste tous les modèles SQL réutilisables, *Documentation* affiche les sources installées.",
+    "root.children[5].children[0].props.label": "Documentation",
+    "root.children[5].children[0].props.subtitle": "Sources de documentation installées"
   }
 }

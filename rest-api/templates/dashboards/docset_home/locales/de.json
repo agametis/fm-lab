@@ -1,0 +1,14 @@
+{
+  "manifest": {
+    "title": "Doku-Set",
+    "description": "Startseite für eine einzelne Dokumentationsquelle."
+  },
+  "layout": {
+    "root.children[0].children[0].props.content": "# {{name}}\n\n{{description}}\n\n{{online_link_md}}\n\n*Sprachen: {{languages_display}}*",
+    "root.children[0].children[1].props.items[0].label": "Rubriken",
+    "root.children[0].children[1].props.items[1].label": "Funktionen",
+    "root.children[1].props.title": "Rubriken",
+    "root.children[1].children[0].props.rowTemplate.secondary": "{{function_count}} Funktionen",
+    "root.children[1].children[0].props.empty.message": "Keine Rubriken für dieses Doku-Set verfügbar."
+  }
+}

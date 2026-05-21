@@ -2,248 +2,309 @@
   "schemaVersion": 1,
   "root": {
     "type": "Grid",
-    "props": { "columns": 12, "gap": 16 },
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
     "children": [
       {
         "type": "Card",
-        "props": { "span": 12, "title": "Project overview", "variant": "hero" },
-        "data": { "dataset": "project_summary" },
+        "props": {
+          "span": 12,
+          "title": "Project overview",
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "project_summary"
+        },
         "children": [
-          { "type": "KPIStrip",
+          {
+            "type": "KPIStrip",
             "props": {
               "items": [
-                { "label": "Files",         "field": "file_count" },
-                { "label": "Objects",       "field": "total_objects", "format": "number" },
-                { "label": "FM version",    "field": "fm_versions" },
-                { "label": "DDR info",      "field": "ddr_status",    "format": "badge" },
-                { "label": "Last import",   "field": "last_import",   "format": "date:relative" }
+                {
+                  "label": "Files",
+                  "field": "file_count"
+                },
+                {
+                  "label": "Objects",
+                  "field": "total_objects",
+                  "format": "number"
+                },
+                {
+                  "label": "FM version",
+                  "field": "fm_versions"
+                },
+                {
+                  "label": "DDR info",
+                  "field": "ddr_status",
+                  "format": "badge"
+                },
+                {
+                  "label": "Last import",
+                  "field": "last_import",
+                  "format": "date:relative"
+                }
               ]
             }
           }
         ]
       },
-
       {
         "type": "Card",
-        "props": { "span": 12, "title": "Objects" },
-        "data": { "dataset": "object_counts" },
+        "props": {
+          "span": 12,
+          "title": "Objects"
+        },
+        "data": {
+          "dataset": "object_counts"
+        },
         "children": [
-          { "type": "KPIStrip",
+          {
+            "type": "KPIStrip",
             "props": {
               "items": [
-                { "label": "Scripts",          "field": "scripts",
-                  "onClick": { "action": "applyFilter", "args": { "type": "Script" } } },
-                { "label": "Fields",           "field": "fields",
-                  "onClick": { "action": "applyFilter", "args": { "type": "Field" } } },
-                { "label": "Tables",           "field": "tables",
-                  "onClick": { "action": "applyFilter", "args": { "type": "BaseTable" } } },
-                { "label": "TOs",              "field": "occurrences",
-                  "onClick": { "action": "applyFilter", "args": { "type": "TableOccurrence" } } },
-                { "label": "Layouts",          "field": "layouts",
-                  "onClick": { "action": "applyFilter", "args": { "type": "Layout" } } },
-                { "label": "Custom fns",       "field": "custom_functions",
-                  "onClick": { "action": "applyFilter", "args": { "type": "CustomFunction" } } },
-                { "label": "Value lists",      "field": "value_lists",
-                  "onClick": { "action": "applyFilter", "args": { "type": "ValueList" } } },
-                { "label": "Relationships",    "field": "relationships",
-                  "onClick": { "action": "applyFilter", "args": { "type": "Relationship" } } }
+                {
+                  "label": "Scripts",
+                  "field": "scripts",
+                  "onClick": {
+                    "action": "applyFilter",
+                    "args": {
+                      "type": "Script"
+                    }
+                  }
+                },
+                {
+                  "label": "Fields",
+                  "field": "fields",
+                  "onClick": {
+                    "action": "applyFilter",
+                    "args": {
+                      "type": "Field"
+                    }
+                  }
+                },
+                {
+                  "label": "Tables",
+                  "field": "tables",
+                  "onClick": {
+                    "action": "applyFilter",
+                    "args": {
+                      "type": "BaseTable"
+                    }
+                  }
+                },
+                {
+                  "label": "TOs",
+                  "field": "occurrences",
+                  "onClick": {
+                    "action": "applyFilter",
+                    "args": {
+                      "type": "TableOccurrence"
+                    }
+                  }
+                },
+                {
+                  "label": "Layouts",
+                  "field": "layouts",
+                  "onClick": {
+                    "action": "applyFilter",
+                    "args": {
+                      "type": "Layout"
+                    }
+                  }
+                },
+                {
+                  "label": "Custom fns",
+                  "field": "custom_functions",
+                  "onClick": {
+                    "action": "applyFilter",
+                    "args": {
+                      "type": "CustomFunction"
+                    }
+                  }
+                },
+                {
+                  "label": "Value lists",
+                  "field": "value_lists",
+                  "onClick": {
+                    "action": "applyFilter",
+                    "args": {
+                      "type": "ValueList"
+                    }
+                  }
+                },
+                {
+                  "label": "Relationships",
+                  "field": "relationships",
+                  "onClick": {
+                    "action": "applyFilter",
+                    "args": {
+                      "type": "Relationship"
+                    }
+                  }
+                }
               ]
             }
           }
         ]
       },
-
       {
         "type": "Card",
-        "props": { "span": 8, "title": "Files" },
-        "data": { "dataset": "files_overview" },
+        "props": {
+          "span": 12,
+          "title": "Files"
+        },
+        "data": {
+          "dataset": "files_overview"
+        },
         "children": [
-          { "type": "Table",
+          {
+            "type": "Table",
             "props": {
               "rowKey": "File_Name",
               "density": "comfortable",
               "columns": [
-                { "field": "File_Name",         "label": "File" },
-                { "field": "FileMaker_Version", "label": "FM version" },
-                { "field": "script_count",      "label": "Scripts",      "align": "right" },
-                { "field": "table_count",       "label": "Tables",       "align": "right" },
-                { "field": "field_count",       "label": "Fields",       "align": "right" },
-                { "field": "layout_count",      "label": "Layouts",      "align": "right" },
-                { "field": "cf_count",          "label": "CFs",          "align": "right" },
-                { "field": "Has_DDR_INFO",      "label": "DDR",          "format": "badge" },
-                { "field": "Import_Timestamp",  "label": "Imported",     "format": "date:relative" }
+                {
+                  "field": "File_Name",
+                  "label": "File"
+                },
+                {
+                  "field": "FileMaker_Version",
+                  "label": "FM version"
+                },
+                {
+                  "field": "script_count",
+                  "label": "Scripts",
+                  "align": "right"
+                },
+                {
+                  "field": "table_count",
+                  "label": "Tables",
+                  "align": "right"
+                },
+                {
+                  "field": "field_count",
+                  "label": "Fields",
+                  "align": "right"
+                },
+                {
+                  "field": "layout_count",
+                  "label": "Layouts",
+                  "align": "right"
+                },
+                {
+                  "field": "cf_count",
+                  "label": "CFs",
+                  "align": "right"
+                },
+                {
+                  "field": "Has_DDR_INFO",
+                  "label": "DDR",
+                  "format": "badge"
+                },
+                {
+                  "field": "Import_Timestamp",
+                  "label": "Imported",
+                  "format": "date:relative"
+                }
               ],
-              "onRowClick": { "action": "applyFilter",
-                              "args": { "file": "{{File_Name}}" } }
+              "onRowClick": {
+                "action": "applyFilter",
+                "args": {
+                  "file": "{{File_Name}}"
+                }
+              }
             }
           }
         ]
       },
-
       {
-        "type": "Stack",
-        "props": { "span": 4, "gap": 12 },
+        "type": "Card",
+        "props": {
+          "span": 4,
+          "variant": "navtile"
+        },
+        "data": {
+          "dataset": "nav_dashboards"
+        },
         "children": [
           {
-            "type": "Card",
-            "props": { "title": "Top scripts" },
-            "data": { "dataset": "top_scripts" },
-            "children": [
-              { "type": "List",
-                "props": {
-                  "rowTemplate": {
-                    "primary":   "{{name}}",
-                    "secondary": "{{file}} · {{step_count}} steps",
-                    "onClick":   { "action": "openObject",
-                                   "args": { "uuid": "{{uuid}}", "type": "Script" } }
-                  },
-                  "empty": { "message": "No scripts found." }
-                }
-              }
-            ]
-          },
-
-          { "type": "Card",
-            "props": { "title": "Top tables" },
-            "data": { "dataset": "top_tables" },
-            "children": [
-              { "type": "List",
-                "props": {
-                  "rowTemplate": {
-                    "primary":   "{{name}}",
-                    "secondary": "{{file}} · {{field_count}} fields",
-                    "onClick":   { "action": "openObject",
-                                   "args": { "uuid": "{{uuid}}", "type": "BaseTable" } }
-                  },
-                  "empty": { "message": "No tables found." }
-                }
-              }
-            ]
-          },
-
-          { "type": "Card",
-            "props": { "title": "Top layouts" },
-            "data": { "dataset": "top_layouts" },
-            "children": [
-              { "type": "List",
-                "props": {
-                  "rowTemplate": {
-                    "primary":   "{{name}}",
-                    "secondary": "{{file}} · {{object_count}} objects",
-                    "onClick":   { "action": "openObject",
-                                   "args": { "uuid": "{{uuid}}", "type": "Layout" } }
-                  },
-                  "empty": { "message": "No layouts found." }
-                }
-              }
-            ]
-          },
-
-          { "type": "Card",
-            "props": { "title": "Top custom functions" },
-            "data": { "dataset": "top_custom_functions" },
-            "children": [
-              { "type": "List",
-                "props": {
-                  "rowTemplate": {
-                    "primary":   "{{name}}",
-                    "secondary": "{{file}} · {{reference_count}}× referenced",
-                    "onClick":   { "action": "openObject",
-                                   "args": { "uuid": "{{uuid}}", "type": "CustomFunction" } }
-                  },
-                  "empty": { "message": "No custom functions found." }
-                }
-              }
-            ]
-          }
-        ]
-      },
-
-      {
-        "type": "Card",
-        "props": { "span": 6, "title": "Health & hints" },
-        "data": { "dataset": "health_indicators" },
-        "children": [
-          { "type": "List",
-            "props": {
-              "rowTemplate": {
-                "primary":   "{{label}}",
-                "secondary": "{{value}}",
-                "badge":     "{{severity}}",
-                "onClick":   { "action": "{{action}}",
-                               "argsString": "{{action_args}}" }
-              },
-              "empty": { "message": "Nothing to report." }
-            }
-          }
-        ]
-      },
-
-      {
-        "type": "Card",
-        "props": { "span": 6, "title": "Variable hot-spots" },
-        "data": { "dataset": "variable_hotspots" },
-        "children": [
-          { "type": "Table",
-            "props": {
-              "rowKey": "name",
-              "density": "compact",
-              "columns": [
-                { "field": "name",    "label": "Variable" },
-                { "field": "scope",   "label": "Scope",   "format": "badge" },
-                { "field": "sets",    "label": "Set",     "align": "right" },
-                { "field": "reads",   "label": "Read",    "align": "right" },
-                { "field": "scripts", "label": "Scripts", "align": "right" },
-                { "field": "files",   "label": "Files",   "align": "right" }
-              ],
-              "onRowClick": { "action": "openObject",
-                              "args": { "uuid": "{{uuid}}", "type": "Variable" } }
-            }
-          }
-        ]
-      },
-
-      {
-        "type": "Card",
-        "props": { "span": 6, "variant": "navtile" },
-        "data": { "dataset": "nav_dashboards" },
-        "children": [
-          { "type": "NavButton",
+            "type": "NavButton",
             "props": {
               "label": "Dashboards",
               "subtitle": "Prepared analyses",
               "icon": "layout-dashboard",
               "showCount": true,
-              "onClick": { "action": "openDashboard",
-                           "args": { "id": "dashboards" } }
+              "onClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "dashboards"
+                }
+              }
             }
           }
         ]
       },
-
       {
         "type": "Card",
-        "props": { "span": 6, "variant": "navtile" },
-        "data": { "dataset": "nav_custom_queries" },
+        "props": {
+          "span": 4,
+          "variant": "navtile"
+        },
+        "data": {
+          "dataset": "nav_custom_queries"
+        },
         "children": [
-          { "type": "NavButton",
+          {
+            "type": "NavButton",
             "props": {
               "label": "Custom queries",
               "subtitle": "Reusable SQL templates",
               "icon": "database-zap",
               "showCount": true,
-              "onClick": { "action": "openDashboard",
-                           "args": { "id": "custom_queries" } }
+              "onClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "custom_queries"
+                }
+              }
             }
           }
         ]
       },
-
+      {
+        "type": "Card",
+        "props": {
+          "span": 4,
+          "variant": "navtile"
+        },
+        "data": {
+          "dataset": "nav_docs"
+        },
+        "children": [
+          {
+            "type": "NavButton",
+            "props": {
+              "label": "Docs",
+              "subtitle": "Installed documentation sources",
+              "icon": "book",
+              "showCount": true,
+              "onClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "docs_overview"
+                }
+              }
+            }
+          }
+        ]
+      },
       {
         "type": "Markdown",
         "props": {
           "span": 12,
-          "content": "## Tips\n\n- **Search:** type a name into the search box to filter objects — the dashboard hides automatically.\n- **Files:** clicking a row in the files table sets the active file filter for all subsequent views.\n- **Dashboards:** the *Dashboards* tile leads to curated analyses, *Custom Queries* lists every reusable SQL template.\n- **Details:** click an entry in a top list to open that object's detail view."
+          "content": "## Tips\n\n- **Search:** type a name into the search box to filter objects — the dashboard hides automatically.\n- **Files:** clicking a row in the files table sets the active file filter for all subsequent views.\n- **Navigation:** *Dashboards* opens curated analyses, *Custom queries* lists every reusable SQL template, *Docs* shows installed documentation sources."
         }
       }
     ]

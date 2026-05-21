@@ -1,0 +1,12 @@
+{
+  "manifest": {
+    "title": "Dokumentation",
+    "description": "Installierte Dokumentationsquellen, registriert durch die install-*-docs-Skills."
+  },
+  "layout": {
+    "root.children[0].props.title": "Dokumentation",
+    "root.children[0].props.subtitle": "Installierte Dokumentationsquellen. Klick auf einen Eintrag öffnet die Originalquelle.",
+    "root.children[0].children[0].props.rowTemplate.tertiary": "{{categories}} Rubriken · {{functions}} Funktionen",
+    "root.children[0].children[0].props.empty.message": "Keine Dokumentation installiert — über /install-claris-docs oder /install-mbs-docs eine Quelle registrieren."
+  }
+}

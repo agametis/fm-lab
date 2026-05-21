@@ -93,5 +93,16 @@
     "disabledDuringFilter": "Disabled while filtering",
     "folderDetailsTitle": "Show folder details",
     "noName": "(no name)"
+  },
+  "docs": {
+    "langFallback":  "This documentation is not available in the selected language — showing {{lang}}.",
+    "openOnline":    "Open online ↗",
+    "openInBrowser": "Open in browser",
+    "edit":          "Edit ↗",
+    "source":        "Source",
+    "noContent":     "No content available.",
+    "category":      "Category",
+    "docset":        "Docset",
+    "references":    "Code references"
   }
 }

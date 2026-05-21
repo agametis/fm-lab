@@ -298,3 +298,4 @@ ERROR: [specific error message]
 - This documentation is used by the `fm_reference.duckdb` setup and the `/api/reference/...` endpoints as the HTML source for full-text extraction (see `project/plan_reference_data_architecture.md` in the fm-lab-vscode repo).
 - The script is idempotent — running it multiple times is safe.
 - If only individual slugs are missing or outdated, a full reinstall is not necessary — the crawler uses Last-Modified headers per file (HEAD request) to update only changed files.
+- After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.py`, so the web home dashboard's Docs card can list it.

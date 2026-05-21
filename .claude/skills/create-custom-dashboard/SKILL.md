@@ -168,6 +168,14 @@ If several logically separate datasets make sense (e.g. an aggregate KPI plus a 
 
 Path: `rest-api/templates/dashboards-custom/<id>/manifest.json`
 
+> **Schema constraints — DO NOT VIOLATE.** The bundle loader validates the manifest with Joi (`rest-api/src/services/dashboard-schemas.js`). Violations land in `console.warn` and the bundle silently disappears from `/api/dashboards`. Memorise these rules:
+>
+> - `id` must match `^[a-zA-Z0-9_-]+$` AND be **identical** to the directory name. No dots, spaces, Unicode.
+> - `title` is required and non-empty.
+> - `params[].type` ∈ `{ "string", "number", "boolean" }` — **never** `"integer"`, `"int"`, `"float"`, `"bool"`. Integer-valued params use `"number"`.
+> - `datasets[].source` must start with one of `bundle:`, `custom:`, `report:`, `builtin:` followed by at least one character.
+> - Every `dataset` name referenced in `layout.json` (`data.dataset`) must be declared in `manifest.datasets[].id`. Loader doesn't catch this — shows up as an empty card at runtime.
+
 ```json
 {
   "id": "<id>",
@@ -182,8 +190,10 @@ Path: `rest-api/templates/dashboards-custom/<id>/manifest.json`
     { "id": "<dataset_name>", "source": "bundle:data/<dataset_name>.sql" }
   ],
   "params": [
-    { "name": "file", "type": "string", "required": false,
-      "description": "Optional file filter." }
+    { "name": "file",  "type": "string",  "required": false,
+      "description": "Optional file filter." },
+    { "name": "limit", "type": "number",  "required": false,
+      "description": "Row limit (integer-valued — but the JSON type stays \"number\")." }
   ],
   "permissions": { "read_only": true, "allow_navigation": true }
 }
@@ -316,7 +326,70 @@ Generate all 10 files in one pass. Keep the JSON-pointer structure of the `layou
 
 ---
 
-#### 5.6 Emit the closing message
+#### 5.6 Post-write verification (BLOCKING — must succeed before step 5.7)
+
+The bundle loader fails silently on schema violations. Never claim the dashboard is "immediately available" without running this gate.
+
+##### 5.6.1 Trigger the cache reload
+
+```bash
+curl -s -X POST http://localhost:3003/api/admin/reload >/dev/null
+```
+
+If the REST API is not running on `:3003`: skip the reload, but warn the user that the dashboard will only become visible after `bash tools/start-servers.sh` and a browser reload. Do **not** continue with 5.6.2 — the verification can't run without the server. Jump to 5.7 with a clearly-labelled warning.
+
+##### 5.6.2 Verify the bundle loads
+
+```bash
+HTTP=$(curl -s -o /tmp/fmlab_dashboard_check.json \
+            -w "%{http_code}" \
+            http://localhost:3003/api/dashboards/<id>)
+echo "HTTP $HTTP"
+```
+
+| Result | Action |
+|---|---|
+| HTTP 200 with `"success":true` and `data.manifest.id == "<id>"` | Verification OK — continue to 5.7 |
+| HTTP 404 with `TEMPLATE_NOT_FOUND` | Bundle was rejected during load. Go to 5.6.3 (read the log) |
+| HTTP 5xx or curl error | Server problem unrelated to the bundle — show error to user, do not auto-fix |
+
+##### 5.6.3 Read the server log for the real cause
+
+```bash
+tail -100 logs/rest-api.log | grep -F "[dashboard:<id>]" | tail -5
+```
+
+The Joi message is human-readable and points at the offending field. Use it to drive 5.6.4.
+
+##### 5.6.4 Auto-heal the top-3 root causes
+
+For each of the following patterns, patch the bundle on disk, re-run 5.6.1 + 5.6.2 once. If the second attempt also fails, stop and surface the log line to the user — don't loop further.
+
+| Log message contains | Auto-fix |
+|---|---|
+| `params[N].type must be one of [string, number, boolean]` | In `manifest.json` rewrite the offending `type` value: `integer`/`int`/`float` → `number`, `bool` → `boolean`. |
+| `manifest.id="X" differs from directory name` | In `manifest.json` set `id` to the directory name (the truth). Never rename the directory to match — IDs were chosen in step 4. |
+| `datasets[N].source ... pattern` or `"source" with value "..." fails to match the required pattern` | Source URI missing its scheme. Prepend `bundle:` if the value looks like a path (`data/foo.sql`); otherwise ask the user. |
+
+For anything else (layout schema errors, dataset name mismatch, JSON parse error) do **not** auto-fix — show the log line to the user and ask.
+
+##### 5.6.5 Probe each dataset (optional — only if the project's DuckDB is accessible)
+
+If a local DuckDB binary is reachable (per the resolver in CLAUDE.md), do a minimal smoke-run of each declared dataset with default param values:
+
+```bash
+# Replace <sql_file> and any required params with the manifest defaults
+duckdb db/fm_catalog.duckdb -csv -noheader \
+  -c "$(cat rest-api/templates/dashboards-custom/<id>/data/<sql_file>) LIMIT 1"
+```
+
+A DuckDB error here means the SQL is broken even though the manifest validates. Report it before 5.7; do not auto-fix SQL.
+
+If DuckDB is not reachable, skip silently — the runtime will surface SQL errors when the user opens the dashboard.
+
+---
+
+#### 5.7 Emit the closing message
 
 ```
 Dashboard bundle created: rest-api/templates/dashboards-custom/<id>/
@@ -340,9 +413,22 @@ Dashboard ID:   <id>
 Title:          <title> (English default; 10 translations available)
 Presentation:   <Primitive>
 Dataset:        <dataset_name> (Preview: N rows)
+Verified:       GET /api/dashboards/<id> → HTTP 200 (loader accepted manifest + layout)
 
-The dashboard is immediately available at /api/dashboards/<id> — a browser reload (Ctrl+R) is enough.
-A server restart is not required: bundles, SQL templates and locale files are hot-reloaded based on mtime.
+The dashboard is live at /api/dashboards/<id> — browser reload (Ctrl+R) picks it up.
+Bundles, SQL templates and locale files are hot-reloaded by mtime; no server restart needed.
+```
+
+If 5.6 ran in **server-unavailable mode** (REST API not on :3003), replace the `Verified:` line with:
+
+```
+Verified:       SKIPPED (REST API not running on :3003 — start with bash tools/start-servers.sh, then reload the browser)
+```
+
+If 5.6 auto-healed a manifest issue, mention it briefly:
+
+```
+Auto-heal:      manifest.params[].type "integer" → "number" (re-verified OK)
 ```
 
 ---
@@ -445,3 +531,4 @@ Run the preview → show the table → "47 scripts found. Recommend **List** (cl
 - **Multiple datasets**: if the user wants more than one data perspective (e.g. overview KPI + detail list), create multiple SQL files and datasets. In `layout.json` place each dataset in its own `Card`.
 - **Cross-file**: if the database contains multiple FileMaker files, always plan for an optional `file` parameter in the query.
 - **Keep the step order**: the interactive dialogue in steps 3 and 4 is not optional — no direct bundle writing without confirmation.
+- **Never skip step 5.6**: writing the bundle and announcing success without verifying `GET /api/dashboards/<id>` has hit us repeatedly — Joi rejects silently, the bundle vanishes from the list, and the API only says "not found or invalid". The real reason is always in `logs/rest-api.log` with prefix `[dashboard:<id>]`. Step 5.6 is the only safe finish line.

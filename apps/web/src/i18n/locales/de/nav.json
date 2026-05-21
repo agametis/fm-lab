@@ -93,5 +93,16 @@
     "disabledDuringFilter": "Im Filter-Modus deaktiviert",
     "folderDetailsTitle": "Folder-Details anzeigen",
     "noName": "(ohne Namen)"
+  },
+  "docs": {
+    "langFallback":  "Diese Doku ist in der gewählten Sprache nicht verfügbar — Anzeige in {{lang}}.",
+    "openOnline":    "Online öffnen ↗",
+    "openInBrowser": "Im Browser öffnen",
+    "edit":          "Bearbeiten ↗",
+    "source":        "Quelle",
+    "noContent":     "Kein Inhalt verfügbar.",
+    "category":      "Category",
+    "docset":        "Docset",
+    "references":    "Code-Referenzen"
   }
 }

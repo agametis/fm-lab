@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "プロジェクト概要",
-    "description": "主要指標、上位オブジェクト、ヘルスインジケーター、ナビゲーションを含むランディングページです。"
+    "description": "主要指標、ファイル一覧、ダッシュボード／カスタムクエリ／ドキュメントへのナビゲーションを備えたランディングページ。"
   },
   "layout": {
     "root.children[0].props.title": "プロジェクト概要",
@@ -10,7 +10,6 @@
     "root.children[0].children[0].props.items[2].label": "FM バージョン",
     "root.children[0].children[0].props.items[3].label": "DDR 情報",
     "root.children[0].children[0].props.items[4].label": "最終インポート",
-
     "root.children[1].props.title": "オブジェクト",
     "root.children[1].children[0].props.items[0].label": "スクリプト",
     "root.children[1].children[0].props.items[1].label": "フィールド",
@@ -20,7 +19,6 @@
     "root.children[1].children[0].props.items[5].label": "カスタム関数",
     "root.children[1].children[0].props.items[6].label": "値一覧",
     "root.children[1].children[0].props.items[7].label": "リレーション",
-
     "root.children[2].props.title": "ファイル",
     "root.children[2].children[0].props.columns[0].label": "ファイル",
     "root.children[2].children[0].props.columns[1].label": "FM バージョン",
@@ -31,36 +29,12 @@
     "root.children[2].children[0].props.columns[6].label": "CF",
     "root.children[2].children[0].props.columns[7].label": "DDR",
     "root.children[2].children[0].props.columns[8].label": "インポート",
-
-    "root.children[3].children[0].props.title": "トップスクリプト",
-    "root.children[3].children[0].children[0].props.rowTemplate.secondary": "{{file}} · {{step_count}} ステップ",
-    "root.children[3].children[0].children[0].props.empty.message": "スクリプトが見つかりません。",
-    "root.children[3].children[1].props.title": "トップテーブル",
-    "root.children[3].children[1].children[0].props.rowTemplate.secondary": "{{file}} · {{field_count}} フィールド",
-    "root.children[3].children[1].children[0].props.empty.message": "テーブルが見つかりません。",
-    "root.children[3].children[2].props.title": "トップレイアウト",
-    "root.children[3].children[2].children[0].props.rowTemplate.secondary": "{{file}} · {{object_count}} オブジェクト",
-    "root.children[3].children[2].children[0].props.empty.message": "レイアウトが見つかりません。",
-    "root.children[3].children[3].props.title": "トップカスタム関数",
-    "root.children[3].children[3].children[0].props.rowTemplate.secondary": "{{file}} · {{reference_count}} 回参照",
-    "root.children[3].children[3].children[0].props.empty.message": "カスタム関数が見つかりません。",
-
-    "root.children[4].props.title": "ヘルスと注意点",
-    "root.children[4].children[0].props.empty.message": "特に注意点はありません。",
-
-    "root.children[5].props.title": "変数ホットスポット",
-    "root.children[5].children[0].props.columns[0].label": "変数",
-    "root.children[5].children[0].props.columns[1].label": "スコープ",
-    "root.children[5].children[0].props.columns[2].label": "書込",
-    "root.children[5].children[0].props.columns[3].label": "読込",
-    "root.children[5].children[0].props.columns[4].label": "スクリプト",
-    "root.children[5].children[0].props.columns[5].label": "ファイル",
-
-    "root.children[6].children[0].props.label": "ダッシュボード",
-    "root.children[6].children[0].props.subtitle": "用意済みの分析",
-    "root.children[7].children[0].props.label": "カスタムクエリ",
-    "root.children[7].children[0].props.subtitle": "再利用可能な SQL テンプレート",
-
-    "root.children[8].props.content": "## ヒント\n\n- **検索:** 検索欄に名前を入力するとオブジェクトをフィルタリングできます — ダッシュボードは自動的に隠れます。\n- **ファイル:** ファイル一覧の行をクリックすると、以降のすべてのビューでファイルフィルターが有効になります。\n- **ダッシュボード:** *ダッシュボード* タイルからキュレーションされた分析にアクセスでき、*カスタムクエリ* からは再利用可能な SQL テンプレートが確認できます。\n- **詳細:** トップリストの項目をクリックするとそのオブジェクトの詳細ビューが開きます。"
+    "root.children[3].children[0].props.label": "ダッシュボード",
+    "root.children[3].children[0].props.subtitle": "整備済みの分析",
+    "root.children[4].children[0].props.label": "カスタムクエリ",
+    "root.children[4].children[0].props.subtitle": "再利用可能な SQL テンプレート",
+    "root.children[6].props.content": "## ヒント\n\n- **検索:** 検索ボックスに名前を入力するとオブジェクトを絞り込めます — ダッシュボードは自動的に隠れます。\n- **ファイル:** ファイル一覧の行をクリックすると、その後すべてのビューでファイルフィルタが有効になります。\n- **ナビゲーション:** *ダッシュボード*で整備済みの分析を開き、*カスタムクエリ*で再利用可能な SQL テンプレートを一覧表示、*ドキュメント*でインストール済みソースを表示します。",
+    "root.children[5].children[0].props.label": "ドキュメント",
+    "root.children[5].children[0].props.subtitle": "インストール済みのドキュメントソース"
   }
 }

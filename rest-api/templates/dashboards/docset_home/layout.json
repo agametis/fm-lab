@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": { "columns": 12, "gap": 16 },
+    "children": [
+      {
+        "type": "Card",
+        "props": { "span": 12, "variant": "hero" },
+        "data": { "dataset": "info" },
+        "children": [
+          {
+            "type": "Markdown",
+            "props": {
+              "content": "# {{name}}\n\n{{description}}\n\n{{online_link_md}}\n\n*Languages: {{languages_display}}*"
+            }
+          },
+          {
+            "type": "KPIStrip",
+            "props": {
+              "items": [
+                { "label": "Categories", "field": "categories", "format": "number" },
+                { "label": "Functions",  "field": "functions",  "format": "number" }
+              ]
+            }
+          }
+        ]
+      },
+
+      {
+        "type": "Card",
+        "props": { "span": 12, "title": "Categories" },
+        "data": { "dataset": "categories" },
+        "children": [
+          { "type": "List",
+            "props": {
+              "rowTemplate": {
+                "primary":   "{{name}}",
+                "secondary": "{{function_count}} functions",
+                "badge":     "{{code_ref_count}}",
+                "badgeOptions": {
+                  "hideZero": true,
+                  "filterable": true,
+                  "onClick": { "action": "{{badge_action}}",
+                               "argsString": "{{badge_action_args}}" }
+                },
+                "onClick":   { "action": "{{action}}",
+                               "argsString": "{{action_args}}" }
+              },
+              "empty": { "message": "No categories available for this docset." }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

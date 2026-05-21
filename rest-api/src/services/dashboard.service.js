@@ -392,11 +392,193 @@ async function builtinFiles() {
   return convertBigInts(result.rows);
 }
 
+/**
+ * builtin:list_docs — listet alle installierten und sichtbaren Dokumentations-Bundles
+ * aus dem v2-Manifest (`.fmlab/docs.json`). Backwards-compat alias zu
+ * `docs_overview_installed`. Filtert auf catalog.visible == true UND installed.
+ */
+async function builtinListDocs() {
+  const docsManifest = require('./docs-manifest');
+  const rows = docsManifest.listVisibleInstalled();
+  return rows.map(({ catalog, installed }) => {
+    const langs = Array.isArray(installed?.languages) ? installed.languages : (catalog.languages || []);
+    return {
+      id: catalog.id,
+      name: catalog.name || catalog.id,
+      description: catalog.description || null,
+      directory: installed?.directory || null,
+      skill: catalog.skill || null,
+      source_url: catalog.source_url || null,
+      categories: installed?.stats?.categories ?? null,
+      functions: installed?.stats?.functions ?? null,
+      languages: langs,
+      languages_count: langs.length,
+      languages_display: langs.map(l => String(l).toUpperCase()).join(' · '),
+      installed_at: installed?.installed_at || null,
+      installed: true,
+    };
+  });
+}
+
+/**
+ * builtin:docs_overview_installed — sichtbare, installierte Doc-Sets.
+ * Identisch mit list_docs, aber semantisch klarer benannt für das neue
+ * docs_overview-Dashboard.
+ */
+async function builtinDocsOverviewInstalled() {
+  return builtinListDocs();
+}
+
+/**
+ * builtin:docs_overview_available — sichtbare Doc-Sets aus dem Catalog,
+ * die noch NICHT installiert sind. Für den "Verfügbar"-Block der
+ * docs_overview-Sub-Dashboard mit Install-Button.
+ */
+async function builtinDocsOverviewAvailable() {
+  const docsManifest = require('./docs-manifest');
+  const rows = docsManifest.listVisibleAvailable();
+  return rows.map(({ catalog }) => {
+    const langs = Array.isArray(catalog.languages) ? catalog.languages : [];
+    return {
+      id: catalog.id,
+      name: catalog.name || catalog.id,
+      description: catalog.description || null,
+      source_url: catalog.source_url || null,
+      skill: catalog.skill || null,
+      languages: langs,
+      languages_count: langs.length,
+      languages_display: langs.map(l => String(l).toUpperCase()).join(' · '),
+      output_format: catalog.output_format || null,
+      download_format: catalog.download_format || null,
+      installed: false,
+    };
+  });
+}
+
+/**
+ * builtin:docset_info — single-row header for the docset detail dashboard.
+ * Params: id (required), lang (optional).
+ */
+async function builtinDocsetInfo(params = {}) {
+  const docsSource = require('./docs-source');
+  const id = params.id;
+  if (!id) throw createError('VALIDATION_ERROR', 'builtin:docset_info requires param "id"');
+  const lang = params._lang || params.lang || 'en';
+  const info = await docsSource.getDocsetInfo(id, lang);
+  if (!info) return [];
+  const langs = Array.isArray(info.languages) ? info.languages : [];
+  return [{
+    id: info.id,
+    name: info.name || info.id,
+    description: info.description || null,
+    source_url: info.source_url || null,
+    online_link_md: info.online_link_md || '',
+    categories: typeof info.categories === 'number' ? info.categories : null,
+    functions: typeof info.functions === 'number' ? info.functions : null,
+    languages: langs,
+    languages_count: langs.length,
+    languages_display: langs.map(l => String(l).toUpperCase()).join(' · '),
+  }];
+}
+
+/**
+ * builtin:docset_categories — list of categories for a docset.
+ * Params: id (required), lang (optional, default 'en').
+ */
+async function builtinDocsetCategories(params = {}) {
+  const docsSource = require('./docs-source');
+  const id = params.id;
+  if (!id) throw createError('VALIDATION_ERROR', 'builtin:docset_categories requires param "id"');
+  return docsSource.listDocsetCategories(id, params._lang || params.lang || 'en');
+}
+
+/**
+ * builtin:docset_categories_with_counts — wie docset_categories, aber annotiert
+ * jede Kategorie mit `code_ref_count` (Anzahl Code-Referenzen in der FM-Solution).
+ * Bei references: false liefert das Set null pro Eintrag (keine Pill).
+ */
+async function builtinDocsetCategoriesWithCounts(params = {}) {
+  const docsSource = require('./docs-source');
+  const docsReferences = require('./docs-references');
+  const id = params.id;
+  if (!id) throw createError('VALIDATION_ERROR', 'builtin:docset_categories_with_counts requires param "id"');
+  const lang = params._lang || params.lang || 'en';
+  const cats = await docsSource.listDocsetCategories(id, lang);
+  return docsReferences.annotateCategoriesWithCounts(id, cats);
+}
+
+/**
+ * builtin:docset_category_info — single-row header for the category dashboard.
+ * Params: docset (required), category (required), lang (optional).
+ */
+async function builtinDocsetCategoryInfo(params = {}) {
+  const docsSource = require('./docs-source');
+  const docset = params.docset;
+  const category = params.category;
+  if (!docset || !category) {
+    throw createError('VALIDATION_ERROR', 'builtin:docset_category_info requires params "docset" and "category"');
+  }
+  const info = await docsSource.getDocsetCategoryInfo(docset, category, params._lang || params.lang || 'en');
+  if (!info) return [];
+  return [{
+    docset,
+    id: info.id,
+    name: info.name,
+    slug: info.slug,
+    kind: info.kind || null,
+    description: info.description || null,
+    source_url: info.source_url || null,
+    online_url: info.online_url || null,
+    online_link_md: info.online_link_md || '',
+    function_count: typeof info.function_count === 'number' ? info.function_count : null,
+  }];
+}
+
+/**
+ * builtin:docset_functions — list of functions/script-steps in a category.
+ * Params: docset (required), category (required), lang (optional).
+ */
+async function builtinDocsetFunctions(params = {}) {
+  const docsSource = require('./docs-source');
+  const docset = params.docset;
+  const category = params.category;
+  if (!docset || !category) {
+    throw createError('VALIDATION_ERROR', 'builtin:docset_functions requires params "docset" and "category"');
+  }
+  return docsSource.listDocsetFunctions(docset, category, params._lang || params.lang || 'en');
+}
+
+/**
+ * builtin:docset_functions_with_counts — wie docset_functions, aber annotiert
+ * jede Funktion mit `code_ref_count`. Bei references: false → null.
+ */
+async function builtinDocsetFunctionsWithCounts(params = {}) {
+  const docsSource = require('./docs-source');
+  const docsReferences = require('./docs-references');
+  const docset = params.docset;
+  const category = params.category;
+  if (!docset || !category) {
+    throw createError('VALIDATION_ERROR', 'builtin:docset_functions_with_counts requires params "docset" and "category"');
+  }
+  const lang = params._lang || params.lang || 'en';
+  const fns = await docsSource.listDocsetFunctions(docset, category, lang);
+  return docsReferences.annotateFunctionsWithCounts(docset, fns);
+}
+
 const BUILTIN_RESOLVERS = {
   list_custom_queries: builtinListCustomQueries,
   list_dashboards: builtinListDashboards,
+  list_docs: builtinListDocs,
+  docs_overview_installed: builtinDocsOverviewInstalled,
+  docs_overview_available: builtinDocsOverviewAvailable,
   files: builtinFiles,
   query_meta: builtinQueryMeta,
+  docset_info: builtinDocsetInfo,
+  docset_categories: builtinDocsetCategories,
+  docset_categories_with_counts: builtinDocsetCategoriesWithCounts,
+  docset_category_info: builtinDocsetCategoryInfo,
+  docset_functions: builtinDocsetFunctions,
+  docset_functions_with_counts: builtinDocsetFunctionsWithCounts,
 };
 
 async function runBuiltin(key, params) {

@@ -1,0 +1,14 @@
+{
+  "manifest": {
+    "title": "Doku-Quelle",
+    "description": "Generische Detailansicht für eine einzelne Dokumentationsquelle."
+  },
+  "layout": {
+    "root.children[0].children[0].props.content": "# {{name}}\n\n{{description}}\n\n[{{source_url}}]({{source_url}})\n\n*Sprachen: {{languages_display}}*",
+    "root.children[0].children[1].props.items[0].label": "Rubriken",
+    "root.children[0].children[1].props.items[1].label": "Funktionen",
+    "root.children[1].props.title": "Rubriken",
+    "root.children[1].children[0].props.rowTemplate.secondary": "{{function_count}} Funktionen",
+    "root.children[1].children[0].props.empty.message": "Keine Rubriken für diese Doku-Quelle verfügbar."
+  }
+}

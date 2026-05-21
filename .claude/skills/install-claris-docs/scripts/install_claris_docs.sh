@@ -15,9 +15,18 @@
 # falls back to: stop server → copy → restart server (via tools/-scripts).
 #
 # Usage:
-#   install_claris_docs.sh [--lang=<code>|all] [--all] [--force]
+#   install_claris_docs.sh [--check|--install] [--quiet]
+#                          [--lang=<code>|all] [--all] [--force]
 #                          [--max-workers=N] [--dry-run] [--list-languages]
 #                          [--skip-reference-db] [--restart-server]
+#
+# Mode flags (from tools/install_modes.sh):
+#   --check:   Probe-only mode (reference language only). Emits a single
+#              check-event with {installed, local_version, remote_version,
+#              update_available} and exits.
+#   --install: Run the installation workflow (default if no mode is given).
+#   --quiet:   Emit NDJSON events instead of plain log lines. Bypasses
+#              interactive prompts (treats every confirmation as yes).
 #
 # Exit codes:
 #   0 - Success
@@ -45,6 +54,18 @@ START_SERVERS_SCRIPT="$PROJECT_ROOT/tools/start-servers.sh"
 BASE_URL="https://help.claris.com"
 ALL_LANGS=(en de es fr it nl pt sv ja ko zh)
 REFERENCE_LANG="en"   # Always installed
+
+# -------------------- Shared mode helpers --------------------
+# shellcheck source=/dev/null
+source "$PROJECT_ROOT/tools/install_modes.sh"
+
+# Extract --check/--install/--quiet first; the rest is parsed by the existing
+# Claris-specific arg-loop below. The `${REMAINING_ARGS[@]+...}` indirection
+# avoids "unbound variable" under `set -u` when no leftover args remain.
+QUIET_MODE=false; CHECK_MODE=false; INSTALL_MODE=false
+REMAINING_ARGS=()
+parse_install_modes "$@"
+set -- ${REMAINING_ARGS[@]+"${REMAINING_ARGS[@]}"}
 
 # -------------------- Argument parsing --------------------
 
@@ -87,8 +108,9 @@ for arg in "$@"; do
             sed -n '2,28p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
             exit 0
             ;;
+        '') ;;
         *)
-            echo "ERROR: Unknown argument: $arg" >&2
+            emit_error "Unknown argument: $arg"
             echo "Use --help for usage information." >&2
             exit 1
             ;;
@@ -276,6 +298,40 @@ lang_display_name() {
     esac
 }
 
+# -------------------- Check mode (probe-only) --------------------
+#
+# Reports installation status using the reference language (en) as the
+# canonical signal. Frontend just needs a yes/no "update available" badge —
+# per-language detail is available via GET /api/docs/claris-help/status.
+
+run_check_mode() {
+    local installed="false" local_version="" remote_version="" update_available="false"
+    local en_dir="$DOCS_DIR/$REFERENCE_LANG"
+    local en_version_file="$en_dir/.version"
+
+    if [ -d "$en_dir/content" ] && [ "$(ls -A "$en_dir/content" 2>/dev/null | wc -l)" -gt 0 ]; then
+        installed="true"
+    fi
+    if [ -f "$en_version_file" ]; then
+        local_version=$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('last_modified',''))" "$en_version_file" 2>/dev/null || echo "")
+    fi
+    remote_version=$(get_remote_timestamp "$REFERENCE_LANG" || true)
+
+    if [ "$installed" = "false" ]; then
+        update_available="true"
+    elif [ -n "$remote_version" ] && [ -n "$local_version" ] && [ "$remote_version" != "$local_version" ]; then
+        # Different Last-Modified → assume remote is newer (Claris doesn't roll back).
+        update_available="true"
+    fi
+
+    emit_check "$installed" "$local_version" "$remote_version" "$update_available"
+    exit 0
+}
+
+if $CHECK_MODE; then
+    run_check_mode
+fi
+
 if $LIST_LANGUAGES; then
     echo "Available languages for Claris Online Help:"
     echo ""
@@ -444,16 +500,10 @@ for lang in "${TARGET_LANGS[@]}"; do
             echo "    Remote: $REMOTE_TS"
         fi
 
-        if [ -t 0 ]; then
-            read -p "[$lang] Replace existing docs? (y/n): " -n 1 -r
-            echo ""
-            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                color_yellow "[$lang] Skipped by user."
-                SKIPPED+=("$lang")
-                continue
-            fi
+        if confirm_or_quiet "[$lang] Replace existing docs?"; then
+            : # proceed
         else
-            color_yellow "[$lang] Non-interactive shell — use --force to replace existing docs."
+            color_yellow "[$lang] Skipped — use --force to replace existing docs non-interactively."
             SKIPPED+=("$lang")
             continue
         fi
@@ -606,6 +656,54 @@ print(f"  Languages registered: {len(languages)}")
 EOF
 fi
 
+# -------------------- Update .fmlab/docs.json --------------------
+# Shared registry consumed by the web home dashboard via the REST API
+# builtin `list_docs`. Skipped in dry-run mode.
+
+REGISTER_SCRIPT="$PROJECT_ROOT/tools/register_docs.py"
+if ! $DRY_RUN && [ -f "$REGISTER_SCRIPT" ]; then
+    # Languages: every <code>/content/ directory that exists counts as installed.
+    INSTALLED_LANGS=()
+    for lang in "${ALL_LANGS[@]}"; do
+        if [ -d "$DOCS_DIR/$lang/content" ]; then
+            INSTALLED_LANGS+=("$lang")
+        fi
+    done
+    LANG_ARGS=""
+    if [ ${#INSTALLED_LANGS[@]} -gt 0 ]; then
+        LANG_CSV=$(IFS=','; echo "${INSTALLED_LANGS[*]}")
+        LANG_ARGS="--languages $LANG_CSV"
+    fi
+
+    # Counts from the reference DB (function + script step categories, totals).
+    CATEGORY_COUNT=""
+    FUNCTION_COUNT=""
+    if [ -f "$REFERENCE_DB_DST" ]; then
+        DUCKDB_BIN=$(command -v duckdb || true)
+        [ -z "$DUCKDB_BIN" ] && [ -x "$HOME/.duckdb/cli/latest/duckdb" ] && DUCKDB_BIN="$HOME/.duckdb/cli/latest/duckdb"
+        [ -z "$DUCKDB_BIN" ] && [ -x "/opt/homebrew/bin/duckdb" ] && DUCKDB_BIN="/opt/homebrew/bin/duckdb"
+        if [ -n "$DUCKDB_BIN" ]; then
+            CATEGORY_COUNT=$("$DUCKDB_BIN" "$REFERENCE_DB_DST" -noheader -csv -c \
+                "SELECT (SELECT COUNT(*) FROM function_categories) + (SELECT COUNT(*) FROM script_steps_categories);" 2>/dev/null || echo "")
+            FUNCTION_COUNT=$("$DUCKDB_BIN" "$REFERENCE_DB_DST" -noheader -csv -c \
+                "SELECT (SELECT COUNT(*) FROM functions) + (SELECT COUNT(*) FROM script_steps);" 2>/dev/null || echo "")
+        fi
+    fi
+
+    color_cyan "Updating .fmlab/docs.json..."
+    python3 "$REGISTER_SCRIPT" \
+        --id claris-help \
+        --name "Claris FileMaker" \
+        --description "Online help mirror for FileMaker Pro (help.claris.com)." \
+        --directory "docs/claris-help" \
+        --skill install-claris-docs \
+        --source-url "https://help.claris.com" \
+        --categories "${CATEGORY_COUNT:-none}" \
+        --functions "${FUNCTION_COUNT:-none}" \
+        $LANG_ARGS \
+        || color_yellow "WARNING: register_docs.py failed (non-fatal)."
+fi
+
 # -------------------- Final summary --------------------
 
 echo ""
@@ -643,8 +741,10 @@ echo ""
 
 if [ "$OVERALL_RC" -eq 0 ]; then
     color_green "SUCCESS"
+    emit_done true "Claris Online Help installed (${#INSTALLED[@]} new, ${#UPDATED[@]} updated, ${#SKIPPED[@]} skipped)"
 else
     color_yellow "PARTIAL SUCCESS (see warnings above)"
+    emit_done false "Claris Online Help install partial — ${#FAILED[@]} language(s) failed"
 fi
 
 exit "$OVERALL_RC"

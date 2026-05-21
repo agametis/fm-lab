@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Routes, Route, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { Routes, Route, useNavigate, useSearchParams, useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from './api/client';
 import { OBJECT_TYPES } from '@packages/shared/constants';
@@ -16,6 +16,18 @@ import { LayoutView } from './views/LayoutView';
 import { DashboardHost } from './dashboard/DashboardHost';
 import { DashboardView } from './dashboard/DashboardView';
 import { QueryView } from './dashboard/QueryView';
+import { DocsEntryView } from './docs/DocsEntryView';
+
+/**
+ * Wrapper, der DocsEntryView per `key` an die Route-Params bindet. Damit
+ * unmountet React den Inhalt beim Wechsel zwischen zwei Doc-Pages und der
+ * komplette State (entry, loading, scroll) wird von vorne aufgebaut —
+ * verhindert "alter Titel sichtbar, neuer Content lädt"-Race-Conditions.
+ */
+function DocsEntryRoute() {
+  const { set, category, fn } = useParams();
+  return <DocsEntryView key={`${set}/${category}/${fn}`} />;
+}
 import type { SortOption, GroupOption, VirtualListRow, FMObject } from './types';
 import './App.css';
 
@@ -135,6 +147,12 @@ function SearchView() {
       if (objectType) params.set('type', objectType);
       if (sortBy !== 'standard') params.set('sort', sortBy);
       if (groupBy !== 'none') params.set('group', groupBy);
+      // Externe Deep-Link-Params (kommen aus Dashboard-Action-URLs, z.B. von
+      // den Counter-Pills im docset_home) durchreichen, damit der State→URL-
+      // Effekt sie nicht beim ersten Tick wieder strippt. PseudoTokenView /
+      // andere Konsumenten lesen sie direkt aus der URL.
+      const pseudoCategory = searchParams.get('category');
+      if (pseudoCategory) params.set('category', pseudoCategory);
     }
     const nextString = params.toString();
     // ?label=... ist ein externer Dekorations-Param (kommt aus Dashboard-Navigation),
@@ -552,6 +570,7 @@ function App() {
       <Route path="/layout/:uuid" element={<LayoutView />} />
       <Route path="/dashboard/:id" element={<DashboardView />} />
       <Route path="/query/:queryName" element={<QueryView />} />
+      <Route path="/docs/:set/:category/:fn" element={<DocsEntryRoute />} />
     </Routes>
   );
 }

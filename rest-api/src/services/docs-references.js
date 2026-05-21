@@ -1,0 +1,278 @@
+const { LRUCache } = require('lru-cache');
+const db = require('../config/database');
+const docsManifest = require('./docs-manifest');
+
+/**
+ * Docs References Service
+ *
+ * Aggregiert "Anzahl Code-Referenzen pro Function/Category" für die
+ * Counter-Pills im Frontend (siehe project/prd_docs_redesign.md §7.3).
+ *
+ * Gating über catalog[].references:
+ *   - references: true  → Aggregations-Queries werden ausgeführt
+ *   - references: false → API liefert null, Frontend rendert keine Pill
+ *
+ * Aktuell implementiert:
+ *   - MBS    → PluginFunction Object_Name = 'MBS::<id>' → ObjectLinks(calls_pluginfunction)
+ *   - Claris → BuiltinFunction + ScriptStepType → Reference-DB Name-Lookup
+ *
+ * Für Claris:
+ *   • Functions: BuiltinFunction-Objects (Object_Name lokalisiert; Solution kann
+ *     in beliebiger Sprache sein) werden gegen `ref.function_name_lookup`
+ *     gejoint, das pro function_id alle bekannten Namen-Varianten kennt
+ *     (canonical_en, display_de, fmstrs_eid …). Aggregation per function_id
+ *     via SUM, weil mehrere Object-Namen auf denselben Funktion-Eintrag
+ *     mappen können (z.B. "ZeitStempel" + "Timestamp" wenn beide auftauchen).
+ *   • Script-Steps: Aggregate aus `StepsForScripts.Step_Name` (nicht aus
+ *     ObjectLinks — es gibt heute keine Step→Type-Edge), gejoined gegen
+ *     `ref.script_step_name_lookup`.
+ *   • Categories: pro fn: / ss: Category aus den enthaltenen Function-/Step-
+ *     Counts aggregiert.
+ *
+ * Cache: 60 Sekunden TTL pro Set-ID; Invalidation per `clearCache()` (via
+ * /api/admin/reload nach jedem convert-xml-Lauf).
+ */
+
+const TTL_MS = 60 * 1000;
+
+const fnCache = new LRUCache({ max: 50, ttl: TTL_MS });
+const catCache = new LRUCache({ max: 50, ttl: TTL_MS });
+
+function clearCache() {
+  fnCache.clear();
+  catCache.clear();
+}
+
+async function referencesPerFunctionMbs() {
+  const sql = `
+    SELECT
+      REPLACE(oc.Object_Name, 'MBS::', '') AS fn_id,
+      COUNT(*) AS ref_count
+    FROM ObjectCatalog oc
+    JOIN ObjectLinks ol ON oc.Object_UUID = ol.Target_UUID
+    WHERE oc.Object_Type = 'PluginFunction'
+      AND ol.Link_Role = 'calls_pluginfunction'
+    GROUP BY fn_id
+  `;
+  const result = await db.executeQuery(sql);
+  const map = new Map();
+  for (const row of result.rows) {
+    map.set(row.fn_id, Number(row.ref_count));
+  }
+  return map;
+}
+
+async function referencesPerCategoryMbs() {
+  // MBS-Kategorie = Component-Präfix. Wir aggregieren über alle PluginFunction-Calls
+  // und schneiden den Namen am ersten Punkt ab (MBS::List.AddValue → List).
+  const sql = `
+    SELECT
+      split_part(REPLACE(oc.Object_Name, 'MBS::', ''), '.', 1) AS category,
+      COUNT(*) AS ref_count
+    FROM ObjectCatalog oc
+    JOIN ObjectLinks ol ON oc.Object_UUID = ol.Target_UUID
+    WHERE oc.Object_Type = 'PluginFunction'
+      AND ol.Link_Role = 'calls_pluginfunction'
+    GROUP BY category
+  `;
+  const result = await db.executeQuery(sql);
+  const map = new Map();
+  for (const row of result.rows) {
+    if (row.category) map.set(row.category, Number(row.ref_count));
+  }
+  return map;
+}
+
+/**
+ * Claris-Funktionen (BuiltinFunction): pro `function_id` aus der Reference-DB
+ * die Anzahl aufrufender ObjectLinks im FM-Catalog.
+ *
+ * Match-Logik:
+ *   1. ObjectCatalog (BuiltinFunction) ↔ ObjectLinks (calls_function) →
+ *      use-Count je Object_Name (lokalisiert).
+ *   2. ref.function_name_lookup mappt jeden gebräuchlichen Namen auf die
+ *      kanonische function_id (deckt canonical_en, display_<lang>, fmstrs_eid).
+ *      `is_primary = 1` schließt Ambiguitäten aus (z.B. Alias-Schreibweisen).
+ *   3. SUM, weil mehrere Object_Names auf dieselbe function_id mappen können.
+ */
+async function referencesPerFunctionClarisFunctions() {
+  const sql = `
+    WITH usage AS (
+      SELECT oc.Object_Name AS name, COUNT(*) AS use_count
+      FROM ObjectCatalog oc
+      JOIN ObjectLinks ol ON oc.Object_UUID = ol.Target_UUID
+      WHERE oc.Object_Type = 'BuiltinFunction'
+        AND ol.Link_Role = 'calls_function'
+      GROUP BY oc.Object_Name
+    )
+    SELECT 'fn:' || lk.function_id AS fn_id,
+           SUM(usage.use_count)    AS ref_count
+    FROM usage
+    JOIN ref.function_name_lookup lk ON lk.lookup_name = usage.name
+    WHERE lk.is_primary = 1
+    GROUP BY lk.function_id
+  `;
+  const result = await db.executeQuery(sql);
+  return result.rows;
+}
+
+/**
+ * Claris-Script-Steps: Aggregate aus `StepsForScripts.Step_Name`. Step→Type-
+ * Edges existieren heute nicht in ObjectLinks, daher direkte Aggregation auf
+ * der Step-Tabelle.
+ */
+async function referencesPerFunctionClarisSteps() {
+  const sql = `
+    WITH usage AS (
+      SELECT Step_Name AS name, COUNT(*) AS use_count
+      FROM StepsForScripts
+      GROUP BY Step_Name
+    )
+    SELECT 'ss:' || lk.step_id AS fn_id,
+           SUM(usage.use_count) AS ref_count
+    FROM usage
+    JOIN ref.script_step_name_lookup lk ON lk.lookup_name = usage.name
+    WHERE lk.is_primary = 1
+    GROUP BY lk.step_id
+  `;
+  const result = await db.executeQuery(sql);
+  return result.rows;
+}
+
+async function referencesPerFunctionClaris() {
+  const [fns, sts] = await Promise.all([
+    referencesPerFunctionClarisFunctions(),
+    referencesPerFunctionClarisSteps(),
+  ]);
+  const map = new Map();
+  for (const row of [...fns, ...sts]) {
+    map.set(row.fn_id, Number(row.ref_count));
+  }
+  return map;
+}
+
+/**
+ * Claris-Categories: aggregiere je Category die Counts ihrer enthaltenen
+ * Funktionen + Script-Steps. Liefert IDs im selben Schema wie
+ * `listDocsetCategories` (fn:<n> / ss:<n>).
+ */
+async function referencesPerCategoryClaris(fnMap) {
+  if (!fnMap || fnMap.size === 0) return new Map();
+  // Funktion-IDs ohne Prefix für SQL IN-Listen extrahieren.
+  const fnIds = [];
+  const ssIds = [];
+  for (const [key, count] of fnMap) {
+    if (count <= 0) continue;
+    if (key.startsWith('fn:')) fnIds.push([parseInt(key.slice(3), 10), count]);
+    else if (key.startsWith('ss:')) ssIds.push([parseInt(key.slice(3), 10), count]);
+  }
+  if (fnIds.length === 0 && ssIds.length === 0) return new Map();
+
+  // VALUES-Liste mit Mappings function_id → count, dann GROUP BY category.
+  // Wir bauen das als inline SQL (alle Werte sind Integers aus eigenem Code,
+  // keine Injection-Vektoren).
+  const map = new Map();
+
+  if (fnIds.length > 0) {
+    const valuesSql = fnIds.map(([id, c]) => `(${id}, ${c})`).join(',');
+    const sql = `
+      WITH cnt(function_id, ref_count) AS (VALUES ${valuesSql})
+      SELECT 'fn:' || f.category_id AS cat_id, SUM(cnt.ref_count) AS total
+      FROM cnt
+      JOIN ref.functions f ON f.function_id = cnt.function_id
+      GROUP BY f.category_id
+    `;
+    const result = await db.executeQuery(sql);
+    for (const row of result.rows) map.set(row.cat_id, Number(row.total));
+  }
+
+  if (ssIds.length > 0) {
+    const valuesSql = ssIds.map(([id, c]) => `(${id}, ${c})`).join(',');
+    const sql = `
+      WITH cnt(step_id, ref_count) AS (VALUES ${valuesSql})
+      SELECT 'ss:' || s.category_id AS cat_id, SUM(cnt.ref_count) AS total
+      FROM cnt
+      JOIN ref.script_steps s ON s.step_id = cnt.step_id
+      GROUP BY s.category_id
+    `;
+    const result = await db.executeQuery(sql);
+    for (const row of result.rows) map.set(row.cat_id, Number(row.total));
+  }
+  return map;
+}
+
+/**
+ * Liefert Map<functionId, count> oder null, wenn das Set nicht referenz-fähig ist.
+ */
+async function referencesPerFunction(setId) {
+  const catalog = docsManifest.getCatalogEntry(setId);
+  if (!catalog || !catalog.references) return null;
+  if (fnCache.has(setId)) return fnCache.get(setId);
+
+  let map = null;
+  try {
+    if (setId === 'mbs') {
+      map = await referencesPerFunctionMbs();
+    } else if (setId === 'claris-help') {
+      map = await referencesPerFunctionClaris();
+    }
+  } catch (err) {
+    console.warn(`[docs-references] referencesPerFunction(${setId}) failed: ${err.message}`);
+  }
+  fnCache.set(setId, map);
+  return map;
+}
+
+async function referencesPerCategory(setId) {
+  const catalog = docsManifest.getCatalogEntry(setId);
+  if (!catalog || !catalog.references) return null;
+  if (catCache.has(setId)) return catCache.get(setId);
+
+  let map = null;
+  try {
+    if (setId === 'mbs') {
+      map = await referencesPerCategoryMbs();
+    } else if (setId === 'claris-help') {
+      // Reuse the function-level map so wir nicht zweimal über ObjectLinks
+      // aggregieren müssen. referencesPerFunction setzt den Cache mit, daher
+      // ist der zweite Call hier billig.
+      const fnMap = await referencesPerFunction(setId);
+      if (fnMap) map = await referencesPerCategoryClaris(fnMap);
+    }
+  } catch (err) {
+    console.warn(`[docs-references] referencesPerCategory(${setId}) failed: ${err.message}`);
+  }
+  catCache.set(setId, map);
+  return map;
+}
+
+/**
+ * Annotiert eine Categories-Liste mit code_ref_count (oder null, wenn Set
+ * nicht referenz-fähig ist oder die Kategorie keine Referenzen hat).
+ */
+async function annotateCategoriesWithCounts(setId, categories) {
+  const map = await referencesPerCategory(setId);
+  return categories.map(c => ({
+    ...c,
+    code_ref_count: map ? (map.get(c.id) ?? 0) : null,
+  }));
+}
+
+/**
+ * Annotiert eine Functions-Liste mit code_ref_count.
+ */
+async function annotateFunctionsWithCounts(setId, functions) {
+  const map = await referencesPerFunction(setId);
+  return functions.map(f => ({
+    ...f,
+    code_ref_count: map ? (map.get(f.id) ?? 0) : null,
+  }));
+}
+
+module.exports = {
+  clearCache,
+  referencesPerFunction,
+  referencesPerCategory,
+  annotateCategoriesWithCounts,
+  annotateFunctionsWithCounts,
+};

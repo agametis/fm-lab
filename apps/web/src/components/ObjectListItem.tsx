@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { components } from '@packages/shared/types';
 import { Slot } from '../plugins';
@@ -62,6 +63,7 @@ function highlightMatch(text: string, term?: string): React.ReactNode {
  */
 export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, onClick, onCategoryClick, searchTerm }) => {
   const { t } = useTranslation(['detail']);
+  const navigate = useNavigate();
   const aggObject = object as FMObjectWithAggregates;
   const noName = t('detail:objectListItem.noName') as string;
   const handleClick = () => {
@@ -131,7 +133,27 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
             {object.Object_Type}
           </span>
           {hasUsage && (
-            <span className="object-usage-badge" title={t('detail:objectListItem.usageBadge', { count: aggObject.usage_count }) as string}>
+            <span
+              className="object-usage-badge object-usage-badge--clickable"
+              role="button"
+              tabIndex={0}
+              title={t('detail:objectListItem.usageBadge', { count: aggObject.usage_count }) as string}
+              onClick={(e) => {
+                // Direkt in den References-Tab springen — die Pille zählt
+                // ja gerade die Verwendungen, da soll der User landen, nicht
+                // im default-Detail-Tab. stopPropagation, weil der Row-Click
+                // (parent) zum default-Tab navigiert.
+                e.stopPropagation();
+                navigate(`/object/${object.Object_UUID}?tab=references`);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  navigate(`/object/${object.Object_UUID}?tab=references`);
+                }
+              }}
+            >
               {aggObject.usage_count}
             </span>
           )}

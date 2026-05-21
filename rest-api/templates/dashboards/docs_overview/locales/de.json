@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Dokumentation",
+    "description": "Übersicht installierter und verfügbarer Dokumentationsquellen."
+  },
+  "layout": {
+    "root.children[0].props.title": "Installiert",
+    "root.children[0].props.subtitle": "In diesem Projekt installierte Dokumentationsquellen. Klick öffnet die Startseite.",
+    "root.children[0].children[0].props.rowTemplate.tertiary": "{{categories}} Rubriken · {{functions}} Funktionen",
+    "root.children[0].children[0].props.empty.message": "Keine Dokumentation installiert — über /install-claris-docs, /install-mbs-docs oder /install-fmide-docs installieren.",
+    "root.children[1].props.title": "Verfügbar",
+    "root.children[1].props.subtitle": "Bekannte Dokumentationsquellen, die in diesem Projekt noch nicht installiert sind.",
+    "root.children[1].children[0].props.empty.message": "Alle bekannten Dokumentationsquellen sind installiert."
+  }
+}

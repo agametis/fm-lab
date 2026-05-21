@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Visão geral do projeto",
-    "description": "Página inicial com métricas-chave, objetos principais, indicadores de saúde e navegação."
+    "description": "Página inicial com indicadores-chave, visão dos arquivos e navegação para dashboards, consultas personalizadas e documentação."
   },
   "layout": {
     "root.children[0].props.title": "Visão geral do projeto",
@@ -10,7 +10,6 @@
     "root.children[0].children[0].props.items[2].label": "Versão FM",
     "root.children[0].children[0].props.items[3].label": "Info DDR",
     "root.children[0].children[0].props.items[4].label": "Última importação",
-
     "root.children[1].props.title": "Objetos",
     "root.children[1].children[0].props.items[0].label": "Scripts",
     "root.children[1].children[0].props.items[1].label": "Campos",
@@ -20,7 +19,6 @@
     "root.children[1].children[0].props.items[5].label": "Funções pers.",
     "root.children[1].children[0].props.items[6].label": "Listas de valores",
     "root.children[1].children[0].props.items[7].label": "Relações",
-
     "root.children[2].props.title": "Ficheiros",
     "root.children[2].children[0].props.columns[0].label": "Ficheiro",
     "root.children[2].children[0].props.columns[1].label": "Versão FM",
@@ -31,36 +29,12 @@
     "root.children[2].children[0].props.columns[6].label": "CFs",
     "root.children[2].children[0].props.columns[7].label": "DDR",
     "root.children[2].children[0].props.columns[8].label": "Importado",
-
-    "root.children[3].children[0].props.title": "Top scripts",
-    "root.children[3].children[0].children[0].props.rowTemplate.secondary": "{{file}} · {{step_count}} passos",
-    "root.children[3].children[0].children[0].props.empty.message": "Nenhum script encontrado.",
-    "root.children[3].children[1].props.title": "Top tabelas",
-    "root.children[3].children[1].children[0].props.rowTemplate.secondary": "{{file}} · {{field_count}} campos",
-    "root.children[3].children[1].children[0].props.empty.message": "Nenhuma tabela encontrada.",
-    "root.children[3].children[2].props.title": "Top layouts",
-    "root.children[3].children[2].children[0].props.rowTemplate.secondary": "{{file}} · {{object_count}} objetos",
-    "root.children[3].children[2].children[0].props.empty.message": "Nenhum layout encontrado.",
-    "root.children[3].children[3].props.title": "Top funções personalizadas",
-    "root.children[3].children[3].children[0].props.rowTemplate.secondary": "{{file}} · referenciado {{reference_count}}×",
-    "root.children[3].children[3].children[0].props.empty.message": "Nenhuma função personalizada encontrada.",
-
-    "root.children[4].props.title": "Saúde e avisos",
-    "root.children[4].children[0].props.empty.message": "Sem ocorrências.",
-
-    "root.children[5].props.title": "Hotspots de variáveis",
-    "root.children[5].children[0].props.columns[0].label": "Variável",
-    "root.children[5].children[0].props.columns[1].label": "Âmbito",
-    "root.children[5].children[0].props.columns[2].label": "Escrita",
-    "root.children[5].children[0].props.columns[3].label": "Leitura",
-    "root.children[5].children[0].props.columns[4].label": "Scripts",
-    "root.children[5].children[0].props.columns[5].label": "Ficheiros",
-
-    "root.children[6].children[0].props.label": "Dashboards",
-    "root.children[6].children[0].props.subtitle": "Análises preparadas",
-    "root.children[7].children[0].props.label": "Consultas personalizadas",
-    "root.children[7].children[0].props.subtitle": "Templates SQL reutilizáveis",
-
-    "root.children[8].props.content": "## Dicas\n\n- **Pesquisa:** escreve um nome no campo de pesquisa para filtrar objetos — o dashboard desaparece automaticamente.\n- **Ficheiros:** clicar numa linha da tabela de ficheiros ativa o filtro de ficheiro para todas as vistas seguintes.\n- **Dashboards:** o cartão *Dashboards* leva a análises curadas; *Consultas personalizadas* lista todos os templates SQL reutilizáveis.\n- **Detalhes:** clicar numa entrada de uma lista de topo abre a vista detalhada do objeto."
+    "root.children[3].children[0].props.label": "Dashboards",
+    "root.children[3].children[0].props.subtitle": "Análises preparadas",
+    "root.children[4].children[0].props.label": "Consultas personalizadas",
+    "root.children[4].children[0].props.subtitle": "Modelos SQL reutilizáveis",
+    "root.children[6].props.content": "## Dicas\n\n- **Pesquisa:** digite um nome no campo de busca para filtrar objetos — o dashboard desaparece automaticamente.\n- **Arquivos:** clicar em uma linha da tabela de arquivos fixa o filtro de arquivo para todas as visões seguintes.\n- **Navegação:** *Dashboards* abre análises curadas, *Consultas personalizadas* lista todos os modelos SQL reutilizáveis, *Documentação* mostra as fontes instaladas.",
+    "root.children[5].children[0].props.label": "Documentação",
+    "root.children[5].children[0].props.subtitle": "Fontes de documentação instaladas"
   }
 }
