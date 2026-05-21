@@ -59,6 +59,11 @@ REFERENCE_LANG="en"   # Always installed
 # shellcheck source=/dev/null
 source "$PROJECT_ROOT/tools/install_modes.sh"
 
+# Phase budget for the SSE progress bar. Per-language crawl gets the lion's
+# share (10-90%); the budget is sliced evenly across the requested languages
+# at runtime once TARGET_LANGS is known.
+set_phase_budget "check:0-5 refdb:5-10 crawl:10-90 manifest:90-94 register:94-98 done:98-100"
+
 # Extract --check/--install/--quiet first; the rest is parsed by the existing
 # Claris-specific arg-loop below. The `${REMAINING_ARGS[@]+...}` indirection
 # avoids "unbound variable" under `set -u` when no leftover args remain.
@@ -70,6 +75,7 @@ set -- ${REMAINING_ARGS[@]+"${REMAINING_ARGS[@]}"}
 # -------------------- Argument parsing --------------------
 
 USER_LANG=""
+USER_LANGS_CSV=""
 INSTALL_ALL=false
 FORCE_INSTALL=false
 MAX_WORKERS=8
@@ -82,6 +88,12 @@ for arg in "$@"; do
     case "$arg" in
         --lang=all|--all)
             INSTALL_ALL=true
+            ;;
+        --langs=*)
+            # Comma-separated list of language codes (e.g. --langs=de,fr,it).
+            # Used by the web Install button when the user picks individual
+            # languages in the popover. EN is always added automatically.
+            USER_LANGS_CSV="${arg#--langs=}"
             ;;
         --lang=*)
             USER_LANG="${arg#--lang=}"
@@ -190,6 +202,7 @@ copy_reference_db_atomic() {
 install_reference_db() {
     if $SKIP_REFERENCE_DB; then
         color_yellow "[ref-db] Skipped (--skip-reference-db)"
+        phase_progress refdb 100 "skipped"
         return 0
     fi
 
@@ -197,14 +210,18 @@ install_reference_db() {
         color_yellow "[ref-db] Source not found: $REFERENCE_DB_SRC"
         echo "         The REST-API reference DB is optional — skipping."
         REF_DB_STATUS="missing"
+        phase_progress refdb 100 "no source"
         return 0
     fi
 
     if $DRY_RUN; then
         color_yellow "[ref-db] Dry-run — would copy $REFERENCE_DB_SRC → $REFERENCE_DB_DST"
         REF_DB_STATUS="dry-run"
+        phase_progress refdb 100 "dry-run"
         return 0
     fi
+
+    phase_progress refdb 0 "Installing reference DB..."
 
     local src_size
     src_size=$(stat -f%z "$REFERENCE_DB_SRC" 2>/dev/null || stat -c%s "$REFERENCE_DB_SRC" 2>/dev/null || echo 0)
@@ -220,6 +237,7 @@ install_reference_db() {
         if copy_reference_db_atomic "$REFERENCE_DB_SRC" "$REFERENCE_DB_DST"; then
             color_green "[ref-db] OK: copied to $REFERENCE_DB_DST"
             REF_DB_STATUS="copied"
+            phase_progress refdb 100 "ref-db installed"
             return 0
         fi
         color_yellow "[ref-db] Direct copy failed — falling back to server-restart cycle"
@@ -231,6 +249,7 @@ install_reference_db() {
         if copy_reference_db_atomic "$REFERENCE_DB_SRC" "$REFERENCE_DB_DST"; then
             color_green "[ref-db] OK: copied to $REFERENCE_DB_DST (no server was running)"
             REF_DB_STATUS="copied"
+            phase_progress refdb 100 "ref-db installed"
             return 0
         fi
         color_red "[ref-db] ERROR: Copy failed and no server is running. Check permissions."
@@ -267,6 +286,7 @@ install_reference_db() {
         color_yellow "[ref-db] start-servers.sh returned non-zero — check logs/rest-api.log"
     fi
 
+    phase_progress refdb 100 ""
     return $copy_rc
 }
 
@@ -350,6 +370,8 @@ fi
 
 # -------------------- Setup checks --------------------
 
+phase_progress check 0 "Validating environment..."
+
 # Python 3 vorhanden?
 if ! command -v python3 >/dev/null 2>&1; then
     color_red "ERROR: python3 not found in PATH" >&2
@@ -380,12 +402,42 @@ if [ -n "$USER_LANG" ]; then
     fi
 fi
 
+# Validate comma-separated language list (--langs=de,fr,it). Splits on comma,
+# rejects any unknown codes — fail-fast so a typo from the frontend doesn't
+# silently install the wrong subset.
+declare -a USER_LANGS_ARRAY=()
+if [ -n "$USER_LANGS_CSV" ]; then
+    IFS=',' read -ra USER_LANGS_ARRAY <<< "$USER_LANGS_CSV"
+    for ul in "${USER_LANGS_ARRAY[@]}"; do
+        ul_trim="${ul// /}"
+        [ -z "$ul_trim" ] && continue
+        valid=false
+        for l in "${ALL_LANGS[@]}"; do
+            if [ "$l" = "$ul_trim" ]; then
+                valid=true
+                break
+            fi
+        done
+        if ! $valid; then
+            color_red "ERROR: Unknown language code in --langs: $ul_trim" >&2
+            echo "Available: ${ALL_LANGS[*]}" >&2
+            exit 1
+        fi
+    done
+fi
+
 # -------------------- Determine target languages --------------------
 
 declare -a TARGET_LANGS=("$REFERENCE_LANG")
 
 if $INSTALL_ALL; then
     TARGET_LANGS=("${ALL_LANGS[@]}")
+elif [ ${#USER_LANGS_ARRAY[@]} -gt 0 ]; then
+    for ul in "${USER_LANGS_ARRAY[@]}"; do
+        ul_trim="${ul// /}"
+        [ -z "$ul_trim" ] && continue
+        TARGET_LANGS+=("$ul_trim")
+    done
 elif [ -n "$USER_LANG" ] && [ "$USER_LANG" != "$REFERENCE_LANG" ]; then
     TARGET_LANGS+=("$USER_LANG")
 fi
@@ -423,6 +475,8 @@ mkdir -p "$DOCS_DIR" || {
     exit 2
 }
 
+phase_progress check 100 ""
+
 # -------------------- Reporting header --------------------
 
 echo ""
@@ -458,9 +512,18 @@ TOTAL_FILES=0
 TOTAL_BYTES=0
 OVERALL_RC=0
 
+# Per-language slice within the "crawl" phase budget (10-90 → 80% total).
+# LANG_IDX is bumped before processing so that any `continue` later in the
+# loop body still advances the bar to the next slice on the next iteration.
+LANG_COUNT=${#TARGET_LANGS[@]}
+LANG_IDX=0
+
 for lang in "${TARGET_LANGS[@]}"; do
+    LANG_START_PCT=$((LANG_IDX * 100 / LANG_COUNT))
+    LANG_IDX=$((LANG_IDX + 1))
     echo "════════════════════════════════════════════════════════════"
     color_cyan "[$lang] Processing language..."
+    phase_progress crawl "$LANG_START_PCT" "[$lang] Starting..."
 
     # Verify language is reachable
     if ! check_url "${BASE_URL}/${lang}/pro-help/content/index.html"; then
@@ -600,10 +663,14 @@ with open('''$LANG_DIR/.version''', 'w') as f:
     echo ""
 done
 
+# Ensure the crawl phase reaches 100% even if the last language hit `continue`.
+phase_progress crawl 100 ""
+
 # -------------------- Update manifest --------------------
 
 if ! $DRY_RUN; then
     color_cyan "Updating manifest..."
+    phase_progress manifest 0 "Updating language manifest..."
     python3 <<EOF
 import json, os, datetime
 
@@ -654,6 +721,7 @@ with open(manifest_path, "w") as f:
 print(f"  Manifest written: {manifest_path}")
 print(f"  Languages registered: {len(languages)}")
 EOF
+    phase_progress manifest 100 ""
 fi
 
 # -------------------- Update .fmlab/docs.json --------------------
@@ -691,6 +759,7 @@ if ! $DRY_RUN && [ -f "$REGISTER_SCRIPT" ]; then
     fi
 
     color_cyan "Updating .fmlab/docs.json..."
+    phase_progress register 0 "Updating .fmlab/docs.json..."
     python3 "$REGISTER_SCRIPT" \
         --id claris-help \
         --name "Claris FileMaker" \
@@ -702,6 +771,7 @@ if ! $DRY_RUN && [ -f "$REGISTER_SCRIPT" ]; then
         --functions "${FUNCTION_COUNT:-none}" \
         $LANG_ARGS \
         || color_yellow "WARNING: register_docs.py failed (non-fatal)."
+    phase_progress register 100 ""
 fi
 
 # -------------------- Final summary --------------------

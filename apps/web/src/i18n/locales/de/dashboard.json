@@ -30,5 +30,19 @@
   "list": {
     "badgeFilter":        "verwendet",
     "noFilteredEntries":  "Keine Einträge mit Treffern."
+  },
+  "install": {
+    "action":          "Installieren",
+    "actionSelected":  "Auswahl installieren",
+    "actionAll":       "Alle installieren",
+    "running":         "Installiert…",
+    "done":            "Installiert",
+    "choose":          "Sprachen wählen",
+    "pickLanguages":   "Sprachen wählen",
+    "langDefault":     "Standard",
+    "langInstalled":   "bereits installiert",
+    "skipsInstalled":  "Bereits installierte Sprachen werden übersprungen.",
+    "errorClose":      "Meldung schließen",
+    "unknownError":    "Unbekannter Fehler."
   }
 }

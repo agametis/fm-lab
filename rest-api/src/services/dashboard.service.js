@@ -431,14 +431,22 @@ async function builtinDocsOverviewInstalled() {
 
 /**
  * builtin:docs_overview_available — sichtbare Doc-Sets aus dem Catalog,
- * die noch NICHT installiert sind. Für den "Verfügbar"-Block der
+ * die noch NICHT vollständig installiert sind. Für den "Verfügbar"-Block der
  * docs_overview-Sub-Dashboard mit Install-Button.
+ *
+ * Multi-Sprach-Sets bleiben hier solange sichtbar, wie noch nicht alle
+ * Catalog-Sprachen installiert sind (siehe docs-manifest.listVisibleAvailable).
+ * `installed_languages` listet die schon vorhandenen Sprachen, damit das
+ * Frontend sie im Sprach-Picker als ausgegraut darstellen kann.
  */
 async function builtinDocsOverviewAvailable() {
   const docsManifest = require('./docs-manifest');
   const rows = docsManifest.listVisibleAvailable();
-  return rows.map(({ catalog }) => {
+  return rows.map(({ catalog, installed }) => {
     const langs = Array.isArray(catalog.languages) ? catalog.languages : [];
+    const installedLangs = installed && Array.isArray(installed.languages)
+      ? installed.languages
+      : [];
     return {
       id: catalog.id,
       name: catalog.name || catalog.id,
@@ -448,9 +456,10 @@ async function builtinDocsOverviewAvailable() {
       languages: langs,
       languages_count: langs.length,
       languages_display: langs.map(l => String(l).toUpperCase()).join(' · '),
+      installed_languages: installedLangs,
       output_format: catalog.output_format || null,
       download_format: catalog.download_format || null,
-      installed: false,
+      installed: installedLangs.length > 0, // true für Teil-Installs
     };
   });
 }

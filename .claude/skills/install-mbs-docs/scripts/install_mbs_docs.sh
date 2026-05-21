@@ -33,6 +33,11 @@ DOCSET_PATH="MBS.docset/Contents/Resources"
 # shellcheck source=/dev/null
 source "$PROJECT_ROOT/tools/install_modes.sh"
 
+# Total budget for a fresh install — sub-progress emits within these ranges so
+# the bar fills continuously even during long operations (download, extract,
+# cp -R). See tools/install_modes.sh::set_phase_budget for the contract.
+set_phase_budget "check:0-10 download:10-40 extract:40-55 install:55-85 parse:85-92 register:92-98 done:98-100"
+
 # Parse arguments — split off shared modes first, then handle leftover flags.
 QUIET_MODE=false; CHECK_MODE=false; INSTALL_MODE=false
 REMAINING_ARGS=()
@@ -113,7 +118,7 @@ check_version() {
         return 0
     fi
 
-    emit_progress check 10 "Checking for updates..."
+    phase_progress check 0 "Checking for updates..."
 
     REMOTE_DATE=$(get_remote_timestamp)
     if [ -z "$REMOTE_DATE" ]; then
@@ -150,7 +155,7 @@ check_version() {
 
 # Function: Download MBS documentation
 download_docs() {
-    emit_progress download 20 "Downloading from $ZIP_URL"
+    phase_progress download 0 "Downloading from $ZIP_URL"
 
     if $QUIET_MODE; then
         curl -sL -o "$TEMP_DIR/MBS.zip" "$ZIP_URL"
@@ -172,12 +177,12 @@ download_docs() {
         exit 2
     fi
 
-    emit_progress download 40 "Download complete ($(echo "scale=1; $FILE_SIZE / 1024 / 1024" | bc) MB)"
+    phase_progress download 100 "Download complete ($(echo "scale=1; $FILE_SIZE / 1024 / 1024" | bc) MB)"
 }
 
 # Function: Extract and validate archive
 extract_docs() {
-    emit_progress extract 50 "Extracting documentation..."
+    phase_progress extract 0 "Extracting documentation..."
 
     unzip -q "$TEMP_DIR/MBS.zip" -d "$TEMP_DIR"
 
@@ -201,11 +206,13 @@ extract_docs() {
         emit_error "docSet.dsidx not found in archive"
         exit 3
     fi
+
+    phase_progress extract 100 "Extraction complete"
 }
 
 # Function: Install documentation files
 install_docs() {
-    emit_progress install 60 "Installing to $DOCS_DIR..."
+    phase_progress install 0 "Installing to $DOCS_DIR..."
 
     # SAFETY CHECK 1: Validate DOCS_DIR variable
     if [ -z "$DOCS_DIR" ]; then
@@ -257,8 +264,10 @@ install_docs() {
     # Remove old files using relative paths (now safe)
     rm -rf "./Documents" "./docSet.dsidx"
 
-    # Copy new files (back to using absolute path for source)
-    cp -R "$TEMP_DIR/$DOCSET_PATH/Documents" "$DOCS_DIR/" 2>&1
+    # Copy new files (back to using absolute path for source). copy_with_progress
+    # polls the dst size against the src size and emits phase_progress events
+    # roughly every second so the bar fills smoothly across these 8k+ files.
+    copy_with_progress "$TEMP_DIR/$DOCSET_PATH/Documents" "$DOCS_DIR/Documents" install 1
     if [ $? -ne 0 ]; then
         emit_error "Failed to copy Documents directory"
         exit 4
@@ -374,12 +383,14 @@ main() {
     install_docs
 
     # Step 5: Parse components and create exceptions table
-    emit_progress parse 80 "Parsing MBS components..."
+    phase_progress parse 0 "Parsing MBS components..."
     parse_components
+    phase_progress parse 100 ""
 
     # Step 6: Register in .fmlab/docs.json (for web home dashboard)
-    emit_progress register 95 "Updating .fmlab/docs.json..."
+    phase_progress register 0 "Updating .fmlab/docs.json..."
     register_docs
+    phase_progress register 100 ""
 
     # Step 7: Report success
     REMOTE_DATE=$(get_remote_timestamp)

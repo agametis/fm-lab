@@ -49,6 +49,7 @@
                 "primary": "{{name}}",
                 "secondary": "{{description}}",
                 "tertiary": "{{languages_display}}",
+                "inlineControl": "docsInstall",
                 "onClick": {
                   "action": "openUrl",
                   "argsString": "url={{source_url}}"
@@ -60,6 +61,10 @@
             }
           }
         ]
+      },
+      {
+        "type": "DocsInstallErrorBezel",
+        "props": { "span": 12 }
       }
     ]
   }

@@ -25,6 +25,15 @@ export function DashboardHost({ id, params }: Props) {
   const [datasets, setDatasets] = useState<DashboardDataResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // External re-fetch trigger (e.g. after a successful docset install via
+  // the DocsetInstallControl inline-control). Bumped from a window event.
+  const [reloadTick, setReloadTick] = useState(0);
+
+  useEffect(() => {
+    const handler = () => setReloadTick(n => n + 1);
+    window.addEventListener('fmlab:reload-dashboard', handler);
+    return () => window.removeEventListener('fmlab:reload-dashboard', handler);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,7 +63,7 @@ export function DashboardHost({ id, params }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [id, JSON.stringify(params || {}), lang]);
+  }, [id, JSON.stringify(params || {}), lang, reloadTick]);
 
   if (loading) {
     return <div className="dash-host dash-host--loading">{t('dashboard.loading')}</div>;

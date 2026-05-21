@@ -96,10 +96,28 @@ function listVisibleInstalled() {
 
 function listVisibleAvailable() {
   const manifest = readManifestSync();
-  const installedIds = new Set(manifest.installed.map(i => i.id));
+  const installedById = new Map(manifest.installed.map(i => [i.id, i]));
   return manifest.catalog
-    .filter(c => c.visible && !installedIds.has(c.id))
-    .map(c => ({ catalog: c }));
+    .filter(c => {
+      if (!c.visible) return false;
+      const inst = installedById.get(c.id);
+      if (!inst) return true; // not installed at all → show
+      // Multi-language doc-sets stay in "Available" as long as at least one
+      // catalog language is not yet installed. This lets the user pick the
+      // missing languages without losing access to the install UI after the
+      // first language was installed (e.g. claris-help with only EN so far).
+      const catalogLangs = Array.isArray(c.languages) ? c.languages : [];
+      if (catalogLangs.length <= 1) return false;
+      const installedLangs = new Set(Array.isArray(inst.languages) ? inst.languages : []);
+      return catalogLangs.some(l => !installedLangs.has(l));
+    })
+    .map(c => {
+      const inst = installedById.get(c.id);
+      return {
+        catalog: c,
+        installed: inst || null,
+      };
+    });
 }
 
 module.exports = {

@@ -155,18 +155,31 @@
 }
 .dash-list__item {
   display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+}
+.dash-list__item-row {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   padding: 6px 8px;
   border-radius: 4px;
 }
-.dash-list__item--clickable {
+.dash-list__item--clickable > .dash-list__item-row {
   cursor: pointer;
   transition: background 0.12s;
 }
-.dash-list__item--clickable:hover {
+.dash-list__item--clickable > .dash-list__item-row:hover {
   background: var(--color-hover-bg);
+}
+.dash-list__item-extra {
+  padding: 4px 16px 8px;
+}
+.dash-list__inline-control {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 .dash-list__main {
   display: flex;
@@ -668,4 +681,206 @@
   .dash-stack {
     grid-column: 1 / -1 !important;
   }
+}
+
+/* --- DocsetInstallControl (inline-control "docsInstall") --- */
+.docs-install-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.docs-install-split {
+  display: inline-flex;
+  align-items: stretch;
+}
+.docs-install-btn {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.docs-install-btn:hover:not(:disabled) {
+  background: var(--color-accent-soft-bg);
+  border-color: var(--color-accent);
+  color: var(--color-accent-soft-fg);
+}
+.docs-install-btn:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+.docs-install-btn--running {
+  color: var(--color-text-muted);
+}
+.docs-install-btn--done {
+  color: var(--color-text-muted);
+  border-style: dashed;
+}
+/* Split-Button: square off the inner edge so main + caret look like one unit. */
+.docs-install-split--has-caret .docs-install-btn {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right-width: 0;
+}
+.docs-install-caret {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.docs-install-caret:hover {
+  background: var(--color-accent-soft-bg);
+  border-color: var(--color-accent);
+  color: var(--color-accent-soft-fg);
+}
+.docs-install-caret[aria-expanded="true"] {
+  background: var(--color-accent-soft-bg);
+  color: var(--color-accent-soft-fg);
+}
+
+/* Popover is rendered via React Portal into document.body and positioned
+ * via inline style (top/right), so it escapes the Card's overflow:hidden
+ * and any other ancestor stacking context. */
+.docs-install-popover {
+  position: fixed;
+  z-index: 1000;
+  min-width: 220px;
+  max-height: calc(100vh - 20px);
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  font-size: 0.82rem;
+  text-align: left;
+}
+.docs-install-popover__title {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 6px;
+}
+.docs-install-popover__list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.docs-install-popover__row {
+  padding: 2px 0;
+}
+.docs-install-popover__row label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.docs-install-popover__row.is-disabled label {
+  cursor: default;
+  color: var(--color-text-muted);
+}
+.docs-install-popover__code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  min-width: 3.5em;
+}
+.docs-install-popover__note {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.docs-install-popover__actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.docs-install-popover__actions .docs-install-btn {
+  flex: 1;
+}
+.docs-install-popover__hint {
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* Progress bar — monochrome outline, fills via width transition.
+ * Indented horizontally so it visually belongs to the row above. */
+.docs-install-progress {
+  height: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  overflow: hidden;
+  background: transparent;
+}
+.docs-install-progress__bar {
+  height: 100%;
+  background: var(--color-text-muted);
+  transition: width 0.3s ease-out;
+}
+
+/* --- DocsInstallErrorBezel --- */
+.docs-install-bezel {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.docs-install-bezel__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-text-muted);
+  border-radius: 4px;
+  background: var(--color-bg-surface-2);
+  font-size: 0.82rem;
+}
+.docs-install-bezel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.docs-install-bezel__title {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.docs-install-bezel__message {
+  color: var(--color-text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.docs-install-bezel__close {
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.docs-install-bezel__close:hover {
+  background: var(--color-hover-bg);
+  color: var(--color-text-primary);
 }

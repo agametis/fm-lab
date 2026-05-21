@@ -245,6 +245,11 @@ async function install(req, res, next) {
     return next(err);
   }
 
+  // Optional per-set extraArgs (e.g. claris-help: --langs=de,fr,it / --all)
+  // Strictly whitelisted in docs-install.sanitizeExtraArgs — unknown args are
+  // dropped, never forwarded blindly to the spawned script.
+  const extraArgs = docsInstall.sanitizeExtraArgs(id, req.body?.extraArgs);
+
   res.writeHead(200, {
     'Content-Type': 'text/event-stream; charset=utf-8',
     'Cache-Control': 'no-cache, no-transform',
@@ -265,7 +270,14 @@ async function install(req, res, next) {
 
   const ac = new AbortController();
   let aborted = false;
-  req.on('close', () => {
+  // IMPORTANT: bind to res.on('close'), not req.on('close').
+  // For POST requests with a body, req.on('close') fires as soon as the
+  // request body has been fully received — that's milliseconds after the
+  // spawn, not when the client actually disconnects. res.on('close') only
+  // fires when the response stream is torn down (real client disconnect or
+  // our own res.end()), which is the actual abort signal we care about.
+  res.on('close', () => {
+    if (res.writableEnded) return; // normal end, not an abort
     aborted = true;
     ac.abort();
   });
@@ -279,6 +291,7 @@ async function install(req, res, next) {
     const exitCode = await docsInstall.runInstaller({
       id,
       mode: 'install',
+      extraArgs,
       onEvent: send,
       signal: ac.signal,
     });

@@ -84,6 +84,40 @@ function ensureScriptExists(id) {
 }
 
 /**
+ * Per-doc-set whitelist for `extraArgs` accepted from HTTP callers. Returns
+ * a sanitized array (drops anything not allowed; ignores positional values
+ * outside of the allowed pattern). Throws on actively malformed input.
+ *
+ * Keep additions here narrow: each entry maps to a CLI flag of the underlying
+ * skill script and is interpolated *exactly once* into the spawn argv — no
+ * shell, so the worst a bad value can do is fail the script's own validation.
+ */
+function sanitizeExtraArgs(id, extraArgs) {
+  if (!Array.isArray(extraArgs) || extraArgs.length === 0) return [];
+
+  const out = [];
+  for (const raw of extraArgs) {
+    if (typeof raw !== 'string') continue;
+    const arg = raw.trim();
+    if (!arg) continue;
+
+    if (id === 'claris-help') {
+      if (arg === '--all') { out.push('--all'); continue; }
+      // --langs=<csv of 2-6 letter ISO codes, optionally hyphenated e.g. zh-Hans>
+      const m = /^--langs=([A-Za-z][A-Za-z0-9-]{1,7}(?:,[A-Za-z][A-Za-z0-9-]{1,7})*)$/.exec(arg);
+      if (m) { out.push(`--langs=${m[1]}`); continue; }
+      // --lang=<code>
+      const single = /^--lang=([A-Za-z][A-Za-z0-9-]{1,7})$/.exec(arg);
+      if (single) { out.push(`--lang=${single[1]}`); continue; }
+    }
+    // Unknown / not-whitelisted args are silently dropped — they would
+    // otherwise be a remote-controlled CLI surface. Log so operators see it.
+    console.warn(`[docs-install] dropping non-whitelisted extraArg for ${id}: ${arg}`);
+  }
+  return out;
+}
+
+/**
  * Spawnt das Installer-Skript und ruft `onEvent(evt)` für jede NDJSON-Zeile
  * auf. Resolvet mit dem Exit-Code, sobald der Prozess beendet ist.
  *
@@ -171,6 +205,7 @@ module.exports = {
   scriptPathFor,
   assertAllowedId,
   ensureScriptExists,
+  sanitizeExtraArgs,
   runInstaller,
   checkDocset,
 };

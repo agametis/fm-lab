@@ -122,5 +122,20 @@
       }
     }
   ],
-  "installed": []
+  "installed": [
+    {
+      "id": "fm-lab",
+      "directory": "docs/fm-lab",
+      "version": null,
+      "installed_at": "2026-05-21T20:37:05Z",
+      "languages": [
+        "en"
+      ],
+      "stats": {
+        "categories": null,
+        "functions": null,
+        "index_ok": null
+      }
+    }
+  ]
 }

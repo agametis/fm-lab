@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+import type { NavigateFunction } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { PrimitiveProps } from '../types';
 import { substituteString } from '../tokens';
@@ -6,6 +7,7 @@ import { useRowSearch } from './_useRowSearch';
 import { dispatchAction, resolveAction } from '../actions';
 import { translateCellValue } from './_cellTranslate';
 import type { ActionSpec } from '../actions';
+import { getInlineControl, type InlineControlComponent } from './inlineControls';
 
 interface BadgeOptions {
   /**
@@ -42,6 +44,13 @@ interface RowTemplate {
   badge?: string;
   badgeOptions?: BadgeOptions;
   onClick?: ActionSpec;
+  /**
+   * Name of a registered inline-control component (see inlineControls.ts).
+   * Rendered right-aligned per row, receives the row as prop. Click events
+   * inside the control stop propagation so they don't trigger the row's
+   * onClick action. Currently registered: `docsInstall`.
+   */
+  inlineControl?: string;
 }
 
 /**
@@ -145,83 +154,20 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
       )}
       <ul className="dash-list">
         {search.filtered.map((row, i) => {
-        const primary = tx(substituteString(rowTemplate.primary, row));
-        const secondary = rowTemplate.secondary
-          ? tx(substituteString(rowTemplate.secondary, row))
-          : '';
-        const tertiary = rowTemplate.tertiary
-          ? tx(substituteString(rowTemplate.tertiary, row))
-          : '';
-        const quaternary = rowTemplate.quaternary
-          ? tx(substituteString(rowTemplate.quaternary, row))
-          : '';
-        const badgeText = badgeByRow.get(row) ?? '';
-        const showBadge = badgeText && !(badgeOpts.hideZero && isZeroBadge(badgeText));
-        const clickable = !!rowTemplate.onClick;
-
-        return (
-          <li
-            key={i}
-            className={`dash-list__item${clickable ? ' dash-list__item--clickable' : ''}`}
-            onClick={clickable ? () => dispatchAction(rowTemplate.onClick, row, { navigate }) : undefined}
-            role={clickable ? 'button' : undefined}
-            tabIndex={clickable ? 0 : undefined}
-            onKeyDown={
-              clickable
-                ? e => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      dispatchAction(rowTemplate.onClick, row, { navigate });
-                    }
-                  }
-                : undefined
-            }
-          >
-            <div className="dash-list__main">
-              <span className="dash-list__primary">{primary}</span>
-              {secondary && <span className="dash-list__secondary">{secondary}</span>}
-              {tertiary && <span className="dash-list__tertiary">{tertiary}</span>}
-              {quaternary && <span className="dash-list__quaternary">{quaternary}</span>}
-            </div>
-            {showBadge && (() => {
-              // Badge-Action wird gegen die aktuelle Row resolved (Token-
-              // Substitution). Wenn der ResolveAction nach Substitution `null`
-              // liefert (z.B. weil action-Token leer war), bleibt die Pill
-              // ein reiner Anzeige-Pill ohne Click.
-              const resolvedBadge = badgeOpts.onClick
-                ? resolveAction(badgeOpts.onClick, row as Record<string, unknown>)
-                : null;
-              const badgeClickable = !!resolvedBadge && !!resolvedBadge.action;
-              const onBadgeClick = badgeClickable
-                ? (e: React.MouseEvent | React.KeyboardEvent) => {
-                    e.stopPropagation();
-                    dispatchAction(badgeOpts.onClick, row, { navigate });
-                  }
-                : undefined;
-              return (
-                <span
-                  className={`dash-badge dash-badge--${slugify(badgeText)}${badgeClickable ? ' dash-badge--clickable' : ''}`}
-                  onClick={onBadgeClick}
-                  role={badgeClickable ? 'button' : undefined}
-                  tabIndex={badgeClickable ? 0 : undefined}
-                  onKeyDown={
-                    badgeClickable
-                      ? e => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            onBadgeClick!(e);
-                          }
-                        }
-                      : undefined
-                  }
-                >
-                  {badgeText}
-                </span>
-              );
-            })()}
-          </li>
-        );
-      })}
+          const InlineCtrl = getInlineControl(rowTemplate.inlineControl);
+          return (
+            <ListItem
+              key={i}
+              row={row}
+              rowTemplate={rowTemplate}
+              badgeOpts={badgeOpts}
+              badgeText={badgeByRow.get(row) ?? ''}
+              InlineCtrl={InlineCtrl}
+              navigate={navigate}
+              tx={tx}
+            />
+          );
+        })}
       </ul>
       {(hasQuery || usedOnly) && search.filtered.length === 0 && (
         <div className="dash-search-bar__empty">
@@ -236,4 +182,98 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
 
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+interface ListItemProps {
+  row: Record<string, unknown>;
+  rowTemplate: RowTemplate;
+  badgeOpts: BadgeOptions;
+  badgeText: string;
+  InlineCtrl: InlineControlComponent | null;
+  navigate: NavigateFunction;
+  tx: (s: string) => string;
+}
+
+function ListItem({ row, rowTemplate, badgeOpts, badgeText, InlineCtrl, navigate, tx }: ListItemProps) {
+  // Slot for an optional block below the row (e.g. progress bar from an
+  // InlineControl). Lifted into per-item state so each row keeps its own.
+  const [extra, setExtra] = useState<ReactNode | null>(null);
+
+  const primary = tx(substituteString(rowTemplate.primary, row));
+  const secondary = rowTemplate.secondary ? tx(substituteString(rowTemplate.secondary, row)) : '';
+  const tertiary = rowTemplate.tertiary ? tx(substituteString(rowTemplate.tertiary, row)) : '';
+  const quaternary = rowTemplate.quaternary ? tx(substituteString(rowTemplate.quaternary, row)) : '';
+  const showBadge = badgeText && !(badgeOpts.hideZero && isZeroBadge(badgeText));
+  const clickable = !!rowTemplate.onClick;
+
+  const resolvedBadge = badgeOpts.onClick
+    ? resolveAction(badgeOpts.onClick, row)
+    : null;
+  const badgeClickable = !!resolvedBadge && !!resolvedBadge.action;
+  const onBadgeClick = badgeClickable
+    ? (e: React.MouseEvent | React.KeyboardEvent) => {
+        e.stopPropagation();
+        dispatchAction(badgeOpts.onClick, row, { navigate });
+      }
+    : undefined;
+
+  return (
+    <li
+      className={`dash-list__item${clickable ? ' dash-list__item--clickable' : ''}${extra ? ' dash-list__item--has-extra' : ''}`}
+    >
+      <div
+        className="dash-list__item-row"
+        onClick={clickable ? () => dispatchAction(rowTemplate.onClick, row, { navigate }) : undefined}
+        role={clickable ? 'button' : undefined}
+        tabIndex={clickable ? 0 : undefined}
+        onKeyDown={
+          clickable
+            ? e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  dispatchAction(rowTemplate.onClick, row, { navigate });
+                }
+              }
+            : undefined
+        }
+      >
+        <div className="dash-list__main">
+          <span className="dash-list__primary">{primary}</span>
+          {secondary && <span className="dash-list__secondary">{secondary}</span>}
+          {tertiary && <span className="dash-list__tertiary">{tertiary}</span>}
+          {quaternary && <span className="dash-list__quaternary">{quaternary}</span>}
+        </div>
+        {InlineCtrl && (
+          <div
+            className="dash-list__inline-control"
+            onClick={e => e.stopPropagation()}
+            onKeyDown={e => e.stopPropagation()}
+          >
+            <InlineCtrl row={row} setExtra={setExtra} />
+          </div>
+        )}
+        {showBadge && (
+          <span
+            className={`dash-badge dash-badge--${slugify(badgeText)}${badgeClickable ? ' dash-badge--clickable' : ''}`}
+            onClick={onBadgeClick}
+            role={badgeClickable ? 'button' : undefined}
+            tabIndex={badgeClickable ? 0 : undefined}
+            onKeyDown={
+              badgeClickable
+                ? e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onBadgeClick!(e);
+                    }
+                  }
+                : undefined
+            }
+          >
+            {badgeText}
+          </span>
+        )}
+      </div>
+      {extra && <div className="dash-list__item-extra">{extra}</div>}
+    </li>
+  );
 }

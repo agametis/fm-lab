@@ -30,6 +30,7 @@ Home dashboard restructured around navigation, and a deep, first-class integrati
   - **Doc dashboards** as the navigation surface: `docs/` (entry), `docs_overview/` (all installed sets), `docset_home/`, `docset_category/`, `docset_detail/` — all bundled, themed, and localized
   - **Frontend doc components**: `DocsEntryView` with dedicated styling and `DocsBreadcrumb` — render entries with internal-link rewriting, asset proxying, and back-navigation
   - **Doc installers redesigned** for the new manifest+index model: `install-claris-docs`, `install-duckdb-docs`, `install-fmide-docs`, `install-mbs-docs` — each installer now generates the manifest, builds/updates the index, and registers the doc set; shared logic in `tools/install_modes.sh` and `tools/register_docs.py`
+  - **Install button** for each available doc-set within the frontend
   - i18n: new dashboard / nav strings (en + de) for the doc surface
 - **New custom dashboard `script_comment_density/`** — code-quality metric surfacing scripts with low (or absent) comment coverage; KPI block plus findings list, localized in all 11 languages
 - **`create-custom-dashboard` skill** updated with refined conventions and guidance for the new dashboard layout (navigation tiles, locales, sub-dashboards)
