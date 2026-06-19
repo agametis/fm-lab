@@ -9,5 +9,6 @@
   "generic": "Algo salió mal. Por favor inténtalo de nuevo.",
   "loadHeading": "Error al cargar",
   "retryAria": "Reintentar",
-  "retryLabel": "Reintentar"
+  "retryLabel": "Reintentar",
+  "noConnection": "Sin conexión con la API REST. Comprueba si el servidor está en ejecución."
 }

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": { "columns": 12, "gap": 16 },
+    "children": [
+      {
+        "type": "Card",
+        "props": {
+          "span": 12,
+          "title": "XML-Konvertierung",
+          "subtitle": "Importiert alle Dateien aus dem xml/-Verzeichnis in die DuckDB-Datenbank."
+        },
+        "data": { "dataset": "directory_status" },
+        "children": [
+          {
+            "type": "XmlConvertControl",
+            "props": {}
+          },
+          {
+            "type": "Table",
+            "props": {
+              "rowKey": "filename",
+              "density": "comfortable",
+              "liveHighlightField": "filename",
+              "liveStatusField": "emoji",
+              "columns": [
+                { "field": "emoji",       "label": "",            "align": "center" },
+                { "field": "filename",    "label": "Datei" },
+                { "field": "mtime",       "label": "Datum",       "format": "date:relative" },
+                { "field": "size",        "label": "Größe",       "format": "filesize", "align": "right" },
+                { "field": "imported_at", "label": "Importiert",  "format": "date:relative" }
+              ],
+              "empty": {
+                "message": "Keine Dateien im XML-Verzeichnis vorhanden."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "props": {
+          "span": 12,
+          "title": "Letzte Konvertierung"
+        },
+        "children": [
+          {
+            "type": "XmlConvertLog",
+            "props": {}
+          }
+        ]
+      }
+    ]
+  }
+}

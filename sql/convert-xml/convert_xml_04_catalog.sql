@@ -1,908 +1,11 @@
 /*
--- Universal Catalog SQL Script
--- Erstellt VariableUsages, VariablesCatalog, ObjectCatalog und ObjectLinks
---
--- WICHTIG: Diese Datei wird NACH convert_xml.sql UND extract_xml_references.py ausgeführt!
--- Sie setzt voraus, dass:
---   1. Alle 25 Basis-Tabellen bereits befüllt sind (convert_xml.sql)
---   2. XMLLayoutReferences und XMLStepReferences existieren (extract_xml_references.py + CSV-Import)
---
--- Reihenfolge:
---   Phase 0: Import der XML-Referenz-CSVs (Python XML-Extraktor)
---   Phase A: Variablen-Parser (VariableUsages + VariablesCatalog)
---   Phase B: ObjectCatalog (inkl. Variablen als Variable)
---   Phase C: ObjectLinks (inkl. sets_variable/reads_variable/displays_variable)
---   Phase D: Statistik-Views
---
--- Usage:
---   1. Alle XML-Dateien importieren: convert-xml --batch (führt alles automatisch aus)
---   2. Oder manuell:
---      duckdb db/fm_catalog.duckdb -c "SET VARIABLE fm_xml = 'File.xml';" < sql/convert_xml.sql
---      python3 scripts/extract_xml_references.py
---      duckdb db/fm_catalog.duckdb < sql/create_universal_catalogs.sql
---
--- Version 0.3
--- Date: 2026-03-26
+-- convert_xml_04_catalog.sql — Phase 4 der XML-Konvertierungs-Pipeline
+-- (project/plan_xml_diff.md §7.1). Generischer ObjektKatalog + Links:
+-- ObjectCatalog (alle Objekttypen) und ObjectLinks (operational + structural,
+-- cross-file). TABLE-ONLY (liest nur P1–P3-Tabellen, kein read_xml). Läuft nach
+-- Phase 3, datei-übergreifend, einmal am Schluss.
+-- Ausgekoppelt aus create_universal_catalogs.sql (Phase B/C/D, Logik unverändert).
 */
-
--- ############################################################
--- Phase 0: XML-Referenzen (erstellt von convert_xml.sql)
--- ############################################################
--- XMLLayoutReferences und XMLStepReferences werden direkt in
--- convert_xml.sql per xml_extract_text() erzeugt.
--- Kein Python-Script oder CSV-Import mehr nötig.
-
-
--- ############################################################
--- Phase A: Variablen-Parser
--- ############################################################
--- Erstellt VariableUsages + VariablesCatalog aus:
--- 1. DDR_Calculations VariableReference Chunks (primär)
--- 2. StepsForScripts Set Variable Schritte
--- 3. MBS Superglobale (Regex auf Calculation_Text)
--- 4. Merge-Variables aus LayoutObjects
--- 5. Regex-Fallback für Dateien ohne DDR
--- ############################################################
-
-
--- ========================================
--- A.1: VariableUsages Tabelle
--- ========================================
-
-DROP TABLE IF EXISTS VariableUsages;
-
-CREATE TABLE VariableUsages (
-    Variable_Name VARCHAR NOT NULL,
-    Variable_Scope VARCHAR NOT NULL,       -- global, local, superglobal, let_local
-    Usage_Type VARCHAR NOT NULL,           -- set, read
-    Context_Type VARCHAR NOT NULL,         -- script_step, calculation, auto_enter_calc, custom_function, layout_object
-    Context_UUID VARCHAR,
-    Context_Name VARCHAR,
-    Script_Name VARCHAR,
-    Script_UUID VARCHAR,
-    Step_Index INTEGER,
-    Table_Name VARCHAR,
-    Field_Name VARCHAR,
-    Calc_Hash VARCHAR,
-    Source VARCHAR NOT NULL,               -- set_variable_step, ddr_chunk, mbs_variable_call, merge_variable, regex_fallback
-    File_Name VARCHAR NOT NULL
-);
-
-
--- ========================================
--- A.2: Chunk_Type in DDR_Calculations materialisieren
--- ========================================
-
-UPDATE DDR_Calculations
-SET Chunk_Type = regexp_extract(Chunk_Content, '<Chunk type="([^"]+)"', 1)
-WHERE Chunk_Type IS NULL
-  AND Chunk_Content IS NOT NULL;
-
-
--- ========================================
--- A.3: DDR VariableReference Chunks → VariableUsages
--- ========================================
--- Vorab-Aggregation: pro (Calc_Hash, File_Name, Variable_Name) genau eine Zeile.
--- Verhindert Inflation durch (a) mehrfache Verwendung derselben Variable in einer
--- Formel (mehrere Chunk-Rows) und (b) shared Calc_Hashes über mehrere Calc_UUIDs
--- (z.B. wenn viele Felder dieselbe Formel haben → identischer Hash).
-
-DROP TABLE IF EXISTS _DDR_VarRefs_Distinct;
-CREATE TEMP TABLE _DDR_VarRefs_Distinct AS
-SELECT DISTINCT
-    Calc_Hash,
-    File_Name,
-    regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) as Variable_Name
-FROM DDR_Calculations
-WHERE Chunk_Type = 'VariableReference'
-  AND regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) IS NOT NULL;
-
--- 3a: Variablen in Calculated Fields (FieldsForTables.DDR_Hash)
-INSERT INTO VariableUsages
-SELECT
-    vr.Variable_Name,
-    CASE
-        WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
-        WHEN vr.Variable_Name LIKE '$%' THEN 'local'
-        ELSE 'let_local'
-    END as Variable_Scope,
-    'read' as Usage_Type,
-    'calculation' as Context_Type,
-    f.Field_UUID as Context_UUID,
-    f.Table_Name || '::' || f.Field_Name as Context_Name,
-    NULL as Script_Name,
-    NULL as Script_UUID,
-    NULL as Step_Index,
-    f.Table_Name,
-    f.Field_Name,
-    vr.Calc_Hash,
-    'ddr_chunk' as Source,
-    vr.File_Name
-FROM _DDR_VarRefs_Distinct vr
-JOIN FieldsForTables f ON vr.Calc_Hash = f.DDR_Hash AND vr.File_Name = f.File_Name;
-
--- 3b: Variablen in AutoEnter Calculated Fields (FieldsForTables.AE_Calc_Hash)
-INSERT INTO VariableUsages
-SELECT
-    vr.Variable_Name,
-    CASE
-        WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
-        WHEN vr.Variable_Name LIKE '$%' THEN 'local'
-        ELSE 'let_local'
-    END as Variable_Scope,
-    'read' as Usage_Type,
-    'auto_enter_calc' as Context_Type,
-    f.Field_UUID as Context_UUID,
-    f.Table_Name || '::' || f.Field_Name as Context_Name,
-    NULL as Script_Name,
-    NULL as Script_UUID,
-    NULL as Step_Index,
-    f.Table_Name,
-    f.Field_Name,
-    vr.Calc_Hash,
-    'ddr_chunk' as Source,
-    vr.File_Name
-FROM _DDR_VarRefs_Distinct vr
-JOIN FieldsForTables f ON vr.Calc_Hash = f.AE_Calc_Hash AND vr.File_Name = f.File_Name
-WHERE f.AE_Calc_Hash IS NOT NULL;
-
--- 3c: Variablen in CustomFunctions (CustomFunctionsCatalog.DDR_Hash)
-INSERT INTO VariableUsages
-SELECT
-    vr.Variable_Name,
-    CASE
-        WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
-        WHEN vr.Variable_Name LIKE '$%' THEN 'local'
-        ELSE 'let_local'
-    END as Variable_Scope,
-    'read' as Usage_Type,
-    'custom_function' as Context_Type,
-    cf.CF_UUID as Context_UUID,
-    cf.CF_Name as Context_Name,
-    NULL as Script_Name,
-    NULL as Script_UUID,
-    NULL as Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    vr.Calc_Hash,
-    'ddr_chunk' as Source,
-    vr.File_Name
-FROM _DDR_VarRefs_Distinct vr
-JOIN CustomFunctionsCatalog cf ON vr.Calc_Hash = cf.DDR_Hash AND vr.File_Name = cf.File_Name
-WHERE cf.DDR_Hash IS NOT NULL;
-
--- 3d: Variablen in Script-Schritt-Formeln
--- StepsForScripts.Parameters_XML enthält ChunkList-Hashes → DDR_Calculations.Calc_Hash
-INSERT INTO VariableUsages
-WITH step_hashes AS (
-    SELECT
-        Script_Name, Script_UUID, Step_Index, File_Name,
-        unnest(regexp_extract_all(CAST(Parameters_XML AS VARCHAR),
-            'kind="ChunkList" hash="([A-F0-9]+)"', 1)) as calc_hash
-    FROM StepsForScripts
-    WHERE Parameters_XML IS NOT NULL
-      AND CAST(Parameters_XML AS VARCHAR) LIKE '%ChunkList%'
-)
-SELECT
-    vr.Variable_Name,
-    CASE
-        WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
-        WHEN vr.Variable_Name LIKE '$%' THEN 'local'
-        ELSE 'let_local'
-    END as Variable_Scope,
-    'read' as Usage_Type,
-    'script_step' as Context_Type,
-    s.Script_UUID as Context_UUID,
-    s.Script_Name as Context_Name,
-    s.Script_Name,
-    s.Script_UUID,
-    s.Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    vr.Calc_Hash,
-    'ddr_chunk' as Source,
-    vr.File_Name
-FROM _DDR_VarRefs_Distinct vr
-JOIN step_hashes s ON vr.Calc_Hash = s.calc_hash AND vr.File_Name = s.File_Name;
-
--- 3e: DDR-Variablen ohne zuordenbaren Kontext
-INSERT INTO VariableUsages
-SELECT
-    vr.Variable_Name,
-    CASE
-        WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
-        WHEN vr.Variable_Name LIKE '$%' THEN 'local'
-        ELSE 'let_local'
-    END as Variable_Scope,
-    'read' as Usage_Type,
-    'calculation' as Context_Type,
-    NULL as Context_UUID,
-    NULL as Context_Name,
-    NULL as Script_Name,
-    NULL as Script_UUID,
-    NULL as Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    vr.Calc_Hash,
-    'ddr_chunk' as Source,
-    vr.File_Name
-FROM _DDR_VarRefs_Distinct vr
-WHERE NOT EXISTS (
-      SELECT 1 FROM FieldsForTables f
-      WHERE (vr.Calc_Hash = f.DDR_Hash OR vr.Calc_Hash = f.AE_Calc_Hash)
-        AND vr.File_Name = f.File_Name
-  )
-  AND NOT EXISTS (
-      SELECT 1 FROM CustomFunctionsCatalog cf
-      WHERE vr.Calc_Hash = cf.DDR_Hash AND vr.File_Name = cf.File_Name
-  )
-  AND NOT EXISTS (
-      SELECT 1 FROM StepsForScripts s
-      WHERE s.Parameters_XML IS NOT NULL
-        AND CAST(s.Parameters_XML AS VARCHAR) LIKE '%' || vr.Calc_Hash || '%'
-        AND vr.File_Name = s.File_Name
-  )
-  AND NOT EXISTS (
-      SELECT 1 FROM LayoutObjects lo
-      WHERE lo.Object_XML IS NOT NULL
-        AND CAST(lo.Object_XML AS VARCHAR) LIKE '%' || vr.Calc_Hash || '%'
-        AND lo.File_Name = vr.File_Name
-  );
-
--- ========================================
--- A.3f: Variablen in LayoutObject-Formeln (Object_XML ChunkList-Hashes)
--- ========================================
--- Erfasst Variablen-Referenzen in:
--- Conditional Formatting, Hide Conditions, Tooltips, Platzhalter,
--- berechnete Labels, Portal-Filter, Web-Viewer-URLs, Tab-Panel-Titel,
--- Script-Parameter, Display Calculations, Popover-Titel
---
--- Alle diese Kontexte verwenden DDRREF kind="ChunkList" hash="..." in Object_XML.
--- Der Hash wird gegen DDR_Calculations aufgelöst um VariableReference-Chunks zu finden.
-
-INSERT INTO VariableUsages
-WITH lo_hashes AS (
-    SELECT
-        Object_UUID, Object_Type, Layout_ID, File_Name,
-        unnest(regexp_extract_all(CAST(Object_XML AS VARCHAR),
-            'kind="ChunkList" hash="([A-F0-9]+)"', 1)) as calc_hash
-    FROM LayoutObjects
-    WHERE Object_XML IS NOT NULL
-      AND CAST(Object_XML AS VARCHAR) LIKE '%ChunkList%'
-)
-SELECT
-    vr.Variable_Name,
-    CASE
-        WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
-        WHEN vr.Variable_Name LIKE '$%' THEN 'local'
-        ELSE 'let_local'
-    END as Variable_Scope,
-    'read' as Usage_Type,
-    'layout_object' as Context_Type,
-    lo.Object_UUID as Context_UUID,
-    l.L_Name || ' → ' || lo.Object_Type as Context_Name,
-    NULL as Script_Name,
-    NULL as Script_UUID,
-    NULL as Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    vr.Calc_Hash,
-    'ddr_chunk' as Source,
-    vr.File_Name
-FROM _DDR_VarRefs_Distinct vr
-JOIN lo_hashes lo ON vr.Calc_Hash = lo.calc_hash AND vr.File_Name = lo.File_Name
-JOIN Layouts l ON lo.Layout_ID = l.L_ID AND l.File_Name = lo.File_Name;
-
-
--- ========================================
--- A.4: Set Variable Schritte → VariableUsages
--- ========================================
-
-INSERT INTO VariableUsages
-SELECT
-    Variable_Name,
-    CASE WHEN Variable_Name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
-    'set' as Usage_Type,
-    'script_step' as Context_Type,
-    Script_UUID as Context_UUID,
-    Script_Name as Context_Name,
-    Script_Name,
-    Script_UUID,
-    Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    NULL as Calc_Hash,
-    'set_variable_step' as Source,
-    File_Name
-FROM StepsForScripts
-WHERE Step_Name = 'Set Variable'
-  AND Variable_Name IS NOT NULL;
-
-
--- ========================================
--- A.4b: Target=Variable Script-Steps → VariableUsages
--- ========================================
--- Script-Steps die ihr Ergebnis in eine Variable schreiben:
--- Insert Text, Show Custom Dialog, Insert from URL, Insert Calculated Result,
--- Execute FileMaker Data API, Open/Read Data File, etc.
--- Generische Erkennung über <Variable value="$var">
--- LATERAL UNNEST für Multi-Target (z.B. Show Custom Dialog mit 3 Eingabefeldern)
-
-INSERT INTO VariableUsages
-SELECT
-    var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
-    'set' as Usage_Type,
-    'script_step' as Context_Type,
-    Script_UUID as Context_UUID,
-    Script_Name as Context_Name,
-    Script_Name,
-    Script_UUID,
-    Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    NULL as Calc_Hash,
-    'target_variable_step' as Source,
-    File_Name
-FROM StepsForScripts
-CROSS JOIN LATERAL unnest(
-    regexp_extract_all(CAST(Parameters_XML AS VARCHAR),
-        '<Variable value="([^"]+)"', 1)
-) as t(var_name)
-WHERE Step_Name != 'Set Variable'
-  AND CAST(Parameters_XML AS VARCHAR) LIKE '%<Variable value="%';
-
-
--- ========================================
--- A.5: MBS Superglobale → VariableUsages
--- ========================================
-
--- 5a: Variable.Set / FM.VariableSet in Script-Schritten
-INSERT INTO VariableUsages
-SELECT
-    regexp_extract(Calculation_Text,
-        '(?:FM\.VariableSet|Variable\.Set)\s*"\s*;\s*"([^"]+)"', 1) as Variable_Name,
-    'superglobal' as Variable_Scope,
-    'set' as Usage_Type,
-    'script_step' as Context_Type,
-    Script_UUID as Context_UUID,
-    Script_Name as Context_Name,
-    Script_Name,
-    Script_UUID,
-    Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    NULL as Calc_Hash,
-    'mbs_variable_call' as Source,
-    File_Name
-FROM StepsForScripts
-WHERE Calculation_Text LIKE '%Variable.Set%' OR Calculation_Text LIKE '%FM.VariableSet%'
-  AND regexp_extract(Calculation_Text,
-        '(?:FM\.VariableSet|Variable\.Set)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
-
--- 5b: Variable.Get / FM.VariableGet / Variable.Exists / Variable.Lookup in Script-Schritten
-INSERT INTO VariableUsages
-SELECT
-    regexp_extract(Calculation_Text,
-        '(?:FM\.VariableGet|Variable\.Get|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1) as Variable_Name,
-    'superglobal' as Variable_Scope,
-    'read' as Usage_Type,
-    'script_step' as Context_Type,
-    Script_UUID as Context_UUID,
-    Script_Name as Context_Name,
-    Script_Name,
-    Script_UUID,
-    Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    NULL as Calc_Hash,
-    'mbs_variable_call' as Source,
-    File_Name
-FROM StepsForScripts
-WHERE (Calculation_Text LIKE '%Variable.Get%'
-    OR Calculation_Text LIKE '%FM.VariableGet%'
-    OR Calculation_Text LIKE '%Variable.Exists%'
-    OR Calculation_Text LIKE '%Variable.Lookup%')
-  AND regexp_extract(Calculation_Text,
-        '(?:FM\.VariableGet|Variable\.Get|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
-
--- 5c: Variable.Append / Variable.AppendValue / Variable.AppendJSON / Variable.Add in Script-Schritten
-INSERT INTO VariableUsages
-SELECT
-    regexp_extract(Calculation_Text,
-        '(?:Variable\.Append|Variable\.AppendValue|Variable\.AppendJSON|Variable\.Add)\s*"\s*;\s*"([^"]+)"', 1) as Variable_Name,
-    'superglobal' as Variable_Scope,
-    'set' as Usage_Type,
-    'script_step' as Context_Type,
-    Script_UUID as Context_UUID,
-    Script_Name as Context_Name,
-    Script_Name,
-    Script_UUID,
-    Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    NULL as Calc_Hash,
-    'mbs_variable_call' as Source,
-    File_Name
-FROM StepsForScripts
-WHERE (Calculation_Text LIKE '%Variable.Append%'
-    OR Calculation_Text LIKE '%Variable.AppendValue%'
-    OR Calculation_Text LIKE '%Variable.AppendJSON%'
-    OR Calculation_Text LIKE '%Variable.Add%')
-  AND regexp_extract(Calculation_Text,
-        '(?:Variable\.Append|Variable\.AppendValue|Variable\.AppendJSON|Variable\.Add)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
-
--- 5d: Variable.Clear in Script-Schritten
-INSERT INTO VariableUsages
-SELECT
-    regexp_extract(Calculation_Text,
-        '(?:Variable\.Clear)\s*"\s*;\s*"([^"]+)"', 1) as Variable_Name,
-    'superglobal' as Variable_Scope,
-    'set' as Usage_Type,
-    'script_step' as Context_Type,
-    Script_UUID as Context_UUID,
-    Script_Name as Context_Name,
-    Script_Name,
-    Script_UUID,
-    Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    NULL as Calc_Hash,
-    'mbs_variable_call' as Source,
-    File_Name
-FROM StepsForScripts
-WHERE Calculation_Text LIKE '%Variable.Clear%'
-  AND Calculation_Text NOT LIKE '%Variable.ClearAll%'
-  AND regexp_extract(Calculation_Text,
-        '(?:Variable\.Clear)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
-
--- 5e: MBS Superglobale in Calculated Fields (FieldsForTables.Calculation_Text)
-INSERT INTO VariableUsages
-SELECT
-    regexp_extract(Calculation_Text,
-        '(?:FM\.VariableGet|Variable\.Get|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1) as Variable_Name,
-    'superglobal' as Variable_Scope,
-    'read' as Usage_Type,
-    'calculation' as Context_Type,
-    Field_UUID as Context_UUID,
-    Table_Name || '::' || Field_Name as Context_Name,
-    NULL as Script_Name,
-    NULL as Script_UUID,
-    NULL as Step_Index,
-    Table_Name,
-    Field_Name,
-    NULL as Calc_Hash,
-    'mbs_variable_call' as Source,
-    File_Name
-FROM FieldsForTables
-WHERE Calculation_Text IS NOT NULL
-  AND (Calculation_Text LIKE '%Variable.Get%'
-    OR Calculation_Text LIKE '%FM.VariableGet%'
-    OR Calculation_Text LIKE '%Variable.Exists%'
-    OR Calculation_Text LIKE '%Variable.Lookup%')
-  AND regexp_extract(Calculation_Text,
-        '(?:FM\.VariableGet|Variable\.Get|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
-
--- 5f: MBS Superglobale in AutoEnter Calculated Fields (FieldsForTables.AE_Calc_Text)
-INSERT INTO VariableUsages
-SELECT
-    regexp_extract(AE_Calc_Text,
-        '(?:FM\.VariableGet|Variable\.Get|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1) as Variable_Name,
-    'superglobal' as Variable_Scope,
-    'read' as Usage_Type,
-    'auto_enter_calc' as Context_Type,
-    Field_UUID as Context_UUID,
-    Table_Name || '::' || Field_Name as Context_Name,
-    NULL as Script_Name,
-    NULL as Script_UUID,
-    NULL as Step_Index,
-    Table_Name,
-    Field_Name,
-    NULL as Calc_Hash,
-    'mbs_variable_call' as Source,
-    File_Name
-FROM FieldsForTables
-WHERE AE_Calc_Text IS NOT NULL
-  AND (AE_Calc_Text LIKE '%Variable.Get%'
-    OR AE_Calc_Text LIKE '%FM.VariableGet%'
-    OR AE_Calc_Text LIKE '%Variable.Exists%'
-    OR AE_Calc_Text LIKE '%Variable.Lookup%')
-  AND regexp_extract(AE_Calc_Text,
-        '(?:FM\.VariableGet|Variable\.Get|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
-
--- 5g: MBS Superglobale in CustomFunctions (CalcsForCustomFunctions.Calculation_Code)
-INSERT INTO VariableUsages
-SELECT
-    regexp_extract(Calculation_Code,
-        '(?:FM\.VariableGet|Variable\.Get|FM\.VariableSet|Variable\.Set|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1) as Variable_Name,
-    'superglobal' as Variable_Scope,
-    CASE
-        WHEN Calculation_Code LIKE '%Variable.Set%' OR Calculation_Code LIKE '%FM.VariableSet%' THEN 'set'
-        ELSE 'read'
-    END as Usage_Type,
-    'custom_function' as Context_Type,
-    CF_UUID as Context_UUID,
-    CF_Name as Context_Name,
-    NULL as Script_Name,
-    NULL as Script_UUID,
-    NULL as Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    NULL as Calc_Hash,
-    'mbs_variable_call' as Source,
-    File_Name
-FROM CalcsForCustomFunctions
-WHERE Calculation_Code IS NOT NULL
-  AND (Calculation_Code LIKE '%Variable.Get%'
-    OR Calculation_Code LIKE '%FM.VariableGet%'
-    OR Calculation_Code LIKE '%Variable.Set%'
-    OR Calculation_Code LIKE '%FM.VariableSet%'
-    OR Calculation_Code LIKE '%Variable.Exists%'
-    OR Calculation_Code LIKE '%Variable.Lookup%')
-  AND regexp_extract(Calculation_Code,
-        '(?:FM\.VariableGet|Variable\.Get|FM\.VariableSet|Variable\.Set|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
-
-
--- ========================================
--- A.6: Merge-Variables aus LayoutObjects → VariableUsages
--- ========================================
-
-INSERT INTO VariableUsages
-SELECT
-    var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
-    'read' as Usage_Type,
-    'layout_object' as Context_Type,
-    lo.Object_UUID as Context_UUID,
-    l.L_Name as Context_Name,
-    NULL as Script_Name,
-    NULL as Script_UUID,
-    NULL as Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    NULL as Calc_Hash,
-    'merge_variable' as Source,
-    lo.File_Name
-FROM LayoutObjects lo
-JOIN Layouts l ON lo.Layout_ID = l.L_ID AND lo.File_Name = l.File_Name
-CROSS JOIN LATERAL unnest(
-    regexp_extract_all(lo.Text_Content, '<<(\$\$?[^>]+)>>', 1)
-) as t(var_name)
-WHERE lo.Object_Type = 'Text'
-  AND lo.Text_Content LIKE '%<<%$%>>%';
-
-
--- ========================================
--- A.6b: Script-Trigger-Parameter → VariableUsages
--- ========================================
--- Layout-Objekte mit Script-Triggern, deren Parameter Variablen referenzieren
-
-INSERT INTO VariableUsages
-SELECT
-    var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
-    'read' as Usage_Type,
-    'layout_object' as Context_Type,
-    lo.Object_UUID as Context_UUID,
-    l.L_Name as Context_Name,
-    NULL as Script_Name,
-    NULL as Script_UUID,
-    NULL as Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    NULL as Calc_Hash,
-    'script_trigger_param' as Source,
-    lo.File_Name
-FROM LayoutObjects lo
-JOIN Layouts l ON lo.Layout_ID = l.L_ID AND lo.File_Name = l.File_Name
-CROSS JOIN LATERAL unnest(
-    regexp_extract_all(lo.ScriptTrigger_Parameter_Text,
-        '\$\$?[a-zA-Z_][a-zA-Z0-9_ ]*')
-) as t(var_name)
-WHERE lo.ScriptTrigger_Parameter_Text IS NOT NULL
-  AND lo.ScriptTrigger_Parameter_Text LIKE '%$%';
-
-
--- ========================================
--- A.7: Regex-Fallback für Dateien ohne DDR
--- ========================================
-
--- 7a: Regex-Variablen aus Script-Schritt-Formeln (nur Dateien ohne DDR)
-INSERT INTO VariableUsages
-SELECT
-    var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
-    'read' as Usage_Type,
-    'script_step' as Context_Type,
-    s.Script_UUID as Context_UUID,
-    s.Script_Name as Context_Name,
-    s.Script_Name,
-    s.Script_UUID,
-    s.Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    NULL as Calc_Hash,
-    'regex_fallback' as Source,
-    s.File_Name
-FROM StepsForScripts s
-JOIN XMLMetadata m ON s.File_Name = m.Filename
-CROSS JOIN LATERAL unnest(
-    regexp_extract_all(s.Calculation_Text, '\$\$?[a-zA-Z_][a-zA-Z0-9_]*')
-) as t(var_name)
-WHERE m.Has_DDR_INFO = 'False'
-  AND s.Calculation_Text IS NOT NULL
-  AND s.Step_Name != 'Set Variable';
-
--- 7b: Regex-Variablen aus Calculated Fields (nur Dateien ohne DDR)
-INSERT INTO VariableUsages
-SELECT
-    var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
-    'read' as Usage_Type,
-    'calculation' as Context_Type,
-    f.Field_UUID as Context_UUID,
-    f.Table_Name || '::' || f.Field_Name as Context_Name,
-    NULL as Script_Name,
-    NULL as Script_UUID,
-    NULL as Step_Index,
-    f.Table_Name,
-    f.Field_Name,
-    NULL as Calc_Hash,
-    'regex_fallback' as Source,
-    f.File_Name
-FROM FieldsForTables f
-JOIN XMLMetadata m ON f.File_Name = m.Filename
-CROSS JOIN LATERAL unnest(
-    regexp_extract_all(f.Calculation_Text, '\$\$?[a-zA-Z_][a-zA-Z0-9_]*')
-) as t(var_name)
-WHERE m.Has_DDR_INFO = 'False'
-  AND f.Calculation_Text IS NOT NULL;
-
--- 7c: Regex-Variablen aus AutoEnter Calculated Fields (nur Dateien ohne DDR)
-INSERT INTO VariableUsages
-SELECT
-    var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
-    'read' as Usage_Type,
-    'auto_enter_calc' as Context_Type,
-    f.Field_UUID as Context_UUID,
-    f.Table_Name || '::' || f.Field_Name as Context_Name,
-    NULL as Script_Name,
-    NULL as Script_UUID,
-    NULL as Step_Index,
-    f.Table_Name,
-    f.Field_Name,
-    NULL as Calc_Hash,
-    'regex_fallback' as Source,
-    f.File_Name
-FROM FieldsForTables f
-JOIN XMLMetadata m ON f.File_Name = m.Filename
-CROSS JOIN LATERAL unnest(
-    regexp_extract_all(f.AE_Calc_Text, '\$\$?[a-zA-Z_][a-zA-Z0-9_]*')
-) as t(var_name)
-WHERE m.Has_DDR_INFO = 'False'
-  AND f.AE_Calc_Text IS NOT NULL;
-
--- 7d: Regex-Variablen aus CustomFunction-Formeln (nur Dateien ohne DDR)
-INSERT INTO VariableUsages
-SELECT
-    var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
-    'read' as Usage_Type,
-    'custom_function' as Context_Type,
-    ccf.CF_UUID as Context_UUID,
-    ccf.CF_Name as Context_Name,
-    NULL as Script_Name,
-    NULL as Script_UUID,
-    NULL as Step_Index,
-    NULL as Table_Name,
-    NULL as Field_Name,
-    NULL as Calc_Hash,
-    'regex_fallback' as Source,
-    ccf.File_Name
-FROM CalcsForCustomFunctions ccf
-JOIN XMLMetadata m ON ccf.File_Name = m.Filename
-CROSS JOIN LATERAL unnest(
-    regexp_extract_all(ccf.Calculation_Code, '\$\$?[a-zA-Z_][a-zA-Z0-9_]*')
-) as t(var_name)
-WHERE m.Has_DDR_INFO = 'False'
-  AND ccf.Calculation_Code IS NOT NULL;
-
-
--- ========================================
--- A.7e: Scope_Anchor in VariableUsages materialisieren
--- ========================================
--- Bindet die Variablen-Identität an den FileMaker-Scope-Träger:
---   superglobal → '__global'           (prozessweit)
---   global      → File_Name            (datei-lokal)
---   local       → Script_UUID          (script-lokal, sofern vorhanden)
---                 '__file::'||File_Name (Fallback bei Calc/CF/Layout-Kontext ohne Script)
---   let_local   → Context_UUID || '__file::'||File_Name
-ALTER TABLE VariableUsages ADD COLUMN IF NOT EXISTS Scope_Anchor VARCHAR;
-
-UPDATE VariableUsages
-SET Scope_Anchor = CASE
-    WHEN Variable_Scope = 'superglobal' THEN '__global'
-    WHEN Variable_Scope = 'global'      THEN File_Name
-    WHEN Variable_Scope = 'local' AND Script_UUID IS NOT NULL THEN Script_UUID
-    WHEN Variable_Scope = 'local' AND Script_UUID IS NULL     THEN '__file::' || File_Name
-    WHEN Variable_Scope = 'let_local'   THEN COALESCE(Context_UUID, '__file::' || File_Name)
-    ELSE File_Name
-END;
-
-
--- ========================================
--- A.8: VariablesCatalog (Aggregation)
--- ========================================
-
-DROP TABLE IF EXISTS VariablesCatalog;
-
-CREATE TABLE VariablesCatalog AS
-SELECT
-    Variable_Name,
-    Variable_Scope,
-    Scope_Anchor,
-    CASE Variable_Scope
-        WHEN 'local' THEN Variable_Name
-        WHEN 'global' THEN Variable_Name
-        WHEN 'superglobal' THEN '$$$' || regexp_replace(Variable_Name, '^\$+', '')
-        ELSE Variable_Name
-    END as Display_Name,
-    regexp_replace(Variable_Name, '^\$+', '') as Normalized_Name,
-    -- Script_UUID nur bei script-lokalen Variablen (Anker = Script_UUID, kein '__file::'-Fallback)
-    CASE WHEN Variable_Scope = 'local' AND Scope_Anchor NOT LIKE '__file::%'
-         THEN Scope_Anchor
-         ELSE NULL
-    END as Script_UUID,
-    COUNT(*) FILTER (WHERE Usage_Type = 'set') as Set_Count,
-    COUNT(*) FILTER (WHERE Usage_Type = 'read') as Read_Count,
-    COUNT(DISTINCT Script_Name) as Script_Count,
-    COUNT(DISTINCT File_Name) as File_Count,
-    array_agg(DISTINCT File_Name ORDER BY File_Name) as Files,
-    first(Context_Name) as First_Seen_Context,
-    Variable_Name LIKE '% %' as Has_Spaces,
-    CASE WHEN bool_or(Source = 'ddr_chunk') THEN 'ddr'
-         WHEN bool_or(Source IN ('set_variable_step', 'target_variable_step')) THEN 'step'
-         WHEN bool_or(Source = 'mbs_variable_call') THEN 'mbs'
-         WHEN bool_or(Source = 'merge_variable') THEN 'merge'
-         WHEN bool_or(Source = 'script_trigger_param') THEN 'trigger'
-         ELSE 'regex'
-    END as Source_Reliability,
-    -- File_Name = Datei, in der diese Scope-Instanz wohnt:
-    --   global: Anker = File_Name (datei-lokal)
-    --   local mit Script-Anker: einzige Datei dieses Scripts (durch mode garantiert)
-    --   local ohne Script (Fallback '__file::X'): X
-    --   superglobal: häufigste Datei (informativ)
-    CASE
-        WHEN Variable_Scope = 'global' THEN Scope_Anchor
-        WHEN Variable_Scope = 'local' AND Scope_Anchor LIKE '__file::%'
-            THEN substr(Scope_Anchor, 9)
-        ELSE mode(File_Name)
-    END as File_Name
-FROM VariableUsages
-GROUP BY Variable_Name, Variable_Scope, Scope_Anchor;
-
--- Indizes für VariableUsages/VariablesCatalog
-CREATE INDEX IF NOT EXISTS idx_varusages_name ON VariableUsages(Variable_Name);
-CREATE INDEX IF NOT EXISTS idx_varusages_scope ON VariableUsages(Variable_Scope);
-CREATE INDEX IF NOT EXISTS idx_varusages_context ON VariableUsages(Context_UUID);
-CREATE INDEX IF NOT EXISTS idx_varusages_file ON VariableUsages(File_Name);
-CREATE INDEX IF NOT EXISTS idx_varusages_anchor ON VariableUsages(Scope_Anchor);
-CREATE INDEX IF NOT EXISTS idx_varcatalog_scope ON VariablesCatalog(Variable_Scope);
-CREATE INDEX IF NOT EXISTS idx_varcatalog_file ON VariablesCatalog(File_Name);
-CREATE INDEX IF NOT EXISTS idx_varcatalog_anchor ON VariablesCatalog(Scope_Anchor);
-CREATE INDEX IF NOT EXISTS idx_varcatalog_name ON VariablesCatalog(Variable_Name);
-
--- Variablen-Parser Statistik
-SELECT '=== Variablen-Parser Ergebnis ===' as Info;
-
-SELECT Source, COUNT(*) as Anzahl_Usages
-FROM VariableUsages GROUP BY Source ORDER BY Anzahl_Usages DESC;
-
-SELECT
-    'Gesamt VariableUsages' as Metrik, COUNT(*)::VARCHAR as Wert FROM VariableUsages
-UNION ALL SELECT 'Gesamt VariablesCatalog', COUNT(*)::VARCHAR FROM VariablesCatalog
-UNION ALL SELECT 'Davon global', COUNT(*)::VARCHAR FROM VariablesCatalog WHERE Variable_Scope = 'global'
-UNION ALL SELECT 'Davon lokal', COUNT(*)::VARCHAR FROM VariablesCatalog WHERE Variable_Scope = 'local'
-UNION ALL SELECT 'Davon superglobal', COUNT(*)::VARCHAR FROM VariablesCatalog WHERE Variable_Scope = 'superglobal'
-UNION ALL SELECT 'Davon let_local', COUNT(*)::VARCHAR FROM VariablesCatalog WHERE Variable_Scope = 'let_local';
-
-
--- ############################################################
--- Phase A.5: FolderHierarchy
--- ############################################################
--- Vereinheitlichte Hierarchie für Folder-Strukturen aller Objekttypen.
--- FileMaker modelliert Folder als sequenzielle Marker im XML:
---   isFolder='True'   → Ordner-Beginn (+1 Tiefe)
---   isFolder='Marker' → Ordner-Ende  (−1 Tiefe)
---   isSeparatorItem='True' → Trennlinie (kein Folder, nur UI)
---
--- Subtypen werden über Source_Table unterschieden:
---   ScriptCatalog → Script-Folder
---   Layouts       → Layout-Folder
---   FM 2026+: CustomFunctionsCatalog → CustomFunction-Folder (UNION-Zweig ergänzen)
--- ############################################################
-
-CREATE OR REPLACE VIEW FolderHierarchy AS
-WITH all_items AS (
-    -- Scripts: Sequence_ID = XML-Reihenfolge (NICHT Script_ID, das ist Anlege-Reihenfolge!)
-    SELECT
-        Script_UUID AS Source_UUID,
-        Script_Name AS Item_Name,
-        File_Name,
-        Sequence_ID,
-        Folder_Type,
-        Is_Separator,
-        'ScriptCatalog' AS Source_Table
-    FROM ScriptCatalog
-
-    UNION ALL
-
-    -- Layouts: Sequence_ID = XML-Reihenfolge (analog zu Scripts)
-    SELECT
-        L_UUID AS Source_UUID,
-        L_Name AS Item_Name,
-        File_Name,
-        Sequence_ID,
-        Folder_Type,
-        Is_Separator,
-        'Layouts' AS Source_Table
-    FROM Layouts
-
-    -- FM 2026+: CustomFunctionsCatalog hier als dritter UNION-Zweig ergänzen,
-    -- sobald isFolder/isSeparatorItem dort verfügbar sind.
-),
-numbered AS (
-    SELECT *,
-        ROW_NUMBER() OVER (PARTITION BY File_Name, Source_Table
-                           ORDER BY Sequence_ID) - 1 AS seq
-    FROM all_items
-),
-with_levels AS (
-    SELECT *,
-        -- Stack-Logik: kumulative Summe bis VOR der aktuellen Zeile.
-        -- 'True' öffnet einen Folder (+1), 'Marker' schließt ihn (−1).
-        GREATEST(0, COALESCE(
-            SUM(CASE WHEN Folder_Type = 'True'   THEN 1
-                     WHEN Folder_Type = 'Marker' THEN -1
-                     ELSE 0 END)
-            OVER (PARTITION BY File_Name, Source_Table ORDER BY seq
-                  ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING)
-        , 0)) AS nesting_level,
-        CASE
-            WHEN Is_Separator           THEN 'Separator'
-            WHEN Folder_Type = 'True'   THEN 'Folder'
-            WHEN Folder_Type = 'Marker' THEN 'FolderEnd'
-            ELSE                             'Item'
-        END AS subtype
-    FROM numbered
-)
-SELECT
-    t.Source_UUID,
-    t.Item_Name,
-    t.File_Name,
-    t.Source_Table,
-    t.Sequence_ID,
-    t.seq,
-    t.Folder_Type,
-    t.Is_Separator,
-    t.nesting_level,
-    t.subtype,
-    -- Parent_Folder_UUID: letzter offener Folder mit nesting_level = current - 1
-    -- und seq < current. Korrelierte Subquery — DuckDB optimiert das.
-    (
-        SELECT p.Source_UUID
-        FROM with_levels p
-        WHERE p.File_Name    = t.File_Name
-          AND p.Source_Table = t.Source_Table
-          AND p.subtype      = 'Folder'
-          AND p.nesting_level = t.nesting_level - 1
-          AND p.seq          < t.seq
-        ORDER BY p.seq DESC
-        LIMIT 1
-    ) AS Parent_Folder_UUID
-FROM with_levels t;
-
 
 -- ############################################################
 -- Phase B: ObjectCatalog
@@ -941,8 +44,10 @@ FROM TableOccurrenceCatalog
 UNION ALL
 
 -- 3. RelationshipCatalog (Relationships)
--- HINWEIS: Relationships haben keine UUID, verwenden Rel_ID + File_Name als Composite Key
-SELECT
+-- HINWEIS: Relationships haben keine UUID, verwenden Rel_ID + File_Name als Composite Key.
+-- DISTINCT, weil RelationshipCatalog seit Schema 1.2.0 eine Zeile pro Join-Prädikat führt
+-- (Mehrfeld-Joins) — als Objekt zählt die Relation aber genau einmal.
+SELECT DISTINCT
     Rel_ID::VARCHAR || '_' || File_Name as Object_UUID,
     'Relationship' as Object_Type,
     Left_TO_Name || ' → ' || Right_TO_Name as Object_Name,
@@ -1093,8 +198,14 @@ UNION ALL
 -- direkt über Step_UUID / Calc_Hash in den Detail-Templates referenziert.
 
 -- 16. PasteIndexList (Paste Index Objects)
+-- WICHTIG: eigener 'paste_'-UUID-Präfix. Ohne ihn kollidierte das synthetische
+-- <Object_ID>_<File_Name>-Schema mit dem IDENTISCHEN Schema der Relationships
+-- (Rel_ID overlappt mit Paste-Object_ID je Datei) → doppelte ObjectCatalog-Zeilen
+-- pro UUID, die jeden ObjectLinks-JOIN über Source_/Target_UUID auffächern
+-- (z.B. eine Relationship-Referenz erscheint zusätzlich als PasteIndexObject).
+-- Paste-Objekte haben selbst KEINE ObjectLinks und keine Detail-/Frontend-Nutzung.
 SELECT
-    Object_ID::VARCHAR || '_' || File_Name as Object_UUID,
+    'paste_' || Object_ID::VARCHAR || '_' || File_Name as Object_UUID,
     'PasteIndexObject' as Object_Type,
     'Paste Object #' || Object_ID as Object_Name,
     File_Name,
@@ -1118,9 +229,13 @@ UNION ALL
 
 -- 18. ScriptTriggers (Script Triggers)
 SELECT
-    Trigger_ID::VARCHAR || '_' || File_Name as Object_UUID,
+    Trigger_ID::VARCHAR || '_' || Owner_UUID || '_' || File_Name as Object_UUID,
     'ScriptTrigger' as Object_Type,
-    Trigger_Action || ' → ' || Script_Name as Object_Name,
+    -- COALESCE-Guard: echte Orphan-Trigger (Trigger-Slot ohne zugewiesenes
+    -- Ziel-Skript) haben Script_Name=NULL. Ohne Guard wird der String-Konkat
+    -- komplett NULL und bricht später den NOT-NULL-Constraint von ObjectHomes
+    -- (build_resolutions.sql) ab → Rollback der gesamten Resolution-Erstellung.
+    Trigger_Action || ' → ' || COALESCE(Script_Name, '<no script assigned>') as Object_Name,
     File_Name,
     'ScriptTriggers' as Source_Table,
     Trigger_ID as Object_ID
@@ -1149,6 +264,18 @@ SELECT
     'CustomMenuCatalog' as Source_Table,
     Menu_ID as Object_ID
 FROM CustomMenuCatalog
+
+UNION ALL
+
+-- 20b. CustomMenuSetCatalog (Menü-Sets, Paket A.2 v4)
+SELECT
+    MenuSet_UUID as Object_UUID,
+    'CustomMenuSet' as Object_Type,
+    MenuSet_Name as Object_Name,
+    File_Name,
+    'CustomMenuSetCatalog' as Source_Table,
+    MenuSet_ID as Object_ID
+FROM CustomMenuSetCatalog
 
 UNION ALL
 
@@ -1275,7 +402,24 @@ SELECT DISTINCT
     NULL as Object_ID
 FROM StepsForScripts
 WHERE Step_Name IS NOT NULL
-  AND Step_Name != '';
+  AND Step_Name != ''
+
+UNION ALL
+
+-- 28. FilesCatalog (File-Knoten als Owner-Anker für File-Level-Trigger)
+-- PRD prd_script_trigger_owner_refs.md §3.2: File-Level-Trigger
+-- (OnFirstWindowOpen etc.) tragen als Owner_UUID die FMSaveAsXML/@UUID.
+-- Damit der trigger_owner-Link (Block 18b) einen Katalog-Eintrag trifft,
+-- wird hier je Datei ein File-Knoten registriert. Object_ID = NULL, da
+-- Dateien keine FileMaker-interne ID haben.
+SELECT
+    File_UUID as Object_UUID,
+    'File' as Object_Type,
+    File_Name as Object_Name,
+    File_Name,
+    'FilesCatalog' as Source_Table,
+    NULL as Object_ID
+FROM FilesCatalog;
 
 -- ========================================
 -- PluginComponent (synthetisch, Category-Aggregat)
@@ -1354,7 +498,8 @@ SELECT
     rc.File_Name as Source_File,
     oc_target.File_Name as Target_File,
     (rc.File_Name != oc_target.File_Name) as Is_Cross_File
-FROM RelationshipCatalog rc
+-- DISTINCT: ein left_table-Link je Relation, nicht je Join-Prädikat (Schema 1.2.0).
+FROM (SELECT DISTINCT Rel_ID, File_Name, Left_TO_UUID FROM RelationshipCatalog) rc
 LEFT JOIN ObjectCatalog oc_target ON rc.Left_TO_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'TableOccurrence'
 
 UNION ALL
@@ -1371,7 +516,8 @@ SELECT
     rc.File_Name as Source_File,
     oc_target.File_Name as Target_File,
     (rc.File_Name != oc_target.File_Name) as Is_Cross_File
-FROM RelationshipCatalog rc
+-- DISTINCT: ein right_table-Link je Relation, nicht je Join-Prädikat (Schema 1.2.0).
+FROM (SELECT DISTINCT Rel_ID, File_Name, Right_TO_UUID FROM RelationshipCatalog) rc
 LEFT JOIN ObjectCatalog oc_target ON rc.Right_TO_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'TableOccurrence'
 
 UNION ALL
@@ -1388,7 +534,10 @@ SELECT
     rc.File_Name as Source_File,
     oc_target.File_Name as Target_File,
     (rc.File_Name != oc_target.File_Name) as Is_Cross_File
-FROM RelationshipCatalog rc
+-- DISTINCT: ein left_field-Link je (Relation, Feld), nicht je Join-Prädikat. Seit
+-- Schema 1.2.0 ist RelationshipCatalog per-Prädikat — ein Feld, das in mehreren
+-- Prädikaten derselben Seite vorkommt, ergäbe sonst doppelte (identische) Links.
+FROM (SELECT DISTINCT Rel_ID, File_Name, Left_Field_UUID FROM RelationshipCatalog WHERE Left_Field_UUID IS NOT NULL) rc
 LEFT JOIN ObjectCatalog oc_target ON rc.Left_Field_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Field'
 
 UNION ALL
@@ -1405,8 +554,37 @@ SELECT
     rc.File_Name as Source_File,
     oc_target.File_Name as Target_File,
     (rc.File_Name != oc_target.File_Name) as Is_Cross_File
-FROM RelationshipCatalog rc
+-- DISTINCT: ein right_field-Link je (Relation, Feld), nicht je Join-Prädikat (s.o.).
+FROM (SELECT DISTINCT Rel_ID, File_Name, Right_Field_UUID FROM RelationshipCatalog WHERE Right_Field_UUID IS NOT NULL) rc
 LEFT JOIN ObjectCatalog oc_target ON rc.Right_Field_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Field'
+
+UNION ALL
+
+-- 4b. Relationships → Fields (Sort fields, per side) — die in „Datensätze sortieren"
+-- konfigurierten Felder sind eine echte Abhängigkeit der Beziehung. Link_Role='sort_field',
+-- Link_Subrole = Seite ('left'/'right'). UNNEST der per-Seite Sort-UUID-Arrays, dann DISTINCT
+-- (die Arrays sind über alle Predicate_Index-Zeilen einer Relation konstant).
+SELECT
+    rc.Rel_ID::VARCHAR || '_' || rc.File_Name as Source_UUID,
+    'Relationship' as Source_Type,
+    rc.sort_field_uuid as Target_UUID,
+    'Field' as Target_Type,
+    'operational' as Link_Type,
+    'sort_field' as Link_Role,
+    rc.side as Link_Subrole,
+    rc.File_Name as Source_File,
+    oc_target.File_Name as Target_File,
+    (rc.File_Name != oc_target.File_Name) as Is_Cross_File
+FROM (
+    SELECT DISTINCT Rel_ID, File_Name, side, sort_field_uuid FROM (
+        SELECT Rel_ID, File_Name, 'left' AS side, UNNEST(Left_Sort_Field_UUIDs) AS sort_field_uuid
+        FROM RelationshipCatalog WHERE Left_Sort_Field_UUIDs IS NOT NULL
+        UNION ALL
+        SELECT Rel_ID, File_Name, 'right' AS side, UNNEST(Right_Sort_Field_UUIDs) AS sort_field_uuid
+        FROM RelationshipCatalog WHERE Right_Sort_Field_UUIDs IS NOT NULL
+    )
+) rc
+LEFT JOIN ObjectCatalog oc_target ON rc.sort_field_uuid = oc_target.Object_UUID AND oc_target.Object_Type = 'Field'
 
 UNION ALL
 
@@ -1649,7 +827,12 @@ UNION ALL
 
 -- 18. Script Triggers → Scripts
 SELECT
-    st.Trigger_ID::VARCHAR || '_' || st.File_Name as Source_UUID,
+    -- Owner_UUID muss im Source_UUID stehen, damit der Link zum ObjectCatalog-
+    -- Eintrag passt (dort Block 18: Trigger_ID_Owner_UUID_File_Name). Ohne Owner
+    -- (a) matcht der Link keinen Katalog-Eintrag → Trigger-Detail findet keine
+    -- Referenz, und (b) kollabieren Object-Level-Trigger gleicher Trigger_ID auf
+    -- eine UUID (derselbe Kollaps wie der ScriptTriggers-PK-Bug, eine Ebene tiefer).
+    st.Trigger_ID::VARCHAR || '_' || st.Owner_UUID || '_' || st.File_Name as Source_UUID,
     'ScriptTrigger' as Source_Type,
     st.Script_UUID as Target_UUID,
     'Script' as Target_Type,
@@ -1661,6 +844,31 @@ SELECT
     (st.File_Name != oc_target.File_Name) as Is_Cross_File
 FROM ScriptTriggers st
 LEFT JOIN ObjectCatalog oc_target ON st.Script_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Script'
+
+UNION ALL
+
+-- 18b. Script Triggers → Owner (Layout / LayoutObject / File)
+-- PRD prd_script_trigger_owner_refs.md §3.1: rückwärts-navigierbare Kante
+-- vom Trigger-Knoten auf seinen Owner (child→parent, wie parent_layout/
+-- parent_object/parent_script). Source_UUID identisch zu Block 18 (= Katalog-
+-- UUID des Triggers). Link_Subrole trägt den Trigger-Typ, sodass "alle
+-- OnObjectSave-Trigger eines Layouts" ohne JOIN auf ScriptTriggers geht.
+-- Der IS-NOT-NULL-Guard verhindert verwaiste Links für unauflösbare Owner
+-- (aktuell die 78 PopoverPanel-Owner, siehe PRD §4.3.2 — Parser-Folge-Ticket).
+SELECT
+    st.Trigger_ID::VARCHAR || '_' || st.Owner_UUID || '_' || st.File_Name as Source_UUID,
+    'ScriptTrigger' as Source_Type,
+    st.Owner_UUID as Target_UUID,
+    st.Owner_Type as Target_Type,
+    'structural' as Link_Type,
+    'trigger_owner' as Link_Role,
+    st.Trigger_Action as Link_Subrole,
+    st.File_Name as Source_File,
+    oc_owner.File_Name as Target_File,
+    FALSE as Is_Cross_File
+FROM ScriptTriggers st
+LEFT JOIN ObjectCatalog oc_owner ON st.Owner_UUID = oc_owner.Object_UUID
+WHERE oc_owner.Object_UUID IS NOT NULL
 
 UNION ALL
 
@@ -1956,6 +1164,41 @@ WHERE vu.Context_Type = 'layout_object'
 
 UNION ALL
 
+-- 28b. PrivilegeSet → Variable (reads_variable) — Custom Record Privilege Calc
+-- PRD prd_record_privileges_calc_rendering.md §6.3: gespiegelt vom Field-/CF-
+-- Pendant (Block 26/27), gefiltert auf den neuen Context_Type. Schließt die
+-- Where-Used-Lücke für Variablen, die NUR in einer Record-Access-Calc gelesen
+-- werden (z.B. $$__Rechte_Bearbeiten). Record-Calcs lesen nur → immer
+-- reads_variable. Source_UUID = Context_UUID = PrivilegeSet_UUID.
+--
+-- Bidirektional traversierbar (PRD §6.4): Vorwärts (Set → Variable) via
+-- Source_UUID, Rückwärts (Where-Used) via Target_UUID — keine zweite Kante nötig.
+-- Link_Subrole bleibt NULL (konsistent mit der reads_variable-Familie 26/27/28);
+-- die feinere Operation:Tabelle-Auflösung lebt in VariableUsages.Context_Name.
+SELECT DISTINCT
+    vu.Context_UUID as Source_UUID,
+    'PrivilegeSet' as Source_Type,
+    md5(vu.Variable_Scope || '::' || vu.Scope_Anchor || '::' || vu.Variable_Name) as Target_UUID,
+    'Variable' as Target_Type,
+    'operational' as Link_Type,
+    'reads_variable' as Link_Role,
+    NULL as Link_Subrole,
+    vu.File_Name as Source_File,
+    vc.File_Name as Target_File,
+    CASE WHEN vu.Variable_Scope IN ('local', 'global') THEN FALSE
+         ELSE (vu.File_Name != vc.File_Name)
+    END as Is_Cross_File
+FROM VariableUsages vu
+JOIN VariablesCatalog vc
+    ON vu.Variable_Name  = vc.Variable_Name
+   AND vu.Variable_Scope = vc.Variable_Scope
+   AND vu.Scope_Anchor   = vc.Scope_Anchor
+WHERE vu.Context_Type = 'record_access_calc'
+  AND vu.Variable_Scope IN ('global', 'local', 'superglobal')
+  AND vu.Context_UUID IS NOT NULL
+
+UNION ALL
+
 -- 29. Item/Sub-Folder → Folder (parent_folder, structural)
 -- Verbindet Scripts/Layouts mit ihrem direkten Parent-Folder und Sub-Folder mit ihrem Parent-Folder.
 -- Source_Type wird aus subtype + Source_Table abgeleitet.
@@ -2131,7 +1374,67 @@ LEFT JOIN MBS_SubnameMap msm
  AND msm.Plugin_Chunk_Index = pfu.Plugin_Chunk_Index
 WHERE pfu.Plugin_Function_Name IS NOT NULL
   AND pfu.Plugin_Function_Name != ''
-  AND (msm.SubName IS NOT NULL OR pfu.Plugin_Function_Name != 'MBS');
+  AND (msm.SubName IS NOT NULL OR pfu.Plugin_Function_Name != 'MBS')
+
+UNION ALL
+
+-- 35. PrivilegeSet → Field (restricts_field)
+-- Quelle: PrivilegeSetFieldAccess (Custom Record Privileges, Feld-Ebene).
+-- Eigener Link_Role (NICHT reads_field): dies ist eine Zugriffs-EINSCHRÄNKUNG,
+-- keine Nutzung. Damit bleibt Where-Used-/Dead-Code-Analyse unberührt — ein für
+-- ein Set gesperrtes Feld gilt dadurch NICHT als "genutzt".
+-- Scope: nur Abweichungen vom vollen Zugriff (Access_Mode <> 'ReadWrite'), d.h.
+-- jede echte Restriktion (NoAccess/ReadOnly); voll-offene Felder erzeugen keine
+-- Links (kein Signal, nur Volumen). Link_Subrole trägt den Access-Modus.
+-- New-Default-Zeilen fallen über Field_UUID IS NOT NULL automatisch raus.
+SELECT DISTINCT
+    pfa.PrivilegeSet_UUID as Source_UUID,
+    'PrivilegeSet' as Source_Type,
+    pfa.Field_UUID as Target_UUID,
+    'Field' as Target_Type,
+    'operational' as Link_Type,
+    'restricts_field' as Link_Role,
+    pfa.Access_Mode as Link_Subrole,
+    pfa.File_Name as Source_File,
+    oc_target.File_Name as Target_File,
+    (pfa.File_Name != oc_target.File_Name) as Is_Cross_File
+FROM PrivilegeSetFieldAccess pfa
+JOIN ObjectCatalog oc_target
+  ON pfa.Field_UUID = oc_target.Object_UUID
+ AND oc_target.Object_Type = 'Field'
+WHERE pfa.Field_UUID IS NOT NULL
+  AND pfa.Access_Mode <> 'ReadWrite'
+
+UNION ALL
+
+-- 36. PrivilegeSet → Layout/ValueList/Script (restricts_object)
+-- Quelle: PrivilegeSetObjectAccess (Custom Privileges, Stufe 3). Analog zu
+-- Block 35: eigener Link_Role, nur Restriktionen (Access_Mode <> 'ReadWrite').
+-- Target_Type = Object_Class (entspricht direkt den ObjectCatalog-Typen
+-- 'Layout'/'ValueList'/'Script'); Link_Subrole trägt den Access-Modus.
+-- PrivilegeSets sind datei-lokal → Is_Cross_File praktisch FALSE, wird aber
+-- konsistent über den ObjectCatalog-JOIN berechnet.
+-- Hinweis: Der Custom-Zugriffsbaum listet auch Folder/Separatoren (mit eigener
+-- UUID); diese sind im ObjectCatalog als Typ 'Folder' registriert, nicht als
+-- 'Layout'/'Script'/'ValueList'. Der Inner-JOIN auf Object_Type=Object_Class
+-- lässt sie daher bewusst weg — Folder-Zugriff ist rein strukturell.
+SELECT DISTINCT
+    poa.PrivilegeSet_UUID as Source_UUID,
+    'PrivilegeSet' as Source_Type,
+    poa.Object_UUID as Target_UUID,
+    poa.Object_Class as Target_Type,
+    'operational' as Link_Type,
+    'restricts_object' as Link_Role,
+    poa.Access_Mode as Link_Subrole,
+    poa.File_Name as Source_File,
+    oc_target.File_Name as Target_File,
+    (poa.File_Name != oc_target.File_Name) as Is_Cross_File
+FROM PrivilegeSetObjectAccess poa
+JOIN ObjectCatalog oc_target
+  ON poa.Object_UUID = oc_target.Object_UUID
+ AND oc_target.Object_Type = poa.Object_Class
+WHERE poa.Object_UUID IS NOT NULL
+  AND poa.Access_Mode <> 'ReadWrite';
 
 -- ========================================
 -- groups_into-Links: PluginFunction → PluginComponent (structural)
@@ -2180,6 +1483,37 @@ SELECT DISTINCT
 FROM resolved
 WHERE component_name IS NOT NULL
   AND component_name != '';
+
+-- ========================================
+-- CustomMenuSet → CustomMenu (contains_menu, structural) — Paket A.2 (v4 §2)
+-- ========================================
+-- Member-Referenzen (CustomMenuList/CustomMenuReference) tragen nur @id (kein UUID) →
+-- Auflösung per (Menu_ID, File_Name) gegen CustomMenuCatalog. Built-in-Menüs (z.B.
+-- id 1 "[Standard FileMaker Menus]", "[Spelling]") sind KEINE Katalog-Objekte → der
+-- JOIN lässt sie weg (nur echte Custom Menus werden verlinkt). Menü-Sets sind datei-
+-- lokal → Is_Cross_File = FALSE.
+INSERT INTO ObjectLinks (Source_UUID, Source_Type, Target_UUID, Target_Type,
+                          Link_Type, Link_Role, Link_Subrole,
+                          Source_File, Target_File, Is_Cross_File)
+WITH menuset_members AS (
+    SELECT MenuSet_UUID, File_Name, UNNEST(Member_Menu_IDs) AS Menu_ID
+    FROM CustomMenuSetCatalog
+    WHERE Member_Menu_IDs IS NOT NULL
+)
+SELECT DISTINCT
+    m.MenuSet_UUID  as Source_UUID,
+    'CustomMenuSet' as Source_Type,
+    cm.Menu_UUID    as Target_UUID,
+    'CustomMenu'    as Target_Type,
+    'structural'    as Link_Type,
+    'contains_menu' as Link_Role,
+    NULL            as Link_Subrole,
+    m.File_Name     as Source_File,
+    cm.File_Name    as Target_File,
+    FALSE           as Is_Cross_File
+FROM menuset_members m
+JOIN CustomMenuCatalog cm
+  ON cm.Menu_ID = m.Menu_ID AND cm.File_Name = m.File_Name;
 
 -- Indexes für ObjectLinks
 CREATE INDEX idx_objectlinks_source ON ObjectLinks(Source_UUID);

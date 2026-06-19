@@ -9,7 +9,7 @@
   "entry": "layout.json",
   "datasets": [
     { "id": "dashboards", "source": "builtin:list_dashboards",
-      "params": { "excludeTags": ["home", "nav", "internal"] } }
+      "params": { "excludeTags": ["home", "nav", "internal", "system"] } }
   ],
   "permissions": { "read_only": true, "allow_navigation": true }
 }

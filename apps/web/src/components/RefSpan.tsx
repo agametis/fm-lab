@@ -1,3 +1,4 @@
+import { API_BASE } from '../config/apiBase';
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -47,7 +48,7 @@ const FunctionRefSpan: React.FC<RefSpanProps & { className: string; navPath: str
     if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
   }, []);
 
-  const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:3003').replace(/\/+$/, '');
+  const apiBase = (API_BASE).replace(/\/+$/, '');
   const helpHref = reference.functionLocalHelpUrl
     ? `${apiBase}${reference.functionLocalHelpUrl}`
     : reference.functionHelpUrl;
@@ -285,7 +286,7 @@ const PluginRefSpan: React.FC<RefSpanProps & { className: string; title: string;
                 // Bevorzugt lokal gehostete Doku-Seite (mit Theme-Switcher),
                 // Fallback auf externe MBS-Site, wenn subFn fehlt. Konsistent
                 // mit dem Function-Hover oben (functionLocalHelpUrl-Logik).
-                const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:3003').replace(/\/+$/, '');
+                const apiBase = (API_BASE).replace(/\/+$/, '');
                 const localHref = subFn
                   ? `${apiBase}/api/plugin-docs/${encodeURIComponent(source)}/${encodeURIComponent(subFn)}/page`
                   : null;

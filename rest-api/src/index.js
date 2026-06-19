@@ -88,6 +88,14 @@ async function start() {
     console.log('Initializing database connection...');
     await db.initialize();
 
+    // Load the last persisted fmIDE scan into memory (no DB query). The scan
+    // itself runs on plugin activation and on explicit Rescan, not every boot.
+    try {
+      require('./plugins/fmide/fmide.service').loadPersistedStatuses();
+    } catch (err) {
+      console.warn(`fmIDE status load skipped: ${err.message}`);
+    }
+
     // Start HTTP server
     const server = app.listen(environment.port, environment.host, () => {
       console.log('');

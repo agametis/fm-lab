@@ -178,6 +178,14 @@ button:disabled {
   color: var(--color-error-fg);
 }
 
+/* Verbindungs-Hinweis (REST-API nicht erreichbar): kein harter Fehler,
+   sondern ein Hinweis → Warnfarben statt Error-Rot. */
+.error-message--connection {
+  background-color: var(--color-warning-bg, var(--color-bg-elevated));
+  border-color: var(--color-warning-border);
+  color: var(--color-warning-fg);
+}
+
 .results-info {
   margin-bottom: 1rem;
   padding: 0.5rem 1rem;

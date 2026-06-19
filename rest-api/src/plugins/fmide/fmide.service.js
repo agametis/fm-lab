@@ -1,5 +1,8 @@
+const fs = require('fs');
+const path = require('path');
 const db = require('../../config/database');
 const { getLoadedPlugins } = require('../loader');
+const { fmlabDir } = require('../settings-store');
 
 /**
  * fmIDE Thingamajig URI Service
@@ -80,9 +83,144 @@ function updateConfig(newValues) {
   return manifest.config;
 }
 
+// ---------------------------------------------------------------------------
+// Per-file fmIDE script status
+//
+// The fmp:// URLs call a script *by name* (default "fmIDE") in the target file.
+// If that script is missing, the link is dead — so we detect, per file, whether
+// the fmIDE script exists and (additionally) verify it by its signature: a
+// `Variable setzen [ $fmide_version ; … ]` step in the script header. The result
+// gates the UI (🦄 actions) so they only appear where fmIDE can actually run.
+// ---------------------------------------------------------------------------
+
+let fileStatusCache = null;
+let scanSqlCache = null;
+
+function statusFilePath() {
+  return path.join(fmlabDir(), 'plugins', 'fmide', 'script_status.json');
+}
+
+/** The scan SQL, read once from the plugin's sql/ template directory. */
+function scanSql() {
+  if (scanSqlCache == null) {
+    scanSqlCache = fs.readFileSync(path.join(__dirname, 'sql', 'scan_status.sql'), 'utf-8');
+  }
+  return scanSqlCache;
+}
+
+/** Coerce a config value (boolean or "true"/"false" string) to a boolean. */
+function asBool(value, dflt) {
+  if (value === undefined || value === null || value === '') return dflt;
+  if (typeof value === 'boolean') return value;
+  return String(value).toLowerCase() === 'true';
+}
+
+/** Strip surrounding double-quotes from a FileMaker string literal (e.g. "0.39"). */
+function unquote(value) {
+  if (value == null) return null;
+  const s = String(value).trim();
+  const m = s.match(/^"(.*)"$/s);
+  return m ? m[1] : s;
+}
+
+/**
+ * Compute the per-file fmIDE script status from the catalog.
+ * Returns { [File_Name]: { script_present, script_valid, fmide_version } }.
+ */
+async function computeFileStatuses() {
+  const { script_name } = getConfig();
+  const result = await db.executeQuery(scanSql(), [script_name]);
+  const map = {};
+  for (const row of result.rows) {
+    map[row.file_name] = {
+      script_present: Boolean(row.script_present),
+      script_valid: Boolean(row.script_valid),
+      fmide_version: unquote(row.version_raw),
+    };
+  }
+  return map;
+}
+
+/**
+ * Recompute the per-file status, cache it in memory and persist it to
+ * `.fmlab/plugins/fmide/script_status.json` (best-effort, for inspectability).
+ * Safe to call when the DB is unavailable — returns {} and leaves no cache.
+ */
+async function refreshFileStatuses() {
+  try {
+    const map = await computeFileStatuses();
+    fileStatusCache = map;
+    try {
+      const file = statusFilePath();
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      const payload = { script_name: getConfig().script_name, files: map };
+      const tmp = `${file}.${process.pid}.tmp`;
+      fs.writeFileSync(tmp, JSON.stringify(payload, null, 2) + '\n', 'utf-8');
+      fs.renameSync(tmp, file);
+    } catch (err) {
+      console.warn(`fmide: could not persist script_status.json: ${err.message}`);
+    }
+    const present = Object.values(map).filter((s) => s.script_present).length;
+    console.log(`  fmIDE: script "${getConfig().script_name}" present in ${present}/${Object.keys(map).length} file(s)`);
+    return map;
+  } catch (err) {
+    console.warn(`fmide: script-status computation skipped: ${err.message}`);
+    return fileStatusCache || {};
+  }
+}
+
+/**
+ * Load a previously persisted scan from `.fmlab/plugins/fmide/script_status.json`
+ * into the cache, WITHOUT querying the DB. Used at startup so the panel reflects
+ * the last scan without re-scanning on every boot. Returns the map or null.
+ */
+function loadPersistedStatuses() {
+  try {
+    const payload = readJsonSafe(statusFilePath());
+    if (payload && payload.files && typeof payload.files === 'object') {
+      fileStatusCache = payload.files;
+      return fileStatusCache;
+    }
+  } catch (err) {
+    console.warn(`fmide: could not load persisted script_status.json: ${err.message}`);
+  }
+  return null;
+}
+
+/** Whether a scan has ever been run (cached in memory or persisted to disk). */
+function hasScanData() {
+  return fileStatusCache != null || fs.existsSync(statusFilePath());
+}
+
+/**
+ * Get the cached per-file status map. Does NOT auto-scan — the scan runs on
+ * plugin activation and on explicit "Rescan" (see fmide.actions.js). Falls back
+ * to the persisted file, then to an empty map.
+ */
+async function getFileStatuses() {
+  if (fileStatusCache) return fileStatusCache;
+  return loadPersistedStatuses() || {};
+}
+
+function readJsonSafe(file) {
+  try {
+    if (!fs.existsSync(file)) return null;
+    return JSON.parse(fs.readFileSync(file, 'utf-8'));
+  } catch (err) {
+    console.warn(`fmide: failed to read ${file}: ${err.message}`);
+    return null;
+  }
+}
+
+/** Status for a single file (never throws; defaults to "absent"). */
+async function getFileStatus(fileName) {
+  const map = await getFileStatuses();
+  return map[fileName] || { script_present: false, script_valid: false, fmide_version: null };
+}
+
 /**
  * Build the Thingamajig URI for a given object.
- * Returns { thingamajig_uri, fmp_url, supported } or null.
+ * Returns { thingamajig_uri, fmp_url, supported, script_available, … } or null.
  */
 async function buildUri(uuid, configOverrides) {
   const config = { ...getConfig(), ...configOverrides };
@@ -205,6 +343,11 @@ async function buildUri(uuid, configOverrides) {
     fmpUrl = `${config.fmp_protocol}://${config.server_address}/${thingamajigUri.replace('&', `?script=${config.script_name}&`)}`;
   }
 
+  // Per-file gate: is the fmIDE target script actually present in this file?
+  const fileStatus = await getFileStatus(obj.File_Name);
+  // When the "only show when installed" option is off, never gate on presence.
+  const onlyIfInstalled = asBool(config.only_if_installed, true);
+
   return {
     object_uuid: obj.Object_UUID,
     object_type: objectType,
@@ -213,6 +356,14 @@ async function buildUri(uuid, configOverrides) {
     thingamajig_uri: thingamajigUri,
     fmp_url: fmpUrl,
     supported: thingamajigUri !== null,
+    // `script_available` gates the UI. With `only_if_installed` (default), the
+    // fmIDE script must exist in the file for the link to make sense; otherwise
+    // the action is always offered. `script_valid`/`fmide_version` are the extra
+    // signature-verification signals (informational).
+    script_available: onlyIfInstalled ? fileStatus.script_present : true,
+    script_present: fileStatus.script_present,
+    script_valid: fileStatus.script_valid,
+    fmide_version: fileStatus.fmide_version,
   };
 }
 
@@ -235,4 +386,10 @@ module.exports = {
   updateConfig,
   SUPPORTED_TYPES,
   encodeParam,
+  computeFileStatuses,
+  refreshFileStatuses,
+  loadPersistedStatuses,
+  hasScanData,
+  getFileStatuses,
+  getFileStatus,
 };

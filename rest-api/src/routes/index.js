@@ -8,6 +8,7 @@ const adminRoutes = require('./admin.routes');
 const pluginsRoutes = require('./plugins.routes');
 const pluginDocsRoutes = require('./plugin-docs.routes');
 const docsRoutes = require('./docs.routes');
+const xmlRoutes = require('./xml.routes');
 const relationshipGraphRoutes = require('./relationshipGraph.routes');
 const referenceRoutes = require('./reference.routes');
 const dashboardRoutes = require('./dashboard.routes');
@@ -38,6 +39,9 @@ router.use('/', pluginDocsRoutes);
 
 // Docs (catalog + installed + categories + entries) — neue v2-API
 router.use('/', docsRoutes);
+
+// XML-Konvertierung (/api/xml/status, /api/xml/convert)
+router.use('/', xmlRoutes);
 
 // Relationship Graph (/api/relationship-graph/:fileName)
 router.use('/', relationshipGraphRoutes);

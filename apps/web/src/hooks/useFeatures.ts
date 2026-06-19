@@ -24,6 +24,8 @@ export interface FeaturesState {
   isEnabled: (name: string) => boolean;
   getConfig: (name: string) => Record<string, string> | null;
   getUi: (name: string) => PluginFeatureUi | null;
+  /** Re-fetch /api/version so plugin enabled/config changes apply without a reload. */
+  refresh: () => Promise<void>;
 }
 
 const OVERRIDE_PREFIX = 'feature_override_';
@@ -47,10 +49,21 @@ export function useFeatures(): FeaturesState {
   const [features, setFeatures] = useState<Record<string, PluginFeature>>({});
   const [loading, setLoading] = useState(true);
 
+  const refresh = useCallback(async () => {
+    try {
+      const res = await api.version() as { data?: { features?: Record<string, PluginFeature> } };
+      setFeatures(res.data?.features ?? {});
+    } catch {
+      setFeatures({});
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
-    api.version().then((res: { success?: boolean; data?: { features?: Record<string, PluginFeature> } }) => {
+    (api.version() as Promise<{ data?: { features?: Record<string, PluginFeature> } }>).then((res) => {
       if (cancelled) return;
       setFeatures(res.data?.features ?? {});
     }).catch(() => {
@@ -81,7 +94,7 @@ export function useFeatures(): FeaturesState {
     [features],
   );
 
-  return { features, loading, isEnabled, getConfig, getUi };
+  return { features, loading, isEnabled, getConfig, getUi, refresh };
 }
 
 /**
@@ -93,6 +106,7 @@ export const FeaturesContext = createContext<FeaturesState>({
   isEnabled: () => false,
   getConfig: () => null,
   getUi: () => null,
+  refresh: async () => {},
 });
 
 export const useFeaturesContext = () => useContext(FeaturesContext);

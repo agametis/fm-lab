@@ -47,8 +47,8 @@ const environment = {
   // XML Import Configuration
   xml: {
     dir: process.env.XML_DIR || '../xml',
-    convertScript: process.env.CONVERT_XML_SCRIPT || '../sql/convert_xml.sql',
-    catalogsScript: process.env.CREATE_CATALOGS_SCRIPT || '../sql/create_universal_catalogs.sql',
+    convertScript: process.env.CONVERT_XML_SCRIPT || '../sql/convert-xml/convert_xml_01_extract.sql',
+    catalogsScript: process.env.CREATE_CATALOGS_SCRIPT || '../sql/convert-xml/convert_xml_04_catalog.sql',
   },
 
   // Obsidian Documentation

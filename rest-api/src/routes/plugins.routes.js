@@ -30,4 +30,7 @@ router.get('/plugins',                    validateLangQuery, controller.list);
 router.get('/plugins/:name',              validateLangQuery, controller.get);
 router.patch('/plugins/:name', express.json(), validateLangQuery, controller.patch);
 
+// POST /api/plugins/:name/actions/:action — invoke a named plugin action (e.g. fmIDE rescan)
+router.post('/plugins/:name/actions/:action', express.json(), controller.action);
+
 module.exports = router;

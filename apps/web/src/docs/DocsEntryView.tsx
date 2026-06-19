@@ -1,3 +1,4 @@
+import { API_BASE } from '../config/apiBase';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -5,8 +6,6 @@ import { ThemeToggle, LanguageSelector } from '../components';
 import { useApiLang } from '../hooks';
 import { DocsBreadcrumb, type DocsCrumb } from './DocsBreadcrumb';
 import './DocsEntryView.css';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3003';
 
 interface DocsEntryResponse {
   id: string;

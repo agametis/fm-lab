@@ -75,8 +75,8 @@ remote_newer_than_local() {
     [ -n "$remote" ] || return 1
     [ -n "$local_v" ] || return 0
     local rts lts
-    rts=$(date -j -f "%a, %d %b %Y %T %Z" "$remote" "+%s" 2>/dev/null || echo "")
-    lts=$(date -j -f "%a, %d %b %Y %T %Z" "$local_v" "+%s" 2>/dev/null || echo "")
+    rts=$(date -j -f "%a, %d %b %Y %T %Z" "$remote" "+%s" 2>/dev/null || date -d "$remote" "+%s" 2>/dev/null || echo "")
+    lts=$(date -j -f "%a, %d %b %Y %T %Z" "$local_v" "+%s" 2>/dev/null || date -d "$local_v" "+%s" 2>/dev/null || echo "")
     [ -n "$rts" ] && [ -n "$lts" ] && [ "$rts" -gt "$lts" ]
 }
 
@@ -171,7 +171,7 @@ download_docs() {
     fi
 
     # Verify file was downloaded and has reasonable size (should be > 1MB)
-    FILE_SIZE=$(stat -f%z "$TEMP_DIR/MBS.zip" 2>/dev/null || echo "0")
+    FILE_SIZE=$(stat -f%z "$TEMP_DIR/MBS.zip" 2>/dev/null || stat -c%s "$TEMP_DIR/MBS.zip" 2>/dev/null || echo "0")
     if [ "$FILE_SIZE" -lt 1000000 ]; then
         emit_error "Downloaded file is too small ($FILE_SIZE bytes). Download may have failed."
         exit 2

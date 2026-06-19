@@ -3,11 +3,13 @@
     "description": "fmIDE Thingamajig URI ナビゲーション"
   },
   "settings_schema": {
-    "fmp_protocol.label":         "FMP プロトコル",
-    "fmp_protocol.description":   "fmp または fmps (TLS)",
-    "server_address.label":       "サーバアドレス",
+    "fmp_protocol.label": "FMP プロトコル",
+    "fmp_protocol.description": "fmp または fmps (TLS)",
+    "server_address.label": "サーバアドレス",
     "server_address.description": "現在のファイルには $、それ以外はホスト/IP",
-    "script_name.label":          "スクリプト名",
-    "script_name.description":    "FileMaker ファイル内の対象スクリプト名"
+    "script_name.label": "スクリプト名",
+    "script_name.description": "FileMaker ファイル内の対象スクリプト名",
+    "only_if_installed.label": "ソリューションにインストールされている場合のみ表示",
+    "only_if_installed.description": "ファイルに fmIDE スクリプトが含まれている"
   }
 }

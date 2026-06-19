@@ -1,3 +1,4 @@
+import { API_BASE } from '../../config/apiBase';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -13,8 +14,11 @@ import type { InlineControlProps } from './inlineControls';
  * Multi-Sprach-Sets (claris-help): Zusätzlicher Caret (▾) öffnet ein Popover
  * mit Sprach-Checkboxen + zwei Buttons ("Auswahl installieren" / "Alle"). Die
  * Auswahl wird als `--langs=de,fr,it` (sanitized) an den Installer übergeben;
- * "Alle" als `--all`. Bereits installierte Sprachen und die Reference-Sprache
- * EN sind im Popover ausgegraut und vorausgewählt.
+ * "Alle" als `--all`. Bereits installierte Sprachen tauchen weder in der
+ * tertiary-Zeile der Listenzeile noch im Popover auf — die Liste spiegelt
+ * exakt das, was noch zu tun ist. Die Reference-Sprache EN ist disabled und
+ * vorausgewählt, solange sie noch nicht installiert ist (sie geht beim
+ * Default-Install immer mit).
  *
  * EventSource ist GET-only, daher fetch + ReadableStream-Parsing für SSE.
  */
@@ -44,8 +48,11 @@ export function DocsetInstallControl({ row, setExtra }: InlineControlProps) {
   const isMultiLang = allLanguages.length > 1;
 
   const installedSet = useMemo(() => new Set(installedLanguages), [installedLanguages]);
-  // Languages "Install all" would still add — used to disable the main button
-  // and decide whether the caret/popover is shown at all.
+  // Languages "Install all" would still add — used to disable the main button,
+  // populate the popover list, and decide whether the caret/popover is shown
+  // at all. Installierte Sprachen werden hier ausgefiltert, damit das Popover
+  // den noch ausstehenden Installations-Stand 1:1 spiegelt (analog zur
+  // tertiary-Zeile im Listing).
   const missingLangs = useMemo(
     () => allLanguages.filter(l => !installedSet.has(l)),
     [allLanguages, installedSet]
@@ -158,7 +165,7 @@ export function DocsetInstallControl({ row, setExtra }: InlineControlProps) {
     const ac = new AbortController();
     abortRef.current = ac;
 
-    const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:3003').replace(/\/+$/, '');
+    const apiBase = (API_BASE).replace(/\/+$/, '');
     const url = `${apiBase}/api/docs/install/${encodeURIComponent(id)}`;
 
     try {
@@ -329,17 +336,16 @@ export function DocsetInstallControl({ row, setExtra }: InlineControlProps) {
             {t('install.pickLanguages', { defaultValue: 'Sprachen wählen' })}
           </div>
           <ul className="docs-install-popover__list">
-            {allLanguages.map(lang => {
+            {missingLangs.map(lang => {
+              // Reference-Sprache (EN) wird immer mitgeholt — checkbox vorgewählt
+              // + disabled, damit klar wird "geht in jedem Fall mit". Tritt
+              // praktisch nur auf, solange EN noch nie installiert wurde.
               const isRef = lang === REFERENCE_LANG;
-              const isInstalled = installedSet.has(lang);
-              const disabled = isRef || isInstalled;
+              const disabled = isRef;
               const checked = disabled ? true : selectedLangs.has(lang);
-              const noteKey = isInstalled
-                ? 'install.langInstalled'
-                : isRef ? 'install.langDefault' : null;
-              const note = noteKey ? (t(noteKey, {
-                defaultValue: isInstalled ? 'bereits installiert' : 'Standard',
-              }) as string) : '';
+              const note = isRef
+                ? (t('install.langDefault', { defaultValue: 'Standard' }) as string)
+                : '';
               return (
                 <li key={lang} className={`docs-install-popover__row${disabled ? ' is-disabled' : ''}`}>
                   <label>
@@ -374,8 +380,8 @@ export function DocsetInstallControl({ row, setExtra }: InlineControlProps) {
             </button>
           </div>
           <div className="docs-install-popover__hint">
-            {t('install.skipsInstalled', {
-              defaultValue: 'Bereits installierte Sprachen werden übersprungen.',
+            {t('install.onlyMissingShown', {
+              defaultValue: 'Es werden nur noch nicht installierte Sprachen angezeigt.',
             })}
           </div>
         </div>,

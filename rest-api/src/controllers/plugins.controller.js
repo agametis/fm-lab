@@ -1,6 +1,25 @@
+const path = require('path');
+const fs = require('fs');
 const { buildSuccess } = require('../utils/response-builder');
 const { getLoadedPlugins } = require('../plugins/loader');
 const settingsStore = require('../plugins/settings-store');
+
+const PLUGINS_DIR = path.join(__dirname, '..', 'plugins');
+
+/**
+ * Lazily load a plugin's optional actions module (`plugins/<name>/<name>.actions.js`).
+ * Returns the module's exports, or null when the plugin has no actions.
+ */
+function loadPluginActions(name) {
+  const file = path.join(PLUGINS_DIR, name, `${name}.actions.js`);
+  if (!fs.existsSync(file)) return null;
+  try {
+    return require(file);
+  } catch (err) {
+    console.warn(`plugins: failed to load actions for "${name}": ${err.message}`);
+    return null;
+  }
+}
 const pluginI18nService = require('../plugins/plugin-i18n.service');
 const environment = require('../config/environment');
 const {
@@ -14,9 +33,11 @@ const {
  * Exposes a generic API over all loaded plugins — used by the Settings UI
  * to list, toggle and configure plugins.
  *
- * Toggling is persistent (writes to .fmlab/plugins.json) but requires a
- * server restart to take effect on the routing layer. The response flags
- * this via `requires_restart: true` so the UI can show a hint.
+ * Toggling is persistent (writes to .fmlab/plugins.json) and takes effect
+ * immediately: the in-memory manifest flag is flipped here, and the plugin's
+ * routes are guarded by that live flag (see plugins/loader.js), so no server
+ * restart is needed. `requires_restart` is therefore always false (kept in the
+ * response for backward compatibility).
  */
 
 function pickLang(query) {
@@ -74,7 +95,7 @@ function get(req, res) {
  * PATCH /api/plugins/:name — update enabled and/or settings.
  * Body: { enabled?: boolean, settings?: object }
  */
-function patch(req, res) {
+async function patch(req, res) {
   const lang = pickLang(req.query);
   const plugins = getLoadedPlugins();
   const manifest = plugins[req.params.name];
@@ -97,11 +118,12 @@ function patch(req, res) {
     });
   }
 
-  let requiresRestart = false;
-
+  let justEnabled = false;
   if (typeof enabled === 'boolean' && enabled !== manifest.enabled) {
     settingsStore.setEnabledState(manifest.name, enabled);
-    requiresRestart = true;
+    // Flip the live flag so the route guard and /api/version reflect it at once.
+    manifest.enabled = enabled;
+    justEnabled = enabled === true;
   }
 
   if (settings && typeof settings === 'object') {
@@ -111,10 +133,57 @@ function patch(req, res) {
     manifest.config = { ...(manifest.config || {}), ...merged };
   }
 
+  // Lifecycle hook: run the plugin's onEnable action on activation (e.g. fmIDE's
+  // first catalog scan). Best-effort — never fails the toggle.
+  if (justEnabled) {
+    const actions = loadPluginActions(manifest.name);
+    if (actions && typeof actions.onEnable === 'function') {
+      try {
+        await actions.onEnable();
+      } catch (err) {
+        console.warn(`plugins: onEnable for "${manifest.name}" failed: ${err.message}`);
+      }
+    }
+  }
+
   res.json(buildSuccess({
     ...serializePlugin(manifest, lang),
-    requires_restart: requiresRestart,
+    requires_restart: false,
   }));
 }
 
-module.exports = { list, get, patch };
+/**
+ * POST /api/plugins/:name/actions/:action — invoke a named plugin action.
+ *
+ * Generic dispatch to `plugins/<name>/<name>.actions.js`. Used e.g. by the
+ * fmIDE settings panel's "Rescan" button (`…/fmide/actions/rescan`) to re-run
+ * the catalog scan on demand. Works regardless of the plugin's enabled state
+ * (this is a core route, not a plugin-guarded one).
+ */
+async function action(req, res, next) {
+  try {
+    const { name, action: actionName } = req.params;
+    const plugins = getLoadedPlugins();
+    if (!plugins[name]) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'PLUGIN_NOT_FOUND', message: `Unknown plugin: ${name}` },
+      });
+    }
+
+    const actions = loadPluginActions(name);
+    if (!actions || typeof actions[actionName] !== 'function') {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'ACTION_NOT_FOUND', message: `Unknown action "${actionName}" for plugin "${name}"` },
+      });
+    }
+
+    const result = await actions[actionName](req.body || {});
+    res.json(buildSuccess(result ?? null));
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { list, get, patch, action };

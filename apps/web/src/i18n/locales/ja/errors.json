@@ -9,5 +9,6 @@
   "generic": "問題が発生しました。もう一度お試しください。",
   "loadHeading": "読み込みに失敗しました",
   "retryAria": "再試行",
-  "retryLabel": "再試行"
+  "retryLabel": "再試行",
+  "noConnection": "REST APIに接続できません。サーバーが起動しているか確認してください。"
 }

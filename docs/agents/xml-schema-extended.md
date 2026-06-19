@@ -91,3 +91,84 @@ To determine whether the extended entries are present, check the `Has_DDR_INFO="
 	</DDR_INFO>
 </FMSaveAsXML>
 ```
+
+## Further `AddAction` catalogs (validated against real exports)
+
+Beyond the catalogs shown in the high-level listing above, real `SaveAsXML` exports contain additional `<AddAction>` catalogs that were missing from the manual schema. The four below were confirmed by scanning **all 57 production files** (`tools/_xml_schema_tree.py`, byte-accurate `expat` streaming). They are conditional — each only appears when the corresponding feature is used, so the file count varies. `membercount` on `<AddAction>` therefore differs per file.
+
+> Note: `<Structure>` may also contain a sibling `<ModifyAction>` (incremental change set) next to `<AddAction>`, carrying the same catalog element types (e.g. `FieldsForTables`, `LayoutCatalog`) for objects to be modified rather than added.
+
+### OptionsForValueLists
+
+Companion catalog to `ValueListCatalog` (same split pattern as `CalcsForCustomFunctions` ↔ `CustomFunctionsCatalog`). It holds the **option detail** of each value list: the value source and, depending on type, the field/relationship binding, an external source, or literal custom values. One `<ValueList id name>` per list, with `<Source value="Custom|Field|External">` plus the matching subtree:
+- `<CustomValues>` → `<Text>` (CDATA, newline-separated literal values)
+- `<Field>` → `<PrimaryField>` / `<SecondaryField>` (each a `<FieldReference>` with nested `<TableOccurrenceReference>`), optional `<ShowRelated>`
+- `<External>` → `<DataSourceReference>` / `<ValueListReference>`
+
+```XML
+<OptionsForValueLists membercount="...">
+    <ValueList id="1" name="Rechtsform">
+        <Source value="Custom"></Source>
+        <UUID modifications="4" userName="…" accountName="developer" timestamp="2026-01-19T11:21:07">BC0C0D9B-…</UUID>
+        <TagList></TagList>
+        <!-- type-specific child: <CustomValues><Text>…</Text></CustomValues>
+                                | <Field><PrimaryField>…</PrimaryField></Field>
+                                | <External><DataSourceReference/></External> -->
+    </ValueList>
+</OptionsForValueLists>
+```
+
+### CustomMenuSetCatalog
+
+Companion to `CustomMenuCatalog`: the **menu sets** (named collections of custom menus that a layout can switch to). One `<CustomMenuSet id name comment>` per set, whose `<CustomMenuList>` references the contained menus via `<CustomMenuReference id name>` (pointing into `CustomMenuCatalog`).
+
+```XML
+<CustomMenuSetCatalog membercount="...">
+    <ObjectList membercount="...">
+        <CustomMenuSet name="Benutzer" id="2" comment="">
+            <UUID …>AB30454C-…</UUID>
+            <TagList></TagList>
+            <CustomMenuList membercount="1">
+                <CustomMenuReference name="Ablage" id="25"></CustomMenuReference>
+            </CustomMenuList>
+        </CustomMenuSet>
+    </ObjectList>
+    <PasteIndexList membercount="..."><Object id="..."/></PasteIndexList>
+</CustomMenuSetCatalog>
+```
+
+### LibraryCatalog
+
+Holds **embedded binary media** (e.g. SVG/PNG used by themes, buttons or layout graphics). Each `<LibraryReference id key>` pairs with a `<StreamList>` of `<Stream>` elements whose text content is the payload, encoded per `type` (`Base64`, `Hex`, or `id`). This is pure blob data (no analysis value) and is the single largest contributor to the `main` chunk — see [project/plan_xml_diff_streaming_turbo_v3.md](../../project/plan_xml_diff_streaming_turbo_v3.md) Anhang A.
+
+```XML
+<LibraryCatalog membercount="1">
+    <BinaryData>
+        <LibraryReference id="2" key="2E54050F5A2F6FAF71E325BD9C4F91CC"></LibraryReference>
+        <StreamList>
+            <Stream name="MAIN" type="id">SVG </Stream>
+            <Stream name="SVG " type="Base64" size="712">PD94bWwgdmVyc2lvbj0i… [base64]</Stream>
+            <Stream name="FNAM" type="Hex" size="24">000000010533373B3D3F…</Stream>
+        </StreamList>
+    </BinaryData>
+</LibraryCatalog>
+```
+
+### FileAccessCatalog
+
+The file's **access-protection / authorization** list ("protect this file" — which files and plugins may reference it). Attributes `required` and `sameHost` carry the protection flags; each `<Authorization id type="Local|External" self>` records an authorized file with its `<Display>` (CDATA file name), `<Source>` (creation metadata) and `<Authentication>` (credential hash).
+
+```XML
+<FileAccessCatalog sameHost="False" required="True">
+    <UUID …>F11C51BC-…</UUID>
+    <ObjectList membercount="4">
+        <Authorization id="1" type="Local" self="True">
+            <Source CreationTimestamp="12/07/2024 05:58:02 PM" CreationAccountName="Admin"></Source>
+            <UUID …>12B7B3E7-…</UUID>
+            <Display><![CDATA[API]]></Display>
+            <Authentication>BADADBAEA524F07F… [hash]</Authentication>
+            <TagList></TagList>
+        </Authorization>
+    </ObjectList>
+</FileAccessCatalog>
+```

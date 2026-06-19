@@ -1,10 +1,11 @@
+import { API_BASE } from '../config/apiBase';
 // CustomFunction Tokens API — Fetch wrapper für /api/get-details?format=tokens&enrich=<lang>
 // Liefert die strukturierte Token-Sequenz inkl. Reference-DB-Anreicherung
 // für Tokens vom Type `function` (siehe rest-api PRD §5.2).
 
 import type { CustomFunctionTokens } from '../script/calcTokens';
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003';
+const baseUrl = API_BASE;
 
 export interface CustomFunctionTokensResponse {
   success: boolean;

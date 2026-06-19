@@ -1,15 +1,23 @@
 {
   "name": "fmide",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "fmIDE Thingamajig URI navigation",
-  "enabled": true,
+  "enabled": false,
   "routes_prefix": "/fmide",
+  "public_routes": ["/status"],
   "config": {
     "fmp_protocol": "fmp",
     "server_address": "$",
-    "script_name": "fmIDE"
+    "script_name": "fmIDE",
+    "only_if_installed": true
   },
   "settings_schema": {
+    "only_if_installed": {
+      "type": "boolean",
+      "label": "Only show when installed in solution",
+      "description": "File contains the fmIDE script",
+      "default": true
+    },
     "fmp_protocol": {
       "type": "select",
       "label": "FMP protocol",

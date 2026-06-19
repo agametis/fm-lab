@@ -120,6 +120,12 @@
   font-size: 0.9rem;
 }
 
+/* Description shown inside the settings block (under the "Einstellungen"
+   heading): the parent already supplies horizontal padding. */
+.plugin-card-description--inset {
+  padding: 0 0 0.75rem 0;
+}
+
 .plugin-card-restart-badge {
   margin: 0.75rem 1.25rem 0 1.25rem;
   padding: 0.5rem 0.75rem;
@@ -156,6 +162,29 @@
 .plugin-card-field-desc {
   color: var(--color-text-muted);
   font-weight: normal;
+}
+
+/* Boolean fields: checkbox before the label, on one line. */
+.plugin-card-field--checkbox .plugin-card-checkbox-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.plugin-card-field--checkbox .plugin-card-checkbox-label input[type="checkbox"] {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.plugin-card-field--checkbox .plugin-card-field-desc {
+  font-size: 0.8rem;
+}
+
+/* Plugin-specific extra content (e.g. fmIDE files panel): align with the
+   other panel sections instead of clinging to the card edge. */
+.plugin-card-extra {
+  padding: 0 1.25rem 1rem 1.25rem;
 }
 
 .plugin-card-field input[type="text"],
@@ -201,4 +230,90 @@
   border-radius: 4px;
   color: var(--color-error-fg);
   font-size: 0.85rem;
+}
+
+/* ---------------------------------------------------------------------------
+   REST-API connection settings
+   --------------------------------------------------------------------------- */
+.api-settings-card {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-elevated);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.api-settings-heading {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.api-settings-desc {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.api-settings-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.api-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.api-settings-input {
+  flex: 1 1 18rem;
+  min-width: 12rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.85rem;
+}
+
+.api-settings-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.api-settings-status {
+  font-size: 1.1rem;
+  line-height: 1;
+  flex: 0 0 auto;
+  user-select: none;
+}
+
+.api-settings-save,
+.api-settings-clear {
+  padding: 0.45rem 0.85rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.api-settings-save {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+
+.api-settings-save:disabled,
+.api-settings-clear:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.api-settings-clear {
+  background: transparent;
+  color: var(--color-text);
 }

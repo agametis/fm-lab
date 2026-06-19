@@ -1,3 +1,4 @@
+import { API_BASE } from '../config/apiBase';
 import { useEffect, useState } from 'react';
 
 export type TOField = {
@@ -52,7 +53,7 @@ type ApiEnvelope<T> = {
   error?: { message: string };
 };
 
-const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3003') + '/api';
+const baseUrl = (API_BASE) + '/api';
 
 export function useRelationshipGraph(fileName: string | null | undefined) {
   const [data, setData] = useState<RelationshipGraphData | null>(null);

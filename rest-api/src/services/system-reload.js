@@ -25,6 +25,17 @@ async function performReload() {
   pluginI18nService.clearCache();
   docsReferences.clearCache();
   clarisAdapter.clearSlugMapCache();
+
+  // Recompute the fmIDE per-file script status against the freshly reloaded DB,
+  // but only if a scan was ever run (don't scan for a never-activated plugin).
+  // Best-effort, lazily required so a missing plugin never breaks the reload.
+  try {
+    const fmide = require('../plugins/fmide/fmide.service');
+    if (fmide.hasScanData()) await fmide.refreshFileStatuses();
+  } catch (err) {
+    console.warn(`reload: fmIDE status refresh skipped: ${err.message}`);
+  }
+
   return result;
 }
 

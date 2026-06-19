@@ -1,8 +1,9 @@
+import { API_BASE } from '../config/apiBase';
 // Plugin-Doku-API mit Modul-Cache. Liefert HTML-Inhalte pro
 // (source, function, level) — bei Hover lazy fetchen, beim "Mehr Details"
 // auf level=long upgraden.
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003';
+const baseUrl = API_BASE;
 
 export type PluginLevel = 'short' | 'long' | 'both';
 

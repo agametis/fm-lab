@@ -8,7 +8,7 @@ import { OBJECT_TYPES } from '@packages/shared/constants';
 // in the "Used tokens" optgroup of the type dropdown.
 const PSEUDO_TYPE_GROUP = ['ScriptStepType', 'BuiltinFunction', 'PluginComponent', 'PluginFunction'] as const;
 const PSEUDO_TYPE_SET = new Set<string>(PSEUDO_TYPE_GROUP);
-import { useInfiniteSearch, useDebounce, useScrollRestore } from './hooks';
+import { useInfiniteSearch, useDebounce, useScrollRestore, CONNECTION_ERROR } from './hooks';
 import { VirtualList, DetailView, SearchOptions, FolderTree, ThemeToggle, LanguageSelector, PseudoTokenView, type FolderTreeSubtype } from './components';
 import { SettingsView } from './views/SettingsView';
 import { RelationshipGraphView } from './views/RelationshipGraphView';
@@ -472,8 +472,8 @@ function SearchView() {
 
       {/* Error message (search mode only) */}
       {!isTreeMode && error && objectType !== 'RelationshipGraph' && (
-        <div className="error-message">
-          {error}
+        <div className={error === CONNECTION_ERROR ? 'error-message error-message--connection' : 'error-message'}>
+          {error === CONNECTION_ERROR ? t('errors:noConnection') : error}
         </div>
       )}
 

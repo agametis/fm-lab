@@ -1,3 +1,4 @@
+import { API_BASE } from '../config/apiBase';
 // Field Tokens API — Fetch wrapper für /api/get-details?format=tokens&enrich=<lang>
 // Liefert die strukturierte Token-Sequenz der Calculation-Formel eines Feldes
 // (Calculated Fields und AutoEnter-Calculated Fields) inkl. Reference-DB-
@@ -5,7 +6,7 @@
 
 import type { FieldTokens } from '../script/calcTokens';
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003';
+const baseUrl = API_BASE;
 
 export interface FieldTokensResponse {
   success: boolean;

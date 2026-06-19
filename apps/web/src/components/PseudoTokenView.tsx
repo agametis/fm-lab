@@ -1,3 +1,4 @@
+import { API_BASE } from '../config/apiBase';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { components } from '@packages/shared/types';
@@ -50,8 +51,6 @@ interface Props {
   initialSort?: SortMode;
   onUrlStateChange?: (state: { category?: string; sort?: SortMode }) => void;
 }
-
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:3003';
 
 async function fetchList(params: URLSearchParams) {
   const url = `${API_BASE}/api/list?${params.toString()}`;

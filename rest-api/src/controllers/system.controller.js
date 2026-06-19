@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const { buildSuccess } = require('../utils/response-builder');
+const appSettings = require('../config/app-settings');
 const environment = require('../config/environment');
 const packageJson = require('../../package.json');
 const { getLoadedPlugins } = require('../plugins/loader');
@@ -169,7 +170,50 @@ async function config(req, res, next) {
         default: defaultLang,
         supported: SUPPORTED_LANGUAGES,
       },
+      // Server-side, installation-wide settings (.fmlab/settings.json).
+      // NOTE: the REST-API base URL is intentionally NOT here — it is a
+      // per-browser client setting (localStorage). See apps/web/src/config/apiBase.ts.
+      settings: appSettings.getAppSettings(),
     }));
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * PUT /api/system/config — persist server-side, installation-wide settings.
+ *
+ * Body: { settings: { [key]: value | null } }
+ *   - merges the patch into `.fmlab/settings.json`
+ *   - a key set to null removes it
+ *   - client-only keys (e.g. `apiUrl`) are rejected — those live in the browser
+ *
+ * TODO: guard with an auth token (the store is installation-wide).
+ */
+async function updateConfig(req, res, next) {
+  try {
+    const { settings } = req.body || {};
+
+    if (settings === undefined || settings === null || typeof settings !== 'object' || Array.isArray(settings)) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_SETTINGS', message: 'Body must contain a "settings" object' },
+      });
+    }
+
+    const rejected = Object.keys(settings).filter((k) => appSettings.CLIENT_ONLY_KEYS.includes(k));
+    if (rejected.length) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'CLIENT_ONLY_SETTING',
+          message: `These settings are client-side only and cannot be stored on the server: ${rejected.join(', ')}`,
+        },
+      });
+    }
+
+    const stored = appSettings.setAppSettings(settings);
+    res.json(buildSuccess({ settings: stored }));
   } catch (error) {
     next(error);
   }
@@ -179,4 +223,5 @@ module.exports = {
   version,
   info,
   config,
+  updateConfig,
 };

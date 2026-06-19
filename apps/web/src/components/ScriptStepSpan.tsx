@@ -1,3 +1,4 @@
+import { API_BASE } from '../config/apiBase';
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -52,7 +53,7 @@ export const ScriptStepSpan: React.FC<ScriptStepSpanProps> = ({ text, line }) =>
     if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
   }, []);
 
-  const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:3003').replace(/\/+$/, '');
+  const apiBase = (API_BASE).replace(/\/+$/, '');
   const helpHref = line.stepLocalHelpUrl
     ? `${apiBase}${line.stepLocalHelpUrl}`
     : line.stepHelpUrl;

@@ -273,6 +273,67 @@
 [data-theme="dark"] .dash-table__row--active:hover > td {
   background: rgba(255, 175, 80, 0.24);
 }
+/* Processing-Row — die gerade laufende XML-Konvertierungs-Datei. Kräftigeres
+ * Signal-Orange als die Active-Filter-Row, plus dezenter Puls, damit klar ist,
+ * dass an dieser Zeile gerade gearbeitet wird. */
+.dash-table__row--processing > td {
+  background: rgba(255, 145, 30, 0.30);
+  animation: dash-row-processing-pulse 1.4s ease-in-out infinite;
+}
+[data-theme="dark"] .dash-table__row--processing > td {
+  background: rgba(255, 160, 50, 0.32);
+}
+@keyframes dash-row-processing-pulse {
+  0%, 100% { background: rgba(255, 145, 30, 0.30); }
+  50%      { background: rgba(255, 145, 30, 0.50); }
+}
+[data-theme="dark"] .dash-table__row--processing > td {
+  animation-name: dash-row-processing-pulse-dark;
+}
+@keyframes dash-row-processing-pulse-dark {
+  0%, 100% { background: rgba(255, 160, 50, 0.32); }
+  50%      { background: rgba(255, 160, 50, 0.52); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-table__row--processing > td { animation: none; }
+}
+/* Filling-Row — importierende Datei mit bekannter Chunk-Gesamtzahl: statt des
+ * indeterminaten Puls-Hintergrunds ein linksbündiger, mit dem Chunk-Fortschritt
+ * (done/total) wachsender Balken. Der Gradient liegt per Inline-Style auf der
+ * <tr> (spannt die volle Zeilenbreite über alle Zellen); --fill-color liefert
+ * die theme-fähige Farbe, die Zellen bleiben transparent, damit der Balken
+ * durchscheint. Kein Puls — der wachsende Balken IST das Fortschrittssignal. */
+.dash-table__row--filling {
+  --fill-color: rgba(255, 145, 30, 0.38);
+}
+[data-theme="dark"] .dash-table__row--filling {
+  --fill-color: rgba(255, 160, 50, 0.42);
+}
+.dash-table__row--filling > td { background: transparent; }
+/* Done-Row — in diesem Lauf fertig konvertierte Datei. Ganz heller grüner
+ * Hintergrund (kein Puls), bleibt bis zum Lauf-Ende und verschwindet dann. */
+.dash-table__row--done > td {
+  background: rgba(60, 190, 110, 0.12);
+}
+[data-theme="dark"] .dash-table__row--done > td {
+  background: rgba(80, 205, 125, 0.14);
+}
+/* Failed-Row — in diesem Lauf fehlgeschlagene Datei. Dezentes Signal-Rot. */
+.dash-table__row--failed > td {
+  background: rgba(225, 70, 70, 0.14);
+}
+[data-theme="dark"] .dash-table__row--failed > td {
+  background: rgba(240, 90, 90, 0.16);
+}
+/* Chunk-Zähler „k von N" hinter dem Dateinamen, solange die Datei importiert
+ * wird (Phase D). Dezent, tabellarische Ziffern für ruhiges Hochzählen. */
+.dash-table__chunk-counter {
+  margin-left: 6px;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .dash-table__empty {
   padding: 8px 0;
   color: var(--color-text-muted);
@@ -883,4 +944,254 @@
 .docs-install-bezel__close:hover {
   background: var(--color-hover-bg);
   color: var(--color-text-primary);
+}
+
+/* ---------------------------------------------------------------------------
+ * XML-Convert Control + Log
+ * Eigenständige Top-Level-Primitives (kein Inline-Control). Der Button
+ * verwendet die Markenakzentfarbe als "Signalfarbe" (PRD §4.1 / §11.1).
+ * ------------------------------------------------------------------------- */
+.xml-convert-control {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.xml-convert-changed-only {
+  display: inline-flex;
+  align-items: center;
+  /* Toggle links im Panel halten, Button bleibt rechtsbündig (flex-end). */
+  margin-right: auto;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-muted, #6b7280);
+  cursor: pointer;
+  user-select: none;
+}
+.xml-convert-changed-only input {
+  cursor: pointer;
+}
+/* In einer Flex-Row (z. B. Home-Project-overview-Card neben dem KPIStrip)
+ * schiebt margin-left:auto den Button an den rechten Rand. In Standalone-
+ * Verwendung (Sub-Dashboard direkt im Card-Body) bleibt das ohne Wirkung,
+ * weil der Parent kein Flex-Container ist. */
+.dash-row > .xml-convert-control {
+  margin-bottom: 0;
+  margin-left: auto;
+}
+.xml-convert-btn {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border: 1px solid var(--color-accent);
+  border-radius: 6px;
+  background: var(--color-accent);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, opacity 0.12s;
+}
+.xml-convert-btn:hover:not(:disabled) {
+  background: var(--color-accent-hover, var(--color-accent));
+  border-color: var(--color-accent-hover, var(--color-accent));
+}
+.xml-convert-btn:disabled {
+  cursor: default;
+  background: var(--color-bg-surface);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  opacity: 0.8;
+}
+
+/* Outline-Variante: Navigation-Button im Home-Dashboard. Optisch zurückhaltend
+ * (analog .app-mode-tabs .tab-button), damit klar ist, dass hier nur navigiert
+ * wird — der gefüllte Button im Sub-Dashboard startet die eigentliche Aktion. */
+.xml-convert-btn--outline {
+  background: none;
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+.xml-convert-btn--outline:hover:not(:disabled) {
+  background: var(--color-hover-bg);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.xml-convert-progress {
+  flex: 1;
+  height: 22px;
+  border: 1px solid var(--color-border);
+  border-radius: 11px;
+  overflow: hidden;
+  background: var(--color-bg-surface);
+  position: relative;
+}
+.xml-convert-progress__bar {
+  height: 100%;
+  background: var(--color-accent);
+  transition: width 0.3s ease-out;
+}
+.xml-convert-progress__label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--color-text-primary);
+  pointer-events: none;
+}
+
+/* --- Segmentierter Fortschrittsbalken (6 SQL-Phasen P1–P6) --- */
+/* Der segmentierte Balken ersetzt im Lauf den einfachen Balken: 6 beschriftete
+ * Segmente, aktives Segment orange + Puls, fertige in Akzent-Blau gefüllt,
+ * offene leer. Am Lauf-Ende blendet der Balken kurz aus (Dissolve). */
+.xml-convert-progress--segmented {
+  display: flex;
+  gap: 3px;
+  height: 22px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+  padding: 0;
+}
+.xml-convert-segment {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--color-bg-surface);
+}
+.xml-convert-segment__fill {
+  position: absolute;
+  inset: 0;
+  width: 0;
+  background: var(--color-accent);
+  transition: width 0.3s ease-out;
+}
+/* Aktives Segment: Signal-Orange mit dezentem Puls. */
+.xml-convert-segment--active .xml-convert-segment__fill {
+  background: rgba(255, 145, 30, 0.92);
+  animation: xml-convert-seg-pulse 1.4s ease-in-out infinite;
+}
+@keyframes xml-convert-seg-pulse {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
+}
+.xml-convert-segment__label {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  font-size: 0.66rem;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-primary);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .xml-convert-segment--active .xml-convert-segment__fill { animation: none; }
+}
+/* Dissolve am Lauf-Ende (~600 ms, siehe DISSOLVE_MS): ausblenden + leicht
+ * zusammenschieben, dann erscheint wieder der Button. */
+.xml-convert-progress--dissolving {
+  animation: xml-convert-dissolve 0.6s ease forwards;
+  pointer-events: none;
+}
+@keyframes xml-convert-dissolve {
+  0%   { opacity: 1; transform: scaleY(1); }
+  100% { opacity: 0; transform: scaleY(0.55); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .xml-convert-progress--dissolving { animation-duration: 0.01s; }
+}
+
+.xml-convert-log-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.xml-convert-status {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  padding: 4px 0;
+}
+.xml-convert-status--running { color: var(--color-text-primary); font-weight: 500; }
+.xml-convert-status--ok      { color: var(--color-text-primary); }
+.xml-convert-status--error   { color: var(--color-text-primary); font-weight: 500; }
+.xml-convert-status--idle    { color: var(--color-text-muted); font-style: italic; }
+
+.xml-convert-log {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  max-height: 50vh;
+  min-height: 120px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.xml-convert-log__empty {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-family: inherit;
+}
+.xml-convert-log__line { display: block; }
+.xml-convert-log__line--warn  { color: var(--color-text-secondary); }
+.xml-convert-log__line--error { color: #c0392b; }
+
+/* ---------------------------------------------------------------------------
+ * XmlEmptyStateCard — Hinweis-Karte im Home-Dashboard bei leerer DB.
+ * Rendert sich selbst aus, wenn die DB Inhalte hat.
+ * ------------------------------------------------------------------------- */
+.xml-empty-card .dash-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.xml-empty-card__hint {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-text-primary);
+}
+.xml-empty-card__listing {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  max-height: 30vh;
+  overflow-y: auto;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+.xml-empty-card__listing-empty {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-family: inherit;
+}
+.xml-empty-card__listing-row {
+  display: block;
+}
+.xml-empty-card__actions {
+  display: flex;
+  justify-content: flex-end;
 }

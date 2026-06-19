@@ -6,6 +6,36 @@ type FMObject = components['schemas']['FMObject'];
 
 const CHUNK_SIZE = 100;
 
+/**
+ * Sentinel-Fehlercode für „REST-API nicht erreichbar". Wird vom Hook gesetzt
+ * und in der UI (App.tsx) in eine übersetzte Hinweis-Meldung übersetzt, statt
+ * einen kryptischen Laufzeitfehler (z. B. „undefined is not an object …") oder
+ * die rohe Fetch-Fehlermeldung anzuzeigen.
+ */
+export const CONNECTION_ERROR = '__NO_CONNECTION__';
+
+/**
+ * Erkennt Netzwerk-/Verbindungsfehler. Zwei Ausprägungen:
+ *  1. `fetch` lehnt direkt ab (kein Proxy / Ziel down) → TypeError mit
+ *     „Failed to fetch" (Chromium), „Load failed" (Safari/WebKit),
+ *     „NetworkError…" (Firefox).
+ *  2. Über den Vite-Dev-Proxy läuft der Request, das Backend ist aber down →
+ *     der Proxy liefert 5xx mit leerem Body; openapi-fetch gibt dann eine
+ *     `undefined`-Response zurück (siehe Aufrufer-Guards).
+ */
+function isConnectionError(err: unknown): boolean {
+  if (err instanceof TypeError) {
+    const m = err.message.toLowerCase();
+    return (
+      m.includes('failed to fetch') ||
+      m.includes('load failed') ||
+      m.includes('networkerror') ||
+      m.includes('network request failed')
+    );
+  }
+  return false;
+}
+
 interface UseInfiniteSearchOptions {
   searchName: string;
   selectedFile: string;
@@ -139,6 +169,16 @@ export const useInfiniteSearch = ({
 
       if (generation !== requestGenerationRef.current) return;
 
+      // Verbindungsfall: Steht das Backend nicht (direkter Fetch lehnt ab) oder
+      // liefert der Dev-Proxy eine 5xx-Antwort mit leerem Body, gibt der
+      // API-Client `undefined` zurück. Ohne diesen Guard würde `searchResponse.success`
+      // den kryptischen „undefined is not an object"-Fehler werfen.
+      if (!searchResponse || !countResponse) {
+        setError(CONNECTION_ERROR);
+        setTotalCount(null);
+        return;
+      }
+
       if (searchResponse.success && searchResponse.data) {
         const items = Array.isArray(searchResponse.data) ? searchResponse.data : [];
         setItems(items);
@@ -163,7 +203,11 @@ export const useInfiniteSearch = ({
     } catch (err) {
       if (generation !== requestGenerationRef.current) return;
       console.error('Search failed:', err);
-      setError(err instanceof Error ? err.message : 'Search failed');
+      setError(
+        isConnectionError(err)
+          ? CONNECTION_ERROR
+          : err instanceof Error ? err.message : 'Search failed'
+      );
     } finally {
       if (generation === requestGenerationRef.current) {
         setLoading(false);
@@ -198,6 +242,11 @@ export const useInfiniteSearch = ({
 
       if (generation !== requestGenerationRef.current) return;
 
+      if (!response) {
+        setError(CONNECTION_ERROR);
+        return;
+      }
+
       if (response.success && response.data) {
         const newItems = Array.isArray(response.data) ? response.data : [];
         setItems((prev) => [...prev, ...newItems]);
@@ -208,7 +257,11 @@ export const useInfiniteSearch = ({
     } catch (err) {
       if (generation !== requestGenerationRef.current) return;
       console.error('Load more failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load');
+      setError(
+        isConnectionError(err)
+          ? CONNECTION_ERROR
+          : err instanceof Error ? err.message : 'Failed to load'
+      );
     } finally {
       if (generation === requestGenerationRef.current) {
         isFetchingRef.current = false;

@@ -11,8 +11,9 @@
     { "id": "project_summary",       "source": "bundle:data/project_summary.sql" },
     { "id": "object_counts",         "source": "bundle:data/object_counts.sql" },
     { "id": "files_overview",        "source": "bundle:data/files_overview.sql" },
+    { "id": "xml_directory_listing", "source": "builtin:xml_directory_listing" },
     { "id": "nav_dashboards",        "source": "builtin:list_dashboards",
-      "params": { "excludeTags": ["home", "nav", "internal"] } },
+      "params": { "excludeTags": ["home", "nav", "internal", "system"] } },
     { "id": "nav_custom_queries",    "source": "builtin:list_custom_queries" },
     { "id": "nav_docs",              "source": "builtin:list_docs" }
   ],

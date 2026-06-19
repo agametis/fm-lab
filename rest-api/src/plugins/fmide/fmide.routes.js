@@ -13,6 +13,9 @@ router.get('/uri', controller.uri);
 // GET /api/fmide/goto?uuid=... — 302 redirect to fmp:// URL
 router.get('/goto', controller.goto);
 
+// GET /api/fmide/status         — Per-file fmIDE script presence/validity
+router.get('/status', controller.status);
+
 // GET /api/fmide/config         — Current configuration
 router.get('/config', controller.getConfig);
 

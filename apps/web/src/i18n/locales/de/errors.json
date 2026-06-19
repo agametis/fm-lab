@@ -9,5 +9,6 @@
   "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
   "loadHeading": "Fehler beim Laden",
   "retryAria": "Erneut versuchen",
-  "retryLabel": "Erneut versuchen"
+  "retryLabel": "Erneut versuchen",
+  "noConnection": "Keine Verbindung zur REST-API. Bitte prüfe, ob der Server läuft."
 }

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  webbed_sax_probe.xml — Capability-Self-Test-Fixture für den SAX-Streaming-Pfad.
+
+  Der convert-xml-Pipeline-Self-Test (sql/convert_xml_01_extract.sql, Marker
+  @WEBBED_SELFTEST@, injiziert vom Skript im Patched-Modus) liest diese Datei mit
+  streaming=true und einem verschachtelten Kind-Attribut-STRUCT
+  (CustomFunctionReference/@UUID). Nur ein webbed-Build mit dem nested-attr-SAX-Fix
+  (teaguesterling/duckdb_webbed#98) liefert die UUID non-NULL zurück; Stock-webbed
+  liefert NULL → der Self-Test fällt auf DOM zurück. Siehe
+  project/plan_xml_diff_streaming.md §3b/§4.
+
+  Bewusst minimal: genau ein CustomFunctionCalc mit attribut-only Referenz-Kind.
+-->
+<FMSaveAsXML>
+  <CalcsForCustomFunctions>
+    <CustomFunctionCalc>
+      <CustomFunctionReference id="1" name="__sax_probe__" UUID="SAX-PROBE-0001"/>
+    </CustomFunctionCalc>
+  </CalcsForCustomFunctions>
+</FMSaveAsXML>

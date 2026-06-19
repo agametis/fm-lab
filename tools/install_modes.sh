@@ -286,6 +286,84 @@ copy_with_progress() {
     return $rc
 }
 
+# ---------------------------------------------------------------------------
+# watch_file_count <watch_dir> <glob> <expected_files> <phase> [<sub_min>] [<sub_max>] [<interval>]
+#
+# Spawns a background poller that emits `phase_progress` every <interval> seconds
+# (default 1) based on the number of files in <watch_dir> matching <glob>, scaled
+# against <expected_files>. Useful for long-running external commands (crawlers,
+# downloaders) that don't emit their own progress events.
+#
+# When <sub_min>/<sub_max> are given, the local 0..100 progress is mapped onto
+# that slice of the phase budget — this lets a single phase be sub-divided
+# across multiple iterations (e.g. one slice per language inside a crawl phase).
+# Defaults: sub_min=0, sub_max=100 (= use the full phase budget).
+#
+# PID handover via the global WATCH_PID variable (NOT via stdout — the poller
+# inherits stdout and would otherwise hold a `$()`-capture open indefinitely).
+# The caller MUST kill the PID once their work finishes:
+#
+#     watch_file_count "$dir" '*.html' 1074 crawl 0 50
+#     POLL_PID=$WATCH_PID
+#     run_actual_work
+#     kill "$POLL_PID" 2>/dev/null || true
+#     wait "$POLL_PID" 2>/dev/null || true
+#
+# Caps at 99 % locally so the bar doesn't visually "finish" before the real
+# command exits — the caller emits the 100 % mark.
+#
+# Returns 0 on successful spawn, non-zero (and leaves WATCH_PID empty) on
+# argument errors so the caller can no-op silently.
+# ---------------------------------------------------------------------------
+WATCH_PID=""
+
+watch_file_count() {
+    WATCH_PID=""
+    local watch_dir="$1"
+    local glob="$2"
+    local expected="$3"
+    local phase="$4"
+    local sub_min="${5:-0}"
+    local sub_max="${6:-100}"
+    local interval="${7:-1}"
+
+    if [ -z "$watch_dir" ] || [ -z "$glob" ] || [ -z "$phase" ]; then
+        emit_warn "watch_file_count: missing required arg (dir/glob/phase)"
+        return 1
+    fi
+    if [ -z "$expected" ] || [ "$expected" -le 0 ] 2>/dev/null; then
+        emit_warn "watch_file_count: invalid expected=$expected for phase=$phase"
+        return 1
+    fi
+
+    local span=$((sub_max - sub_min))
+    if [ "$span" -le 0 ]; then
+        emit_warn "watch_file_count: empty sub-slice ($sub_min..$sub_max) for phase=$phase"
+        return 1
+    fi
+
+    # The poller is a detached subshell. `trap … TERM` makes it exit cleanly
+    # when the caller signals it. `sleep` is short (default 1 s) so the trap
+    # response stays snappy.
+    (
+        trap 'exit 0' TERM INT
+        while true; do
+            local count=0
+            if [ -d "$watch_dir" ]; then
+                count=$(find "$watch_dir" -name "$glob" 2>/dev/null | wc -l | tr -d ' ')
+            fi
+            local local_pct=$((100 * count / expected))
+            [ "$local_pct" -lt 0 ] && local_pct=0
+            [ "$local_pct" -gt 99 ] && local_pct=99
+            local sub_pct=$((sub_min + (local_pct * span) / 100))
+            phase_progress "$phase" "$sub_pct" ""
+            sleep "$interval"
+        done
+    ) &
+    WATCH_PID=$!
+    return 0
+}
+
 # emit_check <installed:bool> <local_version> <remote_version> <update_available:bool> [<extra_json_args>...]
 emit_check() {
     local installed="${1:-false}"

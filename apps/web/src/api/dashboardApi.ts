@@ -1,9 +1,10 @@
+import { API_BASE } from '../config/apiBase';
 /**
  * Dashboard-API-Client (PRD: prd_dashboards.md §7.2).
  * Verwendet plain fetch wie der Rest des Frontends — kein react-query.
  */
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003';
+const baseUrl = API_BASE;
 const API = `${baseUrl}/api`;
 
 export interface DashboardListItem {

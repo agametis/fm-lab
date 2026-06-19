@@ -8,6 +8,20 @@ import { useRowSearch } from './_useRowSearch';
 import { dispatchAction } from '../actions';
 import { isActionActive } from '../actionState';
 import type { ActionSpec } from '../actions';
+import { useXmlConvertFileStates, type XmlConvertFileState } from './useXmlConvertFileStates';
+
+// Live-Status → Icon für die `liveStatusField`-Spalte (Datei-Status-Tabelle der
+// XML-Konvertierung). Voller Lebenszyklus 🟡 → 🔥 → 🟢 → ✴️ → ✅, plus ⏭️ (Skip)
+// und ⚠️ (Fehler).
+const LIVE_STATE_ICON: Record<XmlConvertFileState, string> = {
+  planned:   '🟡',
+  skipped:   '⏭️',
+  chunking:  '🔥',
+  chunked:   '🟢',
+  importing: '✴️',
+  imported:  '✅',
+  failed:    '⚠️',
+};
 
 interface ColumnSpec {
   field: string;
@@ -54,6 +68,16 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
   // ihre Sortierung nicht verlieren, sobald sie einen Sort-State bekämen.
   const sortable = (props.sortable as boolean) ?? false;
   const chipFilter = props.chipFilter as ChipFilterSpec | undefined;
+  // Opt-in: Live-Markierung der XML-Konvertierung. `liveHighlightField` (z.B.
+  // "filename") wird gegen die `file_start`/`file`-Dateinamen abgeglichen und
+  // markiert pro Zeile den Status: orange = gerade in Arbeit (im Parallel-Modus
+  // mehrere gleichzeitig), grün = in diesem Lauf fertig, rot = fehlgeschlagen.
+  // `liveStatusField` (z.B. "emoji") benennt zusätzlich die Spalte, deren Inhalt
+  // während eines Laufs vom Live-Status überschrieben wird (Checkmark-Reset +
+  // Pro-Datei-Checkmark). Nur die xml_convert-Datei-Status-Tabelle setzt das.
+  const liveHighlightField = props.liveHighlightField as string | undefined;
+  const liveStatusField = props.liveStatusField as string | undefined;
+  const liveStates = useXmlConvertFileStates(!!liveHighlightField);
   const rows = dataset?.data ?? [];
   const [searchParams] = useSearchParams();
 
@@ -214,25 +238,77 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
             // Tabelle führt zu sich selbst mit `?api_family=X`), markieren
             // wir die Zeile farbig.
             const isActive = clickable && isActionActive(onRowClick, row, searchParams);
+            // Live-Status dieser Zeile (nur während eines aktiven Laufs).
+            const liveEntry = liveHighlightField && liveStates.active
+              ? liveStates.states.get(String(row[liveHighlightField] ?? ''))
+              : undefined;
+            const liveState = liveEntry?.state;
+            // Importierende Datei mit bekannter Chunk-Gesamtzahl → determinierter
+            // Fortschrittsbalken (done/total) als linksbündige Hintergrund-Füllung der
+            // Zeile. Solange total fehlt (kurz nach import_start im Fallback) bzw.
+            // während des Splittens (chunking) bleibt es beim indeterminaten Puls.
+            const fillTotal = liveState === 'importing' ? liveEntry?.total : undefined;
+            const isFilling = typeof fillTotal === 'number' && fillTotal > 0;
+            const fillPct = isFilling
+              ? Math.max(0, Math.min(100, ((liveEntry?.done ?? 0) / fillTotal) * 100))
+              : 0;
+            // Zeilen-Highlight: chunking (+ importing ohne total) = indeterminater Puls,
+            // importing mit total = wachsender Chunk-Balken, imported = grün, failed = rot.
+            // planned/skipped/chunked bleiben neutral (nur das Status-Icon signalisiert sie).
             const rowClass = [
               clickable ? 'dash-table__row--clickable' : '',
               isActive ? 'dash-table__row--active' : '',
+              isFilling ? 'dash-table__row--filling' : '',
+              (!isFilling && (liveState === 'chunking' || liveState === 'importing')) ? 'dash-table__row--processing' : '',
+              liveState === 'imported' ? 'dash-table__row--done' : '',
+              liveState === 'failed' ? 'dash-table__row--failed' : '',
             ].filter(Boolean).join(' ') || undefined;
+            // Inline-Gradient: linksbündige Orange-Füllung bis fillPct, danach
+            // transparent. Inline (statt CSS-Klasse) gewinnt zuverlässig gegen den
+            // :hover-Hintergrund derselben <tr>; die Farbe kommt aus der theme-fähigen
+            // --fill-color (gesetzt von .dash-table__row--filling).
+            const rowStyle = isFilling
+              ? {
+                  background:
+                    `linear-gradient(to right, var(--fill-color) 0, ` +
+                    `var(--fill-color) ${fillPct}%, transparent ${fillPct}%)`,
+                }
+              : undefined;
             return (
               <tr
                 key={key}
                 className={rowClass}
+                style={rowStyle}
                 onClick={clickable ? () => dispatchAction(onRowClick, row, { navigate }) : undefined}
                 aria-current={isActive ? 'true' : undefined}
               >
                 {columns.map(c => {
-                  const rawValue = row[c.field];
+                  let rawValue = row[c.field];
+                  // Live-Status-Spalte (z.B. "emoji") während eines Laufs vom
+                  // Live-Status überschreiben: beim Start alle Checkmarks leeren
+                  // (Reset), pro fertiger Datei ✅ bzw. ⚠️ setzen. In Arbeit /
+                  // noch nicht gestartet → leer. Nach Lauf-Ende (active=false)
+                  // zeigt wieder der nachgeladene DB-Wert.
+                  if (liveStatusField && c.field === liveStatusField && liveStates.active) {
+                    rawValue = liveState ? LIVE_STATE_ICON[liveState] : '';
+                  }
                   // Categorical cells (badges) frequently carry canonical
                   // English keys emitted from SQL — translate them so the UI
                   // matches the active language. Unknown values pass through.
                   const isBadge = c.format === 'badge';
                   const value = isBadge ? translateCellValue(rawValue, t) : rawValue;
                   const formatted = formatTableCell(value, c.format, lang);
+                  // Chunk-Zähler „k von N" hinter dem Dateinamen, solange diese
+                  // Datei importiert wird (Phase D). Nur in der Highlight-Spalte.
+                  const chunkCounter =
+                    liveHighlightField && c.field === liveHighlightField &&
+                    liveState === 'importing' && liveEntry?.total != null
+                      ? (t('dashboard:xmlConvert.chunkCounter', {
+                          done: liveEntry.done ?? 0,
+                          total: liveEntry.total,
+                          defaultValue: '{{done}} von {{total}}',
+                        }) as string)
+                      : null;
                   return (
                     <td
                       key={c.field}
@@ -245,7 +321,12 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
                           {formatted}
                         </span>
                       ) : (
-                        formatted
+                        <>
+                          {formatted}
+                          {chunkCounter && (
+                            <span className="dash-table__chunk-counter">{chunkCounter}</span>
+                          )}
+                        </>
                       )}
                     </td>
                   );

@@ -9,5 +9,6 @@
   "generic": "문제가 발생했습니다. 다시 시도해 주세요.",
   "loadHeading": "불러오기 실패",
   "retryAria": "다시 시도",
-  "retryLabel": "다시 시도"
+  "retryLabel": "다시 시도",
+  "noConnection": "REST API에 연결할 수 없습니다. 서버가 실행 중인지 확인하세요."
 }

@@ -1,8 +1,9 @@
+import { API_BASE } from '../config/apiBase';
 // Template API - Direct fetch for /api/query endpoint
 // The typed OpenAPI client doesn't support arbitrary template parameters,
 // so we use a simple fetch wrapper here.
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003';
+const baseUrl = API_BASE;
 
 export interface TemplateQueryResponse {
   success: boolean;

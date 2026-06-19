@@ -1,7 +1,6 @@
+import { API_BASE } from '../../../config/apiBase';
 import { useState, useEffect } from 'react';
 import { useFeaturesContext } from '../../../hooks/useFeatures';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3003';
 
 export interface FmideUriResult {
   object_uuid: string;
@@ -11,6 +10,11 @@ export interface FmideUriResult {
   thingamajig_uri: string | null;
   fmp_url: string | null;
   supported: boolean;
+  /** The fmIDE target script exists in this object's file. */
+  script_available?: boolean;
+  /** The fmIDE script passed signature verification ($fmide_version step). */
+  script_valid?: boolean;
+  fmide_version?: string | null;
 }
 
 /**

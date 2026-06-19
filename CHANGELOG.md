@@ -12,6 +12,98 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.8.2] — 2026-06-18
+
+fmIDE plugin and XML import refinements.
+
+- **fmIDE plugin** — settings and lifecycle reworked
+  - New option to **show the plugin buttons only when it is actually installed in the solution** — keeps the UI clean for files that don't use fmIDE
+  - **File scan with version detection** — recognizes the installed fmIDE version per file
+  - **Startup behavior changed to manual activation** — the plugin no longer auto-activates; the user enables it explicitly
+- **Browser-driven XML import** — the `xml_convert` sub-dashboard offers more intuitive behavior and new options
+  - **Turbo mode** (default) — the import uses the full power of multithreading and chunk dispatching to speed up conversion
+  - **Incremental toggle** (default on) — the import re-parses only files that actually changed, streamed as live SSE progress; on a real solution a no-op re-import drops to a handful of seconds
+
+---
+
+## [0.8.1] — 2026-06-17
+
+Relationships with multiple join predicates and sort fields become fully resolvable — in the catalog and in the graph view.
+
+- **Multi-predicate joins** — `RelationshipCatalog` is now **per predicate** (new `Predicate_Index` column); a multi-field relationship emits one `left_field` / `right_field` link pair per predicate instead of collapsing to a single pair (schema 1.2.0)
+- **Sort fields as real dependencies** — the "sort records" field of a relationship side is parsed and linked (`sort_field`, `Link_Subrole = left`/`right`), so it shows up in the field's where-used analysis (schema 1.3.0)
+- **Relationship detail view** — graphical relationship detail in the web frontend, with references sorting; bugfix for join-predicate field rendering
+- **XML schema docs** extended to cover the multi-predicate structure
+- **Dashboard KPIs for the object graph** — Home dashboard gains object-count and link-count KPIs (`ObjectCatalog` / `ObjectLinks`), plus a locales bugfix
+
+---
+
+## [0.8.0] — 2026-06-16
+
+The XML import, rebuilt as a streaming, incremental, memory-aware pipeline — large multi-file solutions import faster, within a bounded memory budget, and a re-import only touches what actually changed. Every optimization is identity-checked to produce byte-identical catalogs, so none of it changes analysis results.
+
+- **Katana-Engine** — XML is folded, refined and forged into fine-grained fragments, enabling massive catalogs to be processed with minimal memory usage and maximum parallelism.
+- **Six-phase pipeline** — the conversion is split into Extract → Resolve → Details → Catalog → Homes → Validate. Only phase 1 reads the XML; every later phase works purely on the DuckDB tables. This keeps the parse load and memory peak low and makes each phase independently testable
+- **Streaming split for large files** (`--split`) — each file's extract phase is chunked at top-level branch boundaries (the heavy script-steps and DDR branches get their own chunks), drastically lowering peak DOM memory — bit-identical to the unsplit run
+- **Turbo mode** (`--turbo`) — chunk-granular parallel dispatch: every chunk across every file flows through a worker pool (heaviest-first) and is consolidated in two stages, for substantially shorter wall-clock on multi-core machines
+- **Incremental import** (`--incremental`) — a persistent manifest fingerprints every file (mtime/size → sha256 + version gate); unchanged files are skipped entirely and their catalog rows are preserved. Re-importing after editing a single file goes from minutes to seconds
+- **Automatic memory backoff** (`--auto`) — a chunk that runs out of memory is automatically re-split into smaller pieces and retried, so an import completes on memory-constrained machines without manual tuning
+- **Memory-aware parallelism** — the `--jobs` default is now derived from actually-available memory and is container/cgroup-aware (not just host RAM), preventing the batch OOM that a fixed worker count could trigger
+- **Validation phase** — a dedicated final phase produces plausibility/consistency check views, surfacing structural anomalies right after a conversion
+- **Linux-friendly** — CLI-tool calls now fall back gracefully across GNU and BSD flag variants, so the import runs on Linux as well as macOS
+
+---
+
+## [0.7.7] — 2026-06-12
+
+Graph completeness: script-trigger owners and popover panels become first-class, queryable nodes — closing the last reachability gaps in the object graph.
+
+- **Script-trigger owner back-links** (`trigger_owner`) — every trigger is now reachable *from* its owner, not just from the script it calls
+  - New structural link `ScriptTrigger → Layout / LayoutObject / File`, with `Link_Subrole` carrying the trigger type (e.g. `OnObjectSave`, `OnLayoutEnter`) — "which triggers hang on layout/object/file X?" is now a direct graph query
+  - New **`File` object type** in `ObjectCatalog` (owner anchor for file-level triggers `OnFirstWindowOpen`, `OnLastWindowClose`, …; UUID = `FMSaveAsXML/@UUID`) — the file itself becomes a registered object
+  - NULL-safe owner guard: unresolvable owners are skipped, never producing orphaned links
+- **PopoverPanel objects** now emitted by the LayoutObject parser — closes a coverage gap where panels were entirely absent from `LayoutObjects` / `ObjectCatalog`
+  - A PopoverPanel hangs under `<PopoverButton>`, not `<ObjectList>` — the parser now descends into it, capturing its UUID, calculated title (with field references), and child objects
+  - Resolves previously-unresolvable trigger owners (`OnObjectEnter/Exit/Keystroke` on popover panels) — prerequisite for full `trigger_owner` coverage
+  - Panels surface in detail view, search, and where-used like any other layout object
+- **Object-reference parser bugfixes** — refinements to read/write field-reference coverage in `create_universal_catalogs.sql`
+
+---
+
+## [0.7.6] — 2026-06-12
+
+Custom Record Privileges as a first-class analysis surface: calculation-based record, field, and object privileges parsed into the catalog, wired into the object graph, and rendered as interactive tokens in the frontend.
+
+- **Three new privilege-detail tables** for solutions using Custom Record Privileges (the `<Records>`/`<Layouts>`/… `Custom="True"` mechanism, where the summary attributes no longer reflect real access)
+  - **`PrivilegeSetRecordAccess`** — table level: one row per privilege set × table × operation (View/Edit/Create/Delete); access mode, calculation text/DDR-hash, evaluation context
+  - **`PrivilegeSetFieldAccess`** — field level: per-field access mode for tables with `Fields access="Custom"`
+  - **`PrivilegeSetObjectAccess`** — Layouts/ValueLists/Scripts: per-object access mode, layout record-access, class create flag
+- **Graph integration** — closes the where-used gap for objects referenced *only* inside a Custom Record Privilege calc, which previously appeared unused
+  - `PrivilegeSet → Field (reads_field)`, `→ Variable (reads_variable)`, `→ CustomFunction (calls_customfunction)`, `→ PluginFunction (calls_pluginfunction)` — `Link_Subrole = <Operation>:<Table>`; variable reads bidirectionally traversable
+  - Scoped **restriction links** `restricts_field` / `restricts_object` (`Link_Subrole` = access mode) for actual restrictions only — a restriction is *not* a usage, so it never pollutes where-used/dead-code analysis; folders/separators excluded
+  - `VariableUsages` extended with `Context_Type='record_access_calc'`
+- **Record-access calc rendering in the frontend** — the calculation behind a privilege is now visible and explorable
+  - New **`PrivilegeSetViewer`** / **`PrivilegeSetDetail`** components with typed, clickable token rendering (variable/field/TO/function colored and linked), `useCalcTokens` hook, and `object_details_privilegeset.sql`
+  - `detail` i18n namespace extended (en + de)
+
+---
+
+## [0.7.5] — 2026-06-11
+
+XML conversion moves into the web frontend: import the catalog by button press, with live progress and a persistent log — no terminal required.
+
+- **New `xml_convert` sub-dashboard** — drives and monitors the XML→DuckDB import from the browser
+  - Per-file import status table: ✅ imported & current · ✴️ imported but a newer file exists · ➡️ not yet imported
+  - **Convert button** with a live progress bar and a persistent live log, streamed as **SSE** (analogous to the docs installer)
+  - Status line: "n of m files processed" during the run; timestamp, duration, and success/error count on completion
+- **Home dashboard empty-state guidance** — when the DB holds no imported files: KPI dashes instead of zeros, a hint text, a listing of the `xml/` directory, and a convert button (disabled when the directory is empty)
+- **REST-API import layer**: `xml.controller` / `xml.routes` / `xml-convert.js` — `POST /api/xml/convert` streamed as SSE; shares the `.fmlab/xml_convert.lock` with the CLI so they can't run in parallel (web → `409 Conflict`, CLI → exit code 7)
+- **New frontend primitives**: `XmlConvertControl`, `XmlConvertLog`, `XmlEmptyStateCard`, `useXmlConvertCurrentFile`; `convert_fm_xml.sh` extended for frontend invocation
+- **Docset installer progress bar** in the frontend (`DocsetInstallControl`) with shared `tools/install_modes.sh` logic — same live-progress treatment as the XML import
+- Bugfixes: Umlaut handling in the import log, log update + highlighting in the dashboard table
+
+---
+
 ## [0.7.4] — 2026-05-21
 
 Home dashboard restructured around navigation, and a deep, first-class integration of doc sets (Claris Help, MBS, DuckDB, fmIDE) into the catalog and dashboard layer.

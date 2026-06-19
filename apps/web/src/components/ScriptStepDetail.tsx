@@ -1,3 +1,4 @@
+import { API_BASE } from '../config/apiBase';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -14,7 +15,7 @@ interface ScriptStepDetailProps {
   onLiveMatchCount?: (count: number) => void;
 }
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003';
+const baseUrl = API_BASE;
 
 /**
  * Detail-Ansicht für einen einzelnen ScriptStep.

@@ -74,6 +74,23 @@ async function goto(req, res, next) {
 }
 
 /**
+ * GET /api/fmide/status
+ * Per-file fmIDE script status: { [File_Name]: { script_present, script_valid, fmide_version } }.
+ * Pass ?refresh=1 to recompute from the catalog.
+ */
+async function status(req, res, next) {
+  try {
+    const refresh = req.query.refresh === '1' || req.query.refresh === 'true';
+    const data = refresh
+      ? await fmideService.refreshFileStatuses()
+      : await fmideService.getFileStatuses();
+    res.json(buildSuccess(data));
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * GET /api/fmide/config
  * Returns the current fmIDE configuration.
  */
@@ -106,4 +123,4 @@ function putConfig(req, res) {
   res.json(buildSuccess(updated));
 }
 
-module.exports = { uri, goto, getConfig, putConfig };
+module.exports = { uri, goto, status, getConfig, putConfig };

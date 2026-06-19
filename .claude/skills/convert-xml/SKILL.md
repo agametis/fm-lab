@@ -19,10 +19,28 @@ The skill accepts **one required parameter**:
 - **XML filename** - The name of the XML file in the `xml/` directory (e.g., "MyDatabase.xml")
 - **--batch** or **--all** - Process all XML files in the `xml/` directory
 
+**Adaptive default (no mode flag):** A bare `convert-xml`/`--batch` auto-selects the
+robust engine — **Turbo** (chunked Phase 1) + **--auto** (OOM backoff via resplit),
+plus **SAX streaming** when the patched webbed is present (its identity with DOM is
+proven on the full corpus, see `tools/tests/identity/streamify_identity.sh`). It never
+hard-aborts on tight RAM (~2.5 GB floor). Any explicit mode flag below overrides the
+default; `FM_FORCE_DOM=1` keeps turbo+auto but on DOM (no SAX).
+
 Optional flags (any combination is allowed):
 - **--fail-fast** - Stop immediately on first error (batch/test mode only)
 - **--force-rebuild** - Delete the DB before importing and rebuild from scratch
 - **--no-auto-heal** - On detected schema drift, abort instead of auto-rebuilding
+- **--turbo** - Chunkmap engine (chunked Phase 1). Implied by the adaptive default. Add **--auto** for OOM backoff, **--changed-only** for a manifest skip of unchanged files.
+- **--streamify** - SAX streaming hybrid (lower parse RAM). Implied by the adaptive default when the patched webbed is present.
+- **--split** - Chunk Phase 1 per file at top-level branch boundaries (lowers peak DOM memory for very large files; bit-identical to the unsplit run). Explicit (non-turbo) DOM path.
+- **--jobs <N>** - Run Phase 1 for N files **in parallel** (`auto` = all cores), each into its own part-DB, then merge into the master DB. **Default 8** (empirical sweet spot, see `project/plan_xml_performance.md` §7); `1` = sequential. Big batch speedup on multi-core machines; bit-identical to the sequential run. Not combinable with `--split`. RAM note: each worker peaks at ~10× the UTF-8 file size — lower N (e.g. `--jobs 4`) if memory is tight or other processes run concurrently; avoid N≥12 on a 14-GiB box (RAM cliff).
+- **--quiet** - NDJSON output mode for the REST-API SSE bridge. Not intended for interactive use.
+
+**Concurrency:** The skill and the Web-Frontend (`POST /api/xml/convert`) share
+the same Bash script and a lock file (`.fmlab/xml_convert.lock`). Only one
+conversion can run at a time. If you start the skill while a web-triggered run
+is active, the script exits with code 7. Same protection in the other
+direction (HTTP returns 409).
 
 **Single-File Mode:**
 ```bash
@@ -44,6 +62,11 @@ convert-xml --batch --fail-fast
 convert-xml --batch --force-rebuild
 ```
 
+**Parallel batch (fastest full rebuild on multi-core):**
+```bash
+convert-xml --batch --force-rebuild --jobs auto
+```
+
 File paths are fixed:
 - Input: `xml/` directory
 - Output: `db/fm_catalog.duckdb`
@@ -51,7 +74,7 @@ File paths are fixed:
 ## Schema versioning & auto-heal
 
 Before each import, the script compares the `@SCHEMA_VERSION` from
-[sql/convert_xml.sql](../../../sql/convert_xml.sql) with the version
+[sql/convert-xml/convert_xml_01_extract.sql](../../../sql/convert-xml/convert_xml_01_extract.sql) with the version
 persisted in the DB table `SchemaInfo`. Possible outcomes:
 
 | Detection action | Default behavior                                                                  | With `--force-rebuild`   | With `--no-auto-heal`    |
@@ -84,7 +107,7 @@ When invoked with `--batch`, the skill performs these steps:
 1. **Discover Files** - Find all `.xml` files in `xml/` directory
 2. **Validate All** - Check that all files are readable
 3. **Process Sequentially** - For each file:
-   - Display progress: "[15/62] Processing: Artikel.xml"
+   - Display progress: "[15/62] Processing: MyDatabase.xml"
    - Measure processing time (start → end)
    - Detect encoding
    - Convert if needed
@@ -97,8 +120,8 @@ When invoked with `--batch`, the skill performs these steps:
 
 ## Available Tools
 
-This skill uses a bundled shell script that handles all operations:
-- **Script**: `scripts/convert_fm_xml.sh`
+This skill uses a shell script (maintained under `tools/`) that handles all operations:
+- **Script**: `tools/convert_fm_xml.sh`
 - **Usage**: Execute the script with the XML filename as argument
 
 ## Working Process
@@ -109,7 +132,7 @@ When the user asks to convert a FileMaker XML file, extract the filename.
 ### Step 2: Execute Conversion Script
 Run the automation script:
 ```bash
-bash .claude/skills/convert-xml/scripts/convert_fm_xml.sh "filename.xml"
+bash tools/convert_fm_xml.sh "filename.xml"
 ```
 
 ### Step 3: Report Results
@@ -219,7 +242,7 @@ Note: Universal catalogs were created for successfully imported files.
 ### General
 - All temporary files are automatically cleaned up
 - Original XML files are never modified
-- The SQL template (`sql/convert_xml.sql`) remains unchanged
+- The SQL pipeline templates (`sql/convert-xml/convert_xml_0N_*.sql`) remain unchanged
 - No UTF-8 conversion files are left in the xml/ directory
 
 ### Single-File Mode
@@ -231,7 +254,7 @@ Note: Universal catalogs were created for successfully imported files.
 - Universal catalogs are automatically created at the end
 - Processing continues even if some files fail
 - Database uses UPSERT semantics (re-importing same file updates data)
-- Progress is shown for each file: "[15/62] Processing: Artikel.xml"
+- Progress is shown for each file: "[15/62] Processing: MyDatabase.xml"
 - Performance log is created in `logs/batch_import_YYYYMMDD_HHMMSS.log`
 - Log contains per-file processing times, total duration, and summary
 - Log file location is displayed at the end of the batch import

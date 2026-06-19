@@ -1,10 +1,11 @@
+import { API_BASE } from '../config/apiBase';
 // Script Tokens API — Fetch wrapper für /api/get-details?format=tokens
 // Liefert für ein Script-UUID das strukturierte Token-Payload (siehe
 // rest-api/src/formatters/tokens.formatter.js).
 
 import type { ScriptTokens } from '../script/types';
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003';
+const baseUrl = API_BASE;
 
 export interface ScriptTokensResponse {
   success: boolean;

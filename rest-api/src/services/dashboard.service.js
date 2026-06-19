@@ -447,6 +447,12 @@ async function builtinDocsOverviewAvailable() {
     const installedLangs = installed && Array.isArray(installed.languages)
       ? installed.languages
       : [];
+    // Was unter "Verfügbar" wirklich angezeigt werden soll: nur die Sprachen,
+    // die für dieses Set noch nicht lokal vorliegen. Das spiegelt die
+    // "Installiert"-Liste (die exakt die installierten zeigt). `languages`
+    // bleibt zu Backwards-Kompatibilität die vollständige Catalog-Liste.
+    const installedSet = new Set(installedLangs);
+    const missingLangs = langs.filter(l => !installedSet.has(l));
     return {
       id: catalog.id,
       name: catalog.name || catalog.id,
@@ -457,6 +463,9 @@ async function builtinDocsOverviewAvailable() {
       languages_count: langs.length,
       languages_display: langs.map(l => String(l).toUpperCase()).join(' · '),
       installed_languages: installedLangs,
+      missing_languages: missingLangs,
+      missing_languages_count: missingLangs.length,
+      missing_languages_display: missingLangs.map(l => String(l).toUpperCase()).join(' · '),
       output_format: catalog.output_format || null,
       download_format: catalog.download_format || null,
       installed: installedLangs.length > 0, // true für Teil-Installs
@@ -558,6 +567,37 @@ async function builtinDocsetFunctions(params = {}) {
 }
 
 /**
+ * builtin:xml_directory_status — Verzeichnis-Listing + Status-Spalte für das
+ * Sub-Dashboard "xml_convert" (siehe project/prd_frontend_xml_convert.md §5.4).
+ * Liefert pro Datei: filename, size, mtime, status, emoji, imported_at.
+ */
+async function builtinXmlDirectoryStatus() {
+  const xmlConvert = require('./xml-convert');
+  const status = await xmlConvert.getStatus();
+  return status.files;
+}
+
+/**
+ * builtin:xml_directory_listing — kompakte Datei-Liste fürs Home-Dashboard
+ * im leeren Zustand (Monospace-Block). Nur die Dateinamen + Größe + mtime.
+ */
+async function builtinXmlDirectoryListing() {
+  const xmlConvert = require('./xml-convert');
+  return xmlConvert.getDirectoryListing();
+}
+
+/**
+ * builtin:xml_last_run — Meta-Zeile zum letzten Konvertierungslauf (ohne
+ * events[]). Wird im Sub-Dashboard für die Statuszeile über dem Log genutzt.
+ * Liefert eine Liste mit 0 oder 1 Eintrag.
+ */
+async function builtinXmlLastRun() {
+  const xmlConvert = require('./xml-convert');
+  const data = await xmlConvert.getStatus();
+  return data.last_run ? [data.last_run] : [];
+}
+
+/**
  * builtin:docset_functions_with_counts — wie docset_functions, aber annotiert
  * jede Funktion mit `code_ref_count`. Bei references: false → null.
  */
@@ -588,6 +628,9 @@ const BUILTIN_RESOLVERS = {
   docset_category_info: builtinDocsetCategoryInfo,
   docset_functions: builtinDocsetFunctions,
   docset_functions_with_counts: builtinDocsetFunctionsWithCounts,
+  xml_directory_status: builtinXmlDirectoryStatus,
+  xml_directory_listing: builtinXmlDirectoryListing,
+  xml_last_run: builtinXmlLastRun,
 };
 
 async function runBuiltin(key, params) {

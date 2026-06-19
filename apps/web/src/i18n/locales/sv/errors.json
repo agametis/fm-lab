@@ -9,5 +9,6 @@
   "generic": "Något gick fel. Försök igen.",
   "loadHeading": "Det gick inte att läsa in",
   "retryAria": "Försök igen",
-  "retryLabel": "Försök igen"
+  "retryLabel": "Försök igen",
+  "noConnection": "Ingen anslutning till REST-API:et. Kontrollera om servern körs."
 }

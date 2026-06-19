@@ -9,5 +9,6 @@
   "generic": "Something went wrong. Please try again.",
   "loadHeading": "Failed to load",
   "retryAria": "Retry",
-  "retryLabel": "Retry"
+  "retryLabel": "Retry",
+  "noConnection": "No connection to the REST API. Please check whether the server is running."
 }

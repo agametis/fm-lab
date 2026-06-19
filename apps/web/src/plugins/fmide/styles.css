@@ -52,3 +52,91 @@
 .fmide-quick-action:hover {
   background-color: var(--color-hover-bg);
 }
+
+/* ---------------------------------------------------------------------------
+   fmIDE settings — "show files" install-status panel
+   --------------------------------------------------------------------------- */
+.fmide-files-panel {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+}
+
+.fmide-files-panel > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  user-select: none;
+}
+
+.fmide-files-loading,
+.fmide-files-count {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin: 0.5rem 0;
+}
+
+.fmide-files-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.fmide-files-table th,
+.fmide-files-table td {
+  text-align: left;
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.fmide-files-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+}
+
+.fmide-files-status-col {
+  width: 4rem;
+  text-align: center;
+}
+
+.fmide-files-table td.fmide-files-status-col {
+  text-align: center;
+}
+
+/* Files without the fmIDE script: grey out the whole row. */
+.fmide-files-row--absent td {
+  color: var(--color-text-muted);
+}
+
+.fmide-files-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.6rem 0;
+}
+
+.fmide-rescan-button {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--color-border-strong, var(--color-border));
+  border-radius: 4px;
+  background: var(--color-bg-input, transparent);
+  color: var(--color-text-primary, var(--color-text));
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.fmide-rescan-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.fmide-files-toolbar .fmide-files-count {
+  margin: 0;
+}
+
+.fmide-files-version-col {
+  width: 5rem;
+  white-space: nowrap;
+}

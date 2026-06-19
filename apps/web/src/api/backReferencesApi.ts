@@ -1,7 +1,8 @@
+import { API_BASE } from '../config/apiBase';
 // Back-References API - Fetch wrapper for /api/back-references endpoint
 // Cross-Reference Highlight Lookup (PRD prd_cross_references_hilite.md §6.3)
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003';
+const baseUrl = API_BASE;
 
 export type BackRefMatchStrategy = 'uuid' | 'name' | 'name-fallback' | 'unresolved';
 

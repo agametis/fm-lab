@@ -48,7 +48,7 @@
               "rowTemplate": {
                 "primary": "{{name}}",
                 "secondary": "{{description}}",
-                "tertiary": "{{languages_display}}",
+                "tertiary": "{{missing_languages_display}}",
                 "inlineControl": "docsInstall",
                 "onClick": {
                   "action": "openUrl",

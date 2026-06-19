@@ -1,0 +1,119 @@
+/* Privilege-Set-Detail-View — Standard-Rechte + Custom Record/Field/Object
+   Privileges. Record-Access-Calcs zeigen die Formel als klickbare Token-
+   Sequenz (CalcTokenSpan, geteilte .fm-ref-Styles aus CustomFunctionViewer.css). */
+
+.fm-privilegeset {
+  padding: 0.5rem 0;
+}
+
+/* Standard-Rechte als kompakte Property-Liste */
+.fm-ps-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.15rem 1rem;
+  margin: 0.5rem 0 1.25rem;
+  font-size: 0.9rem;
+}
+.fm-ps-meta dt {
+  font-weight: 600;
+  color: var(--fm-text-muted, #666);
+}
+.fm-ps-meta dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.fm-ps-section {
+  margin: 1.25rem 0;
+}
+.fm-ps-section-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--fm-border, #e0e0e0);
+}
+
+.fm-ps-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.fm-ps-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--fm-text-muted, #666);
+  padding: 0.3rem 0.6rem;
+  border-bottom: 1px solid var(--fm-border, #e0e0e0);
+  white-space: nowrap;
+}
+.fm-ps-table td {
+  padding: 0.3rem 0.6rem;
+  border-bottom: 1px solid var(--fm-border-subtle, #f0f0f0);
+  vertical-align: top;
+}
+.fm-ps-table tr:hover td {
+  background: var(--fm-row-hover, rgba(0, 0, 0, 0.03));
+}
+.fm-ps-op {
+  white-space: nowrap;
+  color: var(--fm-text, #333);
+}
+.fm-ps-ref {
+  color: var(--fm-link, #2563eb);
+  text-decoration: none;
+}
+.fm-ps-ref:hover {
+  text-decoration: underline;
+}
+.fm-ps-dash {
+  color: var(--fm-text-faint, #aaa);
+}
+
+/* Access-Mode-Badge */
+.fm-acc-badge {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  border-radius: 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.fm-acc--readwrite   { background: #e7f6ec; color: #1a7f37; border-color: #abe0bb; }
+.fm-acc--readonly    { background: #fff7e6; color: #b26a00; border-color: #ffd591; }
+.fm-acc--noaccess    { background: #fdecec; color: #c0392b; border-color: #f5b7b1; }
+.fm-acc--calculation { background: #eaf0ff; color: #2c4ec9; border-color: #b9c8f5; }
+.fm-acc--unknown,
+.fm-acc--custom      { background: #f0f0f0; color: #555; border-color: #ddd; }
+
+/* Formel-Zelle */
+.fm-ps-calc-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+.fm-ps-formula {
+  font-family: var(--fm-mono, 'SF Mono', Menlo, Consolas, monospace);
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.fm-ps-formula--plain {
+  color: var(--fm-text, #333);
+}
+.fm-ps-context {
+  font-size: 0.78rem;
+  color: var(--fm-text-muted, #777);
+  font-style: italic;
+}
+
+@media (prefers-color-scheme: dark) {
+  .fm-acc--readwrite   { background: #143524; color: #6ee7a0; border-color: #1f5235; }
+  .fm-acc--readonly    { background: #3a2c11; color: #f5c265; border-color: #5c451a; }
+  .fm-acc--noaccess    { background: #3a1717; color: #f08c84; border-color: #5c2422; }
+  .fm-acc--calculation { background: #1a2547; color: #9db4ff; border-color: #2a3a6b; }
+  .fm-acc--unknown,
+  .fm-acc--custom      { background: #2a2a2a; color: #bbb; border-color: #3a3a3a; }
+}

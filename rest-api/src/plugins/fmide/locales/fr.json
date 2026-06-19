@@ -3,11 +3,13 @@
     "description": "Navigation URI fmIDE Thingamajig"
   },
   "settings_schema": {
-    "fmp_protocol.label":         "Protocole FMP",
-    "fmp_protocol.description":   "fmp ou fmps (TLS)",
-    "server_address.label":       "Adresse du serveur",
+    "fmp_protocol.label": "Protocole FMP",
+    "fmp_protocol.description": "fmp ou fmps (TLS)",
+    "server_address.label": "Adresse du serveur",
     "server_address.description": "$ pour le fichier courant, sinon hôte/IP",
-    "script_name.label":          "Nom du script",
-    "script_name.description":    "Nom du script cible dans le fichier FileMaker"
+    "script_name.label": "Nom du script",
+    "script_name.description": "Nom du script cible dans le fichier FileMaker",
+    "only_if_installed.label": "Afficher uniquement si installé dans la solution",
+    "only_if_installed.description": "Le fichier contient le script fmIDE"
   }
 }

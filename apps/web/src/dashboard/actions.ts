@@ -1,3 +1,4 @@
+import { API_BASE } from '../config/apiBase';
 import type { NavigateFunction } from 'react-router-dom';
 import { substituteDeep } from './tokens';
 
@@ -202,7 +203,7 @@ export function dispatchAction(
       // mirrored MBS help HTML). Same-tab navigation keeps the browser back
       // button as the obvious way back to the dashboard.
       if (url.startsWith('/api/')) {
-        const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:3003').replace(/\/+$/, '');
+        const apiBase = (API_BASE).replace(/\/+$/, '');
         window.location.href = `${apiBase}${url}`;
         return;
       }

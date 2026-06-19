@@ -61,17 +61,33 @@ function loadPlugins(router) {
     // Register plugin (even if disabled — for /api/plugins and /api/version transparency)
     loaded[manifest.name] = manifest;
 
-    if (!manifest.enabled) {
-      console.log(`  Plugin [${manifest.name}] — disabled`);
-      continue;
-    }
-
-    // Load and mount routes
+    // Mount routes UNCONDITIONALLY, fronted by a guard that checks the *live*
+    // enabled flag on every request. This lets a plugin be toggled on/off at
+    // runtime (PATCH /api/plugins/:name) without a server restart: a disabled
+    // plugin's routes answer 404, exactly as if they were never mounted.
     const routesFile = path.join(PLUGINS_DIR, entry.name, `${entry.name}.routes.js`);
     if (fs.existsSync(routesFile)) {
       const pluginRoutes = require(routesFile);
-      router.use(manifest.routes_prefix, pluginRoutes);
-      console.log(`  Plugin [${manifest.name}] — mounted at /api${manifest.routes_prefix}`);
+      // Sub-routes that stay reachable even while the plugin is disabled
+      // (read-only diagnostics, e.g. fmIDE's per-file install status the
+      // settings panel shows before you enable the plugin). Paths are relative
+      // to the plugin's mount prefix (e.g. "/status").
+      const publicRoutes = Array.isArray(manifest.public_routes) ? manifest.public_routes : [];
+      const enabledGuard = (req, res, next) => {
+        const live = loaded[manifest.name];
+        const isPublic = publicRoutes.some((p) => req.path === p || req.path.startsWith(`${p}/`));
+        if ((!live || !live.enabled) && !isPublic) {
+          return res.status(404).json({
+            success: false,
+            error: { code: 'PLUGIN_DISABLED', message: `Plugin "${manifest.name}" is disabled` },
+          });
+        }
+        next();
+      };
+      router.use(manifest.routes_prefix, enabledGuard, pluginRoutes);
+      console.log(`  Plugin [${manifest.name}] — mounted at /api${manifest.routes_prefix}${manifest.enabled ? '' : ' (currently disabled)'}`);
+    } else {
+      console.log(`  Plugin [${manifest.name}] — ${manifest.enabled ? 'enabled' : 'disabled'} (no routes)`);
     }
   }
 

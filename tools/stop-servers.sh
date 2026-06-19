@@ -14,9 +14,15 @@ warn()  { echo -e "${YELLOW}⚠${NC} $1"; }
 error() { echo -e "${RED}✗${NC} $1"; }
 header(){ echo -e "\n${BOLD}$1${NC}"; }
 
-# Alle PIDs auf einem Port ermitteln (macOS-kompatibel, IPv6-safe)
+# Alle PIDs auf einem Port ermitteln (lsof falls vorhanden, sonst ss — IPv6-safe)
 get_listen_pids() {
-  lsof -nP -iTCP:"$1" 2>/dev/null | awk '/LISTEN/ {print $2}' | sort -u
+  local port=$1
+  if command -v lsof &>/dev/null; then
+    lsof -nP -iTCP:"$port" 2>/dev/null | awk '/LISTEN/ {print $2}' | sort -u
+  elif command -v ss &>/dev/null; then
+    ss -tlnpH 2>/dev/null | awk -v p="$port" '$4 ~ "[:.]"p"$"' \
+      | grep -oE 'pid=[0-9]+' | cut -d= -f2 | sort -u
+  fi
 }
 
 # Prozesse auf einem Port graceful stoppen

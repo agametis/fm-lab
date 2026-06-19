@@ -9,5 +9,6 @@
   "generic": "Algo correu mal. Tente novamente.",
   "loadHeading": "Falha ao carregar",
   "retryAria": "Tentar novamente",
-  "retryLabel": "Tentar novamente"
+  "retryLabel": "Tentar novamente",
+  "noConnection": "Sem ligação à API REST. Verifique se o servidor está em execução."
 }

@@ -25,13 +25,14 @@ export interface PluginInfo {
 
 interface PluginCardProps {
   plugin: PluginInfo;
-  restartPending: boolean;
   expanded: boolean;
   onToggleExpand: () => void;
   onUpdate: (patch: { enabled?: boolean; settings?: Record<string, unknown> }) => Promise<void>;
+  /** Optional plugin-specific content rendered inside the expanded card (e.g. fmIDE's file-status list). */
+  extra?: React.ReactNode;
 }
 
-export const PluginCard: React.FC<PluginCardProps> = ({ plugin, restartPending, expanded, onToggleExpand, onUpdate }) => {
+export const PluginCard: React.FC<PluginCardProps> = ({ plugin, expanded, onToggleExpand, onUpdate, extra }) => {
   const { t } = useTranslation(['detail']);
   const [draft, setDraft] = useState<Record<string, string | number | boolean>>(plugin.settings);
   const [saving, setSaving] = useState(false);
@@ -112,60 +113,69 @@ export const PluginCard: React.FC<PluginCardProps> = ({ plugin, restartPending, 
         </label>
       </div>
 
-      {expanded && plugin.description && (
+      {/* Plugins without settings: just the description. */}
+      {expanded && schemaEntries.length === 0 && plugin.description && (
         <p className="plugin-card-description">{plugin.description}</p>
-      )}
-
-      {expanded && restartPending && (
-        <div className="plugin-card-restart-badge">
-          {t('detail:settingsView.restartRequired')}
-        </div>
       )}
 
       {expanded && schemaEntries.length > 0 && (
         <div className="plugin-card-settings">
           <h3>{t('detail:settingsView.settingsHeading')}</h3>
+          {plugin.description && (
+            <p className="plugin-card-description plugin-card-description--inset">{plugin.description}</p>
+          )}
           {schemaEntries.map(([key, field]) => (
-            <div key={key} className="plugin-card-field">
-              <label htmlFor={`${plugin.name}-${key}`}>
-                {field.label}
+            field.type === 'boolean' ? (
+              // Checkbox precedes the label so the text can't wrap under it.
+              <div key={key} className="plugin-card-field plugin-card-field--checkbox">
+                <label htmlFor={`${plugin.name}-${key}`} className="plugin-card-checkbox-label">
+                  <input
+                    id={`${plugin.name}-${key}`}
+                    type="checkbox"
+                    checked={Boolean(draft[key] ?? field.default ?? false)}
+                    onChange={(e) => handleFieldChange(key, e.target.checked)}
+                  />
+                  <span>{field.label}</span>
+                </label>
                 {field.description && (
-                  <span className="plugin-card-field-desc"> — {field.description}</span>
+                  <span className="plugin-card-field-desc">{field.description}</span>
                 )}
-              </label>
-              {field.type === 'select' && field.options ? (
-                <select
-                  id={`${plugin.name}-${key}`}
-                  value={String(draft[key] ?? field.default ?? '')}
-                  onChange={(e) => handleFieldChange(key, e.target.value)}
-                >
-                  {field.options.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              ) : field.type === 'boolean' ? (
-                <input
-                  id={`${plugin.name}-${key}`}
-                  type="checkbox"
-                  checked={Boolean(draft[key] ?? field.default ?? false)}
-                  onChange={(e) => handleFieldChange(key, e.target.checked)}
-                />
-              ) : field.type === 'number' ? (
-                <input
-                  id={`${plugin.name}-${key}`}
-                  type="number"
-                  value={Number(draft[key] ?? field.default ?? 0)}
-                  onChange={(e) => handleFieldChange(key, Number(e.target.value))}
-                />
-              ) : (
-                <input
-                  id={`${plugin.name}-${key}`}
-                  type="text"
-                  value={String(draft[key] ?? field.default ?? '')}
-                  onChange={(e) => handleFieldChange(key, e.target.value)}
-                />
-              )}
-            </div>
+              </div>
+            ) : (
+              <div key={key} className="plugin-card-field">
+                <label htmlFor={`${plugin.name}-${key}`}>
+                  {field.label}
+                  {field.description && (
+                    <span className="plugin-card-field-desc"> — {field.description}</span>
+                  )}
+                </label>
+                {field.type === 'select' && field.options ? (
+                  <select
+                    id={`${plugin.name}-${key}`}
+                    value={String(draft[key] ?? field.default ?? '')}
+                    onChange={(e) => handleFieldChange(key, e.target.value)}
+                  >
+                    {field.options.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                ) : field.type === 'number' ? (
+                  <input
+                    id={`${plugin.name}-${key}`}
+                    type="number"
+                    value={Number(draft[key] ?? field.default ?? 0)}
+                    onChange={(e) => handleFieldChange(key, Number(e.target.value))}
+                  />
+                ) : (
+                  <input
+                    id={`${plugin.name}-${key}`}
+                    type="text"
+                    value={String(draft[key] ?? field.default ?? '')}
+                    onChange={(e) => handleFieldChange(key, e.target.value)}
+                  />
+                )}
+              </div>
+            )
           ))}
 
           <div className="plugin-card-actions">
@@ -180,6 +190,8 @@ export const PluginCard: React.FC<PluginCardProps> = ({ plugin, restartPending, 
           </div>
         </div>
       )}
+
+      {expanded && extra && <div className="plugin-card-extra">{extra}</div>}
 
       {expanded && error && <div className="plugin-card-error">{error}</div>}
     </div>

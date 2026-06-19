@@ -1,3 +1,4 @@
+import { API_BASE } from '../config/apiBase';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -61,7 +62,7 @@ export const FunctionTokenSpan: React.FC<FunctionTokenSpanProps> = ({ token, tex
   // Help-URL: bevorzugt lokal (rendert in unserer API), Fallback Claris extern.
   // Lokal liegt als /api/reference/help/...; im Browser muss daraus ein
   // absoluter Pfad zur API werden.
-  const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:3003').replace(/\/+$/, '');
+  const apiBase = (API_BASE).replace(/\/+$/, '');
   const helpHref = token.functionLocalHelpUrl
     ? `${apiBase}${token.functionLocalHelpUrl}`
     : token.functionHelpUrl;

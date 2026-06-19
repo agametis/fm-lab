@@ -9,5 +9,6 @@
   "generic": "Er is iets misgegaan. Probeer het opnieuw.",
   "loadHeading": "Laden mislukt",
   "retryAria": "Opnieuw proberen",
-  "retryLabel": "Opnieuw proberen"
+  "retryLabel": "Opnieuw proberen",
+  "noConnection": "Geen verbinding met de REST-API. Controleer of de server actief is."
 }

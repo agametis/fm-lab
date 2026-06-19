@@ -44,5 +44,33 @@
     "skipsInstalled":  "Bereits installierte Sprachen werden übersprungen.",
     "errorClose":      "Meldung schließen",
     "unknownError":    "Unbekannter Fehler."
+  },
+  "xmlConvert": {
+    "start":                     "XML konvertieren",
+    "running":                   "XML wird konvertiert …",
+    "statusRunning":             "XML-Konvertierung läuft: {{processed}} von {{total}} Dateien verarbeitet",
+    "statusOk":                  "Datum: {{ts}}, erfolgreich ✅",
+    "statusOkWithDuration":      "Datum: {{ts}}, Dauer: {{dur}}, erfolgreich ✅",
+    "statusError":               "Datum: {{ts}}, {{count}} Fehler 🚫",
+    "statusErrorWithDuration":   "Datum: {{ts}}, Dauer: {{dur}}, {{count}} Fehler 🚫",
+    "statusIdle":                "Noch keine Konvertierung in dieser Sitzung gelaufen.",
+    "logEmpty":                  "Noch kein Log vorhanden.",
+    "changedOnly":               "Nur geänderte Dateien",
+    "rescan":                    "Neu scannen",
+    "rescanning":                "Aktualisiert …",
+    "rescanHint":                "XML-Verzeichnis neu einlesen, ohne zu konvertieren",
+    "phaseChunk":                "Aufteilen",
+    "phaseImport":               "Importieren",
+    "phaseResolve":              "Auflösen",
+    "phaseDetails":              "Details",
+    "phaseCatalog":              "Katalog",
+    "phaseHomes":                "Verknüpfen",
+    "phaseValidate":             "Prüfen",
+    "chunkCounter":              "{{done}} von {{total}}"
+  },
+  "xmlEmpty": {
+    "hint":           "Es wurden noch keine XML-Dateien importiert.",
+    "directoryEmpty": "Keine Dateien im XML-Verzeichnis vorhanden.",
+    "directoryAria":  "Dateien im XML-Verzeichnis"
   }
 }

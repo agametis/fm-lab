@@ -19,34 +19,49 @@
         },
         "children": [
           {
-            "type": "KPIStrip",
-            "props": {
-              "items": [
-                {
-                  "label": "Files",
-                  "field": "file_count"
-                },
-                {
-                  "label": "Objects",
-                  "field": "total_objects",
-                  "format": "number"
-                },
-                {
-                  "label": "FM version",
-                  "field": "fm_versions"
-                },
-                {
-                  "label": "DDR info",
-                  "field": "ddr_status",
-                  "format": "badge"
-                },
-                {
-                  "label": "Last import",
-                  "field": "last_import",
-                  "format": "date:relative"
+            "type": "Row",
+            "props": { "gap": 16, "align": "center" },
+            "children": [
+              {
+                "type": "KPIStrip",
+                "props": {
+                  "items": [
+                    {
+                      "label": "Files",
+                      "field": "file_count"
+                    },
+                    {
+                      "label": "Objects",
+                      "field": "total_objects",
+                      "format": "number"
+                    },
+                    {
+                      "label": "References",
+                      "field": "total_links",
+                      "format": "number"
+                    },
+                    {
+                      "label": "FM version",
+                      "field": "fm_versions"
+                    },
+                    {
+                      "label": "DDR info",
+                      "field": "ddr_status",
+                      "format": "badge"
+                    },
+                    {
+                      "label": "Last import",
+                      "field": "last_import",
+                      "format": "date:relative"
+                    }
+                  ]
                 }
-              ]
-            }
+              },
+              {
+                "type": "XmlConvertControl",
+                "props": { "mode": "navigate" }
+              }
+            ]
           }
         ]
       },
@@ -148,6 +163,10 @@
             }
           }
         ]
+      },
+      {
+        "type": "XmlEmptyStateCard",
+        "props": { "span": 12 }
       },
       {
         "type": "Card",

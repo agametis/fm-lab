@@ -38,6 +38,18 @@ export function formatKpiValue(
     return String(value);
   }
 
+  if (format === 'filesize') {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 0) return String(value);
+    if (n < 1024) return `${n} B`;
+    const kb = n / 1024;
+    if (kb < 1024) return `${kb.toLocaleString(lang, { maximumFractionDigits: 1 })} KB`;
+    const mb = kb / 1024;
+    if (mb < 1024) return `${mb.toLocaleString(lang, { maximumFractionDigits: 1 })} MB`;
+    const gb = mb / 1024;
+    return `${gb.toLocaleString(lang, { maximumFractionDigits: 2 })} GB`;
+  }
+
   if (format.startsWith('date')) {
     const d = new Date(String(value));
     if (Number.isNaN(d.getTime())) return String(value);

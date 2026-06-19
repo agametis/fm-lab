@@ -3,11 +3,13 @@
     "description": "fmIDE Thingamajig URI 탐색"
   },
   "settings_schema": {
-    "fmp_protocol.label":         "FMP 프로토콜",
-    "fmp_protocol.description":   "fmp 또는 fmps (TLS)",
-    "server_address.label":       "서버 주소",
+    "fmp_protocol.label": "FMP 프로토콜",
+    "fmp_protocol.description": "fmp 또는 fmps (TLS)",
+    "server_address.label": "서버 주소",
     "server_address.description": "현재 파일은 $, 그 외에는 호스트/IP",
-    "script_name.label":          "스크립트 이름",
-    "script_name.description":    "FileMaker 파일의 대상 스크립트 이름"
+    "script_name.label": "스크립트 이름",
+    "script_name.description": "FileMaker 파일의 대상 스크립트 이름",
+    "only_if_installed.label": "솔루션에 설치된 경우에만 표시",
+    "only_if_installed.description": "파일에 fmIDE 스크립트가 포함됨"
   }
 }

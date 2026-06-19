@@ -1,0 +1,130 @@
+/* Relationship-Detail – grafische Beziehungs-Darstellung (FileMaker-Dialog-Anlehnung). */
+
+.fm-relationship {
+  padding: 0.5rem 0.25rem;
+}
+
+/* ── Metadaten (Key/Value) ── */
+.fm-rel-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.15rem 1rem;
+  margin: 0.25rem 0 1.25rem;
+  font-size: 0.85rem;
+}
+.fm-rel-meta dt { color: var(--color-text-muted); font-weight: 600; }
+.fm-rel-meta dd {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+/* ── Grafische Darstellung ── */
+.fm-rel-graph {
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  background: var(--color-bg-surface);
+  padding: 0;
+  overflow: hidden;
+  max-width: 880px;
+}
+
+/* Gemeinsame Spalten für Titel- und Prädikat-Zeilen → exakte Ausrichtung. */
+.fm-rel-titles,
+.fm-rel-pred-row {
+  display: grid;
+  grid-template-columns: 3rem 1fr 2.25rem 1fr;
+  align-items: center;
+}
+
+.fm-rel-titles {
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-strong);
+}
+.fm-rel-title-box {
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-align: center;
+}
+.fm-rel-arrow {
+  text-align: center;
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+}
+
+.fm-rel-predicates {
+  padding: 0.25rem 0;
+}
+.fm-rel-pred-row {
+  padding: 0.1rem 0;
+}
+.fm-rel-pred-row:first-child {
+  background: var(--color-hover-bg);
+}
+.fm-rel-and {
+  text-align: right;
+  padding-right: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.03em;
+}
+.fm-rel-field {
+  padding: 0.3rem 0.75rem;
+}
+.fm-rel-field--left { text-align: right; }
+.fm-rel-field--right { text-align: left; }
+.fm-rel-op {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.fm-rel-to-link,
+.fm-rel-field-link {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.fm-rel-to-link:hover,
+.fm-rel-field-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Optionen je Seite ── */
+.fm-rel-sep {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 1.25rem 0 1rem;
+  max-width: 880px;
+}
+.fm-rel-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  max-width: 880px;
+  font-size: 0.85rem;
+}
+.fm-rel-opt-head {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.4rem;
+}
+.fm-rel-options ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--color-text-secondary);
+}
+.fm-rel-options li { margin-bottom: 0.35rem; }
+/* Sortierfelder als verschachtelte Liste unter „Datensätze sortieren:" */
+.fm-rel-sort-fields {
+  margin-top: 0.2rem;
+  margin-bottom: 0;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+.fm-rel-sort-fields li { margin-bottom: 0.15rem; }
+.fm-rel-opt-none {
+  color: var(--color-text-disabled);
+  font-style: italic;
+}

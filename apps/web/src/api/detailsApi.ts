@@ -1,7 +1,8 @@
+import { API_BASE } from '../config/apiBase';
 // Details API - Fetch wrapper for /api/get-details endpoint
 // Uses the REST API template dispatcher to get type-specific object details.
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003';
+const baseUrl = API_BASE;
 
 export interface ObjectDetailsMeta {
   execution_time_ms?: number;

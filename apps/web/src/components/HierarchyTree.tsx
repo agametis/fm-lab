@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { GroupedReferences, ReferenceItem } from '../types';
@@ -34,6 +34,24 @@ function buildSearchText(ref: ReferenceItem): string {
 }
 
 /**
+ * Generische Sortier-Schlüssel für Referenzen — unabhängig vom Objekttyp.
+ * 'origin' = Herkunft (Datei → Typ → Name); 'name' = Objektname → Datei.
+ * Die Datei ist die abstrakte Herkunfts-Ebene (bei Feldern implizit über die TO,
+ * bei Scripts/Layouts/etc. direkt), daher für ALLE Referenz-Typen sinnvoll.
+ */
+type RefSortKey = 'origin' | 'name';
+interface RefSortState { key: RefSortKey; dir: 'asc' | 'desc'; }
+
+function compareRefs(a: ReferenceItem, b: ReferenceItem, key: RefSortKey): number {
+  const cmp = (x: string, y: string) =>
+    (x ?? '').localeCompare(y ?? '', undefined, { sensitivity: 'base', numeric: true });
+  if (key === 'origin') {
+    return cmp(a.File_Name, b.File_Name) || cmp(a.Object_Type, b.Object_Type) || cmp(a.Object_Name, b.Object_Name);
+  }
+  return cmp(a.Object_Name, b.Object_Name) || cmp(a.File_Name, b.File_Name);
+}
+
+/**
  * Hierarchy Tree Component
  * Displays parent (upstream) and child (downstream) references as clickable lists.
  * Includes a type-filter pill bar and a live search input above the lists.
@@ -53,6 +71,8 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
   const [activeTypes, setActiveTypes] = useUrlState<Set<string>>('types', EMPTY_TYPES, stringSetCodec);
   const [, setSearchParams] = useSearchParams();
   const treeRef = useRef<HTMLElement>(null);
+  // Generische Referenz-Sortierung. Default: Herkunft (Datei) aufsteigend.
+  const [refSort, setRefSort] = useState<RefSortState>({ key: 'origin', dir: 'asc' });
 
   /**
    * Atomarer URL-Update für User-Interaktionen: führt einen Updater auf den
@@ -224,9 +244,9 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
     target.focus();
   }, []);
 
-  const renderReferenceItem = (ref: ReferenceItem) => (
+  const renderReferenceItem = (ref: ReferenceItem, idx: number) => (
     <li
-      key={`${ref.uuid}-${ref.Link_Role}`}
+      key={`${ref.uuid}-${ref.Link_Role}-${idx}`}
       className="reference-item"
       onClick={() => handleReferenceClick(ref)}
       onKeyDown={(e) => handleItemKeyDown(e, ref)}
@@ -255,6 +275,44 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
         {ref.Link_Role}
       </span>
     </li>
+  );
+
+  // Generische Sortierung aller Referenz-Items (Zeilen-Darstellung bleibt unverändert,
+  // nur die Reihenfolge + der Sortier-Header ändern sich).
+  const sortItems = (items: ReferenceItem[]) => {
+    if (items.length < 2) return items;
+    const sign = refSort.dir === 'asc' ? 1 : -1;
+    return [...items].sort((a, b) => sign * compareRefs(a, b, refSort.key));
+  };
+  const toggleSort = (key: RefSortKey) => {
+    setRefSort(s => s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' });
+  };
+  const sortArrow = (key: RefSortKey) => refSort.key === key ? (refSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
+
+  const renderSortBar = () => (
+    <div className="reference-sort-bar" role="group" aria-label={t('detail:hierarchyTree.sortAriaLabel', { defaultValue: 'Sortierung' }) as string}>
+      <span className="reference-sort-label">{t('detail:hierarchyTree.sortBy', { defaultValue: 'Sortieren nach' })}:</span>
+      <button
+        type="button"
+        className={`reference-sort-btn${refSort.key === 'origin' ? ' is-active' : ''}`}
+        onClick={() => toggleSort('origin')}
+      >
+        {t('detail:hierarchyTree.sortOrigin', { defaultValue: 'Herkunft' })}{sortArrow('origin')}
+      </button>
+      <button
+        type="button"
+        className={`reference-sort-btn${refSort.key === 'name' ? ' is-active' : ''}`}
+        onClick={() => toggleSort('name')}
+      >
+        {t('detail:hierarchyTree.sortName', { defaultValue: 'Name' })}{sortArrow('name')}
+      </button>
+    </div>
+  );
+
+  const renderSectionList = (items: ReferenceItem[]) => (
+    <ul className="reference-list">
+      {sortItems(items).map(renderReferenceItem)}
+    </ul>
   );
 
   const hasParents = matches.parent.length > 0;
@@ -286,14 +344,13 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
         aria-label={t('detail:hierarchyTree.ariaLabel') as string}
         onKeyDown={handleTreeKeyDown}
       >
+        {hasAny && renderSortBar()}
         {hasParents && (
           <section className="hierarchy-section">
             <h2>{filterActive
               ? t('detail:hierarchyTree.usedByFiltered', { count: matches.parent.length, total: references.parent.length })
               : t('detail:hierarchyTree.usedBy', { count: matches.parent.length })}</h2>
-            <ul className="reference-list">
-              {matches.parent.map(renderReferenceItem)}
-            </ul>
+            {renderSectionList(matches.parent)}
           </section>
         )}
 
@@ -302,9 +359,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
             <h2>{filterActive
               ? t('detail:hierarchyTree.usesFiltered', { count: matches.child.length, total: references.child.length })
               : t('detail:hierarchyTree.uses', { count: matches.child.length })}</h2>
-            <ul className="reference-list">
-              {matches.child.map(renderReferenceItem)}
-            </ul>
+            {renderSectionList(matches.child)}
           </section>
         )}
 
@@ -313,9 +368,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
             <h2>{filterActive
               ? t('detail:hierarchyTree.structurallyContainedByFiltered', { count: matches.structuralParent.length, total: references.structuralParent.length })
               : t('detail:hierarchyTree.structurallyContainedBy', { count: matches.structuralParent.length })}</h2>
-            <ul className="reference-list">
-              {matches.structuralParent.map(renderReferenceItem)}
-            </ul>
+            {renderSectionList(matches.structuralParent)}
           </section>
         )}
 
@@ -324,9 +377,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
             <h2>{filterActive
               ? t('detail:hierarchyTree.structurallyContainsFiltered', { count: matches.structuralChild.length, total: references.structuralChild.length })
               : t('detail:hierarchyTree.structurallyContains', { count: matches.structuralChild.length })}</h2>
-            <ul className="reference-list">
-              {matches.structuralChild.map(renderReferenceItem)}
-            </ul>
+            {renderSectionList(matches.structuralChild)}
           </section>
         )}
 

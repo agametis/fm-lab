@@ -22,26 +22,56 @@ This is the starting point of our conversion. Afterwards, all data from the XML 
 
 ## Building the database
 
-There is a SQL template `sql/convert_xml.sql` for converting the XML file into the DuckDB tables. It reads the individual XML branches describing the FileMaker objects and produces standalone tables.
+The conversion runs as a **six-phase pipeline** (`sql/convert-xml/convert_xml_0N_<phase>.sql`),
+orchestrated by the `convert-xml` skill. Only **Phase 1 reads the XML** — all later
+phases work purely on the DuckDB tables (no `read_xml`), which keeps the parse load
+and memory peak low. See [project/plan_xml_diff.md](project/plan_xml_diff.md).
+
+| Phase | File | Reads | Produces |
+|---|---|---|---|
+| **P1 Extract** | `sql/convert-xml/convert_xml_01_extract.sql` | XML (`read_xml`) | Raw catalogs + raw-XML columns (`Step_XML`, `Object_XML`, `Parameters_XML`, …) |
+| **P2 Resolve** | `sql/convert-xml/convert_xml_02_resolve.sql` | tables only | Reference tables (XMLStep/Layout/Calc-Refs, MBS/GetSub, PluginUsages) |
+| **P3 Details** | `sql/convert-xml/convert_xml_03_details.sql` | tables only | Variable analysis (VariableUsages, VariablesCatalog) |
+| **P4 Catalog** | `sql/convert-xml/convert_xml_04_catalog.sql` | tables only | ObjectCatalog + ObjectLinks |
+| **P5 Homes** | `sql/convert-xml/convert_xml_05_homes.sql` | tables only | Cross-file resolution (ObjectHomes, TableOccurrenceResolution) |
+| **P6 Validate** | `sql/convert-xml/convert_xml_06_validate.sql` | tables only | Plausibility/consistency check views (`v_check_*`), queried by the post-processor |
+
+P1 runs once per file; P2–P6 run once after all files are imported (batch-wide).
+
+**`--split` (large files):** `convert-xml --batch --split` chunks each file's Phase 1
+at top-level branch boundaries (the heavy `StepsForScripts` and `DDR_INFO` branches
+are split into their own chunks) to lower the peak DOM memory. P2–P6 are unaffected
+(table-only, batch-wide). The result is bit-identical to the unsplit run.
 
 The database is stored in the `db/` directory. The file name is `fm_catalog.duckdb`.
 
-**Create the database:**
-```bash
-duckdb db/fm_catalog.duckdb < sql/convert_xml.sql
-```
-
-**Recommended approach:** Use the `convert-xml` skill:
+**Recommended approach:** Use the `convert-xml` skill (runs the full pipeline):
 - **Single file**: `convert-xml "MyDatabase.xml"`
 - **All files (batch)**: `convert-xml --batch`
 
 Batch mode automatically imports all XML files in the `xml/` directory and then builds the universal catalogs.
 
+**Manual run** (advanced — the skill is preferred):
+```bash
+# Per file: Phase 1 (extract). Then once, batch-wide: Phases 2–5.
+duckdb db/fm_catalog.duckdb < sql/convert-xml/convert_xml_01_extract.sql   # P1, per file (set fm_xml)
+duckdb db/fm_catalog.duckdb < sql/convert-xml/convert_xml_02_resolve.sql   # P2
+duckdb db/fm_catalog.duckdb < sql/convert-xml/convert_xml_03_details.sql   # P3
+duckdb db/fm_catalog.duckdb < sql/convert-xml/convert_xml_04_catalog.sql   # P4
+duckdb db/fm_catalog.duckdb < sql/convert-xml/convert_xml_05_homes.sql     # P5
+```
+
+**Alternative — Web-Frontend (Sub-Dashboard `xml_convert`):** Same Bash script,
+spawned via `POST /api/xml/convert` and streamed as SSE. The CLI and the web
+button share a lock file (`.fmlab/xml_convert.lock`) so they can't run in
+parallel — the second caller gets `409 Conflict` (web) or aborts with exit
+code 7 (CLI). See [project/prd_frontend_xml_convert.md](project/prd_frontend_xml_convert.md).
+
 
 
 ## Available DuckDB tables
 
-The table names mirror the XML branches of the corresponding object types. 30 tables in total:
+The table names mirror the XML branches of the corresponding object types. 33 tables in total:
 
 - **XMLMetadata** — Root attributes of the XML file (version, DDR-Info status)
 - **ExternalDataSourceCatalog** — External data sources
@@ -60,6 +90,9 @@ The table names mirror the XML branches of the corresponding object types. 30 ta
 - **OptionsForValueLists** — Details of value lists (CustomValues, field references)
 - **AccountsCatalog** — User accounts
 - **PrivilegeSetsCatalog** — Privilege sets
+- **PrivilegeSetRecordAccess** — Custom Record Privileges, table level (per Privilege Set × table × operation View/Edit/Create/Delete; access mode, calc text/hash, evaluation context)
+- **PrivilegeSetFieldAccess** — Custom Record Privileges, field level (per Privilege Set × table × field; per-field access mode, only for tables with `Fields access="Custom"`)
+- **PrivilegeSetObjectAccess** — Custom Privileges for Layouts/ValueLists/Scripts (per Privilege Set × object; per-object access mode, Layout records-access, class create flag)
 - **DDR_ScriptSteps** — Human-readable script steps (optional, only when DDR-Info is available)
 - **DDR_Calculations** — Formula chunks for dependency analysis (optional, only when DDR-Info is available)
 - **PasteIndexList** — List of object IDs for copy/paste operations
@@ -136,6 +169,29 @@ The **LayoutObjects** table contains all layout objects with the following key c
 - **Container**: Portal, Group, Tab Control, Panel, Slide Control, PopoverPanel
 - **Graphic**: Rectangle, Line, Oval
 
+### PrivilegeSetRecordAccess (Custom Record Privileges)
+
+When a privilege set uses **Custom Record Privileges**, the `<Records>` element only carries `Custom="True"` and `PrivilegeSetsCatalog.Records_*` no longer reflect the real access. The detail tree (`Records/Custom/ObjectList/Table`) is parsed into **PrivilegeSetRecordAccess** — one row per privilege set × table × operation:
+
+- `PrivilegeSet_ID` / `PrivilegeSet_Name` / `PrivilegeSet_UUID` — owning privilege set
+- `BaseTable_ID` / `BaseTable_Name` / `BaseTable_UUID` — target base table (NULL when `Table_Type='New'`)
+- `Table_Type` — `existing` or `New` (the default rule for future, not-yet-existing tables)
+- `Operation` — `View` | `Edit` | `Create` | `Delete`
+- `Access_Mode` — `NoAccess` | `ReadOnly` | `ReadWrite` | `Calculation` | `Custom` | … (kept as VARCHAR, no enum, so unknown modes survive)
+- `Calculation_Text` — plain-text formula (CDATA) when `Access_Mode='Calculation'`, normalized
+- `DDR_Hash` — `Calculation/DDRREF/@hash`; JOIN-able with `DDR_Calculations.Calc_Hash`
+- `Context_TO_Name` / `Context_TO_UUID` — evaluation context (the calc's table occurrence)
+- `Fields_Access` — the table's `<Fields>@access` (one value per table; `Custom` opens a per-field detail tree — field level is a later stage, not yet parsed)
+- `File_Name`
+
+**Graph integration:** all references inside record-access calcs (via `DDR_Hash` → `DDR_Calculations`) are emitted into `XMLCalcReferences` with `Source_Type='PrivilegeSet'` and resolved to graph links (Link_Subrole = `<Operation>:<Table>` where applicable): **FieldRef** → `PrivilegeSet → Field (reads_field)`, **CustomFunctionRef** → `PrivilegeSet → CustomFunction (calls_customfunction)`, **PluginFunctionRef** → `PrivilegeSet → PluginFunction (calls_pluginfunction)` (via `PluginFunctionUsages`). **VariableReference** is handled separately — it has no generic XMLCalcReferences→link pass, so its read-usage is registered in `VariableUsages` (`Context_Type='record_access_calc'`) and becomes a `PrivilegeSet → Variable (reads_variable)` link. Together these close the where-used gap for any field/variable/CF/plugin referenced **only** by a Custom Record Privilege calc, which previously appeared unused. Requires DDR-Info; without it the table is still populated (calc text comes from the CDATA subtree), but no graph links are created.
+
+**Field level — `PrivilegeSetFieldAccess`:** when a table's `Fields_Access='Custom'`, the per-field detail tree (`…/Table/Fields/Field`) is parsed into one row per privilege set × table × field: `BaseTable_*`, `Field_ID`/`Field_Name`/`Field_UUID`, `Field_Type` (`existing`/`New`), `Access_Mode` (`NoAccess`/`ReadOnly`/`ReadWrite`), `File_Name`. Tables without custom field access produce no rows here (their single `<Fields>@access` lives in `PrivilegeSetRecordAccess.Fields_Access`).
+
+**Other object classes — `PrivilegeSetObjectAccess`:** the same `Custom="True"` mechanism applies to Layouts, ValueLists and Scripts. Unified table with an `Object_Class` discriminator (`Layout`/`ValueList`/`Script`), one row per privilege set × object: `Object_ID`/`Object_Name`/`Object_UUID`, `Item_Type` (`existing`/`New`), `Access_Mode`, `Records_Access` (Layouts only — record access on that layout), `Class_Allow_Create` (the class's `<Custom Create="…">` flag), `File_Name`. Classes left in the simple attribute form (e.g. `<ValueLists Create="True" …>`) produce no rows.
+
+Both feed the graph via **scoped restriction links** (Link_Role `restricts_field` / `restricts_object`), but only for actual restrictions (`Access_Mode <> 'ReadWrite'`) — fully-open grants carry no signal and are skipped. These use a dedicated role (not `reads_field`/`displays_*`) because a restriction is *not* a usage: they never make a field/object appear "used" in where-used or dead-code analysis. Folders/separators listed in the access tree are excluded (they resolve to `Object_Type='Folder'`, not the object class). Link_Subrole carries the access mode, so "which fields/objects does privilege set X restrict (and how)?" is a direct graph query.
+
 ### VariableUsages / VariablesCatalog
 
 The variable parser (integrated into `sql/create_universal_catalogs.sql`) extracts all FileMaker variables from various sources and produces two tables:
@@ -144,7 +200,7 @@ The variable parser (integrated into `sql/create_universal_catalogs.sql`) extrac
 - `Variable_Name` — Full name including the prefix (`$sort`, `$$Module`)
 - `Variable_Scope` — `global`, `local`, `superglobal`, `let_local`
 - `Usage_Type` — `set` (assignment) or `read` (read access)
-- `Context_Type` — `script_step`, `calculation`, `auto_enter_calc`, `custom_function`, `layout_object`
+- `Context_Type` — `script_step`, `calculation`, `auto_enter_calc`, `custom_function`, `layout_object`, `record_access_calc` (variable read inside a Custom Record Privilege calc; Context_Name = `<PrivilegeSet> › <Operation>:<Table>`)
 - `Context_UUID`, `Context_Name` — UUID and name of the context
 - `Script_Name`, `Script_UUID`, `Step_Index` — Script context
 - `Table_Name`, `Field_Name` — Field context
@@ -257,6 +313,7 @@ The universal catalogs enable fast cross-reference analyses across all object ty
 - CustomFunction, ValueList, Account, PrivilegeSet
 - Theme, CustomMenu, ExtendedPrivilege, ScriptTrigger
 - ExternalDataSource, BaseDirectory, LayoutPart
+- File (Owner-Anker für File-Level-Trigger; UUID = `FMSaveAsXML/@UUID`)
 
 **ObjectLinks** — Links between objects:
 - `Source_UUID` / `Target_UUID` — Source and target object UUIDs
@@ -268,7 +325,7 @@ The universal catalogs enable fast cross-reference analyses across all object ty
 - `Is_Cross_File` — Cross-file link?
 - `Source_File` / `Target_File` — File names for multi-file analyses
 
-**Implemented link types (31 in total):**
+**Implemented link types (37 in total):**
 - Field → BaseTable (parent_table)
 - Field → Field (lookup_source) — Lookup target field references the source field
 - Field → TableOccurrence (lookup_relationship) — Lookup target field uses this relationship
@@ -276,7 +333,8 @@ The universal catalogs enable fast cross-reference analyses across all object ty
 - TableOccurrence → BaseTable (base_table)
 - TableOccurrence → ExternalDataSource (data_source)
 - Relationship → TableOccurrence (left_table, right_table)
-- Relationship → Field (left_field, right_field)
+- Relationship → Field (left_field, right_field) — Join-Prädikat-Felder. Mehrfeld-Joins erzeugen seit Schema 1.2.0 ein left_field/right_field-Paar **pro Prädikat** (RelationshipCatalog ist per-Prädikat, Spalte `Predicate_Index`)
+- Relationship → Field (sort_field) — Feld der „Datensätze sortieren"-Folge einer Beziehungsseite; Link_Subrole = `left`/`right`. Echte Sort-Abhängigkeit, taucht in der Where-used-Analyse des Felds auf (Schema 1.3.0)
 - Layout → TableOccurrence (context_table)
 - LayoutObject → Layout (parent_layout)
 - LayoutObject → LayoutObject (parent_object, structural)
@@ -294,7 +352,13 @@ The universal catalogs enable fast cross-reference analyses across all object ty
 - ValueList → Field (source_field)
 - ValueList → TableOccurrence (source_table)
 - ScriptTrigger → Script (trigger_script)
+- ScriptTrigger → Layout/LayoutObject/File (trigger_owner) — structural back-link from a trigger to its owner; Link_Subrole = trigger type (e.g. `OnObjectSave`). Lets "which triggers hang on layout/object/file X?" be a direct graph query. Unresolvable owners (currently PopoverPanel objects not emitted by the LayoutObject parser) are skipped via a NULL-safe guard, never producing orphaned links
 - Account → PrivilegeSet (privilege_set)
+- PrivilegeSet → Field (reads_field) — field referenced by a Custom Record Privilege calc; Link_Subrole = `<Operation>:<Table>` (closes the where-used gap for fields used only in record-access calcs)
+- PrivilegeSet → Variable (reads_variable) — variable read by a Custom Record Privilege calc (e.g. `$$__Rechte_Bearbeiten`); via `VariableUsages.Context_Type='record_access_calc'`. Bidirectionally traversable: forward = which variables a set reads, reverse (Target_UUID) = the set appears in the variable's where-used alongside scripts/layouts. A *read*, not a restriction — counts for where-used/dead-code (unlike `restricts_*`)
+- PrivilegeSet → CustomFunction (calls_customfunction) / PrivilegeSet → PluginFunction (calls_pluginfunction) — CF/plugin called by a Custom Record Privilege calc; resolved via the generic XMLCalcReferences/PluginFunctionUsages passes
+- PrivilegeSet → Field (restricts_field) — field-level Custom Record Privilege restriction; Link_Subrole = access mode. Scoped to restrictions only (`Access_Mode <> 'ReadWrite'`); a restriction is *not* a usage, so this never affects where-used/dead-code analysis
+- PrivilegeSet → Layout/ValueList/Script (restricts_object) — object-level Custom Privilege restriction; Link_Subrole = access mode. Scoped to restrictions only; folders/separators are excluded (registered as `Folder`, not the object class)
 
 
 ## Accessing the object data

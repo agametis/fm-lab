@@ -34,6 +34,7 @@ const OBJECT_TYPES = [
   'PluginFunction',
   'ScriptStepType',
   'PluginComponent',
+  'File',
 ];
 
 /**
@@ -87,6 +88,7 @@ const OBJECT_TYPE_MAP = {
   'pluginfunction': 'PluginFunction',
   'scriptsteptype': 'ScriptStepType',
   'plugincomponent': 'PluginComponent',
+  'file': 'File',
 };
 
 /**
@@ -202,6 +204,8 @@ const DETAIL_TEMPLATE_MAP = {
   'Layout':          'object_details_layout',
   'LayoutObject':    'object_details_layoutobject',
   'Field':           'object_details_field',
+  'Relationship':    'object_details_relationship',
+  'PrivilegeSet':    'object_details_privilegeset',
   'BaseTable':       'object_details_basetable',
   'CustomFunction':  'object_details_customfunction',
   'ValueList':       'object_details_valuelist',

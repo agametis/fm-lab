@@ -244,14 +244,19 @@ if [ "$XML_FILES" -eq 0 ]; then
   echo "  1. Export your FileMaker solution via 'Tools > Save a Copy As XML' + Option 'Include details for analysis tools'"
   echo "  2. Place the .xml file in the xml/ directory"
   echo "  3. Run:  bash tools/convert_fm_xml.sh --batch"
+  echo "           (adaptive: chunked streaming + OOM-backoff automatically; even large solutions on tight RAM)"
   echo "  4. Then: bash tools/start-servers.sh"
   echo ""
   exit 0
 fi
 
-info "Found $XML_FILES XML file(s) in xml/ — starting conversion"
+# --batch picks the adaptive default itself (Turbo + --auto OOM-backoff, plus SAX
+# streaming when the patched webbed is present) — no manual mode flag needed; it
+# never hard-aborts on tight RAM. FM_FORCE_DOM=1 keeps turbo+auto but on DOM.
+CONVERT_ARGS=(--batch)
+info "Found $XML_FILES XML file(s) in xml/ — starting conversion (adaptive mode)"
 T0=$SECONDS
-bash "$SCRIPT_DIR/convert_fm_xml.sh" --batch
+bash "$SCRIPT_DIR/convert_fm_xml.sh" "${CONVERT_ARGS[@]}"
 summary_add "XML conversion    $XML_FILES file(s) → fm_catalog.duckdb ($((SECONDS - T0))s)"
 
 # ─── Start servers ────────────────────────────────────────────

@@ -4,14 +4,19 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { useFeatures, FeaturesContext } from './hooks/useFeatures';
 import { applyServerLanguage } from './i18n'; // initialises i18next before any component renders
+import { API_BASE } from './config/apiBase';
 import './styles/theme.css';
 import './index.css';
 
-// Fire-and-forget: ask the REST API for the server-side default language.
-// `applyServerLanguage` is a no-op when the user has already picked one
-// (localStorage["fmlab.lang"] is set), so existing selections always win.
-const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003';
-fetch(`${apiBaseUrl}/api/system/config`)
+// Fire-and-forget: ask the REST API for the server-side default language. Uses
+// the effective API base (browser-side override → .env → default) to reach the
+// server. `applyServerLanguage` is a no-op when the user has already picked a
+// language (localStorage["fmlab.lang"] is set), so existing selections win.
+//
+// The REST-API base URL itself is a per-browser client setting (localStorage,
+// see config/apiBase.ts) — it is never read from or written to the server, so
+// configuring it never affects other clients or backends.
+fetch(`${API_BASE}/api/system/config`)
   .then((res) => (res.ok ? res.json() : null))
   .then((body) => {
     const def = body?.data?.languages?.default;

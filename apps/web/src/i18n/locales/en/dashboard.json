@@ -44,5 +44,33 @@
     "skipsInstalled":  "Already installed languages are skipped.",
     "errorClose":      "Dismiss message",
     "unknownError":    "Unknown error."
+  },
+  "xmlConvert": {
+    "start":                     "Convert XML",
+    "running":                   "Converting XML…",
+    "statusRunning":             "XML conversion running: {{processed}} of {{total}} files processed",
+    "statusOk":                  "Date: {{ts}}, successful ✅",
+    "statusOkWithDuration":      "Date: {{ts}}, duration: {{dur}}, successful ✅",
+    "statusError":               "Date: {{ts}}, {{count}} errors 🚫",
+    "statusErrorWithDuration":   "Date: {{ts}}, duration: {{dur}}, {{count}} errors 🚫",
+    "statusIdle":                "No conversion has run in this session yet.",
+    "logEmpty":                  "No log yet.",
+    "changedOnly":               "Changed files only",
+    "rescan":                    "Rescan",
+    "rescanning":                "Refreshing…",
+    "rescanHint":                "Re-read the XML directory without converting",
+    "phaseChunk":                "Split",
+    "phaseImport":               "Import",
+    "phaseResolve":              "Resolve",
+    "phaseDetails":              "Details",
+    "phaseCatalog":              "Catalog",
+    "phaseHomes":                "Link",
+    "phaseValidate":             "Validate",
+    "chunkCounter":              "{{done}} of {{total}}"
+  },
+  "xmlEmpty": {
+    "hint":           "No XML files have been imported yet.",
+    "directoryEmpty": "No files in the XML directory.",
+    "directoryAria":  "Files in the XML directory"
   }
 }

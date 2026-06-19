@@ -17,16 +17,34 @@ warn()  { echo -e "${YELLOW}⚠${NC} $1"; }
 error() { echo -e "${RED}✗${NC} $1"; }
 header(){ echo -e "\n${BOLD}$1${NC}"; }
 
-# PID auf einem Port ermitteln (macOS-kompatibel, IPv6-safe)
+# Lauscht ein Prozess auf dem Port? (lsof falls vorhanden, sonst ss — Linux)
+port_listening() {
+  local port=$1
+  if command -v lsof &>/dev/null; then
+    lsof -nP -iTCP:"$port" 2>/dev/null | grep -q LISTEN
+  elif command -v ss &>/dev/null; then
+    ss -tlnH 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${port}\$"
+  else
+    return 1
+  fi
+}
+
+# PID auf einem Port ermitteln (lsof falls vorhanden, sonst ss — IPv6-safe)
 get_listen_pid() {
-  lsof -nP -iTCP:"$1" 2>/dev/null | awk '/LISTEN/ {print $2}' | sort -u | head -1
+  local port=$1
+  if command -v lsof &>/dev/null; then
+    lsof -nP -iTCP:"$port" 2>/dev/null | awk '/LISTEN/ {print $2}' | sort -u | head -1
+  elif command -v ss &>/dev/null; then
+    ss -tlnpH 2>/dev/null | awk -v p="$port" '$4 ~ "[:.]"p"$"' \
+      | grep -oE 'pid=[0-9]+' | head -1 | cut -d= -f2
+  fi
 }
 
 # Warte bis ein Port antwortet (max $2 Sekunden)
 wait_for_port() {
   local port=$1 max=${2:-5} i=0
   while [ $i -lt $max ]; do
-    if lsof -nP -iTCP:"$port" 2>/dev/null | grep -q LISTEN; then
+    if port_listening "$port"; then
       return 0
     fi
     sleep 1

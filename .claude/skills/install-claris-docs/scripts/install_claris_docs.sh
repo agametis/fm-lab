@@ -55,6 +55,23 @@ BASE_URL="https://help.claris.com"
 ALL_LANGS=(en de es fr it nl pt sv ja ko zh)
 REFERENCE_LANG="en"   # Always installed
 
+# Erwartete HTML-Seitenzahl pro Sprache — Heuristik für den Heartbeat-Tracker,
+# der während des Crawls anhand des Wachstums von $LANG_DIR/content/*.html eine
+# Sub-Progress emittiert. Stand 2026-05: alle bisher gemirrorten Sprachen
+# (en/de/es/fr/it/sv) haben exakt 1074 Seiten. Wir nehmen den Wert als globalen
+# Default und cappen bei 99 %, damit eine Abweichung den Balken nicht "voll"
+# erscheinen lässt, bevor der Crawler wirklich fertig ist.
+EXPECTED_PAGES_DEFAULT=1074
+
+expected_pages_for_lang() {
+    # Reserved for future per-language overrides if Claris ever ships a markedly
+    # smaller localized help (e.g. early-stage ja/ko/zh). Today every language
+    # uses the default.
+    case "$1" in
+        *) echo "$EXPECTED_PAGES_DEFAULT" ;;
+    esac
+}
+
 # -------------------- Shared mode helpers --------------------
 # shellcheck source=/dev/null
 source "$PROJECT_ROOT/tools/install_modes.sh"
@@ -521,6 +538,7 @@ LANG_IDX=0
 for lang in "${TARGET_LANGS[@]}"; do
     LANG_START_PCT=$((LANG_IDX * 100 / LANG_COUNT))
     LANG_IDX=$((LANG_IDX + 1))
+    LANG_END_PCT=$((LANG_IDX * 100 / LANG_COUNT))
     echo "════════════════════════════════════════════════════════════"
     color_cyan "[$lang] Processing language..."
     phase_progress crawl "$LANG_START_PCT" "[$lang] Starting..."
@@ -595,10 +613,28 @@ for lang in "${TARGET_LANGS[@]}"; do
     CRAWL_OUTPUT_FILE=$(mktemp)
     trap "rm -f '$CRAWL_OUTPUT_FILE'" EXIT
 
+    # Heartbeat-Poller: zählt sekündlich die *.html-Dateien im LANG_DIR/content
+    # und emittiert dafür phase_progress crawl <pct> innerhalb der per-Sprach-
+    # Slice. Damit füllt sich der Balken auch während eines einzelnen Crawls
+    # gleichmäßig (statt ~60 s still zu stehen). Dry-Run schreibt keine Dateien,
+    # daher Poller dort weglassen.
+    POLL_PID=""
+    if ! $DRY_RUN; then
+        EXPECTED_PAGES=$(expected_pages_for_lang "$lang")
+        if watch_file_count "$LANG_DIR/content" '*.html' "$EXPECTED_PAGES" crawl "$LANG_START_PCT" "$LANG_END_PCT" 1; then
+            POLL_PID="$WATCH_PID"
+        fi
+    fi
+
     if python3 "$CRAWLER" "${PYTHON_ARGS[@]}" 2>&1 | tee "$CRAWL_OUTPUT_FILE"; then
         CRAWL_RC=0
     else
         CRAWL_RC=$?
+    fi
+
+    if [ -n "$POLL_PID" ]; then
+        kill "$POLL_PID" 2>/dev/null || true
+        wait "$POLL_PID" 2>/dev/null || true
     fi
 
     # Extract JSON result from crawler output (last block after ---CRAWL-RESULT---)

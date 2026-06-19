@@ -16,6 +16,9 @@ import { Spacer } from './Spacer';
 import { UnknownPrimitive } from './UnknownPrimitive';
 import { DocsInstallErrorBezel } from './DocsInstallErrorBezel';
 import { DocsetInstallControl } from './DocsetInstallControl';
+import { XmlConvertControl } from './XmlConvertControl';
+import { XmlConvertLog } from './XmlConvertLog';
+import { XmlEmptyStateCard } from './XmlEmptyStateCard';
 import { registerInlineControl } from './inlineControls';
 
 const registry = new Map<string, PrimitiveComponent>();
@@ -44,6 +47,9 @@ registerPrimitive('NavButton', NavButton);
 registerPrimitive('Empty', Empty);
 registerPrimitive('Spacer', Spacer);
 registerPrimitive('DocsInstallErrorBezel', DocsInstallErrorBezel);
+registerPrimitive('XmlConvertControl', XmlConvertControl);
+registerPrimitive('XmlConvertLog', XmlConvertLog);
+registerPrimitive('XmlEmptyStateCard', XmlEmptyStateCard);
 
 // Inline-Controls (rendered inside List rows when rowTemplate.inlineControl is set)
 registerInlineControl('docsInstall', DocsetInstallControl);

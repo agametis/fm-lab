@@ -56,12 +56,12 @@ Delete `db/fm_test.duckdb` if it exists, to ensure a clean test run.
 ### Step 4: Execute Test Import
 Run the convert script with `--test` flag:
 ```bash
-bash .claude/skills/convert-xml/scripts/convert_fm_xml.sh --test
+bash tools/convert_fm_xml.sh --test
 ```
 
 Or with fail-fast:
 ```bash
-bash .claude/skills/convert-xml/scripts/convert_fm_xml.sh --test --fail-fast
+bash tools/convert_fm_xml.sh --test --fail-fast
 ```
 
 ### Step 5: Report Results

@@ -6,13 +6,16 @@ import type { ObjectSlotProps } from '../../types';
 /**
  * "Open in FileMaker" button rendered in the object header.
  * Fetches the fmp:// URL via the REST API and only renders when the backend
- * reports the object type as supported.
+ * reports the object type as supported AND the object's file actually contains
+ * the fmIDE target script (`script_available`).
  */
 export const FmideOpenButton: React.FC<ObjectSlotProps> = ({ objectUuid }) => {
   const { t } = useTranslation();
   const { data } = useFmideUri(objectUuid);
 
   if (!data?.supported || !data.fmp_url) return null;
+  // Hide when the fmIDE script is absent in this object's file (dead link).
+  if (data.script_available === false) return null;
 
   const handleClick = () => {
     if (data.fmp_url) {

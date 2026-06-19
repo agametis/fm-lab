@@ -10,6 +10,8 @@ import { ScriptDetail } from './ScriptDetail';
 import { ScriptStepDetail } from './ScriptStepDetail';
 import { CustomFunctionDetail } from './CustomFunctionDetail';
 import { FieldDetail } from './FieldDetail';
+import { PrivilegeSetDetail } from './PrivilegeSetDetail';
+import { RelationshipDetail } from './RelationshipDetail';
 import '../views/LayoutView.css';
 
 interface ObjectDetailProps {
@@ -179,6 +181,12 @@ export const ObjectDetail: React.FC<ObjectDetailProps> = ({
   }
   if (objectType === 'Field') {
     return <FieldDetail uuid={uuid} highlightRefUuids={highlightUuids} />;
+  }
+  if (objectType === 'PrivilegeSet') {
+    return <PrivilegeSetDetail uuid={uuid} highlightRefUuids={highlightUuids} />;
+  }
+  if (objectType === 'Relationship') {
+    return <RelationshipDetail uuid={uuid} />;
   }
   return (
     <GenericObjectDetail

@@ -4,17 +4,101 @@ import { useTranslation } from 'react-i18next';
 import { PluginCard, type PluginInfo } from '../components/PluginCard';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useApiLang } from '../hooks/useApiLang';
+import { useApiHealth } from '../hooks/useApiHealth';
+import { useFeaturesContext } from '../hooks/useFeatures';
+import { FmideFilesPanel } from '../plugins/fmide/components/FmideFilesPanel';
+import {
+  API_BASE,
+  ENV_API_BASE,
+  ENV_API_URL_PLACEHOLDER,
+  getApiUrlOverride,
+  setApiUrlOverride,
+} from '../config/apiBase';
 import './SettingsView.css';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3003';
+/**
+ * REST-API connection settings: an input for the API base URL that overrides
+ * the build-time `VITE_API_URL`. The value is stored **per browser** in
+ * localStorage (never sent to the server) so it can't affect other clients or
+ * repoint a shared backend. A live 🟢/🔴 dot shows whether the URL currently in
+ * the field is reachable.
+ */
+const ApiConnectionSettings: React.FC = () => {
+  const { t } = useTranslation(['detail']);
+  // Field value = the browser-local override ('' → use .env placeholder).
+  const [value, setValue] = useState<string>(() => getApiUrlOverride() ?? '');
+
+  // The URL the field currently resolves to (empty → .env base). This is what we
+  // probe live and what we would persist.
+  const effectiveTarget = value.trim() || ENV_API_BASE;
+  const health = useApiHealth(effectiveTarget);
+
+  const save = useCallback(() => {
+    // Browser-local only: persist to localStorage and reload so the new base
+    // takes effect across every API call this session. No server round-trip.
+    setApiUrlOverride(value.trim() || null);
+    window.location.reload();
+  }, [value]);
+
+  const dot = health === 'online' ? '🟢' : health === 'offline' ? '🔴' : '⚪️';
+  const dotTitle = health === 'online'
+    ? t('detail:settingsView.api.statusOnline')
+    : health === 'offline'
+      ? t('detail:settingsView.api.statusOffline')
+      : t('detail:settingsView.api.statusChecking');
+
+  return (
+    <section className="api-settings-card">
+      <h2 className="api-settings-heading">{t('detail:settingsView.api.heading')}</h2>
+      <p className="api-settings-desc">{t('detail:settingsView.api.description')}</p>
+
+      <label className="api-settings-label" htmlFor="api-url-input">
+        {t('detail:settingsView.api.label')}
+      </label>
+      <div className="api-settings-row">
+        <input
+          id="api-url-input"
+          type="url"
+          className="api-settings-input"
+          value={value}
+          placeholder={ENV_API_URL_PLACEHOLDER}
+          spellCheck={false}
+          autoCapitalize="off"
+          autoCorrect="off"
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') save(); }}
+        />
+        <span
+          className="api-settings-status"
+          role="status"
+          aria-live="polite"
+          title={dotTitle as string}
+          aria-label={dotTitle as string}
+        >
+          {dot}
+        </span>
+        <button className="api-settings-save" onClick={save}>
+          {t('detail:settingsView.api.save')}
+        </button>
+        <button
+          className="api-settings-clear"
+          onClick={() => setValue('')}
+          disabled={value.trim() === ''}
+        >
+          {t('detail:settingsView.api.clear')}
+        </button>
+      </div>
+    </section>
+  );
+};
 
 export const SettingsView: React.FC = () => {
   const { t } = useTranslation(['detail']);
   const lang = useApiLang();
+  const { refresh: refreshFeatures } = useFeaturesContext();
   const [plugins, setPlugins] = useState<PluginInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [restartPending, setRestartPending] = useState<Set<string>>(new Set());
   const [expandedName, setExpandedName] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -48,13 +132,11 @@ export const SettingsView: React.FC = () => {
     const json = await res.json();
     if (!json.success) throw new Error(json.error?.message || (t('detail:settingsView.saveError') as string));
 
-    if (json.data.requires_restart) {
-      setRestartPending((prev) => new Set(prev).add(name));
-    }
-
-    // Refetch to pick up merged state
-    await load();
-  }, [lang, load, t]);
+    // Refetch the plugin list (merged state) and the app-wide feature flags so
+    // enable/disable and config changes take effect immediately — no restart,
+    // no page reload (e.g. the fmIDE 🦄 actions appear/disappear at once).
+    await Promise.all([load(), refreshFeatures()]);
+  }, [lang, load, t, refreshFeatures]);
 
   return (
     <div className="settings-view">
@@ -65,6 +147,8 @@ export const SettingsView: React.FC = () => {
           <ThemeToggle />
         </div>
       </div>
+
+      <ApiConnectionSettings />
 
       {loading && <div className="settings-loading">{t('detail:settingsView.loading')}</div>}
       {error && <div className="settings-error">{error}</div>}
@@ -78,10 +162,10 @@ export const SettingsView: React.FC = () => {
           <PluginCard
             key={plugin.name}
             plugin={plugin}
-            restartPending={restartPending.has(plugin.name)}
             expanded={expandedName === plugin.name}
             onToggleExpand={() => setExpandedName((prev) => (prev === plugin.name ? null : plugin.name))}
             onUpdate={(patch) => handleUpdate(plugin.name, patch)}
+            extra={plugin.name === 'fmide' ? <FmideFilesPanel /> : undefined}
           />
         ))}
       </div>
