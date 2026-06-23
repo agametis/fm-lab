@@ -6,7 +6,7 @@ import { Slot } from '../plugins';
 
 type FMObject = components['schemas']['FMObject'];
 
-// PRD prd_pseudo_object_types_filter.md §8.3 — optionale Pseudo-Token-Felder,
+// Optionale Pseudo-Token-Felder,
 // vom /api/list-Endpoint mit ?with_usage=true / ?with_category=true geliefert.
 // Da der generierte FMObject-Typ diese Spalten nicht kennt, indizieren wir
 // lose über das ursprüngliche Object.
@@ -22,7 +22,7 @@ interface ObjectListItemProps {
   style?: React.CSSProperties;
   onClick?: (uuid: string) => void;
   // Wenn gesetzt, klick auf die Category-Pille toggelt diesen Wert in der
-  // übergeordneten Filter-Toolbar (PRD §8.3).
+  // übergeordneten Filter-Toolbar.
   onCategoryClick?: (category: string) => void;
   // Aktueller Volltext-Suchbegriff (vor Wildcard-Expansion). Wird für das
   // Highlighting des Treffers im Step_Text bei ScriptStep-Ergebnissen benutzt.

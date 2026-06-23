@@ -141,7 +141,7 @@ export const HighlightRing = memo(function HighlightRing({ object }: { object: L
 
 /**
  * Selektions-Ring als globales SVG-Overlay — wird *nach* allen Layout-Objekten gerendert,
- * sodass er auch über tief verschachtelten Tab-Panels sichtbar bleibt (PRD F16).
+ * sodass er auch über tief verschachtelten Tab-Panels sichtbar bleibt.
  */
 export const SelectionRing = memo(function SelectionRing({ object }: { object: LayoutObject }) {
   const palette = useLayoutObjectPalette();

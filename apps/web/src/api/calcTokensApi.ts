@@ -4,8 +4,7 @@ import { API_BASE } from '../config/apiBase';
 // über ihren DDR-Hash (Calcs haben keine Top-Level-UUID). Generischer Service:
 // teilt sich Template + Formatter mit Field-/CustomFunction-Tokens.
 //
-// Konsument u.a.: PrivilegeSetViewer (Record-Access-Calc-Formeln,
-// PRD prd_record_privileges_calc_rendering.md §5/§3).
+// Konsument u.a.: PrivilegeSetViewer (Record-Access-Calc-Formeln).
 
 import type { CalculationTokens } from '../script/calcTokens';
 

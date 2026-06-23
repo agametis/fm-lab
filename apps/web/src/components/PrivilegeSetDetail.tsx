@@ -7,7 +7,7 @@ import { ErrorMessage } from './ErrorMessage';
 
 interface PrivilegeSetDetailProps {
   uuid: string;
-  /** Cross-reference highlight (PRD §7.2): highlight tokens that match these UUIDs. */
+  /** Cross-reference highlight: highlight tokens that match these UUIDs. */
   highlightRefUuids?: Set<string> | null;
 }
 
@@ -16,7 +16,6 @@ interface PrivilegeSetDetailProps {
  * via /api/get-details (Template object_details_privilegeset) und rendert
  * Standard-Rechte + Custom Record/Field/Object Privileges. Record-Access-Calcs
  * werden mit lesbarer (und via /api/get-calc klickbarer) Formel dargestellt.
- * PRD prd_record_privileges_calc_rendering.md §4.
  */
 export const PrivilegeSetDetail: React.FC<PrivilegeSetDetailProps> = ({ uuid, highlightRefUuids }) => {
   const { t } = useTranslation(['common', 'detail']);

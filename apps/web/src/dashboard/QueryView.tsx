@@ -8,8 +8,6 @@ import type { BreadcrumbItem } from '../types';
  * Route view for `/query/:queryName`. Thin wrapper around the `_generic`
  * dashboard with the query name as a parameter. Additional URL search
  * params (e.g. `?file=...`) are forwarded to the dashboard.
- *
- * PRD: project/prd_dashboards_phase2.md §AP6.
  */
 export function QueryView() {
   const { t } = useTranslation(['nav']);

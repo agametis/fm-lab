@@ -24,6 +24,20 @@ async function initialize() {
 
   connection = await instance.connect();
 
+  // Scan-heavy analytische Queries (z.B. /api/graph/subgraph: Recursive CTE über
+  // ~800k ObjectLinks) sprengen sonst unter dem konservativen max_memory die
+  // Buffer-Manager-Pins ("failed to pin block"). Insertion-Order-Erhaltung baut
+  // große Zwischenpuffer auf, die wir nicht brauchen — alle Templates ordnen
+  // explizit via ORDER BY. Abschalten senkt den Speicher-Peak deutlich (genau die
+  // vom DuckDB-OOM-Hinweis empfohlene Maßnahme). Gilt für die ganze Verbindung.
+  try {
+    const pragma = await connection.prepare('SET preserve_insertion_order = false');
+    await pragma.run();
+    console.log('  - preserve_insertion_order: false (memory tuning)');
+  } catch (err) {
+    console.warn(`  - preserve_insertion_order tuning skipped: ${err.message}`);
+  }
+
   console.log('DuckDB connection established successfully (READ_ONLY)');
   console.log(`  - Max Memory: ${environment.duckdb.maxMemory}`);
   console.log(`  - Threads: ${environment.duckdb.threads}`);
@@ -91,8 +105,9 @@ async function executeQuery(sql, params = []) {
 
   const startTime = Date.now();
 
+  let stmt = null;
   try {
-    const stmt = await connection.prepare(sql);
+    stmt = await connection.prepare(sql);
     if (params.length > 0) {
       stmt.bind(params);
     }
@@ -111,6 +126,15 @@ async function executeQuery(sql, params = []) {
     console.error('SQL:', sql);
     console.error('Params:', params);
     throw err;
+  } finally {
+    // Prepared Statement explizit freigeben. @duckdb/node-api hält die native
+    // DuckDB-Ressource sonst bis zum GC — unter dem konservativen max_memory
+    // akkumulieren scan-schwere Queries (z.B. /api/graph/subgraph) sonst bis
+    // "failed to pin block". Die Engine selbst gibt pro Statement frei (im
+    // CLI kein Leak); nur die ungeschlossenen Node-Handles stauen sich.
+    if (stmt) {
+      try { stmt.destroySync(); } catch { /* schon freigegeben / Reload */ }
+    }
   }
 }
 

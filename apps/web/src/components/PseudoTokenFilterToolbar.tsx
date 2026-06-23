@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Filter-Toolbar für Pseudo-Token-Listen (PRD prd_pseudo_object_types_filter.md §8.2).
+ * Filter-Toolbar für Pseudo-Token-Listen.
  *
  * Render-Bedingung: nur für die drei Token-Pseudo-Typen
  * (ScriptStepType, BuiltinFunction, PluginFunction). PluginComponent rendert keine

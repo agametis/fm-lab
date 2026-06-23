@@ -7,7 +7,7 @@ export { ObjectHeader } from './ObjectHeader';
 export { HierarchyTree } from './HierarchyTree';
 export { Breadcrumbs } from './Breadcrumbs';
 export { SearchOptions } from './SearchOptions';
-export { DependencyGraph } from './DependencyGraph';
+export { ObjectGraphPanel } from './ObjectGraphPanel';
 export { TypeDetail } from './TypeDetail';
 export { ObjectDetail } from './ObjectDetail';
 export { FolderTree } from './FolderTree';

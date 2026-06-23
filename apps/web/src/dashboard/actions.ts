@@ -3,7 +3,7 @@ import type { NavigateFunction } from 'react-router-dom';
 import { substituteDeep } from './tokens';
 
 /**
- * Dashboard Click-Action-Whitelist (PRD §6).
+ * Dashboard Click-Action-Whitelist.
  * Token-Substitution erfolgt VOR der Action.
  */
 
@@ -157,7 +157,7 @@ export function dispatchAction(
     }
     case 'openDocsEntry': {
       // Navigates to /docs/:set/:category/:fn. Used by docset_category Functions-Liste
-      // to open the Function-Volltext-View (PRD prd_docs_redesign.md §6.1).
+      // to open the Function-Volltext-View.
       const setId = String(args.set || args.docset || '');
       const category = String(args.category || '');
       const fn = String(args.fn || args.function || '');

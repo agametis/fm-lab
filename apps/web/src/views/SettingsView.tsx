@@ -7,6 +7,7 @@ import { useApiLang } from '../hooks/useApiLang';
 import { useApiHealth } from '../hooks/useApiHealth';
 import { useFeaturesContext } from '../hooks/useFeatures';
 import { FmideFilesPanel } from '../plugins/fmide/components/FmideFilesPanel';
+import { GraphifyExportPanel } from '../plugins/graphify/components/GraphifyExportPanel';
 import {
   API_BASE,
   ENV_API_BASE,
@@ -165,7 +166,13 @@ export const SettingsView: React.FC = () => {
             expanded={expandedName === plugin.name}
             onToggleExpand={() => setExpandedName((prev) => (prev === plugin.name ? null : plugin.name))}
             onUpdate={(patch) => handleUpdate(plugin.name, patch)}
-            extra={plugin.name === 'fmide' ? <FmideFilesPanel /> : undefined}
+            extra={
+              plugin.name === 'fmide'
+                ? <FmideFilesPanel />
+                : plugin.name === 'graphify'
+                  ? <GraphifyExportPanel enabled={plugin.enabled} />
+                  : undefined
+            }
           />
         ))}
       </div>

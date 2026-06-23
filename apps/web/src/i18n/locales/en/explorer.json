@@ -1,0 +1,84 @@
+{
+  "title": "Graph Explorer",
+  "emptyFocus": "Open an object from its detail view in the Graph Explorer (or double-tap a node) to start exploring its dependency graph.",
+  "loading": "Loading graph…",
+  "truncated": "Showing {{kept}} of {{total}} reachable nodes — lower the depth or narrow the type filter to show them all.",
+  "stats": {
+    "nodes": "{{count}} node",
+    "nodes_other": "{{count}} nodes",
+    "edges": "{{count}} edge",
+    "edges_other": "{{count}} edges",
+    "communities": "{{count}} community",
+    "communities_other": "{{count}} communities"
+  },
+  "toolbar": {
+    "fit": "Fit",
+    "relayout": "Re-layout",
+    "exportPng": "Export PNG",
+    "fullscreen": "Fullscreen",
+    "fullscreenTitle": "Open in the full Graph Explorer"
+  },
+  "inspect": {
+    "ariaLabel": "Selected node details",
+    "type": "Type",
+    "file": "File",
+    "degree": "Degree",
+    "depth": "Depth",
+    "role": "Role",
+    "hub": "Hub",
+    "community": "Community",
+    "setFocus": "Set as focus",
+    "expand": "Expand 1 hop",
+    "expanding": "Expanding…",
+    "collapseHub": "Collapse hub",
+    "openDetails": "Open in details",
+    "neighbors": "Neighbors ({{count}})",
+    "noNeighbors": "No neighbors in the current graph.",
+    "uses": "uses",
+    "usedBy": "used by",
+    "focus": "Focus"
+  },
+  "filter": {
+    "ariaLabel": "Graph filters",
+    "focus": "Focus object",
+    "noFocus": "No focus selected",
+    "nameFilter": "Filter view",
+    "nameFilterPlaceholder": "Filter nodes by name…",
+    "clearNameFilter": "Clear filter",
+    "file": "File",
+    "allFiles": "All files",
+    "filterMode": "Non-matches",
+    "filterModes": {
+      "dim": "Dim",
+      "hide": "Hide"
+    },
+    "filterModeHints": {
+      "dim": "Fade non-matches (stay visible)",
+      "hide": "Remove non-matches"
+    },
+    "depth": "Depth",
+    "direction": "Direction",
+    "directions": {
+      "out": "Uses",
+      "in": "Used by",
+      "both": "Both"
+    },
+    "directionHints": {
+      "out": "What the focus uses",
+      "in": "What uses the focus",
+      "both": "Both directions from the focus"
+    },
+    "types": "Node types",
+    "showAllTypes": "show all",
+    "colorMode": "Coloring",
+    "colorModes": {
+      "type": "Type",
+      "community": "Community"
+    },
+    "colorModeHints": {
+      "type": "Color nodes by object type",
+      "community": "Color nodes by detected module (community)"
+    },
+    "communityUnnamed": "Community {{id}}"
+  }
+}

@@ -1,6 +1,6 @@
 import { API_BASE } from '../config/apiBase';
 // Back-References API - Fetch wrapper for /api/back-references endpoint
-// Cross-Reference Highlight Lookup (PRD prd_cross_references_hilite.md §6.3)
+// Cross-Reference Highlight Lookup
 
 const baseUrl = API_BASE;
 

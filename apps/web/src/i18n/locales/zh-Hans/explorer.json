@@ -1,0 +1,84 @@
+{
+  "title": "图谱浏览器",
+  "emptyFocus": "在详情视图中通过图谱浏览器打开某个对象（或双击节点），即可开始探索其依赖关系图。",
+  "loading": "正在加载图谱…",
+  "truncated": "正在显示 {{total}} 个可达节点中的 {{kept}} 个 — 降低深度或收窄类型筛选即可全部显示。",
+  "stats": {
+    "nodes": "{{count}} 个节点",
+    "nodes_other": "{{count}} 个节点",
+    "edges": "{{count}} 条边",
+    "edges_other": "{{count}} 条边",
+    "communities": "{{count}} 个社区",
+    "communities_other": "{{count}} 个社区"
+  },
+  "toolbar": {
+    "fit": "适配",
+    "relayout": "重新布局",
+    "exportPng": "导出 PNG",
+    "fullscreen": "全屏",
+    "fullscreenTitle": "在完整图谱浏览器中打开"
+  },
+  "inspect": {
+    "ariaLabel": "所选节点详情",
+    "type": "类型",
+    "file": "文件",
+    "degree": "度",
+    "depth": "深度",
+    "role": "角色",
+    "hub": "枢纽",
+    "community": "社区",
+    "setFocus": "设为焦点",
+    "expand": "展开 1 跳",
+    "expanding": "正在展开…",
+    "collapseHub": "折叠枢纽",
+    "openDetails": "在详情中打开",
+    "neighbors": "邻居 ({{count}})",
+    "noNeighbors": "当前图谱中没有邻居。",
+    "uses": "使用",
+    "usedBy": "被使用",
+    "focus": "焦点"
+  },
+  "filter": {
+    "ariaLabel": "图谱筛选器",
+    "focus": "焦点对象",
+    "noFocus": "未选择焦点",
+    "nameFilter": "筛选显示",
+    "nameFilterPlaceholder": "按名称筛选节点…",
+    "clearNameFilter": "清除筛选",
+    "file": "文件",
+    "allFiles": "所有文件",
+    "filterMode": "非匹配项",
+    "filterModes": {
+      "dim": "淡化",
+      "hide": "隐藏"
+    },
+    "filterModeHints": {
+      "dim": "淡化非匹配项（仍可见）",
+      "hide": "移除非匹配项"
+    },
+    "depth": "深度",
+    "direction": "方向",
+    "directions": {
+      "out": "使用",
+      "in": "被使用",
+      "both": "双向"
+    },
+    "directionHints": {
+      "out": "焦点所使用的",
+      "in": "使用焦点的",
+      "both": "从焦点出发的双向"
+    },
+    "types": "节点类型",
+    "showAllTypes": "显示全部",
+    "colorMode": "着色",
+    "colorModes": {
+      "type": "类型",
+      "community": "社区"
+    },
+    "colorModeHints": {
+      "type": "按对象类型为节点着色",
+      "community": "按检测到的模块（社区）为节点着色"
+    },
+    "communityUnnamed": "社区 {{id}}"
+  }
+}

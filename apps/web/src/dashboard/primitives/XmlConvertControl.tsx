@@ -27,7 +27,7 @@ const STATUS_EVENT = 'fmlab:xml-convert-status';
 /** Bittet den DashboardHost um einen nicht-destruktiven In-place-Refresh der
  *  Datasets (ohne die View zu leeren). Vom „Neu scannen"-Button gefeuert, damit
  *  neu im xml/-Verzeichnis abgelegte Dateien ohne Convert-Lauf sichtbar werden.
- *  PRD: project/prd_webclient_xml_directory_rescan.md. */
+ */
 const REFRESH_EVENT = 'fmlab:refresh-datasets';
 
 /** Dauer der Dissolve-Ausblendung am Lauf-Ende (muss zur CSS-Animation passen). */

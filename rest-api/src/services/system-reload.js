@@ -2,6 +2,7 @@ const db = require('../config/database');
 const referenceService = require('./reference.service');
 const helpService = require('./help.service');
 const templateService = require('./template.service');
+const graphService = require('./graph.service');
 const dashboardService = require('./dashboard.service');
 const dashboardI18nService = require('./dashboard-i18n.service');
 const pluginI18nService = require('../plugins/plugin-i18n.service');
@@ -20,6 +21,7 @@ async function performReload() {
   referenceService.clearCaches();
   helpService.clearCache();
   templateService.clearCache();
+  graphService.clearCache();
   dashboardService.clearCache();
   dashboardI18nService.clearCache();
   pluginI18nService.clearCache();

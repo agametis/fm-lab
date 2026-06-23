@@ -52,12 +52,11 @@ export interface ScriptLineToken {
   refs?: ScriptRef[];
 
   // ScriptStep-UUID aus StepsForScripts.Step_UUID — Identität des konkreten
-  // Steps im aktuellen Script, für Cross-Reference-Highlight (PRD
-  // prd_pseudo_object_types_filter.md §6.4: back_references liefert diese
-  // UUIDs als Match-Set, wenn Origin=ScriptStepType).
+  // Steps im aktuellen Script, für Cross-Reference-Highlight: back_references
+  // liefert diese UUIDs als Match-Set, wenn Origin=ScriptStepType.
   stepUuid?: string;
 
-  // Synthetischer ScriptStepType-UUID (PRD §5) — für Cross-Navigation vom
+  // Synthetischer ScriptStepType-UUID — für Cross-Navigation vom
   // Step-Namen zur ScriptStepType-Detail-Seite. Deterministisch via
   // md5('ScriptStepType::' || Step_Name).
   stepTypeUuid?: string;

@@ -20,7 +20,6 @@ interface Props {
  * Aktuell nur die XML-Konvertierung: neu im xml/-Verzeichnis abgelegte Dateien
  * sollen auftauchen, ohne dass erst ein Convert-Lauf nötig ist (der Server-Scan
  * `getStatus()` liefert sie längst, das Frontend fragte bisher nur nicht nach).
- * PRD: project/prd_webclient_xml_directory_rescan.md.
  */
 const AUTO_REFRESH_DASHBOARDS = new Set(['xml_convert']);
 /** Idle-Polling-Intervall für Auto-Refresh-Dashboards. */
@@ -28,7 +27,6 @@ const IDLE_POLL_MS = 6000;
 
 /**
  * Lädt Manifest + Daten eines Dashboards und mountet den Renderer.
- * PRD: prd_dashboards.md §8.1.
  */
 export function DashboardHost({ id, params }: Props) {
   const { t } = useTranslation();

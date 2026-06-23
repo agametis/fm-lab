@@ -8,13 +8,13 @@ import { ErrorMessage } from './ErrorMessage';
 
 interface CustomFunctionDetailProps {
   uuid: string;
-  /** Cross-reference highlight (PRD §7.2): highlight tokens that match these UUIDs. */
+  /** Cross-reference highlight: highlight tokens that match these UUIDs. */
   highlightRefUuids?: Set<string> | null;
 }
 
 /**
  * Wrapper for the token-based custom-function view. Loads
- * `/api/get-details?format=tokens&enrich=<lang>` (PRD §5.2) and renders the
+ * `/api/get-details?format=tokens&enrich=<lang>` and renders the
  * token sequence with reference-DB tooltips for engine functions.
  *
  * The language tracks the active i18n language via `useApiLang()`.

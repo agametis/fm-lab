@@ -6,7 +6,7 @@ import type { BreadcrumbItem } from '../types';
 
 /**
  * Route view for `/dashboard/:id`. Forwards routing/query params to the
- * dashboard host. PRD: prd_dashboards.md §8.
+ * dashboard host.
  */
 export function DashboardView() {
   const { t } = useTranslation(['nav']);

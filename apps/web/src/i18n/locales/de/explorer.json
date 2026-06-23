@@ -1,0 +1,84 @@
+{
+  "title": "Graph-Explorer",
+  "emptyFocus": "Öffne ein Objekt aus der Detailansicht im Graph-Explorer (oder per Doppelklick auf einen Knoten), um seinen Abhängigkeitsgraphen zu erkunden.",
+  "loading": "Graph wird geladen…",
+  "truncated": "{{kept}} von {{total}} erreichbaren Knoten angezeigt — Tiefe verringern oder Typ-Filter einschränken, um alle anzuzeigen.",
+  "stats": {
+    "nodes": "{{count}} Knoten",
+    "nodes_other": "{{count}} Knoten",
+    "edges": "{{count}} Kante",
+    "edges_other": "{{count}} Kanten",
+    "communities": "{{count}} Community",
+    "communities_other": "{{count}} Communities"
+  },
+  "toolbar": {
+    "fit": "Einpassen",
+    "relayout": "Neu anordnen",
+    "exportPng": "PNG exportieren",
+    "fullscreen": "Vollbild",
+    "fullscreenTitle": "Im großen Graph-Explorer öffnen"
+  },
+  "inspect": {
+    "ariaLabel": "Details des ausgewählten Knotens",
+    "type": "Typ",
+    "file": "Datei",
+    "degree": "Grad",
+    "depth": "Tiefe",
+    "role": "Rolle",
+    "hub": "Hub",
+    "community": "Community",
+    "setFocus": "Als Fokus setzen",
+    "expand": "1 Hop expandieren",
+    "expanding": "Expandiere…",
+    "collapseHub": "Hub kollabieren",
+    "openDetails": "In Details öffnen",
+    "neighbors": "Nachbarn ({{count}})",
+    "noNeighbors": "Keine Nachbarn im aktuellen Graphen.",
+    "uses": "verwendet",
+    "usedBy": "verwendet von",
+    "focus": "Fokus"
+  },
+  "filter": {
+    "ariaLabel": "Graph-Filter",
+    "focus": "Fokus-Objekt",
+    "noFocus": "Kein Fokus gewählt",
+    "nameFilter": "Anzeige filtern",
+    "nameFilterPlaceholder": "Knoten nach Name filtern…",
+    "clearNameFilter": "Filter zurücksetzen",
+    "file": "Datei",
+    "allFiles": "Alle Dateien",
+    "filterMode": "Nicht-Treffer",
+    "filterModes": {
+      "dim": "Dimmen",
+      "hide": "Ausblenden"
+    },
+    "filterModeHints": {
+      "dim": "Nicht-Treffer abdunkeln (bleiben sichtbar)",
+      "hide": "Nicht-Treffer ausblenden"
+    },
+    "depth": "Tiefe",
+    "direction": "Richtung",
+    "directions": {
+      "out": "Verwendet",
+      "in": "Verwendet von",
+      "both": "Beides"
+    },
+    "directionHints": {
+      "out": "Was der Fokus verwendet",
+      "in": "Was den Fokus verwendet",
+      "both": "Beide Richtungen ab Fokus"
+    },
+    "types": "Knotentypen",
+    "showAllTypes": "alle anzeigen",
+    "colorMode": "Färbung",
+    "colorModes": {
+      "type": "Typ",
+      "community": "Community"
+    },
+    "colorModeHints": {
+      "type": "Knoten nach Objekttyp einfärben",
+      "community": "Knoten nach erkanntem Modul (Community) einfärben"
+    },
+    "communityUnnamed": "Community {{id}}"
+  }
+}

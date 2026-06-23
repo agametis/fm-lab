@@ -28,7 +28,9 @@
   "author": "Marcel Moré",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "graphology": "^0.26.0",
+    "graphology-communities-louvain": "^2.0.2"
   },
   "engines": {
     "node": ">=18.0.0",

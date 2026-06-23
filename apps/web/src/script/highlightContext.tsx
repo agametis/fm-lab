@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 import type { ScriptRef } from './types';
 
 /**
- * React-Context für Cross-Reference Highlight (PRD prd_cross_references_hilite.md §7.2).
+ * React-Context für Cross-Reference Highlight.
  *
  * Vermeidet Prop-Drilling durch ScriptViewer → ScriptLine → ScriptLineContent →
  * RefSpan und durch CustomFunctionViewer → TokenSpan. Der Context-Wert ist eine

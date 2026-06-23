@@ -14,7 +14,7 @@ export interface PluginDoc {
   metadata?: {
     name: string;
     component?: string;
-    /** Synthetische PluginComponent-UUID für Cross-Navigation (PRD pseudo_object_types §5). */
+    /** Synthetische PluginComponent-UUID für Cross-Navigation. */
     componentUuid?: string | null;
     version?: string;
     signature?: string;

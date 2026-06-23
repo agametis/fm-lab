@@ -1,5 +1,5 @@
 /**
- * Navigation-Helper für Cross-Reference Highlight (PRD prd_cross_references_hilite.md §7.4).
+ * Navigation-Helper für Cross-Reference Highlight.
  *
  * Klick-Quellen, die zwischen Objekten springen (Referenzen-Tab, RefSpan,
  * LayoutCanvas Cross-Nav, DependencyGraph, CF-Token-Links, RG-Doppelklick),
@@ -41,7 +41,7 @@ export function buildObjectPath(
 }
 
 /**
- * Container-aware Navigation für Sub-Knoten (PRD prd_cross_references_hilite.md).
+ * Container-aware Navigation für Sub-Knoten.
  *
  * Sub-Knoten wie LayoutObject oder ScriptStep haben keinen sinnvollen Standalone-
  * Detail-View — ihr Wert liegt im Container-Kontext. Wenn ein Reference-Item

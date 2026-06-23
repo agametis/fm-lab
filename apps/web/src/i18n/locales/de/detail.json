@@ -238,6 +238,23 @@
       "rescanning": "Scanne…",
       "empty": "Noch kein Scan durchgeführt. Auf „Rescan“ klicken.",
       "colVersion": "Version"
+    },
+    "graphify": {
+      "enableFirst": "Aktiviere das Plugin oben, um den Export zu starten.",
+      "exportButton": "Graph exportieren",
+      "doneMessage": "Export abgeschlossen. Die Datei liegt im output/-Verzeichnis.",
+      "failed": "Export fehlgeschlagen.",
+      "lastExport": "Letzter Export",
+      "colFile": "Datei",
+      "colNodes": "Knoten",
+      "colEdges": "Kanten",
+      "colSize": "Größe",
+      "recentFiles": "Frühere Exporte ({{count}})",
+      "phase": {
+        "count": "Zähle Objekte…",
+        "export": "Exportiere Graph…",
+        "assemble": "Schreibe JSON-Datei…"
+      }
     }
   },
   "objectHeader": {

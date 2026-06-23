@@ -26,8 +26,7 @@ type AggObject = FMObject & {
 };
 
 /**
- * PseudoTokenView — Listenansicht für Pseudo-Token-Typen mit Aggregations-Layer
- * (PRD prd_pseudo_object_types_filter.md §8).
+ * PseudoTokenView — Listenansicht für Pseudo-Token-Typen mit Aggregations-Layer.
  *
  * Lädt /api/list mit ?with_usage / ?with_category / ?category / ?sort und
  * /api/list/categories für die Filter-Pillen. Für PluginComponent entfällt
@@ -215,7 +214,7 @@ export const PseudoTokenView: React.FC<Props> = ({
   const handleListItemCategoryClick = (cat: string) => {
     // Toggling-Verhalten: Klick auf Pille im Listenelement aktiviert sie.
     setActiveCategories((prev) => (prev.includes(cat) ? prev : [...prev, cat]));
-    // Scroll nach oben — Konvention aus PRD §8.3
+    // Scroll nach oben — Konvention
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

@@ -18,7 +18,7 @@ interface ObjectDetailProps {
   uuid: string;
   objectType: string;
   /**
-   * UUIDs zum Hervorheben (Cross-Reference Highlight, PRD §7.2).
+   * UUIDs zum Hervorheben (Cross-Reference Highlight).
    * Wird je nach Ziel-View interpretiert:
    *  - LayoutCanvas:        matchUuids
    *  - ScriptViewer:        highlightRefUuids (Token-Match)

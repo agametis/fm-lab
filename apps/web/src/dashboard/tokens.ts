@@ -1,6 +1,5 @@
 /**
  * Token-Substitution für Dashboard-Layouts.
- * PRD: prd_dashboards.md §3.2, §8.2.
  *
  * Unterstützt:
  *   {{field}}

@@ -1,7 +1,7 @@
 // Calc-Token-Typen für CustomFunctions und Calculations (analog
 // rest-api/src/formatters/tokens.formatter.js).
 //
-// Server-seitige Anreicherung über `?enrich=<lang>` (PRD §5.2) fügt für
+// Server-seitige Anreicherung über `?enrich=<lang>` fügt für
 // Tokens mit `type: 'function'` zusätzliche Felder hinzu (Reference-DB).
 // Diese sind optional, damit die Antwort ohne enrich byte-identisch bleibt.
 

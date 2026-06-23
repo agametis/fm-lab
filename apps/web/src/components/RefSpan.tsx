@@ -14,10 +14,10 @@ interface RefSpanProps {
 }
 
 /**
- * Engine-Funktion-Token mit Reference-DB-Popover (PRD §5.2).
+ * Engine-Funktion-Token mit Reference-DB-Popover.
  * Analog zu ScriptStepSpan: enriched → eigener Popover, sonst Browser-Tooltip.
  *
- * Mit synthetischer ObjectCatalog-UUID (PRD prd_pseudo_object_types_filter.md §5)
+ * Mit synthetischer ObjectCatalog-UUID
  * wird das Token zusätzlich klickbar — Navigation auf die BuiltinFunction-Detail.
  */
 const FunctionRefSpan: React.FC<RefSpanProps & { className: string; navPath: string | null }> = ({
@@ -159,7 +159,7 @@ function refTargetPath(ref: ScriptRef): string | null {
 /**
  * Pseudo-Type-Pfad für `function` (→ BuiltinFunction) und `pluginFunction`
  * (→ PluginFunction) — Cross-Navigation aus der Calc-/Script-Token-Ansicht
- * zur jeweiligen Detail-Seite (PRD prd_pseudo_object_types_filter.md §5).
+ * zur jeweiligen Detail-Seite.
  * Liefert null, wenn keine synthetische UUID an der Ref hängt (z.B. Boolean-
  * Operatoren, die wir bewusst uuidlos lassen).
  */
@@ -345,7 +345,7 @@ export const RefSpan: React.FC<RefSpanProps> = ({ reference, text }) => {
       </Link>
     );
   }
-  // Pseudo-Type-Cross-Navigation (PRD §5): function/pluginFunction haben jetzt
+  // Pseudo-Type-Cross-Navigation: function/pluginFunction haben jetzt
   // eine synthetische ObjectCatalog-UUID und sind klickbar.
   const pseudoNavPath = pseudoTypeTargetPath(reference);
   const pseudoNavPathWithRef = pseudoNavPath

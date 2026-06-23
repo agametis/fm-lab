@@ -172,7 +172,8 @@ The project has grown along a clear arc — from a solid foundation toward an in
 - **v0.7.0 – v0.7.1** · _Dashboards_ — declarative, data-driven views as a first-class extension layer.
 - **v0.7.2** · _Internationalization_ — the whole stack opens up to non-English developers, with all technical identifiers kept intact.
 - **v0.7.3 – v0.7.7** · _Depth & reach_ — deeper analysis, integrated documentation sets, and the XML import moving into the browser.
-- **v0.8.x** · _Katana XML engine_ — optimized and powerful XML ingestion.
+- **v0.8.0 – v0.8.2** · _Katana XML engine_ — optimized and powerful XML ingestion.
+- **v0.8.3** · _Graph-based analysis_ — community detection, semantic naming, and an interactive Graph Explorer.
 
 - More details in [`CHANGELOG.md`](CHANGELOG.md) — release history
 

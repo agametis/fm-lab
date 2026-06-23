@@ -12,6 +12,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.8.3] — 2026-06-23
+
+The object graph becomes explorable and self-organizing: an interactive Graph Explorer in the browser, and automatic community detection that segments the solution into named modules.
+
+- **Graph Explorer** — interactive, browser-based exploration of the whole object graph (new `/graph` route)
+  - Pick any object as the focus and reach outward by **depth**, **direction** (uses / used-by / both); narrow by object type, link role, and built-in functions
+  - **Inspect panel** with node metadata and neighbor list, plus one-click *set as focus* / *expand one hop* / *collapse hub* / *open in details*
+  - Cytoscape `fcose` layout, hub highlighting, hover dimming, **PNG export**, deep-linkable view state (`?focus=&depth=&dir=&mode=`)
+  - New REST graph API (`GET /api/graph/subgraph` · `/neighbors` · `/search`) and a **`graphify` plugin** that exports the graph as JSON to `output/`
+- **Community detection** — the graph segments itself into modules and names them
+  - New `ObjectClusters` / `CommunityNames` tables; a deterministic **Louvain** baseline (seeded) with an optional **Leiden** engine, run as a standalone batch after `convert-xml`
+  - **Color lens** in the Graph Explorer toggles node coloring between object type and community, with a community legend
+  - New **`fm-graph-cluster` skill** — sweeps candidate resolutions and scores them (modularity Q + distribution guardrails), names communities semantically, writes an analysis report to `output/`, and syncs the named partition to the Graph Explorer
+  - **Cleaned logical-graph views** in convert-xml Phase 5 (`LogicalLinks`, `ClusterEdges`) — sub-objects hoisted to their container, multi-edges deduped, built-in primitives separated out. The hub/degree analysis now runs on the *same* edge set as the clustering
+- **FileMaker 26 Custom Functions fix** (schema 1.4.1) — FileMaker 26 (SaXML v2.3.0.0) moved each Custom Function's formula out of the separate `<CalcsForCustomFunctions>` section into an embedded `<Calculation>`. The parser now extracts **structure-tolerantly from both locations** and merges them
+
+---
+
 ## [0.8.2] — 2026-06-18
 
 fmIDE plugin and XML import refinements.

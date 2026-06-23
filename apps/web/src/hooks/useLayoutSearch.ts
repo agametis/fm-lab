@@ -26,7 +26,7 @@ export type LayoutSearchAPI = {
 };
 
 /**
- * Konsolidierter Such-Text pro Layout-Objekt (PRD §5.4 F14):
+ * Konsolidierter Such-Text pro Layout-Objekt:
  * deckt Feldname, Script-Caption, Text-Inhalt, Object_Name und Object_Type ab,
  * sodass eine einzelne Substring-Eingabe alle relevanten Bezeichnungen findet.
  */
@@ -46,7 +46,7 @@ function buildSearchText(o: LayoutObject): string {
  * Sortierung der Fundmenge entspricht der SVG-Render-Reihenfolge: (Nesting_Level, Object_ID).
  * Die Daten kommen bereits sortiert aus dem SQL-Template, deshalb reicht ein einfacher Filter.
  *
- * Cross-Reference Highlight (PRD prd_cross_references_hilite.md §7.2):
+ * Cross-Reference Highlight:
  * `externalMatchUuids` injiziert eine Vor-Auswahl, die als weicher Filter wirkt,
  * solange der User nicht selbst interagiert. Sobald der User aktiv sucht oder
  * einen Typ-Filter aktiviert, wird der `?ref=`-Param ATOMAR im selben URL-Update

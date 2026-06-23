@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useSearchParams, useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from './api/client';
 import { OBJECT_TYPES } from '@packages/shared/constants';
 
-// PRD prd_pseudo_object_types_filter.md §8.1 — four pseudo types displayed
+// Four pseudo types displayed
 // in the "Used tokens" optgroup of the type dropdown.
 const PSEUDO_TYPE_GROUP = ['ScriptStepType', 'BuiltinFunction', 'PluginComponent', 'PluginFunction'] as const;
 const PSEUDO_TYPE_SET = new Set<string>(PSEUDO_TYPE_GROUP);
@@ -17,6 +17,12 @@ import { DashboardHost } from './dashboard/DashboardHost';
 import { DashboardView } from './dashboard/DashboardView';
 import { QueryView } from './dashboard/QueryView';
 import { DocsEntryView } from './docs/DocsEntryView';
+
+// Code-split the Graph Explorer (cytoscape + fcose layout) out of the main
+// bundle — it is only reached via the /graph route.
+const GraphExplorerView = lazy(() =>
+  import('./views/GraphExplorerView').then((m) => ({ default: m.GraphExplorerView })),
+);
 
 /**
  * Wrapper, der DocsEntryView per `key` an die Route-Params bindet. Damit
@@ -499,7 +505,7 @@ function SearchView() {
         </div>
       )}
 
-      {/* Search mode: Pseudo-Token-Typen — eigene aggregierte Ansicht (PRD §8) */}
+      {/* Search mode: Pseudo-Token-Typen — eigene aggregierte Ansicht */}
       {!isTreeMode && PSEUDO_TYPE_SET.has(objectType) && (
         <PseudoTokenView
           objectType={objectType}
@@ -511,7 +517,7 @@ function SearchView() {
         />
       )}
 
-      {/* Search mode: Default-Dashboard — sichtbar wenn KEINE Filter aktiv (PRD §8) */}
+      {/* Search mode: Default-Dashboard — sichtbar wenn KEINE Filter aktiv */}
       {!isTreeMode && !debouncedSearchName && !selectedFile && !objectType && (
         <DashboardHost id="home" />
       )}
@@ -567,6 +573,14 @@ function App() {
       <Route path="/settings" element={<SettingsView />} />
       <Route path="/relationship-graph/:fileName" element={<RelationshipGraphView />} />
       <Route path="/relationship-graph" element={<RelationshipGraphView />} />
+      <Route
+        path="/graph"
+        element={
+          <Suspense fallback={<div className="graph-explorer-placeholder">…</div>}>
+            <GraphExplorerView />
+          </Suspense>
+        }
+      />
       <Route path="/layout/:uuid" element={<LayoutView />} />
       <Route path="/dashboard/:id" element={<DashboardView />} />
       <Route path="/query/:queryName" element={<QueryView />} />

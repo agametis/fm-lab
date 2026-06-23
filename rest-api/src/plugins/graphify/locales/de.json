@@ -1,0 +1,6 @@
+{
+  "manifest": {
+    "description": "Exportiert den gesamten Objekt-Graphen (alle Objekte und ihre Verknüpfungen) als JSON-Datei in das output/-Verzeichnis. Die Datei lässt sich an graphify, Gephi/yEd oder andere Graph-Tools übergeben."
+  },
+  "settings_schema": {}
+}

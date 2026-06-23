@@ -1,0 +1,84 @@
+{
+  "title": "Explorateur de graphe",
+  "emptyFocus": "Ouvre un objet depuis sa vue de détail dans l'Explorateur de graphe (ou double-clique sur un nœud) pour explorer son graphe de dépendances.",
+  "loading": "Chargement du graphe…",
+  "truncated": "Affichage de {{kept}} sur {{total}} nœuds accessibles — réduis la profondeur ou restreins le filtre de types pour tous les afficher.",
+  "stats": {
+    "nodes": "{{count}} nœud",
+    "nodes_other": "{{count}} nœuds",
+    "edges": "{{count}} arête",
+    "edges_other": "{{count}} arêtes",
+    "communities": "{{count}} communauté",
+    "communities_other": "{{count}} communautés"
+  },
+  "toolbar": {
+    "fit": "Ajuster",
+    "relayout": "Réorganiser",
+    "exportPng": "Exporter en PNG",
+    "fullscreen": "Plein écran",
+    "fullscreenTitle": "Ouvrir dans l'Explorateur de graphe complet"
+  },
+  "inspect": {
+    "ariaLabel": "Détails du nœud sélectionné",
+    "type": "Type",
+    "file": "Fichier",
+    "degree": "Degré",
+    "depth": "Profondeur",
+    "role": "Rôle",
+    "hub": "Hub",
+    "community": "Communauté",
+    "setFocus": "Définir comme focus",
+    "expand": "Étendre d'un saut",
+    "expanding": "Extension…",
+    "collapseHub": "Réduire le hub",
+    "openDetails": "Ouvrir les détails",
+    "neighbors": "Voisins ({{count}})",
+    "noNeighbors": "Aucun voisin dans le graphe actuel.",
+    "uses": "utilise",
+    "usedBy": "utilisé par",
+    "focus": "Focus"
+  },
+  "filter": {
+    "ariaLabel": "Filtres du graphe",
+    "focus": "Objet focus",
+    "noFocus": "Aucun focus sélectionné",
+    "nameFilter": "Filtrer l'affichage",
+    "nameFilterPlaceholder": "Filtrer les nœuds par nom…",
+    "clearNameFilter": "Effacer le filtre",
+    "file": "Fichier",
+    "allFiles": "Tous les fichiers",
+    "filterMode": "Non concordants",
+    "filterModes": {
+      "dim": "Atténuer",
+      "hide": "Masquer"
+    },
+    "filterModeHints": {
+      "dim": "Atténuer les non concordants (restent visibles)",
+      "hide": "Supprimer les non concordants"
+    },
+    "depth": "Profondeur",
+    "direction": "Direction",
+    "directions": {
+      "out": "Utilise",
+      "in": "Utilisé par",
+      "both": "Les deux"
+    },
+    "directionHints": {
+      "out": "Ce que le focus utilise",
+      "in": "Ce qui utilise le focus",
+      "both": "Les deux directions depuis le focus"
+    },
+    "types": "Types de nœud",
+    "showAllTypes": "tout afficher",
+    "colorMode": "Coloration",
+    "colorModes": {
+      "type": "Type",
+      "community": "Communauté"
+    },
+    "colorModeHints": {
+      "type": "Colorer les nœuds par type d’objet",
+      "community": "Colorer les nœuds par module détecté (communauté)"
+    },
+    "communityUnnamed": "Communauté {{id}}"
+  }
+}

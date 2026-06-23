@@ -1,0 +1,84 @@
+{
+  "title": "Explorador de grafos",
+  "emptyFocus": "Abre un objeto desde su vista de detalle en el Explorador de grafos (o haz doble clic en un nodo) para empezar a explorar su grafo de dependencias.",
+  "loading": "Cargando grafo…",
+  "truncated": "Mostrando {{kept}} de {{total}} nodos alcanzables — reduce la profundidad o restringe el filtro de tipos para mostrarlos todos.",
+  "stats": {
+    "nodes": "{{count}} nodo",
+    "nodes_other": "{{count}} nodos",
+    "edges": "{{count}} arista",
+    "edges_other": "{{count}} aristas",
+    "communities": "{{count}} comunidad",
+    "communities_other": "{{count}} comunidades"
+  },
+  "toolbar": {
+    "fit": "Ajustar",
+    "relayout": "Reorganizar",
+    "exportPng": "Exportar PNG",
+    "fullscreen": "Pantalla completa",
+    "fullscreenTitle": "Abrir en el Explorador de grafos completo"
+  },
+  "inspect": {
+    "ariaLabel": "Detalles del nodo seleccionado",
+    "type": "Tipo",
+    "file": "Archivo",
+    "degree": "Grado",
+    "depth": "Profundidad",
+    "role": "Rol",
+    "hub": "Hub",
+    "community": "Comunidad",
+    "setFocus": "Establecer como foco",
+    "expand": "Expandir 1 salto",
+    "expanding": "Expandiendo…",
+    "collapseHub": "Contraer hub",
+    "openDetails": "Abrir en detalles",
+    "neighbors": "Vecinos ({{count}})",
+    "noNeighbors": "Sin vecinos en el grafo actual.",
+    "uses": "usa",
+    "usedBy": "usado por",
+    "focus": "Foco"
+  },
+  "filter": {
+    "ariaLabel": "Filtros del grafo",
+    "focus": "Objeto de foco",
+    "noFocus": "Ningún foco seleccionado",
+    "nameFilter": "Filtrar vista",
+    "nameFilterPlaceholder": "Filtrar nodos por nombre…",
+    "clearNameFilter": "Borrar filtro",
+    "file": "Archivo",
+    "allFiles": "Todos los archivos",
+    "filterMode": "No coincidentes",
+    "filterModes": {
+      "dim": "Atenuar",
+      "hide": "Ocultar"
+    },
+    "filterModeHints": {
+      "dim": "Atenuar los no coincidentes (siguen visibles)",
+      "hide": "Eliminar los no coincidentes"
+    },
+    "depth": "Profundidad",
+    "direction": "Dirección",
+    "directions": {
+      "out": "Usa",
+      "in": "Usado por",
+      "both": "Ambos"
+    },
+    "directionHints": {
+      "out": "Lo que el foco usa",
+      "in": "Lo que usa al foco",
+      "both": "Ambas direcciones desde el foco"
+    },
+    "types": "Tipos de nodo",
+    "showAllTypes": "mostrar todos",
+    "colorMode": "Coloreado",
+    "colorModes": {
+      "type": "Tipo",
+      "community": "Comunidad"
+    },
+    "colorModeHints": {
+      "type": "Colorear nodos por tipo de objeto",
+      "community": "Colorear nodos por módulo detectado (comunidad)"
+    },
+    "communityUnnamed": "Comunidad {{id}}"
+  }
+}

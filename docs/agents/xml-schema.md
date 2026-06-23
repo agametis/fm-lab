@@ -34,6 +34,42 @@ This is the high-level structure of the XML export produced from a FileMaker fil
     </Structure>
 ```
 
+## CustomFunction calculations — format differs by SaXML version
+
+The location of a custom function's calculation body changed between SaXML versions:
+
+- **SaXML ≤ v2.2.x (FileMaker ≤ 22):** `<CustomFunctionsCatalog>` carries only the
+  signature (`id`/`name`/`UUID`/`Display`/parameters). The formula bodies live in a
+  **separate top-level `<CalcsForCustomFunctions>`** section, one `<CustomFunctionCalc>`
+  per function (with `<CustomFunctionReference>` + `<Calculation>` incl. an inline
+  `<ChunkList>`). *Verified at `xml-test/…_v2_2_3_0__fm_v22_0_4…`.*
+- **SaXML v2.3.0.0 (FileMaker 26+):** the `<CalcsForCustomFunctions>` section is gone;
+  `<Calculation>` is **embedded directly inside each `<CustomFunction>`** within
+  `<CustomFunctionsCatalog>`. The embedded `<Calculation>` has **no `<ChunkList>`** —
+  only `<DDRREF kind="ChunkList" hash="…">` (the chunks remain reachable via the hash in
+  `<DDR_INFO>`) and `<Text>`. *Verified at `xml-test/v26/Ooe.xml` (v2.3.0.0 / FM 26.0.1).*
+
+```xml
+<!-- v2.3.0.0 (FM 26): Calculation embedded in CustomFunctionsCatalog -->
+<CustomFunction id="2" name="OrderOfOperations" access="All">
+    <UUID …>D87A5E62-…</UUID>
+    <Calculation>
+        <DDRREF kind="ChunkList" hash="804DF992…">_D87A5E62-…</DDRREF>
+        <Text><![CDATA[Contacts::OrderOfOperationsTest_u & If ( … )]]></Text>
+    </Calculation>
+    <Display>OrderOfOperations</Display>
+</CustomFunction>
+```
+
+The exact FM version that introduced the embedded format is unknown (between v2.2.3.0 / FM 22
+and v2.3.0.0 / FM 26). The extractor handles **both** forms via a structure-tolerant double
+extraction (no version switch) — see
+`project/bugreports/2026-06-23_Philipp-Puls_CustomFunctions_v26.md`.
+
+> The high-level structure block above (`version="2.2.0.0"`, with a top-level
+> `<CalcsForCustomFunctions>`) reflects the FM 19 export; under v2.3.0.0 that section
+> is absent and the calculation moves into `<CustomFunction>` as shown here.
+
 ## AutoEnter node (inside Field elements)
 
 Each `<Field>` element in `FieldsForTables` may contain an `<AutoEnter>` child:

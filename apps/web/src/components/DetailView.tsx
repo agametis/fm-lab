@@ -6,7 +6,7 @@ import { useRefOrigin } from '../hooks/useRefOrigin';
 import { ObjectHeader } from './ObjectHeader';
 import { HierarchyTree, type HierarchyTreeHandle } from './HierarchyTree';
 import { TypeDetail } from './TypeDetail';
-import { DependencyGraph } from './DependencyGraph';
+import { ObjectGraphPanel, type ObjectGraphPanelHandle } from './ObjectGraphPanel';
 import { Breadcrumbs } from './Breadcrumbs';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
@@ -40,6 +40,7 @@ export const DetailView: React.FC = () => {
   const location = useLocation();
   const { object, references, loading, error, retry } = useObjectDetail(uuid);
   const hierarchyRef = useRef<HierarchyTreeHandle>(null);
+  const graphPanelRef = useRef<ObjectGraphPanelHandle>(null);
 
   // URL ist Single Source of Truth für Tab — beim Wechsel wird die URL
   // aktualisiert (replace), sodass beim Zurück-Navigieren der Tab erhalten
@@ -54,7 +55,7 @@ export const DetailView: React.FC = () => {
     setTabParam(tab);
   }, [setTabParam]);
 
-  // Cross-Reference Highlight (PRD prd_cross_references_hilite.md).
+  // Cross-Reference Highlight.
   // `ref` lebt nur in der URL; useRefOrigin holt das Origin + alle Back-Reference-
   // UUIDs im Destination-Container vom Backend und cached pro (dst, ref)-Paar.
   const [refParam, setRefParam] = useUrlState<string>('ref', '');
@@ -92,6 +93,10 @@ export const DetailView: React.FC = () => {
       }
       return false;
     },
+    // Graph-Tab: ein aktiver Namensfilter wird zuerst geleert (nur gemountet,
+    // wenn der Graph-Tab aktiv ist — sonst ist der Ref null und die Stage fällt
+    // durch zur Zurück-Navigation).
+    () => graphPanelRef.current?.clearTransientFilters() ?? false,
     () => {
       handleBack();
       return true;
@@ -150,7 +155,7 @@ export const DetailView: React.FC = () => {
       case 'references':
         return <HierarchyTree ref={hierarchyRef} references={references} />;
       case 'graph':
-        return <DependencyGraph object={object} references={references} />;
+        return <ObjectGraphPanel ref={graphPanelRef} object={object} />;
       default:
         return null;
     }
@@ -164,7 +169,7 @@ export const DetailView: React.FC = () => {
           &larr; {t('nav:detailView.backLabel')}
         </button>
         <Breadcrumbs items={breadcrumbItems} />
-        <div style={{ marginLeft: 'auto' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <ThemeToggle />
         </div>
       </div>

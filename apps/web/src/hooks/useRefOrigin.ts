@@ -3,7 +3,6 @@ import { fetchBackReferences, type BackReferencesResponse } from '../api/backRef
 
 /**
  * Origin-Auflösung + Back-References-Lookup für Cross-Reference Highlight.
- * PRD prd_cross_references_hilite.md §6.1 + §6.2.
  *
  * Eingabe:
  *   - destinationUuid: aktuell geöffnetes Objekt (Pflicht für API-Call)
@@ -15,7 +14,7 @@ import { fetchBackReferences, type BackReferencesResponse } from '../api/backRef
  *   - matchUuids: Set<UUID> aller Matches im Destination-Container
  *   - origin-Name als Fallback-Substring für Views ohne UUID-Match
  *
- * Caching: einfacher In-Memory-Cache pro `${dst}::${ref}` mit 5min TTL (PRD §8.12).
+ * Caching: einfacher In-Memory-Cache pro `${dst}::${ref}` mit 5min TTL.
  */
 
 export type RefOriginStatus = 'idle' | 'loading' | 'resolved' | 'unresolved' | 'error';

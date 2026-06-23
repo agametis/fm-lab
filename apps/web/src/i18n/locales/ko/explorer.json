@@ -1,0 +1,84 @@
+{
+  "title": "그래프 탐색기",
+  "emptyFocus": "상세 보기에서 그래프 탐색기로 오브젝트를 열거나(노드를 두 번 클릭) 의존성 그래프 탐색을 시작하세요.",
+  "loading": "그래프 불러오는 중…",
+  "truncated": "도달 가능한 {{total}}개 노드 중 {{kept}}개 표시 중 — 깊이를 낮추거나 유형 필터를 좁히면 모두 표시됩니다.",
+  "stats": {
+    "nodes": "노드 {{count}}개",
+    "nodes_other": "노드 {{count}}개",
+    "edges": "엣지 {{count}}개",
+    "edges_other": "엣지 {{count}}개",
+    "communities": "{{count}}개 커뮤니티",
+    "communities_other": "{{count}}개 커뮤니티"
+  },
+  "toolbar": {
+    "fit": "맞춤",
+    "relayout": "재배치",
+    "exportPng": "PNG 내보내기",
+    "fullscreen": "전체 화면",
+    "fullscreenTitle": "전체 그래프 탐색기에서 열기"
+  },
+  "inspect": {
+    "ariaLabel": "선택한 노드 세부정보",
+    "type": "유형",
+    "file": "파일",
+    "degree": "차수",
+    "depth": "깊이",
+    "role": "역할",
+    "hub": "허브",
+    "community": "커뮤니티",
+    "setFocus": "포커스로 설정",
+    "expand": "1홉 확장",
+    "expanding": "확장 중…",
+    "collapseHub": "허브 접기",
+    "openDetails": "세부정보에서 열기",
+    "neighbors": "이웃 ({{count}})",
+    "noNeighbors": "현재 그래프에 이웃이 없습니다.",
+    "uses": "사용함",
+    "usedBy": "사용됨",
+    "focus": "포커스"
+  },
+  "filter": {
+    "ariaLabel": "그래프 필터",
+    "focus": "포커스 오브젝트",
+    "noFocus": "포커스가 선택되지 않음",
+    "nameFilter": "보기 필터",
+    "nameFilterPlaceholder": "이름으로 노드 필터…",
+    "clearNameFilter": "필터 지우기",
+    "file": "파일",
+    "allFiles": "모든 파일",
+    "filterMode": "불일치 항목",
+    "filterModes": {
+      "dim": "흐리게",
+      "hide": "숨기기"
+    },
+    "filterModeHints": {
+      "dim": "불일치 항목 흐리게(계속 표시)",
+      "hide": "불일치 항목 제거"
+    },
+    "depth": "깊이",
+    "direction": "방향",
+    "directions": {
+      "out": "사용함",
+      "in": "사용됨",
+      "both": "둘 다"
+    },
+    "directionHints": {
+      "out": "포커스가 사용하는 항목",
+      "in": "포커스를 사용하는 항목",
+      "both": "포커스로부터 양방향"
+    },
+    "types": "노드 유형",
+    "showAllTypes": "모두 표시",
+    "colorMode": "색상 지정",
+    "colorModes": {
+      "type": "유형",
+      "community": "커뮤니티"
+    },
+    "colorModeHints": {
+      "type": "객체 유형별로 노드 색상 지정",
+      "community": "감지된 모듈(커뮤니티)별로 노드 색상 지정"
+    },
+    "communityUnnamed": "커뮤니티 {{id}}"
+  }
+}

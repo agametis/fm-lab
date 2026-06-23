@@ -1,6 +1,6 @@
 import { API_BASE } from '../config/apiBase';
 /**
- * Dashboard-API-Client (PRD: prd_dashboards.md §7.2).
+ * Dashboard-API-Client.
  * Verwendet plain fetch wie der Rest des Frontends — kein react-query.
  */
 

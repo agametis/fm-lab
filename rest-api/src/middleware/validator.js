@@ -171,6 +171,50 @@ const schemas = {
     debug: Joi.boolean().default(false),
   }),
 
+  // GET /api/graph/subgraph - Fokus-zentrierter k-Hop-Subgraph (Graph Explorer, P2)
+  // Plan plan_graphify_style_visualisierung.md §6.1 / §13.3.
+  // types/roles sind optionale Komma-Listen (CSV); Split + NULL-Handling im SQL.
+  graphSubgraph: Joi.object({
+    focus: Joi.string().required(),
+    depth: Joi.number().integer().min(1).max(4).default(1),
+    direction: Joi.string().lowercase().valid('out', 'in', 'both').default('both'),
+    mode: Joi.string().lowercase().valid('logical', 'raw').default('logical'),
+    types: Joi.string().optional(),
+    roles: Joi.string().optional(),
+    include_builtins: Joi.boolean().default(false),
+    node_limit: Joi.number().integer().min(1).max(environment.api.maxLimit).default(1000),
+    hub_degree: Joi.number().integer().min(1).default(100),
+    format: Joi.string().lowercase().valid(...Object.values(OUTPUT_FORMATS)).default('json'),
+    meta: Joi.boolean().default(false),
+    debug: Joi.boolean().default(false),
+  }),
+
+  // GET /api/graph/neighbors - 1-Hop-Expansion (Lazy-Expand). Wie subgraph, ohne depth.
+  graphNeighbors: Joi.object({
+    focus: Joi.string().required(),
+    direction: Joi.string().lowercase().valid('out', 'in', 'both').default('both'),
+    mode: Joi.string().lowercase().valid('logical', 'raw').default('logical'),
+    types: Joi.string().optional(),
+    roles: Joi.string().optional(),
+    include_builtins: Joi.boolean().default(false),
+    node_limit: Joi.number().integer().min(1).max(environment.api.maxLimit).default(1000),
+    hub_degree: Joi.number().integer().min(1).default(100),
+    format: Joi.string().lowercase().valid(...Object.values(OUTPUT_FORMATS)).default('json'),
+    meta: Joi.boolean().default(false),
+    debug: Joi.boolean().default(false),
+  }),
+
+  // GET /api/graph/search - Fokus-Autocomplete über ObjectCatalog
+  graphSearch: Joi.object({
+    q: Joi.string().min(1).required(),
+    type: Joi.string().optional(),
+    file: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(100).default(20),
+    format: Joi.string().lowercase().valid(...Object.values(OUTPUT_FORMATS)).default('json'),
+    meta: Joi.boolean().default(false),
+    debug: Joi.boolean().default(false),
+  }),
+
   // GET/POST /api/report - Execute report template
   report: Joi.object({
     template: Joi.string().required(),

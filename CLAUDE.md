@@ -33,10 +33,18 @@ and memory peak low. See [project/plan_xml_diff.md](project/plan_xml_diff.md).
 | **P2 Resolve** | `sql/convert-xml/convert_xml_02_resolve.sql` | tables only | Reference tables (XMLStep/Layout/Calc-Refs, MBS/GetSub, PluginUsages) |
 | **P3 Details** | `sql/convert-xml/convert_xml_03_details.sql` | tables only | Variable analysis (VariableUsages, VariablesCatalog) |
 | **P4 Catalog** | `sql/convert-xml/convert_xml_04_catalog.sql` | tables only | ObjectCatalog + ObjectLinks |
-| **P5 Homes** | `sql/convert-xml/convert_xml_05_homes.sql` | tables only | Cross-file resolution (ObjectHomes, TableOccurrenceResolution) |
+| **P5 Homes** | `sql/convert-xml/convert_xml_05_homes.sql` | tables only | Cross-file resolution (ObjectHomes, TableOccurrenceResolution) + graph views (`LogicalLinks`, `ClusterEdges`) |
 | **P6 Validate** | `sql/convert-xml/convert_xml_06_validate.sql` | tables only | Plausibility/consistency check views (`v_check_*`), queried by the post-processor |
 
 P1 runs once per file; P2–P6 run once after all files are imported (batch-wide).
+
+P5 also creates two **graph views** (read-only helpers over the universal catalogs):
+`LogicalLinks` (operational links, sub-objects hoisted to their container, containment
+scaffold + orphans removed) and `ClusterEdges` (= `LogicalLinks` minus `BuiltinFunction`
+endpoints). `ClusterEdges` is the single source of truth for the community-detection edge
+export (`tools/graph-export/graph_export_logical.sql`) and the `fm-graph-cluster` skill's
+logical-degree/hub analysis. Canonical definition mirrored in
+[rest-api/templates/sql/graph_logical_links.sql](rest-api/templates/sql/graph_logical_links.sql).
 
 **`--split` (large files):** `convert-xml --batch --split` chunks each file's Phase 1
 at top-level branch boundaries (the heavy `StepsForScripts` and `DDR_INFO` branches

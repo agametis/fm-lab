@@ -24,8 +24,13 @@
 --   Drift-Indikator herangezogen wird. build_resolutions.sql bewusst NICHT
 --   enthalten, weil es nur abgeleitete Tabellen anlegt.
 
--- @SCHEMA_VERSION 1.4.0
--- @SCHEMA_VERSION_DATE 2026-06-18
+-- @SCHEMA_VERSION 1.4.1
+-- @SCHEMA_VERSION_DATE 2026-06-23
+-- @SCHEMA_CHANGELOG 1.4.1: CalcsForCustomFunctions auch für SaXML v2.3.0.0 (FM 26+),
+--   wo <Calculation> in <CustomFunction> eingebettet ist statt in einer separaten
+--   <CalcsForCustomFunctions>-Sektion. Struktur-tolerante Doppel-Extraktion (Legacy +
+--   Embedded) aus EINEM CustomFunctionsCatalog-Parse; keine Versions-Weiche. Additiv.
+--   Siehe project/bugreports/2026-06-23_Philipp-Puls_CustomFunctions_v26.md.
 -- @SCHEMA_CHANGELOG 1.4.0: Paket A (v4) — neue Tabellen FileAccessAuthorizations,
 --   CustomMenuSetCatalog, LibraryReferences (additiv; bestehende 41 Tabellen unverändert).
 --   + CustomMenuSet im ObjectCatalog + CustomMenuSet→CustomMenu (contains_menu) in ObjectLinks.
@@ -882,18 +887,20 @@ CREATE TABLE IF NOT EXISTS CustomFunctionsCatalog (
     PRIMARY KEY (CF_UUID, File_Name)
 );
 
-WITH filename_normalized AS (
-    SELECT getvariable('fm_file') as File_Name
-)
-INSERT INTO CustomFunctionsCatalog
+-- Ein einziger Parse des CustomFunctionsCatalog-Zweigs, einmal materialisiert und
+-- unten doppelt genutzt: für den Katalog UND (ab SaXML v2.3.0.0 / FM 26+) für die
+-- eingebetteten Formelkörper. So kostet der Embedded-Pfad keinen zusätzlichen XML-Parse.
+-- Die Spalte `Calculation` ist NULL für SaXML ≤ v2.2.x (FM ≤ 22) — dort liegen die
+-- Formeln in einer separaten Top-Level-Sektion <CalcsForCustomFunctions> (weiter unten).
+CREATE OR REPLACE TEMP TABLE _cf_catalog_raw AS
 SELECT
     id AS CF_ID,
     name AS CF_Name,
     Display AS CF_Display,
     UUID->>'#text' AS CF_UUID,
     [p.name for p in ObjectList.Parameter] AS Parameters,
-    NULL AS DDR_Hash,  -- Wird später von CalcsForCustomFunctions aktualisiert
-    fn.File_Name as File_Name
+    Calculation,
+    getvariable('fm_file') AS File_Name
 FROM read_xml(
     getvariable('fm_xml'),
     root_element='CustomFunctionsCatalog',
@@ -906,10 +913,21 @@ FROM read_xml(
         'name': 'VARCHAR',
         'Display': 'VARCHAR',
         'UUID': 'STRUCT("#text" VARCHAR, "modifications" BIGINT, "userName" VARCHAR, "timestamp" VARCHAR)',
-        'ObjectList': 'STRUCT(Parameter STRUCT(name VARCHAR)[])'
+        'ObjectList': 'STRUCT(Parameter STRUCT(name VARCHAR)[])',
+        'Calculation': 'STRUCT("Text" VARCHAR, "DDRREF" STRUCT("kind" VARCHAR, "hash" VARCHAR, "#text" VARCHAR))'
     }
-)
-CROSS JOIN filename_normalized fn
+);
+
+INSERT INTO CustomFunctionsCatalog
+SELECT
+    CF_ID,
+    CF_Name,
+    CF_Display,
+    CF_UUID,
+    Parameters,
+    NULL AS DDR_Hash,  -- Wird später von CalcsForCustomFunctions aktualisiert
+    File_Name
+FROM _cf_catalog_raw
 ON CONFLICT (CF_UUID, File_Name) DO UPDATE SET
     CF_ID = EXCLUDED.CF_ID,
     CF_Name = EXCLUDED.CF_Name,
@@ -978,6 +996,28 @@ ON CONFLICT (CF_UUID, File_Name) DO UPDATE SET
     Code_Chunks = EXCLUDED.Code_Chunks,
     DDR_Hash = EXCLUDED.DDR_Hash,
     DDR_UUID = EXCLUDED.DDR_UUID;
+
+
+-- Embedded-Pfad SaXML v2.3.0.0 (FM 26+): <Calculation> ist direkt in jedes
+-- <CustomFunction> eingebettet; die separate <CalcsForCustomFunctions>-Sektion entfällt.
+-- Quelle ist das oben bereits geparste _cf_catalog_raw → KEIN zusätzlicher XML-Parse.
+-- Code_Chunks = NULL: das eingebettete <Calculation> trägt keine <ChunkList> (verifiziert
+-- an xml-test/v26/Ooe.xml) — die Chunks bleiben über DDR_Hash → DDR_Calculations erreichbar.
+-- ON CONFLICT DO NOTHING: trägt eine Datei je beide Formen, gewinnt der Legacy-Pfad oben
+-- (kein Datenverlust). Bei FM ≤ 22 ist Calculation NULL → 0 Zeilen, also ein No-Op.
+INSERT INTO CalcsForCustomFunctions
+SELECT
+    CF_ID,
+    CF_Name,
+    CF_UUID,
+    replace(Calculation.Text, chr(127), chr(10)) AS Calculation_Code,
+    NULL::STRUCT(type VARCHAR, content VARCHAR)[] AS Code_Chunks,
+    Calculation.DDRREF.hash AS DDR_Hash,
+    regexp_replace(Calculation.DDRREF."#text", '^_', '') AS DDR_UUID,
+    File_Name
+FROM _cf_catalog_raw
+WHERE Calculation IS NOT NULL AND Calculation.Text IS NOT NULL
+ON CONFLICT (CF_UUID, File_Name) DO NOTHING;
 
 
 -- Update CustomFunctionsCatalog with DDR_Hash from CalcsForCustomFunctions

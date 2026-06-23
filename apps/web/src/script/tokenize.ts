@@ -1,7 +1,7 @@
 // Token-Renderer-Logik: aus rohem Text + Ref-Liste eine Sequenz von
 // gefärbten Spans bauen.
 //
-// Kern-Algorithmus (siehe PRD §6.1):
+// Kern-Algorithmus:
 //   1. Refs nach Match-Länge absteigend sortieren (Substring-Konflikte vermeiden)
 //   2. Pro Ref alle Vorkommen finden, bereits-belegte Spans tracken
 //   3. Field-Lookback: "Tab::Name" zusammenfassen, wenn Ref nur "Name" matcht

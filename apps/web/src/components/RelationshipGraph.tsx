@@ -90,7 +90,7 @@ export const RelationshipGraph = forwardRef<RelationshipGraphHandle, Props>(({ d
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.file]);
 
-  // Auto-Pan: selektierte TO ins Sichtfeld bringen, falls außerhalb (PRD F13).
+  // Auto-Pan: selektierte TO ins Sichtfeld bringen, falls außerhalb.
   useEffect(() => {
     if (!search.selectedUuid || !containerRef.current) return;
     const to = tosByUuid.get(search.selectedUuid);

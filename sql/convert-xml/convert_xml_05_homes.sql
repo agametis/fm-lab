@@ -144,3 +144,75 @@ ON CONFLICT (TO_UUID, File_Name) DO NOTHING;
 
 CREATE INDEX IF NOT EXISTS idx_tor_to_uuid ON TableOccurrenceResolution(TO_UUID);
 CREATE INDEX IF NOT EXISTS idx_tor_file    ON TableOccurrenceResolution(File_Name);
+
+
+-- ============================================================================
+-- Graph-Views: LogicalLinks + ClusterEdges (Plan plan_graphify_cluster_v2.md §3)
+-- ============================================================================
+-- EINE View-Definition als Single Source of Truth für den "logischen" Graphen.
+-- Konsumenten: graph_export_logical.sql (Cluster-Engine-Input edges.csv),
+-- die Skill-Grad-/Hub-Analyse (fm-graph-cluster), und perspektivisch der
+-- Graph-Explorer (graph_subgraph.sql). Vor v2 lebte diese Logik 3× inline
+-- dupliziert (Export, Subgraph, Skill-Adhoc) und driftete dadurch auseinander
+-- — die Skill-Hub-Analyse rechnete auf rohem ObjectLinks und meldete God-Nodes,
+-- die im tatsächlich geclusterten Graphen gar nicht so existieren.
+--
+-- WARUM IN P5: P5 ist table-only (kein read_xml), batch-weit und läuft NACH P4
+-- (das ObjectCatalog/ObjectLinks erzeugt) — die View-Abhängigkeiten sind erfüllt.
+-- Eine View materialisiert nichts (nur gespeicherte Query) → kein Speicher-/
+-- Laufzeit-Kostenpunkt im Build. cluster.sh ruft den Export mit -readonly auf
+-- (CREATE VIEW ginge dort nicht); P5 ist der ohnehin schreibende Lauf. Die Views
+-- werden vom convert-xml-Sync automatisch in die READ_ONLY-API-Kopie gespiegelt.
+--
+-- KANONISCHE QUELLE: rest-api/templates/sql/graph_logical_links.sql (v1.1.0).
+-- Diese LogicalLinks-Definition MUSS mit jener Datei deckungsgleich bleiben;
+-- bei Änderung beide Stellen synchron halten (Drift bricht die Cluster-Färbung).
+
+-- LogicalLinks — operationale Referenz-Kanten, Sub-Objekte auf ihren Container
+-- hochgezogen, Containment-Gerüst + Waisen verworfen, (a,b)-dedupliziert. MIT
+-- Builtins (and/or/Case …) — der Builtin-Filter sitzt erst in ClusterEdges.
+CREATE OR REPLACE VIEW LogicalLinks AS
+WITH container AS (
+  -- Sub-Objekt-UUID → Top-Level-Container-UUID (ein direkter Hop, keine Rekursion)
+  SELECT Source_UUID AS child, Target_UUID AS parent
+  FROM ObjectLinks
+  WHERE Link_Role IN ('parent_layout', 'parent_script')
+),
+hoisted AS (
+  SELECT
+    COALESCE(cs.parent, ol.Source_UUID) AS a,
+    COALESCE(ct.parent, ol.Target_UUID) AS b,
+    ol.Link_Role,
+    ol.Link_Subrole,
+    ol.Link_Type,
+    ol.Is_Cross_File
+  FROM ObjectLinks ol
+  LEFT JOIN container cs ON cs.child = ol.Source_UUID
+  LEFT JOIN container ct ON ct.child = ol.Target_UUID
+  WHERE ol.Link_Type = 'operational'
+    -- Containment-Gerüst raus (parent_table bleibt: echte Field→BaseTable-Referenz)
+    AND ol.Link_Role NOT IN
+        ('parent_layout', 'parent_script', 'parent_object', 'parent_folder')
+    -- Waisen raus (LE-4): beide Endpunkte müssen katalogisiert sein
+    AND ol.Source_UUID IN (SELECT Object_UUID FROM ObjectCatalog)
+    AND ol.Target_UUID IN (SELECT Object_UUID FROM ObjectCatalog)
+)
+SELECT DISTINCT
+  a            AS Source_UUID,
+  b            AS Target_UUID,
+  Link_Role,
+  Link_Subrole,
+  Link_Type,
+  Is_Cross_File
+FROM hoisted
+WHERE a <> b;   -- durch Hochziehen entstandene Selbst-Schleifen verwerfen
+
+-- ClusterEdges — Cluster-Kantensatz = LogicalLinks minus Builtins,
+-- (source,target)-dedupliziert. EXAKT die Engine-Eingabe (edges.csv) und die
+-- "logische Grad"-Definition der Skill-Hub-Analyse. Builtins sind God-Nodes,
+-- die Communities verschmelzen würden → für das Clustering ausgeschlossen.
+CREATE OR REPLACE VIEW ClusterEdges AS
+SELECT DISTINCT Source_UUID, Target_UUID
+FROM LogicalLinks
+WHERE Source_UUID NOT IN (SELECT Object_UUID FROM ObjectCatalog WHERE Object_Type = 'BuiltinFunction')
+  AND Target_UUID NOT IN (SELECT Object_UUID FROM ObjectCatalog WHERE Object_Type = 'BuiltinFunction');

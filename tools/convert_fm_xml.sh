@@ -149,6 +149,23 @@ if [ -z "${FM_BASH_REEXECED:-}" ] && [ "${BASH_VERSINFO:-0}" -lt 4 ] && [ "${FM_
     # No bash 4+ found → continue on the current (3.2) bash; the code below is 3.2-safe.
 fi
 
+# Force a dot decimal separator for ALL numeric formatting. The script computes
+# durations with awk and renders them with the bash `printf` builtin (e.g.
+# `printf '%11.3fs' "$dur"` in the batch summary). The bash builtin parses %f
+# input via the active locale's decimal_point — under a comma locale (de_DE,
+# fr_FR, …) it rejects the dot-decimal "0.248" with `printf: invalid number`
+# and truncates the value. We pin LC_NUMERIC=C (not LC_ALL=C — that would also
+# change LC_CTYPE/collation and affect non-ASCII filenames). Because a present
+# LC_ALL outranks LC_NUMERIC, re-express it into the individual categories first
+# (preserving the user's effective locale everywhere except numbers), then drop
+# it — so the guard holds whether the comma locale comes via LANG or LC_ALL.
+if [ -n "${LC_ALL:-}" ]; then
+    export LC_CTYPE="$LC_ALL" LC_COLLATE="$LC_ALL" LC_TIME="$LC_ALL" \
+           LC_MESSAGES="$LC_ALL" LC_MONETARY="$LC_ALL"
+    unset LC_ALL
+fi
+export LC_NUMERIC=C
+
 CONVERTER_VERSION="2.2.0"
 PROJECT_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel 2>/dev/null || (cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd))"
 # Six-phase pipeline. Phase 1 (extraction, the only XML-reading phase) and Phase 2
@@ -3401,6 +3418,7 @@ add_finding() {
     case "$2" in
         warn)  POSTCHECK_WARN=$((POSTCHECK_WARN + 1)); emit_warn "[check:$1] $3 — $4" ;;
         error) emit_error "[check:$1] $3 — $4" ;;
+        info)  emit_log "[check:$1] $3 — $4" ;;  # visible, non-fatal, NOT counted as warn
     esac
     if $QUIET_MODE; then
         _emit_json check category "$1" severity "$2" message "$3" hint "$4"
@@ -3458,13 +3476,23 @@ postprocess_db() {
         add_finding consistency warn "$c1 DDR_Calculations-Zeile(n) mit leerer/NULL Calc_UUID" "ObjectList-Element-Form prüfen (Calc_UUID-Slot-Regex in convert_xml_01_extract.sql)"
     fi
 
-    # Orphan-UUID sampling (sample ≤100, same-file): ObjectLinks targets without
-    # an ObjectCatalog entry. Cross-file links are excluded — their target may
-    # legitimately live in a (not yet) imported file.
+    # Orphan same-file link targets (true count, no cap): ObjectLinks targets
+    # without an ObjectCatalog entry. Cross-file links are excluded (they resolve
+    # cleanly). Severity is gated on corpus completeness: on an INCOMPLETE corpus
+    # (referenced external files not imported) such orphans are EXPECTED — refs
+    # point into files whose objects live in no catalog → report as info, not warn.
+    # Only on a complete corpus (missing_ext_files=0) do orphans signal genuine
+    # dangling references / an integrity problem.
     CHECKS_RUN=$((CHECKS_RUN + 1))
-    local orphans; orphans=$(pp_num "SELECT orphan_n FROM v_check_orphan_links")
+    local orphans missing_ext
+    orphans=$(pp_num "SELECT orphan_n FROM v_check_orphan_links")
+    missing_ext=$(pp_num "SELECT missing_ext_files FROM v_check_orphan_links")
     if [ "$orphans" -gt 0 ]; then
-        add_finding consistency warn "$orphans verwaiste Same-File-Link-Ziel(e) (Stichprobe ≤100) fehlen in ObjectCatalog" "Referenzielle Integrität prüfen (relevant bei --split)"
+        if [ "$missing_ext" -gt 0 ]; then
+            add_finding consistency info "$orphans verwaiste Referenz-Ziel(e) — erwartbar: $missing_ext referenzierte externe Datei(en) nicht importiert (Teil-Korpus)" "Für vollständige Auflösung alle referenzierten FileMaker-Dateien nach xml/ importieren"
+        else
+            add_finding consistency warn "$orphans verwaiste Same-File-Link-Ziel(e) fehlen in ObjectCatalog (Korpus vollständig)" "Echte tote Referenzen — referenzielle Integrität prüfen"
+        fi
     fi
 
     # Schema consistency: DB SchemaInfo == template version (double-check of the detection)

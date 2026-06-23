@@ -1,0 +1,84 @@
+{
+  "title": "グラフエクスプローラー",
+  "emptyFocus": "詳細ビューからグラフエクスプローラーでオブジェクトを開く（またはノードをダブルクリックする）と、その依存関係グラフを探索できます。",
+  "loading": "グラフを読み込み中…",
+  "truncated": "到達可能な {{total}} 件のうち {{kept}} 件のノードを表示中 — 深さを下げるか、タイプフィルターを絞るとすべて表示されます。",
+  "stats": {
+    "nodes": "{{count}} ノード",
+    "nodes_other": "{{count}} ノード",
+    "edges": "{{count}} エッジ",
+    "edges_other": "{{count}} エッジ",
+    "communities": "{{count}} コミュニティ",
+    "communities_other": "{{count}} コミュニティ"
+  },
+  "toolbar": {
+    "fit": "フィット",
+    "relayout": "再配置",
+    "exportPng": "PNG をエクスポート",
+    "fullscreen": "全画面",
+    "fullscreenTitle": "完全なグラフエクスプローラーで開く"
+  },
+  "inspect": {
+    "ariaLabel": "選択したノードの詳細",
+    "type": "タイプ",
+    "file": "ファイル",
+    "degree": "次数",
+    "depth": "深さ",
+    "role": "役割",
+    "hub": "ハブ",
+    "community": "コミュニティ",
+    "setFocus": "フォーカスに設定",
+    "expand": "1 ホップ展開",
+    "expanding": "展開中…",
+    "collapseHub": "ハブを折りたたむ",
+    "openDetails": "詳細で開く",
+    "neighbors": "隣接 ({{count}})",
+    "noNeighbors": "現在のグラフに隣接ノードはありません。",
+    "uses": "使用する",
+    "usedBy": "使用される",
+    "focus": "フォーカス"
+  },
+  "filter": {
+    "ariaLabel": "グラフフィルター",
+    "focus": "フォーカスオブジェクト",
+    "noFocus": "フォーカス未選択",
+    "nameFilter": "表示をフィルター",
+    "nameFilterPlaceholder": "名前でノードをフィルター…",
+    "clearNameFilter": "フィルターをクリア",
+    "file": "ファイル",
+    "allFiles": "すべてのファイル",
+    "filterMode": "非一致",
+    "filterModes": {
+      "dim": "薄く表示",
+      "hide": "非表示"
+    },
+    "filterModeHints": {
+      "dim": "非一致を薄く表示（表示は維持）",
+      "hide": "非一致を非表示にする"
+    },
+    "depth": "深さ",
+    "direction": "方向",
+    "directions": {
+      "out": "使用する",
+      "in": "使用される",
+      "both": "両方"
+    },
+    "directionHints": {
+      "out": "フォーカスが使用するもの",
+      "in": "フォーカスを使用するもの",
+      "both": "フォーカスからの両方向"
+    },
+    "types": "ノードタイプ",
+    "showAllTypes": "すべて表示",
+    "colorMode": "配色",
+    "colorModes": {
+      "type": "タイプ",
+      "community": "コミュニティ"
+    },
+    "colorModeHints": {
+      "type": "オブジェクトタイプでノードを配色",
+      "community": "検出されたモジュール（コミュニティ）でノードを配色"
+    },
+    "communityUnnamed": "コミュニティ {{id}}"
+  }
+}

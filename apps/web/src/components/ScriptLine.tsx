@@ -26,7 +26,7 @@ export const ScriptLine: React.FC<ScriptLineProps> = React.memo(({
   const isFoldable = !!foldStarts && foldStarts.length > 0;
   const role = getStepRole(line.stepName);
   const stepClass = line.stepName ? `fm-step--${stepNameClass(line.stepName)}` : '';
-  // Cross-Reference-Highlight (PRD prd_pseudo_object_types_filter.md §6.4):
+  // Cross-Reference-Highlight:
   // wenn das back_references-Match-Set diese Step-UUID enthält (z.B. weil
   // Origin = ScriptStepType "Set Variable"), bekommt die Zeile eine
   // orange Outline — analog zum LayoutCanvas-Highlight.

@@ -18,7 +18,7 @@ export async function fetchScriptTokens(
 ): Promise<ScriptTokens> {
   // ?enrich=<lang> liefert pro Script-Step die Reference-Daten
   // (stepDisplayName, stepDescription, stepHelpUrl etc.) und reichert
-  // function-Refs in Calcs an (PRD §5.1 + §5.2).
+  // function-Refs in Calcs an.
   const params = new URLSearchParams({ uuid, format: 'tokens', enrich: lang });
   const response = await fetch(`${baseUrl}/api/get-details?${params}`);
 

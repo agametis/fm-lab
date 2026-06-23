@@ -11,7 +11,7 @@ import { buildObjectPath } from '../lib/navigation';
 type Props = {
   data: LayoutData;
   /**
-   * Cross-Reference Highlight (PRD prd_cross_references_hilite.md §7.2):
+   * Cross-Reference Highlight:
    * Externe UUID-Vorauswahl, die als weicher Filter wirkt, solange der User
    * nicht selbst sucht oder einen Typ-Filter setzt.
    */
@@ -44,7 +44,7 @@ const PAN_MARGIN = 40;
 
 type ViewTransform = { tx: number; ty: number; scale: number };
 
-// Cross-Nav-Subset gemäß PRD §6.1.
+// Cross-Nav-Subset.
 const FIELD_NAV_TYPES = new Set([
   'Edit Box', 'Drop-down List', 'Drop-down Calendar', 'Pop-up Menu',
   'Radio Button Set', 'Checkbox Set', 'Concealed Edit Box', 'Container',
@@ -135,7 +135,7 @@ export const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(({ data, exter
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.layoutName]);
 
-  // Auto-Pan auf selektiertes Objekt — gleiche Logik wie RelationshipGraph (PRD F29).
+  // Auto-Pan auf selektiertes Objekt — gleiche Logik wie RelationshipGraph.
   useEffect(() => {
     if (!search.selectedUuid || !containerRef.current) return;
     const o = objectsByUuid.get(search.selectedUuid);
@@ -198,7 +198,7 @@ export const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(({ data, exter
 
   const handleObjectClick = (o: LayoutObject) => {
     const target = resolveCrossNavTarget(o);
-    // PRD §7.4: Layout-UUID als Origin mitgeben — beim Sprung zum Field/Script
+    // Layout-UUID als Origin mitgeben — beim Sprung zum Field/Script
     // weiß der Ziel-View, woher der Klick kam.
     navigate(buildObjectPath(target, currentUuid ?? null));
   };

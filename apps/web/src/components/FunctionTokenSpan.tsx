@@ -13,7 +13,7 @@ interface FunctionTokenSpanProps {
 
 /**
  * Renderer für Calc-Tokens vom Type `function` mit Reference-DB-Anreicherung
- * (PRD §5.2). Zeigt einen Hover-Tooltip mit lokalisiertem Namen, Signatur,
+ *. Zeigt einen Hover-Tooltip mit lokalisiertem Namen, Signatur,
  * Zweck und einem Link zur lokalen Claris-Hilfe.
  *
  * Tooltip-Strategie:
@@ -31,7 +31,7 @@ export const FunctionTokenSpan: React.FC<FunctionTokenSpanProps> = ({ token, tex
   const isEnriched = typeof token.functionId === 'number';
   const displayText = text ?? token.content;
 
-  // Cross-Navigation zur BuiltinFunction-Detail-Seite (PRD pseudo_object_types §5)
+  // Cross-Navigation zur BuiltinFunction-Detail-Seite
   // wenn das Backend eine synthetische UUID am Token mitliefert. Popover bleibt
   // unverändert — onClick und Hover existieren parallel.
   const navPath = token.uuid

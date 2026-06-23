@@ -1,0 +1,84 @@
+{
+  "title": "Graafverkenner",
+  "emptyFocus": "Open een object vanuit de detailweergave in de Graafverkenner (of dubbelklik op een knoop) om de afhankelijkheidsgraaf te verkennen.",
+  "loading": "Graaf laden…",
+  "truncated": "{{kept}} van {{total}} bereikbare knopen weergegeven — verlaag de diepte of beperk het typefilter om ze allemaal te tonen.",
+  "stats": {
+    "nodes": "{{count}} knoop",
+    "nodes_other": "{{count}} knopen",
+    "edges": "{{count}} verbinding",
+    "edges_other": "{{count}} verbindingen",
+    "communities": "{{count}} community",
+    "communities_other": "{{count}} communities"
+  },
+  "toolbar": {
+    "fit": "Passend",
+    "relayout": "Herschikken",
+    "exportPng": "PNG exporteren",
+    "fullscreen": "Volledig scherm",
+    "fullscreenTitle": "Openen in de volledige Graafverkenner"
+  },
+  "inspect": {
+    "ariaLabel": "Details van geselecteerde knoop",
+    "type": "Type",
+    "file": "Bestand",
+    "degree": "Graad",
+    "depth": "Diepte",
+    "role": "Rol",
+    "hub": "Hub",
+    "community": "Community",
+    "setFocus": "Als focus instellen",
+    "expand": "1 stap uitbreiden",
+    "expanding": "Uitbreiden…",
+    "collapseHub": "Hub inklappen",
+    "openDetails": "In details openen",
+    "neighbors": "Buren ({{count}})",
+    "noNeighbors": "Geen buren in de huidige graaf.",
+    "uses": "gebruikt",
+    "usedBy": "gebruikt door",
+    "focus": "Focus"
+  },
+  "filter": {
+    "ariaLabel": "Graaffilters",
+    "focus": "Focusobject",
+    "noFocus": "Geen focus geselecteerd",
+    "nameFilter": "Weergave filteren",
+    "nameFilterPlaceholder": "Knopen op naam filteren…",
+    "clearNameFilter": "Filter wissen",
+    "file": "Bestand",
+    "allFiles": "Alle bestanden",
+    "filterMode": "Niet-overeenkomend",
+    "filterModes": {
+      "dim": "Dimmen",
+      "hide": "Verbergen"
+    },
+    "filterModeHints": {
+      "dim": "Niet-overeenkomende dimmen (blijven zichtbaar)",
+      "hide": "Niet-overeenkomende verwijderen"
+    },
+    "depth": "Diepte",
+    "direction": "Richting",
+    "directions": {
+      "out": "Gebruikt",
+      "in": "Gebruikt door",
+      "both": "Beide"
+    },
+    "directionHints": {
+      "out": "Wat de focus gebruikt",
+      "in": "Wat gebruikmaakt van de focus",
+      "both": "Beide richtingen vanaf de focus"
+    },
+    "types": "Knooptypen",
+    "showAllTypes": "alles tonen",
+    "colorMode": "Kleuring",
+    "colorModes": {
+      "type": "Type",
+      "community": "Community"
+    },
+    "colorModeHints": {
+      "type": "Knopen kleuren op objecttype",
+      "community": "Knopen kleuren op gedetecteerde module (community)"
+    },
+    "communityUnnamed": "Community {{id}}"
+  }
+}

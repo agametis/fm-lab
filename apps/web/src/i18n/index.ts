@@ -26,6 +26,7 @@ import enDetail    from './locales/en/detail.json';
 import enErrors    from './locales/en/errors.json';
 import enTypes     from './locales/en/types.json';
 import enDashboard from './locales/en/dashboard.json';
+import enExplorer  from './locales/en/explorer.json';
 
 import deCommon    from './locales/de/common.json';
 import deNav       from './locales/de/nav.json';
@@ -33,6 +34,7 @@ import deDetail    from './locales/de/detail.json';
 import deErrors    from './locales/de/errors.json';
 import deTypes     from './locales/de/types.json';
 import deDashboard from './locales/de/dashboard.json';
+import deExplorer  from './locales/de/explorer.json';
 
 import esCommon    from './locales/es/common.json';
 import esNav       from './locales/es/nav.json';
@@ -97,9 +99,20 @@ import zhHansErrors    from './locales/zh-Hans/errors.json';
 import zhHansTypes     from './locales/zh-Hans/types.json';
 import zhHansDashboard from './locales/zh-Hans/dashboard.json';
 
+// Explorer namespace for the remaining languages (de/en imported above).
+import esExplorer     from './locales/es/explorer.json';
+import frExplorer     from './locales/fr/explorer.json';
+import itExplorer     from './locales/it/explorer.json';
+import nlExplorer     from './locales/nl/explorer.json';
+import ptExplorer     from './locales/pt/explorer.json';
+import svExplorer     from './locales/sv/explorer.json';
+import jaExplorer     from './locales/ja/explorer.json';
+import koExplorer     from './locales/ko/explorer.json';
+import zhHansExplorer from './locales/zh-Hans/explorer.json';
+
 export const LANGUAGE_STORAGE_KEY = 'fmlab.lang';
 
-export const I18N_NAMESPACES = ['common', 'nav', 'detail', 'errors', 'types', 'dashboard'] as const;
+export const I18N_NAMESPACES = ['common', 'nav', 'detail', 'errors', 'types', 'dashboard', 'explorer'] as const;
 
 const resources = {
   en: {
@@ -109,6 +122,7 @@ const resources = {
     errors:    enErrors,
     types:     enTypes,
     dashboard: enDashboard,
+    explorer:  enExplorer,
   },
   de: {
     common:    deCommon,
@@ -117,6 +131,7 @@ const resources = {
     errors:    deErrors,
     types:     deTypes,
     dashboard: deDashboard,
+    explorer:  deExplorer,
   },
   es: {
     common:    esCommon,
@@ -125,6 +140,7 @@ const resources = {
     errors:    esErrors,
     types:     esTypes,
     dashboard: esDashboard,
+    explorer:  esExplorer,
   },
   fr: {
     common:    frCommon,
@@ -133,6 +149,7 @@ const resources = {
     errors:    frErrors,
     types:     frTypes,
     dashboard: frDashboard,
+    explorer:  frExplorer,
   },
   it: {
     common:    itCommon,
@@ -141,6 +158,7 @@ const resources = {
     errors:    itErrors,
     types:     itTypes,
     dashboard: itDashboard,
+    explorer:  itExplorer,
   },
   nl: {
     common:    nlCommon,
@@ -149,6 +167,7 @@ const resources = {
     errors:    nlErrors,
     types:     nlTypes,
     dashboard: nlDashboard,
+    explorer:  nlExplorer,
   },
   pt: {
     common:    ptCommon,
@@ -157,6 +176,7 @@ const resources = {
     errors:    ptErrors,
     types:     ptTypes,
     dashboard: ptDashboard,
+    explorer:  ptExplorer,
   },
   sv: {
     common:    svCommon,
@@ -165,6 +185,7 @@ const resources = {
     errors:    svErrors,
     types:     svTypes,
     dashboard: svDashboard,
+    explorer:  svExplorer,
   },
   ja: {
     common:    jaCommon,
@@ -173,6 +194,7 @@ const resources = {
     errors:    jaErrors,
     types:     jaTypes,
     dashboard: jaDashboard,
+    explorer:  jaExplorer,
   },
   ko: {
     common:    koCommon,
@@ -181,6 +203,7 @@ const resources = {
     errors:    koErrors,
     types:     koTypes,
     dashboard: koDashboard,
+    explorer:  koExplorer,
   },
   'zh-Hans': {
     common:    zhHansCommon,
@@ -189,6 +212,7 @@ const resources = {
     errors:    zhHansErrors,
     types:     zhHansTypes,
     dashboard: zhHansDashboard,
+    explorer:  zhHansExplorer,
   },
 };
 

@@ -1,7 +1,7 @@
 import { API_BASE } from '../config/apiBase';
 // CustomFunction Tokens API — Fetch wrapper für /api/get-details?format=tokens&enrich=<lang>
 // Liefert die strukturierte Token-Sequenz inkl. Reference-DB-Anreicherung
-// für Tokens vom Type `function` (siehe rest-api PRD §5.2).
+// für Tokens vom Type `function`.
 
 import type { CustomFunctionTokens } from '../script/calcTokens';
 

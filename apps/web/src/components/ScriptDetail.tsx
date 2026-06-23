@@ -8,7 +8,7 @@ import { ErrorMessage } from './ErrorMessage';
 
 interface ScriptDetailProps {
   uuid: string;
-  /** Cross-reference highlight (PRD §7.2): highlight tokens that match these UUIDs. */
+  /** Cross-reference highlight: highlight tokens that match these UUIDs. */
   highlightRefUuids?: Set<string> | null;
   /** Reicht die im ScriptViewer gezählten Highlight-Treffer hoch zur RefOriginPill. */
   onLiveMatchCount?: (count: number) => void;

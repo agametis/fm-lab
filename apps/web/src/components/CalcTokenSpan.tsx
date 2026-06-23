@@ -61,7 +61,7 @@ export const CalcTokenSpan: React.FC<{ token: CalcToken }> = ({ token }) => {
         </span>
       );
     case 'pluginFunction':
-      // Cross-Navigation zur PluginFunction-Detail-Seite (PRD pseudo_object_types §5).
+      // Cross-Navigation zur PluginFunction-Detail-Seite.
       // Popover (Plugin-Doku) wird vom übergeordneten CustomFunctionViewer/
       // FieldViewer nicht über CalcTokenSpan dargestellt — wir bleiben hier
       // bei einem einfachen Link-Wrapper.

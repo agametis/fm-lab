@@ -34,18 +34,34 @@ SELECT COUNT(*) AS bad_calc_uuid
 FROM DDR_Calculations
 WHERE Calc_UUID = '' OR Calc_UUID IS NULL;
 
--- Orphan-UUID-Stichprobe (≤100, same-file): ObjectLinks-Ziele ohne
--- ObjectCatalog-Eintrag. Cross-File-Links ausgenommen (Ziel kann legitim in
--- einer noch nicht importierten Datei liegen). Relevant v.a. bei --split.
+-- Verwaiste Same-File-Link-Ziele: ObjectLinks-Ziele ohne ObjectCatalog-Eintrag.
+-- Cross-File-Links sind ausgenommen (die lösen sauber auf). Ziel: ECHTE Zahl,
+-- KEIN Cap — der frühere `LIMIT 100` machte aus einem realen 1.877 ein "100"
+-- und verschleierte die Größenordnung.
+--
+-- Wichtige Unterscheidung (Schweregrad macht die Shell): Auf einem UNVOLLSTÄNDIGEN
+-- Mehrdatei-Korpus sind solche Orphans ERWARTBAR — Referenzen (Relationship-
+-- Prädikatfelder, displays_field, calls_script, Import-/Export-Mappings) zeigen in
+-- externe Dateien, die nicht mit-importiert wurden; deren Objekte stehen in keinem
+-- Katalog. `missing_ext_files` liefert genau diesen Kontext: referenzierte externe
+-- FileMaker-Dateien (ExternalDataSourceCatalog), die nicht in FilesCatalog sind.
+-- Erst wenn missing_ext_files = 0 (Korpus vollständig) deuten Orphans auf echte
+-- tote Referenzen / ein Integritätsproblem. (Nicht primär ein --split-Effekt.)
 CREATE OR REPLACE VIEW v_check_orphan_links AS
-SELECT COUNT(*) AS orphan_n FROM (
-    SELECT DISTINCT Target_UUID
-    FROM ObjectLinks
-    WHERE Target_UUID IS NOT NULL AND Target_UUID <> ''
-      AND COALESCE(Is_Cross_File, FALSE) = FALSE
-      AND Target_UUID NOT IN (SELECT Object_UUID FROM ObjectCatalog)
-    LIMIT 100
-);
+SELECT
+    (SELECT COUNT(*) FROM (
+        SELECT DISTINCT Target_UUID
+        FROM ObjectLinks
+        WHERE Target_UUID IS NOT NULL AND Target_UUID <> ''
+          AND COALESCE(Is_Cross_File, FALSE) = FALSE
+          AND Target_UUID NOT IN (SELECT Object_UUID FROM ObjectCatalog)
+    )) AS orphan_n,
+    (SELECT COUNT(*) FROM (
+        SELECT DISTINCT regexp_replace(DS_Name, '\.fmp12$', '') AS ref_file
+        FROM ExternalDataSourceCatalog
+        WHERE (DS_Type ILIKE '%FileMaker%' OR DS_Type IS NULL)
+          AND DS_Name IS NOT NULL AND DS_Name <> ''
+    ) ref WHERE ref.ref_file NOT IN (SELECT File_Name FROM FilesCatalog)) AS missing_ext_files;
 
 -- Schema-Stand der DB (aktuellste SchemaInfo-Zeile). Die Shell vergleicht die
 -- Version gegen die Template-Version (@SCHEMA_VERSION) — die liegt nur im Shell-

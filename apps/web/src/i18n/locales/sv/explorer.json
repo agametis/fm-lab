@@ -1,0 +1,84 @@
+{
+  "title": "Grafutforskare",
+  "emptyFocus": "Öppna ett objekt från dess detaljvy i Grafutforskaren (eller dubbelklicka på en nod) för att utforska dess beroendegraf.",
+  "loading": "Läser in grafen…",
+  "truncated": "Visar {{kept}} av {{total}} nåbara noder — minska djupet eller begränsa typfiltret för att visa alla.",
+  "stats": {
+    "nodes": "{{count}} nod",
+    "nodes_other": "{{count}} noder",
+    "edges": "{{count}} kant",
+    "edges_other": "{{count}} kanter",
+    "communities": "{{count}} community",
+    "communities_other": "{{count}} communities"
+  },
+  "toolbar": {
+    "fit": "Anpassa",
+    "relayout": "Ordna om",
+    "exportPng": "Exportera PNG",
+    "fullscreen": "Helskärm",
+    "fullscreenTitle": "Öppna i den fullständiga Grafutforskaren"
+  },
+  "inspect": {
+    "ariaLabel": "Detaljer för vald nod",
+    "type": "Typ",
+    "file": "Fil",
+    "degree": "Grad",
+    "depth": "Djup",
+    "role": "Roll",
+    "hub": "Hubb",
+    "community": "Community",
+    "setFocus": "Ange som fokus",
+    "expand": "Expandera 1 steg",
+    "expanding": "Expanderar…",
+    "collapseHub": "Fäll ihop hubb",
+    "openDetails": "Öppna i detaljer",
+    "neighbors": "Grannar ({{count}})",
+    "noNeighbors": "Inga grannar i den aktuella grafen.",
+    "uses": "använder",
+    "usedBy": "används av",
+    "focus": "Fokus"
+  },
+  "filter": {
+    "ariaLabel": "Graffilter",
+    "focus": "Fokusobjekt",
+    "noFocus": "Inget fokus valt",
+    "nameFilter": "Filtrera vyn",
+    "nameFilterPlaceholder": "Filtrera noder efter namn…",
+    "clearNameFilter": "Rensa filter",
+    "file": "Fil",
+    "allFiles": "Alla filer",
+    "filterMode": "Icke-träffar",
+    "filterModes": {
+      "dim": "Tona ned",
+      "hide": "Dölj"
+    },
+    "filterModeHints": {
+      "dim": "Tona ned icke-träffar (förblir synliga)",
+      "hide": "Ta bort icke-träffar"
+    },
+    "depth": "Djup",
+    "direction": "Riktning",
+    "directions": {
+      "out": "Använder",
+      "in": "Används av",
+      "both": "Båda"
+    },
+    "directionHints": {
+      "out": "Vad fokus använder",
+      "in": "Vad som använder fokus",
+      "both": "Båda riktningarna från fokus"
+    },
+    "types": "Nodtyper",
+    "showAllTypes": "visa alla",
+    "colorMode": "Färgläggning",
+    "colorModes": {
+      "type": "Typ",
+      "community": "Community"
+    },
+    "colorModeHints": {
+      "type": "Färglägg noder efter objekttyp",
+      "community": "Färglägg noder efter upptäckt modul (community)"
+    },
+    "communityUnnamed": "Community {{id}}"
+  }
+}

@@ -16,7 +16,7 @@ interface RefOriginPillProps {
 }
 
 /**
- * Origin indicator pill for cross-reference highlighting (PRD §7.1).
+ * Origin indicator pill for cross-reference highlighting.
  *
  * Renders a thin strip above the tab bar:
  *   ▶ Reference: <Type> · <Name>    [✕]

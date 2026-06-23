@@ -14,7 +14,7 @@ interface ScriptStepSpanProps {
 
 /**
  * Renderer für den Step-Namen am Anfang einer Script-Zeile mit Reference-DB-
- * Anreicherung (PRD §5.1). Hover zeigt einen Popover mit lokalisiertem Namen,
+ * Anreicherung. Hover zeigt einen Popover mit lokalisiertem Namen,
  * Beschreibung und Link zur lokalen Claris-Hilfe.
  *
  * Tooltip-Strategie (analog FunctionTokenSpan):
@@ -29,7 +29,7 @@ export const ScriptStepSpan: React.FC<ScriptStepSpanProps> = ({ text, line }) =>
   const { uuid: currentScriptUuid } = useParams<{ uuid: string }>();
 
   // Cross-Navigation: Klick auf den Step-Namen führt zur ScriptStepType-
-  // Detail-Seite (PRD prd_pseudo_object_types_filter.md §1.1). Hover-Popover
+  // Detail-Seite. Hover-Popover
   // mit Reference-DB-Doku bleibt unverändert; der Link greift erst beim Klick.
   const stepTypePath = line.stepTypeUuid
     ? buildObjectPath(line.stepTypeUuid, currentScriptUuid ?? null)

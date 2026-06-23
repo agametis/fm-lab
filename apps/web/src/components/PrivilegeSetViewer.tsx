@@ -85,7 +85,6 @@ const RecordCalcFormula: React.FC<{ hash: string | null; fallback: string | null
  * Detail-Renderer für ein Privilege Set: Standard-Rechte (meta) plus die drei
  * Custom-Access-Ebenen. Die Record-Ebene zeigt bei Access_Mode='Calculation'
  * die Formel (klickbare Token + Auswertungskontext), sonst einen Access-Badge.
- * PRD prd_record_privileges_calc_rendering.md §4/§5.
  */
 export const PrivilegeSetViewer: React.FC<PrivilegeSetViewerProps> = ({
   data,

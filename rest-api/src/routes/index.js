@@ -10,6 +10,7 @@ const pluginDocsRoutes = require('./plugin-docs.routes');
 const docsRoutes = require('./docs.routes');
 const xmlRoutes = require('./xml.routes');
 const relationshipGraphRoutes = require('./relationshipGraph.routes');
+const graphRoutes = require('./graph.routes');
 const referenceRoutes = require('./reference.routes');
 const dashboardRoutes = require('./dashboard.routes');
 const { loadPlugins } = require('../plugins/loader');
@@ -45,6 +46,9 @@ router.use('/', xmlRoutes);
 
 // Relationship Graph (/api/relationship-graph/:fileName)
 router.use('/', relationshipGraphRoutes);
+
+// Graph Explorer (/api/graph/subgraph, /neighbors, /search) — P2
+router.use('/', graphRoutes);
 
 // Reference-DB (Script Steps + Functions + Claris-Hilfe-Mirror)
 router.use('/', referenceRoutes);

@@ -20,7 +20,7 @@ export type GraphSearchAPI = {
 /**
  * Steuert Such-Filterung, Selektion und Pre-Select-Modus für das Beziehungsdiagramm.
  *
- * Pre-Select-Modus (PRD §4.4): Eine über `initialPreSelectUuid` (z.B. aus `?to=`-URL-Parameter)
+ * Pre-Select-Modus: Eine über `initialPreSelectUuid` (z.B. aus `?to=`-URL-Parameter)
  * vorgegebene TO bildet die Single-Set-Fundmenge und ist sofort selektiert. Der Modus endet
  * bei Tipp-Eingabe, ESC, exitPreSelect() oder einem Wechsel der TO-Liste.
  */
@@ -78,7 +78,7 @@ export function useGraphSearch(
 
   // Selektion synchronisieren mit Fundmenge:
   //  - matches.length === 1 → diese eine TO automatisch selektieren (deckt auch Pre-Select ab)
-  //  - sonst: Selektion verwerfen, wenn sie nicht mehr Teil der Fundmenge ist (PRD F12)
+  //  - sonst: Selektion verwerfen, wenn sie nicht mehr Teil der Fundmenge ist
   useEffect(() => {
     if (matches.length === 1) {
       const onlyUuid = matches[0].uuid;

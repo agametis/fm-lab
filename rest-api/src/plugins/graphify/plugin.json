@@ -1,0 +1,13 @@
+{
+  "name": "graphify",
+  "version": "1.0.0",
+  "description": "Exports the entire object graph (all objects and their links) as a JSON file into the output/ directory. The file can be fed to graphify, Gephi/yEd or other graph tools.",
+  "enabled": false,
+  "routes_prefix": "/graphify",
+  "public_routes": ["/status"],
+  "config": {},
+  "settings_schema": {},
+  "ui": {
+    "frontend_module": "graphify"
+  }
+}

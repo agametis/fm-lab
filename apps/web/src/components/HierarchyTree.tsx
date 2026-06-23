@@ -107,7 +107,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
   }), []);
 
   const handleReferenceClick = (ref: ReferenceItem) => {
-    // PRD §7.4 + Container-Resolution:
+    // Container-Resolution:
     // - Aktuelles Objekt als Origin mitgeben (Standard-Highlight-Mechanik).
     // - Wenn das Ziel ein Sub-Knoten ist (Container_UUID gesetzt, z.B.
     //   LayoutObject → Layout), wird transparent der Container geöffnet und

@@ -8,13 +8,13 @@ import { ErrorMessage } from './ErrorMessage';
 
 interface FieldDetailProps {
   uuid: string;
-  /** Cross-reference highlight (PRD §7.2): highlight tokens that match these UUIDs. */
+  /** Cross-reference highlight: highlight tokens that match these UUIDs. */
   highlightRefUuids?: Set<string> | null;
 }
 
 /**
  * Wrapper for the token-based field view. Loads
- * `/api/get-details?format=tokens&enrich=<lang>` (PRD §5.2) for fields with
+ * `/api/get-details?format=tokens&enrich=<lang>` for fields with
  * a Calculation or AutoEnter-Calculation formula and renders metadata +
  * token sequence with reference-DB tooltips.
  */

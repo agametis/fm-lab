@@ -29,7 +29,7 @@ interface ApiEnvelope<T> {
 /**
  * DocsEntryView — Function-Volltext-Route /docs/:set/:category/:function
  *
- * Layout (PRD §2):
+ * Layout:
  *   ├─ Header: Hauptnavigation (Zurück), Sprachumschaltung, Darkmode
  *   ├─ Navigationszeile: Breadcrumb (Docs → Set → Category → Function)
  *   ├─ Titel
@@ -37,7 +37,7 @@ interface ApiEnvelope<T> {
  *   ├─ Content (HTML — Markdown wird im Backend vorher konvertiert)
  *   └─ Footer (Quelle / Lizenz / Edit-Link bei Wiki-basierten Sets)
  *
- * Sprachfallback (PRD §6.4): URL ?lang= wird durchgereicht. Backend setzt
+ * Sprachfallback: URL ?lang= wird durchgereicht. Backend setzt
  * X-Docs-Lang-Fallback: <code>, wenn die angeforderte Sprache nicht verfügbar
  * ist; wir zeigen dann einen dezenten Hinweis.
  */
@@ -297,7 +297,7 @@ export const DocsEntryView: React.FC = () => {
       )}
 
       {/* Footer
-       * Inhalt nach PRD §9 Open Point #2: Quellen-Hinweis, "Im Browser öffnen"
+       * Inhalt: Quellen-Hinweis, "Im Browser öffnen"
        * und ein optionaler Edit-Link bei Wiki-basierten Sets. Den Edit-Link
        * bauen wir aus der Online-URL nach GitHub-Wiki-Konvention
        * (`<wiki>/_edit/<slug>`). Andere Quellen liefern keinen Edit-Link.
