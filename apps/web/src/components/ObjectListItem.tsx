@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { components } from '@packages/shared/types';
 import { Slot } from '../plugins';
+import { buildObjectPath } from '../lib/navigation';
 
 type FMObject = components['schemas']['FMObject'];
 
@@ -20,7 +21,9 @@ type FMObjectWithAggregates = FMObject & {
 interface ObjectListItemProps {
   object: FMObject;
   style?: React.CSSProperties;
-  onClick?: (uuid: string) => void;
+  // Klon-Disambiguierung: `file` ist die Zieldatei (File_Name des angeklickten
+  // Objekts), die als `?file=` mitwandert. Optional → Graceful Downgrade.
+  onClick?: (uuid: string, file?: string | null) => void;
   // Wenn gesetzt, klick auf die Category-Pille toggelt diesen Wert in der
   // übergeordneten Filter-Toolbar.
   onCategoryClick?: (category: string) => void;
@@ -67,7 +70,7 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
   const aggObject = object as FMObjectWithAggregates;
   const noName = t('detail:objectListItem.noName') as string;
   const handleClick = () => {
-    onClick?.(object.Object_UUID);
+    onClick?.(object.Object_UUID, object.File_Name ?? null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -144,13 +147,13 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
                 // im default-Detail-Tab. stopPropagation, weil der Row-Click
                 // (parent) zum default-Tab navigiert.
                 e.stopPropagation();
-                navigate(`/object/${object.Object_UUID}?tab=references`);
+                navigate(buildObjectPath(object.Object_UUID, null, object.File_Name ?? null, { tab: 'references' }));
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   e.stopPropagation();
-                  navigate(`/object/${object.Object_UUID}?tab=references`);
+                  navigate(buildObjectPath(object.Object_UUID, null, object.File_Name ?? null, { tab: 'references' }));
                 }
               }}
             >

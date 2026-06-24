@@ -13,7 +13,9 @@
 WITH ps AS (
   SELECT *
   FROM PrivilegeSetsCatalog
+  -- Clone-Scoping: Identität ist (UUID, File_Name); ohne file-Var graceful downgrade
   WHERE PrivilegeSet_UUID = getvariable('uuid')
+    AND (getvariable('file') IS NULL OR File_Name = getvariable('file'))
   LIMIT 1
 )
 
@@ -73,6 +75,7 @@ SELECT * FROM (
          ra.BaseTable_UUID AS target_uuid
   FROM PrivilegeSetRecordAccess ra
   WHERE ra.PrivilegeSet_UUID = getvariable('uuid')
+    AND (getvariable('file') IS NULL OR ra.File_Name = getvariable('file'))
 
   UNION ALL
 
@@ -88,6 +91,7 @@ SELECT * FROM (
          fa.Field_UUID AS target_uuid
   FROM PrivilegeSetFieldAccess fa
   WHERE fa.PrivilegeSet_UUID = getvariable('uuid')
+    AND (getvariable('file') IS NULL OR fa.File_Name = getvariable('file'))
 
   UNION ALL
 
@@ -106,5 +110,6 @@ SELECT * FROM (
          oa.Object_UUID AS target_uuid
   FROM PrivilegeSetObjectAccess oa
   WHERE oa.PrivilegeSet_UUID = getvariable('uuid')
+    AND (getvariable('file') IS NULL OR oa.File_Name = getvariable('file'))
 )
 ORDER BY sort_key, order_hint;

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useObjectDetails } from '../hooks/useObjectDetails';
+import { useCurrentFile } from '../lib/currentFileContext';
 import { PrivilegeSetViewer } from './PrivilegeSetViewer';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
@@ -19,7 +20,8 @@ interface PrivilegeSetDetailProps {
  */
 export const PrivilegeSetDetail: React.FC<PrivilegeSetDetailProps> = ({ uuid, highlightRefUuids }) => {
   const { t } = useTranslation(['common', 'detail']);
-  const { data, meta, loading, error, retry } = useObjectDetails(uuid);
+  const currentFile = useCurrentFile();
+  const { data, meta, loading, error, retry } = useObjectDetails(uuid, currentFile);
 
   if (loading) return <LoadingSpinner message={t('common:loading') as string} />;
   if (error) return <ErrorMessage message={error} onRetry={retry} />;

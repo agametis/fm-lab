@@ -31,13 +31,22 @@ export interface BackReferencesResponse {
  * Holt für ein (destination, origin)-Paar alle UUIDs im Destination-Container,
  * die das Origin referenzieren. Wird vom RefOrigin-Hook im Frontend genutzt,
  * um Highlight-State (matchUuids, highlightRefUuids) vorzubelegen.
+ *
+ * `destFile`/`originFile` (Klon-Disambiguierung): optionale File_Names, die die
+ * jeweilige UUID-Seite eindeutig auflösen (geteilte Klon-UUIDs). Der Destination-
+ * File ist der wichtige Fall (das aktuell geöffnete Objekt kennt seine Datei);
+ * der Origin ist oft nur ein Name/UUID ohne Datei → Graceful Downgrade.
  */
 export async function fetchBackReferences(
   destination: string,
   origin: string,
   mode: 'uuid' | 'name' | 'auto' = 'auto',
+  destFile?: string | null,
+  originFile?: string | null,
 ): Promise<BackReferencesResponse> {
   const params = new URLSearchParams({ destination, origin, mode });
+  if (destFile) params.set('dest_file', destFile);
+  if (originFile) params.set('origin_file', originFile);
   const r = await fetch(`${baseUrl}/api/back-references?${params}`);
   if (!r.ok) {
     const err = await r.json().catch(() => null);

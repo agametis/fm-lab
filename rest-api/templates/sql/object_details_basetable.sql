@@ -7,11 +7,13 @@
 -- @tags: tables, details, fields, structure
 -- @note: Shows table properties, field list with types, and associated table occurrences
 
+-- Clone-Scoping: Object_UUID ist bei geklonten/modularen Lösungen nicht eindeutig — Identität ist (UUID, File_Name)
 WITH table_match AS (
   SELECT bt.BT_ID, bt.BT_Name, bt.BT_UUID, bt.File_Name
   FROM BaseTableCatalog bt
-  JOIN ObjectCatalog oc ON bt.BT_UUID = oc.Object_UUID
+  JOIN ObjectCatalog oc ON bt.BT_UUID = oc.Object_UUID AND oc.File_Name = bt.File_Name
   WHERE oc.Object_UUID = getvariable('uuid')
+    AND (getvariable('file') IS NULL OR bt.File_Name = getvariable('file'))
   LIMIT 1
 ),
 field_list AS (

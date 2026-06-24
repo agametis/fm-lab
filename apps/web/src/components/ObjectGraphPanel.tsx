@@ -8,6 +8,7 @@ import {
 } from './GraphExplorer';
 import type { FMObject } from '../types';
 import type { SubgraphDirection } from '../hooks/useSubgraph';
+import { buildObjectPath } from '../lib/navigation';
 
 /**
  * Embedded Graph Explorer for the object DetailView "Graph" tab
@@ -49,17 +50,20 @@ export const ObjectGraphPanel = forwardRef<ObjectGraphPanelHandle, { object: FMO
   const focus = object.Object_UUID;
 
   const handleSetFocus = useCallback(
-    (uuid: string) => navigate(`/object/${uuid}?tab=graph`),
+    // Klon-Disambiguierung: Zieldatei des Knotens als `?file=` mitführen.
+    (uuid: string, file?: string | null) => navigate(buildObjectPath(uuid, null, file ?? null, { tab: 'graph' })),
     [navigate],
   );
   const handleOpenDetails = useCallback(
-    (uuid: string) => navigate(`/object/${uuid}`),
+    (uuid: string, file?: string | null) => navigate(buildObjectPath(uuid, null, file ?? null)),
     [navigate],
   );
   const handleFullscreen = useCallback(() => {
     const q = new URLSearchParams({ focus, depth: String(depth), dir: direction });
+    // Klon-Disambiguierung: Fokus-Datei in den Vollbild-Deeplink übernehmen.
+    if (object.File_Name) q.set('focus_file', object.File_Name);
     navigate(`/graph?${q.toString()}`);
-  }, [navigate, focus, depth, direction]);
+  }, [navigate, focus, depth, direction, object.File_Name]);
 
   return (
     <div className="detail-graph-panel">
@@ -91,6 +95,7 @@ export const ObjectGraphPanel = forwardRef<ObjectGraphPanelHandle, { object: FMO
       <GraphExplorer
         ref={engineRef}
         focus={focus}
+        focusFile={object.File_Name ?? null}
         depth={depth}
         direction={direction}
         onDepthChange={setDepth}

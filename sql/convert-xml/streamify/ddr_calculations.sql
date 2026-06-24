@@ -1,4 +1,4 @@
--- streamify-Override für DDR_Calculations (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für DDR_Calculations.
 -- Wie DDR_ScriptSteps: auf dem eindeutigen DDR_INFO ankern, Calculation-Kind als
 -- VARCHAR kapseln (Klasse-C), Calc-Elemente re-extrahieren. Calc_UUID via Regex auf
 -- Element-NAMEN, Calc_Hash via xml_extract. HINWEIS: Chunk_Content fällt für chunks

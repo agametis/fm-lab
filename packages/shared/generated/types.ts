@@ -92,6 +92,8 @@ export interface paths {
                 query: {
                     /** @description Object UUID */
                     uuid: string;
+                    /** @description Clone disambiguation: exact source file (File_Name) of the object. Geklonte/modulare FileMaker-Dateien teilen sich dieselbe Object_UUID, d.h. eine bare UUID kann mehrdeutig sein. Mit `file` wird das Paar (UUID, File_Name) eindeutig aufgelöst. Fehlt der Param, gilt Graceful Downgrade (bare UUID, solange eindeutig; sonst 409 AMBIGUOUS_UUID). */
+                    file?: components["parameters"]["CloneFile"];
                     /**
                      * @description Output format
                      * @default json
@@ -354,6 +356,8 @@ export interface paths {
                     direction?: components["schemas"]["ReferenceDirection"];
                     /** @default operational */
                     link_type?: components["schemas"]["LinkType"];
+                    /** @description Clone disambiguation: exact source file (File_Name) of the object. Geklonte/modulare FileMaker-Dateien teilen sich dieselbe Object_UUID, d.h. eine bare UUID kann mehrdeutig sein. Mit `file` wird das Paar (UUID, File_Name) eindeutig aufgelöst. Fehlt der Param, gilt Graceful Downgrade (bare UUID, solange eindeutig; sonst 409 AMBIGUOUS_UUID). */
+                    file?: components["parameters"]["CloneFile"];
                     /** @description Maximum number of results (0 = all) */
                     limit?: components["parameters"]["Limit"];
                     /**
@@ -769,6 +773,8 @@ export interface components {
     parameters: {
         /** @description Filter by filename */
         FileFilter: string;
+        /** @description Clone disambiguation: exact source file (File_Name) of the object. Geklonte/modulare FileMaker-Dateien teilen sich dieselbe Object_UUID, d.h. eine bare UUID kann mehrdeutig sein. Mit `file` wird das Paar (UUID, File_Name) eindeutig aufgelöst. Fehlt der Param, gilt Graceful Downgrade (bare UUID, solange eindeutig; sonst 409 AMBIGUOUS_UUID). */
+        CloneFile: string;
         /** @description Maximum number of results (0 = all) */
         Limit: number;
         /** @description Number of results to skip (for pagination) */

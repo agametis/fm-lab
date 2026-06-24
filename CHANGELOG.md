@@ -12,6 +12,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.8.4] — 2026-06-24
+
+Bugfixes and optimizations.
+
+- **Clone-aware UUID resolution** — a solution duplicated via "Save a Copy As…" keeps the original's internal `File_UUID` (and the shared template's object UUIDs), which previously broke both import and where-used analysis
+  - **Import no longer aborts** on a clone pair sharing a `File_UUID` — the second file used to crash the extract phase and, because the REST sync gates on zero failures, block publishing every other successfully imported file alongside it
+  - **Explicit ambiguity instead of a silent guess** — a bare-UUID lookup matching several clones now returns `AMBIGUOUS_UUID` (HTTP 409) with the list of matching files; passing a `file` pins the exact one, and a still-unique UUID resolves as before (graceful downgrade). Applied across object details, references, back-references, graph subgraph/neighbors, and the fmIDE deep-link (which otherwise jumped into the wrong clone)
+  - **`AmbiguousFilePicker`** in the frontend — when a UUID resolves to several clones the user picks the file, and the choice is threaded through navigation
+  - **Surgical link scoping** in the catalog — `trigger_owner` is constrained to its own file, while `lookup_source` / `lookup_relationship` prefer the local file but preserve genuine cross-file lookups
+- **Sharper community detection** (Graph-Analysis refinements)
+  - **God-nodes and local variables filtered** out of the cluster graph, so communities form around real structure instead of being pulled together by ubiquitous, low-signal nodes
+  - **Persistent, drift-tolerant semantic-name cache** — hand-curated community names now survive a re-cluster (e.g. after an XML re-import): names are cached per object UUID and re-applied to the new partition by majority vote, so a single clustering run no longer discards them
+- **Import refresh & validation hardening** (from user feedback) — per-file DELETE-before-INSERT is confirmed as the default, so elements removed from a solution no longer linger as zombie rows on re-import; validation/consistency views refined
+
+---
+
 ## [0.8.3] — 2026-06-23
 
 The object graph becomes explorable and self-organizing: an interactive Graph Explorer in the browser, and automatic community detection that segments the solution into named modules.

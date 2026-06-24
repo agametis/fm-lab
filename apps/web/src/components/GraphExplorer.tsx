@@ -55,14 +55,16 @@ export interface GraphExplorerStats {
 
 interface GraphExplorerProps {
   focus: string | null;
+  /** Klon-Disambiguierung: File_Name des Fokus-Knotens (Graceful Downgrade). */
+  focusFile?: string | null;
   depth: number;
   direction: SubgraphDirection;
   onDepthChange: (d: number) => void;
   onDirectionChange: (d: SubgraphDirection) => void;
-  /** Re-center request (double-tap / inspect "set focus"). */
-  onSetFocus: (uuid: string) => void;
-  /** ⌘/Ctrl-tap / inspect "open details". */
-  onOpenDetails: (uuid: string) => void;
+  /** Re-center request (double-tap / inspect "set focus"). file = Klon-Disambiguierung. */
+  onSetFocus: (uuid: string, file?: string | null) => void;
+  /** ⌘/Ctrl-tap / inspect "open details". file = Klon-Disambiguierung. */
+  onOpenDetails: (uuid: string, file?: string | null) => void;
   /** Live graph stats for the host's toolbar (null while empty). */
   onStats?: (stats: GraphExplorerStats | null) => void;
   /**
@@ -76,7 +78,7 @@ interface GraphExplorerProps {
 export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>(
   (props, ref) => {
     const {
-      focus, depth, direction,
+      focus, focusFile, depth, direction,
       onDepthChange, onDirectionChange,
       onSetFocus, onOpenDetails, onStats,
       enableCommunityLens = false,
@@ -108,7 +110,7 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
     const [expanding, setExpanding] = useState(false);
 
     // Only focus/depth/direction/mode hit the backend — type filtering is client-side.
-    const { data, loading, error } = useSubgraph({ focus, depth, direction, mode });
+    const { data, loading, error } = useSubgraph({ focus, focusFile, depth, direction, mode });
 
     // Read the latest name filter from a ref so the imperative handle (mount-only)
     // can clear it without being re-created on every keystroke.
@@ -247,11 +249,12 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
     }, []);
 
     const handleExpand = useCallback(
-      async (uuid: string) => {
+      async (uuid: string, file?: string | null) => {
         setExpanding(true);
         try {
           // Fetch the full neighborhood — type filtering happens client-side.
-          const { nodes, edges } = await fetchNeighbors(uuid, { direction, mode });
+          // Klon-Disambiguierung: focusFile mitgeben, sonst 409/Klon-Merge beim Nachbar-Fetch.
+          const { nodes, edges } = await fetchNeighbors(uuid, { direction, mode, focusFile: file ?? null });
           graphRef.current?.mergeElements(nodes, edges);
         } catch {
           // Expansion is best-effort; a failed merge leaves the graph untouched.

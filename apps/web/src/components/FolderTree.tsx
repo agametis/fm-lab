@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useTemplateQuery } from '../hooks/useTemplateQuery';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
+import { buildObjectPath } from '../lib/navigation';
 import './FolderTree.css';
 
 const ROW_HEIGHT = 36;
@@ -185,7 +186,8 @@ export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter })
 
   const handleItemClick = useCallback((row: TreeRow) => {
     if (row.subtype === 'Separator') return;
-    navigate(`/object/${row.uuid}`);
+    // Klon-Disambiguierung: `row.file` ist die Zieldatei (Graceful Downgrade).
+    navigate(buildObjectPath(row.uuid, null, row.file || null));
   }, [navigate]);
 
   if (loading) {

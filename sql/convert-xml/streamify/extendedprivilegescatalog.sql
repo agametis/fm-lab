@@ -1,4 +1,4 @@
--- streamify-Override für ExtendedPrivilegesCatalog (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für ExtendedPrivilegesCatalog.
 -- Hat einen ObjectList-Wrapper → Single-VARCHAR-Capture (PrivilegeSets-Muster): priv_xml
 -- bleibt das ganze <ExtendedPrivilege>-Element → alle Downstream-/ExtendedPrivilege/…-
 -- xpaths (inkl. nested //ObjectList/PrivilegeSetReference) UNVERÄNDERT. Keine Roh-Spalte

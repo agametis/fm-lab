@@ -10,6 +10,7 @@ const PSEUDO_TYPE_GROUP = ['ScriptStepType', 'BuiltinFunction', 'PluginComponent
 const PSEUDO_TYPE_SET = new Set<string>(PSEUDO_TYPE_GROUP);
 import { useInfiniteSearch, useDebounce, useScrollRestore, CONNECTION_ERROR } from './hooks';
 import { VirtualList, DetailView, SearchOptions, FolderTree, ThemeToggle, LanguageSelector, PseudoTokenView, type FolderTreeSubtype } from './components';
+import { buildObjectPath } from './lib/navigation';
 import { SettingsView } from './views/SettingsView';
 import { RelationshipGraphView } from './views/RelationshipGraphView';
 import { LayoutView } from './views/LayoutView';
@@ -290,9 +291,11 @@ function SearchView() {
     });
   }, []);
 
-  const handleItemClick = useCallback((uuid: string) => {
+  const handleItemClick = useCallback((uuid: string, file?: string | null) => {
     saveScrollPosition('search-list', scrollContainerRef.current);
-    navigate(`/object/${uuid}`);
+    // Klon-Disambiguierung: die Zieldatei des angeklickten Objekts wandert als
+    // `?file=` mit (Graceful Downgrade, wenn nicht gesetzt).
+    navigate(buildObjectPath(uuid, null, file ?? null));
   }, [navigate, saveScrollPosition]);
 
   // Pseudo-Token-Drilldown: PluginComponent → PluginFunction (Hierarchie

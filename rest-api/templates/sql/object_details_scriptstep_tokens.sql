@@ -21,7 +21,7 @@ SELECT
   0 AS indent,
   s.Step_ID    AS step_id,
   s.Step_UUID  AS step_uuid,
-  -- Synthetischer ScriptStepType-UUID (PRD prd_pseudo_object_types_filter.md §5)
+  -- Synthetischer ScriptStepType-UUID
   md5('ScriptStepType::' || s.Step_Name) AS step_type_uuid,
   s.Step_Name  AS step_name,
   s.Is_Enabled AS enabled,
@@ -46,5 +46,9 @@ SELECT
   s.Step_Index  AS parent_step_index,
   s.File_Name   AS parent_file_name
 FROM StepsForScripts s
-LEFT JOIN DDR_ScriptSteps d ON s.Step_UUID = d.Step_UUID
-WHERE s.Step_UUID = getvariable('uuid');
+-- Klon-Disambiguierung: Step_UUIDs sind geklont → DDR-Join auf dieselbe Datei
+-- skopieren, sonst multipliziert der LEFT JOIN die Zeile.
+LEFT JOIN DDR_ScriptSteps d ON s.Step_UUID = d.Step_UUID AND s.File_Name = d.File_Name
+WHERE s.Step_UUID = getvariable('uuid')
+  -- ohne File-Filter matcht eine geteilte Step_UUID alle Klon-Dateien
+  AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file'));

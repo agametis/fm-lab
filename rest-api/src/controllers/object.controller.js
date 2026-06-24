@@ -7,7 +7,7 @@ const referenceService = require('../services/reference.service');
 
 // UUID-Erkennung: Standard-UUID v1–v5 mit Bindestrichen ODER 32 Hex-Chars ohne
 // Bindestriche (Pseudo-Type-UUIDs aus md5() wie ScriptStepType, BuiltinFunction,
-// PluginFunction, PluginComponent — vgl. PRD prd_pseudo_object_types_filter.md §5).
+// PluginFunction, PluginComponent).
 const UUID_REGEX = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32})$/i;
 
 /**
@@ -27,9 +27,9 @@ const SUBTYPE_FOR_TYPE = {
  */
 async function get(req, res, next) {
   try {
-    const { uuid, format = 'json', meta, debug } = req.query;
+    const { uuid, file, format = 'json', meta, debug } = req.query;
 
-    const result = await objectService.getByUUID(uuid);
+    const result = await objectService.getByUUID(uuid, file);
 
     const formattedData = formatters.format([result.data], format);
 
@@ -48,7 +48,7 @@ async function get(req, res, next) {
 /**
  * GET /api/list - List objects by type
  *
- * PRD prd_pseudo_object_types_filter.md §7.2 — neue Pseudo-Token-Parameter
+ * Neue Pseudo-Token-Parameter
  * (?withUsage, ?withCategory, ?category, ?sort) durchgereicht an den Service.
  */
 async function list(req, res, next) {
@@ -85,7 +85,7 @@ async function list(req, res, next) {
 
 /**
  * GET /api/list/categories - Pseudo-Token-Filter-Pillen Datenbasis
- * PRD §7.2 — { category, token_count, total_usage } pro Category.
+ * { category, token_count, total_usage } pro Category.
  */
 async function listCategories(req, res, next) {
   try {
@@ -219,9 +219,9 @@ async function searchCount(req, res, next) {
  */
 async function references(req, res, next) {
   try {
-    const { uuid, direction, link_type, limit, format = 'json', meta, debug } = req.query;
+    const { uuid, file, direction, link_type, limit, format = 'json', meta, debug } = req.query;
 
-    const result = await objectService.getReferences({ uuid, direction, link_type, limit });
+    const result = await objectService.getReferences({ uuid, direction, link_type, limit, file });
 
     const formattedData = formatters.format(result.data, format);
 
@@ -242,16 +242,16 @@ async function references(req, res, next) {
  */
 async function getDetails(req, res, next) {
   try {
-    const { uuid, format = 'json', meta, debug } = req.query;
+    const { uuid, file, format = 'json', meta, debug } = req.query;
 
     // format=tokens has its own dispatch path with type-specific templates and
     // dedicated post-processing. Use a per-type look-up plus the tokens formatter
     // instead of running the generic detail template through the format pipeline.
     if (format === 'tokens') {
-      return await respondWithTokens(req, res, { uuid, meta, debug, enrich: req.query.enrich });
+      return await respondWithTokens(req, res, { uuid, file, meta, debug, enrich: req.query.enrich });
     }
 
-    const result = await objectService.getDetails(uuid);
+    const result = await objectService.getDetails(uuid, file);
 
     // Content templates auto-override to content formatter (except JSON)
     let effectiveFormat = format;
@@ -280,15 +280,20 @@ async function getDetails(req, res, next) {
  * SQL template(s) for that type and feeds the rows through the tokens formatter.
  * Currently supported: Script, CustomFunction. Other types return 400.
  */
-async function respondWithTokens(req, res, { uuid, meta, debug, enrich }) {
+async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) {
   // 1. Look up object metadata so we know which token template to run.
-  const lookup = await objectService.getByUUID(uuid);
+  const lookup = await objectService.getByUUID(uuid, file);
   const objectType = lookup.data.Object_Type;
   const baseObject = {
     uuid,
     name: lookup.data.Object_Name,
     file: lookup.data.File_Name,
   };
+  // Klon-Disambiguierung: die aufgelöste Datei (getByUUID hat sie eindeutig
+  // bestimmt bzw. 409 geworfen) an ALLE Token-Templates weiterreichen, sonst
+  // joinen sie eine geteilte Klon-UUID gegen alle Dateien → Schritte/Tokens
+  // erscheinen mehrfach.
+  const resolvedFile = lookup.data.File_Name;
 
   let payload;
   let metaInfo = {
@@ -301,12 +306,12 @@ async function respondWithTokens(req, res, { uuid, meta, debug, enrich }) {
   if (objectType === 'Script') {
     const stepsResult = await templateService.executeTemplate(
       'object_details_script_tokens',
-      { uuid },
+      { uuid, file: resolvedFile },
       'report'
     );
     const refsResult = await templateService.executeTemplate(
       'object_references_script',
-      { uuid },
+      { uuid, file: resolvedFile },
       'report'
     );
 
@@ -318,7 +323,7 @@ async function respondWithTokens(req, res, { uuid, meta, debug, enrich }) {
 
     // ?enrich=<lang> — pro Step-Line Display-Name/Beschreibung/Help-URL aus
     // der Reference-DB ergänzen. Ohne `enrich` bleibt der Payload byte-identisch
-    // zum bisherigen Verhalten (PRD §5.1 / Akzeptanzkriterium "byte-identisch").
+    // zum bisherigen Verhalten (Akzeptanzkriterium "byte-identisch").
     if (enrich) {
       try {
         const enrichLang = referenceService.resolveStepLang(enrich);
@@ -401,7 +406,7 @@ async function respondWithTokens(req, res, { uuid, meta, debug, enrich }) {
     // zum Skript und die Step-Position anzeigen kann.
     const stepResult = await templateService.executeTemplate(
       'object_details_scriptstep_tokens',
-      { uuid },
+      { uuid, file: resolvedFile },
       'report'
     );
 
@@ -418,7 +423,7 @@ async function respondWithTokens(req, res, { uuid, meta, debug, enrich }) {
     // Das vermeidet eine Duplikation des 265-Zeilen-Refs-Templates.
     const refsResult = await templateService.executeTemplate(
       'object_references_script',
-      { uuid: parentScriptUuid },
+      { uuid: parentScriptUuid, file: resolvedFile },
       'report'
     );
     const filteredRefs = (refsResult.data || [])
@@ -505,7 +510,7 @@ async function respondWithTokens(req, res, { uuid, meta, debug, enrich }) {
   } else if (objectType === 'CustomFunction') {
     const cfResult = await templateService.executeTemplate(
       'object_details_customfunction_tokens',
-      { uuid },
+      { uuid, file: resolvedFile },
       'report'
     );
 
@@ -517,7 +522,7 @@ async function respondWithTokens(req, res, { uuid, meta, debug, enrich }) {
     // ?enrich=<lang> — Calc-Tokens vom Type 'function' aus der Reference-DB
     // anreichern (function_name_lookup → functions / functions_lang). Soft-Fail
     // wenn die Reference-DB nicht attached ist; Validation-Fehler werden
-    // hochgereicht (PRD §5.2).
+    // hochgereicht.
     if (enrich) {
       try {
         await referenceService.enrichFunctionTokens(payload.tokens, enrich);
@@ -542,7 +547,7 @@ async function respondWithTokens(req, res, { uuid, meta, debug, enrich }) {
   } else if (objectType === 'Field') {
     const fldResult = await templateService.executeTemplate(
       'object_details_field_tokens',
-      { uuid },
+      { uuid, file: resolvedFile },
       'report'
     );
 
@@ -616,7 +621,7 @@ async function getCalc(req, res, next) {
       hash,
     } : null;
 
-    // ?enrich=<lang> — Calc-Token-Anreicherung via function_name_lookup (PRD §5.2)
+    // ?enrich=<lang> — Calc-Token-Anreicherung via function_name_lookup
     if (enrich) {
       try {
         await referenceService.enrichFunctionTokens(payload.tokens, enrich);
@@ -640,7 +645,7 @@ async function getCalc(req, res, next) {
 }
 
 /**
- * GET /api/back-references — PRD prd_cross_references_hilite.md §6.3
+ * GET /api/back-references
  *
  * Liefert alle Objekt-UUIDs, die innerhalb eines Destination-Containers
  * (Layout / Script / CustomFunction) auf das Origin-Objekt verweisen.
@@ -654,7 +659,7 @@ async function getCalc(req, res, next) {
  */
 async function backReferences(req, res, next) {
   try {
-    const { destination, origin, mode = 'auto', format = 'json', meta, debug } = req.query;
+    const { destination, origin, dest_file, origin_file, mode = 'auto', format = 'json', meta, debug } = req.query;
 
     const destUuid = String(destination || '').trim();
     let originRaw = String(origin || '').trim();
@@ -670,7 +675,7 @@ async function backReferences(req, res, next) {
       throw createError('VALIDATION_ERROR',
         '`destination` muss eine UUID sein.', { destination: destUuid });
     }
-    const destObj = await objectService.getByUUID(destUuid);
+    const destObj = await objectService.getByUUID(destUuid, dest_file);
 
     // Origin: UUID-Format ODER Name-Lookup.
     const looksLikeUuid = UUID_REGEX.test(originRaw);
@@ -682,7 +687,7 @@ async function backReferences(req, res, next) {
 
     if (useUuid) {
       try {
-        const o = await objectService.getByUUID(originRaw);
+        const o = await objectService.getByUUID(originRaw, origin_file);
         originObj = o.data;
         matchStrategy = 'uuid';
       } catch (e) {

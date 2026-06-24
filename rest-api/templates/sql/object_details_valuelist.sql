@@ -8,10 +8,12 @@
 -- @note: Shows value list properties, custom values or field source, and usage references
 
 WITH vl_match AS (
+  -- Clone-Scoping: UUID ist bei geklonten Dateien nicht eindeutig -> zusaetzlich nach File_Name filtern
   SELECT vl.VL_ID, vl.VL_Name, vl.Source_Type, vl.VL_UUID, vl.File_Name
   FROM ValueListCatalog vl
-  JOIN ObjectCatalog oc ON vl.VL_UUID = oc.Object_UUID
+  JOIN ObjectCatalog oc ON vl.VL_UUID = oc.Object_UUID AND oc.File_Name = vl.File_Name
   WHERE oc.Object_UUID = getvariable('uuid')
+    AND (getvariable('file') IS NULL OR vl.File_Name = getvariable('file'))
   LIMIT 1
 ),
 vl_options AS (
@@ -34,8 +36,9 @@ vl_usage AS (
     ol.Link_Role,
     ol.Is_Cross_File
   FROM ObjectLinks ol
-  JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID
+  JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID AND oc.File_Name = ol.Source_File
   WHERE ol.Target_UUID = getvariable('uuid')
+    AND (getvariable('file') IS NULL OR ol.Target_File = getvariable('file'))
     AND ol.Link_Type = 'operational'
   ORDER BY oc.Object_Type, oc.Object_Name
 )

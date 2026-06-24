@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCustomFunctionTokens } from '../hooks/useCustomFunctionTokens';
 import { useApiLang } from '../hooks/useApiLang';
+import { useCurrentFile } from '../lib/currentFileContext';
 import { CustomFunctionViewer } from './CustomFunctionViewer';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
@@ -22,7 +23,8 @@ interface CustomFunctionDetailProps {
 export const CustomFunctionDetail: React.FC<CustomFunctionDetailProps> = ({ uuid, highlightRefUuids }) => {
   const { t } = useTranslation(['detail']);
   const lang = useApiLang();
-  const { data, loading, error, retry } = useCustomFunctionTokens(uuid, lang);
+  const currentFile = useCurrentFile();
+  const { data, loading, error, retry } = useCustomFunctionTokens(uuid, lang, currentFile);
 
   if (loading) return <LoadingSpinner message={t('detail:loadingFunction') as string} />;
   if (error) return <ErrorMessage message={error} onRetry={retry} />;

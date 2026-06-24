@@ -49,18 +49,60 @@ function convertBigInts(obj) {
 }
 
 /**
- * Get object by UUID
+ * Clone-aware object resolution against ObjectCatalog.
+ *
+ * Geklonte/modulare FileMaker-Dateien teilen interne Objekt-UUIDs:
+ * eine UUID ist nicht mehr global eindeutig. Vertrag (Graceful Downgrade):
+ *   - file gesetzt         → WHERE Object_UUID=? AND File_Name=?  (eindeutig pro Datei)
+ *   - file leer, 1 Treffer → Treffer (bare UUID bleibt gültig, solange eindeutig)
+ *   - file leer, >1 Treffer → AMBIGUOUS_UUID (409) + matched_files, statt stillem rows[0]
+ *   - 0 Treffer            → OBJECT_NOT_FOUND (404)
+ *
+ * `columns` MUSS File_Name enthalten (für die matched_files-Liste). Liefert das
+ * rohe Query-Result; rows[0] ist garantiert eindeutig aufgelöst.
+ *
+ * @param {string} uuid
+ * @param {string} [file] - optionaler File_Name zur Disambiguierung
+ * @param {string} [columns='*'] - SELECT-Spaltenliste (muss File_Name enthalten)
+ * @returns {Promise<{rows: Array, meta: Object}>}
+ */
+async function resolveByUUID(uuid, file, columns = '*') {
+  const where = file ? 'Object_UUID = ? AND File_Name = ?' : 'Object_UUID = ?';
+  const params = file ? [uuid, file] : [uuid];
+  const result = await db.executeQuery(`SELECT ${columns} FROM ObjectCatalog WHERE ${where}`, params);
+
+  if (result.rows.length === 0) {
+    throw createError(
+      'OBJECT_NOT_FOUND',
+      file
+        ? `Object with UUID '${uuid}' not found in file '${file}'`
+        : `Object with UUID '${uuid}' not found`,
+      file ? { uuid, file } : { uuid }
+    );
+  }
+
+  if (!file && result.rows.length > 1) {
+    const matched_files = [...new Set(result.rows.map((r) => r.File_Name))].sort();
+    throw createError(
+      'AMBIGUOUS_UUID',
+      `UUID '${uuid}' exists in ${matched_files.length} files (cloned/modular solution); ` +
+        `add ?file=<File_Name> to disambiguate`,
+      { uuid, matched_files }
+    );
+  }
+
+  return result;
+}
+
+/**
+ * Get object by UUID (clone-aware, see resolveByUUID).
  * @param {string} uuid - Object UUID
+ * @param {string} [file] - optional File_Name to disambiguate clone duplicates
  * @returns {Promise<Object>} Object data
  */
-async function getByUUID(uuid) {
+async function getByUUID(uuid, file) {
   try {
-    const sql = 'SELECT * FROM ObjectCatalog WHERE Object_UUID = ?';
-    const result = await db.executeQuery(sql, [uuid]);
-
-    if (result.rows.length === 0) {
-      throw createError('OBJECT_NOT_FOUND', `Object with UUID '${uuid}' not found`, { uuid });
-    }
+    const result = await resolveByUUID(uuid, file);
 
     return {
       data: convertBigInts(result.rows[0]),
@@ -68,7 +110,7 @@ async function getByUUID(uuid) {
     };
   } catch (error) {
     if (error.code) throw error;
-    throw createError('DATABASE_ERROR', error.message, { uuid });
+    throw createError('DATABASE_ERROR', error.message, file ? { uuid, file } : { uuid });
   }
 }
 
@@ -194,7 +236,7 @@ function normalizeCategories(category) {
 
 /**
  * GET /api/list/categories — Filter-Pillen-Datenbasis.
- * PRD prd_pseudo_object_types_filter.md §7.2: liefert pro Category eines
+ * Liefert pro Category eines
  * Pseudo-Token-Typs { category, token_count, total_usage }, sortiert nach
  * total_usage desc.
  */
@@ -446,7 +488,7 @@ async function searchObjects(searchOptions) {
       return await searchScriptSteps({ name, file, limit, offset });
     }
 
-    // Suchstrategie (PRD ScriptStep-Filtering):
+    // Suchstrategie (ScriptStep-Filtering):
     //   1. dbType === 'ScriptStep'  → searchScriptSteps (oben abgefangen).
     //   2. dbType ist ein anderer Typ → ObjectCatalog mit Type-Filter; ScriptSteps
     //      kommen hier nicht vor.
@@ -596,7 +638,7 @@ async function countSearchResults(searchOptions) {
  * Pseudo-Type Reference-Resolver.
  *
  * ScriptStepType + PluginComponent haben keine vollständigen ObjectLinks-
- * Spiegelungen (PRD prd_pseudo_object_types_filter.md §6.4). Damit der
+ * Spiegelungen. Damit der
  * Referenzen-Tab im Frontend trotzdem die aufrufenden Scripts/Container
  * anzeigen kann, aggregieren wir die "parent"-Liste live aus den Basis-
  * Tabellen:
@@ -722,11 +764,18 @@ async function getReferences(refOptions) {
       uuid,
       direction = 'all',
       link_type = 'operational',
-      limit = environment.api.defaultLimit
+      limit = environment.api.defaultLimit,
+      file,
     } = refOptions;
 
+    // Clone-Scoping: bei geteilter UUID (Klon) liefern die ObjectLinks-Joins sonst
+    // die Kanten BEIDER Klone gemischt. Mit `file` wird die Fokus-Seite der Kante
+    // auf die richtige Datei eingegrenzt (Source_File bei child, Target_File bei
+    // parent). Ohne `file` unverändertes Verhalten (Graceful Downgrade).
+    const focusFile = file || null;
+
     // Pseudo-Type-Sonderfall: ScriptStepType + PluginComponent haben keine
-    // (vollständigen) ObjectLinks-Spiegelungen (PRD §6.4). Die "Verwendet in"-
+    // (vollständigen) ObjectLinks-Spiegelungen. Die "Verwendet in"-
     // Liste muss daher live aus den Basis-Tabellen aggregiert werden.
     const pseudoRefs = await getPseudoTypeReferences(uuid, direction, link_type, limit);
     if (pseudoRefs !== null) return pseudoRefs;
@@ -734,16 +783,22 @@ async function getReferences(refOptions) {
     let sql;
     let params;
 
-    // Container-Resolution für Sub-Knoten (PRD prd_cross_references_hilite.md):
+    // Container-Resolution für Sub-Knoten:
     // LayoutObject und ScriptStep haben keinen sinnvollen Standalone-Detail-View —
     // ihr Wert liegt im Container-Kontext. Die zusätzlichen LEFT JOINs liefern
     // den Container-UUID/Type über `parent_layout`/`parent_script`-Links mit.
     // Für andere Object-Types bleibt Container_UUID = NULL, und das Frontend
     // navigiert wie gewohnt direkt auf das Objekt.
+    // Klon-Disambiguierung: die Container-Joins (Sub-Knoten → Container) MÜSSEN
+    // datei-gleich ausgerichtet werden. Sonst matcht eine geteilte Klon-UUID die
+    // ObjectCatalog-/ObjectLinks-Zeilen ALLER Klon-Dateien → kartesisches Produkt
+    // (z.B. parent_script eines geklonten Scripts explodierte auf ~10000 Zeilen).
     const CONTAINER_JOIN = `
       LEFT JOIN ObjectLinks pl ON pl.Source_UUID = oc.Object_UUID
+        AND pl.Source_File = oc.File_Name
         AND pl.Link_Role IN ('parent_layout', 'parent_script')
       LEFT JOIN ObjectCatalog pc ON pl.Target_UUID = pc.Object_UUID
+        AND pl.Target_File = pc.File_Name
     `;
 
     if (direction === 'child') {
@@ -759,12 +814,13 @@ async function getReferences(refOptions) {
           pl.Target_UUID as Container_UUID,
           pc.Object_Type as Container_Type
         FROM ObjectLinks ol
-        JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID
+        JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID AND ol.Target_File = oc.File_Name
         ${CONTAINER_JOIN}
         WHERE ol.Source_UUID = ?
       `;
       params = [uuid];
 
+      if (focusFile) { sql += ' AND ol.Source_File = ?'; params.push(focusFile); }
       if (link_type !== 'all') {
         sql += ' AND ol.Link_Type = ?';
         params.push(link_type);
@@ -782,29 +838,41 @@ async function getReferences(refOptions) {
           pl.Target_UUID as Container_UUID,
           pc.Object_Type as Container_Type
         FROM ObjectLinks ol
-        JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID
+        JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID AND ol.Source_File = oc.File_Name
         ${CONTAINER_JOIN}
         WHERE ol.Target_UUID = ?
       `;
       params = [uuid];
 
+      if (focusFile) { sql += ' AND ol.Target_File = ?'; params.push(focusFile); }
       if (link_type !== 'all') {
         sql += ' AND ol.Link_Type = ?';
         params.push(link_type);
       }
     } else if (direction === 'recursive') {
-      // Recursive dependencies
+      // Recursive dependencies.
+      // Klon-Robustheit: die Traversierung folgt der Kante DATEI-GENAU — der nächste Hop
+      // beginnt in genau der Datei, in der der vorige endete (ol.Source_File = dt.Target_File).
+      // Sonst matcht eine geklonte Target_UUID die ObjectLinks ALLER Klon-Dateien und der Lauf
+      // fächert über Geschwister-Klone (focus_file skopierte bisher nur die Saat, nicht den Lauf:
+      // focus_file=GM vs LKU lieferten identisch). NULL-Ziel-Knoten (Builtin-/PluginFunction:
+      // Target_File IS NULL) sind operationale Blätter → `=` terminiert dort natürlich. Die finale
+      // Katalog-Auflösung ist (UUID, File)-genau; IS NOT DISTINCT FROM matcht die synthetischen
+      // NULL-File-Objekte korrekt mit.
       sql = `
         WITH RECURSIVE dependency_tree AS (
-          SELECT Source_UUID, Target_UUID, Link_Role, 1 as depth
+          SELECT Source_UUID, Source_File, Target_UUID, Target_File, Link_Role, 1 as depth
           FROM ObjectLinks
           WHERE Source_UUID = ? AND Link_Type = 'operational'
+            ${focusFile ? 'AND Source_File = ?' : ''}
 
           UNION ALL
 
-          SELECT ol.Source_UUID, ol.Target_UUID, ol.Link_Role, dt.depth + 1
+          SELECT ol.Source_UUID, ol.Source_File, ol.Target_UUID, ol.Target_File, ol.Link_Role, dt.depth + 1
           FROM ObjectLinks ol
-          JOIN dependency_tree dt ON ol.Source_UUID = dt.Target_UUID
+          JOIN dependency_tree dt
+            ON ol.Source_UUID = dt.Target_UUID
+           AND ol.Source_File = dt.Target_File
           WHERE dt.depth < 10 AND ol.Link_Type = 'operational'
         )
         SELECT DISTINCT
@@ -815,10 +883,12 @@ async function getReferences(refOptions) {
           oc.Object_Name,
           oc.File_Name
         FROM dependency_tree dt
-        JOIN ObjectCatalog oc ON dt.Target_UUID = oc.Object_UUID
+        JOIN ObjectCatalog oc
+          ON dt.Target_UUID = oc.Object_UUID
+         AND oc.File_Name IS NOT DISTINCT FROM dt.Target_File
         ORDER BY depth, Object_Name
       `;
-      params = [uuid];
+      params = focusFile ? [uuid, focusFile] : [uuid];
     } else {
       // All (both parent and child) — beide Hälften mit Container-Resolution.
       const baseChild = `
@@ -829,9 +899,10 @@ async function getReferences(refOptions) {
           pl.Target_UUID as Container_UUID,
           pc.Object_Type as Container_Type
         FROM ObjectLinks ol
-        JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID
+        JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID AND ol.Target_File = oc.File_Name
         ${CONTAINER_JOIN}
         WHERE ol.Source_UUID = ?
+        ${focusFile ? 'AND ol.Source_File = ?' : ''}
       `;
       const baseParent = `
         SELECT 'parent' as direction,
@@ -841,16 +912,20 @@ async function getReferences(refOptions) {
           pl.Target_UUID as Container_UUID,
           pc.Object_Type as Container_Type
         FROM ObjectLinks ol
-        JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID
+        JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID AND ol.Source_File = oc.File_Name
         ${CONTAINER_JOIN}
         WHERE ol.Target_UUID = ?
+        ${focusFile ? 'AND ol.Target_File = ?' : ''}
       `;
+      // Param-Reihenfolge je UNION-Hälfte: uuid [, focusFile] [, link_type].
+      const childParams = focusFile ? [uuid, focusFile] : [uuid];
+      const parentParams = focusFile ? [uuid, focusFile] : [uuid];
       if (link_type !== 'all') {
         sql = `${baseChild} AND ol.Link_Type = ? UNION ALL ${baseParent} AND ol.Link_Type = ?`;
-        params = [uuid, link_type, uuid, link_type];
+        params = [...childParams, link_type, ...parentParams, link_type];
       } else {
         sql = `${baseChild} UNION ALL ${baseParent}`;
-        params = [uuid, uuid];
+        params = [...childParams, ...parentParams];
       }
     }
 
@@ -878,25 +953,30 @@ async function getReferences(refOptions) {
  * @param {string} uuid - Object UUID
  * @returns {Promise<Object>} Detail data with metadata
  */
-async function getDetails(uuid) {
+async function getDetails(uuid, file) {
   try {
-    // 1. Look up object type from ObjectCatalog
-    const lookupSql = 'SELECT Object_Type, Object_Name, File_Name, Source_Table, Object_ID FROM ObjectCatalog WHERE Object_UUID = ?';
-    const lookupResult = await db.executeQuery(lookupSql, [uuid]);
-
-    if (lookupResult.rows.length === 0) {
-      throw createError('OBJECT_NOT_FOUND', `Object with UUID '${uuid}' not found`, { uuid });
-    }
+    // 1. Look up object type from ObjectCatalog (clone-aware, see resolveByUUID)
+    const lookupResult = await resolveByUUID(
+      uuid,
+      file,
+      'Object_Type, Object_Name, File_Name, Source_Table, Object_ID'
+    );
 
     const objectInfo = lookupResult.rows[0];
     const objectType = objectInfo.Object_Type;
+    // Klon-Robustheit: die kanonisch aufgelöste Datei (resolveByUUID hat bei
+    // mehrdeutiger UUID ohne `file` bereits 409 geworfen) wird an das Detail-Template
+    // durchgereicht. Sonst matcht ein bare-`getvariable('uuid')`-WHERE die Klon-Zeilen
+    // ALLER Dateien → Inhalt mischt sich (z.B. Field-Klon BEL/BELA). Templates skopieren
+    // via `(getvariable('file') IS NULL OR <tbl>.File_Name = getvariable('file'))`.
+    const resolvedFile = objectInfo.File_Name;
 
     // 2. Determine template name from explicit map
     const templateName = DETAIL_TEMPLATE_MAP[objectType] || 'object_details_generic';
     const hasDedicatedTemplate = objectType in DETAIL_TEMPLATE_MAP;
 
     // 3. Execute the detail template (templates/sql/ = 'report' source)
-    const result = await templateService.executeTemplate(templateName, { uuid }, 'report');
+    const result = await templateService.executeTemplate(templateName, { uuid, file: resolvedFile }, 'report');
 
     return {
       data: result.data,
@@ -917,6 +997,7 @@ async function getDetails(uuid) {
 }
 
 module.exports = {
+  resolveByUUID,
   getByUUID,
   getDetails,
   listObjects,

@@ -122,7 +122,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
     const extras = ref.Link_Role === 'parent_script' && currentUuid
       ? { step: currentUuid }
       : undefined;
-    navigate(buildNavigablePath(ref.uuid, currentUuid ?? null, ref.Container_UUID ?? null, extras));
+    navigate(buildNavigablePath(ref.uuid, currentUuid ?? null, ref.Container_UUID ?? null, ref.File_Name ?? null, extras));
   };
 
   // Item-Handler: Enter/Space löst Navigation aus. Pfeiltasten werden hier

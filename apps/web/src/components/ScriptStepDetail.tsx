@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useScriptTokens } from '../hooks/useScriptTokens';
 import { useApiLang } from '../hooks/useApiLang';
+import { buildObjectPath } from '../lib/navigation';
+import { useCurrentFile } from '../lib/currentFileContext';
 import { ScriptViewer } from './ScriptViewer';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
@@ -32,7 +34,8 @@ const baseUrl = API_BASE;
 export const ScriptStepDetail: React.FC<ScriptStepDetailProps> = ({ uuid, highlightRefUuids, onLiveMatchCount }) => {
   const { t } = useTranslation(['detail']);
   const lang = useApiLang();
-  const { data, loading, error, retry } = useScriptTokens(uuid, lang);
+  const currentFile = useCurrentFile();
+  const { data, loading, error, retry } = useScriptTokens(uuid, lang, currentFile);
 
   if (loading) return <LoadingSpinner message={t('detail:loadingObject') as string} />;
   if (error) return <ErrorMessage message={error} onRetry={retry} />;
@@ -85,7 +88,7 @@ export const ScriptStepDetail: React.FC<ScriptStepDetailProps> = ({ uuid, highli
             <span className="script-step-card__file">{parent.file}</span>
             <span className="script-step-card__separator" aria-hidden="true">▸</span>
             <Link
-              to={`/object/${parent.uuid}?step=${uuid}`}
+              to={buildObjectPath(parent.uuid, null, parent.file ?? null, { step: uuid })}
               className="script-step-card__script-link"
               title={t('detail:objectListItem.showAria', { type: 'Script', name: parent.name }) as string}
             >

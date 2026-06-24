@@ -15,8 +15,12 @@ export interface CustomFunctionTokensResponse {
 export async function fetchCustomFunctionTokens(
   uuid: string,
   lang: string,
+  file?: string | null,
 ): Promise<CustomFunctionTokens> {
+  // `file` (Klon-Disambiguierung): get-details löst via resolveByUUID → ohne file
+  // 409 AMBIGUOUS_UUID bei geteilten Klon-UUIDs.
   const params = new URLSearchParams({ uuid, format: 'tokens', enrich: lang });
+  if (file) params.set('file', file);
   const response = await fetch(`${baseUrl}/api/get-details?${params}`);
 
   if (!response.ok) {

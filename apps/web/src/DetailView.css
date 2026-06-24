@@ -346,7 +346,7 @@
   color: var(--color-text-muted);
 }
 
-/* RefOriginPill — Cross-Reference Highlight (PRD prd_cross_references_hilite.md §7.1) */
+/* RefOriginPill — Cross-Reference Highlight */
 .ref-pill {
   display: flex;
   align-items: center;
@@ -638,4 +638,48 @@
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* Klon-Disambiguierung — Datei-Picker (Sicherheitsnetz für 409 AMBIGUOUS_UUID) */
+.ambiguous-file-picker {
+  max-width: 32rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border-color, #d0d0d0);
+  border-radius: 8px;
+  background: var(--card-bg, #fafafa);
+}
+
+.ambiguous-file-picker__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.ambiguous-file-picker__body {
+  margin: 0 0 1rem;
+  color: var(--text-secondary, #666);
+}
+
+.ambiguous-file-picker__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ambiguous-file-picker__item {
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--border-color, #d0d0d0);
+  border-radius: 6px;
+  background: var(--bg-color, #fff);
+  cursor: pointer;
+  font: inherit;
+}
+
+.ambiguous-file-picker__item:hover {
+  border-color: var(--accent-color, #2563eb);
+  background: var(--hover-bg, #f0f4ff);
 }

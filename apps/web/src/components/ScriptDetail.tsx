@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScriptTokens } from '../hooks/useScriptTokens';
 import { useApiLang } from '../hooks/useApiLang';
+import { useCurrentFile } from '../lib/currentFileContext';
 import { ScriptViewer } from './ScriptViewer';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
@@ -17,7 +18,8 @@ interface ScriptDetailProps {
 export const ScriptDetail: React.FC<ScriptDetailProps> = ({ uuid, highlightRefUuids, onLiveMatchCount }) => {
   const { t } = useTranslation(['detail']);
   const lang = useApiLang();
-  const { data, loading, error, retry } = useScriptTokens(uuid, lang);
+  const currentFile = useCurrentFile();
+  const { data, loading, error, retry } = useScriptTokens(uuid, lang, currentFile);
 
   if (loading) return <LoadingSpinner message={t('detail:loadingObject') as string} />;
   if (error) return <ErrorMessage message={error} onRetry={retry} />;

@@ -1,12 +1,12 @@
--- @title: Logical Links View (Graph Explorer, LE-3)
+-- @title: Logical Links View (Graph Explorer)
 -- @description: Operationale Referenz-Kanten mit Sub-Objekten auf ihren Container hochgezogen
--- @version: 1.1.0
+-- @version: 1.2.0
 -- @author: Marcel / Claude
 -- @tags: graph, subgraph, logical-view
--- @note: Plan plan_graphify_style_visualisierung.md §6.1.1 (LE-3) + plan_graphify_cluster_v2.md §3.
---        Ab v1.1.0 wird diese View regulär in convert-xml Phase 5 angelegt
+-- @note: Ab v1.1.0 wird diese View regulär in convert-xml Phase 5 angelegt
 --        (sql/convert-xml/convert_xml_05_homes.sql) — diese Datei bleibt die
 --        KANONISCHE Definition; bei Änderung beide Stellen synchron halten.
+--        v1.2.0 (Stufe C): lokale Variablen ($x) ausgeschlossen — siehe DEFINITION (5).
 --
 -- ============================================================================
 -- ZWECK
@@ -14,7 +14,7 @@
 -- Die "logische Sicht" (mode=logical) des Graph Explorers zeigt nur Top-Level-
 -- Objekte (Script, Field, Layout, CustomFunction, TableOccurrence, …). Sub-
 -- Objekt-Links werden auf ihren Container hochgezogen, damit der Referenzgraph
--- nicht im ScriptStep-/LayoutObject-Rauschen ertrinkt (LE-3: 46 % aller Knoten
+-- nicht im ScriptStep-/LayoutObject-Rauschen ertrinkt (46 % aller Knoten
 -- sind ScriptStep, 37 % LayoutObject).
 --
 -- ============================================================================
@@ -52,6 +52,12 @@
 --      LayoutObjects desselben Layouts), werden verworfen.
 --   4. DISTINCT dedupliziert: 12 LayoutObjects, die dasselbe Feld zeigen,
 --      werden zu EINER Layout→Field-Kante (vermeidet Doppelzählung, R3).
+--   5. STUFE C: lokale Variablen ($x) werden als Endpunkt ausgeschlossen. Ihr
+--      Scope_Anchor ist das Script (per-Script gekeyt) → Degree-1-Pendant, das nie
+--      eine Brücke sein kann (33,9 % aller Cluster-Knoten, reiner Clutter). GLOBALE
+--      ($$) / superglobale ($$$) BLEIBEN (Datei-/global-gekeyt = echte Brücken). Das
+--      Semantik-Signal bleibt erhalten (Skills lesen Variablen aus VariableUsages/
+--      VariablesCatalog per Script, nicht aus dem Graph).
 --
 -- Container-Logik bewusst analog zur Container-Mitgliedschaft in
 -- back_references.sql (parent_layout/parent_script/parent_object).
@@ -62,7 +68,7 @@
 -- Ab v1.1.0 ist die View PROMOTET: convert-xml Phase 5
 -- (sql/convert-xml/convert_xml_05_homes.sql) legt LogicalLinks + die
 -- Companion-View ClusterEdges (= LogicalLinks minus Builtins) am Phasenende per
--- CREATE OR REPLACE VIEW an. Auslöser war plan_graphify_cluster_v2.md: der
+-- CREATE OR REPLACE VIEW an. Auslöser: der
 -- Cluster-Engine-Export (graph_export_logical.sql 2.0.0) und die Skill-Grad-/
 -- Hub-Analyse (fm-graph-cluster) lesen ab v2 dieselbe View — EINE Single Source
 -- of Truth statt 3-fach inline duplizierter Edge-Logik. Die Views werden vom
@@ -72,7 +78,7 @@
 --
 --     duckdb db/fm_catalog.duckdb < graph_logical_links.sql
 --
--- OFFEN (optional, Plan §3.4): graph_subgraph.sql trägt weiterhin eine
+-- OFFEN (optional): graph_subgraph.sql trägt weiterhin eine
 -- INLINE-KOPIE dieser CTE-Kette (logical_dedup). Mit der nun in P5 promoteten
 -- View kann dort `SELECT * FROM LogicalLinks` die Inline-CTE ersetzen — separater
 -- Folge-Schritt mit eigener Verifikation gegen die READ_ONLY-API-Kopie, nicht
@@ -85,10 +91,26 @@ WITH container AS (
   FROM ObjectLinks
   WHERE Link_Role IN ('parent_layout', 'parent_script')
 ),
+local_var AS (
+  -- Stufe C: lokale Variablen ($x; global=$$, superglobal=$$$). Prefix-Test
+  -- exhaustiv (alle Variablen-Knoten beginnen mit '$'); Object_Type-Guard schützt
+  -- vor '$'-benannten Nicht-Variablen.
+  SELECT Object_UUID
+  FROM ObjectCatalog
+  WHERE Object_Type = 'Variable'
+    AND Object_Name LIKE '$%'
+    AND Object_Name NOT LIKE '$$%'
+),
 hoisted AS (
   SELECT
     COALESCE(cs.parent, ol.Source_UUID) AS a,
+    -- Klon-Robustheit: Datei mitführen. Containment (parent_layout/parent_script) ist
+    -- datei-lokal → der hochgezogene Container liegt in DERSELBEN Datei wie das Sub-
+    -- Objekt → a_file = ol.Source_File (analog b_file). Erlaubt dem Subgraph-Walk, einer
+    -- Kante datei-genau zu folgen statt eine geklonte UUID über alle Dateien zu mergen.
+    ol.Source_File AS a_file,
     COALESCE(ct.parent, ol.Target_UUID) AS b,
+    ol.Target_File AS b_file,
     ol.Link_Role,
     ol.Link_Subrole,
     ol.Link_Type,
@@ -100,16 +122,21 @@ hoisted AS (
     -- Containment-Gerüst raus (parent_table bleibt: echte Field→BaseTable-Referenz)
     AND ol.Link_Role NOT IN
         ('parent_layout', 'parent_script', 'parent_object', 'parent_folder')
-    -- Waisen raus (LE-4): beide Endpunkte müssen katalogisiert sein
+    -- Waisen raus: beide Endpunkte müssen katalogisiert sein
     AND ol.Source_UUID IN (SELECT Object_UUID FROM ObjectCatalog)
     AND ol.Target_UUID IN (SELECT Object_UUID FROM ObjectCatalog)
 )
 SELECT DISTINCT
   a            AS Source_UUID,
+  a_file       AS Source_File,
   b            AS Target_UUID,
+  b_file       AS Target_File,
   Link_Role,
   Link_Subrole,
   Link_Type,
   Is_Cross_File
 FROM hoisted
-WHERE a <> b;   -- durch Hochziehen entstandene Selbst-Schleifen verwerfen
+WHERE a <> b   -- durch Hochziehen entstandene Selbst-Schleifen verwerfen
+  -- Stufe C: lokale Variablen-Pendants (beide Endpunkte) entfernen
+  AND a NOT IN (SELECT Object_UUID FROM local_var)
+  AND b NOT IN (SELECT Object_UUID FROM local_var);

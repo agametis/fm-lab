@@ -19,6 +19,8 @@ WITH cf AS (
     ON cf.CF_UUID = ccf.CF_UUID
    AND cf.File_Name = ccf.File_Name
   WHERE cf.CF_UUID = getvariable('uuid')
+    -- Klon-Disambiguierung: LIMIT 1 würde sonst einen beliebigen Klon liefern.
+    AND (getvariable('file') IS NULL OR cf.File_Name = getvariable('file'))
   LIMIT 1
 ),
 -- Calc_Hash is not unique across DDR_Calculations: multiple Calc_UUIDs may share

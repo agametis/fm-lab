@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useObjectDetails } from '../hooks/useObjectDetails';
+import { useCurrentFile } from '../lib/currentFileContext';
 import { RelationshipViewer } from './RelationshipViewer';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
@@ -17,7 +18,8 @@ interface RelationshipDetailProps {
  */
 export const RelationshipDetail: React.FC<RelationshipDetailProps> = ({ uuid }) => {
   const { t } = useTranslation(['common']);
-  const { data, loading, error, retry } = useObjectDetails(uuid);
+  const currentFile = useCurrentFile();
+  const { data, loading, error, retry } = useObjectDetails(uuid, currentFile);
 
   if (loading) return <LoadingSpinner message={t('common:loading') as string} />;
   if (error) return <ErrorMessage message={error} onRetry={retry} />;

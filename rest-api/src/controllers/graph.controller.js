@@ -13,18 +13,31 @@ const { createError } = require('../middleware/error-handler');
  * Plan plan_graphify_style_visualisierung.md §6.1 / §13.3.
  */
 
+/**
+ * Fokus-Auflösung mit Clone-Disambiguierung. Wirft 404 (unbekannt) bzw. 409
+ * (mehrdeutig ohne focus_file) — sonst stiller Treffer auf den falschen Klon.
+ */
+async function assertFocusResolvable(focus, focusFile) {
+  const status = await graphService.objectFocusStatus(focus, focusFile);
+  if (!status.exists) {
+    throw createError('OBJECT_NOT_FOUND', `Focus object '${focus}' not found in ObjectCatalog`, { focus });
+  }
+  if (status.ambiguous) {
+    throw createError(
+      'AMBIGUOUS_UUID',
+      `Focus UUID '${focus}' exists in ${status.files.length} files (cloned/modular solution); ` +
+        `add &focus_file=<File_Name> to disambiguate`,
+      { focus, matched_files: status.files }
+    );
+  }
+}
+
 /** GET /api/graph/subgraph */
 async function getSubgraph(req, res, next) {
   try {
     const { format, meta, debug } = req.query;
 
-    if (!(await graphService.objectExists(req.query.focus))) {
-      throw createError(
-        'OBJECT_NOT_FOUND',
-        `Focus object '${req.query.focus}' not found in ObjectCatalog`,
-        { focus: req.query.focus }
-      );
-    }
+    await assertFocusResolvable(req.query.focus, req.query.focus_file);
 
     const { payload, sql } = await graphService.getSubgraph(req.query);
     const metaInfo = meta
@@ -41,13 +54,7 @@ async function getNeighbors(req, res, next) {
   try {
     const { format, meta, debug } = req.query;
 
-    if (!(await graphService.objectExists(req.query.focus))) {
-      throw createError(
-        'OBJECT_NOT_FOUND',
-        `Focus object '${req.query.focus}' not found in ObjectCatalog`,
-        { focus: req.query.focus }
-      );
-    }
+    await assertFocusResolvable(req.query.focus, req.query.focus_file);
 
     const { payload, sql } = await graphService.getNeighbors(req.query);
     const metaInfo = meta

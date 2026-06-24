@@ -324,8 +324,11 @@ export const RefSpan: React.FC<RefSpanProps> = ({ reference, text }) => {
   const highlighted = isUuidHighlighted(highlightSet, reference.uuid ?? null);
   const searchMatch = searchPredicate ? searchPredicate(reference) : false;
 
+  // Klon-Disambiguierung: `reference.file` ist die Zieldatei (Backend setzt sie
+  // für intra- UND cross-file-Refs aus ObjectHomes.Home_File). Fehlt sie →
+  // Graceful Downgrade.
   const path = reference.uuid
-    ? buildObjectPath(reference.uuid, currentUuid ?? null)
+    ? buildObjectPath(reference.uuid, currentUuid ?? null, reference.file ?? null)
     : refTargetPath(reference);
   const baseClass = `fm-ref fm-ref--${reference.type}`;
   const crossFile = reference.crossFile ? ' fm-ref--cross-file' : '';

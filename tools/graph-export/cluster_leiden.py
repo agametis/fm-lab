@@ -13,6 +13,10 @@ Usage:  python3 cluster_leiden.py <edges.csv> <communities.csv> [resolution] [se
   edges.csv         header: source,target
   communities.csv   header: object_uuid,community
 
+Node IDs are opaque strings: since export 3.0.0 they are composite `uuid::file`
+(clone-dedup; NULL-file synthetics stay bare `uuid`). csv.reader handles them
+verbatim (quote-safe); cluster_load.sql splits them back to (Object_UUID, File_Name).
+
 Only dependency: python-igraph. No DuckDB in Python — I/O stays CSV.
 """
 import csv

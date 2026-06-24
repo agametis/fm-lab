@@ -20,8 +20,13 @@ export interface FmideUriResult {
 /**
  * Fetches the fmIDE Thingamajig URI for a given object UUID.
  * Only fires when the fmide feature is enabled.
+ *
+ * `file` (Klon-Disambiguierung): File_Name des Objekts. Da die fmp-URL die Datei
+ * als erstes Pfadsegment trägt, würde ein bare-UUID-Deeplink bei geteilten Klon-
+ * UUIDs in die falsche Datei zeigen. Mit `file` löst der Backend-`buildUri` das
+ * Paar (UUID, File_Name) eindeutig auf (sonst Graceful Downgrade / 409).
  */
-export function useFmideUri(uuid: string | undefined) {
+export function useFmideUri(uuid: string | undefined, file?: string | null) {
   const { isEnabled } = useFeaturesContext();
   const enabled = isEnabled('fmide');
   const [data, setData] = useState<FmideUriResult | null>(null);
@@ -36,7 +41,9 @@ export function useFmideUri(uuid: string | undefined) {
     let cancelled = false;
     setLoading(true);
 
-    fetch(`${API_BASE}/api/fmide/uri?uuid=${encodeURIComponent(uuid)}`)
+    const q = new URLSearchParams({ uuid });
+    if (file) q.set('file', file);
+    fetch(`${API_BASE}/api/fmide/uri?${q.toString()}`)
       .then((res) => res.json())
       .then((json) => {
         if (!cancelled && json.success) {
@@ -51,14 +58,17 @@ export function useFmideUri(uuid: string | undefined) {
       });
 
     return () => { cancelled = true; };
-  }, [uuid, enabled]);
+  }, [uuid, enabled, file]);
 
   return { data, loading, enabled };
 }
 
 /**
  * Build the goto URL for a UUID (no fetch needed — just the redirect endpoint).
+ * `file` disambiguates geteilte Klon-UUIDs (siehe useFmideUri).
  */
-export function buildGotoUrl(uuid: string): string {
-  return `${API_BASE}/api/fmide/goto?uuid=${encodeURIComponent(uuid)}`;
+export function buildGotoUrl(uuid: string, file?: string | null): string {
+  const q = new URLSearchParams({ uuid });
+  if (file) q.set('file', file);
+  return `${API_BASE}/api/fmide/goto?${q.toString()}`;
 }

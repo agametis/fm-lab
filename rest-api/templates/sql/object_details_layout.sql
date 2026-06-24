@@ -12,13 +12,18 @@
 WITH RECURSIVE layout_match AS (
   SELECT L_ID, L_Name, L_UUID, L_TO_Name, File_Name
   FROM Layouts
+  -- Clone-Scoping: L_UUID/L_ID sind in geklonten Lösungen nicht eindeutig → in JEDEM
+  -- Zweig auf die aufgelöste Datei einschränken (getvariable('file')=NULL → Downgrade).
+  -- Sonst zog der UUID-Pfad (get-details) via LIMIT 1 einen beliebigen Klon.
   WHERE (
-    (getvariable('uuid') IS NOT NULL AND L_UUID = getvariable('uuid'))
+    (getvariable('uuid') IS NOT NULL AND L_UUID = getvariable('uuid')
+     AND (getvariable('file') IS NULL OR File_Name = getvariable('file')))
     OR
     (getvariable('name') IS NOT NULL AND L_Name = getvariable('name')
      AND (getvariable('file') IS NULL OR File_Name = getvariable('file')))
     OR
-    (getvariable('id') IS NOT NULL AND L_ID = CAST(getvariable('id') AS INTEGER))
+    (getvariable('id') IS NOT NULL AND L_ID = CAST(getvariable('id') AS INTEGER)
+     AND (getvariable('file') IS NULL OR File_Name = getvariable('file')))
   )
   LIMIT 1
 ),

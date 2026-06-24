@@ -9,15 +9,23 @@ interface UseObjectDetailsResult {
   retry: () => void;
 }
 
-// Session-scoped cache (keyed by uuid)
+// Session-scoped cache. Key = `details:${uuid}::${file ?? ''}` — Klon-
+// Disambiguierung: geteilte UUIDs aus verschiedenen Dateien dürfen sich den
+// Detail-Cache nicht teilen (sonst mischt der Detail-Inhalt zwei Klone).
 const cache = new Map<string, { data: Array<Record<string, unknown>>; meta: ObjectDetailsMeta }>();
 
 /**
  * Hook to fetch type-specific object details via /api/get-details.
  * The API automatically selects the correct template based on the object's type.
- * Results are cached per UUID for the session.
+ * Results are cached per (UUID, File) for the session.
+ *
+ * `file` (Klon-Disambiguierung): optionaler File_Name; ohne ihn gilt Graceful
+ * Downgrade (bare UUID, solange eindeutig; sonst 409 AMBIGUOUS_UUID).
  */
-export const useObjectDetails = (uuid: string | undefined): UseObjectDetailsResult => {
+export const useObjectDetails = (
+  uuid: string | undefined,
+  file?: string | null,
+): UseObjectDetailsResult => {
   const [data, setData] = useState<Array<Record<string, unknown>> | null>(null);
   const [meta, setMeta] = useState<ObjectDetailsMeta | null>(null);
   const [loading, setLoading] = useState(false);
@@ -27,7 +35,7 @@ export const useObjectDetails = (uuid: string | undefined): UseObjectDetailsResu
   const fetchData = useCallback(async () => {
     if (!uuid || isFetchingRef.current) return;
 
-    const cacheKey = `details:${uuid}`;
+    const cacheKey = `details:${uuid}::${file ?? ''}`;
     const cached = cache.get(cacheKey);
     if (cached) {
       setData(cached.data);
@@ -42,7 +50,7 @@ export const useObjectDetails = (uuid: string | undefined): UseObjectDetailsResu
     setError(null);
 
     try {
-      const response = await fetchObjectDetails(uuid);
+      const response = await fetchObjectDetails(uuid, file);
       const resultMeta = response.meta || {};
       cache.set(cacheKey, { data: response.data, meta: resultMeta });
       setData(response.data);
@@ -54,7 +62,7 @@ export const useObjectDetails = (uuid: string | undefined): UseObjectDetailsResu
       isFetchingRef.current = false;
       setLoading(false);
     }
-  }, [uuid]);
+  }, [uuid, file]);
 
   useEffect(() => {
     if (uuid) {

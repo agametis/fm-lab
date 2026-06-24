@@ -15,7 +15,7 @@ interface VirtualListProps {
   hasMore: boolean;
   onLoadMore: () => void;
   totalCount: number | null;
-  onItemClick?: (uuid: string) => void;
+  onItemClick?: (uuid: string, file?: string | null) => void;
   onToggleGroup?: (groupKey: string) => void;
   scrollContainerRef?: React.RefObject<HTMLDivElement>;
   // Aktueller Volltext-Suchbegriff (vor Wildcard-Expansion). Wird an
@@ -101,7 +101,11 @@ export const VirtualList: React.FC<VirtualListProps> = ({
           const row = rows[virtualItem.index];
           return (
             <div
-              key={row._type === 'header' ? `header-${row.groupKey}` : row.object.Object_UUID}
+              key={row._type === 'header'
+                ? `header-${row.groupKey}`
+                /* Klon-Disambiguierung: geteilte UUIDs aus mehreren Dateien
+                   würden als React-Key kollidieren → (UUID, File) als Key. */
+                : `${row.object.Object_UUID}::${row.object.File_Name ?? ''}`}
               style={{
                 position: 'absolute',
                 top: 0,

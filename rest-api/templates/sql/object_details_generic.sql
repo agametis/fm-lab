@@ -11,6 +11,8 @@ WITH object_info AS (
   SELECT Object_UUID, Object_Type, Object_Name, File_Name, Source_Table, Object_ID
   FROM ObjectCatalog
   WHERE Object_UUID = getvariable('uuid')
+    -- Clone-Scoping: Object_UUID ist nur je File eindeutig
+    AND (getvariable('file') IS NULL OR File_Name = getvariable('file'))
   LIMIT 1
 ),
 child_refs AS (
@@ -21,9 +23,11 @@ child_refs AS (
     ol.Link_Role,
     ol.Is_Cross_File
   FROM ObjectLinks ol
-  JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID
+  JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID AND oc.File_Name = ol.Target_File
   WHERE ol.Source_UUID = getvariable('uuid')
     AND ol.Link_Type = 'operational'
+    -- Clone-Scoping: Quelle je File eindeutig
+    AND (getvariable('file') IS NULL OR ol.Source_File = getvariable('file'))
   ORDER BY oc.Object_Type, oc.Object_Name
 ),
 parent_refs AS (
@@ -34,9 +38,11 @@ parent_refs AS (
     ol.Link_Role,
     ol.Is_Cross_File
   FROM ObjectLinks ol
-  JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID
+  JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID AND oc.File_Name = ol.Source_File
   WHERE ol.Target_UUID = getvariable('uuid')
     AND ol.Link_Type = 'operational'
+    -- Clone-Scoping: Ziel je File eindeutig
+    AND (getvariable('file') IS NULL OR ol.Target_File = getvariable('file'))
   ORDER BY oc.Object_Type, oc.Object_Name
 )
 

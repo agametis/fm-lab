@@ -14,13 +14,17 @@ const schemas = {
   // GET /api/get
   get: Joi.object({
     uuid: Joi.string().required(),
+    // Clone-Disambiguierung: optionaler File_Name. Bei geteilter UUID (Klon)
+    // grenzt er auf die richtige Datei ein; ohne ihn gilt Graceful Downgrade
+    // (eindeutig → ok, mehrdeutig → AMBIGUOUS_UUID).
+    file: Joi.string().optional(),
     format: Joi.string().lowercase().valid(...Object.values(OUTPUT_FORMATS)).default('json'),
     meta: Joi.boolean().default(false),
     debug: Joi.boolean().default(false),
   }),
 
   // GET /api/list
-  // PRD prd_pseudo_object_types_filter.md §7.2 — neue Pseudo-Token-Parameter:
+  // Neue Pseudo-Token-Parameter:
   //   ?with_usage / ?with_category / ?category=A,B,C / ?sort=usage|name|category
   // (snake_case konsistent mit link_type/group_by; index.js normalisiert
   // Query-Keys automatisch zu lowercase, deshalb keine camelCase-Form möglich.)
@@ -42,7 +46,7 @@ const schemas = {
   }),
 
   // GET /api/list/categories - Filter-Pillen-Daten für einen Pseudo-Token-Typ.
-  // PRD §7.2 — Liefert { category, token_count, total_usage } pro Kategorie.
+  // Liefert { category, token_count, total_usage } pro Kategorie.
   // Nur für PSEUDO_TOKEN_TYPES gültig; PluginComponent → HTTP 400.
   listCategories: Joi.object({
     type: Joi.string()
@@ -103,6 +107,7 @@ const schemas = {
   // GET /api/references
   references: Joi.object({
     uuid: Joi.string().required(),
+    file: Joi.string().optional(), // Clone-Scoping der Fokus-Seite (s. get-Schema)
     direction: Joi.string().lowercase().valid(...Object.values(REFERENCE_DIRECTIONS)).default('all'),
     link_type: Joi.string().lowercase().valid(...Object.values(LINK_TYPES)).default('operational'),
     limit: Joi.number().integer().min(0).max(environment.api.maxLimit).default(environment.api.defaultLimit),
@@ -112,10 +117,11 @@ const schemas = {
   }),
 
   // GET /api/back-references - Cross-Reference Highlight Lookup
-  // PRD prd_cross_references_hilite.md §6.3
   backReferences: Joi.object({
     destination: Joi.string().required(),
     origin: Joi.string().required(),
+    dest_file: Joi.string().optional(),   // Clone-Disambiguierung der Destination-UUID
+    origin_file: Joi.string().optional(), // Clone-Disambiguierung der Origin-UUID
     mode: Joi.string().lowercase().valid('uuid', 'name', 'auto').default('auto'),
     format: Joi.string().lowercase().valid(...Object.values(OUTPUT_FORMATS)).default('json'),
     meta: Joi.boolean().default(false),
@@ -131,10 +137,11 @@ const schemas = {
   // GET /api/get-details - Object type-specific detail view
   getDetails: Joi.object({
     uuid: Joi.string().required(),
+    file: Joi.string().optional(), // Clone-Disambiguierung (s. get-Schema)
     format: Joi.string().lowercase().valid(...Object.values(OUTPUT_FORMATS)).default('json'),
     meta: Joi.boolean().default(false),
     debug: Joi.boolean().default(false),
-    // PRD §5.1 — optionale Token-Anreicherung mit Reference-DB pro Sprache
+    // Optionale Token-Anreicherung mit Reference-DB pro Sprache
     enrich: Joi.string().optional(),
   }),
 
@@ -144,7 +151,7 @@ const schemas = {
     format: Joi.string().lowercase().valid('tokens', 'json').default('tokens'),
     meta: Joi.boolean().default(false),
     debug: Joi.boolean().default(false),
-    // PRD §5.2 — optionale Calc-Token-Anreicherung über function_name_lookup
+    // Optionale Calc-Token-Anreicherung über function_name_lookup
     enrich: Joi.string().optional(),
   }),
 
@@ -171,11 +178,11 @@ const schemas = {
     debug: Joi.boolean().default(false),
   }),
 
-  // GET /api/graph/subgraph - Fokus-zentrierter k-Hop-Subgraph (Graph Explorer, P2)
-  // Plan plan_graphify_style_visualisierung.md §6.1 / §13.3.
+  // GET /api/graph/subgraph - Fokus-zentrierter k-Hop-Subgraph (Graph Explorer)
   // types/roles sind optionale Komma-Listen (CSV); Split + NULL-Handling im SQL.
   graphSubgraph: Joi.object({
     focus: Joi.string().required(),
+    focus_file: Joi.string().optional(), // Clone-Disambiguierung des Fokus-Knotens
     depth: Joi.number().integer().min(1).max(4).default(1),
     direction: Joi.string().lowercase().valid('out', 'in', 'both').default('both'),
     mode: Joi.string().lowercase().valid('logical', 'raw').default('logical'),
@@ -192,6 +199,7 @@ const schemas = {
   // GET /api/graph/neighbors - 1-Hop-Expansion (Lazy-Expand). Wie subgraph, ohne depth.
   graphNeighbors: Joi.object({
     focus: Joi.string().required(),
+    focus_file: Joi.string().optional(), // Clone-Disambiguierung des Fokus-Knotens
     direction: Joi.string().lowercase().valid('out', 'in', 'both').default('both'),
     mode: Joi.string().lowercase().valid('logical', 'raw').default('logical'),
     types: Joi.string().optional(),

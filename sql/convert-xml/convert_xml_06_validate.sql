@@ -1,6 +1,6 @@
 /*
--- convert_xml_06_validate.sql — Phase 6 der XML-Konvertierungs-Pipeline
--- (project/plan_xml_diff.md §7.3). Plausibilitäts-/Konsistenz-Checks als
+-- convert_xml_06_validate.sql — Phase 6 der XML-Konvertierungs-Pipeline.
+-- Plausibilitäts-/Konsistenz-Checks als
 -- wiederverwendbare, versionierte SQL-Views. TABLE-ONLY (liest nur die fertigen
 -- Pipeline-Tabellen).
 --

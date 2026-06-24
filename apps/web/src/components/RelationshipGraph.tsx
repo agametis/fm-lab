@@ -6,6 +6,7 @@ import { useGraphSearch } from '../hooks/useGraphSearch';
 import { TOBox, SelectionRing } from './TOBox';
 import { JoinLine } from './JoinLine';
 import { layoutTOBox } from './relationshipGraphLayout';
+import { buildObjectPath } from '../lib/navigation';
 
 type Props = {
   data: RelationshipGraphData;
@@ -159,7 +160,9 @@ export const RelationshipGraph = forwardRef<RelationshipGraphHandle, Props>(({ d
   };
 
   const handleTOClick = (uuid: string) => {
-    navigate(`/object/${uuid}`);
+    // Klon-Disambiguierung: alle TableOccurrences dieses Beziehungsgraphen liegen
+    // in `data.file` (der Graph ist pro Datei) → Zieldatei ist data.file.
+    navigate(buildObjectPath(uuid, null, data.file ?? null));
   };
 
   // Live-Refs für den imperative Handle.

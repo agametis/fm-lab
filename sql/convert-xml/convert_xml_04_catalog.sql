@@ -1,6 +1,6 @@
 /*
--- convert_xml_04_catalog.sql — Phase 4 der XML-Konvertierungs-Pipeline
--- (project/plan_xml_diff.md §7.1). Generischer ObjektKatalog + Links:
+-- convert_xml_04_catalog.sql — Phase 4 der XML-Konvertierungs-Pipeline.
+-- Generischer ObjektKatalog + Links:
 -- ObjectCatalog (alle Objekttypen) und ObjectLinks (operational + structural,
 -- cross-file). TABLE-ONLY (liest nur P1–P3-Tabellen, kein read_xml). Läuft nach
 -- Phase 3, datei-übergreifend, einmal am Schluss.
@@ -267,7 +267,7 @@ FROM CustomMenuCatalog
 
 UNION ALL
 
--- 20b. CustomMenuSetCatalog (Menü-Sets, Paket A.2 v4)
+-- 20b. CustomMenuSetCatalog (Menü-Sets)
 SELECT
     MenuSet_UUID as Object_UUID,
     'CustomMenuSet' as Object_Type,
@@ -333,7 +333,7 @@ WHERE subtype = 'Folder'
 UNION ALL
 
 -- 25. BuiltinFunction (synthetisch)
--- PRD prd_universal_function_links.md §5: ein Eintrag pro distinct FunctionRef-Token
+-- Ein Eintrag pro distinct FunctionRef-Token
 -- aus XMLCalcReferences (Ref_Type='function'). Built-ins sind lösungs-unabhängig
 -- → File_Name = NULL. Bei Get(<SubParameter>) erzeugt jeder SubParameter einen
 -- eigenen Eintrag (Object_Name = 'Get(<SubParameter>)'); zusätzlich existiert der
@@ -361,11 +361,11 @@ WHERE Ref_Type = 'function'
 UNION ALL
 
 -- 26. PluginFunction (synthetisch)
--- PRD prd_universal_function_links.md §6: ein Eintrag pro (Plugin_Function_Name, SubName).
+-- Ein Eintrag pro (Plugin_Function_Name, SubName).
 -- Container-Plugins (heute: MBS) erzeugen pro SubName einen Eintrag; Non-Container-Plugins
 -- einen Eintrag pro registriertem Calc-Token.
 -- Object_Name folgt der Konvention 'Plugin::SubName' für Container-Plugins,
--- 'Plugin' für Non-Container-Plugins (siehe PRD §6.4).
+-- 'Plugin' für Non-Container-Plugins.
 -- Dynamische MBS-Aufrufe (SubName IS NULL) werden ausgefiltert.
 SELECT DISTINCT
     md5('PluginFunction::' || pfu.Plugin_Function_Name || '::' ||
@@ -389,10 +389,10 @@ WHERE pfu.Plugin_Function_Name IS NOT NULL
 UNION ALL
 
 -- 27. ScriptStepType (synthetisch, Token-Aggregat)
--- PRD prd_pseudo_object_types_filter.md §6.1: ein Eintrag pro distinct Step_Name
+-- Ein Eintrag pro distinct Step_Name
 -- aus StepsForScripts. ScriptStepTypes sind lösungs-unabhängig → File_Name = NULL.
 -- Die Verwendungs-Anzahl wird im Detail-Template direkt aus StepsForScripts aggregiert
--- (keine zusätzlichen ObjectLinks — vgl. PRD §6.4 / §4 Begründung).
+-- (keine zusätzlichen ObjectLinks).
 SELECT DISTINCT
     md5('ScriptStepType::' || Step_Name) as Object_UUID,
     'ScriptStepType' as Object_Type,
@@ -407,7 +407,7 @@ WHERE Step_Name IS NOT NULL
 UNION ALL
 
 -- 28. FilesCatalog (File-Knoten als Owner-Anker für File-Level-Trigger)
--- PRD prd_script_trigger_owner_refs.md §3.2: File-Level-Trigger
+-- File-Level-Trigger
 -- (OnFirstWindowOpen etc.) tragen als Owner_UUID die FMSaveAsXML/@UUID.
 -- Damit der trigger_owner-Link (Block 18b) einen Katalog-Eintrag trifft,
 -- wird hier je Datei ein File-Knoten registriert. Object_ID = NULL, da
@@ -424,14 +424,14 @@ FROM FilesCatalog;
 -- ========================================
 -- PluginComponent (synthetisch, Category-Aggregat)
 -- ========================================
--- PRD prd_pseudo_object_types_filter.md §6.2: Komponenten-Mapping aus
+-- Komponenten-Mapping aus
 --   1) data/mbs_component_exceptions.csv (autoritativ, ~1.021 Mappings)
 --   2) Default-Heuristik split_part(SubName, '.', 1)
 -- Object_Name folgt der Konvention 'MBS::<Component>' (z.B. 'MBS::XL').
 -- Wird als separater INSERT nach dem CREATE eingefügt, weil die Auflösung
 -- auf die bereits existierenden PluginFunction-Einträge des ObjectCatalog
 -- zugreift (CSV-Lookup gegen 'MBS::SubName'-Object_Name).
--- File_Name = NULL (lösungs-unabhängig, vgl. PRD §5).
+-- File_Name = NULL (lösungs-unabhängig).
 --
 -- Voraussetzung: convert_fm_xml.sh führt den DuckDB-Lauf im Repo-Root aus,
 -- sodass der relative CSV-Pfad auflösbar ist (cd in convert_fm_xml.sh).
@@ -674,7 +674,8 @@ SELECT
     oc_target.File_Name as Target_File,
     (lo.File_Name != oc_target.File_Name) as Is_Cross_File
 FROM LayoutObjects lo
-LEFT JOIN ObjectCatalog oc_target ON (SELECT L_UUID FROM Layouts WHERE L_ID = lo.Layout_ID AND File_Name = lo.File_Name LIMIT 1) = oc_target.Object_UUID AND oc_target.Object_Type = 'Layout'
+-- Klon-Disambiguierung: Containment ist datei-lokal (vgl. parent_script).
+LEFT JOIN ObjectCatalog oc_target ON (SELECT L_UUID FROM Layouts WHERE L_ID = lo.Layout_ID AND File_Name = lo.File_Name LIMIT 1) = oc_target.Object_UUID AND oc_target.File_Name = lo.File_Name AND oc_target.Object_Type = 'Layout'
 
 UNION ALL
 
@@ -691,7 +692,8 @@ SELECT
     oc_target.File_Name as Target_File,
     (child.File_Name != oc_target.File_Name) as Is_Cross_File
 FROM LayoutObjects child
-LEFT JOIN ObjectCatalog oc_target ON (SELECT Object_UUID FROM LayoutObjects parent WHERE parent.Object_ID = child.Parent_Object_ID AND parent.Layout_ID = child.Layout_ID AND parent.File_Name = child.File_Name LIMIT 1) = oc_target.Object_UUID AND oc_target.Object_Type = 'LayoutObject'
+-- Klon-Disambiguierung: Containment ist datei-lokal (vgl. parent_script).
+LEFT JOIN ObjectCatalog oc_target ON (SELECT Object_UUID FROM LayoutObjects parent WHERE parent.Object_ID = child.Parent_Object_ID AND parent.Layout_ID = child.Layout_ID AND parent.File_Name = child.File_Name LIMIT 1) = oc_target.Object_UUID AND oc_target.File_Name = child.File_Name AND oc_target.Object_Type = 'LayoutObject'
 WHERE child.Parent_Object_ID IS NOT NULL
 
 UNION ALL
@@ -709,7 +711,10 @@ SELECT
     oc_target.File_Name as Target_File,
     (sfs.File_Name != oc_target.File_Name) as Is_Cross_File
 FROM StepsForScripts sfs
-LEFT JOIN ObjectCatalog oc_target ON sfs.Script_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Script'
+-- Klon-Disambiguierung: Containment ist datei-lokal. Ohne File_Name-Abgleich
+-- matcht eine geteilte Klon-Script_UUID die Script-Zeile ALLER Klon-Dateien →
+-- kartesische parent_script-Kanten (Step-Datei × Script-Datei).
+LEFT JOIN ObjectCatalog oc_target ON sfs.Script_UUID = oc_target.Object_UUID AND oc_target.File_Name = sfs.File_Name AND oc_target.Object_Type = 'Script'
 
 UNION ALL
 
@@ -772,7 +777,7 @@ WHERE xsr.Ref_Type = 'script'
 UNION ALL
 
 -- 16. Script → Field (alle Step-Typen mit FieldReference)
--- Extrahiert aus XMLStepReferences (PRD prd_universal_field_refs_in_steps.md §4.3)
+-- Extrahiert aus XMLStepReferences
 -- Differenzierte Link-Rollen pro Step-Typ-Gruppe:
 --   sets_field         — Step schreibt/verändert den Feldinhalt
 --   reads_field        — Step liest aus dem Feld
@@ -848,13 +853,13 @@ LEFT JOIN ObjectCatalog oc_target ON st.Script_UUID = oc_target.Object_UUID AND 
 UNION ALL
 
 -- 18b. Script Triggers → Owner (Layout / LayoutObject / File)
--- PRD prd_script_trigger_owner_refs.md §3.1: rückwärts-navigierbare Kante
+-- Rückwärts-navigierbare Kante
 -- vom Trigger-Knoten auf seinen Owner (child→parent, wie parent_layout/
 -- parent_object/parent_script). Source_UUID identisch zu Block 18 (= Katalog-
 -- UUID des Triggers). Link_Subrole trägt den Trigger-Typ, sodass "alle
 -- OnObjectSave-Trigger eines Layouts" ohne JOIN auf ScriptTriggers geht.
 -- Der IS-NOT-NULL-Guard verhindert verwaiste Links für unauflösbare Owner
--- (aktuell die 78 PopoverPanel-Owner, siehe PRD §4.3.2 — Parser-Folge-Ticket).
+-- (aktuell die 78 PopoverPanel-Owner — Parser-Folge-Ticket).
 SELECT
     st.Trigger_ID::VARCHAR || '_' || st.Owner_UUID || '_' || st.File_Name as Source_UUID,
     'ScriptTrigger' as Source_Type,
@@ -867,7 +872,14 @@ SELECT
     oc_owner.File_Name as Target_File,
     FALSE as Is_Cross_File
 FROM ScriptTriggers st
-LEFT JOIN ObjectCatalog oc_owner ON st.Owner_UUID = oc_owner.Object_UUID
+-- Clone-Scoping: ein Trigger-Owner (Layout/
+-- LayoutObject/File) liegt IMMER in derselben Datei wie der Trigger. Ohne
+-- File_Name-Scope matcht eine geteilte Owner_UUID (geklonte Module) zusätzlich
+-- die Owner-Schatten der Schwester-Module → mehrfache/fehlattribuierte Kanten.
+-- Auf einem Nicht-Klon-Korpus ist die Bedingung ein No-Op (UUID global eindeutig).
+LEFT JOIN ObjectCatalog oc_owner
+    ON st.Owner_UUID = oc_owner.Object_UUID
+   AND oc_owner.File_Name = st.File_Name
 WHERE oc_owner.Object_UUID IS NOT NULL
 
 UNION ALL
@@ -998,9 +1010,21 @@ SELECT
     COALESCE(oc_target.File_Name, f.File_Name) as Target_File,
     (f.File_Name != COALESCE(oc_target.File_Name, f.File_Name)) as Is_Cross_File
 FROM FieldsForTables f
-LEFT JOIN ObjectCatalog oc_target ON f.Lookup_Field_UUID = oc_target.Object_UUID
+-- Clone-Scoping „prefer-local-else-home": ein Lookup-Quellfeld
+-- liegt MEIST in derselben Datei, kann aber legitim datei-übergreifend sein
+-- (z. B. eine zentrale Daten-Datei). Hartes File_Name=-Scoping wäre falsch
+-- (killte die legitimen Cross-File-Lookups). Stattdessen: existiert eine
+-- gleichdateiliche Ziel-Kopie, gewinnt sie; sonst die (deterministisch erste)
+-- Cross-File-Kopie. Der Object_Type-Guard verhindert UUID-Kollision mit Nicht-Feldern.
+LEFT JOIN ObjectCatalog oc_target
+    ON f.Lookup_Field_UUID = oc_target.Object_UUID
+   AND oc_target.Object_Type = 'Field'
 WHERE f.AutoEnter_Type = 'Looked_up'
   AND f.Lookup_Field_UUID IS NOT NULL
+QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY f.Field_UUID, f.File_Name
+    ORDER BY (oc_target.File_Name = f.File_Name) DESC, oc_target.File_Name
+  ) = 1
 
 UNION ALL
 
@@ -1018,9 +1042,18 @@ SELECT
     COALESCE(oc_target.File_Name, f.File_Name) as Target_File,
     (f.File_Name != COALESCE(oc_target.File_Name, f.File_Name)) as Is_Cross_File
 FROM FieldsForTables f
-LEFT JOIN ObjectCatalog oc_target ON f.Lookup_TO_UUID = oc_target.Object_UUID
+-- Clone-Scoping „prefer-local-else-home" (analog zu lookup_source, Block 25):
+-- die Lookup-Beziehungs-TO liegt meist lokal, kann aber legitim cross-file sein.
+-- Gleichdateilige Kopie gewinnt, sonst deterministisch erste Cross-File-Kopie.
+LEFT JOIN ObjectCatalog oc_target
+    ON f.Lookup_TO_UUID = oc_target.Object_UUID
+   AND oc_target.Object_Type = 'TableOccurrence'
 WHERE f.AutoEnter_Type = 'Looked_up'
   AND f.Lookup_TO_UUID IS NOT NULL
+QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY f.Field_UUID, f.File_Name
+    ORDER BY (oc_target.File_Name = f.File_Name) DESC, oc_target.File_Name
+  ) = 1
 
 UNION ALL
 
@@ -1165,13 +1198,13 @@ WHERE vu.Context_Type = 'layout_object'
 UNION ALL
 
 -- 28b. PrivilegeSet → Variable (reads_variable) — Custom Record Privilege Calc
--- PRD prd_record_privileges_calc_rendering.md §6.3: gespiegelt vom Field-/CF-
+-- Gespiegelt vom Field-/CF-
 -- Pendant (Block 26/27), gefiltert auf den neuen Context_Type. Schließt die
 -- Where-Used-Lücke für Variablen, die NUR in einer Record-Access-Calc gelesen
 -- werden (z.B. $$__Rechte_Bearbeiten). Record-Calcs lesen nur → immer
 -- reads_variable. Source_UUID = Context_UUID = PrivilegeSet_UUID.
 --
--- Bidirektional traversierbar (PRD §6.4): Vorwärts (Set → Variable) via
+-- Bidirektional traversierbar: Vorwärts (Set → Variable) via
 -- Source_UUID, Rückwärts (Where-Used) via Target_UUID — keine zweite Kante nötig.
 -- Link_Subrole bleibt NULL (konsistent mit der reads_variable-Familie 26/27/28);
 -- die feinere Operation:Tabelle-Auflösung lebt in VariableUsages.Context_Name.
@@ -1227,7 +1260,7 @@ WHERE fh.Parent_Folder_UUID IS NOT NULL
 UNION ALL
 
 -- ========================================
--- Erweiterte Referenz-Auflösung (PRD prd_referenzen_extendet.md)
+-- Erweiterte Referenz-Auflösung
 -- ========================================
 
 -- 30. Calc-Source → Field (reads_field)
@@ -1323,7 +1356,7 @@ WHERE xlr.Ref_Type = 'field'
 UNION ALL
 
 -- 33. Calc-Source → BuiltinFunction (calls_function)
--- PRD prd_universal_function_links.md §5.4: Built-in FunctionRef-Aufrufe als
+-- Built-in FunctionRef-Aufrufe als
 -- Link-Tripel (dedupliziert). Target ist datei-unabhängig → Is_Cross_File=FALSE.
 -- Für Get(<SubParameter>) zeigt der Link auf den SubParameter-Eintrag, sonst
 -- auf den nackten Token.
@@ -1350,7 +1383,7 @@ WHERE xcr.Ref_Type = 'function'
 UNION ALL
 
 -- 34. Calc-Source → PluginFunction (calls_pluginfunction)
--- PRD prd_universal_function_links.md §6.5: Plugin-Funktionsaufrufe (granular
+-- Plugin-Funktionsaufrufe (granular
 -- pro Plugin-Token + SubName für Container-Plugins). Source-Tupel kommt aus
 -- PluginFunctionUsages (positionsbezogen via Calc_UUID + Plugin_Chunk_Index
 -- → MBS_SubnameMap). Dynamische MBS-Aufrufe (SubName NULL) werden ausgefiltert.
@@ -1439,7 +1472,7 @@ WHERE poa.Object_UUID IS NOT NULL
 -- ========================================
 -- groups_into-Links: PluginFunction → PluginComponent (structural)
 -- ========================================
--- PRD prd_pseudo_object_types_filter.md §6.2: jede MBS-Plugin-Funktion ist
+-- Jede MBS-Plugin-Funktion ist
 -- über einen 'groups_into'-Link an ihre Komponente angebunden. Die Komponenten-
 -- Auflösung folgt derselben Logik wie der PluginComponent-INSERT
 -- (CSV-Override + Default-Heuristik split_part(SubName,'.',1)).
@@ -1485,7 +1518,7 @@ WHERE component_name IS NOT NULL
   AND component_name != '';
 
 -- ========================================
--- CustomMenuSet → CustomMenu (contains_menu, structural) — Paket A.2 (v4 §2)
+-- CustomMenuSet → CustomMenu (contains_menu, structural)
 -- ========================================
 -- Member-Referenzen (CustomMenuList/CustomMenuReference) tragen nur @id (kein UUID) →
 -- Auflösung per (Menu_ID, File_Name) gegen CustomMenuCatalog. Built-in-Menüs (z.B.
@@ -1522,6 +1555,45 @@ CREATE INDEX idx_objectlinks_type ON ObjectLinks(Link_Type);
 CREATE INDEX idx_objectlinks_composite ON ObjectLinks(Source_Type, Target_Type);
 CREATE INDEX idx_objectlinks_file ON ObjectLinks(Source_File, Target_File);
 CREATE INDEX idx_objectlinks_crossfile ON ObjectLinks(Is_Cross_File);
+
+
+-- ========================================
+-- Klon-Robustheit: prefer-local-else-keep-cross-file (operationale Links)
+-- ========================================
+-- In geklonten/modularen Lösungen ("Kopie speichern unter…") ist Object_UUID NICHT
+-- eindeutig — die Objekt-Identität ist das Paar (Object_UUID, File_Name). Die
+-- generischen oc_target-JOINs oben binden ein Ziel allein über die UUID; existiert
+-- dieselbe UUID in mehreren Klon-Dateien, fächert EINE operationale Kante über alle
+-- diese Dateien (z.B. portal_context/right_table/left_table/context_table →
+-- TableOccurrence, triggers_script/calls_script → Script). Das sind Klon-Artefakte:
+-- eine Beziehung/ein Layout/ein Button referenziert die Kopie in der EIGENEN Datei.
+--
+-- Regel: existiert für eine Kante (Source_UUID, Source_File, Link_Role, Link_Subrole,
+-- Target_UUID) ein datei-LOKALES Ziel (Target_File = Source_File), gewinnt dieses
+-- (prefer-local) und alle cross-file Zeilen derselben Kante werden entfernt. Existiert
+-- KEIN lokales Ziel, bleibt die Kante als echte Cross-File-Referenz erhalten (z.B.
+-- externer Scriptaufruf / Set Field in eine zentrale Daten-/Archiv-Datei) — wir raten
+-- NICHT willkürlich einen Klon (keep-cross-file). Ist das Cross-File-Ziel selbst
+-- geklont, bleibt es bewusst mehrdeutig (dokumentierte Modellgrenze).
+--
+-- Containment/strukturelle Links sind bereits datei-gleich gejoint (Is_Cross_File=0)
+-- → unberührt (Filter Link_Type='operational'). NULL-Ziel-Rollen (BuiltinFunction/
+-- PluginFunction/calls_function: Target_File IS NULL) haben nie ein lokales Sibling
+-- (NULL = Source_File ist nie wahr) → ebenfalls unberührt. Auf klon-freien Lösungen
+-- existiert keine geteilte UUID → der DELETE trifft nichts (No-Op, bit-identisch).
+DELETE FROM ObjectLinks ol
+WHERE ol.Link_Type = 'operational'
+  AND ol.Target_File IS DISTINCT FROM ol.Source_File
+  AND EXISTS (
+        SELECT 1 FROM ObjectLinks loc
+        WHERE loc.Link_Type    = 'operational'
+          AND loc.Source_UUID  = ol.Source_UUID
+          AND loc.Source_File  = ol.Source_File
+          AND loc.Link_Role    = ol.Link_Role
+          AND loc.Link_Subrole IS NOT DISTINCT FROM ol.Link_Subrole
+          AND loc.Target_UUID  = ol.Target_UUID
+          AND loc.Target_File  = loc.Source_File
+      );
 
 
 -- ========================================

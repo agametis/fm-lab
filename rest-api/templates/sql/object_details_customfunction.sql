@@ -8,11 +8,13 @@
 -- @note: Shows function definition, calculation code, and DDR dependency chunks (if available)
 
 WITH func_match AS (
+  -- Clone-Scoping: Identität ist (UUID, File_Name) — auf kanonische Datei einschränken
   SELECT cf.CF_ID, cf.CF_Name, cf.CF_Display, cf.CF_UUID,
          cf.Parameters, cf.DDR_Hash, cf.File_Name
   FROM CustomFunctionsCatalog cf
-  JOIN ObjectCatalog oc ON cf.CF_UUID = oc.Object_UUID
+  JOIN ObjectCatalog oc ON cf.CF_UUID = oc.Object_UUID AND oc.File_Name = cf.File_Name
   WHERE oc.Object_UUID = getvariable('uuid')
+    AND (getvariable('file') IS NULL OR cf.File_Name = getvariable('file'))
   LIMIT 1
 ),
 calc_code AS (
@@ -36,9 +38,10 @@ func_usage AS (
     ol.Link_Role,
     ol.Is_Cross_File
   FROM ObjectLinks ol
-  JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID
+  JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID AND oc.File_Name = ol.Source_File
   WHERE ol.Target_UUID = getvariable('uuid')
     AND ol.Link_Type = 'operational'
+    AND (getvariable('file') IS NULL OR ol.Target_File = getvariable('file'))
   ORDER BY oc.Object_Type, oc.Object_Name
 )
 

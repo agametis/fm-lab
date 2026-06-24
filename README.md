@@ -31,6 +31,7 @@ The first release focuses on this core: reliable **XML conversion**, a comprehen
 - **DuckDB Backend** — In-process analytical database engine for fast and flexible queries without server setup, often delivering results in milliseconds, even for large solutions 🚀
 - **REST API** — Express server providing HTTP access to the analysis database, enabling integration with external tools and services 🧩
 - **Web Client** — React/Vite frontend for interactive exploration of the solution's structure and dependencies with rich visualizations 🔎
+- **Graph-based Analysis** — an interactive Graph Explorer for the whole object graph, with automatic community detection that segments the solution into named modules — turning thousands of objects and links into navigable, self-organizing structure 🕸️
 - **Claude Skills** — Slash commands for conversion, analysis, and documentation installation, designed for seamless use within the Claude Code environment 🤖
 - **Comprehensive Docs** — Easy-to-install documentation of FileMaker Pro and MBS plugin functions 📚
 - **Plugin System** — Open architecture for adding new tools and integrations, starting with **[fmIDE](https://github.com/fmIDE/fmIDE)** as a first-class citizen to provide direct navigation into FileMaker's Script Workspace 🛠️

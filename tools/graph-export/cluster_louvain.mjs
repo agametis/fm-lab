@@ -13,6 +13,13 @@
  *   edges.csv         header: source,target   (one row per distinct pair)
  *   communities.csv   header: object_uuid,community
  *
+ * Node IDs are opaque strings: since 3.0.0 the export keys them as composite
+ * `uuid::file` (clone-dedup; NULL-file synthetics stay bare `uuid`). This engine
+ * never parses the id — it round-trips it verbatim into communities.csv, where
+ * cluster_load.sql splits it back to (Object_UUID, File_Name). The only structural
+ * assumption is the CSV comma separating source from target (file names contain no
+ * comma — verified), so the single-comma split below stays safe.
+ *
  * Perf: prints edge/node counts, wall-clock and peak RSS to stderr.
  *
  * Quality signal: the stderr line also
@@ -56,7 +63,7 @@ async function main() {
   for await (const line of rl) {
     if (header) { header = false; continue; } // skip "source,target"
     if (!line) continue;
-    // UUIDs contain no commas → a single split is safe.
+    // Node IDs (uuid::file) contain no commas → a single split is safe.
     const ix = line.indexOf(',');
     if (ix < 0) continue;
     const a = line.slice(0, ix);

@@ -28,8 +28,10 @@ WITH fld AS (
     COALESCE(f.DDR_Hash, f.AE_Calc_Hash) AS Effective_Hash,
     COALESCE(f.Calculation_Text, f.AE_Calc_Text) AS Effective_Text
   FROM FieldsForTables f
-  JOIN ObjectCatalog oc ON f.Field_UUID = oc.Object_UUID
+  JOIN ObjectCatalog oc ON f.Field_UUID = oc.Object_UUID AND f.File_Name = oc.File_Name
   WHERE oc.Object_UUID = getvariable('uuid')
+    -- Klon-Disambiguierung: LIMIT 1 würde sonst einen beliebigen Klon liefern.
+    AND (getvariable('file') IS NULL OR f.File_Name = getvariable('file'))
   LIMIT 1
 ),
 -- Calc_Hash ist nicht eindeutig: mehrere Calc_UUIDs können sich einen Hash teilen

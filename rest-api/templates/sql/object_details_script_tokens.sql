@@ -14,6 +14,7 @@ WITH step_changes AS (
     s.Is_Enabled,
     s.Parameter_Type,
     s.Step_UUID,
+    s.File_Name,
     CASE
       WHEN s.Step_Name IN ('If', 'Loop') THEN 1
       WHEN s.Step_Name IN ('End If', 'End Loop') THEN -1
@@ -24,13 +25,17 @@ WITH step_changes AS (
       ELSE 0
     END AS depth_change_self
   FROM StepsForScripts s
+  -- Klon-Disambiguierung: ohne File-Filter matcht eine geteilte Script_UUID die
+  -- Schritte ALLER Klon-Dateien → jede Zeile erschiene mehrfach.
   WHERE s.Script_UUID = getvariable('uuid')
+    AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file'))
 ),
 step_depths AS (
   SELECT
     *,
     GREATEST(0,
       COALESCE(SUM(depth_change_after) OVER (
+        PARTITION BY File_Name
         ORDER BY Step_Index
         ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
       ), 0)
@@ -42,7 +47,7 @@ SELECT
   CAST(GREATEST(0, sd.indent_level) AS INTEGER) AS indent,
   sd.Step_ID AS step_id,
   sd.Step_UUID AS step_uuid,
-  -- Synthetischer ScriptStepType-UUID (PRD prd_pseudo_object_types_filter.md §5)
+  -- Synthetischer ScriptStepType-UUID
   -- für Cross-Navigation vom Step-Namen zur Pseudo-Objekt-Detailseite.
   md5('ScriptStepType::' || sd.Step_Name) AS step_type_uuid,
   sd.Step_Name AS step_name,
@@ -64,5 +69,7 @@ SELECT
     ELSE 'step'
   END AS kind
 FROM step_depths sd
-LEFT JOIN DDR_ScriptSteps d ON sd.Step_UUID = d.Step_UUID
-ORDER BY sd.Step_Index;
+-- Step_UUIDs sind ebenfalls geklont → DDR-Join auf die gleiche Datei skopieren,
+-- sonst multipliziert der LEFT JOIN die Zeilen erneut.
+LEFT JOIN DDR_ScriptSteps d ON sd.Step_UUID = d.Step_UUID AND sd.File_Name = d.File_Name
+ORDER BY sd.File_Name, sd.Step_Index;

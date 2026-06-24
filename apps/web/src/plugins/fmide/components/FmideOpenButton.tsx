@@ -9,9 +9,11 @@ import type { ObjectSlotProps } from '../../types';
  * reports the object type as supported AND the object's file actually contains
  * the fmIDE target script (`script_available`).
  */
-export const FmideOpenButton: React.FC<ObjectSlotProps> = ({ objectUuid }) => {
+export const FmideOpenButton: React.FC<ObjectSlotProps> = ({ objectUuid, fileName }) => {
   const { t } = useTranslation();
-  const { data } = useFmideUri(objectUuid);
+  // Klon-Disambiguierung: Datei mitgeben, damit der fmp-Deeplink in die richtige
+  // (geklonte) Datei zeigt.
+  const { data } = useFmideUri(objectUuid, fileName);
 
   if (!data?.supported || !data.fmp_url) return null;
   // Hide when the fmIDE script is absent in this object's file (dead link).

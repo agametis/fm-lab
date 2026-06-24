@@ -9,6 +9,7 @@ import {
 } from '../components/GraphExplorer';
 import type { SubgraphDirection } from '../hooks/useSubgraph';
 import { useEscapeStack } from '../hooks/useEscapeStack';
+import { buildObjectPath } from '../lib/navigation';
 import './GraphExplorerView.css';
 
 /**
@@ -38,6 +39,8 @@ export function GraphExplorerView() {
   const [stats, setStats] = useState<GraphExplorerStats | null>(null);
 
   const focus = searchParams.get('focus');
+  // Klon-Disambiguierung: File_Name des Fokus (Graceful Downgrade ohne den Param).
+  const focusFile = searchParams.get('focus_file');
   const depth = clampDepth(searchParams.get('depth'));
   const direction = parseDirection(searchParams.get('dir'));
 
@@ -54,8 +57,16 @@ export function GraphExplorerView() {
     [searchParams, setSearchParams],
   );
 
-  const handleSetFocus = useCallback((uuid: string) => patchParams({ focus: uuid }), [patchParams]);
-  const handleOpenDetails = useCallback((uuid: string) => navigate(`/object/${uuid}`), [navigate]);
+  // Re-Focus bleibt im Graphen, schreibt aber focus_file mit, damit der Backend-
+  // Fokus eine geteilte Klon-UUID eindeutig auflöst (sonst 409).
+  const handleSetFocus = useCallback(
+    (uuid: string, file?: string | null) => patchParams({ focus: uuid, focus_file: file ?? null }),
+    [patchParams],
+  );
+  const handleOpenDetails = useCallback(
+    (uuid: string, file?: string | null) => navigate(buildObjectPath(uuid, null, file ?? null)),
+    [navigate],
+  );
 
   const handleExportPng = useCallback(() => {
     const dataUrl = engineRef.current?.exportPng();
@@ -121,6 +132,7 @@ export function GraphExplorerView() {
       <GraphExplorer
         ref={engineRef}
         focus={focus}
+        focusFile={focusFile}
         depth={depth}
         direction={direction}
         onDepthChange={(d) => patchParams({ depth: String(d) })}

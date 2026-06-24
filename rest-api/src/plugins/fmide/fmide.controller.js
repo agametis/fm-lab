@@ -20,7 +20,7 @@ async function uri(req, res, next) {
     if (req.query.protocol) configOverrides.fmp_protocol = req.query.protocol;
     if (req.query.server) configOverrides.server_address = req.query.server;
 
-    const result = await fmideService.buildUri(uuid, configOverrides);
+    const result = await fmideService.buildUri(uuid, configOverrides, req.query.file);
 
     if (!result) {
       return res.status(404).json({
@@ -53,7 +53,7 @@ async function goto(req, res, next) {
     if (req.query.protocol) configOverrides.fmp_protocol = req.query.protocol;
     if (req.query.server) configOverrides.server_address = req.query.server;
 
-    const result = await fmideService.buildUri(uuid, configOverrides);
+    const result = await fmideService.buildUri(uuid, configOverrides, req.query.file);
 
     if (!result || !result.fmp_url) {
       return res.status(404).json({

@@ -5,16 +5,16 @@
 -- @version: 2.0
 -- @tags: scripts, references, tokens
 
--- v2.0 (PRD prd_rest_api_token_extended_infos.md):
+-- v2.0:
 --   - Heimat-Datei für Field/Script/Layout/CF kommt aus ObjectHomes statt FieldsForTables
 --   - TO-Resolution (TableOccurrenceResolution) liefert kanonische BaseTable + Cross-File-Indikator
 --   - Cross-File-Script-Aufrufe via XMLStepReferences.Data_Source_*
 --   - Variable-Refs (Set/Read) und Plugin-Function-Refs als eigene Ref-Typen
--- v2.1 (PRD prd_rest_api_token_gtrr.md):
+-- v2.1:
 --   - GTRR-TO-Refs (Ref_Type='tableOccurrence') über tor_gtrr-JOIN auf
 --     TableOccurrenceResolution (Ref_UUID = TO_UUID). Heimat ist die BT-Heimat,
---     nicht die TO-Definitions-Datei (siehe PRD §5.2).
--- v2.2 (PRD prd_rest_api_plugin_docs_subfunction.md):
+--     nicht die TO-Definitions-Datei.
+-- v2.2:
 --   - Plugin-Funktion-Refs liefern `sub_function` aus XMLCalcReferences.Ref_SubName
 --     (fachlicher MBS-Funktionsname, z.B. 'List.AddPrefix'). NULL für nicht-Container-
 --     Plugins (Standard-Plugins ohne MBS-Container-Verhalten).
@@ -105,6 +105,8 @@ LEFT JOIN TableOccurrenceResolution tor_gtrr
       AND xsr.File_Name = tor_gtrr.File_Name
       AND xsr.Ref_Type  = 'tableOccurrence'
 WHERE xsr.Script_UUID = getvariable('uuid')
+  -- Klon-Disambiguierung: geteilte Script_UUID matcht sonst alle Klon-Dateien
+  AND (getvariable('file') IS NULL OR xsr.File_Name = getvariable('file'))
 
 UNION ALL
 
@@ -130,6 +132,7 @@ LEFT JOIN TableOccurrenceResolution tor
        ON xcr.TO_UUID  = tor.TO_UUID
       AND xcr.File_Name = tor.File_Name
 WHERE xcr.Source_UUID  = getvariable('uuid')
+  AND (getvariable('file') IS NULL OR xcr.File_Name = getvariable('file'))
   AND xcr.Source_Type  = 'Script'
   AND xcr.Ref_Type     = 'field'
   AND xcr.Source_Subkey IS NOT NULL
@@ -157,6 +160,7 @@ LEFT JOIN ObjectHomes oh
       AND oh.Object_Type = 'CustomFunction'
       AND oh.Home_File   = xcr.File_Name
 WHERE xcr.Source_UUID  = getvariable('uuid')
+  AND (getvariable('file') IS NULL OR xcr.File_Name = getvariable('file'))
   AND xcr.Source_Type  = 'Script'
   AND xcr.Ref_Type     = 'customfunction'
   AND xcr.Source_Subkey IS NOT NULL
@@ -164,9 +168,9 @@ WHERE xcr.Source_UUID  = getvariable('uuid')
 UNION ALL
 
 -- (4) PluginFunction-Refs (extern, kein Heimat-File, kein crossFile)
--- sub_function: bei MBS-Container-Plugin der fachliche Funktionsname (PRD §3.5).
+-- sub_function: bei MBS-Container-Plugin der fachliche Funktionsname.
 -- uuid: synthetische ObjectCatalog-UUID für Cross-Navigation
--- (PRD prd_pseudo_object_types_filter.md §5, deterministisch via md5).
+-- (deterministisch via md5).
 SELECT
   CAST(xcr.Source_Subkey AS INTEGER) AS line_index,
   3 AS source_priority,
@@ -183,6 +187,7 @@ SELECT
   xcr.Ref_SubName AS sub_function
 FROM XMLCalcReferences xcr
 WHERE xcr.Source_UUID  = getvariable('uuid')
+  AND (getvariable('file') IS NULL OR xcr.File_Name = getvariable('file'))
   AND xcr.Source_Type  = 'Script'
   AND xcr.Ref_Type     = 'pluginfunction'
   AND xcr.Source_Subkey IS NOT NULL
@@ -217,6 +222,7 @@ SELECT
   CAST(NULL AS VARCHAR) AS sub_function
 FROM XMLCalcReferences xcr
 WHERE xcr.Source_UUID  = getvariable('uuid')
+  AND (getvariable('file') IS NULL OR xcr.File_Name = getvariable('file'))
   AND xcr.Source_Type  = 'Script'
   AND xcr.Ref_Type     = 'variable'
   AND xcr.Source_Subkey IS NOT NULL
@@ -235,7 +241,7 @@ SELECT DISTINCT
   5 AS source_priority,
   'function' AS type,
   regexp_extract(dc.Chunk_Content, '<Chunk[^>]*>(.+?)</Chunk>', 1) AS name,
-  -- Synthetische ObjectCatalog-UUID für Cross-Navigation (PRD pseudo_object_types §5).
+  -- Synthetische ObjectCatalog-UUID für Cross-Navigation.
   -- Get-Sub-Parameter werden im aktuellen Token-Modell als nackter 'Get'-Token gerendert;
   -- der bare 'Get'-ObjectCatalog-Eintrag existiert mit dieser UUID-Form.
   md5('BuiltinFunction::' || regexp_extract(dc.Chunk_Content, '<Chunk[^>]*>(.+?)</Chunk>', 1)) AS uuid,
@@ -252,6 +258,7 @@ JOIN DDR_Calculations dc
   ON dc.Calc_Hash = xcr.Calc_Hash
  AND dc.File_Name = xcr.File_Name
 WHERE xcr.Source_UUID  = getvariable('uuid')
+  AND (getvariable('file') IS NULL OR xcr.File_Name = getvariable('file'))
   AND xcr.Source_Type  = 'Script'
   AND xcr.Source_Subkey IS NOT NULL
   AND dc.Chunk_Type    = 'FunctionRef'

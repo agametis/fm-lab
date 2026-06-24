@@ -119,9 +119,15 @@ Full Markdown report with Presumed Purpose, Business Context, Semantic Signals, 
 
 Identical to fm-summarize. Before any further action, the object MUST be unique:
 
-1. UUID given → resolve directly in ObjectCatalog.
+1. UUID given → resolve directly in ObjectCatalog. **If `WHERE Object_UUID = '<UUID>'`
+   returns >1 row** (clone/modular files share the same Object_UUID), the UUID is not
+   unique: add `AND File_Name = '<File>'` when a file is known (`--file <File>` or the
+   conversation identity), else list the matches with **File_Name** and ask. Never take
+   the first row silently.
 2. Name given → ObjectCatalog search (case-insensitive). On multiple hits, offer a selection list and wait for an answer. DO NOT guess.
-3. Context derivation allowed if clear.
+3. Context derivation allowed if clear — read **both** UUID and File_Name from the
+   conversation identity (e.g. the fm-summarize header), since the UUID alone can be
+   ambiguous across clones.
 
 ```sql
 SELECT Object_UUID, Object_Type, Object_Name, File_Name, Source_Table, Object_ID
@@ -362,6 +368,9 @@ Standard format:
 
 **File**: <File_Name>
 **UUID**: `<Object_UUID>`
+
+<!-- Conversation identity = the pair (UUID, File_Name). Always emit BOTH lines so
+     downstream skills (fmide-show, fm-summarize) can resolve clone-shared UUIDs. -->
 
 ### Presumed purpose
 <2-4 sentences in your own words on what the object does from a business perspective. Use hedging

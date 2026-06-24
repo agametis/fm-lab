@@ -59,10 +59,10 @@ interface ExplorerGraphProps {
   selectedCommunity?: number | null;
   /** Hovered community (transient hull preview); null = none. */
   hoveredCommunity?: number | null;
-  /** Double tap on a node — re-center the graph on it. */
-  onSetFocus: (uuid: string) => void;
-  /** ⌘/Ctrl tap on a node — open it in the DetailView. */
-  onOpenDetails: (uuid: string) => void;
+  /** Double tap on a node — re-center the graph on it. (file = Klon-Disambiguierung) */
+  onSetFocus: (uuid: string, file?: string | null) => void;
+  /** ⌘/Ctrl tap on a node — open it in the DetailView. (file = Klon-Disambiguierung) */
+  onOpenDetails: (uuid: string, file?: string | null) => void;
   /** Single tap selects a node — parent shows its metadata in the inspect panel. */
   onSelectNode?: (node: GraphNode | null) => void;
 }
@@ -606,10 +606,12 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
         // Single tap node: ⌘/Ctrl → details, plain → select (inspect panel).
         cy.on('tap', 'node', (evt) => {
           const node = evt.target;
-          const uuid = node.data('id') as string;
+          // data('id') ist der composite Graph-Key (uuid::file) — für Navigation die
+          // ROHE uuid + file nutzen (Klon-Disambiguierung).
+          const uuid = node.data('uuid') as string;
           const oe = evt.originalEvent as MouseEvent;
           if (oe.metaKey || oe.ctrlKey) {
-            openDetailsRef.current(uuid);
+            openDetailsRef.current(uuid, (node.data('file') as string | null) ?? null);
             return;
           }
           cy.nodes().removeClass('selected');
@@ -619,8 +621,9 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
 
         // Double tap node: re-center the graph on it.
         cy.on('dbltap', 'node', (evt) => {
-          const uuid = evt.target.data('id') as string;
-          if (!evt.target.data('isFocus')) setFocusRef.current(uuid);
+          // Re-Focus über die ROHE uuid + file (nicht den composite Graph-Key).
+          const uuid = evt.target.data('uuid') as string;
+          if (!evt.target.data('isFocus')) setFocusRef.current(uuid, (evt.target.data('file') as string | null) ?? null);
         });
 
         // Tap empty background: clear selection.
@@ -814,6 +817,7 @@ ExplorerGraph.displayName = 'ExplorerGraph';
 function nodeFromData(d: Record<string, unknown>): GraphNode {
   return {
     id: d.id as string,
+    uuid: (d.uuid as string) ?? (d.id as string),
     label: (d.label as string) ?? '',
     type: (d.type as string) ?? '',
     file: (d.file as string | null) ?? null,

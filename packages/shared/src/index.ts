@@ -13,5 +13,5 @@ export * from './languages.js';
 export type * from '../generated/types.js';
 
 // API Client
-export { createApiClient } from '../generated/client.js';
+export { createApiClient, ApiError } from '../generated/client.js';
 export type { ApiClient } from '../generated/client.js';

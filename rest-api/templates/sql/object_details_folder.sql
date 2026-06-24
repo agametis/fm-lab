@@ -18,6 +18,8 @@ WITH folder_match AS (
   FROM FolderHierarchy fh
   WHERE fh.subtype = 'Folder'
     AND fh.Source_UUID = getvariable('uuid')
+    -- Clone-Scoping: Identität ist (Source_UUID, File_Name); auf die kanonisch aufgelöste Datei einschränken
+    AND (getvariable('file') IS NULL OR fh.File_Name = getvariable('file'))
   LIMIT 1
 ),
 subtype_label AS (
@@ -36,7 +38,8 @@ parent_info AS (
     fh.Item_Name AS parent_name,
     fh.Source_UUID AS parent_uuid
   FROM FolderHierarchy fh
-  JOIN folder_match fm ON fh.Source_UUID = fm.Parent_Folder_UUID
+  -- Clone-Scoping: Parent-Folder-UUIDs sind nur dateiweit eindeutig → gleiche Datei erzwingen
+  JOIN folder_match fm ON fh.Source_UUID = fm.Parent_Folder_UUID AND fh.File_Name = fm.File_Name
   WHERE fh.subtype = 'Folder'
   LIMIT 1
 ),
@@ -49,7 +52,8 @@ children AS (
     fh.Source_Table AS child_source_table,
     fh.seq          AS child_seq
   FROM FolderHierarchy fh
-  JOIN folder_match fm ON fh.Parent_Folder_UUID = fm.Source_UUID
+  -- Clone-Scoping: Parent/Child-Folder-IDs sind nur dateiweit eindeutig → Children derselben Datei
+  JOIN folder_match fm ON fh.Parent_Folder_UUID = fm.Source_UUID AND fh.File_Name = fm.File_Name
   WHERE fh.subtype IN ('Folder', 'Item')
 ),
 child_stats AS (

@@ -1,27 +1,34 @@
 -- @template_type: report
 -- @title: Graph Subgraph (Recursive k-Hop)
 -- @description: Fokus-zentrierter k-Hop-Subgraph aus ObjectCatalog/ObjectLinks — gefiltert, gedeckelt, ehrlich gekürzt
--- @params: focus (required, UUID), depth, direction, mode, types, roles, include_builtins, node_limit, hub_degree
--- @version: 1.1.0
+-- @params: focus (required, UUID), focus_file, depth, direction, mode, types, roles, include_builtins, node_limit, hub_degree
+-- @version: 1.2.0
 -- @author: Marcel / Claude
 -- @tags: graph, subgraph, explorer
--- @note: Plan plan_graphify_style_visualisierung.md §6.1 + plan_graphify_cluster_v2.md §3.4. Core-Endpoint /api/graph/subgraph.
+-- @note: Core-Endpoint /api/graph/subgraph.
 --        1.1.0: logische Sicht liest aus der View LogicalLinks (P5) statt Inline-CTE.
---        VORAUSSETZUNG: die READ_ONLY-API-Kopie muss die View enthalten (frischer
---        convert-xml --batch synct LogicalLinks/ClusterEdges mit). Ältere Kopien
---        ohne die View brechen hier — daher v2-Plan-Reihenfolge: erst B (P5-Views), dann das.
+--        1.2.0: KLON-ROBUSTHEIT — die Knoten-Identität ist (UUID, File_Name), nicht die nackte
+--        UUID. Der Walk folgt jeder Kante DATEI-GENAU (e.a_file = w.file); sonst merged eine
+--        geklonte/shadow UUID die Nachbarschaften ALLER Dateien (focus_file skopierte vorher nur
+--        den 409-Guard, nicht den Lauf → GM und LKU lieferten identisch). LogicalLinks/raw_links
+--        führen jetzt Source_File/Target_File. Node-`id` = `uuid::file` (composite; synthetische
+--        NULL-File-Objekte wie BuiltinFunction behalten id=uuid); das rohe `uuid` + `file` werden
+--        separat ausgegeben, damit Navigation/Lazy-Expand weiter über (uuid, file) laufen.
+--        VORAUSSETZUNG: die READ_ONLY-API-Kopie muss die View LogicalLinks (mit Source_File/
+--        Target_File, P5 v≥…) enthalten — frischer convert-xml --batch synct sie mit.
 --
 -- ============================================================================
 -- PARAMETER (von graph.service.js via Joi mit Defaults gesetzt, string-interpoliert)
 -- ============================================================================
 --   focus            UUID des Fokus-Knotens                       (Pflicht)
+--   focus_file       File_Name des Fokus (Klon-Disambiguierung)    (Default NULL → Katalog-Auflösung)
 --   depth            Rekursionstiefe 1..4                          (Default 1)
 --   direction        'out' | 'in' | 'both'                        (Default 'both')
 --   mode             'logical' | 'raw'                            (Default 'logical')
 --   types            CSV der erlaubten Object_Type, NULL=alle      (Default NULL)
 --   roles            CSV der erlaubten Link_Role, NULL=alle        (Default NULL)
 --   include_builtins TRUE blendet BuiltinFunction-Ziele ein        (Default FALSE)
---   node_limit       harter Knoten-Deckel (LE-2)                   (Default 1000)
+--   node_limit       harter Knoten-Deckel                         (Default 1000)
 --   hub_degree       Grad-Schwelle für isHub-Markierung            (Default 100)
 --
 -- Die Template-Engine (template.service.js) ersetzt getvariable('x') durch das
@@ -30,110 +37,112 @@
 -- den anderen (kein dynamisches SQL, weiterhin ein einziges Statement).
 --
 -- CLI-Test (getvariable existiert in DuckDB nativ):
---   SET VARIABLE focus = '…'; SET VARIABLE depth = 2; …  dann diese Datei.
+--   SET VARIABLE focus = '…'; SET VARIABLE focus_file = '…'; SET VARIABLE depth = 2; …
 --
 -- ============================================================================
 -- AUSGABE — eine getaggte Union (row_kind), die der Service partitioniert:
---   row_kind='node' → nodes[]   (id,label,type,file,depth,degree,is_hub,is_focus)
---   row_kind='edge' → edges[]   (id,source,target,role,subrole,link_type,cross_file)
+--   row_kind='node' → nodes[]   (id=uuid::file, uuid, label, type, file, depth, degree, is_hub, is_focus)
+--   row_kind='edge' → edges[]   (id, source=uuid::file, target=uuid::file, role, subrole, link_type, cross_file)
 -- `total_reachable` (auf jeder node-Zeile identisch) trägt die VOR-Deckel-Anzahl:
 --   truncated = total_reachable > node_limit   (Prinzip "no silent caps").
---   nodeCount/edgeCount/maxDepthReached rechnet der Service aus den Arrays.
 -- ============================================================================
 
 WITH RECURSIVE
--- 1) Roh-Kanten mit Waisen-Filter (LE-4): beide Endpunkte katalogisiert.
+-- 1) Roh-Kanten mit Waisen-Filter: beide Endpunkte katalogisiert. Datei mitführen.
 raw_links AS (
   SELECT
-    Source_UUID AS a, Target_UUID AS b,
+    Source_UUID AS a, Source_File AS a_file,
+    Target_UUID AS b, Target_File AS b_file,
     Link_Role, Link_Subrole, Link_Type, Is_Cross_File
   FROM ObjectLinks
   WHERE Source_UUID IN (SELECT Object_UUID FROM ObjectCatalog)
     AND Target_UUID IN (SELECT Object_UUID FROM ObjectCatalog)
 ),
--- 2) Logische Sicht: Sub-Objekt-Endpunkte auf Container hochziehen (LE-3).
---    Seit der VIEW-Promotion (plan_graphify_cluster_v2.md §3.4) liest dieser
---    Schritt direkt aus der in convert-xml Phase 5 angelegten View LogicalLinks
---    (kanonische Definition: graph_logical_links.sql) statt die container/hoist/
---    dedup-Kette inline zu wiederholen. Semantisch bit-identisch: LogicalLinks ist
---    exakt operational-Links, Sub-Objekte hochgezogen, Containment-Gerüst + Waisen
---    raus, (a,b,role,…)-dedupliziert, Selbst-Schleifen verworfen. Spalten auf das
---    interne (a,b)-Schema gemappt. raw_links BLEIBT (mode=raw + Fokus-Brücke
---    brauchen die strukturellen parent_*-Kanten, die LogicalLinks bewusst weglässt).
+-- 2) Logische Sicht: Sub-Objekt-Endpunkte auf Container hochgezogen — aus der
+--    P5-View LogicalLinks, die seit v1.2.0 Source_File/Target_File mitführt (Container
+--    liegt datei-lokal beim Sub-Objekt). Spalten auf (a,b)+file gemappt.
 logical_dedup AS (
   SELECT
-    Source_UUID AS a, Target_UUID AS b,
+    Source_UUID AS a, Source_File AS a_file,
+    Target_UUID AS b, Target_File AS b_file,
     Link_Role, Link_Subrole, Link_Type, Is_Cross_File
   FROM LogicalLinks
 ),
 -- 3) Aktive Basis nach mode wählen (ein Zweig wird nach Interpolation gekappt).
 base AS (
-  SELECT a, b, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
+  SELECT a, a_file, b, b_file, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
   FROM logical_dedup
   WHERE getvariable('mode') = 'logical'
   UNION ALL
   -- Fokus-Brücke (logical): ist der Fokus selbst ein Sub-Objekt (ScriptStep /
   -- LayoutObject), wurden alle seine operationalen Kanten auf den Container
-  -- hochgezogen → er hätte keine eigene logische Kante und stünde isoliert da.
-  -- Die echte strukturelle Parent-Kante (Fokus → Script/Layout) hält den
-  -- Einstieg anschlussfähig: der Walk erreicht den Container und entfaltet von
-  -- dort die hochgezogene Nachbarschaft. Greift nur für den Fokus (nicht für
-  -- jeden Sub-Knoten — das wäre die verworfene „raw"-Sicht).
-  SELECT a, b, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
+  -- hochgezogen → die echte strukturelle Parent-Kante (Fokus → Script/Layout) hält
+  -- den Einstieg anschlussfähig. Greift nur für den Fokus.
+  SELECT a, a_file, b, b_file, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
   FROM raw_links
   WHERE getvariable('mode') = 'logical'
     AND a = getvariable('focus')
     AND Link_Role IN ('parent_layout', 'parent_script')
   UNION ALL
-  SELECT a, b, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
+  SELECT a, a_file, b, b_file, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
   FROM raw_links
   WHERE getvariable('mode') = 'raw'
 ),
--- 4) Kanten-Filter: Builtins (LE-4) + optionale Rollen-Whitelist.
---    Builtin-Filter über den Ziel-Typ → Join auf ObjectCatalog.
+-- 4) Kanten-Filter: Builtins + optionale Rollen-Whitelist. Builtin-Filter über
+--    den Ziel-Typ → Join auf ObjectCatalog DATEI-GENAU (sonst fächert eine geklonte
+--    Ziel-UUID den Join über alle Dateien; synthetische NULL-File-Ziele via NULL-safe).
 base_f AS (
-  SELECT base.a, base.b, base.Link_Role, base.Link_Subrole,
+  SELECT base.a, base.a_file, base.b, base.b_file, base.Link_Role, base.Link_Subrole,
          base.Link_Type, base.Is_Cross_File
   FROM base
-  JOIN ObjectCatalog tc ON tc.Object_UUID = base.b
+  JOIN ObjectCatalog tc
+    ON tc.Object_UUID = base.b
+   AND tc.File_Name IS NOT DISTINCT FROM base.b_file
   WHERE (getvariable('include_builtins') = TRUE OR tc.Object_Type <> 'BuiltinFunction')
     AND (getvariable('roles') IS NULL
          OR base.Link_Role IN (SELECT unnest(string_split(CAST(getvariable('roles') AS VARCHAR), ','))))
 ),
--- 5) Gerichtete Kantenmenge (direction): ein/beide Zweige nach Interpolation aktiv.
+-- 5) Gerichtete Kantenmenge (direction): file-Paar auf beiden Endpunkten mitgeführt,
+--    beim 'in'-Zweig symmetrisch getauscht.
 edges AS (
-  SELECT a, b FROM base_f WHERE getvariable('direction') IN ('out', 'both')
+  SELECT a, a_file, b, b_file FROM base_f WHERE getvariable('direction') IN ('out', 'both')
   UNION
-  SELECT b AS a, a AS b FROM base_f WHERE getvariable('direction') IN ('in', 'both')
+  SELECT b AS a, b_file AS a_file, a AS b, a_file AS b_file FROM base_f WHERE getvariable('direction') IN ('in', 'both')
   UNION
-  -- Fokus-Brücke richtungsunabhängig walkbar halten (auch bei direction='in'),
-  -- damit ein Sub-Objekt-Einstieg nie isoliert bleibt (s. base-CTE).
-  SELECT a, b FROM base_f
+  -- Fokus-Brücke richtungsunabhängig walkbar halten (auch bei direction='in').
+  SELECT a, a_file, b, b_file FROM base_f
   WHERE getvariable('mode') = 'logical'
     AND a = getvariable('focus')
     AND Link_Type = 'structural'
 ),
--- 6) Rekursiver Walk ab Fokus. UNION (nicht ALL) ⇒ Zyklen-Dedup.
+-- 6) Fokus-Saat: (UUID, File). focus_file wird durchgereicht; fehlt es (Nicht-Klon,
+--    Downgrade), wird die eindeutige Datei aus dem Katalog aufgelöst. (Bei KLON ohne
+--    focus_file hätte der Controller bereits 409 geworfen — dieser Pfad ist geschützt.)
+focus_seed AS (
+  SELECT
+    getvariable('focus') AS uuid,
+    COALESCE(
+      NULLIF(CAST(getvariable('focus_file') AS VARCHAR), ''),
+      (SELECT File_Name FROM ObjectCatalog WHERE Object_UUID = getvariable('focus') LIMIT 1)
+    ) AS file
+),
+-- 7) Rekursiver Walk ab (Fokus, Fokus-Datei). UNION (nicht ALL) ⇒ Zyklen-Dedup.
+--    DATEI-GENAU: der nächste Hop beginnt in genau der Datei, in der der vorige endete.
 walk AS (
-  SELECT getvariable('focus') AS uuid, 0 AS depth
+  SELECT uuid, file, 0 AS depth FROM focus_seed
   UNION
-  SELECT e.b, w.depth + 1
+  SELECT e.b, e.b_file, w.depth + 1
   FROM walk w
-  JOIN edges e ON e.a = w.uuid
+  JOIN edges e
+    ON e.a = w.uuid
+   AND e.a_file IS NOT DISTINCT FROM w.file
   WHERE w.depth < CAST(getvariable('depth') AS INT)
 ),
 reached AS (
-  SELECT uuid, MIN(depth) AS depth FROM walk GROUP BY uuid
+  SELECT uuid, file, MIN(depth) AS depth FROM walk GROUP BY uuid, file
 ),
--- 7) Globaler operationaler Grad — NUR für die erreichten Knoten (speicher-
---    schonend, LE-7). Direkt aus ObjectLinks mit IN-(reached)-Pushdown: DuckDB
---    streamt die 798k Kanten und behält nur die ~N Treffer, statt den ganzen
---    Graph zu aggregieren (vermeidet den 2-GB-OOM des Servers). Bewusst
---    `Link_Type='operational'`: Roh-Total-Grad würde jedes mehrschrittige Script
---    über seine parent_script-Links fälschlich als Hub markieren. Konsequenz:
---    in logical-Sicht ist der Grad eines Containers (Layout) sein EIGENER
---    operationaler Grad ohne die hochgezogenen Sub-Objekt-Kanten — als Hub-
---    Signal ausreichend (echte Hubs sind Builtins/zentrale Scripts).
+-- 8) Globaler operationaler Grad — als Hub-Signal bewusst UUID-aggregiert (datei-
+--    übergreifend); für die isHub-Markierung ausreichend.
 deg AS (
   SELECT id, COUNT(*) AS degree
   FROM (
@@ -145,21 +154,21 @@ deg AS (
   )
   GROUP BY id
 ),
--- 8) Knoten + optionaler Typ-Filter; degree/depth für das Ranking.
+-- 9) Knoten + optionaler Typ-Filter; Katalog-Join DATEI-GENAU (eine Zeile je (uuid,file)).
 nodes_ranked AS (
   SELECT
-    r.uuid, r.depth,
-    oc.Object_Type AS type, oc.Object_Name AS label, oc.File_Name AS file,
+    r.uuid, r.file, r.depth,
+    oc.Object_Type AS type, oc.Object_Name AS label,
     COALESCE(d.degree, 0) AS degree
   FROM reached r
-  JOIN ObjectCatalog oc ON oc.Object_UUID = r.uuid
+  JOIN ObjectCatalog oc
+    ON oc.Object_UUID = r.uuid
+   AND oc.File_Name IS NOT DISTINCT FROM r.file
   LEFT JOIN deg d ON d.id = r.uuid
   WHERE (getvariable('types') IS NULL
          OR oc.Object_Type IN (SELECT unnest(string_split(CAST(getvariable('types') AS VARCHAR), ','))))
 ),
--- 9) Deckel (LE-2): kleinste depth zuerst, dann höchster Grad. Materialisieren-
---    dann-Trimmen — der Walk ist günstig (~0,26 s selbst für 135k erreichbare
---    Knoten); die Ergebnis-Größe, nicht die CTE, ist der Engpass.
+-- 10) Deckel: kleinste depth zuerst, dann höchster Grad.
 nodes_capped AS (
   SELECT *, ROW_NUMBER() OVER (ORDER BY depth ASC, degree DESC, label ASC) AS rn
   FROM nodes_ranked
@@ -168,33 +177,33 @@ kept AS (
   SELECT * FROM nodes_capped
   WHERE rn <= CAST(getvariable('node_limit') AS INT)
 ),
--- 10) Kanten des Subgraphen: beide Endpunkte überleben den Deckel.
+-- 11) Kanten des Subgraphen: beide (uuid,file)-Endpunkte überleben den Deckel
+--     (NULL-safe membership via EXISTS, damit synthetische NULL-File-Ziele matchen).
 final_edges AS (
   SELECT DISTINCT
-    bf.a AS source, bf.b AS target,
+    bf.a AS source_uuid, bf.a_file AS source_file,
+    bf.b AS target_uuid, bf.b_file AS target_file,
     bf.Link_Role AS role, bf.Link_Subrole AS subrole,
     bf.Link_Type AS link_type, bf.Is_Cross_File AS cross_file
   FROM base_f bf
-  WHERE bf.a IN (SELECT uuid FROM kept)
-    AND bf.b IN (SELECT uuid FROM kept)
+  WHERE EXISTS (SELECT 1 FROM kept k WHERE k.uuid = bf.a AND k.file IS NOT DISTINCT FROM bf.a_file)
+    AND EXISTS (SELECT 1 FROM kept k WHERE k.uuid = bf.b AND k.file IS NOT DISTINCT FROM bf.b_file)
 )
 -- ── getaggte Ausgabe ───────────────────────────────────────────────────────
 SELECT
   'node'                                                AS row_kind,
-  k.uuid                                                AS id,
+  k.uuid || COALESCE('::' || k.file, '')                AS id,
+  k.uuid                                                AS uuid,
   k.label                                               AS label,
   k.type                                                AS type,
   k.file                                                AS file,
   k.depth                                               AS depth,
   k.degree                                              AS degree,
   (k.degree >= CAST(getvariable('hub_degree') AS INT))  AS is_hub,
-  (k.uuid = getvariable('focus'))                       AS is_focus,
+  (k.uuid = getvariable('focus')
+     AND k.file IS NOT DISTINCT FROM (SELECT file FROM focus_seed)) AS is_focus,
   (SELECT COUNT(*) FROM nodes_ranked)                   AS total_reachable,
-  -- P5-Naht (LE-10): community/communityName werden NICHT hier gejoint, sondern
-  -- im Service (graph.service.js enrichCommunities) nachgereicht — bewusst, damit
-  -- der Subgraph READ_ONLY ohne ObjectClusters/CommunityNames läuft (ein harter
-  -- JOIN auf eine fehlende Tabelle bräche den ganzen Explorer vor dem 1. Cluster-
-  -- Lauf). Dieser Platzhalter bleibt NULL; der Service überschreibt ihn.
+  -- P5-Naht: community/communityName reicht der Service (enrichCommunities) nach.
   NULL                                                  AS community,
   NULL                                                  AS source,
   NULL                                                  AS target,
@@ -206,8 +215,14 @@ FROM kept k
 UNION ALL
 SELECT
   'edge',
-  (e.source || '|' || COALESCE(e.role, '') || '|' || e.target),
+  (e.source_uuid || COALESCE('::' || e.source_file, '')
+     || '|' || COALESCE(e.role, '') || '|'
+     || e.target_uuid || COALESCE('::' || e.target_file, '')) AS id,
+  NULL                                                  AS uuid,
+  -- 9 NULLs: label, type, file, depth, degree, is_hub, is_focus, total_reachable, community
   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-  e.source, e.target, e.role, e.subrole, e.link_type, e.cross_file
+  (e.source_uuid || COALESCE('::' || e.source_file, '')) AS source,
+  (e.target_uuid || COALESCE('::' || e.target_file, '')) AS target,
+  e.role, e.subrole, e.link_type, e.cross_file
 FROM final_edges e
 ORDER BY row_kind, degree DESC NULLS LAST;

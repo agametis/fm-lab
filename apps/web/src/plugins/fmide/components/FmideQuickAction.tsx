@@ -25,7 +25,8 @@ export const FmideQuickAction: React.FC<ObjectSlotProps> = ({ objectUuid, object
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    window.location.href = buildGotoUrl(objectUuid);
+    // Klon-Disambiguierung: Zieldatei in den goto-Deeplink übernehmen.
+    window.location.href = buildGotoUrl(objectUuid, fileName);
   };
 
   const label = t('actions.openInFileMaker');

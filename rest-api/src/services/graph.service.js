@@ -3,7 +3,7 @@ const templateService = require('./template.service');
 const db = require('../config/database');
 
 /**
- * LRU-Cache für Subgraph-Antworten (Plan §6.1 „LRU-Cache cacht (focus, depth,
+ * LRU-Cache für Subgraph-Antworten („LRU-Cache cacht (focus, depth,
  * direction, mode)"). Schlüssel = vollständige Parametermenge. Der Explorer
  * fragt denselben Fokus beim Filter-Togglen oft erneut ab — Cache spart die
  * Recursive-CTE. Invalidierung über TTL; nach einem convert-xml-Reload sind die
@@ -16,21 +16,20 @@ const subgraphCache = new LRUCache({
 
 function subgraphCacheKey(p) {
   return [
-    p.focus, p.depth, p.direction, p.mode,
+    p.focus, p.focus_file ?? '', p.depth, p.direction, p.mode,
     p.types ?? '', p.roles ?? '',
     p.include_builtins, p.node_limit, p.hub_degree,
   ].join('|');
 }
 
 /**
- * Graph Service (P2 — Subgraph-Backend)
+ * Graph Service (Subgraph-Backend)
  *
  * Liefert fokus-zentrierte k-Hop-Subgraphen aus ObjectCatalog/ObjectLinks.
  * SQL-Kern: templates/sql/graph_subgraph.sql (Recursive CTE, mode=logical via
- * graph_logical_links.sql-Logik, Deckel + ehrliche Truncation, LE-7).
- * Plan plan_graphify_style_visualisierung.md §6.1 / §13.
+ * graph_logical_links.sql-Logik, Deckel + ehrliche Truncation).
  *
- * Dieser Service ist Core (LE-6) — der graphify-Plugin (P1) ist davon unabhängig.
+ * Dieser Service ist Core.
  */
 
 function escapeLiteral(value) {
@@ -38,7 +37,7 @@ function escapeLiteral(value) {
 }
 
 /**
- * P5-Naht (LE-10) — Community-Anreicherung, abgesichert gegen fehlende Tabellen.
+ * P5-Naht — Community-Anreicherung, abgesichert gegen fehlende Tabellen.
  *
  * Bewusst NICHT als LEFT JOIN in graph_subgraph.sql: der Subgraph läuft READ_ONLY
  * gegen die rest-api-Kopie und muss funktionieren, BEVOR P5-Clustering jemals lief
@@ -46,7 +45,7 @@ function escapeLiteral(value) {
  * GESAMTEN Explorer brechen). Stattdessen reichert der Service nach: existieren
  * ObjectClusters + CommunityNames, wird eine schlanke IN-(≤node_limit)-Abfrage
  * nachgeschoben; sonst bleiben community/communityName null (= Verhalten vor P5).
- * Hält den Subgraph cluster-unabhängig und respektiert LE-9 (kein convert-xml-Wiring).
+ * Hält den Subgraph cluster-unabhängig (kein convert-xml-Wiring).
  *
  * Memoisiert (einmal pro Prozess); clearCache() setzt zurück, damit ein Reload
  * (frisch geclusterte DB) die Tabellen neu erkennt.
@@ -74,9 +73,17 @@ async function enrichCommunities(nodes) {
   if (nodes.length === 0) return;
   if (!(await communityTablesPresent())) return;
 
-  const inList = nodes.map((n) => `'${escapeLiteral(n.id)}'`).join(',');
+  // Klon-Robustheit: ObjectClusters ist auf (Object_UUID, File_Name) gekeyt (Cluster-
+  // Node-Key) → Community-Match DATEI-GENAU,
+  // damit zwei Klone derselben UUID NICHT die Community teilen. Wir laden über die rohe
+  // n.uuid (IN-Liste ≤ node_limit) und matchen client-seitig über den composite Key
+  // `uuid::file` — exakt das Node-id-Format aus graph_subgraph.sql (NULL-File ⇒ bare uuid).
+  const uuids = [...new Set(nodes.map((n) => n.uuid).filter(Boolean))];
+  if (uuids.length === 0) return;
+  const inList = uuids.map((u) => `'${escapeLiteral(u)}'`).join(',');
   const result = await db.executeQuery(
-    `SELECT c.Object_UUID AS id,
+    `SELECT c.Object_UUID AS uuid,
+            c.File_Name    AS file,
             c.Community    AS community,
             COALESCE(cn.Semantic_Name, cn.Heuristic_Name) AS community_name
        FROM ObjectClusters c
@@ -84,31 +91,52 @@ async function enrichCommunities(nodes) {
          ON cn.Community = c.Community AND cn.Engine = c.Engine
       WHERE c.Object_UUID IN (${inList})`
   );
-  const byId = new Map(result.rows.map((r) => [r.id, r]));
+  const keyOf = (uuid, file) => `${uuid}::${file ?? ''}`;
+  const byKey = new Map(result.rows.map((r) => [keyOf(r.uuid, r.file), r]));
   for (const n of nodes) {
-    const hit = byId.get(n.id);
+    const hit = byKey.get(keyOf(n.uuid, n.file)) ?? null;
     n.community = hit ? Number(hit.community) : null;
     n.communityName = hit ? (hit.community_name ?? null) : null;
   }
 }
 
 /**
- * Existiert das Objekt im ObjectCatalog? Unterscheidet "Fokus unbekannt" (404)
- * von "Fokus existiert, aber Filter ergibt leeren Graph" (200, leer).
+ * Fokus-Auflösung im ObjectCatalog (clone-aware). Liefert den Existenz-/
+ * Eindeutigkeits-Status, damit der Controller drei Fälle unterscheiden kann:
+ *   - { exists:false }                    → Fokus unbekannt (404)
+ *   - { exists:true, ambiguous:true }     → UUID in mehreren Dateien, ohne focus_file (409)
+ *   - { exists:true, ambiguous:false }    → eindeutig (bzw. via focus_file eingegrenzt) → 200
+ * Geteilte UUIDs entstehen bei geklonten/modularen Dateien.
+ * @param {string} uuid
+ * @param {string} [file] - optionaler File_Name (focus_file)
  */
-async function objectExists(uuid) {
+async function objectFocusStatus(uuid, file) {
+  const where = file
+    ? `Object_UUID = '${escapeLiteral(uuid)}' AND File_Name = '${escapeLiteral(file)}'`
+    : `Object_UUID = '${escapeLiteral(uuid)}'`;
   const result = await db.executeQuery(
-    `SELECT COUNT(*) AS cnt FROM ObjectCatalog WHERE Object_UUID = '${escapeLiteral(uuid)}'`
+    `SELECT File_Name FROM ObjectCatalog WHERE ${where}`
   );
-  const row = result.rows[0];
-  const cnt = typeof row.cnt === 'bigint' ? Number(row.cnt) : row.cnt;
-  return cnt > 0;
+  const files = [...new Set(result.rows.map((r) => r.File_Name))].sort();
+  return { exists: result.rows.length > 0, ambiguous: !file && files.length > 1, files };
+}
+
+/**
+ * Rückwärtskompatibler Existenz-Check (bare UUID, ignoriert Mehrdeutigkeit).
+ */
+async function objectExists(uuid, file) {
+  const { exists } = await objectFocusStatus(uuid, file);
+  return exists;
 }
 
 /** Validierte Query-Params → graph_subgraph.sql-Parameter (NULL für optionale CSV). */
 function toSubgraphParams(p) {
   return {
     focus: p.focus,
+    // Klon-Robustheit: focus_file an das Template durchreichen — der Walk seedet auf
+    // (focus, focus_file) und folgt der Kante datei-genau (sonst merged eine geklonte
+    // Fokus-UUID die Nachbarschaften aller Dateien). NULL → Katalog-Auflösung (Nicht-Klon).
+    focus_file: p.focus_file ?? null,
     depth: p.depth,
     direction: p.direction,
     mode: p.mode,
@@ -150,7 +178,8 @@ async function getSubgraph(p) {
       const depth = Number(r.depth ?? 0);
       if (depth > maxDepthReached) maxDepthReached = depth;
       nodes.push({
-        id: r.id,
+        id: r.id,            // composite (uuid::file) — eindeutiger Graph-Key bei Klonen
+        uuid: r.uuid,        // rohe UUID für Navigation / Lazy-Expand / fmIDE
         label: r.label,
         type: r.type,
         file: r.file,
@@ -158,7 +187,7 @@ async function getSubgraph(p) {
         degree: Number(r.degree ?? 0),
         isHub: r.is_hub === true,
         isFocus: r.is_focus === true,
-        community: null,      // P5-Naht (LE-10) — via enrichCommunities() gesetzt
+        community: null,      // P5-Naht — via enrichCommunities() gesetzt
         communityName: null,
       });
     } else if (r.row_kind === 'edge') {
@@ -189,7 +218,7 @@ async function getSubgraph(p) {
       nodeLimit: p.node_limit,
       hubDegree: p.hub_degree,
     },
-    truncated: totalReachable > p.node_limit, // "no silent caps" (LE-7)
+    truncated: totalReachable > p.node_limit, // "no silent caps"
     stats: {
       nodeCount: nodes.length,
       edgeCount: edges.length,
@@ -206,7 +235,7 @@ async function getSubgraph(p) {
 
 /**
  * 1-Hop-Expansion eines Knotens (Lazy-Expand im Explorer).
- * = Subgraph mit depth=1 (Plan §6.1) — kein eigenes Template nötig.
+ * = Subgraph mit depth=1 — kein eigenes Template nötig.
  */
 async function getNeighbors(p) {
   return getSubgraph({ ...p, depth: 1 });
@@ -246,6 +275,7 @@ function clearCache() {
 
 module.exports = {
   objectExists,
+  objectFocusStatus,
   getSubgraph,
   getNeighbors,
   search,

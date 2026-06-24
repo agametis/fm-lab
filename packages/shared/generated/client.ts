@@ -9,6 +9,28 @@ import type { paths } from './types.js';
 export type ApiClient = ReturnType<typeof createApiClient>;
 
 /**
+ * Error thrown by the client. Carries the structured API error body so callers
+ * can branch on `code` (e.g. `AMBIGUOUS_UUID`) and read `details`
+ * (e.g. `matched_files` for the clone-disambiguation picker) instead of only a
+ * flat message string.
+ */
+export class ApiError extends Error {
+  code?: string;
+  details?: Record<string, unknown>;
+  constructor(message: string, code?: string, details?: Record<string, unknown>) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+    this.details = details;
+  }
+}
+
+function buildApiError(error: unknown): ApiError {
+  const e = error as { error?: { message?: string; code?: string; details?: Record<string, unknown> } };
+  return new ApiError(e?.error?.message || 'Request failed', e?.error?.code, e?.error?.details);
+}
+
+/**
  * Create a type-safe API client instance
  *
  * @example
@@ -31,7 +53,7 @@ export function createApiClient(options: { baseUrl: string }) {
       const { data, error } = await client.GET('/get', {
         params: { query: params }
       });
-      if (error) throw new Error((error as any).error?.message || 'Request failed');
+      if (error) throw buildApiError(error);
       return data;
     },
 
@@ -42,7 +64,7 @@ export function createApiClient(options: { baseUrl: string }) {
       const { data, error } = await client.GET('/list', {
         params: { query: params }
       });
-      if (error) throw new Error((error as any).error?.message || 'Request failed');
+      if (error) throw buildApiError(error);
       return data;
     },
 
@@ -53,7 +75,7 @@ export function createApiClient(options: { baseUrl: string }) {
       const { data, error } = await client.GET('/search', {
         params: { query: params }
       });
-      if (error) throw new Error((error as any).error?.message || 'Request failed');
+      if (error) throw buildApiError(error);
       return data;
     },
 
@@ -64,7 +86,7 @@ export function createApiClient(options: { baseUrl: string }) {
       const { data, error } = await client.GET('/search/count', {
         params: { query: params }
       });
-      if (error) throw new Error((error as any).error?.message || 'Request failed');
+      if (error) throw buildApiError(error);
       return data;
     },
 
@@ -75,7 +97,7 @@ export function createApiClient(options: { baseUrl: string }) {
       const { data, error } = await client.GET('/count', {
         params: { query: params }
       });
-      if (error) throw new Error((error as any).error?.message || 'Request failed');
+      if (error) throw buildApiError(error);
       return data;
     },
 
@@ -86,7 +108,7 @@ export function createApiClient(options: { baseUrl: string }) {
       const { data, error } = await client.GET('/references', {
         params: { query: params }
       });
-      if (error) throw new Error((error as any).error?.message || 'Request failed');
+      if (error) throw buildApiError(error);
       return data;
     },
 
@@ -97,7 +119,7 @@ export function createApiClient(options: { baseUrl: string }) {
       const { data, error } = await client.GET('/query', {
         params: { query: params }
       });
-      if (error) throw new Error((error as any).error?.message || 'Request failed');
+      if (error) throw buildApiError(error);
       return data;
     },
 
@@ -106,7 +128,7 @@ export function createApiClient(options: { baseUrl: string }) {
      */
     async queryPost(body: paths['/query']['post']['requestBody']['content']['application/json']) {
       const { data, error } = await client.POST('/query', { body });
-      if (error) throw new Error((error as any).error?.message || 'Request failed');
+      if (error) throw buildApiError(error);
       return data;
     },
 
@@ -117,7 +139,7 @@ export function createApiClient(options: { baseUrl: string }) {
       const { data, error } = await client.GET('/report', {
         params: { query: params }
       });
-      if (error) throw new Error((error as any).error?.message || 'Request failed');
+      if (error) throw buildApiError(error);
       return data;
     },
 
@@ -126,7 +148,7 @@ export function createApiClient(options: { baseUrl: string }) {
      */
     async reportPost(body: paths['/report']['post']['requestBody']['content']['application/json']) {
       const { data, error } = await client.POST('/report', { body });
-      if (error) throw new Error((error as any).error?.message || 'Request failed');
+      if (error) throw buildApiError(error);
       return data;
     },
 
@@ -135,7 +157,7 @@ export function createApiClient(options: { baseUrl: string }) {
      */
     async version() {
       const { data, error } = await client.GET('/version');
-      if (error) throw new Error((error as any).error?.message || 'Request failed');
+      if (error) throw buildApiError(error);
       return data;
     },
 
@@ -146,7 +168,7 @@ export function createApiClient(options: { baseUrl: string }) {
       const { data, error } = await client.GET('/info', {
         params: { query: params || {} }
       });
-      if (error) throw new Error((error as any).error?.message || 'Request failed');
+      if (error) throw buildApiError(error);
       return data;
     },
   };

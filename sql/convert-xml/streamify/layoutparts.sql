@@ -1,4 +1,4 @@
--- streamify-Override für LayoutParts (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für LayoutParts.
 -- read_xml_objects(ganzes Dokument) → per-Record-SAX-Streaming auf LC_Layout;
 -- PartsList-Subtree als VARCHAR (Klasse-C) → Parts re-extrahiert. LayoutParts speichert
 -- KEINE Roh-XML-Spalte → voll bit-identisch zur DOM-Basis erwartet. Part-Extraktion

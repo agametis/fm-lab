@@ -29,12 +29,19 @@ The chosen engine is persisted in `ObjectClusters.Engine` (provenance).
 ## Pipeline
 
 ```
-graph_export_logical.sql  →  edges.csv         (SELECT FROM ClusterEdges; ORDER BY → stable)
+graph_export_logical.sql  →  edges.csv         (SELECT FROM ClusterEdges; nodes = uuid::file; ORDER BY → stable)
 cluster_louvain.mjs       →  communities.csv   (node → community; graphology; Q on stderr)
   └ or cluster_leiden.py                        (igraph, optional drop-in; Q on stderr)
-cluster_load.sql          →  ObjectClusters + CommunityNames (heuristic names)
+cluster_load.sql          →  ObjectClusters + CommunityNames (split uuid::file; heuristic names)
 sync_db.sh                →  rest-api/db copy + reload
 ```
+
+**Clone node key.** Node IDs are composite `uuid::file` (export ≥ 3.0.0), so two clones of the same
+UUID in different files stay **distinct** cluster nodes (previously they collapsed into one node and
+merged their edges → possibly wrong modules). `cluster_load.sql` splits the composite back into
+`(Object_UUID, File_Name)`. NULL-file synthetics (PluginFunction) stay bare `uuid`. On a clone-free
+solution every UUID is file-unique ⇒ `uuid::file` is a pure node relabel = structurally identical
+partition (same Q/K), one-time color re-baseline only.
 
 The edge export is **sorted** (`ORDER BY source, target`), so `edges.csv` is
 bit-identical across runs and the (order-sensitive) engines produce the same
@@ -65,7 +72,7 @@ a fresh `convert-xml --batch` creates them in P5.
 ## Output tables
 
 ```
-ObjectClusters(Object_UUID PK, Community INT, Engine)
+ObjectClusters(Object_UUID, File_Name, Community INT, Engine)   -- key (Object_UUID, File_Name)
 CommunityNames(Community, Engine, Member_Count, Dominant_Type, Dominant_File,
                Top_Member_UUID, Top_Member_Label, Sample_Labels[],
                Heuristic_Name,        -- always (deterministic, no LLM)
@@ -95,9 +102,31 @@ _last_ write step, and the rest-api sync runs once at the very end (after naming
 so the Explorer sees the named partition in a single reload. The sync itself lives
 in the reusable `sync_db.sh` (cluster.sh step 5 and the skill both call it).
 
+### Persistent name cache (survives a cluster run)
+
+To keep `Semantic_Name` from being lost on every re-cluster, `cluster.sh` wraps the
+load with a **drift-tolerant cache** (`cache_save.sql` → load → `cache_apply.sql`):
+
+- **`cache_save.sql`** (before the replace) snapshots the current names at **object
+  granularity** (`Object_UUID → name`) into the standalone table `SemanticNameCache`
+  — only if names exist (an empty snapshot never overwrites a good cache).
+- **`cache_apply.sql`** (after the load) restores names onto the **new** communities by
+  **majority vote**: each new community inherits the cached name held by ≥ `τ_purity`
+  (default 0.6) of its cache-covered members, provided coverage ≥ `τ_coverage` (0.5). A
+  cached name maps to **at most one** new community (split-safe); merges and mostly-new
+  modules stay dirty (`Semantic_Name IS NULL`) for the skill to (re)name.
+
+Object-level keying sidesteps the unstable integer `Community` id. Measured reuse on a
+~3 % input drift: **97 %** of nodes keep their name automatically; identical/resolution
+re-runs restore ~100 %. `cluster.sh` logs `restored N/Z, node-reuse=R`; if `R` falls
+below `FMLAB_CACHE_FLOOR` (0.5) it warns that a full re-name is advisable. Knobs:
+`FMLAB_CACHE_{DISABLE,TAU_PURITY,TAU_COVERAGE,FLOOR}`. The `fm-graph-cluster` skill then
+names **only the dirty communities**.
+
 **Partition, not overlap:** Louvain/Leiden produce a _partition_ — every node belongs to
-**exactly one** community (`ObjectClusters.Object_UUID` is unique). Overlapping membership
-would require a different algorithm (link communities / clique percolation) and is out of scope.
+**exactly one** community (`ObjectClusters` is keyed `(Object_UUID, File_Name)`, unique per node).
+Overlapping membership would require a different algorithm (link communities / clique percolation)
+and is out of scope.
 
 ## How the Explorer consumes it
 

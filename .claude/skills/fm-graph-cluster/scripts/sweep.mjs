@@ -145,16 +145,21 @@ if (nNodes === 0 || nEdges === 0) {
 }
 
 // ── 2) n_files of the clustered subgraph (read-only, identical to sweep input) ─
+// Node IDs in edges.csv are composite `uuid::file` (export 3.0.0) — the file
+// segment IS the node's file, so count distinct file segments directly (no
+// ObjectCatalog join, and clone-correct: each (uuid,file) node carries its own
+// file, vs. the old uuid-join which over-counted a clone's other files).
+// NULL-file synthetics are bare `uuid` ⇒ split_part(…,2)='' ⇒ NULLIF → ignored.
 const tFiles0 = nowMs();
 let nFiles = null;
 {
-  const q = `SELECT COUNT(DISTINCT oc.File_Name) AS n_files
-             FROM ObjectCatalog oc
-             WHERE oc.Object_UUID IN (
-               SELECT source FROM read_csv('edges.csv', header=true) WHERE source IS NOT NULL
+  const q = `WITH node_ids AS (
+               SELECT source AS node FROM read_csv('edges.csv', header=true) WHERE source IS NOT NULL
                UNION
-               SELECT target FROM read_csv('edges.csv', header=true) WHERE target IS NOT NULL
-             );`;
+               SELECT target       FROM read_csv('edges.csv', header=true) WHERE target IS NOT NULL
+             )
+             SELECT COUNT(DISTINCT NULLIF(split_part(node, '::', 2), '')) AS n_files
+             FROM node_ids;`;
   const r = spawnSync(DUCKDB, [DB_FILE, '-readonly', '-noheader', '-list', '-c', q], { cwd: WORKDIR, encoding: 'utf8' });
   if (r.status === 0) {
     const v = parseInt((r.stdout || '').trim(), 10);

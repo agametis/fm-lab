@@ -51,13 +51,20 @@ type Result = {
   error: string | null;
 };
 
+// Key = `${uuid}::${file ?? ''}` — Klon-Disambiguierung (siehe useObjectDetail).
 const cache = new Map<string, LayoutData>();
 
 /**
  * Lädt Layout-Objekte und Layout-Parts parallel über die beiden Custom-SQL-Templates
- * `display_layout_objects_data` und `display_layout_parts_data`. Cached pro Layout-UUID.
+ * `display_layout_objects_data` und `display_layout_parts_data`. Cached pro (UUID, File).
+ *
+ * `file` (Klon-Disambiguierung): wird in den Cache-Key aufgenommen und an die
+ * Templates durchgereicht. Die Layout-Templates skopieren heute noch bare-UUID
+ * (gated Follow-up); der Param ist vorwärtskompatibel und schadet nicht
+ * (ungenutzte Template-Variable). Der Cache-Key verhindert sofort, dass zwei
+ * Klon-Layouts denselben Eintrag teilen.
  */
-export function useLayoutData(uuid: string | undefined): Result {
+export function useLayoutData(uuid: string | undefined, file?: string | null): Result {
   const [data, setData] = useState<LayoutData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +78,8 @@ export function useLayoutData(uuid: string | undefined): Result {
       return;
     }
 
-    const cached = cache.get(uuid);
+    const cacheKey = `${uuid}::${file ?? ''}`;
+    const cached = cache.get(cacheKey);
     if (cached) {
       setData(cached);
       setError(null);
@@ -85,9 +93,11 @@ export function useLayoutData(uuid: string | undefined): Result {
     setLoading(true);
     setError(null);
 
+    const params: Record<string, string> = { uuid };
+    if (file) params.file = file;
     Promise.all([
-      fetchTemplateQuery('display_layout_objects_data', { uuid }),
-      fetchTemplateQuery('display_layout_parts_data', { uuid }),
+      fetchTemplateQuery('display_layout_objects_data', params),
+      fetchTemplateQuery('display_layout_parts_data', params),
     ])
       .then(([objectsRes, partsRes]) => {
         if (cancelled) return;
@@ -101,7 +111,7 @@ export function useLayoutData(uuid: string | undefined): Result {
           layoutToName: first?.layout_to_name ?? null,
           fileName: first?.file_name ?? '',
         };
-        cache.set(uuid, layoutData);
+        cache.set(cacheKey, layoutData);
         setData(layoutData);
       })
       .catch(err => {
@@ -115,7 +125,7 @@ export function useLayoutData(uuid: string | undefined): Result {
     return () => {
       cancelled = true;
     };
-  }, [uuid]);
+  }, [uuid, file]);
 
   return { data, loading, error };
 }

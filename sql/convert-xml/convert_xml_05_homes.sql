@@ -8,8 +8,6 @@
 -- Erzeugt:
 --   - ObjectHomes: kanonische Heimat-Datei pro Object-UUID (alle Schema-Objekt-Typen)
 --   - TableOccurrenceResolution: TO → BaseTable + Heimat-Datei (DS-basiert)
---
--- Siehe: project/prd_rest_api_token_extended_infos.md §4.1, §4.2
 
 -- --------------------------------------------
 -- ObjectHomes — Single Source of Truth pro Objekt
@@ -24,9 +22,9 @@ CREATE TABLE ObjectHomes (
 );
 
 -- Block 1: Direkte Heimat aus ObjectCatalog.
--- Field-/Script-UUIDs sind global eindeutig (PRD §2.1, §2.2) — ein Eintrag pro Objekt.
+-- Field-/Script-UUIDs sind global eindeutig — ein Eintrag pro Objekt.
 -- Plugin-Functions sind kein FileMaker-Schema-Objekt → nicht enthalten.
--- Variables sind kein Schema-Objekt → nicht enthalten (siehe Validierungsfilter §6.1).
+-- Variables sind kein Schema-Objekt → nicht enthalten (siehe Validierungsfilter).
 INSERT INTO ObjectHomes
 SELECT
     oc.Object_UUID,
@@ -49,7 +47,7 @@ ON CONFLICT (Object_UUID) DO NOTHING;
 -- Die "lokal-Felder-Detektion" (NOT EXISTS) versagt deshalb. Stattdessen:
 -- Unter allen gleichnamigen BTs ist diejenige mit den meisten Feldern die echte Heimat.
 -- Falls mehrere BTs gleich viele Felder haben (Edge-Case): ORDER BY File_Name LIMIT 1
--- für Determinismus (PRD §7.8).
+-- für Determinismus.
 UPDATE ObjectHomes oh
 SET Home_File = sub.real_home,
     Source    = 'resolved_via_basetable'
@@ -147,7 +145,7 @@ CREATE INDEX IF NOT EXISTS idx_tor_file    ON TableOccurrenceResolution(File_Nam
 
 
 -- ============================================================================
--- Graph-Views: LogicalLinks + ClusterEdges (Plan plan_graphify_cluster_v2.md §3)
+-- Graph-Views: LogicalLinks + ClusterEdges
 -- ============================================================================
 -- EINE View-Definition als Single Source of Truth für den "logischen" Graphen.
 -- Konsumenten: graph_export_logical.sql (Cluster-Engine-Input edges.csv),
@@ -171,6 +169,18 @@ CREATE INDEX IF NOT EXISTS idx_tor_file    ON TableOccurrenceResolution(File_Nam
 -- LogicalLinks — operationale Referenz-Kanten, Sub-Objekte auf ihren Container
 -- hochgezogen, Containment-Gerüst + Waisen verworfen, (a,b)-dedupliziert. MIT
 -- Builtins (and/or/Case …) — der Builtin-Filter sitzt erst in ClusterEdges.
+--
+-- STUFE C: lokale Variablen ($x) werden hier
+-- ausgeschlossen. Ihr Knoten-UUID ist md5(Variable_Scope::Scope_Anchor::Name) und
+-- der Scope_Anchor einer LOKALEN Variable ist das Script → sie ist an genau ein
+-- Script gekettet ⇒ Degree-1-Pendant, kann NIE eine Brücke zwischen Modulen sein.
+-- Strukturell inert fürs Clustering, reiner visueller Clutter im Explorer
+-- („farbige Bündel um Scripte"): 33,9 % aller Cluster-Knoten, 10,8 % der Kanten.
+-- GLOBALE ($$) und superglobale ($$$) Variablen BLEIBEN (Scope_Anchor=Datei bzw.
+-- __global → über Scripte geteilt = echte Cross-Script-Brücken). Das semantische
+-- Variablen-Signal bleibt erhalten: die Skills (fm-analyze/fm-graph-cluster) lesen
+-- Variablennamen aus VariableUsages/VariablesCatalog (per Script), nicht aus dem
+-- Graph. raw-Sicht + Basistabellen bleiben unberührt.
 CREATE OR REPLACE VIEW LogicalLinks AS
 WITH container AS (
   -- Sub-Objekt-UUID → Top-Level-Container-UUID (ein direkter Hop, keine Rekursion)
@@ -178,10 +188,25 @@ WITH container AS (
   FROM ObjectLinks
   WHERE Link_Role IN ('parent_layout', 'parent_script')
 ),
+local_var AS (
+  -- Lokale Variablen: Prefix genau EIN '$' (global=$$, superglobal=$$$). Exhaustiv,
+  -- da alle Variablen-Knoten mit '$' beginnen; Object_Type-Guard schützt vor
+  -- '$'-benannten Nicht-Variablen.
+  SELECT Object_UUID
+  FROM ObjectCatalog
+  WHERE Object_Type = 'Variable'
+    AND Object_Name LIKE '$%'
+    AND Object_Name NOT LIKE '$$%'
+),
 hoisted AS (
   SELECT
     COALESCE(cs.parent, ol.Source_UUID) AS a,
+    -- Klon-Robustheit: Datei der Source/Target mitführen. Containment (parent_layout/
+    -- parent_script) ist datei-lokal → der hochgezogene Container liegt in DERSELBEN
+    -- Datei wie das Sub-Objekt → a_file = ol.Source_File (analog b_file).
+    ol.Source_File AS a_file,
     COALESCE(ct.parent, ol.Target_UUID) AS b,
+    ol.Target_File AS b_file,
     ol.Link_Role,
     ol.Link_Subrole,
     ol.Link_Type,
@@ -193,26 +218,93 @@ hoisted AS (
     -- Containment-Gerüst raus (parent_table bleibt: echte Field→BaseTable-Referenz)
     AND ol.Link_Role NOT IN
         ('parent_layout', 'parent_script', 'parent_object', 'parent_folder')
-    -- Waisen raus (LE-4): beide Endpunkte müssen katalogisiert sein
+    -- Waisen raus: beide Endpunkte müssen katalogisiert sein
     AND ol.Source_UUID IN (SELECT Object_UUID FROM ObjectCatalog)
     AND ol.Target_UUID IN (SELECT Object_UUID FROM ObjectCatalog)
 )
 SELECT DISTINCT
   a            AS Source_UUID,
+  a_file       AS Source_File,
   b            AS Target_UUID,
+  b_file       AS Target_File,
   Link_Role,
   Link_Subrole,
   Link_Type,
   Is_Cross_File
 FROM hoisted
-WHERE a <> b;   -- durch Hochziehen entstandene Selbst-Schleifen verwerfen
+WHERE a <> b   -- durch Hochziehen entstandene Selbst-Schleifen verwerfen
+  -- Stufe C: lokale Variablen-Pendants (beide Endpunkte) entfernen
+  AND a NOT IN (SELECT Object_UUID FROM local_var)
+  AND b NOT IN (SELECT Object_UUID FROM local_var);
 
--- ClusterEdges — Cluster-Kantensatz = LogicalLinks minus Builtins,
--- (source,target)-dedupliziert. EXAKT die Engine-Eingabe (edges.csv) und die
--- "logische Grad"-Definition der Skill-Hub-Analyse. Builtins sind God-Nodes,
--- die Communities verschmelzen würden → für das Clustering ausgeschlossen.
-CREATE OR REPLACE VIEW ClusterEdges AS
-SELECT DISTINCT Source_UUID, Target_UUID
+-- ============================================================================
+-- Cluster-Kantensatz — dreistufig (Stufe D)
+-- ============================================================================
+-- ClusterEdgesBase → ClusterGodNodes → ClusterEdges. Builtins sind God-Nodes,
+-- die Communities verschmelzen würden → ausgeschlossen. STUFE D ergänzt einen
+-- zweiten Ausschluss: querschneidende "God-Nodes" (Nachbarn über ≥8 Dateien UND
+-- ≤40 % in der eigenen Datei) — generische MBS-Plugin-Utilities + globale Konfig-/
+-- Auth-Felder, die die Modulgrenzen verwischen. Verifiziert: 33 Knoten raus ⇒
+-- Q 0,9278→0,9324, K stabil (keine Fragmentierung). Schema-Anker (BaseTable Artikel,
+-- own_file_share≈0,99) werden NICHT getroffen. Der Filter sitzt NUR hier in
+-- ClusterEdges (Clustering + Skill-Hub-Analyse), NICHT in LogicalLinks — der
+-- Explorer/where-used soll God-Nodes weiter zeigen.
+--
+-- KLON-ROBUSTHEIT (Cluster-Knoten-Key = (UUID, File_Name)): die Kette führt jetzt
+-- Source_File/Target_File mit (LogicalLinks trägt sie). Der Export keyt
+-- Knoten als composite `uuid::file` (graph_export_logical.sql) → zwei Klone DERSELBEN
+-- UUID in verschiedenen Dateien bleiben getrennte Cluster-Knoten (vorher zu EINEM
+-- kollabiert ⇒ verschmolzene Kanten = potenziell falsche Module). Auf klon-freien
+-- Lösungen ist jede UUID datei-eindeutig ⇒ `uuid::file` ist reine Knoten-Umbenennung
+-- (strukturell identische Partition). Der God-Node-Test bleibt UUID-aggregiert
+-- (R2): ein generischer MBS-Helper ist in JEDER Datei querschneidend; auf UUID-Ebene
+-- erkannt, auf (uuid,file) zurück-ausgeschlossen — verifiziert god-node-set-identisch
+-- zur UUID-only-Variante auf klon-freien wie geklonten Korpora.
+
+-- ClusterEdgesBase — bisheriger Cluster-Kantensatz: LogicalLinks minus Builtins,
+-- (source,target)-dedupliziert. Builtin-Filter lebt genau HIER (einmal). Führt
+-- Source_File/Target_File mit (Klon-Knoten-Key).
+CREATE OR REPLACE VIEW ClusterEdgesBase AS
+SELECT DISTINCT Source_UUID, Source_File, Target_UUID, Target_File
 FROM LogicalLinks
 WHERE Source_UUID NOT IN (SELECT Object_UUID FROM ObjectCatalog WHERE Object_Type = 'BuiltinFunction')
   AND Target_UUID NOT IN (SELECT Object_UUID FROM ObjectCatalog WHERE Object_Type = 'BuiltinFunction');
+
+-- ClusterGodNodes — querschneidende Knoten (Stufe D-Kriterium, partition-unabhängig).
+-- file_spread = #distinkte Dateien unter den Nachbarn; own_file_share = Anteil der
+-- Nachbarn in der eigenen Datei (Datei NULL bei Plugin-Nachbarn zählt nicht als
+-- "eigene Datei" ⇒ 0). Eigene View (statt inline) → der Ausschluss ist queryfähig
+-- (Report kann ihn ehrlich ausweisen). Schwellen 8 / 0.4 aus der Verifikation.
+--
+-- KLON-ROBUSTHEIT (R2): die Erkennung aggregiert auf UUID-Ebene (GROUP BY a), NICHT
+-- auf (uuid,file). Begründung: ein generischer Helper ist datei-übergreifend ein
+-- God-Node; auf (uuid,file) zerfiele er in N datei-lokal-harmlose Knoten. Datei kommt
+-- jetzt DIREKT von der Kante (a_file/b_file) statt aus einem ObjectCatalog-Join — das
+-- vermeidet Klon-Fan-out im Nachbar-Join (mehrere Catalog-Zeilen je geklonter UUID)
+-- und ist auf klon-freien Lösungen bit-identisch zur Catalog-Join-Variante. Der
+-- Ausschluss in ClusterEdges greift per UUID ⇒ alle (uuid,file)-Instanzen eines
+-- God-Nodes fallen raus ("auf (uuid,file) zurück-ausgeschlossen").
+CREATE OR REPLACE VIEW ClusterGodNodes AS
+WITH und AS (
+  SELECT Source_UUID AS a, Source_File AS a_file, Target_File AS b_file FROM ClusterEdgesBase
+  UNION ALL
+  SELECT Target_UUID AS a, Target_File AS a_file, Source_File AS b_file FROM ClusterEdgesBase
+)
+SELECT
+  a                                            AS Object_UUID,
+  COUNT(DISTINCT b_file)                       AS File_Spread,
+  SUM(CASE WHEN b_file = a_file THEN 1 ELSE 0 END)::DOUBLE / COUNT(*) AS Own_File_Share
+FROM und
+GROUP BY a
+HAVING COUNT(DISTINCT b_file) >= 8
+   AND SUM(CASE WHEN b_file = a_file THEN 1 ELSE 0 END)::DOUBLE / COUNT(*) <= 0.4;
+
+-- ClusterEdges — finaler Cluster-Kantensatz: Base minus God-Nodes. EXAKT die
+-- Engine-Eingabe (edges.csv) und die "logische Grad"-Definition der Skill-Hub-Analyse.
+-- Führt Source_File/Target_File mit (composite Knoten-Key im Export). Der God-Node-
+-- Ausschluss ist per UUID (s. R2 oben).
+CREATE OR REPLACE VIEW ClusterEdges AS
+SELECT DISTINCT Source_UUID, Source_File, Target_UUID, Target_File
+FROM ClusterEdgesBase
+WHERE Source_UUID NOT IN (SELECT Object_UUID FROM ClusterGodNodes)
+  AND Target_UUID NOT IN (SELECT Object_UUID FROM ClusterGodNodes);

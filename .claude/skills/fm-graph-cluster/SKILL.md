@@ -162,13 +162,21 @@ sweep (the edge export is now sorted, so it is bit-identical across runs).
 
 ### F. Semantic naming (default mode)
 
-Read the hint columns for communities at/above the threshold (smaller ones keep their heuristic name):
+> **Name cache:** `cluster.sh` restores `Semantic_Name`/
+> `Semantic_Description` from `SemanticNameCache` via majority vote **before** this skill runs — so
+> stable communities already carry their previous names. **Only name the dirty rest**
+> (`Semantic_Name IS NULL`): genuinely new/split/merged modules. The cached names are the existing
+> vocabulary — stay consistent with them. (To force a full re-name, clear names first:
+> `UPDATE CommunityNames SET Semantic_Name=NULL, Semantic_Description=NULL;` — destroys cache reuse.)
+
+Read the hint columns for **un-named** communities at/above the threshold (smaller ones keep their heuristic name):
 
 ```sql
 SELECT Community, Engine, Member_Count, Dominant_Type, Dominant_File,
        Top_Member_Label, Sample_Labels, Heuristic_Name
 FROM CommunityNames
 WHERE Member_Count >= <name-threshold>
+  AND Semantic_Name IS NULL          -- skip cache-restored communities (already named)
 ORDER BY Member_Count DESC;
 ```
 
@@ -197,7 +205,8 @@ Additionally look into the **real member objects** of each community to produce 
 
 **Bounds (mandatory — no silent caps):**
 - **Which communities**: only the **largest `--max-communities`** (default 60) with
-  `Member_Count ≥ --name-threshold`. **Log** how many were deep-scanned vs. only hint/heuristic-named.
+  `Member_Count ≥ --name-threshold` **and `Semantic_Name IS NULL`** (skip cache-restored, see F).
+  **Log** how many were deep-scanned vs. cache-restored vs. only hint/heuristic-named.
 - **Per community**: top-`K` members by **logical (cluster) degree** (default `K=12`); truncate
   plain-text steps/comments (≈ ≤40 steps / ≤2 KB text per community).
 
@@ -205,18 +214,23 @@ Top-members per community (degree-ranked). The degree is the **logical cluster d
 `ClusterEdges` — the same cleaned graph the clustering ran on), **not** raw `ObjectLinks`: this
 picks anchors by their weight in the actual partition, not by inflated multi-edge/un-hoisted counts:
 
+The cluster node key is **(Object_UUID, File_Name)** (clones don't merge), so the degree and
+both catalog joins are **file-aware** (`IS NOT DISTINCT FROM` keeps NULL-file synthetics):
+
 ```sql
 WITH deg AS (
-  SELECT id, COUNT(*) AS degree FROM (
-    SELECT Source_UUID id FROM ClusterEdges
-    UNION ALL SELECT Target_UUID FROM ClusterEdges
-  ) GROUP BY id
+  SELECT id, file, COUNT(*) AS degree FROM (
+    SELECT Source_UUID AS id, Source_File AS file FROM ClusterEdges
+    UNION ALL SELECT Target_UUID, Target_File FROM ClusterEdges
+  ) GROUP BY id, file
 )
 SELECT cl.Community, oc.Object_Type, oc.Object_Name, oc.File_Name,
        COALESCE(d.degree,0) AS degree
 FROM ObjectClusters cl
-JOIN ObjectCatalog oc ON oc.Object_UUID = cl.Object_UUID
-LEFT JOIN deg d ON d.id = cl.Object_UUID
+JOIN ObjectCatalog oc
+  ON oc.Object_UUID = cl.Object_UUID AND oc.File_Name IS NOT DISTINCT FROM cl.File_Name
+LEFT JOIN deg d
+  ON d.id = cl.Object_UUID AND d.file IS NOT DISTINCT FROM cl.File_Name
 WHERE cl.Community = ? AND cl.Engine = ?
 QUALIFY ROW_NUMBER() OVER (PARTITION BY cl.Community ORDER BY degree DESC) <= 12;
 ```
@@ -243,7 +257,8 @@ a run log) with the Write tool. Data source is the final, named state of
    (`@version` from `cluster.sh`/`cluster_load.sql`), solution size (`n_nodes`/`n_edges`/`n_files`),
    start/end/duration (total + per phase from `timings_ms`), **number of cluster attempts** (sweep
    candidates) + **full ranking table** + chosen resolution, **communities found**; semantically
-   named vs. heuristic; (deep-research: deep-scanned vs. skipped — no silent caps).
+   named vs. heuristic; **cache-restored vs. newly named** (node-reuse %, from `cluster.sh`'s
+   cache-apply log); (deep-research: deep-scanned vs. skipped — no silent caps).
 2. **Architecture findings** — from the cluster metrics: module count & size distribution (compact
    vs. fragmented), dominant files/types per module, **hubs/god-nodes** (highest **logical**-degree
    nodes — use the fixed query below, **not** raw `ObjectLinks`), **cross-file interweaving**,
@@ -265,16 +280,22 @@ counted on `ClusterEdges` (the exact graph the clustering ran on), so the hubs i
 hubs in the partition — not the multi-edge/un-hoisted artefacts the raw `ObjectLinks` degree
 produces (those over-report by up to ~77×). Bind `?` to the winning engine (`'louvain'`/`'leiden'`):
 
+The degree and both joins are keyed **(uuid, file)** (clones are distinct nodes — same UUID in
+two files counts twice, once per file copy), so a cloned hub does not inflate by summing across files:
+
 ```sql
 WITH logical_degree AS (
-  SELECT uuid, COUNT(*) AS degree
-  FROM (SELECT Source_UUID AS uuid FROM ClusterEdges UNION ALL SELECT Target_UUID FROM ClusterEdges)
-  GROUP BY uuid
+  SELECT uuid, file, COUNT(*) AS degree
+  FROM (SELECT Source_UUID AS uuid, Source_File AS file FROM ClusterEdges
+        UNION ALL SELECT Target_UUID, Target_File FROM ClusterEdges)
+  GROUP BY uuid, file
 )
 SELECT oc.Object_Type, oc.Object_Name, oc.File_Name, d.degree, cl.Community
 FROM logical_degree d
-JOIN ObjectCatalog oc ON oc.Object_UUID = d.uuid
-LEFT JOIN ObjectClusters cl ON cl.Object_UUID = d.uuid AND cl.Engine = ?
+JOIN ObjectCatalog oc
+  ON oc.Object_UUID = d.uuid AND oc.File_Name IS NOT DISTINCT FROM d.file
+LEFT JOIN ObjectClusters cl
+  ON cl.Object_UUID = d.uuid AND cl.File_Name IS NOT DISTINCT FROM d.file AND cl.Engine = ?
 ORDER BY d.degree DESC LIMIT 20;
 ```
 
@@ -282,14 +303,17 @@ Builtins never appear here (they are not in `ClusterEdges`). Note in the report 
 "degree = logical cluster degree (v2)" — older reports used the raw degree and are **not**
 number-comparable.
 
-> ⚠ **Same name ≠ same object.** Nodes are UUIDs; identical names are **never** merged across files.
-> A name that recurs in the hub list (or as `Top_Member_Label` of several communities) is **separate
-> per-file copies** — distinct UUIDs, each clustered into its **own** file's community. This solution
-> replicates utility/filter scripts per file (e.g. `Eingabe Filtern …` exists 34×, one per file, in 34
-> different communities, with **0** `calls_script` links between them). Do **not** read such a name as a
-> single central hub that "clamps domains together" or where "changes propagate" — the opposite is true:
-> it is **code duplication** (a maintenance/consistency risk). If the duplication is notable, report it as
-> such — quantify with `COUNT(DISTINCT File_Name)` per name — never as a shared cross-file dependency.
+> ⚠ **Same name ≠ same object — and same UUID ≠ same node.** The cluster node key is
+> **(Object_UUID, File_Name)**: identical names are never merged across files, **and** a single UUID
+> that is *cloned* into several files (e.g. a "Save a copy as…" template scaffold) is split into one
+> distinct node per file — they never collapse into one cluster node. A name (or UUID) that recurs in
+> the hub list or as `Top_Member_Label` of several communities is **separate per-file copies**, each
+> clustered into its **own** file's community. This solution replicates utility/filter scripts per file
+> (e.g. `Eingabe Filtern …` exists 34×, one per file, in 34 different communities, with **0**
+> `calls_script` links between them). Do **not** read such a name as a single central hub that "clamps
+> domains together" or where "changes propagate" — the opposite is true: it is **code duplication** (a
+> maintenance/consistency risk). If the duplication is notable, report it as such — quantify with
+> `COUNT(DISTINCT File_Name)` per name — never as a shared cross-file dependency.
 
 Final, named community data for the report:
 

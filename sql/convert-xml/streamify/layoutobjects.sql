@@ -1,10 +1,10 @@
--- streamify-Override für LayoutObjects (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für LayoutObjects.
 -- Ersetzt den read_xml_objects-DOM-Read (ganzes Dokument) durch per-Record-SAX-
 -- Streaming auf dem vom Renamer eindeutig gemachten Anker LC_Layout. Nur die ersten
 -- CTEs (raw_layouts/layouts_resolved/layout_parts) ändern sich; die rekursive
 -- Objekt-Extraktion + INSERT bleiben identisch zur Basis. Ergebnis ist bit-identisch
 -- zur DOM-Basis BIS AUF die Roh-Spalte Object_XML (SAX-Serialisierung, semantisch
--- äquivalent — Downstream-Invarianz bewiesen, …_heavyweight_analysis.md §8).
+-- äquivalent — Downstream-Invarianz bewiesen).
 WITH RECURSIVE filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 ),

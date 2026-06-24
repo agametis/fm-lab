@@ -1,4 +1,4 @@
--- streamify-Override für BaseDirectoryCatalog (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für BaseDirectoryCatalog.
 -- BaseDirectory trägt Identität in Attributen (@name/@id/@relativeTo) + UUID-Kind →
 -- typisierte STRUCT[]-Capture (gepatchtes webbed) auf dem eindeutigen
 -- BaseDirectoryCatalog-Anker. Keine Roh-Spalte → voll bit-identisch erwartet.

@@ -1,4 +1,4 @@
--- streamify-Override für DDR_ScriptSteps (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für DDR_ScriptSteps.
 -- DDR-Elemente haben dynamische Namen (<_UUID>) → kein per-Record-Anker. Stattdessen
 -- auf dem EINDEUTIGEN DDR_INFO ankern (kein Renamer nötig) und das Script-Kind als
 -- VARCHAR kapseln (Klasse-C), dann die Step-Elemente re-extrahieren. Vermeidet den

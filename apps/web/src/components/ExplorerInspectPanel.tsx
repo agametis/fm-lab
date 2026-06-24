@@ -23,10 +23,12 @@ interface ExplorerInspectPanelProps {
   neighbors: InspectNeighbor[];
   expanding: boolean;
   onClose: () => void;
-  onOpenDetails: (uuid: string) => void;
-  onSetFocus: (uuid: string) => void;
-  onExpand: (uuid: string) => void;
-  onCollapse: (uuid: string) => void;
+  onOpenDetails: (uuid: string, file?: string | null) => void;
+  onSetFocus: (uuid: string, file?: string | null) => void;
+  /** Lazy-Expand: rohe uuid + file (Klon-Disambiguierung des Nachbar-Fetch). */
+  onExpand: (uuid: string, file?: string | null) => void;
+  /** Hub-Collapse: composite Graph-Key (node.id), reine Cytoscape-Operation. */
+  onCollapse: (graphId: string) => void;
   onSelectNeighbor: (node: GraphNode) => void;
 }
 
@@ -54,10 +56,10 @@ export function ExplorerInspectPanel(props: ExplorerInspectPanelProps) {
       </dl>
 
       <div className="explorer-inspect-actions">
-        <button type="button" className="explorer-inspect-action primary" onClick={() => onSetFocus(node.id)} disabled={node.isFocus}>
+        <button type="button" className="explorer-inspect-action primary" onClick={() => onSetFocus(node.uuid, node.file ?? null)} disabled={node.isFocus}>
           {t('inspect.setFocus')}
         </button>
-        <button type="button" className="explorer-inspect-action" onClick={() => onExpand(node.id)} disabled={expanding}>
+        <button type="button" className="explorer-inspect-action" onClick={() => onExpand(node.uuid, node.file ?? null)} disabled={expanding}>
           {expanding ? t('inspect.expanding') : t('inspect.expand')}
         </button>
         {node.isHub && (
@@ -65,7 +67,7 @@ export function ExplorerInspectPanel(props: ExplorerInspectPanelProps) {
             {t('inspect.collapseHub')}
           </button>
         )}
-        <button type="button" className="explorer-inspect-action" onClick={() => onOpenDetails(node.id)}>
+        <button type="button" className="explorer-inspect-action" onClick={() => onOpenDetails(node.uuid, node.file ?? null)}>
           {t('inspect.openDetails')}
         </button>
       </div>

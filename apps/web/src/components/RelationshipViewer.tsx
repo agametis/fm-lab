@@ -62,9 +62,13 @@ export const RelationshipViewer: React.FC<RelationshipViewerProps> = ({ data }) 
 
   if (!meta) return <div className="no-references">{t('common:noData')}</div>;
 
-  const link = (label: string | null, uuid: string | null, className: string) => {
+  // Klon-Disambiguierung: `file` ist die Zieldatei. TableOccurrences sind
+  // datei-lokal (liegen im Relationship-Graph derselben Datei) → meta.file_name
+  // ist korrekt. Prädikat-Felder können über externe TOs cross-file sein → kein
+  // file (Graceful Downgrade, kein 404-Risiko).
+  const link = (label: string | null, uuid: string | null, className: string, file?: string | null) => {
     if (label && uuid) {
-      return <Link to={buildObjectPath(uuid, currentUuid ?? null)} className={className}>{label}</Link>;
+      return <Link to={buildObjectPath(uuid, currentUuid ?? null, file ?? null)} className={className}>{label}</Link>;
     }
     return <span className={className}>{label ?? '—'}</span>;
   };
@@ -115,9 +119,9 @@ export const RelationshipViewer: React.FC<RelationshipViewerProps> = ({ data }) 
         {/* Titelbalken der beiden TOs + bidirektionaler Pfeil (gleiche Spalten wie die Prädikat-Zeilen) */}
         <div className="fm-rel-titles">
           <span className="fm-rel-spacer" aria-hidden="true" />
-          <div className="fm-rel-title-box">{link(meta.left_to_name, meta.left_to_uuid, 'fm-rel-to-link')}</div>
+          <div className="fm-rel-title-box">{link(meta.left_to_name, meta.left_to_uuid, 'fm-rel-to-link', meta.file_name)}</div>
           <div className="fm-rel-arrow" aria-hidden="true">⟷</div>
-          <div className="fm-rel-title-box">{link(meta.right_to_name, meta.right_to_uuid, 'fm-rel-to-link')}</div>
+          <div className="fm-rel-title-box">{link(meta.right_to_name, meta.right_to_uuid, 'fm-rel-to-link', meta.file_name)}</div>
         </div>
 
         {/* Prädikat-Zeilen: [UND] linkes Feld = rechtes Feld */}

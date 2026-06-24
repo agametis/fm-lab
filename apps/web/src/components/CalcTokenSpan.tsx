@@ -7,6 +7,7 @@ import {
   isUuidHighlighted,
 } from '../script/highlightContext';
 import { buildObjectPath } from '../lib/navigation';
+import { useCurrentFile } from '../lib/currentFileContext';
 
 /**
  * FileMaker speichert Zeilenumbrüche in Calc-Tokens als CR (\r). HTML/CSS
@@ -36,6 +37,11 @@ export const CalcTokenSpan: React.FC<{ token: CalcToken }> = ({ token }) => {
   const text = normalizeCalcWhitespace(token.content);
   const highlightSet = useHighlightRefUuids();
   const { uuid: currentUuid } = useParams<{ uuid: string }>();
+  // Klon-Disambiguierung: CustomFunctions sind in FileMaker datei-lokal — eine
+  // in dieser Calc referenzierte CF liegt zwingend in derselben Datei wie das
+  // aktuelle Objekt. `currentFile` ist daher die korrekte Zieldatei (kein 404-
+  // Risiko). Felder/Plugins können hingegen cross-file sein → kein file (Downgrade).
+  const currentFile = useCurrentFile();
   const highlighted = isUuidHighlighted(highlightSet, token.uuid ?? null);
   const hlClass = highlighted ? ' fm-ref--highlighted' : '';
 
@@ -46,7 +52,7 @@ export const CalcTokenSpan: React.FC<{ token: CalcToken }> = ({ token }) => {
       if (token.uuid) {
         return (
           <Link
-            to={buildObjectPath(token.uuid, currentUuid ?? null)}
+            to={buildObjectPath(token.uuid, currentUuid ?? null, currentFile)}
             className={`fm-ref fm-ref--customFunction${hlClass}`}
             title={`Custom Function: ${text}`}
             data-ref-type="customFunction"

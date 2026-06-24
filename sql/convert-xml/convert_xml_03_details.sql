@@ -1,6 +1,6 @@
 /*
--- convert_xml_03_details.sql — Phase 3 der XML-Konvertierungs-Pipeline
--- (project/plan_xml_diff.md §6). Spezial-Parser: Variablen-Analyse.
+-- convert_xml_03_details.sql — Phase 3 der XML-Konvertierungs-Pipeline.
+-- Spezial-Parser: Variablen-Analyse.
 -- Erzeugt VariableUsages + VariablesCatalog aus DDR-Chunks, Set-Variable-Steps,
 -- MBS-Superglobalen, Merge-Variablen, Trigger-Parametern und Regex-Fallback.
 -- TABLE-ONLY (liest nur P1/P2-Tabellen, kein read_xml). Läuft nach Phase 2 und
@@ -189,7 +189,7 @@ FROM _DDR_VarRefs_Distinct vr
 JOIN step_hashes s ON vr.Calc_Hash = s.calc_hash AND vr.File_Name = s.File_Name;
 
 -- 3e: DDR-Variablen ohne zuordenbaren Kontext
--- Performance (P3, project/plan_xml_performance.md §6): Die frühere Version prüfte
+-- Performance (P3): Die frühere Version prüfte
 -- "Calc_Hash kommt in KEINEM Step/LayoutObject vor" über zwei korrelierte
 -- NOT EXISTS mit `CAST(... AS VARCHAR) LIKE '%'||vr.Calc_Hash||'%'` — ein
 -- Substring-Scan jedes Parameters_XML/Object_XML-Blobs PRO vr-Zeile
@@ -291,7 +291,7 @@ JOIN Layouts l ON lo.Layout_ID = l.L_ID AND l.File_Name = lo.File_Name;
 -- ========================================
 -- A.3g: Variablen in Custom Record Privileges (PrivilegeSetRecordAccess.DDR_Hash)
 -- ========================================
--- PRD prd_record_privileges_calc_rendering.md §6.2: Record-Access-Calcs
+-- Record-Access-Calcs
 -- (@access="Calculation") referenzieren Variablen wie $$__Rechte_Bearbeiten.
 -- Neuer Context_Type 'record_access_calc' macht diese Nutzung im Variablen-
 -- Where-Used sichtbar (vorher unsichtbar: kein generischer XMLCalcReferences→
@@ -299,9 +299,9 @@ JOIN Layouts l ON lo.Layout_ID = l.L_ID AND l.File_Name = lo.File_Name;
 --
 -- Greift auf die Parser-Grundlage zurück (KEIN Neuparsen): _DDR_VarRefs_Distinct
 -- trägt pro (Hash, File, Variable) genau EINE Zeile; die 43×-Hash-Kollision
--- (§2.2) ist damit bereits kollabiert. Der JOIN auf die N
+-- ist damit bereits kollabiert. Der JOIN auf die N
 -- PrivilegeSetRecordAccess-Zeilen mit diesem Hash erzeugt exakt eine Usage je
--- Set×Operation×Tabelle (nicht 43×) — vgl. §9-Abnahmekriterium.
+-- Set×Operation×Tabelle (nicht 43×).
 INSERT INTO VariableUsages
 SELECT
     vr.Variable_Name,

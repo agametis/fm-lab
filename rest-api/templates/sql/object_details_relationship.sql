@@ -15,9 +15,11 @@
 
 WITH rel AS (
   -- Composite-UUID → (Rel_ID, File_Name) via ObjectCatalog (file names may contain '_').
+  -- Clone-Scoping: UUID ist nur je (UUID, File_Name) eindeutig → optional auf 'file' einschränken.
   SELECT Object_ID AS Rel_ID, File_Name
   FROM ObjectCatalog
   WHERE Object_UUID = getvariable('uuid') AND Object_Type = 'Relationship'
+    AND (getvariable('file') IS NULL OR File_Name = getvariable('file'))
   LIMIT 1
 ),
 preds AS (

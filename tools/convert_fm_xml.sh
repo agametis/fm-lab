@@ -1,6 +1,6 @@
 #!/bin/bash
 # FileMaker XML to DuckDB Conversion Script
-# version 4.4.0 - 2026-06-19
+# version 4.4.2 - 2026-06-24
 #
 #
 #   *** KATANA XML Engine ***
@@ -114,6 +114,7 @@
 #   5 - XML preprocessing failed
 #   6 - Schema drift detected (single mode or --no-auto-heal): manual rebuild required
 #   7 - Concurrency lock collided (another convert is already running)
+#   8 - webbed/xml extension too old (no read_xml 'streaming' parameter — Stufe b version gate)
 
 # Constants
 # Converter version (SemVer): version of THIS ingestion script, independent of the
@@ -129,6 +130,19 @@
 #   2.2.0 — file parallelism (--jobs N): Phase 1 concurrently into part DBs +
 #           merge into the master DB (bit-identical). Log options extended with
 #           jobs/parallel.
+#   2.3.0 — Merge dedup hardening (Stufe a):
+#           the chunk/part-union merges (catmerge, _turbo_build_part, parquet variant) now carry
+#           `ON CONFLICT DO NOTHING` on PK/UNIQUE tables → cross-chunk record overlap or clone
+#           UUIDs no longer crash the catalog build with a duplicate-key error (a1). Absorbed
+#           duplicates are logged (a2). Sync no longer blocked by a single failed file and refuses
+#           to publish a master without ObjectCatalog (a4). Bit-identical on clean data.
+#           [Tester-Vorabpatch — bugfix-only.]
+#   2.4.0 — webbed capability gate (Stufe b): startup probe of the actually
+#           loaded webbed → clear upfront abort (exit 8) when it lacks the read_xml 'streaming'
+#           parameter (the real version floor, previously a cryptic mid-run Binder Error), plus
+#           capability provenance logging (streaming-param / nested-attr-SAX-fix). Capability-driven
+#           instead of dev-artifact-presence. FM_SKIP_WEBBED_PROBE=1 bypasses. Auto-SAX activation
+#           on a capable stock webbed (b1) follows once a signed webbed with the fix is published.
 # ── Bash version guard (macOS ships bash 3.2; we exploit newer features when there) ──
 # The script body is written to be bash-3.2-safe (the macOS default — no associative
 # arrays, no `declare -g`, no `wait -n`). A newer bash (4+) is nonetheless preferred:
@@ -166,7 +180,7 @@ if [ -n "${LC_ALL:-}" ]; then
 fi
 export LC_NUMERIC=C
 
-CONVERTER_VERSION="2.2.0"
+CONVERTER_VERSION="2.4.0"
 PROJECT_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel 2>/dev/null || (cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd))"
 # Six-phase pipeline. Phase 1 (extraction, the only XML-reading phase) and Phase 2
 # (reference resolution) live in separate files; the skill script runs them per
@@ -323,7 +337,7 @@ TURBO_SUBCHUNK_DEFAULT="${FM_TURBO_SUBCHUNK_DEFAULT:-25}"
 # XPaths. Default: on in turbo mode (see below), otherwise off.
 # Opt-out: FM_DDR_NEST=0; explicit map: FM_NEST_MAP="Parent:Child1,Child2 …".
 NEST_MAP="${FM_NEST_MAP:-}"
-# DDR sub-chunk (plan v5 §5/§8.7, §8.8): cuts the DDR_INFO/Calculation NEST child at
+# DDR sub-chunk: cuts the DDR_INFO/Calculation NEST child at
 # ObjectList-record boundaries (anchor sc_rec="*", 2-level wrapper) → lowers the irreducible
 # DDR-Calculation DOM peak (the ~2.3-GB long pole that --auto cannot resplit). ONLY
 # Calculation is sub-chunked (Script is NOT — see _ddr_recmap_for_file: its bare "<_ hash=>"
@@ -714,7 +728,7 @@ _ddr_count_records() {
 # sub-chunked: ~some of its records use a bare "<_ hash=…>" tag (no UUID in the name) →
 # Step_UUID extraction returns '' → multiple sub-chunks would each emit a ('' ,File) row →
 # catmerge PRIMARY-KEY violation (the empty key also silently collapses those steps in the
-# unsplit build — a separate, pre-existing DDR_ScriptSteps data-loss bug, see plan §8.8).
+# unsplit build — a separate, pre-existing DDR_ScriptSteps data-loss bug).
 # M = max(M_floor, ceil(R / DDR_MAX_CHUNKS)) so ceil(R/M) ≤ DDR_MAX_CHUNKS per file.
 _ddr_recmap_for_file() {
     $DDR_SUBCHUNK_ACTIVE || return 0
@@ -792,9 +806,16 @@ if $STREAMIFY_MODE; then
         exit 1
     fi
     if [ ! -f "$WEBBED_PATCHED_EXT" ]; then
-        echo "ERROR: --streamify braucht den gepatchten webbed unter:"
+        # a3: --streamify is an ADVANCED opt-in needing a webbed build
+        # with the nested-attr SAX fix (teaguesterling/duckdb_webbed#98). That artifact is NOT
+        # part of the public distribution → do not point users at a dev-only staging script.
+        # The default `--batch` needs none of this (pure DOM on stock/signed webbed).
+        echo "ERROR: --streamify (fortgeschrittener Opt-in) braucht ein webbed mit dem"
+        echo "       nested-attr-SAX-Fix (teaguesterling/duckdb_webbed#98) unter:"
         echo "       $WEBBED_PATCHED_EXT"
-        echo "       (tools/stage_patched_webbed.sh + Rebuild, oder FM_WEBBED_EXT setzen)."
+        echo "       Setze FM_WEBBED_EXT auf ein passendes Artefakt — sobald eine signierte"
+        echo "       webbed-Version mit dem Fix veröffentlicht ist, genügt das Stock-webbed."
+        echo "       Hinweis: Das Standard-'--batch' braucht --streamify NICHT (reines DOM)."
         exit 1
     fi
     if [ ! -f "$STREAMIFY_RENAMER" ] || ! command -v awk >/dev/null 2>&1; then
@@ -906,6 +927,52 @@ else
     DB_FILE="$DB_DIR/fm_catalog.duckdb"
     LOG_DIR="$PROJECT_ROOT/logs"
     LOG_PREFIX="batch_import"
+fi
+
+# ── Stufe b: webbed-Capability-Probe ──
+# Probe das TATSÄCHLICH geladene webbed EINMAL auf zwei Fähigkeiten — statt aus der blossen
+# Präsenz des Dev-Patch-Artefakts zu schliessen:
+#   (1) streaming-Param: Die Extraktions-SQL übergibt `streaming=` an JEDES read_xml (auch im
+#       DOM-Default). Ein zu altes webbed kennt den Param nicht → mitten im Lauf der kryptische
+#       `Binder Error: Invalid named parameter "streaming"`. Das Gate macht daraus einen klaren
+#       Vorab-Abbruch (Exit 8) — der Versions-Floor, den README/Setup bisher nicht erzwangen.
+#   (2) nested-attr-SAX-Fix (teaguesterling/duckdb_webbed#98): sobald ein SIGNIERTES Stock-webbed
+#       den Fix trägt, ist SAX ohne Dev-Patch nutzbar (Aktivierung = Stufe b1, folgt separat).
+# Provenienz: das Ergebnis wird geloggt (welche webbed-Fähigkeiten lief der Build?) — Synergie
+# mit dem geplanten Versions-Manifest (Stufe c). FM_SKIP_WEBBED_PROBE=1 überspringt die Probe.
+# Ziel = stock 'webbed'; FM_WEBBED_EXT überschreibt (Artefakt-Pfad → -unsigned). Mirror der
+# Self-Test-Mechanik aus run_p1_on (gleiche Probe-Query gegen sql/.../fixtures/webbed_sax_probe.xml).
+WEBBED_HAS_STREAMING_PARAM=unknown
+WEBBED_HAS_NESTED_ATTR_FIX=false
+_probe_webbed_caps() {
+    local _tgt="${FM_WEBBED_EXT:-webbed}" _flags=() _load _out
+    if [ "$_tgt" = "webbed" ]; then _load="LOAD webbed;"; else _load="LOAD '$_tgt';"; _flags+=(-unsigned); fi
+    _out=$("$DUCKDB_BIN" "${_flags[@]}" :memory: -noheader -list -c \
+        "${_load} SELECT COALESCE(MAX(CASE WHEN CustomFunctionReference.UUID IS NOT NULL THEN 1 ELSE 0 END),0) \
+         FROM read_xml('${WEBBED_SAX_PROBE}', root_element='CalcsForCustomFunctions', record_element='CustomFunctionCalc', \
+         maximum_file_size=100, streaming=true, columns={'CustomFunctionReference':'STRUCT(UUID VARCHAR)'});" 2>&1)
+    case "$_out" in
+        *"Invalid named parameter"*) WEBBED_HAS_STREAMING_PARAM=false; WEBBED_HAS_NESTED_ATTR_FIX=false ;;
+        1)                           WEBBED_HAS_STREAMING_PARAM=true;  WEBBED_HAS_NESTED_ATTR_FIX=true ;;
+        0)                           WEBBED_HAS_STREAMING_PARAM=true;  WEBBED_HAS_NESTED_ATTR_FIX=false ;;
+        *)                           WEBBED_HAS_STREAMING_PARAM=unknown; WEBBED_HAS_NESTED_ATTR_FIX=false ;;
+    esac
+}
+if [ -z "${FM_SKIP_WEBBED_PROBE:-}" ] && [ -f "$WEBBED_SAX_PROBE" ]; then
+    _probe_webbed_caps
+    if [ "$WEBBED_HAS_STREAMING_PARAM" = "false" ]; then
+        echo "ERROR: Die geladene webbed/xml-Extension kennt den read_xml-Parameter 'streaming' nicht (zu alt)."
+        echo "       fm-lab benötigt DuckDB ≥ 1.5 mit aktuellem webbed/xml. Bitte beide aktualisieren"
+        echo "       (z. B. in DuckDB: FORCE INSTALL webbed FROM community;) und erneut starten."
+        echo "       Umgehung auf eigenes Risiko (z. B. bei Fehldetektion): FM_SKIP_WEBBED_PROBE=1."
+        exit 8
+    fi
+    if ! $QUIET_MODE; then
+        echo "webbed-Capabilities: streaming-Param=$WEBBED_HAS_STREAMING_PARAM · nested-attr-SAX-Fix=$WEBBED_HAS_NESTED_ATTR_FIX"
+        if [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ] && ! $STREAMIFY_MODE && [ "${FM_FORCE_DOM:-}" != "1" ]; then
+            echo "  Hinweis: geladenes webbed ist SAX-fähig — automatische SAX-Aktivierung im Default folgt (Stufe b1, nach Freigabe des signierten webbed)."
+        fi
+    fi
 fi
 
 # DDR sub-chunk plan dry-run (FM_DDR_PLAN=1): print the per-file plan (R, M, chunks) the
@@ -1144,6 +1211,24 @@ sync_to_rest_api() {
     if [ ! -f "$DB_FILE" ]; then
         emit_log "Skipping rest-api sync: master DB not found at $DB_FILE"
         return 0
+    fi
+
+    # a4 sanity: never publish a master whose catalog build did not
+    # complete. The REST-API hard-depends on ObjectCatalog — a missing/empty table makes
+    # /api/info,/count,/list return HTTP 500. Refuse the sync loudly instead of poisoning the
+    # read copy. (With a1 the catmerge no longer half-builds; this is defense-in-depth.)
+    local _oc_exists _oc_rows
+    _oc_exists=$("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c \
+        "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='ObjectCatalog';" 2>/dev/null)
+    if [ "${_oc_exists:-0}" = "1" ]; then
+        _oc_rows=$("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c \
+            "SELECT COUNT(*) FROM ObjectCatalog;" 2>/dev/null)
+    else
+        _oc_rows=0
+    fi
+    if ! [ "${_oc_rows:-0}" -gt 0 ] 2>/dev/null; then
+        emit_warn "Sync übersprungen: Master ohne befüllte ObjectCatalog (Katalog-Build unvollständig) — die REST-API würde sonst HTTP 500 liefern."
+        return 1
     fi
 
     phase_progress validate 70 "Copying database to rest-api/..."
@@ -1709,6 +1794,50 @@ _tree_rss_kb() {
 # KB → integer MB (for log lines/tables).
 _kb_mb() { awk -v k="${1:-0}" 'BEGIN{ printf "%d", (k+0)/1024 }'; }
 
+# ── Chunk/part-union merge hardening (a1) ──
+# Space-delimited SET of tables in DB $1 that carry a PRIMARY KEY / UNIQUE constraint.
+# The chunk/part-union merges (catmerge, _turbo_build_part, parquet variant) bulk-INSERT
+# the parquet/chunk slices of one file into the master under the "chunks are record-disjoint"
+# assumption. That breaks when a record lands in >1 chunk of the SAME file (multi-fed
+# ScriptTriggers OR a sub-chunked DDR catalog) OR two exports share an internal File_Name
+# (clone) → a plain INSERT raises a duplicate-key error and the whole catalog
+# build is lost. Appending `ON CONFLICT DO NOTHING` absorbs such duplicates — but DuckDB
+# requires a matching PK/UNIQUE constraint for that clause (it errors on a constraint-less
+# table, which in turn can never raise a dup-key error on a plain INSERT). So the clause is
+# applied ONLY to constrained tables; everything else stays a plain INSERT. Bit-identical on
+# clean data (no conflicts → no-op), verified by the catmerge identity test.
+_pk_constrained_tables() {
+    "$DUCKDB_BIN" -readonly "$1" -noheader -list -c \
+        "SELECT DISTINCT table_name FROM duckdb_constraints() WHERE constraint_type IN ('PRIMARY KEY','UNIQUE');" 2>/dev/null \
+        | tr '\n' ' '
+}
+
+# Membership: echoes " ON CONFLICT DO NOTHING" if table $1 is in the PK set $2, else "".
+_oc_clause() { case " $2 " in *" $1 "*) printf ' ON CONFLICT DO NOTHING' ;; *) printf '' ;; esac; }
+
+# a2 (visibility) — best-effort report of PK duplicates ABSORBED by the catmerge a1 guard.
+# Without this the dedup is silent; here we name the tables whose parquet union carried
+# duplicate primary keys (= 3A cross-chunk overlap or 3B clone collision actually fired).
+# Reads PK columns from $1 (seed DB schema), scans the parquet dir $2 for the tables in $3.
+# Never fails the build (all errors swallowed); logs one warning line per offending table.
+_turbo_catmerge_dup_report() {
+    local _seed="$1" _pqdir="$2" _tables="$3" _map _t _cols _q n
+    _map=$("$DUCKDB_BIN" -readonly "$_seed" -noheader -list -c \
+        "SELECT table_name || chr(9) || '\"' || array_to_string(constraint_column_names, '\",\"') || '\"' \
+         FROM duckdb_constraints() WHERE constraint_type = 'PRIMARY KEY';" 2>/dev/null) || return 0
+    while IFS=$'\t' read -r _t _cols; do
+        [ -z "$_t" ] && continue
+        case "$_tables" in *"$_t"*) ;; *) continue ;; esac
+        ls "$_pqdir/$_t"/*.parquet >/dev/null 2>&1 || continue
+        _q="SELECT (SELECT COUNT(*) FROM read_parquet('$_pqdir/$_t/*.parquet')) \
+             - (SELECT COUNT(*) FROM (SELECT DISTINCT $_cols FROM read_parquet('$_pqdir/$_t/*.parquet')));"
+        n=$("$DUCKDB_BIN" ":memory:" -noheader -list -c "$_q" 2>/dev/null)
+        [ -n "$n" ] && [ "$n" -gt 0 ] 2>/dev/null && \
+            emit_warn "katmerge: $n doppelte PK in '$_t' absorbiert (Chunk-Overlap/Klon, a1) — Daten konsistent, aber prüfenswert."
+    done <<< "$_map"
+    return 0
+}
+
 # ============================================================================
 # Parallel Phase-1 processing (opt-in via --jobs N)
 # Each file runs into its own part DB under $PARTDB_DIR. Afterwards all successful
@@ -1942,10 +2071,12 @@ _turbo_merge_parquet() {
     [ "$MERGE_RC" -ne 0 ] && return $MERGE_RC
 
     # Merge: per table ONE wildcard INSERT into the seeded master (no ATTACH/DELETE).
+    # a1: guard PK/UNIQUE tables against cross-chunk/clone duplicates (see _pk_constrained_tables).
+    local pk_tables; pk_tables=$(_pk_constrained_tables "$seed_db")
     local msql; msql="$(mktemp)"
     while IFS= read -r tbl; do
         [ -z "$tbl" ] && continue
-        echo "INSERT INTO \"$tbl\" BY NAME SELECT * FROM read_parquet('$pqdir/$tbl/*.parquet');" >> "$msql"
+        echo "INSERT INTO \"$tbl\" BY NAME SELECT * FROM read_parquet('$pqdir/$tbl/*.parquet')$(_oc_clause "$tbl" "$pk_tables");" >> "$msql"
     done <<< "$tables"
     [ -s "$msql" ] && { "$DUCKDB_BIN" "$DB_FILE" < "$msql" >> "$PARTDB_DIR/parquet_merge.log" 2>&1 || MERGE_RC=$?; }
     rm -f "$msql"
@@ -2122,6 +2253,8 @@ _turbo_merge_catalog() {
 
     # Merge: per table with Parquet files: DELETE-by-File (no-op on an empty master, but
     # collision-/incremental-safe) + wildcard INSERT. Atomic per (file×catalog) via owner partition.
+    # a1: tables that may carry `ON CONFLICT DO NOTHING` (PK/UNIQUE present). Computed once.
+    local pk_tables; pk_tables=$(_pk_constrained_tables "$seed_chunk")
     local msql dtypes; msql="$(mktemp)"
     while IFS= read -r t; do
         [ -z "$t" ] && continue
@@ -2142,10 +2275,12 @@ _turbo_merge_catalog() {
         elif printf '%s\n' "$fn_tables" | grep -qxF "$t"; then
             echo "DELETE FROM \"$t\" WHERE \"File_Name\" IN (SELECT DISTINCT \"File_Name\" FROM read_parquet('$pqdir/$t/*.parquet'));" >> "$msql"
         fi
-        echo "INSERT INTO \"$t\" BY NAME SELECT * FROM read_parquet('$pqdir/$t/*.parquet');" >> "$msql"
+        echo "INSERT INTO \"$t\" BY NAME SELECT * FROM read_parquet('$pqdir/$t/*.parquet')$(_oc_clause "$t" "$pk_tables");" >> "$msql"
     done <<< "$tables"
     [ -s "$msql" ] && { "$DUCKDB_BIN" "$DB_FILE" < "$msql" >> "$PARTDB_DIR/catmerge.log" 2>&1 || MERGE_RC=$?; }
     rm -f "$msql"
+    # a2: surface any PK duplicates the a1 guard absorbed (best-effort, only on success).
+    [ "$MERGE_RC" -eq 0 ] && _turbo_catmerge_dup_report "$seed_chunk" "$pqdir" "$tables"
     return $MERGE_RC
 }
 
@@ -2661,6 +2796,9 @@ _turbo_build_part() {
     [ ${#cdbs[@]} -eq 1 ] && return 0   # only main → done
     local tables; tables=$("$DUCKDB_BIN" -readonly "$part" -noheader -list -c \
         "SELECT table_name FROM information_schema.tables WHERE table_schema='main' AND table_type='BASE TABLE' AND table_name <> 'SchemaInfo' ORDER BY table_name;")
+    # a1: same record-disjoint assumption as the catmerge — a record present in >1 chunk of
+    # this file would crash the plain INSERT. Guard PK/UNIQUE tables with ON CONFLICT DO NOTHING.
+    local pk_tables; pk_tables=$(_pk_constrained_tables "$part")
     local msql; msql="$(mktemp)"
     local k=1 cdb tbl
     while [ "$k" -lt "${#cdbs[@]}" ]; do
@@ -2669,7 +2807,7 @@ _turbo_build_part() {
         while IFS= read -r tbl; do
             [ -z "$tbl" ] && continue
             case " $TURBO_PERDOC_SKIP " in *" $tbl "*) continue ;; esac
-            echo "INSERT INTO \"$tbl\" BY NAME SELECT * FROM c.\"$tbl\";" >> "$msql"
+            echo "INSERT INTO \"$tbl\" BY NAME SELECT * FROM c.\"$tbl\"$(_oc_clause "$tbl" "$pk_tables");" >> "$msql"
         done <<< "$tables"
         echo "DETACH c;" >> "$msql"
         k=$((k + 1))
@@ -4165,7 +4303,7 @@ if ! acquire_lock; then
 fi
 
 # Set the phase budget for the progress bar — the SQL pipeline phases as labelled
-# segments in the web frontend (see project/prd_webclient_xml_import_progress*.md).
+# segments in the web frontend.
 # Opt 1 (v2): P1/extract is split into two visible segments — `chunk` (Phase S:
 # split XML into chunks) and `import` (Phase D/C: chunks → DuckDB → master). The
 # turbo path (always used by the web frontend) emits `chunk`/`import`. The
@@ -4661,10 +4799,24 @@ if [[ "$MODE" == "batch" ]]; then
     # (Manifest existiert nur dort) → auf den Turbo-Pfad beschränkt.
     $TURBO_MODE && _catalogs_state_set ok
 
-    # 7b. Sync to rest-api/db/ (production mode, only when there are no errors).
+    # 7b. Sync to rest-api/db/ (production mode).
     # The post-processor checks fill validate 0..70; the sync/reload tail fills 70..100.
     phase_progress validate 70 "Checks complete"
-    if ! $TEST_MODE && [ ${#FAILED_FILES[@]} -eq 0 ]; then
+    # a4: a single failed
+    # file must not block the publication of all the others. The master is rebuilt (P2–P6) from
+    # whatever imported successfully → internally consistent. So sync when at least one file
+    # succeeded, even if others failed. FM_SYNC_STRICT=1 restores the strict gate (sync only on a
+    # fully clean batch). sync_to_rest_api additionally refuses a master without ObjectCatalog.
+    DO_SYNC=false
+    if ! $TEST_MODE; then
+        if [ -n "${FM_SYNC_STRICT:-}" ]; then
+            [ ${#FAILED_FILES[@]} -eq 0 ] && DO_SYNC=true
+        else
+            [ "${SUCCESS_COUNT:-0}" -gt 0 ] && DO_SYNC=true
+        fi
+    fi
+    if $DO_SYNC; then
+        [ ${#FAILED_FILES[@]} -gt 0 ] && emit_warn "Sync trotz ${#FAILED_FILES[@]} fehlgeschlagener Datei(en) (erfolgreich: $SUCCESS_COUNT). FM_SYNC_STRICT=1 erzwingt striktes Verhalten."
         if ! $QUIET_MODE; then
             echo "========================================="
             echo "Syncing database to rest-api/..."

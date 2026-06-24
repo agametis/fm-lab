@@ -25,7 +25,7 @@ This is the starting point of our conversion. Afterwards, all data from the XML 
 The conversion runs as a **six-phase pipeline** (`sql/convert-xml/convert_xml_0N_<phase>.sql`),
 orchestrated by the `convert-xml` skill. Only **Phase 1 reads the XML** — all later
 phases work purely on the DuckDB tables (no `read_xml`), which keeps the parse load
-and memory peak low. See [project/plan_xml_diff.md](project/plan_xml_diff.md).
+and memory peak low.
 
 | Phase | File | Reads | Produces |
 |---|---|---|---|
@@ -38,13 +38,23 @@ and memory peak low. See [project/plan_xml_diff.md](project/plan_xml_diff.md).
 
 P1 runs once per file; P2–P6 run once after all files are imported (batch-wide).
 
-P5 also creates two **graph views** (read-only helpers over the universal catalogs):
+P5 also creates **graph views** (read-only helpers over the universal catalogs):
 `LogicalLinks` (operational links, sub-objects hoisted to their container, containment
-scaffold + orphans removed) and `ClusterEdges` (= `LogicalLinks` minus `BuiltinFunction`
-endpoints). `ClusterEdges` is the single source of truth for the community-detection edge
+scaffold + orphans removed, **local variables `$x` excluded**) and the cluster-edge chain
+`ClusterEdgesBase` (= `LogicalLinks` minus `BuiltinFunction`) → `ClusterGodNodes` (cross-cutting
+"god-nodes": neighbours span ≥8 files **and** ≤40 % in their own file — generic MBS-plugin utilities
++ global config/auth fields; **Stufe D**) → `ClusterEdges` (= `ClusterEdgesBase` minus
+`ClusterGodNodes`). `ClusterEdges` is the single source of truth for the community-detection edge
 export (`tools/graph-export/graph_export_logical.sql`) and the `fm-graph-cluster` skill's
-logical-degree/hub analysis. Canonical definition mirrored in
-[rest-api/templates/sql/graph_logical_links.sql](rest-api/templates/sql/graph_logical_links.sql).
+logical-degree/hub analysis. The god-node filter sits **only** in `ClusterEdges` (clustering), not in
+`LogicalLinks` (the Explorer/where-used still shows god-nodes). `LogicalLinks` canonical definition
+mirrored in [rest-api/templates/sql/graph_logical_links.sql](rest-api/templates/sql/graph_logical_links.sql).
+**Local-variable filter (Stufe C):**
+local variables are keyed per-script (`Scope_Anchor`=script) → degree-1 pendants that only clutter
+the graph (≈34 % of cluster nodes) without bridging modules, so they are dropped from `LogicalLinks`.
+Global (`$$`) / superglobal (`$$$`) variables stay (real cross-script bridges). The semantic
+variable signal is unaffected — `fm-analyze`/`fm-graph-cluster` read variable names from
+`VariableUsages`/`VariablesCatalog` (per script), not from the graph.
 
 **`--split` (large files):** `convert-xml --batch --split` chunks each file's Phase 1
 at top-level branch boundaries (the heavy `StepsForScripts` and `DDR_INFO` branches
@@ -73,7 +83,7 @@ duckdb db/fm_catalog.duckdb < sql/convert-xml/convert_xml_05_homes.sql     # P5
 spawned via `POST /api/xml/convert` and streamed as SSE. The CLI and the web
 button share a lock file (`.fmlab/xml_convert.lock`) so they can't run in
 parallel — the second caller gets `409 Conflict` (web) or aborts with exit
-code 7 (CLI). See [project/prd_frontend_xml_convert.md](project/prd_frontend_xml_convert.md).
+code 7 (CLI).
 
 
 

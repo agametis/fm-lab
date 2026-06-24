@@ -25,13 +25,21 @@ export interface ObjectDetailsResponse {
 /**
  * Fetch type-specific object details via /api/get-details.
  * The API automatically dispatches to the correct SQL template based on Object_Type.
+ *
+ * `file` (Klon-Disambiguierung): optionaler File_Name, der zusammen mit der UUID
+ * das Objekt eindeutig auflöst (geteilte Klon-UUIDs). Fehlt er, gilt Graceful
+ * Downgrade (bare UUID, solange eindeutig; sonst 409 AMBIGUOUS_UUID).
  */
-export async function fetchObjectDetails(uuid: string): Promise<ObjectDetailsResponse> {
+export async function fetchObjectDetails(
+  uuid: string,
+  file?: string | null,
+): Promise<ObjectDetailsResponse> {
   const searchParams = new URLSearchParams({
     uuid,
     format: 'json',
     meta: 'true',
   });
+  if (file) searchParams.set('file', file);
 
   const response = await fetch(`${baseUrl}/api/get-details?${searchParams}`);
 

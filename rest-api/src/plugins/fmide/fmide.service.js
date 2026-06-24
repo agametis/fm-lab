@@ -3,6 +3,7 @@ const path = require('path');
 const db = require('../../config/database');
 const { getLoadedPlugins } = require('../loader');
 const { fmlabDir } = require('../settings-store');
+const { createError } = require('../../middleware/error-handler');
 
 /**
  * fmIDE Thingamajig URI Service
@@ -222,17 +223,32 @@ async function getFileStatus(fileName) {
  * Build the Thingamajig URI for a given object.
  * Returns { thingamajig_uri, fmp_url, supported, script_available, … } or null.
  */
-async function buildUri(uuid, configOverrides) {
+async function buildUri(uuid, configOverrides, file) {
   const config = { ...getConfig(), ...configOverrides };
 
-  // Fetch the object from ObjectCatalog
+  // Fetch the object from ObjectCatalog (clone-aware). Bei geteilter UUID (Klon)
+  // grenzt `file` auf die richtige Datei ein; ohne `file` gilt Graceful Downgrade
+  // (eindeutig → ok, mehrdeutig → AMBIGUOUS_UUID statt willkürlichem rows[0],
+  // sonst zeigte der fmp://-Deeplink in die falsche Klon-Datei).
   const objResult = await db.executeQuery(
-    'SELECT Object_UUID, Object_Type, Object_Name, File_Name FROM ObjectCatalog WHERE Object_UUID = ?',
-    [uuid]
+    file
+      ? 'SELECT Object_UUID, Object_Type, Object_Name, File_Name FROM ObjectCatalog WHERE Object_UUID = ? AND File_Name = ?'
+      : 'SELECT Object_UUID, Object_Type, Object_Name, File_Name FROM ObjectCatalog WHERE Object_UUID = ?',
+    file ? [uuid, file] : [uuid]
   );
 
   if (objResult.rows.length === 0) {
     return null;
+  }
+
+  if (!file && objResult.rows.length > 1) {
+    const matched_files = [...new Set(objResult.rows.map((r) => r.File_Name))].sort();
+    throw createError(
+      'AMBIGUOUS_UUID',
+      `UUID '${uuid}' exists in ${matched_files.length} files (cloned/modular solution); ` +
+        `add ?file=<File_Name> to disambiguate`,
+      { uuid, matched_files }
+    );
   }
 
   const obj = objResult.rows[0];

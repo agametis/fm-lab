@@ -62,6 +62,7 @@ function cacheSet(key: string, data: BackReferencesResponse): void {
 export function useRefOrigin(
   destinationUuid: string | undefined,
   refParam: string | null | undefined,
+  destFile?: string | null,
 ): RefOriginState {
   const [state, setState] = useState<RefOriginState>(EMPTY_STATE);
   const fetchSeq = useRef(0);
@@ -73,7 +74,10 @@ export function useRefOrigin(
       return;
     }
 
-    const cacheKey = `${destinationUuid}::${refParam}`;
+    // Klon-Disambiguierung: `destFile` skopiert die Destination-Seite (das aktuell
+    // geöffnete, klon-aufgelöste Objekt) im Cache-Key UND im Back-Refs-Call. Der
+    // Origin (refParam) ist oft nur Name/UUID ohne Datei → Graceful Downgrade.
+    const cacheKey = `${destinationUuid}::${destFile ?? ''}::${refParam}`;
     const cached = cacheGet(cacheKey);
     if (cached) {
       setState(buildState(cached));
@@ -83,7 +87,7 @@ export function useRefOrigin(
     setState({ ...EMPTY_STATE, status: 'loading' });
     const seq = ++fetchSeq.current;
 
-    fetchBackReferences(destinationUuid, refParam, 'auto')
+    fetchBackReferences(destinationUuid, refParam, 'auto', destFile)
       .then(data => {
         if (seq !== fetchSeq.current) return; // Veraltetes Result verwerfen
         cacheSet(cacheKey, data);
@@ -97,7 +101,7 @@ export function useRefOrigin(
           error: err instanceof Error ? err.message : 'Origin-Lookup fehlgeschlagen',
         });
       });
-  }, [destinationUuid, refParam]);
+  }, [destinationUuid, refParam, destFile]);
 
   // matchUuids als stabile Set-Identität: solange Inhalt gleich ist, gleiche Ref.
   // Reduziert Re-Renders in Views, die das Set als Dependency nutzen.

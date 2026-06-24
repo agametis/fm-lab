@@ -100,8 +100,13 @@ Before any database query for the description runs, the object to be described M
    FROM ObjectCatalog
    WHERE Object_UUID = '<UUID>';
    ```
-   On hit: continue with Step 2.
+   On exactly 1 hit: continue with Step 2.
    On no hit: inform the user and ask back.
+   **On >1 hit (clone/modular files share the same Object_UUID)**: the UUID is **not**
+   unique. Do **NOT** silently take the first row. If a file is also known (passed as
+   `--file <File>`, or carried in the conversation identity, see below), add
+   `AND File_Name = '<File>'` to resolve. Otherwise list the matches (Type, Name,
+   **File_Name**) and ask the user which file is meant.
 
 2. **If only a name is provided** → search in ObjectCatalog (case-insensitive, exact matches preferred):
    ```sql
@@ -335,6 +340,11 @@ The standard output follows this schema. Omit sections without content.
 **File**: <File_Name>
 **UUID**: `<Object_UUID>`
 **Internal ID**: <Object_ID> (if relevant)
+
+<!-- Conversation identity = the pair (UUID, File_Name). Always emit BOTH lines:
+     clone/modular files share Object_UUID, so downstream skills (fmide-show,
+     fm-analyze) must read the File_Name back to resolve the object unambiguously. -->
+
 
 ### Purpose
 <From Field_Comment / other comments, or a brief derivation from name + context.

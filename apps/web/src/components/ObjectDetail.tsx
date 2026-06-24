@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useObjectDetails } from '../hooks/useObjectDetails';
 import { useLayoutData } from '../hooks/useLayoutData';
+import { useCurrentFile } from '../lib/currentFileContext';
 import { LayoutCanvas } from './LayoutCanvas';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
@@ -54,7 +55,8 @@ const EmbeddedLayoutView: React.FC<{
   onClearRef?: () => void;
 }> = ({ uuid, highlightUuids, onClearRef }) => {
   const { t } = useTranslation(['common', 'detail']);
-  const { data, loading, error } = useLayoutData(uuid);
+  const currentFile = useCurrentFile();
+  const { data, loading, error } = useLayoutData(uuid, currentFile);
   if (loading) return <LoadingSpinner message={t('detail:layoutPreview.loading') as string} />;
   if (error) return <ErrorMessage message={error} />;
   if (!data || data.objects.length === 0) {
@@ -117,7 +119,8 @@ function highlightSubstring(text: string, needle: string | null | undefined): Re
  */
 const GenericObjectDetail: React.FC<ObjectDetailProps> = ({ uuid, objectType, highlightText }) => {
   const { t } = useTranslation(['common', 'detail']);
-  const { data, loading, error, retry } = useObjectDetails(uuid);
+  const currentFile = useCurrentFile();
+  const { data, loading, error, retry } = useObjectDetails(uuid, currentFile);
 
   const renderedLines = useMemo(() => {
     if (!data) return null;

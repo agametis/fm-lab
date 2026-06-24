@@ -5,6 +5,8 @@ import { useLayoutData } from '../hooks/useLayoutData';
 import { LayoutCanvas, type LayoutCanvasHandle } from '../components/LayoutCanvas';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useEscapeStack } from '../hooks/useEscapeStack';
+import { useUrlState } from '../hooks/useUrlState';
+import { CurrentFileContext } from '../lib/currentFileContext';
 import './LayoutView.css';
 
 export function LayoutView() {
@@ -14,7 +16,9 @@ export function LayoutView() {
   const location = useLocation();
   const canvasRef = useRef<LayoutCanvasHandle>(null);
 
-  const { data, loading, error } = useLayoutData(uuid);
+  // Klon-Disambiguierung: `?file=` begleitet die UUID (Graceful Downgrade).
+  const [fileParam] = useUrlState<string>('file', '');
+  const { data, loading, error } = useLayoutData(uuid, fileParam || null);
 
   // Zurück: bevorzugt vorigen Eintrag, sonst Startseite (analog RelationshipGraphView).
   const handleBack = () => {
@@ -56,6 +60,7 @@ export function LayoutView() {
   ]);
 
   return (
+    <CurrentFileContext.Provider value={data?.fileName || fileParam || null}>
     <div className="layout-view">
       <header className="layout-view-header">
         <button
@@ -92,5 +97,6 @@ export function LayoutView() {
         )}
       </div>
     </div>
+    </CurrentFileContext.Provider>
   );
 }

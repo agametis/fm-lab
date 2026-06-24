@@ -1,14 +1,14 @@
 /* GENERIERT von tools/gen_streamify_sql.sh aus sql/convert-xml/convert_xml_01_extract.sql
    NICHT von Hand editieren — Änderungen in der Basis bzw. sql/convert-xml/streamify/ vornehmen.
-   project/plan_xml_diff_streaming_preprocess.md (Hybrid: Renamer + streamify-SQL). */
+   (Hybrid: Renamer + streamify-SQL). */
 /*
--- convert_xml_01_extract.sql — Phase 1 der XML-Konvertierungs-Pipeline
--- (project/plan_xml_diff.md §4). EINZIGE XML-lesende Phase: überführt die
+-- convert_xml_01_extract.sql — Phase 1 der XML-Konvertierungs-Pipeline.
+-- EINZIGE XML-lesende Phase: überführt die
 -- Roh-Kataloge 1:1 aus der XML in DuckDB-Tabellen und speichert Roh-XML-
 -- Fragmente (Parameters_XML, Object_XML, Step_XML, …) für die nachgelagerten
 -- Phasen. Die Referenz-Auflösung liegt in convert_xml_02_resolve.sql (Phase 2).
 -- Chunk-fähig: jede Sektion ist bei einem Chunk ohne ihren Katalog ein No-Op
--- (UPSERT bzw. branch-guarded DELETE bei PrivilegeSet*, §4.3).
+-- (UPSERT bzw. branch-guarded DELETE bei PrivilegeSet*).
 --
 -- DuckDB SQL Script to parse FileMaker XML Catalog
 -- and extract various catalog information into tables.
@@ -18,7 +18,7 @@
 -- Version 0.4
 -- Date: 2026-01-14
 
--- Schema-Versionierung (siehe project/prd_schema_versioning_auto_heal.md):
+-- Schema-Versionierung:
 --   @SCHEMA_VERSION wird vom Shell-Skript per grep ausgewertet und gegen den
 --   Wert in der DB-Tabelle SchemaInfo verglichen. Bei Mismatch löst der
 --   Auto-Heal-Mechanismus einen Force-Rebuild aus.
@@ -33,8 +33,7 @@
 --   wo <Calculation> in <CustomFunction> eingebettet ist statt in einer separaten
 --   <CalcsForCustomFunctions>-Sektion. Struktur-tolerante Doppel-Extraktion (Legacy +
 --   Embedded) aus EINEM CustomFunctionsCatalog-Parse; keine Versions-Weiche. Additiv.
---   Siehe project/bugreports/2026-06-23_Philipp-Puls_CustomFunctions_v26.md.
--- @SCHEMA_CHANGELOG 1.4.0: Paket A (v4) — neue Tabellen FileAccessAuthorizations,
+-- @SCHEMA_CHANGELOG 1.4.0: neue Tabellen FileAccessAuthorizations,
 --   CustomMenuSetCatalog, LibraryReferences (additiv; bestehende 41 Tabellen unverändert).
 --   + CustomMenuSet im ObjectCatalog + CustomMenuSet→CustomMenu (contains_menu) in ObjectLinks.
 -- @SCHEMA_HASH_FILES sql/convert-xml/convert_xml_01_extract.sql sql/convert-xml/convert_xml_02_resolve.sql sql/convert-xml/convert_xml_03_details.sql sql/convert-xml/convert_xml_04_catalog.sql sql/convert-xml/convert_xml_01_extract.streamify.sql tools/katana-xml/streamify_fm_xml.awk
@@ -46,7 +45,7 @@
 -- Netzwerk nötig). Der Convert-Pipeline-Treiber (convert_fm_xml.sh) ERSETZT diese
 -- Zeile im Patched-Modus per sed durch  LOAD '<abs-Pfad>'  und startet duckdb mit
 -- -unsigned (das gepatchte webbed mit dem nested-attr-SAX-Fix ist lokal gebaut →
--- unsigniert). Siehe project/plan_xml_diff_streaming.md §3b/§3c.
+-- unsigniert).
 LOAD webbed;
 
 -- xml_unescape(): dekodiert die gängigen XML-Entities in TEXT, der aus ATTRIBUTwerten
@@ -76,14 +75,14 @@ SET file_search_path = COALESCE(NULLIF(getenv('FM_XML_DIR'), ''), 'xml');
 SET VARIABLE fm_xml = 'Test.xml';  -- Wird durch Skill-Script ersetzt
 
 -- Schema-Marker (werden vom Shell-Skript zur Build-Zeit ersetzt; siehe
--- Header-Kommentar @SCHEMA_VERSION / @SCHEMA_HASH_FILES und §5.2 des PRD).
+-- Header-Kommentar @SCHEMA_VERSION / @SCHEMA_HASH_FILES).
 -- Die SchemaInfo-Tabelle (s. u.) wird am Ende des Imports mit diesen Werten
 -- befüllt, sodass folgende Läufe Drift detektieren können.
 SET VARIABLE schema_version = '1.1.0';   -- Wird durch Skill-Script ersetzt
 SET VARIABLE schema_hash = 'pending';    -- Wird durch Skill-Script ersetzt
 SET VARIABLE schema_notes = 'convert_xml.sql import';
 
--- Sub-Chunk-Offset für Sequence_ID (These 1b, plan_xml_diff_streaming_optimization.md).
+-- Sub-Chunk-Offset für Sequence_ID (These 1b).
 -- Default 0 = unsplit/coarse unverändert. Beim Sub-Chunking eines Sequence_ID-Katalogs
 -- (LayoutCatalog/ScriptCatalog) injiziert das Skript pro Sub-Chunk den globalen
 -- Record-Offset (= Σ Records vorheriger Sub-Chunks), damit ROW_NUMBER() pro Chunk +
@@ -95,7 +94,7 @@ SET VARIABLE seq_offset = 0;   -- Wird beim Sub-Chunking pro Chunk ersetzt
 SET VARIABLE max_filesize TO 256000000; -- 256 MB
 
 -- ============================================================================
--- SAX-Streaming-Aktuatoren (project/plan_xml_diff_streaming.md §4, Pfad 1)
+-- SAX-Streaming-Aktuatoren
 -- ----------------------------------------------------------------------------
 -- Empirisch ermittelte webbed-Mechanik: NICHT der streaming-Flag, sondern
 -- `maximum_file_size` ist der Aktuator. Datei > maximum_file_size + streaming=true
@@ -115,14 +114,14 @@ SET VARIABLE dom_threshold = getvariable('max_filesize');
 SET VARIABLE use_streaming = false;
 -- @WEBBED_SELFTEST@  (Treiber ersetzt diese Zeile im Patched-Modus; sonst No-Op)
 
--- Performance (P1, project/plan_xml_performance.md §6): File_Name EINMAL aus der XML
+-- Performance (P1): File_Name EINMAL aus der XML
 -- ableiten und als Variable bereitstellen. Bislang baute jede der ~28 Katalog-
 -- Sektionen über eine `filename_normalized`-CTE einen ZUSÄTZLICHEN read_xml nur für
 -- den (datei-weit konstanten) File_Name auf — DuckDB dedupliziert die zwei
 -- read_xml-Scans pro Statement NICHT, was die Parse-Last je Sektion verdoppelte
 -- (~2,3 s → ~1,05 s ohne den Zweit-Scan). filename_normalized liest jetzt diese
 -- Variable; das Ergebnis ist bit-identisch (gleiche Ableitung, nur einmal berechnet).
--- KONSOLIDIERTER ROOT-READ (project/plan_xml_diff_streaming_preprocess.md): die
+-- KONSOLIDIERTER ROOT-READ: die
 -- Root-Attribute (`/FMSaveAsXML/@…`) wurden zuvor von DREI read_xml_objects-Aufrufen
 -- separat gelesen (fm_file-Ableitung, XMLMetadata, FilesCatalog) — je ein Whole-Doc-
 -- DOM-Parse. Da Root-Attribute strukturell NICHT per record_element streambar sind
@@ -205,7 +204,6 @@ CREATE TABLE IF NOT EXISTS FilesCatalog (
     File_UUID VARCHAR,                      -- UUID der Datei (aus XML); KEIN UNIQUE: geklonte
                                             -- FileMaker-Dateien ("Kopie speichern unter…") teilen
                                             -- dieselbe interne UUID. Identität liegt auf File_Name (PK).
-                                            -- Siehe project/bugreports/2026-06-18_Michael-Heider_Clon-Duplikate.md
     FileMaker_Version VARCHAR,              -- FileMaker Version (z.B. "ProAdvanced 21.0.2.206")
     Has_DDR_INFO BOOLEAN DEFAULT FALSE,     -- DDR-Info verfügbar?
     Import_Timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Zeitpunkt des letzten Imports
@@ -1134,7 +1132,7 @@ CREATE TABLE IF NOT EXISTS StepsForScripts (
     PRIMARY KEY (Step_UUID, File_Name)
 );
 
--- Step_XML: vollständiges <Step>-Element (project/plan_xml_diff.md §12.3-Fallback).
+-- Step_XML: vollständiges <Step>-Element.
 -- Parameters_XML deckt nur /Step/ParameterValues ab; manche Step-Typen (z.B.
 -- "Unknown external script step from missing plug-in") legen Referenzen AUSSERHALB
 -- von ParameterValues ab. Phase 2 (XMLStepReferences) liest daher aus Step_XML.
@@ -1142,13 +1140,13 @@ CREATE TABLE IF NOT EXISTS StepsForScripts (
 ALTER TABLE StepsForScripts ADD COLUMN IF NOT EXISTS Step_XML VARCHAR;
 
 -- [streamify block: stepsforscripts — eingefügt von gen_streamify_sql.sh]
--- streamify-Override für StepsForScripts (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für StepsForScripts.
 -- read_xml_objects(ganzes Dokument) → per-Record-SAX-Streaming auf dem vom Renamer
 -- eindeutig gemachten Anker SFS_Script. ScriptReference (nested-Attr-STRUCT, via
 -- gepatchtem webbed) liefert Script_ID/Name/UUID; ObjectList-Subtree als VARCHAR
 -- (Klasse-C) → Steps re-extrahiert. Step-Extraktion + INSERT identisch zur Basis.
 -- Bit-identisch zur DOM-Basis bis auf die Roh-Spalten Step_XML/Parameters_XML
--- (SAX-Serialisierung, semantisch äquivalent — Downstream-Invarianz §8).
+-- (SAX-Serialisierung, semantisch äquivalent — Downstream-Invarianz).
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 ),
@@ -1305,7 +1303,7 @@ CREATE TABLE IF NOT EXISTS LayoutParts (
 );
 
 -- [streamify block: layoutparts — eingefügt von gen_streamify_sql.sh]
--- streamify-Override für LayoutParts (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für LayoutParts.
 -- read_xml_objects(ganzes Dokument) → per-Record-SAX-Streaming auf LC_Layout;
 -- PartsList-Subtree als VARCHAR (Klasse-C) → Parts re-extrahiert. LayoutParts speichert
 -- KEINE Roh-XML-Spalte → voll bit-identisch zur DOM-Basis erwartet. Part-Extraktion
@@ -1398,13 +1396,13 @@ CREATE TABLE IF NOT EXISTS LayoutObjects (
 );
 
 -- [streamify block: layoutobjects — eingefügt von gen_streamify_sql.sh]
--- streamify-Override für LayoutObjects (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für LayoutObjects.
 -- Ersetzt den read_xml_objects-DOM-Read (ganzes Dokument) durch per-Record-SAX-
 -- Streaming auf dem vom Renamer eindeutig gemachten Anker LC_Layout. Nur die ersten
 -- CTEs (raw_layouts/layouts_resolved/layout_parts) ändern sich; die rekursive
 -- Objekt-Extraktion + INSERT bleiben identisch zur Basis. Ergebnis ist bit-identisch
 -- zur DOM-Basis BIS AUF die Roh-Spalte Object_XML (SAX-Serialisierung, semantisch
--- äquivalent — Downstream-Invarianz bewiesen, …_heavyweight_analysis.md §8).
+-- äquivalent — Downstream-Invarianz bewiesen).
 WITH RECURSIVE filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 ),
@@ -1818,7 +1816,7 @@ CREATE TABLE IF NOT EXISTS PrivilegeSetRecordAccess (
 
 -- Idempotenz: bestehende Einträge der aktuellen Datei entfernen (1:N, kein PK).
 -- BaseTable_UUID ist bei type="New" NULL, daher DELETE-by-File statt ON CONFLICT.
--- Chunk-Guard (project/plan_xml_diff.md §4.3, I2): nur löschen, wenn der aktuelle
+-- Chunk-Guard (I2): nur löschen, wenn der aktuelle
 -- XML-Input (= Chunk) den PrivilegeSetsCatalog-Branch enthält. Ohne Guard würde ein
 -- Chunk OHNE diesen Branch die von einem anderen Chunk derselben Datei eingefügten
 -- Zeilen löschen (DELETE-then-INSERT, kein UPSERT). Nicht-gesplittet: Branch immer
@@ -1962,7 +1960,7 @@ CREATE TABLE IF NOT EXISTS PrivilegeSetFieldAccess (
 );
 
 -- Idempotenz: bestehende Einträge der aktuellen Datei entfernen (1:N, kein PK).
--- Chunk-Guard (§4.3, I2): nur löschen, wenn der Chunk PrivilegeSetsCatalog enthält.
+-- Chunk-Guard (I2): nur löschen, wenn der Chunk PrivilegeSetsCatalog enthält.
 DELETE FROM PrivilegeSetFieldAccess WHERE File_Name IN (
     SELECT getvariable('fm_file')
     WHERE EXISTS (SELECT 1 FROM read_xml(getvariable('fm_xml'), record_element='PrivilegeSetsCatalog', maximum_file_size=getvariable('dom_threshold'), streaming=getvariable('use_streaming'), columns={'ObjectList':'VARCHAR'}))
@@ -2055,7 +2053,7 @@ CREATE TABLE IF NOT EXISTS PrivilegeSetObjectAccess (
 );
 
 -- Idempotenz: bestehende Einträge der aktuellen Datei entfernen (1:N, kein PK).
--- Chunk-Guard (§4.3, I2): nur löschen, wenn der Chunk PrivilegeSetsCatalog enthält.
+-- Chunk-Guard (I2): nur löschen, wenn der Chunk PrivilegeSetsCatalog enthält.
 DELETE FROM PrivilegeSetObjectAccess WHERE File_Name IN (
     SELECT getvariable('fm_file')
     WHERE EXISTS (SELECT 1 FROM read_xml(getvariable('fm_xml'), record_element='PrivilegeSetsCatalog', maximum_file_size=getvariable('dom_threshold'), streaming=getvariable('use_streaming'), columns={'ObjectList':'VARCHAR'}))
@@ -2148,7 +2146,7 @@ CREATE TABLE IF NOT EXISTS DDR_ScriptSteps (
 );
 
 -- [streamify block: ddr_scriptsteps — eingefügt von gen_streamify_sql.sh]
--- streamify-Override für DDR_ScriptSteps (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für DDR_ScriptSteps.
 -- DDR-Elemente haben dynamische Namen (<_UUID>) → kein per-Record-Anker. Stattdessen
 -- auf dem EINDEUTIGEN DDR_INFO ankern (kein Renamer nötig) und das Script-Kind als
 -- VARCHAR kapseln (Klasse-C), dann die Step-Elemente re-extrahieren. Vermeidet den
@@ -2199,7 +2197,7 @@ CREATE TABLE IF NOT EXISTS DDR_Calculations (
 );
 
 -- [streamify block: ddr_calculations — eingefügt von gen_streamify_sql.sh]
--- streamify-Override für DDR_Calculations (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für DDR_Calculations.
 -- Wie DDR_ScriptSteps: auf dem eindeutigen DDR_INFO ankern, Calculation-Kind als
 -- VARCHAR kapseln (Klasse-C), Calc-Elemente re-extrahieren. Calc_UUID via Regex auf
 -- Element-NAMEN, Calc_Hash via xml_extract. HINWEIS: Chunk_Content fällt für chunks
@@ -2280,7 +2278,7 @@ CREATE TABLE IF NOT EXISTS PasteIndexList (
 );
 
 -- [streamify block: pasteindexlist — eingefügt von gen_streamify_sql.sh]
--- streamify-Override für PasteIndexList (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für PasteIndexList.
 -- Object ist attribut-only (<Object id=".."/>) → VARCHAR-Capture verlöre @id; daher
 -- typisierte STRUCT[]-Capture (gepatchtes webbed, PR#98) direkt auf dem eindeutigen
 -- PasteIndexList-Anker. Keine Roh-Spalte → voll bit-identisch erwartet.
@@ -2325,7 +2323,7 @@ CREATE TABLE IF NOT EXISTS BaseDirectoryCatalog (
 );
 
 -- [streamify block: basedirectorycatalog — eingefügt von gen_streamify_sql.sh]
--- streamify-Override für BaseDirectoryCatalog (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für BaseDirectoryCatalog.
 -- BaseDirectory trägt Identität in Attributen (@name/@id/@relativeTo) + UUID-Kind →
 -- typisierte STRUCT[]-Capture (gepatchtes webbed) auf dem eindeutigen
 -- BaseDirectoryCatalog-Anker. Keine Roh-Spalte → voll bit-identisch erwartet.
@@ -2390,7 +2388,7 @@ CREATE TABLE IF NOT EXISTS ScriptTriggers (
 -- die Layout-Stufe nur die DIREKTEN Trigger des <Layout> (Pfad /Layout/Script...),
 -- nicht die der enthaltenen <LayoutObject>.
 -- [streamify block: scripttriggers — eingefügt von gen_streamify_sql.sh]
--- streamify-Override für ScriptTriggers (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für ScriptTriggers.
 -- 3-Wege-UNION (File/Layout/Object-Level) — jede Quelle per SAX-Streaming auf einem
 -- eindeutigen bzw. eindeutig-genug Anker, Subtree-VARCHAR-Capture → Trigger re-extrahiert:
 --   - File:   record_element='Metadata' (Capture AddAction), Owner_UUID aus FilesCatalog
@@ -2510,7 +2508,7 @@ CREATE TABLE IF NOT EXISTS ExtendedPrivilegesCatalog (
 );
 
 -- [streamify block: extendedprivilegescatalog — eingefügt von gen_streamify_sql.sh]
--- streamify-Override für ExtendedPrivilegesCatalog (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für ExtendedPrivilegesCatalog.
 -- Hat einen ObjectList-Wrapper → Single-VARCHAR-Capture (PrivilegeSets-Muster): priv_xml
 -- bleibt das ganze <ExtendedPrivilege>-Element → alle Downstream-/ExtendedPrivilege/…-
 -- xpaths (inkl. nested //ObjectList/PrivilegeSetReference) UNVERÄNDERT. Keine Roh-Spalte
@@ -2599,14 +2597,14 @@ ON CONFLICT (Menu_UUID, File_Name) DO UPDATE SET
 
 
 -- ============================================
--- 24b. FileAccessAuthorizations  (Paket A.1, v4 §2)
+-- 24b. FileAccessAuthorizations
 -- ============================================
 -- Datei-Zugriffsschutz: welche Dateien/Plugins dürfen diese Datei referenzieren.
 -- Struktur (Tiefe 3, bleibt in main): <FileAccessCatalog @sameHost @required>
 --   <UUID/> <ObjectList> <Authorization @id @type=Local|External [@self]>
 --   <Source @CreationAccountName @CreationTimestamp/> <UUID>#text</UUID>
 --   <Display>CDATA</Display> <Authentication>hash</Authentication> <TagList/>.
--- read_xml_objects + XPath (kein typisiertes record_element → kein globales Leck, §7).
+-- read_xml_objects + XPath (kein typisiertes record_element → kein globales Leck).
 CREATE TABLE IF NOT EXISTS FileAccessAuthorizations (
     Auth_ID BIGINT,
     Auth_Type VARCHAR,                  -- Local | External
@@ -2661,7 +2659,7 @@ ON CONFLICT (Auth_UUID, File_Name) DO UPDATE SET
 
 
 -- ============================================
--- 24c. CustomMenuSetCatalog  (Paket A.2, v4 §2)
+-- 24c. CustomMenuSetCatalog
 -- ============================================
 -- Menü-Sets = benannte Sammlungen von Custom Menus, die ein Layout aktivieren kann.
 -- Struktur (Tiefe 3, bleibt in main): <CustomMenuSetCatalog> … <ObjectList>
@@ -2669,7 +2667,7 @@ ON CONFLICT (Auth_UUID, File_Name) DO UPDATE SET
 --   <CustomMenuList> <CustomMenuReference @name @id/> … </CustomMenuList> </CustomMenuSet>.
 -- (Der Top-Level <CustomMenuSetReference> unter dem Katalog = Default-Set-Verweis, NICHT
 --  in ObjectList → vom XPath ausgeschlossen.) Member-IDs/-Namen als Arrays; P4 entfaltet
---  sie zu CustomMenuSet→CustomMenu-Links (Auflösung per @id + File_Name, §7).
+--  sie zu CustomMenuSet→CustomMenu-Links (Auflösung per @id + File_Name).
 CREATE TABLE IF NOT EXISTS CustomMenuSetCatalog (
     MenuSet_ID BIGINT,
     MenuSet_Name VARCHAR,
@@ -2716,14 +2714,14 @@ ON CONFLICT (MenuSet_UUID, File_Name) DO UPDATE SET
 
 
 -- ============================================
--- 24d. LibraryReferences  (Paket A.3 — Inventar, v4 §2)
+-- 24d. LibraryReferences  (Inventar)
 -- ============================================
 -- Eingebettete Medien-Bibliothek: <LibraryCatalog> <BinaryData>
 --   <LibraryReference @id @key> + <StreamList> (Blobs). Wir behalten NUR die
 --   Referenz-Schlüssel (key = Inhalts-Hash, über den Layout-Objekte/Themes das Bild
 --   referenzieren) als schlankes Inventar. Die Blobs (~9,6 MB/Korpus) tragen keinen
 --   Analysewert; ihr Byte-Schnitt im Phase-S-Preprocessing ist ein separater Schritt
---   (v4 §2 A.3 „Phase-S-Schnitt" / §8 — gebündelt mit der v3-Phase-S-Fusion). Diese
+--   („Phase-S-Schnitt", gebündelt mit der Phase-S-Fusion). Diese
 --   Tabelle ist unabhängig davon korrekt (parst die Referenzen, ob Blobs da sind oder nicht).
 CREATE TABLE IF NOT EXISTS LibraryReferences (
     Library_ID BIGINT,

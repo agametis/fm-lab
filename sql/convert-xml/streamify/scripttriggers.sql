@@ -1,4 +1,4 @@
--- streamify-Override für ScriptTriggers (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für ScriptTriggers.
 -- 3-Wege-UNION (File/Layout/Object-Level) — jede Quelle per SAX-Streaming auf einem
 -- eindeutigen bzw. eindeutig-genug Anker, Subtree-VARCHAR-Capture → Trigger re-extrahiert:
 --   - File:   record_element='Metadata' (Capture AddAction), Owner_UUID aus FilesCatalog

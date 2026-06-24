@@ -1,46 +1,58 @@
 -- @title: Cluster Loader + Heuristic Naming (P5)
 -- @description: communities.csv → ObjectClusters; aggregiert CommunityNames (Hints + Heuristik-Name)
--- @version: 1.1.0
+-- @version: 2.0.0
 -- @author: Marcel / Claude
 -- @tags: graph, cluster, P5, community
 -- @note: Läuft gegen die Master-DB (read-write).
 -- @changelog 1.1.0: Semantic_Description fest ins Schema (fm-graph-cluster deep-research).
+-- @changelog 2.0.0: Klon-Knoten-Key (Object_UUID, File_Name). communities.csv trägt
+--        seit graph_export_logical.sql 3.0.0 composite IDs `uuid::file`; hier per
+--        split_part zurück in zwei Spalten zerlegt. ObjectClusters-PK ist jetzt
+--        (Object_UUID, File_Name); alle CommunityNames-Joins sind datei-genau, sodass
+--        Klone derselben UUID NICHT mehr in der Aggregation verschmelzen.
 --
 -- ============================================================================
 -- VORBEDINGUNG (von cluster.sh gesetzt)
 -- ============================================================================
 --   SET VARIABLE engine = 'louvain' | 'leiden';   -- Provenienz
---   communities.csv im CWD (Spalten: object_uuid,community)
+--   communities.csv im CWD (Spalten: object_uuid,community) — object_uuid ist der
+--   composite Knoten-Key `uuid::file` (NULL-File-Synthetics: bare `uuid`).
 --
 -- ============================================================================
 -- ZWEI-TABELLEN-MODELL
 -- ============================================================================
---   ObjectClusters(Object_UUID PK, Community, Engine)         — reine Zugehörigkeit
+--   ObjectClusters(Object_UUID, File_Name, Community, Engine)  — Zugehörigkeit,
+--                                            konzeptueller PK (Object_UUID, File_Name)
 --   CommunityNames(Community, Engine, …Hints…, Heuristic_Name, Semantic_Name)
 -- Trennung, damit der optionale Claude-Skill Semantic_Name unabhängig von der
 -- Zugehörigkeit nachpflegen kann (keine LLM-Vorbedingung). Anzeige im Explorer:
 -- COALESCE(Semantic_Name, Heuristic_Name).
 
 -- 1) Zugehörigkeit laden. CREATE OR REPLACE = re-runnable; Engine als Provenienz.
+--    Composite Knoten-Key `uuid::file` zurück-splitten: split_part am ersten `::`.
+--    NULL-File-Synthetics (PluginFunction) tragen kein `::` ⇒ split_part(…,2)='' ⇒
+--    NULLIF → File_Name NULL (verträgt sich mit IS NOT DISTINCT FROM unten).
 CREATE OR REPLACE TABLE ObjectClusters AS
 SELECT
-  object_uuid                       AS Object_UUID,
-  CAST(community AS INTEGER)         AS Community,
-  CAST(getvariable('engine') AS VARCHAR) AS Engine
+  split_part(object_uuid, '::', 1)               AS Object_UUID,
+  NULLIF(split_part(object_uuid, '::', 2), '')   AS File_Name,
+  CAST(community AS INTEGER)                      AS Community,
+  CAST(getvariable('engine') AS VARCHAR)          AS Engine
 FROM read_csv('communities.csv', header = true,
               columns = {'object_uuid': 'VARCHAR', 'community': 'INTEGER'});
 
 -- 2) Operationaler Grad je Objekt (Anker-Wahl + Sample-Reihenfolge).
---    Voll-Aggregation über ObjectLinks — im Batch unkritisch.
+--    Voll-Aggregation über ObjectLinks — im Batch unkritisch. Datei-genau gekeyt
+--    (id, file), damit der Grad einer geklonten UUID nicht über Dateien summiert.
 CREATE OR REPLACE TABLE CommunityNames AS
 WITH deg AS (
-  SELECT id, COUNT(*) AS degree
+  SELECT id, file, COUNT(*) AS degree
   FROM (
-    SELECT Source_UUID AS id FROM ObjectLinks WHERE Link_Type = 'operational'
+    SELECT Source_UUID AS id, Source_File AS file FROM ObjectLinks WHERE Link_Type = 'operational'
     UNION ALL
-    SELECT Target_UUID AS id FROM ObjectLinks WHERE Link_Type = 'operational'
+    SELECT Target_UUID AS id, Target_File AS file FROM ObjectLinks WHERE Link_Type = 'operational'
   )
-  GROUP BY id
+  GROUP BY id, file
 ),
 members AS (
   SELECT
@@ -48,8 +60,13 @@ members AS (
     oc.Object_UUID, oc.Object_Type, oc.File_Name, oc.Object_Name,
     COALESCE(d.degree, 0) AS degree
   FROM ObjectClusters cl
-  JOIN ObjectCatalog oc ON oc.Object_UUID = cl.Object_UUID
-  LEFT JOIN deg d ON d.id = cl.Object_UUID
+  -- Datei-genauer Katalog-Join (IS NOT DISTINCT FROM hält NULL-File-Synthetics).
+  JOIN ObjectCatalog oc
+    ON oc.Object_UUID = cl.Object_UUID
+   AND oc.File_Name IS NOT DISTINCT FROM cl.File_Name
+  LEFT JOIN deg d
+    ON d.id = cl.Object_UUID
+   AND d.file IS NOT DISTINCT FROM cl.File_Name
 )
 SELECT
   Community,

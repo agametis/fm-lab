@@ -15,13 +15,15 @@ const cache = new Map<string, CustomFunctionTokens>();
 export const useCustomFunctionTokens = (
   uuid: string | undefined,
   lang: string,
+  file?: string | null,
 ): UseCustomFunctionTokensResult => {
   const [data, setData] = useState<CustomFunctionTokens | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isFetchingRef = useRef(false);
 
-  const cacheKey = uuid ? `${uuid}::${lang}` : '';
+  // Cache- und Fetch-Key inkl. file (Klon-Disambiguierung).
+  const cacheKey = uuid ? `${uuid}::${lang}::${file ?? ''}` : '';
 
   const fetchData = useCallback(async () => {
     if (!uuid || isFetchingRef.current) return;
@@ -39,7 +41,7 @@ export const useCustomFunctionTokens = (
     setError(null);
 
     try {
-      const tokens = await fetchCustomFunctionTokens(uuid, lang);
+      const tokens = await fetchCustomFunctionTokens(uuid, lang, file);
       cache.set(cacheKey, tokens);
       setData(tokens);
     } catch (err) {
@@ -49,7 +51,7 @@ export const useCustomFunctionTokens = (
       isFetchingRef.current = false;
       setLoading(false);
     }
-  }, [uuid, lang, cacheKey]);
+  }, [uuid, lang, file, cacheKey]);
 
   useEffect(() => {
     if (uuid) {

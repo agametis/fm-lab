@@ -1,10 +1,10 @@
--- streamify-Override für StepsForScripts (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für StepsForScripts.
 -- read_xml_objects(ganzes Dokument) → per-Record-SAX-Streaming auf dem vom Renamer
 -- eindeutig gemachten Anker SFS_Script. ScriptReference (nested-Attr-STRUCT, via
 -- gepatchtem webbed) liefert Script_ID/Name/UUID; ObjectList-Subtree als VARCHAR
 -- (Klasse-C) → Steps re-extrahiert. Step-Extraktion + INSERT identisch zur Basis.
 -- Bit-identisch zur DOM-Basis bis auf die Roh-Spalten Step_XML/Parameters_XML
--- (SAX-Serialisierung, semantisch äquivalent — Downstream-Invarianz §8).
+-- (SAX-Serialisierung, semantisch äquivalent — Downstream-Invarianz).
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 ),

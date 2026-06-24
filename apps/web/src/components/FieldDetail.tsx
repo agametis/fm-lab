@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFieldTokens } from '../hooks/useFieldTokens';
 import { useApiLang } from '../hooks/useApiLang';
+import { useCurrentFile } from '../lib/currentFileContext';
 import { FieldViewer } from './FieldViewer';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
@@ -21,7 +22,8 @@ interface FieldDetailProps {
 export const FieldDetail: React.FC<FieldDetailProps> = ({ uuid, highlightRefUuids }) => {
   const { t } = useTranslation(['detail']);
   const lang = useApiLang();
-  const { data, loading, error, retry } = useFieldTokens(uuid, lang);
+  const currentFile = useCurrentFile();
+  const { data, loading, error, retry } = useFieldTokens(uuid, lang, currentFile);
 
   if (loading) return <LoadingSpinner message={t('detail:loadingObject') as string} />;
   if (error) return <ErrorMessage message={error} onRetry={retry} />;

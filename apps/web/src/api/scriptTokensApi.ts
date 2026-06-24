@@ -15,11 +15,15 @@ export interface ScriptTokensResponse {
 export async function fetchScriptTokens(
   uuid: string,
   lang: string,
+  file?: string | null,
 ): Promise<ScriptTokens> {
   // ?enrich=<lang> liefert pro Script-Step die Reference-Daten
   // (stepDisplayName, stepDescription, stepHelpUrl etc.) und reichert
   // function-Refs in Calcs an.
+  // `file` (Klon-Disambiguierung): /api/get-details löst die UUID via
+  // resolveByUUID auf → ohne file 409 AMBIGUOUS_UUID bei geteilten Klon-UUIDs.
   const params = new URLSearchParams({ uuid, format: 'tokens', enrich: lang });
+  if (file) params.set('file', file);
   const response = await fetch(`${baseUrl}/api/get-details?${params}`);
 
   if (!response.ok) {

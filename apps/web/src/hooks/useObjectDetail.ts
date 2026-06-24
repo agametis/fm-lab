@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { ApiError } from '@packages/shared';
 import { api } from '../api/client';
 import type { FMObject, ReferenceItem, GroupedReferences } from '../types';
 
@@ -7,11 +8,22 @@ interface UseObjectDetailResult {
   references: GroupedReferences;
   loading: boolean;
   error: string | null;
+  /**
+   * Klon-Disambiguierung (Sicherheitsnetz): bei `409 AMBIGUOUS_UUID` — eine bare
+   * UUID, die in mehreren Dateien existiert — die Liste der betroffenen Dateien.
+   * Die DetailView rendert daraus einen Datei-Picker. `null` = nicht mehrdeutig.
+   */
+  ambiguousFiles: string[] | null;
   retry: () => void;
 }
 
-// Simple in-memory cache (session-scoped)
+// Simple in-memory cache (session-scoped).
+// Key = `${uuid}::${file ?? ''}` — Klon-Disambiguierung: zwei Objekte mit
+// geteilter UUID aus verschiedenen Dateien dürfen sich nicht den Cache-Eintrag
+// teilen. Ohne `file` (Graceful Downgrade) bleibt der Key bare-UUID-äquivalent.
 const cache = new Map<string, { object: FMObject; references: GroupedReferences }>();
+
+const cacheKeyFor = (uuid: string, file?: string | null): string => `${uuid}::${file ?? ''}`;
 
 /**
  * Hook to fetch object details and references by UUID.
@@ -25,18 +37,22 @@ const EMPTY_REFS: GroupedReferences = {
   structuralChild: [],
 };
 
-export const useObjectDetail = (uuid: string | undefined): UseObjectDetailResult => {
+export const useObjectDetail = (
+  uuid: string | undefined,
+  file?: string | null,
+): UseObjectDetailResult => {
   const [object, setObject] = useState<FMObject | null>(null);
   const [references, setReferences] = useState<GroupedReferences>(EMPTY_REFS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ambiguousFiles, setAmbiguousFiles] = useState<string[] | null>(null);
   const isFetchingRef = useRef(false);
 
   const fetchData = useCallback(async () => {
     if (!uuid || isFetchingRef.current) return;
 
     // Check cache first
-    const cached = cache.get(uuid);
+    const cached = cache.get(cacheKeyFor(uuid, file));
     if (cached) {
       setObject(cached.object);
       setReferences(cached.references);
@@ -48,6 +64,7 @@ export const useObjectDetail = (uuid: string | undefined): UseObjectDetailResult
     isFetchingRef.current = true;
     setLoading(true);
     setError(null);
+    setAmbiguousFiles(null);
 
     try {
       // Parallel fetch: object details + operational refs + structural refs.
@@ -59,10 +76,11 @@ export const useObjectDetail = (uuid: string | undefined): UseObjectDetailResult
       // HierarchyTree machen längere Listen handhabbar; obergrenze ist
       // environment.api.maxLimit (10000).
       const REFS_LIMIT = 10000;
+      const fileParam = file || undefined;
       const [objectResponse, opRefsResponse, structRefsResponse] = await Promise.all([
-        api.get({ uuid }),
-        api.references({ uuid, direction: 'all', link_type: 'operational', limit: REFS_LIMIT }),
-        api.references({ uuid, direction: 'all', link_type: 'structural', limit: REFS_LIMIT }),
+        api.get({ uuid, file: fileParam }),
+        api.references({ uuid, file: fileParam, direction: 'all', link_type: 'operational', limit: REFS_LIMIT }),
+        api.references({ uuid, file: fileParam, direction: 'all', link_type: 'structural', limit: REFS_LIMIT }),
       ]);
 
       // Extract object data
@@ -90,24 +108,33 @@ export const useObjectDetail = (uuid: string | undefined): UseObjectDetailResult
       };
 
       // Cache the result
-      cache.set(uuid, { object: objectData, references: grouped });
+      cache.set(cacheKeyFor(uuid, file), { object: objectData, references: grouped });
 
       setObject(objectData);
       setReferences(grouped);
     } catch (err) {
-      console.error('Detail fetch failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load object details');
+      // Sicherheitsnetz: bare-UUID-Navigation auf ein in mehreren Dateien
+      // existierendes Objekt → 409 AMBIGUOUS_UUID. Statt eines harten Fehlers
+      // die matched_files für den Datei-Picker durchreichen.
+      if (err instanceof ApiError && err.code === 'AMBIGUOUS_UUID') {
+        const files = (err.details?.matched_files as string[] | undefined) ?? [];
+        setAmbiguousFiles(files);
+      } else {
+        console.error('Detail fetch failed:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load object details');
+      }
     } finally {
       isFetchingRef.current = false;
       setLoading(false);
     }
-  }, [uuid]);
+  }, [uuid, file]);
 
   useEffect(() => {
     setObject(null);
     setReferences(EMPTY_REFS);
+    setAmbiguousFiles(null);
     fetchData();
   }, [fetchData]);
 
-  return { object, references, loading, error, retry: fetchData };
+  return { object, references, loading, error, ambiguousFiles, retry: fetchData };
 };

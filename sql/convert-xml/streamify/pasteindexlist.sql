@@ -1,4 +1,4 @@
--- streamify-Override für PasteIndexList (project/plan_xml_diff_streaming_preprocess.md).
+-- streamify-Override für PasteIndexList.
 -- Object ist attribut-only (<Object id=".."/>) → VARCHAR-Capture verlöre @id; daher
 -- typisierte STRUCT[]-Capture (gepatchtes webbed, PR#98) direkt auf dem eindeutigen
 -- PasteIndexList-Anker. Keine Roh-Spalte → voll bit-identisch erwartet.

@@ -15,13 +15,15 @@ const cache = new Map<string, ScriptTokens>();
 export const useScriptTokens = (
   uuid: string | undefined,
   lang: string,
+  file?: string | null,
 ): UseScriptTokensResult => {
   const [data, setData] = useState<ScriptTokens | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isFetchingRef = useRef(false);
 
-  const cacheKey = uuid ? `${uuid}::${lang}` : '';
+  // Cache- und Fetch-Key inkl. file (Klon-Disambiguierung).
+  const cacheKey = uuid ? `${uuid}::${lang}::${file ?? ''}` : '';
 
   const fetchData = useCallback(async () => {
     if (!uuid || isFetchingRef.current) return;
@@ -39,7 +41,7 @@ export const useScriptTokens = (
     setError(null);
 
     try {
-      const tokens = await fetchScriptTokens(uuid, lang);
+      const tokens = await fetchScriptTokens(uuid, lang, file);
       cache.set(cacheKey, tokens);
       setData(tokens);
     } catch (err) {
@@ -49,7 +51,7 @@ export const useScriptTokens = (
       isFetchingRef.current = false;
       setLoading(false);
     }
-  }, [uuid, lang, cacheKey]);
+  }, [uuid, lang, file, cacheKey]);
 
   useEffect(() => {
     if (uuid) {

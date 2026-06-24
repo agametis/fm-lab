@@ -1,11 +1,11 @@
 /*
--- convert_xml_01_extract.sql — Phase 1 der XML-Konvertierungs-Pipeline
--- (project/plan_xml_diff.md §4). EINZIGE XML-lesende Phase: überführt die
+-- convert_xml_01_extract.sql — Phase 1 der XML-Konvertierungs-Pipeline.
+-- EINZIGE XML-lesende Phase: überführt die
 -- Roh-Kataloge 1:1 aus der XML in DuckDB-Tabellen und speichert Roh-XML-
 -- Fragmente (Parameters_XML, Object_XML, Step_XML, …) für die nachgelagerten
 -- Phasen. Die Referenz-Auflösung liegt in convert_xml_02_resolve.sql (Phase 2).
 -- Chunk-fähig: jede Sektion ist bei einem Chunk ohne ihren Katalog ein No-Op
--- (UPSERT bzw. branch-guarded DELETE bei PrivilegeSet*, §4.3).
+-- (UPSERT bzw. branch-guarded DELETE bei PrivilegeSet*).
 --
 -- DuckDB SQL Script to parse FileMaker XML Catalog
 -- and extract various catalog information into tables.
@@ -15,7 +15,7 @@
 -- Version 0.4
 -- Date: 2026-01-14
 
--- Schema-Versionierung (siehe project/prd_schema_versioning_auto_heal.md):
+-- Schema-Versionierung:
 --   @SCHEMA_VERSION wird vom Shell-Skript per grep ausgewertet und gegen den
 --   Wert in der DB-Tabelle SchemaInfo verglichen. Bei Mismatch löst der
 --   Auto-Heal-Mechanismus einen Force-Rebuild aus.
@@ -30,8 +30,7 @@
 --   wo <Calculation> in <CustomFunction> eingebettet ist statt in einer separaten
 --   <CalcsForCustomFunctions>-Sektion. Struktur-tolerante Doppel-Extraktion (Legacy +
 --   Embedded) aus EINEM CustomFunctionsCatalog-Parse; keine Versions-Weiche. Additiv.
---   Siehe project/bugreports/2026-06-23_Philipp-Puls_CustomFunctions_v26.md.
--- @SCHEMA_CHANGELOG 1.4.0: Paket A (v4) — neue Tabellen FileAccessAuthorizations,
+-- @SCHEMA_CHANGELOG 1.4.0: neue Tabellen FileAccessAuthorizations,
 --   CustomMenuSetCatalog, LibraryReferences (additiv; bestehende 41 Tabellen unverändert).
 --   + CustomMenuSet im ObjectCatalog + CustomMenuSet→CustomMenu (contains_menu) in ObjectLinks.
 -- @SCHEMA_HASH_FILES sql/convert-xml/convert_xml_01_extract.sql sql/convert-xml/convert_xml_02_resolve.sql sql/convert-xml/convert_xml_03_details.sql sql/convert-xml/convert_xml_04_catalog.sql
@@ -43,7 +42,7 @@
 -- Netzwerk nötig). Der Convert-Pipeline-Treiber (convert_fm_xml.sh) ERSETZT diese
 -- Zeile im Patched-Modus per sed durch  LOAD '<abs-Pfad>'  und startet duckdb mit
 -- -unsigned (das gepatchte webbed mit dem nested-attr-SAX-Fix ist lokal gebaut →
--- unsigniert). Siehe project/plan_xml_diff_streaming.md §3b/§3c.
+-- unsigniert).
 LOAD webbed;
 
 -- xml_unescape(): dekodiert die gängigen XML-Entities in TEXT, der aus ATTRIBUTwerten
@@ -73,14 +72,14 @@ SET file_search_path = COALESCE(NULLIF(getenv('FM_XML_DIR'), ''), 'xml');
 SET VARIABLE fm_xml = 'Test.xml';  -- Wird durch Skill-Script ersetzt
 
 -- Schema-Marker (werden vom Shell-Skript zur Build-Zeit ersetzt; siehe
--- Header-Kommentar @SCHEMA_VERSION / @SCHEMA_HASH_FILES und §5.2 des PRD).
+-- Header-Kommentar @SCHEMA_VERSION / @SCHEMA_HASH_FILES).
 -- Die SchemaInfo-Tabelle (s. u.) wird am Ende des Imports mit diesen Werten
 -- befüllt, sodass folgende Läufe Drift detektieren können.
 SET VARIABLE schema_version = '1.1.0';   -- Wird durch Skill-Script ersetzt
 SET VARIABLE schema_hash = 'pending';    -- Wird durch Skill-Script ersetzt
 SET VARIABLE schema_notes = 'convert_xml.sql import';
 
--- Sub-Chunk-Offset für Sequence_ID (These 1b, plan_xml_diff_streaming_optimization.md).
+-- Sub-Chunk-Offset für Sequence_ID (These 1b).
 -- Default 0 = unsplit/coarse unverändert. Beim Sub-Chunking eines Sequence_ID-Katalogs
 -- (LayoutCatalog/ScriptCatalog) injiziert das Skript pro Sub-Chunk den globalen
 -- Record-Offset (= Σ Records vorheriger Sub-Chunks), damit ROW_NUMBER() pro Chunk +
@@ -92,7 +91,7 @@ SET VARIABLE seq_offset = 0;   -- Wird beim Sub-Chunking pro Chunk ersetzt
 SET VARIABLE max_filesize TO 256000000; -- 256 MB
 
 -- ============================================================================
--- SAX-Streaming-Aktuatoren (project/plan_xml_diff_streaming.md §4, Pfad 1)
+-- SAX-Streaming-Aktuatoren
 -- ----------------------------------------------------------------------------
 -- Empirisch ermittelte webbed-Mechanik: NICHT der streaming-Flag, sondern
 -- `maximum_file_size` ist der Aktuator. Datei > maximum_file_size + streaming=true
@@ -112,14 +111,14 @@ SET VARIABLE dom_threshold = getvariable('max_filesize');
 SET VARIABLE use_streaming = false;
 -- @WEBBED_SELFTEST@  (Treiber ersetzt diese Zeile im Patched-Modus; sonst No-Op)
 
--- Performance (P1, project/plan_xml_performance.md §6): File_Name EINMAL aus der XML
+-- Performance (P1): File_Name EINMAL aus der XML
 -- ableiten und als Variable bereitstellen. Bislang baute jede der ~28 Katalog-
 -- Sektionen über eine `filename_normalized`-CTE einen ZUSÄTZLICHEN read_xml nur für
 -- den (datei-weit konstanten) File_Name auf — DuckDB dedupliziert die zwei
 -- read_xml-Scans pro Statement NICHT, was die Parse-Last je Sektion verdoppelte
 -- (~2,3 s → ~1,05 s ohne den Zweit-Scan). filename_normalized liest jetzt diese
 -- Variable; das Ergebnis ist bit-identisch (gleiche Ableitung, nur einmal berechnet).
--- KONSOLIDIERTER ROOT-READ (project/plan_xml_diff_streaming_preprocess.md): die
+-- KONSOLIDIERTER ROOT-READ: die
 -- Root-Attribute (`/FMSaveAsXML/@…`) wurden zuvor von DREI read_xml_objects-Aufrufen
 -- separat gelesen (fm_file-Ableitung, XMLMetadata, FilesCatalog) — je ein Whole-Doc-
 -- DOM-Parse. Da Root-Attribute strukturell NICHT per record_element streambar sind
@@ -202,7 +201,6 @@ CREATE TABLE IF NOT EXISTS FilesCatalog (
     File_UUID VARCHAR,                      -- UUID der Datei (aus XML); KEIN UNIQUE: geklonte
                                             -- FileMaker-Dateien ("Kopie speichern unter…") teilen
                                             -- dieselbe interne UUID. Identität liegt auf File_Name (PK).
-                                            -- Siehe project/bugreports/2026-06-18_Michael-Heider_Clon-Duplikate.md
     FileMaker_Version VARCHAR,              -- FileMaker Version (z.B. "ProAdvanced 21.0.2.206")
     Has_DDR_INFO BOOLEAN DEFAULT FALSE,     -- DDR-Info verfügbar?
     Import_Timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Zeitpunkt des letzten Imports
@@ -1131,7 +1129,7 @@ CREATE TABLE IF NOT EXISTS StepsForScripts (
     PRIMARY KEY (Step_UUID, File_Name)
 );
 
--- Step_XML: vollständiges <Step>-Element (project/plan_xml_diff.md §12.3-Fallback).
+-- Step_XML: vollständiges <Step>-Element.
 -- Parameters_XML deckt nur /Step/ParameterValues ab; manche Step-Typen (z.B.
 -- "Unknown external script step from missing plug-in") legen Referenzen AUSSERHALB
 -- von ParameterValues ab. Phase 2 (XMLStepReferences) liest daher aus Step_XML.
@@ -1147,7 +1145,7 @@ raw_scripts AS (
         unnest(xml_extract_elements(xml, '//StepsForScripts/Script')) as script_xml
     FROM read_xml_objects(getvariable('fm_xml'), maximum_file_size=getvariable('max_filesize'))
 ),
--- Performance (B-1, project/plan_xml_performance.md §3): Script-Level-Felder
+-- Performance (B-1): Script-Level-Felder
 -- EINMAL pro Script auflösen, BEVOR die Steps unnested werden. Stehen scalar-
 -- xml_extract auf dem großen script_xml-Fragment im SELBEN SELECT wie unnest(),
 -- wertet DuckDB sie pro expandierter Step-Zeile aus (O(steps × script_größe)) und
@@ -1305,7 +1303,7 @@ raw_layouts AS (
         unnest(xml_extract_elements(xml, '//LayoutCatalog/Layout')) as layout_xml
     FROM read_xml_objects(getvariable('fm_xml'), maximum_file_size=getvariable('max_filesize'))
 ),
--- Performance (B-2, project/plan_xml_performance.md §3): Layout-Level-Felder
+-- Performance (B-2): Layout-Level-Felder
 -- EINMAL pro Layout auflösen, BEVOR die Parts unnested werden (Anti-Pattern wie
 -- B-1: scalar-xml_extract auf layout_xml im selben SELECT wie unnest() → pro Part
 -- re-evaluiert). Eigene CTE-Ebene davor.
@@ -1397,7 +1395,7 @@ raw_layouts AS (
         unnest(xml_extract_elements(xml, '//LayoutCatalog/Layout')) as layout_xml
     FROM read_xml_objects(getvariable('fm_xml'), maximum_file_size=getvariable('max_filesize'))
 ),
--- Performance (B-2, project/plan_xml_performance.md §3): Layout- und Part-Level-
+-- Performance (B-2): Layout- und Part-Level-
 -- Felder jeweils EINMAL auflösen, BEVOR genested wird (Anti-Pattern wie B-1).
 -- layout_xml bzw. part_xml sind große Fragmente; scalar-xml_extract im selben
 -- SELECT wie das unnest würde pro Part bzw. pro Objekt re-evaluiert.
@@ -1515,7 +1513,7 @@ nested_objects AS (
             xml_extract_text(child_xml, '/LayoutObject/ScriptTriggers/ScriptTrigger/ScriptReference/Calculation/Text'),
             E'\n'
         ) as ScriptTrigger_Parameter_Text,
-        -- PopoverPanel-Titel (Feldreferenzen, §3.3) per Title/Text-Fallback
+        -- PopoverPanel-Titel (Feldreferenzen) per Title/Text-Fallback
         -- mitführen; reguläre Objekte haben nur StyledText/Data.
         COALESCE(
             xml_extract_text(child_xml, '/LayoutObject/Text/StyledText/Data')[1],
@@ -1531,7 +1529,7 @@ nested_objects AS (
         --     Damit wird das Panel als eigene Zeile emittiert (Parent = Button,
         --     Nesting +1). Der Button greift bewusst NICHT die Descendant-Achse,
         --     sonst würde der Panel-Inhalt eine Ebene zu hoch direkt am Button
-        --     hängen (§2.3).
+        --     hängen.
         --   * alle anderen Container: unveränderte Descendant-Achse
         --     '//ObjectList/LayoutObject'. Das emittierte PopoverPanel ist
         --     selbst Whitelist-Parent und nimmt hierüber seine ObjectList-
@@ -1580,7 +1578,7 @@ SELECT
     replace(Text_Content, chr(127), chr(10)) as Text_Content,
     object_xml::VARCHAR as Object_XML,
     fn.File_Name as File_Name
--- DETERMINISTISCHES DEDUP (Chunk-Invarianz, plan_xml_diff_streaming_optimization.md
+-- DETERMINISTISCHES DEDUP (Chunk-Invarianz,
 -- These 1b): Die Descendant-Achse '//ObjectList/LayoutObject' im rekursiven Term
 -- emittiert tief verschachtelte Objekte MEHRFACH (einmal pro Container-Vorfahre, je
 -- mit anderem Nesting_Level/Parent). Das ON-CONFLICT-„last writer" war reihenfolge-
@@ -1854,7 +1852,7 @@ CREATE TABLE IF NOT EXISTS PrivilegeSetRecordAccess (
 
 -- Idempotenz: bestehende Einträge der aktuellen Datei entfernen (1:N, kein PK).
 -- BaseTable_UUID ist bei type="New" NULL, daher DELETE-by-File statt ON CONFLICT.
--- Chunk-Guard (project/plan_xml_diff.md §4.3, I2): nur löschen, wenn der aktuelle
+-- Chunk-Guard (I2): nur löschen, wenn der aktuelle
 -- XML-Input (= Chunk) den PrivilegeSetsCatalog-Branch enthält. Ohne Guard würde ein
 -- Chunk OHNE diesen Branch die von einem anderen Chunk derselben Datei eingefügten
 -- Zeilen löschen (DELETE-then-INSERT, kein UPSERT). Nicht-gesplittet: Branch immer
@@ -2000,7 +1998,7 @@ CREATE TABLE IF NOT EXISTS PrivilegeSetFieldAccess (
 );
 
 -- Idempotenz: bestehende Einträge der aktuellen Datei entfernen (1:N, kein PK).
--- Chunk-Guard (§4.3, I2): nur löschen, wenn der Chunk PrivilegeSetsCatalog enthält.
+-- Chunk-Guard (I2): nur löschen, wenn der Chunk PrivilegeSetsCatalog enthält.
 DELETE FROM PrivilegeSetFieldAccess WHERE File_Name IN (
     SELECT regexp_replace(
         xml_extract_text(xml, '/FMSaveAsXML/@File')[1], '\.fmp12$', ''
@@ -2095,7 +2093,7 @@ CREATE TABLE IF NOT EXISTS PrivilegeSetObjectAccess (
 );
 
 -- Idempotenz: bestehende Einträge der aktuellen Datei entfernen (1:N, kein PK).
--- Chunk-Guard (§4.3, I2): nur löschen, wenn der Chunk PrivilegeSetsCatalog enthält.
+-- Chunk-Guard (I2): nur löschen, wenn der Chunk PrivilegeSetsCatalog enthält.
 DELETE FROM PrivilegeSetObjectAccess WHERE File_Name IN (
     SELECT regexp_replace(
         xml_extract_text(xml, '/FMSaveAsXML/@File')[1], '\.fmp12$', ''
@@ -2237,7 +2235,7 @@ ddr_calc_raw AS (
         unnest(xml_extract_elements(xml, '//DDR_INFO/Calculation/ObjectList/*')) as calc_elem
     FROM read_xml_objects(getvariable('fm_xml'), maximum_file_size=getvariable('max_filesize'))
 ),
--- Chunk-Index in XML-Dokumentreihenfolge (PRD prd_universal_function_links.md §4):
+-- Chunk-Index in XML-Dokumentreihenfolge:
 -- Zwei parallele unnest()-Aufrufe iterieren synchron pro Zeile. Die Chunk-Liste
 -- und ein begleitendes generate_series mit derselben Länge erzeugen einen
 -- deterministischen, lesegerechten Chunk_Index. Vorgängerlösung mit
@@ -2458,7 +2456,7 @@ SELECT
 
     -- Deterministischer md5-Fallback verhindert eine NULL im PK, falls ein Owner
     -- ausnahmsweise keine UUID trägt (kein ROW_NUMBER, vgl. Slot-Fix oben).
-    -- SERIALISIERUNGS-UNABHÄNGIG (project/plan_xml_diff_streaming_preprocess.md): hasht
+    -- SERIALISIERUNGS-UNABHÄNGIG: hasht
     -- EXTRAHIERTE Identitätsfelder statt der Roh-Serialisierung trigger_xml::VARCHAR.
     -- Sonst divergierte der PK unter SAX-Streaming (CDATA/Entity/Whitespace) und
     -- erzwänge einen DOM-Fallback. Owner-lose Trigger sind ein Edge-Case (in den
@@ -2583,14 +2581,14 @@ ON CONFLICT (Menu_UUID, File_Name) DO UPDATE SET
 
 
 -- ============================================
--- 24b. FileAccessAuthorizations  (Paket A.1, v4 §2)
+-- 24b. FileAccessAuthorizations
 -- ============================================
 -- Datei-Zugriffsschutz: welche Dateien/Plugins dürfen diese Datei referenzieren.
 -- Struktur (Tiefe 3, bleibt in main): <FileAccessCatalog @sameHost @required>
 --   <UUID/> <ObjectList> <Authorization @id @type=Local|External [@self]>
 --   <Source @CreationAccountName @CreationTimestamp/> <UUID>#text</UUID>
 --   <Display>CDATA</Display> <Authentication>hash</Authentication> <TagList/>.
--- read_xml_objects + XPath (kein typisiertes record_element → kein globales Leck, §7).
+-- read_xml_objects + XPath (kein typisiertes record_element → kein globales Leck).
 CREATE TABLE IF NOT EXISTS FileAccessAuthorizations (
     Auth_ID BIGINT,
     Auth_Type VARCHAR,                  -- Local | External
@@ -2645,7 +2643,7 @@ ON CONFLICT (Auth_UUID, File_Name) DO UPDATE SET
 
 
 -- ============================================
--- 24c. CustomMenuSetCatalog  (Paket A.2, v4 §2)
+-- 24c. CustomMenuSetCatalog
 -- ============================================
 -- Menü-Sets = benannte Sammlungen von Custom Menus, die ein Layout aktivieren kann.
 -- Struktur (Tiefe 3, bleibt in main): <CustomMenuSetCatalog> … <ObjectList>
@@ -2653,7 +2651,7 @@ ON CONFLICT (Auth_UUID, File_Name) DO UPDATE SET
 --   <CustomMenuList> <CustomMenuReference @name @id/> … </CustomMenuList> </CustomMenuSet>.
 -- (Der Top-Level <CustomMenuSetReference> unter dem Katalog = Default-Set-Verweis, NICHT
 --  in ObjectList → vom XPath ausgeschlossen.) Member-IDs/-Namen als Arrays; P4 entfaltet
---  sie zu CustomMenuSet→CustomMenu-Links (Auflösung per @id + File_Name, §7).
+--  sie zu CustomMenuSet→CustomMenu-Links (Auflösung per @id + File_Name).
 CREATE TABLE IF NOT EXISTS CustomMenuSetCatalog (
     MenuSet_ID BIGINT,
     MenuSet_Name VARCHAR,
@@ -2700,14 +2698,14 @@ ON CONFLICT (MenuSet_UUID, File_Name) DO UPDATE SET
 
 
 -- ============================================
--- 24d. LibraryReferences  (Paket A.3 — Inventar, v4 §2)
+-- 24d. LibraryReferences  (Inventar)
 -- ============================================
 -- Eingebettete Medien-Bibliothek: <LibraryCatalog> <BinaryData>
 --   <LibraryReference @id @key> + <StreamList> (Blobs). Wir behalten NUR die
 --   Referenz-Schlüssel (key = Inhalts-Hash, über den Layout-Objekte/Themes das Bild
 --   referenzieren) als schlankes Inventar. Die Blobs (~9,6 MB/Korpus) tragen keinen
 --   Analysewert; ihr Byte-Schnitt im Phase-S-Preprocessing ist ein separater Schritt
---   (v4 §2 A.3 „Phase-S-Schnitt" / §8 — gebündelt mit der v3-Phase-S-Fusion). Diese
+--   („Phase-S-Schnitt", gebündelt mit der Phase-S-Fusion). Diese
 --   Tabelle ist unabhängig davon korrekt (parst die Referenzen, ob Blobs da sind oder nicht).
 CREATE TABLE IF NOT EXISTS LibraryReferences (
     Library_ID BIGINT,

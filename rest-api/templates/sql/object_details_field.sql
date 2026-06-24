@@ -13,8 +13,12 @@ WITH field_match AS (
          f.Is_Global, f.Max_Repetitions, f.DDR_Hash, f.File_Name,
          f.Field_ID, f.Calculation_Text
   FROM FieldsForTables f
-  JOIN ObjectCatalog oc ON f.Field_UUID = oc.Object_UUID
+  -- Klon-Scoping: datei-gleicher Join + Datei-Filter. Ohne ihn mischt eine geteilte
+  -- Field_UUID (z.B. Archiv-Klon BEL/BELA) die Zeilen aller Klon-Dateien; der Controller
+  -- reicht die aufgelöste Datei als getvariable('file') durch (NULL → Graceful Downgrade).
+  JOIN ObjectCatalog oc ON f.Field_UUID = oc.Object_UUID AND oc.File_Name = f.File_Name
   WHERE oc.Object_UUID = getvariable('uuid')
+    AND (getvariable('file') IS NULL OR f.File_Name = getvariable('file'))
   LIMIT 1
 ),
 -- Primary: Calculation_Text from XML <Text> CDATA (most reliable)

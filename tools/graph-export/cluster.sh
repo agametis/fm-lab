@@ -27,13 +27,23 @@ set -u
 # ── Paths ───────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DB_FILE="$PROJECT_ROOT/db/fm_catalog.duckdb"
+# DB_FILE override (FMLAB_CLUSTER_DB) — default master; lets tests run against a
+# throwaway copy without touching the production DB. Sync still targets rest-api.
+DB_FILE="${FMLAB_CLUSTER_DB:-$PROJECT_ROOT/db/fm_catalog.duckdb}"
 EXPORT_SQL="$SCRIPT_DIR/graph_export_logical.sql"
 LOAD_SQL="$SCRIPT_DIR/cluster_load.sql"
+CACHE_SAVE_SQL="$SCRIPT_DIR/cache_save.sql"
+CACHE_APPLY_SQL="$SCRIPT_DIR/cache_apply.sql"
 
 RESOLUTION="${FMLAB_CLUSTER_RESOLUTION:-1.0}"
 SEED="${FMLAB_CLUSTER_SEED:-42}"
 # rest-api sync paths/URL live in sync_db.sh (step 5 delegates to it).
+
+# ── Semantic-Name cache knobs (plan_semantic_name_cache.md §3) ──────────────
+CACHE_DISABLE="${FMLAB_CACHE_DISABLE:-0}"
+CACHE_TAU_PURITY="${FMLAB_CACHE_TAU_PURITY:-0.6}"
+CACHE_TAU_COVERAGE="${FMLAB_CACHE_TAU_COVERAGE:-0.5}"
+CACHE_FLOOR="${FMLAB_CACHE_FLOOR:-0.5}"
 
 # ── Locate duckdb (CLAUDE.md well-known locations) ──────────────────────────
 DUCKDB=""
@@ -101,12 +111,67 @@ fi
 T_CLUSTER_END=$(date +%s)
 echo "  clustering wall-clock: $((T_CLUSTER_END - T_CLUSTER_START))s"
 
+# ── 3a) Cache-Save: bestehende Semantic_Name auf Objekt-Ebene sichern ───────
+# VOR dem Replace (Schritt 3). Nur wenn CommunityNames bereits benannte Module
+# trägt — sonst würde ein leerer Snapshot einen guten Cache überschreiben.
+# plan_semantic_name_cache.md §5.1.
+if [ "$CACHE_DISABLE" != "1" ]; then
+  HAS_CN=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
+    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='CommunityNames';" 2>/dev/null || echo 0)
+  SEM_COUNT=0
+  if [ "$HAS_CN" = "1" ]; then
+    SEM_COUNT=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
+      "SELECT COUNT(*) FROM CommunityNames WHERE Semantic_Name IS NOT NULL;" 2>/dev/null || echo 0)
+  fi
+  if [ "${SEM_COUNT:-0}" -gt 0 ]; then
+    echo "→ cache-save: snapshotting $SEM_COUNT named communities (object-level) …"
+    "$DUCKDB" "$DB_FILE" <<SQL || echo "  WARN: cache-save failed (continuing)" >&2
+SET VARIABLE resolution = $RESOLUTION;
+.read $CACHE_SAVE_SQL
+SQL
+  fi
+fi
+
 # ── 3) Load communities + build heuristic names ─────────────────────────────
 echo "→ loading ObjectClusters + CommunityNames …"
 "$DUCKDB" "$DB_FILE" <<SQL || { echo "ERROR: cluster load failed." >&2; exit 9; }
 SET VARIABLE engine = '$ENGINE';
 .read $LOAD_SQL
 SQL
+
+# ── 3c) Cache-Apply: Semantic_Name per Mehrheitsvotum restaurieren ──────────
+# NACH dem Load (CommunityNames.Semantic_Name=NULL). plan_semantic_name_cache.md §5.2.
+if [ "$CACHE_DISABLE" != "1" ]; then
+  HAS_CACHE=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
+    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='SemanticNameCache';" 2>/dev/null || echo 0)
+  CACHE_ROWS=0
+  if [ "$HAS_CACHE" = "1" ]; then
+    CACHE_ROWS=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
+      "SELECT COUNT(*) FROM SemanticNameCache;" 2>/dev/null || echo 0)
+  fi
+  if [ "${CACHE_ROWS:-0}" -gt 0 ]; then
+    echo "→ cache-apply: restoring names via majority vote (τ_purity=$CACHE_TAU_PURITY τ_coverage=$CACHE_TAU_COVERAGE) …"
+    "$DUCKDB" "$DB_FILE" <<SQL || echo "  WARN: cache-apply failed (continuing)" >&2
+SET VARIABLE tau_purity = $CACHE_TAU_PURITY;
+SET VARIABLE tau_coverage = $CACHE_TAU_COVERAGE;
+.read $CACHE_APPLY_SQL
+SQL
+    REUSE=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
+      "SELECT ROUND(COALESCE(SUM(Member_Count) FILTER (WHERE Semantic_Name IS NOT NULL),0)::DOUBLE / SUM(Member_Count), 4) FROM CommunityNames;" 2>/dev/null || echo 0)
+    NAMED=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
+      "SELECT COUNT(*) FILTER (WHERE Semantic_Name IS NOT NULL) FROM CommunityNames;" 2>/dev/null || echo 0)
+    TOTAL=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
+      "SELECT COUNT(*) FROM CommunityNames;" 2>/dev/null || echo 0)
+    echo "  cache: restored $NAMED/$TOTAL communities, node-reuse=$REUSE (floor=$CACHE_FLOOR)"
+    # Floor-Check (advisory). bash-3.2 kann kein Float → awk-Vergleich.
+    BELOW=$(awk "BEGIN{print (($REUSE) < ($CACHE_FLOOR)) ? 1 : 0}" 2>/dev/null || echo 0)
+    if [ "$BELOW" = "1" ]; then
+      echo "  WARN: node-reuse $REUSE < floor $CACHE_FLOOR — Partition stark gedriftet; Voll-Re-Naming via /fm-graph-cluster empfohlen." >&2
+    fi
+  else
+    echo "  cache: empty (first run / no prior names) — skipping restore"
+  fi
+fi
 
 # ── 4) Report ───────────────────────────────────────────────────────────────
 echo "→ result:"

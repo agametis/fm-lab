@@ -1,6 +1,6 @@
 /*
--- convert_xml_02_resolve.sql — Phase 2 der XML-Konvertierungs-Pipeline
--- (project/plan_xml_diff.md §5). Löst die Verschränkungs-/Referenz-Tabellen
+-- convert_xml_02_resolve.sql — Phase 2 der XML-Konvertierungs-Pipeline.
+-- Löst die Verschränkungs-/Referenz-Tabellen
 -- auf, die aus den P1-Roh-Katalogen abgeleitet werden:
 --   • XMLStepReferences   (Cluster 1)
 --   • XMLLayoutReferences  (Cluster 2)
@@ -10,8 +10,8 @@
 -- TABLE-ONLY (Schritt 2 abgeschlossen): Diese Phase liest AUSSCHLIESSLICH aus
 -- den P1-Tabellen (inkl. der Roh-XML-Spalten Step_XML/Object_XML/Parameters_XML
 -- via xml_extract_* auf Spaltenwerten) — KEIN read_xml mehr. Sie verarbeitet alle
--- Dateien auf einmal (DELETE-then-INSERT pro Tabelle, File_Name-Filter entfallen,
--- Variante A §12.4) und läuft daher genau EINMAL nach allen P1-Importen (das
+-- Dateien auf einmal (DELETE-then-INSERT pro Tabelle, File_Name-Filter entfallen)
+-- und läuft daher genau EINMAL nach allen P1-Importen (das
 -- Skill-Skript ruft sie batch-einmalig auf, analog zu create_universal_catalogs.sql).
 -- Schema-Persistenz (SchemaInfo) bleibt in convert_xml_01_extract.sql — diese Datei
 -- schreibt KEINE SchemaInfo.
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS XMLStepReferences (
     Ref_UUID VARCHAR,            -- bei Ref_Type='variable': NULL
     Ref_Name VARCHAR,
     File_Name VARCHAR,
-    -- v2.0 Erweiterungen (PRD prd_rest_api_token_extended_infos.md §4.3):
+    -- v2.0 Erweiterungen:
     TO_Name VARCHAR,             -- nur Ref_Type='field' (Set Field / GTF / GTRR)
     TO_UUID VARCHAR,             -- analog
     Data_Source_Name VARCHAR,    -- nur Ref_Type='script' Cross-File (Perform Script from file)
@@ -54,12 +54,12 @@ ALTER TABLE XMLStepReferences ADD COLUMN IF NOT EXISTS Usage_Type VARCHAR;
 -- Bestehende Einträge für diese Datei entfernen (Idempotenz)
 DELETE FROM XMLStepReferences WHERE TRUE;
 
--- Quelle: StepsForScripts-Tabelle (Schritt 2c, project/plan_xml_diff.md §13.7).
+-- Quelle: StepsForScripts-Tabelle.
 -- Step-UUID/Name/Index stammen aus Spalten; alle Referenzen (Script/Field/Layout/
 -- TableOccurrence/DataSource/Name) werden aus Step_XML (vollständiges <Step>-Element)
 -- gelesen — byte-identisch zur früheren Extraktion aus der Roh-XML (kein read_xml mehr).
 -- Step_XML statt Parameters_XML, weil manche Step-Typen (z.B. "missing plug-in")
--- Referenzen AUSSERHALB von ParameterValues ablegen (§12.3-Fallback).
+-- Referenzen AUSSERHALB von ParameterValues ablegen.
 
 -- Perform Script → ScriptReference
 INSERT INTO XMLStepReferences
@@ -73,8 +73,8 @@ SELECT
     xml_extract_text(Step_XML, '//ScriptReference/@name')[1] as Ref_Name,
     File_Name,
     NULL AS TO_Name, NULL AS TO_UUID,
-    -- Cross-File-Detection: <DataSourceReference> vor <ScriptReference> markiert externen Aufruf
-    -- (PRD §2.5). NULLIF, weil xml_extract_text leere Strings für nicht-existente Elemente liefert.
+    -- Cross-File-Detection: <DataSourceReference> vor <ScriptReference> markiert externen Aufruf.
+    -- NULLIF, weil xml_extract_text leere Strings für nicht-existente Elemente liefert.
     NULLIF(xml_extract_text(Step_XML, '//DataSourceReference/@name')[1], '') AS Data_Source_Name,
     NULLIF(xml_extract_text(Step_XML, '//DataSourceReference/@UUID')[1], '') AS Data_Source_UUID,
     NULL AS Variable_Scope, NULL AS Usage_Type
@@ -91,7 +91,6 @@ FROM (
 WHERE ref_uuid IS NOT NULL;
 
 -- Alle Step-Typen mit eingebetteten <FieldReference>-Elementen
--- (PRD prd_universal_field_refs_in_steps.md §4.1)
 -- Universelle Erfassung: unnest jeder FieldReference im Step_XML → eine Zeile pro
 -- Feld. Step-Filter entfällt — XPath '//FieldReference' matched in 22 Step-Typen
 -- (Set Field, Sort Records, Import Records, Perform Find, Replace Field Contents,
@@ -107,7 +106,7 @@ SELECT
     ref_uuid as Ref_UUID,
     xml_extract_text(field_ref_xml, '/FieldReference/@name')[1] as Ref_Name,
     File_Name,
-    -- TO-Auflösung relativ zum FieldReference-Element (PRD §3.2 / §5.1)
+    -- TO-Auflösung relativ zum FieldReference-Element
     NULLIF(xml_extract_text(field_ref_xml, '/FieldReference/TableOccurrenceReference/@name')[1], '') AS TO_Name,
     NULLIF(xml_extract_text(field_ref_xml, '/FieldReference/TableOccurrenceReference/@UUID')[1], '') AS TO_UUID,
     NULL AS Data_Source_Name, NULL AS Data_Source_UUID,
@@ -130,7 +129,7 @@ FROM (
 )
 WHERE ref_uuid IS NOT NULL;
 
--- Go to Related Record → TableOccurrenceReference (PRD prd_rest_api_token_gtrr.md §4.1)
+-- Go to Related Record → TableOccurrenceReference
 -- GTRR enthält kein <FieldReference>; das Ziel ist die TO. Heimat/Cross-File werden
 -- im Template über TableOccurrenceResolution aufgelöst (Ref_UUID = TO_UUID, File_Name
 -- = Quelldatei des Scripts).
@@ -159,7 +158,7 @@ FROM (
 )
 WHERE ref_uuid IS NOT NULL;
 
--- Go to Related Record → LayoutReference (PRD prd_rest_api_token_gtrr.md §4.2)
+-- Go to Related Record → LayoutReference
 -- Variante A (~92%) hat <LayoutReference> innerhalb von <LayoutReferenceContainer>.
 -- Variante B ("original layout") hat nur <LayoutReferenceContainer> mit <Label> —
 -- der XPath //LayoutReference/@UUID matcht dann nichts → kein INSERT.
@@ -212,7 +211,7 @@ WHERE ref_uuid IS NOT NULL;
 -- Set Variable → <Name value="$X"> als Definition (LHS, Usage_Type='set')
 -- Die RHS-Lesung kommt über DDR-Calc-Chunks und landet in XMLCalcReferences
 -- (Ref_Type='variable', Usage_Type='read'). Damit haben wir saubere Trennung
--- Definition vs. Lesung — Voraussetzung für Cross-Step-Navigation (PRD §2.6).
+-- Definition vs. Lesung — Voraussetzung für Cross-Step-Navigation.
 INSERT INTO XMLStepReferences
 SELECT
     Script_UUID,
@@ -281,7 +280,7 @@ WHERE object_uuid IS NOT NULL
   AND ref_uuid IS NOT NULL;
 
 -- Script-Referenzen: //ScriptReference/@UUID (alle Nachfahren).
--- P2-Footprint-Fix (project/plan_xml_diff_streaming_p2_footprint.md §7): statt
+-- P2-Footprint-Fix: statt
 -- unnest(xml_extract_elements(…, '//ScriptReference')) — das DOM-tragende
 -- Fragment-Listen materialisiert und den EINZIGEN nicht-spillbaren >1-GB-Peak
 -- erzeugte (2298 MB, reproduzierte den 2-GiB-P2-OOM) — werden zwei PARALLELE
@@ -350,11 +349,11 @@ FROM (
 WHERE ref_uuid IS NOT NULL;
 
 -- ============================================
--- MBS_SubnameMap (PRD prd_rest_api_plugin_docs_subfunction.md §3.5 Variante B)
+-- MBS_SubnameMap
 -- ============================================
 -- Pro `MBS`-PluginFunctionRef-Chunk wird der fachliche MBS-Funktionsname (erstes
 -- Argument, z.B. "List.AddPrefix") aus den NoRef-Chunks derselben Calculation
--- ermittelt. Seit PRD prd_universal_function_links.md §4 steht Chunk_Index in
+-- ermittelt. Chunk_Index steht in
 -- XML-Dokumentreihenfolge — die Pairing-Heuristik nutzt nur die relative
 -- Reihenfolge pro Liste:
 --   (a) alle MBS-PluginFunctionRef-Chunks und
@@ -362,7 +361,7 @@ WHERE ref_uuid IS NOT NULL;
 -- werden nach Chunk_Index sortiert und 1:1 per ROW_NUMBER gemappt.
 -- Bei dynamischem ersten Argument (`MBS( $name ; … )`) liefert die NoRef-Liste
 -- weniger Treffer als die MBS-Liste — dann bleibt SubName NULL (kein subFunction
--- im Tokens-Output, siehe PRD §3.4).
+-- im Tokens-Output).
 
 CREATE TABLE IF NOT EXISTS MBS_SubnameMap (
     Calc_UUID VARCHAR,
@@ -421,12 +420,12 @@ QUALIFY ROW_NUMBER() OVER (PARTITION BY pr.Calc_UUID, pr.File_Name, pr.Chunk_Ind
 
 
 -- ============================================
--- GetSubparameterMap (PRD prd_universal_function_links.md §7)
+-- GetSubparameterMap
 -- ============================================
 -- Get(<SubParameter>) ist eine FileMaker-Container-Funktion: pro Sub-Parameter
 -- liefert sie einen anderen Wert. Im DDR steht der Sub-Parameter als eigener
 -- FunctionRef-Chunk innerhalb von Get( ... ) — Pattern (nach Chunk-Reorder
--- gemäß §4 immer in dieser Reihenfolge):
+-- immer in dieser Reihenfolge):
 --   Chunk N:   FunctionRef = 'Get'
 --   Chunk N+1: NoRef       = '(' (mit optionalem Whitespace)
 --   Chunk N+2: FunctionRef = '<SubParameter>'  (z.B. 'LayoutName')
@@ -479,7 +478,7 @@ WHERE Chunk_Type = 'FunctionRef'
 
 
 -- ============================================
--- XMLCalcReferences (PRD Erweiterte Referenzen v1)
+-- XMLCalcReferences
 -- ============================================
 -- Resolved DDR-Refs (FieldRef + CustomFunctionRef) aus allen Calculation-Quellen:
 --   - FieldsForTables (Calculated, AutoEnter-Calc) via DDR_Hash / AE_Calc_Hash
@@ -500,10 +499,10 @@ CREATE TABLE IF NOT EXISTS XMLCalcReferences (
     File_Name VARCHAR,
     TO_Name VARCHAR,             -- TO-Name aus <TableOccurrenceReference> (NULL bei CF/Plugin/Var)
     TO_UUID VARCHAR,             -- TO-UUID analog
-    -- v2.0 Erweiterungen (PRD prd_rest_api_token_extended_infos.md §4.4):
+    -- v2.0 Erweiterungen:
     Variable_Scope VARCHAR,      -- nur Ref_Type='variable': 'local'|'global'|'superglobal'|'let_local'
     Usage_Type VARCHAR,          -- nur Ref_Type='variable': 'read' (Calc-Chunk-Refs sind immer Lesungen)
-    -- v2.1 Erweiterung (PRD prd_rest_api_plugin_docs_subfunction.md §3.5 Variante B):
+    -- v2.1 Erweiterung:
     Ref_SubName VARCHAR          -- nur Ref_Type='pluginfunction' bei Container-Plugins
                                  -- (heute: MBS) — fachlicher Funktionsname aus dem
                                  -- ersten quoted String des Folge-NoRef-Chunks.
@@ -526,7 +525,7 @@ CREATE TABLE IF NOT EXISTS PluginFunctionUsages (
     Plugin_Function_Name VARCHAR,
     Calc_Hash VARCHAR,
     File_Name VARCHAR,
-    -- PRD prd_universal_function_links.md §6.3: Positionsbezogene Spalten,
+    -- Positionsbezogene Spalten,
     -- damit (Source, Calc_UUID, Plugin_Chunk_Index) eindeutig auf einen SubName
     -- in MBS_SubnameMap mappt. Calc_Hash-Joins explodieren wegen Hash-Dedup
     -- (1 Hash → bis zu 58k Calc_UUIDs); diese beiden Spalten lösen das.
@@ -891,7 +890,7 @@ WHERE d.Chunk_Type = 'PluginFunctionRef';
 
 
 -- ============================================
--- A.6 — Plugin- und Variable-Refs in XMLCalcReferences (PRD §5.3)
+-- A.6 — Plugin- und Variable-Refs in XMLCalcReferences
 -- ============================================
 -- 5 Quellen × 2 neue Ref-Typen = 10 INSERT-Blöcke.
 -- PluginFunction-Refs sind hier zusätzlich zu PluginFunctionUsages enthalten,
@@ -1172,7 +1171,6 @@ WHERE d.Chunk_Type = 'VariableReference';
 
 -- ============================================
 -- A.7 — Built-in FunctionRef in XMLCalcReferences
--- (PRD prd_universal_function_links.md §5)
 -- ============================================
 -- Built-in FileMaker-Funktionen (Get, Case, If, Length, …) erscheinen im DDR als
 -- FunctionRef-Chunks. Wir spiegeln sie als Ref_Type='function' in XMLCalcReferences
@@ -1363,7 +1361,7 @@ WHERE d.Chunk_Type = 'FieldRef'
 
 -- A.8.2 VariableReference in Custom Record Privileges (DDR_Hash)
 -- Gespiegelt von A.6.2 (VariableReference in Calculated Fields). Schreibt die
--- Variable als Ref nach XMLCalcReferences (Token-/REST-Symmetrie + §9-Kriterium);
+-- Variable als Ref nach XMLCalcReferences (Token-/REST-Symmetrie);
 -- der eigentliche reads_variable-Link entsteht über VariableUsages.
 INSERT INTO XMLCalcReferences
 SELECT

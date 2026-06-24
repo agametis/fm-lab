@@ -19,7 +19,9 @@ WITH object_match AS (
     lo.ScriptTrigger_Parameter_Text,
     lo.File_Name
   FROM LayoutObjects lo
+  -- Clone-Scoping: Object_UUID ist über Modul-Dateien hinweg geklont → auf die aufgelöste Datei einschränken
   WHERE lo.Object_UUID = getvariable('uuid')
+    AND (getvariable('file') IS NULL OR lo.File_Name = getvariable('file'))
   LIMIT 1
 ),
 layout_info AS (
@@ -46,8 +48,10 @@ child_refs AS (
     ol.Link_Role,
     ol.Is_Cross_File
   FROM ObjectLinks ol
-  JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID
+  -- Clone-Scoping: geklonte UUIDs → Link und Ziel-Catalog auf die aufgelöste Datei einschränken
+  JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID AND oc.File_Name = ol.Target_File
   WHERE ol.Source_UUID = getvariable('uuid')
+    AND (getvariable('file') IS NULL OR ol.Source_File = getvariable('file'))
     AND ol.Link_Type = 'operational'
   ORDER BY oc.Object_Type, oc.Object_Name
 )

@@ -12,8 +12,10 @@ import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
 import { ThemeToggle } from './ThemeToggle';
 import { RefOriginPill } from './RefOriginPill';
+import { AmbiguousFilePicker } from './AmbiguousFilePicker';
 import { useEscapeStack } from '../hooks/useEscapeStack';
 import { useUrlState } from '../hooks/useUrlState';
+import { CurrentFileContext } from '../lib/currentFileContext';
 import type { BreadcrumbItem, DetailViewTab } from '../types';
 import { DETAIL_TABS } from '../types';
 import '../DetailView.css';
@@ -38,7 +40,10 @@ export const DetailView: React.FC = () => {
   const { uuid } = useParams<{ uuid: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { object, references, loading, error, retry } = useObjectDetail(uuid);
+  // Klon-Disambiguierung: `?file=` ist der zweite Identitäts-Begleiter neben der
+  // UUID (siehe lib/navigation.ts). Fehlt er, gilt Graceful Downgrade.
+  const [fileParam] = useUrlState<string>('file', '');
+  const { object, references, loading, error, ambiguousFiles, retry } = useObjectDetail(uuid, fileParam || null);
   const hierarchyRef = useRef<HierarchyTreeHandle>(null);
   const graphPanelRef = useRef<ObjectGraphPanelHandle>(null);
 
@@ -59,7 +64,9 @@ export const DetailView: React.FC = () => {
   // `ref` lebt nur in der URL; useRefOrigin holt das Origin + alle Back-Reference-
   // UUIDs im Destination-Container vom Backend und cached pro (dst, ref)-Paar.
   const [refParam, setRefParam] = useUrlState<string>('ref', '');
-  const refOrigin = useRefOrigin(uuid, refParam || null);
+  // destFile skopiert die Destination-Seite (das aktuell geöffnete, klon-
+  // aufgelöste Objekt) im Back-Refs-Lookup; der Origin (ref) bleibt downgrade.
+  const refOrigin = useRefOrigin(uuid, refParam || null, fileParam || null);
   const dismissRefOrigin = useCallback(() => setRefParam(''), [setRefParam]);
 
   // Live-Match-Count aus Token-Container-Viewern (Script / CustomFunction /
@@ -107,6 +114,21 @@ export const DetailView: React.FC = () => {
     return (
       <div className="app">
         <LoadingSpinner message={t('nav:detailView.loadingDetails') as string} />
+      </div>
+    );
+  }
+
+  // Sicherheitsnetz: bare-UUID-Navigation auf ein in mehreren Dateien existierendes
+  // Objekt (409 AMBIGUOUS_UUID) → Datei-Picker statt hartem Fehler.
+  if (ambiguousFiles && ambiguousFiles.length > 0 && uuid) {
+    return (
+      <div className="app">
+        <button onClick={handleBack} className="back-button" aria-label={t('nav:detailView.backAria') as string}>
+          &larr; {t('nav:detailView.backLabel')}
+        </button>
+        <div style={{ marginTop: '1rem' }}>
+          <AmbiguousFilePicker uuid={uuid} files={ambiguousFiles} />
+        </div>
       </div>
     );
   }
@@ -162,6 +184,7 @@ export const DetailView: React.FC = () => {
   };
 
   return (
+    <CurrentFileContext.Provider value={object.File_Name ?? null}>
     <div className="app" role="main" aria-labelledby="object-title">
       {/* Navigation bar */}
       <div className="detail-nav">
@@ -213,5 +236,6 @@ export const DetailView: React.FC = () => {
       {/* Tab content */}
       {renderTabContent()}
     </div>
+    </CurrentFileContext.Provider>
   );
 };
