@@ -11,6 +11,7 @@ export type ActionName =
   | 'openObject'
   | 'openDashboard'
   | 'openDocsEntry'
+  | 'navigate'
   | 'applyFilter'
   | 'runQuery'
   | 'openUrl'
@@ -168,6 +169,18 @@ export function dispatchAction(
       const lang = args.lang ? String(args.lang) : '';
       const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
       ctx.navigate(`/docs/${encodeURIComponent(setId)}/${encodeURIComponent(category)}/${encodeURIComponent(fn)}${qs}`);
+      return;
+    }
+    case 'navigate': {
+      // Generic SPA-Navigation to an app-internal path. Replaces the
+      // id-Spezialfälle in openDashboard for the Leitseiten (`/dashboard`,
+      // `/query`, `/docs`, `/xml-import`).
+      const path = String(args.path || '');
+      if (!path.startsWith('/')) {
+        console.warn('[dashboard] navigate requires an app-internal path (leading "/")', args);
+        return;
+      }
+      ctx.navigate(path);
       return;
     }
     case 'applyFilter': {

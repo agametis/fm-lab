@@ -7,11 +7,19 @@ import type {
   DashboardDataResponse,
 } from '../api/dashboardApi';
 import { DashboardRenderer } from './DashboardRenderer';
+import { TitleBox } from '../components/TitleBox';
 import './dashboard.css';
 
 interface Props {
   id: string;
   params?: Record<string, unknown>;
+  /**
+   * Render a framed TitleBox from the manifest (title + description) above the
+   * grid — for object-entry dashboards (/dashboard/:id), where the manifest
+   * carries the authoritative title + rich description. Leitseiten/Query/Docset
+   * bundles render their own title and leave this off.
+   */
+  showManifestTitle?: boolean;
 }
 
 /**
@@ -28,7 +36,7 @@ const IDLE_POLL_MS = 6000;
 /**
  * Lädt Manifest + Daten eines Dashboards und mountet den Renderer.
  */
-export function DashboardHost({ id, params }: Props) {
+export function DashboardHost({ id, params, showManifestTitle }: Props) {
   const { t } = useTranslation();
   const lang = useApiLang();
   const [envelope, setEnvelope] = useState<DashboardEnvelope | null>(null);
@@ -150,6 +158,9 @@ export function DashboardHost({ id, params }: Props) {
 
   return (
     <div className={`dash-host dash-host--${envelope.manifest.id}`}>
+      {showManifestTitle && envelope.manifest.title && (
+        <TitleBox title={envelope.manifest.title} subtitle={envelope.manifest.description} />
+      )}
       <DashboardRenderer layout={envelope.layout} datasets={datasets} />
     </div>
   );

@@ -4,17 +4,16 @@
     "description": "Vindt scriptstappen die verwijzen naar inloggegevens-trefwoorden (wachtwoord, secret, apikey, token, …) in alle bestanden. Werkelijke waarden worden gemaskeerd met ***** zodat het dashboard nooit geheimen in platte tekst lekt."
   },
   "layout": {
-    "root.children[0].props.title": "Overzicht inloggegevens",
-    "root.children[0].children[0].props.items[0].label": "Treffers",
-    "root.children[0].children[0].props.items[1].label": "Scripts",
-    "root.children[0].children[0].props.items[2].label": "Bestanden",
-    "root.children[1].props.title": "Treffers",
-    "root.children[1].children[0].props.columns[0].label": "Bestand",
-    "root.children[1].children[0].props.columns[1].label": "Script",
-    "root.children[1].children[0].props.columns[2].label": "Stap",
-    "root.children[1].children[0].props.columns[3].label": "Staptype",
-    "root.children[1].children[0].props.columns[4].label": "Trefwoord",
-    "root.children[1].children[0].props.columns[5].label": "Fragment (gemaskeerd)",
-    "root.children[1].children[0].props.empty.message": "Geen inloggegevens-trefwoorden gevonden in scriptstappen."
+    "credentials_kpi_kpistrip.props.items[0].label": "Treffers",
+    "credentials_kpi_kpistrip.props.items[1].label": "Scripts",
+    "credentials_kpi_kpistrip.props.items[2].label": "Bestanden",
+    "credentials_findings.props.title": "Treffers",
+    "credentials_findings_table.props.columns[0].label": "Bestand",
+    "credentials_findings_table.props.columns[1].label": "Script",
+    "credentials_findings_table.props.columns[2].label": "Stap",
+    "credentials_findings_table.props.columns[3].label": "Staptype",
+    "credentials_findings_table.props.columns[4].label": "Trefwoord",
+    "credentials_findings_table.props.columns[5].label": "Fragment (gemaskeerd)",
+    "credentials_findings_table.props.empty.message": "Geen inloggegevens-trefwoorden gevonden in scriptstappen."
   }
 }

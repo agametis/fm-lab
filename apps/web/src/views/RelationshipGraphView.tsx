@@ -4,14 +4,17 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import { useRelationshipGraph } from '../hooks/useRelationshipGraph';
 import { RelationshipGraph, type RelationshipGraphHandle } from '../components/RelationshipGraph';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { SubNav } from '../components/SubNav';
+import { StatusBar } from '../components/StatusBar';
+import { Filterbar } from '../components/Filterbar';
+import { buildBreadcrumb } from '../lib/navigation';
 import { useEscapeStack } from '../hooks/useEscapeStack';
 import './RelationshipGraphView.css';
 
 type FileInfo = { File_Name?: string };
 
 export function RelationshipGraphView() {
-  const { t } = useTranslation(['common', 'errors']);
+  const { t } = useTranslation(['common', 'errors', 'nav']);
   const { fileName } = useParams<{ fileName: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,31 +81,26 @@ export function RelationshipGraphView() {
 
   return (
     <div className="relationship-graph-view">
-      <header className="relationship-graph-header">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="relationship-graph-back"
-          title={t('common:backToPrevious') as string}
-        >
-          ← {t('common:back')}
-        </button>
-        <h1>{t('common:relationshipGraph.title')}</h1>
-        <div className="relationship-graph-file-selector">
-          <label htmlFor="rg-file">{t('common:relationshipGraph.fileLabel')}</label>
-          <select
-            id="rg-file"
-            value={fileName ?? ''}
-            onChange={e => handleFileChange(e.target.value)}
-          >
-            <option value="" disabled>{t('common:relationshipGraph.selectFile')}</option>
-            {files.map(f => (
-              <option key={f.File_Name || ''} value={f.File_Name || ''}>{f.File_Name}</option>
-            ))}
-          </select>
-        </div>
-        <ThemeToggle />
-      </header>
+      <SubNav
+        breadcrumbs={buildBreadcrumb({ kind: 'relationships', file: fileName || '—' }, t)}
+      />
+      <StatusBar onBack={handleBack}>
+        <Filterbar>
+          <div className="form-group relationship-graph-file-selector">
+            <label htmlFor="rg-file">{t('common:relationshipGraph.fileLabel')}</label>
+            <select
+              id="rg-file"
+              value={fileName ?? ''}
+              onChange={e => handleFileChange(e.target.value)}
+            >
+              <option value="" disabled>{t('common:relationshipGraph.selectFile')}</option>
+              {files.map(f => (
+                <option key={f.File_Name || ''} value={f.File_Name || ''}>{f.File_Name}</option>
+              ))}
+            </select>
+          </div>
+        </Filterbar>
+      </StatusBar>
 
       <div className="relationship-graph-body">
         {!fileName && (

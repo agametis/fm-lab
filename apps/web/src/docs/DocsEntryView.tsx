@@ -2,9 +2,10 @@ import { API_BASE } from '../config/apiBase';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ThemeToggle, LanguageSelector } from '../components';
+import { SubNav, StatusBar, TitleBox } from '../components';
 import { useApiLang } from '../hooks';
-import { DocsBreadcrumb, type DocsCrumb } from './DocsBreadcrumb';
+import { buildBreadcrumb } from '../lib/navigation';
+import { type DocsCrumb } from './DocsBreadcrumb';
 import './DocsEntryView.css';
 
 interface DocsEntryResponse {
@@ -41,6 +42,25 @@ interface ApiEnvelope<T> {
  * X-Docs-Lang-Fallback: <code>, wenn die angeforderte Sprache nicht verfügbar
  * ist; wir zeigen dann einen dezenten Hinweis.
  */
+
+/**
+ * Entfernt eine führende H1/H2 aus dem Content-HTML, wenn deren Text dem
+ * Eintrags-Titel entspricht. Greift für Markdown-gerenderte Sets (z.B. fm-lab,
+ * Content beginnt mit `# Titel`) ebenso wie für HTML-Sets (Claris-Docs). Der
+ * Titel lebt in der Titelbox → die Dopplung im Body entfällt.
+ */
+function stripLeadingDuplicateHeading(html: string, title?: string | null): string {
+  if (!html || !title) return html;
+  const norm = (s: string) => s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const target = norm(title);
+  if (!target) return html;
+  const m = html.match(/^\s*(?:<!--[\s\S]*?-->\s*)*<(h1|h2)\b[^>]*>([\s\S]*?)<\/\1>/i);
+  if (m && norm(m[2]) === target) {
+    return html.slice((m.index ?? 0) + m[0].length);
+  }
+  return html;
+}
+
 export const DocsEntryView: React.FC = () => {
   const { t, i18n } = useTranslation(['nav', 'errors']);
   const { set, category, fn } = useParams<{ set: string; category: string; fn: string }>();
@@ -210,28 +230,28 @@ export const DocsEntryView: React.FC = () => {
     else navigate('/');
   };
 
-  const renderedHtml = externalHtml ?? entry?.content_html ?? '';
+  // Der Titel lebt in der Titelbox (Header). Markdown- und HTML-Content (z.B.
+  // Claris-Docs) beginnen oft mit einer identischen H1/H2 → führende Dopplung
+  // entfernen, damit der Titel nicht zweimal erscheint.
+  const renderedHtml = stripLeadingDuplicateHeading(
+    externalHtml ?? entry?.content_html ?? '',
+    entry?.title,
+  );
 
   return (
     <div className="app docs-entry" role="main" aria-labelledby="docs-entry-title">
-      {/* Header */}
-      <div className="app-title-row">
-        <h1>{t('nav:home.title') as string}</h1>
-        <div className="app-title-actions">
-          <LanguageSelector />
-          <ThemeToggle />
-        </div>
-      </div>
-
-      {/* Navigation row */}
-      <div className="docs-entry__nav">
-        <button onClick={handleBack} className="back-button" aria-label={t('nav:detailView.backAria') as string}>
-          &larr; {t('nav:detailView.backLabel')}
-        </button>
-        {entry?.breadcrumb && entry.breadcrumb.length > 0 && (
-          <DocsBreadcrumb items={entry.breadcrumb} />
-        )}
-      </div>
+      {/* Navigation (Ebene 3+4): Home-Icon + Docs-Breadcrumb + Meta-Navi, darunter Back */}
+      <SubNav
+        breadcrumbs={
+          entry?.breadcrumb && entry.breadcrumb.length > 0
+            ? [
+                { label: t('nav:crumbs.home') as string, path: '/' },
+                ...entry.breadcrumb.map((c) => ({ label: c.label, path: c.href })),
+              ]
+            : buildBreadcrumb({ kind: 'docs' }, t)
+        }
+      />
+      <StatusBar onBack={handleBack} />
 
       {/* Language fallback hint */}
       {langFallback && (
@@ -240,37 +260,38 @@ export const DocsEntryView: React.FC = () => {
         </div>
       )}
 
-      {/* Title */}
+      {/* Title (Objekt-Eintrag → großer Titel + Extra-Infos in gerahmter Box,
+          kein separater Trennstrich mehr) */}
       {entry?.title && (
-        <h2 id="docs-entry-title" className="docs-entry__title">{entry.title}</h2>
-      )}
-
-      {/* Metadata strip */}
-      {entry && (
-        <div className="docs-entry__meta">
-          {entry.breadcrumb?.find(c => c.kind === 'docset') && (
-            <span className="docs-entry__meta-item">
-              <span className="docs-entry__meta-label">{t('nav:docs.docset')}:</span>
-              <span>{entry.breadcrumb.find(c => c.kind === 'docset')?.label}</span>
-            </span>
-          )}
-          {entry.breadcrumb?.find(c => c.kind === 'category') && (
-            <span className="docs-entry__meta-item">
-              <span className="docs-entry__meta-label">{t('nav:docs.category')}:</span>
-              <span>{entry.breadcrumb.find(c => c.kind === 'category')?.label}</span>
-            </span>
-          )}
-          {entry.online_url && (
-            <a
-              href={entry.online_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="docs-entry__meta-link"
-            >
-              {t('nav:docs.openOnline')}
-            </a>
-          )}
-        </div>
+        <TitleBox title={entry.title} titleId="docs-entry-title">
+          <div className="docs-entry__meta">
+            {/* Docset selbst ist das Label, die Category der Wert →
+                „MBS Plugin: AVRecorder" (ohne generische „Docset:/Category:"-Labels). */}
+            {(() => {
+              const docsetLabel = entry.breadcrumb?.find(c => c.kind === 'docset')?.label;
+              const categoryLabel = entry.breadcrumb?.find(c => c.kind === 'category')?.label;
+              if (!docsetLabel && !categoryLabel) return null;
+              return (
+                <span className="docs-entry__meta-item">
+                  <span className="docs-entry__meta-label">
+                    {docsetLabel}{docsetLabel && categoryLabel ? ':' : ''}
+                  </span>
+                  {categoryLabel && <span>{categoryLabel}</span>}
+                </span>
+              );
+            })()}
+            {entry.online_url && (
+              <a
+                href={entry.online_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="docs-entry__meta-link"
+              >
+                {t('nav:docs.openOnline')}
+              </a>
+            )}
+          </div>
+        </TitleBox>
       )}
 
       {/* Content */}

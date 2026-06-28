@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0.0",
+  "filemaker_coverage": "22",
+  "source_version": "v21",
+  "generated_at": "2026-06-28T00:00:00Z",
+  "_note": "Übergangs-Sidecar für die fm_reference-DB-Version (Plan §13). Quelle der Wahrheit wird später die eingebettete reference_meta-Tabelle aus dem fm-spec-Schwesterprojekt. Bis dahin hier manuell gepflegt; der Manifest-Generator liest diese Datei read-only (kein DuckDB-Lock)."
+}

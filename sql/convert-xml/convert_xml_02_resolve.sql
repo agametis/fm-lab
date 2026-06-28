@@ -20,6 +20,12 @@
 INSTALL webbed FROM community;
 LOAD webbed;   -- xml_extract_* auf Spaltenwerten (Step_XML/Object_XML/Parameters_XML); kein read_xml
 
+-- Workaround-Disable-Flag (Version-Check-Registry tools/katana-xml/version_check.json,
+-- Capability fragment_utf8/#108 → wa_entity_decode, Default ON). Gatet den html_unescape-
+-- Decode der Namensspalten unten; OFF (sobald webbed Fragmente als literales UTF-8 statt
+-- &#xNN; serialisiert) → Roh-Wert unveraendert. Idempotent → identitaets-neutral solange ON.
+SET VARIABLE wa_entity_decode = true;
+
 -- ============================================
 -- XMLStepReferences (ersetzt Python extract_xml_references.py)
 -- ============================================
@@ -104,7 +110,7 @@ SELECT
     Step_Index::VARCHAR AS Step_Index,
     'field' as Ref_Type,
     ref_uuid as Ref_UUID,
-    xml_extract_text(field_ref_xml, '/FieldReference/@name')[1] as Ref_Name,
+    ref_name as Ref_Name,
     File_Name,
     -- TO-Auflösung relativ zum FieldReference-Element
     NULLIF(xml_extract_text(field_ref_xml, '/FieldReference/TableOccurrenceReference/@name')[1], '') AS TO_Name,
@@ -112,10 +118,11 @@ SELECT
     NULL AS Data_Source_Name, NULL AS Data_Source_UUID,
     NULL AS Variable_Scope, NULL AS Usage_Type
 FROM (
-    -- Opt 3A: /FieldReference/@UUID nur EINMAL parsen (vorher SELECT+WHERE doppelt);
+    -- Opt 3A: /FieldReference/@UUID + @name je EINMAL parsen (vorher SELECT+WHERE doppelt);
     -- field_ref_xml bleibt durchgereicht für die gefilterten Select-only-Extrakte.
     SELECT Script_UUID, Step_UUID, Step_Name, Step_Index, File_Name, field_ref_xml,
-           xml_extract_text(field_ref_xml, '/FieldReference/@UUID')[1] AS ref_uuid
+           xml_extract_text(field_ref_xml, '/FieldReference/@UUID')[1] AS ref_uuid,
+           xml_extract_text(field_ref_xml, '/FieldReference/@name')[1] AS ref_name
     FROM (
         SELECT
             Script_UUID, Step_UUID, Step_Name, Step_Index, File_Name,
@@ -127,7 +134,12 @@ FROM (
         WHERE Step_XML LIKE '%FieldReference%'
     )
 )
-WHERE ref_uuid IS NOT NULL;
+WHERE ref_uuid IS NOT NULL
+  -- Import-Records-Platzhalter ausfiltern: nicht zugeordnete Quellspalten einer
+  -- Importzuordnung stehen als '<FieldReference id="0" name="" UUID="">' im Map —
+  -- weder Name noch UUID → keine echte Feldreferenz (sonst ~14,8k dangling
+  -- imports_to_field-Links + „Ziel nicht im Datenbestand" in der Step-Anzeige).
+  AND NOT (COALESCE(ref_uuid, '') = '' AND COALESCE(ref_name, '') = '');
 
 -- Go to Related Record → TableOccurrenceReference
 -- GTRR enthält kein <FieldReference>; das Ziel ist die TO. Heimat/Cross-File werden
@@ -242,6 +254,14 @@ FROM (
 )
 WHERE name_value IS NOT NULL
   AND name_value <> '';
+
+-- HINWEIS: Die Cross-File-Auflösung leerer Referenz-UUIDs (External GTRR / Go-to-Layout /
+-- Perform-Script + TO-relative Feldbezüge) UND der Step_UUID-Index liegen NICHT hier,
+-- sondern in Phase 4 (convert_xml_04_catalog.sql, ganz oben). Grund: P2 läuft im Batch
+-- DATEI-PARTITIONIERT (je Slice nur die eigenen Dateien als gefilterte `src`-Views), die
+-- Auflösung ist aber DATEI-ÜBERGREIFEND und batch-weit — sie muss auf der fertig gemergten
+-- Master-XMLStepReferences laufen, nicht je Slice. Der Import-Platzhalter-Filter im
+-- Feld-INSERT oben bleibt hier (rein per-Datei → partitionssicher).
 
 -- ============================================
 -- XMLLayoutReferences (ersetzt Python extract_xml_references.py)
@@ -1451,3 +1471,25 @@ LEFT JOIN MBS_SubnameMap m
 WHERE d.Chunk_Type = 'PluginFunctionRef'
   AND ra.DDR_Hash IS NOT NULL
   AND TRUE;
+
+
+-- ============================================
+-- Entity-Decode (zentraler Post-Pass)
+-- ============================================
+-- XMLCalcReferences und PluginFunctionUsages werden AUSSCHLIESSLICH aus rohen
+-- DDR_Calculations-Chunks befüllt (Field-/CF-/Plugin-/Function-/Variable-Namen
+-- per regexp_extract aus dem Chunk-String). Der Roh-String trägt un-dekodierte
+-- XML-Entities (`Datens&#xE4;tze`, `Schl&#xFC;ssel`), die Regex NICHT dekodiert.
+-- Ein einziger Decode-Pass hier normalisiert alle Namensspalten zentral, BEVOR
+-- Phase 4 daraus md5-UUIDs/ObjectLinks baut → UUID-Konsistenz garantiert.
+-- (Die UUID-/Chunk-Index-Spalten bleiben unberührt; die SubName-JOINs liefen
+-- bereits oben über Chunk_Index, nicht über Namen.) Idempotent: html_unescape
+-- lässt entity-freie Strings unverändert; LIKE-Guard spart den No-op-Scan.
+-- wa_entity_decode-gegatet (Default ON): WHERE-Guard schaltet den Decode komplett ab,
+-- wenn das Flag OFF ist (No-op, kein Schreibzugriff) — siehe Flag-Definition oben.
+UPDATE XMLCalcReferences    SET Ref_Name    = html_unescape(Ref_Name)    WHERE getvariable('wa_entity_decode') AND Ref_Name    LIKE '%&%';
+UPDATE XMLCalcReferences    SET TO_Name     = html_unescape(TO_Name)     WHERE getvariable('wa_entity_decode') AND TO_Name     LIKE '%&%';
+-- Ref_SubName: Get(<SubName>) trägt den lokalisierten Funktionsnamen (→ BuiltinFunction
+-- `Get(AnzahlGefundeneDatensätze)`); MBS-SubNames sind ASCII und vom LIKE-Guard ausgenommen.
+UPDATE XMLCalcReferences    SET Ref_SubName = html_unescape(Ref_SubName) WHERE getvariable('wa_entity_decode') AND Ref_SubName LIKE '%&%';
+UPDATE PluginFunctionUsages SET Plugin_Function_Name = html_unescape(Plugin_Function_Name) WHERE getvariable('wa_entity_decode') AND Plugin_Function_Name LIKE '%&%';

@@ -20,7 +20,7 @@ WITH scored AS (
         l.File_Name               AS file,
         COUNT(lo.Object_UUID)     AS object_count
     FROM Layouts l
-    LEFT JOIN LayoutObjects lo ON lo.Layout_ID = l.L_ID
+    LEFT JOIN LayoutObjects lo ON lo.Layout_ID = l.L_ID AND lo.File_Name = l.File_Name
     WHERE (l.Folder_Type IS NULL) AND NOT l.Is_Separator
       AND (getvariable('file') IS NULL OR l.File_Name = getvariable('file'))
     GROUP BY ALL

@@ -6,39 +6,6 @@
   background: var(--color-bg-canvas);
 }
 
-.relationship-graph-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-bg-elevated);
-  flex-shrink: 0;
-}
-
-.relationship-graph-header h1 {
-  font-size: 1.1rem;
-  margin: 0;
-  color: var(--color-text-primary);
-}
-
-.relationship-graph-back {
-  text-decoration: none;
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-  font-family: inherit;
-  padding: 0.25rem 0.6rem;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 4px;
-  background: var(--color-bg-surface);
-  cursor: pointer;
-}
-
-.relationship-graph-back:hover {
-  background: var(--color-hover-bg);
-  border-color: var(--color-accent);
-}
-
 .relationship-graph-file-selector {
   margin-left: auto;
   display: flex;

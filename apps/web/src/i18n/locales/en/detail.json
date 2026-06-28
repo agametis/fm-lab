@@ -125,7 +125,13 @@
     "noReferences": "No references found",
     "noFilterMatches": "No matches for the current filters",
     "crossFileBadge": "Cross-file",
-    "itemAriaLabel": "Navigate to {{type}}: {{name}}"
+    "itemAriaLabel": "Navigate to {{type}}: {{name}}",
+    "notNavigable": "Target not in the imported dataset",
+    "dirFilterAria": "Filter by direction",
+    "dirFilterLabel": "Direction",
+    "dirIn": "Incoming",
+    "dirOut": "Outgoing",
+    "dirBoth": "Both"
   },
   "searchOptions": {
     "regionAria": "Sort and group options",
@@ -181,7 +187,8 @@
     "usageBadge_other": "{{count}} usages",
     "showAria": "{{type}}: {{name}} — show",
     "noName": "(no name)",
-    "filterByCategory": "Filter by {{category}}"
+    "filterByCategory": "Filter by {{category}}",
+    "graphButton": "Graph"
   },
   "scriptSearchFilter": {
     "searchAria": "Search references",
@@ -216,6 +223,13 @@
     "settingsHeading": "Settings",
     "saveLabel": "Save settings",
     "savingLabel": "Saving…",
+    "versions": {
+      "fmlab": "FM-Lab",
+      "api": "API",
+      "frontend": "Frontend",
+      "xmlConverter": "XML Converter",
+      "dbSchema": "DB Schema"
+    },
     "api": {
       "heading": "REST API connection",
       "label": "REST API URL",

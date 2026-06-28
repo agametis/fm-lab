@@ -6,6 +6,19 @@
     "ariaLabel": "이동 경로",
     "linkAria": "{{label}}(으)로 이동"
   },
+  "crumbs": {
+    "home": "홈",
+    "search": "검색",
+    "hierarchy": "계층",
+    "graph": "그래프",
+    "relationships": "관계",
+    "dashboards": "대시보드",
+    "customQueries": "사용자 쿼리",
+    "docs": "문서",
+    "xmlImport": "XML 가져오기",
+    "cluster": "클러스터",
+    "settings": "설정"
+  },
   "errors": {
     "noDashboardId": "대시보드 ID가 지정되지 않았습니다.",
     "noQueryName": "쿼리 이름이 지정되지 않았습니다."
@@ -57,11 +70,11 @@
     "tabsAria": "오브젝트 보기",
     "noName": "(이름 없음)",
     "tabs": {
-      "detail":     "세부 정보",
+      "detail": "세부 정보",
       "references": "참조",
-      "graph":      "그래프",
-      "versions":   "버전",
-      "notes":      "메모"
+      "graph": "그래프",
+      "versions": "버전",
+      "notes": "메모"
     }
   },
   "pseudoToolbar": {

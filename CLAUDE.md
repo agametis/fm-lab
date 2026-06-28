@@ -1,3 +1,4 @@
+<!-- @CLAUDE_MD_VERSION 0.8.5 -->
 # FileMaker XML Analysis
 
 ## Role
@@ -343,7 +344,7 @@ The universal catalogs enable fast cross-reference analyses across all object ty
 - `Is_Cross_File` — Cross-file link?
 - `Source_File` / `Target_File` — File names for multi-file analyses
 
-**Implemented link types (37 in total):**
+**Implemented link types (38 in total):**
 - Field → BaseTable (parent_table)
 - Field → Field (lookup_source) — Lookup target field references the source field
 - Field → TableOccurrence (lookup_relationship) — Lookup target field uses this relationship
@@ -364,7 +365,8 @@ The universal catalogs enable fast cross-reference analyses across all object ty
 - ScriptStep → Script (parent_script, structural)
 - Script → Script (calls_script)
 - Script → Field (sets_field, navigates_to_field)
-- Script → Layout (navigates_to_layout) — Go to Layout steps
+- Script → Layout (navigates_to_layout) — Go to Layout steps (und das Ziel-Layout von „Go to Related Record")
+- Script → TableOccurrence (navigates_to_to) — Sprungziel-TO von „Go to Related Record" (`Ref_Type='tableOccurrence'`). Schließt die Where-used-Lücke für TOs, die nur als GTRR-Ziel dienen (sonst als ungenutzt erschienen)
 - Script → Variable (sets_variable, reads_variable) — Script sets/reads the variable
 - CustomFunction → Variable (reads_variable, sets_variable) — CF references the variable
 - ValueList → Field (source_field)

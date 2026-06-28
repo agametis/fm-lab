@@ -2,7 +2,7 @@
   "title": "Explorador de grafos",
   "emptyFocus": "Abre un objeto desde su vista de detalle en el Explorador de grafos (o haz doble clic en un nodo) para empezar a explorar su grafo de dependencias.",
   "loading": "Cargando grafo…",
-  "truncated": "Mostrando {{kept}} de {{total}} nodos alcanzables — reduce la profundidad o restringe el filtro de tipos para mostrarlos todos.",
+  "truncated": "Cargados {{kept}} de {{total}} nodos alcanzables — reduce la profundidad o restringe el filtro de tipos para cargarlos todos.",
   "stats": {
     "nodes": "{{count}} nodo",
     "nodes_other": "{{count}} nodos",
@@ -36,7 +36,8 @@
     "noNeighbors": "Sin vecinos en el grafo actual.",
     "uses": "usa",
     "usedBy": "usado por",
-    "focus": "Foco"
+    "focus": "Foco",
+    "resizePanel": "Ajustar el ancho del panel de detalles"
   },
   "filter": {
     "ariaLabel": "Filtros del grafo",
@@ -69,7 +70,6 @@
       "both": "Ambas direcciones desde el foco"
     },
     "types": "Tipos de nodo",
-    "showAllTypes": "mostrar todos",
     "colorMode": "Coloreado",
     "colorModes": {
       "type": "Tipo",
@@ -79,6 +79,24 @@
       "type": "Colorear nodos por tipo de objeto",
       "community": "Colorear nodos por módulo detectado (comunidad)"
     },
-    "communityUnnamed": "Comunidad {{id}}"
-  }
+    "communityUnnamed": "Comunidad {{id}}",
+    "resizePanel": "Ajustar el ancho del panel de filtros",
+    "depthLoad": "{{count}} alcanzables",
+    "depthClipped": "{{count}} alcanzables, carga limitada a {{limit}}",
+    "partLoaded": "{{count}} cargados",
+    "partConnected": "{{count}} conectados",
+    "partIsland_one": "{{count}} isla",
+    "partIsland_other": "{{count}} islas",
+    "partIsolated": "{{count}} aislados",
+    "loadScope": "Cargar tipos",
+    "loadAll": "Todos los tipos",
+    "loadSelected": "Solo seleccionados",
+    "loadAllHint": "Cargar todos los tipos; desmarcar un chip solo lo oculta",
+    "loadSelectedHint": "Cargar solo los tipos seleccionados (recarga)"
+  },
+  "unconnectedHidden_one": "{{count}} nodo sin conexión con el foco",
+  "unconnectedHidden_other": "{{count}} nodos sin conexión con el foco",
+  "unconnectedToggleShow": "mostrar",
+  "unconnectedToggleHide": "ocultar",
+  "unconnectedToggleHint": "Los nodos sin ruta al foco resultan del filtro de tipo/profundidad — mostrarlos u ocultarlos"
 }

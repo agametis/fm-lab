@@ -125,7 +125,8 @@
     "noReferences": "未找到引用",
     "noFilterMatches": "没有符合当前筛选器的结果",
     "crossFileBadge": "跨文件",
-    "itemAriaLabel": "导航到 {{type}}:{{name}}"
+    "itemAriaLabel": "导航到 {{type}}:{{name}}",
+    "notNavigable": "目标不在已导入的数据集中"
   },
   "searchOptions": {
     "regionAria": "排序和分组选项",
@@ -181,7 +182,8 @@
     "usageBadge_other": "{{count}} 次使用",
     "showAria": "{{type}}:{{name}} — 显示",
     "noName": "(无名称)",
-    "filterByCategory": "按 {{category}} 筛选"
+    "filterByCategory": "按 {{category}} 筛选",
+    "graphButton": "关系图"
   },
   "scriptSearchFilter": {
     "searchAria": "搜索引用",

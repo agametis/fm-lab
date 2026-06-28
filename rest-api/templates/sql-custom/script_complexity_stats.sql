@@ -12,16 +12,16 @@
 
 SELECT
     sc.File_Name as file_name,
-    COUNT(DISTINCT sc.Script_ID) as script_count,
+    COUNT(DISTINCT sc.Script_UUID) as script_count,
     CAST(AVG(step_counts.step_count) AS INTEGER) as avg_steps,
     MAX(step_counts.step_count) as max_steps,
     SUM(step_counts.step_count) as total_steps
 FROM ScriptCatalog sc
 LEFT JOIN (
-    SELECT Script_ID, COUNT(*) as step_count
+    SELECT Script_UUID, COUNT(*) as step_count
     FROM StepsForScripts
-    GROUP BY Script_ID
-) step_counts ON sc.Script_ID = step_counts.Script_ID
+    GROUP BY Script_UUID
+) step_counts ON sc.Script_UUID = step_counts.Script_UUID
 WHERE sc.Folder_Type IS NULL OR sc.Folder_Type = 'False'
 GROUP BY sc.File_Name
 ORDER BY total_steps DESC;

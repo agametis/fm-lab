@@ -13,8 +13,8 @@
 const crypto = require('crypto');
 const { isContainerPlugin } = require('../services/plugin-token-registry');
 
-// Deterministischer md5-Hash zur Erzeugung synthetischer ObjectCatalog-UUIDs
-// (PRD prd_pseudo_object_types_filter.md §5). Hex-output, kleinbuchstaben —
+// Deterministischer md5-Hash zur Erzeugung synthetischer ObjectCatalog-UUIDs.
+// Hex-output, kleinbuchstaben —
 // identisch zur DuckDB-md5() Konvention im create_universal_catalogs.sql.
 function md5(s) {
   return crypto.createHash('md5').update(s).digest('hex');
@@ -77,7 +77,7 @@ function decodeXmlEntities(s) {
  * plus the resolved UUID.
  *
  * Optionale Parameter `idx` und `allChunks` werden für die `subFunction`-
- * Auflösung von MBS-Style Container-Plugins genutzt (PRD prd_rest_api_plugin_docs_subfunction.md).
+ * Auflösung von MBS-Style Container-Plugins genutzt.
  * Werden sie weggelassen (z.B. von Test-Aufrufern), bleibt das Verhalten für
  * pluginFunction-Tokens identisch zur v1 — kein `subFunction`-Feld.
  */
@@ -90,9 +90,13 @@ function tokenFromChunk(chunk, idx, allChunks) {
     const fieldMatch = FIELD_REF_RE.exec(inner);
     const toMatch = TO_REF_RE.exec(inner);
     if (fieldMatch) {
-      const fieldName = fieldMatch[1];
+      // Field- und TO-Namen stammen aus dem FieldReference-Markup und tragen
+      // die XML-Entities des Roh-Chunks (z.B. `g&#xFC;ltig`) — wie jeder andere
+      // Token-Content müssen sie dekodiert werden (der generische `content`-Pfad
+      // unten ruft decodeXmlEntities, dieser Zweig kehrt vorher zurück).
+      const fieldName = decodeXmlEntities(fieldMatch[1]);
       const fieldUuid = fieldMatch[2];
-      const toName = toMatch ? toMatch[1] : null;
+      const toName = toMatch ? decodeXmlEntities(toMatch[1]) : null;
       const content = toName ? `${toName}::${fieldName}` : fieldName;
       const tok = { type: 'field', content };
       if (fieldUuid) tok.uuid = fieldUuid;
@@ -121,8 +125,7 @@ function tokenFromChunk(chunk, idx, allChunks) {
     if (sub) tok.subFunction = sub;
   }
 
-  // Synthetische ObjectCatalog-UUIDs für Cross-Navigation
-  // (PRD prd_pseudo_object_types_filter.md §5).
+  // Synthetische ObjectCatalog-UUIDs für Cross-Navigation.
   // BuiltinFunction: deterministisch via md5('BuiltinFunction::' + name).
   //                  Boolean-Operatoren (and/or/not/xor) haben keinen Catalog-
   //                  Eintrag — wir setzen die UUID trotzdem; das Frontend filtert
@@ -134,6 +137,13 @@ function tokenFromChunk(chunk, idx, allChunks) {
   }
   if (apiType === 'pluginFunction') {
     tok.uuid = md5(`PluginFunction::${content}::${tok.subFunction || ''}`);
+  }
+  // CustomFunctionRef-Chunks tragen — anders als FieldRef — keine UUID im
+  // CDATA, nur den Namen. Die Field-/CustomFunction-Token-Templates lösen ihn
+  // file-lokal über ObjectHomes auf und liefern sie als `ref_uuid` mit; ohne
+  // sie bliebe das Token uuidlos (kein Link, kein Cross-Reference-Highlight).
+  if (apiType === 'customFunction' && chunk.ref_uuid) {
+    tok.uuid = chunk.ref_uuid;
   }
 
   return tok;
@@ -212,13 +222,35 @@ function extractSubFunctionFromNeighbors(idx, allChunks) {
   return null;
 }
 
+// Anzeige-Obergrenze für den eingefügten Literaltext (z.B. lange Spaltenlisten in
+// "Insert Text [ $Header ]"). Längere Werte werden mit "…" gekürzt.
+const INSERTED_TEXT_MAX = 200;
+
+/**
+ * Bereitet den Insert-Text-Payload (StepsForScripts.Inserted_Text) für die Anzeige
+ * auf: der Wert ist bereits in P2 (xml_extract_text) entity-DEKODIERT, hier wird er
+ * nur noch fürs Single-Line-Rendering normalisiert — interne Zeilenumbrüche/Tabs auf
+ * sichtbare Trenner (sonst bläht der Wert die Step-Zeile vertikal auf) und gekürzt.
+ * Leerer/None-Payload → null (nichts anhängen).
+ */
+function formatInsertedText(raw) {
+  if (raw === null || raw === undefined || raw === '') return null;
+  let v = String(raw)
+    .replace(/\r\n|\r|\n/g, ' ¶ ')
+    .replace(/\t/g, ' ⇥ ')
+    .trim();
+  if (v === '') return null;
+  if (v.length > INSERTED_TEXT_MAX) v = v.slice(0, INSERTED_TEXT_MAX) + '…';
+  return v;
+}
+
 function formatScript(rows, { object, refs }) {
-  // Dedup pro Zeile (PRD prd_rest_api_token_extended_infos.md §5.5):
+  // Dedup pro Zeile:
   //   - Variables:       (type, name, scope, usage) — Set/Read sind unterschiedliche Refs
   //   - Fields:          (type, name, table) — gleiches Feld via unterschiedlicher TO = unterschiedliche Refs
   //   - PluginFunctions: (type, name, subFunction) — zwei MBS-Aufrufe mit unter-
   //                      schiedlicher subFunction in derselben Step-Calc bleiben
-  //                      eigenständige Refs (PRD prd_rest_api_plugin_docs_subfunction.md §6).
+  //                      eigenständige Refs.
   //   - Andere:          (type, name)
   // Step-Refs (source_priority=0) kommen vor Calc-Refs durch ORDER BY im Template
   // — first-wins-Semantik sorgt dafür, dass Step-XML-Refs gewinnen.
@@ -248,7 +280,7 @@ function formatScript(rows, { object, refs }) {
       if (r.to_name)         entry.table     = r.to_name;
       if (r.field_basetable) entry.baseTable = r.field_basetable;
       // crossFile/dataSource für Field-, Script- und tableOccurrence-Refs.
-      // tableOccurrence kommt aus GTRR (PRD prd_rest_api_token_gtrr.md §4.4):
+      // tableOccurrence kommt aus GTRR:
       // ein Sprung zu einer TO mit Cross-File-DataSource ist semantisch ein
       // dateiübergreifender Navigations-Sprung. Variables/PluginFunctions haben
       // kein Cross-File-Konzept.
@@ -258,7 +290,7 @@ function formatScript(rows, { object, refs }) {
       }
       if (r.variable_scope) entry.scope = r.variable_scope;
       if (r.variable_usage) entry.usage = r.variable_usage;
-      // subFunction (PRD prd_rest_api_plugin_docs_subfunction.md §2.2):
+      // subFunction:
       // fachlicher Funktionsname für Container-Plugins (heute: MBS).
       if (r.type === 'pluginFunction' && r.sub_function) {
         entry.subFunction = r.sub_function;
@@ -288,13 +320,21 @@ function formatScript(rows, { object, refs }) {
     }
 
     const lineRefs = refsByLine[row.line_index];
+    // Insert-Text-Payload sichtbar machen: das DDR-Step_Text zeigt nur Ziel +
+    // [ Select ], nie den eingefügten Literaltext. Als eigenes Bracket-Segment
+    // anhängen (analog der mehrzeiligen DDR-Bracket-Notation). Der Tokenizer
+    // rendert Strings/Zahlen darin korrekt; der angehängte Literal matcht keine
+    // Ref (außer er enthält zufällig exakt einen Ref-Namen — harmlos).
+    const baseText = row.step_text || row.step_name;
+    const inserted = formatInsertedText(row.inserted_text);
+    const text = inserted ? `${baseText}\r[ ${inserted} ]` : baseText;
     return {
       ...base,
       stepId: row.step_id,
       stepName: row.step_name,
       stepUuid: row.step_uuid,
       stepTypeUuid: row.step_type_uuid,
-      text: row.step_text || row.step_name,
+      text,
       ...(lineRefs && lineRefs.length ? { refs: lineRefs } : {}),
     };
   });
@@ -335,7 +375,7 @@ function formatCustomFunction(rows, { object }) {
 
   const chunkRows = rows
     .filter(r => r.chunk_index !== null && r.chunk_index !== undefined)
-    .map(r => ({ chunk_type: r.chunk_type, chunk_content: r.chunk_content }));
+    .map(r => ({ chunk_type: r.chunk_type, chunk_content: r.chunk_content, ref_uuid: r.chunk_ref_uuid }));
   const rawTokens = chunkRows.map((c, i, arr) => tokenFromChunk(c, i, arr));
 
   const tokens = head.plain_text != null
@@ -386,7 +426,7 @@ function formatField(rows, { object }) {
 
   const chunkRows = rows
     .filter(r => r.chunk_index !== null && r.chunk_index !== undefined)
-    .map(r => ({ chunk_type: r.chunk_type, chunk_content: r.chunk_content }));
+    .map(r => ({ chunk_type: r.chunk_type, chunk_content: r.chunk_content, ref_uuid: r.chunk_ref_uuid }));
   const rawTokens = chunkRows.map((c, i, arr) => tokenFromChunk(c, i, arr));
 
   const tokens = head.plain_text != null

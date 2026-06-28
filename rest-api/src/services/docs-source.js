@@ -80,8 +80,8 @@ function buildCategoryAction(setId, cat) {
     };
   }
   return {
-    action: 'openDashboard',
-    action_args: `id=docset_category&docset=${encodeURIComponent(setId)}&category=${encodeURIComponent(cat.id)}`,
+    action: 'navigate',
+    action_args: `path=/docs/${encodeURIComponent(setId)}/${encodeURIComponent(cat.id)}`,
   };
 }
 
@@ -111,7 +111,7 @@ function buildCategoryBadgeAction(setId, cat) {
 }
 
 function buildFunctionAction(setId, fn, lang, categoryId) {
-  // Neue Route /docs/:set/:category/:fn → DocsEntryView (PRD §6.1).
+  // Neue Route /docs/:set/:category/:fn → DocsEntryView.
   // Wir behalten `source_url` für die Code-Referenz-Auflösung und das alte
   // openObject-Fallback, falls ein Konsument den Mirror-Endpoint direkt
   // braucht (z.B. ohne SPA).
@@ -381,7 +381,7 @@ async function getDocsetEntry(id, categoryId, functionId, lang = 'en') {
   // intact — the Frontend lädt es dann separat über /api/reference/help.
   const entry = docsContent.processEntry(raw, { setId: id, pagePath });
 
-  // Breadcrumb-Tupel für die DocsEntryView (PRD §2: Docs → Set → Category → Function).
+  // Breadcrumb-Tupel für die DocsEntryView (Docs → Set → Category → Function).
   // Wir bauen es serverseitig, damit das Frontend keinen separaten Category-
   // Request brauchen muss. Bei markdown-fs ist die Category leer (die Datei
   // selbst IST die Page).
@@ -405,13 +405,13 @@ async function getDocsetEntry(id, categoryId, functionId, lang = 'en') {
  */
 async function buildBreadcrumb({ catalog, setId, categoryId, entryId, entryTitle, lang, adapter }) {
   const crumbs = [
-    { kind: 'root', label: 'Docs', href: '/dashboard/docs_overview' },
+    { kind: 'root', label: 'Docs', href: '/docs' },
   ];
   if (catalog) {
     crumbs.push({
       kind: 'docset',
       label: catalog.name,
-      href: `/dashboard/docset_home?id=${encodeURIComponent(setId)}&lang=${encodeURIComponent(lang)}`,
+      href: `/docs/${encodeURIComponent(setId)}?lang=${encodeURIComponent(lang)}`,
     });
   }
 
@@ -427,13 +427,13 @@ async function buildBreadcrumb({ catalog, setId, categoryId, entryId, entryTitle
       const found = cats.find(c => c.id === categoryId);
       if (found) catName = found.name;
     } catch { /* fall back to id */ }
-    // Achtung: docset_category-Dashboard erwartet den Set-Identifier als
-    // `docset=...` (nicht `id=...`). Verwechslung mit docset_home, das
-    // tatsächlich `id=` nimmt — siehe dashboard.service.js Builtins.
+    // Bare route `/docs/:set/:category` → DocsCategoryPage rendert das
+    // docset_category-Bundle (das den Set-Identifier als `docset=` erwartet,
+    // siehe dashboard.service.js Builtins; die Page mappt :set → docset).
     crumbs.push({
       kind: 'category',
       label: catName,
-      href: `/dashboard/docset_category?docset=${encodeURIComponent(setId)}&category=${encodeURIComponent(categoryId)}&lang=${encodeURIComponent(lang)}`,
+      href: `/docs/${encodeURIComponent(setId)}/${encodeURIComponent(categoryId)}?lang=${encodeURIComponent(lang)}`,
     });
   }
 

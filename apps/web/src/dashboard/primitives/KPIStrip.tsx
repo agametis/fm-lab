@@ -8,15 +8,22 @@ import { translateCellValue } from './_cellTranslate';
 import type { ActionSpec } from '../actions';
 import type { KpiItem } from './KPI';
 
-export function KPIStrip({ node, row, navigate }: PrimitiveProps) {
+export function KPIStrip({ node, row, dataset, navigate }: PrimitiveProps) {
   const { t, i18n } = useTranslation(['common', 'dashboard']);
   const items = (node.props?.items as KpiItem[]) ?? [];
   const [searchParams] = useSearchParams();
 
+  // Trägt der Strip eine EIGENE Dataset-Bindung (node.data.dataset, z.B. die
+  // Home-„Cluster"-Bubble mit `cluster_count`), nutzt er dessen erste Zeile als
+  // Werte-Row. Ohne eigene Bindung ist `dataset` das vom Container vererbte
+  // Dataset → identische Row wie `row` (kein Verhaltenswechsel der bestehenden
+  // Strips). Dispatch/Active bleiben an der Container-`row`.
+  const valueRow = (node.data?.dataset ? dataset?.data?.[0] : undefined) ?? row;
+
   return (
     <div className="dash-kpistrip">
       {items.map((item, i) => {
-        const rawValue = row?.[item.field];
+        const rawValue = valueRow?.[item.field];
         const isBadge = item.format === 'badge';
         // Badges often carry canonical categorical strings — translate them
         // the same way Table cells do so KPI strips stay consistent.

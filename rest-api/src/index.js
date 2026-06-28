@@ -6,6 +6,7 @@ const { errorHandler } = require('./middleware/error-handler');
 const logger = require('./middleware/logger');
 const corsMiddleware = require('./middleware/cors');
 const normalizeQueryKeys = require('./middleware/query-normalizer');
+const debugSessionMiddleware = require('./middleware/debug-session');
 
 /**
  * FileMaker DuckDB Analysis API
@@ -30,6 +31,11 @@ app.use(logger);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Debug-Session: hängt req.debug an + loggt Request-Lifecycle in die korrelierte
+// Zeitachse (nur aktiv bei DEBUG_SESSION=1 oder X-Debug-Session-Header). Nach
+// dem Body-Parser, damit die Ingestion-Route den Body schon hat.
+app.use(debugSessionMiddleware);
+
 // API Routes
 app.use('/api', routes);
 
@@ -40,6 +46,7 @@ app.get('/', (req, res) => {
     version: require('../package.json').version,
     endpoints: {
       version: '/api/version',
+      versionManifest: '/api/version-manifest',
       info: '/api/info',
       get: '/api/get?uuid=<uuid>',
       getDetails: '/api/get-details?uuid=<uuid>',
@@ -88,6 +95,11 @@ async function start() {
     console.log('Initializing database connection...');
     await db.initialize();
 
+    // Initialize the writable annotations sidecar (Noise-Filter & semantic
+    // enrichment). Guarded: if it can't be opened, the feature stays off and the
+    // rest of the API runs unchanged.
+    await require('./config/annotations-db').initialize();
+
     // Load the last persisted fmIDE scan into memory (no DB query). The scan
     // itself runs on plugin activation and on explicit Rescan, not every boot.
     try {
@@ -109,6 +121,7 @@ async function start() {
       console.log('');
       console.log('Available endpoints:');
       console.log(`  GET  /api/version        - API version and health`);
+      console.log(`  GET  /api/version-manifest - Module version manifest`);
       console.log(`  GET  /api/info           - Solution information`);
       console.log(`  GET  /api/get            - Get object by UUID`);
       console.log(`  GET  /api/get-details    - Type-specific object details`);

@@ -1,0 +1,97 @@
+{
+  "title": "Grafatlas",
+  "subtitle": "Top-down-ingång — klicka på en ruta för att borra ner, på ett löv för att öppna det i Grafutforskaren.",
+  "headerButton": "Atlas",
+  "headerButton_hint": "Öppna Grafatlasen — top-down-översikten över hela lösningen.",
+  "segmentation": "Segmentering",
+  "segment": {
+    "community": "Community",
+    "file": "Fil",
+    "hubs": "Toppnoder",
+    "type": "Typ"
+  },
+  "breadcrumb": {
+    "root": "Atlas"
+  },
+  "representation": "Representation",
+  "view": {
+    "composition": "Komposition",
+    "topology": "Topologi",
+    "composition_hint": "Treemap — hur stort är vad (proportion).",
+    "topology_hint": "Metagraf — hur segment kopplas (endast Community/Fil)."
+  },
+  "weight": {
+    "label": "Viktning",
+    "domain": "Domän",
+    "logical": "Rå",
+    "domain_hint": "Domänvikt (ClusterEdges) — inbyggda funktioner och god-noder redan borttagna.",
+    "logical_hint": "Rå logisk grad — inkluderar inbyggda funktioner."
+  },
+  "search": {
+    "placeholder": "Filtrera synliga rutor…"
+  },
+  "types": {
+    "label": "Objekttyper",
+    "hide": "Dölj {{type}}",
+    "show": "Visa {{type}}",
+    "reset": "Återställ"
+  },
+  "rest": {
+    "collapse": "Fäll ihop till toppposter",
+    "hide": "dölj"
+  },
+  "status": {
+    "semanticNames": "Semantiska namn: {{value}}",
+    "semanticNamesNone": "Semantiska namn: --",
+    "count": "Antal: {{semantic}} / {{user}} användardefinierade",
+    "clustersMissing": "Inte klustrad ännu — kör ”fm-graph-cluster” för att aktivera Community och Topologi."
+  },
+  "loading": "Laddar…",
+  "empty": "Inget att visa här.",
+  "error": "Kunde inte ladda atlasen: {{message}}",
+  "truncated": "Visar de översta posterna — resten samlas i den grå rutan.",
+  "hint": {
+    "leafClick": "Tips: klicka på en lövruta för att öppna objektet i Grafutforskaren.",
+    "metaClick": "Tips: klicka på en supernod för att öppna dess tyngsta medlem i Grafutforskaren."
+  },
+  "topN": {
+    "label": "Top-N",
+    "hint": "Hur många toppsegment/löv som visas innan resten viks ihop till en ruta.",
+    "auto": "Tillbaka till automatiskt gränsvärde (per nivå)",
+    "autoTag": "auto"
+  },
+  "hidden": {
+    "mode": "Ignorerade",
+    "dim": "tona",
+    "hide": "dölj",
+    "dim_hint": "Ignorerade noder förblir synliga (tonade) och kan ångras.",
+    "hide_hint": "Ignorerade noder tas bort — ångra endast via listan.",
+    "manage": "hantera…",
+    "manage_hint": "Lista över alla ignorerade noder — återställ dem här.",
+    "empty": "Inga noder ignorerade.",
+    "restore": "Återställ"
+  },
+  "panel": {
+    "infoButton": "Alternativ",
+    "close": "Stäng",
+    "type": "Typ",
+    "save": "Spara",
+    "saving": "Sparar…",
+    "openExplorer": "Graf",
+    "openDetail": "Detaljer",
+    "hideNode": "Ignorera",
+    "unhideNode": "Sluta ignorera",
+    "hiddenBadge": "ignorerad",
+    "community": {
+      "title": "Community",
+      "nameLabel": "Eget namn",
+      "namePlaceholder": "t.ex. ”Fakturering & PDF”",
+      "notesLabel": "Anteckningar",
+      "notesPlaceholder": "Fritext för denna community…"
+    },
+    "node": {
+      "title": "Nod"
+    },
+    "cancel": "Avbryt"
+  }
+}

@@ -38,13 +38,84 @@ async function initialize() {
     console.warn(`  - preserve_insertion_order tuning skipped: ${err.message}`);
   }
 
+  // DuckDB-Spill auf das DEDIZIERTE Volume lenken statt neben die DB. DuckDB
+  // liest DUCKDB_TEMP_DIR NICHT nativ → ohne dieses SET landet großer Spill in
+  // rest-api/db/fm_catalog.duckdb.tmp, also auf dem macOS-Bind-Mount: das flutet
+  // die File-Sharing-Schicht (Docker-„injecting event blocked"-Crash-Risiko) und
+  // umgeht das eigens angelegte /duckdb_spill-Volume. Guarded: nur wenn die Env
+  // gesetzt UND das Verzeichnis vorhanden ist (Nicht-Container → DuckDB-Default).
+  const tempDir = process.env.DUCKDB_TEMP_DIR;
+  if (tempDir && fs.existsSync(tempDir)) {
+    try {
+      const esc = (s) => s.replace(/'/g, "''");
+      await (await connection.prepare(`SET temp_directory = '${esc(tempDir)}'`)).run();
+      console.log(`  - temp_directory: ${tempDir} (spill off the bind mount)`);
+      if (process.env.DUCKDB_MAX_TEMP) {
+        await (await connection.prepare(`SET max_temp_directory_size = '${esc(process.env.DUCKDB_MAX_TEMP)}'`)).run();
+        console.log(`  - max_temp_directory_size: ${process.env.DUCKDB_MAX_TEMP}`);
+      }
+    } catch (err) {
+      console.warn(`  - temp_directory tuning skipped: ${err.message}`);
+    }
+  }
+
   console.log('DuckDB connection established successfully (READ_ONLY)');
   console.log(`  - Max Memory: ${environment.duckdb.maxMemory}`);
   console.log(`  - Threads: ${environment.duckdb.threads}`);
 
+  await ensureClusterStubs();
   await attachReferenceDb();
 
   return connection;
+}
+
+/**
+ * Cluster-Layer-Stubs (TEMP, leer) anlegen, wenn die DB noch nicht geclustert ist.
+ *
+ * Die Graph-Atlas-Templates (graph_overview_aggregate/leaf/topology) referenzieren
+ * `ObjectClusters`/`CommunityNames` per `LEFT JOIN` — auch für group_dim=file/type.
+ * Fehlen die Tabellen (frische convert-xml-DB ohne fm-graph-cluster, oder Cluster-
+ * Layer per force-rebuild gewischt), schlägt schon das BINDEN fehl (Catalog Error)
+ * und der GESAMTE Atlas bricht ab, nicht nur die Community-Segmentierung.
+ *
+ * DuckDB erlaubt im READ_ONLY-Modus TEMP-Tabellen (rein In-Memory, kein Schreiben
+ * in die Datei). Eine TEMP-Tabelle gleichen Namens wird von unqualifizierten
+ * Referenzen aufgelöst → die LEFT JOINs liefern NULL-Community statt zu crashen.
+ * So degradiert der Atlas sauber zu „keine Communities" (Frontend schaltet dann
+ * auf Datei+Komposition um und dimmt Community/Topologie). Wird die DB später
+ * geclustert + neu geladen, existiert die echte Tabelle → der Stub entfällt.
+ *
+ * Idempotent + reload-fest: läuft nach jedem initialize() auf der frischen
+ * Verbindung; nur fehlende Tabellen werden gestubt.
+ */
+const CLUSTER_STUB_DDL = {
+  ObjectClusters: `CREATE TEMP TABLE ObjectClusters (
+     Object_UUID VARCHAR, File_Name VARCHAR, Community INTEGER, Engine VARCHAR
+   )`,
+  CommunityNames: `CREATE TEMP TABLE CommunityNames (
+     Community INTEGER, Engine VARCHAR, Member_Count BIGINT,
+     Dominant_Type VARCHAR, Dominant_File VARCHAR,
+     Top_Member_UUID VARCHAR, Top_Member_Label VARCHAR, Sample_Labels VARCHAR[],
+     Heuristic_Name VARCHAR, Semantic_Name VARCHAR, Semantic_Description VARCHAR
+   )`,
+};
+
+async function ensureClusterStubs() {
+  try {
+    const result = await executeQuery(
+      `SELECT table_name FROM information_schema.tables
+        WHERE table_name IN ('ObjectClusters', 'CommunityNames')`
+    );
+    const present = new Set(result.rows.map((r) => r.table_name));
+    for (const [name, ddl] of Object.entries(CLUSTER_STUB_DDL)) {
+      if (present.has(name)) continue;
+      await (await connection.prepare(ddl)).run();
+      console.log(`  - cluster stub created (TEMP, empty): ${name} — DB not clustered yet`);
+    }
+  } catch (err) {
+    // Nie fatal: ohne Stub crasht nur der Atlas (wie bisher), der Rest läuft.
+    console.warn(`  - cluster stub setup skipped: ${err.message}`);
+  }
 }
 
 async function attachReferenceDb() {
@@ -55,7 +126,7 @@ async function attachReferenceDb() {
     return false;
   }
   // ATTACH erlaubt READ_ONLY-Modus selbst auf einer READ_ONLY-Hauptverbindung
-  // (siehe PRD §9 Risiko 1, getestet mit DuckDB 1.5.x).
+  // (getestet mit DuckDB 1.5.x).
   const escaped = refPath.replace(/'/g, "''");
   const stmt = await connection.prepare(`ATTACH '${escaped}' AS ref (READ_ONLY)`);
   await stmt.run();
@@ -191,10 +262,38 @@ async function getDatabaseStats() {
   return stats;
 }
 
+/**
+ * Leichtgewichtige DuckDB-Memory-Probe für das Debug-Session-Log.
+ * Summiert duckdb_memory().memory_usage_bytes (Buffer-Manager-Belegung über alle
+ * Tags) + meldet die größten Einzel-Tags. Niemals werfen: bei (z.B. OOM-naher)
+ * Fehlabfrage liefern wir { error } statt den Aufrufer zu kippen.
+ *
+ * Achtung: das ist eine ECHTE Extra-Query auf derselben Verbindung — sparsam
+ * einsetzen (nur vor/nach einer instrumentierten Query, nicht pro Zeile).
+ */
+async function probeMemory() {
+  if (!connection) return { error: 'no-connection' };
+  try {
+    const { rows } = await executeQuery(
+      `SELECT tag, memory_usage_bytes AS bytes
+         FROM duckdb_memory()
+        WHERE memory_usage_bytes > 0
+        ORDER BY memory_usage_bytes DESC`
+    );
+    const toNum = (v) => (typeof v === 'bigint' ? Number(v) : Number(v) || 0);
+    const total = rows.reduce((s, r) => s + toNum(r.bytes), 0);
+    const top = rows.slice(0, 5).map((r) => ({ tag: r.tag, mb: +(toNum(r.bytes) / 1e6).toFixed(1) }));
+    return { total_mb: +(total / 1e6).toFixed(1), top };
+  } catch (err) {
+    return { error: err.message };
+  }
+}
+
 module.exports = {
   initialize,
   getConnection,
   executeQuery,
+  probeMemory,
   close,
   reload,
   getDatabaseStats,

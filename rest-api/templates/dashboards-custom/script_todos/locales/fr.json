@@ -1,17 +1,20 @@
 {
   "manifest": {
     "title": "TO-DO dans les scripts",
-    "description": "Compte les étapes de commentaire portant des marqueurs TO-DO et liste tous les scripts concernés par fichier."
+    "description": "Travail en suspens dans les étapes de commentaire selon trois notations (TO DO, FIX IT, TBD). Cliquez sur un nombre pour filtrer la liste des résultats."
   },
   "layout": {
-    "root.children[0].props.title": "Aperçu TO-DO",
-    "root.children[0].children[0].props.items[0].label": "Lignes TO-DO",
-    "root.children[0].children[0].props.items[1].label": "Scripts",
-    "root.children[0].children[0].props.items[2].label": "Fichiers",
-
-    "root.children[1].props.title": "Scripts avec TO-DO",
-    "root.children[1].children[0].props.columns[0].label": "Fichier",
-    "root.children[1].children[0].props.columns[1].label": "Nom du script",
-    "root.children[1].children[0].props.columns[2].label": "Nombre"
+    "todo_kpi_kpistrip.props.items[0].label": "Lignes totales",
+    "todo_kpi_kpistrip.props.items[1].label": "Lignes TO DO",
+    "todo_kpi_kpistrip.props.items[2].label": "Lignes FIX IT",
+    "todo_kpi_kpistrip.props.items[3].label": "Lignes TBD",
+    "todo_kpi_kpistrip.props.items[4].label": "Scripts",
+    "todo_kpi_kpistrip.props.items[5].label": "Fichiers",
+    "todo_lines.props.title": "Lignes de commentaire marquées",
+    "todo_lines_table.props.columns[0].label": "Fichier",
+    "todo_lines_table.props.columns[1].label": "Nom du script",
+    "todo_lines_table.props.columns[2].label": "Motif",
+    "todo_lines_table.props.columns[3].label": "Commentaire",
+    "todo_lines_table.props.searchPlaceholder": "Rechercher dans les commentaires …"
   }
 }

@@ -39,7 +39,7 @@ const RESCAN_FEEDBACK_MS = 600;
  * Die SQL-Pipeline als beschriftete Balken-Segmente. `start`/`end` sind die
  * globalen Fortschrittsgrenzen und spiegeln das Phasen-Budget des Backends
  * (`set_phase_budget`): chunk:0-25 import:25-70 resolve:70-78 details:78-84
- * catalog:84-90 homes:90-96 validate:96-100. Opt 1 (v2): Das frühere
+ * catalog:84-90 homes:90-94 validate:94-97 cluster:97-100. Opt 1 (v2): Das frühere
  * `extract`-Segment (P1) ist in zwei sichtbare Pässe aufgeteilt — `chunk`
  * (Phase S: XML in Chunks splitten, 🔥/🟢) und `import` (Phase D/C: Chunks →
  * DuckDB → Master, ✴️/✅). Das Import-Segment wird aktiv, sobald der erste
@@ -55,7 +55,10 @@ const RESCAN_FEEDBACK_MS = 600;
  * lange) Laufzeit, und der Orange-Puls, der nur auf dem `__fill`-Element liegt, wäre
  * unsichtbar (= Wartezeit ohne Feedback). Solche Segmente füllen den Puls deshalb im
  * aktiven Zustand über die volle Breite (indeterminates „läuft gerade"). chunk/import
- * (laufende Sub-Events) und validate (0→70→100 inkl. Sync) bleiben determinierte Füllungen.
+ * (laufende Sub-Events) und validate (0→100, P6-Checks) bleiben determinierte Füllungen.
+ * `cluster` (P7 Auto-Clustering + Sync) ist indeterminate — cluster.sh-Laufzeit ist
+ * unvorhersehbar; bei inkrementellem Import wird P7 übersprungen, der Sync füllt das
+ * Segment trotzdem auf 100 (Backend faltet den Sync in `cluster`).
  */
 const SEGMENTS: ReadonlyArray<{ id: string; labelKey: string; def: string; start: number; end: number; indeterminate?: boolean }> = [
   { id: 'chunk',    labelKey: 'xmlConvert.phaseChunk',    def: 'Aufteilen',   start: 0,  end: 25 },
@@ -63,8 +66,9 @@ const SEGMENTS: ReadonlyArray<{ id: string; labelKey: string; def: string; start
   { id: 'resolve',  labelKey: 'xmlConvert.phaseResolve',  def: 'Auflösen',    start: 70, end: 78, indeterminate: true },
   { id: 'details',  labelKey: 'xmlConvert.phaseDetails',  def: 'Details',     start: 78, end: 84, indeterminate: true },
   { id: 'catalog',  labelKey: 'xmlConvert.phaseCatalog',  def: 'Katalog',     start: 84, end: 90, indeterminate: true },
-  { id: 'homes',    labelKey: 'xmlConvert.phaseHomes',    def: 'Verknüpfen',  start: 90, end: 96, indeterminate: true },
-  { id: 'validate', labelKey: 'xmlConvert.phaseValidate', def: 'Prüfen',      start: 96, end: 100 },
+  { id: 'homes',    labelKey: 'xmlConvert.phaseHomes',    def: 'Verknüpfen',  start: 90, end: 94, indeterminate: true },
+  { id: 'validate', labelKey: 'xmlConvert.phaseValidate', def: 'Prüfen',      start: 94, end: 97 },
+  { id: 'cluster',  labelKey: 'xmlConvert.phaseCluster',  def: 'Communities', start: 97, end: 100, indeterminate: true },
 ];
 
 export interface XmlConvertEventDetail {
@@ -120,6 +124,9 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
   const dissolveTimer = useRef<number | null>(null);
   const rescanTimer = useRef<number | null>(null);
 
+  // Unmount-Cleanup: abortRef hält jetzt NUR den Stream-fetch (Feature E). Sein
+  // Abbruch löst den Client vom SSE-Stream — der Lauf läuft SERVERSEITIG WEITER
+  // (kein child.kill mehr). Damit killt Wegnavigieren den Import nicht länger.
   useEffect(() => () => {
     abortRef.current?.abort();
     if (dissolveTimer.current != null) window.clearTimeout(dissolveTimer.current);
@@ -145,40 +152,27 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
     }, DISSOLVE_MS);
   }, []);
 
-  const startConvert = useCallback(async () => {
-    if (status === 'running') return;
-    const startedAt = new Date().toISOString();
-    if (dissolveTimer.current != null) {
-      window.clearTimeout(dissolveTimer.current);
-      dissolveTimer.current = null;
-    }
-    setDissolving(false);
-    setStatus('running');
-    setProgress(0);
-    setPhase('');
-    dispatchStatus({ status: 'running', startedAt });
-
+  /**
+   * Konsumiert den SSE-Stream `GET /api/xml/convert/stream`.
+   * EIN Render-Pfad: sowohl der startende Tab (nach POST 202) als auch jeder
+   * Wiedereintritt rendern AUSSCHLIESSLICH aus diesem Stream — der Ring-Replay
+   * holt einen Spät-Eintritt auf den aktuellen Stand (Phase/Progress/Log). Der
+   * Stream hängt am LAUF, nicht an der Anfrage → der „Default-State"-Bug ist
+   * strukturell unmöglich. `startedAt` = Lauf-Start (POST jetzt, oder active_run).
+   */
+  const subscribeToStream = useCallback(async (startedAt: string) => {
     const ac = new AbortController();
     abortRef.current = ac;
-
     const apiBase = (API_BASE).replace(/\/+$/, '');
-    const url = `${apiBase}/api/xml/convert`;
-
     try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Accept': 'text/event-stream', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ changedOnly }),
+      const res = await fetch(`${apiBase}/api/xml/convert/stream`, {
+        headers: { Accept: 'text/event-stream' },
         signal: ac.signal,
       });
       if (!res.ok || !res.body) {
-        const text = await res.text().catch(() => '');
-        const msg = `HTTP ${res.status} ${res.statusText}: ${text}`.trim();
-        setStatus('error');
+        setStatus('idle');
         setProgress(0);
         setPhase('');
-        dispatchEvent({ event: 'log', level: 'error', msg });
-        dispatchStatus({ status: 'error' });
         return;
       }
 
@@ -189,6 +183,7 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
       let finishedAt: string | undefined;
       let errorCount = 0;
       let doneOk: boolean | null = null;
+      let idle = false;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -211,7 +206,7 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
               case 'progress': {
                 const pct = typeof evt.pct === 'number' ? evt.pct : Number(evt.pct ?? 0);
                 if (Number.isFinite(pct)) setProgress(Math.max(0, Math.min(100, pct)));
-                if (typeof evt.phase === 'string') setPhase(evt.phase);
+                if (typeof evt.phase === 'string') setPhase(evt.phase as string);
                 break;
               }
               case 'log': {
@@ -220,6 +215,15 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
               }
               case 'file': {
                 if (evt.ok === false) errorCount += 1;
+                break;
+              }
+              case 'idle': {
+                // Stream ohne aktiven Lauf (Race) → nichts läuft.
+                idle = true;
+                break;
+              }
+              case 'aborted': {
+                idle = true;
                 break;
               }
               case 'done': {
@@ -233,22 +237,32 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
         }
       }
 
-      setProgress(100);
-      const durationMs = finishedAt
-        ? new Date(finishedAt).getTime() - new Date(startedAt).getTime()
-        : undefined;
-      if (hadError || doneOk === false) {
-        setStatus('error');
-        dispatchStatus({ status: 'error', ok: false, startedAt, finishedAt, durationMs, errorCount });
-      } else {
-        setStatus('done');
-        dispatchStatus({ status: 'done', ok: true, startedAt, finishedAt, durationMs, errorCount: 0 });
-        // Reload-Bus: Status-Tabelle holt frische Daten.
-        window.dispatchEvent(new CustomEvent('fmlab:reload-dashboard'));
+      if (doneOk !== null) {
+        setProgress(100);
+        const durationMs = finishedAt
+          ? new Date(finishedAt).getTime() - new Date(startedAt).getTime()
+          : undefined;
+        if (hadError || doneOk === false) {
+          setStatus('error');
+          dispatchStatus({ status: 'error', ok: false, startedAt, finishedAt, durationMs, errorCount });
+        } else {
+          setStatus('done');
+          dispatchStatus({ status: 'done', ok: true, startedAt, finishedAt, durationMs, errorCount: 0 });
+          // Datei-Tabelle UND Community-Gauges neu laden.
+          window.dispatchEvent(new CustomEvent('fmlab:reload-dashboard'));
+          window.dispatchEvent(new CustomEvent(REFRESH_EVENT));
+        }
+        triggerDissolve();
+      } else if (idle) {
+        // Kein Lauf (mehr) → zurück auf den Button-Zustand, kein Dissolve.
+        setStatus('idle');
+        setProgress(0);
+        setPhase('');
+        dispatchStatus({ status: 'idle' });
       }
-      // Gesamtlauf abgeschlossen → Balken im finalen Zustand kurz ausblenden.
-      triggerDissolve();
     } catch (err) {
+      // AbortError = Unmount: der Lauf läuft SERVERSEITIG WEITER (Feature E), wir
+      // lösen uns nur vom Stream. Kein child.kill, kein Fehlerzustand.
       if ((err as Error).name === 'AbortError') return;
       setStatus('error');
       setProgress(0);
@@ -258,11 +272,90 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
     } finally {
       abortRef.current = null;
     }
-  }, [status, changedOnly, triggerDissolve]);
+  }, [triggerDissolve]);
+
+  /**
+   * Startet einen Lauf: POST /api/xml/convert (202, streamt NICHT mehr selbst) →
+   * danach `subscribeToStream`. 409 (bereits aktiv) → freundlich auf den Stream
+   * abonnieren (Catch-up) statt einen Fehler zu zeigen.
+   */
+  const startConvert = useCallback(async () => {
+    if (status === 'running') return;
+    const startedAt = new Date().toISOString();
+    if (dissolveTimer.current != null) {
+      window.clearTimeout(dissolveTimer.current);
+      dissolveTimer.current = null;
+    }
+    setDissolving(false);
+    setStatus('running');
+    setProgress(0);
+    setPhase('');
+    dispatchStatus({ status: 'running', startedAt });
+
+    const apiBase = (API_BASE).replace(/\/+$/, '');
+    try {
+      const res = await fetch(`${apiBase}/api/xml/convert`, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ changedOnly }),
+      });
+      if (res.status === 409) {
+        // Es läuft bereits (anderer Tab/CLI) → einfach auf den Stream aufspringen.
+        await subscribeToStream(startedAt);
+        return;
+      }
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        const msg = `HTTP ${res.status} ${res.statusText}: ${text}`.trim();
+        setStatus('error');
+        setProgress(0);
+        setPhase('');
+        dispatchEvent({ event: 'log', level: 'error', msg });
+        dispatchStatus({ status: 'error' });
+        return;
+      }
+      await subscribeToStream(startedAt);
+    } catch (err) {
+      setStatus('error');
+      setProgress(0);
+      setPhase('');
+      dispatchEvent({ event: 'log', level: 'error', msg: (err as Error).message || String(err) });
+      dispatchStatus({ status: 'error' });
+    }
+  }, [status, changedOnly, subscribeToStream]);
+
+  // Mount-Detektion: fragt den Server, ob bereits ein Lauf
+  // aktiv ist. Falls ja → OHNE POST auf den Stream abonnieren (Wiedereintritt
+  // zeigt sofort „läuft" + Live-Log statt des Default-States). Nur im run-Modus.
+  useEffect(() => {
+    if (mode !== 'run') return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const apiBase = (API_BASE).replace(/\/+$/, '');
+        const res = await fetch(`${apiBase}/api/xml/status`, { headers: { Accept: 'application/json' } });
+        if (!res.ok) return;
+        const json = await res.json().catch(() => null);
+        const data = json?.data ?? json;
+        if (cancelled || !data?.running) return;
+        const startedAt = data.active_run?.started_at ?? new Date().toISOString();
+        setStatus('running');
+        setProgress(0);
+        setPhase(data.active_run?.phase ?? '');
+        dispatchStatus({ status: 'running', startedAt });
+        await subscribeToStream(startedAt);
+      } catch {
+        /* status check best-effort */
+      }
+    })();
+    return () => { cancelled = true; };
+    // Nur beim Mount auswerten — subscribeToStream ist stabil (useCallback).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   const handleClick = useCallback(() => {
     if (mode === 'navigate') {
-      navigate('/dashboard/xml_convert');
+      navigate('/xml-import');
       return;
     }
     startConvert();

@@ -143,12 +143,12 @@ SELECT
     Parent_Object_ID,
     Nesting_Level,
     Z_Order,
-    replace(Hide_Calculation_Text, chr(127), chr(10)) as Hide_Calculation_Text,
-    replace(Tooltip_Calculation_Text, chr(127), chr(10)) as Tooltip_Calculation_Text,
-    replace(Label_Calculation_Text, chr(127), chr(10)) as Label_Calculation_Text,
-    replace(ScriptTrigger_Parameter_Text, chr(127), chr(10)) as ScriptTrigger_Parameter_Text,
-    replace(Text_Content, chr(127), chr(10)) as Text_Content,
-    object_xml::VARCHAR as Object_XML,
+    ws_restore(Hide_Calculation_Text) as Hide_Calculation_Text,
+    ws_restore(Tooltip_Calculation_Text) as Tooltip_Calculation_Text,
+    ws_restore(Label_Calculation_Text) as Label_Calculation_Text,
+    ws_restore(ScriptTrigger_Parameter_Text) as ScriptTrigger_Parameter_Text,
+    ws_restore(Text_Content) as Text_Content,
+    ws_restore(object_xml::VARCHAR) as Object_XML,
     fn.File_Name as File_Name
 -- DETERMINISTISCHES DEDUP (Chunk-Invarianz, These 1b) — identisch zur DOM-Basis:
 -- '//ObjectList/LayoutObject' emittiert tief verschachtelte Objekte mehrfach; pro

@@ -4,7 +4,5 @@
     "description": "利用可能なすべてのダッシュボードの概要。"
   },
   "layout": {
-    "root.children[0].props.title": "ダッシュボード",
-    "root.children[0].props.subtitle": "クリックすると選択したダッシュボードが開きます。"
   }
 }

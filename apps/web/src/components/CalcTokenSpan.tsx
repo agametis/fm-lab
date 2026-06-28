@@ -47,7 +47,7 @@ export const CalcTokenSpan: React.FC<{ token: CalcToken }> = ({ token }) => {
 
   switch (token.type) {
     case 'function':
-      return <FunctionTokenSpan token={token} text={text} />;
+      return <FunctionTokenSpan token={token} text={text} highlighted={highlighted} />;
     case 'customFunction':
       if (token.uuid) {
         return (

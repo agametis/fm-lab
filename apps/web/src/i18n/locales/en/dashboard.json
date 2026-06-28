@@ -1,4 +1,9 @@
 {
+  "view": {
+    "label": "View",
+    "tiles": "Tiles",
+    "list": "List"
+  },
   "cellValues": {
     "All":          "All",
     "Other":        "Other",
@@ -66,7 +71,31 @@
     "phaseCatalog":              "Catalog",
     "phaseHomes":                "Link",
     "phaseValidate":             "Validate",
+    "phaseCluster":              "Communities",
     "chunkCounter":              "{{done}} of {{total}}"
+  },
+  "semanticNames": {
+    "structureLabel":        "Structure",
+    "namingLabel":           "Naming",
+    "dash":                  "--",
+    "structValue":           "{{pct}}% clustered",
+    "nameValue":             "{{pct}}% named",
+    "structNone":            "not clustered yet",
+    "structWarnHint":        "new objects not clustered",
+    "structCritHint":        "new objects not clustered",
+    "nameNone":              "never named",
+    "nameWarnHint":          "new modules unnamed",
+    "nameCritHint":          "new modules unnamed",
+    "evaluateAfterRebuild":  "evaluate after re-clustering",
+    "sequenceHint":          "New objects not clustered – first \"Rebuild communities\", then re-evaluate naming.",
+    "rebuild":               "Rebuild communities",
+    "rebuilding":            "Rebuilding…",
+    "rebuildHint":           "Re-detect communities (re-partition, no re-import)",
+    "rebuildFailed":         "Re-clustering failed.",
+    "copyCommand":           "Copy command",
+    "copied":                "copied",
+    "openCluster": "Show communities",
+    "openClusterHint": "Go to the cluster overview"
   },
   "xmlEmpty": {
     "hint":           "No XML files have been imported yet.",

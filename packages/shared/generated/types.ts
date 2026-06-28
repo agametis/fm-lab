@@ -356,6 +356,8 @@ export interface paths {
                     direction?: components["schemas"]["ReferenceDirection"];
                     /** @default operational */
                     link_type?: components["schemas"]["LinkType"];
+                    /** @description Origin object UUID (the `?ref=` cross-reference origin). For pseudo aggregate types (ScriptStepType) it flags the rows reachable from that origin via `Origin_Hit`, so the UI can pin/highlight them. */
+                    origin?: string;
                     /** @description Clone disambiguation: exact source file (File_Name) of the object. Geklonte/modulare FileMaker-Dateien teilen sich dieselbe Object_UUID, d.h. eine bare UUID kann mehrdeutig sein. Mit `file` wird das Paar (UUID, File_Name) eindeutig aufgelöst. Fehlt der Param, gilt Graceful Downgrade (bare UUID, solange eindeutig; sonst 409 AMBIGUOUS_UUID). */
                     file?: components["parameters"]["CloneFile"];
                     /** @description Maximum number of results (0 = all) */

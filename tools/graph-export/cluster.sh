@@ -39,7 +39,7 @@ RESOLUTION="${FMLAB_CLUSTER_RESOLUTION:-1.0}"
 SEED="${FMLAB_CLUSTER_SEED:-42}"
 # rest-api sync paths/URL live in sync_db.sh (step 5 delegates to it).
 
-# ── Semantic-Name cache knobs (plan_semantic_name_cache.md §3) ──────────────
+# ── Semantic-Name cache knobs ──────────────────────────────────────────────
 CACHE_DISABLE="${FMLAB_CACHE_DISABLE:-0}"
 CACHE_TAU_PURITY="${FMLAB_CACHE_TAU_PURITY:-0.6}"
 CACHE_TAU_COVERAGE="${FMLAB_CACHE_TAU_COVERAGE:-0.5}"
@@ -99,22 +99,29 @@ T_EXPORT_END=$(date +%s)
 echo "  edges.csv: $EDGE_COUNT edges in $((T_EXPORT_END - T_EXPORT_START))s"
 
 # ── 2) Cluster → communities.csv ────────────────────────────────────────────
+# Die Engine schreibt ihre Kennzahl-Zeile (`[engine] nodes=… edges=… communities=…
+# modularity=… resolution=… seed=…`) auf stderr. Wir fangen stderr in eine Datei,
+# um modularity/nodes für die Run-Summary (Schritt 4b) zu parsen, und spiegeln sie
+# danach unverändert nach stderr (Recluster-/Skill-Log sieht sie wie bisher).
 echo "→ clustering ($ENGINE) …"
+ENGINE_STATS_FILE="$WORKDIR/engine_stats.txt"
 T_CLUSTER_START=$(date +%s)
 if [ "$ENGINE" = "leiden" ]; then
-  python3 "$SCRIPT_DIR/cluster_leiden.py" edges.csv communities.csv "$RESOLUTION" "$SEED" || {
+  python3 "$SCRIPT_DIR/cluster_leiden.py" edges.csv communities.csv "$RESOLUTION" "$SEED" 2> "$ENGINE_STATS_FILE" || {
+    cat "$ENGINE_STATS_FILE" >&2
     echo "ERROR: leiden clustering failed." >&2; exit 8; }
 else
-  node "$SCRIPT_DIR/cluster_louvain.mjs" edges.csv communities.csv "$RESOLUTION" "$SEED" || {
+  node "$SCRIPT_DIR/cluster_louvain.mjs" edges.csv communities.csv "$RESOLUTION" "$SEED" 2> "$ENGINE_STATS_FILE" || {
+    cat "$ENGINE_STATS_FILE" >&2
     echo "ERROR: louvain clustering failed." >&2; exit 8; }
 fi
+cat "$ENGINE_STATS_FILE" >&2
 T_CLUSTER_END=$(date +%s)
 echo "  clustering wall-clock: $((T_CLUSTER_END - T_CLUSTER_START))s"
 
 # ── 3a) Cache-Save: bestehende Semantic_Name auf Objekt-Ebene sichern ───────
 # VOR dem Replace (Schritt 3). Nur wenn CommunityNames bereits benannte Module
 # trägt — sonst würde ein leerer Snapshot einen guten Cache überschreiben.
-# plan_semantic_name_cache.md §5.1.
 if [ "$CACHE_DISABLE" != "1" ]; then
   HAS_CN=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
     "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='CommunityNames';" 2>/dev/null || echo 0)
@@ -140,7 +147,7 @@ SET VARIABLE engine = '$ENGINE';
 SQL
 
 # ── 3c) Cache-Apply: Semantic_Name per Mehrheitsvotum restaurieren ──────────
-# NACH dem Load (CommunityNames.Semantic_Name=NULL). plan_semantic_name_cache.md §5.2.
+# NACH dem Load (CommunityNames.Semantic_Name=NULL).
 if [ "$CACHE_DISABLE" != "1" ]; then
   HAS_CACHE=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
     "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='SemanticNameCache';" 2>/dev/null || echo 0)
@@ -184,6 +191,42 @@ echo "→ result:"
   SELECT Community, Member_Count, Dominant_Type, Heuristic_Name
   FROM CommunityNames ORDER BY Member_Count DESC LIMIT 8;
 "
+
+# ── 4b) Run-Summary → .fmlab/cluster_run.json ───────────────────────────────
+# Persistiert die bereits berechneten Lauf-Metriken maschinenlesbar für die
+# /cluster-Status-Leiste. modularity/edges lassen sich nicht
+# billig live nachrechnen (Modularity kennt nur die Engine; ClusterEdges ist eine
+# teure View) → hier als JSON sichern. Greift uniform für alle Lauf-Pfade (Skill
+# Phase H, Auto-P7, Recluster-Button) — alle rufen cluster.sh. Abgrenzung:
+# .fmlab/cluster.json bleibt die Config-für-Reuse; cluster_run.json ist das
+# Ergebnis-für-Anzeige (jeder Lauf). Additiver Write, best-effort.
+RUN_NODES=$(sed -n 's/.*nodes=\([0-9][0-9]*\).*/\1/p' "$ENGINE_STATS_FILE" 2>/dev/null | tail -1)
+RUN_MOD=$(sed -n 's/.*modularity=\([0-9][0-9.]*\).*/\1/p' "$ENGINE_STATS_FILE" 2>/dev/null | tail -1)
+RUN_COMMUNITIES=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
+  "SELECT COUNT(*) FROM CommunityNames;" 2>/dev/null || echo "")
+RUN_NAMED=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
+  "SELECT COUNT(*) FILTER (WHERE Semantic_Name IS NOT NULL) FROM CommunityNames;" 2>/dev/null || echo "")
+RUN_FINISHED=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+RUN_DIR="$PROJECT_ROOT/.fmlab"
+RUN_JSON="$RUN_DIR/cluster_run.json"
+# Numerisches JSON-Feld: leer → null, sonst Roh-Zahl (kein Quoting).
+jnum() { if [ -z "$1" ]; then printf 'null'; else printf '%s' "$1"; fi; }
+mkdir -p "$RUN_DIR" 2>/dev/null
+{
+  printf '{\n'
+  printf '  "engine": "%s",\n'        "$ENGINE"
+  printf '  "resolution": %s,\n'      "$(jnum "$RESOLUTION")"
+  printf '  "seed": %s,\n'            "$(jnum "$SEED")"
+  printf '  "modularity_q": %s,\n'    "$(jnum "$RUN_MOD")"
+  printf '  "n_nodes": %s,\n'         "$(jnum "$RUN_NODES")"
+  printf '  "n_edges": %s,\n'         "$(jnum "$EDGE_COUNT")"
+  printf '  "n_communities": %s,\n'   "$(jnum "$RUN_COMMUNITIES")"
+  printf '  "n_named": %s,\n'         "$(jnum "$RUN_NAMED")"
+  printf '  "finished_at": "%s"\n'    "$RUN_FINISHED"
+  printf '}\n'
+} > "$RUN_JSON" 2>/dev/null \
+  && echo "  run-summary → .fmlab/cluster_run.json (modularity=$RUN_MOD nodes=$RUN_NODES)" \
+  || echo "  WARN: could not write cluster_run.json" >&2
 
 # ── 5) Sync master → rest-api copy + reload (optional) ──────────────────────
 # Sync logic lives in sync_db.sh (reused by the fm-graph-cluster skill); the

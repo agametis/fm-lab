@@ -1,5 +1,6 @@
 ---
 name: install-fmide-docs
+version: 0.8.5
 description: Download and install fmIDE documentation from the GitHub Wiki. Automatically checks for newer commits and prompts before replacing existing docs. Triggers (English): "install fmIDE docs", "update fmIDE documentation". Triggers (German): "installiere die fmIDE-Doku", "fmIDE-Dokumentation aktualisieren".
 ---
 

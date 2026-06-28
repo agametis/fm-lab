@@ -9,20 +9,39 @@ import { OBJECT_TYPES } from '@packages/shared/constants';
 const PSEUDO_TYPE_GROUP = ['ScriptStepType', 'BuiltinFunction', 'PluginComponent', 'PluginFunction'] as const;
 const PSEUDO_TYPE_SET = new Set<string>(PSEUDO_TYPE_GROUP);
 import { useInfiniteSearch, useDebounce, useScrollRestore, CONNECTION_ERROR } from './hooks';
-import { VirtualList, DetailView, SearchOptions, FolderTree, ThemeToggle, LanguageSelector, PseudoTokenView, type FolderTreeSubtype } from './components';
-import { buildObjectPath } from './lib/navigation';
+import { VirtualList, DetailView, SearchOptions, FolderTree, PseudoTokenView, StartHeader, SubNav, StatusBar, Filterbar, type FolderTreeSubtype } from './components';
+import { buildObjectPath, buildBreadcrumb } from './lib/navigation';
 import { SettingsView } from './views/SettingsView';
 import { RelationshipGraphView } from './views/RelationshipGraphView';
 import { LayoutView } from './views/LayoutView';
 import { DashboardHost } from './dashboard/DashboardHost';
 import { DashboardView } from './dashboard/DashboardView';
 import { QueryView } from './dashboard/QueryView';
+import {
+  DashboardsPage,
+  CustomQueriesPage,
+  DocsOverviewPage,
+  XmlImportPage,
+  DocsSetPage,
+  DocsCategoryPage,
+} from './dashboard/LeitPages';
 import { DocsEntryView } from './docs/DocsEntryView';
 
 // Code-split the Graph Explorer (cytoscape + fcose layout) out of the main
 // bundle — it is only reached via the /graph route.
 const GraphExplorerView = lazy(() =>
   import('./views/GraphExplorerView').then((m) => ({ default: m.GraphExplorerView })),
+);
+
+// Graph-Atlas (Top-Down-Einstieg) — eigener Chunk, zieht die visx-Treemap nur
+// auf der /atlas-Route herein (wie Cytoscape auf /graph).
+const GraphAtlasView = lazy(() =>
+  import('./views/GraphAtlasView').then((m) => ({ default: m.GraphAtlasView })),
+);
+
+// Cluster-Übersicht (/cluster) — eigener Chunk (lazy, wie Atlas).
+const ClusterView = lazy(() =>
+  import('./views/ClusterView').then((m) => ({ default: m.ClusterView })),
 );
 
 /**
@@ -321,153 +340,133 @@ function SearchView() {
     ? t('nav:form.filterTitle')
     : t('nav:form.searchTitle');
 
-  return (
-    <div className="app">
-      <div className="app-title-row">
-        <h1>{t('common:appTitle')}</h1>
-        <div className="app-title-actions">
-          <LanguageSelector />
-          <ThemeToggle />
-          <Link to="/settings" className="app-settings-link" aria-label={t('nav:settings.ariaLabel') as string} title={t('nav:settings.title') as string}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-          </svg>
-        </Link>
-        </div>
+  // Klasse S (Start) ⇄ Klasse L (Listing).
+  // S = Such-Modus ohne jeden aktiven Filter (Home-Dashboard sichtbar); jeder
+  // Filter oder der Tree-Modus schaltet auf L (Sub-Navi + kompakte Filterbar).
+  const isStart = !isTreeMode && !debouncedSearchName && !selectedFile && !objectType;
+
+  // Filter-Controls — einmal definiert, in beiden Zuständen verwendet (Start:
+  // unter dem StartHeader; Listing: in der Filterbar der StatusBar).
+  const filterControls = (
+    <>
+      <div className="form-group">
+        <label htmlFor="search-name">{filterLabel}</label>
+        <input
+          ref={searchInputRef}
+          id="search-name"
+          type="text"
+          value={searchName}
+          onChange={(e) => setSearchName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setSearchName('');
+              e.currentTarget.blur();
+            }
+          }}
+          onFocus={() => { wasFocusedRef.current = true; }}
+          onBlur={() => { wasFocusedRef.current = false; }}
+          placeholder={filterPlaceholder}
+          title={filterTitle}
+        />
       </div>
 
-      <nav className="app-mode-tabs" role="tablist" aria-label={t('nav:modeTabsAriaLabel') as string}>
-        <button
-          type="button"
-          className={`tab-button tab-button--home${!debouncedSearchName && !selectedFile && !objectType && mode === 'search' ? ' active' : ''}`}
-          onClick={() => navigate('/')}
-          title={t('nav:home.title') as string}
-          aria-label={t('nav:home.ariaLabel') as string}
+      <div className="form-group">
+        <label htmlFor="file-name">{t('nav:form.fileLabel')}</label>
+        <select
+          id="file-name"
+          value={selectedFile}
+          onChange={(e) => setSelectedFile(e.target.value)}
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'search'}
-          className={`tab-button${mode === 'search' ? ' active' : ''}`}
-          onClick={() => setMode('search')}
-        >
-          {t('nav:tabs.search')}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'tree'}
-          className={`tab-button${mode === 'tree' ? ' active' : ''}`}
-          onClick={() => setMode('tree')}
-        >
-          {t('nav:tabs.tree')}
-        </button>
-      </nav>
+          <option value="">{t('nav:form.allFiles')}</option>
+          {files.map((file) => (
+            <option key={file.File_Name || ''} value={file.File_Name || ''}>
+              {file.File_Name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <div className="search-form">
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="search-name">{filterLabel}</label>
-            <input
-              ref={searchInputRef}
-              id="search-name"
-              type="text"
-              value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') {
-                  setSearchName('');
-                  e.currentTarget.blur();
-                }
-              }}
-              onFocus={() => { wasFocusedRef.current = true; }}
-              onBlur={() => { wasFocusedRef.current = false; }}
-              placeholder={filterPlaceholder}
-              title={filterTitle}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="file-name">{t('nav:form.fileLabel')}</label>
-            <select
-              id="file-name"
-              value={selectedFile}
-              onChange={(e) => setSelectedFile(e.target.value)}
-            >
-              <option value="">{t('nav:form.allFiles')}</option>
-              {files.map((file) => (
-                <option key={file.File_Name || ''} value={file.File_Name || ''}>
-                  {file.File_Name}
+      {isTreeMode ? (
+        <div className="form-group">
+          <label htmlFor="tree-subtype">{t('nav:form.typeLabel')}</label>
+          <select
+            id="tree-subtype"
+            value={treeSubtype}
+            onChange={(e) => setTreeSubtype(e.target.value as FolderTreeSubtype)}
+          >
+            {(['ScriptCatalog', 'Layouts', 'CustomFunctionsCatalog'] as FolderTreeSubtype[]).map(st => (
+              <option key={st} value={st}>{t(`nav:treeSubtypes.${st}`)}</option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <div className="form-group">
+          <label htmlFor="object-type">{t('nav:form.objectTypeLabel')}</label>
+          <select
+            id="object-type"
+            value={objectType}
+            onChange={(e) => setObjectType(e.target.value)}
+          >
+            <option value="">{t('nav:form.allTypes')}</option>
+            {OBJECT_TYPES.filter(type => !PSEUDO_TYPE_SET.has(type)).map((type) => (
+              <option key={type} value={type}>
+                {t(`types:objectTypes.${type}`, { defaultValue: type })}
+              </option>
+            ))}
+            <optgroup label={t('nav:form.usedTokensGroup') as string}>
+              {PSEUDO_TYPE_GROUP.map((type) => (
+                <option key={type} value={type}>
+                  {t(`types:objectTypes.${type}`, { defaultValue: type })}
                 </option>
               ))}
-            </select>
-          </div>
-
-          {isTreeMode ? (
-            <div className="form-group">
-              <label htmlFor="tree-subtype">{t('nav:form.typeLabel')}</label>
-              <select
-                id="tree-subtype"
-                value={treeSubtype}
-                onChange={(e) => setTreeSubtype(e.target.value as FolderTreeSubtype)}
-              >
-                {(['ScriptCatalog', 'Layouts', 'CustomFunctionsCatalog'] as FolderTreeSubtype[]).map(st => (
-                  <option key={st} value={st}>{t(`nav:treeSubtypes.${st}`)}</option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <div className="form-group">
-              <label htmlFor="object-type">{t('nav:form.objectTypeLabel')}</label>
-              <select
-                id="object-type"
-                value={objectType}
-                onChange={(e) => setObjectType(e.target.value)}
-              >
-                <option value="">{t('nav:form.allTypes')}</option>
-                {OBJECT_TYPES.filter(type => !PSEUDO_TYPE_SET.has(type)).map((type) => (
-                  <option key={type} value={type}>
-                    {t(`types:objectTypes.${type}`, { defaultValue: type })}
-                  </option>
-                ))}
-                <optgroup label={t('nav:form.usedTokensGroup') as string}>
-                  {PSEUDO_TYPE_GROUP.map((type) => (
-                    <option key={type} value={type}>
-                      {t(`types:objectTypes.${type}`, { defaultValue: type })}
-                    </option>
-                  ))}
-                </optgroup>
-              </select>
-            </div>
-          )}
-
-          {!isTreeMode && (
-            <button
-              className="search-options-toggle"
-              onClick={() => setOptionsOpen(prev => !prev)}
-              aria-expanded={optionsOpen}
-              type="button"
-            >
-              {optionsOpen ? t('nav:form.optionsOpen') : t('nav:form.optionsClosed')}
-            </button>
-          )}
+            </optgroup>
+          </select>
         </div>
+      )}
 
-        {!isTreeMode && optionsOpen && (
-          <SearchOptions
-            sortBy={sortBy}
-            groupBy={groupBy}
-            onSortChange={setSortBy}
-            onGroupChange={setGroupBy}
-          />
-        )}
-      </div>
+      {!isTreeMode && (
+        <button
+          className="search-options-toggle"
+          onClick={() => setOptionsOpen(prev => !prev)}
+          aria-expanded={optionsOpen}
+          type="button"
+        >
+          {optionsOpen ? t('nav:form.optionsOpen') : t('nav:form.optionsClosed')}
+        </button>
+      )}
+    </>
+  );
+
+  const optionsPanel = !isTreeMode && optionsOpen ? (
+    <SearchOptions
+      sortBy={sortBy}
+      groupBy={groupBy}
+      onSortChange={setSortBy}
+      onGroupChange={setGroupBy}
+    />
+  ) : null;
+
+  return (
+    <div className="app">
+      {isStart ? (
+        <>
+          <StartHeader mode={mode} onSelectMode={setMode} />
+          <div className="search-form">
+            <div className="form-row">{filterControls}</div>
+            {optionsPanel}
+          </div>
+        </>
+      ) : (
+        <>
+          <SubNav breadcrumbs={buildBreadcrumb(isTreeMode ? { kind: 'hierarchy' } : { kind: 'search' }, t)} />
+          <StatusBar>
+            <Filterbar>
+              {filterControls}
+              {optionsPanel && <div className="filterbar__options">{optionsPanel}</div>}
+            </Filterbar>
+          </StatusBar>
+        </>
+      )}
 
       {/* Context-Label — gesetzt wenn via Dashboard-Action mit ?label=... navigiert */}
       {!isTreeMode && (debouncedSearchName || selectedFile || objectType) && searchParams.get('label') && (
@@ -584,9 +583,32 @@ function App() {
           </Suspense>
         }
       />
+      <Route
+        path="/atlas"
+        element={
+          <Suspense fallback={<div className="graph-explorer-placeholder">…</div>}>
+            <GraphAtlasView />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/cluster"
+        element={
+          <Suspense fallback={<div className="graph-explorer-placeholder">…</div>}>
+            <ClusterView />
+          </Suspense>
+        }
+      />
       <Route path="/layout/:uuid" element={<LayoutView />} />
+      {/* Leitseiten (bare routes) — vor den :param-Routen */}
+      <Route path="/dashboard" element={<DashboardsPage />} />
       <Route path="/dashboard/:id" element={<DashboardView />} />
+      <Route path="/query" element={<CustomQueriesPage />} />
       <Route path="/query/:queryName" element={<QueryView />} />
+      <Route path="/xml-import" element={<XmlImportPage />} />
+      <Route path="/docs" element={<DocsOverviewPage />} />
+      <Route path="/docs/:set" element={<DocsSetPage />} />
+      <Route path="/docs/:set/:category" element={<DocsCategoryPage />} />
       <Route path="/docs/:set/:category/:fn" element={<DocsEntryRoute />} />
     </Routes>
   );

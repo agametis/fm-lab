@@ -6,6 +6,19 @@
     "ariaLabel": "Migas de pan",
     "linkAria": "Navegar a {{label}}"
   },
+  "crumbs": {
+    "home": "Inicio",
+    "search": "Búsqueda",
+    "hierarchy": "Jerarquía",
+    "graph": "Grafo",
+    "relationships": "Relaciones",
+    "dashboards": "Paneles",
+    "customQueries": "Consultas personalizadas",
+    "docs": "Documentación",
+    "xmlImport": "Importar XML",
+    "cluster": "Clústeres",
+    "settings": "Ajustes"
+  },
   "errors": {
     "noDashboardId": "No se ha proporcionado el id del dashboard.",
     "noQueryName": "No se ha proporcionado el nombre de la consulta."
@@ -57,11 +70,11 @@
     "tabsAria": "Vistas del objeto",
     "noName": "(sin nombre)",
     "tabs": {
-      "detail":     "Detalles",
+      "detail": "Detalles",
       "references": "Referencias",
-      "graph":      "Grafo",
-      "versions":   "Versiones",
-      "notes":      "Notas"
+      "graph": "Grafo",
+      "versions": "Versiones",
+      "notes": "Notas"
     }
   },
   "pseudoToolbar": {

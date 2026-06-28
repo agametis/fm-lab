@@ -1,0 +1,33 @@
+{
+  "title": "Kluster",
+  "subtitle": "Grafgemenskaper",
+  "status": {
+    "named": "{{named}} av {{total}} gemenskaper namngivna",
+    "algorithm": "Algoritm",
+    "lastRun": "senaste körning",
+    "dash": "—"
+  },
+  "list": {
+    "members": "{{count}} medlemmar",
+    "edit": "Redigera",
+    "openHint": "Öppna i grafutforskaren",
+    "unnamedBadge": "namnlös",
+    "count": "{{shown}} av {{total}}",
+    "search": "Sök…"
+  },
+  "empty": {
+    "title": "Inte klustrad ännu",
+    "hint": "Identifiera gemenskaper med ”Nya gemenskaper” nedan — en billig ompartitionering."
+  },
+  "loading": "Laddar…",
+  "hero": {
+    "communities": "Communities",
+    "nodes": "Noder",
+    "edges": "Kanter"
+  },
+  "filter": {
+    "all": "Alla",
+    "named": "Namngivna",
+    "unnamed": "Namnlösa"
+  }
+}

@@ -125,7 +125,8 @@
     "noReferences": "Nessun riferimento trovato",
     "noFilterMatches": "Nessuna corrispondenza per i filtri attuali",
     "crossFileBadge": "Tra file",
-    "itemAriaLabel": "Naviga a {{type}}: {{name}}"
+    "itemAriaLabel": "Naviga a {{type}}: {{name}}",
+    "notNavigable": "Destinazione non presente nel set di dati importato"
   },
   "searchOptions": {
     "regionAria": "Opzioni di ordinamento e raggruppamento",
@@ -181,7 +182,8 @@
     "usageBadge_other": "{{count}} utilizzi",
     "showAria": "{{type}}: {{name}} — mostra",
     "noName": "(senza nome)",
-    "filterByCategory": "Filtra per {{category}}"
+    "filterByCategory": "Filtra per {{category}}",
+    "graphButton": "Grafo"
   },
   "scriptSearchFilter": {
     "searchAria": "Cerca riferimenti",

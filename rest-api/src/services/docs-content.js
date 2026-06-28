@@ -7,7 +7,7 @@ const { marked } = require('marked');
  * eine minimale Sanitization plus Link-Rewriting. HTML-Quellen (Claris,
  * MBS) durchlaufen denselben Sanitizer, aber ohne Marked-Pass.
  *
- * Siehe project/prd_docs_redesign.md §6.3:
+ * Verhalten:
  *   - Markdown wird im Backend zu HTML konvertiert, BEVOR es ausgeliefert wird.
  *   - Relative Links werden auf API-Pfade umgeschrieben.
  *   - Anchors (#...) bleiben unangetastet.
@@ -260,10 +260,10 @@ function preprocessWikiSyntax(md) {
  *   <a href="#" data-plugin-fn="Clipboard.AddText">
  *     → href="/docs/mbs/Clipboard/Clipboard.AddText"
  *   <a href="#" data-plugin-component="Clipboard">
- *     → href="/dashboard/docset_category?id=mbs&category=Clipboard"
+ *     → href="/docs/mbs/Clipboard"
  *
  * Wird vor `rewriteLinks` aufgerufen — die neuen Hrefs beginnen mit `/docs/`
- * bzw. `/dashboard/` und werden vom Frontend als App-Routes erkannt.
+ * und werden vom Frontend als App-Routes erkannt.
  */
 function rewriteMbsDataLinks(html) {
   return String(html).replace(/<a\b([^>]*)>/gi, (full, attrs) => {
@@ -279,9 +279,9 @@ function rewriteMbsDataLinks(html) {
       newHref = `/docs/mbs/${encodeURIComponent(cat)}/${encodeURIComponent(fn)}`;
     } else {
       const cat = compMatch[1];
-      // docset_category-Dashboard erwartet `docset=` (nicht `id=`) — siehe
-      // dashboard.service.js builtinDocsetCategoryInfo.
-      newHref = `/dashboard/docset_category?docset=mbs&category=${encodeURIComponent(cat)}`;
+      // Bare route `/docs/:set/:category` → DocsCategoryPage rendert das
+      // docset_category-Bundle (mappt :set → docset).
+      newHref = `/docs/mbs/${encodeURIComponent(cat)}`;
     }
 
     let newAttrs;

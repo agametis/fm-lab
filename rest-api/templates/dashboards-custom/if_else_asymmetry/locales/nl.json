@@ -4,19 +4,17 @@
     "description": "Toont scripts met If/Else-blokken waarvan de If-tak aanzienlijk langer is dan de Else-tak. Kandidaten voor refactoring naar early returns of guard clauses."
   },
   "layout": {
-    "root.children[0].props.title": "Overzicht If/Else-asymmetrie",
-    "root.children[0].children[0].props.items[0].label": "Asymmetrische blokken",
-    "root.children[0].children[0].props.items[1].label": "Betrokken scripts",
-    "root.children[0].children[0].props.items[2].label": "Betrokken bestanden",
-    "root.children[0].children[0].props.items[3].label": "Langste If-tak",
-
-    "root.children[1].props.title": "Scripts met lange If / korte Else",
-    "root.children[1].children[0].props.columns[0].label": "Bestand",
-    "root.children[1].children[0].props.columns[1].label": "Scriptnaam",
-    "root.children[1].children[0].props.columns[2].label": "If-positie",
-    "root.children[1].children[0].props.columns[3].label": "If-stappen",
-    "root.children[1].children[0].props.columns[4].label": "Else-stappen",
-    "root.children[1].children[0].props.columns[5].label": "Score",
-    "root.children[1].children[0].props.empty.message": "Geen asymmetrische If/Else-blokken gevonden."
+    "if_else_kpi_kpistrip.props.items[0].label": "Asymmetrische blokken",
+    "if_else_kpi_kpistrip.props.items[1].label": "Betrokken scripts",
+    "if_else_kpi_kpistrip.props.items[2].label": "Betrokken bestanden",
+    "if_else_kpi_kpistrip.props.items[3].label": "Langste If-tak",
+    "if_else_blocks.props.title": "Scripts met lange If / korte Else",
+    "if_else_blocks_table.props.columns[0].label": "Bestand",
+    "if_else_blocks_table.props.columns[1].label": "Scriptnaam",
+    "if_else_blocks_table.props.columns[2].label": "If-positie",
+    "if_else_blocks_table.props.columns[3].label": "If-stappen",
+    "if_else_blocks_table.props.columns[4].label": "Else-stappen",
+    "if_else_blocks_table.props.columns[5].label": "Score",
+    "if_else_blocks_table.props.empty.message": "Geen asymmetrische If/Else-blokken gevonden."
   }
 }

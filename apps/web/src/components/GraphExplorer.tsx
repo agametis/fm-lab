@@ -9,16 +9,40 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ExplorerFilterPanel, type CommunityLegendItem } from './ExplorerFilterPanel';
-import { ExplorerGraph, type ExplorerGraphHandle, type FilterMode, type ColorMode } from './ExplorerGraph';
+import { ExplorerGraph, type ExplorerGraphHandle, type FilterMode, type ColorMode, type GraphPartition } from './ExplorerGraph';
 import { ExplorerInspectPanel, type InspectNeighbor } from './ExplorerInspectPanel';
+import { ExplorerTypeListPanel, type TypeListSort, type TypeListDir } from './ExplorerTypeListPanel';
 import {
   useSubgraph,
   fetchNeighbors,
   type GraphNode,
   type SubgraphDirection,
 } from '../hooks/useSubgraph';
+import { useDepthProfile } from '../hooks/useDepthProfile';
+import { usePanelResize } from '../hooks/usePanelResize';
 import { getCommunityColor } from '../lib/graphColors';
 import '../views/GraphExplorerView.css';
+
+/** Backend-Default node_limit von /api/graph/subgraph — Basis des Clipping-Hinweises. */
+const NODE_LIMIT = 1000;
+/** GUI-Default-Deckel der Tiefe; die Opt-in-Erweiterung „tiefer" geht bis zum Profil-hardCap. */
+const DEFAULT_DEPTH_MAX = 4;
+
+/** Default-Breiten der Seitenpanels (px) — zugleich der Doppelklick-Reset-Wert. */
+const LEFT_PANEL_DEFAULT = 270;
+const RIGHT_PANEL_DEFAULT = 300;
+const LEFT_PANEL_KEY = 'fmlab.explorer.leftPanelWidth';
+const RIGHT_PANEL_KEY = 'fmlab.explorer.rightPanelWidth';
+
+/** Persistierte Panelbreite lesen (Fallback = Default; ungültige Werte verworfen). */
+function readPanelWidth(key: string, fallback: number): number {
+  try {
+    const v = Number(localStorage.getItem(key));
+    return Number.isFinite(v) && v > 0 ? v : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 /**
  * Graph Explorer engine — the reusable workhorse shared by the standalone route
@@ -91,6 +115,20 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
     const { t } = useTranslation(['explorer', 'common']);
     const graphRef = useRef<ExplorerGraphHandle>(null);
 
+    // Individuell per Drag verstellbare Breiten der beiden Seitenpanels, in
+    // localStorage gemerkt (Listeneinträge werden sonst abgeschnitten). Doppelklick
+    // auf den Anfasser stellt den Default wieder her.
+    const [leftWidth, setLeftWidth] = useState(() => readPanelWidth(LEFT_PANEL_KEY, LEFT_PANEL_DEFAULT));
+    const [rightWidth, setRightWidth] = useState(() => readPanelWidth(RIGHT_PANEL_KEY, RIGHT_PANEL_DEFAULT));
+    const onResizeLeft = usePanelResize(leftWidth, setLeftWidth, { side: 'left' });
+    const onResizeRight = usePanelResize(rightWidth, setRightWidth, { side: 'right' });
+    useEffect(() => {
+      try { localStorage.setItem(LEFT_PANEL_KEY, String(leftWidth)); } catch { /* ignore */ }
+    }, [leftWidth]);
+    useEffect(() => {
+      try { localStorage.setItem(RIGHT_PANEL_KEY, String(rightWidth)); } catch { /* ignore */ }
+    }, [rightWidth]);
+
     // Client-side lenses: name/file/type filters act on the
     // already-loaded subgraph — no re-fetch. Type chips are a hard exclusion set;
     // the name + file filters are soft and share one dim/hide mode (default: dim).
@@ -109,8 +147,38 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
     const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
     const [expanding, setExpanding] = useState(false);
 
-    // Only focus/depth/direction/mode hit the backend — type filtering is client-side.
-    const { data, loading, error } = useSubgraph({ focus, focusFile, depth, direction, mode });
+    // Rechtes Panel, zweiter Modus: Objektliste eines Typs (mutually exclusive mit
+    // dem Node-Inspect — beide teilen den Slot). null = keine Liste offen.
+    const [typeListType, setTypeListType] = useState<string | null>(null);
+    const [typeListSort, setTypeListSort] = useState<TypeListSort>('name');
+    // Richtungs-Filter der Typ-Liste relativ zum Fokus (eingehend/ausgehend/beide).
+    const [typeListDir, setTypeListDir] = useState<TypeListDir>('both');
+
+    // Verfeinerung C — server-seitiger Typ-Filter (committed). null = wie heute
+    // (alle Typen laden, Chips filtern client-seitig). Eine Änderung ⇒ Refetch.
+    const [serverTypes, setServerTypes] = useState<string[] | null>(null);
+
+    // Verfeinerung D — Opt-in-Erweiterung des Tiefen-Reglers über DEFAULT_DEPTH_MAX.
+    const [depthExtended, setDepthExtended] = useState(false);
+
+    // Stabile Konnektivitäts-Partition der geladenen Knoten (verbunden/Inseln/isoliert).
+    // Eine Quelle für die Aufschlüsselung, den Pill und das Default-Verstecken nicht-verbundener.
+    const [partition, setPartition] = useState<GraphPartition | null>(null);
+
+    // Nicht mit dem Fokus verbundene Knoten (Inseln + isolierte) werden standardmäßig
+    // ausgeblendet (sonst kachelt fcose isolierte in ein Raster); ein Pill auf der Canvas
+    // nennt die Anzahl und erlaubt das Einblenden.
+    const [showUnconnected, setShowUnconnected] = useState(false);
+    // Jeder neu fokussierte Graph startet mit dem Default (nicht-verbundene ausgeblendet).
+    useEffect(() => { setShowUnconnected(false); }, [focus, focusFile]);
+
+    // serverTypes geht als `types` an den Subgraph-Fetch (Refetch + Re-Layout).
+    const { data, loading, error } = useSubgraph({ focus, focusFile, depth, direction, mode, types: serverTypes });
+
+    // Tiefen-Profil (max. erreichbare Tiefe + per-Tiefe-Last), richtungsabhängig.
+    // serverTypes MUSS mitgehen, damit die Last-/Clipping-Anzeige dieselbe (typgefilterte)
+    // erreichbare Menge zählt wie der Subgraph (sonst 2933 statt 1916).
+    const { profile: depthProfile } = useDepthProfile(focus, focusFile ?? null, direction, mode, serverTypes);
 
     // Read the latest name filter from a ref so the imperative handle (mount-only)
     // can clear it without being re-created on every keystroke.
@@ -140,7 +208,29 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
       setSelectedFile((prev) => (prev && data.nodes.some((n) => n.file === prev) ? prev : null));
       setSelectedCommunity((prev) => (prev !== null && data.nodes.some((n) => n.community === prev) ? prev : null));
       setHoveredCommunity(null);
+      // Eine offene Typ-Liste schließen, wenn der Typ im neuen Graph fehlt.
+      setTypeListType((prev) => (prev && data.nodes.some((n) => n.type === prev) ? prev : null));
     }, [data]);
+
+    // Fokus-Knoten (uuid + file) für den „⧉ Details"-Link (Verfeinerung A).
+    const focusNode = useMemo(() => data?.nodes.find((n) => n.isFocus) ?? null, [data]);
+
+    // Direkte Nachbarn des Fokus nach Richtung (aus den geladenen Kanten). Speist
+    // den Richtungs-Filter der Typ-Liste: 'out' = Fokus → Knoten („verwendet"),
+    // 'in' = Knoten → Fokus („verwendet von"). Knoten >1 Hop entfernt liegen in
+    // keiner Menge und erscheinen nur unter „beide".
+    const focusAdjacency = useMemo(() => {
+      const out = new Set<string>();
+      const inc = new Set<string>();
+      const fid = focusNode?.id;
+      if (data && fid) {
+        for (const e of data.edges) {
+          if (e.source === fid) out.add(e.target);
+          else if (e.target === fid) inc.add(e.source);
+        }
+      }
+      return { out, inc };
+    }, [data, focusNode]);
 
     // Report stats to the host toolbar.
     useEffect(() => {
@@ -160,13 +250,6 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
       );
     }, [data, onStats]);
 
-    // Clicking a chip toggles its type in the *exclusion* set (deselect = hide).
-    const handleToggleType = useCallback((type: string) => {
-      setDeselectedTypes((prev) =>
-        prev.includes(type) ? prev.filter((x) => x !== type) : [...prev, type],
-      );
-    }, []);
-
     // Type chips: counts from the current graph, unioned with any deselected types.
     const availableTypes = useMemo(() => {
       const counts = new Map<string, number>();
@@ -176,6 +259,22 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
         .map(([type, count]) => ({ type, count }))
         .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type));
     }, [data, deselectedTypes]);
+
+    // Clicking a chip toggles its type in the *exclusion* set. Im „Alle Typen"-Modus
+    // (serverTypes === null) dimmt/versteckt das nur client-seitig. Im „Nur gewählte
+    // Typen"-Modus definiert die Auswahl den Ladefilter → die neue Auswahl wird
+    // server-seitig nachgeladen (Achse A, Klick-Matrix).
+    const handleToggleType = useCallback((type: string) => {
+      setDeselectedTypes((prev) => {
+        const next = prev.includes(type) ? prev.filter((x) => x !== type) : [...prev, type];
+        if (serverTypes !== null) {
+          const selected = availableTypes.map((tt) => tt.type).filter((ty) => !next.includes(ty));
+          // Leere Auswahl wäre sinnlos → Fallback „Alle Typen".
+          setServerTypes(selected.length > 0 ? selected : null);
+        }
+        return next;
+      });
+    }, [serverTypes, availableTypes]);
 
     // File filter options — distinct files present in the current graph.
     const availableFiles = useMemo(() => {
@@ -198,6 +297,97 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
         .map(([id, v]) => ({ id, name: v.name, count: v.count, color: getCommunityColor(id) }))
         .sort((a, b) => b.count - a.count || a.id - b.id);
     }, [data]);
+
+    // Verfeinerung B — Objekte des in der Typ-Liste gewählten Typs (aus dem aktuellen
+    // Graph; deckungsgleich mit dem Chip-Zähler). Sortierung clientseitig.
+    // Richtungs-Zähler der Typ-Liste (Name-Filter berücksichtigt, Richtungs-Filter
+    // NICHT) — beschriftet die Buttons und entscheidet, ob der Filter sinnvoll ist.
+    const typeListDirCounts = useMemo(() => {
+      if (!data || !typeListType) return { in: 0, out: 0, total: 0 };
+      const nf = nameFilter.trim().toLowerCase();
+      let inC = 0, outC = 0, total = 0;
+      for (const n of data.nodes) {
+        if (n.type !== typeListType) continue;
+        if (nf && !n.label.toLowerCase().includes(nf)) continue;
+        total++;
+        if (focusAdjacency.inc.has(n.id)) inC++;
+        if (focusAdjacency.out.has(n.id)) outC++;
+      }
+      return { in: inC, out: outC, total };
+    }, [data, typeListType, nameFilter, focusAdjacency]);
+
+    // Richtungs-Filter zeigen, sobald überhaupt eine Richtung vertreten ist
+    // (eine Typ-Liste ist oft komplett eingehend ODER ausgehend — z.B. nur
+    // Aufrufer eines Scripts). Die leere Richtung wird im Panel deaktiviert.
+    const showTypeListDir = typeListDirCounts.in > 0 || typeListDirCounts.out > 0;
+
+    const typeListItems = useMemo<GraphNode[]>(() => {
+      if (!data || !typeListType) return [];
+      // Die Sucheingabe (nameFilter) filtert auch die Objektliste (Label-Substring).
+      const nf = nameFilter.trim().toLowerCase();
+      // Bei verstecktem Filter (nur eine Richtung vorhanden) nicht filtern, damit
+      // ein „hängender" Richtungswert keine Einträge unsichtbar macht.
+      const dir = showTypeListDir ? typeListDir : 'both';
+      const items = data.nodes.filter(
+        (n) => n.type === typeListType
+          && (!nf || n.label.toLowerCase().includes(nf))
+          && (dir === 'both'
+              || (dir === 'in' && focusAdjacency.inc.has(n.id))
+              || (dir === 'out' && focusAdjacency.out.has(n.id))),
+      );
+      const cmp = typeListSort === 'file'
+        ? (a: GraphNode, b: GraphNode) =>
+            (a.file ?? '').localeCompare(b.file ?? '') || a.label.localeCompare(b.label)
+        : (a: GraphNode, b: GraphNode) => a.label.localeCompare(b.label);
+      return [...items].sort(cmp);
+    }, [data, typeListType, typeListSort, nameFilter, typeListDir, showTypeListDir, focusAdjacency]);
+
+    // Hamburger-Klick auf einem Typ-Chip → Liste öffnen (schließt das Node-Inspect).
+    const handleOpenTypeList = useCallback((type: string) => {
+      setSelectedNode(null);
+      graphRef.current?.highlightNode(null);
+      setTypeListType(type);
+      setTypeListDir('both');
+    }, []);
+
+    // Node-Tap → Inspect öffnen (schließt eine offene Typ-Liste).
+    const handleSelectNode = useCallback((node: GraphNode | null) => {
+      if (node) setTypeListType(null);
+      setSelectedNode(node);
+    }, []);
+
+    // Hover über einen Listeneintrag → transiente Vorschau-Hervorhebung im Graph.
+    const handleHoverItem = useCallback((graphId: string | null) => {
+      graphRef.current?.previewNode(graphId);
+    }, []);
+
+    // Verfeinerung C — aktuelle Client-Typ-Auswahl serverseitig anwenden (Refetch lädt
+    // bis node_limit NUR die gewählten Typen → der Deckel deckt sie voll ab).
+    const handleApplyServerTypes = useCallback(() => {
+      const selected = availableTypes
+        .map((t) => t.type)
+        .filter((ty) => !deselectedTypes.includes(ty));
+      setServerTypes(selected.length > 0 ? selected : null);
+    }, [availableTypes, deselectedTypes]);
+
+    // „Alle Typen anzeigen": Client-Abwahl UND den Server-Filter zurücksetzen.
+    const handleShowAllTypes = useCallback(() => {
+      setDeselectedTypes([]);
+      setServerTypes(null);
+    }, []);
+
+    // Verfeinerung D — effektiver Schieberegler-Maximalwert.
+    const sliderDepthMax = useMemo(() => {
+      const cap = depthProfile?.hardCap ?? 16;
+      if (!depthExtended) return DEFAULT_DEPTH_MAX;
+      const reachable = depthProfile?.maxDepth ?? DEFAULT_DEPTH_MAX;
+      return Math.min(Math.max(reachable, DEFAULT_DEPTH_MAX), cap);
+    }, [depthExtended, depthProfile]);
+
+    // Tiefe einklemmen, wenn die Erweiterung deaktiviert wird (depth darf nicht >max bleiben).
+    useEffect(() => {
+      if (depth > sliderDepthMax) onDepthChange(sliderDepthMax);
+    }, [sliderDepthMax, depth, onDepthChange]);
 
     // The lens is only meaningful when clustering data is present in this graph.
     const communityLensActive = enableCommunityLens && availableCommunities.length > 0;
@@ -272,19 +462,33 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
     return (
       <div className="graph-explorer-body">
         <ExplorerFilterPanel
+          width={leftWidth}
           focusLabel={focusLabel}
+          focusUuid={focusNode?.uuid ?? null}
+          focusFile={focusNode?.file ?? null}
           nameFilter={nameFilter}
           selectedFile={selectedFile}
           filterMode={filterMode}
           depth={depth}
+          depthMax={sliderDepthMax}
+          maxDepth={depthProfile?.maxDepth ?? null}
+          maxDepthHitCap={depthProfile?.hitCap ?? false}
+          depthExtended={depthExtended}
+          canExtendDepth={(depthProfile?.maxDepth ?? 0) > DEFAULT_DEPTH_MAX}
+          depthCumulative={depthProfile?.perDepth ?? null}
+          nodeLimit={NODE_LIMIT}
           direction={direction}
+          partition={partition}
           deselectedTypes={deselectedTypes}
           availableTypes={availableTypes}
           availableFiles={availableFiles}
+          serverTypesActive={serverTypes !== null}
           showColorMode={communityLensActive}
           colorMode={colorMode}
           communities={availableCommunities}
           selectedCommunity={selectedCommunity}
+          onOpenFocusDetails={onOpenDetails}
+          onOpenTypeList={handleOpenTypeList}
           onNameFilterChange={setNameFilter}
           onSelectedFileChange={setSelectedFile}
           onFilterModeChange={setFilterMode}
@@ -292,17 +496,34 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
           onSelectCommunity={handleSelectCommunity}
           onHoverCommunity={setHoveredCommunity}
           onDepthChange={onDepthChange}
+          onExtendDepthChange={setDepthExtended}
           onDirectionChange={onDirectionChange}
           onToggleType={handleToggleType}
+          onShowAllTypes={handleShowAllTypes}
+          onApplyServerTypes={handleApplyServerTypes}
+        />
+
+        <div
+          className="explorer-resizer explorer-resizer-left"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={t('filter.resizePanel', { defaultValue: 'Breite des Filter-Panels ändern' }) as string}
+          title={t('filter.resizePanel', { defaultValue: 'Breite des Filter-Panels ändern' }) as string}
+          onPointerDown={onResizeLeft}
+          onDoubleClick={() => setLeftWidth(LEFT_PANEL_DEFAULT)}
         />
 
         <main className="graph-explorer-canvas-wrap">
           {data?.truncated && (
             <div className="graph-explorer-banner" role="status">
-              {t('explorer:truncated', {
-                kept: data.stats.nodeCount,
-                total: data.stats.totalReachable,
-              })}
+              {/* Reiner Hinweis — der Lade-Umfang („Alle Typen / Nur gewählte Typen")
+                  steuert das Nachladen jetzt im KNOTENTYPEN-Bereich, nicht hier. */}
+              <span>
+                {t('explorer:truncated', {
+                  kept: data.stats.nodeCount,
+                  total: data.stats.totalReachable,
+                })}
+              </span>
             </div>
           )}
 
@@ -333,15 +554,76 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
               hoveredCommunity={communityLensActive ? hoveredCommunity : null}
               onSetFocus={onSetFocus}
               onOpenDetails={onOpenDetails}
-              onSelectNode={setSelectedNode}
+              onSelectNode={handleSelectNode}
+              showUnconnected={showUnconnected}
+              onPartition={setPartition}
             />
           )}
 
           {loading && data && <div className="graph-explorer-loading-pill">{t('explorer:loading')}</div>}
+
+          {/* Nicht mit dem Fokus verbundene Knoten (Inseln + isolierte): dezenter Hinweis
+              + Einblenden-Toggle (Default: ausgeblendet). */}
+          {partition && (partition.island + partition.isolated) > 0 && (
+            <div className="graph-explorer-isolated-pill">
+              <span>
+                {t('explorer:unconnectedHidden', {
+                  count: partition.island + partition.isolated,
+                  defaultValue_one: '{{count}} Knoten ohne Verbindung zum Fokus',
+                  defaultValue_other: '{{count}} Knoten ohne Verbindung zum Fokus',
+                  defaultValue: '{{count}} Knoten ohne Verbindung zum Fokus',
+                })}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowUnconnected((s) => !s)}
+                title={t('explorer:unconnectedToggleHint', {
+                  defaultValue: 'Knoten ohne Pfad zum Fokus entstehen durch den Typ-/Tiefenfilter — ein- oder ausblenden',
+                }) as string}
+              >
+                {showUnconnected
+                  ? t('explorer:unconnectedToggleHide', { defaultValue: 'ausblenden' })
+                  : t('explorer:unconnectedToggleShow', { defaultValue: 'einblenden' })}
+              </button>
+            </div>
+          )}
         </main>
 
-        {selectedNode && (
+        {/* Anfasser zum rechten Slot — nur wenn ein Panel offen ist. */}
+        {(typeListType || selectedNode) && (
+          <div
+            className="explorer-resizer explorer-resizer-right"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={t('inspect.resizePanel', { defaultValue: 'Breite des Detail-Panels ändern' }) as string}
+            title={t('inspect.resizePanel', { defaultValue: 'Breite des Detail-Panels ändern' }) as string}
+            onPointerDown={onResizeRight}
+            onDoubleClick={() => setRightWidth(RIGHT_PANEL_DEFAULT)}
+          />
+        )}
+
+        {/* Rechter Slot — Typ-Liste hat Vorrang (zuletzt geöffnet), sonst Node-Inspect. */}
+        {typeListType ? (
+          <ExplorerTypeListPanel
+            width={rightWidth}
+            type={typeListType}
+            items={typeListItems}
+            sort={typeListSort}
+            onSortChange={setTypeListSort}
+            dir={typeListDir}
+            dirCounts={typeListDirCounts}
+            showDir={showTypeListDir}
+            onDirChange={setTypeListDir}
+            onClose={() => {
+              setTypeListType(null);
+              graphRef.current?.previewNode(null);
+            }}
+            onOpenDetails={onOpenDetails}
+            onHoverItem={handleHoverItem}
+          />
+        ) : selectedNode ? (
           <ExplorerInspectPanel
+            width={rightWidth}
             node={selectedNode}
             neighbors={neighbors}
             expanding={expanding}
@@ -355,7 +637,7 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
             onCollapse={handleCollapse}
             onSelectNeighbor={handleSelectNeighbor}
           />
-        )}
+        ) : null}
       </div>
     );
   },

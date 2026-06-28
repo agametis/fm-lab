@@ -1,7 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { SubNav } from '../components/SubNav';
+import { StatusBar } from '../components/StatusBar';
+import { Filterbar } from '../components/Filterbar';
 import {
   GraphExplorer,
   type GraphExplorerHandle,
@@ -9,7 +11,7 @@ import {
 } from '../components/GraphExplorer';
 import type { SubgraphDirection } from '../hooks/useSubgraph';
 import { useEscapeStack } from '../hooks/useEscapeStack';
-import { buildObjectPath } from '../lib/navigation';
+import { buildObjectPath, buildBreadcrumb } from '../lib/navigation';
 import './GraphExplorerView.css';
 
 /**
@@ -20,10 +22,14 @@ import './GraphExplorerView.css';
  * DetailView graph tab, a deep-link or a double-tap (no global search).
  */
 
+// Obergrenze der Tiefe im Deep-Link. Muss zum Backend GRAPH_MAX_DEPTH passen
+// (Default 16); der GUI-Default bleibt 4, nur die Opt-in-Erweiterung geht höher.
+const GRAPH_MAX_DEPTH = 16;
+
 function clampDepth(raw: string | null): number {
   const n = Number(raw);
   if (!Number.isFinite(n)) return 1;
-  return Math.min(4, Math.max(1, Math.round(n)));
+  return Math.min(GRAPH_MAX_DEPTH, Math.max(1, Math.round(n)));
 }
 
 function parseDirection(raw: string | null): SubgraphDirection {
@@ -31,7 +37,7 @@ function parseDirection(raw: string | null): SubgraphDirection {
 }
 
 export function GraphExplorerView() {
-  const { t } = useTranslation(['explorer', 'common']);
+  const { t } = useTranslation(['explorer', 'common', 'nav']);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -94,28 +100,26 @@ export function GraphExplorerView() {
 
   return (
     <div className="graph-explorer-view">
-      <header className="graph-explorer-header">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="graph-explorer-back"
-          title={t('common:backToPrevious') as string}
-        >
-          ← {t('common:back')}
-        </button>
-        <h1>{t('explorer:title')}</h1>
-        <div className="graph-explorer-stats" aria-live="polite">
-          {stats && (
-            <span>
-              {t('explorer:stats.nodes', { count: stats.nodeCount })} ·{' '}
-              {t('explorer:stats.edges', { count: stats.edgeCount })}
-              {stats.communityCount > 0 && (
-                <> · {t('explorer:stats.communities', { count: stats.communityCount })}</>
-              )}
-            </span>
-          )}
-        </div>
-        <div className="graph-explorer-toolbar">
+      <SubNav
+        breadcrumbs={
+          focus && stats?.focusLabel
+            ? buildBreadcrumb({ kind: 'graphNode', nodeName: stats.focusLabel }, t)
+            : buildBreadcrumb({ kind: 'graph' }, t)
+        }
+      />
+      <StatusBar
+        onBack={handleBack}
+        message={stats && (
+          <span className="graph-explorer-stats" aria-live="polite">
+            {t('explorer:stats.nodes', { count: stats.nodeCount })} ·{' '}
+            {t('explorer:stats.edges', { count: stats.edgeCount })}
+            {stats.communityCount > 0 && (
+              <> · {t('explorer:stats.communities', { count: stats.communityCount })}</>
+            )}
+          </span>
+        )}
+      >
+        <Filterbar className="graph-explorer-toolbar">
           <button type="button" onClick={() => engineRef.current?.fit()} disabled={!stats}>
             {t('explorer:toolbar.fit')}
           </button>
@@ -125,9 +129,8 @@ export function GraphExplorerView() {
           <button type="button" onClick={handleExportPng} disabled={!stats}>
             {t('explorer:toolbar.exportPng')}
           </button>
-          <ThemeToggle />
-        </div>
-      </header>
+        </Filterbar>
+      </StatusBar>
 
       <GraphExplorer
         ref={engineRef}

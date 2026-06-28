@@ -19,6 +19,106 @@
 
 export type ObjectPathExtras = Record<string, string | null | undefined>;
 
+// ──────────────────────────────────────────────────────────────────────────
+// Zentraler Breadcrumb-Builder
+//
+// Eine Stelle für die gesamte Breadcrumb-Logik. Jede Seitenklasse liefert ihren
+// `BreadcrumbCtx`; der Builder erzeugt die
+// `BreadcrumbItem[]`-Kette nach den verbindlichen Crumb-Ziel-Regeln. Der **letzte**
+// Crumb ist immer aktiv (path = null, nicht klickbar), alle übrigen verlinken auf
+// ihr Leit-/Listenziel.
+// ──────────────────────────────────────────────────────────────────────────
+
+import type { BreadcrumbItem } from '../types';
+
+/** Minimaler i18next-`t`-Vertrag (vermeidet harte TFunction-Kopplung). */
+export type TranslateFn = (key: string, opts?: Record<string, unknown>) => string;
+
+export type BreadcrumbCtx =
+  | { kind: 'search' }
+  | { kind: 'hierarchy' }
+  | { kind: 'object'; objectType: string; objectName: string; objectPath?: string | null; tab?: string | null }
+  | { kind: 'graph' }
+  | { kind: 'graphNode'; nodeName: string }
+  | { kind: 'graphSegment'; segment: string }
+  | { kind: 'relationships'; file: string }
+  | { kind: 'dashboards' }
+  | { kind: 'dashboard'; title: string }
+  | { kind: 'customQueries' }
+  | { kind: 'query'; name: string }
+  | { kind: 'docs' }
+  | { kind: 'docsSet'; setLabel: string }
+  | { kind: 'docsCategory'; setId: string; setLabel: string; categoryLabel: string }
+  | { kind: 'xmlImport' }
+  | { kind: 'cluster' }
+  | { kind: 'settings' };
+
+/** Letzten Crumb auf aktiv (kein Link) setzen — Regel 4. */
+function finalize(items: BreadcrumbItem[]): BreadcrumbItem[] {
+  if (items.length > 0) {
+    items[items.length - 1] = { ...items[items.length - 1], path: null };
+  }
+  return items;
+}
+
+export function buildBreadcrumb(ctx: BreadcrumbCtx, t: TranslateFn): BreadcrumbItem[] {
+  const home: BreadcrumbItem = { label: t('nav:crumbs.home'), path: '/' };
+  const search: BreadcrumbItem = { label: t('nav:crumbs.search'), path: '/' };
+  const graph: BreadcrumbItem = { label: t('nav:crumbs.graph'), path: '/atlas' };
+  const docs: BreadcrumbItem = { label: t('nav:crumbs.docs'), path: '/docs' };
+  const dashboards: BreadcrumbItem = { label: t('nav:crumbs.dashboards'), path: '/dashboard' };
+  const customQueries: BreadcrumbItem = { label: t('nav:crumbs.customQueries'), path: '/query' };
+
+  switch (ctx.kind) {
+    case 'search':
+      return finalize([home, search]);
+    case 'hierarchy':
+      return finalize([home, { label: t('nav:crumbs.hierarchy'), path: '/?mode=tree' }]);
+    case 'object': {
+      const typeLabel = t(`types:objectTypes.${ctx.objectType}`, { defaultValue: ctx.objectType });
+      const items: BreadcrumbItem[] = [
+        home,
+        search,
+        { label: typeLabel, path: `/?type=${encodeURIComponent(ctx.objectType)}` },
+        { label: ctx.objectName, path: ctx.objectPath ?? null },
+      ];
+      // Tab-Crumb nur, wenn ein nicht-Default-Tab aktiv ist (V6).
+      if (ctx.tab && ctx.tab !== 'detail') {
+        items.push({ label: t(`nav:detailView.tabs.${ctx.tab}`, { defaultValue: ctx.tab }), path: null });
+      }
+      return finalize(items);
+    }
+    case 'graph':
+      return finalize([home, graph]);
+    case 'graphNode':
+      return finalize([home, graph, { label: ctx.nodeName, path: null }]);
+    case 'graphSegment':
+      return finalize([home, graph, { label: ctx.segment, path: null }]);
+    case 'relationships':
+      return finalize([home, graph, { label: t('nav:crumbs.relationships'), path: '/atlas' }, { label: ctx.file, path: null }]);
+    case 'dashboards':
+      return finalize([home, dashboards]);
+    case 'dashboard':
+      return finalize([home, dashboards, { label: ctx.title, path: null }]);
+    case 'customQueries':
+      return finalize([home, customQueries]);
+    case 'query':
+      return finalize([home, customQueries, { label: ctx.name, path: null }]);
+    case 'docs':
+      return finalize([home, docs]);
+    case 'docsSet':
+      return finalize([home, docs, { label: ctx.setLabel, path: null }]);
+    case 'docsCategory':
+      return finalize([home, docs, { label: ctx.setLabel, path: `/docs/${encodeURIComponent(ctx.setId)}` }, { label: ctx.categoryLabel, path: null }]);
+    case 'xmlImport':
+      return finalize([home, { label: t('nav:crumbs.xmlImport'), path: '/xml-import' }]);
+    case 'cluster':
+      return finalize([home, { label: t('nav:crumbs.cluster'), path: '/cluster' }]);
+    case 'settings':
+      return finalize([home, { label: t('nav:crumbs.settings'), path: '/settings' }]);
+  }
+}
+
 /**
  * Baut einen `/object/<uuid>`-Pfad mit optionalem Origin-, File- und Zusatz-Parametern.
  *
@@ -28,7 +128,12 @@ export type ObjectPathExtras = Record<string, string | null | undefined>;
  * - `extras` erlauben zusätzliche Query-Params (z.B. `tab=graph`); `null`/`undefined`
  *   Werte werden ignoriert, damit Aufrufer nicht selbst filtern müssen.
  *
- * Hinweis: `originUuid === targetUuid` wird verworfen — kein Self-Highlight.
+ * Self-Reference (`originUuid === targetUuid`) wird BEWUSST mitgesetzt: rekursive
+ * CustomFunctions/Scripts referenzieren sich selbst, und der Klick auf den
+ * Self-Eintrag (Referenzen-Tab oder Token-Link in der eigenen Formel) soll die
+ * rekursive Stelle hervorheben. Für nicht-rekursive Objekte erzeugt ein Self-`ref`
+ * 0 Token-Treffer → die RefOriginPill blendet sich aus (count===0) und es wird
+ * nichts markiert — also kein Störsignal.
  */
 export function buildObjectPath(
   targetUuid: string,
@@ -37,7 +142,7 @@ export function buildObjectPath(
   extras?: ObjectPathExtras,
 ): string {
   const params = new URLSearchParams();
-  if (originUuid && originUuid !== targetUuid) {
+  if (originUuid) {
     params.set('ref', originUuid);
   }
   if (file) {
@@ -100,7 +205,9 @@ export function buildLayoutPath(
   extras?: ObjectPathExtras,
 ): string {
   const params = new URLSearchParams();
-  if (originUuid && originUuid !== layoutUuid) {
+  // Self-Reference bewusst mitgesetzt (siehe buildObjectPath) — degradiert für
+  // nicht-rekursive Fälle still auf 0 Treffer.
+  if (originUuid) {
     params.set('ref', originUuid);
   }
   if (file) {

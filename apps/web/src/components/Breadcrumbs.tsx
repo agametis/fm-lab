@@ -9,7 +9,13 @@ interface BreadcrumbsProps {
 
 /**
  * Breadcrumb Navigation Component
- * Shows the navigation path: Search > ObjectType > ObjectName
+ * Renders the navigation path, e.g. `Home / Search / {Type} / {Name}`.
+ * The last item is the active page (no link, `aria-current="page"`).
+ *
+ * The full chain is always shown — the middle crumbs carry the most context
+ * (front and back are already visible elsewhere in the navigation). When the
+ * chain is too wide for the viewport it simply wraps to multiple lines
+ * (`flex-wrap` on `.breadcrumbs__list`); depths are usually only 3–4 levels.
  */
 export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
   const navigate = useNavigate();
@@ -17,18 +23,9 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
 
   return (
     <nav className="breadcrumbs" aria-label={t('nav:breadcrumbs.ariaLabel') as string}>
-      <ol style={{
-        display: 'flex',
-        gap: '0.5rem',
-        listStyle: 'none',
-        padding: 0,
-        margin: 0,
-        fontSize: '0.9rem',
-        color: '#888',
-        flexWrap: 'wrap',
-      }}>
+      <ol className="breadcrumbs__list">
         {items.map((item, index) => (
-          <li key={index} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <li key={index} className="breadcrumbs__item">
             {item.path !== null ? (
               <>
                 <button
@@ -38,10 +35,10 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
                 >
                   {item.label}
                 </button>
-                <span aria-hidden="true" style={{ color: '#555' }}>/</span>
+                <span className="breadcrumbs__sep" aria-hidden="true">/</span>
               </>
             ) : (
-              <span aria-current="page" style={{ color: '#fff' }}>{item.label}</span>
+              <span aria-current="page" className="breadcrumbs__current">{item.label}</span>
             )}
           </li>
         ))}

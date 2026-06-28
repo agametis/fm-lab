@@ -10,5 +10,6 @@ SELECT
     COUNT(*) FILTER (WHERE Object_Type = 'Layout')          AS layouts,
     COUNT(*) FILTER (WHERE Object_Type = 'CustomFunction')  AS custom_functions,
     COUNT(*) FILTER (WHERE Object_Type = 'ValueList')       AS value_lists,
-    COUNT(*) FILTER (WHERE Object_Type = 'Relationship')    AS relationships
+    COUNT(*) FILTER (WHERE Object_Type = 'Relationship')    AS relationships,
+    COUNT(*) FILTER (WHERE Object_Type = 'Variable')        AS variables
 FROM ObjectCatalog;

@@ -29,8 +29,78 @@ header() { echo -e "\n${BOLD}$1${NC}"; }
 SUMMARY=()
 summary_add() { SUMMARY+=("$1"); }
 
+# ─── FM-Lab version (central manifest version.json) ───────────
+# Shown at the very top so the user always sees which fm-lab build they
+# are setting up. jq-optional: falls back to a sed scrape of the first
+# top-level "version" key when jq is unavailable (e.g. a stock macOS).
+VERSION_JSON="$PROJECT_ROOT/version.json"
+read_fmlab_version() {
+  local v=""
+  [ -f "$VERSION_JSON" ] || { printf ''; return 0; }
+  if command -v jq >/dev/null 2>&1; then
+    v=$(jq -r '.version // empty' "$VERSION_JSON" 2>/dev/null)
+  fi
+  if [ -z "$v" ]; then
+    v=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$VERSION_JSON" | head -1)
+  fi
+  printf '%s' "$v"
+}
+FMLAB_VERSION=$(read_fmlab_version)
+
+# ─── DuckDB baseline (stable, tested setup) ───────────────────
+# The recommended floor lives data-driven in the webbed capability registry
+# (tools/katana-xml/version_check.json → .tested_baseline). We only WARN when the
+# installed DuckDB CLI is older — never abort, never block init. webbed itself is a
+# runtime extension; the convert pipeline probes it separately (.capabilities[]).
+VERSION_MANIFEST="$SCRIPT_DIR/katana-xml/version_check.json"
+
+# Compare two dotted numeric versions; echoes -1 / 0 / 1 for a<b / a==b / a>b.
+# bash-3.2-safe (macOS): pure string/array ops, no `sort -V` (unavailable on BSD sort).
+version_cmp() {
+  local a="$1" b="$2" IFS=.
+  local a_arr=($a) b_arr=($b)
+  local i max=${#a_arr[@]}
+  if [ "${#b_arr[@]}" -gt "$max" ]; then max=${#b_arr[@]}; fi
+  for ((i=0; i<max; i++)); do
+    local ai="${a_arr[i]:-0}" bi="${b_arr[i]:-0}"
+    ai="${ai//[!0-9]/}"; bi="${bi//[!0-9]/}"
+    ai="${ai:-0}"; bi="${bi:-0}"
+    if [ "$ai" -gt "$bi" ]; then echo 1; return; fi
+    if [ "$ai" -lt "$bi" ]; then echo -1; return; fi
+  done
+  echo 0
+}
+
+# Warn (recommendation only) when DuckDB is older than the tested baseline.
+check_duckdb_baseline() {
+  local installed_raw="$1" base_duckdb="" base_webbed="" base_url="" installed
+  if [ -f "$VERSION_MANIFEST" ] && command -v jq >/dev/null 2>&1; then
+    base_duckdb=$(jq -r '.tested_baseline.duckdb_min_version // empty' "$VERSION_MANIFEST" 2>/dev/null)
+    base_webbed=$(jq -r '.tested_baseline.webbed_min_version // empty' "$VERSION_MANIFEST" 2>/dev/null)
+    base_url=$(jq -r '.tested_baseline.update_url // empty' "$VERSION_MANIFEST" 2>/dev/null)
+  fi
+  # Fallback if the manifest or jq is unavailable — never let the check itself fail.
+  [ -n "$base_duckdb" ] || base_duckdb="1.5.4"
+  [ -n "$base_webbed" ] || base_webbed="2.2.1"
+  [ -n "$base_url" ]    || base_url="https://duckdb.org/docs/installation/"
+
+  # Extract the numeric version, e.g. "1.5.4" from "v1.5.4 (Variegata) 08e34c447b".
+  installed=$(printf '%s' "$installed_raw" | sed -E 's/^[^0-9]*([0-9]+(\.[0-9]+)*).*/\1/')
+  case "$installed" in
+    ''|*[!0-9.]*) return 0 ;;   # couldn't parse a version → stay silent
+  esac
+
+  if [ "$(version_cmp "$installed" "$base_duckdb")" = "-1" ]; then
+    warn "DuckDB $installed is older than the tested fm-lab baseline (v$base_duckdb + webbed $base_webbed)."
+    echo  "    Recommended: update DuckDB to ≥ $base_duckdb — the validated setup for webbed $base_webbed."
+    echo  "    → $base_url   (init continues; this is a recommendation, not a requirement)"
+    summary_add "DuckDB baseline   v$installed < v$base_duckdb (update recommended — see above)"
+  fi
+}
+
 header "fm-lab init"
 echo "  Project root: $PROJECT_ROOT"
+[ -n "$FMLAB_VERSION" ] && echo "  Version: $FMLAB_VERSION"
 [ "$VERBOSE" = true ] && echo "  Mode: verbose (--verbose)"
 
 # ─── Prerequisites ────────────────────────────────────────────
@@ -60,6 +130,7 @@ if [ -n "$DUCKDB_BIN" ]; then
   DUCKDB_VER=$("$DUCKDB_BIN" --version 2>/dev/null | head -1 || echo "unknown")
   DUCKDB_DIR=$(dirname "$DUCKDB_BIN")
   info "DuckDB: $DUCKDB_VER ($DUCKDB_BIN)"
+  check_duckdb_baseline "$DUCKDB_VER"
 else
   error "DuckDB CLI not found. Install it from https://duckdb.org/docs/installation/"
   ok=false

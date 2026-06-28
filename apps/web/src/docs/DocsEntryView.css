@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------------ *
  * DocsEntryView — Volltext-Layout für /docs/:set/:category/:function
  *
- * Folgt der Hierarchie aus prd_docs_redesign.md §2:
+ * Folgt der Hierarchie:
  *   header → nav row → title → meta → content → footer
  *
  * Theming: greift auf die Theme-Tokens aus styles/theme.css zurück
@@ -82,22 +82,14 @@
   font-size: 0.875rem;
 }
 
-/* Title + metadata */
-.docs-entry__title {
-  font-size: 1.75rem;
-  line-height: 1.2;
-  margin: 1.25rem 0 0.5rem;
-  color: var(--color-text-primary);
-}
+/* Metadata strip — lives INSIDE the TitleBox (kein Trennstrich mehr) */
 .docs-entry__meta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1.25rem;
   font-size: 0.85rem;
   color: var(--color-text-secondary);
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--color-divider);
+  margin-top: 0.6rem;
 }
 .docs-entry__meta-item {
   display: inline-flex;

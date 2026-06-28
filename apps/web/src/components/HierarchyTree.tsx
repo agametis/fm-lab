@@ -3,10 +3,21 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { GroupedReferences, ReferenceItem } from '../types';
 import { ReferencesFilter } from './ReferencesFilter';
-import { useUrlState, stringSetCodec } from '../hooks/useUrlState';
+import { useUrlState, stringSetCodec, type UrlStateCodec } from '../hooks/useUrlState';
 import { buildNavigablePath } from '../lib/navigation';
 
 const EMPTY_TYPES = new Set<string>();
+
+/**
+ * Richtungs-Filter der Referenzliste. parent/structuralParent = eingehend (←,
+ * „wird verwendet von"), child/structuralChild = ausgehend (→, „verwendet").
+ * 'both' ist Default und fällt aus der URL heraus (saubere URLs).
+ */
+type DirFilter = 'in' | 'out' | 'both';
+const dirFilterCodec: UrlStateCodec<DirFilter> = {
+  parse: (raw) => (raw === 'in' || raw === 'out' ? raw : 'both'),
+  serialize: (value) => (value === 'both' ? null : value),
+};
 
 interface HierarchyTreeProps {
   references: GroupedReferences;
@@ -69,6 +80,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
   // damit der Filter sich nicht mit dem Referenz-Modus schneidet.
   const [query, setQuery] = useUrlState<string>('q', '');
   const [activeTypes, setActiveTypes] = useUrlState<Set<string>>('types', EMPTY_TYPES, stringSetCodec);
+  const [dirFilter] = useUrlState<DirFilter>('rdir', 'both', dirFilterCodec);
   const [, setSearchParams] = useSearchParams();
   const treeRef = useRef<HTMLElement>(null);
   // Generische Referenz-Sortierung. Default: Herkunft (Datei) aufsteigend.
@@ -170,39 +182,58 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
     }
   }, []);
 
-  const allReferences = useMemo(() => [
-    ...references.parent,
-    ...references.child,
-    ...references.structuralParent,
-    ...references.structuralChild,
-  ], [references]);
+  // Richtung → aktive Sektionen. Bei 'in'/'out' wird die jeweils andere Richtung
+  // komplett ausgeblendet (leere Sektionen), 'both' zeigt alle vier.
+  const inOn = dirFilter !== 'out';
+  const outOn = dirFilter !== 'in';
+
+  // Referenz-Menge im Geltungsbereich des Richtungs-Filters — speist Typ-Pillen
+  // und Gesamtzähler, damit die Zahlen zur sichtbaren Auswahl passen.
+  const directionScopedRefs = useMemo(() => [
+    ...(inOn ? references.parent : []),
+    ...(outOn ? references.child : []),
+    ...(inOn ? references.structuralParent : []),
+    ...(outOn ? references.structuralChild : []),
+  ], [references, inOn, outOn]);
 
   const typeCounts = useMemo(() => {
     const m = new Map<string, number>();
-    for (const r of allReferences) {
+    for (const r of directionScopedRefs) {
       m.set(r.Object_Type, (m.get(r.Object_Type) ?? 0) + 1);
     }
     return m;
-  }, [allReferences]);
+  }, [directionScopedRefs]);
 
   const queryLower = query.trim().toLowerCase();
-  const matches = useMemo(() => {
-    const filterFn = (r: ReferenceItem) => {
-      if (activeTypes.size > 0 && !activeTypes.has(r.Object_Type)) return false;
-      if (queryLower !== '' && !buildSearchText(r).includes(queryLower)) return false;
-      return true;
-    };
-    return {
-      parent: references.parent.filter(filterFn),
-      child: references.child.filter(filterFn),
-      structuralParent: references.structuralParent.filter(filterFn),
-      structuralChild: references.structuralChild.filter(filterFn),
-    };
-  }, [references, activeTypes, queryLower]);
+  const filterFn = useCallback((r: ReferenceItem) => {
+    if (activeTypes.size > 0 && !activeTypes.has(r.Object_Type)) return false;
+    if (queryLower !== '' && !buildSearchText(r).includes(queryLower)) return false;
+    return true;
+  }, [activeTypes, queryLower]);
 
-  const totalCount = allReferences.length;
+  const matches = useMemo(() => ({
+    parent: inOn ? references.parent.filter(filterFn) : [],
+    child: outOn ? references.child.filter(filterFn) : [],
+    structuralParent: inOn ? references.structuralParent.filter(filterFn) : [],
+    structuralChild: outOn ? references.structuralChild.filter(filterFn) : [],
+  }), [references, filterFn, inOn, outOn]);
+
+  // Treffer je Richtung (Typ-/Such-Filter berücksichtigt, Richtungs-Filter NICHT)
+  // — beschriftet die Richtungs-Buttons und bleibt beim Umschalten stabil.
+  const dirCounts = useMemo(() => ({
+    in: references.parent.filter(filterFn).length + references.structuralParent.filter(filterFn).length,
+    out: references.child.filter(filterFn).length + references.structuralChild.filter(filterFn).length,
+  }), [references, filterFn]);
+
+  const totalCount = directionScopedRefs.length;
   const matchCount = matches.parent.length + matches.child.length
     + matches.structuralParent.length + matches.structuralChild.length;
+
+  // Richtungs-Leiste nur, wenn beide Richtungen überhaupt Referenzen haben (sonst
+  // ist der Filter sinnlos). Basiert auf den Rohdaten, nicht auf dem aktiven Filter.
+  const hasIncomingTotal = references.parent.length + references.structuralParent.length > 0;
+  const hasOutgoingTotal = references.child.length + references.structuralChild.length > 0;
+  const showDirBar = hasIncomingTotal && hasOutgoingTotal;
 
   // User-Klick auf Filter-Pille: atomar Filter setzen + ref-Param entfernen.
   const toggleType = (type: string) => {
@@ -220,6 +251,15 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
   // "Filter zurücksetzen"-Link und ESC-Stack — programmatische Zurücknahme,
   // ref-Modus wird nicht angerührt (kein User-Filter-Eingriff).
   const clearTypes = () => setActiveTypes(EMPTY_TYPES);
+
+  // Richtungs-Filter: gleiche atomare Mechanik wie die Typ-Pillen (ref-Param
+  // wird im selben Update entfernt). 'both' ist Default → Param fällt weg.
+  const setDirFilter = (d: DirFilter) => {
+    runUserUpdate(p => {
+      if (d === 'both') p.delete('rdir');
+      else p.set('rdir', d);
+    });
+  };
 
   // Sucheingabe: bei nicht-leerer Eingabe atomar mit ref-Clear; leerer Wert
   // (Backspace, Clear-Button, ESC) ist programmatisch und lässt ref unverändert.
@@ -244,74 +284,161 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
     target.focus();
   }, []);
 
-  const renderReferenceItem = (ref: ReferenceItem, idx: number) => (
-    <li
-      key={`${ref.uuid}-${ref.Link_Role}-${idx}`}
-      className="reference-item"
-      onClick={() => handleReferenceClick(ref)}
-      onKeyDown={(e) => handleItemKeyDown(e, ref)}
-      tabIndex={0}
-      role="button"
-      aria-label={t('detail:hierarchyTree.itemAriaLabel', {
-        type: ref.Object_Type,
-        name: ref.Object_Name,
-      }) as string}
-    >
-      <span className="object-type">
-        {ref.Object_Type}
-      </span>
-      <span className="ref-name">
-        {ref.Object_Name}
-      </span>
-      <span className="ref-file">
-        ({ref.File_Name})
-      </span>
-      {ref.Is_Cross_File && (
-        <span className="cross-file-badge">
-          {t('detail:hierarchyTree.crossFileBadge')}
+  const renderReferenceItem = (ref: ReferenceItem, idx: number, dir: 'in' | 'out') => {
+    // Step-eigene Referenzen mit datei-extern nicht auflösbarem Ziel (navigable=false)
+    // werden als nicht-klickbarer, gedimmter Text gezeigt — kein Klick/Enter, nicht im
+    // TAB-Fluss. Graph-Referenzen haben kein `navigable`-Feld → gelten als navigierbar.
+    const isNavigable = ref.navigable !== false;
+    // Fokus-Objekt selbst (z.B. Self-Reference eines Scripts) hervorheben.
+    const isFocus = currentUuid != null && ref.uuid === currentUuid;
+    return (
+      <li
+        key={`${ref.uuid}-${ref.Link_Role}-${idx}`}
+        className={`reference-item${isNavigable ? '' : ' is-not-navigable'}${isFocus ? ' is-focus' : ''}`}
+        aria-current={isFocus ? 'true' : undefined}
+        onClick={isNavigable ? () => handleReferenceClick(ref) : undefined}
+        onKeyDown={isNavigable ? (e) => handleItemKeyDown(e, ref) : undefined}
+        tabIndex={isNavigable ? 0 : -1}
+        role={isNavigable ? 'button' : undefined}
+        title={isNavigable ? undefined : t('detail:hierarchyTree.notNavigable', {
+          defaultValue: 'Ziel nicht im importierten Datenbestand',
+        }) as string}
+        aria-label={isNavigable
+          ? t('detail:hierarchyTree.itemAriaLabel', {
+              type: ref.Object_Type,
+              name: ref.Object_Name,
+            }) as string
+          : `${ref.Object_Type}: ${ref.Object_Name}`}
+      >
+        <span className="object-type">
+          {ref.Object_Type}
         </span>
-      )}
-      <span className="ref-role">
-        {ref.Link_Role}
-      </span>
-    </li>
-  );
+        <span className="ref-name">
+          {ref.Object_Name}
+        </span>
+        <span className="ref-file">
+          ({ref.File_Name})
+        </span>
+        {ref.Is_Cross_File && (
+          <span className="cross-file-badge">
+            {t('detail:hierarchyTree.crossFileBadge')}
+          </span>
+        )}
+        {ref.Origin_Hit && (
+          <span
+            className="origin-hit-badge"
+            title={t('detail:hierarchyTree.originHitTitle', {
+              defaultValue: 'Aus dem Herkunftsobjekt (ref) erreichbar',
+            }) as string}
+          >
+            {t('detail:hierarchyTree.originHitBadge', { defaultValue: '↩ Herkunft' })}
+          </span>
+        )}
+        <span className="ref-role">
+          {/* Rolle nicht mehr als Text — nur ein Richtungs-Pfeil; die konkrete
+              Rolle (calls_script, reads_field, …) steht im Tooltip. */}
+          <span
+            className={`ref-dir ref-dir-${dir}`}
+            title={`${dir === 'in'
+              ? t('detail:hierarchyTree.dirIn', { defaultValue: 'Eingehend' })
+              : t('detail:hierarchyTree.dirOut', { defaultValue: 'Ausgehend' })} · ${ref.Link_Role}`}
+            aria-hidden="true"
+          >
+            {dir === 'in' ? '←' : '→'}
+          </span>
+          {typeof ref.Call_Count === 'number' && ref.Call_Count > 1 && (
+            <span className="ref-call-count" title={t('detail:hierarchyTree.callCountTitle', {
+              count: ref.Call_Count,
+              defaultValue: '{{count}} Vorkommen',
+            }) as string}> ×{ref.Call_Count}</span>
+          )}
+        </span>
+      </li>
+    );
+  };
 
   // Generische Sortierung aller Referenz-Items (Zeilen-Darstellung bleibt unverändert,
   // nur die Reihenfolge + der Sortier-Header ändern sich).
   const sortItems = (items: ReferenceItem[]) => {
     if (items.length < 2) return items;
     const sign = refSort.dir === 'asc' ? 1 : -1;
-    return [...items].sort((a, b) => sign * compareRefs(a, b, refSort.key));
+    return [...items].sort((a, b) => {
+      // Origin-Treffer (aus dem ?ref=-Herkunftsobjekt erreichbar, z.B. das im
+      // Herkunfts-Script geschriebene Feld) immer zuoberst — unabhängig vom
+      // gewählten Sortierschlüssel, damit der kontextuell relevante Treffer
+      // nicht in einer langen Aggregat-Liste untergeht.
+      const ao = a.Origin_Hit ? 0 : 1;
+      const bo = b.Origin_Hit ? 0 : 1;
+      if (ao !== bo) return ao - bo;
+      return sign * compareRefs(a, b, refSort.key);
+    });
   };
   const toggleSort = (key: RefSortKey) => {
     setRefSort(s => s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' });
   };
   const sortArrow = (key: RefSortKey) => refSort.key === key ? (refSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
 
-  const renderSortBar = () => (
-    <div className="reference-sort-bar" role="group" aria-label={t('detail:hierarchyTree.sortAriaLabel', { defaultValue: 'Sortierung' }) as string}>
-      <span className="reference-sort-label">{t('detail:hierarchyTree.sortBy', { defaultValue: 'Sortieren nach' })}:</span>
-      <button
-        type="button"
-        className={`reference-sort-btn${refSort.key === 'origin' ? ' is-active' : ''}`}
-        onClick={() => toggleSort('origin')}
-      >
-        {t('detail:hierarchyTree.sortOrigin', { defaultValue: 'Herkunft' })}{sortArrow('origin')}
-      </button>
-      <button
-        type="button"
-        className={`reference-sort-btn${refSort.key === 'name' ? ' is-active' : ''}`}
-        onClick={() => toggleSort('name')}
-      >
-        {t('detail:hierarchyTree.sortName', { defaultValue: 'Name' })}{sortArrow('name')}
-      </button>
+  // Sortier-Steuerung (links) + Richtungs-Filter (rechtsbündig) in einer Zeile.
+  const renderToolbar = () => (
+    <div className="reference-toolbar">
+      <div className="reference-sort-bar" role="group" aria-label={t('detail:hierarchyTree.sortAriaLabel', { defaultValue: 'Sortierung' }) as string}>
+        <span className="reference-sort-label">{t('detail:hierarchyTree.sortBy', { defaultValue: 'Sortieren nach' })}:</span>
+        <button
+          type="button"
+          className={`reference-sort-btn${refSort.key === 'origin' ? ' is-active' : ''}`}
+          onClick={() => toggleSort('origin')}
+        >
+          {t('detail:hierarchyTree.sortOrigin', { defaultValue: 'Herkunft' })}{sortArrow('origin')}
+        </button>
+        <button
+          type="button"
+          className={`reference-sort-btn${refSort.key === 'name' ? ' is-active' : ''}`}
+          onClick={() => toggleSort('name')}
+        >
+          {t('detail:hierarchyTree.sortName', { defaultValue: 'Name' })}{sortArrow('name')}
+        </button>
+      </div>
+      {showDirBar && renderDirectionFilter()}
     </div>
   );
 
-  const renderSectionList = (items: ReferenceItem[]) => (
+  // Kompakter Richtungs-Filter: nur Pfeil-Glyph + Zähler; das Wort (Eingehend/
+  // Ausgehend/Beide) steht im title/aria-label.
+  const renderDirectionFilter = () => {
+    const opts: Array<{ key: DirFilter; glyph: string; label: string; count: number }> = [
+      { key: 'in', glyph: '←', label: t('detail:hierarchyTree.dirIn', { defaultValue: 'Eingehend' }) as string, count: dirCounts.in },
+      { key: 'out', glyph: '→', label: t('detail:hierarchyTree.dirOut', { defaultValue: 'Ausgehend' }) as string, count: dirCounts.out },
+      { key: 'both', glyph: '↔', label: t('detail:hierarchyTree.dirBoth', { defaultValue: 'Beide' }) as string, count: dirCounts.in + dirCounts.out },
+    ];
+    return (
+      <div
+        className="reference-dir-bar"
+        role="radiogroup"
+        aria-label={t('detail:hierarchyTree.dirFilterAria', { defaultValue: 'Richtung filtern' }) as string}
+      >
+        <span className="reference-dir-prefix">{t('detail:hierarchyTree.dirFilterLabel', { defaultValue: 'Richtung' })}:</span>
+        {opts.map(o => (
+          <button
+            key={o.key}
+            type="button"
+            role="radio"
+            aria-checked={dirFilter === o.key}
+            aria-label={`${o.label} (${o.count})`}
+            className={`reference-dir-btn${dirFilter === o.key ? ' is-active' : ''}`}
+            onClick={() => setDirFilter(o.key)}
+            title={`${o.label} (${o.count})`}
+          >
+            <span className="reference-dir-glyph" aria-hidden="true">{o.glyph}</span>
+            <span className="reference-dir-count">{o.count}</span>
+          </button>
+        ))}
+      </div>
+    );
+  };
+
+  const renderSectionList = (items: ReferenceItem[], dir: 'in' | 'out') => (
     <ul className="reference-list">
-      {sortItems(items).map(renderReferenceItem)}
+      {sortItems(items).map((ref, idx) => renderReferenceItem(ref, idx, dir))}
     </ul>
   );
 
@@ -344,13 +471,13 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
         aria-label={t('detail:hierarchyTree.ariaLabel') as string}
         onKeyDown={handleTreeKeyDown}
       >
-        {hasAny && renderSortBar()}
+        {(hasAny || showDirBar) && renderToolbar()}
         {hasParents && (
           <section className="hierarchy-section">
             <h2>{filterActive
               ? t('detail:hierarchyTree.usedByFiltered', { count: matches.parent.length, total: references.parent.length })
               : t('detail:hierarchyTree.usedBy', { count: matches.parent.length })}</h2>
-            {renderSectionList(matches.parent)}
+            {renderSectionList(matches.parent, 'in')}
           </section>
         )}
 
@@ -359,7 +486,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
             <h2>{filterActive
               ? t('detail:hierarchyTree.usesFiltered', { count: matches.child.length, total: references.child.length })
               : t('detail:hierarchyTree.uses', { count: matches.child.length })}</h2>
-            {renderSectionList(matches.child)}
+            {renderSectionList(matches.child, 'out')}
           </section>
         )}
 
@@ -368,7 +495,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
             <h2>{filterActive
               ? t('detail:hierarchyTree.structurallyContainedByFiltered', { count: matches.structuralParent.length, total: references.structuralParent.length })
               : t('detail:hierarchyTree.structurallyContainedBy', { count: matches.structuralParent.length })}</h2>
-            {renderSectionList(matches.structuralParent)}
+            {renderSectionList(matches.structuralParent, 'in')}
           </section>
         )}
 
@@ -377,7 +504,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
             <h2>{filterActive
               ? t('detail:hierarchyTree.structurallyContainsFiltered', { count: matches.structuralChild.length, total: references.structuralChild.length })
               : t('detail:hierarchyTree.structurallyContains', { count: matches.structuralChild.length })}</h2>
-            {renderSectionList(matches.structuralChild)}
+            {renderSectionList(matches.structuralChild, 'out')}
           </section>
         )}
 

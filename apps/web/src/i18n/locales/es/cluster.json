@@ -1,0 +1,33 @@
+{
+  "title": "Clústeres",
+  "subtitle": "Comunidades del grafo",
+  "status": {
+    "named": "{{named}} de {{total}} comunidades con nombre",
+    "algorithm": "Algoritmo",
+    "lastRun": "última ejecución",
+    "dash": "—"
+  },
+  "list": {
+    "members": "{{count}} miembros",
+    "edit": "Editar",
+    "openHint": "Abrir en el explorador de grafos",
+    "unnamedBadge": "sin nombre",
+    "count": "{{shown}} de {{total}}",
+    "search": "Buscar…"
+  },
+  "empty": {
+    "title": "Aún no agrupado",
+    "hint": "Detecta comunidades con «Nuevas comunidades» abajo: una re-partición económica."
+  },
+  "loading": "Cargando…",
+  "hero": {
+    "communities": "Comunidades",
+    "nodes": "Nodos",
+    "edges": "Aristas"
+  },
+  "filter": {
+    "all": "Todas",
+    "named": "Con nombre",
+    "unnamed": "Sin nombre"
+  }
+}

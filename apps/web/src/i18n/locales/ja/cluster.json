@@ -1,0 +1,33 @@
+{
+  "title": "クラスタ",
+  "subtitle": "グラフコミュニティ",
+  "status": {
+    "named": "{{total}} 件中 {{named}} 件のコミュニティに名前あり",
+    "algorithm": "アルゴリズム",
+    "lastRun": "最終実行",
+    "dash": "—"
+  },
+  "list": {
+    "members": "{{count}} 個のメンバー",
+    "edit": "編集",
+    "openHint": "グラフエクスプローラーで開く",
+    "unnamedBadge": "未命名",
+    "count": "{{total}} 件中 {{shown}} 件",
+    "search": "検索…"
+  },
+  "empty": {
+    "title": "まだクラスタリングされていません",
+    "hint": "下の「コミュニティを新規作成」でコミュニティを検出します（低コストな再分割）。"
+  },
+  "loading": "読み込み中…",
+  "hero": {
+    "communities": "コミュニティ",
+    "nodes": "ノード",
+    "edges": "エッジ"
+  },
+  "filter": {
+    "all": "すべて",
+    "named": "命名済み",
+    "unnamed": "未命名"
+  }
+}

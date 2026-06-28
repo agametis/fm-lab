@@ -1,0 +1,33 @@
+{
+  "title": "클러스터",
+  "subtitle": "그래프 커뮤니티",
+  "status": {
+    "named": "커뮤니티 {{total}}개 중 {{named}}개 이름 지정됨",
+    "algorithm": "알고리즘",
+    "lastRun": "마지막 실행",
+    "dash": "—"
+  },
+  "list": {
+    "members": "멤버 {{count}}개",
+    "edit": "편집",
+    "openHint": "그래프 탐색기에서 열기",
+    "unnamedBadge": "이름 없음",
+    "count": "{{total}}개 중 {{shown}}개",
+    "search": "검색…"
+  },
+  "empty": {
+    "title": "아직 클러스터링되지 않음",
+    "hint": "아래의 ‘커뮤니티 새로’로 커뮤니티를 감지합니다(저비용 재분할)."
+  },
+  "loading": "불러오는 중…",
+  "hero": {
+    "communities": "커뮤니티",
+    "nodes": "노드",
+    "edges": "엣지"
+  },
+  "filter": {
+    "all": "전체",
+    "named": "이름 있음",
+    "unnamed": "이름 없음"
+  }
+}

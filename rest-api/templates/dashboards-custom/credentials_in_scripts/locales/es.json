@@ -4,17 +4,16 @@
     "description": "Encuentra pasos de script que hacen referencia a palabras clave de credenciales (contraseña, secreto, apikey, token, …) en todos los archivos. Los valores reales se enmascaran con ***** para que el panel nunca filtre secretos en texto plano."
   },
   "layout": {
-    "root.children[0].props.title": "Vista general de credenciales",
-    "root.children[0].children[0].props.items[0].label": "Coincidencias",
-    "root.children[0].children[0].props.items[1].label": "Scripts",
-    "root.children[0].children[0].props.items[2].label": "Archivos",
-    "root.children[1].props.title": "Coincidencias",
-    "root.children[1].children[0].props.columns[0].label": "Archivo",
-    "root.children[1].children[0].props.columns[1].label": "Script",
-    "root.children[1].children[0].props.columns[2].label": "Paso",
-    "root.children[1].children[0].props.columns[3].label": "Tipo de paso",
-    "root.children[1].children[0].props.columns[4].label": "Palabra clave",
-    "root.children[1].children[0].props.columns[5].label": "Fragmento (enmascarado)",
-    "root.children[1].children[0].props.empty.message": "No se encontraron palabras clave de credenciales en ningún paso de script."
+    "credentials_kpi_kpistrip.props.items[0].label": "Coincidencias",
+    "credentials_kpi_kpistrip.props.items[1].label": "Scripts",
+    "credentials_kpi_kpistrip.props.items[2].label": "Archivos",
+    "credentials_findings.props.title": "Coincidencias",
+    "credentials_findings_table.props.columns[0].label": "Archivo",
+    "credentials_findings_table.props.columns[1].label": "Script",
+    "credentials_findings_table.props.columns[2].label": "Paso",
+    "credentials_findings_table.props.columns[3].label": "Tipo de paso",
+    "credentials_findings_table.props.columns[4].label": "Palabra clave",
+    "credentials_findings_table.props.columns[5].label": "Fragmento (enmascarado)",
+    "credentials_findings_table.props.empty.message": "No se encontraron palabras clave de credenciales en ningún paso de script."
   }
 }

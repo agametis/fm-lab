@@ -6,6 +6,19 @@
     "ariaLabel": "パンくずリスト",
     "linkAria": "{{label}} に移動"
   },
+  "crumbs": {
+    "home": "ホーム",
+    "search": "検索",
+    "hierarchy": "階層",
+    "graph": "グラフ",
+    "relationships": "リレーション",
+    "dashboards": "ダッシュボード",
+    "customQueries": "カスタムクエリ",
+    "docs": "ドキュメント",
+    "xmlImport": "XMLインポート",
+    "cluster": "クラスタ",
+    "settings": "設定"
+  },
   "errors": {
     "noDashboardId": "ダッシュボード ID が指定されていません。",
     "noQueryName": "クエリ名が指定されていません。"
@@ -57,11 +70,11 @@
     "tabsAria": "オブジェクトのビュー",
     "noName": "(名前なし)",
     "tabs": {
-      "detail":     "詳細",
+      "detail": "詳細",
       "references": "参照",
-      "graph":      "グラフ",
-      "versions":   "バージョン",
-      "notes":      "メモ"
+      "graph": "グラフ",
+      "versions": "バージョン",
+      "notes": "メモ"
     }
   },
   "pseudoToolbar": {

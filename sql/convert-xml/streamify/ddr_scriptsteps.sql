@@ -27,7 +27,7 @@ SELECT
         1
     ) as Step_UUID,
     xml_extract_text(step_elem, '//*/@hash')[1] as Step_Hash,
-    replace(xml_extract_text(step_elem, '//text()')[1], chr(127), chr(10)) as Step_Text,
+    ws_restore(xml_extract_text(step_elem, '//text()')[1]) as Step_Text,
     fn.File_Name as File_Name
 FROM ddr_script_raw
 CROSS JOIN filename_normalized fn

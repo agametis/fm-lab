@@ -3,6 +3,7 @@ const router = express.Router({ caseSensitive: false });
 
 const objectRoutes = require('./object.routes');
 const systemRoutes = require('./system.routes');
+const versionRoutes = require('./version.routes');
 const queryRoutes = require('./query.routes');
 const adminRoutes = require('./admin.routes');
 const pluginsRoutes = require('./plugins.routes');
@@ -11,8 +12,10 @@ const docsRoutes = require('./docs.routes');
 const xmlRoutes = require('./xml.routes');
 const relationshipGraphRoutes = require('./relationshipGraph.routes');
 const graphRoutes = require('./graph.routes');
+const annotationsRoutes = require('./annotations.routes');
 const referenceRoutes = require('./reference.routes');
 const dashboardRoutes = require('./dashboard.routes');
+const debugRoutes = require('./debug.routes');
 const { loadPlugins } = require('../plugins/loader');
 
 /**
@@ -25,6 +28,9 @@ router.use('/', objectRoutes);
 
 // System routes (/api/version, /api/info)
 router.use('/', systemRoutes);
+
+// Version manifest (/api/version-manifest) — modul-granulares version.json
+router.use('/', versionRoutes);
 
 // Query & Report routes (/api/query, /api/report)
 router.use('/', queryRoutes);
@@ -50,11 +56,17 @@ router.use('/', relationshipGraphRoutes);
 // Graph Explorer (/api/graph/subgraph, /neighbors, /search) — P2
 router.use('/', graphRoutes);
 
+// User-Annotationen (/api/annotations/*) — Noise-Filter & semantische Anreicherung
+router.use('/', annotationsRoutes);
+
 // Reference-DB (Script Steps + Functions + Claris-Hilfe-Mirror)
 router.use('/', referenceRoutes);
 
 // Dashboards (deklarative Bundles aus templates/dashboards/)
 router.use('/', dashboardRoutes);
+
+// Debug-Session (Frontend-Interaktions-Ingestion + Logging-Status)
+router.use('/', debugRoutes);
 
 // Plugin routes (dynamically discovered)
 loadPlugins(router);

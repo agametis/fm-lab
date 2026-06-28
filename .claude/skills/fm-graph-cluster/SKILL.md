@@ -1,5 +1,6 @@
 ---
 name: fm-graph-cluster
+version: 0.8.5
 description: Segments the FileMaker object graph in `db/fm_catalog.duckdb` into modules/communities, finds the best resolution for this solution's size by sweeping candidate resolutions and scoring them (modularity Q + distribution guardrails), names the communities semantically (CommunityNames.Semantic_Name, optionally Semantic_Description in --deep-research), writes an analysis report to `output/`, and syncs the named partition to the Graph Explorer. Orchestrates the existing tools/graph-export tooling (cluster.sh, cluster_louvain.mjs/cluster_leiden.py, cluster_load.sql); it does not replace it. Triggers (English): "/fm-graph-cluster", "cluster the graph", "detect communities/modules", "name the clusters", "segment the solution into modules". Triggers (German): "/fm-graph-cluster", "clustere den Graph", "finde die Module/Communities", "benenne die Cluster", "segmentiere die Lösung in Module".
 ---
 
@@ -338,6 +339,25 @@ bash tools/graph-export/sync_db.sh "$PWD/db/fm_catalog.duckdb"
 ```
 
 The report file lives in `output/` and is **not** part of the DB sync.
+
+#### H.4 Persist the winning resolution → `.fmlab/cluster.json` (R1)
+
+Write the sweep winner so the **Auto-P7 pipeline phase** (after a fresh/force rebuild) and the
+**Rebuild-Communities button** (`POST /api/graph/recluster`) re-cluster at the **same** granularity —
+otherwise a from-scratch build or a button click would silently fall back to the `cluster.sh`
+defaults (`auto`/1.0/42) and invalidate every semantic/user name via a different partition. The file
+freezes the granularity decision here, in the skill (the only place that explores it via the sweep):
+
+```bash
+# Values = the winning engine/resolution/seed (the same ones passed to Phase E) +
+# the winner's modularity Q from the sweep JSON. updated_at = ISO-8601.
+cat > "$PWD/.fmlab/cluster.json" <<JSON
+{ "engine": "<engine>", "resolution": <winner>, "seed": <seed>, "modularity_q": <Q>, "updated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)" }
+JSON
+```
+
+This is plain config (no DB sync). Auto-P7 downgrades a stored `leiden` engine to `auto` when the
+host lacks python3+igraph, so writing the real winning engine is safe even across hosts.
 
 ---
 

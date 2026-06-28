@@ -4,19 +4,17 @@
     "description": "Listar skript med If/Else-block där If-grenen är betydligt längre än Else-grenen. Kandidater för refaktorering till early returns eller guard clauses."
   },
   "layout": {
-    "root.children[0].props.title": "Översikt If/Else-asymmetri",
-    "root.children[0].children[0].props.items[0].label": "Asymmetriska block",
-    "root.children[0].children[0].props.items[1].label": "Berörda skript",
-    "root.children[0].children[0].props.items[2].label": "Berörda filer",
-    "root.children[0].children[0].props.items[3].label": "Längsta If-gren",
-
-    "root.children[1].props.title": "Skript med lång If / kort Else",
-    "root.children[1].children[0].props.columns[0].label": "Fil",
-    "root.children[1].children[0].props.columns[1].label": "Skriptnamn",
-    "root.children[1].children[0].props.columns[2].label": "If-position",
-    "root.children[1].children[0].props.columns[3].label": "If-steg",
-    "root.children[1].children[0].props.columns[4].label": "Else-steg",
-    "root.children[1].children[0].props.columns[5].label": "Poäng",
-    "root.children[1].children[0].props.empty.message": "Inga asymmetriska If/Else-block hittades."
+    "if_else_kpi_kpistrip.props.items[0].label": "Asymmetriska block",
+    "if_else_kpi_kpistrip.props.items[1].label": "Berörda skript",
+    "if_else_kpi_kpistrip.props.items[2].label": "Berörda filer",
+    "if_else_kpi_kpistrip.props.items[3].label": "Längsta If-gren",
+    "if_else_blocks.props.title": "Skript med lång If / kort Else",
+    "if_else_blocks_table.props.columns[0].label": "Fil",
+    "if_else_blocks_table.props.columns[1].label": "Skriptnamn",
+    "if_else_blocks_table.props.columns[2].label": "If-position",
+    "if_else_blocks_table.props.columns[3].label": "If-steg",
+    "if_else_blocks_table.props.columns[4].label": "Else-steg",
+    "if_else_blocks_table.props.columns[5].label": "Poäng",
+    "if_else_blocks_table.props.empty.message": "Inga asymmetriska If/Else-block hittades."
   }
 }

@@ -9,6 +9,7 @@
     "children": [
       {
         "type": "Card",
+        "id": "project_summary",
         "props": {
           "span": 12,
           "title": "Project overview",
@@ -20,10 +21,14 @@
         "children": [
           {
             "type": "Row",
-            "props": { "gap": 16, "align": "center" },
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
             "children": [
               {
                 "type": "KPIStrip",
+                "id": "project_summary_kpistrip",
                 "props": {
                   "items": [
                     {
@@ -39,7 +44,37 @@
                       "label": "References",
                       "field": "total_links",
                       "format": "number"
-                    },
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "KPIStrip",
+                "id": "cluster_count_kpistrip",
+                "data": {
+                  "dataset": "cluster_count"
+                },
+                "props": {
+                  "items": [
+                    {
+                      "label": "Clusters",
+                      "field": "count",
+                      "format": "number",
+                      "onClick": {
+                        "action": "navigate",
+                        "args": {
+                          "path": "/cluster"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "KPIStrip",
+                "id": "project_summary_meta_kpistrip",
+                "props": {
+                  "items": [
                     {
                       "label": "FM version",
                       "field": "fm_versions"
@@ -59,7 +94,9 @@
               },
               {
                 "type": "XmlConvertControl",
-                "props": { "mode": "navigate" }
+                "props": {
+                  "mode": "navigate"
+                }
               }
             ]
           }
@@ -67,6 +104,7 @@
       },
       {
         "type": "Card",
+        "id": "object_counts",
         "props": {
           "span": 12,
           "title": "Objects"
@@ -77,6 +115,7 @@
         "children": [
           {
             "type": "KPIStrip",
+            "id": "object_counts_kpistrip",
             "props": {
               "items": [
                 {
@@ -86,16 +125,6 @@
                     "action": "applyFilter",
                     "args": {
                       "type": "Script"
-                    }
-                  }
-                },
-                {
-                  "label": "Fields",
-                  "field": "fields",
-                  "onClick": {
-                    "action": "applyFilter",
-                    "args": {
-                      "type": "Field"
                     }
                   }
                 },
@@ -110,12 +139,32 @@
                   }
                 },
                 {
+                  "label": "Fields",
+                  "field": "fields",
+                  "onClick": {
+                    "action": "applyFilter",
+                    "args": {
+                      "type": "Field"
+                    }
+                  }
+                },
+                {
                   "label": "TOs",
                   "field": "occurrences",
                   "onClick": {
                     "action": "applyFilter",
                     "args": {
                       "type": "TableOccurrence"
+                    }
+                  }
+                },
+                {
+                  "label": "Relationships",
+                  "field": "relationships",
+                  "onClick": {
+                    "action": "applyFilter",
+                    "args": {
+                      "type": "Relationship"
                     }
                   }
                 },
@@ -130,16 +179,6 @@
                   }
                 },
                 {
-                  "label": "Custom fns",
-                  "field": "custom_functions",
-                  "onClick": {
-                    "action": "applyFilter",
-                    "args": {
-                      "type": "CustomFunction"
-                    }
-                  }
-                },
-                {
                   "label": "Value lists",
                   "field": "value_lists",
                   "onClick": {
@@ -150,12 +189,22 @@
                   }
                 },
                 {
-                  "label": "Relationships",
-                  "field": "relationships",
+                  "label": "Custom fns",
+                  "field": "custom_functions",
                   "onClick": {
                     "action": "applyFilter",
                     "args": {
-                      "type": "Relationship"
+                      "type": "CustomFunction"
+                    }
+                  }
+                },
+                {
+                  "label": "Variables",
+                  "field": "variables",
+                  "onClick": {
+                    "action": "applyFilter",
+                    "args": {
+                      "type": "Variable"
                     }
                   }
                 }
@@ -166,10 +215,13 @@
       },
       {
         "type": "XmlEmptyStateCard",
-        "props": { "span": 12 }
+        "props": {
+          "span": 12
+        }
       },
       {
         "type": "Card",
+        "id": "files_overview",
         "props": {
           "span": 12,
           "title": "Files"
@@ -180,6 +232,7 @@
         "children": [
           {
             "type": "Table",
+            "id": "files_overview_table",
             "props": {
               "rowKey": "File_Name",
               "density": "comfortable",
@@ -250,15 +303,16 @@
         "children": [
           {
             "type": "NavButton",
+            "id": "dashboards",
             "props": {
               "label": "Dashboards",
               "subtitle": "Prepared analyses",
               "icon": "layout-dashboard",
               "showCount": true,
               "onClick": {
-                "action": "openDashboard",
+                "action": "navigate",
                 "args": {
-                  "id": "dashboards"
+                  "path": "/dashboard"
                 }
               }
             }
@@ -277,15 +331,16 @@
         "children": [
           {
             "type": "NavButton",
+            "id": "custom_queries",
             "props": {
               "label": "Custom queries",
               "subtitle": "Reusable SQL templates",
               "icon": "database-zap",
               "showCount": true,
               "onClick": {
-                "action": "openDashboard",
+                "action": "navigate",
                 "args": {
-                  "id": "custom_queries"
+                  "path": "/query"
                 }
               }
             }
@@ -304,15 +359,16 @@
         "children": [
           {
             "type": "NavButton",
+            "id": "docs",
             "props": {
               "label": "Docs",
               "subtitle": "Installed documentation sources",
               "icon": "book",
               "showCount": true,
               "onClick": {
-                "action": "openDashboard",
+                "action": "navigate",
                 "args": {
-                  "id": "docs_overview"
+                  "path": "/docs"
                 }
               }
             }
@@ -321,6 +377,7 @@
       },
       {
         "type": "Markdown",
+        "id": "markdown",
         "props": {
           "span": 12,
           "content": "## Tips\n\n- **Search:** type a name into the search box to filter objects — the dashboard hides automatically.\n- **Files:** clicking a row in the files table sets the active file filter for all subsequent views.\n- **Navigation:** *Dashboards* opens curated analyses, *Custom queries* lists every reusable SQL template, *Docs* shows installed documentation sources."

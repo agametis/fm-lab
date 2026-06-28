@@ -1,0 +1,33 @@
+{
+  "title": "Clusters",
+  "subtitle": "Communautés du graphe",
+  "status": {
+    "named": "{{named}} sur {{total}} communautés nommées",
+    "algorithm": "Algorithme",
+    "lastRun": "dernière exécution",
+    "dash": "—"
+  },
+  "list": {
+    "members": "{{count}} membres",
+    "edit": "Modifier",
+    "openHint": "Ouvrir dans l’explorateur de graphe",
+    "unnamedBadge": "sans nom",
+    "count": "{{shown}} sur {{total}}",
+    "search": "Rechercher…"
+  },
+  "empty": {
+    "title": "Pas encore regroupé",
+    "hint": "Détectez les communautés via « Nouvelles communautés » ci-dessous — une re-partition économique."
+  },
+  "loading": "Chargement…",
+  "hero": {
+    "communities": "Communautés",
+    "nodes": "Nœuds",
+    "edges": "Arêtes"
+  },
+  "filter": {
+    "all": "Toutes",
+    "named": "Nommées",
+    "unnamed": "Sans nom"
+  }
+}

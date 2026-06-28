@@ -4,19 +4,17 @@
     "description": "Liste les scripts contenant des blocs If/Else dont la branche If est nettement plus longue que la branche Else. Candidats à une refactorisation en early returns ou guard clauses."
   },
   "layout": {
-    "root.children[0].props.title": "Vue d'ensemble de l'asymétrie If/Else",
-    "root.children[0].children[0].props.items[0].label": "Blocs asymétriques",
-    "root.children[0].children[0].props.items[1].label": "Scripts concernés",
-    "root.children[0].children[0].props.items[2].label": "Fichiers concernés",
-    "root.children[0].children[0].props.items[3].label": "Branche If la plus longue",
-
-    "root.children[1].props.title": "Scripts avec If long / Else court",
-    "root.children[1].children[0].props.columns[0].label": "Fichier",
-    "root.children[1].children[0].props.columns[1].label": "Nom du script",
-    "root.children[1].children[0].props.columns[2].label": "Position du If",
-    "root.children[1].children[0].props.columns[3].label": "Étapes du If",
-    "root.children[1].children[0].props.columns[4].label": "Étapes du Else",
-    "root.children[1].children[0].props.columns[5].label": "Score",
-    "root.children[1].children[0].props.empty.message": "Aucun bloc If/Else asymétrique trouvé."
+    "if_else_kpi_kpistrip.props.items[0].label": "Blocs asymétriques",
+    "if_else_kpi_kpistrip.props.items[1].label": "Scripts concernés",
+    "if_else_kpi_kpistrip.props.items[2].label": "Fichiers concernés",
+    "if_else_kpi_kpistrip.props.items[3].label": "Branche If la plus longue",
+    "if_else_blocks.props.title": "Scripts avec If long / Else court",
+    "if_else_blocks_table.props.columns[0].label": "Fichier",
+    "if_else_blocks_table.props.columns[1].label": "Nom du script",
+    "if_else_blocks_table.props.columns[2].label": "Position du If",
+    "if_else_blocks_table.props.columns[3].label": "Étapes du If",
+    "if_else_blocks_table.props.columns[4].label": "Étapes du Else",
+    "if_else_blocks_table.props.columns[5].label": "Score",
+    "if_else_blocks_table.props.empty.message": "Aucun bloc If/Else asymétrique trouvé."
   }
 }

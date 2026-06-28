@@ -1,0 +1,97 @@
+{
+  "title": "图谱图集",
+  "subtitle": "自上而下的入口 — 点击图块深入，点击叶子在图谱浏览器中打开。",
+  "headerButton": "图集",
+  "headerButton_hint": "打开图谱图集 — 整个解决方案的自上而下总览。",
+  "segmentation": "分段",
+  "segment": {
+    "community": "社区",
+    "file": "文件",
+    "hubs": "核心节点",
+    "type": "类型"
+  },
+  "breadcrumb": {
+    "root": "图集"
+  },
+  "representation": "呈现方式",
+  "view": {
+    "composition": "构成",
+    "topology": "拓扑",
+    "composition_hint": "树状图 — 各部分有多大（比例）。",
+    "topology_hint": "元图 — 各分段如何耦合（仅社区/文件）。"
+  },
+  "weight": {
+    "label": "权重",
+    "domain": "领域",
+    "logical": "原始",
+    "domain_hint": "领域权重（ClusterEdges）— 已移除内置函数和 god-node。",
+    "logical_hint": "原始逻辑度 — 包含内置函数。"
+  },
+  "search": {
+    "placeholder": "筛选可见图块…"
+  },
+  "types": {
+    "label": "对象类型",
+    "hide": "隐藏 {{type}}",
+    "show": "显示 {{type}}",
+    "reset": "重置"
+  },
+  "rest": {
+    "collapse": "折叠为最重要的条目",
+    "hide": "隐藏"
+  },
+  "status": {
+    "semanticNames": "语义名称：{{value}}",
+    "semanticNamesNone": "语义名称：--",
+    "count": "数量：{{semantic}} / {{user}} 个用户定义",
+    "clustersMissing": "尚未聚类 — 运行“fm-graph-cluster”以启用社区和拓扑。"
+  },
+  "loading": "加载中…",
+  "empty": "这里没有可显示的内容。",
+  "error": "无法加载图集：{{message}}",
+  "truncated": "显示最重要的条目 — 其余的收在灰色图块中。",
+  "hint": {
+    "leafClick": "提示：点击叶子图块，在图谱浏览器中打开该对象。",
+    "metaClick": "提示：点击超级节点，在图谱浏览器中打开其权重最高的成员。"
+  },
+  "topN": {
+    "label": "Top-N",
+    "hint": "在将其余部分折叠为一个图块之前显示多少个顶部段/叶子。",
+    "auto": "恢复为自动（按层级）阈值",
+    "autoTag": "auto"
+  },
+  "hidden": {
+    "mode": "已忽略",
+    "dim": "淡化",
+    "hide": "隐藏",
+    "dim_hint": "被忽略的节点保持可见（淡化）且可恢复。",
+    "hide_hint": "被忽略的节点将被移除 — 仅可通过列表撤销。",
+    "manage": "管理…",
+    "manage_hint": "所有被忽略节点的列表 — 在此恢复。",
+    "empty": "没有被忽略的节点。",
+    "restore": "恢复"
+  },
+  "panel": {
+    "infoButton": "选项",
+    "close": "关闭",
+    "type": "类型",
+    "save": "保存",
+    "saving": "保存中…",
+    "openExplorer": "图谱",
+    "openDetail": "详情",
+    "hideNode": "忽略",
+    "unhideNode": "取消忽略",
+    "hiddenBadge": "已忽略",
+    "community": {
+      "title": "社区",
+      "nameLabel": "自定义名称",
+      "namePlaceholder": "例如“计费与 PDF”",
+      "notesLabel": "备注",
+      "notesPlaceholder": "此社区的自由文本…"
+    },
+    "node": {
+      "title": "节点"
+    },
+    "cancel": "取消"
+  }
+}

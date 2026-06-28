@@ -2,19 +2,26 @@
   "schemaVersion": 1,
   "root": {
     "type": "Grid",
-    "props": { "columns": 12, "gap": 16 },
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
     "children": [
       {
         "type": "Card",
+        "id": "installed",
         "props": {
           "span": 12,
           "title": "Installed",
           "subtitle": "Documentation sources installed in this project. Click an entry to open the start page."
         },
-        "data": { "dataset": "installed" },
+        "data": {
+          "dataset": "installed"
+        },
         "children": [
           {
             "type": "List",
+            "id": "installed_list",
             "props": {
               "rowTemplate": {
                 "primary": "{{name}}",
@@ -22,8 +29,10 @@
                 "tertiary": "{{categories}} categories · {{functions}} functions",
                 "quaternary": "{{languages_display}}",
                 "onClick": {
-                  "action": "openDashboard",
-                  "args": { "id": "docset_home", "params": { "id": "{{id}}" } }
+                  "action": "navigate",
+                  "args": {
+                    "path": "/docs/{{id}}"
+                  }
                 }
               },
               "empty": {
@@ -35,15 +44,19 @@
       },
       {
         "type": "Card",
+        "id": "available",
         "props": {
           "span": 12,
           "title": "Available",
           "subtitle": "Known documentation sources that are not yet installed in this project."
         },
-        "data": { "dataset": "available" },
+        "data": {
+          "dataset": "available"
+        },
         "children": [
           {
             "type": "List",
+            "id": "available_list",
             "props": {
               "rowTemplate": {
                 "primary": "{{name}}",
@@ -64,7 +77,9 @@
       },
       {
         "type": "DocsInstallErrorBezel",
-        "props": { "span": 12 }
+        "props": {
+          "span": 12
+        }
       }
     ]
   }

@@ -6,6 +6,19 @@
     "ariaLabel": "Briciole di pane",
     "linkAria": "Naviga a {{label}}"
   },
+  "crumbs": {
+    "home": "Home",
+    "search": "Ricerca",
+    "hierarchy": "Gerarchia",
+    "graph": "Grafo",
+    "relationships": "Relazioni",
+    "dashboards": "Dashboard",
+    "customQueries": "Query personalizzate",
+    "docs": "Documentazione",
+    "xmlImport": "Importa XML",
+    "cluster": "Cluster",
+    "settings": "Impostazioni"
+  },
   "errors": {
     "noDashboardId": "Nessun id di dashboard fornito.",
     "noQueryName": "Nessun nome di query fornito."
@@ -57,11 +70,11 @@
     "tabsAria": "Viste dell’oggetto",
     "noName": "(senza nome)",
     "tabs": {
-      "detail":     "Dettagli",
+      "detail": "Dettagli",
       "references": "Riferimenti",
-      "graph":      "Grafo",
-      "versions":   "Versioni",
-      "notes":      "Note"
+      "graph": "Grafo",
+      "versions": "Versioni",
+      "notes": "Note"
     }
   },
   "pseudoToolbar": {

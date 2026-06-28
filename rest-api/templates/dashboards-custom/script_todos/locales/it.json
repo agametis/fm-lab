@@ -1,17 +1,20 @@
 {
   "manifest": {
     "title": "TO-DO negli script",
-    "description": "Conta i passi di commento con marcatori TO-DO e mostra tutti gli script interessati per ciascun file."
+    "description": "Lavoro in sospeso nei passi di commento con tre notazioni (TO DO, FIX IT, TBD). Clicca su un conteggio per filtrare l'elenco dei risultati."
   },
   "layout": {
-    "root.children[0].props.title": "Panoramica TO-DO",
-    "root.children[0].children[0].props.items[0].label": "Righe TO-DO",
-    "root.children[0].children[0].props.items[1].label": "Script",
-    "root.children[0].children[0].props.items[2].label": "File",
-
-    "root.children[1].props.title": "Script con TO-DO",
-    "root.children[1].children[0].props.columns[0].label": "File",
-    "root.children[1].children[0].props.columns[1].label": "Nome script",
-    "root.children[1].children[0].props.columns[2].label": "Quantità"
+    "todo_kpi_kpistrip.props.items[0].label": "Righe totali",
+    "todo_kpi_kpistrip.props.items[1].label": "Righe TO DO",
+    "todo_kpi_kpistrip.props.items[2].label": "Righe FIX IT",
+    "todo_kpi_kpistrip.props.items[3].label": "Righe TBD",
+    "todo_kpi_kpistrip.props.items[4].label": "Script",
+    "todo_kpi_kpistrip.props.items[5].label": "File",
+    "todo_lines.props.title": "Righe di commento contrassegnate",
+    "todo_lines_table.props.columns[0].label": "File",
+    "todo_lines_table.props.columns[1].label": "Nome script",
+    "todo_lines_table.props.columns[2].label": "Pattern",
+    "todo_lines_table.props.columns[3].label": "Commento",
+    "todo_lines_table.props.searchPlaceholder": "Cerca nei commenti …"
   }
 }

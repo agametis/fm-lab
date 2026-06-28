@@ -2,7 +2,7 @@
   "title": "Graph-Explorer",
   "emptyFocus": "Öffne ein Objekt aus der Detailansicht im Graph-Explorer (oder per Doppelklick auf einen Knoten), um seinen Abhängigkeitsgraphen zu erkunden.",
   "loading": "Graph wird geladen…",
-  "truncated": "{{kept}} von {{total}} erreichbaren Knoten angezeigt — Tiefe verringern oder Typ-Filter einschränken, um alle anzuzeigen.",
+  "truncated": "{{kept}} von {{total}} erreichbaren Knoten geladen — Tiefe verringern oder Typ-Filter einschränken, um alle zu laden.",
   "stats": {
     "nodes": "{{count}} Knoten",
     "nodes_other": "{{count}} Knoten",
@@ -36,7 +36,8 @@
     "noNeighbors": "Keine Nachbarn im aktuellen Graphen.",
     "uses": "verwendet",
     "usedBy": "verwendet von",
-    "focus": "Fokus"
+    "focus": "Fokus",
+    "resizePanel": "Breite des Detail-Panels ändern"
   },
   "filter": {
     "ariaLabel": "Graph-Filter",
@@ -69,7 +70,6 @@
       "both": "Beide Richtungen ab Fokus"
     },
     "types": "Knotentypen",
-    "showAllTypes": "alle anzeigen",
     "colorMode": "Färbung",
     "colorModes": {
       "type": "Typ",
@@ -79,6 +79,46 @@
       "type": "Knoten nach Objekttyp einfärben",
       "community": "Knoten nach erkanntem Modul (Community) einfärben"
     },
-    "communityUnnamed": "Community {{id}}"
-  }
+    "communityUnnamed": "Community {{id}}",
+    "detailsShort": "Details",
+    "openDetails": "Detail-Ansicht des Fokus-Objekts öffnen",
+    "openTypeList": "{{type}}-Objektliste öffnen",
+    "hideType": "{{type}} ausblenden",
+    "showType": "{{type}} einblenden",
+    "depthOf": "(von {{max}})",
+    "extendDepth": "tiefer",
+    "extendDepthHint": "Schieberegler über 4 hinaus erweitern (bis zur erreichbaren Maxtiefe).",
+    "depthLoad": "{{count}} erreichbar",
+    "depthClipped": "{{count}} erreichbar, geladen gekappt auf {{limit}}",
+    "resizePanel": "Breite des Filter-Panels ändern",
+    "partLoaded": "{{count}} geladen",
+    "partConnected": "{{count}} verbunden",
+    "partIsland_one": "{{count}} Insel",
+    "partIsland_other": "{{count}} Inseln",
+    "partIsolated": "{{count}} isoliert",
+    "loadScope": "Typen laden",
+    "loadAll": "Alle Typen",
+    "loadSelected": "Nur gewählte Typen",
+    "loadAllHint": "Alle Typen laden; Chip-Abwahl blendet nur aus",
+    "loadSelectedHint": "Nur die gewählten Typen laden (lädt neu)"
+  },
+  "typeList": {
+    "ariaLabel": "Objektliste: {{type}}",
+    "sortBy": "Sortieren",
+    "sort": {
+      "name": "Name",
+      "file": "Datei"
+    },
+    "directionLabel": "Richtung",
+    "directionAria": "Nach Richtung filtern",
+    "dirIn": "Eingehend",
+    "dirOut": "Ausgehend",
+    "dirBoth": "Beide",
+    "empty": "Keine Objekte dieses Typs im Graphen."
+  },
+  "unconnectedHidden_one": "{{count}} Knoten ohne Verbindung zum Fokus",
+  "unconnectedHidden_other": "{{count}} Knoten ohne Verbindung zum Fokus",
+  "unconnectedToggleShow": "einblenden",
+  "unconnectedToggleHide": "ausblenden",
+  "unconnectedToggleHint": "Knoten ohne Pfad zum Fokus entstehen durch den Typ-/Tiefenfilter — ein- oder ausblenden"
 }

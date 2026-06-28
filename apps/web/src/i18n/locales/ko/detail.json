@@ -125,7 +125,8 @@
     "noReferences": "참조를 찾을 수 없습니다",
     "noFilterMatches": "현재 필터에 일치하는 항목이 없습니다",
     "crossFileBadge": "파일 간",
-    "itemAriaLabel": "{{type}}: {{name}}로 이동"
+    "itemAriaLabel": "{{type}}: {{name}}로 이동",
+    "notNavigable": "대상이 가져온 데이터 집합에 없습니다"
   },
   "searchOptions": {
     "regionAria": "정렬 및 그룹 옵션",
@@ -181,7 +182,8 @@
     "usageBadge_other": "{{count}}회 사용",
     "showAria": "{{type}}: {{name}} — 표시",
     "noName": "(이름 없음)",
-    "filterByCategory": "{{category}}로 필터링"
+    "filterByCategory": "{{category}}로 필터링",
+    "graphButton": "그래프"
   },
   "scriptSearchFilter": {
     "searchAria": "참조 검색",

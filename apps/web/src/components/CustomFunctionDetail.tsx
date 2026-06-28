@@ -11,6 +11,8 @@ interface CustomFunctionDetailProps {
   uuid: string;
   /** Cross-reference highlight: highlight tokens that match these UUIDs. */
   highlightRefUuids?: Set<string> | null;
+  /** Reicht die im CustomFunctionViewer gezählten Highlight-Treffer hoch zur RefOriginPill. */
+  onLiveMatchCount?: (count: number) => void;
 }
 
 /**
@@ -20,7 +22,7 @@ interface CustomFunctionDetailProps {
  *
  * The language tracks the active i18n language via `useApiLang()`.
  */
-export const CustomFunctionDetail: React.FC<CustomFunctionDetailProps> = ({ uuid, highlightRefUuids }) => {
+export const CustomFunctionDetail: React.FC<CustomFunctionDetailProps> = ({ uuid, highlightRefUuids, onLiveMatchCount }) => {
   const { t } = useTranslation(['detail']);
   const lang = useApiLang();
   const currentFile = useCurrentFile();
@@ -32,5 +34,5 @@ export const CustomFunctionDetail: React.FC<CustomFunctionDetailProps> = ({ uuid
     return <div className="no-references">{t('detail:noReferences')}</div>;
   }
 
-  return <CustomFunctionViewer data={data} highlightRefUuids={highlightRefUuids} />;
+  return <CustomFunctionViewer data={data} highlightRefUuids={highlightRefUuids} onLiveMatchCount={onLiveMatchCount} />;
 };

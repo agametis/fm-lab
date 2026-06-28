@@ -108,6 +108,7 @@ const schemas = {
   references: Joi.object({
     uuid: Joi.string().required(),
     file: Joi.string().optional(), // Clone-Scoping der Fokus-Seite (s. get-Schema)
+    origin: Joi.string().optional(), // Herkunfts-Script (?ref=) — markiert Origin_Hit bei Pseudo-Typen (ScriptStepType)
     direction: Joi.string().lowercase().valid(...Object.values(REFERENCE_DIRECTIONS)).default('all'),
     link_type: Joi.string().lowercase().valid(...Object.values(LINK_TYPES)).default('operational'),
     limit: Joi.number().integer().min(0).max(environment.api.maxLimit).default(environment.api.defaultLimit),
@@ -183,7 +184,7 @@ const schemas = {
   graphSubgraph: Joi.object({
     focus: Joi.string().required(),
     focus_file: Joi.string().optional(), // Clone-Disambiguierung des Fokus-Knotens
-    depth: Joi.number().integer().min(1).max(4).default(1),
+    depth: Joi.number().integer().min(1).max(environment.duckdb.graphMaxDepth).default(1),
     direction: Joi.string().lowercase().valid('out', 'in', 'both').default('both'),
     mode: Joi.string().lowercase().valid('logical', 'raw').default('logical'),
     types: Joi.string().optional(),
@@ -207,6 +208,73 @@ const schemas = {
     include_builtins: Joi.boolean().default(false),
     node_limit: Joi.number().integer().min(1).max(environment.api.maxLimit).default(1000),
     hub_degree: Joi.number().integer().min(1).default(100),
+    format: Joi.string().lowercase().valid(...Object.values(OUTPUT_FORMATS)).default('json'),
+    meta: Joi.boolean().default(false),
+    debug: Joi.boolean().default(false),
+  }),
+
+  // GET /api/graph/depth-profile - Max. erreichbare Tiefe (Exzentrizität) + per-Tiefe-Count.
+  // Richtungsabhängig (out|in|both); leichtgewichtig (nur Walk-Aggregat, keine Projektion).
+  graphDepthProfile: Joi.object({
+    focus: Joi.string().required(),
+    focus_file: Joi.string().optional(), // Clone-Disambiguierung des Fokus-Knotens
+    direction: Joi.string().lowercase().valid('out', 'in', 'both').default('both'),
+    mode: Joi.string().lowercase().valid('logical', 'raw').default('logical'),
+    // Typ-Filter (CSV) — spiegelt graphSubgraph, damit die Last-/Clipping-Anzeige des
+    // Reglers dieselbe (typgefilterte) erreichbare Menge zählt wie der Subgraph.
+    types: Joi.string().optional(),
+    include_builtins: Joi.boolean().default(false),
+    format: Joi.string().lowercase().valid(...Object.values(OUTPUT_FORMATS)).default('json'),
+    meta: Joi.boolean().default(false),
+    debug: Joi.boolean().default(false),
+  }),
+
+  // GET /api/graph/overview - Graph-Atlas Top-Down-Einstieg (Treemap + Meta-Graph)
+  // Achse A (segment_by) × Achse B (view). level steuert den Treemap-Trichter.
+  // parent_* = Drill-Kontext (Ebene 1/2). Schema-kanonisch composite (uuid::file).
+  graphOverview: Joi.object({
+    view: Joi.string().lowercase().valid('composition', 'topology').default('composition'),
+    level: Joi.string().lowercase().valid('root', 'segment', 'leaf').default('root'),
+    segment_by: Joi.string().lowercase().valid('community', 'file', 'type', 'hubs').default('community'),
+    parent_community: Joi.number().integer().optional(),
+    parent_file: Joi.string().optional(),
+    parent_type: Joi.string().optional(),
+    weight: Joi.string().lowercase().valid('domain', 'logical').default('domain'),
+    include_builtins: Joi.boolean().default(false),
+    // Objekttyp-Filterleiste (Exclusion-Semantik wie die Explorer-Type-Chips):
+    // CSV der auszublendenden Object_Type. Greift VOR der Aggregation → ändert
+    // Segment-Gewichte/-Counts und blendet Blätter aus.
+    exclude_types: Joi.string().optional(),
+    // Top-K/„Rest"-Faltung der Aggregat-Ebenen abschalten (Rest-Kachel „auffalten"):
+    // false → alle Segmente, keine Rest-Kachel.
+    fold: Joi.boolean().default(true),
+    limit: Joi.number().integer().min(1).max(environment.api.maxLimit).default(50),
+    format: Joi.string().lowercase().valid(...Object.values(OUTPUT_FORMATS)).default('json'),
+    meta: Joi.boolean().default(false),
+    debug: Joi.boolean().default(false),
+  }),
+
+  // PUT /api/annotations/community - Community-Name/Notiz (User-Annotation)
+  // Body-Validierung. Leere Strings sind erlaubt (= Feld löschen); der Service
+  // normalisiert sie zu NULL. engine+community identifizieren die Community in der
+  // aktiven Partition (Live-Overlay-Key).
+  annotationCommunity: Joi.object({
+    engine: Joi.string().min(1).required(),
+    community: Joi.number().integer().required(),
+    user_name: Joi.string().allow('', null).max(200).optional(),
+    user_notes: Joi.string().allow('', null).max(4000).optional(),
+  }),
+
+  // PUT /api/annotations/node/visibility - Node als sichtbar/ausgeblendet markieren
+  annotationNodeVisibility: Joi.object({
+    uuid: Joi.string().min(1).required(),
+    file: Joi.string().allow('', null).optional(),
+    visible: Joi.boolean().required(),
+  }),
+
+  // GET /api/graph/community-stats - Community-Namen-Status + Cluster-Verfügbarkeit
+  // (keine fachlichen Params; nur die Standard-Ausgabesteuerung).
+  graphCommunityStats: Joi.object({
     format: Joi.string().lowercase().valid(...Object.values(OUTPUT_FORMATS)).default('json'),
     meta: Joi.boolean().default(false),
     debug: Joi.boolean().default(false),

@@ -48,6 +48,8 @@ export interface DashboardManifest {
 
 export interface LayoutNode {
   type: string;
+  /** Stable anchor for server-side i18n overrides (see dashboard-i18n.service). */
+  id?: string;
   props?: Record<string, unknown>;
   data?: { dataset?: string } & Record<string, unknown>;
   children?: LayoutNode[];

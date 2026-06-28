@@ -2,7 +2,7 @@
   "title": "Explorateur de graphe",
   "emptyFocus": "Ouvre un objet depuis sa vue de détail dans l'Explorateur de graphe (ou double-clique sur un nœud) pour explorer son graphe de dépendances.",
   "loading": "Chargement du graphe…",
-  "truncated": "Affichage de {{kept}} sur {{total}} nœuds accessibles — réduis la profondeur ou restreins le filtre de types pour tous les afficher.",
+  "truncated": "{{kept}} sur {{total}} nœuds accessibles chargés — réduisez la profondeur ou restreignez le filtre de types pour tous les charger.",
   "stats": {
     "nodes": "{{count}} nœud",
     "nodes_other": "{{count}} nœuds",
@@ -36,7 +36,8 @@
     "noNeighbors": "Aucun voisin dans le graphe actuel.",
     "uses": "utilise",
     "usedBy": "utilisé par",
-    "focus": "Focus"
+    "focus": "Focus",
+    "resizePanel": "Redimensionner le panneau de détails"
   },
   "filter": {
     "ariaLabel": "Filtres du graphe",
@@ -69,7 +70,6 @@
       "both": "Les deux directions depuis le focus"
     },
     "types": "Types de nœud",
-    "showAllTypes": "tout afficher",
     "colorMode": "Coloration",
     "colorModes": {
       "type": "Type",
@@ -79,6 +79,24 @@
       "type": "Colorer les nœuds par type d’objet",
       "community": "Colorer les nœuds par module détecté (communauté)"
     },
-    "communityUnnamed": "Communauté {{id}}"
-  }
+    "communityUnnamed": "Communauté {{id}}",
+    "resizePanel": "Redimensionner le panneau de filtres",
+    "depthLoad": "{{count}} accessibles",
+    "depthClipped": "{{count}} accessibles, chargement plafonné à {{limit}}",
+    "partLoaded": "{{count}} chargés",
+    "partConnected": "{{count}} connectés",
+    "partIsland_one": "{{count}} îlot",
+    "partIsland_other": "{{count}} îlots",
+    "partIsolated": "{{count}} isolés",
+    "loadScope": "Charger les types",
+    "loadAll": "Tous les types",
+    "loadSelected": "Sélection seule",
+    "loadAllHint": "Charger tous les types ; désélectionner une puce la masque seulement",
+    "loadSelectedHint": "Charger uniquement les types sélectionnés (recharge)"
+  },
+  "unconnectedHidden_one": "{{count}} nœud sans lien avec le focus",
+  "unconnectedHidden_other": "{{count}} nœuds sans lien avec le focus",
+  "unconnectedToggleShow": "afficher",
+  "unconnectedToggleHide": "masquer",
+  "unconnectedToggleHint": "Les nœuds sans chemin vers le focus proviennent du filtre type/profondeur — les afficher ou les masquer"
 }

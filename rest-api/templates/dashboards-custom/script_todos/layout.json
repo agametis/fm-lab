@@ -2,45 +2,139 @@
   "schemaVersion": 1,
   "root": {
     "type": "Grid",
-    "props": { "columns": 12, "gap": 16 },
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
     "children": [
       {
         "type": "Card",
-        "props": { "span": 12, "title": "TO-DO overview", "variant": "hero" },
-        "data": { "dataset": "todo_kpi" },
+        "id": "todo_kpi",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "todo_kpi"
+        },
         "children": [
-          { "type": "KPIStrip",
+          {
+            "type": "KPIStrip",
+            "id": "todo_kpi_kpistrip",
             "props": {
               "items": [
-                { "label": "TO-DO lines", "field": "todo_steps",   "format": "number" },
-                { "label": "Scripts",     "field": "todo_scripts", "format": "number" },
-                { "label": "Files",       "field": "todo_files",   "format": "number" }
+                {
+                  "label": "Total lines",
+                  "field": "total_lines",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "script_todos",
+                      "params": { "pattern": "", "file": "{{file}}" }
+                    }
+                  }
+                },
+                {
+                  "label": "TO DO lines",
+                  "field": "todo_lines",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "script_todos",
+                      "params": { "pattern": "todo", "file": "{{file}}" }
+                    }
+                  }
+                },
+                {
+                  "label": "FIX IT lines",
+                  "field": "fixit_lines",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "script_todos",
+                      "params": { "pattern": "fixit", "file": "{{file}}" }
+                    }
+                  }
+                },
+                {
+                  "label": "TBD lines",
+                  "field": "tbd_lines",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "script_todos",
+                      "params": { "pattern": "tbd", "file": "{{file}}" }
+                    }
+                  }
+                },
+                {
+                  "label": "Scripts",
+                  "field": "scripts",
+                  "format": "number"
+                },
+                {
+                  "label": "Files",
+                  "field": "files",
+                  "format": "number"
+                }
               ]
             }
           }
         ]
       },
-
       {
         "type": "Card",
-        "props": { "span": 12, "title": "Scripts with TO-DOs" },
-        "data": { "dataset": "todo_scripts" },
+        "id": "todo_lines",
+        "props": {
+          "span": 12,
+          "title": "Flagged comment lines"
+        },
+        "data": {
+          "dataset": "todo_lines"
+        },
         "children": [
-          { "type": "Table",
+          {
+            "type": "Table",
+            "id": "todo_lines_table",
             "props": {
-              "rowKey": "uuid",
+              "rowKey": "row_id",
               "density": "comfortable",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search comments …",
               "columns": [
-                { "field": "file",       "label": "File" },
-                { "field": "name",       "label": "Script name" },
-                { "field": "todo_count", "label": "Count", "align": "right", "format": "number" }
+                {
+                  "field": "file",
+                  "label": "File"
+                },
+                {
+                  "field": "name",
+                  "label": "Script name"
+                },
+                {
+                  "field": "pattern",
+                  "label": "Pattern",
+                  "format": "badge"
+                },
+                {
+                  "field": "comment",
+                  "label": "Comment"
+                }
               ],
-              "onRowClick": { "action": "openObject",
-                              "args": {
-                                "uuid": "{{uuid}}",
-                                "type": "Script",
-                                "params": { "sq": "{{search_term}}" }
-                              } }
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{uuid}}",
+                  "type": "Script",
+                  "params": {
+                    "sq": "{{search_term}}"
+                  }
+                }
+              }
             }
           }
         ]

@@ -125,7 +125,13 @@
     "noReferences": "Keine Referenzen gefunden",
     "noFilterMatches": "Keine Treffer für die aktuellen Filter",
     "crossFileBadge": "Cross-File",
-    "itemAriaLabel": "Navigiere zu {{type}}: {{name}}"
+    "itemAriaLabel": "Navigiere zu {{type}}: {{name}}",
+    "notNavigable": "Ziel nicht im importierten Datenbestand",
+    "dirFilterAria": "Richtung filtern",
+    "dirFilterLabel": "Richtung",
+    "dirIn": "Eingehend",
+    "dirOut": "Ausgehend",
+    "dirBoth": "Beide"
   },
   "searchOptions": {
     "regionAria": "Sortier- und Gruppierungsoptionen",
@@ -181,7 +187,8 @@
     "usageBadge_other": "{{count}} Verwendungen",
     "showAria": "{{type}}: {{name}} anzeigen",
     "noName": "(ohne Namen)",
-    "filterByCategory": "Filter auf {{category}}"
+    "filterByCategory": "Filter auf {{category}}",
+    "graphButton": "Graph"
   },
   "scriptSearchFilter": {
     "searchAria": "Refs durchsuchen",
@@ -216,6 +223,13 @@
     "settingsHeading": "Einstellungen",
     "saveLabel": "Einstellungen speichern",
     "savingLabel": "Speichere…",
+    "versions": {
+      "fmlab": "FM-Lab",
+      "api": "API",
+      "frontend": "Frontend",
+      "xmlConverter": "XML Konverter",
+      "dbSchema": "DB Schema"
+    },
     "api": {
       "heading": "REST-API-Verbindung",
       "label": "REST-API-URL",

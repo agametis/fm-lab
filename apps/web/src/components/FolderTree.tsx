@@ -260,7 +260,13 @@ export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter })
 
             return (
               <div
-                key={`${row.uuid}-${row.sequence}`}
+                // Render-Key MUSS global eindeutig sein: `sequence` (= fh.seq) ist
+                // datei-lokal (jede Datei startet bei 0), und `uuid` ist bei geklonten/
+                // gemergten Dateibeständen nicht global eindeutig. Ohne `file` kollidieren
+                // im "All files"-Modus zwei Zeilen auf demselben Key → React malt einen
+                // DOM-Knoten für beide → übereinanderliegende Zeilen (Badge/Name verschmiert).
+                // (File_Name, seq) ist im Datenmodell garantiert eindeutig.
+                key={`${row.file}-${row.uuid}-${row.sequence}`}
                 className={`folder-tree-row folder-tree-row-${row.subtype.toLowerCase()}`}
                 style={{
                   position: 'absolute',

@@ -23,7 +23,11 @@ interface UseObjectDetailResult {
 // teilen. Ohne `file` (Graceful Downgrade) bleibt der Key bare-UUID-äquivalent.
 const cache = new Map<string, { object: FMObject; references: GroupedReferences }>();
 
-const cacheKeyFor = (uuid: string, file?: string | null): string => `${uuid}::${file ?? ''}`;
+// `origin` (?ref=) fließt in den Key ein, weil es die operationalen Referenzen
+// eines Pseudo-Aggregats (ScriptStepType) verändert (Origin_Hit-Markierung).
+// Ohne origin bleibt der Key abwärtskompatibel zum bare-(uuid,file)-Key.
+const cacheKeyFor = (uuid: string, file?: string | null, origin?: string | null): string =>
+  `${uuid}::${file ?? ''}${origin ? `::${origin}` : ''}`;
 
 /**
  * Hook to fetch object details and references by UUID.
@@ -40,6 +44,7 @@ const EMPTY_REFS: GroupedReferences = {
 export const useObjectDetail = (
   uuid: string | undefined,
   file?: string | null,
+  origin?: string | null,
 ): UseObjectDetailResult => {
   const [object, setObject] = useState<FMObject | null>(null);
   const [references, setReferences] = useState<GroupedReferences>(EMPTY_REFS);
@@ -52,7 +57,7 @@ export const useObjectDetail = (
     if (!uuid || isFetchingRef.current) return;
 
     // Check cache first
-    const cached = cache.get(cacheKeyFor(uuid, file));
+    const cached = cache.get(cacheKeyFor(uuid, file, origin));
     if (cached) {
       setObject(cached.object);
       setReferences(cached.references);
@@ -77,9 +82,12 @@ export const useObjectDetail = (
       // environment.api.maxLimit (10000).
       const REFS_LIMIT = 10000;
       const fileParam = file || undefined;
+      // `origin` nur am operationalen Call — er beeinflusst nur die Pseudo-Aggregat-
+      // Zielliste (Origin_Hit). Strukturelle Refs sind davon unberührt.
+      const originParam = origin || undefined;
       const [objectResponse, opRefsResponse, structRefsResponse] = await Promise.all([
         api.get({ uuid, file: fileParam }),
-        api.references({ uuid, file: fileParam, direction: 'all', link_type: 'operational', limit: REFS_LIMIT }),
+        api.references({ uuid, file: fileParam, origin: originParam, direction: 'all', link_type: 'operational', limit: REFS_LIMIT }),
         api.references({ uuid, file: fileParam, direction: 'all', link_type: 'structural', limit: REFS_LIMIT }),
       ]);
 
@@ -108,7 +116,7 @@ export const useObjectDetail = (
       };
 
       // Cache the result
-      cache.set(cacheKeyFor(uuid, file), { object: objectData, references: grouped });
+      cache.set(cacheKeyFor(uuid, file, origin), { object: objectData, references: grouped });
 
       setObject(objectData);
       setReferences(grouped);
@@ -127,7 +135,7 @@ export const useObjectDetail = (
       isFetchingRef.current = false;
       setLoading(false);
     }
-  }, [uuid, file]);
+  }, [uuid, file, origin]);
 
   useEffect(() => {
     setObject(null);

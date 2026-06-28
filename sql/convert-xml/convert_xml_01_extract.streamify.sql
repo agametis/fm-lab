@@ -57,12 +57,35 @@ LOAD webbed;
 -- IDEMPOTENT für DOM-Werte: ein bereits dekodiertes literales '&' enthält kein
 -- Entity-Muster und bleibt unverändert. '&amp;' MUSS zuletzt ersetzt werden, sonst
 -- würde '&amp;lt;' fälschlich zu '<' statt '&lt;'.
+-- Workaround-Disable-Gate (Version-Check-Registry tools/katana-xml/version_check.json,
+-- Capability sax_attr_entities → Flag wa_attr_unescape, Default ON). Der Workaround wird
+-- NICHT geloescht, sondern flag-bewacht: aktiv (default) → dekodieren; OFF (sobald webbed
+-- SAX-Attribut-Entities selbst dekodiert) → s unveraendert durchreichen. DOM-No-op,
+-- idempotent → identitaets-neutral, solange das Flag ON ist.
 CREATE OR REPLACE MACRO xml_unescape(s) AS
+    CASE WHEN getvariable('wa_attr_unescape') THEN
     replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(
         s,
         '&#38;','&'), '&#60;','<'), '&#62;','>'), '&#34;','"'), '&#39;',''''),
         '&lt;','<'), '&gt;','>'), '&quot;','"'), '&apos;',''''),
-        '&amp;','&');
+        '&amp;','&')
+    ELSE s END;
+
+-- ws_restore(): holt den chr(127)-Sentinel zurueck zu LF (0x7F -> chr 10). Der
+-- Preprozessor (convert_fm_xml.sh / turbo_phaseS_fuse.awk) wandelt CR (0x0D) VOR dem
+-- Parsen in 0x7F (DEL, kein Whitespace), damit webbeds frueherer #73-Whitespace-Collapse
+-- (CleanTextContent()) den Zeilenumbruch nicht zu einem Space kollabiert; hier wird er
+-- danach zu LF restauriert. Anwendung auf ALLE Calc-/Text-Spalten UND die Roh-XML-
+-- Fragmentspalten (Step_XML/Object_XML/Parameters_XML), die sonst das DEL-Byte leakten.
+-- Workaround-Disable-Gate (Version-Check-Registry tools/katana-xml/version_check.json,
+-- Capability whitespace_preservation -> Flag wa_ws_sentinel, Default ON). Der Workaround
+-- wird NICHT geloescht, sondern flag-bewacht: aktiv (Default) -> 0x7F->LF restaurieren;
+-- OFF (sobald webbed Whitespace nativ bewahrt, per Probe) -> s unveraendert durchreichen
+-- (dann ist auch der Preproc-Sentinel aus, also kein 0x7F vorhanden -> ELSE = No-op).
+-- EMPIRISCH bit-identisch (v2.2.1): replace(0x7F->LF) [Sentinel ON] == native CR->LF
+-- [Sentinel OFF], fuer typisierte Reads UND Fragment-Extraktion.
+CREATE OR REPLACE MACRO ws_restore(s) AS
+    CASE WHEN getvariable('wa_ws_sentinel') THEN replace(s, chr(127), chr(10)) ELSE s END;
 
 -- json_escape() Macro entfernt: xml_to_json() wird nicht mehr verwendet.
 -- Stattdessen speichern wir rohes XML (Object_XML, Parameters_XML, Menu_XML, Theme_XML)
@@ -112,6 +135,16 @@ SET VARIABLE max_filesize TO 256000000; -- 256 MB
 -- der use_streaming/dom_threshold scharf schaltet.
 SET VARIABLE dom_threshold = getvariable('max_filesize');
 SET VARIABLE use_streaming = false;
+-- Workaround-Disable-Flags (Version-Check-Registry tools/katana-xml/version_check.json):
+-- Default = Workaround ON (safe-by-default). Ein zukuenftiger Treiber-Probe-Lauf kann sie
+-- am @WEBBED_SELFTEST@-Marker uebersteuern (auf OFF), sobald der zugehoerige webbed-Fix da ist.
+SET VARIABLE wa_attr_unescape = true;
+-- chr(127)-Sentinel-Restore (Capability whitespace_preservation / #73). Default ON =
+-- Sentinel aktiv (0x7F->LF, ws_restore-Macro greift). Der Treiber uebersteuert das Flag
+-- am Selbsttest-Marker (unten) auf false, sobald die Probe bestaetigt, dass webbed
+-- Whitespace nativ bewahrt (dann laeuft auch der Preproc-Sentinel nicht). Gemeinsame
+-- Single Source mit der Bash-/awk-Preproc-Gatung (WS_SENTINEL_ON im Treiber).
+SET VARIABLE wa_ws_sentinel = true;
 -- @WEBBED_SELFTEST@  (Treiber ersetzt diese Zeile im Patched-Modus; sonst No-Op)
 
 -- Performance (P1): File_Name EINMAL aus der XML
@@ -663,7 +696,7 @@ SELECT
     f.Storage.maxRepetitions AS Max_Repetitions,
     f.Calculation.DDRREF.hash AS DDR_Hash,  -- DDR-Hash für Calculated Fields (ab FM21+)
     -- chr(127) -> chr(10): Preprocessing-Sentinel für CR zurück zu LF
-    replace(f.Calculation.Text, chr(127), chr(10)) AS Calculation_Text,
+    ws_restore(f.Calculation.Text) AS Calculation_Text,
     -- AutoEnter-Basisattribute
     CASE WHEN f.AutoEnter.type = '' THEN NULL ELSE f.AutoEnter.type END AS AutoEnter_Type,
     f.AutoEnter.prohibitModification AS AutoEnter_ProhibitMod,
@@ -675,7 +708,7 @@ SELECT
     f.AutoEnter.Looked_up.dontCopyIfEmpty AS Lookup_DontCopyIfEmpty,
     f.AutoEnter.Looked_up.noMatchCopyOption AS Lookup_NoMatchOption,
     -- AutoEnter Calculated-Details
-    replace(f.AutoEnter.Calculated.Calculation.Text, chr(127), chr(10)) AS AE_Calc_Text,
+    ws_restore(f.AutoEnter.Calculated.Calculation.Text) AS AE_Calc_Text,
     f.AutoEnter.Calculated.Calculation.DDRREF.hash AS AE_Calc_Hash,
     f.AutoEnter.overwriteExisting AS AE_Calc_OverwriteExisting,
     f.AutoEnter.alwaysEvaluate AS AE_Calc_AlwaysEvaluate,
@@ -958,7 +991,7 @@ SELECT
     CustomFunctionReference.id AS CF_ID,
     CustomFunctionReference.name AS CF_Name,
     CustomFunctionReference.UUID AS CF_UUID,
-    replace(Calculation.Text, chr(127), chr(10)) AS Calculation_Code,
+    ws_restore(Calculation.Text) AS Calculation_Code,
     [ {'type': c.type, 'content': c."#text"} for c in Calculation.ChunkList.Chunk ] AS Code_Chunks,
     Calculation.DDRREF.hash AS DDR_Hash,
     regexp_replace(
@@ -1011,7 +1044,7 @@ SELECT
     CF_ID,
     CF_Name,
     CF_UUID,
-    replace(Calculation.Text, chr(127), chr(10)) AS Calculation_Code,
+    ws_restore(Calculation.Text) AS Calculation_Code,
     NULL::STRUCT(type VARCHAR, content VARCHAR)[] AS Code_Chunks,
     Calculation.DDRREF.hash AS DDR_Hash,
     regexp_replace(Calculation.DDRREF."#text", '^_', '') AS DDR_UUID,
@@ -1192,11 +1225,11 @@ SELECT
         '^_',
         ''
     ) as DDR_UUID,
-    xml_extract_elements(step_xml, '/Step/ParameterValues')[1]::VARCHAR as Parameters_XML,
-    step_xml::VARCHAR as Step_XML,
+    ws_restore(xml_extract_elements(step_xml, '/Step/ParameterValues')[1]::VARCHAR) as Parameters_XML,
+    ws_restore(step_xml::VARCHAR) as Step_XML,
     xml_extract_text(step_xml, '//Parameter/@type')[1] as Parameter_Type,
     xml_extract_text(step_xml, '//Parameter[@type="Variable"]/Name/@value')[1] as Variable_Name,
-    replace(xml_extract_text(step_xml, '//Calculation/Text')[1], chr(127), chr(10)) as Calculation_Text,
+    ws_restore(xml_extract_text(step_xml, '//Calculation/Text')[1]) as Calculation_Text,
     xml_extract_text(step_xml, '//Boolean/@type')[1] as Boolean_Type,
     xml_extract_text(step_xml, '//Boolean/@value')[1] as Boolean_Value,
     fn.File_Name as File_Name
@@ -1541,12 +1574,12 @@ SELECT
     Parent_Object_ID,
     Nesting_Level,
     Z_Order,
-    replace(Hide_Calculation_Text, chr(127), chr(10)) as Hide_Calculation_Text,
-    replace(Tooltip_Calculation_Text, chr(127), chr(10)) as Tooltip_Calculation_Text,
-    replace(Label_Calculation_Text, chr(127), chr(10)) as Label_Calculation_Text,
-    replace(ScriptTrigger_Parameter_Text, chr(127), chr(10)) as ScriptTrigger_Parameter_Text,
-    replace(Text_Content, chr(127), chr(10)) as Text_Content,
-    object_xml::VARCHAR as Object_XML,
+    ws_restore(Hide_Calculation_Text) as Hide_Calculation_Text,
+    ws_restore(Tooltip_Calculation_Text) as Tooltip_Calculation_Text,
+    ws_restore(Label_Calculation_Text) as Label_Calculation_Text,
+    ws_restore(ScriptTrigger_Parameter_Text) as ScriptTrigger_Parameter_Text,
+    ws_restore(Text_Content) as Text_Content,
+    ws_restore(object_xml::VARCHAR) as Object_XML,
     fn.File_Name as File_Name
 -- DETERMINISTISCHES DEDUP (Chunk-Invarianz, These 1b) — identisch zur DOM-Basis:
 -- '//ObjectList/LayoutObject' emittiert tief verschachtelte Objekte mehrfach; pro
@@ -1917,7 +1950,7 @@ SELECT
     ra.Operation,
     ra.Access_Mode,
     -- chr(127) -> chr(10): Preprocessing-Sentinel für CR zurück zu LF
-    replace(ra.Calc_Text_Raw, chr(127), chr(10)) as Calculation_Text,
+    ws_restore(ra.Calc_Text_Raw) as Calculation_Text,
     ra.DDR_Hash,
     ra.Context_TO_Name,
     ra.Context_TO_UUID,
@@ -2175,7 +2208,7 @@ SELECT
         1
     ) as Step_UUID,
     xml_extract_text(step_elem, '//*/@hash')[1] as Step_Hash,
-    replace(xml_extract_text(step_elem, '//text()')[1], chr(127), chr(10)) as Step_Text,
+    ws_restore(xml_extract_text(step_elem, '//text()')[1]) as Step_Text,
     fn.File_Name as File_Name
 FROM ddr_script_raw
 CROSS JOIN filename_normalized fn

@@ -2,7 +2,7 @@
   "title": "Grafutforskare",
   "emptyFocus": "Öppna ett objekt från dess detaljvy i Grafutforskaren (eller dubbelklicka på en nod) för att utforska dess beroendegraf.",
   "loading": "Läser in grafen…",
-  "truncated": "Visar {{kept}} av {{total}} nåbara noder — minska djupet eller begränsa typfiltret för att visa alla.",
+  "truncated": "Laddade {{kept}} av {{total}} nåbara noder — minska djupet eller begränsa typfiltret för att ladda alla.",
   "stats": {
     "nodes": "{{count}} nod",
     "nodes_other": "{{count}} noder",
@@ -36,7 +36,8 @@
     "noNeighbors": "Inga grannar i den aktuella grafen.",
     "uses": "använder",
     "usedBy": "används av",
-    "focus": "Fokus"
+    "focus": "Fokus",
+    "resizePanel": "Ändra bredd på detaljpanelen"
   },
   "filter": {
     "ariaLabel": "Graffilter",
@@ -69,7 +70,6 @@
       "both": "Båda riktningarna från fokus"
     },
     "types": "Nodtyper",
-    "showAllTypes": "visa alla",
     "colorMode": "Färgläggning",
     "colorModes": {
       "type": "Typ",
@@ -79,6 +79,24 @@
       "type": "Färglägg noder efter objekttyp",
       "community": "Färglägg noder efter upptäckt modul (community)"
     },
-    "communityUnnamed": "Community {{id}}"
-  }
+    "communityUnnamed": "Community {{id}}",
+    "resizePanel": "Ändra bredd på filterpanelen",
+    "depthLoad": "{{count}} nåbara",
+    "depthClipped": "{{count}} nåbara, laddning begränsad till {{limit}}",
+    "partLoaded": "{{count}} laddade",
+    "partConnected": "{{count}} anslutna",
+    "partIsland_one": "{{count}} ö",
+    "partIsland_other": "{{count}} öar",
+    "partIsolated": "{{count}} isolerade",
+    "loadScope": "Ladda typer",
+    "loadAll": "Alla typer",
+    "loadSelected": "Endast valda",
+    "loadAllHint": "Ladda alla typer; att avmarkera en chip döljer den bara",
+    "loadSelectedHint": "Ladda endast de valda typerna (laddar om)"
+  },
+  "unconnectedHidden_one": "{{count}} nod utan koppling till fokus",
+  "unconnectedHidden_other": "{{count}} noder utan koppling till fokus",
+  "unconnectedToggleShow": "visa",
+  "unconnectedToggleHide": "dölj",
+  "unconnectedToggleHint": "Noder utan väg till fokus uppstår genom typ-/djupfiltret — visa eller dölj dem"
 }

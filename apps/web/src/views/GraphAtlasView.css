@@ -1,0 +1,498 @@
+/* Full-window exception (like the Graph Explorer): the Atlas breaks
+   out of the global #root max-width/padding box so the treemap uses the whole
+   window. Scoped via :has() so no other view is affected. */
+#root:has(.atlas-view) {
+  max-width: none;
+  padding: 0;
+}
+
+.atlas-view {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+}
+
+.atlas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  flex-shrink: 0;
+}
+
+.atlas-axes {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* F2: zusammenhängende Segment-/Buttonleiste (gemeinsamer Rahmen,
+   interne Trennlinien) — gleiches Muster wie .atlas-viewbar. */
+.atlas-segbar {
+  display: inline-flex;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.atlas-viewbar {
+  display: inline-flex;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.atlas-viewbtn {
+  font-family: inherit;
+  font-size: 0.82rem;
+  padding: 0.3rem 0.7rem;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.atlas-viewbtn.active {
+  background: var(--color-accent, #4fc3f7);
+  color: #10131a;
+  font-weight: 600;
+}
+
+.atlas-viewbtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.atlas-segbtn {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.8rem;
+  border: none;
+  border-left: 1px solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.atlas-segbtn:first-child {
+  border-left: none;
+}
+
+.atlas-segbtn:hover {
+  background: var(--color-hover-bg);
+}
+
+.atlas-segbtn.active {
+  background: var(--color-accent, #4fc3f7);
+  color: #10131a;
+  font-weight: 600;
+}
+
+/* F6: Community-Tab gedimmt, solange die DB nicht geclustert ist. */
+.atlas-segbtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* F5: Community-Namen-Status in der Statusleiste (rechts vom „Zurück"-Button). */
+.atlas-namestatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.atlas-namestatus-sep {
+  opacity: 0.5;
+}
+
+/* Leiste 2: Hidden-Mode-Gruppe linksbündig, Suche rechtsbündig (space-between).
+   Top-N ist in den Header (Leiste 1, rechtsbündig) gewandert. */
+.atlas-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+
+/* Kleine Toggle-Buttons innerhalb der Toolbar-Gruppen (Noise-Filter-Modus
+   dim|hide). Früher `.atlas-weightbtn` — entkoppelt vom (entfernten) F4-
+   Gewichts-Schalter, damit deren Styling erhalten bleibt. */
+.atlas-segctl-btn {
+  font-family: inherit;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.atlas-segctl-btn.active {
+  background: var(--color-accent, #4fc3f7);
+  color: #10131a;
+  font-weight: 600;
+}
+
+.atlas-search {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  min-width: 200px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+}
+
+.atlas-topn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.atlas-topn input[type='range'] {
+  width: 110px;
+  accent-color: var(--color-accent, #4fc3f7);
+  cursor: pointer;
+}
+
+.atlas-topn-value {
+  min-width: 1.8em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.atlas-topn-auto {
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+.atlas-topn-reset {
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.atlas-typebar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.4rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.atlas-typechip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  padding: 0.18rem 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.atlas-typechip.off {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+.atlas-typeswatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.atlas-typereset {
+  font-family: inherit;
+  font-size: 0.78rem;
+  padding: 0.18rem 0.5rem;
+  border: none;
+  background: none;
+  color: var(--color-accent, #4fc3f7);
+  cursor: pointer;
+}
+
+
+.atlas-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.atlas-treemap {
+  width: 100%;
+  height: 100%;
+}
+
+/* F1 — theme-aware Treemap-Flächen (Tokens in theme.css, Light + Dark). Die
+   kräftige Typ-Palettenfüllung kommt weiter inline aus getTypeColor; nur Rand,
+   Text und Info-Kreis leiten ihre Farbe aus Theme-Tokens ab (re-themed via CSS,
+   kein JS-Hook). */
+.atlas-tile-rect {
+  stroke: var(--color-graph-tile-stroke);
+  cursor: pointer;
+}
+.atlas-tile-rect.hidden {
+  stroke: #9a9aa8; /* gedimmter Knoten — bewusster State-Indikator, kein Theme-Token */
+}
+.atlas-tile-text {
+  fill: var(--color-graph-tile-text);
+}
+
+.atlas-metagraph {
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg-canvas);
+}
+
+.atlas-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.atlas-error {
+  color: var(--color-error-fg);
+}
+
+.atlas-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 1rem;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.atlas-footer-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.atlas-collapse {
+  font-family: inherit;
+  font-size: 0.78rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.atlas-truncated {
+  color: var(--color-warning-fg);
+}
+
+/* ── „(...)"-Optionen-Panel (Noise-Filter & semantische Anreicherung) ──────── */
+.atlas-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.atlas-panel {
+  position: relative;
+  width: min(420px, 92vw);
+  max-height: 86vh;
+  overflow: auto;
+  padding: 1.1rem 1.2rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg-elevated);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.atlas-panel-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.atlas-panel-close:hover { color: var(--color-text-primary); }
+
+.atlas-panel-title {
+  margin: 0 0 0.15rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.atlas-panel-badge {
+  font-size: 0.65rem;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(154, 154, 168, 0.25);
+  color: var(--color-text-secondary);
+}
+.atlas-panel-sub {
+  margin: 0 0 0.2rem;
+  font-size: 1.02rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+.atlas-panel-meta {
+  margin: 0 0 0.8rem;
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+}
+
+.atlas-panel-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.7rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+.atlas-panel-field input,
+.atlas-panel-field textarea {
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+  font: inherit;
+  resize: vertical;
+}
+
+.atlas-panel-error {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  color: var(--color-error-fg);
+}
+
+.atlas-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+.atlas-panel-btn {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.atlas-panel-btn:hover:not(:disabled) {
+  background: var(--color-hover-bg);
+}
+.atlas-panel-btn:disabled { opacity: 0.45; cursor: default; }
+.atlas-panel-btn.primary {
+  background: var(--color-accent, #4fc3f7);
+  border-color: var(--color-accent, #4fc3f7);
+  color: #0a0a0a;
+}
+.atlas-panel-btn.danger {
+  border-color: var(--color-error-fg);
+  color: var(--color-error-fg);
+}
+
+/* ── Noise-Filter-Modus (dim|hide) + Hidden-Manager ───────────────────────── */
+.atlas-hiddenmode {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.atlas-hiddenmode-label {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  margin-right: 0.1rem;
+}
+.atlas-hiddenmanage {
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.atlas-hiddenmanage:hover { background: var(--color-hover-bg); }
+
+.atlas-hiddenlist { width: min(520px, 94vw); }
+.atlas-hiddenlist-items {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.atlas-hiddenlist-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+.atlas-hiddenlist-label {
+  flex: 1;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.atlas-hiddenlist-file {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}

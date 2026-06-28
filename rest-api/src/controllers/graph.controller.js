@@ -5,12 +5,10 @@ const { createError } = require('../middleware/error-handler');
 /**
  * Graph Controller (P2 — Subgraph-Backend)
  *
- * Core-Endpoints (LE-6):
+ * Core-Endpoints:
  *   GET /api/graph/subgraph   — fokus-zentrierter k-Hop-Subgraph
  *   GET /api/graph/neighbors  — 1-Hop-Expansion (Lazy-Expand)
  *   GET /api/graph/search     — Fokus-Autocomplete über ObjectCatalog
- *
- * Plan plan_graphify_style_visualisierung.md §6.1 / §13.3.
  */
 
 /**
@@ -66,6 +64,58 @@ async function getNeighbors(req, res, next) {
   }
 }
 
+/** GET /api/graph/overview — Graph-Atlas Top-Down-Einstieg (Treemap + Meta-Graph) */
+async function getOverview(req, res, next) {
+  try {
+    const { format, meta, debug } = req.query;
+    const { payload, sql } = await graphService.getOverview(req.query, req.debug);
+    const metaInfo = meta
+      ? { view: payload.view, segment_by: payload.segment_by, level: payload.level ?? null,
+          truncated: payload.truncated ?? null }
+      : null;
+    return sendFormatted(res, payload, format, metaInfo, debug ? sql : null);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** GET /api/graph/community-stats — Community-Namen-Status + Cluster-Verfügbarkeit (Atlas-Statusleiste / Failover) */
+async function getCommunityStats(req, res, next) {
+  try {
+    const { format } = req.query;
+    const payload = await graphService.getCommunityStats();
+    return sendFormatted(res, payload, format, null, null);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** GET /api/graph/communities — vollständige Community-Liste der aktiven Engine */
+async function getCommunities(req, res, next) {
+  try {
+    const { format } = req.query;
+    const payload = await graphService.getCommunities();
+    return sendFormatted(res, payload, format, null, null);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** GET /api/graph/depth-profile — max. erreichbare Tiefe (Exzentrizität) + per-Tiefe-Count */
+async function getDepthProfile(req, res, next) {
+  try {
+    const { format, meta, debug } = req.query;
+    await assertFocusResolvable(req.query.focus, req.query.focus_file);
+    const { payload, sql } = await graphService.getDepthProfile(req.query);
+    const metaInfo = meta
+      ? { focus: payload.focus, direction: payload.direction, maxDepth: payload.maxDepth, hitCap: payload.hitCap }
+      : null;
+    return sendFormatted(res, payload, format, metaInfo, debug ? sql : null);
+  } catch (error) {
+    next(error);
+  }
+}
+
 /** GET /api/graph/search — Fokus-Autocomplete */
 async function search(req, res, next) {
   try {
@@ -78,8 +128,67 @@ async function search(req, res, next) {
   }
 }
 
+/**
+ * POST /api/graph/recluster — der Rebuild-Button. Spawnt cluster.sh
+ * (Roh-Repartition + Sync + Reload → R3-Restore) und streamt SSE: start · log
+ * (cluster.sh-stdout, inkl. „cache: restored …/node-reuse") · done {ok}.
+ * Concurrency: 409 bei laufendem Import (Lock) oder aktivem Re-Cluster.
+ */
+async function recluster(req, res, next) {
+  const reclusterService = require('../services/recluster.service');
+  const xmlConvert = require('../services/xml-convert');
+
+  if (reclusterService.isReclusterActive() || xmlConvert.isRunning()) {
+    return res.status(409).json({
+      success: false,
+      error: { code: 'ALREADY_RUNNING', message: 'A conversion or re-cluster is already running.' },
+    });
+  }
+
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  if (typeof res.flushHeaders === 'function') res.flushHeaders();
+
+  const send = (evt) => {
+    try { res.write(`data: ${JSON.stringify(evt)}\n\n`); } catch { /* client gone */ }
+  };
+
+  send({ event: 'start', ts: new Date().toISOString() });
+
+  let aborted = false;
+  res.on('close', () => {
+    // cluster.sh läuft bewusst weiter (kein Kill mitten in cluster_load) — nur das
+    // Forwarding zu DIESEM Socket endet.
+    if (!res.writableEnded) aborted = true;
+  });
+
+  const heartbeat = setInterval(() => {
+    try { res.write(': heartbeat\n\n'); } catch { /* socket gone */ }
+  }, 15000);
+
+  try {
+    const { exit_code } = await reclusterService.runRecluster({ onEvent: send });
+    if (!aborted) send({ event: 'done', ok: exit_code === 0, exit_code });
+  } catch (err) {
+    send({ event: 'error', message: err.message });
+    send({ event: 'done', ok: false, exit_code: -1 });
+  } finally {
+    clearInterval(heartbeat);
+    try { res.end(); } catch { /* already closed */ }
+  }
+}
+
 module.exports = {
   getSubgraph,
   getNeighbors,
+  getOverview,
+  getCommunityStats,
+  getCommunities,
+  getDepthProfile,
   search,
+  recluster,
 };

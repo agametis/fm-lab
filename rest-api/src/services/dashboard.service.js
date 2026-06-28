@@ -24,8 +24,6 @@ const { schemas: dashboardSchemas } = require('./dashboard-schemas');
  *   custom:<template-name>  → bestehende sql-custom/<name>.sql
  *   report:<template-name>  → bestehende sql/<name>.sql
  *   builtin:<key>           → server-bereitgestellte Quelle (list_custom_queries, list_dashboards, files)
- *
- * PRD: project/prd_dashboards.md §3, §7.
  */
 
 // Suchreihenfolge: Custom zuerst, damit lokale Bundles System-Bundles bei ID-Kollision überschreiben.
@@ -568,7 +566,7 @@ async function builtinDocsetFunctions(params = {}) {
 
 /**
  * builtin:xml_directory_status — Verzeichnis-Listing + Status-Spalte für das
- * Sub-Dashboard "xml_convert" (siehe project/prd_frontend_xml_convert.md §5.4).
+ * Sub-Dashboard "xml_convert".
  * Liefert pro Datei: filename, size, mtime, status, emoji, imported_at.
  */
 async function builtinXmlDirectoryStatus() {
@@ -595,6 +593,32 @@ async function builtinXmlLastRun() {
   const xmlConvert = require('./xml-convert');
   const data = await xmlConvert.getStatus();
   return data.last_run ? [data.last_run] : [];
+}
+
+/**
+ * builtin:xml_semantic_names — die zwei Drift-Kennzahlen (Struktur + Benennung)
+ * für die „Graph-Communities"-Card. Eine Zeile (oder leer, wenn
+ * keine Partition existiert → available:false). Vom 6-s-Soft-Refresh gepollt.
+ */
+async function builtinXmlSemanticNames() {
+  const xmlConvert = require('./xml-convert');
+  const data = await xmlConvert.getStatus();
+  return data.semantic_names ? [data.semantic_names] : [];
+}
+
+/**
+ * builtin:cluster_count — eine Zeile `[{ count }]` für die Home-Hero
+ * „Cluster"-Bubble. `count` = Anzahl der
+ * Communities der aktiven Engine; `null`, wenn keine Partition existiert
+ * (`clusters_available=false`) → das Frontend rendert dann `—`. Nutzt den
+ * robusten `communityTablesPresent()`-Guard aus graph.service (kein SQL-Crash
+ * auf einer ungeclusterten DB, kein Stub-Risiko).
+ */
+async function builtinClusterCount() {
+  const graphService = require('./graph.service');
+  const stats = await graphService.getCommunityStats();
+  const count = stats.clusters_available ? stats.total_communities : null;
+  return [{ count }];
 }
 
 /**
@@ -631,6 +655,8 @@ const BUILTIN_RESOLVERS = {
   xml_directory_status: builtinXmlDirectoryStatus,
   xml_directory_listing: builtinXmlDirectoryListing,
   xml_last_run: builtinXmlLastRun,
+  xml_semantic_names: builtinXmlSemanticNames,
+  cluster_count: builtinClusterCount,
 };
 
 async function runBuiltin(key, params) {

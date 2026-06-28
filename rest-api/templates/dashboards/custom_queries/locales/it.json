@@ -4,7 +4,5 @@
     "description": "Tutte le analisi SQL pronte all’uso in un colpo d’occhio."
   },
   "layout": {
-    "root.children[0].props.title": "Analisi e query personalizzate",
-    "root.children[0].props.subtitle": "Un clic apre l’analisi nel renderer generico."
   }
 }

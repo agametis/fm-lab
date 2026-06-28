@@ -1,5 +1,6 @@
 ---
 name: convert-fm-xml
+version: 0.8.5
 description: Convert FileMaker XML export to DuckDB database. Automatically handles UTF-8 encoding conversion and creates analyzed database tables. Triggers (English): "convert XML", "import the FileMaker XML", "/convert-xml", "batch import all XML files". Triggers (German): "konvertiere die XML", "importiere die FileMaker-XML", "alle XML-Dateien importieren". Triggers (Spanish): "convertir el XML", "importar el XML de FileMaker". Triggers (French): "convertir le XML", "importer le XML FileMaker". Triggers (Italian): "converti l'XML", "importa l'XML FileMaker". Triggers (Dutch): "converteer de XML", "importeer de FileMaker-XML". Triggers (Portuguese): "converter o XML", "importar o XML do FileMaker". Triggers (Swedish): "konvertera XML", "importera FileMaker-XML". Triggers (Japanese): "XMLを変換", "FileMaker XMLをインポート". Triggers (Korean): "XML 변환", "FileMaker XML 가져오기". Triggers (Chinese): "转换 XML", "导入 FileMaker XML".
 ---
 
@@ -8,6 +9,7 @@ description: Convert FileMaker XML export to DuckDB database. Automatically hand
 ## When to Use This Skill
 
 Use this skill when you need to convert a FileMaker XML export (created via SaveCopyAsXML) into a DuckDB database for analysis. The skill automates:
+
 - UTF-16 to UTF-8 encoding conversion (if needed)
 - SQL template preparation
 - DuckDB database creation
@@ -16,6 +18,7 @@ Use this skill when you need to convert a FileMaker XML export (created via Save
 ## Parameters
 
 The skill accepts **one required parameter**:
+
 - **XML filename** - The name of the XML file in the `xml/` directory (e.g., "MyDatabase.xml")
 - **--batch** or **--all** - Process all XML files in the `xml/` directory
 
@@ -27,13 +30,14 @@ hard-aborts on tight RAM (~2.5 GB floor). Any explicit mode flag below overrides
 default; `FM_FORCE_DOM=1` keeps turbo+auto but on DOM (no SAX).
 
 Optional flags (any combination is allowed):
+
 - **--fail-fast** - Stop immediately on first error (batch/test mode only)
 - **--force-rebuild** - Delete the DB before importing and rebuild from scratch
 - **--no-auto-heal** - On detected schema drift, abort instead of auto-rebuilding
 - **--turbo** - Chunkmap engine (chunked Phase 1). Implied by the adaptive default. Add **--auto** for OOM backoff, **--changed-only** for a manifest skip of unchanged files.
 - **--streamify** - SAX streaming hybrid (lower parse RAM). Implied by the adaptive default when the patched webbed is present.
 - **--split** - Chunk Phase 1 per file at top-level branch boundaries (lowers peak DOM memory for very large files; bit-identical to the unsplit run). Explicit (non-turbo) DOM path.
-- **--jobs <N>** - Run Phase 1 for N files **in parallel** (`auto` = all cores), each into its own part-DB, then merge into the master DB. **Default 8** (empirical sweet spot, see `project/plan_xml_performance.md` §7); `1` = sequential. Big batch speedup on multi-core machines; bit-identical to the sequential run. Not combinable with `--split`. RAM note: each worker peaks at ~10× the UTF-8 file size — lower N (e.g. `--jobs 4`) if memory is tight or other processes run concurrently; avoid N≥12 on a 14-GiB box (RAM cliff).
+- **--jobs <N>** - Run Phase 1 for N files **in parallel** (`auto` = all cores), each into its own part-DB, then merge into the master DB. **Default 8** (empirical sweet spot); `1` = sequential. Big batch speedup on multi-core machines; bit-identical to the sequential run. Not combinable with `--split`. RAM note: each worker peaks at ~10× the UTF-8 file size — lower N (e.g. `--jobs 4`) if memory is tight or other processes run concurrently; avoid N≥12 on a 14-GiB box (RAM cliff).
 - **--quiet** - NDJSON output mode for the REST-API SSE bridge. Not intended for interactive use.
 
 **Concurrency:** The skill and the Web-Frontend (`POST /api/xml/convert`) share
@@ -43,31 +47,37 @@ is active, the script exits with code 7. Same protection in the other
 direction (HTTP returns 409).
 
 **Single-File Mode:**
+
 ```bash
 convert-xml "MyDatabase.xml"
 ```
 
 **Batch Mode:**
+
 ```bash
 convert-xml --batch
 ```
 
 **Batch Mode with Fail-Fast (for debugging):**
+
 ```bash
 convert-xml --batch --fail-fast
 ```
 
 **Force Rebuild (recovery after schema update or DB inconsistency):**
+
 ```bash
 convert-xml --batch --force-rebuild
 ```
 
 **Parallel batch (fastest full rebuild on multi-core):**
+
 ```bash
 convert-xml --batch --force-rebuild --jobs auto
 ```
 
 File paths are fixed:
+
 - Input: `xml/` directory
 - Output: `db/fm_catalog.duckdb`
 
@@ -77,14 +87,12 @@ Before each import, the script compares the `@SCHEMA_VERSION` from
 [sql/convert-xml/convert_xml_01_extract.sql](../../../sql/convert-xml/convert_xml_01_extract.sql) with the version
 persisted in the DB table `SchemaInfo`. Possible outcomes:
 
-| Detection action | Default behavior                                                                  | With `--force-rebuild`   | With `--no-auto-heal`    |
-|------------------|------------------------------------------------------------------------------------|--------------------------|--------------------------|
-| `fresh_build`    | DB does not exist → normal import                                                  | Delete DB + import       | Same as default          |
-| `incremental`    | Schema OK → normal import                                                          | Delete DB + rebuild      | Same as default          |
-| `rebuild`        | Batch: auto-heal (delete DB, re-import all XMLs). Single: abort, exit 6            | Delete DB + rebuild      | Abort, exit 6            |
-| `warn`           | Hash drift without version bump: log warning, normal import                        | Delete DB + rebuild      | Same as default + warning |
-
-See [project/prd_schema_versioning_auto_heal.md](../../../project/prd_schema_versioning_auto_heal.md) for the full specification.
+| Detection action | Default behavior                                                        | With `--force-rebuild` | With `--no-auto-heal`     |
+| ---------------- | ----------------------------------------------------------------------- | ---------------------- | ------------------------- |
+| `fresh_build`    | DB does not exist → normal import                                       | Delete DB + import     | Same as default           |
+| `incremental`    | Schema OK → normal import                                               | Delete DB + rebuild    | Same as default           |
+| `rebuild`        | Batch: auto-heal (delete DB, re-import all XMLs). Single: abort, exit 6 | Delete DB + rebuild    | Abort, exit 6             |
+| `warn`           | Hash drift without version bump: log warning, normal import             | Delete DB + rebuild    | Same as default + warning |
 
 ## Workflow
 
@@ -121,22 +129,28 @@ When invoked with `--batch`, the skill performs these steps:
 ## Available Tools
 
 This skill uses a shell script (maintained under `tools/`) that handles all operations:
+
 - **Script**: `tools/convert_fm_xml.sh`
 - **Usage**: Execute the script with the XML filename as argument
 
 ## Working Process
 
 ### Step 1: Accept User Request
+
 When the user asks to convert a FileMaker XML file, extract the filename.
 
 ### Step 2: Execute Conversion Script
+
 Run the automation script:
+
 ```bash
 bash tools/convert_fm_xml.sh "filename.xml"
 ```
 
 ### Step 3: Report Results
+
 The script will output one of:
+
 - `SUCCESS: Database created successfully from filename.xml`
 - `WARNING: Skipped — legacy SaXML v2.0.0.0 format (FMDynamicTemplate)`
 - `ERROR: File not found: filename.xml`
@@ -148,13 +162,17 @@ Report the result to the user with appropriate context.
 ## Error Handling
 
 ### File Not Found
+
 If the XML file doesn't exist in `xml/` directory, inform the user and suggest:
+
 - Checking the filename spelling
 - Verifying the file is in the `xml/` directory
 - Listing available XML files with `ls xml/*.xml`
 
 ### Encoding Conversion Failed
+
 If iconv fails (rare), this indicates:
+
 - File permissions issue
 - Corrupted XML file
 - Unsupported encoding variant
@@ -162,15 +180,20 @@ If iconv fails (rare), this indicates:
 Suggest checking file integrity.
 
 ### Unsupported XML Format (Skipped)
+
 Files using the legacy `FMDynamicTemplate` root element (SaXML v2.0.0.0, FileMaker 18.x) are automatically skipped with a warning. Only `FMSaveAsXML` (SaXML v2.1.0.0+, FileMaker 19+) is supported.
 
 ### Schema drift (exit 6)
+
 Triggered when the DB was built with an older `@SCHEMA_VERSION` than the current SQL template and the user did not choose an auto-heal path:
+
 - **Single-file mode with drift** → automatic abort (auto-heal would lose other files from the DB). Recommendation: `convert-xml --batch --force-rebuild`.
 - **`--no-auto-heal` flag active** → manual intervention expected.
 
 ### DuckDB Conversion Failed
+
 If DuckDB fails, possible causes:
+
 - Invalid XML structure
 - Memory issues (file too large)
 - Database permissions
@@ -178,7 +201,9 @@ If DuckDB fails, possible causes:
 Suggest examining the XML file or checking available disk space.
 
 ### Batch Processing Errors
+
 If some files fail during batch processing:
+
 - **Normal Mode**: The script continues with remaining files and reports all errors at the end
 - **Fail-Fast Mode** (`--fail-fast`): The script stops immediately on first error for faster debugging
 - Failed files are listed at the end in the final report (normal mode only)
@@ -194,12 +219,14 @@ Provide concise feedback:
 ### Single-File Mode
 
 **Success:**
+
 ```
 Successfully converted filename.xml to DuckDB database.
 Database location: db/fm_catalog.duckdb
 ```
 
 **Failure:**
+
 ```
 Conversion failed: [specific error message]
 [suggestion for resolution]
@@ -208,6 +235,7 @@ Conversion failed: [specific error message]
 ### Batch Mode
 
 **Success (all files):**
+
 ```
 Batch import complete!
 Total files: 62
@@ -221,6 +249,7 @@ Database location: db/fm_catalog.duckdb
 ```
 
 **Partial Success (some files failed):**
+
 ```
 Batch import complete with errors.
 Total files: 62
@@ -240,16 +269,19 @@ Note: Universal catalogs were created for successfully imported files.
 ## Notes
 
 ### General
+
 - All temporary files are automatically cleaned up
 - Original XML files are never modified
 - The SQL pipeline templates (`sql/convert-xml/convert_xml_0N_*.sql`) remain unchanged
 - No UTF-8 conversion files are left in the xml/ directory
 
 ### Single-File Mode
+
 - Each conversion appends/updates data in the database (UPSERT semantics)
 - Universal catalogs are NOT automatically created (user may import more files)
 
 ### Batch Mode
+
 - All XML files in `xml/` directory are processed
 - Universal catalogs are automatically created at the end
 - Processing continues even if some files fail

@@ -1,17 +1,20 @@
 {
   "manifest": {
     "title": "스크립트의 TO-DO",
-    "description": "TO-DO 마커가 있는 주석 스텝의 개수를 세고, 파일별로 영향을 받는 모든 스크립트를 보여줍니다."
+    "description": "주석 스텝의 미완료 작업을 세 가지 표기법(TO DO, FIX IT, TBD)으로 표시합니다. 개수를 클릭하면 결과 목록을 필터링합니다."
   },
   "layout": {
-    "root.children[0].props.title": "TO-DO 개요",
-    "root.children[0].children[0].props.items[0].label": "TO-DO 라인",
-    "root.children[0].children[0].props.items[1].label": "스크립트",
-    "root.children[0].children[0].props.items[2].label": "파일",
-
-    "root.children[1].props.title": "TO-DO가 있는 스크립트",
-    "root.children[1].children[0].props.columns[0].label": "파일",
-    "root.children[1].children[0].props.columns[1].label": "스크립트 이름",
-    "root.children[1].children[0].props.columns[2].label": "개수"
+    "todo_kpi_kpistrip.props.items[0].label": "전체 라인",
+    "todo_kpi_kpistrip.props.items[1].label": "TO DO 라인",
+    "todo_kpi_kpistrip.props.items[2].label": "FIX IT 라인",
+    "todo_kpi_kpistrip.props.items[3].label": "TBD 라인",
+    "todo_kpi_kpistrip.props.items[4].label": "스크립트",
+    "todo_kpi_kpistrip.props.items[5].label": "파일",
+    "todo_lines.props.title": "표시된 주석 라인",
+    "todo_lines_table.props.columns[0].label": "파일",
+    "todo_lines_table.props.columns[1].label": "스크립트 이름",
+    "todo_lines_table.props.columns[2].label": "패턴",
+    "todo_lines_table.props.columns[3].label": "주석",
+    "todo_lines_table.props.searchPlaceholder": "주석 검색 …"
   }
 }

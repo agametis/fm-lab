@@ -640,6 +640,110 @@
   font-style: italic;
 }
 
+/* --- View toolbar (tiles⇄list toggle + entry-count meta) --- */
+.dash-viewbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 12px;
+}
+.dash-viewbar__toggle {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.dash-viewbar__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  border: none;
+  background: var(--color-bg-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.dash-viewbar__btn + .dash-viewbar__btn {
+  border-left: 1px solid var(--color-border);
+}
+.dash-viewbar__btn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-hover-bg);
+}
+.dash-viewbar__btn.active {
+  color: var(--color-accent);
+  background: var(--color-accent-soft-bg);
+}
+.dash-viewbar__btn svg {
+  flex: 0 0 auto;
+  display: block;
+}
+.dash-viewbar__count {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- NavList (list view of the tile entries) --- */
+.dash-navlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.dash-navlist > li + li .dash-navlist__item {
+  border-top: 1px solid var(--color-border);
+}
+.dash-navlist__item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+  background: var(--color-bg-surface);
+  border: none;
+  color: inherit;
+  font-family: inherit;
+  cursor: default;
+}
+.dash-navlist__item--clickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.dash-navlist__item--clickable:hover {
+  background: var(--color-hover-bg);
+}
+.dash-navlist__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  flex: 0 0 auto;
+}
+.dash-navlist__subtitle {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dash-navlist__badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--color-accent-soft-bg);
+  color: var(--color-accent-soft-fg);
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
 /* --- NavButton --- */
 .dash-navbutton {
   display: flex;
@@ -949,7 +1053,7 @@
 /* ---------------------------------------------------------------------------
  * XML-Convert Control + Log
  * Eigenständige Top-Level-Primitives (kein Inline-Control). Der Button
- * verwendet die Markenakzentfarbe als "Signalfarbe" (PRD §4.1 / §11.1).
+ * verwendet die Markenakzentfarbe als "Signalfarbe".
  * ------------------------------------------------------------------------- */
 .xml-convert-control {
   display: flex;
@@ -966,7 +1070,7 @@
   margin-right: auto;
   gap: 6px;
   font-size: 0.85rem;
-  color: var(--text-muted, #6b7280);
+  color: var(--color-text-muted);
   cursor: pointer;
   user-select: none;
 }
@@ -1118,10 +1222,17 @@
   .xml-convert-progress--dissolving { animation-duration: 0.01s; }
 }
 
+/* Block 2 ist jetzt ein <details> — block-Layout, damit der Disclosure-
+ * Marker des <summary> sauber rendert. Der Log-Body bekommt den Abstand. */
 .xml-convert-log-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: block;
+}
+.xml-convert-log-summary {
+  cursor: pointer;
+  user-select: none;
+}
+.xml-convert-log-wrap > .xml-convert-log {
+  margin-top: 8px;
 }
 .xml-convert-status {
   font-size: 0.85rem;
@@ -1194,4 +1305,180 @@
 .xml-empty-card__actions {
   display: flex;
   justify-content: flex-end;
+}
+
+/* ── SemanticNamesStatus (Block 3 „Graph-Communities") ───────────────────── */
+.semantic-names-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.semantic-names-status--compact {
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+/* Eine Kennzahl-Zeile: Label · Wert · Aktion. Zwei unabhängige Ampeln, je eine
+ * eigene Klasse aus structure.state / naming.state (keine Hardcodes). */
+.sn-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+.sn-row--warn {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-fg);
+  border-color: var(--color-warning-border);
+}
+.sn-row--critical {
+  background: var(--color-error-bg);
+  color: var(--color-error-fg);
+  border-color: var(--color-error-border);
+}
+.sn-row__label {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+.sn-row--warn .sn-row__label,
+.sn-row--critical .sn-row__label {
+  color: inherit;
+}
+.sn-row__value {
+  color: var(--color-text-primary);
+}
+.sn-row--warn .sn-row__value,
+.sn-row--critical .sn-row__value {
+  color: inherit;
+}
+.sn-row__hint {
+  color: var(--color-text-muted);
+  font-size: 0.85em;
+}
+.sn-row--warn .sn-row__hint,
+.sn-row--critical .sn-row__hint {
+  color: inherit;
+  opacity: 0.85;
+}
+.sn-row__hint--provisional {
+  font-style: italic;
+}
+.sn-row__action {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* „Communities zeigen" (Feature D) — dezent gefüllte Outline-Variante (analog
+ * .xml-convert-btn--outline „Neu scannen"): nur Navigation nach /cluster, kein
+ * Heilungs-Akzent. Explizite Textfarbe (Light-Mode-Falle: ein <button> ohne
+ * eigenes color: erbt sonst die globale weiße button-Farbe). */
+.sn-open-cluster-btn {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.sn-open-cluster-btn:hover {
+  background: var(--color-hover-bg);
+  color: var(--color-text-primary);
+}
+
+/* ① Rebuild-Button — gefüllt (Frontend heilt). Explizite Textfarbe: ein <button>
+ * ohne eigenes color: erbt sonst die globale weiße button-Farbe (Light-Mode-Falle). */
+.sn-rebuild-btn {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border: 1px solid var(--color-accent);
+  border-radius: 6px;
+  background: var(--color-accent);
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s, opacity 0.12s;
+}
+.sn-rebuild-btn:hover:not(:disabled) {
+  background: var(--color-accent-hover, var(--color-accent));
+  border-color: var(--color-accent-hover, var(--color-accent));
+}
+.sn-rebuild-btn:disabled {
+  cursor: default;
+  background: var(--color-bg-surface);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  opacity: 0.8;
+}
+
+/* ② Skill-Befehl — KEIN Button-Look, nur ein kopierbarer Hinweis (nur User kann
+ * den CLI-Skill starten). Explizite Textfarbe (Light-Mode-Falle wie oben). */
+.sn-copy-cmd {
+  font: inherit;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px dashed var(--color-border);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sn-copy-cmd:hover {
+  background: var(--color-hover-bg);
+  color: var(--color-text-primary);
+}
+.sn-copy-cmd code {
+  font-family: var(--font-mono, monospace);
+}
+.sn-copy-cmd__feedback {
+  color: var(--color-success-fg);
+  font-size: 0.85em;
+}
+
+.sn-sequence-hint {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  color: var(--color-warning-fg);
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+  border-radius: 8px;
+}
+/* Rebuild-Log — mehrzeilig & scrollbar, analog zum Block-2-Log. Begrenzte Höhe
+ * (kein Aufblähen der Card), vertikal scrollbar; `white-space: pre` auf den Zeilen
+ * lässt breite cluster.sh-Tabellenzeilen horizontal scrollen statt sie auf eine
+ * Zeile abzuschneiden. */
+.sn-rebuild-log {
+  margin-top: 8px;
+  max-height: 180px;
+  overflow: auto;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+  background: var(--color-bg-surface, var(--color-bg-elevated));
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.sn-rebuild-log__line {
+  white-space: pre;
+}
+.sn-rebuild-log--error {
+  color: var(--color-error-fg);
+  border-color: var(--color-error-border);
 }

@@ -7,16 +7,19 @@ import { ObjectHeader } from './ObjectHeader';
 import { HierarchyTree, type HierarchyTreeHandle } from './HierarchyTree';
 import { TypeDetail } from './TypeDetail';
 import { ObjectGraphPanel, type ObjectGraphPanelHandle } from './ObjectGraphPanel';
-import { Breadcrumbs } from './Breadcrumbs';
+import type { LayoutCanvasHandle } from './LayoutCanvas';
+import { SubNav } from './SubNav';
+import { StatusBar } from './StatusBar';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
-import { ThemeToggle } from './ThemeToggle';
 import { RefOriginPill } from './RefOriginPill';
 import { AmbiguousFilePicker } from './AmbiguousFilePicker';
+import { Slot } from '../plugins';
 import { useEscapeStack } from '../hooks/useEscapeStack';
 import { useUrlState } from '../hooks/useUrlState';
+import { buildBreadcrumb, buildObjectPath } from '../lib/navigation';
 import { CurrentFileContext } from '../lib/currentFileContext';
-import type { BreadcrumbItem, DetailViewTab } from '../types';
+import type { DetailViewTab } from '../types';
 import { DETAIL_TABS } from '../types';
 import '../DetailView.css';
 
@@ -43,9 +46,17 @@ export const DetailView: React.FC = () => {
   // Klon-Disambiguierung: `?file=` ist der zweite Identitäts-Begleiter neben der
   // UUID (siehe lib/navigation.ts). Fehlt er, gilt Graceful Downgrade.
   const [fileParam] = useUrlState<string>('file', '');
-  const { object, references, loading, error, ambiguousFiles, retry } = useObjectDetail(uuid, fileParam || null);
+  // `ref` (Cross-Reference-Origin) muss vor useObjectDetail gelesen werden, weil
+  // er als `origin` die operationalen Referenzen eines Pseudo-Aggregats
+  // (ScriptStepType) anreichert (Origin_Hit-Markierung der Zielfelder).
+  const [refParam, setRefParam] = useUrlState<string>('ref', '');
+  const { object, references, loading, error, ambiguousFiles, retry } = useObjectDetail(uuid, fileParam || null, refParam || null);
   const hierarchyRef = useRef<HierarchyTreeHandle>(null);
   const graphPanelRef = useRef<ObjectGraphPanelHandle>(null);
+  // Detail-Tab eines Layouts: eingebetteter LayoutCanvas. Der Handle wird in den
+  // ESC-Stack unten verdrahtet, sodass ESC im Layout-Suchfeld zuerst Suche/Filter
+  // räumt (analog zur Vollbild-LayoutView), statt direkt zurückzunavigieren.
+  const layoutCanvasRef = useRef<LayoutCanvasHandle>(null);
 
   // URL ist Single Source of Truth für Tab — beim Wechsel wird die URL
   // aktualisiert (replace), sodass beim Zurück-Navigieren der Tab erhalten
@@ -61,9 +72,9 @@ export const DetailView: React.FC = () => {
   }, [setTabParam]);
 
   // Cross-Reference Highlight.
-  // `ref` lebt nur in der URL; useRefOrigin holt das Origin + alle Back-Reference-
-  // UUIDs im Destination-Container vom Backend und cached pro (dst, ref)-Paar.
-  const [refParam, setRefParam] = useUrlState<string>('ref', '');
+  // `ref` lebt nur in der URL (oben gelesen); useRefOrigin holt das Origin + alle
+  // Back-Reference-UUIDs im Destination-Container vom Backend und cached pro
+  // (dst, ref)-Paar.
   // destFile skopiert die Destination-Seite (das aktuell geöffnete, klon-
   // aufgelöste Objekt) im Back-Refs-Lookup; der Origin (ref) bleibt downgrade.
   const refOrigin = useRefOrigin(uuid, refParam || null, fileParam || null);
@@ -86,6 +97,29 @@ export const DetailView: React.FC = () => {
   // Mehrstufige ESC-Logik: Suchfeld leeren → Filter leeren → Zurück.
   // Stages werden in Reihenfolge geprüft, die erste aktive konsumiert ESC.
   useEscapeStack([
+    // Detail-Tab (Layout): Tooltip → Suche/Selektion → Typ-Filter. Außerhalb des
+    // Layout-Detail-Tabs ist layoutCanvasRef null, daher fallen diese Stages durch.
+    () => {
+      if (layoutCanvasRef.current?.hasTooltip()) {
+        layoutCanvasRef.current.closeTooltip();
+        return true;
+      }
+      return false;
+    },
+    () => {
+      if (layoutCanvasRef.current?.hasSearchState()) {
+        layoutCanvasRef.current.clearSearch();
+        return true;
+      }
+      return false;
+    },
+    () => {
+      if (layoutCanvasRef.current?.hasFilters()) {
+        layoutCanvasRef.current.clearFilters();
+        return true;
+      }
+      return false;
+    },
     () => {
       if (hierarchyRef.current?.hasQuery()) {
         hierarchyRef.current.clearQuery();
@@ -155,11 +189,13 @@ export const DetailView: React.FC = () => {
   }
 
   const breadcrumbType = displayObjectType(object.Object_Type, object.Source_Table);
-  const breadcrumbItems: BreadcrumbItem[] = [
-    { label: t('nav:breadcrumbs.search') as string, path: '/' },
-    { label: breadcrumbType, path: `/?type=${breadcrumbType}` },
-    { label: object.Object_Name || (t('nav:detailView.noName') as string), path: null },
-  ];
+  const breadcrumbItems = buildBreadcrumb({
+    kind: 'object',
+    objectType: breadcrumbType,
+    objectName: object.Object_Name || (t('nav:detailView.noName') as string),
+    objectPath: buildObjectPath(uuid!, null, fileParam || null),
+    tab: activeTab,
+  }, t);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -172,6 +208,7 @@ export const DetailView: React.FC = () => {
             highlightText={refOrigin.origin?.name ?? null}
             onClearRef={dismissRefOrigin}
             onLiveMatchCount={setLiveMatchCount}
+            layoutCanvasRef={layoutCanvasRef}
           />
         );
       case 'references':
@@ -186,55 +223,59 @@ export const DetailView: React.FC = () => {
   return (
     <CurrentFileContext.Provider value={object.File_Name ?? null}>
     <div className="app" role="main" aria-labelledby="object-title">
-      {/* Navigation bar */}
-      <div className="detail-nav">
-        <button onClick={handleBack} className="back-button" aria-label={t('nav:detailView.backAria') as string}>
-          &larr; {t('nav:detailView.backLabel')}
-        </button>
-        <Breadcrumbs items={breadcrumbItems} />
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <ThemeToggle />
-        </div>
-      </div>
+      {/* Navigation (Ebene 3+4): Home-Icon + Breadcrumb + Meta-Navi, darunter Back.
+          Die Origin-Indikator-Pill (Cross-Reference Highlight) erscheint direkt
+          rechts neben dem Zurück-Button — nur wenn ein `ref`-Parameter in der URL
+          gesetzt ist. liveMatchCount überschreibt den server-seitigen Container-
+          Self-Link-Count für Token-Container-Detail-Tabs (Script / CF / Field). */}
+      <SubNav breadcrumbs={breadcrumbItems} />
+      <StatusBar
+        onBack={handleBack}
+        message={refParam ? (
+          <RefOriginPill
+            state={refOrigin}
+            rawRef={refParam}
+            onDismiss={dismissRefOrigin}
+            liveMatchCount={activeTab === 'detail' ? liveMatchCount : undefined}
+          />
+        ) : undefined}
+      />
 
       {/* Object header */}
       <ObjectHeader object={object} />
 
-      {/* Origin-Indikator-Pill (Cross-Reference Highlight) — nur sichtbar,
-          wenn ein `ref`-Parameter in der URL gesetzt ist. liveMatchCount
-          überschreibt den server-seitigen Container-Self-Link-Count für
-          Token-Container-Detail-Tabs (Script / CustomFunction / Field). */}
-      {refParam && (
-        <RefOriginPill
-          state={refOrigin}
-          rawRef={refParam}
-          onDismiss={dismissRefOrigin}
-          liveMatchCount={activeTab === 'detail' ? liveMatchCount : undefined}
-        />
-      )}
-
-      {/* Sub-navigation tabs */}
-      <nav className="detail-tab-nav" role="tablist" aria-label={t('nav:detailView.tabsAria') as string}>
-        {DETAIL_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            className={`tab-button${activeTab === tab.id ? ' active' : ''}${!tab.enabled ? ' disabled' : ''}`}
-            onClick={() => tab.enabled && setActiveTab(tab.id)}
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            aria-disabled={!tab.enabled}
-            tabIndex={tab.enabled ? 0 : -1}
-          >
-            {t(`nav:${tab.label}`)}
-          </button>
-        ))}
-      </nav>
-
-      {/* Separator */}
-      <hr className="detail-separator" />
+      {/* Sub-navigation tabs (left) + object actions like "Open in FileMaker" (right) */}
+      <div className="detail-tab-bar">
+        <nav className="detail-tab-nav" role="tablist" aria-label={t('nav:detailView.tabsAria') as string}>
+          {DETAIL_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              className={`tab-button${activeTab === tab.id ? ' active' : ''}${!tab.enabled ? ' disabled' : ''}`}
+              onClick={() => tab.enabled && setActiveTab(tab.id)}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-disabled={!tab.enabled}
+              tabIndex={tab.enabled ? 0 : -1}
+            >
+              {t(`nav:${tab.label}`)}
+            </button>
+          ))}
+        </nav>
+        <div className="detail-tab-actions">
+          <Slot
+            name="objectHeaderActions"
+            objectUuid={object.Object_UUID}
+            objectType={object.Object_Type}
+            objectName={object.Object_Name || ''}
+            fileName={object.File_Name || ''}
+          />
+        </div>
+      </div>
 
       {/* Tab content */}
-      {renderTabContent()}
+      <div className="detail-tab-content">
+        {renderTabContent()}
+      </div>
     </div>
     </CurrentFileContext.Provider>
   );

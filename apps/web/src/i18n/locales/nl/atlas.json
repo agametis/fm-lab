@@ -1,0 +1,97 @@
+{
+  "title": "Grafiek-atlas",
+  "subtitle": "Top-down startpunt — klik op een tegel om in te zoomen, op een blad om het in de Graaf-verkenner te openen.",
+  "headerButton": "Atlas",
+  "headerButton_hint": "Open de Grafiek-atlas — het top-downoverzicht van de hele oplossing.",
+  "segmentation": "Segmentatie",
+  "segment": {
+    "community": "Community",
+    "file": "Bestand",
+    "hubs": "Topknopen",
+    "type": "Type"
+  },
+  "breadcrumb": {
+    "root": "Atlas"
+  },
+  "representation": "Weergave",
+  "view": {
+    "composition": "Compositie",
+    "topology": "Topologie",
+    "composition_hint": "Treemap — hoe groot is wat (verhouding).",
+    "topology_hint": "Metagraaf — hoe segmenten samenhangen (alleen Community/Bestand)."
+  },
+  "weight": {
+    "label": "Weging",
+    "domain": "Domein",
+    "logical": "Ruw",
+    "domain_hint": "Domeingewicht (ClusterEdges) — ingebouwde functies en god-nodes al verwijderd.",
+    "logical_hint": "Ruwe logische graad — inclusief ingebouwde functies."
+  },
+  "search": {
+    "placeholder": "Zichtbare tegels filteren…"
+  },
+  "types": {
+    "label": "Objecttypen",
+    "hide": "{{type}} verbergen",
+    "show": "{{type}} tonen",
+    "reset": "Opnieuw instellen"
+  },
+  "rest": {
+    "collapse": "Inklappen naar topvermeldingen",
+    "hide": "verbergen"
+  },
+  "status": {
+    "semanticNames": "Semantische namen: {{value}}",
+    "semanticNamesNone": "Semantische namen: --",
+    "count": "Aantal: {{semantic}} / {{user}} door gebruiker gedefinieerd",
+    "clustersMissing": "Nog niet geclusterd — voer “fm-graph-cluster” uit om Community en Topologie in te schakelen."
+  },
+  "loading": "Laden…",
+  "empty": "Niets om hier te tonen.",
+  "error": "Kon de atlas niet laden: {{message}}",
+  "truncated": "De belangrijkste vermeldingen worden getoond — de rest zit in de grijze tegel.",
+  "hint": {
+    "leafClick": "Tip: klik op een bladtegel om dat object in de Graaf-verkenner te openen.",
+    "metaClick": "Tip: klik op een supernode om het zwaarste lid in de Graaf-verkenner te openen."
+  },
+  "topN": {
+    "label": "Top-N",
+    "hint": "Hoeveel topsegmenten/bladeren te tonen voordat de rest in één tegel wordt gevouwen.",
+    "auto": "Terug naar de automatische drempel (per niveau)",
+    "autoTag": "auto"
+  },
+  "hidden": {
+    "mode": "Genegeerd",
+    "dim": "dimmen",
+    "hide": "verbergen",
+    "dim_hint": "Genegeerde nodes blijven zichtbaar (gedimd) en omkeerbaar.",
+    "hide_hint": "Genegeerde nodes worden verwijderd — ongedaan maken alleen via de lijst.",
+    "manage": "beheren…",
+    "manage_hint": "Lijst van alle genegeerde nodes — herstel ze hier.",
+    "empty": "Geen nodes genegeerd.",
+    "restore": "Herstellen"
+  },
+  "panel": {
+    "infoButton": "Opties",
+    "close": "Sluiten",
+    "type": "Type",
+    "save": "Opslaan",
+    "saving": "Opslaan…",
+    "openExplorer": "Graaf",
+    "openDetail": "Details",
+    "hideNode": "Negeren",
+    "unhideNode": "Niet negeren",
+    "hiddenBadge": "genegeerd",
+    "community": {
+      "title": "Community",
+      "nameLabel": "Eigen naam",
+      "namePlaceholder": "bijv. ‘Facturatie & PDF’",
+      "notesLabel": "Notities",
+      "notesPlaceholder": "Vrije tekst voor deze community…"
+    },
+    "node": {
+      "title": "Node"
+    },
+    "cancel": "Annuleren"
+  }
+}

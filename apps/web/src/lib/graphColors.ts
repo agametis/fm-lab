@@ -58,3 +58,50 @@ export const getCommunityColor = (community: number | null): string =>
   community === null || community === undefined
     ? UNCLUSTERED_COLOR
     : communityPalette[((community % communityPalette.length) + communityPalette.length) % communityPalette.length];
+
+/**
+ * Theme-aware graph surface tokens (F1) — the non-palette colors of the Cytoscape
+ * graphs (edge line/arrow/label/label-bg/structural, node outline/label, rest node).
+ *
+ * Cytoscape stylesheets are plain JS objects and cannot read CSS variables, so we
+ * resolve the `--color-graph-*` tokens from the document root via getComputedStyle.
+ * The components rebuild their stylesheet from this on every theme change (the
+ * tokens are already theme-resolved at read time). Hardcoded fallbacks mirror the
+ * dark values in case a token is missing (SSR / very old build).
+ */
+export type GraphThemeTokens = {
+  edge: string;
+  edgeArrow: string;
+  edgeLabel: string;
+  edgeLabelBg: string;
+  edgeStructural: string;
+  nodeOutline: string;
+  nodeLabel: string;
+  rest: string;
+};
+
+export function readGraphThemeTokens(): GraphThemeTokens {
+  const fallback: GraphThemeTokens = {
+    edge: '#7a7a8c',
+    edgeArrow: '#b8b8c8',
+    edgeLabel: '#888888',
+    edgeLabelBg: '#1a1a1a',
+    edgeStructural: '#5a5a66',
+    nodeOutline: '#1a1a1a',
+    nodeLabel: '#e6e6ea',
+    rest: '#5a5a66',
+  };
+  if (typeof document === 'undefined' || typeof getComputedStyle !== 'function') return fallback;
+  const cs = getComputedStyle(document.documentElement);
+  const read = (name: string, fb: string) => cs.getPropertyValue(name).trim() || fb;
+  return {
+    edge: read('--color-graph-edge', fallback.edge),
+    edgeArrow: read('--color-graph-edge-arrow', fallback.edgeArrow),
+    edgeLabel: read('--color-graph-edge-label', fallback.edgeLabel),
+    edgeLabelBg: read('--color-graph-edge-label-bg', fallback.edgeLabelBg),
+    edgeStructural: read('--color-graph-edge-structural', fallback.edgeStructural),
+    nodeOutline: read('--color-graph-node-outline', fallback.nodeOutline),
+    nodeLabel: read('--color-graph-node-label', fallback.nodeLabel),
+    rest: read('--color-graph-rest', fallback.rest),
+  };
+}

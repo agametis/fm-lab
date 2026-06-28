@@ -1,0 +1,246 @@
+/* Cluster-Übersicht (/cluster). Eigene React-Page,
+ * Design-Tokens wie Atlas/Dashboard. Breite = Startseite (#root: max-width 1280
+ * + 1.25rem Inset) → KEIN eigenes max-width/Zentrieren, nur vertikales Spacing. */
+
+.cluster-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 0 40px;
+}
+
+.cluster-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cluster-title {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--color-text-primary);
+}
+.cluster-subtitle {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--color-text-secondary);
+}
+
+/* ── Hero-Balken: KPI-Kacheln + zweizeiliger Run-Status ── */
+.cluster-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--color-accent-soft-bg, var(--color-bg-surface)), var(--color-bg-elevated, var(--color-bg-surface)));
+}
+.cluster-hero__kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+}
+.cluster-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 110px;
+}
+.cluster-kpi__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+.cluster-kpi__value {
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--color-text-primary);
+}
+.cluster-hero__status {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border-subtle, var(--color-border));
+}
+.cluster-status-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+.cluster-status__sep {
+  color: var(--color-text-muted);
+}
+.cluster-status-line--named {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+/* ── Filter-Zeile: [alle|benannt|unbenannt] · Count · Suche ── */
+.cluster-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cluster-segbar {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+/* Explizite Textfarben (Light-Mode-Falle: <button> erbt sonst globales Weiß). */
+.cluster-segbtn {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 5px 14px;
+  border: none;
+  border-right: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.cluster-segbtn:last-child {
+  border-right: none;
+}
+.cluster-segbtn:hover {
+  background: var(--color-hover-bg);
+  color: var(--color-text-primary);
+}
+.cluster-segbtn.active {
+  background: var(--color-accent);
+  color: #fff;
+}
+.cluster-count {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+.cluster-search {
+  margin-left: auto;
+  min-width: 220px;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+}
+
+/* ── Liste ── */
+.cluster-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cluster-item {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-surface);
+  overflow: hidden;
+}
+.cluster-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+}
+.cluster-row__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 6px;
+}
+.cluster-row__main--clickable {
+  cursor: pointer;
+}
+.cluster-row__main--clickable:hover {
+  background: var(--color-hover-bg);
+}
+.cluster-row__name {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cluster-row__badge {
+  font-size: 0.68rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--color-warning-bg, rgba(154, 154, 168, 0.25));
+  color: var(--color-warning-fg, var(--color-text-secondary));
+}
+.cluster-row__meta {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+.cluster-row__desc {
+  font-size: 0.84rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+/* Explizite Textfarbe (Light-Mode-Falle). */
+.cluster-row__edit {
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 5px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.cluster-row__edit:hover {
+  background: var(--color-hover-bg);
+  color: var(--color-text-primary);
+}
+.cluster-row__editor {
+  padding: 4px 12px 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* ── Empty-State ── */
+.cluster-empty {
+  padding: 24px 16px;
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+.cluster-empty strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-text-primary);
+}
+.cluster-empty p {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+/* ── Bottom-Heil-Block ── */
+.cluster-heal {
+  margin-top: 8px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-surface);
+}

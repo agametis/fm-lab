@@ -19,6 +19,8 @@ export type InspectNeighbor = {
 };
 
 interface ExplorerInspectPanelProps {
+  /** User-resized panel width in px (drag handle); falls back to the CSS default. */
+  width?: number;
   node: GraphNode;
   neighbors: InspectNeighbor[];
   expanding: boolean;
@@ -33,11 +35,15 @@ interface ExplorerInspectPanelProps {
 }
 
 export function ExplorerInspectPanel(props: ExplorerInspectPanelProps) {
-  const { node, neighbors, expanding, onClose, onOpenDetails, onSetFocus, onExpand, onCollapse, onSelectNeighbor } = props;
+  const { width, node, neighbors, expanding, onClose, onOpenDetails, onSetFocus, onExpand, onCollapse, onSelectNeighbor } = props;
   const { t } = useTranslation(['explorer', 'common']);
 
   return (
-    <aside className="explorer-inspect-panel" aria-label={t('inspect.ariaLabel') as string}>
+    <aside
+      className="explorer-inspect-panel"
+      style={width ? { width } : undefined}
+      aria-label={t('inspect.ariaLabel') as string}
+    >
       <div className="explorer-inspect-head">
         <span className="explorer-type-dot" style={{ background: getTypeColor(node.type) }} />
         <h2 className="explorer-inspect-title" title={node.label}>{node.label}</h2>

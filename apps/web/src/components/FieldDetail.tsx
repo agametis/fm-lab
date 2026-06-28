@@ -11,6 +11,8 @@ interface FieldDetailProps {
   uuid: string;
   /** Cross-reference highlight: highlight tokens that match these UUIDs. */
   highlightRefUuids?: Set<string> | null;
+  /** Reicht die im FieldViewer gezählten Highlight-Treffer hoch zur RefOriginPill. */
+  onLiveMatchCount?: (count: number) => void;
 }
 
 /**
@@ -19,7 +21,7 @@ interface FieldDetailProps {
  * a Calculation or AutoEnter-Calculation formula and renders metadata +
  * token sequence with reference-DB tooltips.
  */
-export const FieldDetail: React.FC<FieldDetailProps> = ({ uuid, highlightRefUuids }) => {
+export const FieldDetail: React.FC<FieldDetailProps> = ({ uuid, highlightRefUuids, onLiveMatchCount }) => {
   const { t } = useTranslation(['detail']);
   const lang = useApiLang();
   const currentFile = useCurrentFile();
@@ -29,5 +31,5 @@ export const FieldDetail: React.FC<FieldDetailProps> = ({ uuid, highlightRefUuid
   if (error) return <ErrorMessage message={error} onRetry={retry} />;
   if (!data) return <div className="no-references">{t('detail:noReferences')}</div>;
 
-  return <FieldViewer data={data} highlightRefUuids={highlightRefUuids} />;
+  return <FieldViewer data={data} highlightRefUuids={highlightRefUuids} onLiveMatchCount={onLiveMatchCount} />;
 };

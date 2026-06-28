@@ -125,7 +125,8 @@
     "noReferences": "Inga referenser hittades",
     "noFilterMatches": "Inga träffar för aktuella filter",
     "crossFileBadge": "Mellan filer",
-    "itemAriaLabel": "Navigera till {{type}}: {{name}}"
+    "itemAriaLabel": "Navigera till {{type}}: {{name}}",
+    "notNavigable": "Målet finns inte i den importerade datamängden"
   },
   "searchOptions": {
     "regionAria": "Sorterings- och grupperingsalternativ",
@@ -181,7 +182,8 @@
     "usageBadge_other": "{{count}} användningar",
     "showAria": "{{type}}: {{name}} — visa",
     "noName": "(inget namn)",
-    "filterByCategory": "Filtrera efter {{category}}"
+    "filterByCategory": "Filtrera efter {{category}}",
+    "graphButton": "Graf"
   },
   "scriptSearchFilter": {
     "searchAria": "Sök referenser",

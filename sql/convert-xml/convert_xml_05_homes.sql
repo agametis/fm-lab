@@ -308,3 +308,26 @@ SELECT DISTINCT Source_UUID, Source_File, Target_UUID, Target_File
 FROM ClusterEdgesBase
 WHERE Source_UUID NOT IN (SELECT Object_UUID FROM ClusterGodNodes)
   AND Target_UUID NOT IN (SELECT Object_UUID FROM ClusterGodNodes);
+
+-- ============================================================================
+-- ClusterNodeUniverse — aktueller Knotenraum U (Drift-Nenner, jeder Import)
+-- ============================================================================
+-- Endpunkte der ClusterEdges-View = der AKTUELLE Knotenraum (frisch je Import),
+-- gegen den die zwischen zwei Cluster-Läufen veraltende ObjectClusters-Partition
+-- gemessen wird (Struktur-/Benennungs-Drift). Materialisiert (Tabelle,
+-- nicht View), klein (2 Spalten), via Sync in die Copy mitkopiert.
+--
+-- OOM-Schutz: Die ClusterEdges-View ist eine teure View-Kette (LogicalLinks →
+-- ClusterEdgesBase → ClusterGodNodes → ClusterEdges). Ein naiver UNION über
+-- Source-/Target-Endpunkte scannt sie ZWEIMAL → OOM bei 8 Threads/2 GB
+-- (clusteredges-view-double-scan-oom). Deshalb GENAU EINE Materialisierung der
+-- Kanten (WITH … AS MATERIALIZED) und der billige Knoten-Unnest darüber.
+CREATE OR REPLACE TABLE ClusterNodeUniverse AS
+WITH edges AS MATERIALIZED (
+    SELECT Source_UUID, Source_File, Target_UUID, Target_File FROM ClusterEdges
+)
+SELECT DISTINCT Object_UUID, File_Name FROM (
+    SELECT Source_UUID AS Object_UUID, Source_File AS File_Name FROM edges
+    UNION ALL
+    SELECT Target_UUID AS Object_UUID, Target_File AS File_Name FROM edges
+);

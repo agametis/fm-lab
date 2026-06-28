@@ -649,7 +649,7 @@ async function countSearchResults(searchOptions) {
  * Liefert ein {data, meta}-Objekt (kompatibel zum Standard-References-Pfad)
  * oder NULL, wenn das Objekt kein Pseudo-Typ ist.
  */
-async function getPseudoTypeReferences(uuid, direction, link_type, limit) {
+async function getPseudoTypeReferences(uuid, direction, link_type, limit, origin = null) {
   // Object-Type lookup
   const typeLookup = await db.executeQuery(
     'SELECT Object_Type, Object_Name FROM ObjectCatalog WHERE Object_UUID = ?',
@@ -678,8 +678,10 @@ async function getPseudoTypeReferences(uuid, direction, link_type, limit) {
   }
 
   if (objType === 'ScriptStepType') {
-    // Aufrufer = Scripts mit Step_Name = Object_Name
-    const sql = `
+    // ── (A) Aufrufer (parent) = Scripts mit Step_Name = Object_Name ──────────
+    // `Origin_Hit` markiert das Script, aus dem der User auf den Token-Knoten
+    // gesprungen ist (?ref=<script>) — die Frontend-Liste hebt es hervor.
+    const scriptSql = `
       SELECT
         'parent' as direction,
         s.Script_UUID as uuid,
@@ -690,7 +692,9 @@ async function getPseudoTypeReferences(uuid, direction, link_type, limit) {
         FALSE as Is_Cross_File,
         NULL as Container_UUID,
         NULL as Container_Type,
-        COUNT(*) as Call_Count
+        TRUE as navigable,
+        COUNT(*) as Call_Count,
+        BOOL_OR(s.Script_UUID = ?) as Origin_Hit
       FROM StepsForScripts s
       JOIN ObjectCatalog oc ON oc.Object_UUID = ?
       WHERE s.Step_Name = oc.Object_Name
@@ -698,11 +702,161 @@ async function getPseudoTypeReferences(uuid, direction, link_type, limit) {
       ORDER BY Call_Count DESC, s.Script_Name ASC
       ${limit > 0 ? 'LIMIT ?' : ''}
     `;
-    const params = limit > 0 ? [uuid, limit] : [uuid];
-    const result = await db.executeQuery(sql, params);
+    const scriptParams = limit > 0 ? [origin, uuid, limit] : [origin, uuid];
+
+    // ── (B) Ziel-/Downstream-Objekte (child) eines Step-Typs ─────────────────
+    // ScriptStepTypes spiegeln keine ObjectLinks; die step-eigenen Bezüge leben
+    // step-granular in XMLStepReferences (das Graph-Hoisting hängt sie ans
+    // Eltern-Script). Hier aggregieren wir sie pro Typ zu Distinct-Zielen —
+    // für "Replace Field Contents"/"Set Field" sind das die geschriebenen
+    // Felder, allgemein auch TO/Layout/Script-Bezüge anderer Step-Typen.
+    // REINER LESEPFAD: ObjectLinks/Graph werden NICHT angefasst, das Hoisting
+    // bleibt erhalten (kein ScriptStepType→Field-Mega-Hub im Where-used/Cluster).
+    // Rollen-Mapping spiegelt STEP_REF_ROLE (getReferences) / Block 16 in
+    // convert_xml_04_catalog.sql. Call_Count = Anzahl Steps dieses Typs, die das
+    // Ziel referenzieren. Origin_Hit = Ziel wird im Herkunfts-Script getroffen.
+    const targetSql = `
+      SELECT
+        'child' as direction,
+        uuid,
+        Object_Type,
+        Object_Name,
+        File_Name,
+        Link_Role,
+        BOOL_OR(Is_Cross_File) as Is_Cross_File,
+        NULL as Container_UUID,
+        NULL as Container_Type,
+        BOOL_OR(navigable) as navigable,
+        COUNT(*) as Call_Count,
+        BOOL_OR(is_origin) as Origin_Hit
+      FROM (
+        SELECT
+          xsr.Ref_UUID as uuid,
+          COALESCE(tc.Object_Type, CASE xsr.Ref_Type
+            WHEN 'field' THEN 'Field'
+            WHEN 'tableOccurrence' THEN 'TableOccurrence'
+            WHEN 'layout' THEN 'Layout'
+            WHEN 'script' THEN 'Script'
+            ELSE xsr.Ref_Type END) as Object_Type,
+          COALESCE(tc.Object_Name, xsr.Ref_Name) as Object_Name,
+          COALESCE(tc.File_Name, xsr.File_Name) as File_Name,
+          CASE
+            WHEN xsr.Ref_Type = 'tableOccurrence' THEN 'navigates_to_to'
+            WHEN xsr.Ref_Type = 'layout' THEN 'navigates_to_layout'
+            WHEN xsr.Ref_Type = 'script' THEN 'calls_script'
+            WHEN xsr.Ref_Type = 'field' THEN CASE xsr.Step_Name
+              WHEN 'Set Field' THEN 'sets_field'
+              WHEN 'Replace Field Contents' THEN 'sets_field'
+              WHEN 'Insert Calculated Result' THEN 'sets_field'
+              WHEN 'Insert Text' THEN 'sets_field'
+              WHEN 'Insert File' THEN 'sets_field'
+              WHEN 'Insert from URL' THEN 'sets_field'
+              WHEN 'Paste' THEN 'sets_field'
+              WHEN 'Clear' THEN 'sets_field'
+              WHEN 'Set Selection' THEN 'sets_field'
+              WHEN 'Set Next Serial Value' THEN 'sets_field'
+              WHEN 'Relookup Field Contents' THEN 'sets_field'
+              WHEN 'Copy' THEN 'reads_field'
+              WHEN 'Export Field Contents' THEN 'reads_field'
+              WHEN 'Go to Field' THEN 'navigates_to_field'
+              WHEN 'Go to Related Record' THEN 'navigates_to_field'
+              WHEN 'Perform Find' THEN 'finds_in_field'
+              WHEN 'Constrain Found Set' THEN 'finds_in_field'
+              WHEN 'Extend Found Set' THEN 'finds_in_field'
+              WHEN 'Enter Find Mode' THEN 'finds_in_field'
+              WHEN 'Sort Records' THEN 'sorts_by_field'
+              WHEN 'Import Records' THEN 'imports_to_field'
+              WHEN 'Export Records' THEN 'exports_from_field'
+              WHEN 'Show Custom Dialog' THEN 'inputs_to_field'
+              ELSE 'references_field'
+            END
+            ELSE xsr.Ref_Type
+          END as Link_Role,
+          (xsr.File_Name <> COALESCE(tc.File_Name, xsr.File_Name)) as Is_Cross_File,
+          (tc.Object_UUID IS NOT NULL) as navigable,
+          COALESCE(xsr.Script_UUID = ?, FALSE) as is_origin
+        FROM XMLStepReferences xsr
+        JOIN ObjectCatalog oc ON oc.Object_UUID = ?
+        LEFT JOIN ObjectCatalog tc ON tc.Object_UUID = xsr.Ref_UUID
+        WHERE xsr.Step_Name = oc.Object_Name
+          AND xsr.Ref_UUID IS NOT NULL
+      )
+      GROUP BY uuid, Object_Type, Object_Name, File_Name, Link_Role
+      ORDER BY Origin_Hit DESC, Call_Count DESC, Object_Name ASC
+      ${limit > 0 ? 'LIMIT ?' : ''}
+    `;
+    const targetParams = limit > 0 ? [origin, uuid, limit] : [origin, uuid];
+
+    // ── (C) Ziel-Variablen (child) eines Step-Typs ───────────────────────────
+    // Steps, die ihr Ergebnis in eine Variable schreiben (Set Variable, Insert
+    // Text/from URL, Show Custom Dialog, Execute FileMaker Data API, Open/Write/
+    // Get Data File, …), tragen kein <FieldReference> und stehen daher NICHT in
+    // XMLStepReferences (Variablen-Refs dort haben Ref_UUID=NULL). Die geschriebene
+    // Variable lebt aber in VariableUsages (Usage_Type='set', Source u.a.
+    // 'target_variable_step'/'set_variable_step'). Wir mappen sie per
+    // (Script_UUID, Step_Index) → StepsForScripts.Step_Name auf den Step-Typ und
+    // lösen die Variable über ihre kanonische UUID md5(scope::anchor::name) in
+    // ObjectCatalog auf (= identische Bildung wie convert_xml_04_catalog.sql Block
+    // 24, daher mit dem `sets_variable`-Graph konsistent). REINER LESEPFAD.
+    const variableSql = `
+      SELECT
+        'child' as direction,
+        uuid,
+        Object_Type,
+        Object_Name,
+        File_Name,
+        'sets_variable' as Link_Role,
+        FALSE as Is_Cross_File,
+        NULL as Container_UUID,
+        NULL as Container_Type,
+        TRUE as navigable,
+        COUNT(*) as Call_Count,
+        BOOL_OR(is_origin) as Origin_Hit
+      FROM (
+        SELECT
+          vc.Object_UUID as uuid,
+          vc.Object_Type as Object_Type,
+          vc.Object_Name as Object_Name,
+          vc.File_Name as File_Name,
+          COALESCE(vu.Script_UUID = ?, FALSE) as is_origin
+        FROM VariableUsages vu
+        JOIN ObjectCatalog oc ON oc.Object_UUID = ?
+        JOIN StepsForScripts s
+          ON s.Script_UUID = vu.Script_UUID
+         AND s.Step_Index = vu.Step_Index
+         AND s.Step_Name = oc.Object_Name
+        JOIN ObjectCatalog vc
+          ON vc.Object_UUID = md5(vu.Variable_Scope || '::' || vu.Scope_Anchor || '::' || vu.Variable_Name)
+         AND vc.Object_Type LIKE '%Variable%'
+        WHERE vu.Usage_Type = 'set'
+          AND vu.Context_Type = 'script_step'
+          AND vu.Script_UUID IS NOT NULL
+          AND vu.Step_Index IS NOT NULL
+      )
+      GROUP BY uuid, Object_Type, Object_Name, File_Name
+      ORDER BY Origin_Hit DESC, Call_Count DESC, Object_Name ASC
+      ${limit > 0 ? 'LIMIT ?' : ''}
+    `;
+    const variableParams = limit > 0 ? [origin, uuid, limit] : [origin, uuid];
+
+    const [scriptResult, targetResult, variableResult] = await Promise.all([
+      db.executeQuery(scriptSql, scriptParams),
+      db.executeQuery(targetSql, targetParams),
+      db.executeQuery(variableSql, variableParams),
+    ]);
     return {
-      data: convertBigInts(result.rows),
-      meta: { ...result.meta, source: 'pseudo_type_resolver', object_type: objType },
+      data: convertBigInts([
+        ...scriptResult.rows,
+        ...targetResult.rows,
+        ...variableResult.rows,
+      ]),
+      meta: {
+        ...scriptResult.meta,
+        source: 'pseudo_type_resolver',
+        object_type: objType,
+        parent_count: scriptResult.rows.length,
+        child_count: targetResult.rows.length + variableResult.rows.length,
+      },
     };
   }
 
@@ -766,6 +920,7 @@ async function getReferences(refOptions) {
       link_type = 'operational',
       limit = environment.api.defaultLimit,
       file,
+      origin = null,
     } = refOptions;
 
     // Clone-Scoping: bei geteilter UUID (Klon) liefern die ObjectLinks-Joins sonst
@@ -777,7 +932,7 @@ async function getReferences(refOptions) {
     // Pseudo-Type-Sonderfall: ScriptStepType + PluginComponent haben keine
     // (vollständigen) ObjectLinks-Spiegelungen. Die "Verwendet in"-
     // Liste muss daher live aus den Basis-Tabellen aggregiert werden.
-    const pseudoRefs = await getPseudoTypeReferences(uuid, direction, link_type, limit);
+    const pseudoRefs = await getPseudoTypeReferences(uuid, direction, link_type, limit, origin);
     if (pseudoRefs !== null) return pseudoRefs;
 
     let sql;
@@ -801,6 +956,89 @@ async function getReferences(refOptions) {
         AND pl.Target_File = pc.File_Name
     `;
 
+    // ── Step-Ebenen-Referenzen (NUR Anzeige) ──────────────────────────────
+    // XMLStepReferences behält die Step-Granularität, die ObjectLinks durch das
+    // Hoisting-auf-Script verliert (die TO-/Layout-/Feld-/Script-Bezüge eines
+    // Steps hängen im Graph am Eltern-Script). Für eine ScriptStep-Detailseite
+    // zeigen wir hier die step-eigenen ausgehenden Bezüge — REINER LESEPFAD:
+    // ObjectLinks/der Graph werden NICHT angefasst, das Hoisting bleibt erhalten.
+    // Der WHERE-Filter auf Step_UUID grenzt den Branch automatisch korrekt ein —
+    // nur ScriptStep-UUIDs treffen eine Step_UUID, für alle anderen Objekttypen
+    // ist er leer (keine Typ-Verzweigung im Code nötig).
+    // Variablen (Ref_UUID NULL) bleiben vorerst außen vor (Phase 2 — Auflösung
+    // per Name statt UUID). `navigable` markiert datei-extern nicht auflösbare
+    // Ziele, die das Frontend als nicht-klickbaren Text rendert statt sie zu
+    // verschlucken. Feld-Rollen spiegeln convert_xml_04_catalog.sql Block 16.
+    const STEP_REF_ROLE = `CASE
+        WHEN xsr.Ref_Type = 'tableOccurrence' THEN 'navigates_to_to'
+        WHEN xsr.Ref_Type = 'layout' THEN 'navigates_to_layout'
+        WHEN xsr.Ref_Type = 'script' THEN 'calls_script'
+        WHEN xsr.Ref_Type = 'field' THEN CASE xsr.Step_Name
+          WHEN 'Set Field' THEN 'sets_field'
+          WHEN 'Replace Field Contents' THEN 'sets_field'
+          WHEN 'Insert Calculated Result' THEN 'sets_field'
+          WHEN 'Insert Text' THEN 'sets_field'
+          WHEN 'Insert File' THEN 'sets_field'
+          WHEN 'Insert from URL' THEN 'sets_field'
+          WHEN 'Paste' THEN 'sets_field'
+          WHEN 'Clear' THEN 'sets_field'
+          WHEN 'Set Selection' THEN 'sets_field'
+          WHEN 'Set Next Serial Value' THEN 'sets_field'
+          WHEN 'Relookup Field Contents' THEN 'sets_field'
+          WHEN 'Copy' THEN 'reads_field'
+          WHEN 'Export Field Contents' THEN 'reads_field'
+          WHEN 'Go to Field' THEN 'navigates_to_field'
+          WHEN 'Go to Related Record' THEN 'navigates_to_field'
+          WHEN 'Perform Find' THEN 'finds_in_field'
+          WHEN 'Constrain Found Set' THEN 'finds_in_field'
+          WHEN 'Extend Found Set' THEN 'finds_in_field'
+          WHEN 'Enter Find Mode' THEN 'finds_in_field'
+          WHEN 'Sort Records' THEN 'sorts_by_field'
+          WHEN 'Import Records' THEN 'imports_to_field'
+          WHEN 'Export Records' THEN 'exports_from_field'
+          WHEN 'Show Custom Dialog' THEN 'inputs_to_field'
+          ELSE 'references_field'
+        END
+        ELSE xsr.Ref_Type
+      END`;
+    // Anzeige-Typ auch für nicht-auflösbare Ziele (oc.* NULL) aus Ref_Type ableiten.
+    const STEP_REF_TYPE = `COALESCE(oc.Object_Type, CASE xsr.Ref_Type
+        WHEN 'tableOccurrence' THEN 'TableOccurrence'
+        WHEN 'layout' THEN 'Layout'
+        WHEN 'script' THEN 'Script'
+        WHEN 'field' THEN 'Field'
+        ELSE xsr.Ref_Type END)`;
+    // Spaltenform passend zum direction='all'-Zweig (baseChild/baseParent).
+    const STEP_REFS_ALL = `
+      SELECT 'child' as direction,
+        xsr.Ref_UUID as uuid,
+        ${STEP_REF_TYPE} as Object_Type,
+        COALESCE(oc.Object_Name, xsr.Ref_Name) as Object_Name,
+        COALESCE(oc.File_Name, xsr.File_Name) as File_Name,
+        ${STEP_REF_ROLE} as Link_Role,
+        (xsr.File_Name <> COALESCE(oc.File_Name, xsr.File_Name)) as Is_Cross_File,
+        NULL as Container_UUID, NULL as Container_Type,
+        (oc.Object_UUID IS NOT NULL) as navigable
+      FROM XMLStepReferences xsr
+      LEFT JOIN ObjectCatalog oc ON xsr.Ref_UUID = oc.Object_UUID
+      WHERE xsr.Step_UUID = ? AND xsr.Ref_UUID IS NOT NULL
+    `;
+    // Spaltenform passend zum direction='child'-Zweig (Target_*).
+    const STEP_REFS_CHILD = `
+      SELECT
+        xsr.Ref_UUID as Target_UUID,
+        ${STEP_REF_TYPE} as Target_Type,
+        COALESCE(oc.Object_Name, xsr.Ref_Name) as Target_Name,
+        COALESCE(oc.File_Name, xsr.File_Name) as Target_File,
+        ${STEP_REF_ROLE} as Link_Role,
+        (xsr.File_Name <> COALESCE(oc.File_Name, xsr.File_Name)) as Is_Cross_File,
+        NULL as Container_UUID, NULL as Container_Type,
+        (oc.Object_UUID IS NOT NULL) as navigable
+      FROM XMLStepReferences xsr
+      LEFT JOIN ObjectCatalog oc ON xsr.Ref_UUID = oc.Object_UUID
+      WHERE xsr.Step_UUID = ? AND xsr.Ref_UUID IS NOT NULL
+    `;
+
     if (direction === 'child') {
       // Downstream dependencies (what this object references)
       sql = `
@@ -812,7 +1050,8 @@ async function getReferences(refOptions) {
           ol.Link_Role,
           ol.Is_Cross_File,
           pl.Target_UUID as Container_UUID,
-          pc.Object_Type as Container_Type
+          pc.Object_Type as Container_Type,
+          TRUE as navigable
         FROM ObjectLinks ol
         JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID AND ol.Target_File = oc.File_Name
         ${CONTAINER_JOIN}
@@ -824,6 +1063,11 @@ async function getReferences(refOptions) {
       if (link_type !== 'all') {
         sql += ' AND ol.Link_Type = ?';
         params.push(link_type);
+      }
+      // Step-eigene ausgehende Bezüge (operational) anhängen — leer für Nicht-Steps.
+      if (link_type !== 'structural') {
+        sql += ` UNION ALL ${STEP_REFS_CHILD}`;
+        params.push(uuid);
       }
     } else if (direction === 'parent') {
       // Upstream dependencies (what references this object)
@@ -897,7 +1141,8 @@ async function getReferences(refOptions) {
           oc.Object_Type, oc.Object_Name, oc.File_Name,
           ol.Link_Role, ol.Is_Cross_File,
           pl.Target_UUID as Container_UUID,
-          pc.Object_Type as Container_Type
+          pc.Object_Type as Container_Type,
+          TRUE as navigable
         FROM ObjectLinks ol
         JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID AND ol.Target_File = oc.File_Name
         ${CONTAINER_JOIN}
@@ -910,7 +1155,8 @@ async function getReferences(refOptions) {
           oc.Object_Type, oc.Object_Name, oc.File_Name,
           ol.Link_Role, ol.Is_Cross_File,
           pl.Target_UUID as Container_UUID,
-          pc.Object_Type as Container_Type
+          pc.Object_Type as Container_Type,
+          TRUE as navigable
         FROM ObjectLinks ol
         JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID AND ol.Source_File = oc.File_Name
         ${CONTAINER_JOIN}
@@ -926,6 +1172,12 @@ async function getReferences(refOptions) {
       } else {
         sql = `${baseChild} UNION ALL ${baseParent}`;
         params = [...childParams, ...parentParams];
+      }
+      // Step-eigene ausgehende Bezüge (operational, child-Richtung) anhängen.
+      // Bei link_type='structural' weggelassen (Step-Bezüge sind operational).
+      if (link_type !== 'structural') {
+        sql += ` UNION ALL ${STEP_REFS_ALL}`;
+        params.push(uuid);
       }
     }
 

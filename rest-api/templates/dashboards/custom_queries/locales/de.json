@@ -4,7 +4,5 @@
     "description": "Alle vorbereiteten SQL-Analysen auf einen Blick."
   },
   "layout": {
-    "root.children[0].props.title": "Analysen & Custom-Queries",
-    "root.children[0].props.subtitle": "Klick öffnet die Analyse im Generischen Renderer."
   }
 }

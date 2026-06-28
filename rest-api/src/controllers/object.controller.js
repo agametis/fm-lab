@@ -219,9 +219,9 @@ async function searchCount(req, res, next) {
  */
 async function references(req, res, next) {
   try {
-    const { uuid, file, direction, link_type, limit, format = 'json', meta, debug } = req.query;
+    const { uuid, file, origin, direction, link_type, limit, format = 'json', meta, debug } = req.query;
 
-    const result = await objectService.getReferences({ uuid, direction, link_type, limit, file });
+    const result = await objectService.getReferences({ uuid, direction, link_type, limit, file, origin });
 
     const formattedData = formatters.format(result.data, format);
 

@@ -1,0 +1,97 @@
+{
+  "title": "Graph Atlas",
+  "subtitle": "Top-down entry point — pick a tile to drill in, a leaf to open it in the Graph Explorer.",
+  "headerButton": "Atlas",
+  "headerButton_hint": "Open the Graph Atlas — the top-down overview of the whole solution.",
+  "segmentation": "Segmentation",
+  "segment": {
+    "community": "Community",
+    "file": "File",
+    "hubs": "Top nodes",
+    "type": "Type"
+  },
+  "breadcrumb": {
+    "root": "Atlas"
+  },
+  "representation": "Representation",
+  "view": {
+    "composition": "Composition",
+    "topology": "Topology",
+    "composition_hint": "Treemap — how big is what (proportion).",
+    "topology_hint": "Meta-graph — how segments couple (only Community/File)."
+  },
+  "weight": {
+    "label": "Weighting",
+    "domain": "Domain",
+    "logical": "Raw",
+    "domain_hint": "Domain weight (ClusterEdges) — builtins and god-nodes already removed.",
+    "logical_hint": "Raw logical degree — includes builtin functions."
+  },
+  "search": {
+    "placeholder": "Filter visible tiles…"
+  },
+  "topN": {
+    "label": "Top-N",
+    "hint": "How many top segments/leaves to show before the rest is folded into one tile.",
+    "auto": "Back to the automatic (per-level) cut-off",
+    "autoTag": "auto"
+  },
+  "types": {
+    "label": "Object types",
+    "hide": "Hide {{type}}",
+    "show": "Show {{type}}",
+    "reset": "Reset"
+  },
+  "rest": {
+    "collapse": "Collapse to top entries",
+    "hide": "hide"
+  },
+  "status": {
+    "semanticNames": "Semantic names: {{value}}",
+    "semanticNamesNone": "Semantic names: --",
+    "count": "Count: {{semantic}} / {{user}} user-defined",
+    "clustersMissing": "Not clustered yet — run “fm-graph-cluster” to enable Community & Topology."
+  },
+  "loading": "Loading…",
+  "empty": "Nothing to show here.",
+  "error": "Could not load the atlas: {{message}}",
+  "truncated": "Showing the top entries — the rest is collected in the grey tile.",
+  "hint": {
+    "leafClick": "Tip: click a leaf tile to open that object in the Graph Explorer.",
+    "metaClick": "Tip: click a super-node to open its heaviest member in the Graph Explorer."
+  },
+  "hidden": {
+    "mode": "Ignored",
+    "dim": "dim",
+    "hide": "remove",
+    "dim_hint": "Hidden nodes stay visible (dimmed) and remain reversible.",
+    "hide_hint": "Hidden nodes are removed — undo only via the list.",
+    "manage": "manage…",
+    "manage_hint": "List of all hidden nodes — restore them here.",
+    "empty": "No nodes hidden.",
+    "restore": "Restore"
+  },
+  "panel": {
+    "infoButton": "Options",
+    "close": "Close",
+    "type": "Type",
+    "save": "Save",
+    "saving": "Saving…",
+    "openExplorer": "Graph",
+    "openDetail": "Details",
+    "hideNode": "Ignore",
+    "unhideNode": "Unignore",
+    "hiddenBadge": "ignored",
+    "community": {
+      "title": "Community",
+      "nameLabel": "Custom name",
+      "namePlaceholder": "e.g. “Billing & PDF”",
+      "notesLabel": "Notes",
+      "notesPlaceholder": "Free text for this community…"
+    },
+    "node": {
+      "title": "Node"
+    },
+    "cancel": "Cancel"
+  }
+}

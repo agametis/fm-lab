@@ -9,6 +9,16 @@
 */
 
 -- ############################################################
+-- webbed wird für html_unescape() benötigt (Decode der XML-Entities in
+-- DDR-Chunk-abgeleiteten Variablennamen, z.B. `$$__Kontoausz&#xFC;ge` → `…üge`).
+INSTALL webbed FROM community;
+LOAD webbed;
+
+-- Workaround-Disable-Flag (Version-Check-Registry tools/katana-xml/version_check.json,
+-- Capability fragment_utf8/#108 → wa_entity_decode, Default ON). Gatet den html_unescape-
+-- Decode der Variable_Name-Extraktion unten. Idempotent → identitaets-neutral solange ON.
+SET VARIABLE wa_entity_decode = true;
+
 -- Phase 0: XML-Referenzen (erstellt von convert_xml.sql)
 -- ############################################################
 -- XMLLayoutReferences und XMLStepReferences werden direkt in
@@ -75,7 +85,12 @@ CREATE TEMP TABLE _DDR_VarRefs_Distinct AS
 SELECT DISTINCT
     Calc_Hash,
     File_Name,
-    regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) as Variable_Name
+    -- html_unescape: Roh-Chunks tragen un-dekodierte XML-Entities (`Datens&#xE4;tze`);
+    -- ohne Decode landen sie in VariableUsages/VariablesCatalog und den md5-UUIDs (P4).
+    -- wa_entity_decode-gegatet (Default ON): OFF → Roh-Wert ohne Decode.
+    CASE WHEN getvariable('wa_entity_decode')
+         THEN html_unescape(regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1))
+         ELSE regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) END as Variable_Name
 FROM DDR_Calculations
 WHERE Chunk_Type = 'VariableReference'
   AND regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) IS NOT NULL;
@@ -954,3 +969,27 @@ SELECT
 FROM with_levels t;
 
 
+
+-- ============================================
+-- A.7: StepsForScripts.Inserted_Text — Anzeige-Payload für "Insert Text"
+-- ============================================
+-- Der von FileMaker erzeugte DDR-Step_Text lässt bei "Insert Text" den literalen
+-- <Parameter type="Text"><Text value="…">-Inhalt weg (zeigt nur Ziel + [ Select ]).
+-- Hier in eine Hilfsspalte aufgelöst — xml_extract_text DEKODIERT die XML-Entities
+-- (&quot;, &#xFC;, &#13; …) bereits korrekt. So zeigen die REST-Templates/Formatter
+-- den Inhalt OHNE eigene XML-/Entity-Behandlung an (der READ_ONLY-API-Server kann
+-- webbed nicht laden). Nur "Insert Text" trägt dieses Literal (datenbasiert
+-- verifiziert: einziger Step-Typ, dessen @value-Literal im DDR-Text fehlt — alle
+-- anderen Literale, Pfade, URLs, Calcs zeigt der DDR).
+--
+-- WICHTIG — Phase-Wahl: NICHT in P2 (resolve). P2 läuft K-fach partitioniert, jede
+-- Slice mountet die Master-DB read-only und sieht StepsForScripts nur als VIEW über
+-- `src` (CREATE VIEW … AS SELECT * FROM src.StepsForScripts …) → ALTER/UPDATE darauf
+-- scheitert ("Can only modify view"/"Can only update base table"). P3 dagegen läuft
+-- EINMAL auf der Master-DB, wo StepsForScripts ein Base-Table ist. Additiv/idempotent
+-- (analog Step_XML in P1); ein Rebuild recreiert die Tabelle in P1 ohne die Spalte,
+-- P3 fügt sie hier wieder hinzu.
+ALTER TABLE StepsForScripts ADD COLUMN IF NOT EXISTS Inserted_Text VARCHAR;
+UPDATE StepsForScripts
+SET Inserted_Text = xml_extract_text(Step_XML, '//Parameter[@type=''Text'']/Text/@value')[1]
+WHERE Step_Name = 'Insert Text';

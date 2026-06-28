@@ -15,6 +15,13 @@ WITH step_changes AS (
     s.Parameter_Type,
     s.Step_UUID,
     s.File_Name,
+    -- Eingefügter Literaltext (nur "Insert Text"): der DDR-Step_Text lässt den
+    -- <Parameter type="Text"><Text value="…">-Payload weg. Bereits in P2 (resolve)
+    -- per xml_extract_text DEKODIERT in die Hilfsspalte StepsForScripts.Inserted_Text
+    -- aufgelöst — hier nur durchgereicht, keine XML-/Entity-Behandlung im Server
+    -- (der READ_ONLY-API-Server kann webbed nicht laden). Der tokens.formatter
+    -- normalisiert/kürzt nur noch für die Anzeige.
+    s.Inserted_Text AS inserted_text,
     CASE
       WHEN s.Step_Name IN ('If', 'Loop') THEN 1
       WHEN s.Step_Name IN ('End If', 'End Loop') THEN -1
@@ -63,6 +70,7 @@ SELECT
     THEN regexp_replace(d.Step_Text, '\s*\[\s*\]\s*$', '')
     ELSE d.Step_Text
   END AS step_text,
+  sd.inserted_text AS inserted_text,
   CASE
     WHEN sd.Step_ID = 89 AND d.Step_Text IS NULL THEN 'empty'
     WHEN sd.Step_ID = 89                          THEN 'comment'

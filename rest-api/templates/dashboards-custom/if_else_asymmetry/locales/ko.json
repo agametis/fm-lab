@@ -4,19 +4,17 @@
     "description": "If 분기가 Else 분기보다 현저히 긴 If/Else 블록을 포함한 스크립트를 나열합니다. early return 또는 guard clause 로의 리팩토링 후보입니다."
   },
   "layout": {
-    "root.children[0].props.title": "If/Else 비대칭 개요",
-    "root.children[0].children[0].props.items[0].label": "비대칭 블록 수",
-    "root.children[0].children[0].props.items[1].label": "영향받은 스크립트",
-    "root.children[0].children[0].props.items[2].label": "영향받은 파일",
-    "root.children[0].children[0].props.items[3].label": "가장 긴 If 분기",
-
-    "root.children[1].props.title": "긴 If / 짧은 Else 스크립트",
-    "root.children[1].children[0].props.columns[0].label": "파일",
-    "root.children[1].children[0].props.columns[1].label": "스크립트 이름",
-    "root.children[1].children[0].props.columns[2].label": "If 위치",
-    "root.children[1].children[0].props.columns[3].label": "If 단계 수",
-    "root.children[1].children[0].props.columns[4].label": "Else 단계 수",
-    "root.children[1].children[0].props.columns[5].label": "점수",
-    "root.children[1].children[0].props.empty.message": "비대칭 If/Else 블록을 찾을 수 없습니다."
+    "if_else_kpi_kpistrip.props.items[0].label": "비대칭 블록 수",
+    "if_else_kpi_kpistrip.props.items[1].label": "영향받은 스크립트",
+    "if_else_kpi_kpistrip.props.items[2].label": "영향받은 파일",
+    "if_else_kpi_kpistrip.props.items[3].label": "가장 긴 If 분기",
+    "if_else_blocks.props.title": "긴 If / 짧은 Else 스크립트",
+    "if_else_blocks_table.props.columns[0].label": "파일",
+    "if_else_blocks_table.props.columns[1].label": "스크립트 이름",
+    "if_else_blocks_table.props.columns[2].label": "If 위치",
+    "if_else_blocks_table.props.columns[3].label": "If 단계 수",
+    "if_else_blocks_table.props.columns[4].label": "Else 단계 수",
+    "if_else_blocks_table.props.columns[5].label": "점수",
+    "if_else_blocks_table.props.empty.message": "비대칭 If/Else 블록을 찾을 수 없습니다."
   }
 }

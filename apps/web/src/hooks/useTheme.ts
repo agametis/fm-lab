@@ -56,6 +56,20 @@ export function useTheme() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
+  // Same-Tab-Sync: jede useTheme-Instanz hält EIGENEN State; der storage-Event
+  // feuert aber nur in ANDEREN Tabs. Ohne diesen Beobachter bemerkt z.B. der
+  // Graph-Explorer (eigene useTheme-Instanz) einen Toggle über die ThemeToggle
+  // nicht → sein theme-State bleibt stale, die an [theme] hängenden Cytoscape-
+  // Stylesheet-Rebuilds feuern nicht, und die Kantenfarben aktualisieren sich
+  // erst beim Reload. Ein MutationObserver auf data-theme (die Quelle der
+  // Wahrheit, von applyTheme gesetzt) re-synchronisiert ALLE Instanzen sofort.
+  useEffect(() => {
+    if (typeof MutationObserver === 'undefined') return;
+    const observer = new MutationObserver(() => setThemeState(readDomTheme()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
+
   // OS-prefers-color-scheme nur folgen, solange der User nicht manuell gewählt hat
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return;

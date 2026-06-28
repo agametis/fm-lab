@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FieldTokens } from '../script/calcTokens';
 import { HighlightRefContext } from '../script/highlightContext';
@@ -10,6 +10,8 @@ interface FieldViewerProps {
   data: FieldTokens;
   /** Cross-Reference Highlight: Token-Match auf Tokens mit `uuid ∈ Set`. */
   highlightRefUuids?: Set<string> | null;
+  /** Reicht die gezählten Highlight-Treffer hoch zur RefOriginPill. */
+  onLiveMatchCount?: (count: number) => void;
 }
 
 /**
@@ -22,7 +24,7 @@ interface FieldViewerProps {
  * werden zu klickbaren Links. Variablen, Plugin-Funktionen und Kommentare
  * bekommen ihre jeweilige Highlight-Klasse.
  */
-export const FieldViewer: React.FC<FieldViewerProps> = ({ data, highlightRefUuids }) => {
+export const FieldViewer: React.FC<FieldViewerProps> = ({ data, highlightRefUuids, onLiveMatchCount }) => {
   const { t } = useTranslation(['detail']);
   const rootRef = useRef<HTMLDivElement>(null);
   const highlightSig = highlightRefUuids ? Array.from(highlightRefUuids).sort().join(',') : '';
@@ -34,6 +36,22 @@ export const FieldViewer: React.FC<FieldViewerProps> = ({ data, highlightRefUuid
     });
     return () => cancelAnimationFrame(id);
   }, [highlightSig]);
+
+  // Live-Match-Count: zählt Calc-Tokens mit UUID im Highlight-Set. Für die
+  // RefOriginPill — der server-seitige back_references-Count liefert für
+  // Token-Container keinen (Field) bzw. nur einen Self-Link-Repräsentanten,
+  // nicht die tatsächliche Anzahl Vorkommen in der Formel (analog ScriptViewer).
+  const liveMatchCount = useMemo(() => {
+    if (!highlightRefUuids || highlightRefUuids.size === 0) return 0;
+    let n = 0;
+    for (const tok of data.tokens) {
+      if (tok.uuid && highlightRefUuids.has(tok.uuid)) n++;
+    }
+    return n;
+  }, [data.tokens, highlightRefUuids]);
+  useEffect(() => {
+    onLiveMatchCount?.(liveMatchCount);
+  }, [liveMatchCount, onLiveMatchCount]);
 
   const field = data.field;
   const hasFormula = data.tokens && data.tokens.length > 0;

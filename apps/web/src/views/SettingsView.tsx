@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PluginCard, type PluginInfo } from '../components/PluginCard';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { SubNav } from '../components/SubNav';
+import { StatusBar } from '../components/StatusBar';
+import { VersionStatusLine } from '../components/VersionStatusLine';
+import { buildBreadcrumb } from '../lib/navigation';
 import { useApiLang } from '../hooks/useApiLang';
 import { useApiHealth } from '../hooks/useApiHealth';
 import { useFeaturesContext } from '../hooks/useFeatures';
@@ -94,7 +96,7 @@ const ApiConnectionSettings: React.FC = () => {
 };
 
 export const SettingsView: React.FC = () => {
-  const { t } = useTranslation(['detail']);
+  const { t } = useTranslation(['detail', 'nav']);
   const lang = useApiLang();
   const { refresh: refreshFeatures } = useFeaturesContext();
   const [plugins, setPlugins] = useState<PluginInfo[]>([]);
@@ -141,12 +143,10 @@ export const SettingsView: React.FC = () => {
 
   return (
     <div className="settings-view">
+      <SubNav breadcrumbs={buildBreadcrumb({ kind: 'settings' }, t)} />
+      <StatusBar message={<VersionStatusLine />} />
       <div className="settings-header">
-        <Link to="/" className="settings-back" aria-label={t('detail:settingsView.backAria') as string}>← {t('detail:settingsView.backLabel')}</Link>
         <h1>{t('detail:settingsView.title')}</h1>
-        <div style={{ marginLeft: 'auto' }}>
-          <ThemeToggle />
-        </div>
       </div>
 
       <ApiConnectionSettings />

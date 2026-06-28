@@ -6,6 +6,19 @@
     "ariaLabel": "面包屑导航",
     "linkAria": "导航到 {{label}}"
   },
+  "crumbs": {
+    "home": "主页",
+    "search": "搜索",
+    "hierarchy": "层级",
+    "graph": "图谱",
+    "relationships": "关系",
+    "dashboards": "仪表板",
+    "customQueries": "自定义查询",
+    "docs": "文档",
+    "xmlImport": "XML 导入",
+    "cluster": "聚类",
+    "settings": "设置"
+  },
   "errors": {
     "noDashboardId": "未提供仪表板 ID。",
     "noQueryName": "未提供查询名称。"
@@ -57,11 +70,11 @@
     "tabsAria": "对象视图",
     "noName": "(无名称)",
     "tabs": {
-      "detail":     "详情",
+      "detail": "详情",
       "references": "引用",
-      "graph":      "图表",
-      "versions":   "版本",
-      "notes":      "备注"
+      "graph": "图表",
+      "versions": "版本",
+      "notes": "备注"
     }
   },
   "pseudoToolbar": {

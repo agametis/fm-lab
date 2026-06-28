@@ -13,8 +13,8 @@ import type { PrimitiveProps } from '../types';
  * Rendert nichts, wenn die DB bereits Inhalte hat — das Layout enthält die
  * Karte also "blind", sie blendet sich selbst ein.
  *
- * Der Button navigiert zu /dashboard/xml_convert?autostart=1, wodurch das
- * Sub-Dashboard die Konvertierung sofort beim Mount startet.
+ * Der Button navigiert zur Leitseite /xml-import (xml_convert-Bundle), wo die
+ * Konvertierung gestartet wird.
  */
 export function XmlEmptyStateCard({ node, datasets }: PrimitiveProps) {
   const { t } = useTranslation('dashboard');
@@ -42,7 +42,7 @@ export function XmlEmptyStateCard({ node, datasets }: PrimitiveProps) {
     // Identisches Verhalten wie der Button im Project-overview-Card:
     // nur Navigation, kein Auto-Start. Der eigentliche Convert-Trigger
     // sitzt ausschließlich im xml_convert-Sub-Dashboard.
-    navigate('/dashboard/xml_convert');
+    navigate('/xml-import');
   };
 
   return (

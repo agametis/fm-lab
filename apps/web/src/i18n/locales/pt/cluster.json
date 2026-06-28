@@ -1,0 +1,33 @@
+{
+  "title": "Clusters",
+  "subtitle": "Comunidades do grafo",
+  "status": {
+    "named": "{{named}} de {{total}} comunidades nomeadas",
+    "algorithm": "Algoritmo",
+    "lastRun": "última execução",
+    "dash": "—"
+  },
+  "list": {
+    "members": "{{count}} membros",
+    "edit": "Editar",
+    "openHint": "Abrir no explorador de grafos",
+    "unnamedBadge": "sem nome",
+    "count": "{{shown}} de {{total}}",
+    "search": "Pesquisar…"
+  },
+  "empty": {
+    "title": "Ainda não agrupado",
+    "hint": "Detecte comunidades com «Novas comunidades» abaixo — um reparticionamento econômico."
+  },
+  "loading": "Carregando…",
+  "hero": {
+    "communities": "Comunidades",
+    "nodes": "Nós",
+    "edges": "Arestas"
+  },
+  "filter": {
+    "all": "Todas",
+    "named": "Nomeadas",
+    "unnamed": "Sem nome"
+  }
+}

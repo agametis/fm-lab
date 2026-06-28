@@ -1,5 +1,16 @@
 {
-  "title": "XML-Konvertierung",
-  "subtitle": "Importiert alle Dateien aus dem xml/-Verzeichnis in die DuckDB-Datenbank.",
-  "lastRunCard": "Letzte Konvertierung"
+  "manifest": {
+    "title": "XML-Import",
+    "description": "Importiert XML-Exporte aus dem xml/-Verzeichnis in die DuckDB-Datenbank."
+  },
+  "layout": {
+    "files_table.props.columns[1].label": "Datei",
+    "files_table.props.columns[2].label": "Datum",
+    "files_table.props.columns[3].label": "Größe",
+    "files_table.props.columns[4].label": "Importiert",
+    "files_table.props.empty.message": "Keine Dateien im XML-Verzeichnis vorhanden.",
+    "last_run.props.title": "Letzte Konvertierung",
+    "graph_communities.props.title": "Graph-Communities",
+    "graph_communities_desc.props.content": "Struktur- & Benennungs-Abdeckung der erkannten Module. Partition per Button neu erstellen; neue Module mit dem Skill `/fm-graph-cluster` (neu) benennen."
+  }
 }

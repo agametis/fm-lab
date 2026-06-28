@@ -1,17 +1,20 @@
 {
   "manifest": {
     "title": "TO-DO’s in scripts",
-    "description": "Telt commentaarsstappen met TO-DO-markeringen en toont alle betrokken scripts per bestand."
+    "description": "Openstaand werk in commentaarstappen via drie notaties (TO DO, FIX IT, TBD). Klik op een aantal om de resultatenlijst te filteren."
   },
   "layout": {
-    "root.children[0].props.title": "TO-DO-overzicht",
-    "root.children[0].children[0].props.items[0].label": "TO-DO-regels",
-    "root.children[0].children[0].props.items[1].label": "Scripts",
-    "root.children[0].children[0].props.items[2].label": "Bestanden",
-
-    "root.children[1].props.title": "Scripts met TO-DO’s",
-    "root.children[1].children[0].props.columns[0].label": "Bestand",
-    "root.children[1].children[0].props.columns[1].label": "Scriptnaam",
-    "root.children[1].children[0].props.columns[2].label": "Aantal"
+    "todo_kpi_kpistrip.props.items[0].label": "Totaal regels",
+    "todo_kpi_kpistrip.props.items[1].label": "TO DO-regels",
+    "todo_kpi_kpistrip.props.items[2].label": "FIX IT-regels",
+    "todo_kpi_kpistrip.props.items[3].label": "TBD-regels",
+    "todo_kpi_kpistrip.props.items[4].label": "Scripts",
+    "todo_kpi_kpistrip.props.items[5].label": "Bestanden",
+    "todo_lines.props.title": "Gemarkeerde commentaarregels",
+    "todo_lines_table.props.columns[0].label": "Bestand",
+    "todo_lines_table.props.columns[1].label": "Scriptnaam",
+    "todo_lines_table.props.columns[2].label": "Patroon",
+    "todo_lines_table.props.columns[3].label": "Opmerking",
+    "todo_lines_table.props.searchPlaceholder": "Opmerkingen doorzoeken …"
   }
 }

@@ -4,7 +4,5 @@
     "description": "用意されたすべての SQL 分析を一覧で表示します。"
   },
   "layout": {
-    "root.children[0].props.title": "分析とカスタムクエリ",
-    "root.children[0].props.subtitle": "クリックすると分析が汎用レンダラーで開きます。"
   }
 }

@@ -4,6 +4,8 @@ const path = require('path');
 const { spawn } = require('child_process');
 const settingsStore = require('../plugins/settings-store');
 const db = require('../config/database');
+const annoDb = require('../config/annotations-db');
+const environment = require('../config/environment');
 
 /**
  * XML-Convert Bridge
@@ -12,8 +14,6 @@ const db = require('../config/database');
  * Zeile für Zeile zu Events. Wird von `POST /api/xml/convert` (SSE) genutzt.
  * Verwaltet außerdem den persistierten Run-Record (.fmlab/last_xml_run.json)
  * und liefert den Status der XML-Dateien für `GET /api/xml/status`.
- *
- * PRD: project/prd_frontend_xml_convert.md §5, §7.
  */
 
 const REPO_ROOT = settingsStore.resolveRepoRoot();
@@ -138,19 +138,183 @@ const STATUS_EMOJI = {
 
 /**
  * Aggregiert die Datei-Liste mit dem FilesCatalog zu Status-Zeilen.
- * Emoji-Logik gemäß PRD §4.2:
+ * Emoji-Logik:
  *   - in DB UND Datei-Mtime ≤ Import-Timestamp  → 'current'  ✅
  *   - in DB UND Datei-Mtime >  Import-Timestamp → 'outdated' ✴️
  *   - nicht in DB                                → 'new'      ➡️
  */
+/**
+ * Ampel-Band für eine Coverage-Kennzahl: ≥warn → ok, ≥crit → warn, sonst critical.
+ */
+function bandState(pct, warn, crit) {
+  if (pct >= warn) return 'ok';
+  if (pct >= crit) return 'warn';
+  return 'critical';
+}
+
+/**
+ * semantic_names-Block — zwei orthogonale Drift-Kennzahlen, deterministisch
+ * aus dem aktuellen Knotenraum `U` (ClusterNodeUniverse, jeder Import frisch) und der
+ * Partition (ObjectClusters, nur bei Cluster-Läufen aktualisiert), KEINE Shadow-
+ * Simulation. Berechnung = Copy-Query (READ_ONLY) + Sidecar-Query, in JS gemerged
+ * (kein Cross-DB-JOIN). Beide Namensquellen zählen: Skill-`Semantic_Name`
+ * (Copy) ∪ User-`User_Name` (Sidecar) ∪ R3-`SemanticNameRestore` (Sidecar).
+ *
+ *   ① Struktur-Abdeckung = partitioned / U          (Heilung: Button, Frontend)
+ *   ② Benennungs-Abdeckung = covered / partitioned   (Heilung: Skill, CLI)
+ *
+ * Liefert `{ available:false }`, solange keine Partition/Universe existiert (frischer
+ * Import vor dem ersten Cluster-Lauf) → Frontend zeigt beide „--".
+ */
+async function computeSemanticNames() {
+  const unavailable = { available: false };
+
+  // Cluster-/Universe-Tabellen vorhanden? (Copy kann frisch & ungeclustert sein.)
+  try {
+    const r = await db.executeQuery(
+      `SELECT
+         (SELECT COUNT(*) FROM information_schema.tables WHERE table_name='ObjectClusters')      AS oc,
+         (SELECT COUNT(*) FROM information_schema.tables WHERE table_name='ClusterNodeUniverse')  AS cnu`
+    );
+    const p = r.rows[0] || {};
+    if (Number(p.oc) === 0 || Number(p.cnu) === 0) return unavailable;
+  } catch {
+    return unavailable;
+  }
+
+  // (a) Copy: partitionierte Universe-Knoten je Community + Skill-Benennung + Totale.
+  let comm = [];
+  let universeTotal = 0;
+  let partitioned = 0;
+  try {
+    comm = (await db.executeQuery(
+      `WITH comm AS (
+         SELECT oc.Engine, oc.Community, COUNT(*) AS u_nodes
+         FROM ClusterNodeUniverse u JOIN ObjectClusters oc USING (Object_UUID, File_Name)
+         GROUP BY 1, 2
+       )
+       SELECT c.Engine AS engine, c.Community AS community, c.u_nodes AS u_nodes,
+              (cn.Semantic_Name IS NOT NULL) AS skill_named
+       FROM comm c LEFT JOIN CommunityNames cn USING (Engine, Community)`
+    )).rows;
+    universeTotal = Number((await db.executeQuery(
+      `SELECT COUNT(*) AS n FROM ClusterNodeUniverse`
+    )).rows[0]?.n ?? 0);
+    partitioned = Number((await db.executeQuery(
+      `SELECT COUNT(*) AS n FROM ClusterNodeUniverse u
+         JOIN ObjectClusters oc USING (Object_UUID, File_Name)`
+    )).rows[0]?.n ?? 0);
+  } catch (err) {
+    console.warn(`[xml-convert] semantic_names copy query failed: ${err.message}`);
+    return unavailable;
+  }
+  if (universeTotal === 0) return unavailable;
+
+  // (b) Sidecar: Communities mit User-Name ODER R3-Restore. Best-effort (Tabellen
+  // fehlen evtl. auf einem noch nicht neugestarteten Server) → leere Sets.
+  const sidecarNamed = new Set();
+  let userCount = 0;
+  let restoredCount = 0;
+  try {
+    const userRows = await annoDb.query(
+      `SELECT Engine, Community FROM CommunityAnnotation WHERE User_Name IS NOT NULL`
+    );
+    const restoreRows = await annoDb.query(
+      `SELECT Engine, Community FROM SemanticNameRestore WHERE Semantic_Name IS NOT NULL`
+    );
+    for (const r of userRows) sidecarNamed.add(`${r.Engine}|${Number(r.Community)}`);
+    userCount = userRows.length;
+    for (const r of restoreRows) sidecarNamed.add(`${r.Engine}|${Number(r.Community)}`);
+    restoredCount = restoreRows.length;
+  } catch (err) {
+    console.warn(`[xml-convert] semantic_names sidecar query skipped: ${err.message}`);
+  }
+
+  // (c) JS-Merge: drei Eimer, zwei Kennzahlen. Knoten-, nicht Community-gewichtet.
+  let covered = 0;
+  let skillCount = 0;
+  const namedCommSet = new Set();
+  const engineNodes = new Map();
+  for (const row of comm) {
+    const eng = row.engine;
+    const key = `${eng}|${Number(row.community)}`;
+    const nodes = Number(row.u_nodes) || 0;
+    engineNodes.set(eng, (engineNodes.get(eng) ?? 0) + nodes);
+    if (row.skill_named) skillCount += 1;
+    if (row.skill_named || sidecarNamed.has(key)) {
+      covered += nodes;
+      namedCommSet.add(key);
+    }
+  }
+  const unnamed = partitioned - covered;
+  const unpartitioned = universeTotal - partitioned;
+  const structCovPct = Math.round((100 * partitioned) / universeTotal);
+  const nameCovPct = partitioned ? Math.round((100 * covered) / partitioned) : null;
+
+  // Dominante Engine (meiste Universe-Knoten).
+  let engine = null;
+  let engBest = -1;
+  for (const [eng, n] of engineNodes) if (n > engBest) { engBest = n; engine = eng; }
+
+  const structTh = environment.semanticNames.structDrift;
+  const nameTh = environment.semanticNames.nameDrift;
+
+  // ① Struktur: partitioned=0 → „none" (noch nicht geclustert, Button heilt).
+  const structState = partitioned === 0
+    ? 'none'
+    : bandState(structCovPct, structTh.warn, structTh.crit);
+  // ② Benennung: keine benannte/keine partitionierte → „none" (Skill heilt).
+  const nameState = (partitioned === 0 || covered === 0)
+    ? 'none'
+    : bandState(nameCovPct, nameTh.warn, nameTh.crit);
+
+  return {
+    available: true,
+    universe_nodes: universeTotal,
+    structure: {
+      state: structState,
+      coverage_pct: structCovPct,
+      unpartitioned,
+      thresholds: { warn: structTh.warn, crit: structTh.crit },
+    },
+    naming: {
+      state: nameState,
+      coverage_pct: nameCovPct,
+      unnamed_nodes: unnamed,
+      thresholds: { warn: nameTh.warn, crit: nameTh.crit },
+    },
+    named_communities: namedCommSet.size,
+    total_communities: comm.length,
+    sources: { skill: skillCount, user: userCount, restored: restoredCount },
+    engine,
+  };
+}
+
 async function getStatus() {
-  const [files, catalog] = await Promise.all([
+  const [files, catalog, semanticNames] = await Promise.all([
     listXmlDirectory(),
     readFilesCatalog(),
+    computeSemanticNames().catch((err) => {
+      console.warn(`[xml-convert] semantic_names compute failed: ${err.message}`);
+      return { available: false };
+    }),
   ]);
 
   const dbEmpty = catalog.size === 0;
   const lastRun = await readLastRunMeta();
+
+  // Billige Running-Detektion (Lock+PID ODER aktiver Hub-Lauf) +
+  // flaches active_run (phase/pct/processed/total) für den 6-s-Soft-Refresh → die
+  // UI weiß beim Eintritt sofort „es läuft" und kann auf /convert/stream abonnieren.
+  let running = false;
+  let activeRun = null;
+  try {
+    const hub = require('./xml-convert-hub');
+    running = isRunning() || hub.isActive();
+    activeRun = hub.getActiveRunMeta();
+  } catch (err) {
+    console.warn(`[xml-convert] running-detection skipped: ${err.message}`);
+  }
 
   const rows = files.map(f => {
     const base = stripXmlSuffix(f.filename).normalize('NFC').toLowerCase();
@@ -178,6 +342,9 @@ async function getStatus() {
     db_empty: dbEmpty,
     files: rows,
     last_run: lastRun,
+    semantic_names: semanticNames,
+    running,
+    active_run: activeRun,
   };
 }
 

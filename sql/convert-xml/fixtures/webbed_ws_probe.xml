@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  webbed_ws_probe.xml — Capability-Probe-Fixture fuer die Whitespace-Preservation
+  (teaguesterling/duckdb_webbed#73, gefixt ab webbed v2.0.1).
+
+  Hintergrund (#73): die fruehere webbed-DOM-Routine CleanTextContent() kollabierte
+  internen Whitespace (CR/LF/TAB und Laeufe daraus) im typisierten Textinhalt zu
+  EINEM Space — mehrzeilige FileMaker-Calc-Texte verloren ihre Zeilenstruktur. Der
+  fm-lab-Workaround (chr(127)-Sentinel) umging das, indem der Preprozessor CR (0x0D)
+  vor dem Parsen in 0x7F (DEL, kein Whitespace) wandelte und die SQL es danach zu LF
+  zurueckholte (Flag wa_ws_sentinel).
+
+  Diese Fixture traegt EINEN Calc-Textknoten mit einem eingebetteten Zeilenumbruch
+  (Quelle: das Entity &#13; — byte-stabil im Repo, anders als ein literaler CR, den
+  git/Editoren normalisieren koennten). Der Version-Check
+  (tools/katana-xml/version_check.json, Capability whitespace_preservation) liest die
+  Fixture im DEFAULT-DOM-Pfad (KEIN streaming, KEIN preserve_whitespace) auf zwei
+  Wegen — typisierter read_xml UND read_xml_objects + xml_extract_text (der Fragment-
+  Pfad, der die Roh-XML-Spalten Step_XML/Object_XML/Parameters_XML speist) — und
+  prueft, ob der Umbruch erhalten bleibt (CR oder LF) statt zu einem Space zu
+  kollabieren. Empirisch belegt v2.2.1: beide Wege bewahren den Umbruch nativ →
+  der Sentinel ist redundant (wa_ws_sentinel=false). Kollabierendes/altes webbed →
+  'A B' → konservativ Sentinel ON.
+
+  Bewusst minimal: genau eine Row mit einem <Calc>, dessen Text einen &#13; traegt.
+-->
+<FMSaveAsXML>
+  <WSProbe>
+    <Row>
+      <Calc>A&#13;B</Calc>
+    </Row>
+  </WSProbe>
+</FMSaveAsXML>

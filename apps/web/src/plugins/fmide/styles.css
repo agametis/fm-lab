@@ -1,6 +1,6 @@
 /* fmIDE Plugin — UI-Styles */
 
-/* "In FileMaker öffnen"-Button (ObjectHeader) */
+/* "In FileMaker öffnen"-Button (Tab-Bar, rechts neben der Tab-Navigation) */
 .fmide-open-button {
   display: inline-flex;
   align-items: center;
@@ -122,7 +122,7 @@
   border: 1px solid var(--color-border-strong, var(--color-border));
   border-radius: 4px;
   background: var(--color-bg-input, transparent);
-  color: var(--color-text-primary, var(--color-text));
+  color: var(--color-text-primary);
   font-size: 0.8rem;
   cursor: pointer;
 }

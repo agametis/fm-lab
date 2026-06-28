@@ -2,7 +2,7 @@
   "title": "グラフエクスプローラー",
   "emptyFocus": "詳細ビューからグラフエクスプローラーでオブジェクトを開く（またはノードをダブルクリックする）と、その依存関係グラフを探索できます。",
   "loading": "グラフを読み込み中…",
-  "truncated": "到達可能な {{total}} 件のうち {{kept}} 件のノードを表示中 — 深さを下げるか、タイプフィルターを絞るとすべて表示されます。",
+  "truncated": "到達可能な {{total}} 件のうち {{kept}} 件を読み込みました — すべて読み込むには深さを下げるか種類フィルターを絞ってください。",
   "stats": {
     "nodes": "{{count}} ノード",
     "nodes_other": "{{count}} ノード",
@@ -36,7 +36,8 @@
     "noNeighbors": "現在のグラフに隣接ノードはありません。",
     "uses": "使用する",
     "usedBy": "使用される",
-    "focus": "フォーカス"
+    "focus": "フォーカス",
+    "resizePanel": "詳細パネルの幅を変更"
   },
   "filter": {
     "ariaLabel": "グラフフィルター",
@@ -69,7 +70,6 @@
       "both": "フォーカスからの両方向"
     },
     "types": "ノードタイプ",
-    "showAllTypes": "すべて表示",
     "colorMode": "配色",
     "colorModes": {
       "type": "タイプ",
@@ -79,6 +79,24 @@
       "type": "オブジェクトタイプでノードを配色",
       "community": "検出されたモジュール（コミュニティ）でノードを配色"
     },
-    "communityUnnamed": "コミュニティ {{id}}"
-  }
+    "communityUnnamed": "コミュニティ {{id}}",
+    "resizePanel": "フィルターパネルの幅を変更",
+    "depthLoad": "到達可能 {{count}} 件",
+    "depthClipped": "到達可能 {{count}} 件、読み込みは {{limit}} 件に制限",
+    "partLoaded": "読み込み {{count}} 件",
+    "partConnected": "接続 {{count}} 件",
+    "partIsland_one": "島 {{count}} 個",
+    "partIsland_other": "島 {{count}} 個",
+    "partIsolated": "孤立 {{count}} 件",
+    "loadScope": "種類を読み込む",
+    "loadAll": "すべての種類",
+    "loadSelected": "選択のみ",
+    "loadAllHint": "すべての種類を読み込みます。チップの選択解除は表示を隠すだけです",
+    "loadSelectedHint": "選択した種類のみを読み込みます（再読み込み）"
+  },
+  "unconnectedHidden_one": "フォーカスに接続されていないノード {{count}} 件",
+  "unconnectedHidden_other": "フォーカスに接続されていないノード {{count}} 件",
+  "unconnectedToggleShow": "表示",
+  "unconnectedToggleHide": "非表示",
+  "unconnectedToggleHint": "フォーカスへの経路がないノードは種類/深さフィルターによって生じます — 表示または非表示にします"
 }

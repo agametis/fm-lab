@@ -6,6 +6,19 @@
     "ariaLabel": "Brödsmulor",
     "linkAria": "Navigera till {{label}}"
   },
+  "crumbs": {
+    "home": "Start",
+    "search": "Sök",
+    "hierarchy": "Hierarki",
+    "graph": "Graf",
+    "relationships": "Relationer",
+    "dashboards": "Instrumentpaneler",
+    "customQueries": "Egna frågor",
+    "docs": "Dokumentation",
+    "xmlImport": "XML-import",
+    "cluster": "Kluster",
+    "settings": "Inställningar"
+  },
   "errors": {
     "noDashboardId": "Inget dashboard-id angivet.",
     "noQueryName": "Inget frågenamn angivet."
@@ -57,11 +70,11 @@
     "tabsAria": "Objektvyer",
     "noName": "(inget namn)",
     "tabs": {
-      "detail":     "Detaljer",
+      "detail": "Detaljer",
       "references": "Referenser",
-      "graph":      "Diagram",
-      "versions":   "Versioner",
-      "notes":      "Anteckningar"
+      "graph": "Diagram",
+      "versions": "Versioner",
+      "notes": "Anteckningar"
     }
   },
   "pseudoToolbar": {

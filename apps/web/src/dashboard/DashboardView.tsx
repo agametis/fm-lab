@@ -2,7 +2,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { DashboardHost } from './DashboardHost';
 import { SubPageHeader } from '../components';
-import type { BreadcrumbItem } from '../types';
+import { buildBreadcrumb } from '../lib/navigation';
 
 /**
  * Route view for `/dashboard/:id`. Forwards routing/query params to the
@@ -22,16 +22,15 @@ export function DashboardView() {
     params[k] = v;
   }
 
-  const title = idToTitle(id);
-  const breadcrumbs: BreadcrumbItem[] = [
-    { label: t('nav:breadcrumbs.search') as string, path: '/' },
-    { label: title, path: null },
-  ];
+  // Titel + Description kommen aus dem Manifest des Eintrags (echter Titel +
+  // reiche Beschreibung) → DashboardHost rendert die Titelbox. Hier nur die
+  // Breadcrumb-Wurzel; der Breadcrumb-Titel bleibt die Slug-Ableitung.
+  const breadcrumbs = buildBreadcrumb({ kind: 'dashboard', title: idToTitle(id) }, t);
 
   return (
     <div className="app">
-      <SubPageHeader title={title} breadcrumbs={breadcrumbs} />
-      <DashboardHost id={id} params={params} />
+      <SubPageHeader breadcrumbs={breadcrumbs} />
+      <DashboardHost id={id} params={params} showManifestTitle />
     </div>
   );
 }

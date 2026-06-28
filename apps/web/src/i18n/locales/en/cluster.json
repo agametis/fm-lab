@@ -1,0 +1,33 @@
+{
+  "title": "Clusters",
+  "subtitle": "Graph communities",
+  "status": {
+    "named": "{{named}} of {{total}} communities named",
+    "algorithm": "Algorithm",
+    "lastRun": "last run",
+    "dash": "—"
+  },
+  "list": {
+    "members": "{{count}} members",
+    "edit": "Edit",
+    "openHint": "Open in the graph explorer",
+    "unnamedBadge": "unnamed",
+    "count": "{{shown}} of {{total}}",
+    "search": "Search…"
+  },
+  "empty": {
+    "title": "Not yet clustered",
+    "hint": "Detect communities with “New communities” below — a cheap re-partition."
+  },
+  "loading": "Loading…",
+  "hero": {
+    "communities": "Communities",
+    "nodes": "Nodes",
+    "edges": "Edges"
+  },
+  "filter": {
+    "all": "All",
+    "named": "Named",
+    "unnamed": "Unnamed"
+  }
+}

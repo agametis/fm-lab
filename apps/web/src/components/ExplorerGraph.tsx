@@ -9,7 +9,8 @@ import { useTranslation } from 'react-i18next';
 import cytoscape from 'cytoscape';
 import type { GraphNode, GraphEdge, SubgraphResponse } from '../hooks/useSubgraph';
 import { subgraphToElements } from '../hooks/useSubgraph';
-import { getCommunityColor } from '../lib/graphColors';
+import { getCommunityColor, readGraphThemeTokens } from '../lib/graphColors';
+import { useTheme } from '../hooks/useTheme';
 
 /**
  * Graph-Explorer canvas.
@@ -28,6 +29,23 @@ export type FilterMode = 'dim' | 'hide';
 /** Node color lens: by object type (default) or by P5 community. */
 export type ColorMode = 'type' | 'community';
 
+/**
+ * Stable connectivity breakdown of the loaded subgraph — a topology property of
+ * the loaded nodes/edges (independent of soft view filters), so the three counts
+ * always sum to `loaded`. Single source of truth for the "geladen = verbunden +
+ * Inseln + isoliert" hint, the isolated pill, and the "Nur verbunden" hide pass.
+ */
+export interface GraphPartition {
+  /** Total real nodes loaded (focus + neighbors), halos excluded. */
+  loaded: number;
+  /** Reachable from the focus over loaded edges (includes the focus itself). */
+  connectedToFocus: number;
+  /** Degree ≥ 1 but no path to the focus — small islands the filter cut loose. */
+  island: number;
+  /** Degree 0 — edgeless filter-orphans. */
+  isolated: number;
+}
+
 export interface ExplorerGraphHandle {
   /** Fit the whole graph into the viewport. */
   fit: () => void;
@@ -41,6 +59,9 @@ export interface ExplorerGraphHandle {
   collapseHub: (uuid: string) => void;
   /** Mark a node as the inspected one (selection ring) without re-centering. */
   highlightNode: (uuid: string | null) => void;
+  /** Transiente Vorschau-Hervorhebung (Hover über die Typ-Liste). Eigene Klasse,
+   *  damit eine aktive Klick-Auswahl (.selected) nicht überschrieben wird. */
+  previewNode: (id: string | null) => void;
 }
 
 interface ExplorerGraphProps {
@@ -65,6 +86,11 @@ interface ExplorerGraphProps {
   onOpenDetails: (uuid: string, file?: string | null) => void;
   /** Single tap selects a node — parent shows its metadata in the inspect panel. */
   onSelectNode?: (node: GraphNode | null) => void;
+  /** Nicht mit dem Fokus verbundene Knoten (Inseln + isolierte) anzeigen. Default
+   *  false → ausgeblendet (sonst kachelt fcose isolierte in ein Raster). */
+  showUnconnected?: boolean;
+  /** Meldet die stabile Konnektivitäts-Partition der geladenen Knoten (null = leer). */
+  onPartition?: (partition: GraphPartition | null) => void;
 }
 
 // fcose has no bundled type declarations; register it once, lazily, so the
@@ -100,7 +126,17 @@ const NODE_RANGE_PX = 36;
 // Persistent label only for "important" nodes (≥15 % maxDeg).
 const LABEL_DEGREE_FRACTION = 0.15;
 
-const cytoscapeStyles: cytoscape.StylesheetStyle[] = [
+/**
+ * Theme-aware Stylesheet (F1): aus den `--color-graph-*`-Tokens gebaut. Cytoscape-
+ * Stylesheets sind statische JS-Objekte und kennen keine CSS-Vars — die Tokens
+ * werden hier JS-seitig (getComputedStyle) aufgelöst und das Stylesheet bei jedem
+ * Theme-Wechsel via `cy.style()` neu gesetzt (ohne Re-Layout). Akzent-/State-Farben
+ * (Fokus-Ring #646cff, Auswahl #ffd54f, Halo/Preview #ff3b30, Cross-File-Orange)
+ * bleiben hartkodiert — sie liegen auf eingefärbten Knoten und lesen in beiden Themes.
+ */
+function buildExplorerStylesheet(): cytoscape.StylesheetStyle[] {
+  const g = readGraphThemeTokens();
+  return [
   {
     selector: 'node',
     style: {
@@ -111,9 +147,9 @@ const cytoscapeStyles: cytoscape.StylesheetStyle[] = [
       'text-margin-y': 4,
       'font-size': '11px',
       'font-family': 'system-ui, -apple-system, sans-serif',
-      'color': '#e6e6ea',
+      'color': g.nodeLabel,
       'text-outline-width': 2,
-      'text-outline-color': '#1a1a1a',
+      'text-outline-color': g.nodeOutline,
       'text-wrap': 'wrap',
       'text-max-width': '120px',
       'width': 'data(sizePx)',
@@ -183,6 +219,35 @@ const cytoscapeStyles: cytoscape.StylesheetStyle[] = [
       'border-color': '#ffd54f',
     } as unknown as cytoscape.Css.Node,
   },
+  // List-preview — transient hover highlight from the type-list panel. The node
+  // itself shows its label + a bright red ring; a separate `.preview-halo` node
+  // adds the red focus-style halo so the hovered object reads unmistakably.
+  {
+    selector: 'node.list-preview',
+    style: {
+      'label': 'data(label)',
+      'border-width': 4,
+      'border-color': '#ff3b30',
+      'z-index': 31,
+    } as unknown as cytoscape.Css.Node,
+  },
+  // Preview halo — red ring like the focus halo (but brighter/larger), spawned on
+  // hover over a type-list entry. Non-interactive, sits outside the node.
+  {
+    selector: 'node.preview-halo',
+    style: {
+      'shape': 'ellipse',
+      'width': 'data(haloSize)',
+      'height': 'data(haloSize)',
+      'background-opacity': 0,
+      'border-color': '#ff3b30',
+      'border-width': 4,
+      'border-opacity': 0.85,
+      'label': '',
+      'events': 'no',
+      'z-index': 30,
+    } as unknown as cytoscape.Css.Node,
+  },
   // Focus halo — a separate, non-interactive ring at 1.5× the focus node's radius
   // (red, 50 % opacity, double line width). A dedicated node so the ring sits
   // *outside* the focus node with a visible gap (user request).
@@ -205,18 +270,18 @@ const cytoscapeStyles: cytoscape.StylesheetStyle[] = [
     selector: 'edge',
     style: {
       'width': 1,
-      'line-color': '#7a7a8c',
+      'line-color': g.edge,
       // Lighter arrowhead + full scale so the "uses" direction reads clearly.
-      'target-arrow-color': '#b8b8c8',
+      'target-arrow-color': g.edgeArrow,
       'target-arrow-shape': 'triangle',
       'arrow-scale': 1,
       'curve-style': 'bezier',
       'control-point-step-size': 40,
       'label': 'data(label)',
       'font-size': '8px',
-      'color': '#888',
+      'color': g.edgeLabel,
       'text-rotation': 'autorotate',
-      'text-background-color': '#1a1a1a',
+      'text-background-color': g.edgeLabelBg,
       'text-background-opacity': 0.8,
       'text-background-padding': '2px',
       'font-family': 'system-ui, -apple-system, sans-serif',
@@ -227,7 +292,7 @@ const cytoscapeStyles: cytoscape.StylesheetStyle[] = [
     selector: 'edge[linkType = "structural"]',
     style: {
       'line-style': 'dotted',
-      'line-color': '#5a5a66',
+      'line-color': g.edgeStructural,
       'target-arrow-color': '#9a9aa8',
     } as unknown as cytoscape.Css.Edge,
   },
@@ -258,7 +323,13 @@ const cytoscapeStyles: cytoscape.StylesheetStyle[] = [
     selector: '.filtered-hidden',
     style: { 'display': 'none' } as unknown as cytoscape.Css.Node,
   },
-];
+  // Not-connected-to-focus nodes (islands + isolated) hidden by default — see applyUnconnectedVisibility.
+  {
+    selector: '.unconnected-hidden',
+    style: { 'display': 'none' } as unknown as cytoscape.Css.Node,
+  },
+  ];
+}
 
 /** Recompute degree-scaled size + label visibility across all real nodes. */
 function recomputeNodeVisuals(cy: cytoscape.Core): void {
@@ -408,6 +479,81 @@ function applyColorMode(cy: cytoscape.Core, mode: ColorMode): void {
 }
 
 const HALO_ID_PREFIX = '__focus_halo__';
+// Transienter Hover-Halo (Typ-Liste) — eigener Prefix/Klasse, getrennt vom Fokus-Halo.
+const PREVIEW_HALO_PREFIX = '__preview_halo__';
+const PREVIEW_HALO_CLASS = 'preview-halo';
+
+// Filter-orphans: nodes left edgeless by the server-side type/depth filter. They
+// carry no relational signal in the current view and fcose tiles them into a
+// confusing grid, so they're hidden by default (opt-in via the canvas pill).
+const UNCONNECTED_HIDDEN_CLASS = 'unconnected-hidden';
+
+/**
+ * Hide every non-focus node without a path to the focus (islands + isolated)
+ * unless `show`. Uses the precomputed focus-connected id set, so it stays
+ * consistent with the partition counts; the focus itself is always shown.
+ */
+function applyUnconnectedVisibility(cy: cytoscape.Core, connected: Set<string>, show: boolean): void {
+  cy.batch(() => {
+    cy.nodes().forEach((n) => {
+      if (n.hasClass('focus-halo') || n.hasClass(PREVIEW_HALO_CLASS)) return;
+      if (n.data('isFocus') || connected.has(n.id())) {
+        n.removeClass(UNCONNECTED_HIDDEN_CLASS);
+      } else {
+        n.toggleClass(UNCONNECTED_HIDDEN_CLASS, !show);
+      }
+    });
+  });
+}
+
+/**
+ * Partition the loaded graph by connectivity to the focus — a pure topology pass
+ * over the *loaded* edges (BFS, undirected), independent of any soft view filter,
+ * so the result is stable and the counts always sum to `loaded`. Returns the
+ * focus-connected id set (for the "Nur verbunden" hide pass) alongside the counts.
+ */
+function computeConnectivity(cy: cytoscape.Core): { connected: Set<string> } & GraphPartition {
+  const real = cy.nodes().filter((n) => !n.hasClass('focus-halo') && !n.hasClass(PREVIEW_HALO_CLASS));
+  const focusNodes = real.filter((n) => Boolean(n.data('isFocus')));
+  const connected = new Set<string>();
+  if (focusNodes.nonempty()) {
+    cy.elements().bfs({
+      roots: focusNodes,
+      directed: false,
+      visit: (v) => { if (v.isNode()) connected.add(v.id()); },
+    });
+  }
+  let connectedToFocus = 0;
+  let island = 0;
+  let isolated = 0;
+  real.forEach((n) => {
+    if (connected.has(n.id())) connectedToFocus++;
+    else if (n.degree(false) === 0) isolated++;
+    else island++;
+  });
+  return { connected, loaded: real.length, connectedToFocus, island, isolated };
+}
+
+/**
+ * Recompute the connectivity partition, hide isolated orphans per `show`, and
+ * report the counts to the host. Returns the partition (incl. the connected id
+ * set) so the caller can stash it for the "Nur verbunden" hide pass.
+ */
+function refreshPartition(
+  cy: cytoscape.Core,
+  show: boolean,
+  report?: (p: GraphPartition | null) => void,
+): { connected: Set<string> } & GraphPartition {
+  const part = computeConnectivity(cy);
+  applyUnconnectedVisibility(cy, part.connected, show);
+  report?.({
+    loaded: part.loaded,
+    connectedToFocus: part.connectedToFocus,
+    island: part.island,
+    isolated: part.isolated,
+  });
+  return part;
+}
 
 /**
  * Create/update the red focus halo — a non-interactive ring node at 1.5× the
@@ -450,7 +596,11 @@ function syncFocusHalo(cy: cytoscape.Core): void {
  * canvas so the graph spreads across the full window width instead of collapsing
  * into a centered square with empty side gutters.
  */
-function runLayout(cy: cytoscape.Core, opts: cytoscape.LayoutOptions): void {
+function runLayout(
+  cy: cytoscape.Core,
+  opts: cytoscape.LayoutOptions,
+  eles?: cytoscape.CollectionReturnValue,
+): void {
   cy.resize();
   const boundingBox = {
     x1: 0,
@@ -458,10 +608,15 @@ function runLayout(cy: cytoscape.Core, opts: cytoscape.LayoutOptions): void {
     w: Math.max(cy.width(), 400),
     h: Math.max(cy.height(), 400),
   };
-  const layout = cy.layout({ ...opts, boundingBox } as cytoscape.LayoutOptions);
+  // Lay out (and fit to) an explicit subset when given — used to keep the
+  // edgeless filter-orphans out of the layout so fcose doesn't tile them into a
+  // grid. Falls back to the whole graph.
+  const hasSubset = !!eles && eles.length > 0;
+  const target = hasSubset ? eles! : cy.elements();
+  const layout = target.layout({ ...opts, boundingBox } as cytoscape.LayoutOptions);
   layout.one('layoutstop', () => {
     cy.resize();
-    cy.fit(undefined, 40);
+    cy.fit(hasSubset ? eles : undefined, 40);
   });
   layout.run();
 }
@@ -475,8 +630,9 @@ function escapeHtml(s: string): string {
 }
 
 export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>(
-  ({ data, nameFilter, selectedFile, filterMode, deselectedTypes, colorMode = 'type', selectedCommunity = null, hoveredCommunity = null, onSetFocus, onOpenDetails, onSelectNode }, ref) => {
+  ({ data, nameFilter, selectedFile, filterMode, deselectedTypes, colorMode = 'type', selectedCommunity = null, hoveredCommunity = null, onSetFocus, onOpenDetails, onSelectNode, showUnconnected = false, onPartition }, ref) => {
     const { t } = useTranslation(['explorer']);
+    const { theme } = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const cyRef = useRef<cytoscape.Core | null>(null);
@@ -529,6 +685,14 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
     openDetailsRef.current = onOpenDetails;
     const selectRef = useRef(onSelectNode);
     selectRef.current = onSelectNode;
+    // Stable connectivity partition: the report callback + the latest computed
+    // partition (incl. the focus-connected id set used by the "Nur verbunden" pass).
+    const partitionReportRef = useRef(onPartition);
+    partitionReportRef.current = onPartition;
+    const partitionRef = useRef<({ connected: Set<string> } & GraphPartition) | null>(null);
+    // Unconnected-node visibility, read inside mount-only handlers (mergeElements).
+    const showUnconnectedRef = useRef(showUnconnected);
+    showUnconnectedRef.current = showUnconnected;
     // Tooltip label strings (read inside mount-only handlers).
     const tRef = useRef(t);
     tRef.current = t;
@@ -543,7 +707,7 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
       relayout: () => {
         const cy = cyRef.current;
         if (!cy) return;
-        runLayout(cy, fcoseLayout);
+        runLayout(cy, fcoseLayout, cy.elements().not(`.${UNCONNECTED_HIDDEN_CLASS}`));
       },
       exportPng: () =>
         cyRef.current?.png({ full: true, scale: 2, bg: 'transparent' }) ?? null,
@@ -557,9 +721,11 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
         cy.add(fresh);
         recomputeNodeVisuals(cy);
         applyColorMode(cy, colorModeRef.current);
+        // A merged hop may have connected former orphans (or added new ones) — re-evaluate.
+        partitionRef.current = refreshPartition(cy, showUnconnectedRef.current, partitionReportRef.current);
         // Re-layout keeping existing positions as the starting point so the
         // graph grows outward instead of reshuffling (incremental expand).
-        runLayout(cy, { ...fcoseLayout, randomize: false } as cytoscape.LayoutOptions);
+        runLayout(cy, { ...fcoseLayout, randomize: false } as cytoscape.LayoutOptions, cy.elements().not(`.${UNCONNECTED_HIDDEN_CLASS}`));
       },
       collapseHub: (uuid) => {
         const cy = cyRef.current;
@@ -580,7 +746,42 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
         cy.nodes().removeClass('selected');
         if (uuid) cy.getElementById(uuid).addClass('selected');
       },
+      previewNode: (id) => {
+        const cy = cyRef.current;
+        if (!cy) return;
+        // Vorherige Vorschau entfernen (Klasse am Knoten + transienter Halo-Knoten).
+        cy.nodes().removeClass('list-preview');
+        cy.nodes(`.${PREVIEW_HALO_CLASS}`).remove();
+        if (!id) return;
+        const target = cy.getElementById(id);
+        if (target.empty() || !target.isNode()) return;
+        target.addClass('list-preview');
+        // Rotes Halo wie beim Fokus-Knoten — ein separater, nicht-interaktiver
+        // Ring-Knoten am Ort des Ziels (statisch beim Hover, kein Re-Layout).
+        const size = (target.data('sizePx') as number) ?? NODE_MIN_PX;
+        const pos = target.position();
+        cy.add({
+          group: 'nodes',
+          data: {
+            id: `${PREVIEW_HALO_PREFIX}${id}`,
+            isHalo: true,
+            haloSize: Math.round(size * 1.6),
+            color: 'transparent',
+            communityColor: 'transparent',
+            sizePx: Math.round(size),
+          },
+          position: { x: pos.x, y: pos.y },
+          selectable: false,
+          grabbable: false,
+        }).addClass(PREVIEW_HALO_CLASS);
+      },
     }));
+
+    // F1: bei Theme-Wechsel das Stylesheet aus den neuen Tokens neu setzen (kein
+    // Re-Layout — Positionen/Zoom bleiben). Initial setzt der Mount das Stylesheet.
+    useEffect(() => {
+      cyRef.current?.style(buildExplorerStylesheet());
+    }, [theme]);
 
     // Init once: register fcose, create the instance, bind handlers.
     useEffect(() => {
@@ -597,7 +798,7 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
         const cy = cytoscape({
           container: containerRef.current,
           elements: [],
-          style: cytoscapeStyles,
+          style: buildExplorerStylesheet(),
           minZoom: 0.15,
           maxZoom: 3,
           wheelSensitivity: 0.3,
@@ -733,12 +934,33 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
       if (elements.length) {
         recomputeNodeVisuals(cy);
         applyColorMode(cy, colorMode);
-        runLayout(cy, fcoseLayout);
+        // Compute the stable partition + hide not-connected nodes (islands + isolated)
+        // BEFORE the layout so fcose never grids them; stash the connected set.
+        partitionRef.current = refreshPartition(cy, showUnconnected, partitionReportRef.current);
+        runLayout(cy, fcoseLayout, cy.elements().not(`.${UNCONNECTED_HIDDEN_CLASS}`));
+      } else {
+        partitionRef.current = null;
+        partitionReportRef.current?.(null);
       }
-      // colorMode intentionally omitted — its own effect re-applies the lens
-      // without forcing a re-layout on a mere recolor.
+      // colorMode/showUnconnected intentionally omitted — their own effects react
+      // without forcing a full element rebuild.
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, ready]);
+
+    // Toggle not-connected visibility without rebuilding the graph (preserves any
+    // incrementally expanded nodes). Skips the initial paint — the data effect
+    // above already applied the default-hidden state + ran the first layout.
+    const isoInitRef = useRef(false);
+    useEffect(() => {
+      const cy = cyRef.current;
+      if (!cy || !ready) return;
+      if (!isoInitRef.current) { isoInitRef.current = true; return; }
+      // Toggling visibility doesn't change the partition counts — just show/hide + relayout.
+      if (partitionRef.current) applyUnconnectedVisibility(cy, partitionRef.current.connected, showUnconnected);
+      if (cy.elements().length) {
+        runLayout(cy, fcoseLayout, cy.elements().not(`.${UNCONNECTED_HIDDEN_CLASS}`));
+      }
+    }, [showUnconnected, ready]);
 
     // Recolor in place when the färb-lens toggles (no re-layout, just the class).
     useEffect(() => {
@@ -772,8 +994,8 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
       const communityActive = selectedCommunity !== null;
       cy.batch(() => {
         cy.nodes().forEach((n) => {
-          // The focus node and its halo are always fully visible.
-          if (n.data('isFocus') || n.hasClass('focus-halo')) {
+          // The focus node + halos (focus + transient hover preview) stay fully visible.
+          if (n.data('isFocus') || n.hasClass('focus-halo') || n.hasClass(PREVIEW_HALO_CLASS)) {
             n.removeClass('filtered-hidden name-dimmed');
             return;
           }
@@ -782,13 +1004,22 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
           const fileMatch = !fileActive || n.data('file') === selectedFile;
           // A selected community keeps its members; the rest become soft non-matches.
           const communityMatch = !communityActive || n.data('community') === selectedCommunity;
-          const softMatch = nameMatch && fileMatch && communityMatch;
+          // User-ausgeblendete Knoten (Noise-Filter) sind ebenfalls Soft-Non-Matches →
+          // dimmen bzw. ausblenden nach filterMode (analog Name/Datei-Filter, rücknehmbar
+          // über den Atlas-Hidden-Manager).
+          const userHidden = Boolean(n.data('userHidden'));
+          const softMatch = nameMatch && fileMatch && communityMatch && !userHidden;
           // Type exclusion always hides; a soft non-match dims or hides per mode.
           const hidden = typeHidden || (!softMatch && filterMode === 'hide');
           const dimmed = !hidden && !softMatch && filterMode === 'dim';
           n.toggleClass('filtered-hidden', hidden);
           n.toggleClass('name-dimmed', dimmed);
         });
+
+        // Not-connected-to-focus nodes (islands + isolated) sind über die Klasse
+        // `unconnected-hidden` separat versteckt (Default, via applyUnconnectedVisibility) —
+        // dieser Soft-Filter-Pass behandelt nur Name/Datei/Typ/Community.
+
         // An edge follows its endpoints: hidden if either is hidden (no dangling
         // arrows), otherwise dimmed if either endpoint is dimmed.
         cy.edges().forEach((e) => {

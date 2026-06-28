@@ -27,6 +27,7 @@ import enErrors    from './locales/en/errors.json';
 import enTypes     from './locales/en/types.json';
 import enDashboard from './locales/en/dashboard.json';
 import enExplorer  from './locales/en/explorer.json';
+import enAtlas     from './locales/en/atlas.json';
 
 import deCommon    from './locales/de/common.json';
 import deNav       from './locales/de/nav.json';
@@ -35,6 +36,7 @@ import deErrors    from './locales/de/errors.json';
 import deTypes     from './locales/de/types.json';
 import deDashboard from './locales/de/dashboard.json';
 import deExplorer  from './locales/de/explorer.json';
+import deAtlas     from './locales/de/atlas.json';
 
 import esCommon    from './locales/es/common.json';
 import esNav       from './locales/es/nav.json';
@@ -110,9 +112,33 @@ import jaExplorer     from './locales/ja/explorer.json';
 import koExplorer     from './locales/ko/explorer.json';
 import zhHansExplorer from './locales/zh-Hans/explorer.json';
 
+// Atlas namespace for the remaining languages (de/en imported above).
+import esAtlas     from './locales/es/atlas.json';
+import frAtlas     from './locales/fr/atlas.json';
+import itAtlas     from './locales/it/atlas.json';
+import nlAtlas     from './locales/nl/atlas.json';
+import ptAtlas     from './locales/pt/atlas.json';
+import svAtlas     from './locales/sv/atlas.json';
+import jaAtlas     from './locales/ja/atlas.json';
+import koAtlas     from './locales/ko/atlas.json';
+import zhHansAtlas from './locales/zh-Hans/atlas.json';
+
+// Cluster namespace (/cluster-Ansicht) for all languages.
+import enCluster     from './locales/en/cluster.json';
+import deCluster     from './locales/de/cluster.json';
+import esCluster     from './locales/es/cluster.json';
+import frCluster     from './locales/fr/cluster.json';
+import itCluster     from './locales/it/cluster.json';
+import nlCluster     from './locales/nl/cluster.json';
+import ptCluster     from './locales/pt/cluster.json';
+import svCluster     from './locales/sv/cluster.json';
+import jaCluster     from './locales/ja/cluster.json';
+import koCluster     from './locales/ko/cluster.json';
+import zhHansCluster from './locales/zh-Hans/cluster.json';
+
 export const LANGUAGE_STORAGE_KEY = 'fmlab.lang';
 
-export const I18N_NAMESPACES = ['common', 'nav', 'detail', 'errors', 'types', 'dashboard', 'explorer'] as const;
+export const I18N_NAMESPACES = ['common', 'nav', 'detail', 'errors', 'types', 'dashboard', 'explorer', 'atlas', 'cluster'] as const;
 
 const resources = {
   en: {
@@ -123,6 +149,8 @@ const resources = {
     types:     enTypes,
     dashboard: enDashboard,
     explorer:  enExplorer,
+    atlas:     enAtlas,
+    cluster:     enCluster,
   },
   de: {
     common:    deCommon,
@@ -132,6 +160,8 @@ const resources = {
     types:     deTypes,
     dashboard: deDashboard,
     explorer:  deExplorer,
+    atlas:     deAtlas,
+    cluster:     deCluster,
   },
   es: {
     common:    esCommon,
@@ -140,6 +170,8 @@ const resources = {
     errors:    esErrors,
     types:     esTypes,
     dashboard: esDashboard,
+    atlas:     esAtlas,
+    cluster:     esCluster,
     explorer:  esExplorer,
   },
   fr: {
@@ -149,6 +181,8 @@ const resources = {
     errors:    frErrors,
     types:     frTypes,
     dashboard: frDashboard,
+    atlas:     frAtlas,
+    cluster:     frCluster,
     explorer:  frExplorer,
   },
   it: {
@@ -158,6 +192,8 @@ const resources = {
     errors:    itErrors,
     types:     itTypes,
     dashboard: itDashboard,
+    atlas:     itAtlas,
+    cluster:     itCluster,
     explorer:  itExplorer,
   },
   nl: {
@@ -167,6 +203,8 @@ const resources = {
     errors:    nlErrors,
     types:     nlTypes,
     dashboard: nlDashboard,
+    atlas:     nlAtlas,
+    cluster:     nlCluster,
     explorer:  nlExplorer,
   },
   pt: {
@@ -176,6 +214,8 @@ const resources = {
     errors:    ptErrors,
     types:     ptTypes,
     dashboard: ptDashboard,
+    atlas:     ptAtlas,
+    cluster:     ptCluster,
     explorer:  ptExplorer,
   },
   sv: {
@@ -185,6 +225,8 @@ const resources = {
     errors:    svErrors,
     types:     svTypes,
     dashboard: svDashboard,
+    atlas:     svAtlas,
+    cluster:     svCluster,
     explorer:  svExplorer,
   },
   ja: {
@@ -194,6 +236,8 @@ const resources = {
     errors:    jaErrors,
     types:     jaTypes,
     dashboard: jaDashboard,
+    atlas:     jaAtlas,
+    cluster:     jaCluster,
     explorer:  jaExplorer,
   },
   ko: {
@@ -203,6 +247,8 @@ const resources = {
     errors:    koErrors,
     types:     koTypes,
     dashboard: koDashboard,
+    atlas:     koAtlas,
+    cluster:     koCluster,
     explorer:  koExplorer,
   },
   'zh-Hans': {
@@ -212,6 +258,8 @@ const resources = {
     errors:    zhHansErrors,
     types:     zhHansTypes,
     dashboard: zhHansDashboard,
+    atlas:     zhHansAtlas,
+    cluster:     zhHansCluster,
     explorer:  zhHansExplorer,
   },
 };

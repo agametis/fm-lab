@@ -8,6 +8,96 @@
 */
 
 -- ############################################################
+-- Phase A: Cross-File-Auflösung leerer Step-Referenz-UUIDs
+-- ############################################################
+-- Bei datei-übergreifenden Bezügen schreibt FileMaker KEINE Ziel-UUID, sondern nur den
+-- <DataSourceReference> (Zieldatei) + die datei-lokale id (+ Name):
+--   <LayoutReferenceContainer External="True">
+--     <DataSourceReference name="Artikel Einkauf"/>
+--     <LayoutReference id="1" name="Stammdaten" UUID=""/>     ← UUID leer
+-- P2 liefert dann Ref_UUID='' → der Graph-Link (navigates_to_layout/calls_script/
+-- sets_field …) dangelt (Target_UUID='') und das Ziel erscheint im Where-used als
+-- ungenutzt. Hier — NACH dem batch-weiten P2-Merge, vor dem ObjectLinks-Aufbau — lösen
+-- wir die echte UUID auf. Bewusst in P4 (nicht P2): P2 läuft datei-PARTITIONIERT (je Slice
+-- nur die eigenen Dateien), die Auflösung ist aber DATEI-ÜBERGREIFEND und braucht die
+-- volle Master-XMLStepReferences + alle Kataloge.
+-- xml_extract_text läuft auf der Step_XML-SPALTE (KEIN read_xml/DOM → minimaler Peak; nur
+-- ~1,5k External-Step-Zeilen), daher die webbed-Last vernachlässigbar.
+INSTALL webbed FROM community;
+LOAD webbed;
+
+-- Layout: External GTRR / Go to Layout — DataSourceReference-Name → Zieldatei
+-- (Strip '.fmp12') + lokale LayoutReference-id → Layouts.L_UUID. Pro Step genau EINE
+-- Layout-Zeile (//…@UUID[1]) → UPDATE über Step_UUID eindeutig. ≈97 % auflösbar
+-- (Rest = referenzierte Datei nicht importiert → bleibt leer, korrekt nicht-navigierbar).
+UPDATE XMLStepReferences x
+SET Ref_UUID = r.resolved_uuid
+FROM (
+    SELECT x2.Step_UUID, lay.L_UUID AS resolved_uuid
+    FROM XMLStepReferences x2
+    JOIN StepsForScripts st ON st.Step_UUID = x2.Step_UUID
+    JOIN Layouts lay
+      ON lay.File_Name = regexp_replace(
+             NULLIF(xml_extract_text(st.Step_XML, '//DataSourceReference/@name')[1], ''),
+             '\.fmp12$', '')
+     AND lay.L_ID = TRY_CAST(
+             NULLIF(xml_extract_text(st.Step_XML, '//LayoutReferenceContainer/LayoutReference/@id')[1], '')
+             AS BIGINT)
+    WHERE x2.Ref_Type = 'layout' AND (x2.Ref_UUID IS NULL OR x2.Ref_UUID = '')
+) r
+WHERE x.Step_UUID = r.Step_UUID
+  AND x.Ref_Type = 'layout' AND (x.Ref_UUID IS NULL OR x.Ref_UUID = '');
+
+-- Script: External Perform Script — DataSourceReference-Name → Zieldatei + lokale
+-- ScriptReference-id → ScriptCatalog.Script_UUID. ≈99 % auflösbar.
+UPDATE XMLStepReferences x
+SET Ref_UUID = r.resolved_uuid
+FROM (
+    SELECT x2.Step_UUID, scr.Script_UUID AS resolved_uuid
+    FROM XMLStepReferences x2
+    JOIN StepsForScripts st ON st.Step_UUID = x2.Step_UUID
+    JOIN ScriptCatalog scr
+      ON scr.File_Name = regexp_replace(
+             NULLIF(xml_extract_text(st.Step_XML, '//DataSourceReference/@name')[1], ''),
+             '\.fmp12$', '')
+     AND scr.Script_ID = TRY_CAST(
+             NULLIF(xml_extract_text(st.Step_XML, '//ScriptReference/@id')[1], '')
+             AS BIGINT)
+    WHERE x2.Ref_Type = 'script' AND (x2.Ref_UUID IS NULL OR x2.Ref_UUID = '')
+) r
+WHERE x.Step_UUID = r.Step_UUID
+  AND x.Ref_Type = 'script' AND (x.Ref_UUID IS NULL OR x.Ref_UUID = '');
+
+-- Feld: TO-relativ ausgelassene UUID (Set Field / Sort / Go to Field …). FileMaker lässt
+-- die Feld-UUID weg, liefert aber den TO-Kontext mit. Die TO zeigt auf eine Basistabelle
+-- in einer ANDEREN Datei (TableOccurrenceCatalog.BT_UUID NULL, aber BT_Name + DS_Name
+-- gesetzt) → Heimat der Basistabelle: DS_Name → Datei (sonst die TO-eigene Datei) +
+-- BT_Name + Feldname → FieldsForTables.Field_UUID. Reine Tabellen-Auflösung (kein XML).
+-- (TO_UUID, Feldname) ist eindeutig (durch BT_Name-Skopierung kollisionsfrei); Match über
+-- (TO_UUID, Ref_Name), da ein Step mehrere Feldzeilen haben kann.
+UPDATE XMLStepReferences x
+SET Ref_UUID = r.field_uuid
+FROM (
+    SELECT toc.TO_UUID, f.Field_Name, f.Field_UUID AS field_uuid
+    FROM TableOccurrenceCatalog toc
+    JOIN FieldsForTables f
+      ON f.Table_Name = toc.BT_Name
+     AND f.File_Name = regexp_replace(
+             COALESCE(NULLIF(toc.DS_Name, ''), toc.File_Name), '\.fmp12$', '')
+    WHERE toc.TO_UUID IN (
+        SELECT DISTINCT TO_UUID FROM XMLStepReferences
+        WHERE Ref_Type = 'field' AND (Ref_UUID IS NULL OR Ref_UUID = '') AND TO_UUID IS NOT NULL
+    )
+) r
+WHERE x.Ref_Type = 'field' AND (x.Ref_UUID IS NULL OR x.Ref_UUID = '')
+  AND x.TO_UUID = r.TO_UUID AND x.Ref_Name = r.Field_Name;
+
+-- Step_UUID-Index für die REST-API (pro ScriptStep-Detailaufruf werden die step-eigenen
+-- Referenzen direkt aus XMLStepReferences gelesen). Hier statt in P2, weil der P2-Merge
+-- (CREATE TABLE AS … LIMIT 0) keine Indizes der Slice-DBs überträgt.
+CREATE INDEX IF NOT EXISTS idx_xmlstepref_step ON XMLStepReferences(Step_UUID);
+
+-- ############################################################
 -- Phase B: ObjectCatalog
 -- ############################################################
 
@@ -993,6 +1083,31 @@ SELECT
 FROM XMLStepReferences xsr
 LEFT JOIN ObjectCatalog oc_target ON xsr.Ref_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Layout'
 WHERE xsr.Ref_Type = 'layout'
+
+UNION ALL
+
+-- 24b. Script → TableOccurrence (Go to Related Record — Sprungziel-TO)
+-- Extrahiert aus XMLStepReferences (Ref_Type = 'tableOccurrence'). GTRR legt das
+-- Bezugs-TO als <TableOccurrenceReference> ab; ohne diese Regel verpuffte die Referenz
+-- komplett (kein Konsument für Ref_Type='tableOccurrence') — ein TO, das nur als
+-- GTRR-Sprungziel dient, erschien dadurch in Where-used/Dead-Code als ungenutzt.
+-- Rolle analog zu navigates_to_field/navigates_to_layout. TO-UUIDs sind in
+-- ObjectCatalog eindeutig (keine Klon-Mehrfachtreffer → kein Row-Multiply); COALESCE
+-- fängt das seltene datei-externe (nicht importierte) Sprungziel als Nicht-Cross-File ab.
+SELECT
+    xsr.Script_UUID as Source_UUID,
+    'Script' as Source_Type,
+    xsr.Ref_UUID as Target_UUID,
+    'TableOccurrence' as Target_Type,
+    'operational' as Link_Type,
+    'navigates_to_to' as Link_Role,
+    NULL as Link_Subrole,
+    xsr.File_Name as Source_File,
+    COALESCE(oc_target.File_Name, xsr.File_Name) as Target_File,
+    (xsr.File_Name != COALESCE(oc_target.File_Name, xsr.File_Name)) as Is_Cross_File
+FROM XMLStepReferences xsr
+LEFT JOIN ObjectCatalog oc_target ON xsr.Ref_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'TableOccurrence'
+WHERE xsr.Ref_Type = 'tableOccurrence'
 
 UNION ALL
 

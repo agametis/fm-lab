@@ -1,0 +1,97 @@
+{
+  "title": "Atlas del grafo",
+  "subtitle": "Punto de entrada descendente — elige una celda para profundizar, una hoja para abrirla en el Explorador de grafos.",
+  "headerButton": "Atlas",
+  "headerButton_hint": "Abrir el Atlas del grafo — la vista general descendente de toda la solución.",
+  "segmentation": "Segmentación",
+  "segment": {
+    "community": "Comunidad",
+    "file": "Archivo",
+    "hubs": "Nodos principales",
+    "type": "Tipo"
+  },
+  "breadcrumb": {
+    "root": "Atlas"
+  },
+  "representation": "Representación",
+  "view": {
+    "composition": "Composición",
+    "topology": "Topología",
+    "composition_hint": "Mapa de árbol — qué tan grande es cada cosa (proporción).",
+    "topology_hint": "Metagrafo — cómo se acoplan los segmentos (solo Comunidad/Archivo)."
+  },
+  "weight": {
+    "label": "Ponderación",
+    "domain": "Dominio",
+    "logical": "Bruto",
+    "domain_hint": "Peso de dominio (ClusterEdges) — funciones integradas y god-nodes ya eliminados.",
+    "logical_hint": "Grado lógico bruto — incluye funciones integradas."
+  },
+  "search": {
+    "placeholder": "Filtrar celdas visibles…"
+  },
+  "types": {
+    "label": "Tipos de objeto",
+    "hide": "Ocultar {{type}}",
+    "show": "Mostrar {{type}}",
+    "reset": "Restablecer"
+  },
+  "rest": {
+    "collapse": "Contraer a las entradas principales",
+    "hide": "ocultar"
+  },
+  "status": {
+    "semanticNames": "Nombres semánticos: {{value}}",
+    "semanticNamesNone": "Nombres semánticos: --",
+    "count": "Cantidad: {{semantic}} / {{user}} definidos por el usuario",
+    "clustersMissing": "Aún sin agrupar — ejecuta «fm-graph-cluster» para activar Comunidad y Topología."
+  },
+  "loading": "Cargando…",
+  "empty": "No hay nada que mostrar aquí.",
+  "error": "No se pudo cargar el atlas: {{message}}",
+  "truncated": "Mostrando las entradas principales — el resto se agrupa en la celda gris.",
+  "hint": {
+    "leafClick": "Consejo: haz clic en una celda hoja para abrir ese objeto en el Explorador de grafos.",
+    "metaClick": "Consejo: haz clic en un supernodo para abrir su miembro más pesado en el Explorador de grafos."
+  },
+  "topN": {
+    "label": "Top-N",
+    "hint": "Cuántos segmentos/hojas principales mostrar antes de plegar el resto en una celda.",
+    "auto": "Volver al corte automático (por nivel)",
+    "autoTag": "auto"
+  },
+  "hidden": {
+    "mode": "Ignorados",
+    "dim": "atenuar",
+    "hide": "quitar",
+    "dim_hint": "Los nodos ignorados siguen visibles (atenuados) y son reversibles.",
+    "hide_hint": "Los nodos ignorados se quitan — deshacer solo desde la lista.",
+    "manage": "gestionar…",
+    "manage_hint": "Lista de todos los nodos ignorados — restáuralos aquí.",
+    "empty": "Ningún nodo ignorado.",
+    "restore": "Restaurar"
+  },
+  "panel": {
+    "infoButton": "Opciones",
+    "close": "Cerrar",
+    "type": "Tipo",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "openExplorer": "Grafo",
+    "openDetail": "Detalles",
+    "hideNode": "Ignorar",
+    "unhideNode": "No ignorar",
+    "hiddenBadge": "ignorado",
+    "community": {
+      "title": "Comunidad",
+      "nameLabel": "Nombre propio",
+      "namePlaceholder": "p. ej. «Facturación y PDF»",
+      "notesLabel": "Notas",
+      "notesPlaceholder": "Texto libre para esta comunidad…"
+    },
+    "node": {
+      "title": "Nodo"
+    },
+    "cancel": "Cancelar"
+  }
+}

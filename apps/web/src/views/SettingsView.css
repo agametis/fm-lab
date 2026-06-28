@@ -1,7 +1,14 @@
+/* Volle Standard-Breite wie alle übrigen Seiten (#root cappt auf 1280px und
+   liefert die Außen-Polster). Kein eigener 900px-Cap mehr — sonst wirkt
+   Settings schmaler als der Rest und einzelne Module (graphify) brechen aus. */
 .settings-view {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1.5rem;
+  width: 100%;
+}
+
+/* Karten füllen die Spaltenbreite gleichmäßig; min-width:0 verhindert, dass
+   breiter Inhalt (graphify-Tabelle / lange Pfade) die Karte aufbläht. */
+.plugin-card {
+  min-width: 0;
 }
 
 .settings-header {
@@ -11,19 +18,10 @@
   margin-bottom: 1.5rem;
 }
 
-.settings-back {
-  color: var(--color-accent);
-  text-decoration: none;
-  font-size: 0.9rem;
-}
-
-.settings-back:hover {
-  text-decoration: underline;
-}
-
 .settings-header h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
+  font-weight: 700;
 }
 
 .settings-loading,
@@ -274,9 +272,9 @@
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-mono, monospace);
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
   font-size: 0.85rem;
 }
 
@@ -315,5 +313,5 @@
 
 .api-settings-clear {
   background: transparent;
-  color: var(--color-text);
+  color: var(--color-text-primary);
 }

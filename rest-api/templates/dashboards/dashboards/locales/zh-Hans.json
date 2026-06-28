@@ -4,7 +4,5 @@
     "description": "所有可用仪表板的概览。"
   },
   "layout": {
-    "root.children[0].props.title": "仪表板",
-    "root.children[0].props.subtitle": "单击可打开所选仪表板。"
   }
 }

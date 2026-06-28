@@ -4,17 +4,16 @@
     "description": "Findet Script-Schritte mit Hinweisen auf Zugangsdaten (Passwort, Secret, API-Key, Token, …) über alle Dateien hinweg. Klartext-Werte werden mit ***** maskiert, damit das Dashboard keine Geheimnisse preisgibt."
   },
   "layout": {
-    "root.children[0].props.title": "Credential-Überblick",
-    "root.children[0].children[0].props.items[0].label": "Treffer",
-    "root.children[0].children[0].props.items[1].label": "Skripte",
-    "root.children[0].children[0].props.items[2].label": "Dateien",
-    "root.children[1].props.title": "Treffer",
-    "root.children[1].children[0].props.columns[0].label": "Datei",
-    "root.children[1].children[0].props.columns[1].label": "Skript",
-    "root.children[1].children[0].props.columns[2].label": "Schritt",
-    "root.children[1].children[0].props.columns[3].label": "Schritttyp",
-    "root.children[1].children[0].props.columns[4].label": "Keyword",
-    "root.children[1].children[0].props.columns[5].label": "Ausschnitt (maskiert)",
-    "root.children[1].children[0].props.empty.message": "Keine Credential-Schlüsselwörter in Script-Schritten gefunden."
+    "credentials_kpi_kpistrip.props.items[0].label": "Treffer",
+    "credentials_kpi_kpistrip.props.items[1].label": "Skripte",
+    "credentials_kpi_kpistrip.props.items[2].label": "Dateien",
+    "credentials_findings.props.title": "Treffer",
+    "credentials_findings_table.props.columns[0].label": "Datei",
+    "credentials_findings_table.props.columns[1].label": "Skript",
+    "credentials_findings_table.props.columns[2].label": "Schritt",
+    "credentials_findings_table.props.columns[3].label": "Schritttyp",
+    "credentials_findings_table.props.columns[4].label": "Keyword",
+    "credentials_findings_table.props.columns[5].label": "Ausschnitt (maskiert)",
+    "credentials_findings_table.props.empty.message": "Keine Credential-Schlüsselwörter in Script-Schritten gefunden."
   }
 }

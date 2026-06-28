@@ -6,6 +6,19 @@
     "ariaLabel": "Kruimelpad",
     "linkAria": "Navigeer naar {{label}}"
   },
+  "crumbs": {
+    "home": "Start",
+    "search": "Zoeken",
+    "hierarchy": "Hiërarchie",
+    "graph": "Grafiek",
+    "relationships": "Relaties",
+    "dashboards": "Dashboards",
+    "customQueries": "Aangepaste query's",
+    "docs": "Documentatie",
+    "xmlImport": "XML-import",
+    "cluster": "Clusters",
+    "settings": "Instellingen"
+  },
   "errors": {
     "noDashboardId": "Geen dashboard-id opgegeven.",
     "noQueryName": "Geen querynaam opgegeven."
@@ -57,11 +70,11 @@
     "tabsAria": "Objectweergaven",
     "noName": "(geen naam)",
     "tabs": {
-      "detail":     "Details",
+      "detail": "Details",
       "references": "Referenties",
-      "graph":      "Grafiek",
-      "versions":   "Versies",
-      "notes":      "Notities"
+      "graph": "Grafiek",
+      "versions": "Versies",
+      "notes": "Notities"
     }
   },
   "pseudoToolbar": {

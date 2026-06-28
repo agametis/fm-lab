@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { components } from '@packages/shared/types';
 import { Slot } from '../plugins';
@@ -65,7 +65,7 @@ function highlightMatch(text: string, term?: string): React.ReactNode {
  * "Datei ▸ Skript ▸ Step N" (1-basiert wie im FileMaker-Editor).
  */
 export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, onClick, onCategoryClick, searchTerm }) => {
-  const { t } = useTranslation(['detail']);
+  const { t } = useTranslation(['detail', 'common']);
   const navigate = useNavigate();
   const aggObject = object as FMObjectWithAggregates;
   const noName = t('detail:objectListItem.noName') as string;
@@ -132,9 +132,6 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
               {aggObject.category}
             </span>
           )}
-          <span className="object-type">
-            {object.Object_Type}
-          </span>
           {hasUsage && (
             <span
               className="object-usage-badge object-usage-badge--clickable"
@@ -167,6 +164,27 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
             objectName={object.Object_Name || ''}
             fileName={object.File_Name || ''}
           />
+          {/* Typ-Pille → mit `object-name { flex:1 }` rechtsbündig, unabhängig von
+              Category-Pille/Usage-Badge/Slot. */}
+          <span className="object-type">
+            {object.Object_Type}
+          </span>
+          {/* TableOccurrence: Direkt-Sprung ins Beziehungsdiagramm der Datei, mit
+              dieser TO vorselektiert (`?to=<UUID>`). stopPropagation, weil der
+              Row-Click sonst zusätzlich in die DetailView navigieren würde. */}
+          {object.Object_Type === 'TableOccurrence' && object.File_Name && (
+            <Link
+              to={`/relationship-graph/${encodeURIComponent(object.File_Name)}?to=${encodeURIComponent(object.Object_UUID)}`}
+              className="object-rg-link"
+              title={t('common:actions.showInRelationshipGraph') as string}
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
+              }}
+            >
+              {t('detail:objectListItem.graphButton')}
+            </Link>
+          )}
         </div>
         {isScriptStep ? (
           <div className="object-details object-step-breadcrumb">

@@ -125,7 +125,8 @@
     "noReferences": "Geen referenties gevonden",
     "noFilterMatches": "Geen matches voor de huidige filters",
     "crossFileBadge": "Tussen bestanden",
-    "itemAriaLabel": "Navigeer naar {{type}}: {{name}}"
+    "itemAriaLabel": "Navigeer naar {{type}}: {{name}}",
+    "notNavigable": "Doel niet in de geïmporteerde dataset"
   },
   "searchOptions": {
     "regionAria": "Sorteer- en groepeeropties",
@@ -181,7 +182,8 @@
     "usageBadge_other": "{{count}} gebruiken",
     "showAria": "{{type}}: {{name}} — tonen",
     "noName": "(geen naam)",
-    "filterByCategory": "Filteren op {{category}}"
+    "filterByCategory": "Filteren op {{category}}",
+    "graphButton": "Graaf"
   },
   "scriptSearchFilter": {
     "searchAria": "Zoek referenties",

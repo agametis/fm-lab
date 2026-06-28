@@ -4,8 +4,8 @@
     "description": "Funktions-/Schritt-Liste innerhalb einer Doku-Rubrik."
   },
   "layout": {
-    "root.children[0].children[1].props.items[0].label": "Funktionen",
-    "root.children[1].props.title": "Funktionen",
-    "root.children[1].children[0].props.empty.message": "Keine Funktionen für diese Rubrik verfügbar."
+    "info_kpistrip.props.items[0].label": "Funktionen",
+    "functions.props.title": "Funktionen",
+    "functions_list.props.empty.message": "Keine Funktionen für diese Rubrik verfügbar."
   }
 }

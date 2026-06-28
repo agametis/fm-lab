@@ -2,10 +2,15 @@
 -- @title: Graph Subgraph (Recursive k-Hop)
 -- @description: Fokus-zentrierter k-Hop-Subgraph aus ObjectCatalog/ObjectLinks — gefiltert, gedeckelt, ehrlich gekürzt
 -- @params: focus (required, UUID), focus_file, depth, direction, mode, types, roles, include_builtins, node_limit, hub_degree
--- @version: 1.2.0
+-- @version: 1.3.0
 -- @author: Marcel / Claude
 -- @tags: graph, subgraph, explorer
 -- @note: Core-Endpoint /api/graph/subgraph.
+--        1.3.0: FOKUS-AUSNAHME im Typ-Filter (nodes_ranked) — der Fokus-Knoten bleibt
+--        IMMER Teil des Subgraphen, unabhängig vom `types`-Filter. Vorher kollabierte
+--        der Graph im „Nur gewählte Typen"-Modus, sobald man den Object_Type des Fokus
+--        abwählte (Refetch ohne diesen Typ → Fokus weg → leer). Spiegelbild in
+--        graph_depth_profile.sql (reached_f), damit total_reachable konsistent bleibt.
 --        1.1.0: logische Sicht liest aus der View LogicalLinks (P5) statt Inline-CTE.
 --        1.2.0: KLON-ROBUSTHEIT — die Knoten-Identität ist (UUID, File_Name), nicht die nackte
 --        UUID. Der Walk folgt jeder Kante DATEI-GENAU (e.a_file = w.file); sonst merged eine
@@ -155,6 +160,11 @@ deg AS (
   GROUP BY id
 ),
 -- 9) Knoten + optionaler Typ-Filter; Katalog-Join DATEI-GENAU (eine Zeile je (uuid,file)).
+--    FOKUS-AUSNAHME: der Fokus-Knoten überlebt den Typ-Filter IMMER — auch wenn sein
+--    eigener Object_Type abgewählt ist. Ohne diese Ausnahme kollabiert der Graph im
+--    „Nur gewählte Typen"-Modus komplett, sobald man den Typ des Fokus deaktiviert
+--    (Refetch ohne diesen Typ → Fokus weg → leerer Graph). Identität = (uuid, file),
+--    deckungsgleich mit der is_focus-Projektion in der Ausgabe.
 nodes_ranked AS (
   SELECT
     r.uuid, r.file, r.depth,
@@ -166,7 +176,9 @@ nodes_ranked AS (
    AND oc.File_Name IS NOT DISTINCT FROM r.file
   LEFT JOIN deg d ON d.id = r.uuid
   WHERE (getvariable('types') IS NULL
-         OR oc.Object_Type IN (SELECT unnest(string_split(CAST(getvariable('types') AS VARCHAR), ','))))
+         OR oc.Object_Type IN (SELECT unnest(string_split(CAST(getvariable('types') AS VARCHAR), ',')))
+         OR (r.uuid = getvariable('focus')
+             AND r.file IS NOT DISTINCT FROM (SELECT file FROM focus_seed)))
 ),
 -- 10) Deckel: kleinste depth zuerst, dann höchster Grad.
 nodes_capped AS (

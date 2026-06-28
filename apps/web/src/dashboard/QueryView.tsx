@@ -2,7 +2,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { DashboardHost } from './DashboardHost';
 import { SubPageHeader } from '../components';
-import type { BreadcrumbItem } from '../types';
+import { buildBreadcrumb } from '../lib/navigation';
 
 /**
  * Route view for `/query/:queryName`. Thin wrapper around the `_generic`
@@ -24,15 +24,13 @@ export function QueryView() {
   }
 
   const title = titleize(queryName);
-  const breadcrumbs: BreadcrumbItem[] = [
-    { label: t('nav:breadcrumbs.search') as string, path: '/' },
-    { label: t('nav:breadcrumbs.analyses') as string, path: '/dashboard/custom_queries' },
-    { label: title, path: null },
-  ];
+  const breadcrumbs = buildBreadcrumb({ kind: 'query', name: title }, t);
 
+  // Kein Frontend-Titel: das _generic-Bundle rendert den *echten* Query-Titel
+  // (aus den Daten, nicht der Slug-Ableitung) als Hero-Titelbox.
   return (
     <div className="app">
-      <SubPageHeader title={title} breadcrumbs={breadcrumbs} />
+      <SubPageHeader breadcrumbs={breadcrumbs} />
       <DashboardHost id="_generic" params={params} />
     </div>
   );

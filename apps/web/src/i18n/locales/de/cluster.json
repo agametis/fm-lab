@@ -1,0 +1,33 @@
+{
+  "title": "Cluster",
+  "subtitle": "Graph-Communities",
+  "status": {
+    "named": "{{named}} von {{total}} Communities benannt",
+    "algorithm": "Algorithmus",
+    "lastRun": "letzter Run",
+    "dash": "—"
+  },
+  "list": {
+    "members": "{{count}} Objekte",
+    "edit": "Bearbeiten",
+    "openHint": "Im Graph-Explorer öffnen",
+    "unnamedBadge": "unbenannt",
+    "count": "{{shown}} von {{total}}",
+    "search": "Suche…"
+  },
+  "empty": {
+    "title": "Noch nicht geclustert",
+    "hint": "Communities unten über „Communities neu“ erkennen — eine billige Re-Partition."
+  },
+  "loading": "Lädt…",
+  "hero": {
+    "communities": "Communities",
+    "nodes": "Knoten",
+    "edges": "Kanten"
+  },
+  "filter": {
+    "all": "Alle",
+    "named": "Benannt",
+    "unnamed": "Unbenannt"
+  }
+}

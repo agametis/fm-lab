@@ -4,17 +4,16 @@
     "description": "모든 파일에서 자격 증명 관련 키워드(비밀번호, 시크릿, API 키, 토큰 등)를 참조하는 스크립트 단계를 찾아냅니다. 실제 값은 *****로 마스킹되어 대시보드가 평문 비밀을 노출하지 않습니다."
   },
   "layout": {
-    "root.children[0].props.title": "자격 증명 개요",
-    "root.children[0].children[0].props.items[0].label": "일치",
-    "root.children[0].children[0].props.items[1].label": "스크립트",
-    "root.children[0].children[0].props.items[2].label": "파일",
-    "root.children[1].props.title": "결과",
-    "root.children[1].children[0].props.columns[0].label": "파일",
-    "root.children[1].children[0].props.columns[1].label": "스크립트",
-    "root.children[1].children[0].props.columns[2].label": "단계",
-    "root.children[1].children[0].props.columns[3].label": "단계 유형",
-    "root.children[1].children[0].props.columns[4].label": "키워드",
-    "root.children[1].children[0].props.columns[5].label": "발췌(마스킹됨)",
-    "root.children[1].children[0].props.empty.message": "스크립트 단계에서 자격 증명 키워드를 찾을 수 없습니다."
+    "credentials_kpi_kpistrip.props.items[0].label": "일치",
+    "credentials_kpi_kpistrip.props.items[1].label": "스크립트",
+    "credentials_kpi_kpistrip.props.items[2].label": "파일",
+    "credentials_findings.props.title": "결과",
+    "credentials_findings_table.props.columns[0].label": "파일",
+    "credentials_findings_table.props.columns[1].label": "스크립트",
+    "credentials_findings_table.props.columns[2].label": "단계",
+    "credentials_findings_table.props.columns[3].label": "단계 유형",
+    "credentials_findings_table.props.columns[4].label": "키워드",
+    "credentials_findings_table.props.columns[5].label": "발췌(마스킹됨)",
+    "credentials_findings_table.props.empty.message": "스크립트 단계에서 자격 증명 키워드를 찾을 수 없습니다."
   }
 }

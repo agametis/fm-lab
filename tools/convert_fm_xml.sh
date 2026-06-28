@@ -260,6 +260,58 @@ WEBBED_STREAM_THRESHOLD="${FM_DOM_THRESHOLD:-1000000}"
 # (hybrid model): the default path stays pure DOM/stock (no auto-streaming). The
 # activation decision is made AFTER arg parsing (STREAMIFY_MODE is not yet known here).
 PATCHED_WEBBED_ACTIVE=false
+# Stufe b1: --streamify auf SIGNIERTEM Stock-webbed (kein Dev-Patch), sobald dieses den
+# nested-attr-SAX-Fix (#98) trägt. Wie PATCHED_WEBBED_ACTIVE, aber OHNE LOAD-Redirect/-unsigned
+# (Stock lädt per `LOAD webbed;`). Finale Entscheidung fällt nach der Capability-Probe.
+STOCK_STREAMING_ACTIVE=false
+
+# ----------------------------------------------------------------------------
+# webbed Capability-Registry (datengetrieben). LAUFZEIT-Quelle des Version-Checks:
+# tools/katana-xml/version_check.json — die einzige Mechanismus-Quelle. Die Planungs-
+# doku project/webbed_version_check.md / webbed_project.md ist NUR intern und wird
+# hier NICHT gelesen. _vc_probe_sql <cap-id> liefert die im Manifest hinterlegte
+# probe_sql (@FIXTURE@ -> probe_fixture aufgeloest); leer, wenn Manifest/jq/Eintrag
+# fehlen → der Caller faellt auf den Hardcode-Fallback zurueck (robust, kein
+# Schwaechen des Versions-Floors). Bewusst nur String-Operationen (bash-3.2-safe).
+WEBBED_VERSION_CHECK_MANIFEST="${FM_WEBBED_MANIFEST:-$PROJECT_ROOT/tools/katana-xml/version_check.json}"
+_vc_probe_sql() {
+    local _id="$1" _s _fix
+    { [ -f "$WEBBED_VERSION_CHECK_MANIFEST" ] && command -v jq >/dev/null 2>&1; } || return 0
+    _s="$(jq -r --arg id "$_id" '.capabilities[] | select(.id==$id) | .probe_sql // empty' \
+            "$WEBBED_VERSION_CHECK_MANIFEST" 2>/dev/null)"
+    { [ -n "$_s" ] && [ "$_s" != "null" ]; } || return 0
+    # per-Capability probe_fixture (Override) → sonst die #98-Default-Fixture $WEBBED_SAX_PROBE.
+    _fix="$(jq -r --arg id "$_id" '.capabilities[] | select(.id==$id) | .probe_fixture // empty' \
+            "$WEBBED_VERSION_CHECK_MANIFEST" 2>/dev/null)"
+    if [ -n "$_fix" ] && [ "$_fix" != "null" ]; then _fix="$PROJECT_ROOT/$_fix"; else _fix="$WEBBED_SAX_PROBE"; fi
+    printf '%s' "${_s//@FIXTURE@/$_fix}"
+}
+# nested_attr_sax (#98) → Flag use_streaming. EINMAL aus dem Manifest aufgeloest und
+# als Single Source von _probe_webbed_caps (Startup-Log/Floor) UND der
+# @WEBBED_SELFTEST@-Injektion (run_p1_on) genutzt. Hardcode-Fallback = das bisherige
+# Verhalten, falls das Manifest fehlt.
+_vc_nested_probe_sql="$(_vc_probe_sql nested_attr_sax)"
+if [ -z "$_vc_nested_probe_sql" ]; then
+    _vc_nested_probe_sql="SELECT COALESCE(MAX(CASE WHEN CustomFunctionReference.UUID IS NOT NULL THEN 1 ELSE 0 END),0) FROM read_xml('$WEBBED_SAX_PROBE', root_element='CalcsForCustomFunctions', record_element='CustomFunctionCalc', maximum_file_size=100, streaming=true, columns={'CustomFunctionReference':'STRUCT(UUID VARCHAR)'})"
+fi
+# sax_cr_parity (#109) → Flag sax_text_faithful. Probe gegen die eigene CR-Fixture
+# (probe_fixture im Manifest). 1 = SAX bewahrt CR DOM-treu (gefixt), sonst CR→Space.
+# Speist die Auto-Default-SAX-Entscheidung (nur text-treu, wenn #109 da). Hardcode-Fallback.
+WEBBED_CR_PROBE="$PROJECT_ROOT/sql/convert-xml/fixtures/webbed_cr_probe.xml"
+_vc_cr_probe_sql="$(_vc_probe_sql sax_cr_parity)"
+if [ -z "$_vc_cr_probe_sql" ]; then
+    _vc_cr_probe_sql="SELECT COALESCE(MAX(CASE WHEN contains(Parameter.Text.value, chr(13)) THEN 1 ELSE 0 END),0) FROM read_xml('$WEBBED_CR_PROBE', root_element='CRProbe', record_element='Step', maximum_file_size=100, streaming=true, columns={'Parameter':'STRUCT(\"Text\" STRUCT(value VARCHAR))'})"
+fi
+# whitespace_preservation (#73) → Flag wa_ws_sentinel. Probe testet, ob das geladene
+# webbed internen Whitespace im DEFAULT-DOM-Pfad bewahrt (typisierter Read UND Fragment-
+# xml_extract_text) statt ihn zu kollabieren. 1 = bewahrt → der chr(127)-Sentinel ist
+# redundant (wa_ws_sentinel=false, Preproc CR→0x7F entfällt). 0/alt → Sentinel ON
+# (konservativ). DOM-Pfad (KEIN streaming erzwingen). Hardcode-Fallback wie bei #109.
+WEBBED_WS_PROBE="$PROJECT_ROOT/sql/convert-xml/fixtures/webbed_ws_probe.xml"
+_vc_ws_probe_sql="$(_vc_probe_sql whitespace_preservation)"
+if [ -z "$_vc_ws_probe_sql" ]; then
+    _vc_ws_probe_sql="SELECT CASE WHEN (SELECT COALESCE(MAX(CASE WHEN contains(Calc,chr(10)) OR contains(Calc,chr(13)) THEN 1 ELSE 0 END),0) FROM read_xml('$WEBBED_WS_PROBE', root_element='WSProbe', record_element='Row', columns={'Calc':'VARCHAR'})) = 1 AND (SELECT COALESCE(MAX(CASE WHEN contains(xml_extract_text(xml,'//Calc')[1],chr(10)) OR contains(xml_extract_text(xml,'//Calc')[1],chr(13)) THEN 1 ELSE 0 END),0) FROM read_xml_objects('$WEBBED_WS_PROBE', maximum_file_size=100000000)) = 1 THEN 1 ELSE 0 END"
+fi
 
 # Argument parsing: mode + flags in any order.
 # Exactly one positional argument (filename) OR one mode flag is expected.
@@ -599,23 +651,88 @@ _detect_avail_mb() {
     echo "$res"
 }
 
+# ── webbed Capability-Probe (VOR der Mode-Wahl) ───────────────────────────────
+# Probt das tatsaechlich geladene webbed gegen die Registry-Fixtures, BEVOR der
+# adaptive Default SAX-vs-DOM entscheidet (Auto-Default-SAX-Gate). Zwei Capabilities:
+#   • nested_attr_sax (#98)  → streaming-Param vorhanden + SAX liefert genestete Attr
+#     (Versions-Floor: fehlt der streaming-Param → klarer Vorab-Abbruch Exit 8).
+#   • sax_cr_parity (#109)   → SAX bewahrt CR DOM-treu (sonst CR→Space, Mehrzeilen-Verlust).
+# Proben kommen aus der datengetriebenen Registry (tools/katana-xml/version_check.json).
+# FM_SKIP_WEBBED_PROBE=1 ueberspringt (⇒ konservativ: keine Capability bestaetigt → DOM).
+WEBBED_HAS_STREAMING_PARAM=unknown
+WEBBED_HAS_NESTED_ATTR_FIX=false
+WEBBED_HAS_CR_PARITY=false
+WEBBED_HAS_WS_PRESERVE=false
+WEBBED_PROBE_RAN=false
+# chr(127)-Sentinel-Gate (#73): ON = Workaround aktiv (Default, konservativ). Wird unten
+# auf OFF gesetzt, falls die Probe bestaetigt, dass webbed Whitespace nativ bewahrt.
+# Single Source für (a) die Preproc-Gatung (preprocess_file tr-Pipeline + awk -v ws_sentinel)
+# UND (b) die SQL-Injektion von wa_ws_sentinel am @WEBBED_SELFTEST@-Marker.
+WS_SENTINEL_ON=true
+_probe_webbed_caps() {
+    local _tgt="${FM_WEBBED_EXT:-webbed}" _flags=() _load _out _cr _ws
+    if [ "$_tgt" = "webbed" ]; then _load="LOAD webbed;"; else _load="LOAD '$_tgt';"; _flags+=(-unsigned); fi
+    # #98 nested-attr-SAX + streaming-Param (Single Source: $_vc_nested_probe_sql)
+    _out=$("$DUCKDB_BIN" "${_flags[@]}" :memory: -noheader -list -c "${_load} ${_vc_nested_probe_sql};" 2>&1)
+    case "$_out" in
+        *"Invalid named parameter"*) WEBBED_HAS_STREAMING_PARAM=false; WEBBED_HAS_NESTED_ATTR_FIX=false ;;
+        1)                           WEBBED_HAS_STREAMING_PARAM=true;  WEBBED_HAS_NESTED_ATTR_FIX=true ;;
+        0)                           WEBBED_HAS_STREAMING_PARAM=true;  WEBBED_HAS_NESTED_ATTR_FIX=false ;;
+        *)                           WEBBED_HAS_STREAMING_PARAM=unknown; WEBBED_HAS_NESTED_ATTR_FIX=false ;;
+    esac
+    # #109 SAX-CR-Paritaet ($_vc_cr_probe_sql): 1 = CR DOM-treu erhalten (gefixt)
+    _cr=$("$DUCKDB_BIN" "${_flags[@]}" :memory: -noheader -list -c "${_load} ${_vc_cr_probe_sql};" 2>&1)
+    [ "$_cr" = "1" ] && WEBBED_HAS_CR_PARITY=true || WEBBED_HAS_CR_PARITY=false
+    # #73 Whitespace-Preservation ($_vc_ws_probe_sql): 1 = Umbruch nativ bewahrt (DOM)
+    _ws=$("$DUCKDB_BIN" "${_flags[@]}" :memory: -noheader -list -c "${_load} ${_vc_ws_probe_sql};" 2>&1)
+    [ "$_ws" = "1" ] && WEBBED_HAS_WS_PRESERVE=true || WEBBED_HAS_WS_PRESERVE=false
+}
+if [ -z "${FM_SKIP_WEBBED_PROBE:-}" ] && [ -f "$WEBBED_SAX_PROBE" ]; then
+    _probe_webbed_caps
+    WEBBED_PROBE_RAN=true
+    if [ "$WEBBED_HAS_STREAMING_PARAM" = "false" ]; then
+        echo "ERROR: Die geladene webbed/xml-Extension kennt den read_xml-Parameter 'streaming' nicht (zu alt)."
+        echo "       fm-lab benötigt DuckDB ≥ 1.5 mit aktuellem webbed/xml. Bitte beide aktualisieren"
+        echo "       (z. B. in DuckDB: FORCE INSTALL webbed FROM community;) und erneut starten."
+        echo "       Umgehung auf eigenes Risiko (z. B. bei Fehldetektion): FM_SKIP_WEBBED_PROBE=1."
+        exit 8
+    fi
+    # #73: webbed bewahrt Whitespace nativ → Sentinel aus (Preproc CR→0x7F entfällt,
+    # SQL-ws_restore wird No-op). Sonst konservativ ON. Gemeinsame Quelle für Preproc + SQL.
+    [ "$WEBBED_HAS_WS_PRESERVE" = "true" ] && WS_SENTINEL_ON=false || WS_SENTINEL_ON=true
+fi
+# Operator-/Test-Override für den chr(127)-Sentinel (analog FM_FORCE_DOM): 1/true = ON
+# erzwingen, 0/false = OFF erzwingen. Setzt die Probe-Entscheidung ausser Kraft und
+# aktiviert die SQL-Injektion auch ohne gelaufene Probe (Identitaets-Tests; Fehldetektion).
+WS_SENTINEL_FORCED=""
+case "${FM_FORCE_WS_SENTINEL:-}" in
+    1|true|on|ON|TRUE)     WS_SENTINEL_ON=true;  WS_SENTINEL_FORCED=" (FM_FORCE_WS_SENTINEL)" ;;
+    0|false|off|OFF|FALSE) WS_SENTINEL_ON=false; WS_SENTINEL_FORCED=" (FM_FORCE_WS_SENTINEL)" ;;
+esac
+if [ "$WEBBED_PROBE_RAN" = "true" ]; then
+    $QUIET_MODE || echo "webbed-Capabilities [Registry: ${WEBBED_VERSION_CHECK_MANIFEST#$PROJECT_ROOT/}]: streaming-Param=$WEBBED_HAS_STREAMING_PARAM · nested-attr-SAX(#98)=$WEBBED_HAS_NESTED_ATTR_FIX · sax-cr-parity(#109)=$WEBBED_HAS_CR_PARITY · ws-preserve(#73)=$WEBBED_HAS_WS_PRESERVE → chr(127)-Sentinel=$([ "$WS_SENTINEL_ON" = "true" ] && echo ON || echo OFF)${WS_SENTINEL_FORCED}"
+fi
+
 # ── Adaptive default ──────────────────────────────────────────────────────────
 # No explicit Phase-1 strategy → pick the robust, never-hard-abort engine instead
 # of classic whole-doc DOM: Turbo (chunked, ~2.5 GB floor) + --auto (OOM backoff via
-# resplit). When the patched webbed is present, also stream via SAX (--streamify) —
-# its identity with DOM is proven on the full corpus (tools/tests/identity/
-# streamify_identity.sh: all derived tables byte-identical, only the 4 raw/text
-# storage columns differ). SAX halves the parse RAM in the 3-5 GB band. Opt-outs:
-# any explicit mode flag, or FM_FORCE_DOM=1 (keeps turbo+auto, just on DOM).
-# Test mode keeps the classic deterministic path. The runtime self-test still
-# degrades SAX→DOM if the loaded webbed lacks the nested-attr fix.
+# resplit). SAX (--streamify) is auto-chosen ONLY when the loaded webbed is BOTH
+# correct AND text-faithful per probe: #98 (nested_attr_sax → use_streaming) makes SAX
+# functionally identical to DOM, and #109 (sax_cr_parity) guarantees CR fidelity (no
+# &#13;→space loss). On v2.2.1 #109 is NOT fixed → DOM stays the faithful default;
+# --streamify remains an explicit opt-in (catalog-identical, but CR-lossy in text cols).
+# SAX halves the parse RAM in the 3-5 GB band. Opt-outs: any explicit mode flag, or
+# FM_FORCE_DOM=1 (keeps turbo+auto, just on DOM). The per-file self-test still degrades
+# SAX→DOM at runtime if #98 turns out missing.
 if ! $MODE_EXPLICIT && ! $TEST_MODE; then
     TURBO_MODE=true; SPLIT_MODE=true; AUTO_MODE=true
-    if [ -f "$WEBBED_PATCHED_EXT" ] && [ "${FM_FORCE_DOM:-}" != "1" ]; then
+    if [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ] && [ "$WEBBED_HAS_CR_PARITY" = "true" ] && [ "${FM_FORCE_DOM:-}" != "1" ]; then
         STREAMIFY_MODE=true
-        echo "Hinweis: Adaptiver Default — SAX-Streaming (gepatchtes webbed gefunden) + Turbo + Auto-Backoff (nie harter RAM-Abbruch). Opt-out: FM_FORCE_DOM=1 oder ein expliziter Modus-Flag (z. B. --split)."
+        echo "Hinweis: Adaptiver Default — SAX-Streaming (webbed mit #98 nested-attr UND #109 CR-Parität → text-treu) + Turbo + Auto-Backoff. Opt-out: FM_FORCE_DOM=1 oder ein expliziter Modus-Flag (z. B. --split)."
+    elif [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ] && [ "${FM_FORCE_DOM:-}" != "1" ]; then
+        echo "Hinweis: Adaptiver Default — Turbo (DOM, chunked) + Auto-Backoff. (#98 da, aber #109 CR-Parität fehlt → DOM bleibt text-treu; --streamify nur als Opt-in mit Text-Caveat.)"
     else
-        echo "Hinweis: Adaptiver Default — Turbo (DOM, chunked) + Auto-Backoff (nie harter RAM-Abbruch).$([ ! -f "$WEBBED_PATCHED_EXT" ] && echo ' (Kein gepatchtes webbed → kein SAX.)')"
+        echo "Hinweis: Adaptiver Default — Turbo (DOM, chunked) + Auto-Backoff (nie harter RAM-Abbruch).$([ "$WEBBED_HAS_NESTED_ATTR_FIX" != "true" ] && echo ' (Kein #98-fähiges webbed → kein SAX.)')"
     fi
 fi
 
@@ -805,19 +922,6 @@ if $STREAMIFY_MODE; then
         echo "ERROR: --streamify und FM_FORCE_DOM=1 schließen sich aus."
         exit 1
     fi
-    if [ ! -f "$WEBBED_PATCHED_EXT" ]; then
-        # a3: --streamify is an ADVANCED opt-in needing a webbed build
-        # with the nested-attr SAX fix (teaguesterling/duckdb_webbed#98). That artifact is NOT
-        # part of the public distribution → do not point users at a dev-only staging script.
-        # The default `--batch` needs none of this (pure DOM on stock/signed webbed).
-        echo "ERROR: --streamify (fortgeschrittener Opt-in) braucht ein webbed mit dem"
-        echo "       nested-attr-SAX-Fix (teaguesterling/duckdb_webbed#98) unter:"
-        echo "       $WEBBED_PATCHED_EXT"
-        echo "       Setze FM_WEBBED_EXT auf ein passendes Artefakt — sobald eine signierte"
-        echo "       webbed-Version mit dem Fix veröffentlicht ist, genügt das Stock-webbed."
-        echo "       Hinweis: Das Standard-'--batch' braucht --streamify NICHT (reines DOM)."
-        exit 1
-    fi
     if [ ! -f "$STREAMIFY_RENAMER" ] || ! command -v awk >/dev/null 2>&1; then
         echo "ERROR: --streamify braucht awk + $STREAMIFY_RENAMER."
         exit 1
@@ -827,9 +931,19 @@ if $STREAMIFY_MODE; then
         echo "       (per tools/gen_streamify_sql.sh aus der Basis generieren)."
         exit 1
     fi
-    PATCHED_WEBBED_ACTIVE=true
     SQL_TEMPLATE="$STREAMIFY_SQL"
-    echo "Hinweis: --streamify aktiv — Renamer + gepatchtes webbed + streamify-SQL (RAM-Senkung Schwergewichte)."
+    # webbed-Binär-Entscheidung. --streamify braucht ein webbed mit dem nested-attr-SAX-Fix
+    # (teaguesterling/duckdb_webbed#98):
+    #   1) Dev-Patch unter $WEBBED_PATCHED_EXT vorhanden → unsigniert laden (-unsigned + LOAD-Redirect).
+    #   2) Stufe b1: sonst SIGNIERTES Stock-webbed, SOFERN es #98 trägt — der Nachweis kommt aus der
+    #      Startup-Capability-Probe (läuft weiter unten), daher fällt die finale Stock-Entscheidung dort.
+    if [ -f "$WEBBED_PATCHED_EXT" ]; then
+        PATCHED_WEBBED_ACTIVE=true
+        echo "Hinweis: --streamify aktiv — Renamer + gepatchtes (unsigniertes) webbed + streamify-SQL (RAM-Senkung Schwergewichte)."
+    else
+        STREAMIFY_WANTS_STOCK=true
+        echo "Hinweis: --streamify aktiv — Renamer + streamify-SQL; kein Dev-Patch → signiertes Stock-webbed wird nach der Capability-Probe geprüft (#98)."
+    fi
 fi
 
 # Dry-run hook (test/diagnose): print the resolved strategy flags and exit before any
@@ -929,49 +1043,25 @@ else
     LOG_PREFIX="batch_import"
 fi
 
-# ── Stufe b: webbed-Capability-Probe ──
-# Probe das TATSÄCHLICH geladene webbed EINMAL auf zwei Fähigkeiten — statt aus der blossen
-# Präsenz des Dev-Patch-Artefakts zu schliessen:
-#   (1) streaming-Param: Die Extraktions-SQL übergibt `streaming=` an JEDES read_xml (auch im
-#       DOM-Default). Ein zu altes webbed kennt den Param nicht → mitten im Lauf der kryptische
-#       `Binder Error: Invalid named parameter "streaming"`. Das Gate macht daraus einen klaren
-#       Vorab-Abbruch (Exit 8) — der Versions-Floor, den README/Setup bisher nicht erzwangen.
-#   (2) nested-attr-SAX-Fix (teaguesterling/duckdb_webbed#98): sobald ein SIGNIERTES Stock-webbed
-#       den Fix trägt, ist SAX ohne Dev-Patch nutzbar (Aktivierung = Stufe b1, folgt separat).
-# Provenienz: das Ergebnis wird geloggt (welche webbed-Fähigkeiten lief der Build?) — Synergie
-# mit dem geplanten Versions-Manifest (Stufe c). FM_SKIP_WEBBED_PROBE=1 überspringt die Probe.
-# Ziel = stock 'webbed'; FM_WEBBED_EXT überschreibt (Artefakt-Pfad → -unsigned). Mirror der
-# Self-Test-Mechanik aus run_p1_on (gleiche Probe-Query gegen sql/.../fixtures/webbed_sax_probe.xml).
-WEBBED_HAS_STREAMING_PARAM=unknown
-WEBBED_HAS_NESTED_ATTR_FIX=false
-_probe_webbed_caps() {
-    local _tgt="${FM_WEBBED_EXT:-webbed}" _flags=() _load _out
-    if [ "$_tgt" = "webbed" ]; then _load="LOAD webbed;"; else _load="LOAD '$_tgt';"; _flags+=(-unsigned); fi
-    _out=$("$DUCKDB_BIN" "${_flags[@]}" :memory: -noheader -list -c \
-        "${_load} SELECT COALESCE(MAX(CASE WHEN CustomFunctionReference.UUID IS NOT NULL THEN 1 ELSE 0 END),0) \
-         FROM read_xml('${WEBBED_SAX_PROBE}', root_element='CalcsForCustomFunctions', record_element='CustomFunctionCalc', \
-         maximum_file_size=100, streaming=true, columns={'CustomFunctionReference':'STRUCT(UUID VARCHAR)'});" 2>&1)
-    case "$_out" in
-        *"Invalid named parameter"*) WEBBED_HAS_STREAMING_PARAM=false; WEBBED_HAS_NESTED_ATTR_FIX=false ;;
-        1)                           WEBBED_HAS_STREAMING_PARAM=true;  WEBBED_HAS_NESTED_ATTR_FIX=true ;;
-        0)                           WEBBED_HAS_STREAMING_PARAM=true;  WEBBED_HAS_NESTED_ATTR_FIX=false ;;
-        *)                           WEBBED_HAS_STREAMING_PARAM=unknown; WEBBED_HAS_NESTED_ATTR_FIX=false ;;
-    esac
-}
-if [ -z "${FM_SKIP_WEBBED_PROBE:-}" ] && [ -f "$WEBBED_SAX_PROBE" ]; then
-    _probe_webbed_caps
-    if [ "$WEBBED_HAS_STREAMING_PARAM" = "false" ]; then
-        echo "ERROR: Die geladene webbed/xml-Extension kennt den read_xml-Parameter 'streaming' nicht (zu alt)."
-        echo "       fm-lab benötigt DuckDB ≥ 1.5 mit aktuellem webbed/xml. Bitte beide aktualisieren"
-        echo "       (z. B. in DuckDB: FORCE INSTALL webbed FROM community;) und erneut starten."
-        echo "       Umgehung auf eigenes Risiko (z. B. bei Fehldetektion): FM_SKIP_WEBBED_PROBE=1."
-        exit 8
-    fi
-    if ! $QUIET_MODE; then
-        echo "webbed-Capabilities: streaming-Param=$WEBBED_HAS_STREAMING_PARAM · nested-attr-SAX-Fix=$WEBBED_HAS_NESTED_ATTR_FIX"
-        if [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ] && ! $STREAMIFY_MODE && [ "${FM_FORCE_DOM:-}" != "1" ]; then
-            echo "  Hinweis: geladenes webbed ist SAX-fähig — automatische SAX-Aktivierung im Default folgt (Stufe b1, nach Freigabe des signierten webbed)."
-        fi
+# (Die webbed-Capability-Probe (#98 + #109) + der streaming-Param-Floor-Check laufen
+#  jetzt WEITER OBEN, VOR dem adaptiven Default — damit die Auto-SAX-Entscheidung die
+#  Proben einbeziehen kann. WEBBED_HAS_NESTED_ATTR_FIX/-CR_PARITY/-STREAMING_PARAM sind
+#  hier bereits gesetzt.)
+
+# Stufe b1 — finale Stock-Streaming-Entscheidung NACH der Capability-Probe (die
+# WEBBED_HAS_NESTED_ATTR_FIX setzt). Nur wenn --streamify OHNE Dev-Patch angefordert wurde
+# (STREAMIFY_WANTS_STOCK): das signierte Stock-webbed muss den nested-attr-SAX-Fix (#98)
+# tragen. Probe übersprungen (FM_SKIP_WEBBED_PROBE) ⇒ Fix unbestätigt ⇒ konservativer Abbruch.
+if [ "${STREAMIFY_WANTS_STOCK:-}" = "true" ]; then
+    if [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ]; then
+        STOCK_STREAMING_ACTIVE=true
+        $QUIET_MODE || echo "Hinweis: --streamify auf signiertem Stock-webbed — #98 per Probe bestätigt, kein Dev-Patch nötig (Stufe b1)."
+    else
+        echo "ERROR: --streamify braucht ein webbed mit dem nested-attr-SAX-Fix (teaguesterling/duckdb_webbed#98)."
+        echo "       Das geladene Stock-webbed trägt ihn nicht bzw. die Probe wurde übersprungen"
+        echo "       (nested-attr-SAX-Fix=$WEBBED_HAS_NESTED_ATTR_FIX). → signiertes webbed v2.2.1+ installieren,"
+        echo "       FM_WEBBED_EXT auf ein passendes Artefakt setzen, oder das Standard-'--batch' (DOM) nutzen."
+        exit 1
     fi
 fi
 
@@ -1204,6 +1294,10 @@ trap 'abort_handler' INT TERM
 # means the REST-API server is not running.
 # ============================================================================
 sync_to_rest_api() {
+    # Optional progress phase (default 'validate'). The batch pipeline routes the
+    # sync into the final `cluster` segment (after P7) so the bar stays monotonic
+    # — the sync has always been folded into whatever the last segment is.
+    local _sync_phase="${1:-validate}"
     # Guard: production mode only
     if $TEST_MODE; then
         return 0
@@ -1231,13 +1325,13 @@ sync_to_rest_api() {
         return 1
     fi
 
-    phase_progress validate 70 "Copying database to rest-api/..."
+    phase_progress "$_sync_phase" 70 "Copying database to rest-api/..."
     mkdir -p "$REST_API_DB_DIR"
 
     # Atomic replace: copy to .tmp first, then mv
     if cp "$DB_FILE" "$REST_API_DB_FILE.tmp" && mv -f "$REST_API_DB_FILE.tmp" "$REST_API_DB_FILE"; then
         emit_log "Synced master DB to rest-api/db/fm_catalog.duckdb"
-        phase_progress validate 85 "Database synced"
+        phase_progress "$_sync_phase" 85 "Database synced"
     else
         emit_warn "Sync to rest-api/db/ failed"
         rm -f "$REST_API_DB_FILE.tmp" 2>/dev/null
@@ -1249,7 +1343,7 @@ sync_to_rest_api() {
     # receiving the `done` event — otherwise the server would reload during the
     # ongoing stream and disturb in-flight requests.
     if $QUIET_MODE; then
-        phase_progress validate 100 "Skipping reload (handled by API caller)"
+        phase_progress "$_sync_phase" 100 "Skipping reload (handled by API caller)"
         return 0
     fi
 
@@ -1268,8 +1362,117 @@ sync_to_rest_api() {
     else
         emit_warn "REST-API reload returned HTTP $HTTP_CODE"
     fi
-    phase_progress validate 100 "Reload triggered"
+    phase_progress "$_sync_phase" 100 "Reload triggered"
 
+    return 0
+}
+
+# ============================================================================
+# Phase 7 — Auto-Clustering (Rohform) · R1 cluster.json reuse
+# ============================================================================
+
+# read_cluster_json — echoes "engine|resolution|seed" for Auto-P7 / Re-Cluster.
+# Source order: .fmlab/cluster.json (last /fm-graph-cluster sweep winner, R1) →
+# CLUSTER_* env overrides → cluster.sh defaults (auto|1.0|42). A stored 'leiden'
+# engine is downgraded to 'auto' so a host without python3+igraph does not hard-
+# abort cluster.sh (engine fallback); resolution/seed are preserved.
+read_cluster_json() {
+    local f="$PROJECT_ROOT/.fmlab/cluster.json"
+    local engine="auto" res="1.0" seed="42"
+    if [ -f "$f" ]; then
+        local parsed
+        parsed=$("$DUCKDB_BIN" -noheader -list -c \
+            "SELECT COALESCE(engine,'auto')||'|'||COALESCE(resolution,1.0)::VARCHAR||'|'||COALESCE(seed,42)::VARCHAR FROM read_json_auto('$f');" 2>/dev/null | head -n1)
+        if [ -n "$parsed" ]; then
+            engine="${parsed%%|*}"
+            local rest="${parsed#*|}"
+            res="${rest%%|*}"
+            seed="${rest##*|}"
+        fi
+    fi
+    engine="${CLUSTER_ENGINE:-$engine}"
+    res="${CLUSTER_RES:-$res}"
+    seed="${CLUSTER_SEED:-$seed}"
+    [ "$engine" = "leiden" ] && engine="auto"
+    printf '%s|%s|%s' "$engine" "$res" "$seed"
+}
+
+# run_phase7_clustering — Auto-Clustering as the last pipeline phase.
+# Gate: runs only on a from-scratch build (fresh_build|force_rebuild|
+# auto_heal_rebuild) OR when ObjectClusters is missing/empty (safety net). An
+# incremental import into an already-clustered DB SKIPS P7 — the partition + the
+# Semantic-/User-names stay, the drift gauges show the gap, the Rebuild button
+# heals on demand. Why never re-partition incrementally: cluster.sh has no warm
+# start (edges.csv only) → modularity clustering is globally unstable; re-running
+# it on every import would churn community boundaries even in untouched files and
+# mask the drift signal. Runs INSIDE the held xml_convert.lock (cluster.sh
+# takes no own lock → no deadlock) and BEFORE the single pipeline sync (so the
+# sync carries the fresh ObjectClusters/CommunityNames to the copy). P7 errors are
+# non-fatal (nachgelagert, nicht datenkritisch) — warn + Warn-finish, never a
+# fail_fast_stop. Production only (TEST_MODE uses a throwaway DB).
+run_phase7_clustering() {
+    if $TEST_MODE; then
+        return 0
+    fi
+
+    local _from_scratch=false
+    if [[ "$SCHEMA_ACTION_EXECUTED" =~ ^(fresh_build|force_rebuild|auto_heal_rebuild)$ ]]; then
+        _from_scratch=true
+    fi
+    local _oc_rows
+    _oc_rows=$("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c \
+        "SELECT COUNT(*) FROM ObjectClusters;" 2>/dev/null)
+    [ -z "$_oc_rows" ] && _oc_rows=0
+
+    if ! $_from_scratch && [ "${_oc_rows:-0}" -gt 0 ] 2>/dev/null; then
+        # Incremental into a clustered DB → skip. The bar reaches 100 via the sync
+        # (which now fills the `cluster` segment); a single start marker keeps the
+        # segment from looking stuck while avoiding a misleading "── P7 ──" banner.
+        phase_progress cluster 0 "Clustering übersprungen (inkrementell)"
+        $QUIET_MODE || echo "Phase 7 (Clustering): übersprungen (inkrementeller Import in geclusterte DB)"
+        return 0
+    fi
+
+    phase_begin P7 Clustering
+    phase_progress cluster 0 "Community-Erkennung (Phase 7)…"
+    if ! $QUIET_MODE; then
+        echo "========================================="
+        echo "Community detection (Phase 7)..."
+        echo "========================================="
+    fi
+
+    local _cfg _eng _res _seed
+    _cfg=$(read_cluster_json)
+    _eng="${_cfg%%|*}"; _cfg="${_cfg#*|}"; _res="${_cfg%%|*}"; _seed="${_cfg##*|}"
+    emit_log "Phase 7: cluster.sh (engine=$_eng resolution=$_res seed=$_seed, no-sync)"
+
+    local _p7_log _rc=0
+    _p7_log=$(mktemp "${TMPDIR:-/tmp}/fmlab-p7.XXXXXX")
+    if FMLAB_CLUSTER_NO_SYNC=1 \
+       FMLAB_CLUSTER_ENGINE="$_eng" \
+       FMLAB_CLUSTER_RESOLUTION="$_res" \
+       FMLAB_CLUSTER_SEED="$_seed" \
+       bash "$PROJECT_ROOT/tools/graph-export/cluster.sh" >"$_p7_log" 2>&1; then
+        _rc=0
+    else
+        _rc=$?
+    fi
+    # Surface the key cluster.sh lines into the run log (no flood).
+    while IFS= read -r _line; do
+        [ -n "$_line" ] && emit_log "P7 $_line"
+    done < <(grep -iE 'engine|cache:|communit|node-reuse|modularity|floor|ERROR' "$_p7_log" 2>/dev/null | head -n 20)
+    $QUIET_MODE || cat "$_p7_log"
+    rm -f "$_p7_log"
+
+    if [ "$_rc" -ne 0 ]; then
+        emit_warn "Phase 7 (Clustering) fehlgeschlagen (rc=$_rc) — Import bleibt erfolgreich, Partition unverändert."
+        phase_finish "Clustering fehlgeschlagen (rc=$_rc)" "{\"cluster_failed\":true,\"rc\":$_rc}"
+        return 0
+    fi
+
+    local _comm
+    _comm=$(pp_num "SELECT COUNT(DISTINCT Community) FROM CommunityNames")
+    phase_finish "$(group_de "$_comm") Communities (Rohform)" "{\"communities\":$_comm}"
     return 0
 }
 
@@ -1650,22 +1853,30 @@ run_p1_on() {
         -e "s/SET VARIABLE seq_offset = [0-9]*;/SET VARIABLE seq_offset = $seqoff;/" \
         "$SQL_TEMPLATE" > "$tsql"
 
-    # Patched-webbed mode (SAX streaming): redirect the LOAD line to the absolute
-    # path of the patched (unsigned) build and insert the capability self-test at the
-    # marker @WEBBED_SELFTEST@. The self-test reads the nested-attr probe with forced
-    # SAX (maximum_file_size < fixture); only a webbed with the fix returns the UUID
-    # non-NULL → use_streaming=true → dom_threshold is lowered.
-    # Stock/public webbed returns NULL → DOM (safe, version-independent).
+    # Capability-Self-Test am Marker @WEBBED_SELFTEST@ injizieren. Zwei unabhaengige Teile:
+    #   (1) #73 chr(127)-Sentinel (wa_ws_sentinel) — modus-UNABHAENGIG (DOM wie SAX): wird
+    #       injiziert, sobald die Capability-Probe lief; sonst greift der SQL-Default ON.
+    #       WS_SENTINEL_ON ist die Single Source (auch fuer die bash/awk-Preproc-Gatung) →
+    #       SQL und Preproc bleiben pro Batch konsistent. true/false = SQL-Boolean-Literal.
+    #   (2) nested-attr-SAX (use_streaming/dom_threshold) — NUR im Streaming-Modus relevant:
+    #       liest die #98-Probe mit erzwungenem SAX; nur ein webbed mit Fix → use_streaming=
+    #       true → dom_threshold gesenkt. NUR der unsignierte Dev-Patch braucht zusaetzlich
+    #       den LOAD-Redirect + -unsigned; signiertes Stock-webbed laedt per `LOAD webbed;`.
     local duck_flags=()
+    local selftest=""
+    if [ "$WEBBED_PROBE_RAN" = "true" ] || [ -n "${FM_FORCE_WS_SENTINEL:-}" ]; then
+        selftest="SET VARIABLE wa_ws_sentinel = ${WS_SENTINEL_ON};"
+    fi
+    if $PATCHED_WEBBED_ACTIVE || $STOCK_STREAMING_ACTIVE; then
+        selftest="${selftest:+$selftest }SET VARIABLE use_streaming = ((${_vc_nested_probe_sql}) = 1); SET VARIABLE dom_threshold = (CASE WHEN getvariable('use_streaming') THEN ${WEBBED_STREAM_THRESHOLD} ELSE getvariable('max_filesize') END);"
+    fi
+    if [ -n "$selftest" ]; then
+        # '|' as the sed delimiter (paths contain '/'); escape '&' in the replacement.
+        sed -i -e "s|^-- @WEBBED_SELFTEST@.*|${selftest//&/\\&}|" "$tsql"
+    fi
     if $PATCHED_WEBBED_ACTIVE; then
         duck_flags+=(-unsigned)
-        local selftest
-        selftest="SET VARIABLE use_streaming = ((SELECT count(*) FROM read_xml('${WEBBED_SAX_PROBE}', root_element='CalcsForCustomFunctions', record_element='CustomFunctionCalc', maximum_file_size=100, streaming=true, columns={'CustomFunctionReference':'STRUCT(UUID VARCHAR)'}) WHERE CustomFunctionReference.UUID IS NOT NULL) > 0); SET VARIABLE dom_threshold = (CASE WHEN getvariable('use_streaming') THEN ${WEBBED_STREAM_THRESHOLD} ELSE getvariable('max_filesize') END);"
-        # '|' as the sed delimiter (paths contain '/'); escape '&' in the replacement.
-        sed -i \
-            -e "s|^LOAD webbed;|LOAD '${WEBBED_PATCHED_EXT}';|" \
-            -e "s|^-- @WEBBED_SELFTEST@.*|${selftest//&/\\&}|" \
-            "$tsql"
+        sed -i -e "s|^LOAD webbed;|LOAD '${WEBBED_PATCHED_EXT}';|" "$tsql"
     fi
 
     { memory_limit_prefix; cat "$tsql"; } | FM_XML_DIR="$xdir" "$DUCKDB_BIN" "${duck_flags[@]}" "$target" >> "$elog" 2>&1
@@ -2405,8 +2616,12 @@ _turbo_split_one_file() {
     local _rules=""; $STREAMIFY_MODE && _rules="$STREAMIFY_RULES"
     local NCHUNKS
     [ -n "$_t5_on" ] && echo "@T5 ${idx} fuse_start $(date +%s.%N)" >>"$out"
+    # ws_sentinel=1/0 gatet die CR→0x7F-Wandlung im Byte-Clean (clean_line) — Spiegel der
+    # bash-preprocess_file-Gatung (WS_SENTINEL_ON). 0 = webbed bewahrt Whitespace nativ →
+    # CR bleibt erhalten (Parser normalisiert zu LF). Default 1 (Sentinel ON, konservativ).
+    local _ws_sentinel=1; [ "${WS_SENTINEL_ON:-true}" = "false" ] && _ws_sentinel=0
     NCHUNKS=$(LC_ALL=C "$AWK_BIN" -v outdir="$cdir" -v subchunk="$SUBCHUNK" -v recmap="$EFFECTIVE_RECMAP" \
-                  -v nest="$NEST_MAP" \
+                  -v nest="$NEST_MAP" -v ws_sentinel="$_ws_sentinel" \
                   -v chunkmap="$cdir/chunkmap.tsv" -v counts="$cdir/counts.tsv" -v rules="$_rules" \
                   -f "$TURBO_FUSE_AWK" < "$UTF8" 2>>"$out")
     [ -n "$_t5_on" ] && echo "@T5 ${idx} fuse_end $(date +%s.%N)" >>"$out"
@@ -3295,12 +3510,26 @@ preprocess_file() {
     PRE_CR_COUNT=$(tr -dc '\r' < "$TMP_UTF8" | wc -c | tr -d ' ')
     PRE_DEL_GUARD_COUNT=$(tr -dc '\177' < "$TMP_UTF8" | wc -c | tr -d ' ')
 
-    # (c2) DEL guard → (b) CR→DEL → (c) strip C0-invalid
-    if ! tr -d '\177' < "$TMP_UTF8" \
-            | tr '\r' '\177' \
-            | tr -d '\000-\010\013\014\016-\037' > "$OUT"; then
-        rm -f "$TMP_UTF8"
-        return 5
+    # (c2) DEL guard → (b) CR→DEL [chr(127)-Sentinel, nur wenn WS_SENTINEL_ON] → (c) strip C0.
+    # Sentinel ON (Default/altes webbed): heutiges Verhalten — CR (0x0D) → 0x7F (DEL), damit
+    # webbeds frueherer #73-Whitespace-Collapse den Umbruch nicht frisst; die SQL holt 0x7F→LF
+    # zurueck (ws_restore). Sentinel OFF (Probe: webbed bewahrt Whitespace nativ): CR→DEL
+    # ueberspringen — CR ist NICHT im C0-Strip-Set, ueberlebt also bis zum Parser, der es nativ
+    # zu LF normalisiert; ws_restore wird dann zum No-op. Gemeinsame Quelle WS_SENTINEL_ON
+    # mit der SQL-Injektion (wa_ws_sentinel). DEL-Guard + C0-Strip laufen in beiden Faellen.
+    if [ "${WS_SENTINEL_ON:-true}" = "false" ]; then
+        if ! tr -d '\177' < "$TMP_UTF8" \
+                | tr -d '\000-\010\013\014\016-\037' > "$OUT"; then
+            rm -f "$TMP_UTF8"
+            return 5
+        fi
+    else
+        if ! tr -d '\177' < "$TMP_UTF8" \
+                | tr '\r' '\177' \
+                | tr -d '\000-\010\013\014\016-\037' > "$OUT"; then
+            rm -f "$TMP_UTF8"
+            return 5
+        fi
     fi
 
     local out_size
@@ -3812,6 +4041,7 @@ phase_label_txt() {
         P4) echo "Catalog  (Objekte+Links)" ;;
         P5) echo "Homes    (Cross-File)" ;;
         P6) echo "Validate (Post-Checks)" ;;
+        P7) echo "Cluster  (Communities)" ;;
         *)  echo "$2" ;;
     esac
 }
@@ -4313,7 +4543,7 @@ fi
 # segment's fill from the global pct, so chunk+import fill correctly regardless).
 # P2–P5 are the fast catalog phases; P6/validate absorbs the post-processor checks
 # AND the rest-api sync/reload at its tail.
-set_phase_budget "chunk:0-25 import:25-70 extract:0-70 resolve:70-78 details:78-84 catalog:84-90 homes:90-96 validate:96-100"
+set_phase_budget "chunk:0-25 import:25-70 extract:0-70 resolve:70-78 details:78-84 catalog:84-90 homes:90-94 validate:94-97 cluster:97-100"
 
 # One-off start event in --quiet mode so clients immediately know the process is
 # running. The controller streams this out anyway, but an explicit script-owned
@@ -4799,9 +5029,18 @@ if [[ "$MODE" == "batch" ]]; then
     # (Manifest existiert nur dort) → auf den Turbo-Pfad beschränkt.
     $TURBO_MODE && _catalogs_state_set ok
 
-    # 7b. Sync to rest-api/db/ (production mode).
-    # The post-processor checks fill validate 0..70; the sync/reload tail fills 70..100.
-    phase_progress validate 70 "Checks complete"
+    # The post-processor checks now fill the WHOLE validate segment (94..97); the
+    # sync/reload tail moved into the `cluster` segment (97..100, after P7) so the
+    # bar stays monotonic when Auto-P7 runs between the checks and the sync.
+    phase_progress validate 100 "Checks complete"
+
+    # 7a2. Phase 7 (Clustering) — Auto-Community-Erkennung (Rohform), BEFORE the
+    # sync so the single pipeline sync carries the fresh ObjectClusters/
+    # CommunityNames to the copy. Gated: only on a from-scratch build or a
+    # DB without a partition; incremental imports skip it. Non-fatal.
+    run_phase7_clustering
+
+    # 7b. Sync to rest-api/db/ (production mode). Routed into the `cluster` segment.
     # a4: a single failed
     # file must not block the publication of all the others. The master is rebuilt (P2–P6) from
     # whatever imported successfully → internally consistent. So sync when at least one file
@@ -4822,8 +5061,12 @@ if [[ "$MODE" == "batch" ]]; then
             echo "Syncing database to rest-api/..."
             echo "========================================="
         fi
-        sync_to_rest_api
+        sync_to_rest_api cluster
         if ! $QUIET_MODE; then echo ""; fi
+    else
+        # No sync (test mode / nothing published): still drive the bar to 100 so
+        # the `cluster` segment completes instead of sticking at its start.
+        phase_progress cluster 100 "fertig"
     fi
     fi   # ── Ende Short-Circuit-Block (! $TURBO_NO_CHANGES): P2–P6 + Sync ──
 

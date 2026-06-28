@@ -3,14 +3,16 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLayoutData } from '../hooks/useLayoutData';
 import { LayoutCanvas, type LayoutCanvasHandle } from '../components/LayoutCanvas';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { SubNav } from '../components/SubNav';
+import { StatusBar } from '../components/StatusBar';
+import { buildBreadcrumb } from '../lib/navigation';
 import { useEscapeStack } from '../hooks/useEscapeStack';
 import { useUrlState } from '../hooks/useUrlState';
 import { CurrentFileContext } from '../lib/currentFileContext';
 import './LayoutView.css';
 
 export function LayoutView() {
-  const { t } = useTranslation(['common', 'errors']);
+  const { t } = useTranslation(['common', 'errors', 'nav', 'types']);
   const { uuid } = useParams<{ uuid: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -62,15 +64,14 @@ export function LayoutView() {
   return (
     <CurrentFileContext.Provider value={data?.fileName || fileParam || null}>
     <div className="layout-view">
+      <SubNav
+        breadcrumbs={buildBreadcrumb(
+          { kind: 'object', objectType: 'Layout', objectName: data?.layoutName || 'Layout' },
+          t,
+        )}
+      />
+      <StatusBar onBack={handleBack} />
       <header className="layout-view-header">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="layout-view-back"
-          title={t('common:backToPrevious') as string}
-        >
-          ← {t('common:back')}
-        </button>
         <h1>
           Layout
           {data && (
@@ -83,7 +84,6 @@ export function LayoutView() {
           )}
         </h1>
         {data && <div className="layout-view-file">{data.fileName}</div>}
-        <ThemeToggle />
       </header>
 
       <div className="layout-view-body">

@@ -2,7 +2,7 @@
   "title": "Graafverkenner",
   "emptyFocus": "Open een object vanuit de detailweergave in de Graafverkenner (of dubbelklik op een knoop) om de afhankelijkheidsgraaf te verkennen.",
   "loading": "Graaf laden…",
-  "truncated": "{{kept}} van {{total}} bereikbare knopen weergegeven — verlaag de diepte of beperk het typefilter om ze allemaal te tonen.",
+  "truncated": "{{kept}} van {{total}} bereikbare knopen geladen — verlaag de diepte of beperk het typefilter om ze allemaal te laden.",
   "stats": {
     "nodes": "{{count}} knoop",
     "nodes_other": "{{count}} knopen",
@@ -36,7 +36,8 @@
     "noNeighbors": "Geen buren in de huidige graaf.",
     "uses": "gebruikt",
     "usedBy": "gebruikt door",
-    "focus": "Focus"
+    "focus": "Focus",
+    "resizePanel": "Breedte van het detailpaneel aanpassen"
   },
   "filter": {
     "ariaLabel": "Graaffilters",
@@ -69,7 +70,6 @@
       "both": "Beide richtingen vanaf de focus"
     },
     "types": "Knooptypen",
-    "showAllTypes": "alles tonen",
     "colorMode": "Kleuring",
     "colorModes": {
       "type": "Type",
@@ -79,6 +79,24 @@
       "type": "Knopen kleuren op objecttype",
       "community": "Knopen kleuren op gedetecteerde module (community)"
     },
-    "communityUnnamed": "Community {{id}}"
-  }
+    "communityUnnamed": "Community {{id}}",
+    "resizePanel": "Breedte van het filterpaneel aanpassen",
+    "depthLoad": "{{count}} bereikbaar",
+    "depthClipped": "{{count}} bereikbaar, laden begrensd op {{limit}}",
+    "partLoaded": "{{count}} geladen",
+    "partConnected": "{{count}} verbonden",
+    "partIsland_one": "{{count}} eiland",
+    "partIsland_other": "{{count}} eilanden",
+    "partIsolated": "{{count}} geïsoleerd",
+    "loadScope": "Typen laden",
+    "loadAll": "Alle typen",
+    "loadSelected": "Alleen geselecteerde",
+    "loadAllHint": "Alle typen laden; een chip uitschakelen verbergt deze alleen",
+    "loadSelectedHint": "Alleen de geselecteerde typen laden (herlaadt)"
+  },
+  "unconnectedHidden_one": "{{count}} knoop zonder verbinding met de focus",
+  "unconnectedHidden_other": "{{count}} knopen zonder verbinding met de focus",
+  "unconnectedToggleShow": "tonen",
+  "unconnectedToggleHide": "verbergen",
+  "unconnectedToggleHint": "Knopen zonder pad naar de focus ontstaan door het type-/dieptefilter — tonen of verbergen"
 }

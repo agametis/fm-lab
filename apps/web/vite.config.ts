@@ -1,8 +1,22 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+// Build-Zeit-Version aus der eigenen package.json. Wird als globales
+// __APP_VERSION__ ins Bundle injiziert, damit der Versions-Balken die
+// *tatsächlich gebaute* Frontend-Version zeigt (wahrheitsgetreu zum laufenden
+// Build, nicht nur die im Manifest gespiegelte Repo-Version). Ermöglicht später
+// eine Drift-Anzeige „Bundle ≠ Manifest = Frontend nicht neu gebaut".
+const pkg = JSON.parse(
+  readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf-8'),
+);
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   server: {
     // Bind-Adresse aus der Umgebung: Host-sicherer Default (false → localhost),
     // im Dev-Container injiziert devcontainer.json VITE_DEV_HOST=0.0.0.0, damit
@@ -11,6 +25,26 @@ export default defineConfig({
     host: process.env.VITE_DEV_HOST || false,
     port: 5173,
     strictPort: true,
+    // FS-Watcher entlasten (Docker-Desktop-Stabilität auf macOS, s. .vscode/
+    // settings.json). Vite-Root ist apps/web, daher sieht der Dev-Server die
+    // GB-Datenverzeichnisse im Repo-Root normalerweise gar nicht — diese Liste
+    // ist defensiv (deckt dist/.vite + den Fall „Vite vom Repo-Root gestartet"):
+    watch: {
+      ignored: [
+        '**/node_modules/**',
+        '**/.git/**',
+        '**/dist/**',
+        '**/.vite/**',
+        '**/db/**',
+        '**/output/**',
+        '**/logs/**',
+        '**/.fmlab/**',
+        '**/xml/**',
+        '**/docs/**',
+        '**/_Backup/**',
+        '**/*.duckdb',
+      ],
+    },
     // open nur lokal auf dem Host sinnvoll; im Container (kein Browser) leise aus.
     // VS Code öffnet das Frontend dort via Port-Forwarding/openBrowser.
     open: !process.env.VITE_DEV_HOST,

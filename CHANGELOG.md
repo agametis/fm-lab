@@ -12,6 +12,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.8.5] — 2026-06-28
+
+A top-down Graph Atlas over the whole solution, a cluster overview with auto-clustering, and a unified, more polished web client.
+
+- **Graph Atlas** — a top-down entry point to the object graph (new `/atlas` route), complementing the focus-driven Graph Explorer
+  - **Overview at a glance** — a treemap of files and communities sized by object count, plus a meta-graph of how the modules connect; drill from any tile into the Explorer or a detail view
+  - **Annotations** — name and comment communities and individual nodes, stored in a separate sidecar database so they survive re-imports and re-clusters (remapped by majority vote)
+  - **Noise filter** — dim or hide low-signal nodes to keep the big picture readable
+  - **Graph Explorer refinements** — richer focus filters, an adaptive depth control backed by a depth-profile endpoint, per-type object lists, and truncation-aware reloading
+- **Cluster overview & auto-clustering**
+  - **New `/cluster` page** — clustering-run metrics, the full community list with inline (re)naming and filters, and a Home-dashboard cluster bubble for a quick count
+  - **Community rebuild in the import** — clustering can run as a final import step, with two independent drift indicators (structural input-delta vs. naming) signalling when a re-partition or re-naming pays off; existing module names are reused across runs
+- **Richer reference extraction** — closing object-graph gaps: previously-missed **cross-file references** now resolve, **references to built-in functions** and the text content of **Insert Text** steps are captured, plus an umlaut/encoding bugfix in the reference parser
+- **XML engine (webbed)** — the tested DuckDB baseline is raised to **1.5.4** (required for webbed v2.2.1's SAX-streaming parsing of nested FileMaker structures); a data-driven capability registry probes the actually-loaded webbed and toggles the matching workarounds, and setup warns when the installed CLI is older; serializer encoding bugfixes (non-ASCII / carriage-return)
+- **Unified & optimized UI/UX** — numerous frontend optimizations consolidated into one pass; the prominent ones:
+  - **Navigation overhaul** — a reworked navigation model with consistent labels and breadcrumbs
+  - **Home dashboard** — a new variables KPI and a cleaner KPI rhythm
+  - **Restartable XML import** — the import streams through a broadcast hub, so navigating away no longer kills it, resuming via the incremental manifest
+  - **Light-mode fix** for inherited white button text, plus assorted bugfixes
+  - **`script_todos` dashboard** reworked to recognize multiple TO-DO notations
+
+---
+
 ## [0.8.4] — 2026-06-24
 
 Bugfixes and optimizations.

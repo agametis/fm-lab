@@ -1,0 +1,97 @@
+{
+  "title": "グラフアトラス",
+  "subtitle": "トップダウンの入口 — タイルをクリックして掘り下げ、リーフをクリックするとグラフエクスプローラーで開きます。",
+  "headerButton": "アトラス",
+  "headerButton_hint": "グラフアトラスを開く — ソリューション全体のトップダウン概観。",
+  "segmentation": "セグメント分け",
+  "segment": {
+    "community": "コミュニティ",
+    "file": "ファイル",
+    "hubs": "トップノード",
+    "type": "タイプ"
+  },
+  "breadcrumb": {
+    "root": "アトラス"
+  },
+  "representation": "表示",
+  "view": {
+    "composition": "構成",
+    "topology": "トポロジー",
+    "composition_hint": "ツリーマップ — 何がどれだけ大きいか（比率）。",
+    "topology_hint": "メタグラフ — セグメントの結合（コミュニティ／ファイルのみ）。"
+  },
+  "weight": {
+    "label": "重み付け",
+    "domain": "ドメイン",
+    "logical": "生",
+    "domain_hint": "ドメイン重み（ClusterEdges）— 組み込み関数と god-node は除去済み。",
+    "logical_hint": "生の論理次数 — 組み込み関数を含む。"
+  },
+  "search": {
+    "placeholder": "表示中のタイルを絞り込み…"
+  },
+  "types": {
+    "label": "オブジェクト型",
+    "hide": "{{type}} を非表示",
+    "show": "{{type}} を表示",
+    "reset": "リセット"
+  },
+  "rest": {
+    "collapse": "上位項目に折りたたむ",
+    "hide": "非表示"
+  },
+  "status": {
+    "semanticNames": "セマンティック名: {{value}}",
+    "semanticNamesNone": "セマンティック名: --",
+    "count": "件数: {{semantic}} / {{user}} ユーザー定義",
+    "clustersMissing": "まだクラスタリングされていません —「fm-graph-cluster」を実行してコミュニティとトポロジーを有効化してください。"
+  },
+  "loading": "読み込み中…",
+  "empty": "表示するものがありません。",
+  "error": "アトラスを読み込めませんでした: {{message}}",
+  "truncated": "上位の項目を表示しています — 残りは灰色のタイルにまとめられています。",
+  "hint": {
+    "leafClick": "ヒント: リーフタイルをクリックすると、そのオブジェクトをグラフエクスプローラーで開きます。",
+    "metaClick": "ヒント: スーパーノードをクリックすると、その最重要メンバーをグラフエクスプローラーで開きます。"
+  },
+  "topN": {
+    "label": "Top-N",
+    "hint": "残りを1つのタイルに折りたたむ前に表示する上位セグメント／リーフの数。",
+    "auto": "自動（レベルごと）のしきい値に戻す",
+    "autoTag": "auto"
+  },
+  "hidden": {
+    "mode": "除外",
+    "dim": "淡色",
+    "hide": "非表示",
+    "dim_hint": "除外したノードは表示されたまま（淡色）で、元に戻せます。",
+    "hide_hint": "除外したノードは削除されます — 取り消しはリストからのみ。",
+    "manage": "管理…",
+    "manage_hint": "除外したすべてのノードの一覧 — ここで復元できます。",
+    "empty": "除外されたノードはありません。",
+    "restore": "復元"
+  },
+  "panel": {
+    "infoButton": "オプション",
+    "close": "閉じる",
+    "type": "タイプ",
+    "save": "保存",
+    "saving": "保存中…",
+    "openExplorer": "グラフ",
+    "openDetail": "詳細",
+    "hideNode": "除外",
+    "unhideNode": "除外解除",
+    "hiddenBadge": "除外済み",
+    "community": {
+      "title": "コミュニティ",
+      "nameLabel": "カスタム名",
+      "namePlaceholder": "例：「請求・PDF」",
+      "notesLabel": "メモ",
+      "notesPlaceholder": "このコミュニティの自由記述…"
+    },
+    "node": {
+      "title": "ノード"
+    },
+    "cancel": "キャンセル"
+  }
+}

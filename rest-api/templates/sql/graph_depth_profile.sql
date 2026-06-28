@@ -1,0 +1,121 @@
+-- @template_type: report
+-- @title: Graph Depth Profile (Eccentricity + per-depth node counts)
+-- @description: Max. erreichbare Tiefe ab dem Fokus + Knotenzahl je Tiefe — richtungsabhängig, ungedeckelt bis hard_cap
+-- @params: focus (required, UUID), focus_file, direction, mode, include_builtins, roles, types, hard_cap
+-- @version: 1.1.0
+-- @author: Marcel / Claude
+-- @tags: graph, explorer, depth
+-- @note: Endpoint /api/graph/depth-profile. Spiegelt die CTEs 1–7 von graph_subgraph.sql
+--        1.1.0: Fokus-Ausnahme im Typ-Filter (reached_f) — gespiegelt aus
+--        graph_subgraph.sql v1.3.0, hält die kumulative Last konsistent mit total_reachable.
+--        (Reuse des Walks), ERSETZT aber den Tiefen-Deckel `depth` durch `hard_cap`
+--        (Runaway-Schutz) und aggregiert auf depth → COUNT(*). KEINE Knoten-Projektion/
+--        Community-Anreicherung (leichtgewichtig). `reached` nutzt MIN(depth) je Knoten =
+--        kürzester Pfad ⇒ MAX(depth) = Exzentrizität, COUNT je depth = Knoten dieser Distanz.
+--        Richtung über den `direction`-Zweig der edges-CTE: out|in|both.
+-- ============================================================================
+
+WITH RECURSIVE
+-- 1) Roh-Kanten mit Waisen-Filter (beide Endpunkte katalogisiert). Datei mitführen.
+raw_links AS (
+  SELECT
+    Source_UUID AS a, Source_File AS a_file,
+    Target_UUID AS b, Target_File AS b_file,
+    Link_Role, Link_Subrole, Link_Type, Is_Cross_File
+  FROM ObjectLinks
+  WHERE Source_UUID IN (SELECT Object_UUID FROM ObjectCatalog)
+    AND Target_UUID IN (SELECT Object_UUID FROM ObjectCatalog)
+),
+-- 2) Logische Sicht (Sub-Objekte auf Container hochgezogen) aus der P5-View.
+logical_dedup AS (
+  SELECT
+    Source_UUID AS a, Source_File AS a_file,
+    Target_UUID AS b, Target_File AS b_file,
+    Link_Role, Link_Subrole, Link_Type, Is_Cross_File
+  FROM LogicalLinks
+),
+-- 3) Aktive Basis nach mode (ein Zweig wird nach Interpolation gekappt).
+base AS (
+  SELECT a, a_file, b, b_file, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
+  FROM logical_dedup
+  WHERE getvariable('mode') = 'logical'
+  UNION ALL
+  SELECT a, a_file, b, b_file, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
+  FROM raw_links
+  WHERE getvariable('mode') = 'logical'
+    AND a = getvariable('focus')
+    AND Link_Role IN ('parent_layout', 'parent_script')
+  UNION ALL
+  SELECT a, a_file, b, b_file, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
+  FROM raw_links
+  WHERE getvariable('mode') = 'raw'
+),
+-- 4) Kanten-Filter: Builtins + optionale Rollen-Whitelist (Ziel-Typ datei-genau).
+base_f AS (
+  SELECT base.a, base.a_file, base.b, base.b_file, base.Link_Role, base.Link_Subrole,
+         base.Link_Type, base.Is_Cross_File
+  FROM base
+  JOIN ObjectCatalog tc
+    ON tc.Object_UUID = base.b
+   AND tc.File_Name IS NOT DISTINCT FROM base.b_file
+  WHERE (getvariable('include_builtins') = TRUE OR tc.Object_Type <> 'BuiltinFunction')
+    AND (getvariable('roles') IS NULL
+         OR base.Link_Role IN (SELECT unnest(string_split(CAST(getvariable('roles') AS VARCHAR), ','))))
+),
+-- 5) Gerichtete Kantenmenge (direction): out|in|both, in-Zweig symmetrisch getauscht.
+edges AS (
+  SELECT a, a_file, b, b_file FROM base_f WHERE getvariable('direction') IN ('out', 'both')
+  UNION
+  SELECT b AS a, b_file AS a_file, a AS b, a_file AS b_file FROM base_f WHERE getvariable('direction') IN ('in', 'both')
+  UNION
+  SELECT a, a_file, b, b_file FROM base_f
+  WHERE getvariable('mode') = 'logical'
+    AND a = getvariable('focus')
+    AND Link_Type = 'structural'
+),
+-- 6) Fokus-Saat (UUID, File) — focus_file durchgereicht, sonst Katalog-Auflösung.
+focus_seed AS (
+  SELECT
+    getvariable('focus') AS uuid,
+    COALESCE(
+      NULLIF(CAST(getvariable('focus_file') AS VARCHAR), ''),
+      (SELECT File_Name FROM ObjectCatalog WHERE Object_UUID = getvariable('focus') LIMIT 1)
+    ) AS file
+),
+-- 7) Rekursiver Walk — UNGEDECKELT bis hard_cap (Runaway-Schutz). UNION ⇒ Zyklen-Dedup.
+walk AS (
+  SELECT uuid, file, 0 AS depth FROM focus_seed
+  UNION
+  SELECT e.b, e.b_file, w.depth + 1
+  FROM walk w
+  JOIN edges e
+    ON e.a = w.uuid
+   AND e.a_file IS NOT DISTINCT FROM w.file
+  WHERE w.depth < CAST(getvariable('hard_cap') AS INT)
+),
+reached AS (
+  SELECT uuid, file, MIN(depth) AS depth FROM walk GROUP BY uuid, file
+),
+-- 8) Typ-Filter — SPIEGELT graph_subgraph.sql (dort `nodes_ranked`): der Walk läuft
+--    ungefiltert (Knoten anderer Typen bleiben Brücken), nur die GEZÄHLTE Knotenmenge
+--    wird auf die gewählten Object_Type beschränkt. So matcht die kumulative Last je
+--    Tiefe exakt `total_reachable` des Subgraphen (sonst zählt das Profil alle Typen).
+--    FOKUS-AUSNAHME (spiegelt graph_subgraph.sql v1.3.0): der Fokus zählt bei depth 0
+--    IMMER mit, auch wenn sein eigener Object_Type abgewählt ist — sonst driftet die
+--    kumulative Last gegen `total_reachable` des Subgraphen (der den Fokus stets führt).
+reached_f AS (
+  SELECT r.depth
+  FROM reached r
+  JOIN ObjectCatalog oc
+    ON oc.Object_UUID = r.uuid
+   AND oc.File_Name IS NOT DISTINCT FROM r.file
+  WHERE (getvariable('types') IS NULL
+         OR oc.Object_Type IN (SELECT unnest(string_split(CAST(getvariable('types') AS VARCHAR), ',')))
+         OR (r.uuid = getvariable('focus')
+             AND r.file IS NOT DISTINCT FROM (SELECT file FROM focus_seed)))
+)
+-- Knoten je Distanz (depth 0 = Fokus). Service bildet maxDepth + kumulative Last.
+SELECT depth, COUNT(*) AS nodes
+FROM reached_f
+GROUP BY depth
+ORDER BY depth;

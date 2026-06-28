@@ -1,0 +1,97 @@
+{
+  "title": "그래프 아틀라스",
+  "subtitle": "하향식 진입점 — 타일을 클릭해 파고들고, 리프를 클릭하면 그래프 탐색기에서 엽니다.",
+  "headerButton": "아틀라스",
+  "headerButton_hint": "그래프 아틀라스 열기 — 전체 솔루션의 하향식 개요.",
+  "segmentation": "세분화",
+  "segment": {
+    "community": "커뮤니티",
+    "file": "파일",
+    "hubs": "상위 노드",
+    "type": "유형"
+  },
+  "breadcrumb": {
+    "root": "아틀라스"
+  },
+  "representation": "표현",
+  "view": {
+    "composition": "구성",
+    "topology": "토폴로지",
+    "composition_hint": "트리맵 — 무엇이 얼마나 큰지(비율).",
+    "topology_hint": "메타 그래프 — 세그먼트가 어떻게 연결되는지(커뮤니티/파일만)."
+  },
+  "weight": {
+    "label": "가중치",
+    "domain": "도메인",
+    "logical": "원시",
+    "domain_hint": "도메인 가중치(ClusterEdges) — 내장 함수와 god-node는 이미 제거됨.",
+    "logical_hint": "원시 논리 차수 — 내장 함수 포함."
+  },
+  "search": {
+    "placeholder": "표시된 타일 필터링…"
+  },
+  "types": {
+    "label": "객체 유형",
+    "hide": "{{type}} 숨기기",
+    "show": "{{type}} 표시",
+    "reset": "재설정"
+  },
+  "rest": {
+    "collapse": "상위 항목으로 접기",
+    "hide": "숨기기"
+  },
+  "status": {
+    "semanticNames": "시맨틱 이름: {{value}}",
+    "semanticNamesNone": "시맨틱 이름: --",
+    "count": "개수: {{semantic}} / {{user}} 사용자 정의",
+    "clustersMissing": "아직 클러스터링되지 않음 — 'fm-graph-cluster'를 실행하여 커뮤니티와 토폴로지를 활성화하세요."
+  },
+  "loading": "불러오는 중…",
+  "empty": "여기에 표시할 내용이 없습니다.",
+  "error": "아틀라스를 불러올 수 없습니다: {{message}}",
+  "truncated": "상위 항목을 표시 중 — 나머지는 회색 타일에 모았습니다.",
+  "hint": {
+    "leafClick": "팁: 리프 타일을 클릭하면 해당 객체를 그래프 탐색기에서 엽니다.",
+    "metaClick": "팁: 슈퍼 노드를 클릭하면 가장 비중 큰 구성원을 그래프 탐색기에서 엽니다."
+  },
+  "topN": {
+    "label": "Top-N",
+    "hint": "나머지를 하나의 타일로 접기 전에 표시할 상위 세그먼트/리프 수.",
+    "auto": "자동(레벨별) 컷오프로 되돌리기",
+    "autoTag": "auto"
+  },
+  "hidden": {
+    "mode": "무시됨",
+    "dim": "흐리게",
+    "hide": "숨김",
+    "dim_hint": "무시된 노드는 (흐리게) 표시된 채로 남아 되돌릴 수 있습니다.",
+    "hide_hint": "무시된 노드는 제거됩니다 — 되돌리기는 목록에서만 가능합니다.",
+    "manage": "관리…",
+    "manage_hint": "무시된 모든 노드 목록 — 여기서 복원하세요.",
+    "empty": "무시된 노드가 없습니다.",
+    "restore": "복원"
+  },
+  "panel": {
+    "infoButton": "옵션",
+    "close": "닫기",
+    "type": "유형",
+    "save": "저장",
+    "saving": "저장 중…",
+    "openExplorer": "그래프",
+    "openDetail": "세부 정보",
+    "hideNode": "무시",
+    "unhideNode": "무시 해제",
+    "hiddenBadge": "무시됨",
+    "community": {
+      "title": "커뮤니티",
+      "nameLabel": "사용자 지정 이름",
+      "namePlaceholder": "예: ‘청구 및 PDF’",
+      "notesLabel": "메모",
+      "notesPlaceholder": "이 커뮤니티에 대한 자유 텍스트…"
+    },
+    "node": {
+      "title": "노드"
+    },
+    "cancel": "취소"
+  }
+}

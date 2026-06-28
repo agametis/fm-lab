@@ -1,6 +1,6 @@
 {
-  "name": "filemaker-duckdb-api",
-  "version": "0.6.1",
+  "name": "@fm-lab/api",
+  "version": "0.8.5",
   "description": "REST API for FileMaker DuckDB Analysis",
   "main": "src/index.js",
   "scripts": {

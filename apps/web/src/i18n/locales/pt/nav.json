@@ -6,6 +6,19 @@
     "ariaLabel": "Caminho de migalhas",
     "linkAria": "Navegar para {{label}}"
   },
+  "crumbs": {
+    "home": "Início",
+    "search": "Pesquisa",
+    "hierarchy": "Hierarquia",
+    "graph": "Grafo",
+    "relationships": "Relações",
+    "dashboards": "Painéis",
+    "customQueries": "Consultas personalizadas",
+    "docs": "Documentação",
+    "xmlImport": "Importar XML",
+    "cluster": "Clusters",
+    "settings": "Configurações"
+  },
   "errors": {
     "noDashboardId": "Nenhum id de dashboard fornecido.",
     "noQueryName": "Nenhum nome de consulta fornecido."
@@ -57,11 +70,11 @@
     "tabsAria": "Vistas do objeto",
     "noName": "(sem nome)",
     "tabs": {
-      "detail":     "Detalhes",
+      "detail": "Detalhes",
       "references": "Referências",
-      "graph":      "Grafo",
-      "versions":   "Versões",
-      "notes":      "Notas"
+      "graph": "Grafo",
+      "versions": "Versões",
+      "notes": "Notas"
     }
   },
   "pseudoToolbar": {

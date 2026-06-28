@@ -1,0 +1,33 @@
+{
+  "title": "Cluster",
+  "subtitle": "Community del grafo",
+  "status": {
+    "named": "{{named}} di {{total}} community denominate",
+    "algorithm": "Algoritmo",
+    "lastRun": "ultima esecuzione",
+    "dash": "—"
+  },
+  "list": {
+    "members": "{{count}} membri",
+    "edit": "Modifica",
+    "openHint": "Apri nell’esploratore del grafo",
+    "unnamedBadge": "senza nome",
+    "count": "{{shown}} di {{total}}",
+    "search": "Cerca…"
+  },
+  "empty": {
+    "title": "Non ancora clusterizzato",
+    "hint": "Rileva le community con «Nuove community» qui sotto — una ripartizione economica."
+  },
+  "loading": "Caricamento…",
+  "hero": {
+    "communities": "Community",
+    "nodes": "Nodi",
+    "edges": "Archi"
+  },
+  "filter": {
+    "all": "Tutte",
+    "named": "Denominate",
+    "unnamed": "Senza nome"
+  }
+}

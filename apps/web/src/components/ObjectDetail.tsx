@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useObjectDetails } from '../hooks/useObjectDetails';
 import { useLayoutData } from '../hooks/useLayoutData';
 import { useCurrentFile } from '../lib/currentFileContext';
-import { LayoutCanvas } from './LayoutCanvas';
+import { LayoutCanvas, type LayoutCanvasHandle } from './LayoutCanvas';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
 import { ScriptDetail } from './ScriptDetail';
@@ -42,6 +42,11 @@ interface ObjectDetailProps {
    * CustomFunction / Field als Token-Container).
    */
   onLiveMatchCount?: (count: number) => void;
+  /**
+   * Handle des eingebetteten LayoutCanvas (nur für objectType='Layout' belegt) —
+   * von der DetailView für die ESC-Stufenlogik (Suche/Filter räumen) verdrahtet.
+   */
+  layoutCanvasRef?: React.Ref<LayoutCanvasHandle>;
 }
 
 /**
@@ -53,7 +58,8 @@ const EmbeddedLayoutView: React.FC<{
   uuid: string;
   highlightUuids?: Set<string>;
   onClearRef?: () => void;
-}> = ({ uuid, highlightUuids, onClearRef }) => {
+  layoutCanvasRef?: React.Ref<LayoutCanvasHandle>;
+}> = ({ uuid, highlightUuids, onClearRef, layoutCanvasRef }) => {
   const { t } = useTranslation(['common', 'detail']);
   const currentFile = useCurrentFile();
   const { data, loading, error } = useLayoutData(uuid, currentFile);
@@ -76,6 +82,7 @@ const EmbeddedLayoutView: React.FC<{
       </div>
       <div className="layout-detail-canvas">
         <LayoutCanvas
+          ref={layoutCanvasRef}
           data={data}
           externalMatchUuids={highlightUuids}
           onClearRef={onClearRef}
@@ -163,6 +170,7 @@ export const ObjectDetail: React.FC<ObjectDetailProps> = ({
   highlightText,
   onClearRef,
   onLiveMatchCount,
+  layoutCanvasRef,
 }) => {
   if (objectType === 'Layout') {
     return (
@@ -170,6 +178,7 @@ export const ObjectDetail: React.FC<ObjectDetailProps> = ({
         uuid={uuid}
         highlightUuids={highlightUuids}
         onClearRef={onClearRef}
+        layoutCanvasRef={layoutCanvasRef}
       />
     );
   }
@@ -180,10 +189,10 @@ export const ObjectDetail: React.FC<ObjectDetailProps> = ({
     return <ScriptStepDetail uuid={uuid} highlightRefUuids={highlightUuids} onLiveMatchCount={onLiveMatchCount} />;
   }
   if (objectType === 'CustomFunction') {
-    return <CustomFunctionDetail uuid={uuid} highlightRefUuids={highlightUuids} />;
+    return <CustomFunctionDetail uuid={uuid} highlightRefUuids={highlightUuids} onLiveMatchCount={onLiveMatchCount} />;
   }
   if (objectType === 'Field') {
-    return <FieldDetail uuid={uuid} highlightRefUuids={highlightUuids} />;
+    return <FieldDetail uuid={uuid} highlightRefUuids={highlightUuids} onLiveMatchCount={onLiveMatchCount} />;
   }
   if (objectType === 'PrivilegeSet') {
     return <PrivilegeSetDetail uuid={uuid} highlightRefUuids={highlightUuids} />;

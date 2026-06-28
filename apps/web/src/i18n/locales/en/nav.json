@@ -6,6 +6,28 @@
     "ariaLabel": "Breadcrumb",
     "linkAria": "Navigate to {{label}}"
   },
+  "crumbs": {
+    "home": "Home",
+    "search": "Search",
+    "hierarchy": "Hierarchy",
+    "graph": "Graph",
+    "relationships": "Relationships",
+    "dashboards": "Dashboards",
+    "customQueries": "Custom Queries",
+    "docs": "Docs",
+    "xmlImport": "XML Import",
+    "cluster": "Clusters",
+    "settings": "Settings"
+  },
+  "entryType": {
+    "dashboard": "Dashboard"
+  },
+  "leitDescription": {
+    "dashboards": "Overview of every available dashboard.",
+    "customQueries": "Reusable SQL templates — click a tile to open an analysis.",
+    "docs": "Documentation sources installed in this project.",
+    "xmlImport": "Imports all files from the xml/ directory into DuckDB."
+  },
   "errors": {
     "noDashboardId": "No dashboard id supplied.",
     "noQueryName": "No query name supplied."

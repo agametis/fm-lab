@@ -125,7 +125,8 @@
     "noReferences": "参照が見つかりません",
     "noFilterMatches": "現在のフィルターに一致する項目はありません",
     "crossFileBadge": "ファイル間",
-    "itemAriaLabel": "{{type}}: {{name}} に移動"
+    "itemAriaLabel": "{{type}}: {{name}} に移動",
+    "notNavigable": "対象がインポートされたデータセットに存在しません"
   },
   "searchOptions": {
     "regionAria": "並べ替えとグループ化のオプション",
@@ -181,7 +182,8 @@
     "usageBadge_other": "{{count}} 回使用",
     "showAria": "{{type}}: {{name}} — 表示",
     "noName": "(名前なし)",
-    "filterByCategory": "{{category}} で絞り込む"
+    "filterByCategory": "{{category}} で絞り込む",
+    "graphButton": "グラフ"
   },
   "scriptSearchFilter": {
     "searchAria": "参照を検索",

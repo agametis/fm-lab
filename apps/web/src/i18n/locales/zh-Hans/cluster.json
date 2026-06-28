@@ -1,0 +1,33 @@
+{
+  "title": "聚类",
+  "subtitle": "图社区",
+  "status": {
+    "named": "{{total}} 个社区中已命名 {{named}} 个",
+    "algorithm": "算法",
+    "lastRun": "上次运行",
+    "dash": "—"
+  },
+  "list": {
+    "members": "{{count}} 个成员",
+    "edit": "编辑",
+    "openHint": "在图浏览器中打开",
+    "unnamedBadge": "未命名",
+    "count": "{{total}} 个中的 {{shown}} 个",
+    "search": "搜索…"
+  },
+  "empty": {
+    "title": "尚未聚类",
+    "hint": "通过下方的“重建社区”检测社区（低成本重新分区）。"
+  },
+  "loading": "加载中…",
+  "hero": {
+    "communities": "社区",
+    "nodes": "节点",
+    "edges": "边"
+  },
+  "filter": {
+    "all": "全部",
+    "named": "已命名",
+    "unnamed": "未命名"
+  }
+}

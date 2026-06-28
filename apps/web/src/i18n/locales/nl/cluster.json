@@ -1,0 +1,33 @@
+{
+  "title": "Clusters",
+  "subtitle": "Graafcommunities",
+  "status": {
+    "named": "{{named}} van {{total}} communities benoemd",
+    "algorithm": "Algoritme",
+    "lastRun": "laatste run",
+    "dash": "—"
+  },
+  "list": {
+    "members": "{{count}} leden",
+    "edit": "Bewerken",
+    "openHint": "Openen in de graafverkenner",
+    "unnamedBadge": "naamloos",
+    "count": "{{shown}} van {{total}}",
+    "search": "Zoeken…"
+  },
+  "empty": {
+    "title": "Nog niet geclusterd",
+    "hint": "Detecteer communities met ‘Nieuwe communities’ hieronder — een goedkope herpartitie."
+  },
+  "loading": "Laden…",
+  "hero": {
+    "communities": "Communities",
+    "nodes": "Knopen",
+    "edges": "Verbindingen"
+  },
+  "filter": {
+    "all": "Alle",
+    "named": "Benoemd",
+    "unnamed": "Naamloos"
+  }
+}

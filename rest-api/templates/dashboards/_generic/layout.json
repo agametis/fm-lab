@@ -6,13 +6,13 @@
     "children": [
       {
         "type": "Card",
-        "props": { "span": 12, "variant": "header" },
+        "props": { "span": 12, "variant": "hero" },
         "data": { "dataset": "query_meta" },
         "children": [
           {
             "type": "Markdown",
             "props": {
-              "content": "**{{title}}** — {{description | default:—}}"
+              "content": "# {{title}}\n\n{{description | default:}}"
             }
           }
         ]

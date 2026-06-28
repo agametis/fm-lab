@@ -1,15 +1,16 @@
 {
   "id": "xml_convert",
   "version": "1.0.0",
-  "title": "XML-Konvertierung",
-  "description": "Importiert XML-Exporte aus dem xml/-Verzeichnis in die DuckDB-Datenbank.",
+  "title": "XML import",
+  "description": "Imports XML exports from the xml/ directory into the DuckDB database.",
   "author": "fm-lab core",
   "icon": "database",
   "tags": ["system"],
   "entry": "layout.json",
   "datasets": [
-    { "id": "directory_status", "source": "builtin:xml_directory_status" },
-    { "id": "last_run",         "source": "builtin:xml_last_run" }
+    { "id": "directory_status",   "source": "builtin:xml_directory_status" },
+    { "id": "last_run",           "source": "builtin:xml_last_run" },
+    { "id": "xml_semantic_names", "source": "builtin:xml_semantic_names" }
   ],
   "params": [
     { "name": "autostart", "type": "string", "required": false,

@@ -2,7 +2,6 @@ const Joi = require('joi');
 
 /**
  * Joi-Schemas für Dashboard-Bundles.
- * PRD: project/prd_dashboards.md §3.1 (manifest), §3.2 (layout).
  */
 
 // Dataset-Spec im Manifest
@@ -46,6 +45,8 @@ const manifestSchema = Joi.object({
 // Layout: Baumstruktur mit type/props/children/data — rekursiv
 const layoutNodeSchema = Joi.object({
   type: Joi.string().min(1).required(),
+  // Stable anchor for server-side i18n overrides (see dashboard-i18n.service).
+  id: Joi.string().pattern(/^[a-zA-Z0-9_-]+$/).optional(),
   props: Joi.object().unknown(true).default({}),
   data: Joi.object({
     dataset: Joi.string().optional(),

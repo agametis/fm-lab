@@ -34,6 +34,10 @@
 #   preprocess_file()           (Byte-Clean + Zähler) in convert_fm_xml.sh
 
 BEGIN {
+    # chr(127)-Sentinel-Default: ohne -v ws_sentinel (z. B. Identitaets-Unit-Tests) = ON.
+    # WICHTIG: ein uninitialisiertes awk-Skalar vergleicht sich GLEICH zu 0 → ohne dieses
+    # BEGIN-Default wuerde `ws_sentinel != 0` faelschlich den Sentinel deaktivieren.
+    if (ws_sentinel == "") ws_sentinel = 1; else ws_sentinel = ws_sentinel + 0
     # ---- Splitter-Init (identisch zu split_fm_xml.awk) ----
     if (mode == "") mode = "coarse"
     if (separate == "") {
@@ -202,7 +206,11 @@ function clean_line(   before) {
     if (NR == 1) sub(/^\357\273\277/, "", line)   # (d) UTF-8-BOM (EF BB BF) strippen
     before = length(line)
     pre_del += gsub(/\177/, "", line)              # (c2) DEL-Guard: 0x7F entfernen
-    pre_cr  += gsub(/\r/, "\177", line)            # (b)  CR (0x0D) → DEL (0x7F)
+    # (b) CR (0x0D) → DEL (0x7F) chr(127)-Sentinel — nur wenn ws_sentinel != 0.
+    # ws_sentinel=0 (webbed bewahrt Whitespace nativ, per Probe): CR bleibt erhalten,
+    # ueberlebt den C0-Strip (0x0D nicht im Set) und wird vom Parser zu LF normalisiert;
+    # die SQL ws_restore wird dann zum No-op. Default (kein -v) = 1 (Sentinel ON).
+    if (ws_sentinel != 0) pre_cr += gsub(/\r/, "\177", line)
     gsub(/[\000\001-\010\013\014\016-\037]/, "", line)  # (c) XML-1.0-invalide C0-Bytes
     in_size  += before
     out_size += length(line)

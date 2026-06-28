@@ -19,6 +19,7 @@ import { DocsetInstallControl } from './DocsetInstallControl';
 import { XmlConvertControl } from './XmlConvertControl';
 import { XmlConvertLog } from './XmlConvertLog';
 import { XmlEmptyStateCard } from './XmlEmptyStateCard';
+import { SemanticNamesStatus } from './SemanticNamesStatus';
 import { registerInlineControl } from './inlineControls';
 
 const registry = new Map<string, PrimitiveComponent>();
@@ -50,6 +51,7 @@ registerPrimitive('DocsInstallErrorBezel', DocsInstallErrorBezel);
 registerPrimitive('XmlConvertControl', XmlConvertControl);
 registerPrimitive('XmlConvertLog', XmlConvertLog);
 registerPrimitive('XmlEmptyStateCard', XmlEmptyStateCard);
+registerPrimitive('SemanticNamesStatus', SemanticNamesStatus);
 
 // Inline-Controls (rendered inside List rows when rowTemplate.inlineControl is set)
 registerInlineControl('docsInstall', DocsetInstallControl);

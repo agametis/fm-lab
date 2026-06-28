@@ -4,19 +4,17 @@
     "description": "Listet Scripts mit If/Else-Blöcken, deren If-Zweig deutlich länger ist als der Else-Zweig. Kandidaten für ein Refactoring zu Early-Returns oder Guard Clauses."
   },
   "layout": {
-    "root.children[0].props.title": "Übersicht If/Else-Asymmetrie",
-    "root.children[0].children[0].props.items[0].label": "Asymmetrische Blöcke",
-    "root.children[0].children[0].props.items[1].label": "Betroffene Scripts",
-    "root.children[0].children[0].props.items[2].label": "Betroffene Dateien",
-    "root.children[0].children[0].props.items[3].label": "Längster If-Zweig",
-
-    "root.children[1].props.title": "Scripts mit langem If / kurzem Else",
-    "root.children[1].children[0].props.columns[0].label": "Datei",
-    "root.children[1].children[0].props.columns[1].label": "Script-Name",
-    "root.children[1].children[0].props.columns[2].label": "If-Position",
-    "root.children[1].children[0].props.columns[3].label": "If-Schritte",
-    "root.children[1].children[0].props.columns[4].label": "Else-Schritte",
-    "root.children[1].children[0].props.columns[5].label": "Score",
-    "root.children[1].children[0].props.empty.message": "Keine asymmetrischen If/Else-Blöcke gefunden."
+    "if_else_kpi_kpistrip.props.items[0].label": "Asymmetrische Blöcke",
+    "if_else_kpi_kpistrip.props.items[1].label": "Betroffene Scripts",
+    "if_else_kpi_kpistrip.props.items[2].label": "Betroffene Dateien",
+    "if_else_kpi_kpistrip.props.items[3].label": "Längster If-Zweig",
+    "if_else_blocks.props.title": "Scripts mit langem If / kurzem Else",
+    "if_else_blocks_table.props.columns[0].label": "Datei",
+    "if_else_blocks_table.props.columns[1].label": "Script-Name",
+    "if_else_blocks_table.props.columns[2].label": "If-Position",
+    "if_else_blocks_table.props.columns[3].label": "If-Schritte",
+    "if_else_blocks_table.props.columns[4].label": "Else-Schritte",
+    "if_else_blocks_table.props.columns[5].label": "Score",
+    "if_else_blocks_table.props.empty.message": "Keine asymmetrischen If/Else-Blöcke gefunden."
   }
 }

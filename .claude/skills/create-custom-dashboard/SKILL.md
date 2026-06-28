@@ -1,5 +1,6 @@
 ---
 name: create-custom-dashboard
+version: 0.8.5
 description: Interactively creates a new custom dashboard bundle for the fm-lab dashboard system. Asks the user about the desired dashboard content, drafts SQL queries, shows sample results, proposes a presentation format, asks for a name, and generates the full bundle directory under `rest-api/templates/dashboards-custom/<id>/`. Triggers (English): "/create-custom-dashboard", "create a new dashboard for X", "new dashboard", "build a dashboard that shows X". Triggers (German): "erstelle ein neues Dashboard für X", "neues Dashboard", "baue ein Dashboard das X zeigt".
 ---
 
@@ -58,6 +59,14 @@ Based on the goal, draft a SQL query that returns the relevant data from `db/fm_
 - Parameter with default: `CAST(COALESCE(getvariable('limit'), '25') AS INTEGER)` or `(getvariable('file') IS NULL OR File_Name = getvariable('file'))`
 - Prefer CTEs for intermediate results
 - Orient yourself on `sql/sample_queries.sql` and the existing bundle SQL files
+
+> **⚠️ Multi-file JOIN rule (critical).** The database holds **many FileMaker files** (one solution = dozens of files). Internal FileMaker IDs like `L_ID`, `Script_ID`, `BT_ID`, `Layout_ID`, `Table_ID` are **only unique within a single file**, not across the database. JOINing on a bare ID fans out across every file that happens to reuse the same ID and **silently inflates counts** (e.g. `LayoutObjects.Layout_ID = Layouts.L_ID` summed the objects of 50+ files into one row).
+>
+> Always join on either:
+> - the **global UUID** (`L_UUID`, `Script_UUID`, `Object_UUID`, …) — preferred when available, **or**
+> - the **ID *plus* `File_Name`** (`lo.Layout_ID = l.L_ID AND lo.File_Name = l.File_Name`) when no shared UUID column exists.
+>
+> The same rule applies inside aggregating subqueries: `GROUP BY Script_ID` across all files double-counts — `GROUP BY Script_UUID` instead. When validating a new query, sanity-check that the top counts look plausible; identical or suspiciously round top values are the classic fan-out symptom.
 
 #### Execute the query (LIMIT 10 for preview)
 
@@ -229,7 +238,15 @@ Always `Grid(columns:12)` as root. Wrap every content unit in a `Card`.
     "children": [
       {
         "type": "Card",
-        "props": { "span": 12, "title": "<card title>" },
+        "props": { "span": 12, "variant": "hero" },
+        "data": { "dataset": "<overview_dataset>" },
+        "children": [
+          { "type": "KPIStrip", "props": { ... } }
+        ]
+      },
+      {
+        "type": "Card",
+        "props": { "span": 12, "title": "<section title>" },
         "data": { "dataset": "<dataset_name>" },
         "children": [
           { "type": "<Primitive>", "props": { ... } }
@@ -239,6 +256,26 @@ Always `Grid(columns:12)` as root. Wrap every content unit in a `Card`.
   }
 }
 ```
+
+> **Title convention — single source of truth.** The **entry title comes from
+> `manifest.title`**: `DashboardHost` renders it as a framed title box (together
+> with the manifest `description`) above the grid. Therefore:
+>
+> - **The first card carries NO `title`.** Leave it off (`{ "span": 12 }`, or
+>   `+ "variant": "hero"`) so the KPI/overview sits directly under the title box.
+>   Never write `"title": "<entry name>"` or a filler `"Overview"` there — that is
+>   the duplicate/redundant second heading we want to avoid.
+> - **Only follow-up cards get a `title`**, and only a *genuine, distinct section*
+>   label (e.g. `"Findings"`, `"API families"`, `"URL details"`). If a card title
+>   merely repeats the dashboard name or says "Overview", drop it.
+> - `variant: "hero"` is **purely cosmetic** (a gradient background — see
+>   [Card.tsx](../../../apps/web/src/dashboard/primitives/Card.tsx),
+>   [dashboard.css](../../../apps/web/src/dashboard/dashboard.css)). It does **not**
+>   mark a "title card"; use it at most to emphasise the KPI-summary card, never to
+>   host the entry title.
+>
+> Rule of thumb: *"Does this card title repeat the dashboard name or just say
+> 'Overview'? → drop it. Is it a distinct section label? → keep it."*
 
 **Primitive props templates**:
 
@@ -311,8 +348,8 @@ Path: `rest-api/templates/dashboards-custom/<id>/locales/<lang>.json`
     "description": "<description in target language>"
   },
   "layout": {
-    "root.children[0].props.title": "<card title>",
     "root.children[0].children[0].props.items[0].label": "<KPI label>",
+    "root.children[1].props.title": "<section card title>",
     "root.children[1].children[0].props.columns[0].label": "<column label>"
   }
 }

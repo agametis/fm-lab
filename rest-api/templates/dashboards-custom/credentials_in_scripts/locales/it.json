@@ -4,17 +4,16 @@
     "description": "Trova passi di script che fanno riferimento a parole chiave legate alle credenziali (password, secret, apikey, token, …) in tutti i file. I valori effettivi vengono mascherati con ***** in modo che il dashboard non riveli mai segreti in chiaro."
   },
   "layout": {
-    "root.children[0].props.title": "Panoramica credenziali",
-    "root.children[0].children[0].props.items[0].label": "Trovati",
-    "root.children[0].children[0].props.items[1].label": "Script",
-    "root.children[0].children[0].props.items[2].label": "File",
-    "root.children[1].props.title": "Risultati",
-    "root.children[1].children[0].props.columns[0].label": "File",
-    "root.children[1].children[0].props.columns[1].label": "Script",
-    "root.children[1].children[0].props.columns[2].label": "Passo",
-    "root.children[1].children[0].props.columns[3].label": "Tipo passo",
-    "root.children[1].children[0].props.columns[4].label": "Parola chiave",
-    "root.children[1].children[0].props.columns[5].label": "Frammento (mascherato)",
-    "root.children[1].children[0].props.empty.message": "Nessuna parola chiave di credenziali trovata nei passi degli script."
+    "credentials_kpi_kpistrip.props.items[0].label": "Trovati",
+    "credentials_kpi_kpistrip.props.items[1].label": "Script",
+    "credentials_kpi_kpistrip.props.items[2].label": "File",
+    "credentials_findings.props.title": "Risultati",
+    "credentials_findings_table.props.columns[0].label": "File",
+    "credentials_findings_table.props.columns[1].label": "Script",
+    "credentials_findings_table.props.columns[2].label": "Passo",
+    "credentials_findings_table.props.columns[3].label": "Tipo passo",
+    "credentials_findings_table.props.columns[4].label": "Parola chiave",
+    "credentials_findings_table.props.columns[5].label": "Frammento (mascherato)",
+    "credentials_findings_table.props.empty.message": "Nessuna parola chiave di credenziali trovata nei passi degli script."
   }
 }

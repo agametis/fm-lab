@@ -6,6 +6,19 @@
     "ariaLabel": "Fil d’Ariane",
     "linkAria": "Naviguer vers {{label}}"
   },
+  "crumbs": {
+    "home": "Accueil",
+    "search": "Recherche",
+    "hierarchy": "Hiérarchie",
+    "graph": "Graphe",
+    "relationships": "Relations",
+    "dashboards": "Tableaux de bord",
+    "customQueries": "Requêtes personnalisées",
+    "docs": "Documentation",
+    "xmlImport": "Import XML",
+    "cluster": "Clusters",
+    "settings": "Paramètres"
+  },
   "errors": {
     "noDashboardId": "Aucun identifiant de tableau de bord fourni.",
     "noQueryName": "Aucun nom de requête fourni."
@@ -57,11 +70,11 @@
     "tabsAria": "Vues de l’objet",
     "noName": "(sans nom)",
     "tabs": {
-      "detail":     "Détails",
+      "detail": "Détails",
       "references": "Références",
-      "graph":      "Graphe",
-      "versions":   "Versions",
-      "notes":      "Notes"
+      "graph": "Graphe",
+      "versions": "Versions",
+      "notes": "Notes"
     }
   },
   "pseudoToolbar": {

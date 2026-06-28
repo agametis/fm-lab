@@ -1,0 +1,59 @@
+/* Geteilte Community-Annotations-Form (Atlas-Panel + Cluster-Liste).
+ * Klassen sind kontextneutral (`caf-*`), die Optik spiegelt die bisherigen
+ * `atlas-panel-*`-Felder/Buttons 1:1 → keine visuelle Atlas-Regression. */
+
+.caf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.7rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+.caf-field input,
+.caf-field textarea {
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+  font: inherit;
+  resize: vertical;
+}
+
+.caf-error {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  color: var(--color-error-fg);
+}
+
+.caf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+/* Explizite Textfarbe: ein <button> ohne eigenes color: erbt sonst die globale
+ * weiße button-Farbe (Light-Mode-Falle). */
+.caf-btn {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.caf-btn:hover:not(:disabled) {
+  background: var(--color-hover-bg);
+}
+.caf-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.caf-btn--primary {
+  background: var(--color-accent, #4fc3f7);
+  border-color: var(--color-accent, #4fc3f7);
+  color: #0a0a0a;
+}

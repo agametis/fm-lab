@@ -2,24 +2,35 @@
   "schemaVersion": 1,
   "root": {
     "type": "Grid",
-    "props": { "columns": 12, "gap": 16 },
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
     "children": [
       {
         "type": "Card",
-        "props": { "span": 12, "title": "Dashboards", "subtitle": "Click a tile to open the selected dashboard." },
-        "data": { "dataset": "dashboards" },
+        "id": "dashboards",
+        "props": {
+          "span": 12
+        },
+        "data": {
+          "dataset": "dashboards"
+        },
         "children": [
           {
             "type": "TileGrid",
             "props": {
+              "viewToggle": true,
               "minTileWidth": 260,
               "tile": {
-                "title":    "{{title}}",
+                "title": "{{title}}",
                 "subtitle": "{{description}}",
-                "icon":     "{{icon}}",
+                "icon": "{{icon}}",
                 "onClick": {
                   "action": "openDashboard",
-                  "args":   { "id": "{{id}}" }
+                  "args": {
+                    "id": "{{id}}"
+                  }
                 }
               }
             }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  webbed_cr_probe.xml — Capability-Probe-Fixture fuer die SAX-CR-Paritaet
+  (teaguesterling/duckdb_webbed#109, PR #111).
+
+  Beobachtbares Verhalten: ein in Text/Attribut eingebetteter Carriage Return
+  (Quelle: das Entity &#13;) serialisiert reader-modus-abhaengig:
+    - DOM (read_xml ohne streaming): bleibt als Entity `&#13;` erhalten (treu),
+      xml_extract_text dekodiert ihn zu einem echten CR (chr 13).
+    - SAX (read_xml streaming=true ueber > maximum_file_size): #109-ungefixtes
+      webbed wandelt `&#13;` → Space (in Attributwerten) bzw. CR-Byte (in Element-
+      Text) → DOM != SAX, stille Datenabweichung in CR-haltigem Text.
+
+  Der Version-Check (tools/katana-xml/version_check.json, Capability sax_cr_parity)
+  liest diese Fixture mit streaming=true (maximum_file_size klein → SAX erzwungen)
+  und prueft, ob der CR DOM-treu (als &#13; bzw. CR) erhalten bleibt. Erst ein
+  webbed MIT #109 (PR #111) liefert DOM==SAX.
+
+  Bewusst minimal: genau ein Step mit einem Parameter[@type='Text']/Text/@value,
+  dessen @value einen &#13; traegt (= dieselbe Stelle, an der der reale
+  Inserted_Text-Befund die #109-Differenz zeigte).
+-->
+<FMSaveAsXML>
+  <CRProbe>
+    <Step>
+      <Parameter type="Text"><Text value="A&#13;B"/></Parameter>
+    </Step>
+  </CRProbe>
+</FMSaveAsXML>

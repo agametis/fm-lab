@@ -1,14 +1,16 @@
 # fm-lab — FileMaker Code Analyzing Foundation
 
-A **DuckDB**-based tool for analyzing **FileMaker SaXML exports**. Converts the XML structure of a FileMaker solution into a queryable DuckDB database — covering all object types and their dependencies — for fast cross-reference analysis.
+A **DuckDB**-based tool for analyzing **FileMaker SaXML exports**. It converts the XML structure of a FileMaker solution into a queryable DuckDB database — covering all object types and their dependencies — and provides a fast, in-memory digital twin for deep, scalable cross-reference analysis, documentation, and AI-assisted development.
 
 ![FM-Lab](Banner.jpg)
 
 ## Highlights
 
-> "Using **agentic analytics** with FM-Lab feels less like searching through metadata and more like asking a senior developer who already understands the structure of the solution in every little detail."
+> “Using **agentic analytics** with FM-Lab feels less like searching through metadata and more like asking a senior developer who already understands the structure of the solution in every little detail.”
 
-> "DuckDB is a key enabler here. Its role in this architecture is hard to overstate. It turns code analysis from digging through static files into querying a live map of the solution in memory. **This RAM-accelerated, in-process architecture** removes the drag of disk-heavy workflows and makes **deep catalog and graph analysis** practical."
+> “DuckDB is a key enabler here. Its role in this architecture is hard to overstate. It turns code analysis from digging through static files into querying a live map of the solution in memory. **This RAM-accelerated, in-process architecture** removes the drag of disk-heavy workflows and makes **deep catalog and graph analysis** practical.”
+
+> “The Katana-XML engine delivers **a major leap in conversion speed**, making large FileMaker catalogs practical to analyze interactively in fast iteration cycles.”
 
 ## Prologue
 
@@ -174,7 +176,7 @@ The project has grown along a clear arc — from a solid foundation toward an in
 - **v0.7.2** · _Internationalization_ — the whole stack opens up to non-English developers, with all technical identifiers kept intact.
 - **v0.7.3 – v0.7.7** · _Depth & reach_ — deeper analysis, integrated documentation sets, and the XML import moving into the browser.
 - **v0.8.0 – v0.8.2** · _Katana XML engine_ — optimized and powerful XML ingestion.
-- **v0.8.3** · _Graph-based analysis_ — community detection, semantic naming, and an interactive Graph Explorer.
+- **v0.8.3 – v0.8.5** · _Graph-based analysis_ — community detection, semantic naming, and an interactive Graph Explorer.
 
 - More details in [`CHANGELOG.md`](CHANGELOG.md) — release history
 
@@ -182,12 +184,15 @@ The core architecture is in place and ready for real-world use. Many more featur
 
 ## Roadmap
 
+- Pre-configured installer with granular framework update options
 - Windows support
-- Snapshots (for tracking changes over time)
-- Multi-Solution support (for analyzing multiple files from different solutions together)
-- Deep integration with other tools for optimal support of different developer workflows (VS Code, Raycast, Obsidian, etc.)
-- Support for other AI agents besides Claude Code (Agents.md, Skills)
-- AI-driven code generation and refactoring tools based on the object catalog and integrated documentation
+- Granular deployment options for separate ingestion, API, and frontend services
+- Multi-user mode
+- Multi-solution support
+- Snapshots for tracking changes over time
+- Deeper integration with developer tools and workflows, including VS Code, Raycast, Obsidian, and others
+- Support for additional AI agents and agent configuration formats
+- AI-assisted code generation, refactoring, and documentation based on the object catalog
 
 ## Vision
 

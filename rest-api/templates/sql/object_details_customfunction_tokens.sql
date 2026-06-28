@@ -39,9 +39,22 @@ SELECT
   cf.Calculation_Code AS plain_text,
   d.Chunk_Index AS chunk_index,
   d.Chunk_Type AS chunk_type,
-  d.Chunk_Content AS chunk_content
+  d.Chunk_Content AS chunk_content,
+  cfh.Object_UUID AS chunk_ref_uuid
 FROM cf
 LEFT JOIN calc_uuid ON TRUE
 LEFT JOIN DDR_Calculations d
   ON d.Calc_UUID = calc_uuid.Calc_UUID
+-- CustomFunctionRef-Chunks tragen anders als FieldRef nur den CF-Namen, keine
+-- UUID. Für Cross-Navigation (klickbarer Link) UND Cross-Reference-Highlight
+-- lösen wir den Namen file-lokal über ObjectHomes auf (CF-Namen sind je Datei
+-- eindeutig — analog object_references_script.sql). Inner-Name wird aus dem
+-- Chunk-Wrapper extrahiert und die Standard-XML-Entities werden dekodiert.
+LEFT JOIN ObjectHomes cfh
+  ON d.Chunk_Type    = 'CustomFunctionRef'
+ AND cfh.Object_Type = 'CustomFunction'
+ AND cfh.Home_File   = cf.File_Name
+ AND cfh.Object_Name = replace(replace(replace(replace(replace(
+       regexp_extract(d.Chunk_Content, '<Chunk[^>]*>(.*)</Chunk>', 1),
+       '&lt;', '<'), '&gt;', '>'), '&quot;', '"'), '&apos;', ''''), '&amp;', '&')
 ORDER BY d.Chunk_Index NULLS FIRST;

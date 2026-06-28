@@ -12,6 +12,11 @@ export type ObjectType = components['schemas']['ObjectType'];
  * Container_UUID/Container_Type sind für Sub-Knoten (LayoutObject, ScriptStep)
  * gesetzt — diese öffnen sich beim Klick im Container-View mit dem Sub-Knoten
  * als ref-Highlight. Für eigenständige Objekte sind beide Felder null.
+ *
+ * `navigable` ist false für step-eigene Referenzen (ScriptStep-Detail), deren
+ * Ziel datei-extern nicht im importierten Datenbestand aufgelöst werden konnte —
+ * sie werden als nicht-klickbarer Text gezeigt statt verschluckt. Fehlt das Feld
+ * (alle Graph-basierten Referenzen), gilt das Ziel als navigierbar.
  */
 export interface ReferenceItem {
   direction: 'parent' | 'child';
@@ -23,6 +28,19 @@ export interface ReferenceItem {
   Is_Cross_File: boolean;
   Container_UUID?: string | null;
   Container_Type?: string | null;
+  navigable?: boolean;
+  /**
+   * Nur Pseudo-Aggregat-Typen (ScriptStepType): Anzahl der Schritte dieses Typs,
+   * die das Ziel referenzieren (bzw. Vorkommen des Schritts im Script). Dient als
+   * Häufigkeits-Hinweis in der Referenzliste.
+   */
+  Call_Count?: number;
+  /**
+   * Nur Pseudo-Aggregat-Typen mit gesetztem `?ref=<origin>`: true, wenn diese
+   * Referenz aus dem Herkunfts-Objekt heraus erreichbar ist (z.B. das Feld, das
+   * der Schritt im Herkunfts-Script schreibt). Die UI pinnt/markiert solche Zeilen.
+   */
+  Origin_Hit?: boolean;
 }
 
 /**

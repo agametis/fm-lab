@@ -1,5 +1,6 @@
 import React from 'react';
 import { ObjectDetail } from './ObjectDetail';
+import type { LayoutCanvasHandle } from './LayoutCanvas';
 
 interface TypeDetailProps {
   objectType: string;
@@ -25,6 +26,11 @@ interface TypeDetailProps {
    * für die RefOriginPill durchgereicht (siehe ObjectDetail).
    */
   onLiveMatchCount?: (count: number) => void;
+  /**
+   * Handle des eingebetteten LayoutCanvas (nur für objectType='Layout' belegt).
+   * Wird von der DetailView in den ESC-Stack verdrahtet (Suche/Filter räumen).
+   */
+  layoutCanvasRef?: React.Ref<LayoutCanvasHandle>;
 }
 
 /**
@@ -39,6 +45,7 @@ export const TypeDetail: React.FC<TypeDetailProps> = ({
   highlightText,
   onClearRef,
   onLiveMatchCount,
+  layoutCanvasRef,
 }) => {
   return (
     <ObjectDetail
@@ -48,6 +55,7 @@ export const TypeDetail: React.FC<TypeDetailProps> = ({
       highlightText={highlightText}
       onClearRef={onClearRef}
       onLiveMatchCount={onLiveMatchCount}
+      layoutCanvasRef={layoutCanvasRef}
     />
   );
 };

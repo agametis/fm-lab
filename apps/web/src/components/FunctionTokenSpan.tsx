@@ -9,6 +9,12 @@ interface FunctionTokenSpanProps {
   token: CalcToken;
   /** Optional: bereits normalisierter Anzeige-Text (CR → LF). */
   text?: string;
+  /**
+   * Cross-Reference Highlight: setzt `fm-ref--highlighted`. Wird von
+   * CalcTokenSpan durchgereicht, da function-Tokens (anders als field/CF/…)
+   * nicht inline dort, sondern in dieser eigenen Komponente gerendert werden.
+   */
+  highlighted?: boolean;
 }
 
 /**
@@ -22,7 +28,7 @@ interface FunctionTokenSpanProps {
  *   - Token nicht enriched (Reference-DB nicht attached o.ä.) → Browser-
  *     Tooltip als Fallback mit dem Token-Content selbst.
  */
-export const FunctionTokenSpan: React.FC<FunctionTokenSpanProps> = ({ token, text }) => {
+export const FunctionTokenSpan: React.FC<FunctionTokenSpanProps> = ({ token, text, highlighted }) => {
   const { t } = useTranslation(['detail']);
   const navigate = useNavigate();
   const { uuid: currentUuid } = useParams<{ uuid: string }>();
@@ -69,7 +75,7 @@ export const FunctionTokenSpan: React.FC<FunctionTokenSpanProps> = ({ token, tex
 
   return (
     <span
-      className={`fm-ref fm-ref--function${navPath ? ' fm-ref-link' : ''}`}
+      className={`fm-ref fm-ref--function${navPath ? ' fm-ref-link' : ''}${highlighted ? ' fm-ref--highlighted' : ''}`}
       data-ref-type="function"
       // Browser-Tooltip nur als Fallback, wenn keine Reference-Daten vorliegen.
       // Bei enriched-Token zeigt der eigene Popover die vollständigen Infos.

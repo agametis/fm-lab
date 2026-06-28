@@ -1,0 +1,97 @@
+{
+  "title": "Graph-Atlas",
+  "subtitle": "Top-Down-Einstieg — Kachel anklicken zum Eintauchen, ein Blatt öffnet es im Graph Explorer.",
+  "headerButton": "Atlas",
+  "headerButton_hint": "Graph-Atlas öffnen — die Top-Down-Übersicht der ganzen Lösung.",
+  "segmentation": "Segmentierung",
+  "segment": {
+    "community": "Community",
+    "file": "Datei",
+    "hubs": "Top-Knoten",
+    "type": "Typ"
+  },
+  "breadcrumb": {
+    "root": "Atlas"
+  },
+  "representation": "Darstellung",
+  "view": {
+    "composition": "Komposition",
+    "topology": "Topologie",
+    "composition_hint": "Treemap — wie groß ist was (Proportion).",
+    "topology_hint": "Meta-Graph — wie hängen Segmente zusammen (nur Community/Datei)."
+  },
+  "weight": {
+    "label": "Gewichtung",
+    "domain": "Domäne",
+    "logical": "Roh",
+    "domain_hint": "Domänen-Grad (ClusterEdges) — Builtins und god-nodes bereits entfernt.",
+    "logical_hint": "Roh-logischer Grad — inklusive Builtin-Funktionen."
+  },
+  "search": {
+    "placeholder": "Sichtbare Kacheln filtern…"
+  },
+  "topN": {
+    "label": "Top-N",
+    "hint": "Wie viele Top-Segmente/Blätter gezeigt werden, bevor der Rest zu einer Kachel gefaltet wird.",
+    "auto": "Zurück zum automatischen (ebenenabhängigen) Cutoff",
+    "autoTag": "auto"
+  },
+  "types": {
+    "label": "Objekttypen",
+    "hide": "{{type}} ausblenden",
+    "show": "{{type}} einblenden",
+    "reset": "Zurücksetzen"
+  },
+  "rest": {
+    "collapse": "Auf Top-Einträge einklappen",
+    "hide": "ausblenden"
+  },
+  "status": {
+    "semanticNames": "Semantische Namen: {{value}}",
+    "semanticNamesNone": "Semantische Namen: --",
+    "count": "Anzahl: {{semantic}} / {{user}} benutzer-definiert",
+    "clustersMissing": "Noch nicht geclustert — führe „fm-graph-cluster“ aus, um Community & Topologie zu aktivieren."
+  },
+  "loading": "Lädt…",
+  "empty": "Hier gibt es nichts anzuzeigen.",
+  "error": "Atlas konnte nicht geladen werden: {{message}}",
+  "truncated": "Es werden die wichtigsten Einträge gezeigt — der Rest steckt in der grauen Kachel.",
+  "hint": {
+    "leafClick": "Tipp: Klicke eine Blatt-Kachel, um das Objekt im Graph Explorer zu öffnen.",
+    "metaClick": "Tipp: Klicke eine Super-Node, um ihr schwerstes Mitglied im Graph Explorer zu öffnen."
+  },
+  "hidden": {
+    "mode": "Ignorierte",
+    "dim": "dimmen",
+    "hide": "ausblenden",
+    "dim_hint": "Ausgeblendete Knoten bleiben sichtbar (gedimmt) und damit rücknehmbar.",
+    "hide_hint": "Ausgeblendete Knoten werden entfernt — Rücknahme nur über die Liste.",
+    "manage": "verwalten…",
+    "manage_hint": "Liste aller ausgeblendeten Knoten — hier wieder einblenden.",
+    "empty": "Keine Knoten ausgeblendet.",
+    "restore": "Wieder einblenden"
+  },
+  "panel": {
+    "infoButton": "Optionen",
+    "close": "Schließen",
+    "type": "Typ",
+    "save": "Speichern",
+    "saving": "Speichert…",
+    "openExplorer": "Graph",
+    "openDetail": "Details",
+    "hideNode": "Ignorieren",
+    "unhideNode": "Nicht ignorieren",
+    "hiddenBadge": "ignoriert",
+    "community": {
+      "title": "Community",
+      "nameLabel": "Eigener Name",
+      "namePlaceholder": "z. B. „Abrechnung & PDF“",
+      "notesLabel": "Notiz",
+      "notesPlaceholder": "Freitext für diese Community…"
+    },
+    "node": {
+      "title": "Knoten"
+    },
+    "cancel": "Abbrechen"
+  }
+}

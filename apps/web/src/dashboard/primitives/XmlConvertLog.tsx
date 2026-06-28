@@ -116,6 +116,9 @@ export function XmlConvertLog({}: PrimitiveProps) {
     errorCount: 0,
   });
   const logRef = useRef<HTMLDivElement | null>(null);
+  // Block 2 als Disclosure: erzwungen offen während eines Laufs, sonst
+  // nach User-Toggle. Nach Lauf-Ende/Wiedereintritt default zugeklappt.
+  const [userToggled, setUserToggled] = useState(false);
 
   // Initial-Load: persistierter Run-Record.
   useEffect(() => {
@@ -265,9 +268,17 @@ export function XmlConvertLog({}: PrimitiveProps) {
     statusClass += ' xml-convert-status--idle';
   }
 
+  // open = running (erzwungen) || userToggled. Die Summary-Statuszeile bleibt
+  // IMMER sichtbar; nur der Log-Body klappt auf/zu.
+  const open = status === 'running' || userToggled;
+
   return (
-    <div className="xml-convert-log-wrap">
-      <div className={statusClass}>{statusText}</div>
+    <details
+      className="xml-convert-log-wrap"
+      open={open}
+      onToggle={(e) => setUserToggled((e.currentTarget as HTMLDetailsElement).open)}
+    >
+      <summary className={`${statusClass} xml-convert-log-summary`}>{statusText}</summary>
       <div ref={logRef} className="xml-convert-log" role="log" aria-live="polite">
         {lines.length === 0 ? (
           <div className="xml-convert-log__empty">
@@ -283,6 +294,6 @@ export function XmlConvertLog({}: PrimitiveProps) {
           ))
         )}
       </div>
-    </div>
+    </details>
   );
 }

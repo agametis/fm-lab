@@ -1,0 +1,119 @@
+{
+  "manifest_schema": "1.0",
+  "version": "0.8.5",
+  "generated_at": "2026-06-28T17:40:42.548Z",
+  "source_commit": "7022e79",
+  "components": {
+    "rest_api": {
+      "scheme": "A",
+      "version": "0.8.5",
+      "source": "rest-api/package.json",
+      "on_change": "restart_api"
+    },
+    "web": {
+      "scheme": "A",
+      "version": "0.8.5",
+      "source": "apps/web/package.json",
+      "on_change": "rebuild_web"
+    },
+    "claude_md": {
+      "scheme": "A",
+      "version": "0.8.5",
+      "source": "CLAUDE.md",
+      "on_change": "copy_file"
+    },
+    "schema": {
+      "scheme": "B",
+      "version": "1.4.1",
+      "source": "sql/convert-xml/convert_xml_01_extract.sql",
+      "on_change": "force_rebuild_db"
+    },
+    "xml_import": {
+      "scheme": "B",
+      "version": "4.4.2",
+      "source": "tools/convert_fm_xml.sh",
+      "on_change": "reconvert_xml"
+    },
+    "fm_reference": {
+      "scheme": "B",
+      "version": "1.0.0",
+      "filemaker_coverage": "22",
+      "source": "rest-api/db/fm_reference.meta.json",
+      "on_change": "copy_reference_db_reload_api"
+    }
+  },
+  "plugins": [
+    {
+      "name": "fmide",
+      "version": "1.2.0",
+      "on_change": "copy_plugin_restart_api"
+    },
+    {
+      "name": "graphify",
+      "version": "1.0.0",
+      "on_change": "copy_plugin_restart_api"
+    }
+  ],
+  "skills": [
+    {
+      "name": "convert-xml",
+      "version": "0.8.5"
+    },
+    {
+      "name": "test-convert-xml",
+      "version": "0.8.5"
+    },
+    {
+      "name": "install-ooe-fm",
+      "version": "0.8.5"
+    },
+    {
+      "name": "install-fm-xml-export-exploder",
+      "version": "0.8.5"
+    },
+    {
+      "name": "install-claris-docs",
+      "version": "0.8.5"
+    },
+    {
+      "name": "install-mbs-docs",
+      "version": "0.8.5"
+    },
+    {
+      "name": "install-fmide-docs",
+      "version": "0.8.5"
+    },
+    {
+      "name": "filemaker-function-reference",
+      "version": "0.8.5"
+    },
+    {
+      "name": "mbs-function-reference",
+      "version": "0.8.5"
+    },
+    {
+      "name": "fm-summarize",
+      "version": "0.8.5"
+    },
+    {
+      "name": "fm-analyze",
+      "version": "0.8.5"
+    },
+    {
+      "name": "fm-graph-cluster",
+      "version": "0.8.5"
+    },
+    {
+      "name": "create-custom-dashboard",
+      "version": "0.8.5"
+    },
+    {
+      "name": "skill-creator",
+      "version": "0.8.5"
+    }
+  ],
+  "engine_baseline": {
+    "duckdb_min": "1.5.4",
+    "webbed_min": "2.2.1"
+  }
+}

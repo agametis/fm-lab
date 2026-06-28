@@ -2,55 +2,119 @@
   "schemaVersion": 1,
   "root": {
     "type": "Grid",
-    "props": { "columns": 12, "gap": 16 },
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
     "children": [
       {
         "type": "Card",
-        "props": { "span": 12, "title": "Credential exposure overview", "variant": "hero" },
-        "data": { "dataset": "credentials_kpi" },
+        "id": "credentials_kpi",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "credentials_kpi"
+        },
         "children": [
-          { "type": "KPIStrip",
+          {
+            "type": "KPIStrip",
+            "id": "credentials_kpi_kpistrip",
             "props": {
               "items": [
-                { "label": "Hits",    "field": "hit_count",    "format": "number" },
-                { "label": "Scripts", "field": "script_count", "format": "number" },
-                { "label": "Files",   "field": "file_count",   "format": "number" }
+                {
+                  "label": "Hits",
+                  "field": "hit_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Scripts",
+                  "field": "script_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Files",
+                  "field": "file_count",
+                  "format": "number"
+                }
               ]
             }
           }
         ]
       },
-
       {
         "type": "Card",
-        "props": { "span": 12, "title": "Findings" },
-        "data": { "dataset": "credentials_findings" },
+        "id": "credentials_findings",
+        "props": {
+          "span": 12,
+          "title": "Findings"
+        },
+        "data": {
+          "dataset": "credentials_findings"
+        },
         "children": [
-          { "type": "Table",
+          {
+            "type": "Table",
+            "id": "credentials_findings_table",
             "props": {
               "rowKey": "uuid",
               "density": "comfortable",
               "chipFilter": {
                 "field": "step_name",
                 "groups": [
-                  { "label": "If / Else If", "values": ["If", "Else If"] }
+                  {
+                    "label": "If / Else If",
+                    "values": [
+                      "If",
+                      "Else If"
+                    ]
+                  }
                 ]
               },
               "columns": [
-                { "field": "file",       "label": "File" },
-                { "field": "script",     "label": "Script" },
-                { "field": "step_index", "label": "Step",     "align": "right", "format": "number" },
-                { "field": "step_name",  "label": "Step type" },
-                { "field": "keyword",    "label": "Keyword",  "format": "badge" },
-                { "field": "snippet",    "label": "Snippet (masked)" }
+                {
+                  "field": "file",
+                  "label": "File"
+                },
+                {
+                  "field": "script",
+                  "label": "Script"
+                },
+                {
+                  "field": "step_index",
+                  "label": "Step",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "step_name",
+                  "label": "Step type"
+                },
+                {
+                  "field": "keyword",
+                  "label": "Keyword",
+                  "format": "badge"
+                },
+                {
+                  "field": "snippet",
+                  "label": "Snippet (masked)"
+                }
               ],
-              "onRowClick": { "action": "openObject",
-                              "args": {
-                                "uuid": "{{uuid}}",
-                                "type": "Script",
-                                "params": { "sq": "{{keyword}}", "step": "{{step_index}}" }
-                              } },
-              "empty": { "message": "No credential keywords found in any script step." }
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{uuid}}",
+                  "type": "Script",
+                  "params": {
+                    "sq": "{{keyword}}",
+                    "step": "{{step_index}}"
+                  }
+                }
+              },
+              "empty": {
+                "message": "No credential keywords found in any script step."
+              }
             }
           }
         ]

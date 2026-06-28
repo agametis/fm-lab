@@ -21,9 +21,21 @@ const environment = require('../config/environment');
  *     }
  *   }
  *
- * Keys in `manifest` and `layout` are JSON paths into the corresponding
- * document. Missing keys or a missing locale file leave the English
- * originals untouched.
+ * Layout override keys come in two forms (both supported):
+ *
+ *   1. ID-form (preferred)   "<node-id>.props.label"
+ *      The node carries a stable `id` in `layout.json`; the part after the
+ *      first dot is resolved relative to that node. Insertion/reordering of
+ *      sibling nodes does NOT break the mapping.
+ *
+ *   2. Legacy path-form      "root.children[4].props.label"
+ *      Absolute, positional JSON path from the document root. Kept for
+ *      backward compatibility; brittle against structural shifts.
+ *
+ * Manifest override keys are flat top-level keys (title, description, …).
+ * Missing keys or a missing locale file leave the English originals
+ * untouched. In dev/CI, set `STRICT_I18N=1` to turn an unresolvable
+ * override into a hard error instead of a silent skip.
  *
  * The resolver is cached per `(dashboard_id, lang)`. `clearCache()` is
  * called from `/api/admin/reload` (after a fresh DB sync from convert-xml).
@@ -83,12 +95,61 @@ function resolvePath(root, expression) {
   return { container: cursor, key: tokens[tokens.length - 1] };
 }
 
+/**
+ * Walks the layout document and collects every node that carries a stable
+ * string `id`, returning a `Map<id, node>`. Only objects that are actual
+ * layout nodes (i.e. also have a string `type`) are indexed — this avoids
+ * picking up unrelated `id` keys nested in props (e.g. `onClick.args.id`).
+ */
+function buildIdIndex(value, index = new Map()) {
+  if (Array.isArray(value)) {
+    for (const item of value) buildIdIndex(item, index);
+  } else if (value && typeof value === 'object') {
+    if (typeof value.id === 'string' && typeof value.type === 'string') {
+      if (index.has(value.id)) {
+        console.warn(`[dashboard-i18n] duplicate node id "${value.id}" — later occurrence wins`);
+      }
+      index.set(value.id, value);
+    }
+    for (const key of Object.keys(value)) {
+      buildIdIndex(value[key], index);
+    }
+  }
+  return index;
+}
+
+/**
+ * Resolves a single override key (either ID-form or legacy path-form) to a
+ * `{ container, key }` assignment slot. Returns `null` if it does not resolve.
+ *
+ * @param {object} layout   the layout document root
+ * @param {Map}    idIndex  result of buildIdIndex(layout)
+ * @param {string} key      override key
+ */
+function resolveOverrideKey(layout, idIndex, key) {
+  const firstDot = key.indexOf('.');
+  const head = firstDot === -1 ? key : key.slice(0, firstDot);
+  // Legacy: absolute JSON path from the document root.
+  if (head === 'root') {
+    return resolvePath(layout, key);
+  }
+  // ID-form: "<node-id>.<relative.path>"
+  const node = idIndex.get(head);
+  if (!node || firstDot === -1) return null;
+  return resolvePath(node, key.slice(firstDot + 1));
+}
+
 function applyOverrides(target, overrides) {
   if (!overrides || typeof overrides !== 'object') return;
-  for (const [pathExpression, value] of Object.entries(overrides)) {
-    const slot = resolvePath(target, pathExpression);
+  const idIndex = buildIdIndex(target);
+  for (const [key, value] of Object.entries(overrides)) {
+    const slot = resolveOverrideKey(target, idIndex, key);
     if (!slot) {
-      // Path doesn't exist — silently skip. Translations are best-effort.
+      // Unresolvable override: silent best-effort skip in production, but a
+      // loud signal in dev/CI so structural drift cannot slip through.
+      const msg = `[dashboard-i18n] unresolved override key "${key}"`;
+      if (process.env.STRICT_I18N) throw new Error(msg);
+      console.warn(msg);
       continue;
     }
     slot.container[slot.key] = value;
@@ -163,4 +224,6 @@ module.exports = {
   // exposed for tests
   resolvePath,
   applyOverrides,
+  buildIdIndex,
+  resolveOverrideKey,
 };

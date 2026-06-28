@@ -1,4 +1,9 @@
 {
+  "view": {
+    "label": "Ansicht",
+    "tiles": "Kacheln",
+    "list": "Liste"
+  },
   "cellValues": {
     "All":          "Alle",
     "Other":        "Andere",
@@ -66,7 +71,31 @@
     "phaseCatalog":              "Katalog",
     "phaseHomes":                "Verknüpfen",
     "phaseValidate":             "Prüfen",
+    "phaseCluster":              "Communities",
     "chunkCounter":              "{{done}} von {{total}}"
+  },
+  "semanticNames": {
+    "structureLabel":        "Struktur",
+    "namingLabel":           "Benennung",
+    "dash":                  "--",
+    "structValue":           "{{pct}}% geclustert",
+    "nameValue":             "{{pct}}% benannt",
+    "structNone":            "noch nicht geclustert",
+    "structWarnHint":        "neue Objekte nicht geclustert",
+    "structCritHint":        "neue Objekte nicht geclustert",
+    "nameNone":              "noch nie benannt",
+    "nameWarnHint":          "neue Module unbenannt",
+    "nameCritHint":          "neue Module unbenannt",
+    "evaluateAfterRebuild":  "nach Re-Clustering bewerten",
+    "sequenceHint":          "Neue Objekte nicht geclustert – erst „Communities neu\", danach Benennung neu bewerten.",
+    "rebuild":               "Communities neu",
+    "rebuilding":            "Wird neu geclustert …",
+    "rebuildHint":           "Communities neu erkennen (Re-Partition, kein Re-Import)",
+    "rebuildFailed":         "Re-Clustering fehlgeschlagen.",
+    "copyCommand":           "Befehl kopieren",
+    "copied":                "kopiert",
+    "openCluster": "Communities zeigen",
+    "openClusterHint": "Zur Cluster-Übersicht"
   },
   "xmlEmpty": {
     "hint":           "Es wurden noch keine XML-Dateien importiert.",

@@ -2,7 +2,7 @@
   "title": "图谱浏览器",
   "emptyFocus": "在详情视图中通过图谱浏览器打开某个对象（或双击节点），即可开始探索其依赖关系图。",
   "loading": "正在加载图谱…",
-  "truncated": "正在显示 {{total}} 个可达节点中的 {{kept}} 个 — 降低深度或收窄类型筛选即可全部显示。",
+  "truncated": "已加载 {{total}} 个可达节点中的 {{kept}} 个 — 降低深度或缩小类型筛选以加载全部。",
   "stats": {
     "nodes": "{{count}} 个节点",
     "nodes_other": "{{count}} 个节点",
@@ -36,7 +36,8 @@
     "noNeighbors": "当前图谱中没有邻居。",
     "uses": "使用",
     "usedBy": "被使用",
-    "focus": "焦点"
+    "focus": "焦点",
+    "resizePanel": "调整详情面板宽度"
   },
   "filter": {
     "ariaLabel": "图谱筛选器",
@@ -69,7 +70,6 @@
       "both": "从焦点出发的双向"
     },
     "types": "节点类型",
-    "showAllTypes": "显示全部",
     "colorMode": "着色",
     "colorModes": {
       "type": "类型",
@@ -79,6 +79,24 @@
       "type": "按对象类型为节点着色",
       "community": "按检测到的模块（社区）为节点着色"
     },
-    "communityUnnamed": "社区 {{id}}"
-  }
+    "communityUnnamed": "社区 {{id}}",
+    "resizePanel": "调整筛选面板宽度",
+    "depthLoad": "可达 {{count}} 个",
+    "depthClipped": "可达 {{count}} 个，加载上限 {{limit}} 个",
+    "partLoaded": "已加载 {{count}} 个",
+    "partConnected": "已连接 {{count}} 个",
+    "partIsland_one": "{{count}} 个孤岛",
+    "partIsland_other": "{{count}} 个孤岛",
+    "partIsolated": "{{count}} 个孤立",
+    "loadScope": "加载类型",
+    "loadAll": "所有类型",
+    "loadSelected": "仅所选",
+    "loadAllHint": "加载所有类型；取消选择某个标签只会将其隐藏",
+    "loadSelectedHint": "仅加载所选类型（重新加载）"
+  },
+  "unconnectedHidden_one": "{{count}} 个与焦点无连接的节点",
+  "unconnectedHidden_other": "{{count}} 个与焦点无连接的节点",
+  "unconnectedToggleShow": "显示",
+  "unconnectedToggleHide": "隐藏",
+  "unconnectedToggleHint": "没有通往焦点路径的节点由类型/深度筛选产生 — 显示或隐藏它们"
 }

@@ -4,7 +4,5 @@
     "description": "Översikt över alla tillgängliga dashboards."
   },
   "layout": {
-    "root.children[0].props.title": "Dashboards",
-    "root.children[0].props.subtitle": "Klicket öppnar den valda dashboarden."
   }
 }

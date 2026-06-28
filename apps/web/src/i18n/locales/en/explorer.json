@@ -2,7 +2,7 @@
   "title": "Graph Explorer",
   "emptyFocus": "Open an object from its detail view in the Graph Explorer (or double-tap a node) to start exploring its dependency graph.",
   "loading": "Loading graph…",
-  "truncated": "Showing {{kept}} of {{total}} reachable nodes — lower the depth or narrow the type filter to show them all.",
+  "truncated": "Loaded {{kept}} of {{total}} reachable nodes — lower the depth or narrow the type filter to load them all.",
   "stats": {
     "nodes": "{{count}} node",
     "nodes_other": "{{count}} nodes",
@@ -36,7 +36,8 @@
     "noNeighbors": "No neighbors in the current graph.",
     "uses": "uses",
     "usedBy": "used by",
-    "focus": "Focus"
+    "focus": "Focus",
+    "resizePanel": "Resize the detail panel"
   },
   "filter": {
     "ariaLabel": "Graph filters",
@@ -69,7 +70,6 @@
       "both": "Both directions from the focus"
     },
     "types": "Node types",
-    "showAllTypes": "show all",
     "colorMode": "Coloring",
     "colorModes": {
       "type": "Type",
@@ -79,6 +79,46 @@
       "type": "Color nodes by object type",
       "community": "Color nodes by detected module (community)"
     },
-    "communityUnnamed": "Community {{id}}"
-  }
+    "communityUnnamed": "Community {{id}}",
+    "detailsShort": "Details",
+    "openDetails": "Open the focus object’s detail view",
+    "openTypeList": "Open the {{type}} object list",
+    "hideType": "Hide {{type}}",
+    "showType": "Show {{type}}",
+    "depthOf": "(of {{max}})",
+    "extendDepth": "deeper",
+    "extendDepthHint": "Extend the slider past 4 (up to the reachable max depth).",
+    "depthLoad": "{{count}} reachable",
+    "depthClipped": "{{count}} reachable, load capped at {{limit}}",
+    "resizePanel": "Resize the filter panel",
+    "partLoaded": "{{count}} loaded",
+    "partConnected": "{{count}} connected",
+    "partIsland_one": "{{count}} island",
+    "partIsland_other": "{{count}} islands",
+    "partIsolated": "{{count}} isolated",
+    "loadScope": "Load types",
+    "loadAll": "All types",
+    "loadSelected": "Selected only",
+    "loadAllHint": "Load all types; deselecting a chip only hides it",
+    "loadSelectedHint": "Load only the selected types (reloads)"
+  },
+  "typeList": {
+    "ariaLabel": "Object list: {{type}}",
+    "sortBy": "Sort",
+    "sort": {
+      "name": "Name",
+      "file": "File"
+    },
+    "directionLabel": "Direction",
+    "directionAria": "Filter by direction",
+    "dirIn": "Incoming",
+    "dirOut": "Outgoing",
+    "dirBoth": "Both",
+    "empty": "No objects of this type in the graph."
+  },
+  "unconnectedHidden_one": "{{count}} node not connected to the focus",
+  "unconnectedHidden_other": "{{count}} nodes not connected to the focus",
+  "unconnectedToggleShow": "show",
+  "unconnectedToggleHide": "hide",
+  "unconnectedToggleHint": "Nodes with no path to the focus result from the type/depth filter — show or hide them"
 }

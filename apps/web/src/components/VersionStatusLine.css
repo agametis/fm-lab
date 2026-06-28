@@ -1,0 +1,17 @@
+/* Versions-Status-Balken — sitzt im .status-bar__message-Slot rechts
+   neben dem „Zurück"-Button auf /settings. Gedämpfte Schrift, tabular-nums für
+   ruhig ausgerichtete Versionsnummern, umbruchfreundlich bei schmalen Fenstern. */
+.version-status-line {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+
+.version-status-line__sep {
+  opacity: 0.5;
+}
+
+.version-status-line__item {
+  white-space: nowrap;
+}

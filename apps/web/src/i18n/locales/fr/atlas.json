@@ -1,0 +1,97 @@
+{
+  "title": "Atlas du graphe",
+  "subtitle": "Point d'entrée descendant — cliquez sur une tuile pour explorer, sur une feuille pour l'ouvrir dans l'Explorateur de graphe.",
+  "headerButton": "Atlas",
+  "headerButton_hint": "Ouvrir l'Atlas du graphe — la vue d'ensemble descendante de toute la solution.",
+  "segmentation": "Segmentation",
+  "segment": {
+    "community": "Communauté",
+    "file": "Fichier",
+    "hubs": "Nœuds principaux",
+    "type": "Type"
+  },
+  "breadcrumb": {
+    "root": "Atlas"
+  },
+  "representation": "Représentation",
+  "view": {
+    "composition": "Composition",
+    "topology": "Topologie",
+    "composition_hint": "Treemap — quelle est la taille de quoi (proportion).",
+    "topology_hint": "Méta-graphe — comment les segments se couplent (Communauté/Fichier uniquement)."
+  },
+  "weight": {
+    "label": "Pondération",
+    "domain": "Domaine",
+    "logical": "Brut",
+    "domain_hint": "Poids de domaine (ClusterEdges) — fonctions intégrées et god-nodes déjà retirés.",
+    "logical_hint": "Degré logique brut — inclut les fonctions intégrées."
+  },
+  "search": {
+    "placeholder": "Filtrer les tuiles visibles…"
+  },
+  "types": {
+    "label": "Types d'objet",
+    "hide": "Masquer {{type}}",
+    "show": "Afficher {{type}}",
+    "reset": "Réinitialiser"
+  },
+  "rest": {
+    "collapse": "Réduire aux entrées principales",
+    "hide": "masquer"
+  },
+  "status": {
+    "semanticNames": "Noms sémantiques : {{value}}",
+    "semanticNamesNone": "Noms sémantiques : --",
+    "count": "Nombre : {{semantic}} / {{user}} définis par l’utilisateur",
+    "clustersMissing": "Pas encore regroupé — lancez « fm-graph-cluster » pour activer Communauté et Topologie."
+  },
+  "loading": "Chargement…",
+  "empty": "Rien à afficher ici.",
+  "error": "Impossible de charger l'atlas : {{message}}",
+  "truncated": "Affichage des entrées principales — le reste est regroupé dans la tuile grise.",
+  "hint": {
+    "leafClick": "Astuce : cliquez sur une tuile feuille pour ouvrir cet objet dans l'Explorateur de graphe.",
+    "metaClick": "Astuce : cliquez sur un super-nœud pour ouvrir son membre le plus lourd dans l'Explorateur de graphe."
+  },
+  "topN": {
+    "label": "Top-N",
+    "hint": "Combien de segments/feuilles principaux afficher avant de replier le reste en une seule tuile.",
+    "auto": "Revenir au seuil automatique (par niveau)",
+    "autoTag": "auto"
+  },
+  "hidden": {
+    "mode": "Ignorés",
+    "dim": "atténuer",
+    "hide": "masquer",
+    "dim_hint": "Les nœuds ignorés restent visibles (atténués) et réversibles.",
+    "hide_hint": "Les nœuds ignorés sont retirés — annulation uniquement via la liste.",
+    "manage": "gérer…",
+    "manage_hint": "Liste de tous les nœuds ignorés — restaurez-les ici.",
+    "empty": "Aucun nœud ignoré.",
+    "restore": "Restaurer"
+  },
+  "panel": {
+    "infoButton": "Options",
+    "close": "Fermer",
+    "type": "Type",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "openExplorer": "Graphe",
+    "openDetail": "Détails",
+    "hideNode": "Ignorer",
+    "unhideNode": "Ne plus ignorer",
+    "hiddenBadge": "ignoré",
+    "community": {
+      "title": "Communauté",
+      "nameLabel": "Nom personnalisé",
+      "namePlaceholder": "p. ex. « Facturation et PDF »",
+      "notesLabel": "Notes",
+      "notesPlaceholder": "Texte libre pour cette communauté…"
+    },
+    "node": {
+      "title": "Nœud"
+    },
+    "cancel": "Annuler"
+  }
+}

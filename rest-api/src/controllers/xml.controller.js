@@ -1,24 +1,24 @@
 const xmlConvert = require('../services/xml-convert');
-const { performReload } = require('../services/system-reload');
+const hub = require('../services/xml-convert-hub');
 
 /**
  * XML-Convert Controller — REST handlers for /api/xml/*
  *
- * Endpoints (siehe project/prd_frontend_xml_convert.md §5):
- *   GET  /api/xml/status         Verzeichnis-Listing + Status pro Datei
- *   GET  /api/xml/last-run/log   Vollständiger Event-Stream der letzten Konvertierung
- *   POST /api/xml/convert        Startet die Konvertierung, streamt SSE
+ * Endpoints:
+ *   GET  /api/xml/status          Verzeichnis-Listing + Status pro Datei (+ running/active_run)
+ *   GET  /api/xml/last-run/log    Vollständiger Event-Stream der letzten Konvertierung
+ *   POST /api/xml/convert         Startet den Job (202); streamt NICHT mehr selbst
+ *   GET  /api/xml/convert/stream  SSE: Ring-Replay + Live-Tail des aktiven Laufs
+ *   POST /api/xml/convert/cancel  Expliziter Abbruch (einziger Pfad zu child.kill)
  *
- * Concurrency: Nur ein Lauf gleichzeitig. Während ein Lauf aktiv ist, antwortet
- * POST mit 409. Geprüft wird sowohl der eigene Service-State als auch das
- * Lock-File (das auch das CLI-Skill setzt).
+ * Feature E: Der Lauf ist vom Request entkoppelt (Broadcast-Hub). Wegnavigieren
+ * killt den Import NICHT mehr; Wiedereintritt rendert über /convert/stream aus dem
+ * Ring statt aus dem Default-State.
  */
 
 function ok(res, data, meta = {}) {
   return res.json({ success: true, data, meta });
 }
-
-let activeRunController = null;
 
 async function getStatus(req, res, next) {
   try {
@@ -45,25 +45,39 @@ async function getLastRunLog(req, res, next) {
 }
 
 /**
- * POST /api/xml/convert — startet die Konvertierung und streamt NDJSON-Events
- * als SSE an den Client. Identisches Pattern zu POST /api/docs/install/:id.
- *
- * Nach exit_code === 0 wird intern `performReload()` aufgerufen, damit
- * Adapter-Caches und in-process Maps die frische DB sehen.
+ * POST /api/xml/convert — startet den Job und kehrt SOFORT mit 202 zurück
+ * Der Lauf lebt im Hub weiter, unabhängig von dieser Anfrage;
+ * Fortschritt/Log holt der Client über `GET /api/xml/convert/stream`. 409, wenn
+ * bereits ein Lauf aktiv ist (Hub-State ODER externes Lock-File des CLI-Skripts).
  */
-async function convert(req, res, next) {
-  // Concurrency-Schutz: weder ein laufender In-Process-Run noch ein extern
-  // gehaltenes Lock-File darf umgangen werden.
-  if (activeRunController || xmlConvert.isRunning()) {
-    return res.status(409).json({
+async function convert(req, res) {
+  // "Nur geänderte Dateien" (Manifest-Skip) ist Default; `changedOnly:false`
+  // erzwingt einen vollen Build. Legacy-Alias `incremental`.
+  const changedOnly = (req.body?.changedOnly ?? req.body?.incremental) !== false;
+  try {
+    const { run_id } = hub.startRun({ changedOnly });
+    return res.status(202).json({ success: true, data: { run_id, running: true, changedOnly } });
+  } catch (err) {
+    if (err && err.code === 'ALREADY_RUNNING') {
+      return res.status(409).json({
+        success: false,
+        error: { code: 'ALREADY_RUNNING', message: err.message },
+      });
+    }
+    return res.status(500).json({
       success: false,
-      error: {
-        code: 'ALREADY_RUNNING',
-        message: 'A conversion is already running.',
-      },
+      error: { code: 'INTERNAL', message: err.message },
     });
   }
+}
 
+/**
+ * GET /api/xml/convert/stream — SSE-Abonnement des aktiven Laufs. Subscribe → erst
+ * Ring replayen (Client springt auf den aktuellen Stand
+ * inkl. Phase/Progress), dann Live-Tail. Kein aktiver Lauf → letztes Snapshot /
+ * `idle` + schließen. Mehrere gleichzeitige Subscriber (Tabs/Views) erlaubt.
+ */
+async function streamConvert(req, res) {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream; charset=utf-8',
     'Cache-Control': 'no-cache, no-transform',
@@ -72,78 +86,43 @@ async function convert(req, res, next) {
   });
   if (typeof res.flushHeaders === 'function') res.flushHeaders();
 
-  const send = (evt) => {
-    try {
-      res.write(`data: ${JSON.stringify(evt)}\n\n`);
-    } catch {
-      /* client closed connection */
-    }
-  };
-
-  // "Nur geänderte Dateien" (Manifest-Skip) ist Default; ein explizites
-  // `changedOnly:false` im Body erzwingt einen vollen (Turbo-)Build aller Dateien.
-  // Legacy-Alias `incremental` wird weiterhin akzeptiert. Robust gegen fehlenden
-  // oder nicht-Boolean-Body.
-  const changedOnly = (req.body?.changedOnly ?? req.body?.incremental) !== false;
-
-  send({ event: 'start', ts: new Date().toISOString(), changedOnly });
-
-  const ac = new AbortController();
-  activeRunController = ac;
-  let aborted = false;
-  res.on('close', () => {
-    if (res.writableEnded) return;
-    aborted = true;
-    ac.abort();
-  });
+  const live = hub.subscribe(res);
+  if (!live) {
+    try { res.end(); } catch { /* already closed */ }
+    return;
+  }
 
   const heartbeat = setInterval(() => {
     try { res.write(': heartbeat\n\n'); } catch { /* socket gone */ }
   }, 15000);
 
-  try {
-    const { exit_code } = await xmlConvert.runConverter({
-      onEvent: send,
-      signal: ac.signal,
-      changedOnly,
-    });
-
-    if (aborted) {
-      send({ event: 'aborted' });
-      return;
-    }
-
-    if (exit_code === 0) {
-      try {
-        const result = await performReload();
-        send({ event: 'reload', ok: true, tables: result.tables });
-      } catch (err) {
-        send({ event: 'reload', ok: false, error: err.message });
-      }
-      // Done-Event sendet das Skript bereits selbst (emit_done). Hier nur ein
-      // explizites Wrap-up, falls das Skript-eigene done aus irgendeinem
-      // Grund nicht durchkam — der Client erwartet ein finales `done`.
-      send({ event: 'done', ok: true, exit_code: 0 });
-    } else {
-      send({ event: 'done', ok: false, exit_code });
-    }
-  } catch (err) {
-    if (err && err.code === 'SCRIPT_NOT_FOUND') {
-      send({ event: 'error', message: err.message });
-      send({ event: 'done', ok: false, exit_code: -1 });
-    } else {
-      send({ event: 'error', message: err.message });
-      send({ event: 'done', ok: false, exit_code: -1 });
-    }
-  } finally {
+  // Wegnavigieren beendet NUR das Forwarding zu DIESEM Socket — der Lauf läuft im
+  // Hub weiter (kein ac.abort/child.kill mehr).
+  res.on('close', () => {
     clearInterval(heartbeat);
-    activeRunController = null;
-    try { res.end(); } catch { /* already closed */ }
+    hub.unsubscribe(res);
+  });
+}
+
+/**
+ * POST /api/xml/convert/cancel — expliziter Abbruch des aktiven Laufs (der
+ * EINZIGE Pfad, der child.kill auslöst). 409, wenn nichts läuft.
+ */
+async function cancelConvert(req, res) {
+  const cancelled = hub.cancel();
+  if (!cancelled) {
+    return res.status(409).json({
+      success: false,
+      error: { code: 'NOT_RUNNING', message: 'No active conversion to cancel.' },
+    });
   }
+  return ok(res, { cancelled: true });
 }
 
 module.exports = {
   getStatus,
   getLastRunLog,
   convert,
+  streamConvert,
+  cancelConvert,
 };
