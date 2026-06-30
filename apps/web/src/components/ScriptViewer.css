@@ -351,6 +351,28 @@
     0 0 0 3px rgba(255, 165, 82, 0.25);
 }
 
+/* Such-Highlight in Step-Literalen (Parameterwerte, Strings, Step-Namen) —
+ * visuell identisch zum Kommentar-Highlight, damit Volltext-Treffer überall im
+ * Skript gleich aussehen. Überschreibt die Token-Färbung (string/number/…) für
+ * den Treffer-Substring; der <mark>-Default-Hintergrund wird neutralisiert. */
+.fm-line-search-match {
+  background-color: #fff3a8;
+  color: #5b3a00;
+  box-shadow:
+    0 0 0 2px #fb923c,
+    0 0 0 3px rgba(251, 146, 60, 0.20);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+[data-theme="dark"] .fm-line-search-match {
+  background-color: #6b4a00;
+  color: #ffe680;
+  box-shadow:
+    0 0 0 2px #ffa552,
+    0 0 0 3px rgba(255, 165, 82, 0.25);
+}
+
 /* ============================================================================
  * Step-Typ-Färbung (über data-step-name am <li>)
  * ========================================================================== */
@@ -426,8 +448,8 @@ a.fm-ref {
 .fm-ref--valueList       { background: var(--fm-ref-valuelist-bg); }
 .fm-ref--tableOccurrence { background: var(--fm-ref-to-bg); }
 
-/* Klickbare Refs (Cross-Navigation zu Pseudo-Objekt-Detail-Seiten) —
- * PRD prd_pseudo_object_types_filter.md §5. Pointer-Cursor + Hover-Underline
+/* Klickbare Refs (Cross-Navigation zu Pseudo-Objekt-Detail-Seiten).
+ * Pointer-Cursor + Hover-Underline
  * konsistent mit anderen Ref-Links (Field, Script, …). */
 .fm-ref-link {
   cursor: pointer;
@@ -445,7 +467,7 @@ a.fm-ref {
   opacity: 0.55;
 }
 
-/* Cross-Reference Highlight (PRD prd_cross_references_hilite.md §7.2).
+/* Cross-Reference Highlight.
    Analog zu LayoutCanvas-Highlight: kräftige rote Umrandung. Zusätzlich
    gelber Hintergrund, damit das Token im Textfluss auch ohne Border-Sichtkontakt
    sofort ins Auge sticht. Position relative + ::before-Pseudo wäre aufwendiger
@@ -506,8 +528,8 @@ a.fm-ref {
     0 0 0 6px #ffa552;
 }
 
-/* Cross-Reference-Highlight für ganze Step-Zeilen (PRD prd_pseudo_object_types
- * _filter.md §6.4). Aktiviert, wenn back_references die Step_UUID dieser Zeile
+/* Cross-Reference-Highlight für ganze Step-Zeilen. Aktiviert, wenn
+ * back_references die Step_UUID dieser Zeile
  * als Match liefert (z.B. Origin=ScriptStepType "Set Variable" → alle 706
  * Set-Variable-Steps im Destination-Script werden markiert). */
 .fm-line--ref-highlighted {
@@ -832,7 +854,7 @@ span.fm-ref--pluginFunction {
 }
 
 /* ============================================================================
- * Function-Tokens innerhalb von Script-Lines (PRD §5.2)
+ * Function-Tokens innerhalb von Script-Lines
  * Wenn Calc-Refs vom Type `function` als ScriptRef geliefert werden, bekommen
  * sie eine eigene Background-Färbung — wird die volle Funktions-Popover dann
  * direkt im RefSpan über die Function-Variante getriggert.

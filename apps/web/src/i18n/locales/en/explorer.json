@@ -49,6 +49,9 @@
     "file": "File",
     "allFiles": "All files",
     "filterMode": "Non-matches",
+    "groupByFile": "group",
+    "groupByFileHint": "Group nodes into boxes per file",
+    "fileGroupNone": "No file",
     "filterModes": {
       "dim": "Dim",
       "hide": "Hide"
@@ -114,7 +117,8 @@
     "dirIn": "Incoming",
     "dirOut": "Outgoing",
     "dirBoth": "Both",
-    "empty": "No objects of this type in the graph."
+    "empty": "No objects of this type in the graph.",
+    "focus": "Focus object"
   },
   "unconnectedHidden_one": "{{count}} node not connected to the focus",
   "unconnectedHidden_other": "{{count}} nodes not connected to the focus",

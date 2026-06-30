@@ -1,8 +1,12 @@
-# fm-lab — FileMaker Code Analyzing Foundation
+# FM-Lab: AI Agent Coding Harness for FileMaker
 
-A **DuckDB**-based tool for analyzing **FileMaker SaXML exports**. It converts the XML structure of a FileMaker solution into a queryable DuckDB database — covering all object types and their dependencies — and provides a fast, in-memory digital twin for deep, scalable cross-reference analysis, documentation, and AI-assisted development.
+Reliable FileMaker development starts with a shared understanding of FileMaker principles and the structure of the solution at hand — for both humans and AI agents.
+
+FM-Lab provides that foundation by converting **FileMaker SaXML exports** into a queryable **DuckDB** catalog. It turns the XML structure of a FileMaker solution into a fast, in-memory digital twin — covering all object types and their dependencies — for deep cross-reference analysis, documentation, and AI-assisted development at scale.
 
 ![FM-Lab](Banner.jpg)
+
+**[⚡ QUICKSTART](#-quickstart)** — from clone to catalog in five steps.
 
 ## Highlights
 
@@ -33,8 +37,8 @@ The first release focuses on this core: reliable **XML conversion**, a comprehen
 - **DuckDB Backend** — In-process analytical database engine for fast and flexible queries without server setup, often delivering results in milliseconds, even for large solutions 🚀
 - **REST API** — Express server providing HTTP access to the analysis database, enabling integration with external tools and services 🧩
 - **Web Client** — React/Vite frontend for interactive exploration of the solution's structure and dependencies with rich visualizations 🔎
-- **Graph-based Analysis** — an interactive Graph Explorer for the whole object graph, with automatic community detection that segments the solution into named modules — turning thousands of objects and links into navigable, self-organizing structure 🕸️
-- **Claude Skills** — Slash commands for conversion, analysis, and documentation installation, designed for seamless use within the Claude Code environment 🤖
+- **Graph-based Analysis** — an interactive Graph Explorer for the full object graph, with automatic community detection that reveals named clusters across the solution — transforming thousands of objects and links into a navigable graph map. 🕸️
+- **Claude Skills** — Slash commands for agentic analysis workflows in Claude Code, supported by helpers for XML conversion and documentation setup — complementing interactive exploration with deep, solution-aware inspection beyond scripted analysis. 🤖
 - **Comprehensive Docs** — Easy-to-install documentation of FileMaker Pro and MBS plugin functions 📚
 - **Plugin System** — Open architecture for adding new tools and integrations, starting with **[fmIDE](https://github.com/fmIDE/fmIDE)** as a first-class citizen to provide direct navigation into FileMaker's Script Workspace 🛠️
 - **Prepared for AI code generation** — The architecture and data model are designed to support AI-driven code generation, augmented by reliable context from the object catalog and the integrated docs 🧠
@@ -65,18 +69,67 @@ Learn how FM-Lab turns FileMaker XML exports into a structured Object Catalog an
 - **Claude Skills** (`.claude/skills/`) — Contains Claude Code skills and slash commands for installation, conversion, lookup and analysis.
 - **Plugin registry** (`.fmlab/`) — Registry and preferences for FM-Lab plugins.
 
+## ⚡ Quickstart
+
+The only prerequisite on your machine is **[Docker](https://docs.docker.com/get-docker/)** — Batteries already included: DuckDB, NodeJS, PATH setup.
+
+```bash
+# 1 · Clone
+git clone https://github.com/marcel-more/fm-lab.git
+cd fm-lab
+
+# 2 · Start (first run builds everything, ~2–3 min)
+docker compose up
+```
+
+3. **Drop your FileMaker XML export** into the `xml/` folder of the cloned repo.
+   _(FileMaker Pro ▸ Tools ▸ Save a Copy as XML — enable “Include details for analysis tools”; one file per solution file.)_
+4. Open the web client at **http://localhost:5173** and **start the conversion** — one button, live progress, no terminal needed.
+5. **Done.** Explore the object catalog, dependencies and the Graph Explorer.
+
+<b>… with a sandboxed AI agent (Claude Code)</b>
+
+```bash
+# Start the agent-enabled stack
+docker compose -f docker-compose.yml -f docker-compose.claude.yml up
+
+# Open the agent and sign in once. Claude Code runs INSIDE the container
+# (`which claude` on the host is empty by design); the login then persists.
+docker compose exec -it api claude
+#   → choose "Claude account with subscription", complete the browser sign-in, then just ask Claude about your FileMaker solution or run a skill command:
+#       "List all scripts that write to the Orders table"
+#       /fm-analyze "Invoice Import"
+```
+
+> **The sign-in URL wraps across several terminal lines — don't select it by hand.**
+> A truncated URL fails in the browser with _"Invalid response_type"_ or _"Unknown scope"_.
+> Press **`c`** to copy it, **or** paste it into a text
+> editor and remove every line break — a URL never contains spaces — before opening it.
+> Sign in, then paste the shown code back at the `Paste code here` prompt.
+>
+> **No browser at hand?** Put credentials in a `.env` next to the compose files instead —
+> `ANTHROPIC_API_KEY=…` (API-key billing) or `CLAUDE_CODE_OAUTH_TOKEN=…` (from
+> `claude setup-token`) — then just run `docker compose exec -it api claude`.
+
+→ Native install, performance tuning and Windows/WSL2 notes: see **[Setup](#setup)** below.
+
 ## Compatibility
 
-At this stage, the tool is ready for **macOS** and **Linux**. A **Windows** version is planned for the future, but may require adjustments to the orchestration scripts setup.
+There are two ways to run FM-Lab:
 
-All base technologies (DuckDB, Node.js, Express, React) are cross-platform, so the main work for Windows compatibility will be in adapting the shell scripts and ensuring any file path handling is robust across OSes.
+- **Docker (recommended, all platforms)** — a self-contained container ships every prerequisite (DuckDB CLI, the webbed extension, Node/npm, the Leiden clustering engine) in the right version. The host needs **only Docker** — no DuckDB, no Node, no PATH setup. This is the fastest path to **Windows** support too: the entire POSIX shell layer runs inside the Linux container, so the host OS no longer matters. See [Setup with Docker](#setup-with-docker-recommended).
+- **Native (macOS / Linux, power users)** — run the orchestration scripts directly on the host. Ready today for **macOS** and **Linux**; native Windows would need shell-script adjustments (which the Docker path sidesteps entirely).
+
+All base technologies (DuckDB, Node.js, Express, React) are cross-platform.
+
+> **Windows note:** use **Docker Desktop with the WSL2 backend**, and keep the cloned repository **inside the WSL2 distribution** (e.g. under `~/projects/…`), **not** on the Windows drive (`/mnt/c/…`). A repo on `/mnt/c` suffers slow bind-mount performance and file-watcher (inotify) problems. Inside WSL2 the bind mount is fast and reliable.
 
 FileMaker XML exports are supported on all platforms where FileMaker Pro is available. The conversion process relies on the structure of the **SaXML** export from **FileMaker Versions 19 and above**. Future updates of FileMaker may require adjustments to the XML parsing.
 
 ## Prerequisites for the Analysis Tool (Standalone via GUI or REST API)
 
-- [DuckDB CLI](https://duckdb.org/docs/installation/) ≥ 1.0
-- Node.js ≥ 18, npm ≥ 9
+- [DuckDB CLI](https://duckdb.org/docs/installation/) ≥ 1.5.4
+- Node.js ≥ 20, npm ≥ 10
 - FileMaker Pro (for the SaXML export, SaXML v2.1.0.0+ / FileMaker 19+)
 
 ## Prerequisites for Analysis with Claude Code
@@ -100,13 +153,64 @@ git clone https://github.com/marcel-more/fm-lab.git
 cd fm-lab
 ```
 
-Then place all files of your FileMaker XML export in the `xml/` directory and run:
+(Windows: clone **inside** your WSL2 distribution — see the [Windows note](#compatibility) above.)
+
+### Setup with Docker (recommended)
+
+The only prerequisite on the host is **[Docker](https://docs.docker.com/get-docker/)** (Docker Desktop on macOS/Windows, Docker Engine on Linux) — no DuckDB, no Node, no PATH setup. From the repository root:
+
+```bash
+docker compose up
+```
+
+This builds the image (DuckDB CLI + webbed extension + Node/npm + Leiden clustering engine, all pinned to tested versions) and starts both servers:
+
+- **Web Client** → http://localhost:5173
+- **REST API** → http://localhost:3003
+
+Then prepare and convert your data:
+
+1. Put all files of your FileMaker SaXML export into the `xml/` directory.
+2. Convert — either click **XML conversion** in the web client, or run:
+   ```bash
+   docker compose exec api bash tools/convert_fm_xml.sh --batch
+   ```
+   (Or, as a one-shot job off the running stack: `docker compose run --rm ingestion`.)
+
+Your catalog (`db/`), conversions and local settings live in the cloned repo **on the host**, so they survive container restarts. Updating is a plain `git pull` — no rebuild needed, because the repo is mounted into the container, not baked into the image.
+
+**Tuning (optional):** create a `.env` file next to `docker-compose.yml` to override the defaults:
+
+```bash
+FMLAB_MEM_LIMIT=8g        # per-container RAM cap (raise for very large solutions)
+FMLAB_DUCKDB_THREADS=4    # DuckDB thread cap (raise on hosts with more cores)
+```
+
+### Setup natively (power users)
+
+If you prefer to run without Docker (macOS / Linux), install the [prerequisites](#prerequisites-for-the-analysis-tool-standalone-via-gui-or-rest-api) yourself, then place your XML export in `xml/` and run:
 
 ```bash
 bash tools/init.sh
 ```
 
 `init.sh` checks prerequisites, installs dependencies, sets up environment files, converts the XML export, and starts the local Node.js-servers — all in one step. It prints clear instructions if anything is missing.
+
+### With Claude Code (optional)
+
+A second container variant adds the **[Claude Code](https://docs.claude.com/en/docs/claude-code)** CLI on top of the same tool — ready to go, with the [duckdb-skills](https://github.com/duckdb/duckdb-skills) plugin bundled and a persistent login. The only manual step is providing credentials.
+
+- **VS Code:** "Dev Containers: Reopen in Container" → pick **fm-lab + Claude Code**.
+- **Plain Docker:** start with both compose files:
+  ```bash
+  docker compose -f docker-compose.yml -f docker-compose.claude.yml up
+  # then start the agent (it runs inside the container):
+  docker compose exec -it api claude
+  ```
+
+On first launch choose **"Claude account with subscription"** and complete the browser sign-in once — the login then persists across restarts in a named volume. The terminal sign-in URL wraps across lines, so copy it with **`c`** (OSC-52 terminals such as iTerm2) or repair it in a text editor (remove every line break) rather than selecting it by hand; a truncated URL fails with _"Invalid response_type"_ / _"Unknown scope"_. Alternatively provide credentials non-interactively via a `.env`: `ANTHROPIC_API_KEY` (API-key billing) or `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`). No secret is ever stored in the image.
+
+This variant also grants the capabilities for an **opt-in egress firewall** that restricts outbound traffic to a small allowlist (npm, GitHub, the Anthropic API, the DuckDB extension host, the VS Code marketplace). It is applied automatically in the VS Code variant; without it, Claude Code's permission prompts remain your safeguard.
 
 ## Day-to-day
 
@@ -177,6 +281,7 @@ The project has grown along a clear arc — from a solid foundation toward an in
 - **v0.7.3 – v0.7.7** · _Depth & reach_ — deeper analysis, integrated documentation sets, and the XML import moving into the browser.
 - **v0.8.0 – v0.8.2** · _Katana XML engine_ — optimized and powerful XML ingestion.
 - **v0.8.3 – v0.8.5** · _Graph-based analysis_ — community detection, semantic naming, and an interactive Graph Explorer.
+- **v0.8.6** · _Docker installer_ - including all dependencies for easy setup. Experimental Windows support via Docker on WSL2.
 
 - More details in [`CHANGELOG.md`](CHANGELOG.md) — release history
 
@@ -184,8 +289,8 @@ The core architecture is in place and ready for real-world use. Many more featur
 
 ## Roadmap
 
-- Pre-configured installer with granular framework update options
-- Windows support
+- Pre-configured installer with granular framework update options (beta with v0.8.6)
+- Windows support (early alpha with v0.8.6)
 - Granular deployment options for separate ingestion, API, and frontend services
 - Multi-user mode
 - Multi-solution support

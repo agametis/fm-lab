@@ -49,6 +49,8 @@ export function GraphExplorerView() {
   const focusFile = searchParams.get('focus_file');
   const depth = clampDepth(searchParams.get('depth'));
   const direction = parseDirection(searchParams.get('dir'));
+  // Datei-Gruppierung als Deep-Link-Param (`?group=file`) → ein gruppierter Graph ist teilbar.
+  const groupByFile = searchParams.get('group') === 'file';
 
   // Patch a subset of the deep-link params, preserving the rest.
   const patchParams = useCallback(
@@ -144,6 +146,8 @@ export function GraphExplorerView() {
         onOpenDetails={handleOpenDetails}
         onStats={setStats}
         enableCommunityLens
+        groupByFile={groupByFile}
+        onGroupByFileChange={(v) => patchParams({ group: v ? 'file' : null })}
       />
     </div>
   );

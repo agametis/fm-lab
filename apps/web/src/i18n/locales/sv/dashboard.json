@@ -69,5 +69,18 @@
     "copied": "kopierat",
     "openCluster": "Visa communities",
     "openClusterHint": "Gå till klusteröversikten"
+  },
+  "xmlEmpty": {
+    "hint":              "Inga data ännu. Lägg din FileMaker XML-export i mappen “xml/” och starta konverteringen.",
+    "hintExport":        "Exportera från FileMaker Pro via “Arkiv ▸ Spara en kopia som XML” — aktivera “Inkludera detaljer för analysverktyg”.",
+    "directoryEmpty":    "Inga filer i mappen “xml/”.",
+    "directoryAria":     "Filer i XML-katalogen",
+    "countFound":        "{{count}} XML-fil(er) hittades",
+    "openFolder":        "Öppna mapp",
+    "copyPath":          "Kopiera sökväg",
+    "copied":            "Kopierat ✓",
+    "hostPathHint":      "Lägg filerna i den här mappen på värden — den är monterad i containern.",
+    "containerPathNote": "Sökväg inuti containern",
+    "putFilesHint":      "Lägg dina FileMaker XML-filer i mappen “xml/”."
   }
 }

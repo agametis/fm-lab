@@ -69,5 +69,18 @@
     "copied": "コピーしました",
     "openCluster": "コミュニティを表示",
     "openClusterHint": "クラスタ一覧へ"
+  },
+  "xmlEmpty": {
+    "hint":              "まだデータがありません。FileMaker の XML エクスポートを「xml/」フォルダに入れて、変換を開始してください。",
+    "hintExport":        "FileMaker Pro の「ファイル ▸ XML としてコピーを保存」からエクスポートし、「分析ツール用の詳細を含める」を有効にしてください。",
+    "directoryEmpty":    "「xml/」フォルダにファイルがありません。",
+    "directoryAria":     "XML ディレクトリ内のファイル",
+    "countFound":        "{{count}} 個の XML ファイルが見つかりました",
+    "openFolder":        "フォルダを開く",
+    "copyPath":          "パスをコピー",
+    "copied":            "コピーしました ✓",
+    "hostPathHint":      "ホスト上のこのフォルダにファイルを置いてください。コンテナにマウントされています。",
+    "containerPathNote": "コンテナ内のパス",
+    "putFilesHint":      "FileMaker の XML ファイルを「xml/」フォルダに置いてください。"
   }
 }

@@ -46,6 +46,25 @@ export interface DashboardManifest {
   permissions: { read_only: boolean; allow_navigation: boolean };
 }
 
+/**
+ * Declarative visibility guard on a layout node. Reads the first row of a dataset
+ * and shows the node only when the condition holds (absent = always visible).
+ * Used e.g. to hide the data cards on the home dashboard while the catalog is empty
+ * (`db_empty` truthy) so only the "convert your XML" card remains.
+ */
+export interface VisibleWhen {
+  /** Dataset id whose first row is tested. */
+  dataset: string;
+  /** Field on that row to read. */
+  field: string;
+  /** Show only when the field strictly equals this value. */
+  equals?: unknown;
+  /** Show only when the field does NOT strictly equal this value. */
+  notEquals?: unknown;
+  /** Show only when the field is truthy (`true`) / falsy (`false`). */
+  truthy?: boolean;
+}
+
 export interface LayoutNode {
   type: string;
   /** Stable anchor for server-side i18n overrides (see dashboard-i18n.service). */
@@ -53,6 +72,8 @@ export interface LayoutNode {
   props?: Record<string, unknown>;
   data?: { dataset?: string } & Record<string, unknown>;
   children?: LayoutNode[];
+  /** Optional declarative visibility guard (absent = always visible). */
+  visibleWhen?: VisibleWhen;
 }
 
 export interface DashboardLayout {

@@ -1,0 +1,65 @@
+// fm-lab + Claude Code — VS Code Dev Container variant (Scenario 2).
+//
+// A second, selectable devcontainer config (VS Code lets you pick it under
+// "Dev Containers: Reopen in Container"). It layers the Claude Code overlay on top of
+// the base compose, so you get the full fm-lab tool PLUS the Claude Code CLI, a
+// persistent login, the bundled duckdb-skills, and the opt-in egress firewall.
+//
+// Auth — the ONLY manual step: provide credentials. Either set ANTHROPIC_API_KEY in
+// the environment (or a `.env` next to the compose files) before opening, or run
+// `claude auth login` once inside the container (the token persists in the fmlab-claude
+// volume across rebuilds). No secret is ever baked into the image.
+//
+// This file targets the PUBLISHED layout: it lives at .devcontainer/claude/ and the
+// compose files sit at the repo root (../../).
+{
+  "name": "fm-lab + Claude Code",
+
+  // Base compose + the Claude overlay (claude image, login volume, firewall caps).
+  "dockerComposeFile": [
+    "../../docker-compose.yml",
+    "../../docker-compose.claude.yml"
+  ],
+  "service": "api",
+  "overrideCommand": true,
+  "workspaceFolder": "/workspaces/fm-lab",
+
+  "remoteUser": "node",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "anthropic.claude-code"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "bash": { "path": "bash", "icon": "terminal-bash" },
+          "zsh": { "path": "zsh" }
+        }
+      }
+    }
+  },
+
+  // Bootstrap: ensure node_modules (idempotent — the compose `setup` service normally
+  // did this), then seed the project .claude/settings.json from the baked template
+  // (permissions + the duckdb-skills marketplace) when the repo doesn't have one yet.
+  "postCreateCommand": "test -d node_modules/.bin || (sudo /usr/local/bin/init-node-modules.sh /workspaces/fm-lab && npm install && npm run build:shared); test -f .claude/settings.json || cp /opt/fmlab/claude-settings.seed.json .claude/settings.json",
+
+  // Apply the opt-in egress firewall on each start (the overlay grants NET_ADMIN/
+  // NET_RAW; the script no-ops gracefully if the caps are ever removed).
+  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh",
+
+  "forwardPorts": [3003, 5173],
+  "portsAttributes": {
+    "3003": { "label": "REST-API", "onAutoForward": "silent" },
+    "5173": { "label": "Web-Frontend", "onAutoForward": "openBrowser" }
+  }
+}

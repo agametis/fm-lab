@@ -49,6 +49,9 @@
     "file": "Archivo",
     "allFiles": "Todos los archivos",
     "filterMode": "No coincidentes",
+    "groupByFile": "agrupar",
+    "groupByFileHint": "Agrupar los nodos por archivo en cajas",
+    "fileGroupNone": "Sin archivo",
     "filterModes": {
       "dim": "Atenuar",
       "hide": "Ocultar"
@@ -98,5 +101,20 @@
   "unconnectedHidden_other": "{{count}} nodos sin conexión con el foco",
   "unconnectedToggleShow": "mostrar",
   "unconnectedToggleHide": "ocultar",
-  "unconnectedToggleHint": "Los nodos sin ruta al foco resultan del filtro de tipo/profundidad — mostrarlos u ocultarlos"
+  "unconnectedToggleHint": "Los nodos sin ruta al foco resultan del filtro de tipo/profundidad — mostrarlos u ocultarlos",
+  "typeList": {
+    "ariaLabel": "Lista de objetos: {{type}}",
+    "sortBy": "Ordenar",
+    "sort": {
+      "name": "Nombre",
+      "file": "Archivo"
+    },
+    "directionLabel": "Dirección",
+    "directionAria": "Filtrar por dirección",
+    "dirIn": "Entrante",
+    "dirOut": "Saliente",
+    "dirBoth": "Ambas",
+    "empty": "No hay objetos de este tipo en el grafo.",
+    "focus": "Objeto de foco"
+  }
 }

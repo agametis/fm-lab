@@ -100,7 +100,7 @@
     "loading": "A carregar hierarquia…",
     "empty": "Sem entradas",
     "statsFiltered": "{{visibleEntries}} / {{totalEntries}} entradas, {{visibleFolders}} / {{totalFolders}} pastas",
-    "stats": "{{entries}} entradas, {{folders}} pastas",
+    "stats": "{{entries}} entradas, {{folders}} pastas, {{files}} ficheiros",
     "expandAll": "Expandir tudo",
     "collapseAll": "Recolher tudo",
     "disabledDuringFilter": "Desativado durante a filtragem",

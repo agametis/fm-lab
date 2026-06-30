@@ -12,6 +12,7 @@
     { "id": "object_counts",         "source": "bundle:data/object_counts.sql" },
     { "id": "files_overview",        "source": "bundle:data/files_overview.sql" },
     { "id": "xml_directory_listing", "source": "builtin:xml_directory_listing" },
+    { "id": "xml_directory_meta",    "source": "builtin:xml_directory_meta" },
     { "id": "cluster_count",         "source": "builtin:cluster_count" },
     { "id": "nav_dashboards",        "source": "builtin:list_dashboards",
       "params": { "excludeTags": ["home", "nav", "internal", "system"] } },

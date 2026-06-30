@@ -1,0 +1,54 @@
+# Line-ending normalization — Cross-OS hygiene for the Docker/Dev-Container.
+#
+# Why: the conversion harness (convert_fm_xml.sh, the katana *.awk scripts, the
+# convert-xml SQL) runs INSIDE the Linux container even when the repo is checked out
+# on a Windows host. A CRLF checkout would break bash/awk parsing (the classic
+# "Windows needs script adjustments" problem). Forcing LF on checkout makes the host
+# OS irrelevant.
+#
+# `* text=auto eol=lf` normalizes every git-detected text file to LF in the working
+# tree on all platforms; binaries are auto-detected and additionally pinned below so
+# they are never line-ending-munged. The repo is developed on Linux (already LF), so
+# this introduces no churn — it only protects future Windows checkouts.
+
+* text=auto eol=lf
+
+# --- Scripts & harness (MUST stay LF — executed in the Linux container) ----------
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.awk   text eol=lf
+*.sql   text eol=lf
+
+# --- Source & config (LF expected by prettier/eslint and the Node toolchain) -----
+*.js    text eol=lf
+*.mjs   text eol=lf
+*.cjs   text eol=lf
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.json  text eol=lf
+*.jsonc text eol=lf
+*.md    text eol=lf
+*.css   text eol=lf
+*.html  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.py    text eol=lf
+Dockerfile      text eol=lf
+.gitattributes  text eol=lf
+.gitignore      text eol=lf
+.env.example    text eol=lf
+
+# --- Binary assets (never normalize) ---------------------------------------------
+*.duckdb            binary
+*.duckdb.wal        binary
+*.duckdb_extension  binary
+*.gz                binary
+*.zip                binary
+*.jpg               binary
+*.jpeg              binary
+*.png               binary
+*.gif               binary
+*.ico               binary
+*.pdf               binary
+*.woff              binary
+*.woff2             binary

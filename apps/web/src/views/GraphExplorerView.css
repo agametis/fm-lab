@@ -118,6 +118,35 @@
   gap: 0.4rem;
 }
 
+/* Abschnitts-Titelzeile mit Inline-Steuerung rechts (z. B. „DATEI  [✓] gruppieren"). */
+.explorer-filter-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* Kompakte Checkbox neben dem Abschnitts-Titel (Datei-Gruppierung). */
+.explorer-group-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  text-transform: none;
+  letter-spacing: normal;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.explorer-group-toggle input {
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--color-accent);
+}
+
 /* Read-only focus context */
 .explorer-focus-display {
   font-size: 0.9rem;
@@ -663,6 +692,24 @@ input[type="range"]#explorer-depth {
   white-space: nowrap;
 }
 
+/* Rohe Link-Rolle als Klartext (vor Datei + Pfeil), nur bei genug Panel-Breite
+   (Container Query auf .explorer-typelist-panel). Default: ausgeblendet; die
+   Rolle bleibt im Pfeil-Tooltip erhalten. */
+.explorer-neighbor-role-label {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  display: none;
+}
+@container (min-width: 400px) {
+  .explorer-neighbor-role-label { display: inline; }
+}
+
+/* Fokus-Zeile: Fisheye-Glyph (◉) statt Richtungspfeil, im Akzent getönt. */
+.explorer-neighbor-dir.is-focus-glyph {
+  color: var(--color-accent);
+}
+
 /* ── Detail-Navigation & Typ-Listen ─────────────── */
 
 /* Verfeinerung A — „⧉ Details"-Link hinter dem Fokus-Namen */
@@ -784,6 +831,9 @@ input[type="range"]#explorer-depth {
 .explorer-typelist-panel {
   display: flex;
   flex-direction: column;
+  /* Query-Container: der Rollen-Klartext (.explorer-neighbor-role-label) blendet
+     erst ein, wenn das Panel breit genug gezogen ist. */
+  container-type: inline-size;
 }
 .explorer-typelist-sort {
   display: flex;

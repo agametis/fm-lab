@@ -69,5 +69,18 @@
     "copied": "복사됨",
     "openCluster": "커뮤니티 보기",
     "openClusterHint": "클러스터 개요로 이동"
+  },
+  "xmlEmpty": {
+    "hint":              "아직 데이터가 없습니다. FileMaker XML 내보내기 파일을 “xml/” 폴더에 넣고 변환을 시작하세요.",
+    "hintExport":        "FileMaker Pro의 “파일 ▸ XML로 사본 저장”에서 내보내고 “분석 도구를 위한 세부 정보 포함”을 활성화하세요.",
+    "directoryEmpty":    "“xml/” 폴더에 파일이 없습니다.",
+    "directoryAria":     "XML 디렉터리의 파일",
+    "countFound":        "{{count}}개의 XML 파일을 찾았습니다",
+    "openFolder":        "폴더 열기",
+    "copyPath":          "경로 복사",
+    "copied":            "복사됨 ✓",
+    "hostPathHint":      "호스트의 이 폴더에 파일을 넣으세요 — 컨테이너에 마운트되어 있습니다.",
+    "containerPathNote": "컨테이너 내부 경로",
+    "putFilesHint":      "FileMaker XML 파일을 “xml/” 폴더에 넣으세요."
   }
 }

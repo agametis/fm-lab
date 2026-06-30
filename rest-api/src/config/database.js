@@ -63,32 +63,40 @@ async function initialize() {
   console.log(`  - Max Memory: ${environment.duckdb.maxMemory}`);
   console.log(`  - Threads: ${environment.duckdb.threads}`);
 
-  await ensureClusterStubs();
+  await ensureCoreStubs();
   await attachReferenceDb();
 
   return connection;
 }
 
 /**
- * Cluster-Layer-Stubs (TEMP, leer) anlegen, wenn die DB noch nicht geclustert ist.
+ * Core-Tabellen-Stubs (TEMP, leer) anlegen, wenn die DB sie (noch) nicht hat.
+ * Zwei Fälle, ein Mechanismus:
  *
- * Die Graph-Atlas-Templates (graph_overview_aggregate/leaf/topology) referenzieren
- * `ObjectClusters`/`CommunityNames` per `LEFT JOIN` — auch für group_dim=file/type.
- * Fehlen die Tabellen (frische convert-xml-DB ohne fm-graph-cluster, oder Cluster-
- * Layer per force-rebuild gewischt), schlägt schon das BINDEN fehl (Catalog Error)
- * und der GESAMTE Atlas bricht ab, nicht nur die Community-Segmentierung.
+ * 1. **Cluster-Layer** (`ObjectClusters`/`CommunityNames`): Die Graph-Atlas-Templates
+ *    (graph_overview_aggregate/leaf/topology) referenzieren sie per `LEFT JOIN` — auch
+ *    für group_dim=file/type. Fehlen sie (DB ohne fm-graph-cluster oder per force-rebuild
+ *    gewischt), schlägt schon das BINDEN fehl (Catalog Error) und der GESAMTE Atlas bricht
+ *    ab. Mit leerem Stub degradiert er sauber zu „keine Communities" (Frontend schaltet
+ *    auf Datei+Komposition um und dimmt Community/Topologie).
  *
- * DuckDB erlaubt im READ_ONLY-Modus TEMP-Tabellen (rein In-Memory, kein Schreiben
- * in die Datei). Eine TEMP-Tabelle gleichen Namens wird von unqualifizierten
- * Referenzen aufgelöst → die LEFT JOINs liefern NULL-Community statt zu crashen.
- * So degradiert der Atlas sauber zu „keine Communities" (Frontend schaltet dann
- * auf Datei+Komposition um und dimmt Community/Topologie). Wird die DB später
- * geclustert + neu geladen, existiert die echte Tabelle → der Stub entfällt.
+ * 2. **Universal-Kataloge** (`FilesCatalog`/`ObjectCatalog`/`ObjectLinks`): Auf einer
+ *    frischen, NICHT konvertierten DB (z. B. die leere Platzhalter-DB des Docker-Erst-
+ *    starts) existieren sie nicht. Das Home-Dashboard (`project_summary`/`object_counts`/
+ *    `files_overview`) liefe sonst in „Table … does not exist" statt in den dafür
+ *    vorgesehenen Leerzustand. Mit leeren Stubs laufen die Aggregate durch →
+ *    `project_summary` meldet `db_empty=true` → das Frontend zeigt die „erst XML
+ *    konvertieren"-Karte statt roter Fehler; Listen/Suche liefern leer statt Fehler.
  *
- * Idempotent + reload-fest: läuft nach jedem initialize() auf der frischen
- * Verbindung; nur fehlende Tabellen werden gestubt.
+ * DuckDB erlaubt im READ_ONLY-Modus TEMP-Tabellen (rein In-Memory, kein Schreiben in die
+ * Datei). Eine TEMP-Tabelle gleichen Namens wird von unqualifizierten Referenzen aufgelöst.
+ * Die Stub-Spalten spiegeln das echte Schema, damit Queries, die einzelne Spalten
+ * selektieren, nicht an einer fehlenden Spalte scheitern. Idempotent + reload-fest: läuft
+ * nach jedem initialize() auf der frischen Verbindung; sobald die echte (konvertierte/
+ * geclusterte) Tabelle existiert, entfällt der Stub.
  */
-const CLUSTER_STUB_DDL = {
+const CORE_STUB_DDL = {
+  // Cluster-Layer — Atlas degradiert zu „keine Communities".
   ObjectClusters: `CREATE TEMP TABLE ObjectClusters (
      Object_UUID VARCHAR, File_Name VARCHAR, Community INTEGER, Engine VARCHAR
    )`,
@@ -98,23 +106,40 @@ const CLUSTER_STUB_DDL = {
      Top_Member_UUID VARCHAR, Top_Member_Label VARCHAR, Sample_Labels VARCHAR[],
      Heuristic_Name VARCHAR, Semantic_Name VARCHAR, Semantic_Description VARCHAR
    )`,
+  // Universal-Kataloge — frische/leere DB zeigt den designierten Empty-State statt Crash.
+  FilesCatalog: `CREATE TEMP TABLE FilesCatalog (
+     File_Name VARCHAR, File_FullName VARCHAR, File_UUID VARCHAR,
+     FileMaker_Version VARCHAR, Has_DDR_INFO BOOLEAN,
+     Import_Timestamp TIMESTAMP, XML_Path VARCHAR
+   )`,
+  ObjectCatalog: `CREATE TEMP TABLE ObjectCatalog (
+     Object_UUID VARCHAR, Object_Type VARCHAR, Object_Name VARCHAR,
+     File_Name VARCHAR, Source_Table VARCHAR, Object_ID BIGINT
+   )`,
+  ObjectLinks: `CREATE TEMP TABLE ObjectLinks (
+     Source_UUID VARCHAR, Source_Type VARCHAR, Target_UUID VARCHAR, Target_Type VARCHAR,
+     Link_Type VARCHAR, Link_Role VARCHAR, Link_Subrole VARCHAR,
+     Source_File VARCHAR, Target_File VARCHAR, Is_Cross_File BOOLEAN
+   )`,
 };
 
-async function ensureClusterStubs() {
+async function ensureCoreStubs() {
   try {
+    const names = Object.keys(CORE_STUB_DDL);
+    const inList = names.map((n) => `'${n}'`).join(', ');
     const result = await executeQuery(
       `SELECT table_name FROM information_schema.tables
-        WHERE table_name IN ('ObjectClusters', 'CommunityNames')`
+        WHERE table_name IN (${inList})`
     );
     const present = new Set(result.rows.map((r) => r.table_name));
-    for (const [name, ddl] of Object.entries(CLUSTER_STUB_DDL)) {
+    for (const [name, ddl] of Object.entries(CORE_STUB_DDL)) {
       if (present.has(name)) continue;
       await (await connection.prepare(ddl)).run();
-      console.log(`  - cluster stub created (TEMP, empty): ${name} — DB not clustered yet`);
+      console.log(`  - core stub created (TEMP, empty): ${name} — not present yet`);
     }
   } catch (err) {
-    // Nie fatal: ohne Stub crasht nur der Atlas (wie bisher), der Rest läuft.
-    console.warn(`  - cluster stub setup skipped: ${err.message}`);
+    // Nie fatal: ohne Stub crasht nur die betroffene Ansicht (wie bisher), der Rest läuft.
+    console.warn(`  - core stub setup skipped: ${err.message}`);
   }
 }
 

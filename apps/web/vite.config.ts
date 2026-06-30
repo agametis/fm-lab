@@ -53,9 +53,14 @@ export default defineConfig({
     // serverseitig an die REST-API auf localhost:3003 weiter — unabhängig
     // davon, auf welchen Host-Port der Dev-Container 3003 weiterleitet
     // (z. B. 3004 bei Port-Kollision). Der Browser muss 3003 nie kennen.
+    //
+    // Ziel per VITE_API_PROXY_TARGET übersteuerbar: Default localhost:3003 gilt,
+    // wenn API + Dev-Server im selben Prozess/Container laufen (native, start-
+    // servers.sh, Dev-Container). Laufen sie als GETRENNTE Container (Compose-
+    // Multi-Service), zeigt die Var auf den Service-DNS-Namen, z. B. http://api:3003.
     proxy: {
       '/api': {
-        target: 'http://localhost:3003',
+        target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:3003',
         changeOrigin: true
       }
     }

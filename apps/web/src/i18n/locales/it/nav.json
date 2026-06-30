@@ -100,7 +100,7 @@
     "loading": "Caricamento della gerarchia…",
     "empty": "Nessuna voce",
     "statsFiltered": "{{visibleEntries}} / {{totalEntries}} voci, {{visibleFolders}} / {{totalFolders}} cartelle",
-    "stats": "{{entries}} voci, {{folders}} cartelle",
+    "stats": "{{entries}} voci, {{folders}} cartelle, {{files}} file",
     "expandAll": "Espandi tutto",
     "collapseAll": "Comprimi tutto",
     "disabledDuringFilter": "Disattivato durante il filtro",

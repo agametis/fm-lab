@@ -98,8 +98,16 @@
     "openClusterHint": "Zur Cluster-Übersicht"
   },
   "xmlEmpty": {
-    "hint":           "Es wurden noch keine XML-Dateien importiert.",
-    "directoryEmpty": "Keine Dateien im XML-Verzeichnis vorhanden.",
-    "directoryAria":  "Dateien im XML-Verzeichnis"
+    "hint":              "Noch keine Daten. Lege die XML-Dateien deines FileMaker-Exports in den Ordner „xml/“ und starte die Konvertierung.",
+    "hintExport":        "Export in FileMaker Pro über „Ablage ▸ Eine Kopie speichern als XML“ — Option „Details für Analysetools einschließen“ aktivieren.",
+    "directoryEmpty":    "Keine Dateien im Ordner „xml/“.",
+    "directoryAria":     "Dateien im XML-Verzeichnis",
+    "countFound":        "{{count}} XML-Datei(en) gefunden",
+    "openFolder":        "Ordner öffnen",
+    "copyPath":          "Pfad kopieren",
+    "copied":            "Kopiert ✓",
+    "hostPathHint":      "Lege die Dateien auf dem Host in diesen Ordner — er ist in den Container gemountet.",
+    "containerPathNote": "Pfad im Container",
+    "putFilesHint":      "Lege deine FileMaker-XML-Dateien in den Ordner „xml/“."
   }
 }

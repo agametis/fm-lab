@@ -23,6 +23,41 @@ const FMLAB_DIR = path.join(REPO_ROOT, '.fmlab');
 const LAST_RUN_PATH = path.join(FMLAB_DIR, 'last_xml_run.json');
 const LOCK_PATH = path.join(FMLAB_DIR, 'xml_convert.lock');
 
+// ---------------------------------------------------------------------------
+// Laufzeit-/Reveal-Kontext für die „Ordner öffnen"-Affordance der Empty-State-
+// Karte. Statisch über die Prozesslebensdauer → einmal beim Laden berechnen.
+//   runtime       'native' | 'container' — expliziter Marker, sonst /.dockerenv
+//   host_xml_dir  Host-Pfad des xml/-Ordners (nur Container, via Env injiziert)
+//   can_reveal    nativ + verfügbarer Datei-Manager-Opener (open / xdg-open)
+// ---------------------------------------------------------------------------
+function detectRuntime() {
+  const explicit = String(process.env.FMLAB_RUNTIME || '').trim().toLowerCase();
+  if (explicit === 'container' || explicit === 'native') return explicit;
+  if (fs.existsSync('/.dockerenv') || fs.existsSync('/run/.containerenv')) return 'container';
+  return 'native';
+}
+
+function commandOnPath(cmd) {
+  const dirs = String(process.env.PATH || '').split(path.delimiter).filter(Boolean);
+  return dirs.some((d) => {
+    try { fs.accessSync(path.join(d, cmd), fs.constants.X_OK); return true; }
+    catch { return false; }
+  });
+}
+
+const RUNTIME = detectRuntime();
+const HOST_REPO_ROOT = String(process.env.FMLAB_HOST_REPO_ROOT || '').trim();
+// Host-xml/-Pfad nur posix verknüpfen (macOS/Linux-Host bzw. Repo INNERHALB WSL2).
+const HOST_XML_DIR = HOST_REPO_ROOT
+  ? `${HOST_REPO_ROOT.replace(/[\\/]+$/, '')}/xml`
+  : null;
+const REVEAL_COMMAND = process.platform === 'darwin'
+  ? 'open'
+  : (process.platform === 'linux' ? 'xdg-open' : null);
+const CAN_REVEAL = RUNTIME === 'native'
+  && REVEAL_COMMAND != null
+  && (process.platform === 'darwin' || commandOnPath(REVEAL_COMMAND));
+
 const RUN_RECORD_SCHEMA_VERSION = 1;
 const MAX_EVENTS_RETAINED = 5000;
 
@@ -339,6 +374,9 @@ async function getStatus() {
 
   return {
     xml_dir: XML_DIR,
+    host_xml_dir: HOST_XML_DIR,
+    runtime: RUNTIME,
+    can_reveal: CAN_REVEAL,
     db_empty: dbEmpty,
     files: rows,
     last_run: lastRun,
@@ -359,6 +397,28 @@ async function getDirectoryListing() {
     size: f.size,
     mtime: f.mtime,
   }));
+}
+
+/**
+ * Öffnet das XML-Verzeichnis im nativen Datei-Manager (macOS: `open`,
+ * Linux: `xdg-open`). Nur im nativen Lauf mit verfügbarem Opener. Nutzt
+ * AUSSCHLIESSLICH den server-aufgelösten XML_DIR (kein Client-Pfad) und spawnt
+ * ohne Shell (Argument-Array) → keine Command-Injection. Wirft
+ * `REVEAL_UNSUPPORTED`, wenn die Laufzeit das Reveal nicht beherrscht (Container).
+ */
+async function revealXmlDir() {
+  if (!CAN_REVEAL || !REVEAL_COMMAND) {
+    const err = new Error('Folder reveal is not supported in this runtime.');
+    err.code = 'REVEAL_UNSUPPORTED';
+    throw err;
+  }
+  await fsp.mkdir(XML_DIR, { recursive: true });
+  await new Promise((resolve, reject) => {
+    const child = spawn(REVEAL_COMMAND, [XML_DIR], { stdio: 'ignore', detached: true });
+    child.once('error', reject);
+    child.once('spawn', () => { child.unref(); resolve(); });
+  });
+  return XML_DIR;
 }
 
 // ---------------------------------------------------------------------------
@@ -660,6 +720,7 @@ module.exports = {
   LAST_RUN_PATH,
   getStatus,
   getDirectoryListing,
+  revealXmlDir,
   readLastRunLog,
   isRunning,
   runConverter,

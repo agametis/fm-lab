@@ -15,6 +15,7 @@
           "title": "Project overview",
           "variant": "hero"
         },
+        "visibleWhen": { "dataset": "project_summary", "field": "db_empty", "truthy": false },
         "data": {
           "dataset": "project_summary"
         },
@@ -109,6 +110,7 @@
           "span": 12,
           "title": "Objects"
         },
+        "visibleWhen": { "dataset": "project_summary", "field": "db_empty", "truthy": false },
         "data": {
           "dataset": "object_counts"
         },
@@ -226,6 +228,7 @@
           "span": 12,
           "title": "Files"
         },
+        "visibleWhen": { "dataset": "project_summary", "field": "db_empty", "truthy": false },
         "data": {
           "dataset": "files_overview"
         },

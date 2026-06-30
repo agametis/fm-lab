@@ -109,7 +109,7 @@
     "loading": "Loading hierarchy…",
     "empty": "No entries",
     "statsFiltered": "{{visibleEntries}} / {{totalEntries}} entries, {{visibleFolders}} / {{totalFolders}} folders",
-    "stats": "{{entries}} entries, {{folders}} folders",
+    "stats": "{{entries}} entries, {{folders}} folders, {{files}} files",
     "expandAll": "Expand all",
     "collapseAll": "Collapse all",
     "disabledDuringFilter": "Disabled while filtering",

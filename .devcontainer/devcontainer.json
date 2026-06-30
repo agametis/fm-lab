@@ -1,0 +1,65 @@
+// fm-lab — public VS Code Dev Container (clean, host-path-free).
+//
+// A THIN wrapper over docker-compose.yml: the compose file is the single source of
+// truth (same image, volumes, ports, bootstrap), so "pure docker" (docker compose up)
+// and "VS Code Dev Container" stay guaranteed-consistent.
+//
+// Bootstrap (npm install + build:shared + ownership of the node_modules/spill volumes
+// + an empty placeholder catalog DB) is performed by the compose `setup` service,
+// which the `api` service depends on — so it runs to completion before this container
+// is ready. The `postCreateCommand` below is only an idempotent safety net.
+//
+// This file targets the PUBLISHED layout, where it lives at .devcontainer/
+// devcontainer.json and the compose file sits at the repo root (../docker-compose.yml).
+{
+  "name": "fm-lab",
+
+  // Single source of truth — reuse the repo-root compose definition.
+  "dockerComposeFile": ["../docker-compose.yml"],
+
+  // Attach to the API service (it carries the full toolchain: DuckDB CLI, webbed,
+  // Node/npm, the conversion harness). Its command is overridden so the container
+  // stays alive for development; you start the servers deliberately (see below).
+  "service": "api",
+  "overrideCommand": true,
+  "workspaceFolder": "/workspaces/fm-lab",
+
+  "remoteUser": "node",
+
+  "customizations": {
+    "vscode": {
+      // Neutral, tool-agnostic extension set — formatting/linting only. Agent
+      // extensions (e.g. Claude Code) belong to the agent image variants, not the
+      // base tool.
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "bash": { "path": "bash", "icon": "terminal-bash" },
+          "zsh": { "path": "zsh" }
+        }
+      }
+    }
+  },
+
+  // Idempotent safety net: if the compose `setup` service already populated the
+  // node_modules volumes this is a no-op; otherwise it bootstraps here.
+  "postCreateCommand": "test -d node_modules/.bin || (sudo /usr/local/bin/init-node-modules.sh /workspaces/fm-lab && npm install && npm run build:shared)",
+
+  // Forward both servers to the host. Start them from a terminal with:
+  //   bash tools/start-servers.sh
+  // (launches the REST API on 3003 and the Vite web client on 5173 in this container).
+  "forwardPorts": [3003, 5173],
+  "portsAttributes": {
+    "3003": { "label": "REST-API", "onAutoForward": "silent" },
+    "5173": { "label": "Web-Frontend", "onAutoForward": "openBrowser" }
+  }
+}

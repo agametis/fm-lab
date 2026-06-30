@@ -6,7 +6,7 @@ import { ScriptLine } from './ScriptLine';
 import { ScriptViewerHeader, type FilterStyle } from './ScriptViewerHeader';
 import { ScriptSearchFilter } from './ScriptSearchFilter';
 import { useUrlState, stringSetCodec } from '../hooks/useUrlState';
-import { HighlightRefContext, ScriptSearchContext, ScriptSearchQueryContext, type ScriptSearchPredicate } from '../script/highlightContext';
+import { HighlightRefContext, ScriptSearchContext, ScriptSearchQueryContext, ScriptLineSearchQueryContext, type ScriptSearchPredicate } from '../script/highlightContext';
 import './ScriptViewer.css';
 
 interface ScriptViewerProps {
@@ -163,6 +163,32 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
   // unterstreichen.
   const commentSearchQuery = (hasQuery && commentsInScope.length > 0) ? queryLower : null;
 
+  // Literal-Text-Suche in Step-Zeilen: matched gegen den vollen Step-Text
+  // (Step-Name + Parameter + eingefügte Literale), nicht nur gegen Refs/
+  // Kommentare. Schließt die Lücke für Werte, die nicht als Ref tokenisiert
+  // sind (z.B. ein langer XML-String im Wert eines Set-Variable-Steps).
+  // Spiegelt die globale Suche, die ebenfalls auf dem vollen Step_Text (ILIKE)
+  // matcht. Nur im Default-Scope aktiv (keine Pillen) — analog zu Kommentaren,
+  // die bei reinen Typ-Pillen aus dem Scope fallen: aktive Pillen verengen die
+  // Suche bewusst auf Ref-Typen, da hat Literaltext nichts mehr zu suchen.
+  const lineSearchQuery = (hasQuery && !hasAnyFilter) ? queryLower : null;
+
+  // Step-Zeilen im Scope der Literal-Suche (nur ohne aktive Pillen). Basis für
+  // die Match-/Total-Zähler unten.
+  const stepLinesInScope = useMemo(() => {
+    if (hasAnyFilter) return [];
+    return lines.filter(l => l.kind === 'step');
+  }, [lines, hasAnyFilter]);
+
+  const lineTextMatchCount = useMemo(() => {
+    if (!hasQuery) return stepLinesInScope.length;
+    let n = 0;
+    for (const l of stepLinesInScope) {
+      if ((l.text ?? '').toLowerCase().includes(queryLower)) n++;
+    }
+    return n;
+  }, [stepLinesInScope, queryLower, hasQuery]);
+
   // Match-Counts: innerhalb des Scopes. Ohne Query zählt alles im Scope
   // (konsistent mit Type-Pills, wo die Pill-Aktivierung allein bereits die
   // Refs des Types als "Match" zählt).
@@ -183,8 +209,12 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
     return n;
   }, [commentsInScope, queryLower, hasQuery]);
 
-  const matchCount = refMatchCount + commentMatchCount;
-  const totalCount = refsInScope.length + commentsInScope.length;
+  // Step-Literal-Treffer sind eine eigene Zähl-Kategorie (zeilen-, nicht ref-
+  // basiert). Da Ref-Namen Teil des Step-Texts sind, kann ein Ref-Match in
+  // seltenen Fällen doppelt zählen (einmal als Ref, einmal als Zeile) — bewusst
+  // in Kauf genommen, der Hauptfall (Literal ohne Ref) zählt sauber einfach.
+  const matchCount = refMatchCount + commentMatchCount + lineTextMatchCount;
+  const totalCount = refsInScope.length + commentsInScope.length + stepLinesInScope.length;
 
   const toggleRefType = useCallback((type: RefType) => {
     setActiveRefTypes(prev => {
@@ -309,7 +339,7 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
     if (!queryLower || !rootRef.current) return;
     const id = requestAnimationFrame(() => {
       const hit = rootRef.current?.querySelector(
-        '.fm-ref--search-match, .fm-comment-search-match',
+        '.fm-ref--search-match, .fm-comment-search-match, .fm-line-search-match',
       );
       const target = (hit?.closest('li.fm-line') as HTMLElement | null) ?? hit;
       if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -321,6 +351,7 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
     <HighlightRefContext.Provider value={highlightRefUuids ?? null}>
       <ScriptSearchContext.Provider value={searchPredicate}>
        <ScriptSearchQueryContext.Provider value={commentSearchQuery}>
+        <ScriptLineSearchQueryContext.Provider value={lineSearchQuery}>
         <div ref={rootRef} className="object-detail fm-script-root" aria-label="Script-Text">
           {!hideToolbar && (
             <ScriptViewerHeader
@@ -370,6 +401,7 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
             })}
           </ol>
         </div>
+        </ScriptLineSearchQueryContext.Provider>
        </ScriptSearchQueryContext.Provider>
       </ScriptSearchContext.Provider>
     </HighlightRefContext.Provider>

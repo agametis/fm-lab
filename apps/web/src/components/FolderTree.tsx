@@ -49,6 +49,11 @@ function saveExpandedToStorage(subtype: FolderTreeSubtype, expanded: Set<string>
   }
 }
 
+/** Aufklappbare Container: echte Folder UND die optionalen Datei-Gruppenknoten. */
+function isContainerRow(subtype: string): boolean {
+  return subtype === 'Folder' || subtype === 'File';
+}
+
 function computeUnfilteredVisibleRows(rows: TreeRow[], expanded: Set<string>): TreeRow[] {
   const out: TreeRow[] = [];
   let hideUntilLevel = -1;
@@ -58,7 +63,7 @@ function computeUnfilteredVisibleRows(rows: TreeRow[], expanded: Set<string>): T
     }
     hideUntilLevel = -1;
     out.push(row);
-    if (row.subtype === 'Folder' && !expanded.has(row.uuid)) {
+    if (isContainerRow(row.subtype) && !expanded.has(row.uuid)) {
       hideUntilLevel = row.nesting_level;
     }
   }
@@ -73,9 +78,11 @@ function computeFilteredVisibleRows(rows: TreeRow[], filterLower: string): TreeR
     while (folderStack.length > 0 && folderStack[folderStack.length - 1].level >= row.nesting_level) {
       folderStack.pop();
     }
-    if (row.subtype === 'Folder') {
+    if (isContainerRow(row.subtype)) {
       folderStack.push({ level: row.nesting_level, uuid: row.uuid });
-      if (row.name.toLowerCase().includes(filterLower)) {
+      // Datei-Knoten matchen nie selbst — reine Container, nur über einen
+      // Kind-Treffer sichtbar. Folder dürfen per Namen selbst matchen.
+      if (row.subtype === 'Folder' && row.name.toLowerCase().includes(filterLower)) {
         visibleSet.add(row.uuid);
         for (const f of folderStack) visibleSet.add(f.uuid);
       }
@@ -95,7 +102,7 @@ function computeFilteredVisibleRows(rows: TreeRow[], filterLower: string): TreeR
     while (currentStack.length > 0 && currentStack[currentStack.length - 1].level >= row.nesting_level) {
       currentStack.pop();
     }
-    if (row.subtype === 'Folder') {
+    if (isContainerRow(row.subtype)) {
       const isVis = visibleSet.has(row.uuid);
       currentStack.push({ level: row.nesting_level, uuid: row.uuid, visible: isVis });
       if (isVis) out.push(row);
@@ -146,12 +153,51 @@ export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter })
   const filterTrimmed = (filter ?? '').trim();
   const filterActive = filterTrimmed.length > 0;
 
+  // Anzahl verschiedener Dateien im geladenen Datenbestand.
+  const fileCount = useMemo(() => {
+    const seen = new Set<string>();
+    for (const r of rows) seen.add(r.file);
+    return seen.size;
+  }, [rows]);
+
+  // Datei-Ebene optional als Top-Level-Knoten einziehen — aber nur, wenn
+  //   (a) keine Datei vorausgewählt ist (file-Prop leer) und
+  //   (b) die Lösung mehr als eine Datei umfasst.
+  // So vermeiden wir Unübersichtlichkeit beim Einstieg in Mehrdatei-Lösungen:
+  // jede Datei wird ein eigener aufklappbarer Container, die realen Zeilen rücken
+  // eine Ebene tiefer. Bei vorausgewählter Datei bleibt der Baum unverändert flach.
+  const groupByFile = !file && fileCount > 1;
+
+  const displayRows: TreeRow[] = useMemo(() => {
+    if (!groupByFile) return rows;
+    // rows sind bereits nach (File_Name, seq) sortiert → Dateien liegen
+    // zusammenhängend, ein Header pro Datei genügt.
+    const out: TreeRow[] = [];
+    let lastFile: string | null = null;
+    for (const r of rows) {
+      if (r.file !== lastFile) {
+        lastFile = r.file;
+        out.push({
+          uuid: `__file__:${r.file}`,
+          name: r.file,
+          type: 'File',
+          subtype: 'File',
+          nesting_level: 0,
+          file: r.file,
+          sequence: -1,
+        });
+      }
+      out.push({ ...r, nesting_level: r.nesting_level + 1 });
+    }
+    return out;
+  }, [rows, groupByFile]);
+
   const visibleRows: TreeRow[] = useMemo(() => {
     if (filterActive) {
-      return computeFilteredVisibleRows(rows, filterTrimmed.toLowerCase());
+      return computeFilteredVisibleRows(displayRows, filterTrimmed.toLowerCase());
     }
-    return computeUnfilteredVisibleRows(rows, expanded);
-  }, [rows, expanded, filterActive, filterTrimmed]);
+    return computeUnfilteredVisibleRows(displayRows, expanded);
+  }, [displayRows, expanded, filterActive, filterTrimmed]);
 
   const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
@@ -177,8 +223,8 @@ export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter })
   }, []);
 
   const expandAll = useCallback(() => {
-    setExpanded(new Set(rows.filter(r => r.subtype === 'Folder').map(r => r.uuid)));
-  }, [rows]);
+    setExpanded(new Set(displayRows.filter(r => isContainerRow(r.subtype)).map(r => r.uuid)));
+  }, [displayRows]);
 
   const collapseAll = useCallback(() => {
     setExpanded(new Set());
@@ -220,6 +266,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter })
             t('nav:folderTree.stats', {
               entries: itemCount,
               folders: folderCount,
+              files: fileCount,
             })
           )}
         </span>
@@ -254,8 +301,10 @@ export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter })
           {virtualizer.getVirtualItems().map(vi => {
             const row = visibleRows[vi.index];
             const isFolder = row.subtype === 'Folder';
+            const isFile = row.subtype === 'File';
+            const isContainer = isFolder || isFile;
             const isSeparator = row.subtype === 'Separator';
-            const isExpanded = isFolder && (filterActive || expanded.has(row.uuid));
+            const isExpanded = isContainer && (filterActive || expanded.has(row.uuid));
             const indent = row.nesting_level * INDENT_PX;
 
             return (
@@ -288,28 +337,28 @@ export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter })
                     role="button"
                     tabIndex={0}
                     onClick={() => {
-                      if (isFolder && !filterActive) {
-                        toggleFolder(row.uuid);
-                      } else {
-                        handleItemClick(row);
-                      }
+                      // Container (Folder/Datei) klappen auf; Datei-Knoten haben
+                      // keine Detail-Seite, navigieren also nie.
+                      if (isContainer && !filterActive) toggleFolder(row.uuid);
+                      else if (!isFile) handleItemClick(row);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        if (isFolder && !filterActive) toggleFolder(row.uuid);
-                        else handleItemClick(row);
+                        if (isContainer && !filterActive) toggleFolder(row.uuid);
+                        else if (!isFile) handleItemClick(row);
                       }
                     }}
                   >
                     <span className="folder-tree-toggle">
-                      {isFolder ? (isExpanded ? '▾' : '▸') : ''}
+                      {isContainer ? (isExpanded ? '▾' : '▸') : ''}
                     </span>
                     <span className={`folder-tree-badge folder-tree-badge-${row.type.toLowerCase()}`}>
                       {badgeForType(row.type)}
                     </span>
                     <span className="folder-tree-name">{row.name || (t('nav:folderTree.noName') as string)}</span>
-                    <span className="folder-tree-file">{row.file}</span>
+                    {/* Datei-Header: rechte Datei-Spalte wäre redundant zum Namen */}
+                    {!isFile && <span className="folder-tree-file">{row.file}</span>}
                     {isFolder && (
                       <button
                         type="button"
@@ -336,6 +385,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter })
 
 function badgeForType(type: string): string {
   switch (type) {
+    case 'File':           return 'FILE';
     case 'Folder':         return 'DIR';
     case 'Script':         return 'SCR';
     case 'Layout':         return 'LAY';

@@ -1,6 +1,6 @@
 import { API_BASE } from '../../config/apiBase';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { PrimitiveProps } from '../types';
 
@@ -95,6 +95,10 @@ function dispatchStatus(detail: XmlConvertStatusDetail) {
 export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
   const { t } = useTranslation('dashboard');
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Auto-Start-Intent aus dem Empty-State (?autostart=1) — genau einmal beim Mount
+  // ausgewertet (Ref, damit ein Re-Render durch das URL-Säubern nicht erneut feuert).
+  const autostartRef = useRef(searchParams.get('autostart') === '1');
   const mode = (node.props?.mode as string) === 'navigate' ? 'navigate' : 'run';
 
   // Dataset für die Disable-Logik: bevorzugt `directory_status` (im
@@ -337,19 +341,40 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
         if (!res.ok) return;
         const json = await res.json().catch(() => null);
         const data = json?.data ?? json;
-        if (cancelled || !data?.running) return;
-        const startedAt = data.active_run?.started_at ?? new Date().toISOString();
-        setStatus('running');
-        setProgress(0);
-        setPhase(data.active_run?.phase ?? '');
-        dispatchStatus({ status: 'running', startedAt });
-        await subscribeToStream(startedAt);
+        if (cancelled) return;
+
+        // Auto-Start-Parameter genau einmal konsumieren und aus der URL entfernen,
+        // damit Reload/Back keinen erneuten Lauf auslöst.
+        const wantAutostart = autostartRef.current;
+        if (wantAutostart) {
+          autostartRef.current = false;
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            next.delete('autostart');
+            return next;
+          }, { replace: true });
+        }
+
+        if (data?.running) {
+          const startedAt = data.active_run?.started_at ?? new Date().toISOString();
+          setStatus('running');
+          setProgress(0);
+          setPhase(data.active_run?.phase ?? '');
+          dispatchStatus({ status: 'running', startedAt });
+          await subscribeToStream(startedAt);
+          return;
+        }
+
+        // Nichts läuft → Auto-Start aus dem Empty-State feuern (nur wenn Dateien da sind).
+        if (wantAutostart && !directoryEmpty) {
+          startConvert();
+        }
       } catch {
         /* status check best-effort */
       }
     })();
     return () => { cancelled = true; };
-    // Nur beim Mount auswerten — subscribeToStream ist stabil (useCallback).
+    // Nur beim Mount auswerten — subscribeToStream/startConvert sind stabil (useCallback).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 

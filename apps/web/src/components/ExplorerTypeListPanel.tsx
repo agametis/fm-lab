@@ -28,6 +28,17 @@ interface ExplorerTypeListPanelProps {
   /** Aktiver Richtungs-Filter + Zähler je Richtung (vom Parent berechnet). */
   dir: TypeListDir;
   dirCounts: { in: number; out: number; total: number };
+  /**
+   * Pro Knoten-ID: Richtung relativ zum Fokus (←/→/↔) + Rolle der Fokus-Kante.
+   * Fehlt für den Fokus selbst und indirekte Knoten (>1 Hop) → kein Pfeil.
+   */
+  dirInfo: Map<string, { dir: TypeListDir; role: string | null }>;
+  /**
+   * Datei des Fokus-Knotens (kann im Graph-Tab vom URL-Objekt abweichen, wenn
+   * der User „als Fokus setzen" genutzt hat). Einträge derselben Datei blenden
+   * den Dateinamen aus (Platzersparnis); nur datei-fremde zeigen ihn.
+   */
+  focusFile: string | null;
   /** Nur einblenden, wenn beide Richtungen vertreten sind (sonst sinnlos). */
   showDir: boolean;
   onDirChange: (d: TypeListDir) => void;
@@ -40,8 +51,16 @@ interface ExplorerTypeListPanelProps {
 const SORTS: TypeListSort[] = ['name', 'file'];
 
 export function ExplorerTypeListPanel(props: ExplorerTypeListPanelProps) {
-  const { width, type, items, sort, onSortChange, dir, dirCounts, showDir, onDirChange, onClose, onOpenDetails, onHoverItem } = props;
+  const { width, type, items, sort, onSortChange, dir, dirCounts, dirInfo, focusFile, showDir, onDirChange, onClose, onOpenDetails, onHoverItem } = props;
   const { t } = useTranslation(['explorer', 'common']);
+
+  const dirGlyph = (d: TypeListDir) => (d === 'in' ? '←' : d === 'out' ? '→' : '↔');
+  const dirLabel = (d: TypeListDir) =>
+    d === 'in'
+      ? (t('typeList.dirIn', { defaultValue: 'Eingehend' }) as string)
+      : d === 'out'
+        ? (t('typeList.dirOut', { defaultValue: 'Ausgehend' }) as string)
+        : (t('typeList.dirBoth', { defaultValue: 'Beide' }) as string);
 
   const dirOpts: Array<{ key: TypeListDir; glyph: string; label: string; count: number }> = [
     { key: 'in', glyph: '←', label: t('typeList.dirIn', { defaultValue: 'Eingehend' }) as string, count: dirCounts.in },
@@ -119,24 +138,45 @@ export function ExplorerTypeListPanel(props: ExplorerTypeListPanelProps) {
           <p className="explorer-inspect-empty">{t('typeList.empty')}</p>
         ) : (
           <ul>
-            {items.map((n) => (
-              <li key={n.id}>
-                <button
-                  type="button"
-                  className={`explorer-neighbor${n.isFocus ? ' is-focus' : ''}`}
-                  aria-current={n.isFocus ? 'true' : undefined}
-                  onClick={() => onOpenDetails(n.uuid, n.file ?? null)}
-                  onMouseEnter={() => onHoverItem(n.id)}
-                  onFocus={() => onHoverItem(n.id)}
-                  onBlur={() => onHoverItem(null)}
-                  title={n.label}
-                >
-                  <span className="explorer-type-dot" style={{ background: getTypeColor(n.type) }} />
-                  <span className="explorer-neighbor-label">{n.label}</span>
-                  {n.file && <span className="explorer-neighbor-role">{n.file}</span>}
-                </button>
-              </li>
-            ))}
+            {items.map((n) => {
+              // Fokus-Knoten: kein Pfeil, stattdessen Fisheye-Glyph (◉).
+              // Direkte Nachbarn: Richtungspfeil + rohe Rolle (Klartext nur bei
+              // genug Panel-Breite via Container Query, Rolle stets im Tooltip).
+              const info = n.isFocus ? null : dirInfo.get(n.id);
+              const glyphTitle = info
+                ? (info.role ? `${dirLabel(info.dir)} · ${info.role}` : dirLabel(info.dir))
+                : undefined;
+              return (
+                <li key={n.id}>
+                  <button
+                    type="button"
+                    className={`explorer-neighbor${n.isFocus ? ' is-focus' : ''}`}
+                    aria-current={n.isFocus ? 'true' : undefined}
+                    onClick={() => onOpenDetails(n.uuid, n.file ?? null)}
+                    onMouseEnter={() => onHoverItem(n.id)}
+                    onFocus={() => onHoverItem(n.id)}
+                    onBlur={() => onHoverItem(null)}
+                    title={n.label}
+                  >
+                    <span className="explorer-type-dot" style={{ background: getTypeColor(n.type) }} />
+                    <span className="explorer-neighbor-label">{n.label}</span>
+                    {info?.role && <span className="explorer-neighbor-role-label">{info.role}</span>}
+                    {n.file && n.file !== focusFile && <span className="explorer-neighbor-role">{n.file}</span>}
+                    {n.isFocus ? (
+                      <span
+                        className="explorer-neighbor-dir is-focus-glyph"
+                        aria-hidden="true"
+                        title={t('typeList.focus', { defaultValue: 'Fokus-Objekt' }) as string}
+                      >
+                        ◉
+                      </span>
+                    ) : info ? (
+                      <span className="explorer-neighbor-dir" title={glyphTitle}>{dirGlyph(info.dir)}</span>
+                    ) : null}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

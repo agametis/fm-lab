@@ -100,7 +100,7 @@
     "loading": "계층 로딩 중…",
     "empty": "항목 없음",
     "statsFiltered": "{{visibleEntries}} / {{totalEntries}}개 항목, {{visibleFolders}} / {{totalFolders}}개 폴더",
-    "stats": "{{entries}}개 항목, {{folders}}개 폴더",
+    "stats": "{{entries}}개 항목, {{folders}}개 폴더, {{files}}개 파일",
     "expandAll": "모두 펼치기",
     "collapseAll": "모두 접기",
     "disabledDuringFilter": "필터링 중에는 비활성화됨",

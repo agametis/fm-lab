@@ -76,6 +76,8 @@ interface ExplorerGraphProps {
   deselectedTypes: string[];
   /** Node color lens — 'type' (default) or 'community' (standalone färb-lens). */
   colorMode?: ColorMode;
+  /** Datei-Gruppierung — Knoten in Compound-Boxen je Datei (Layout-Schalter). */
+  groupByFile?: boolean;
   /** Selected community (hull + dims others); null = none. */
   selectedCommunity?: number | null;
   /** Hovered community (transient hull preview); null = none. */
@@ -120,11 +122,37 @@ const fcoseLayout = {
   padding: 40,
 } as unknown as cytoscape.LayoutOptions;
 
+// Variante für die Datei-Gruppierung: ruhiger/dichter. Weniger Abstoßung & Separation, kürzere
+// Kanten und kein hartes Komponenten-Packing → die Compound-Boxen rücken näher zusammen und dürfen
+// sich etwas überlappen, statt weit auseinandergedrückt zu werden.
+const fcoseLayoutGrouped = {
+  ...fcoseLayout,
+  nodeRepulsion: 7000,
+  idealEdgeLength: 90,
+  nodeSeparation: 70,
+  gravity: 0.25,
+  packComponents: false,
+  padding: 30,
+} as unknown as cytoscape.LayoutOptions;
+
+/** Layout-Profil je nach aktiver Datei-Gruppierung (ruhiger im Gruppen-Modus). */
+function layoutFor(grouped: boolean): cytoscape.LayoutOptions {
+  return grouped ? fcoseLayoutGrouped : fcoseLayout;
+}
+
 // Degree-scaled diameter: 12 px (leaf) … 48 px (max-degree hub).
 const NODE_MIN_PX = 12;
 const NODE_RANGE_PX = 36;
 // Persistent label only for "important" nodes (≥15 % maxDeg).
 const LABEL_DEGREE_FRACTION = 0.15;
+
+// ── Datei-Gruppierung (Compound-Boxen) ───────────────────────────
+// Ein synthetischer Parent-Node je Datei; `file === null` (synthetische Objekte) bekommt
+// eine eigene Box. Die `id` ist deterministisch aus dem Dateinamen abgeleitet, getrennt vom
+// Halo-Prefix. Knoten werden via `node.move({ parent })` ein-/ausgehängt (kein Refetch).
+const FILE_GROUP_ID_PREFIX = '__file__::';
+const FILE_GROUP_NULL_ID = '__file__::__null__';
+const FILE_GROUP_CLASS = 'file-group';
 
 /**
  * Theme-aware Stylesheet (F1): aus den `--color-graph-*`-Tokens gebaut. Cytoscape-
@@ -165,6 +193,48 @@ function buildExplorerStylesheet(): cytoscape.StylesheetStyle[] {
   {
     selector: 'node[?showLabel]',
     style: { 'label': 'data(label)' } as unknown as cytoscape.Css.Node,
+  },
+  // Datei-Gruppe (Compound-Parent): neutrale, einheitliche Box (NICHT je Datei eingefärbt) mit
+  // Datei-Label oben links. Compound-Parents sizen sich automatisch auf ihre Kinder (+ padding);
+  // width/height aus dem Basis-`node`-Style werden dabei ignoriert.
+  {
+    selector: 'node[?isFileGroup]',
+    style: {
+      'shape': 'round-rectangle',
+      'corner-radius': '12px',
+      'background-color': g.rest,
+      'background-opacity': 0.07,
+      'border-color': g.edgeStructural,
+      'border-width': 1,
+      'border-opacity': 0.7,
+      'label': 'data(label)',
+      'color': g.nodeLabel,
+      // Doppelte Schriftgröße, als transparentes „Watermark"-Label (70 % transparent) oben mittig.
+      'font-size': '22px',
+      'font-weight': 'bold',
+      'text-opacity': 0.3,
+      'text-valign': 'top',
+      'text-halign': 'center',
+      'text-margin-y': 2,
+      'text-outline-width': 2,
+      'text-outline-color': g.nodeOutline,
+      'padding': '18px',
+      'z-index': 0,
+      'cursor': 'grab',
+    } as unknown as cytoscape.Css.Node,
+  },
+  // Über das Datei-Dropdown gewählte Datei: die zugehörige Box bekommt einen transluzenten
+  // Akzent-Hintergrund (Hervorhebung). Muss NACH der Basis-`isFileGroup`-Regel stehen, damit
+  // background-color/opacity gewinnen.
+  {
+    selector: 'node.file-group-selected',
+    style: {
+      'background-color': '#646cff',
+      'background-opacity': 0.16,
+      'border-color': '#646cff',
+      'border-width': 1.5,
+      'border-opacity': 0.9,
+    } as unknown as cytoscape.Css.Node,
   },
   // Community color lens — recolor by P5 community when the standalone
   // färb-lens is on. Declared BEFORE the hub/focus/hover/selected rules so those
@@ -333,7 +403,7 @@ function buildExplorerStylesheet(): cytoscape.StylesheetStyle[] {
 
 /** Recompute degree-scaled size + label visibility across all real nodes. */
 function recomputeNodeVisuals(cy: cytoscape.Core): void {
-  const realNodes = cy.nodes().not('.focus-halo');
+  const realNodes = cy.nodes().not('.focus-halo').not(`.${FILE_GROUP_CLASS}`);
   let maxDeg = 0;
   realNodes.forEach((n) => {
     const d = (n.data('degree') as number) ?? 0;
@@ -424,7 +494,7 @@ function drawCommunityHulls(
   if (!octx) return;
 
   for (const id of order) {
-    const nodes = cy.nodes().filter((n) => !n.hasClass('focus-halo') && n.data('community') === id);
+    const nodes = cy.nodes().filter((n) => !n.hasClass('focus-halo') && !n.hasClass(FILE_GROUP_CLASS) && n.data('community') === id);
     if (nodes.empty()) continue;
     const pts: number[][] = [];
     let maxR = NODE_MIN_PX / 2;
@@ -471,11 +541,104 @@ function drawCommunityHulls(
   }
 }
 
-/** Toggle the community color lens across all real nodes (halo excluded). */
+/** Toggle the community color lens across all real nodes (halo + file-groups excluded). */
 function applyColorMode(cy: cytoscape.Core, mode: ColorMode): void {
-  const real = cy.nodes().not('.focus-halo');
+  const real = cy.nodes().not('.focus-halo').not(`.${FILE_GROUP_CLASS}`);
   if (mode === 'community') real.addClass('color-community');
   else real.removeClass('color-community');
+}
+
+/** Compound-Parent-id einer Datei (synthetische NULL-File → eigene „Ohne Datei"-Box). */
+function fileGroupIdFor(file: string | null | undefined): string {
+  return file == null ? FILE_GROUP_NULL_ID : FILE_GROUP_ID_PREFIX + file;
+}
+
+/** Echte Objekt-Knoten (ohne Halos und ohne die Datei-Gruppen-Parents). */
+function selectRealNodes(cy: cytoscape.Core): cytoscape.NodeCollection {
+  return cy
+    .nodes()
+    .filter((n) => !n.hasClass('focus-halo') && !n.hasClass(PREVIEW_HALO_CLASS) && !n.hasClass(FILE_GROUP_CLASS));
+}
+
+/**
+ * Datei-Gruppierung an-/ausschalten. Legt je vorkommender Datei einen Compound-Parent an und
+ * schiebt die Knoten via `node.move({ parent })` hinein (Klone landen über ihren `file`-Wert
+ * datei-getrennt); `file === null` bekommt eine eigene Box `nullLabel`. Beim Abschalten werden
+ * alle Knoten gelöst und die Parents entfernt. **Idempotent** — kann nach jedem Merge/Rebuild
+ * erneut laufen. Muss in `cy.batch()` keine Sorge tragen (kapselt selbst).
+ */
+function applyFileGrouping(cy: cytoscape.Core, on: boolean, nullLabel: string): void {
+  cy.batch(() => {
+    const real = selectRealNodes(cy);
+    if (!on) {
+      real.forEach((n) => { if (n.parent().nonempty()) n.move({ parent: null }); });
+      cy.nodes(`.${FILE_GROUP_CLASS}`).remove();
+      return;
+    }
+    // (1) Benötigte Parents anlegen (Felder, die das Basis-`node`-Style mappt, mitgeben, sonst
+    //     warnt Cytoscape über fehlende Mappings auf dem Parent).
+    const needed = new Set<string>();
+    real.forEach((n) => { needed.add(fileGroupIdFor(n.data('file') as string | null)); });
+    needed.forEach((gid) => {
+      if (!cy.getElementById(gid).empty()) return;
+      const isNull = gid === FILE_GROUP_NULL_ID;
+      cy.add({
+        group: 'nodes',
+        data: {
+          id: gid,
+          label: isNull ? nullLabel : gid.slice(FILE_GROUP_ID_PREFIX.length),
+          isFileGroup: true,
+          color: 'transparent',
+          communityColor: 'transparent',
+          sizePx: 1,
+        },
+        selectable: false,
+        grabbable: true,
+      }).addClass(FILE_GROUP_CLASS);
+    });
+    // (2) Knoten in ihren Parent verschieben (nur wenn nötig).
+    real.forEach((n) => {
+      const gid = fileGroupIdFor(n.data('file') as string | null);
+      const parent = n.parent();
+      const parentId = parent.nonempty() ? parent.first().id() : null;
+      if (parentId !== gid) n.move({ parent: gid });
+    });
+    // (3) Leere Parents entfernen (z. B. wenn beim Rebuild eine Datei wegfällt).
+    cy.nodes(`.${FILE_GROUP_CLASS}`).forEach((p) => { if (p.children().empty()) p.remove(); });
+  });
+}
+
+/**
+ * Datei-Boxen ohne ein einziges *sichtbares* Kind ausblenden (sonst rendert Cytoscape eine leere
+ * Mini-Box). „Sichtbar" = weder vom Soft-Filter (`filtered-hidden`) noch als nicht-verbunden
+ * (`unconnected-hidden`) versteckt. Wird aus dem Filter- UND dem Unconnected-Pass aufgerufen, da
+ * beide die Kind-Sichtbarkeit verändern.
+ */
+function hideEmptyFileGroups(cy: cytoscape.Core): void {
+  cy.nodes(`.${FILE_GROUP_CLASS}`).forEach((p) => {
+    const hasVisibleChild = p
+      .children()
+      .filter((c) => !c.hasClass('filtered-hidden') && !c.hasClass(UNCONNECTED_HIDDEN_CLASS))
+      .nonempty();
+    p.toggleClass('filtered-hidden', !hasVisibleChild);
+  });
+}
+
+/**
+ * Das an `fcose` zu übergebende Element-Subset bauen. Schließt die nicht-verbundenen Knoten aus
+ * (wie bisher) UND **leere Datei-Boxen**: ein Compound-Parent ohne im Layout sichtbares Kind bringt
+ * fcose mit NaN-Bounds zum Absturz (leerer Graph). Tritt z. B. bei „Nur gewählte Typen" auf, wenn
+ * der Typ-Filter eine ganze Datei in lauter nicht-verbundene Inseln zerlegt. Markiert solche Boxen
+ * zugleich als `filtered-hidden` (kein Geister-Compound). No-op ohne Gruppierung.
+ */
+function layoutEles(cy: cytoscape.Core): cytoscape.CollectionReturnValue {
+  hideEmptyFileGroups(cy);
+  // `.file-group.filtered-hidden` = leere Box (beide Klassen) → nur diese, nicht normale
+  // typgefilterte Knoten, aus dem Layout nehmen (deren Positionen sollen erhalten bleiben).
+  return cy
+    .elements()
+    .not(`.${UNCONNECTED_HIDDEN_CLASS}`)
+    .not(`.${FILE_GROUP_CLASS}.filtered-hidden`);
 }
 
 const HALO_ID_PREFIX = '__focus_halo__';
@@ -496,7 +659,7 @@ const UNCONNECTED_HIDDEN_CLASS = 'unconnected-hidden';
 function applyUnconnectedVisibility(cy: cytoscape.Core, connected: Set<string>, show: boolean): void {
   cy.batch(() => {
     cy.nodes().forEach((n) => {
-      if (n.hasClass('focus-halo') || n.hasClass(PREVIEW_HALO_CLASS)) return;
+      if (n.hasClass('focus-halo') || n.hasClass(PREVIEW_HALO_CLASS) || n.hasClass(FILE_GROUP_CLASS)) return;
       if (n.data('isFocus') || connected.has(n.id())) {
         n.removeClass(UNCONNECTED_HIDDEN_CLASS);
       } else {
@@ -513,7 +676,7 @@ function applyUnconnectedVisibility(cy: cytoscape.Core, connected: Set<string>, 
  * focus-connected id set (for the "Nur verbunden" hide pass) alongside the counts.
  */
 function computeConnectivity(cy: cytoscape.Core): { connected: Set<string> } & GraphPartition {
-  const real = cy.nodes().filter((n) => !n.hasClass('focus-halo') && !n.hasClass(PREVIEW_HALO_CLASS));
+  const real = cy.nodes().filter((n) => !n.hasClass('focus-halo') && !n.hasClass(PREVIEW_HALO_CLASS) && !n.hasClass(FILE_GROUP_CLASS));
   const focusNodes = real.filter((n) => Boolean(n.data('isFocus')));
   const connected = new Set<string>();
   if (focusNodes.nonempty()) {
@@ -630,7 +793,7 @@ function escapeHtml(s: string): string {
 }
 
 export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>(
-  ({ data, nameFilter, selectedFile, filterMode, deselectedTypes, colorMode = 'type', selectedCommunity = null, hoveredCommunity = null, onSetFocus, onOpenDetails, onSelectNode, showUnconnected = false, onPartition }, ref) => {
+  ({ data, nameFilter, selectedFile, filterMode, deselectedTypes, colorMode = 'type', groupByFile = false, selectedCommunity = null, hoveredCommunity = null, onSetFocus, onOpenDetails, onSelectNode, showUnconnected = false, onPartition }, ref) => {
     const { t } = useTranslation(['explorer']);
     const { theme } = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -641,6 +804,10 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
     // inherit the current color lens without re-binding the imperative handle.
     const colorModeRef = useRef(colorMode);
     colorModeRef.current = colorMode;
+    // Datei-Gruppierung, gelesen in mount-only-Handlern (mergeElements) und im Render-Tick
+    // (Hüllen-Unterdrückung). Der Klartext „Ohne Datei" wird über tRef gezogen.
+    const groupByFileRef = useRef(groupByFile);
+    groupByFileRef.current = groupByFile;
 
     // Community hull overlay: a canvas behind the cytoscape layers,
     // a reusable offscreen buffer, and refs the mount-only `render` handler reads.
@@ -665,7 +832,9 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
         if (!cy || !canvas) return;
         const sel = selCommunityRef.current;
         const hov = hovCommunityRef.current;
-        const willDraw = sel !== null || hov !== null;
+        // Bei aktiver Datei-Gruppierung wird die Community-Hülle komplett unterdrückt
+        // (die Compound-Boxen liefern bereits die räumliche Gruppierung); Färbung bleibt.
+        const willDraw = (sel !== null || hov !== null) && !groupByFileRef.current;
         if (!willDraw && !hullLastDrewRef.current) return; // nothing to draw or clear
         hullLastDrewRef.current = willDraw;
         if (!offscreenRef.current) offscreenRef.current = document.createElement('canvas');
@@ -707,7 +876,7 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
       relayout: () => {
         const cy = cyRef.current;
         if (!cy) return;
-        runLayout(cy, fcoseLayout, cy.elements().not(`.${UNCONNECTED_HIDDEN_CLASS}`));
+        runLayout(cy, layoutFor(groupByFileRef.current), layoutEles(cy));
       },
       exportPng: () =>
         cyRef.current?.png({ full: true, scale: 2, bg: 'transparent' }) ?? null,
@@ -723,9 +892,14 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
         applyColorMode(cy, colorModeRef.current);
         // A merged hop may have connected former orphans (or added new ones) — re-evaluate.
         partitionRef.current = refreshPartition(cy, showUnconnectedRef.current, partitionReportRef.current);
+        // Bei aktiver Gruppierung die frisch gemergten Knoten ihrer Datei-Box zuordnen
+        // (Parent ggf. neu anlegen), sonst erscheinen sie außerhalb aller Boxen.
+        if (groupByFileRef.current) {
+          applyFileGrouping(cy, true, tRef.current('filter.fileGroupNone', { defaultValue: 'Ohne Datei' }) as string);
+        }
         // Re-layout keeping existing positions as the starting point so the
         // graph grows outward instead of reshuffling (incremental expand).
-        runLayout(cy, { ...fcoseLayout, randomize: false } as cytoscape.LayoutOptions, cy.elements().not(`.${UNCONNECTED_HIDDEN_CLASS}`));
+        runLayout(cy, { ...layoutFor(groupByFileRef.current), randomize: false } as cytoscape.LayoutOptions, layoutEles(cy));
       },
       collapseHub: (uuid) => {
         const cy = cyRef.current;
@@ -739,6 +913,8 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
           .nodes()
           .filter((n) => n.degree(false) <= 1 && !n.data('isFocus'));
         leaves.remove();
+        // Eine Datei-Box, die dadurch leer wurde, mit entfernen (kein Geister-Compound).
+        cy.nodes(`.${FILE_GROUP_CLASS}`).forEach((p) => { if (p.children().empty()) p.remove(); });
       },
       highlightNode: (uuid) => {
         const cy = cyRef.current;
@@ -807,6 +983,8 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
         // Single tap node: ⌘/Ctrl → details, plain → select (inspect panel).
         cy.on('tap', 'node', (evt) => {
           const node = evt.target;
+          // Eine Datei-Box (Compound-Parent) ist kein Objekt — Klick ignorieren.
+          if (node.data('isFileGroup')) return;
           // data('id') ist der composite Graph-Key (uuid::file) — für Navigation die
           // ROHE uuid + file nutzen (Klon-Disambiguierung).
           const uuid = node.data('uuid') as string;
@@ -822,6 +1000,7 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
 
         // Double tap node: re-center the graph on it.
         cy.on('dbltap', 'node', (evt) => {
+          if (evt.target.data('isFileGroup')) return; // Box ist kein Re-Focus-Ziel
           // Re-Focus über die ROHE uuid + file (nicht den composite Graph-Key).
           const uuid = evt.target.data('uuid') as string;
           if (!evt.target.data('isFocus')) setFocusRef.current(uuid, (evt.target.data('file') as string | null) ?? null);
@@ -839,6 +1018,7 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
         // edges, strongly dim the rest, and show a metadata tooltip.
         cy.on('mouseover', 'node', (evt) => {
           const node = evt.target;
+          if (node.data('isFileGroup')) return; // kein Hover-Highlight/Tooltip für Boxen
           const keep = node.closedNeighborhood();
           // The focus halo stays bright as a persistent locator, never dimmed.
           cy.elements().not(keep).not('.focus-halo').addClass('faded');
@@ -937,7 +1117,12 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
         // Compute the stable partition + hide not-connected nodes (islands + isolated)
         // BEFORE the layout so fcose never grids them; stash the connected set.
         partitionRef.current = refreshPartition(cy, showUnconnected, partitionReportRef.current);
-        runLayout(cy, fcoseLayout, cy.elements().not(`.${UNCONNECTED_HIDDEN_CLASS}`));
+        // Der Rebuild hat die Datei-Boxen mitentfernt → bei aktiver Gruppierung neu aufbauen,
+        // BEVOR das Layout läuft (sonst werden die Parents nicht mit angeordnet).
+        if (groupByFileRef.current) {
+          applyFileGrouping(cy, true, tRef.current('filter.fileGroupNone', { defaultValue: 'Ohne Datei' }) as string);
+        }
+        runLayout(cy, layoutFor(groupByFileRef.current), layoutEles(cy));
       } else {
         partitionRef.current = null;
         partitionReportRef.current?.(null);
@@ -957,8 +1142,10 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
       if (!isoInitRef.current) { isoInitRef.current = true; return; }
       // Toggling visibility doesn't change the partition counts — just show/hide + relayout.
       if (partitionRef.current) applyUnconnectedVisibility(cy, partitionRef.current.connected, showUnconnected);
+      // layoutEles() bewertet die Box-Sichtbarkeit (hideEmptyFileGroups) selbst neu — Ein-/Ausblenden
+      // nicht-verbundener Knoten kann eine Datei-Box leeren/füllen.
       if (cy.elements().length) {
-        runLayout(cy, fcoseLayout, cy.elements().not(`.${UNCONNECTED_HIDDEN_CLASS}`));
+        runLayout(cy, layoutFor(groupByFileRef.current), layoutEles(cy));
       }
     }, [showUnconnected, ready]);
 
@@ -970,13 +1157,28 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
     }, [colorMode, ready]);
 
     // Redraw hulls when the selection/hover (or data) changes — a selection change
-    // alone doesn't trigger a cytoscape `render` tick.
+    // alone doesn't trigger a cytoscape `render` tick. `groupByFile` mit drin, damit beim
+    // Einschalten der Gruppierung eine evtl. gezeichnete Hülle sofort gelöscht wird.
     useEffect(() => {
       if (!ready) return;
       redrawHulls();
       // redrawHulls reads the latest selection/hover from refs; deps drive the call.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedCommunity, hoveredCommunity, colorMode, data, ready]);
+    }, [selectedCommunity, hoveredCommunity, colorMode, groupByFile, data, ready]);
+
+    // Datei-Gruppierung umschalten ohne Refetch: Knoten in/aus Compound-Boxen schieben (via
+    // node.move) + Re-Layout. Der erste Lauf wird übersprungen — die Daten-Effekte oben wenden
+    // die Gruppierung beim Aufbau bereits an (liest groupByFileRef); hier nur echte Toggles.
+    const groupInitRef = useRef(false);
+    useEffect(() => {
+      const cy = cyRef.current;
+      if (!cy || !ready) return;
+      if (!groupInitRef.current) { groupInitRef.current = true; return; }
+      applyFileGrouping(cy, groupByFile, tRef.current('filter.fileGroupNone', { defaultValue: 'Ohne Datei' }) as string);
+      if (cy.elements().length) {
+        runLayout(cy, layoutFor(groupByFileRef.current), layoutEles(cy));
+      }
+    }, [groupByFile, ready]);
 
     // Client-side filters: toggle visibility only — no
     // re-layout, positions stay put. Type chips are a hard *exclusion* set
@@ -994,6 +1196,9 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
       const communityActive = selectedCommunity !== null;
       cy.batch(() => {
         cy.nodes().forEach((n) => {
+          // Datei-Boxen werden nicht direkt gefiltert — ihre Sichtbarkeit ergibt sich aus den
+          // Kindern (siehe Pass unten); hier überspringen.
+          if (n.data('isFileGroup')) return;
           // The focus node + halos (focus + transient hover preview) stay fully visible.
           if (n.data('isFocus') || n.hasClass('focus-halo') || n.hasClass(PREVIEW_HALO_CLASS)) {
             n.removeClass('filtered-hidden name-dimmed');
@@ -1029,8 +1234,19 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
           e.toggleClass('filtered-hidden', hide);
           e.toggleClass('name-dimmed', !hide && (s.hasClass('name-dimmed') || t.hasClass('name-dimmed')));
         });
+
+        // Datei-Boxen ohne sichtbares Kind ausblenden (sonst leere Mini-Box) — greift z. B.
+        // wenn der Datei-Filter im „hide"-Modus eine ganze Datei wegblendet.
+        hideEmptyFileGroups(cy);
+
+        // Die per Dropdown gewählte Datei-Box hervorheben (transluzenter Akzent-Hintergrund).
+        cy.nodes(`.${FILE_GROUP_CLASS}`).removeClass('file-group-selected');
+        if (selectedFile !== null) {
+          cy.getElementById(`${FILE_GROUP_ID_PREFIX}${selectedFile}`).addClass('file-group-selected');
+        }
       });
-    }, [nameFilter, selectedFile, filterMode, deselectedTypes, selectedCommunity, data, ready]);
+      // groupByFile mit drin: nach dem Ein-/Ausschalten die Box-Sichtbarkeit neu bewerten.
+    }, [nameFilter, selectedFile, filterMode, deselectedTypes, selectedCommunity, groupByFile, data, ready]);
 
     return (
       <div className="explorer-graph-canvas-host">

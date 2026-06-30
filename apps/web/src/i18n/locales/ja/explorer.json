@@ -49,6 +49,9 @@
     "file": "ファイル",
     "allFiles": "すべてのファイル",
     "filterMode": "非一致",
+    "groupByFile": "グループ化",
+    "groupByFileHint": "ノードをファイルごとにボックスにまとめる",
+    "fileGroupNone": "ファイルなし",
     "filterModes": {
       "dim": "薄く表示",
       "hide": "非表示"
@@ -98,5 +101,20 @@
   "unconnectedHidden_other": "フォーカスに接続されていないノード {{count}} 件",
   "unconnectedToggleShow": "表示",
   "unconnectedToggleHide": "非表示",
-  "unconnectedToggleHint": "フォーカスへの経路がないノードは種類/深さフィルターによって生じます — 表示または非表示にします"
+  "unconnectedToggleHint": "フォーカスへの経路がないノードは種類/深さフィルターによって生じます — 表示または非表示にします",
+  "typeList": {
+    "ariaLabel": "オブジェクト一覧: {{type}}",
+    "sortBy": "並べ替え",
+    "sort": {
+      "name": "名前",
+      "file": "ファイル"
+    },
+    "directionLabel": "方向",
+    "directionAria": "方向で絞り込み",
+    "dirIn": "参照元",
+    "dirOut": "参照先",
+    "dirBoth": "両方",
+    "empty": "このタイプのオブジェクトはグラフにありません。",
+    "focus": "フォーカスオブジェクト"
+  }
 }

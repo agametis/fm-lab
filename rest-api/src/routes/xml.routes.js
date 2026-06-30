@@ -12,6 +12,7 @@ const xmlController = require('../controllers/xml.controller');
  */
 
 router.get('/xml/status',         xmlController.getStatus);
+router.post('/xml/reveal',        xmlController.reveal);
 router.get('/xml/last-run/log',   xmlController.getLastRunLog);
 router.post('/xml/convert',       xmlController.convert);
 // Lauf vom Request entkoppelt — Stream-Abo + expliziter Cancel.

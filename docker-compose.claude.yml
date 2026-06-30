@@ -1,0 +1,88 @@
+# fm-lab — Claude Code overlay: adds the Claude Code CLI on top of the base tool.
+#
+# Use WITH the base compose (the base stays the pure tool; this is an additive layer):
+#   docker compose -f docker-compose.yml -f docker-compose.claude.yml up
+#
+# Upgrades the `api` service to the `claude` image (Claude Code CLI + sandbox-runtime
+# + bundled duckdb-skills) and adds:
+#   - fmlab-claude  : a named volume at /home/node/.claude so the login / sessions
+#                     persist across restarts (no host path).
+#   - NET_ADMIN/NET_RAW caps : enable the OPT-IN egress firewall. Apply it inside the
+#                     container with `sudo /usr/local/bin/init-firewall.sh` (the Claude
+#                     devcontainer variant runs it automatically via postStartCommand).
+#                     Without the firewall, Claude Code's permission prompts protect you.
+#
+# Auth: the ONLY manual step is providing credentials. Pick one (each persists in the
+# fmlab-claude volume; no secret is ever baked into the image):
+#   - sign in interactively: `docker compose exec -it api claude`, choose the subscription
+#     option, and complete the browser sign-in once. The terminal sign-in URL wraps across
+#     lines — copy it with `c` (OSC-52 terminals) or repair it in an editor (see README
+#     Quickstart). This is the reliable path; the credentials are then recognised on every
+#     restart.
+#   - or set ANTHROPIC_API_KEY (API-key billing) / CLAUDE_CODE_OAUTH_TOKEN (subscription
+#     token from `claude setup-token`) in your environment or a `.env` next to the files.
+#
+# The volume list is re-declared in full (base 6 + fmlab-claude) on purpose, so the
+# overlay never depends on cross-file volume-merge semantics dropping the node_modules
+# / spill volumes.
+
+services:
+  api:
+    image: fm-lab-claude:local
+    build:
+      target: claude
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    # Credentials pass through only when set on the host — never injected as an empty
+    # value. A present-but-empty key/token can shadow an interactive subscription login;
+    # leaving them unset lets the interactive `claude` login (persisted in the
+    # fmlab-claude volume) take effect.
+    environment:
+      - CLAUDE_CONFIG_DIR=/home/node/.claude
+      - ANTHROPIC_API_KEY          # API-key billing (passed through only if set on the host)
+      - CLAUDE_CODE_OAUTH_TOKEN    # subscription token from `claude setup-token` (only if set)
+    volumes:
+      - type: bind
+        source: .
+        target: /workspaces/fm-lab
+      - type: volume
+        source: fmlab-nm-root
+        target: /workspaces/fm-lab/node_modules
+      - type: volume
+        source: fmlab-nm-restapi
+        target: /workspaces/fm-lab/rest-api/node_modules
+      - type: volume
+        source: fmlab-nm-web
+        target: /workspaces/fm-lab/apps/web/node_modules
+      - type: volume
+        source: fmlab-nm-shared
+        target: /workspaces/fm-lab/packages/shared/node_modules
+      - type: volume
+        source: fmlab-duckdb-spill
+        target: /duckdb_spill
+      - type: volume
+        source: fmlab-claude
+        target: /home/node/.claude
+
+      # ── Optional: give the agent access to YOUR files ─────────────────────────
+      # Bind a host folder into the container so Claude Code can work with it, then
+      # grant the matching permission (the mount makes files visible; the permission
+      # lets the agent use them — add it via `/permissions` or .claude/settings.local.json).
+      #
+      # Read-only — agent may READ but never change (e.g. reference documents).
+      # `read_only: true` enforces this at the filesystem level, independent of permissions.
+      #   - type: bind
+      #     source: /Users/you/Documents/reference     # ← edit: your host path
+      #     target: /workspaces/sources/reference
+      #     read_only: true
+      #   permission to add:  Read(/workspaces/sources/reference/**)
+      #
+      # Read-write — agent may also CREATE/EDIT files (e.g. an Obsidian vault).
+      #   - type: bind
+      #     source: /Users/you/vaults/Notes            # ← edit: your host path
+      #     target: /workspaces/sources/notes
+      #   permissions to add:  Read(/workspaces/sources/notes/**), Edit(/workspaces/sources/notes/**), Write(/workspaces/sources/notes/**)
+
+volumes:
+  fmlab-claude:

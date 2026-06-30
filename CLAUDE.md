@@ -1,4 +1,4 @@
-<!-- @CLAUDE_MD_VERSION 0.8.5 -->
+<!-- @CLAUDE_MD_VERSION 0.8.6 -->
 # FileMaker XML Analysis
 
 ## Role
@@ -402,23 +402,28 @@ The database lives as two separate instances to avoid read/write conflicts betwe
 
 ### DuckDB binary — locating the executable
 
-The VS Code environment does not automatically inherit the user's shell PATH. If `which duckdb` fails, check the following well-known install locations **in this order** before attempting to install DuckDB:
+In the standard setup (the Docker container, or a native install with DuckDB on `PATH`),
+just call DuckDB as a plain `duckdb …` command — see the examples below. `which duckdb`
+succeeds there, so no path probing is needed.
+
+**Keep every DuckDB call a single, plain command.** Do **not** wrap it in a subshell
+`( … )`, chain it with `&&`/`||` to probe for the binary, or assign the path to a variable
+and call `$DB …`. The project's permission allow-list matches the command **prefix**
+(`duckdb …` / `/usr/local/bin/duckdb …`), so any such indirection defeats the match and
+makes Claude Code prompt for approval on every single query.
+
+Only if `which duckdb` actually fails (some native setups do not inherit the user's shell
+PATH) resolve the path **once** by checking these well-known locations in order:
 
 ```bash
-# 1. Check PATH
-which duckdb
-
-# 2. Bash installer (most common cause of PATH issues)
-~/.duckdb/cli/latest/duckdb --version
-
-# 3. Homebrew (Apple Silicon)
-/opt/homebrew/bin/duckdb --version
-
-# 4. Homebrew (Intel Mac)
-/usr/local/bin/duckdb --version
+which duckdb                              # 1. PATH (the standard case)
+~/.duckdb/cli/latest/duckdb --version    # 2. Bash installer
+/opt/homebrew/bin/duckdb --version       # 3. Homebrew (Apple Silicon)
+/usr/local/bin/duckdb --version          # 4. Homebrew (Intel Mac)
 ```
 
-Once the path is found, use the full path for all subsequent DuckDB commands in this session, e.g. `~/.duckdb/cli/latest/duckdb db/fm_catalog.duckdb -c "..."`.
+Then call that absolute path **directly** as a plain command — still no subshell, no `$DB`
+variable — e.g. `~/.duckdb/cli/latest/duckdb db/fm_catalog.duckdb -c "..."`.
 
 **Important:** Never try to install DuckDB yourself. If it cannot be found in any of the locations above, point the user to the installation instructions.
 

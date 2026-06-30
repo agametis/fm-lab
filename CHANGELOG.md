@@ -12,6 +12,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.8.6] — 2026-06-30
+
+A containerized setup for fm-lab with a clear Quickstart path, a version manifest that tracks every moving part, and a round of UI refinements.
+
+- **Docker setup** — run the whole stack in a container, no local toolchain required
+  - A self-contained **dev-container + `docker-compose` bundle** with a clean multi-stage `Dockerfile` (base and Claude Code targets) and a network-hardening firewall init script
+  - **Guided Quickstart** — the Home empty-state card now shows the live file count in `xml/`, an **Open folder** action (copyable host path in the container), and a one-click **Convert** that jumps into the import and starts it
+  - Windows support (experimental) via Docker Desktop / WSL2 backend
+- **Version manifest & runtime checks**
+  - A central **`version.json` manifest** generated from a single source, tracking the version of each component (REST API, web client, `CLAUDE.md`, DB schema) with a per-component on-change action (restart, rebuild, copy, or force a DB rebuild)
+  - New **`/api/version-manifest` endpoint** and a version bar in the web client settings
+  - Init/version check raised to a **Node 20 / npm 10** baseline
+- **UI refinements** — numerous frontend optimizations; the prominent ones:
+  - **Files as the top level** — the object hierarchy and the Graph Explorer can group by file
+  - **References panel** — duplicate removal, additional columns, and a flex layout
+  - **In-script search** extended to step parameters (ScriptStep chunk content), so a query hits inside step contents, not just step names
+
+---
+
 ## [0.8.5] — 2026-06-28
 
 A top-down Graph Atlas over the whole solution, a cluster overview with auto-clustering, and a unified, more polished web client.

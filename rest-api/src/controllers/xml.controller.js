@@ -119,10 +119,32 @@ async function cancelConvert(req, res) {
   return ok(res, { cancelled: true });
 }
 
+/**
+ * POST /api/xml/reveal — öffnet das xml/-Verzeichnis im nativen Datei-Manager
+ * (macOS: open, Linux: xdg-open). Nur im nativen Lauf möglich; im Container
+ * (kein Host-Finder erreichbar) liefert der Service `REVEAL_UNSUPPORTED` → 409,
+ * worauf das Frontend stattdessen den Host-Pfad zum Kopieren anzeigt.
+ */
+async function reveal(req, res, next) {
+  try {
+    const opened = await xmlConvert.revealXmlDir();
+    return ok(res, { opened });
+  } catch (err) {
+    if (err && err.code === 'REVEAL_UNSUPPORTED') {
+      return res.status(409).json({
+        success: false,
+        error: { code: 'REVEAL_UNSUPPORTED', message: err.message },
+      });
+    }
+    return next(err);
+  }
+}
+
 module.exports = {
   getStatus,
   getLastRunLog,
   convert,
   streamConvert,
   cancelConvert,
+  reveal,
 };

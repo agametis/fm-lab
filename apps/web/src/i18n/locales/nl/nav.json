@@ -100,7 +100,7 @@
     "loading": "Hiërarchie wordt geladen…",
     "empty": "Geen vermeldingen",
     "statsFiltered": "{{visibleEntries}} / {{totalEntries}} vermeldingen, {{visibleFolders}} / {{totalFolders}} mappen",
-    "stats": "{{entries}} vermeldingen, {{folders}} mappen",
+    "stats": "{{entries}} vermeldingen, {{folders}} mappen, {{files}} bestanden",
     "expandAll": "Alles uitvouwen",
     "collapseAll": "Alles invouwen",
     "disabledDuringFilter": "Uitgeschakeld tijdens filteren",

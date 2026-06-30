@@ -46,6 +46,8 @@ export const ObjectGraphPanel = forwardRef<ObjectGraphPanelHandle, { object: FMO
   // Local (non-URL) traversal state — the object URL stays `?tab=graph` only.
   const [depth, setDepth] = useState(1);
   const [direction, setDirection] = useState<SubgraphDirection>('both');
+  // Datei-Gruppierung: im eingebetteten Panel rein lokaler State (keine eigene URL).
+  const [groupByFile, setGroupByFile] = useState(false);
 
   const focus = object.Object_UUID;
 
@@ -103,6 +105,8 @@ export const ObjectGraphPanel = forwardRef<ObjectGraphPanelHandle, { object: FMO
         onSetFocus={handleSetFocus}
         onOpenDetails={handleOpenDetails}
         onStats={setStats}
+        groupByFile={groupByFile}
+        onGroupByFileChange={setGroupByFile}
       />
     </div>
   );

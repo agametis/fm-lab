@@ -57,3 +57,18 @@ export const ScriptSearchQueryContext = createContext<string | null>(null);
 export function useScriptSearchQuery(): string | null {
   return useContext(ScriptSearchQueryContext);
 }
+
+/**
+ * Raw Query-String für die Literal-Text-Suche in Step-Zeilen. Anders als der
+ * ScriptSearchQueryContext (nur Kommentare) zielt dieser Context auf die
+ * Nicht-Ref-Literalsegmente einer Step-Zeile — Parameterwerte, eingefügte
+ * Strings, Step-Namen. Damit findet die In-Skript-Suche auch Text, der nicht
+ * als Ref tokenisiert ist (z.B. ein XML-Literal im Wert eines Set-Variable-
+ * Steps) und spiegelt so die globale Suche, die auf dem vollen Step_Text matcht.
+ * `null` = inaktiv (Pillen-Filter aktiv oder kein Query).
+ */
+export const ScriptLineSearchQueryContext = createContext<string | null>(null);
+
+export function useScriptLineSearchQuery(): string | null {
+  return useContext(ScriptLineSearchQueryContext);
+}

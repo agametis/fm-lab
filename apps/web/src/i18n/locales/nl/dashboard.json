@@ -69,5 +69,18 @@
     "copied": "gekopieerd",
     "openCluster": "Communities tonen",
     "openClusterHint": "Naar het clusteroverzicht"
+  },
+  "xmlEmpty": {
+    "hint":              "Nog geen gegevens. Plaats je FileMaker XML-export in de map “xml/” en start de conversie.",
+    "hintExport":        "Exporteer vanuit FileMaker Pro via “Bestand ▸ Een kopie opslaan als XML” — schakel “Details voor analysetools opnemen” in.",
+    "directoryEmpty":    "Geen bestanden in de map “xml/”.",
+    "directoryAria":     "Bestanden in de XML-map",
+    "countFound":        "{{count}} XML-bestand(en) gevonden",
+    "openFolder":        "Map openen",
+    "copyPath":          "Pad kopiëren",
+    "copied":            "Gekopieerd ✓",
+    "hostPathHint":      "Plaats de bestanden in deze map op de host — deze is gekoppeld aan de container.",
+    "containerPathNote": "Pad in de container",
+    "putFilesHint":      "Plaats je FileMaker XML-bestanden in de map “xml/”."
   }
 }

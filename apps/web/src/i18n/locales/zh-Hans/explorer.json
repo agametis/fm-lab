@@ -49,6 +49,9 @@
     "file": "文件",
     "allFiles": "所有文件",
     "filterMode": "非匹配项",
+    "groupByFile": "分组",
+    "groupByFileHint": "按文件将节点分组到框中",
+    "fileGroupNone": "无文件",
     "filterModes": {
       "dim": "淡化",
       "hide": "隐藏"
@@ -98,5 +101,20 @@
   "unconnectedHidden_other": "{{count}} 个与焦点无连接的节点",
   "unconnectedToggleShow": "显示",
   "unconnectedToggleHide": "隐藏",
-  "unconnectedToggleHint": "没有通往焦点路径的节点由类型/深度筛选产生 — 显示或隐藏它们"
+  "unconnectedToggleHint": "没有通往焦点路径的节点由类型/深度筛选产生 — 显示或隐藏它们",
+  "typeList": {
+    "ariaLabel": "对象列表：{{type}}",
+    "sortBy": "排序",
+    "sort": {
+      "name": "名称",
+      "file": "文件"
+    },
+    "directionLabel": "方向",
+    "directionAria": "按方向筛选",
+    "dirIn": "传入",
+    "dirOut": "传出",
+    "dirBoth": "双向",
+    "empty": "图中没有此类型的对象。",
+    "focus": "焦点对象"
+  }
 }

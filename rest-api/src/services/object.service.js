@@ -1179,6 +1179,22 @@ async function getReferences(refOptions) {
         sql += ` UNION ALL ${STEP_REFS_ALL}`;
         params.push(uuid);
       }
+      // Identische Mehrfachkanten zu EINER Referenz je (Richtung · Ziel · Rolle ·
+      // Container) zusammenfassen. ObjectLinks hält bewusst eine Kante pro
+      // Vorkommen (z.B. ruft ein Script dasselbe Ziel-Script in 4 Perform-Script-
+      // Schritten → 4 calls_script-Zeilen); in der Referenzliste zeigt jedes
+      // dieselbe Zielzeile, was nur Lärm ist. Call_Count = Anzahl der Vorkommen
+      // (Frontend rendert ×N) — gleiche Aggregation wie der Pseudo-Type-Resolver.
+      sql = `
+        SELECT direction, uuid, Object_Type, Object_Name, File_Name, Link_Role,
+               BOOL_OR(Is_Cross_File) AS Is_Cross_File,
+               Container_UUID, Container_Type,
+               BOOL_OR(navigable) AS navigable,
+               COUNT(*) AS Call_Count
+        FROM (${sql}) ref_union
+        GROUP BY direction, uuid, Object_Type, Object_Name, File_Name, Link_Role,
+                 Container_UUID, Container_Type
+      `;
     }
 
     if (limit > 0 && direction !== 'recursive') {

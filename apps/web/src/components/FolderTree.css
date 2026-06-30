@@ -114,6 +114,11 @@
   color: var(--color-badge-cf-fg);
 }
 
+.folder-tree-badge-file {
+  background-color: var(--color-accent);
+  color: var(--color-text-inverse);
+}
+
 .folder-tree-name {
   flex: 1 1 auto;
   min-width: 0;
@@ -126,6 +131,16 @@
 .folder-tree-row-folder .folder-tree-name {
   font-weight: 600;
   color: var(--color-badge-folder-fg);
+}
+
+/* Datei-Gruppenknoten (Top-Level in Mehrdatei-Lösungen) hervorheben */
+.folder-tree-row-file {
+  background-color: var(--color-bg-surface-2);
+}
+
+.folder-tree-row-file .folder-tree-name {
+  font-weight: 700;
+  color: var(--color-text-primary);
 }
 
 .folder-tree-file {

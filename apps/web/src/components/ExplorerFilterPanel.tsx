@@ -64,6 +64,8 @@ export interface ExplorerFilterPanelProps {
   availableTypes: { type: string; count: number }[];
   /** Distinct files present in the current graph. */
   availableFiles: string[];
+  /** Datei-Gruppierung aktiv — Knoten in Compound-Boxen je Datei. */
+  groupByFile: boolean;
   /** Verfeinerung C: ein server-seitiger Typ-Filter ist aktiv (committed). */
   serverTypesActive: boolean;
   /** Show the Type↔Community color-lens toggle + legend (standalone only). */
@@ -80,6 +82,8 @@ export interface ExplorerFilterPanelProps {
   onOpenTypeList: (type: string) => void;
   onNameFilterChange: (v: string) => void;
   onSelectedFileChange: (file: string | null) => void;
+  /** Datei-Gruppierung (Compound-Boxen) an/aus. */
+  onGroupByFileChange: (v: boolean) => void;
   onFilterModeChange: (m: FilterMode) => void;
   onColorModeChange: (m: ColorMode) => void;
   /** Toggle a community as selected. */
@@ -107,10 +111,10 @@ export function ExplorerFilterPanel(props: ExplorerFilterPanelProps) {
     focusLabel, focusUuid, focusFile, nameFilter, selectedFile, filterMode,
     depth, depthMax, maxDepth, maxDepthHitCap, depthExtended, canExtendDepth, depthCumulative, nodeLimit,
     direction, partition,
-    deselectedTypes, availableTypes, availableFiles, serverTypesActive,
+    deselectedTypes, availableTypes, availableFiles, groupByFile, serverTypesActive,
     showColorMode, colorMode, communities, selectedCommunity,
     onOpenFocusDetails, onOpenTypeList,
-    onNameFilterChange, onSelectedFileChange, onFilterModeChange, onColorModeChange,
+    onNameFilterChange, onSelectedFileChange, onGroupByFileChange, onFilterModeChange, onColorModeChange,
     onSelectCommunity, onHoverCommunity,
     onDepthChange, onExtendDepthChange, onDirectionChange, onToggleType, onShowAllTypes, onApplyServerTypes,
   } = props;
@@ -196,12 +200,24 @@ export function ExplorerFilterPanel(props: ExplorerFilterPanelProps) {
         </div>
       </div>
 
-      {/* File filter — only shown when the graph spans more than one file */}
+      {/* File filter — only shown when the graph spans more than one file.
+          Die „gruppieren"-Checkbox sitzt inline rechts neben dem Abschnitts-Titel
+          (über der Auswahlliste): Knoten werden in Compound-Boxen je Datei gelegt. */}
       {availableFiles.length > 1 && (
         <div className="explorer-filter-section">
-          <label className="explorer-filter-label" htmlFor="explorer-file-filter">
-            {t('filter.file')}
-          </label>
+          <div className="explorer-filter-label-row">
+            <label className="explorer-filter-label" htmlFor="explorer-file-filter">
+              {t('filter.file')}
+            </label>
+            <label className="explorer-group-toggle" title={t('filter.groupByFileHint') as string}>
+              <input
+                type="checkbox"
+                checked={groupByFile}
+                onChange={(e) => onGroupByFileChange(e.target.checked)}
+              />
+              {t('filter.groupByFile')}
+            </label>
+          </div>
           <select
             id="explorer-file-filter"
             className="explorer-file-select"

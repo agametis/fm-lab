@@ -100,7 +100,7 @@
     "loading": "Läser in hierarki…",
     "empty": "Inga poster",
     "statsFiltered": "{{visibleEntries}} / {{totalEntries}} poster, {{visibleFolders}} / {{totalFolders}} mappar",
-    "stats": "{{entries}} poster, {{folders}} mappar",
+    "stats": "{{entries}} poster, {{folders}} mappar, {{files}} filer",
     "expandAll": "Expandera alla",
     "collapseAll": "Fäll ihop alla",
     "disabledDuringFilter": "Avaktiverat vid filtrering",

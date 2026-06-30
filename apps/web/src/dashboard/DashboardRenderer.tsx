@@ -9,6 +9,23 @@ interface Props {
 }
 
 /**
+ * Evaluate a node's optional `visibleWhen` guard against the loaded datasets.
+ * Reads the first row of the referenced dataset; on any uncertainty (missing
+ * dataset/row/field) it defaults to VISIBLE, so a node never disappears because
+ * its guard dataset failed to load.
+ */
+function isNodeVisible(node: LayoutNode, datasets: DashboardDataResponse): boolean {
+  const cond = node.visibleWhen;
+  if (!cond) return true;
+  const row = datasets?.[cond.dataset]?.data?.[0] as Record<string, unknown> | undefined;
+  const val = row?.[cond.field];
+  if ('equals' in cond) return val === cond.equals;
+  if ('notEquals' in cond) return val !== cond.notEquals;
+  if ('truthy' in cond) return cond.truthy ? !!val : !val;
+  return true;
+}
+
+/**
  * Walkt rekursiv den Layout-Tree. Ein Primitive entscheidet selbst, wie es das
  * gebundene Dataset interpretiert (Single-Row für Container, Multi-Row für
  * Repeating-Primitives wie List/Table/TileGrid).
@@ -24,6 +41,7 @@ export function DashboardRenderer({ layout, datasets }: Props) {
       parentRow?: Record<string, unknown>,
       parentDataset?: DatasetResult
     ): React.ReactNode => {
+      if (!isNodeVisible(node, datasets)) return null;
       const Primitive = getPrimitive(node.type);
       const ownDatasetId = node.data?.dataset as string | undefined;
       // Eigene Bindung gewinnt; sonst erbt das Primitive das Dataset vom Parent.

@@ -42,6 +42,17 @@ const manifestSchema = Joi.object({
   }).default({ read_only: true, allow_navigation: true }),
 }).unknown(true);
 
+// Declarative visibility guard on a node: reads the first row of a dataset and
+// shows the node only when the condition holds (absent = always visible). Mirrors
+// the frontend VisibleWhen type (apps/web/src/api/dashboardApi.ts).
+const visibleWhenSchema = Joi.object({
+  dataset: Joi.string().min(1).required(),
+  field: Joi.string().min(1).required(),
+  equals: Joi.any().optional(),
+  notEquals: Joi.any().optional(),
+  truthy: Joi.boolean().optional(),
+});
+
 // Layout: Baumstruktur mit type/props/children/data — rekursiv
 const layoutNodeSchema = Joi.object({
   type: Joi.string().min(1).required(),
@@ -51,6 +62,7 @@ const layoutNodeSchema = Joi.object({
   data: Joi.object({
     dataset: Joi.string().optional(),
   }).unknown(true).optional(),
+  visibleWhen: visibleWhenSchema.optional(),
   children: Joi.array().items(Joi.link('#node')).optional(),
 }).id('node');
 

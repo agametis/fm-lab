@@ -100,7 +100,7 @@
     "loading": "正在加载层级…",
     "empty": "没有条目",
     "statsFiltered": "{{visibleEntries}} / {{totalEntries}} 条,{{visibleFolders}} / {{totalFolders}} 个文件夹",
-    "stats": "{{entries}} 条,{{folders}} 个文件夹",
+    "stats": "{{entries}} 条,{{folders}} 个文件夹,{{files}} 个文件",
     "expandAll": "全部展开",
     "collapseAll": "全部折叠",
     "disabledDuringFilter": "筛选过程中已禁用",

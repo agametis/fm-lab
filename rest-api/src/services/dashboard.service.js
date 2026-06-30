@@ -585,6 +585,27 @@ async function builtinXmlDirectoryListing() {
 }
 
 /**
+ * builtin:xml_directory_meta — eine Meta-Zeile für die Empty-State-Karte:
+ * Datei-Anzahl + Gesamtgröße + Pfade + Laufzeit-/Reveal-Flags. So zieht die
+ * Karte Anzahl, „Ordner öffnen" (nativ) und den Host-Pfad-Fallback (Container)
+ * aus einer Quelle. Vom 6-s-Soft-Refresh des Home-Dashboards gepollt.
+ */
+async function builtinXmlDirectoryMeta() {
+  const xmlConvert = require('./xml-convert');
+  const status = await xmlConvert.getStatus();
+  const files = status.files || [];
+  const totalBytes = files.reduce((sum, f) => sum + (Number(f.size) || 0), 0);
+  return [{
+    count: files.length,
+    total_bytes: totalBytes,
+    xml_dir: status.xml_dir,
+    host_xml_dir: status.host_xml_dir ?? null,
+    runtime: status.runtime,
+    can_reveal: status.can_reveal === true,
+  }];
+}
+
+/**
  * builtin:xml_last_run — Meta-Zeile zum letzten Konvertierungslauf (ohne
  * events[]). Wird im Sub-Dashboard für die Statuszeile über dem Log genutzt.
  * Liefert eine Liste mit 0 oder 1 Eintrag.
@@ -654,6 +675,7 @@ const BUILTIN_RESOLVERS = {
   docset_functions_with_counts: builtinDocsetFunctionsWithCounts,
   xml_directory_status: builtinXmlDirectoryStatus,
   xml_directory_listing: builtinXmlDirectoryListing,
+  xml_directory_meta: builtinXmlDirectoryMeta,
   xml_last_run: builtinXmlLastRun,
   xml_semantic_names: builtinXmlSemanticNames,
   cluster_count: builtinClusterCount,

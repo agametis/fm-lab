@@ -5,6 +5,7 @@ import type { GroupedReferences, ReferenceItem } from '../types';
 import { ReferencesFilter } from './ReferencesFilter';
 import { useUrlState, stringSetCodec, type UrlStateCodec } from '../hooks/useUrlState';
 import { buildNavigablePath } from '../lib/navigation';
+import { useCurrentFile } from '../lib/currentFileContext';
 
 const EMPTY_TYPES = new Set<string>();
 
@@ -71,6 +72,10 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
   const { t } = useTranslation(['detail']);
   const navigate = useNavigate();
   const { uuid: currentUuid } = useParams<{ uuid: string }>();
+  // Heimat-Datei = Datei des aktuell geöffneten Objekts (der Fokus, in dem die
+  // Referenzen aufgelöst werden). Referenzen aus derselben Datei blenden den
+  // Dateinamen aus (Platzersparnis); nur datei-fremde Treffer zeigen ihn.
+  const focusFile = useCurrentFile();
   // URL als Single Source of Truth — Stack erhält Such- und Filterstand
   // beim Zurück-Navigieren automatisch (Tab-Param 'tab' liegt in DetailView).
   //
@@ -316,42 +321,56 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
         <span className="ref-name">
           {ref.Object_Name}
         </span>
-        <span className="ref-file">
-          ({ref.File_Name})
-        </span>
-        {ref.Is_Cross_File && (
-          <span className="cross-file-badge">
-            {t('detail:hierarchyTree.crossFileBadge')}
-          </span>
-        )}
-        {ref.Origin_Hit && (
-          <span
-            className="origin-hit-badge"
-            title={t('detail:hierarchyTree.originHitTitle', {
-              defaultValue: 'Aus dem Herkunftsobjekt (ref) erreichbar',
-            }) as string}
-          >
-            {t('detail:hierarchyTree.originHitBadge', { defaultValue: '↩ Herkunft' })}
-          </span>
-        )}
-        <span className="ref-role">
-          {/* Rolle nicht mehr als Text — nur ein Richtungs-Pfeil; die konkrete
-              Rolle (calls_script, reads_field, …) steht im Tooltip. */}
-          <span
-            className={`ref-dir ref-dir-${dir}`}
-            title={`${dir === 'in'
-              ? t('detail:hierarchyTree.dirIn', { defaultValue: 'Eingehend' })
-              : t('detail:hierarchyTree.dirOut', { defaultValue: 'Ausgehend' })} · ${ref.Link_Role}`}
-            aria-hidden="true"
-          >
-            {dir === 'in' ? '←' : '→'}
-          </span>
+        {/* Meta-Gruppe (Zähler · Rolle · Datei · Badges · Pfeil) — wrappt als EIN
+            Block unter den Namen, sobald die Breite nicht reicht; erst bei ganz
+            wenig Platz brechen ihre Einzelteile weiter um (stufenweise via
+            flex-wrap, kein hartes Spalten-Umbrechen mehr ab 768px). */}
+        <span className="ref-meta">
           {typeof ref.Call_Count === 'number' && ref.Call_Count > 1 && (
             <span className="ref-call-count" title={t('detail:hierarchyTree.callCountTitle', {
               count: ref.Call_Count,
               defaultValue: '{{count}} Vorkommen',
-            }) as string}> ×{ref.Call_Count}</span>
+            }) as string}>×{ref.Call_Count}</span>
           )}
+          {ref.Link_Role && (
+            // Rohe Link-Rolle als Klartext (calls_script, reads_field, …). Per
+            // Container-Query nur eingeblendet, wenn die Referenz-Spalte breit
+            // genug ist (sonst trägt der Pfeil-Tooltip die Rolle weiter).
+            <span className="ref-role-label">{ref.Link_Role}</span>
+          )}
+          {ref.File_Name && ref.File_Name !== focusFile && (
+            <span className="ref-file">
+              ({ref.File_Name})
+            </span>
+          )}
+          {ref.Is_Cross_File && (
+            <span className="cross-file-badge">
+              {t('detail:hierarchyTree.crossFileBadge')}
+            </span>
+          )}
+          {ref.Origin_Hit && (
+            <span
+              className="origin-hit-badge"
+              title={t('detail:hierarchyTree.originHitTitle', {
+                defaultValue: 'Aus dem Herkunftsobjekt (ref) erreichbar',
+              }) as string}
+            >
+              {t('detail:hierarchyTree.originHitBadge', { defaultValue: '↩ Herkunft' })}
+            </span>
+          )}
+          <span className="ref-role">
+            {/* Rolle nicht mehr als Text — nur ein Richtungs-Pfeil; die konkrete
+                Rolle (calls_script, reads_field, …) steht im Tooltip. */}
+            <span
+              className={`ref-dir ref-dir-${dir}`}
+              title={`${dir === 'in'
+                ? t('detail:hierarchyTree.dirIn', { defaultValue: 'Eingehend' })
+                : t('detail:hierarchyTree.dirOut', { defaultValue: 'Ausgehend' })} · ${ref.Link_Role}`}
+              aria-hidden="true"
+            >
+              {dir === 'in' ? '←' : '→'}
+            </span>
+          </span>
         </span>
       </li>
     );

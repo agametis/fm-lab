@@ -49,6 +49,9 @@
     "file": "파일",
     "allFiles": "모든 파일",
     "filterMode": "불일치 항목",
+    "groupByFile": "그룹화",
+    "groupByFileHint": "노드를 파일별로 박스로 그룹화",
+    "fileGroupNone": "파일 없음",
     "filterModes": {
       "dim": "흐리게",
       "hide": "숨기기"
@@ -98,5 +101,20 @@
   "unconnectedHidden_other": "포커스와 연결되지 않은 노드 {{count}}개",
   "unconnectedToggleShow": "표시",
   "unconnectedToggleHide": "숨기기",
-  "unconnectedToggleHint": "포커스로 가는 경로가 없는 노드는 유형/깊이 필터로 인해 생깁니다 — 표시하거나 숨깁니다"
+  "unconnectedToggleHint": "포커스로 가는 경로가 없는 노드는 유형/깊이 필터로 인해 생깁니다 — 표시하거나 숨깁니다",
+  "typeList": {
+    "ariaLabel": "오브젝트 목록: {{type}}",
+    "sortBy": "정렬",
+    "sort": {
+      "name": "이름",
+      "file": "파일"
+    },
+    "directionLabel": "방향",
+    "directionAria": "방향으로 필터링",
+    "dirIn": "들어옴",
+    "dirOut": "나감",
+    "dirBoth": "양방향",
+    "empty": "그래프에 이 유형의 오브젝트가 없습니다.",
+    "focus": "포커스 오브젝트"
+  }
 }

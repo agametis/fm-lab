@@ -1302,9 +1302,51 @@
 .xml-empty-card__listing-row {
   display: block;
 }
-.xml-empty-card__actions {
+.xml-empty-card__step {
   display: flex;
-  justify-content: flex-end;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+}
+.xml-empty-card__step-num {
+  flex: 0 0 auto;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+.xml-empty-card__divider {
+  width: 100%;
+  margin: 2px 0;
+  border: none;
+  border-top: 1px solid var(--color-border);
+}
+.xml-empty-card__count {
+  font-weight: 600;
+}
+.xml-empty-card__ready {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.xml-empty-card__folder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.xml-empty-card__path {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
 }
 
 /* ── SemanticNamesStatus (Block 3 „Graph-Communities") ───────────────────── */

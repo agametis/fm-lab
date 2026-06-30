@@ -97,6 +97,13 @@ interface GraphExplorerProps {
    * panel omits it (no legend room). Off → nodes are always type-colored.
    */
   enableCommunityLens?: boolean;
+  /**
+   * Datei-Gruppierung (Compound-Boxen je Datei) — vom Host kontrolliert, damit jeder
+   * Host die Persistenz selbst wählt: Standalone `/graph` als Deep-Link-Param,
+   * eingebettetes Objekt-Panel als lokaler State. Default aus.
+   */
+  groupByFile?: boolean;
+  onGroupByFileChange?: (v: boolean) => void;
 }
 
 export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>(
@@ -106,6 +113,8 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
       onDepthChange, onDirectionChange,
       onSetFocus, onOpenDetails, onStats,
       enableCommunityLens = false,
+      groupByFile = false,
+      onGroupByFileChange,
     } = props;
     // The graph always uses the "logical" view (container-hoisted operational
     // links). The "raw" granularity exposed only isolated, non-navigable
@@ -222,14 +231,23 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
     const focusAdjacency = useMemo(() => {
       const out = new Set<string>();
       const inc = new Set<string>();
+      // Rolle der jeweiligen Fokus-Kante je Nachbar-ID (erste gewinnt bei
+      // Mehrfachkanten) — speist den Rollen-Klartext + Tooltip der Typ-Liste.
+      const roleOut = new Map<string, string>();
+      const roleIn = new Map<string, string>();
       const fid = focusNode?.id;
       if (data && fid) {
         for (const e of data.edges) {
-          if (e.source === fid) out.add(e.target);
-          else if (e.target === fid) inc.add(e.source);
+          if (e.source === fid) {
+            out.add(e.target);
+            if (!roleOut.has(e.target)) roleOut.set(e.target, e.role);
+          } else if (e.target === fid) {
+            inc.add(e.source);
+            if (!roleIn.has(e.source)) roleIn.set(e.source, e.role);
+          }
         }
       }
-      return { out, inc };
+      return { out, inc, roleOut, roleIn };
     }, [data, focusNode]);
 
     // Report stats to the host toolbar.
@@ -282,6 +300,11 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
       for (const n of data?.nodes ?? []) if (n.file) set.add(n.file);
       return [...set].sort((a, b) => a.localeCompare(b));
     }, [data]);
+
+    // Die Datei-Gruppierung ist nur sinnvoll, wenn der Graph mehr als eine Datei umfasst
+    // (sonst eine einzige Box). Der gespeicherte Schalter-Wert bleibt erhalten, damit ein
+    // Re-Fokus auf einen Mehrdatei-Graphen die Gruppierung wiederherstellt.
+    const effectiveGroupByFile = groupByFile && availableFiles.length > 1;
 
     // Community legend — distinct communities in the current graph with
     // their palette color, display name and member count (most populous first).
@@ -341,6 +364,25 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
         : (a: GraphNode, b: GraphNode) => a.label.localeCompare(b.label);
       return [...items].sort(cmp);
     }, [data, typeListType, typeListSort, nameFilter, typeListDir, showTypeListDir, focusAdjacency]);
+
+    // Pro Typ-Listen-Eintrag: Richtung relativ zum Fokus (←/→/↔) + Rolle der
+    // Fokus-Kante. Der Fokus selbst und indirekte Knoten (>1 Hop, kein direkter
+    // Fokus-Bezug) fehlen bewusst → das Panel zeigt dort keinen Pfeil.
+    const typeListDirInfo = useMemo(() => {
+      const m = new Map<string, { dir: TypeListDir; role: string | null }>();
+      for (const n of typeListItems) {
+        const isIn = focusAdjacency.inc.has(n.id);
+        const isOut = focusAdjacency.out.has(n.id);
+        if (isIn && isOut) {
+          m.set(n.id, { dir: 'both', role: focusAdjacency.roleOut.get(n.id) ?? focusAdjacency.roleIn.get(n.id) ?? null });
+        } else if (isIn) {
+          m.set(n.id, { dir: 'in', role: focusAdjacency.roleIn.get(n.id) ?? null });
+        } else if (isOut) {
+          m.set(n.id, { dir: 'out', role: focusAdjacency.roleOut.get(n.id) ?? null });
+        }
+      }
+      return m;
+    }, [typeListItems, focusAdjacency]);
 
     // Hamburger-Klick auf einem Typ-Chip → Liste öffnen (schließt das Node-Inspect).
     const handleOpenTypeList = useCallback((type: string) => {
@@ -482,6 +524,7 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
           deselectedTypes={deselectedTypes}
           availableTypes={availableTypes}
           availableFiles={availableFiles}
+          groupByFile={groupByFile}
           serverTypesActive={serverTypes !== null}
           showColorMode={communityLensActive}
           colorMode={colorMode}
@@ -491,6 +534,7 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
           onOpenTypeList={handleOpenTypeList}
           onNameFilterChange={setNameFilter}
           onSelectedFileChange={setSelectedFile}
+          onGroupByFileChange={onGroupByFileChange ?? (() => {})}
           onFilterModeChange={setFilterMode}
           onColorModeChange={setColorMode}
           onSelectCommunity={handleSelectCommunity}
@@ -550,6 +594,7 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
               filterMode={filterMode}
               deselectedTypes={deselectedTypes}
               colorMode={effectiveColorMode}
+              groupByFile={effectiveGroupByFile}
               selectedCommunity={communityLensActive ? selectedCommunity : null}
               hoveredCommunity={communityLensActive ? hoveredCommunity : null}
               onSetFocus={onSetFocus}
@@ -612,6 +657,8 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
             onSortChange={setTypeListSort}
             dir={typeListDir}
             dirCounts={typeListDirCounts}
+            dirInfo={typeListDirInfo}
+            focusFile={focusNode?.file ?? null}
             showDir={showTypeListDir}
             onDirChange={setTypeListDir}
             onClose={() => {

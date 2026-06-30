@@ -69,5 +69,18 @@
     "copied": "已复制",
     "openCluster": "显示社区",
     "openClusterHint": "前往聚类概览"
+  },
+  "xmlEmpty": {
+    "hint":              "暂无数据。将你的 FileMaker XML 导出文件放入 “xml/” 文件夹并开始转换。",
+    "hintExport":        "在 FileMaker Pro 中通过 “文件 ▸ 将副本另存为 XML” 导出 — 并启用 “包含用于分析工具的详细信息”。",
+    "directoryEmpty":    "“xml/” 文件夹中没有文件。",
+    "directoryAria":     "XML 目录中的文件",
+    "countFound":        "找到 {{count}} 个 XML 文件",
+    "openFolder":        "打开文件夹",
+    "copyPath":          "复制路径",
+    "copied":            "已复制 ✓",
+    "hostPathHint":      "将文件放入主机上的此文件夹 — 它已挂载到容器中。",
+    "containerPathNote": "容器内的路径",
+    "putFilesHint":      "将你的 FileMaker XML 文件放入 “xml/” 文件夹。"
   }
 }

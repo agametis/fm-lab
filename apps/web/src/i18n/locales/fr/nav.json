@@ -100,7 +100,7 @@
     "loading": "Chargement de la hiérarchie…",
     "empty": "Aucune entrée",
     "statsFiltered": "{{visibleEntries}} / {{totalEntries}} entrées, {{visibleFolders}} / {{totalFolders}} dossiers",
-    "stats": "{{entries}} entrées, {{folders}} dossiers",
+    "stats": "{{entries}} entrées, {{folders}} dossiers, {{files}} fichiers",
     "expandAll": "Tout développer",
     "collapseAll": "Tout réduire",
     "disabledDuringFilter": "Désactivé pendant le filtrage",

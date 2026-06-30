@@ -49,6 +49,9 @@
     "file": "Fichier",
     "allFiles": "Tous les fichiers",
     "filterMode": "Non concordants",
+    "groupByFile": "grouper",
+    "groupByFileHint": "Regrouper les nœuds par fichier en boîtes",
+    "fileGroupNone": "Sans fichier",
     "filterModes": {
       "dim": "Atténuer",
       "hide": "Masquer"
@@ -98,5 +101,20 @@
   "unconnectedHidden_other": "{{count}} nœuds sans lien avec le focus",
   "unconnectedToggleShow": "afficher",
   "unconnectedToggleHide": "masquer",
-  "unconnectedToggleHint": "Les nœuds sans chemin vers le focus proviennent du filtre type/profondeur — les afficher ou les masquer"
+  "unconnectedToggleHint": "Les nœuds sans chemin vers le focus proviennent du filtre type/profondeur — les afficher ou les masquer",
+  "typeList": {
+    "ariaLabel": "Liste d’objets : {{type}}",
+    "sortBy": "Trier",
+    "sort": {
+      "name": "Nom",
+      "file": "Fichier"
+    },
+    "directionLabel": "Direction",
+    "directionAria": "Filtrer par direction",
+    "dirIn": "Entrant",
+    "dirOut": "Sortant",
+    "dirBoth": "Les deux",
+    "empty": "Aucun objet de ce type dans le graphe.",
+    "focus": "Objet focus"
+  }
 }

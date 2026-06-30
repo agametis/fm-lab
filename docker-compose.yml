@@ -1,0 +1,169 @@
+# fm-lab — public Docker Compose (pure analysis tool, no agent).
+#
+# "Clone → docker compose up → läuft." The host needs ONLY Docker — no DuckDB, no
+# Node, no PATH fiddling.
+#
+# Topology cut-line: one SERVICE per component (ingestion / api / web),
+# all co-located in the default profile and sharing one base image. Splitting these
+# across hosts later becomes "move a service + swap its env" — slim
+# standalone per-component images + compose `profiles` are future work.
+#
+# Runtime overrides (env, all optional — sane defaults baked in):
+#   FMLAB_DUCKDB_VERSION   DuckDB CLI / webbed version baked into the image (1.5.4)
+#   FMLAB_DUCKDB_THREADS   DuckDB thread cap (default 4; raise on big hosts)
+#   FMLAB_MEM_LIMIT        per-container RAM cap for api+ingestion (default 8g)
+# Put them in a `.env` next to this file or `export` them before `docker compose up`.
+
+name: fm-lab
+
+# ---- Shared building blocks (YAML anchors) --------------------------------------
+
+x-fmlab-build: &fmlab-build
+  context: .devcontainer
+  dockerfile: Dockerfile
+  target: base
+  args:
+    DUCKDB_VERSION: "${FMLAB_DUCKDB_VERSION:-1.5.4}"
+
+# Repo arrives as a bind mount (NOT copied into the image) so `git pull` keeps the
+# code current without a rebuild. node_modules are platform-
+# isolated NAMED VOLUMES so the host's (macOS/Windows) modules never leak wrong-arch
+# native bindings into the Linux container. The DuckDB spill volume gives fast Linux
+# I/O off the (slow) host bind mount.
+x-fmlab-volumes: &fmlab-volumes
+  - type: bind
+    source: .
+    target: /workspaces/fm-lab
+  - type: volume
+    source: fmlab-nm-root
+    target: /workspaces/fm-lab/node_modules
+  - type: volume
+    source: fmlab-nm-restapi
+    target: /workspaces/fm-lab/rest-api/node_modules
+  - type: volume
+    source: fmlab-nm-web
+    target: /workspaces/fm-lab/apps/web/node_modules
+  - type: volume
+    source: fmlab-nm-shared
+    target: /workspaces/fm-lab/packages/shared/node_modules
+  - type: volume
+    source: fmlab-duckdb-spill
+    target: /duckdb_spill
+
+x-fmlab-env: &fmlab-env
+  NODE_OPTIONS: "--max-old-space-size=2048"
+  # DuckDB ingestion hardening — DUCKDB_TEMP_DIR points at the spill volume,
+  # DUCKDB_MAX_TEMP caps its growth (mirrors the dev container).
+  DUCKDB_TEMP_DIR: /duckdb_spill
+  DUCKDB_MAX_TEMP: 50GB
+  DUCKDB_THREADS: "${FMLAB_DUCKDB_THREADS:-4}"
+  # Runtime marker + host repo root. The empty-state "open folder" affordance can't
+  # reveal the host file manager from inside the container, so it shows the HOST path
+  # instead. ${PWD} interpolates from the host shell at `docker compose up` time (the
+  # cloned repo root); if unset, the web client falls back to the in-container path.
+  FMLAB_RUNTIME: "container"
+  FMLAB_HOST_REPO_ROOT: "${PWD:-}"
+
+x-fmlab-service: &fmlab-service
+  build: *fmlab-build
+  image: fm-lab-base:local
+  # Always build the local image; never try to pull it from a registry. Without this,
+  # the first `docker compose up` prints a scary (but harmless) "pull access denied for
+  # fm-lab-base" before falling back to building. Subsequent builds are cache-fast.
+  pull_policy: build
+  working_dir: /workspaces/fm-lab
+  volumes: *fmlab-volumes
+  environment: *fmlab-env
+
+# ---- Services -------------------------------------------------------------------
+
+services:
+  # One-shot bootstrap (postCreateCommand analogue). Runs as the node user;
+  # the ONLY privileged step is the sudo init-node-modules.sh (chowns the root-owned
+  # empty node_modules + spill volumes). Then: seed the .env files from the examples,
+  # `npm install` into the volumes, build packages/shared, and — so the READ_ONLY API
+  # can boot on a fresh clone BEFORE any XML is converted — create an empty placeholder
+  # catalog DB if none exists yet (the convert step / web button replaces it later).
+  setup:
+    <<: *fmlab-service
+    command:
+      - bash
+      - -lc
+      - |
+        set -euo pipefail
+        sudo /usr/local/bin/init-node-modules.sh /workspaces/fm-lab
+        cp -n rest-api/.env.example rest-api/.env 2>/dev/null || true
+        cp -n apps/web/.env.example   apps/web/.env   2>/dev/null || true
+        npm install
+        npm run build:shared
+        mkdir -p rest-api/db
+        if [ ! -f rest-api/db/fm_catalog.duckdb ]; then
+          echo "Seeding empty placeholder catalog DB (no XML converted yet)…"
+          duckdb rest-api/db/fm_catalog.duckdb -c "SELECT 1;" >/dev/null
+        fi
+    restart: "no"
+
+  # REST API (Express + @duckdb/node-api, READ_ONLY over the catalog copy). Also the
+  # host of the web "XML conversion" button (POST /api/xml/convert spawns the convert
+  # harness in-container). Port 3003 → host.
+  api:
+    <<: *fmlab-service
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    environment:
+      <<: *fmlab-env
+      HOST: "0.0.0.0"   # bind for port forwarding (dev default localhost is host-only)
+    command: ["bash", "-lc", "cd rest-api && exec node src/index.js"]
+    ports:
+      - "3003:3003"
+    mem_limit: "${FMLAB_MEM_LIMIT:-8g}"
+    restart: unless-stopped
+
+  # Web client (Vite dev server over the mounted source). Port 5173 → host browser.
+  # The browser talks to the API via the forwarded host port (VITE_API_URL default
+  # http://localhost:3003), so no container DNS is needed.
+  web:
+    <<: *fmlab-service
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    environment:
+      <<: *fmlab-env
+      VITE_DEV_HOST: "0.0.0.0"
+      # web and api are SEPARATE containers here, so the Vite dev-server must proxy
+      # /api to the api service by its compose DNS name, not localhost (which would be
+      # the web container itself → ECONNREFUSED).
+      VITE_API_PROXY_TARGET: "http://api:3003"
+    command: ["bash", "-lc", "exec npm run dev --workspace=apps/web -- --host 0.0.0.0 --port 5173"]
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+
+  # On-demand XML conversion as its own service (the topology cut-line).
+  # NOT auto-started — gated behind the `ingestion` profile so `docker compose up`
+  # stays the analysis stack. Run it explicitly:
+  #   docker compose run --rm ingestion                       # convert all of xml/
+  #   docker compose run --rm ingestion bash tools/convert_fm_xml.sh "MyFile.xml"
+  # (In the all-in-one default, the web "XML conversion" button / `docker compose
+  #  exec api bash tools/convert_fm_xml.sh --batch` does the same inside the api box.)
+  ingestion:
+    <<: *fmlab-service
+    profiles: ["ingestion"]
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    command: ["bash", "-lc", "exec bash tools/convert_fm_xml.sh --batch"]
+    mem_limit: "${FMLAB_MEM_LIMIT:-8g}"
+    restart: "no"
+
+# ---- Named volumes --------------------------------------------------------------
+# Platform-isolated node_modules (one per workspace — npm hoisting is incomplete, so
+# natives live in both root AND rest-api) + the DuckDB spill volume. Ownership is set
+# by setup → init-node-modules.sh.
+volumes:
+  fmlab-nm-root:
+  fmlab-nm-restapi:
+  fmlab-nm-web:
+  fmlab-nm-shared:
+  fmlab-duckdb-spill:

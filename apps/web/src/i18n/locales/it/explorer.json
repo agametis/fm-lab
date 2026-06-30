@@ -49,6 +49,9 @@
     "file": "File",
     "allFiles": "Tutti i file",
     "filterMode": "Non corrispondenti",
+    "groupByFile": "raggruppa",
+    "groupByFileHint": "Raggruppa i nodi per file in riquadri",
+    "fileGroupNone": "Senza file",
     "filterModes": {
       "dim": "Attenua",
       "hide": "Nascondi"
@@ -98,5 +101,20 @@
   "unconnectedHidden_other": "{{count}} nodi non collegati al fuoco",
   "unconnectedToggleShow": "mostra",
   "unconnectedToggleHide": "nascondi",
-  "unconnectedToggleHint": "I nodi senza percorso verso il fuoco derivano dal filtro tipo/profondità — mostrali o nascondili"
+  "unconnectedToggleHint": "I nodi senza percorso verso il fuoco derivano dal filtro tipo/profondità — mostrali o nascondili",
+  "typeList": {
+    "ariaLabel": "Elenco oggetti: {{type}}",
+    "sortBy": "Ordina",
+    "sort": {
+      "name": "Nome",
+      "file": "File"
+    },
+    "directionLabel": "Direzione",
+    "directionAria": "Filtra per direzione",
+    "dirIn": "In entrata",
+    "dirOut": "In uscita",
+    "dirBoth": "Entrambe",
+    "empty": "Nessun oggetto di questo tipo nel grafo.",
+    "focus": "Oggetto focus"
+  }
 }

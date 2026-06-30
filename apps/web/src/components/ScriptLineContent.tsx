@@ -4,6 +4,7 @@ import { tokenizeLine } from '../script/tokenize';
 import { collapseStepParameterBreaks } from '../script/normalizeText';
 import { RefSpan } from './RefSpan';
 import { ScriptStepSpan } from './ScriptStepSpan';
+import { useScriptLineSearchQuery } from '../script/highlightContext';
 import type { ScriptRef, ScriptLineToken } from '../script/types';
 
 interface ScriptLineContentProps {
@@ -18,31 +19,62 @@ interface ScriptLineContentProps {
 }
 
 
-function renderPiece(piece: Piece, key: number): React.ReactNode {
+/**
+ * Hebt Substring-Treffer des Literal-Such-Querys im Klartext-Inhalt eines
+ * Nicht-Ref-Pieces hervor (Parameterwerte, Strings, Step-Namen). Spiegelt die
+ * Comment-Highlight-Logik in ScriptLine.tsx; `<mark class="fm-line-search-match">`
+ * teilt sich die Optik. Ref-Pieces bleiben unangetastet — die werden über das
+ * RefSpan-Predicate (orange Outline) markiert.
+ */
+function highlightLiteral(content: string, query: string | null): React.ReactNode {
+  if (!query) return content;
+  const lower = content.toLowerCase();
+  if (!lower.includes(query)) return content;
+  const out: React.ReactNode[] = [];
+  let pos = 0;
+  let n = 0;
+  while (pos < content.length) {
+    const idx = lower.indexOf(query, pos);
+    if (idx < 0) {
+      out.push(content.slice(pos));
+      break;
+    }
+    if (idx > pos) out.push(content.slice(pos, idx));
+    out.push(
+      <mark key={`lm-${n++}`} className="fm-line-search-match">
+        {content.slice(idx, idx + query.length)}
+      </mark>,
+    );
+    pos = idx + query.length;
+  }
+  return out;
+}
+
+function renderPiece(piece: Piece, key: number, query: string | null): React.ReactNode {
   switch (piece.type) {
     case 'ref':
       return <RefSpan key={key} reference={piece.ref} text={piece.content} />;
     case 'string':
       return (
         <span key={key} className="fm-token fm-token--string">
-          {piece.content}
+          {highlightLiteral(piece.content, query)}
         </span>
       );
     case 'number':
       return (
         <span key={key} className="fm-token fm-token--number">
-          {piece.content}
+          {highlightLiteral(piece.content, query)}
         </span>
       );
     case 'operator':
       return (
         <span key={key} className="fm-token fm-token--operator">
-          {piece.content}
+          {highlightLiteral(piece.content, query)}
         </span>
       );
     case 'text':
     default:
-      return <span key={key}>{piece.content}</span>;
+      return <span key={key}>{highlightLiteral(piece.content, query)}</span>;
   }
 }
 
@@ -69,6 +101,7 @@ function splitStepName(text: string, line?: ScriptLineToken): { head: string | n
  * rendern, gefolgt von einem `…`-Marker.
  */
 export const ScriptLineContent: React.FC<ScriptLineContentProps> = ({ text, refs, folded, line }) => {
+  const lineSearchQuery = useScriptLineSearchQuery();
   const normalized = collapseStepParameterBreaks(text);
   const subLines = normalized.split(/\r\n|\r|\n/);
 
@@ -80,7 +113,7 @@ export const ScriptLineContent: React.FC<ScriptLineContentProps> = ({ text, refs
     return (
       <>
         {head && line && <ScriptStepSpan text={head} line={line} />}
-        {pieces.map(renderPiece)}
+        {pieces.map((p, i) => renderPiece(p, i, lineSearchQuery))}
       </>
     );
   };
@@ -101,7 +134,7 @@ export const ScriptLineContent: React.FC<ScriptLineContentProps> = ({ text, refs
       {subLines.map((sub, i) => {
         const inner = i === 0
           ? renderFirstSubLine(sub)
-          : tokenizeLine(sub, refs).map(renderPiece);
+          : tokenizeLine(sub, refs).map((p, j) => renderPiece(p, j, lineSearchQuery));
         return (
           <span
             key={i}

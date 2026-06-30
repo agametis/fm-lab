@@ -49,6 +49,9 @@
     "file": "Datei",
     "allFiles": "Alle Dateien",
     "filterMode": "Nicht-Treffer",
+    "groupByFile": "gruppieren",
+    "groupByFileHint": "Knoten nach Datei in Boxen gruppieren",
+    "fileGroupNone": "Ohne Datei",
     "filterModes": {
       "dim": "Dimmen",
       "hide": "Ausblenden"
@@ -114,7 +117,8 @@
     "dirIn": "Eingehend",
     "dirOut": "Ausgehend",
     "dirBoth": "Beide",
-    "empty": "Keine Objekte dieses Typs im Graphen."
+    "empty": "Keine Objekte dieses Typs im Graphen.",
+    "focus": "Fokus-Objekt"
   },
   "unconnectedHidden_one": "{{count}} Knoten ohne Verbindung zum Fokus",
   "unconnectedHidden_other": "{{count}} Knoten ohne Verbindung zum Fokus",

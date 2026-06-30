@@ -109,7 +109,7 @@
     "loading": "Hierarchie wird geladen…",
     "empty": "Keine Einträge",
     "statsFiltered": "{{visibleEntries}} / {{totalEntries}} Einträge, {{visibleFolders}} / {{totalFolders}} Ordner",
-    "stats": "{{entries}} Einträge, {{folders}} Ordner",
+    "stats": "{{entries}} Einträge, {{folders}} Ordner, {{files}} Dateien",
     "expandAll": "Alle aufklappen",
     "collapseAll": "Alle zuklappen",
     "disabledDuringFilter": "Im Filter-Modus deaktiviert",

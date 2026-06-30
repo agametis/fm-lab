@@ -49,6 +49,9 @@
     "file": "Fil",
     "allFiles": "Alla filer",
     "filterMode": "Icke-träffar",
+    "groupByFile": "gruppera",
+    "groupByFileHint": "Gruppera noder per fil i rutor",
+    "fileGroupNone": "Ingen fil",
     "filterModes": {
       "dim": "Tona ned",
       "hide": "Dölj"
@@ -98,5 +101,20 @@
   "unconnectedHidden_other": "{{count}} noder utan koppling till fokus",
   "unconnectedToggleShow": "visa",
   "unconnectedToggleHide": "dölj",
-  "unconnectedToggleHint": "Noder utan väg till fokus uppstår genom typ-/djupfiltret — visa eller dölj dem"
+  "unconnectedToggleHint": "Noder utan väg till fokus uppstår genom typ-/djupfiltret — visa eller dölj dem",
+  "typeList": {
+    "ariaLabel": "Objektlista: {{type}}",
+    "sortBy": "Sortera",
+    "sort": {
+      "name": "Namn",
+      "file": "Fil"
+    },
+    "directionLabel": "Riktning",
+    "directionAria": "Filtrera efter riktning",
+    "dirIn": "Inkommande",
+    "dirOut": "Utgående",
+    "dirBoth": "Båda",
+    "empty": "Inga objekt av den här typen i grafen.",
+    "focus": "Fokusobjekt"
+  }
 }

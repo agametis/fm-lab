@@ -100,7 +100,7 @@
     "loading": "階層を読み込み中…",
     "empty": "エントリはありません",
     "statsFiltered": "{{visibleEntries}} / {{totalEntries}} 件、{{visibleFolders}} / {{totalFolders}} フォルダー",
-    "stats": "{{entries}} 件、{{folders}} フォルダー",
+    "stats": "{{entries}} 件、{{folders}} フォルダー、{{files}} ファイル",
     "expandAll": "すべて展開",
     "collapseAll": "すべて折りたたむ",
     "disabledDuringFilter": "フィルタリング中は無効",

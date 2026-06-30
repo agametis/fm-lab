@@ -1,6 +1,6 @@
 {
   "name": "fm-lab",
-  "version": "0.8.5",
+  "version": "0.8.6",
   "description": "FileMaker XML Analysis with DuckDB - Multi-Frontend Architecture",
   "private": true,
   "workspaces": [
@@ -15,6 +15,7 @@
     "generate:types": "npm run generate --workspace=packages/shared",
     "install:all": "npm install && npm install --workspaces",
     "version:manifest": "node tools/build-version-manifest.mjs",
+    "container:versions": "node tools/build-container-env.mjs",
     "clean": "npm run clean --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"
@@ -34,7 +35,7 @@
     "graphology-communities-louvain": "^2.0.2"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
   }
 }

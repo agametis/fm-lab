@@ -129,6 +129,9 @@
 /* References Filter Toolbar — spacing now comes from .detail-tab-content */
 .hierarchy-tree-wrapper {
   margin-top: 0;
+  /* Query-Container: die Rollen-Klartext-Spalte (.ref-role-label) reagiert auf
+     die Breite der Referenz-Spalte, nicht auf den Viewport. */
+  container-type: inline-size;
 }
 
 .references-filter {
@@ -263,7 +266,8 @@
 .reference-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.75rem;
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid var(--color-border);
   background: transparent;
@@ -310,6 +314,17 @@
   font-weight: 500;
 }
 
+/* Rechte Meta-Gruppe (Zähler · Rolle · Datei · Badges · Pfeil). Eigenes
+   flex-wrap, damit sie als EIN Block unter den Namen rutscht, wenn die Zeile
+   eng wird — und ihre Einzelteile erst bei noch weniger Platz weiter umbrechen.
+   Der .ref-name (flex:1) schiebt sie im Breitfall rechtsbündig. */
+.ref-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.75rem;
+}
+
 .ref-file {
   font-size: 0.85rem;
   color: var(--color-text-muted);
@@ -330,6 +345,20 @@
   font-style: italic;
 }
 
+/* Rohe Link-Rolle als Klartext, vor Datei + Richtungspfeil. Standardmäßig
+   ausgeblendet; nur wenn die Referenz-Spalte breit genug ist (Container Query),
+   damit schmale Layouts nicht überlaufen. Der Pfeil-Tooltip trägt die Rolle
+   sonst weiter (kein Informationsverlust). */
+.ref-role-label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  display: none;
+}
+@container (min-width: 600px) {
+  .ref-role-label { display: inline; }
+}
+
 /* Origin-Treffer-Badge: Referenz, die aus dem ?ref=-Herkunftsobjekt erreichbar
    ist (z.B. das im Herkunfts-Script geschriebene Feld eines ScriptStepType). */
 .origin-hit-badge {
@@ -342,11 +371,15 @@
   white-space: nowrap;
 }
 
-/* Häufigkeits-Hinweis (×N Vorkommen) am Rollen-Label der Aggregat-Referenzen. */
+/* Häufigkeits-Hinweis (×N Vorkommen) der Aggregat-Referenzen — steht direkt
+   hinter dem Namen, vor Rolle + Pfeil. Eigenständiges Flex-Item (nicht mehr im
+   .ref-role-Block), daher Schriftgröße explizit auf die Meta-Zeile abgestimmt. */
 .ref-call-count {
   font-style: normal;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
 /* ── Toolbar: Sortierung (links) + Richtungs-Filter (rechtsbündig) ── */
@@ -744,7 +777,11 @@
   .detail-object-header {
     padding: 0.75rem;
   }
+}
 
+/* Allerletzte Stufe — erst bei sehr wenig Platz alles untereinander. Dazwischen
+   trägt flex-wrap (.reference-item / .ref-meta) die stufenweise Regression. */
+@media (max-width: 420px) {
   .reference-item {
     flex-direction: column;
     align-items: flex-start;

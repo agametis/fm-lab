@@ -30,6 +30,14 @@ interface Props {
  * `getStatus()` liefert sie längst, das Frontend fragte bisher nur nicht nach).
  */
 const AUTO_REFRESH_DASHBOARDS = new Set(['xml_convert']);
+/**
+ * Dashboards, die NUR im Leerzustand (noch kein Katalog importiert) auto-refreshen.
+ * Das Home zeigt dann die „erst XML konvertieren"-Karte; per Poll/Focus erscheint eine
+ * neu in xml/ abgelegte Datei live (Button aktiviert sich), ohne Seiten-Reload — derselbe
+ * Server-Scan (`getStatus()` → `xml_directory_listing`) wie auf der XML-Import-Seite.
+ * Sobald der Katalog gefüllt ist, entfällt der Poll wieder (die Home-Daten sind dann statisch).
+ */
+const AUTO_REFRESH_WHEN_EMPTY_DASHBOARDS = new Set(['home']);
 /** Idle-Polling-Intervall für Auto-Refresh-Dashboards. */
 const IDLE_POLL_MS = 6000;
 
@@ -115,12 +123,23 @@ export function DashboardHost({ id, params, showManifestTitle }: Props) {
     }
   }, [id, JSON.stringify(params || {}), lang]);
 
+  // Leerzustand des Katalogs (spiegelt XmlEmptyStateCard): steuert, ob das Home
+  // im Ausgangszustand mit-pollt. project_summary.db_empty kommt aus dem (gestubten)
+  // leeren Katalog; file_count==null ist der gleiche „nichts importiert"-Marker.
+  const summaryRow = datasets?.project_summary?.data?.[0] as Record<string, unknown> | undefined;
+  const catalogEmpty = !!summaryRow && (
+    summaryRow.db_empty === true || summaryRow.db_empty === 1
+    || summaryRow.file_count == null || summaryRow.file_count === 0
+  );
+  const autoRefresh = AUTO_REFRESH_DASHBOARDS.has(id)
+    || (AUTO_REFRESH_WHEN_EMPTY_DASHBOARDS.has(id) && catalogEmpty);
+
   // Auto-Refresh-Trigger (Fokus / Tab-Sichtbarkeit / Idle-Poll / „Neu scannen") —
-  // nur für opt-in-Dashboards (AUTO_REFRESH_DASHBOARDS) und erst nach dem
-  // Erst-Load (envelope vorhanden). Hält die XML-Datei-Tabelle mit dem
-  // xml/-Verzeichnis synchron, ohne einen Convert-Lauf zu erzwingen.
+  // für opt-in-Dashboards (AUTO_REFRESH_DASHBOARDS) bzw. das Home im Leerzustand
+  // (AUTO_REFRESH_WHEN_EMPTY_DASHBOARDS), erst nach dem Erst-Load (envelope vorhanden).
+  // Hält das xml/-Verzeichnis-Listing synchron, ohne einen Convert-Lauf zu erzwingen.
   useEffect(() => {
-    if (!AUTO_REFRESH_DASHBOARDS.has(id) || !envelope) return;
+    if (!autoRefresh || !envelope) return;
 
     const trigger = () => { void softRefresh(); };
     const onVisible = () => { if (document.visibilityState === 'visible') void softRefresh(); };
@@ -139,7 +158,7 @@ export function DashboardHost({ id, params, showManifestTitle }: Props) {
       window.removeEventListener('fmlab:refresh-datasets', trigger);
       window.clearInterval(poll);
     };
-  }, [id, envelope, softRefresh]);
+  }, [autoRefresh, envelope, softRefresh]);
 
   if (loading) {
     return <div className="dash-host dash-host--loading">{t('dashboard.loading')}</div>;

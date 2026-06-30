@@ -136,14 +136,14 @@ else
   ok=false
 fi
 
-# Node.js (≥18)
+# Node.js (≥20)
 if command -v node &>/dev/null; then
   NODE_VER=$(node --version)
   NODE_MAJOR=$(echo "$NODE_VER" | sed 's/v\([0-9]*\).*/\1/')
-  if [ "$NODE_MAJOR" -ge 18 ]; then
+  if [ "$NODE_MAJOR" -ge 20 ]; then
     info "Node.js: $NODE_VER"
   else
-    error "Node.js $NODE_VER found, but ≥18 is required."
+    error "Node.js $NODE_VER found, but ≥20 is required."
     ok=false
   fi
 else
@@ -151,14 +151,14 @@ else
   ok=false
 fi
 
-# npm (≥9)
+# npm (≥10)
 if command -v npm &>/dev/null; then
   NPM_VER=$(npm --version)
   NPM_MAJOR=$(echo "$NPM_VER" | sed 's/\([0-9]*\).*/\1/')
-  if [ "$NPM_MAJOR" -ge 9 ]; then
+  if [ "$NPM_MAJOR" -ge 10 ]; then
     info "npm: $NPM_VER"
   else
-    error "npm $NPM_VER found, but ≥9 is required. Run: npm install -g npm"
+    error "npm $NPM_VER found, but ≥10 is required. Run: npm install -g npm"
     ok=false
   fi
 else

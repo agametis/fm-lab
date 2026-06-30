@@ -49,6 +49,9 @@
     "file": "Bestand",
     "allFiles": "Alle bestanden",
     "filterMode": "Niet-overeenkomend",
+    "groupByFile": "groeperen",
+    "groupByFileHint": "Knooppunten per bestand in vakken groeperen",
+    "fileGroupNone": "Zonder bestand",
     "filterModes": {
       "dim": "Dimmen",
       "hide": "Verbergen"
@@ -98,5 +101,20 @@
   "unconnectedHidden_other": "{{count}} knopen zonder verbinding met de focus",
   "unconnectedToggleShow": "tonen",
   "unconnectedToggleHide": "verbergen",
-  "unconnectedToggleHint": "Knopen zonder pad naar de focus ontstaan door het type-/dieptefilter — tonen of verbergen"
+  "unconnectedToggleHint": "Knopen zonder pad naar de focus ontstaan door het type-/dieptefilter — tonen of verbergen",
+  "typeList": {
+    "ariaLabel": "Objectlijst: {{type}}",
+    "sortBy": "Sorteren",
+    "sort": {
+      "name": "Naam",
+      "file": "Bestand"
+    },
+    "directionLabel": "Richting",
+    "directionAria": "Op richting filteren",
+    "dirIn": "Inkomend",
+    "dirOut": "Uitgaand",
+    "dirBoth": "Beide",
+    "empty": "Geen objecten van dit type in de graaf.",
+    "focus": "Focusobject"
+  }
 }

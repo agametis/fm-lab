@@ -69,5 +69,18 @@
     "copied": "copiado",
     "openCluster": "Ver comunidades",
     "openClusterHint": "Ir a la vista de clústeres"
+  },
+  "xmlEmpty": {
+    "hint":              "Aún no hay datos. Coloca tu exportación XML de FileMaker en la carpeta “xml/” e inicia la conversión.",
+    "hintExport":        "Exporta desde FileMaker Pro con “Archivo ▸ Guardar una copia como XML” — activa “Incluir detalles para herramientas de análisis”.",
+    "directoryEmpty":    "No hay archivos en la carpeta “xml/”.",
+    "directoryAria":     "Archivos en el directorio XML",
+    "countFound":        "{{count}} archivo(s) XML encontrado(s)",
+    "openFolder":        "Abrir carpeta",
+    "copyPath":          "Copiar ruta",
+    "copied":            "Copiado ✓",
+    "hostPathHint":      "Coloca los archivos en esta carpeta del host — está montada en el contenedor.",
+    "containerPathNote": "Ruta dentro del contenedor",
+    "putFilesHint":      "Coloca tus archivos XML de FileMaker en la carpeta “xml/”."
   }
 }
