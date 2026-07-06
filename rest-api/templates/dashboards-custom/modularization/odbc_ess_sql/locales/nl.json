@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "ODBC / ESS / SQL",
+    "description": "Inventaris van externe SQL-gegevenstoegang: Execute SQL-stappen (Step_ID 117), ODBC / ESS-gegevensbronnen (niet-FileMaker externe bronnen) en fmxdbc (ODBC/JDBC) toekenningen. Een generiek sjabloon — ook nuttig waar het corpus momenteel geen ODBC-bronnen heeft."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Execute SQL-stappen",
+    "summary_kpistrip.props.items[1].label": "ODBC / ESS-bronnen",
+    "summary_kpistrip.props.items[2].label": "fmxdbc-toekenningen",
+    "summary_kpistrip.props.items[3].label": "Bestanden met SQL",
+    "findings.props.title": "Execute SQL-stappen",
+    "findings_table.props.columns[0].label": "Script",
+    "findings_table.props.columns[1].label": "Stap",
+    "findings_table.props.columns[2].label": "SQL (voorbeeld)",
+    "findings_table.props.columns[3].label": "Bestand",
+    "findings_table.props.columns[4].label": "#",
+    "ess_sources.props.title": "ODBC / ESS-gegevensbronnen",
+    "ess_sources_table.props.emptyMessage": "Geen ODBC / ESS-bronnen — alle externe bronnen zijn FileMaker.",
+    "ess_sources_table.props.columns[0].label": "Bron",
+    "ess_sources_table.props.columns[1].label": "Type",
+    "ess_sources_table.props.columns[2].label": "TOs",
+    "ess_sources_table.props.columns[3].label": "Bestand",
+    "grants.props.title": "ODBC / xDBC-toekenningen (fmxdbc)",
+    "grants_table.props.emptyMessage": "Geen privilegeset kent fmxdbc toe.",
+    "grants_table.props.columns[0].label": "Uitgebreid privilege",
+    "grants_table.props.columns[1].label": "Privilegeset",
+    "grants_table.props.columns[2].label": "Bestand",
+    "markdown.props.content": "## Opmerkingen\n\nExterne **SQL**-gegevenstoegang. *Execute SQL* is Step_ID-gebonden (117, taalonafhankelijk — in dit corpus geëxporteerd als `SQL ausführen`). ODBC / ESS-bronnen zijn de niet-FileMaker-vermeldingen van de catalogus met externe gegevensbronnen; `fmxdbc`-toekenningen tonen welke privilegesets ODBC/JDBC-toegang toestaan.\n\n- Dit is een **generiek sjabloon**: het corpus heeft momenteel geen ODBC/ESS-bronnen (alle externe bronnen zijn FileMaker) en één Execute SQL-stap — het dashboard blijft nuttig als herbruikbaar bibliotheekitem.\n- **Navigatie**: klikken op een Execute SQL-stap opent het script bij die stap; een ODBC/ESS-bron opent de eerste table occurrence; een toekenning opent de privilegeset.\n- **Gerelateerde regels**: afgeleide ernstregels staan onder *Static Code Analysis*.\n- **Sorteren**: alle kolomkoppen zijn klikbaar (▲▼)."
+  }
+}

@@ -30,6 +30,7 @@ export type ObjectPathExtras = Record<string, string | null | undefined>;
 // ──────────────────────────────────────────────────────────────────────────
 
 import type { BreadcrumbItem } from '../types';
+import { formatObjectDisplayName } from './objectName';
 
 /** Minimaler i18next-`t`-Vertrag (vermeidet harte TFunction-Kopplung). */
 export type TranslateFn = (key: string, opts?: Record<string, unknown>) => string;
@@ -42,6 +43,7 @@ export type BreadcrumbCtx =
   | { kind: 'graphNode'; nodeName: string }
   | { kind: 'graphSegment'; segment: string }
   | { kind: 'relationships'; file: string }
+  | { kind: 'file'; fileLabel: string }
   | { kind: 'dashboards' }
   | { kind: 'dashboard'; title: string }
   | { kind: 'customQueries' }
@@ -80,7 +82,7 @@ export function buildBreadcrumb(ctx: BreadcrumbCtx, t: TranslateFn): BreadcrumbI
         home,
         search,
         { label: typeLabel, path: `/?type=${encodeURIComponent(ctx.objectType)}` },
-        { label: ctx.objectName, path: ctx.objectPath ?? null },
+        { label: formatObjectDisplayName(ctx.objectType, ctx.objectName), path: ctx.objectPath ?? null },
       ];
       // Tab-Crumb nur, wenn ein nicht-Default-Tab aktiv ist (V6).
       if (ctx.tab && ctx.tab !== 'detail') {
@@ -96,6 +98,8 @@ export function buildBreadcrumb(ctx: BreadcrumbCtx, t: TranslateFn): BreadcrumbI
       return finalize([home, graph, { label: ctx.segment, path: null }]);
     case 'relationships':
       return finalize([home, graph, { label: t('nav:crumbs.relationships'), path: '/atlas' }, { label: ctx.file, path: null }]);
+    case 'file':
+      return finalize([home, { label: ctx.fileLabel, path: null }]);
     case 'dashboards':
       return finalize([home, dashboards]);
     case 'dashboard':

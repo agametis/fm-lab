@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Branche Else vide",
+    "description": "Règle sujette aux erreurs : un Else suivi directement d’un End If, c’est-à-dire une branche Else sans étapes. Souvent un reste.\n\nD’après la règle PMD EmptyControlStatement — https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#emptycontrolstatement"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Branche Else vide",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un script…",
+    "findings_table.props.empty.message": "Aucune branche Else vide trouvée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Étape"
+  }
+}

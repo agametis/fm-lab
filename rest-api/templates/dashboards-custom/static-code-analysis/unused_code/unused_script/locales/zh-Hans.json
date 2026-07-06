@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "未使用的脚本",
+    "description": "未使用代码规则 — 未被任何其他脚本调用、也未被任何触发器启动的脚本。请核查：手动或自定义菜单启动可能出现在此。\n\n基于 PMD 规则 UnusedPrivateMethod — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatemethod"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "未使用的脚本",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到未使用的脚本。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本"
+  }
+}

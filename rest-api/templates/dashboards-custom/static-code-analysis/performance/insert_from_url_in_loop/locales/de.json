@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Insert from URL in der Loop",
+    "description": "Performance-Regel — Insert from URL innerhalb einer Loop feuert pro Durchlauf einen Netzwerk-Request ab."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Insert from URL in der Loop",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Kein Treffer für „Insert from URL in der Loop\" gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Schritt",
+    "findings_table.props.columns[3].label": "Tiefe"
+  }
+}

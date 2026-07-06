@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Oanvänt skript",
+    "description": "Oanvänd-kod-regel — skript som inte anropas av något annat skript och inte startas av någon utlösare. Kontrollera: manuella starter eller starter från anpassad meny kan visas här.\n\nBaserad på PMD-regeln UnusedPrivateMethod — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatemethod"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Oanvänt skript",
+    "findings_table.props.searchPlaceholder": "Sök fil eller skript…",
+    "findings_table.props.empty.message": "Inga oanvända skript hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Skript"
+  }
+}

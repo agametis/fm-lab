@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Set Field By Name (dynamisches Ziel)",
+    "description": "Code-Style-Regel — Set-Field-By-Name-Schritte. Das Zielfeld wird zur Laufzeit berechnet, sodass statische Analyse und Refactoring ihm nicht folgen können."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Set Field By Name (dynamisches Ziel)",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Keine Set-Field-By-Name-Schritte gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Schritt"
+  }
+}

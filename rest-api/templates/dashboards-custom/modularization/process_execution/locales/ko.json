@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "프로세스 및 셸 실행",
+    "description": "외부 프로세스/셸 실행 인벤토리: Send Event 및 Perform AppleScript(Step_ID 게이트, 로케일 독립적)와 MBS Shell / RunTask / Process 호출(calls_pluginfunction으로 해석됨). 솔루션이 운영 체제에 제어권을 넘기는 위치를 보여줍니다."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "접점",
+    "summary_kpistrip.props.items[1].label": "Send Event",
+    "summary_kpistrip.props.items[2].label": "AppleScript",
+    "summary_kpistrip.props.items[3].label": "MBS 프로세스 호출",
+    "summary_kpistrip.props.items[4].label": "영향받는 파일",
+    "by_mechanism.props.title": "메커니즘별",
+    "by_mechanism_table.props.columns[0].label": "메커니즘",
+    "by_mechanism_table.props.columns[1].label": "종류",
+    "by_mechanism_table.props.columns[2].label": "호출 위치",
+    "by_mechanism_table.props.columns[3].label": "파일",
+    "findings.props.title": "발견 위치",
+    "findings_table.props.columns[0].label": "메커니즘",
+    "findings_table.props.columns[1].label": "참조 유형",
+    "findings_table.props.columns[2].label": "스크립트/객체",
+    "findings_table.props.columns[3].label": "단계/함수",
+    "findings_table.props.columns[4].label": "파일",
+    "findings_table.props.columns[5].label": "#",
+    "markdown.props.content": "## 참고\n\n솔루션이 **외부 프로세스 또는 셸**에 제어권을 넘기는 위치입니다. 네이티브 단계는 Step_ID로 게이트됩니다(로케일 독립적): *Send Event* (57), *Perform AppleScript* (67). MBS 프로세스 호출은 해석된 `calls_pluginfunction` 링크에서 읽습니다: `Shell.*`, `RunTask.*`, `Process.*`.\n\n- **필터로서의 KPI**: *Send Event* 및 *AppleScript*는 세부 목록을 해당 메커니즘으로 필터링합니다.\n- **메커니즘별**: 행을 클릭하면 발견 위치가 필터링됩니다.\n- **탐색**: 발견 위치를 클릭하면 캐리어(스크립트 + 단계 앵커 또는 MBS 호출 뒤의 객체)가 열립니다.\n- **관련 규칙**: 파생된 심각도 규칙은 *Static Code Analysis*에 있습니다.\n- **정렬**: 모든 열 머리글은 클릭 가능합니다 (▲▼)."
+  }
+}

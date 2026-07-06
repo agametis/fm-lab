@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Hårdkodad IP-adress i beräkning",
+    "description": "Säkerhets-/underhållsregel — beräkningsfragment med en literal IPv4-adress (t.ex. en FTP-/SMTP-värd). Hårdkodade värdar går sönder vid nätverksändringar.\n\nBaserad på PMD-regeln AvoidUsingHardCodedIP — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#avoidusinghardcodedip"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Hårdkodad IP-adress i beräkning",
+    "findings_table.props.searchPlaceholder": "Sök fil, skript eller IP…",
+    "findings_table.props.empty.message": "Inga hårdkodade IP-adresser hittades i beräkningar.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Hittad i",
+    "findings_table.props.columns[2].label": "IP"
+  }
+}

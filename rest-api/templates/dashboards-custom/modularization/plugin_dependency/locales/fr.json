@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Dépendance aux plug-ins",
+    "description": "Inventaire des dépendances aux plug-ins : sites d'appel par composant de plug-in (MBS et autres) × fichier, résolus via calls_pluginfunction, ainsi que les étapes Install Plug-In File. Une vue de risque : quels modules seraient morts sans le plug-in ?"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Sites d'appel de plug-ins",
+    "summary_kpistrip.props.items[1].label": "Composants",
+    "summary_kpistrip.props.items[2].label": "Fonctions",
+    "summary_kpistrip.props.items[3].label": "Fichiers concernés",
+    "summary_kpistrip.props.items[4].label": "Étapes Install Plug-In",
+    "components.props.title": "Composants",
+    "components_table.props.columns[0].label": "Plug-in",
+    "components_table.props.columns[1].label": "Composant",
+    "components_table.props.columns[2].label": "Sites d'appel",
+    "components_table.props.columns[3].label": "Fonctions",
+    "components_table.props.columns[4].label": "Fichiers",
+    "top_functions.props.title": "Fonctions les plus utilisées",
+    "top_functions_table.props.columns[0].label": "Fonction",
+    "top_functions_table.props.columns[1].label": "Composant",
+    "top_functions_table.props.columns[2].label": "Sites d'appel",
+    "top_functions_table.props.columns[3].label": "Fichiers",
+    "markdown.props.content": "## Remarques\n\nDe quels **plug-ins** la solution dépend, et où. Les sites d'appel sont lus à partir des liens `calls_pluginfunction` résolus (`MBS:<Composant>.<Fonction>`), de sorte que la liste des *Fonctions les plus utilisées* navigue directement vers la vue des utilisations de la fonction du plug-in.\n\n- **Composants** : sites d'appel, fonctions distinctes et fichiers concernés par composant de plug-in. Cliquez sur un composant pour filtrer la liste des fonctions.\n- **Vue de risque** : un module bâti sur un composant comportant de nombreux sites d'appel est mort si ce plug-in n'est pas installé — les étapes *Install Plug-In File* montrent où la solution installe elle-même des plug-ins.\n- **Navigation** : cliquer sur une fonction ouvre le détail de sa fonction de plug-in (utilisations).\n- **Règles associées** : les règles de sévérité dérivées se trouvent sous *Static Code Analysis*.\n- **Tri** : tous les en-têtes de colonne sont cliquables (▲▼)."
+  }
+}

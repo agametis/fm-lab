@@ -10,9 +10,12 @@ import { ErrorMessage } from './ErrorMessage';
 import { ScriptDetail } from './ScriptDetail';
 import { ScriptStepDetail } from './ScriptStepDetail';
 import { CustomFunctionDetail } from './CustomFunctionDetail';
+import { CustomMenuDetail } from './CustomMenuDetail';
 import { FieldDetail } from './FieldDetail';
 import { PrivilegeSetDetail } from './PrivilegeSetDetail';
 import { RelationshipDetail } from './RelationshipDetail';
+import { ValueListDetail } from './ValueListDetail';
+import { BaseTableDetail } from './BaseTableDetail';
 import '../views/LayoutView.css';
 
 interface ObjectDetailProps {
@@ -191,6 +194,9 @@ export const ObjectDetail: React.FC<ObjectDetailProps> = ({
   if (objectType === 'CustomFunction') {
     return <CustomFunctionDetail uuid={uuid} highlightRefUuids={highlightUuids} onLiveMatchCount={onLiveMatchCount} />;
   }
+  if (objectType === 'CustomMenu' || objectType === 'CustomMenuItem') {
+    return <CustomMenuDetail uuid={uuid} objectType={objectType} highlightRefUuids={highlightUuids} onLiveMatchCount={onLiveMatchCount} />;
+  }
   if (objectType === 'Field') {
     return <FieldDetail uuid={uuid} highlightRefUuids={highlightUuids} onLiveMatchCount={onLiveMatchCount} />;
   }
@@ -199,6 +205,12 @@ export const ObjectDetail: React.FC<ObjectDetailProps> = ({
   }
   if (objectType === 'Relationship') {
     return <RelationshipDetail uuid={uuid} />;
+  }
+  if (objectType === 'ValueList') {
+    return <ValueListDetail uuid={uuid} />;
+  }
+  if (objectType === 'BaseTable') {
+    return <BaseTableDetail uuid={uuid} />;
   }
   return (
     <GenericObjectDetail

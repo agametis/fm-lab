@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Nome script duplicato",
+    "description": "Regola soggetta a errori: due o più script con lo stesso nome all’interno di un file. Artefatto frequente da copia-incolla che rende ambiguo «chiama script per nome»."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Nome script duplicato",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Nessun nome script duplicato trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

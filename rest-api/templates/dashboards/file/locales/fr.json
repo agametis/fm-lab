@@ -1,0 +1,42 @@
+{
+  "manifest": {
+    "title": "Vue fichier",
+    "description": "Vue détaillée par fichier : métadonnées, options de fichier, indicateurs d'objets et les scripts déclenchés / modèle de départ / compte de connexion."
+  },
+  "layout": {
+    "file_not_found.props.title": "Fichier introuvable",
+    "file_not_found_md.props.content": "Aucun fichier de ce nom n'existe dans la base de données actuelle. Ouvrez un fichier depuis la page d'**accueil**.",
+    "file_info.props.title": "Infos fichier",
+    "file_metrics_kpistrip.props.items[0].label": "Objets",
+    "file_metrics_kpistrip.props.items[1].label": "Références",
+    "file_metrics_kpistrip.props.items[2].label": "Version FM",
+    "file_metrics_kpistrip.props.items[3].label": "Info DDR",
+    "file_metrics_kpistrip.props.items[4].label": "Dernier import",
+    "file_metrics_kpistrip.props.items[5].label": "Version min.",
+    "file_size_kpistrip.props.items[0].label": "Taille du fichier",
+    "file_settings_list.props.items[0].label": "Connexion auto",
+    "file_settings_list.props.items[1].label": "Enregistrer les identifiants",
+    "file_settings_list.props.items[2].label": "Champs de connexion",
+    "file_settings_list.props.items[3].label": "Chiffrement",
+    "file_settings_list.props.items[4].label": "Masquer le partage WebDirect",
+    "file_settings_list.props.items[5].label": "Masquer le partage client",
+    "file_settings_list.props.items[6].label": "Souligner l'orthographe",
+    "file_object_counts.props.title": "Objets",
+    "file_object_counts_kpistrip.props.items[0].label": "Scripts",
+    "file_object_counts_kpistrip.props.items[1].label": "Tables",
+    "file_object_counts_kpistrip.props.items[2].label": "Champs",
+    "file_object_counts_kpistrip.props.items[3].label": "TO",
+    "file_object_counts_kpistrip.props.items[4].label": "Relations",
+    "file_object_counts_kpistrip.props.items[5].label": "Mises en page",
+    "file_object_counts_kpistrip.props.items[6].label": "Listes de valeurs",
+    "file_object_counts_kpistrip.props.items[7].label": "Fonctions pers.",
+    "file_object_counts_kpistrip.props.items[8].label": "Variables",
+    "file_triggers.props.title": "Scripts déclenchés",
+    "file_triggers_table.props.columns[0].label": "Événement",
+    "file_triggers_table.props.columns[1].label": "Script",
+    "file_start_layout.props.title": "Modèle de départ",
+    "file_start_layout_table.props.columns[0].label": "Mise en page",
+    "file_account.props.title": "Compte de connexion",
+    "file_account_table.props.columns[0].label": "Compte"
+  }
+}

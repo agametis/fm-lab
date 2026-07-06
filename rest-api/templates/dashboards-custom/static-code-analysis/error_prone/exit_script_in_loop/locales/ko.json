@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Exit Script (Loop 내)",
+    "description": "오류 유발 규칙 — Loop 내부의 Exit Script. Loop 중간에 스크립트를 빠져나가면 Loop 정리가 생략되고 호출자를 놀라게 합니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "Exit Script (Loop 내)",
+    "findings_table.props.searchPlaceholder": "파일 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "Loop 내부의 Exit Script를 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "스크립트",
+    "findings_table.props.columns[2].label": "단계"
+  }
+}

@@ -7,7 +7,20 @@ const environment = require('../config/environment');
 const { createError } = require('../middleware/error-handler');
 const db = require('../config/database');
 const templateService = require('./template.service');
+const dashboardI18nService = require('./dashboard-i18n.service');
 const { schemas: dashboardSchemas } = require('./dashboard-schemas');
+const settingsStore = require('../plugins/settings-store');
+
+// API-Filter-Sets (external_apis): eine austauschbare URL→Familie-Klassifikation.
+// Der Platzhalter in den Dataset-SQLs wird NACH interpolateTemplate durch den
+// generierten CASE-Block ersetzt (bewusst danach → der `:param`-Präprozessor
+// sieht die generierte SQL nicht, Muster mit Doppelpunkt/Port bleiben intakt).
+// Sets werden aus dem Install-Verzeichnis (user-installiert, gewinnt) bzw. dem
+// Bundle (`api-sets/<id>.json`, Default `generic`) geladen.
+const API_SET_PLACEHOLDER = '/*__API_SET_CLASSIFICATION__*/';
+const API_SETS_INSTALL_DIR = path.join(
+  settingsStore.resolveRepoRoot(), '.fmlab', 'dashboards', 'api-sets',
+);
 
 /**
  * Dashboard Service
@@ -32,15 +45,30 @@ const DASHBOARDS_DIRS = [
   environment.templates.dashboardsDir,
 ];
 
-// Discovery-Cache: ID → { manifest, layout, dir, mtime }
+// Discovery-Cache: ID → { manifest, layout, dir, folder, mtime }
 const bundleCache = new LRUCache({
   max: 50,
   ttl: 1000 * 60 * 60, // 1h
   updateAgeOnGet: true,
 });
 
+// Max. Ordner-Tiefe für die rekursive Bundle-Discovery (Baum ≤4, Folders-Doc F-5).
+const MAX_FOLDER_DEPTH = 4;
+
+// Discovery-Map: id → { id, dir, base, folder }. Einmalig pro Cache-Generation
+// aufgebaut (gemeinsame Promise → kein paralleler Doppel-Scan) und in clearCache
+// invalidiert. So bleibt findBundleDir O(1) statt pro Lookup den Baum zu scannen.
+let discoveryPromise = null;
+
+// Folder-Metadaten-Cache (folder.json je Ordner): folderPath → { mtime, title, locales }.
+// Trägt die lokalisierten Ordner-Anzeigenamen für die Übersicht (Datenschicht mit
+// Fallback: locales[lang] → title → humanisiertes Segment). mtime-invalidiert.
+const folderMetaCache = new Map();
+
 function clearCache() {
   bundleCache.clear();
+  discoveryPromise = null;
+  folderMetaCache.clear();
 }
 
 async function readJsonFile(filePath) {
@@ -62,21 +90,80 @@ async function tryStatMtime(filePath) {
 }
 
 /**
- * Findet das Verzeichnis eines Bundles. Sucht in DASHBOARDS_DIRS in der definierten
- * Reihenfolge (Custom zuerst) und gibt den ersten Treffer zurück (Override-Pattern).
- * Liefert null, wenn keine `manifest.json` gefunden wird.
+ * Rekursiver Verzeichnis-Walk: sammelt alle Bundle-Verzeichnisse (= Ordner mit
+ * `manifest.json`) unter `base` bis Tiefe MAX_FOLDER_DEPTH. Ein Bundle-Ordner wird
+ * NICHT weiter durchsucht (Bundles verschachteln nicht). `folder` = relativer Pfad
+ * des Eltern-Ordners (ohne `<id>`), null an der Wurzel.
  */
-async function findBundleDir(id) {
-  for (const base of DASHBOARDS_DIRS) {
-    const candidate = path.join(base, id);
+async function walkBundleDir(base, relDir, depth, out) {
+  const absDir = path.join(base, relDir);
+  let entries;
+  try {
+    entries = await fs.readdir(absDir, { withFileTypes: true });
+  } catch (err) {
+    if (err.code === 'ENOENT') return;
+    throw err;
+  }
+  for (const e of entries) {
+    if (!e.isDirectory() || e.name.startsWith('.')) continue;
+    const childRel = relDir ? path.join(relDir, e.name) : e.name;
+    const childAbs = path.join(base, childRel);
+    let isBundle = false;
     try {
-      const stat = await fs.stat(path.join(candidate, 'manifest.json'));
-      if (stat.isFile()) return candidate;
+      isBundle = (await fs.stat(path.join(childAbs, 'manifest.json'))).isFile();
     } catch {
-      // weiterprobieren
+      // kein manifest.json → entweder Kategorie-Ordner oder Bundle-Unterordner
+    }
+    if (isBundle) {
+      out.push({ id: e.name, dir: childAbs, base, folder: relDir || null });
+    } else if (depth < MAX_FOLDER_DEPTH) {
+      await walkBundleDir(base, childRel, depth + 1, out);
     }
   }
-  return null;
+}
+
+/**
+ * Baut die Discovery-Map (id → {id, dir, base, folder}) aus beiden DASHBOARDS_DIRS.
+ * Custom-Verzeichnis wird zuerst gescannt → gewinnt bei ID-Kollision (Override-Pattern).
+ * Doppelter Basename (innerhalb desselben Scans, anderes Verzeichnis) → Warn + verwerfen.
+ */
+async function buildDiscovery() {
+  const found = [];
+  for (const base of DASHBOARDS_DIRS) {
+    await walkBundleDir(base, '', 0, found);
+  }
+  const map = new Map();
+  for (const entry of found) {
+    const existing = map.get(entry.id);
+    if (existing) {
+      console.warn(
+        `[dashboard:${entry.id}] duplicate bundle id at "${entry.dir}" — keeping "${existing.dir}", discarding`,
+      );
+      continue;
+    }
+    map.set(entry.id, entry);
+  }
+  return map;
+}
+
+function getDiscovery() {
+  if (!discoveryPromise) {
+    discoveryPromise = buildDiscovery().catch(err => {
+      // Scan-Fehler nicht cachen — nächster Aufruf versucht es erneut.
+      discoveryPromise = null;
+      throw err;
+    });
+  }
+  return discoveryPromise;
+}
+
+/**
+ * Findet das Verzeichnis eines Bundles über die gecachte Discovery-Map (O(1)).
+ * Liefert null, wenn die ID nicht bekannt ist.
+ */
+async function findBundleDir(id) {
+  const map = await getDiscovery();
+  return map.get(id)?.dir || null;
 }
 
 /**
@@ -85,8 +172,11 @@ async function findBundleDir(id) {
  */
 async function loadBundle(id) {
   const cacheKey = id;
-  const dir = await findBundleDir(id);
-  if (!dir) return null;
+  const map = await getDiscovery();
+  const entry = map.get(id);
+  if (!entry) return null;
+  const dir = entry.dir;
+  const folder = entry.folder; // relativer Ordnerpfad (ohne <id>), null = Wurzel
   const manifestPath = path.join(dir, 'manifest.json');
   const layoutPath = path.join(dir, 'layout.json');
 
@@ -145,6 +235,7 @@ async function loadBundle(id) {
     const bundle = {
       id,
       dir,
+      folder,
       manifest,
       layout,
       mtime: combinedMtime,
@@ -166,26 +257,8 @@ async function loadBundle(id) {
  * Fehlerhafte Bundles werden übersprungen.
  */
 async function listBundles() {
-  const seen = new Set();
-  const dirs = [];
-
-  for (const base of DASHBOARDS_DIRS) {
-    let entries;
-    try {
-      entries = await fs.readdir(base, { withFileTypes: true });
-    } catch (err) {
-      if (err.code === 'ENOENT') continue;
-      throw err;
-    }
-    for (const e of entries) {
-      if (!e.isDirectory() || e.name.startsWith('.')) continue;
-      if (seen.has(e.name)) continue; // erste Quelle (Custom) gewinnt
-      seen.add(e.name);
-      dirs.push(e.name);
-    }
-  }
-
-  const bundles = await Promise.all(dirs.map(loadBundle));
+  const map = await getDiscovery();
+  const bundles = await Promise.all([...map.keys()].map(loadBundle));
   return bundles.filter(b => b !== null);
 }
 
@@ -252,9 +325,72 @@ function convertBigInts(value) {
   return typeof value === 'bigint' ? Number(value) : value;
 }
 
+// ---------------------------------------------------------------------------
+// API-Filter-Sets: Klassifikations-Generator + Set-Resolver
+// ---------------------------------------------------------------------------
+
+// Einzelne SQL-String-Literal-Escape (verdoppelt einfache Anführungszeichen).
+function sqlQuote(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+// Erzeugt den `CASE … END`-Block (url → Familie) aus einer Set-Definition.
+// Reihenfolge der `rules` = Priorität (erste Übereinstimmung gewinnt). Feste
+// Tail-Regeln (Local Import für Import-Steps ohne http-URL, ELSE 'Other') sind
+// generische Mechanik und werden immer angehängt.
+function buildClassificationCase(set) {
+  const rules = Array.isArray(set && set.rules) ? set.rules : [];
+  const lines = [];
+  for (const r of rules) {
+    if (!r || !r.family) continue;
+    // Prädikate werden per AND verknüpft: URL-Muster (ilike ODER-Gruppe / regex)
+    // plus optionale semantische Bedingungen source_type / in_comment. So lässt
+    // sich z.B. „CustomFunction mit URL im Kommentar" ohne URL-Muster ausdrücken.
+    const preds = [];
+    if (Array.isArray(r.ilike) && r.ilike.length) {
+      preds.push('(' + r.ilike.map(p => `url ILIKE ${sqlQuote(p)}`).join(' OR ') + ')');
+    } else if (typeof r.regex === 'string' && r.regex.length) {
+      preds.push(`regexp_matches(url, ${sqlQuote(r.regex)})`);
+    }
+    if (typeof r.source_type === 'string' && r.source_type.length) {
+      preds.push(`source_type = ${sqlQuote(r.source_type)}`);
+    }
+    if (r.in_comment === true) preds.push('in_comment');
+    else if (r.in_comment === false) preds.push('NOT in_comment');
+    if (!preds.length) continue;
+    lines.push(`            WHEN ${preds.join(' AND ')} THEN ${sqlQuote(r.family)}`);
+  }
+  lines.push(`            WHEN source_type = 'Script (Import)' THEN 'Local Import'`);
+  return `CASE\n${lines.join('\n')}\n            ELSE 'Other'\n        END`;
+}
+
+// Lädt eine Set-Datei aus einem Verzeichnis (null bei Fehler/Nichtvorhandensein).
+async function loadApiSetFile(dir, setId) {
+  if (!/^[a-zA-Z0-9_-]+$/.test(setId)) return null; // Traversal-/Injection-Schutz
+  try {
+    const raw = await fs.readFile(path.join(dir, `${setId}.json`), 'utf-8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+// Auflösung: Install-Verzeichnis (user-installiert) gewinnt über Bundle-Default.
+async function resolveApiSet(bundle, setId) {
+  return (await loadApiSetFile(API_SETS_INSTALL_DIR, setId))
+      || (await loadApiSetFile(path.join(bundle.dir, 'api-sets'), setId));
+}
+
 async function runBundleQuery(bundle, relPath, params) {
   const sqlTemplate = await loadBundleSql(bundle, relPath);
-  const sql = templateService.interpolateTemplate(sqlTemplate, params);
+  let sql = templateService.interpolateTemplate(sqlTemplate, params);
+  // API-Filter-Set injizieren (nur Datasets mit Platzhalter; alle anderen Bundles
+  // unberührt). NACH interpolateTemplate → generierte SQL ist präprozessor-sicher.
+  if (sql.includes(API_SET_PLACEHOLDER)) {
+    const setId = (params && params.api_set && String(params.api_set)) || 'generic';
+    const set = (await resolveApiSet(bundle, setId)) || (await resolveApiSet(bundle, 'generic'));
+    sql = sql.split(API_SET_PLACEHOLDER).join(buildClassificationCase(set || {}));
+  }
   const result = await db.executeQuery(sql);
   return {
     data: convertBigInts(result.rows),
@@ -329,6 +465,7 @@ async function builtinQueryMeta(params = {}) {
       display: 'auto',
       click_action: null,
       click_args: null,
+      chip_filter: null,
     }];
   }
   return [{
@@ -341,11 +478,55 @@ async function builtinQueryMeta(params = {}) {
     display: t.display || 'auto',
     click_action: t.click_action || null,
     click_args: t.click_args || null,
+    chip_filter: t.chip_filter || null,
   }];
+}
+
+// humanisiert ein Ordner-Segment ("code_style" → "Code Style") — letzter Fallback.
+function humanizeFolderSegment(seg) {
+  return seg.replace(/[-_]/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase());
+}
+
+// Lädt folder.json eines Ordners (relativer Pfad ohne Bundle-ID) aus einem der
+// DASHBOARDS_DIRS, mtime-gecacht. Liefert { title, locales } oder null.
+async function loadFolderMeta(folderPath) {
+  for (const base of DASHBOARDS_DIRS) {
+    const fp = path.join(base, folderPath, 'folder.json');
+    const mtime = await tryStatMtime(fp);
+    if (!mtime) continue;
+    const cached = folderMetaCache.get(folderPath);
+    if (cached && cached.mtime === mtime) return cached;
+    let raw = null;
+    try { raw = await readJsonFile(fp); } catch { raw = null; }
+    const meta = { mtime, title: raw?.title || null, locales: raw?.locales || null };
+    folderMetaCache.set(folderPath, meta);
+    return meta;
+  }
+  return null;
+}
+
+// Baut den lokalisierten Anzeigenamen eines Ordner-Pfads ("a/b" → "A-Label / B-Label").
+// Pro Segment: folder.json locales[lang] → folder.json title → humanisiertes Segment.
+// Der Pfad-Key bleibt der führende Identifier; dies ist reine Anzeige-Datenschicht.
+async function resolveFolderLabel(folderPath, lang) {
+  if (!folderPath) return null;
+  const segs = String(folderPath).split('/');
+  const parts = [];
+  let prefix = '';
+  for (const seg of segs) {
+    prefix = prefix ? `${prefix}/${seg}` : seg;
+    const meta = await loadFolderMeta(prefix);
+    const label = (lang && meta?.locales && meta.locales[lang])
+      || meta?.title
+      || humanizeFolderSegment(seg);
+    parts.push(label);
+  }
+  return parts.join(' / ');
 }
 
 async function builtinListDashboards(params = {}) {
   const bundles = await listBundles();
+  const lang = params._lang || params.lang || 'en';
 
   let excludeTags = [];
   if (params.excludeTags) {
@@ -354,24 +535,32 @@ async function builtinListDashboards(params = {}) {
       : String(params.excludeTags).split(',').map(s => s.trim()).filter(Boolean);
   }
 
-  const rows = bundles
-    .filter(b => {
-      if (!excludeTags.length) return true;
-      const tags = b.manifest.tags || [];
-      return !tags.some(t => excludeTags.includes(t));
-    })
-    .map(b => ({
-      id: b.manifest.id,
-      title: b.manifest.title,
-      description: b.manifest.description || null,
-      icon: b.manifest.icon || null,
-      tags: b.manifest.tags || [],
-      category: b.manifest.category || null,
-      author: b.manifest.author || null,
-      version: b.manifest.version || null,
-    }));
+  const filtered = bundles.filter(b => {
+    if (!excludeTags.length) return true;
+    const tags = b.manifest.tags || [];
+    return !tags.some(t => excludeTags.includes(t));
+  });
 
-  rows.sort((a, b) => a.title.localeCompare(b.title, 'de'));
+  // Titel/Beschreibung über die i18n-Schicht auflösen (Fallback = Basis-Manifest);
+  // Ordner-Label als zusätzliche Anzeige-Datenschicht (folder bleibt der Identifier).
+  const rows = await Promise.all(filtered.map(async b => {
+    const { manifest } = await dashboardI18nService.resolveBundleForLanguage(b, lang);
+    return {
+      id: manifest.id,
+      title: manifest.title,
+      description: manifest.description || null,
+      icon: manifest.icon || null,
+      tags: manifest.tags || [],
+      category: manifest.category || null,
+      folder: b.folder || null,
+      folder_label: await resolveFolderLabel(b.folder, lang),
+      author: manifest.author || null,
+      version: manifest.version || null,
+    };
+  }));
+
+  const collator = lang && lang !== 'en' ? lang : 'en';
+  rows.sort((a, b) => a.title.localeCompare(b.title, collator));
   return rows;
 }
 
@@ -585,6 +774,26 @@ async function builtinXmlDirectoryListing() {
 }
 
 /**
+ * builtin:file_source_size — size (bytes) of one file's XML source export, for
+ * the file-detail view KPI. Sourced from the on-disk xml/ listing (filesystem
+ * metadata, like the home file sizes) rather than the object catalog. Matches on
+ * the file name with the .xml suffix stripped, NFC-normalised, case-insensitive.
+ * Returns one row [{ size_bytes }] — null when the param is missing or no XML
+ * source is present (KPI then renders "—").
+ */
+async function builtinFileSourceSize(params = {}) {
+  const file = params.file;
+  if (!file) return [{ size_bytes: null }];
+  const xmlConvert = require('./xml-convert');
+  const listing = await xmlConvert.getDirectoryListing();
+  const target = String(file).normalize('NFC').toLowerCase();
+  const match = listing.find(
+    f => String(f.filename).replace(/\.xml$/i, '').normalize('NFC').toLowerCase() === target,
+  );
+  return [{ size_bytes: match ? match.size : null }];
+}
+
+/**
  * builtin:xml_directory_meta — eine Meta-Zeile für die Empty-State-Karte:
  * Datei-Anzahl + Gesamtgröße + Pfade + Laufzeit-/Reveal-Flags. So zieht die
  * Karte Anzahl, „Ordner öffnen" (nativ) und den Host-Pfad-Fallback (Container)
@@ -643,6 +852,89 @@ async function builtinClusterCount() {
 }
 
 /**
+ * builtin:xml_import_integrity — der Dup-Absorption-Zensus des letzten Imports
+ * für die „Import-Integrität"-Card im xml_convert-Dashboard. Liest die P6-View
+ * `v_check_absorbed_dups` und gibt sie SCRIPT-ZENTRISCH aggregiert zurück:
+ *
+ *   - Normalfall: eine Zeile je Datei. StepsForScripts-Verluste (rohe Step-UUID-
+ *     Dubletten, für den Entwickler wenig aussagekräftig) werden auf die Datei
+ *     GEHOISTET und als Step-Summe (`Steps`) an die ScriptCatalog-Zeile gehängt.
+ *     `Absorbed` = verlorene GANZE Scripts (ScriptCatalog), `Steps` = verlorene
+ *     Steps innerhalb von Scripts. Beispiel: „Artikel Bilder | 1 | (47 Steps)".
+ *   - Sonderfall: Kollisionen in Katalogen, die NICHT in die Script-Hierarchie
+ *     kollabieren (weder ScriptCatalog noch StepsForScripts, z. B. LayoutObjects/
+ *     Button-Steps) → eigene Zeile mit `is_other=true` und exakter Anzahl.
+ *
+ * Alle 219k StepsForScripts-Zeilen tragen ein Script (verifiziert) → der reine
+ * Step-Verlust ist immer einem Script-Kontext zuordenbar; deshalb genügt die
+ * hoisted Summe (keine Roh-Step-Detailerfassung nötig).
+ *
+ * NULL-sicher / Alt-DB-fest: fehlt die View (Alt-DB ohne Zensus), `[]`
+ * zurückgeben statt zu crashen. HUGEINT → BIGINT casten (int128-Serialisierung).
+ */
+async function builtinXmlImportIntegrity() {
+  const present = await db.executeQuery(
+    `SELECT COUNT(*) AS cnt FROM information_schema.tables
+      WHERE table_name = 'v_check_absorbed_dups'`,
+  );
+  const row = present.rows[0];
+  const cnt = typeof row.cnt === 'bigint' ? Number(row.cnt) : row.cnt;
+  if (cnt < 1) return [];
+  const result = await db.executeQuery(
+    `WITH scriptcentric AS (
+       SELECT File_Name,
+              'ScriptCatalog' AS Catalog,
+              SUM(CASE WHEN Catalog = 'ScriptCatalog'   THEN Absorbed ELSE 0 END)::BIGINT AS Absorbed,
+              SUM(CASE WHEN Catalog = 'StepsForScripts' THEN Absorbed ELSE 0 END)::BIGINT AS Steps,
+              FALSE AS is_other
+         FROM v_check_absorbed_dups
+        WHERE Catalog IN ('ScriptCatalog', 'StepsForScripts')
+        GROUP BY File_Name
+     ),
+     other AS (
+       SELECT File_Name, Catalog, Absorbed::BIGINT AS Absorbed, NULL::BIGINT AS Steps, TRUE AS is_other
+         FROM v_check_absorbed_dups
+        WHERE Catalog NOT IN ('ScriptCatalog', 'StepsForScripts')
+     )
+     SELECT * FROM (
+       SELECT * FROM scriptcentric
+       UNION ALL
+       SELECT * FROM other
+     ) t
+     ORDER BY (Absorbed + COALESCE(Steps, 0)) DESC, File_Name`,
+  );
+  return result.rows;
+}
+
+/**
+ * builtin:xml_import_integrity_details — Objekt-Merkmale der KOLLIDIERENDEN Objekte
+ * je Dup-UUID für die Detail-Aufklappung der „Import-
+ * Integrität"-Card. Liest die P1-Tabelle `DuplicateAbsorptionDetails` (Typ + Name je
+ * kollidierendem Vorkommen). Aktuell befüllt für ScriptCatalog (benannte Objekte, die
+ * still verschwinden); weitere Kataloge folgen. Leere Liste = keine Detail-Objekte
+ * (kein Verlust, oder nur Kataloge ohne Detail-Erfassung wie StepsForScripts).
+ *
+ * NULL-sicher / Alt-DB-fest: fehlt die Tabelle (Alt-DB ohne die Erweiterung), `[]`
+ * zurückgeben statt zu crashen — analog `builtin:xml_import_integrity`.
+ */
+async function builtinXmlImportIntegrityDetails() {
+  const present = await db.executeQuery(
+    `SELECT COUNT(*) AS cnt FROM information_schema.tables
+      WHERE table_name = 'DuplicateAbsorptionDetails'`,
+  );
+  const row = present.rows[0];
+  const cnt = typeof row.cnt === 'bigint' ? Number(row.cnt) : row.cnt;
+  if (cnt < 1) return [];
+  const result = await db.executeQuery(
+    `SELECT Catalog, File_Name, Object_UUID, Object_Name, Object_Type,
+            Occurrence_Seq::BIGINT AS Occurrence_Seq
+       FROM DuplicateAbsorptionDetails
+      ORDER BY File_Name, Catalog, Object_UUID, Occurrence_Seq`,
+  );
+  return result.rows;
+}
+
+/**
  * builtin:docset_functions_with_counts — wie docset_functions, aber annotiert
  * jede Funktion mit `code_ref_count`. Bei references: false → null.
  */
@@ -659,7 +951,36 @@ async function builtinDocsetFunctionsWithCounts(params = {}) {
   return docsReferences.annotateFunctionsWithCounts(docset, fns);
 }
 
+// builtin:api_sets_list — verfügbare API-Filter-Sets (Install-Verzeichnis +
+// Bundle `api-sets/`), Labels je Sprache lokalisiert. Speist das Set-Dropdown.
+async function builtinApiSetsList(params = {}) {
+  const lang = params._lang || params.lang || 'en';
+  const bundleDir = await findBundleDir('external_apis');
+  const dirs = [API_SETS_INSTALL_DIR];              // Install-Verzeichnis gewinnt
+  if (bundleDir) dirs.push(path.join(bundleDir, 'api-sets'));
+  const byId = new Map();
+  for (const dir of dirs) {
+    let entries;
+    try { entries = await fs.readdir(dir); } catch { continue; }
+    for (const name of entries) {
+      if (!name.endsWith('.json')) continue;
+      const id = name.slice(0, -5);
+      if (byId.has(id)) continue;                   // bereits aus Override-Dir geladen
+      try {
+        const set = JSON.parse(await fs.readFile(path.join(dir, name), 'utf-8'));
+        const label = (set.locales && set.locales[lang]) || set.label || id;
+        byId.set(id, { id, label });
+      } catch { /* defekte Set-Datei überspringen */ }
+    }
+  }
+  const rows = [...byId.values()];
+  rows.sort((a, b) =>
+    a.id === 'generic' ? -1 : b.id === 'generic' ? 1 : String(a.label).localeCompare(String(b.label)));
+  return rows;
+}
+
 const BUILTIN_RESOLVERS = {
+  api_sets_list: builtinApiSetsList,
   list_custom_queries: builtinListCustomQueries,
   list_dashboards: builtinListDashboards,
   list_docs: builtinListDocs,
@@ -675,9 +996,12 @@ const BUILTIN_RESOLVERS = {
   docset_functions_with_counts: builtinDocsetFunctionsWithCounts,
   xml_directory_status: builtinXmlDirectoryStatus,
   xml_directory_listing: builtinXmlDirectoryListing,
+  file_source_size: builtinFileSourceSize,
   xml_directory_meta: builtinXmlDirectoryMeta,
   xml_last_run: builtinXmlLastRun,
   xml_semantic_names: builtinXmlSemanticNames,
+  xml_import_integrity: builtinXmlImportIntegrity,
+  xml_import_integrity_details: builtinXmlImportIntegrityDetails,
   cluster_count: builtinClusterCount,
 };
 

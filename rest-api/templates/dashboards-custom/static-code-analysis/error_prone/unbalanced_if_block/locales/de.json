@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Unbalancierte If / End If",
+    "description": "Fehleranfälligkeits-Regel — Scripts, deren If/End-If-Klammerung nicht aufgeht oder ein If schließen, das nie geöffnet wurde."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Unbalancierte If / End If",
+    "findings_table.props.searchPlaceholder": "Datei, Script oder Befund suchen…",
+    "findings_table.props.empty.message": "Keine unbalancierten If/End-If-Blöcke gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Befund"
+  }
+}

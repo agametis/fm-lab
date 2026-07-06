@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "无表上下文的 Layout",
+    "description": "最佳实践规则 — 没有表实例上下文的 Layout。它们无法显示记录数据，通常是孤立或辅助性的 Layout。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "无表上下文的 Layout",
+    "findings_table.props.searchPlaceholder": "搜索文件或 Layout…",
+    "findings_table.props.empty.message": "未找到无上下文的 Layout。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

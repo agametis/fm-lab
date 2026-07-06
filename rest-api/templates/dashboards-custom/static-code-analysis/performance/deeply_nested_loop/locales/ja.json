@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "深くネストされた Loop",
+    "description": "パフォーマンスルール — 3 つ以上のネストされた Loop を持つスクリプト。ネストした反復は外側の 1 周ごとに処理量を掛け合わせます。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "深くネストされた Loop",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "深くネストされた Loop は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "深さ"
+  }
+}

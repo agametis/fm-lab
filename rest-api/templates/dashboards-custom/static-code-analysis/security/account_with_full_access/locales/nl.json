@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Account met [Volledige toegang]",
+    "description": "Beveiligingsregel — accounts met de bevoegdhedenset [Volledige toegang]. Elk account met volledige toegang is een onbeperkte loper; houd het aantal minimaal."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Account met [Volledige toegang]",
+    "findings_table.props.searchPlaceholder": "Bestand of account zoeken…",
+    "findings_table.props.empty.message": "Geen accounts met [Volledige toegang] gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Account"
+  }
+}

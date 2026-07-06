@@ -1,0 +1,35 @@
+{
+  "manifest": {
+    "title": "Dateisystem-Zugriffe",
+    "description": "Inventar aller Dateisystem-Berührungspunkte der Lösung, klassifiziert nach Operation und API-Gruppe, mit Drilldown bis zur Fundstelle. Deckt native FileMaker-Befehle (Data File API, Import/Insert, Export/Save — Step_ID-gated, locale-unabhängig) und MBS-Plugin-Funktionen (Files / Text / Container / Path / Folders / FileDialog, aufgelöst über calls_pluginfunction-Links) ab. Netz-Zugriffe bleiben im APIs-Dashboard. Die WHEN-Zweige für projektspezifische MBS-Komponenten erweitern."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Touchpoints",
+    "summary_kpistrip.props.items[1].label": "Kritisch (write+delete)",
+    "summary_kpistrip.props.items[2].label": "Delete",
+    "summary_kpistrip.props.items[3].label": "Betroffene Dateien",
+    "summary_kpistrip.props.items[4].label": "MBS-Aufrufe",
+    "summary_kpistrip.props.items[5].label": "Native Steps",
+    "fs_groups.props.title": "Gruppen (API-Gruppe × Operation)",
+    "fs_groups_table.props.columns[0].label": "API-Gruppe",
+    "fs_groups_table.props.columns[1].label": "Operation",
+    "fs_groups_table.props.columns[2].label": "Hits",
+    "fs_groups_table.props.columns[3].label": "Dateien",
+    "findings.props.title": "Touchpoints (Fundstellen)",
+    "findings_table.props.columns[0].label": "Gruppe",
+    "findings_table.props.columns[1].label": "Operation",
+    "findings_table.props.columns[2].label": "Ref-Typ",
+    "findings_table.props.columns[3].label": "Script/Objekt",
+    "findings_table.props.columns[4].label": "Step/Funktion",
+    "findings_table.props.columns[5].label": "Datei",
+    "findings_table.props.columns[6].label": "#",
+    "fs_paths.props.title": "Pfad-Literale (wohin schreibt / liest die Lösung?)",
+    "fs_paths_table.props.columns[0].label": "Pfad-Literal",
+    "fs_paths_table.props.columns[1].label": "Verzeichnis",
+    "fs_paths_table.props.columns[2].label": "Script",
+    "fs_paths_table.props.columns[3].label": "Step",
+    "fs_paths_table.props.columns[4].label": "Datei",
+    "fs_paths_table.props.columns[5].label": "#",
+    "markdown.props.content": "## Hinweise\n\nInventar **aller Dateisystem-Berührungspunkte** der Lösung — native FileMaker-Befehle und MBS-Plugin-Funktionen. Netz-/Web-Zugriffe bleiben im Dashboard *APIs & externe Schnittstellen*; `Import Records` erscheint in beiden (Schnittstellen-Indikator vs. Dateisystem-Lesezugriff).\n\n- **Native Befehle sind Step_ID-gated** (locale-unabhängig). SaXML schreibt den Step-Namen in der UI-Sprache des exportierenden Clients (dieser Korpus mischt `Datensätze als Excel speichern` und `Save Records as PDF`), daher klassifiziert die Logik über die numerische `Step_ID`, nie über den Namen. Abgedeckt: Data File API (188–199), Import/Insert (35, 131, 56, 158, 159, 161), Export/Save (36, 132, 143, 144, 152, 225, 37, 3, 96).\n- **MBS-Funktionen** werden aus den aufgelösten `calls_pluginfunction`-Links gelesen (`MBS:<Komponente>.<Funktion>`), nicht per Text-Matching — die Where-used-Navigation stimmt dadurch exakt. Dateisystem-Komponenten: `Files.*`, `Path.*`, `Folders.*`, `FileDialog.*`, plus die Datei-I/O-Funktionen von `Text.*` (Read/Write/AppendTextFile) und `Container.*` (Export/ReadFile/WriteFile). Case-insensitiv (der Korpus enthält `FileMakerPathToNativePath` und `FilemakerPathToNativePath`).\n- **Operationen**: `read` / `write` / `delete` / `probe` (Exists/Size/Date) / `import` / `export` / `launch` / `mount` / `dialog` (benutzer-vermittelt) / `path` (Pfad-Hilfsfunktionen) / `manage` (Open/Close/Position/Rename). Unbekannte `Files.*`-Funktionen fallen auf `operation = other` — sichtbar, nicht verloren.\n- **KPIs als Filter**: *Kritisch (write+delete)* und *Delete* filtern die Detailliste auf die riskanten Operationen. *Touchpoints*, *Betroffene Dateien*, *MBS-Aufrufe* und *Native Steps* sind Statistik-Tiles.\n- **Gruppen**: Klick auf eine *API-Gruppe × Operation*-Zelle filtert die Detailliste darauf.\n- **Pfad-Literale**: `file:` / `filewin:` / `filemac:`-Literale aus Script-Step-Formeln, normalisiert auf Verzeichnis-Ebene — beantwortet *wohin* die Lösung liest/schreibt. Hartkodierte absolute Pfade tauchen hier auf.\n- **Navigation**: Klick auf einen Touchpoint öffnet den Träger (Script + Step-Anchor bzw. die Custom Function / das Feld / das Layout-Objekt hinter einem MBS-Aufruf).\n- **Erweitern**: projektspezifische schreibende MBS-Komponenten (XL.Book.Save, DynaPDF.Save, Archive/Compression, …) als weitere WHEN-Zweige in `data/findings.sql` **und** `data/fs_groups.sql` ergänzen (beide synchron halten).\n- **Zugehörige Regeln**: die abgeleiteten Severity-Regeln (Write ohne Fehlerprüfung, hartkodierter absoluter Pfad, Delete-Nutzung) liegen unter *Statische Code-Analyse*.\n- **Sortierung**: alle Spaltenüberschriften sind klickbar (▲▼)."
+  }
+}

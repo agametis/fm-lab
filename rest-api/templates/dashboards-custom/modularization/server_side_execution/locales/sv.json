@@ -1,0 +1,29 @@
+{
+  "manifest": {
+    "title": "Körning på serversidan",
+    "description": "Vad som (potentiellt) körs på servern: Perform Script on Server, Execute FileMaker Data API och Install OnTimer Script (Step_ID-gated), samt de serverrelevanta Extended Privilege-beviljandena (fmrest, fmurlscript, fmodata, fmxml, fmphp, fmextscriptaccess). En åtkomstgranskningsvy av serverytan."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Perform Script on Server",
+    "summary_kpistrip.props.items[1].label": "Execute Data API",
+    "summary_kpistrip.props.items[2].label": "Install OnTimer",
+    "summary_kpistrip.props.items[3].label": "Berörda filer",
+    "summary_kpistrip.props.items[4].label": "Serverbeviljanden",
+    "by_kind.props.title": "Efter mekanism",
+    "by_kind_table.props.columns[0].label": "Mekanism",
+    "by_kind_table.props.columns[1].label": "Anropspunkter",
+    "by_kind_table.props.columns[2].label": "Filer",
+    "by_kind_table.props.columns[3].label": "Skript",
+    "findings.props.title": "Förekomster",
+    "findings_table.props.columns[0].label": "Mekanism",
+    "findings_table.props.columns[1].label": "Skript",
+    "findings_table.props.columns[2].label": "Step",
+    "findings_table.props.columns[3].label": "Fil",
+    "findings_table.props.columns[4].label": "#",
+    "grants.props.title": "Server-/API-beviljanden (Extended Privileges)",
+    "grants_table.props.columns[0].label": "Extended Privilege",
+    "grants_table.props.columns[1].label": "Behörighetsuppsättning",
+    "grants_table.props.columns[2].label": "Fil",
+    "markdown.props.content": "## Anmärkningar\n\nVad som (potentiellt) körs på **servern**. Inbyggda steps är Step_ID-gated (språkoberoende): *Perform Script on Server* (164), *Execute FileMaker Data API* (203), *Install OnTimer Script* (148).\n\n- **KPI:er som filter**: step-KPI:erna filtrerar förekomsterna till den mekanismen.\n- **Server-/API-beviljanden**: vilka behörighetsuppsättningar som beviljar de serverrelevanta Extended Privileges (`fmrest`, `fmurlscript`, `fmodata`, `fmxml`, `fmphp`, `fmextscriptaccess`). Klicka på en rad för att öppna behörighetsuppsättningen.\n- **Navigering**: att klicka på en förekomst öppnar skriptet vid det steget.\n- **Relaterade regler**: härledda allvarlighetsregler finns under *Static Code Analysis*.\n- **Sortering**: alla kolumnrubriker är klickbara (▲▼)."
+  }
+}

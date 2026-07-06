@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "メール統合",
+    "description": "送信メールのインベントリ: Send Mail ステップ（Step_ID 63）を送信経路（SMTP サーバー対メールクライアント）で分類し、抽出した SMTP ホストとハードコードされた資格情報（セキュリティ関連）のフラグ、さらに MBS SendMail 呼び出しを含みます。cURL による SMTP は API ダッシュボードに残ります。"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Send Mail ステップ",
+    "summary_kpistrip.props.items[1].label": "SMTP 経由",
+    "summary_kpistrip.props.items[2].label": "Client 経由",
+    "summary_kpistrip.props.items[3].label": "ハードコードされた資格情報",
+    "summary_kpistrip.props.items[4].label": "MBS メール呼び出し",
+    "summary_kpistrip.props.items[5].label": "対象ファイル",
+    "by_mode.props.title": "送信経路別",
+    "by_mode_table.props.columns[0].label": "送信経路",
+    "by_mode_table.props.columns[1].label": "呼び出し箇所",
+    "by_mode_table.props.columns[2].label": "ファイル",
+    "by_mode_table.props.columns[3].label": "ハードコードされた認証",
+    "findings.props.title": "呼び出し箇所",
+    "findings_table.props.columns[0].label": "送信経路",
+    "findings_table.props.columns[1].label": "メカニズム",
+    "findings_table.props.columns[2].label": "スクリプト/オブジェクト",
+    "findings_table.props.columns[3].label": "SMTP ホスト",
+    "findings_table.props.columns[4].label": "ハードコードされた認証",
+    "findings_table.props.columns[5].label": "ファイル",
+    "findings_table.props.columns[6].label": "#",
+    "markdown.props.content": "## 注記\n\n送信 **メール**。*Send Mail*（Step_ID 63）は、DDR ステップテキストから送信経路によって分類されます: **SMTP サーバー** 対 **メールクライアント**。ステップが SMTP サーバーを使用する場合、ホストが抽出されます。インラインの `Password:` を含むステップは **ハードコードされた資格情報** としてフラグが立てられます（セキュリティ上の指摘 — パスワードの値そのものは決して表示されません）。MBS `SendMail.*` / `EmailParser.*` 呼び出しは、解決済みの `calls_pluginfunction` リンクから読み取られます。\n\n- **フィルターとしての KPI**: *SMTP 経由* と *Client 経由* は詳細リストをフィルターします。\n- **ハードコードされた資格情報**: ステップに埋め込まれた SMTP サーバー、ポート、パスワードはデプロイ時に壊れ、DDR にシークレットを漏らします。\n- **範囲**: cURL ベースの SMTP（`MBS:CURL.*`）は *API と外部インターフェース* ダッシュボードに残ります。\n- **ナビゲーション**: 呼び出し箇所をクリックすると、キャリア（スクリプト + ステップアンカー、または MBS 呼び出しの背後にあるオブジェクト）が開きます。\n- **関連ルール**: 派生した重大度ルールは *Static Code Analysis* にあります。\n- **並べ替え**: すべての列見出しはクリック可能です（▲▼）。"
+  }
+}

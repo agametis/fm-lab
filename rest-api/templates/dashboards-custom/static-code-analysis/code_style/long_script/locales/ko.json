@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "긴 스크립트",
+    "description": "코드 스타일 규칙 — 150단계를 초과하는 스크립트. 매우 긴 스크립트는 읽기, 테스트, 재사용이 어렵습니다.\n\nPMD 규칙 ExcessiveMethodLength — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessivemethodlength 임계값은 슬라이더로 조정 가능(기본값 150)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "긴 스크립트",
+    "findings_table.props.searchPlaceholder": "파일 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "지나치게 긴 스크립트를 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "스크립트",
+    "findings_table.props.columns[2].label": "단계 수",
+    "threshold_slider.props.label": "스크립트당 단계 수(최소)",
+    "threshold_slider.props.valueSuffix": "단계"
+  }
+}

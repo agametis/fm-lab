@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Tabel met veel velden",
+    "description": "Codestijlregel — basistabellen met meer dan 100 velden. Een zeer brede tabel mengt vaak meerdere zaken die in eigen tabellen thuishoren.\n\nGebaseerd op de PMD-regel TooManyFields — https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#toomanyfields Drempel instelbaar via de schuifregelaar (standaard 100)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Tabel met veel velden",
+    "findings_table.props.searchPlaceholder": "Bestand of tabel zoeken…",
+    "findings_table.props.empty.message": "Geen zeer brede tabellen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Tabel",
+    "findings_table.props.columns[2].label": "Velden",
+    "threshold_slider.props.label": "Velden per tabel (minimum)",
+    "threshold_slider.props.valueSuffix": "velden"
+  }
+}

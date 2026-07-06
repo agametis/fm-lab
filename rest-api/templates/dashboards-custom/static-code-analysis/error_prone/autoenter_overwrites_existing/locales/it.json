@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Il calcolo di immissione automatica sovrascrive l’esistente",
+    "description": "Regola soggetta a errori: campi il cui calcolo di immissione automatica sostituisce un valore esistente. Può sovrascrivere silenziosamente l’input dell’utente a ogni modifica."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Il calcolo di immissione automatica sovrascrive l’esistente",
+    "findings_table.props.searchPlaceholder": "Cerca file, tabella o campo…",
+    "findings_table.props.empty.message": "Nessun calcolo di immissione automatica che sovrascrive trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tabella",
+    "findings_table.props.columns[2].label": "Campo"
+  }
+}

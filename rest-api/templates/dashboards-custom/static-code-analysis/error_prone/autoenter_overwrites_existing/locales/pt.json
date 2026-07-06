@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Cálculo de entrada automática sobrescreve o existente",
+    "description": "Regra propensa a erros — campos cujo cálculo de entrada automática substitui um valor existente. Pode sobrescrever silenciosamente a entrada do usuário a cada alteração."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Cálculo de entrada automática sobrescreve o existente",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, tabela ou campo…",
+    "findings_table.props.empty.message": "Nenhum cálculo de entrada automática que sobrescreve encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Tabela",
+    "findings_table.props.columns[2].label": "Campo"
+  }
+}

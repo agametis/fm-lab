@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Le calcul de saisie automatique écrase l’existant",
+    "description": "Règle sujette aux erreurs : champs dont le calcul de saisie automatique remplace une valeur existante. Il peut écraser silencieusement la saisie de l’utilisateur à chaque modification."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Le calcul de saisie automatique écrase l’existant",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, une table ou un champ…",
+    "findings_table.props.empty.message": "Aucun calcul de saisie automatique écrasant trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Table",
+    "findings_table.props.columns[2].label": "Champ"
+  }
+}

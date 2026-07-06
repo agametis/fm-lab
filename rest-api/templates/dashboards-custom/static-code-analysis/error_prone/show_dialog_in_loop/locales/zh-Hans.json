@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Show Custom Dialog（Loop 内）",
+    "description": "易错/UX 规则 — Loop 内的 Show Custom Dialog 每次迭代都会打开一个模态对话框，让用户陷入反复的提示。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "Show Custom Dialog（Loop 内）",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到 Loop 内的 Show Custom Dialog。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "步骤",
+    "findings_table.props.columns[3].label": "状态",
+    "scope_filter.props.options[0].label": "忽略未启用",
+    "scope_filter.props.options[1].label": "全部"
+  }
+}

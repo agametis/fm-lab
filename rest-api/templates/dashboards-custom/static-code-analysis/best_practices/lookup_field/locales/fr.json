@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Champ de lookup",
+    "description": "Inventaire des champs remplis par lookup. Un lookup capture délibérément une valeur au moment de la définition (instantané), souvent exactement voulu (p. ex. figer un prix, un taux de taxe ou une adresse sur un document). Listé pour information, pas comme erreur."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Champ de lookup",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un champ ou une source…",
+    "findings_table.props.empty.message": "Aucun champ de lookup trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Champ",
+    "findings_table.props.columns[2].label": "Source du lookup"
+  }
+}

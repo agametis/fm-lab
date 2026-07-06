@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Ramo If vazio",
+    "description": "Regra propensa a erros — um If seguido diretamente de Else / Else If / End If, ou seja, um ramo sem etapas. Muitas vezes um resquício ou erro de lógica.\n\nBaseado na regra PMD EmptyControlStatement — https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#emptycontrolstatement"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Ramo If vazio",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhum ramo If vazio encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Etapa"
+  }
+}

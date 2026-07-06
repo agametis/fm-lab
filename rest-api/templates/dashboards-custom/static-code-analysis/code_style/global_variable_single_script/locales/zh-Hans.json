@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "仅在单个脚本中使用的全局变量",
+    "description": "代码风格规则 — 仅在单个脚本内设置和读取的全局（$$）变量。用局部（$）变量能更好地表达意图。\n\n基于 PMD 规则 GlobalVariable — https://docs.pmd-code.org/latest/pmd_rules_ecmascript_bestpractices.html#globalvariable"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "仅在单个脚本中使用的全局变量",
+    "findings_table.props.searchPlaceholder": "搜索变量…",
+    "findings_table.props.empty.message": "未找到仅用于单个脚本的全局变量。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "变量",
+    "findings_table.props.columns[2].label": "读取次数"
+  }
+}

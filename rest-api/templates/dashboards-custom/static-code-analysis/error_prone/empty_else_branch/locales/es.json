@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Rama Else vacía",
+    "description": "Regla de propensión a errores: un Else seguido directamente de End If, es decir, una rama Else sin pasos. Suele ser un resto.\n\nBasado en la regla de PMD EmptyControlStatement — https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#emptycontrolstatement"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Rama Else vacía",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o script…",
+    "findings_table.props.empty.message": "No se encontraron ramas Else vacías.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Paso"
+  }
+}

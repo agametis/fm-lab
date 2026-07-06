@@ -23,6 +23,11 @@
               "density": "comfortable",
               "liveHighlightField": "filename",
               "liveStatusField": "emoji",
+              "alwaysShowCount": true,
+              "searchAutoThreshold": 4,
+              "summaryNewField": "status",
+              "summaryNewValue": "new",
+              "summarySizeField": "size",
               "columns": [
                 { "field": "emoji",       "label": "",          "align": "center" },
                 { "field": "filename",    "label": "File" },
@@ -48,6 +53,21 @@
           {
             "type": "XmlConvertLog",
             "props": {}
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "import_integrity",
+        "props": {
+          "span": 12,
+          "title": "Import integrity"
+        },
+        "data": { "dataset": "xml_import_integrity" },
+        "children": [
+          {
+            "type": "XmlImportIntegrity",
+            "props": { "detailsDataset": "xml_import_integrity_details" }
           }
         ]
       },

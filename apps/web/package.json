@@ -1,6 +1,6 @@
 {
   "name": "@fm-lab/web",
-  "version": "0.8.5",
+  "version": "0.8.8",
   "type": "module",
   "scripts": {
     "dev": "vite",

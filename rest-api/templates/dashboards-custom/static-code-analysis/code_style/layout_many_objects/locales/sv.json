@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Layout med många objekt",
+    "description": "Kodstils-/prestandaregel — Layouter med många objekt. Tunga Layouter renderas långsamt och är svåra att underhålla. Tröskeln justerbar via reglaget (standard 250)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "threshold_slider.props.label": "Objekt per Layout (minimum)",
+    "threshold_slider.props.valueSuffix": "objekt",
+    "findings_card.props.title": "Layout med många objekt",
+    "findings_table.props.searchPlaceholder": "Sök fil eller Layout…",
+    "findings_table.props.empty.message": "Inga överbelastade Layouter hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekt"
+  }
+}

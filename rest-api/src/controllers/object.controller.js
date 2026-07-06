@@ -579,15 +579,108 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
       template_used: 'object_details_field_tokens',
     };
     debugSql = debug ? fldResult.sql : null;
+  } else if (objectType === 'CustomMenu' || objectType === 'CustomMenuItem') {
+    const cmTemplate = objectType === 'CustomMenuItem'
+      ? 'object_details_custommenuitem_tokens'
+      : 'object_details_custommenu_tokens';
+    const cmResult = await templateService.executeTemplate(
+      cmTemplate,
+      { uuid, file: resolvedFile },
+      'report'
+    );
+
+    payload = formatters.format(cmResult.data, 'tokens', {
+      kind: 'custommenu',
+      object: baseObject,
+    });
+
+    // ?enrich=<lang> — Calc-Tokens vom Type 'function' anreichern. Die Tokens
+    // liegen pro Calc-Block; für die Anreicherung über alle Blöcke flach sammeln
+    // (enrichFunctionTokens mutiert in-place, die Referenzen bleiben erhalten).
+    if (enrich) {
+      try {
+        const allTokens = (payload.calcs || []).flatMap(c => c.tokens || []);
+        await referenceService.enrichFunctionTokens(allTokens, enrich);
+        metaInfo = { ...metaInfo, enrich };
+      } catch (e) {
+        if (e.code === 'REF_LANG_INVALID') {
+          throw createError('VALIDATION_ERROR', e.message, e.details || {});
+        }
+        if (e.code === 'REF_NOT_ATTACHED') {
+          metaInfo = { ...metaInfo, enrich: null, enrich_error: e.code };
+        } else {
+          throw e;
+        }
+      }
+    }
+
+    metaInfo = {
+      ...metaInfo,
+      template_used: cmTemplate,
+    };
+    debugSql = debug ? cmResult.sql : null;
   } else {
     throw createError(
       'VALIDATION_ERROR',
       `format=tokens is not supported for object type '${objectType}'`,
-      { uuid, objectType, supported: ['Script', 'ScriptStep', 'CustomFunction', 'Field'] }
+      { uuid, objectType, supported: ['Script', 'ScriptStep', 'CustomFunction', 'Field', 'CustomMenu', 'CustomMenuItem'] }
     );
   }
 
+  // Tote Cross-Nav-Links auf nicht-registrierte BuiltinFunctions entfernen
+  // (betrifft alle Token-Views: CF/Field/CustomMenu).
+  await pruneDeadBuiltinLinks(payload);
+
   return sendFormatted(res, payload, 'tokens', meta ? metaInfo : null, debugSql);
+}
+
+/**
+ * Entfernt tote Cross-Navigation-Links auf BuiltinFunctions, die NICHT im
+ * ObjectCatalog registriert sind. Der Tokenizer (tokens.formatter.js) minted für
+ * JEDES `function`-Token deterministisch `md5('BuiltinFunction::' + name)` — aber
+ * nur tatsächlich registrierte Builtins existieren als Objekt. Nicht registriert
+ * sind u.a. der bloße `Get`-Wrapper von `Get(<param>)` (das Objekt liegt unter dem
+ * Parameternamen) sowie diverse Operatoren. Ohne diese Bereinigung führt ein Klick
+ * auf ein solches Token auf eine 404-Detailseite. Greift auf payload.tokens
+ * (CustomFunction/Field/Calculation) UND payload.calcs[].tokens (CustomMenu).
+ */
+async function pruneDeadBuiltinLinks(payload) {
+  if (!payload) return;
+  const tokenLists = [];
+  if (Array.isArray(payload.tokens)) tokenLists.push(payload.tokens);
+  if (Array.isArray(payload.calcs)) {
+    for (const c of payload.calcs) {
+      if (c && Array.isArray(c.tokens)) tokenLists.push(c.tokens);
+    }
+  }
+  if (tokenLists.length === 0) return;
+
+  // Kandidaten-UUIDs sammeln (nur function-Tokens mit gesetzter uuid).
+  const candidateUuids = new Set();
+  for (const list of tokenLists) {
+    for (const t of list) {
+      if (t && t.type === 'function' && t.uuid) candidateUuids.add(t.uuid);
+    }
+  }
+  if (candidateUuids.size === 0) return;
+
+  const database = require('../config/database');
+  const ids = Array.from(candidateUuids);
+  const placeholders = ids.map(() => '?').join(',');
+  const r = await database.executeQuery(
+    `SELECT Object_UUID FROM ObjectCatalog
+      WHERE Object_Type = 'BuiltinFunction' AND Object_UUID IN (${placeholders})`,
+    ids
+  );
+  const valid = new Set(r.rows.map(row => String(row.Object_UUID)));
+
+  for (const list of tokenLists) {
+    for (const t of list) {
+      if (t && t.type === 'function' && t.uuid && !valid.has(t.uuid)) {
+        delete t.uuid;
+      }
+    }
+  }
 }
 
 /**

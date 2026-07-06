@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "空 Layout",
+    "description": "未使用代码规则 — 完全没有 Layout 对象的 Layout。通常是从未完善的占位符。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "空 Layout",
+    "findings_table.props.searchPlaceholder": "搜索文件或 Layout…",
+    "findings_table.props.empty.message": "未找到空 Layout。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

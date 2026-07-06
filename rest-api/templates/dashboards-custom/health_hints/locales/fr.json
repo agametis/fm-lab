@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Healthchecks",
+    "description": "Contrôles de santé curatés et regroupés par type d'objet avec des compteurs en direct, chacun renvoyant vers son tableau de bord de règles d'analyse statique de code."
+  },
+  "layout": {
+    "hc_kpi_strip.props.items[0].label": "Tous les contrôles",
+    "hc_kpi_strip.props.items[1].label": "Erreurs",
+    "hc_kpi_strip.props.items[2].label": "Avertissements",
+    "hc_kpi_strip.props.items[3].label": "Info",
+    "hc_security_card.props.title": "Sécurité",
+    "hc_security_list.props.empty.message": "Rien à signaler.",
+    "hc_fields_card.props.title": "Rubriques",
+    "hc_fields_list.props.empty.message": "Rien à signaler.",
+    "hc_scripts_card.props.title": "Scripts",
+    "hc_scripts_list.props.empty.message": "Rien à signaler.",
+    "hc_relationships_card.props.title": "Liens",
+    "hc_relationships_list.props.empty.message": "Rien à signaler.",
+    "hc_tables_card.props.title": "Tables et occurrences",
+    "hc_tables_list.props.empty.message": "Rien à signaler.",
+    "hc_layouts_card.props.title": "Modèles",
+    "hc_layouts_list.props.empty.message": "Rien à signaler.",
+    "hc_variables_card.props.title": "Variables",
+    "hc_variables_list.props.empty.message": "Rien à signaler.",
+    "hc_valuelists_card.props.title": "Listes de valeurs",
+    "hc_valuelists_list.props.empty.message": "Rien à signaler.",
+    "hc_customfunctions_card.props.title": "Fonctions personnalisées",
+    "hc_customfunctions_list.props.empty.message": "Rien à signaler."
+  }
+}

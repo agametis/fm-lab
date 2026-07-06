@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Aparición de tabla sin usar",
+    "description": "Regla de código sin usar: apariciones de tabla que no sirven como contexto de Layout, origen de portal, destino de GTRR ni lado de relación."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Aparición de tabla sin usar",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o nombre…",
+    "findings_table.props.empty.message": "No se encontraron coincidencias.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Nombre"
+  }
+}

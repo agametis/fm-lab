@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Layout con muchos portales",
+    "description": "Regla de estilo de código/rendimiento: Layouts con más de seis portales. Muchos portales traen cada uno un conjunto relacionado y ralentizan el Layout. Umbral ajustable con el control deslizante (predeterminado 6)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Layout con muchos portales",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o Layout…",
+    "findings_table.props.empty.message": "No se encontraron Layouts con muchos portales.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Portales",
+    "threshold_slider.props.label": "Portales por Layout (mínimo)",
+    "threshold_slider.props.valueSuffix": "portales"
+  }
+}

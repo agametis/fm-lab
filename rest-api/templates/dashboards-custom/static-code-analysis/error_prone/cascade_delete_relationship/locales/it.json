@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Relazione con eliminazione a cascata",
+    "description": "Regola soggetta a errori: relazioni che eliminano record correlati su uno o entrambi i lati. Un’eliminazione errata cancella silenziosamente i record figli; controllare ciascuna."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Relazione con eliminazione a cascata",
+    "findings_table.props.searchPlaceholder": "Cerca occorrenza di tabella…",
+    "findings_table.props.empty.message": "Nessuna relazione con eliminazione a cascata trovata.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "TO sinistra",
+    "findings_table.props.columns[2].label": "TO destra",
+    "findings_table.props.columns[3].label": "Cascata"
+  }
+}

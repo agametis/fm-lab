@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": { "columns": 12, "gap": 16 },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary",
+        "props": { "span": 12, "variant": "hero" },
+        "data": { "dataset": "summary" },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpistrip",
+            "props": {
+              "items": [
+                { "label": "Plugin call sites", "field": "callsites", "format": "number" },
+                { "label": "Components", "field": "components", "format": "number" },
+                { "label": "Functions", "field": "functions", "format": "number" },
+                { "label": "Files affected", "field": "files_affected", "format": "number" },
+                { "label": "Install Plug-In steps", "field": "install_plugin_steps", "format": "number" }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "components",
+        "props": { "span": 12, "title": "Components" },
+        "data": { "dataset": "components" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "components_table",
+            "props": {
+              "rowKey": "component",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                { "field": "plugin", "label": "Plugin", "format": "badge" },
+                { "field": "component", "label": "Component", "format": "badge" },
+                { "field": "callsites", "label": "Call sites", "align": "right" },
+                { "field": "functions", "label": "Functions", "align": "right" },
+                { "field": "files", "label": "Files", "align": "right" }
+              ],
+              "onRowClick": { "action": "openDashboard", "args": { "id": "plugin_dependency", "params": { "component": "{{component}}" } } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "top_functions",
+        "props": { "span": 12, "title": "Most-used functions" },
+        "data": { "dataset": "top_functions" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "top_functions_table",
+            "props": {
+              "rowKey": "function_name",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                { "field": "function_name", "label": "Function" },
+                { "field": "component", "label": "Component", "format": "badge" },
+                { "field": "callsites", "label": "Call sites", "align": "right" },
+                { "field": "files", "label": "Files", "align": "right" }
+              ],
+              "onRowClick": { "action": "openObject", "args": { "uuid": "{{nav_uuid}}", "type": "PluginFunction" } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Markdown",
+        "id": "markdown",
+        "props": {
+          "span": 12,
+          "content": "## Notes\n\nWhich **plugins** the solution depends on, and where. Call sites are read from the resolved `calls_pluginfunction` links (`MBS:<Component>.<Function>`), so the *Most-used functions* list navigates straight into the plugin function's where-used.\n\n- **Components**: call sites, distinct functions and affected files per plugin component. Click a component to filter the function list.\n- **Risk view**: a module built on a component with many call sites is dead without that plugin installed — *Install Plug-In File* steps show where the solution installs plugins itself.\n- **Navigation**: clicking a function opens its plugin-function detail (where-used).\n- **Related rules**: derived severity rules live under *Static Code Analysis*.\n- **Sorting**: all column headings are clickable (▲▼)."
+        }
+      }
+    ]
+  }
+}

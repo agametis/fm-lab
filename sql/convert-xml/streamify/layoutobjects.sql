@@ -41,7 +41,7 @@ root_objects AS (
         Part_Type,
         xml_extract_text(object_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
         xml_extract_text(object_xml, '/LayoutObject/@type')[1] as Object_Type,
-        xml_extract_text(object_xml, '/LayoutObject/@name')[1] as Object_Name,
+        xml_unescape(xml_extract_text(object_xml, '/LayoutObject/@name')[1]) as Object_Name,
         xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::INTEGER as Object_Kind,
         xml_extract_text(object_xml, '/LayoutObject/@hash')[1] as Object_Hash,
         xml_extract_text(object_xml, '/LayoutObject/UUID')[1] as Object_UUID,
@@ -86,7 +86,7 @@ nested_objects AS (
         parent.Part_Type,
         xml_extract_text(child_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
         xml_extract_text(child_xml, '/LayoutObject/@type')[1] as Object_Type,
-        xml_extract_text(child_xml, '/LayoutObject/@name')[1] as Object_Name,
+        xml_unescape(xml_extract_text(child_xml, '/LayoutObject/@name')[1]) as Object_Name,
         xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::INTEGER as Object_Kind,
         xml_extract_text(child_xml, '/LayoutObject/@hash')[1] as Object_Hash,
         xml_extract_text(child_xml, '/LayoutObject/UUID')[1] as Object_UUID,
@@ -115,10 +115,13 @@ nested_objects AS (
         child_xml as object_xml
     FROM nested_objects parent
     CROSS JOIN LATERAL unnest(
+        -- DIREKTE Kind-Achsen (B-K1) — identisch zur DOM-Basis (Begründung dort).
         CASE
             WHEN parent.Object_Type = 'Popover Button'
                 THEN xml_extract_elements(parent.object_xml, '/LayoutObject/PopoverButton/LayoutObject')
-            ELSE xml_extract_elements(parent.object_xml, '//ObjectList/LayoutObject')
+            WHEN parent.Object_Type = 'PopoverPanel'
+                THEN xml_extract_elements(parent.object_xml, '/LayoutObject/ObjectList/LayoutObject')
+            ELSE xml_extract_elements(parent.object_xml, '/LayoutObject/*/ObjectList/LayoutObject')
         END
     ) WITH ORDINALITY AS t(child_xml, z_order)
     WHERE parent.Object_Type IN (
@@ -135,7 +138,16 @@ SELECT
     Object_Name,
     Object_Kind,
     Object_Hash,
-    Object_UUID,
+    -- NULL-PK-Guard (B-K2) — identisch zur DOM-Basis (Begründung dort).
+    COALESCE(Object_UUID, md5(
+        'LayoutObjectNoUUID|' ||
+        COALESCE(Layout_ID::VARCHAR, '') || '|' ||
+        COALESCE(Object_ID::VARCHAR, '') || '|' ||
+        COALESCE(Object_Type, '') || '|' ||
+        COALESCE(Part_Type, '') || '|' ||
+        COALESCE(Nesting_Level::VARCHAR, '') || '|' ||
+        COALESCE(Z_Order::VARCHAR, '')
+    )) as Object_UUID,
     Bounds_Top,
     Bounds_Left,
     Bounds_Bottom,
@@ -151,9 +163,9 @@ SELECT
     ws_restore(object_xml::VARCHAR) as Object_XML,
     fn.File_Name as File_Name
 -- DETERMINISTISCHES DEDUP (Chunk-Invarianz, These 1b) — identisch zur DOM-Basis:
--- '//ObjectList/LayoutObject' emittiert tief verschachtelte Objekte mehrfach; pro
--- (Layout_ID, Object_UUID) die flachste Emission (min Nesting_Level) behalten, damit
--- das Ergebnis reihenfolge-/chunk-invariant ist. NULL-UUID-Objekte bleiben erhalten.
+-- mit den direkten Kind-Achsen (B-K1) bleibt nur die bekannte Doppel-Serialisierung
+-- (Part-Root + GroupedButton-ObjectList, 12 Korpus-Fälle); pro (Layout_ID, Object_UUID)
+-- gewinnt die flachste Emission (min Nesting_Level). NULL-UUID-Objekte bleiben erhalten.
 FROM (
     SELECT *,
         ROW_NUMBER() OVER (PARTITION BY Layout_ID, Object_UUID
@@ -183,3 +195,75 @@ ON CONFLICT (Object_UUID, File_Name) DO UPDATE SET
     ScriptTrigger_Parameter_Text = EXCLUDED.ScriptTrigger_Parameter_Text,
     Text_Content = EXCLUDED.Text_Content,
     Object_XML = EXCLUDED.Object_XML;
+
+-- Zensus (Dup-Absorption): deduplizierte Emissionsmenge des LayoutObjects-INSERTs —
+-- SAX-Fassung, quellgleich zum Zensus im DOM-Block der Basis (dort begründet).
+-- Schlanke Zweit-Rekursion über den LC_Layout-Stream (gleiche Kind-Achsen/Container-
+-- Typen wie oben), nur Typ/UUID fürs Zählen; je (Layout_ID, Object_UUID) EINE
+-- Emission, NULL-UUID-Objekte einzeln (md5-Fallback-PK).
+WITH RECURSIVE census_parts AS (
+    SELECT
+        Layout_ID,
+        unnest(xml_extract_elements(parts_wrapped, '/PartsList/Part')) as part_xml
+    FROM (
+        SELECT
+            "id"::BIGINT as Layout_ID,
+            '<PartsList>' || PartsList || '</PartsList>' as parts_wrapped
+        FROM read_xml(
+            getvariable('fm_xml'),
+            record_element='LC_Layout',
+            maximum_file_size=getvariable('dom_threshold'),
+            streaming=getvariable('use_streaming'),
+            columns={'id':'BIGINT','PartsList':'VARCHAR'}
+        )
+        WHERE PartsList IS NOT NULL
+    )
+),
+census_objects AS (
+    SELECT
+        Layout_ID,
+        xml_extract_text(object_xml, '/LayoutObject/@type')[1] as Object_Type,
+        xml_extract_text(object_xml, '/LayoutObject/UUID')[1] as Object_UUID,
+        object_xml
+    FROM census_parts
+    CROSS JOIN LATERAL unnest(
+        xml_extract_elements(part_xml, '/Part/ObjectList/LayoutObject')
+    ) AS t(object_xml)
+
+    UNION ALL
+
+    SELECT
+        parent.Layout_ID,
+        xml_extract_text(child_xml, '/LayoutObject/@type')[1] as Object_Type,
+        xml_extract_text(child_xml, '/LayoutObject/UUID')[1] as Object_UUID,
+        child_xml as object_xml
+    FROM census_objects parent
+    CROSS JOIN LATERAL unnest(
+        CASE
+            WHEN parent.Object_Type = 'Popover Button'
+                THEN xml_extract_elements(parent.object_xml, '/LayoutObject/PopoverButton/LayoutObject')
+            WHEN parent.Object_Type = 'PopoverPanel'
+                THEN xml_extract_elements(parent.object_xml, '/LayoutObject/ObjectList/LayoutObject')
+            ELSE xml_extract_elements(parent.object_xml, '/LayoutObject/*/ObjectList/LayoutObject')
+        END
+    ) AS t(child_xml)
+    WHERE parent.Object_Type IN (
+        'Portal',
+        'Group',
+        'Tab Control',
+        'Panel',
+        'Container',
+        'Button Bar',
+        'Slide Control',
+        'Grouped Button',
+        'PopoverPanel',
+        'Popover Button'
+    )
+)
+INSERT INTO DuplicateAbsorptions
+SELECT getvariable('fm_file'), 'LayoutObjects', 'Object_UUID,File_Name',
+       COALESCE(getvariable('seq_offset'), 0)::BIGINT,
+       COUNT(*) FILTER (WHERE Object_UUID IS NULL)
+         + COUNT(DISTINCT (Layout_ID, Object_UUID)) FILTER (WHERE Object_UUID IS NOT NULL)
+FROM census_objects
+ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;

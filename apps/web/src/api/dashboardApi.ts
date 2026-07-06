@@ -14,6 +14,8 @@ export interface DashboardListItem {
   icon: string | null;
   tags: string[];
   category: string | null;
+  /** Relative folder path (without the bundle id), null = root. Drives the grouped navigation. */
+  folder: string | null;
   author: string | null;
   version: string | null;
 }

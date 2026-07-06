@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "ODBC / ESS / SQL",
+    "description": "Inventaire de l'accès aux données SQL externes : étapes Execute SQL (Step_ID 117), sources de données ODBC / ESS (sources externes non FileMaker) et autorisations fmxdbc (ODBC/JDBC). Un modèle générique — utile même là où le corpus n'a actuellement aucune source ODBC."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Étapes Execute SQL",
+    "summary_kpistrip.props.items[1].label": "Sources ODBC / ESS",
+    "summary_kpistrip.props.items[2].label": "Autorisations fmxdbc",
+    "summary_kpistrip.props.items[3].label": "Fichiers avec SQL",
+    "findings.props.title": "Étapes Execute SQL",
+    "findings_table.props.columns[0].label": "Script",
+    "findings_table.props.columns[1].label": "Étape",
+    "findings_table.props.columns[2].label": "SQL (aperçu)",
+    "findings_table.props.columns[3].label": "Fichier",
+    "findings_table.props.columns[4].label": "#",
+    "ess_sources.props.title": "Sources de données ODBC / ESS",
+    "ess_sources_table.props.emptyMessage": "Aucune source ODBC / ESS — toutes les sources externes sont FileMaker.",
+    "ess_sources_table.props.columns[0].label": "Source",
+    "ess_sources_table.props.columns[1].label": "Type",
+    "ess_sources_table.props.columns[2].label": "TOs",
+    "ess_sources_table.props.columns[3].label": "Fichier",
+    "grants.props.title": "Autorisations ODBC / xDBC (fmxdbc)",
+    "grants_table.props.emptyMessage": "Aucun jeu de privilèges n'accorde fmxdbc.",
+    "grants_table.props.columns[0].label": "Privilège étendu",
+    "grants_table.props.columns[1].label": "Jeu de privilèges",
+    "grants_table.props.columns[2].label": "Fichier",
+    "markdown.props.content": "## Notes\n\nAccès aux données **SQL** externes. *Execute SQL* est conditionné par Step_ID (117, indépendant de la langue — dans ce corpus, il est exporté sous le nom `SQL ausführen`). Les sources ODBC / ESS sont les entrées non FileMaker du catalogue de sources de données externes ; les autorisations `fmxdbc` indiquent quels jeux de privilèges autorisent l'accès ODBC/JDBC.\n\n- Ceci est un **modèle générique** : le corpus n'a actuellement aucune source ODBC/ESS (toutes les sources externes sont FileMaker) et une étape Execute SQL — le tableau de bord reste utile comme entrée réutilisable de la bibliothèque.\n- **Navigation** : cliquer sur une étape Execute SQL ouvre le script à cette étape ; une source ODBC/ESS ouvre sa première table occurrence ; une autorisation ouvre le jeu de privilèges.\n- **Règles associées** : les règles de sévérité dérivées se trouvent sous *Static Code Analysis*.\n- **Tri** : tous les en-têtes de colonne sont cliquables (▲▼)."
+  }
+}

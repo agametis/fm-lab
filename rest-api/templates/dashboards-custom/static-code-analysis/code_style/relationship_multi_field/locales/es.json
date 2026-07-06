@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Relación multicampo",
+    "description": "Regla de estilo de código: relaciones con tres o más predicados de campo. Las claves de unión muy amplias son difíciles de seguir y a menudo indican la falta de un campo clave."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Relación multicampo",
+    "findings_table.props.searchPlaceholder": "Buscar aparición de tabla…",
+    "findings_table.props.empty.message": "No se encontraron relaciones multicampo.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "TO izquierda",
+    "findings_table.props.columns[2].label": "TO derecha",
+    "findings_table.props.columns[3].label": "Predicados"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "El cálculo de autoentrada sobrescribe lo existente",
+    "description": "Regla de propensión a errores: campos cuyo cálculo de autoentrada reemplaza un valor existente. Puede sobrescribir silenciosamente la entrada del usuario en cada cambio."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "El cálculo de autoentrada sobrescribe lo existente",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, tabla o campo…",
+    "findings_table.props.empty.message": "No se encontraron cálculos de autoentrada que sobrescriban.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Tabla",
+    "findings_table.props.columns[2].label": "Campo"
+  }
+}

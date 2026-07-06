@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Geheim in globale variabele",
+    "description": "Beveiligingsregel — globale/superglobale variabelen waarvan de naam op een geheim wijst (wachtwoord, token, API-sleutel). Globals blijven de hele sessie bestaan.\n\nGebaseerd op de PMD-regel GlobalVariable — https://docs.pmd-code.org/latest/pmd_rules_ecmascript_bestpractices.html#globalvariable"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Geheim in globale variabele",
+    "findings_table.props.searchPlaceholder": "Variabele zoeken…",
+    "findings_table.props.empty.message": "Geen geheimen in globale variabelen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Variabele",
+    "findings_table.props.columns[2].label": "Bereik"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Campo calculado sin comentario",
+    "description": "Regla de documentación: campos calculados con el comentario de campo vacío. La fórmula a menudo no se explica por sí sola y merece una nota.\n\nBasado en la regla de PMD CommentRequired — https://docs.pmd-code.org/latest/pmd_rules_java_documentation.html#commentrequired Un conmutador de filtro sobre la tabla alterna entre objetos sin y con comentario (los comentados sirven de plantilla/inspiración)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Campo calculado sin comentario",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, tabla o campo…",
+    "findings_table.props.empty.message": "No se encontraron campos calculados sin documentar.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Tabla",
+    "findings_table.props.columns[2].label": "Campo",
+    "comment_filter.props.options[0].label": "sin comentario",
+    "comment_filter.props.options[1].label": "con comentario"
+  }
+}

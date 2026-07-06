@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "アンバランスな If / End If",
+    "description": "エラーを招きやすいルール — If/End If の対応が取れていない、または開いていない If を閉じているスクリプト。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "アンバランスな If / End If",
+    "findings_table.props.searchPlaceholder": "ファイル・スクリプト・検出を検索…",
+    "findings_table.props.empty.message": "アンバランスな If / End If ブロックは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "検出"
+  }
+}

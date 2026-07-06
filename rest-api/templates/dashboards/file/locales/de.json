@@ -1,0 +1,42 @@
+{
+  "manifest": {
+    "title": "Datei-Ansicht",
+    "description": "Detailansicht pro Datei: Metadaten, Datei-Optionen, Objekt-Kennzahlen sowie getriggerte Skripte / Start-Layout / Anmelde-Konto."
+  },
+  "layout": {
+    "file_not_found.props.title": "Datei nicht gefunden",
+    "file_not_found_md.props.content": "Es existiert keine Datei mit diesem Namen in der aktuellen Datenbank. Öffne eine Datei über die **Startseite**.",
+    "file_info.props.title": "Dateiinfo",
+    "file_metrics_kpistrip.props.items[0].label": "Objekte",
+    "file_metrics_kpistrip.props.items[1].label": "Referenzen",
+    "file_metrics_kpistrip.props.items[2].label": "FM-Version",
+    "file_metrics_kpistrip.props.items[3].label": "DDR-Info",
+    "file_metrics_kpistrip.props.items[4].label": "Letzter Import",
+    "file_metrics_kpistrip.props.items[5].label": "Mindestversion",
+    "file_size_kpistrip.props.items[0].label": "Dateigröße",
+    "file_settings_list.props.items[0].label": "Auto-Login",
+    "file_settings_list.props.items[1].label": "Anmeldeinfos speichern",
+    "file_settings_list.props.items[2].label": "Anmeldefelder",
+    "file_settings_list.props.items[3].label": "Verschlüsselung",
+    "file_settings_list.props.items[4].label": "WebDirect-Freigabe verbergen",
+    "file_settings_list.props.items[5].label": "Client-Freigabe verbergen",
+    "file_settings_list.props.items[6].label": "Rechtschreibung unterstreichen",
+    "file_object_counts.props.title": "Objekte",
+    "file_object_counts_kpistrip.props.items[0].label": "Scripts",
+    "file_object_counts_kpistrip.props.items[1].label": "Tabellen",
+    "file_object_counts_kpistrip.props.items[2].label": "Felder",
+    "file_object_counts_kpistrip.props.items[3].label": "TOs",
+    "file_object_counts_kpistrip.props.items[4].label": "Beziehungen",
+    "file_object_counts_kpistrip.props.items[5].label": "Layouts",
+    "file_object_counts_kpistrip.props.items[6].label": "Wertelisten",
+    "file_object_counts_kpistrip.props.items[7].label": "Custom Fns",
+    "file_object_counts_kpistrip.props.items[8].label": "Variablen",
+    "file_triggers.props.title": "Getriggerte Skripte",
+    "file_triggers_table.props.columns[0].label": "Ereignis",
+    "file_triggers_table.props.columns[1].label": "Skript",
+    "file_start_layout.props.title": "Start-Layout",
+    "file_start_layout_table.props.columns[0].label": "Layout",
+    "file_account.props.title": "Anmelde-Konto",
+    "file_account_table.props.columns[0].label": "Konto"
+  }
+}

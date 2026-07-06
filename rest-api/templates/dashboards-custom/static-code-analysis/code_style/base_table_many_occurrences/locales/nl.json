@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Basistabel met veel instanties",
+    "description": "Codestijlregel — basistabellen met meer dan acht tabelinstanties. Een zeer hoog aantal wijst op een verward relatiegrafiek."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Basistabel met veel instanties",
+    "findings_table.props.searchPlaceholder": "Bestand of tabel zoeken…",
+    "findings_table.props.empty.message": "Geen basistabellen met veel instanties gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Basistabel",
+    "findings_table.props.columns[2].label": "Instanties"
+  }
+}

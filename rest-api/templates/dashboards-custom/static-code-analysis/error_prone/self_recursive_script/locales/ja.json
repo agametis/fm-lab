@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "自己再帰スクリプト",
+    "description": "エラーを招きやすいルール — 自分自身を呼び出すスクリプト。再帰は意図的な場合もありますが、確実な停止条件がないとスタックオーバーフローの恐れがあります。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "自己再帰スクリプト",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "自己再帰スクリプトは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "If / End If desbalanceado",
+    "description": "Regra propensa a erros — scripts cuja estrutura If/End If não fecha, ou que fecham um If que nunca foi aberto."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "If / End If desbalanceado",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, script ou resultado…",
+    "findings_table.props.empty.message": "Nenhum bloco If / End If desbalanceado encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Resultado"
+  }
+}

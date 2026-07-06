@@ -46,10 +46,11 @@ SELECT
     Calc_Hash,
     chunk_index as Chunk_Index,
     xml_extract_text(chunk_xml, '/Chunk/@type')[1] as Chunk_Type,
-    COALESCE(
+    -- ws_restore (B-K6) — identisch zur DOM-Basis (Begründung dort).
+    ws_restore(COALESCE(
         xml_extract_text(chunk_xml, 'text()')[1],
         chunk_xml::VARCHAR
-    ) as Chunk_Content,
+    )) as Chunk_Content,
     fn.File_Name as File_Name
 FROM calc_with_chunks
 CROSS JOIN filename_normalized fn

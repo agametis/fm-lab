@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Process- och shell-körning",
+    "description": "Inventering av extern process-/shell-körning: Send Event och Perform AppleScript (Step_ID-gated, språkoberoende) plus MBS Shell / RunTask / Process-anrop (upplösta via calls_pluginfunction). Visar var lösningen lämnar över kontrollen till operativsystemet."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Kontaktpunkter",
+    "summary_kpistrip.props.items[1].label": "Send Event",
+    "summary_kpistrip.props.items[2].label": "AppleScript",
+    "summary_kpistrip.props.items[3].label": "MBS-processanrop",
+    "summary_kpistrip.props.items[4].label": "Berörda filer",
+    "by_mechanism.props.title": "Efter mekanism",
+    "by_mechanism_table.props.columns[0].label": "Mekanism",
+    "by_mechanism_table.props.columns[1].label": "Typ",
+    "by_mechanism_table.props.columns[2].label": "Anropsställen",
+    "by_mechanism_table.props.columns[3].label": "Filer",
+    "findings.props.title": "Fyndplatser",
+    "findings_table.props.columns[0].label": "Mekanism",
+    "findings_table.props.columns[1].label": "Reftyp",
+    "findings_table.props.columns[2].label": "Skript/Objekt",
+    "findings_table.props.columns[3].label": "Steg/Funktion",
+    "findings_table.props.columns[4].label": "Fil",
+    "findings_table.props.columns[5].label": "#",
+    "markdown.props.content": "## Anmärkningar\n\nDär lösningen lämnar över kontrollen till en **extern process eller shell**. Inbyggda steg är Step_ID-gated (språkoberoende): *Send Event* (57), *Perform AppleScript* (67). MBS-processanrop läses från de upplösta `calls_pluginfunction`-länkarna: `Shell.*`, `RunTask.*`, `Process.*`.\n\n- **KPI:er som filter**: *Send Event* och *AppleScript* filtrerar detaljlistan till den mekanismen.\n- **Efter mekanism**: klicka på en rad för att filtrera fyndplatserna.\n- **Navigering**: att klicka på en fyndplats öppnar bäraren (Skript + steg-ankare, eller objektet bakom ett MBS-anrop).\n- **Relaterade regler**: härledda allvarlighetsregler finns under *Static Code Analysis*.\n- **Sortering**: alla kolumnrubriker är klickbara (▲▼)."
+  }
+}

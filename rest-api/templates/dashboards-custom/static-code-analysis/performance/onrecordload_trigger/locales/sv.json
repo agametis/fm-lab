@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "OnRecordLoad-utlösare",
+    "description": "Prestandaregel — OnRecordLoad-skriptutlösare. De körs för varje post som blir synlig; tunga skript här gör listvyer och sökningar långsammare."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "OnRecordLoad-utlösare",
+    "findings_table.props.searchPlaceholder": "Sök fil eller skript…",
+    "findings_table.props.empty.message": "Inga OnRecordLoad-utlösare hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Utlösarskript",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

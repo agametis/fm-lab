@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "コメントのない Custom Function",
+    "description": "ドキュメントルール — 数式にコメントが 1 つもない Custom Function。特に共有関数には文書化された仕様が必要です。\n\nPMD ルール CommentRequired — https://docs.pmd-code.org/latest/pmd_rules_java_documentation.html#commentrequired テーブル上部のフィルタースイッチで、コメントなしとありのオブジェクトを切り替えられます（コメント付きは手本／参考になります）。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "コメントのない Custom Function",
+    "findings_table.props.searchPlaceholder": "ファイルまたは関数を検索…",
+    "findings_table.props.empty.message": "文書化されていない Custom Function は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Custom Function",
+    "comment_filter.props.options[0].label": "コメントなし",
+    "comment_filter.props.options[1].label": "コメントあり"
+  }
+}

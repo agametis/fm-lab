@@ -1,0 +1,35 @@
+{
+  "manifest": {
+    "title": "ファイルシステムアクセス",
+    "description": "操作とAPIグループ別に分類された、ソリューションのすべてのファイルシステム接点のインベントリ。呼び出し箇所までドリルダウン可能。ネイティブのFileMakerコマンド（Data File API、Import/Insert、Export/Save — Step_ID制御、ロケール非依存）とMBSプラグイン関数（Files / Text / Container / Path / Folders / FileDialog、calls_pluginfunctionリンク経由で解決）をカバーします。ネットワークアクセスはAPIダッシュボードに残ります。プロジェクト固有のMBSコンポーネント用にWHEN分岐を拡張してください。"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "接点",
+    "summary_kpistrip.props.items[1].label": "重大（write+delete）",
+    "summary_kpistrip.props.items[2].label": "Delete",
+    "summary_kpistrip.props.items[3].label": "影響を受けるファイル",
+    "summary_kpistrip.props.items[4].label": "MBS呼び出し",
+    "summary_kpistrip.props.items[5].label": "ネイティブステップ",
+    "fs_groups.props.title": "グループ（APIグループ × 操作）",
+    "fs_groups_table.props.columns[0].label": "APIグループ",
+    "fs_groups_table.props.columns[1].label": "操作",
+    "fs_groups_table.props.columns[2].label": "ヒット数",
+    "fs_groups_table.props.columns[3].label": "ファイル",
+    "findings.props.title": "接点（呼び出し箇所）",
+    "findings_table.props.columns[0].label": "グループ",
+    "findings_table.props.columns[1].label": "操作",
+    "findings_table.props.columns[2].label": "参照タイプ",
+    "findings_table.props.columns[3].label": "スクリプト/オブジェクト",
+    "findings_table.props.columns[4].label": "ステップ/関数",
+    "findings_table.props.columns[5].label": "ファイル",
+    "findings_table.props.columns[6].label": "#",
+    "fs_paths.props.title": "パスリテラル（ソリューションはどこに書き込む / 読み取るか?）",
+    "fs_paths_table.props.columns[0].label": "パスリテラル",
+    "fs_paths_table.props.columns[1].label": "ディレクトリ",
+    "fs_paths_table.props.columns[2].label": "Script",
+    "fs_paths_table.props.columns[3].label": "Step",
+    "fs_paths_table.props.columns[4].label": "ファイル",
+    "fs_paths_table.props.columns[5].label": "#",
+    "markdown.props.content": "## 注記\n\nソリューションの**すべてのファイルシステム接点**のインベントリ — ネイティブのFileMakerコマンドとMBSプラグイン関数。ネットワーク/Webアクセスは*APIと外部インターフェース*ダッシュボードに残ります。`Import Records`は両方に表示されます（インターフェース指標 対 ファイル読み取り）。\n\n- **ネイティブコマンドはStep_ID制御**（ロケール非依存）です。SaXMLはエクスポートするクライアントのUI言語でステップ名を書き込むため（このコーパスは`Datensätze als Excel speichern`と`Save Records as PDF`が混在）、ロジックは名前ではなく数値の`Step_ID`で分類します。カバー範囲: Data File API (188–199), Import/Insert (35, 131, 56, 158, 159, 161), Export/Save (36, 132, 143, 144, 152, 225, 37, 3, 96)。\n- **MBS関数**は解決済みの`calls_pluginfunction`リンク（`MBS:<コンポーネント>.<関数>`）から読み取られ、テキストマッチングではありません — そのため使用箇所ナビゲーションは正確です。ファイルシステムコンポーネント: `Files.*`, `Path.*`, `Folders.*`, `FileDialog.*`、さらに`Text.*`のファイルI/O関数（Read/Write/AppendTextFile）と`Container.*`（Export/ReadFile/WriteFile）。大文字小文字を区別しません（コーパスには`FileMakerPathToNativePath`と`FilemakerPathToNativePath`の両方が含まれます）。\n- **操作**: `read` / `write` / `delete` / `probe`（存在/サイズ/日付） / `import` / `export` / `launch` / `mount` / `dialog`（ユーザー仲介） / `path`（パスヘルパー） / `manage`（open/close/position/rename）。未知の`Files.*`関数は`operation = other`にフォールバックします — 失われず、可視化されます。\n- **フィルターとしてのKPI**: *重大（write+delete）*と*Delete*は詳細リストをリスクの高い操作に絞り込みます。*接点*、*影響を受けるファイル*、*MBS呼び出し*、*ネイティブステップ*は統計タイルです。\n- **グループ**: *APIグループ × 操作*セルをクリックすると、詳細リストをそれに絞り込みます。\n- **パスリテラル**: スクリプトステップの数式から抽出された`file:` / `filewin:` / `filemac:`リテラルで、ディレクトリレベルに正規化されます — ソリューションが*どこに*読み書きするかに答えます。ハードコードされた絶対パスがここに現れます。\n- **ナビゲーション**: 接点をクリックすると、キャリア（Script + ステップアンカー、またはMBS呼び出しの背後にあるCustom Function / フィールド / Layoutオブジェクト）が開きます。\n- **拡張**: プロジェクト固有の書き込みMBSコンポーネント（XL.Book.Save、DynaPDF.Save、Archive/Compression、…）を`data/findings.sql`**および**`data/fs_groups.sql`に追加のWHEN分岐として追加します（両方を同期させてください）。\n- **関連ルール**: 派生した重大度ルール（エラーチェックなしの書き込み、ハードコードされた絶対パス、delete使用）は*静的コード解析*にあります。\n- **並べ替え**: すべての列見出しはクリック可能です（▲▼）。"
+  }
+}

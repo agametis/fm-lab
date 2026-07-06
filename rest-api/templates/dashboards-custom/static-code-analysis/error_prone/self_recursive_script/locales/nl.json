@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Zelf-recursief script",
+    "description": "Foutgevoelige regel — scripts die zichzelf aanroepen. Recursie kan bedoeld zijn, maar zonder solide stopvoorwaarde dreigt een stack overflow."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Zelf-recursief script",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen zelf-recursieve scripts gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

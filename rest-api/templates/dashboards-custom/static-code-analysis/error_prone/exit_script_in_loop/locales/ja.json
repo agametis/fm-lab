@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Exit Script（Loop 内）",
+    "description": "エラーを招きやすいルール — Loop 内の Exit Script。Loop の途中でスクリプトを抜けると Loop の後処理が飛ばされ、呼び出し元を驚かせます。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "Exit Script（Loop 内）",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "Loop 内の Exit Script は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "ステップ"
+  }
+}

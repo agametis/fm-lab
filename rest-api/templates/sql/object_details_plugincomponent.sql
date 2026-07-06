@@ -6,8 +6,9 @@
 -- @version: 1.0
 -- @tags: plugincomponent, details, mbs, aggregate
 -- @note: Synthetic ObjectCatalog entry — Object_Name = 'MBS::XL', 'MBS::JSON', etc.
---        Two-level result: (1) PluginFunctions of this component via groups_into,
---        (2) Callers per function via calls_pluginfunction.
+--        (PluginComponent behält das doppelte '::'; nur PluginFunction ist auf
+--        'MBS:<Sub>::<Sub>' qualifiziert). Two-level result: (1) PluginFunctions of
+--        this component via groups_into, (2) Callers per function via calls_pluginfunction.
 
 WITH self AS (
   SELECT Object_UUID, Object_Type, Object_Name
@@ -18,7 +19,9 @@ WITH self AS (
 ),
 funcs AS (
   -- Ebene 1: alle Funktionen dieser Komponente (groups_into)
-  SELECT pf.Object_UUID as Function_UUID, pf.Object_Name as Function_Name
+  -- Function_Name = fachlicher SubName (hinter dem letzten '::'); vgl. utils/plugin-name.js.
+  SELECT pf.Object_UUID as Function_UUID,
+         regexp_replace(pf.Object_Name, '^.*::', '') as Function_Name
   FROM self pc
   JOIN ObjectLinks ol ON ol.Target_UUID = pc.Object_UUID
                      AND ol.Link_Role = 'groups_into'

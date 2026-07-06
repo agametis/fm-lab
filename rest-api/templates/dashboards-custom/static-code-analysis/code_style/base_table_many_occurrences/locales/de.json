@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Basistabelle mit vielen Auftreten",
+    "description": "Code-Style-Regel — Basistabellen mit mehr als acht Tabellenauftreten. Eine sehr hohe Anzahl deutet auf einen verworrenen Beziehungsgraphen hin."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Basistabelle mit vielen Auftreten",
+    "findings_table.props.searchPlaceholder": "Datei oder Tabelle suchen…",
+    "findings_table.props.empty.message": "Keine Basistabellen mit vielen Auftreten gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Basistabelle",
+    "findings_table.props.columns[2].label": "Auftreten"
+  }
+}

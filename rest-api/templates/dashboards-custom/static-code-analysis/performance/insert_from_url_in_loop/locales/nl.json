@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Insert from URL in Loop",
+    "description": "Prestatieregel — Insert from URL binnen een Loop verstuurt bij elke iteratie een netwerkverzoek."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Insert from URL in Loop",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen treffer voor \"Insert from URL in Loop\" gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Stap",
+    "findings_table.props.columns[3].label": "Diepte"
+  }
+}

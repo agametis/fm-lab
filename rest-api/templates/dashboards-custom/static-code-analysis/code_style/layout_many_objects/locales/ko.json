@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "개체가 많은 Layout",
+    "description": "코드 스타일/성능 규칙 — 개체가 많은 Layout. 무거운 Layout은 렌더링이 느리고 유지보수가 어렵습니다. 임계값은 슬라이더로 조정 가능(기본값 250)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "threshold_slider.props.label": "Layout당 개체 수(최소)",
+    "threshold_slider.props.valueSuffix": "개체",
+    "findings_card.props.title": "개체가 많은 Layout",
+    "findings_table.props.searchPlaceholder": "파일 또는 Layout 검색…",
+    "findings_table.props.empty.message": "과도한 Layout을 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "개체 수"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "title": "Documentation",
+  "icon": "file-text",
+  "order": 6,
+  "locales": {
+    "de": "Dokumentation",
+    "es": "Documentación",
+    "fr": "Documentation",
+    "it": "Documentazione",
+    "ja": "ドキュメント",
+    "ko": "문서화",
+    "nl": "Documentatie",
+    "pt": "Documentação",
+    "sv": "Dokumentation",
+    "zh-Hans": "文档"
+  }
+}

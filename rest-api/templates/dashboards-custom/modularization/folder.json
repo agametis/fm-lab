@@ -1,0 +1,18 @@
+{
+  "title": "Modularization",
+  "icon": "boxes",
+  "description": "Inventory dashboards for module boundaries — where logic leaves the solution: into other FileMaker files, the file system, the network, processes, the server. Descriptive catalogs with drilldown (always \"green\"); the derived severity rules live under Static Code Analysis.",
+  "order": 2,
+  "locales": {
+    "de": "Modularisierung",
+    "es": "Modularización",
+    "fr": "Modularisation",
+    "it": "Modularizzazione",
+    "ja": "モジュール化",
+    "ko": "모듈화",
+    "nl": "Modularisatie",
+    "pt": "Modularização",
+    "sv": "Modularisering",
+    "zh-Hans": "模块化"
+  }
+}

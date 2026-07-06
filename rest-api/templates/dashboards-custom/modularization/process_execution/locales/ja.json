@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "プロセス・シェル実行",
+    "description": "外部プロセス/シェル実行のインベントリ: Send Event と Perform AppleScript（Step_ID でゲート、ロケール非依存）に加え、MBS Shell / RunTask / Process の呼び出し（calls_pluginfunction 経由で解決）。ソリューションがどこで制御をオペレーティングシステムに渡すかを示します。"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "タッチポイント",
+    "summary_kpistrip.props.items[1].label": "Send Event",
+    "summary_kpistrip.props.items[2].label": "AppleScript",
+    "summary_kpistrip.props.items[3].label": "MBS プロセス呼び出し",
+    "summary_kpistrip.props.items[4].label": "影響を受けるファイル",
+    "by_mechanism.props.title": "メカニズム別",
+    "by_mechanism_table.props.columns[0].label": "メカニズム",
+    "by_mechanism_table.props.columns[1].label": "種別",
+    "by_mechanism_table.props.columns[2].label": "呼び出し箇所",
+    "by_mechanism_table.props.columns[3].label": "ファイル",
+    "findings.props.title": "検出箇所",
+    "findings_table.props.columns[0].label": "メカニズム",
+    "findings_table.props.columns[1].label": "参照タイプ",
+    "findings_table.props.columns[2].label": "スクリプト/オブジェクト",
+    "findings_table.props.columns[3].label": "ステップ/関数",
+    "findings_table.props.columns[4].label": "ファイル",
+    "findings_table.props.columns[5].label": "#",
+    "markdown.props.content": "## 注記\n\nソリューションが**外部プロセスまたはシェル**に制御を渡す場所。ネイティブステップは Step_ID でゲートされます（ロケール非依存）: *Send Event* (57)、*Perform AppleScript* (67)。MBS プロセス呼び出しは、解決済みの `calls_pluginfunction` リンクから読み取られます: `Shell.*`、`RunTask.*`、`Process.*`。\n\n- **フィルターとしての KPI**: *Send Event* と *AppleScript* は詳細リストをそのメカニズムに絞り込みます。\n- **メカニズム別**: 行をクリックすると検出箇所が絞り込まれます。\n- **ナビゲーション**: 検出箇所をクリックすると担い手（スクリプト + ステップアンカー、または MBS 呼び出しの背後にあるオブジェクト）が開きます。\n- **関連ルール**: 派生した重大度ルールは *Static Code Analysis* にあります。\n- **並べ替え**: すべての列見出しはクリック可能です (▲▼)。"
+  }
+}

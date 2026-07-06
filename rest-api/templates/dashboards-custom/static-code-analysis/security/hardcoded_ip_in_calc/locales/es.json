@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Dirección IP fija en cálculo",
+    "description": "Regla de seguridad/mantenibilidad: fragmentos de cálculo con una dirección IPv4 literal (p. ej., un host FTP/SMTP). Los hosts fijos se rompen al cambiar la red.\n\nBasado en la regla de PMD AvoidUsingHardCodedIP — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#avoidusinghardcodedip"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Dirección IP fija en cálculo",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, script o IP…",
+    "findings_table.props.empty.message": "No se encontraron direcciones IP fijas en los cálculos.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Encontrado en",
+    "findings_table.props.columns[2].label": "IP"
+  }
+}

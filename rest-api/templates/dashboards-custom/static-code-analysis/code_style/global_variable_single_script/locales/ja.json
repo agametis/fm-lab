@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "1 つのスクリプトだけで使われるグローバル変数",
+    "description": "コードスタイルルール — 1 つのスクリプト内だけで設定・読み取りされるグローバル（$$）変数。ローカル（$）変数のほうが意図が明確です。\n\nPMD ルール GlobalVariable — https://docs.pmd-code.org/latest/pmd_rules_ecmascript_bestpractices.html#globalvariable"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "1 つのスクリプトだけで使われるグローバル変数",
+    "findings_table.props.searchPlaceholder": "変数を検索…",
+    "findings_table.props.empty.message": "1 つのスクリプトだけのグローバル変数は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "変数",
+    "findings_table.props.columns[2].label": "読み取り回数"
+  }
+}

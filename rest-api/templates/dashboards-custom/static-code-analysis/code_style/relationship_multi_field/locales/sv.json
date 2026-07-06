@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Flerfältsrelation",
+    "description": "Kodstilsregel — relationer med tre eller fler fältpredikat. Mycket breda join-nycklar är svåra att följa och tyder ofta på ett saknat nyckelfält."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Flerfältsrelation",
+    "findings_table.props.searchPlaceholder": "Sök tabellförekomst…",
+    "findings_table.props.empty.message": "Inga flerfältsrelationer hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Vänster TO",
+    "findings_table.props.columns[2].label": "Höger TO",
+    "findings_table.props.columns[3].label": "Predikat"
+  }
+}

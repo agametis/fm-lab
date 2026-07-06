@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Cascade-verwijderrelatie",
+    "description": "Foutgevoelige regel — relaties die aan één of beide zijden gerelateerde records verwijderen. Een verkeerde verwijdering wist stil onderliggende records; controleer elke."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Cascade-verwijderrelatie",
+    "findings_table.props.searchPlaceholder": "Tabelinstantie zoeken…",
+    "findings_table.props.empty.message": "Geen cascade-verwijderrelaties gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Linker TO",
+    "findings_table.props.columns[2].label": "Rechter TO",
+    "findings_table.props.columns[3].label": "Cascade"
+  }
+}

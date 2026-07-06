@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Ongebruikt veld",
+    "description": "Ongebruikte-code-regel — velden die nergens worden gelezen, getoond, ingesteld, gezocht, gesorteerd, geïmporteerd of geëxporteerd.\n\nGebaseerd op de PMD-regel UnusedPrivateField — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatefield"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Ongebruikt veld",
+    "findings_table.props.searchPlaceholder": "Bestand of naam zoeken…",
+    "findings_table.props.empty.message": "Geen resultaten gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Naam"
+  }
+}

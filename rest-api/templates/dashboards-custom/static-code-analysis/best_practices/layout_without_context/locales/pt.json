@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Layout sem contexto de tabela",
+    "description": "Regra de boas práticas — Layouts sem contexto de ocorrência de tabela. Não podem exibir dados de registros e costumam ser Layouts órfãos ou auxiliares."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Layout sem contexto de tabela",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou Layout…",
+    "findings_table.props.empty.message": "Nenhum Layout sem contexto encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

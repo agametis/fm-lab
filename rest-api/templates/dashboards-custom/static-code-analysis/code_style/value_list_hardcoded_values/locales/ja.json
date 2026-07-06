@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "ハードコードされた値の値一覧",
+    "description": "コードスタイルルール — フィールドではなくカスタム（ハードコード）値から作成された値一覧。ハードコードされた一覧は古くなり、ユーザーが保守できません。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "ハードコードされた値の値一覧",
+    "findings_table.props.searchPlaceholder": "ファイルまたは値一覧を検索…",
+    "findings_table.props.empty.message": "ハードコードされた値一覧は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "値一覧",
+    "findings_table.props.columns[2].label": "値"
+  }
+}

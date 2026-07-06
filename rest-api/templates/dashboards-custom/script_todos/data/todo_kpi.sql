@@ -25,7 +25,7 @@ WITH comment_steps AS (
         s.File_Name,
         regexp_extract(s.Parameters_XML, '<Comment value="([^"]*)"', 1) AS comment_text
     FROM StepsForScripts s
-    WHERE s.Step_Name = '# (comment)'
+    WHERE s.Step_ID = 89   -- '# (Comment)' — Step_ID ist locale-unabhängig (Step_Name lokalisiert)
       AND (getvariable('file') IS NULL OR getvariable('file') = '' OR s.File_Name = getvariable('file'))
 ),
 classified AS (

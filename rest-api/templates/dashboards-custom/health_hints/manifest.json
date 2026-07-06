@@ -1,0 +1,27 @@
+{
+  "id": "health_hints",
+  "version": "2.0.0",
+  "title": "Healthchecks",
+  "description": "Curated, object-type-grouped health checks with live counts, each linking into its static-code-analysis rule dashboard.",
+  "author": "fm-lab core",
+  "icon": "activity",
+  "tags": ["custom", "health", "quality"],
+  "entry": "layout.json",
+  "datasets": [
+    { "id": "hc_kpi",             "source": "bundle:data/hc_kpi.sql" },
+    { "id": "hc_security",        "source": "bundle:data/hc_security.sql" },
+    { "id": "hc_fields",          "source": "bundle:data/hc_fields.sql" },
+    { "id": "hc_scripts",         "source": "bundle:data/hc_scripts.sql" },
+    { "id": "hc_relationships",   "source": "bundle:data/hc_relationships.sql" },
+    { "id": "hc_tables",          "source": "bundle:data/hc_tables.sql" },
+    { "id": "hc_layouts",         "source": "bundle:data/hc_layouts.sql" },
+    { "id": "hc_variables",       "source": "bundle:data/hc_variables.sql" },
+    { "id": "hc_valuelists",      "source": "bundle:data/hc_valuelists.sql" },
+    { "id": "hc_customfunctions", "source": "bundle:data/hc_customfunctions.sql" }
+  ],
+  "params": [
+    { "name": "severity", "type": "string", "required": false,
+      "description": "Severity filter (error | warn | info), set by clicking a header KPI. Empty = all." }
+  ],
+  "permissions": { "read_only": true, "allow_navigation": true }
+}

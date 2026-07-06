@@ -1,0 +1,59 @@
+{
+  "locked": true,
+  "id": "cascade_delete_relationship",
+  "version": "1.0.0",
+  "title": "Cascading delete relationship",
+  "description": "Error-prone rule — relationships that delete related records on one or both sides. A wrong delete here silently removes child records; review each one.",
+  "author": "fm-lab rules",
+  "icon": "trash",
+  "category": "error_prone",
+  "tags": [
+    "rule",
+    "pmd",
+    "error_prone"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "error_prone",
+    "rationale": "Cascading deletes remove related records automatically and are easy to trigger unintentionally.",
+    "remediation": "Confirm each cascade is intended; otherwise disable \"delete related records\".",
+    "meta": {
+      "name": "Cascading delete relationship",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Error-prone rule — relationships that delete related records on one or both sides. A wrong delete here silently removes child records; review each one.",
+      "created": "2026-07-01",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": false
+  }
+}

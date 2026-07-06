@@ -1,7 +1,7 @@
 {
   "name": "@fm-lab/api",
-  "version": "0.8.5",
-  "description": "REST API for FileMaker DuckDB Analysis",
+  "version": "0.8.8",
+  "description": "FM-Lab REST API",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

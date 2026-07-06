@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Proces- en shell-uitvoering",
+    "description": "Inventaris van externe proces-/shell-uitvoering: Send Event en Perform AppleScript (Step_ID-gated, locale-onafhankelijk) plus MBS Shell / RunTask / Process-aanroepen (opgelost via calls_pluginfunction). Laat zien waar de oplossing de controle overdraagt aan het besturingssysteem."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Contactpunten",
+    "summary_kpistrip.props.items[1].label": "Send Event",
+    "summary_kpistrip.props.items[2].label": "AppleScript",
+    "summary_kpistrip.props.items[3].label": "MBS-procesaanroepen",
+    "summary_kpistrip.props.items[4].label": "Betrokken bestanden",
+    "by_mechanism.props.title": "Per mechanisme",
+    "by_mechanism_table.props.columns[0].label": "Mechanisme",
+    "by_mechanism_table.props.columns[1].label": "Soort",
+    "by_mechanism_table.props.columns[2].label": "Aanroeplocaties",
+    "by_mechanism_table.props.columns[3].label": "Bestanden",
+    "findings.props.title": "Vindplaatsen",
+    "findings_table.props.columns[0].label": "Mechanisme",
+    "findings_table.props.columns[1].label": "Ref-type",
+    "findings_table.props.columns[2].label": "Script/Object",
+    "findings_table.props.columns[3].label": "Stap/Functie",
+    "findings_table.props.columns[4].label": "Bestand",
+    "findings_table.props.columns[5].label": "#",
+    "markdown.props.content": "## Opmerkingen\n\nWaar de oplossing de controle overdraagt aan een **extern proces of de shell**. Native stappen zijn Step_ID-gated (locale-onafhankelijk): *Send Event* (57), *Perform AppleScript* (67). MBS-procesaanroepen worden gelezen uit de opgeloste `calls_pluginfunction`-links: `Shell.*`, `RunTask.*`, `Process.*`.\n\n- **KPI's als filters**: *Send Event* en *AppleScript* filteren de detaillijst op dat mechanisme.\n- **Per mechanisme**: klik op een rij om de vindplaatsen te filteren.\n- **Navigatie**: klikken op een vindplaats opent de drager (Script + stap-anker, of het object achter een MBS-aanroep).\n- **Bijbehorende regels**: afgeleide severity-regels staan onder *Static Code Analysis*.\n- **Sorteren**: alle kolomkoppen zijn klikbaar (▲▼)."
+  }
+}

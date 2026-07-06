@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "If/Else ブロックの非対称性",
+    "description": "コードスタイルルール — If 分岐が Else 分岐より明らかに長い If/Else ブロックを持つスクリプト。早期リターンやガード節へのリファクタリング候補です。しきい値はヘッダーのスライダーで調整可能（既定 If ≥ 10、Else ≤ 2 ステップ）。"
+  },
+  "layout": {
+    "if_else_kpi_kpistrip.props.items[0].label": "非対称ブロック数",
+    "if_else_kpi_kpistrip.props.items[1].label": "対象スクリプト数",
+    "if_else_kpi_kpistrip.props.items[2].label": "対象ファイル数",
+    "if_else_kpi_kpistrip.props.items[3].label": "最長の If 分岐",
+    "if_else_blocks.props.title": "長い If / 短い Else のスクリプト",
+    "if_else_blocks_table.props.columns[0].label": "ファイル",
+    "if_else_blocks_table.props.columns[1].label": "スクリプト名",
+    "if_else_blocks_table.props.columns[2].label": "If の位置",
+    "if_else_blocks_table.props.columns[3].label": "If のステップ数",
+    "if_else_blocks_table.props.columns[4].label": "Else のステップ数",
+    "if_else_blocks_table.props.columns[5].label": "スコア",
+    "if_else_blocks_table.props.empty.message": "非対称な If/Else ブロックは見つかりませんでした。"
+  }
+}

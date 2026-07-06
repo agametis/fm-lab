@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Conta desativada",
+    "description": "Regra de código não utilizado/segurança — contas desativadas. Contas desativadas antigas devem ser removidas para manter limpa a superfície de segurança."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Conta desativada",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou conta…",
+    "findings_table.props.empty.message": "Nenhuma conta desativada encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Conta",
+    "findings_table.props.columns[2].label": "Conjunto de privilégios"
+  }
+}

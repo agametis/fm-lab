@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Ongedocumenteerd script",
+    "description": "Documentatieregel — niet-triviale scripts (10+ stappen) zonder een enkele commentaarstap. Moeilijk over te dragen of te onderhouden.\n\nGebaseerd op de PMD-regel CommentRequired — https://docs.pmd-code.org/latest/pmd_rules_java_documentation.html#commentrequired Een filterschakelaar boven de tabel wisselt tussen objecten zonder en met commentaar (de becommentarieerde dienen als sjabloon/inspiratie)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Ongedocumenteerd script",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen ongedocumenteerde scripts gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Stappen",
+    "comment_filter.props.options[0].label": "ongedocumenteerd",
+    "comment_filter.props.options[1].label": "gedocumenteerd"
+  }
+}

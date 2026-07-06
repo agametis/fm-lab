@@ -32,6 +32,7 @@ function parseTemplateMetadata(templateContent) {
     display: null,
     click_action: null,
     click_args: null,
+    chip_filter: null,
     params: [],
     output_format: null,
     author: null,
@@ -71,6 +72,14 @@ function parseTemplateMetadata(templateContent) {
         break;
       case 'click_args':
         metadata.click_args = value;
+        break;
+      case 'chip_filter':
+        // Name einer Ergebnis-Spalte, über die der generische Renderer eine
+        // client-seitige Chip-Leiste rendert (Werte + Live-Counts über die
+        // geladene, LIMIT-gekappte Ergebnismenge). Bewusst leichtgewichtig:
+        // kein zweiter Query, kein Server-Param — die Facetten-Buckets werden
+        // in der SQL geformt (z.B. Scope → '$'/'$$'/'$$$').
+        metadata.chip_filter = value;
         break;
       case 'params':
         metadata.params = value.split(',').map(p => p.trim()).filter(Boolean);
@@ -181,16 +190,16 @@ function interpolateTemplate(templateContent, params = {}) {
     return String(value);
   };
 
-  // 1. Replace DuckDB-style getvariable('var_name')
-  sql = sql.replace(/getvariable\('([^']+)'\)/g, (match, varName) => {
-    if (varName in params) {
-      return escapeParam(params[varName]);
-    }
-    // Keep NULL for missing parameters
-    return 'NULL';
-  });
+  // Substitution order matters: the getvariable() pass — the one used by the
+  // dashboard bundles — MUST run LAST. Otherwise a value it inserts that itself
+  // contains ":word" (e.g. a host with a port like `localhost:3000`, or a
+  // "key:value" string) would be re-scanned by the named-parameter pass below and
+  // its ":3000" fragment replaced with NULL → `'localhostNULL'`, so the filter
+  // matches nothing. Running getvariable last means its inserted values are never
+  // re-scanned. (String.replace does not re-scan its own replacement text within a
+  // single pass, so the :name / $n values are already safe on their own passes.)
 
-  // 2. Replace named parameters :var_name
+  // 1. Replace named parameters :var_name (e.g. the `file` dashboard's `:file`)
   sql = sql.replace(/:(\w+)/g, (match, varName) => {
     if (varName in params) {
       return escapeParam(params[varName]);
@@ -198,13 +207,22 @@ function interpolateTemplate(templateContent, params = {}) {
     return 'NULL';
   });
 
-  // 3. Replace positional parameters $1, $2, etc.
+  // 2. Replace positional parameters $1, $2, etc.
   sql = sql.replace(/\$(\d+)/g, (match, position) => {
     const index = parseInt(position, 10) - 1;
     const paramsArray = Object.values(params);
     if (index >= 0 && index < paramsArray.length) {
       return escapeParam(paramsArray[index]);
     }
+    return 'NULL';
+  });
+
+  // 3. Replace DuckDB-style getvariable('var_name') — LAST (see note above).
+  sql = sql.replace(/getvariable\('([^']+)'\)/g, (match, varName) => {
+    if (varName in params) {
+      return escapeParam(params[varName]);
+    }
+    // Keep NULL for missing parameters
     return 'NULL';
   });
 

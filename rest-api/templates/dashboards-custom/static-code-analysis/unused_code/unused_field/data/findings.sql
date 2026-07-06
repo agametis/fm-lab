@@ -1,0 +1,18 @@
+SELECT
+    'unused-field'   AS rule_id,
+    'info' AS severity,
+    oc.File_Name  AS file_name,
+    oc.Object_UUID AS nav_uuid,
+    oc.Object_Name AS object_name,
+    'Unused Field'    AS message,
+    row_number() OVER (ORDER BY oc.File_Name, oc.Object_Name) AS row_key
+FROM ObjectCatalog oc
+WHERE oc.Object_Type = 'Field'
+  AND NOT EXISTS (
+        SELECT 1 FROM ObjectLinks ol
+        WHERE ol.Target_UUID = oc.Object_UUID
+          AND ol.Link_Role IN ('lookup_source', 'finds_in_field', 'inputs_to_field', 'imports_to_field', 'right_field', 'sorts_by_field', 'sets_field', 'left_field', 'sort_field', 'reads_field', 'displays_field', 'exports_from_field', 'navigates_to_field')
+      )
+  AND (getvariable('file') IS NULL OR oc.File_Name = getvariable('file'))
+ORDER BY oc.File_Name, oc.Object_Name
+LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);

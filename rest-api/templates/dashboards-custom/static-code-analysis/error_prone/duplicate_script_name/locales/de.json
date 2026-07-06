@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Doppelter Script-Name",
+    "description": "Fehleranfälligkeits-Regel — zwei oder mehr Scripts mit gleichem Namen innerhalb einer Datei. Häufiges Copy-Paste-Artefakt, das „Script per Name aufrufen\" mehrdeutig macht."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Doppelter Script-Name",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Keine doppelten Script-Namen gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

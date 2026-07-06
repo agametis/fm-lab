@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Custom Function zonder commentaar",
+    "description": "Documentatieregel — Custom Functions waarvan de formule geen enkel commentaar bevat. Vooral gedeelde functies hebben gedocumenteerde contracten nodig.\n\nGebaseerd op de PMD-regel CommentRequired — https://docs.pmd-code.org/latest/pmd_rules_java_documentation.html#commentrequired Een filterschakelaar boven de tabel wisselt tussen objecten zonder en met commentaar (de becommentarieerde dienen als sjabloon/inspiratie)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Custom Function zonder commentaar",
+    "findings_table.props.searchPlaceholder": "Bestand of functie zoeken…",
+    "findings_table.props.empty.message": "Geen ongedocumenteerde Custom Functions gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Custom Function",
+    "comment_filter.props.options[0].label": "zonder commentaar",
+    "comment_filter.props.options[1].label": "met commentaar"
+  }
+}

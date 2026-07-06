@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Wachtwoordveld getoond als platte tekst",
+    "description": "Beveiligingsregel — een wachtwoord-/PIN-veld wordt op een lay-out getoond door een object dat geen \"versleuteld invoervak\" is, dus de waarde staat in platte tekst op de lay-out. Weergegeven per lay-outobject (hetzelfde veld kan op meerdere lay-outs zichtbaar zijn).\n\nAanvulling op de opslagregel (password_field_plaintext): dit gaat over de schermweergave, bepaald op het niveau van het lay-outobject, niet van het veld."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Wachtwoordveld getoond als platte tekst",
+    "findings_table.props.searchPlaceholder": "Veld of lay-out zoeken…",
+    "findings_table.props.empty.message": "Geen wachtwoordvelden worden in platte tekst getoond.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Veld",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

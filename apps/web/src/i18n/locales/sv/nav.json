@@ -1,4 +1,8 @@
 {
+  "fileActions": {
+    "search": "Sök",
+    "drilldown": "Detaljvy"
+  },
   "modeTabsAriaLabel": "Visningsläge",
   "breadcrumbs": {
     "search": "Sök",

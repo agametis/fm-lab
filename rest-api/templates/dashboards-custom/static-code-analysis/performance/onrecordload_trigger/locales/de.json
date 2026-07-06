@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "OnRecordLoad-Trigger",
+    "description": "Performance-Regel — OnRecordLoad-Script-Trigger. Sie feuern für jeden Datensatz, der sichtbar wird; schwere Scripts hier bremsen Listenansichten und Suchen."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "OnRecordLoad-Trigger",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Keine OnRecordLoad-Trigger gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Trigger-Script",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

@@ -39,7 +39,11 @@
 SELECT
   CAST(xsr.Step_Index AS INTEGER) AS line_index,
   0 AS source_priority,
-  xsr.Ref_Type AS type,
+  -- Ref_Type ist bereits die Frontend-RefType-Kennung — bis auf 'valuelist',
+  -- das im TS-Union als camelCase 'valueList' geführt wird (Sort-Records-Custom-
+  -- Sortierung nach Werteliste). Ohne Mapping bliebe die Werteliste im Step-Text
+  -- unklickbar (RefSpan kennt nur 'valueList').
+  CASE WHEN xsr.Ref_Type = 'valuelist' THEN 'valueList' ELSE xsr.Ref_Type END AS type,
   xsr.Ref_Name AS name,
   -- Variable-Refs (Set Variable Step): synthetische UUID aus Scope/Anchor/Name
   -- (parallel zu VariablesCatalog.Object_UUID), damit Cross-Reference-Highlight
@@ -67,6 +71,7 @@ SELECT
     WHEN xsr.Ref_Type = 'layout'          THEN oh_layout.Home_File
     WHEN xsr.Ref_Type = 'tableOccurrence' THEN tor_gtrr.Home_File
     WHEN xsr.Ref_Type = 'variable'        THEN xsr.File_Name
+    WHEN xsr.Ref_Type = 'valuelist'       THEN oh_vl.Home_File
   END AS field_file,
   -- BaseTable für Field-Refs (kanonisch aus TableOccurrenceResolution) und
   -- für tableOccurrence-Refs (GTRR-TO direkt aus tor_gtrr).
@@ -97,6 +102,8 @@ LEFT JOIN ObjectHomes oh_script
        ON xsr.Ref_UUID = oh_script.Object_UUID AND xsr.Ref_Type = 'script'
 LEFT JOIN ObjectHomes oh_layout
        ON xsr.Ref_UUID = oh_layout.Object_UUID AND xsr.Ref_Type = 'layout'
+LEFT JOIN ObjectHomes oh_vl
+       ON xsr.Ref_UUID = oh_vl.Object_UUID AND xsr.Ref_Type = 'valuelist'
 LEFT JOIN TableOccurrenceResolution tor
        ON xsr.TO_UUID  = tor.TO_UUID
       AND xsr.File_Name = tor.File_Name
@@ -176,7 +183,14 @@ SELECT
   3 AS source_priority,
   'pluginFunction' AS type,
   xcr.Ref_Name AS name,
-  md5('PluginFunction::' || xcr.Ref_Name || '::' || COALESCE(xcr.Ref_SubName, '')) AS uuid,
+  -- Container-Plugins (MBS): der Katalog-Plugin_Function_Name ist `<Plugin>:<SubName>`
+  -- (einfacher Doppelpunkt), nicht der bloße Ref_Name `MBS`. Ohne Rekonstruktion zeigt
+  -- der Link auf eine nicht existierende UUID. Vgl. convert_xml_04_catalog.sql.
+  md5('PluginFunction::' ||
+      CASE WHEN xcr.Ref_SubName IS NOT NULL AND xcr.Ref_SubName <> ''
+           THEN xcr.Ref_Name || ':' || xcr.Ref_SubName
+           ELSE xcr.Ref_Name END
+      || '::' || COALESCE(xcr.Ref_SubName, '')) AS uuid,
   CAST(NULL AS VARCHAR) AS field_file,
   CAST(NULL AS VARCHAR) AS field_basetable,
   CAST(NULL AS VARCHAR) AS to_name,

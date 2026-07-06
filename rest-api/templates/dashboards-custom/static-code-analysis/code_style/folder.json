@@ -1,0 +1,17 @@
+{
+  "title": "Code style",
+  "icon": "ruler",
+  "order": 5,
+  "locales": {
+    "de": "Code-Stil",
+    "es": "Estilo de código",
+    "fr": "Style de code",
+    "it": "Stile del codice",
+    "ja": "コードスタイル",
+    "ko": "코드 스타일",
+    "nl": "Codestijl",
+    "pt": "Estilo de código",
+    "sv": "Kodstil",
+    "zh-Hans": "代码风格"
+  }
+}

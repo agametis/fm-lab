@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Kaskadierende Löschbeziehung",
+    "description": "Fehleranfälligkeits-Regel — Beziehungen, die auf einer oder beiden Seiten verknüpfte Datensätze löschen. Eine falsche Löschung entfernt still Kind-Datensätze; jede prüfen."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Kaskadierende Löschbeziehung",
+    "findings_table.props.searchPlaceholder": "Tabellenauftreten suchen…",
+    "findings_table.props.empty.message": "Keine kaskadierenden Löschbeziehungen gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Linke TO",
+    "findings_table.props.columns[2].label": "Rechte TO",
+    "findings_table.props.columns[3].label": "Kaskade"
+  }
+}

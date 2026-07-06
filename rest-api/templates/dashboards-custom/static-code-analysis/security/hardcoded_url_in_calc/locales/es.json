@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "URL fija en cálculo",
+    "description": "Regla de seguridad/mantenibilidad: fragmentos de cálculo con una URL http(s):// literal. Los extremos fijos son frágiles y revelan la infraestructura."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "URL fija en cálculo",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, script o URL…",
+    "findings_table.props.empty.message": "No se encontraron URL fijas en los cálculos.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Encontrado en",
+    "findings_table.props.columns[2].label": "URL"
+  }
+}

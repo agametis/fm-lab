@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Perform Find senza Set Error Capture",
+    "description": "Regola di buone pratiche: script con Perform Find ma senza Set Error Capture [Attivato]. Una finestra «nessun record» può interrompere l’utente a metà script."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Perform Find senza Set Error Capture",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Nessuna ricerca senza cattura degli errori trovata.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Ricerche"
+  }
+}

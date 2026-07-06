@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "自动输入计算覆盖现有值",
+    "description": "易错规则 — 自动输入计算会替换现有值的字段。每次更改都可能悄悄覆盖用户输入。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "自动输入计算覆盖现有值",
+    "findings_table.props.searchPlaceholder": "搜索文件、表或字段…",
+    "findings_table.props.empty.message": "未找到会覆盖的自动输入计算。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "表",
+    "findings_table.props.columns[2].label": "字段"
+  }
+}

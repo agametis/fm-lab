@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Lege Else-tak",
+    "description": "Foutgevoelige regel — een Else direct gevolgd door End If, dus een Else-tak zonder stappen. Meestal een overblijfsel.\n\nGebaseerd op de PMD-regel EmptyControlStatement — https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#emptycontrolstatement"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Lege Else-tak",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen lege Else-takken gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Stap"
+  }
+}

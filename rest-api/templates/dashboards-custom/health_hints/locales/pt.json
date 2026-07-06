@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Healthchecks",
+    "description": "Verificações de integridade curadas e agrupadas por tipo de objeto com contagens ao vivo, cada uma vinculada ao seu painel de regras de static-code-analysis."
+  },
+  "layout": {
+    "hc_kpi_strip.props.items[0].label": "Todas as verificações",
+    "hc_kpi_strip.props.items[1].label": "Erros",
+    "hc_kpi_strip.props.items[2].label": "Avisos",
+    "hc_kpi_strip.props.items[3].label": "Info",
+    "hc_security_card.props.title": "Segurança",
+    "hc_security_list.props.empty.message": "Nada a relatar.",
+    "hc_fields_card.props.title": "Campos",
+    "hc_fields_list.props.empty.message": "Nada a relatar.",
+    "hc_scripts_card.props.title": "Scripts",
+    "hc_scripts_list.props.empty.message": "Nada a relatar.",
+    "hc_relationships_card.props.title": "Relacionamentos",
+    "hc_relationships_list.props.empty.message": "Nada a relatar.",
+    "hc_tables_card.props.title": "Tabelas & ocorrências",
+    "hc_tables_list.props.empty.message": "Nada a relatar.",
+    "hc_layouts_card.props.title": "Layouts",
+    "hc_layouts_list.props.empty.message": "Nada a relatar.",
+    "hc_variables_card.props.title": "Variáveis",
+    "hc_variables_list.props.empty.message": "Nada a relatar.",
+    "hc_valuelists_card.props.title": "Listas de valores",
+    "hc_valuelists_list.props.empty.message": "Nada a relatar.",
+    "hc_customfunctions_card.props.title": "Funções personalizadas",
+    "hc_customfunctions_list.props.empty.message": "Nada a relatar."
+  }
+}

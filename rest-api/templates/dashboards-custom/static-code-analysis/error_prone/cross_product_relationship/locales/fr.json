@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Relation en produit cartésien (×)",
+    "description": "Règle sujette aux erreurs : relations avec l’opérateur de produit cartésien (×). Elles relient chaque enregistrement à tous les autres ; rarement voulu et facile à laisser par inadvertance."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Relation en produit cartésien (×)",
+    "findings_table.props.searchPlaceholder": "Rechercher une occurrence de table…",
+    "findings_table.props.empty.message": "Aucune relation en produit cartésien trouvée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "TO gauche",
+    "findings_table.props.columns[2].label": "TO droite"
+  }
+}

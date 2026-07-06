@@ -1,0 +1,58 @@
+{
+  "id": "unbalanced_if_block",
+  "version": "1.0.0",
+  "title": "Unbalanced If / End If",
+  "description": "Error-prone rule — scripts whose If / End If nesting does not balance out, or that close an If that was never opened.",
+  "author": "fm-lab rules",
+  "icon": "git-fork",
+  "category": "error_prone",
+  "tags": [
+    "rule",
+    "pmd",
+    "error_prone"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "error",
+    "category": "error_prone",
+    "rationale": "Unbalanced If/End If means the control flow is not what the developer drew — branches silently fall through.",
+    "remediation": "Repair the If/End If nesting (add the missing End If, or remove the orphan End If).",
+    "meta": {
+      "name": "Unbalanced If / End If",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Error-prone rule — scripts whose If / End If nesting does not balance out, or that close an If that was never opened.",
+      "created": "2026-07-01",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

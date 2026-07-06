@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "未使用の権限セット",
+    "description": "未使用コードルール — どのアカウントにも割り当てられていないカスタム権限セット（組み込みの [フルアクセス] / [データ入力のみ] / [読み取り専用] は除外）。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "未使用の権限セット",
+    "findings_table.props.searchPlaceholder": "ファイルまたはセットを検索…",
+    "findings_table.props.empty.message": "未使用の権限セットは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "権限セット"
+  }
+}

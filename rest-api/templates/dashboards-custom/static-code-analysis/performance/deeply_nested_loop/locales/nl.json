@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Diep geneste Loop",
+    "description": "Prestatieregel — scripts met drie of meer geneste Loops. Geneste iteratie vermenigvuldigt het werk per buitenste doorloop."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Diep geneste Loop",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen diep geneste Loops gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Diepte"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "ODBC / ESS / SQL",
+    "description": "Inventar des externen SQL-Datenzugriffs: Execute-SQL-Steps (Step_ID 117), ODBC-/ESS-Datenquellen (externe Nicht-FileMaker-Quellen) und fmxdbc-Grants (ODBC/JDBC). Eine generische Vorlage — auch dort nützlich, wo der Korpus aktuell keine ODBC-Quellen hat."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Execute-SQL-Steps",
+    "summary_kpistrip.props.items[1].label": "ODBC-/ESS-Quellen",
+    "summary_kpistrip.props.items[2].label": "fmxdbc-Grants",
+    "summary_kpistrip.props.items[3].label": "Dateien mit SQL",
+    "findings.props.title": "Execute-SQL-Steps",
+    "findings_table.props.columns[0].label": "Script",
+    "findings_table.props.columns[1].label": "Step",
+    "findings_table.props.columns[2].label": "SQL (Vorschau)",
+    "findings_table.props.columns[3].label": "Datei",
+    "findings_table.props.columns[4].label": "#",
+    "ess_sources.props.title": "ODBC-/ESS-Datenquellen",
+    "ess_sources_table.props.emptyMessage": "Keine ODBC-/ESS-Quellen — alle externen Quellen sind FileMaker.",
+    "ess_sources_table.props.columns[0].label": "Quelle",
+    "ess_sources_table.props.columns[1].label": "Typ",
+    "ess_sources_table.props.columns[2].label": "TOs",
+    "ess_sources_table.props.columns[3].label": "Datei",
+    "grants.props.title": "ODBC-/xDBC-Grants (fmxdbc)",
+    "grants_table.props.emptyMessage": "Kein Privilege-Set gewährt fmxdbc.",
+    "grants_table.props.columns[0].label": "Extended Privilege",
+    "grants_table.props.columns[1].label": "Privilege-Set",
+    "grants_table.props.columns[2].label": "Datei",
+    "markdown.props.content": "## Hinweise\n\nExterner **SQL**-Datenzugriff. *Execute SQL* ist Step_ID-gated (117, locale-unabhängig — in diesem Korpus als `SQL ausführen` exportiert). ODBC-/ESS-Quellen sind die Nicht-FileMaker-Einträge des Datenquellen-Katalogs; `fmxdbc`-Grants zeigen, welche Privilege-Sets ODBC/JDBC-Zugriff erlauben.\n\n- Dies ist eine **generische Vorlage**: der Korpus hat aktuell keine ODBC-/ESS-Quellen (alle externen Quellen sind FileMaker) und einen Execute-SQL-Step — das Dashboard bleibt als wiederverwendbarer Library-Eintrag nützlich.\n- **Navigation**: Klick auf einen Execute-SQL-Step öffnet das Script am Step; eine ODBC-/ESS-Quelle öffnet ihre erste TableOccurrence; ein Grant öffnet das Privilege-Set.\n- **Zugehörige Regeln**: abgeleitete Severity-Regeln liegen unter *Statische Code-Analyse*.\n- **Sortierung**: alle Spaltenüberschriften sind klickbar (▲▼)."
+  }
+}

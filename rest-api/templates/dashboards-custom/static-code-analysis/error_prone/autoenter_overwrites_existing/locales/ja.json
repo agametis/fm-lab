@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "自動入力計算が既存値を上書き",
+    "description": "エラーを招きやすいルール — 自動入力計算が既存値を置き換えるフィールド。変更のたびにユーザー入力を黙って上書きする恐れがあります。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "自動入力計算が既存値を上書き",
+    "findings_table.props.searchPlaceholder": "ファイル・テーブル・フィールドを検索…",
+    "findings_table.props.empty.message": "上書きする自動入力計算は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "テーブル",
+    "findings_table.props.columns[2].label": "フィールド"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Relacionamento multicampo",
+    "description": "Regra de estilo de código — relacionamentos com três ou mais predicados de campo. Chaves de junção muito amplas são difíceis de acompanhar e muitas vezes indicam um campo-chave ausente."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Relacionamento multicampo",
+    "findings_table.props.searchPlaceholder": "Pesquisar ocorrência de tabela…",
+    "findings_table.props.empty.message": "Nenhum relacionamento multicampo encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "TO esquerda",
+    "findings_table.props.columns[2].label": "TO direita",
+    "findings_table.props.columns[3].label": "Predicados"
+  }
+}

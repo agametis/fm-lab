@@ -23,7 +23,7 @@ INSERT INTO DDR_ScriptSteps
 SELECT
     regexp_extract(
         step_elem::VARCHAR,
-        '<_([0-9A-F-]+)',
+        '<_([0-9A-Fa-f-]+)',   -- B-R9: Hex-Klasse case-tolerant wie die P2/P3-Anker ([0-9A-Fa-f-]{36})
         1
     ) as Step_UUID,
     xml_extract_text(step_elem, '//*/@hash')[1] as Step_Hash,

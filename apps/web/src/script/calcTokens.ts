@@ -59,6 +59,8 @@ export interface FieldMeta {
   maxRepetitions: number;
   comment: string | null;
   autoEnterType: string | null;
+  /** Fester Vorgabewert bei AutoEnter_Type = 'ConstantData' (sonst null). */
+  constantData: string | null;
 }
 
 export interface FieldTokens {
@@ -67,4 +69,18 @@ export interface FieldTokens {
   field: FieldMeta | null;
   tokens: CalcToken[];
   plainText: string;
+}
+
+// Custom Menu: mehrere Berechnungen (Menü-eigene + pro-Item) als je ein Token-Block.
+export interface CustomMenuCalcBlock {
+  label: string;
+  isStatic: boolean;
+  tokens: CalcToken[];
+  plainText: string;
+}
+
+export interface CustomMenuTokens {
+  kind: 'custommenu';
+  object: { uuid: string; name: string; file: string };
+  calcs: CustomMenuCalcBlock[];
 }

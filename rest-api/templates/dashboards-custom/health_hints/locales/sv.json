@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Healthchecks",
+    "description": "Kurerade hälsokontroller grupperade efter objekttyp med liveräkningar, var och en länkad till sin static-code-analysis-regelpanel."
+  },
+  "layout": {
+    "hc_kpi_strip.props.items[0].label": "Alla kontroller",
+    "hc_kpi_strip.props.items[1].label": "Fel",
+    "hc_kpi_strip.props.items[2].label": "Varningar",
+    "hc_kpi_strip.props.items[3].label": "Info",
+    "hc_security_card.props.title": "Säkerhet",
+    "hc_security_list.props.empty.message": "Inget att rapportera.",
+    "hc_fields_card.props.title": "Fält",
+    "hc_fields_list.props.empty.message": "Inget att rapportera.",
+    "hc_scripts_card.props.title": "Skript",
+    "hc_scripts_list.props.empty.message": "Inget att rapportera.",
+    "hc_relationships_card.props.title": "Relationer",
+    "hc_relationships_list.props.empty.message": "Inget att rapportera.",
+    "hc_tables_card.props.title": "Tabeller & förekomster",
+    "hc_tables_list.props.empty.message": "Inget att rapportera.",
+    "hc_layouts_card.props.title": "Layouter",
+    "hc_layouts_list.props.empty.message": "Inget att rapportera.",
+    "hc_variables_card.props.title": "Variabler",
+    "hc_variables_list.props.empty.message": "Inget att rapportera.",
+    "hc_valuelists_card.props.title": "Värdelistor",
+    "hc_valuelists_list.props.empty.message": "Inget att rapportera.",
+    "hc_customfunctions_card.props.title": "Anpassade funktioner",
+    "hc_customfunctions_list.props.empty.message": "Inget att rapportera."
+  }
+}

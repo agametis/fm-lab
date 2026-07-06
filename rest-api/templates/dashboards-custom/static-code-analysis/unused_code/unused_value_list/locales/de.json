@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Ungenutzte Werteliste",
+    "description": "Unused-Code-Regel — Wertelisten, die an kein Feld / Layout-Objekt, keine Sortierung und keinen External-Wrapper gebunden sind."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Ungenutzte Werteliste",
+    "findings_table.props.searchPlaceholder": "Datei oder Name suchen…",
+    "findings_table.props.empty.message": "Keine Treffer gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Name"
+  }
+}

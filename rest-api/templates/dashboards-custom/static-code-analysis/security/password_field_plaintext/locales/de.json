@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Passwort-Feld im Klartext gespeichert",
+    "description": "Sicherheits-Regel — normale (gespeicherte) Felder, deren Name auf ein Passwort / PIN hindeutet. Sofern für die Datei nicht „Encryption at rest\" (EAR) aktiviert ist, speichert FileMaker die Feldwerte unverschlüsselt. Die Spalte „Encryption at rest\" zeigt den EAR-Status je Datei."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Passwort-Feld im Klartext gespeichert",
+    "findings_table.props.searchPlaceholder": "Datei, Tabelle oder Feld suchen…",
+    "findings_table.props.empty.message": "Keine Klartext-Passwortfelder gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Tabelle",
+    "findings_table.props.columns[2].label": "Feld",
+    "findings_table.props.columns[3].label": "Encryption at rest"
+  }
+}

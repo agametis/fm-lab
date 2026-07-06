@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "Acoplamiento de archivos FileMaker",
+    "description": "Matriz de acoplamiento de módulos entre los archivos FileMaker de la solución: ObjectLinks entre archivos agregados por archivo de origen × archivo de destino × rol de enlace, más las fuentes de datos FileMaker externas declaradas y las autorizaciones de acceso entre archivos. Responde a «¿qué módulo depende de cuál?» como una vista de auditoría tabular, complementando el Graph Atlas."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Enlaces entre archivos",
+    "summary_kpistrip.props.items[1].label": "Pares de archivos acoplados",
+    "summary_kpistrip.props.items[2].label": "Archivos de origen",
+    "summary_kpistrip.props.items[3].label": "Fan-out máx.",
+    "summary_kpistrip.props.items[4].label": "Fuentes FM externas",
+    "summary_kpistrip.props.items[5].label": "Autorizaciones de archivo",
+    "by_role.props.title": "Acoplamiento por rol de enlace",
+    "by_role_table.props.columns[0].label": "Rol de enlace",
+    "by_role_table.props.columns[1].label": "Tipo",
+    "by_role_table.props.columns[2].label": "Enlaces",
+    "by_role_table.props.columns[3].label": "Pares",
+    "by_role_table.props.columns[4].label": "Archivos de origen",
+    "by_role_table.props.columns[5].label": "Archivos de destino",
+    "coupling.props.title": "Matriz de acoplamiento (origen → destino)",
+    "coupling_table.props.columns[0].label": "Archivo de origen",
+    "coupling_table.props.columns[1].label": "Archivo de destino",
+    "coupling_table.props.columns[2].label": "Enlaces",
+    "coupling_table.props.columns[3].label": "Roles",
+    "coupling_table.props.columns[4].label": "Roles principales",
+    "coupling_details.props.title": "Detalles de acoplamiento (enlaces individuales)",
+    "coupling_details_table.props.columns[0].label": "Archivo de origen",
+    "coupling_details_table.props.columns[1].label": "Tipo de origen",
+    "coupling_details_table.props.columns[2].label": "Objeto de origen",
+    "coupling_details_table.props.columns[3].label": "Rol",
+    "coupling_details_table.props.columns[4].label": "Archivo de destino",
+    "coupling_details_table.props.columns[5].label": "Tipo de destino",
+    "coupling_details_table.props.columns[6].label": "Objeto de destino",
+    "external_sources.props.title": "Fuentes de datos FileMaker externas (acoplamiento declarado)",
+    "external_sources_table.props.columns[0].label": "Desde archivo",
+    "external_sources_table.props.columns[1].label": "Declara fuente",
+    "external_sources_table.props.columns[2].label": "TOs",
+    "external_sources_table.props.columns[3].label": "TO de ejemplo",
+    "markdown.props.content": "## Notas\n\n**El dashboard central de la categoría Modularización** — responde directamente a *¿qué módulo depende de cuál?* y complementa el Graph Atlas con una vista de auditoría tabular.\n\n- **KPIs**: *Enlaces entre archivos* = todos los `ObjectLinks` operativos con `Is_Cross_File = TRUE` y archivo de origen/destino distinto. *Pares de archivos acoplados* = pares dirigidos (origen → destino) distintos. *Fan-out máx.* = el mayor número de archivos de destino distintos alcanzados desde un único archivo de origen. *Fuentes FM externas* = declaraciones distintas de fuentes de datos FileMaker. *Autorizaciones de archivo* = filas en `FileAccessAuthorizations`.\n- **Acoplamiento por rol de enlace**: cómo se desglosa el tráfico entre archivos por tipo (`displays_field`, `reads_field`, `calls_script`, `base_table`, …). Haz clic en un rol para filtrar la lista de detalles por ese rol.\n- **Matriz de acoplamiento**: una fila por par de archivos dirigido con el número de enlaces, el número de roles distintos y una vista previa de los roles principales. Haz clic en un par para filtrar la lista de detalles exactamente por ese acoplamiento origen → destino.\n- **Detalles de acoplamiento**: los enlaces individuales detrás de un par / rol seleccionado — el objeto de origen en el archivo A que referencia un objeto de destino en el archivo B. Haz clic en una fila para abrir el objeto **de destino**.\n- **Fuentes FM externas**: el lado declarativo — qué archivo registra a qué otro archivo como fuente de datos externa (independientemente del tráfico real de objetos). Haz clic en una fila para abrir la primera ocurrencia de tabla alfabética de esa fuente.\n- Los enlaces entre archivos son operativos por naturaleza (la contención estructural nunca cruza un límite de archivo en FileMaker), por lo que no hay columna estructural.\n- **Reglas relacionadas**: las reglas de severidad derivadas para el acoplamiento excesivo se encuentran en *Static Code Analysis*.\n- **Ordenación**: todos los encabezados de columna son clicables (▲▼)."
+  }
+}

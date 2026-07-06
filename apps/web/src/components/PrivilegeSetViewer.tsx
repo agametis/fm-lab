@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useApiLang } from '../hooks/useApiLang';
 import { useCalcTokens } from '../hooks/useCalcTokens';
 import { HighlightRefContext } from '../script/highlightContext';
-import { CalcTokenSpan } from './CalcTokenSpan';
+import { CalcTokenList } from './CalcTokenSpan';
 import { buildObjectPath } from '../lib/navigation';
 import './CustomFunctionViewer.css';
 import './PrivilegeSetViewer.css';
@@ -71,9 +71,7 @@ const RecordCalcFormula: React.FC<{ hash: string | null; fallback: string | null
   if (hash && data && data.tokens && data.tokens.length > 0 && !error) {
     return (
       <code className="fm-ps-formula">
-        {data.tokens.map((tok, idx) => (
-          <CalcTokenSpan key={idx} token={tok} />
-        ))}
+        <CalcTokenList tokens={data.tokens} />
       </code>
     );
   }

@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Layout con muchos objetos",
+    "description": "Regla de estilo de código/rendimiento: Layouts con muchos objetos. Los Layouts pesados se renderizan lentamente y son difíciles de mantener. Umbral ajustable con el control deslizante (predeterminado 250)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "threshold_slider.props.label": "Objetos por Layout (mínimo)",
+    "threshold_slider.props.valueSuffix": "objetos",
+    "findings_card.props.title": "Layout con muchos objetos",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o Layout…",
+    "findings_table.props.empty.message": "No se encontraron Layouts sobrecargados.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objetos"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "id": "open_url_in_loop",
+  "version": "1.0.0",
+  "title": "Open URL inside Loop",
+  "description": "Performance / UX rule — Open URL inside a Loop launches an external handler on every iteration.",
+  "author": "fm-lab rules",
+  "icon": "gauge",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "pmd",
+    "performance"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "performance",
+    "rationale": "Opening a URL per iteration spawns many handlers/tabs and disrupts the user.",
+    "remediation": "Collect the targets and open once, or move the call out of the loop.",
+    "meta": {
+      "name": "Open URL inside Loop",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Performance / UX rule — Open URL inside a Loop launches an external handler on every iteration.",
+      "created": "2026-07-01",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

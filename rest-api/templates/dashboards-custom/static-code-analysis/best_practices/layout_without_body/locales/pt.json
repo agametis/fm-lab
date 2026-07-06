@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Layout sem corpo",
+    "description": "Regra de boas práticas — Layouts sem parte de corpo. Sem corpo, os registros não são exibidos na visualização de formulário/lista; geralmente um Layout perdido ou mal construído."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Layout sem corpo",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou Layout…",
+    "findings_table.props.empty.message": "Nenhum Layout sem corpo encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

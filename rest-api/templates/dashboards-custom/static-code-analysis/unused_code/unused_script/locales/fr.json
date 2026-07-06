@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Script inutilisé",
+    "description": "Règle de code inutilisé : scripts appelés par aucun autre script et démarrés par aucun déclencheur. À vérifier : les démarrages manuels ou depuis un menu personnalisé peuvent apparaître ici.\n\nD’après la règle PMD UnusedPrivateMethod — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatemethod"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Script inutilisé",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un script…",
+    "findings_table.props.empty.message": "Aucun script inutilisé trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

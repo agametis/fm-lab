@@ -1,0 +1,64 @@
+{
+  "id": "empty_else_branch",
+  "version": "1.0.0",
+  "title": "Empty Else branch",
+  "description": "Error-prone rule — an Else immediately followed by End If, i.e. an Else branch with no steps. Usually a leftover.\n\nBased on the PMD rule EmptyControlStatement — https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#emptycontrolstatement",
+  "author": "fm-lab rules",
+  "icon": "square-dashed",
+  "category": "error_prone",
+  "tags": [
+    "rule",
+    "pmd",
+    "error_prone"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "error_prone",
+    "rationale": "An empty Else adds a branch that does nothing and hides intent.",
+    "remediation": "Remove the empty Else or fill in the intended steps.",
+    "meta": {
+      "name": "Empty Else branch",
+      "author": "fm-lab rules",
+      "source": "PMD",
+      "url": "https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#emptycontrolstatement",
+      "description": "Error-prone rule — an Else immediately followed by End If, i.e. an Else branch with no steps. Usually a leftover.",
+      "created": "2026-07-01",
+      "references": [
+        {
+          "project": "PMD",
+          "rule": "EmptyControlStatement",
+          "url": "https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#emptycontrolstatement"
+        }
+      ]
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

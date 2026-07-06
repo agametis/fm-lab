@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "OnRecordLoad トリガー",
+    "description": "パフォーマンスルール — OnRecordLoad スクリプトトリガー。表示されるレコードごとに実行されるため、重いスクリプトはリスト表示や検索を遅くします。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "OnRecordLoad トリガー",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "OnRecordLoad トリガーは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "トリガースクリプト",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

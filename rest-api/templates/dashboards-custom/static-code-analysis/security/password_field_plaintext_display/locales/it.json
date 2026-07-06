@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Campo password mostrato in chiaro",
+    "description": "Regola di sicurezza: un campo password/PIN viene mostrato su un formato da un oggetto che non è un «campo di modifica cifrato», quindi il valore appare in chiaro sul formato. Elencato per oggetto del formato (lo stesso campo può essere visibile su più formati).\n\nIntegra la regola di memorizzazione (password_field_plaintext): qui si tratta della visualizzazione a schermo, decisa a livello di oggetto del formato, non del campo."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Campo password mostrato in chiaro",
+    "findings_table.props.searchPlaceholder": "Cerca campo o layout…",
+    "findings_table.props.empty.message": "Nessun campo password mostrato in chiaro.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Campo",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

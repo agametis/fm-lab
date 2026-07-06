@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Passwort-Feld wird im Klartext angezeigt",
+    "description": "Sicherheits-Regel — ein Passwort-/PIN-Feld wird auf einem Layout von einem Objekt dargestellt, das kein „verschlüsseltes Bearbeitungsfeld“ ist, der Wert steht also im Klartext auf dem Layout. Aufgelistet pro Layout-Objekt (dasselbe Feld kann auf mehreren Layouts sichtbar sein).\n\nErgänzt die Speicher-Regel (password_field_plaintext): hier geht es um die Darstellung am Bildschirm, die auf Ebene des Layout-Objekts entschieden wird, nicht am Feld."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Passwort-Feld wird im Klartext angezeigt",
+    "findings_table.props.searchPlaceholder": "Feld oder Layout suchen…",
+    "findings_table.props.empty.message": "Keine Passwort-Felder werden im Klartext angezeigt.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Feld",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

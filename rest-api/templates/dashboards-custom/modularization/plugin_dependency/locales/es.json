@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Dependencia de plugins",
+    "description": "Inventario de dependencias de plugins: sitios de llamada por componente de plugin (MBS y otros) × archivo, resueltos mediante calls_pluginfunction, más los pasos Install Plug-In File. Vista de riesgo: ¿qué módulos quedarían muertos sin el plugin?"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Sitios de llamada de plugins",
+    "summary_kpistrip.props.items[1].label": "Componentes",
+    "summary_kpistrip.props.items[2].label": "Funciones",
+    "summary_kpistrip.props.items[3].label": "Archivos afectados",
+    "summary_kpistrip.props.items[4].label": "Pasos Install Plug-In",
+    "components.props.title": "Componentes",
+    "components_table.props.columns[0].label": "Plugin",
+    "components_table.props.columns[1].label": "Componente",
+    "components_table.props.columns[2].label": "Sitios de llamada",
+    "components_table.props.columns[3].label": "Funciones",
+    "components_table.props.columns[4].label": "Archivos",
+    "top_functions.props.title": "Funciones más utilizadas",
+    "top_functions_table.props.columns[0].label": "Función",
+    "top_functions_table.props.columns[1].label": "Componente",
+    "top_functions_table.props.columns[2].label": "Sitios de llamada",
+    "top_functions_table.props.columns[3].label": "Archivos",
+    "markdown.props.content": "## Notas\n\nDe qué **plugins** depende la solución y dónde. Los sitios de llamada se leen de los enlaces `calls_pluginfunction` resueltos (`MBS:<Componente>.<Función>`), por lo que la lista de *Funciones más utilizadas* navega directamente a la vista de usos de la función del plugin.\n\n- **Componentes**: sitios de llamada, funciones distintas y archivos afectados por cada componente de plugin. Haz clic en un componente para filtrar la lista de funciones.\n- **Vista de riesgo**: un módulo construido sobre un componente con muchos sitios de llamada queda muerto sin ese plugin instalado — los pasos *Install Plug-In File* muestran dónde la solución instala plugins por sí misma.\n- **Navegación**: al hacer clic en una función se abre su detalle de función de plugin (usos).\n- **Reglas relacionadas**: las reglas de severidad derivadas se encuentran en *Static Code Analysis*.\n- **Ordenación**: todos los encabezados de columna son clicables (▲▼)."
+  }
+}

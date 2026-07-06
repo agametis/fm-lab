@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Layout mit vielen Objekten",
+    "description": "Code-Style-/Performance-Regel — Layouts mit vielen Objekten (Schwelle über den Schieberegler einstellbar, Vorgabe 250). Schwere Layouts rendern langsam und sind schwer zu pflegen."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "threshold_slider.props.label": "Objekte pro Layout (Minimum)",
+    "threshold_slider.props.valueSuffix": "Objekte",
+    "findings_card.props.title": "Layout mit vielen Objekten",
+    "findings_table.props.searchPlaceholder": "Datei oder Layout suchen…",
+    "findings_table.props.empty.message": "Keine überladenen Layouts gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekte"
+  }
+}

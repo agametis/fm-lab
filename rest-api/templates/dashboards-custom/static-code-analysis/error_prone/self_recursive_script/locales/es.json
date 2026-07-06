@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Script autorrecursivo",
+    "description": "Regla de propensión a errores: scripts que se llaman a sí mismos. La recursión puede ser intencionada, pero sin una condición de parada sólida amenaza un desbordamiento de pila."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Script autorrecursivo",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o script…",
+    "findings_table.props.empty.message": "No se encontraron scripts autorrecursivos.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

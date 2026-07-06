@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": { "columns": 12, "gap": 16 },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary",
+        "props": { "span": 12, "variant": "hero" },
+        "data": { "dataset": "summary" },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpistrip",
+            "props": {
+              "items": [
+                { "label": "Perform Script on Server", "field": "psos", "format": "number", "onClick": { "action": "openDashboard", "args": { "id": "server_side_execution", "params": { "mechanism": "Perform Script on Server" } } } },
+                { "label": "Execute Data API", "field": "data_api", "format": "number", "onClick": { "action": "openDashboard", "args": { "id": "server_side_execution", "params": { "mechanism": "Execute FileMaker Data API" } } } },
+                { "label": "Install OnTimer", "field": "ontimer", "format": "number", "onClick": { "action": "openDashboard", "args": { "id": "server_side_execution", "params": { "mechanism": "Install OnTimer Script" } } } },
+                { "label": "Files affected", "field": "files_affected", "format": "number" },
+                { "label": "Server grants", "field": "server_grants", "format": "number" }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "by_kind",
+        "props": { "span": 12, "title": "By mechanism" },
+        "data": { "dataset": "by_kind" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "by_kind_table",
+            "props": {
+              "rowKey": "mechanism",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                { "field": "mechanism", "label": "Mechanism", "format": "badge" },
+                { "field": "callsites", "label": "Call sites", "align": "right" },
+                { "field": "files", "label": "Files", "align": "right" },
+                { "field": "scripts", "label": "Scripts", "align": "right" }
+              ],
+              "onRowClick": { "action": "openDashboard", "args": { "id": "server_side_execution", "params": { "mechanism": "{{mechanism}}" } } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings",
+        "props": { "span": 12, "title": "Call sites" },
+        "data": { "dataset": "findings" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "step_uuid",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                { "field": "mechanism", "label": "Mechanism", "format": "badge" },
+                { "field": "carrier", "label": "Script" },
+                { "field": "detail", "label": "Step" },
+                { "field": "file", "label": "File" },
+                { "field": "step_index", "label": "#", "align": "right" }
+              ],
+              "onRowClick": { "action": "openObject", "args": { "uuid": "{{nav_uuid}}", "type": "Script", "file": "{{file}}", "params": { "step": "{{step_uuid}}" } } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "grants",
+        "props": { "span": 12, "title": "Server / API grants (Extended Privileges)" },
+        "data": { "dataset": "grants" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "grants_table",
+            "props": {
+              "rowKey": "nav_uuid",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                { "field": "extended_privilege", "label": "Extended privilege", "format": "badge" },
+                { "field": "privilege_set", "label": "Privilege set" },
+                { "field": "file", "label": "File" }
+              ],
+              "onRowClick": { "action": "openObject", "args": { "uuid": "{{nav_uuid}}", "type": "PrivilegeSet", "file": "{{file}}" } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Markdown",
+        "id": "markdown",
+        "props": {
+          "span": 12,
+          "content": "## Notes\n\nWhat runs (potentially) on the **server**. Native steps are Step_ID-gated (locale-independent): *Perform Script on Server* (164), *Execute FileMaker Data API* (203), *Install OnTimer Script* (148).\n\n- **KPIs as filters**: the step KPIs filter the call sites to that mechanism.\n- **Server / API grants**: which privilege sets grant the server-relevant Extended Privileges (`fmrest`, `fmurlscript`, `fmodata`, `fmxml`, `fmphp`, `fmextscriptaccess`). Click a row to open the privilege set.\n- **Navigation**: clicking a call site opens the script at the step.\n- **Related rules**: derived severity rules live under *Static Code Analysis*.\n- **Sorting**: all column headings are clickable (▲▼)."
+        }
+      }
+    ]
+  }
+}

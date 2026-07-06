@@ -1,0 +1,42 @@
+{
+  "manifest": {
+    "title": "文件视图",
+    "description": "按文件的详情视图：元数据、文件选项、对象 KPI，以及触发的脚本／起始布局／登录账户。"
+  },
+  "layout": {
+    "file_not_found.props.title": "未找到文件",
+    "file_not_found_md.props.content": "当前数据库中不存在此名称的文件。请从**主页**打开一个文件。",
+    "file_info.props.title": "文件信息",
+    "file_metrics_kpistrip.props.items[0].label": "对象",
+    "file_metrics_kpistrip.props.items[1].label": "引用",
+    "file_metrics_kpistrip.props.items[2].label": "FM 版本",
+    "file_metrics_kpistrip.props.items[3].label": "DDR 信息",
+    "file_metrics_kpistrip.props.items[4].label": "最近导入",
+    "file_metrics_kpistrip.props.items[5].label": "最低版本",
+    "file_size_kpistrip.props.items[0].label": "文件大小",
+    "file_settings_list.props.items[0].label": "自动登录",
+    "file_settings_list.props.items[1].label": "保存登录凭据",
+    "file_settings_list.props.items[2].label": "登录字段",
+    "file_settings_list.props.items[3].label": "加密",
+    "file_settings_list.props.items[4].label": "隐藏 WebDirect 共享",
+    "file_settings_list.props.items[5].label": "隐藏客户端共享",
+    "file_settings_list.props.items[6].label": "拼写下划线",
+    "file_object_counts.props.title": "对象",
+    "file_object_counts_kpistrip.props.items[0].label": "脚本",
+    "file_object_counts_kpistrip.props.items[1].label": "表",
+    "file_object_counts_kpistrip.props.items[2].label": "字段",
+    "file_object_counts_kpistrip.props.items[3].label": "TO",
+    "file_object_counts_kpistrip.props.items[4].label": "关系",
+    "file_object_counts_kpistrip.props.items[5].label": "布局",
+    "file_object_counts_kpistrip.props.items[6].label": "值列表",
+    "file_object_counts_kpistrip.props.items[7].label": "自定义函数",
+    "file_object_counts_kpistrip.props.items[8].label": "变量",
+    "file_triggers.props.title": "触发的脚本",
+    "file_triggers_table.props.columns[0].label": "事件",
+    "file_triggers_table.props.columns[1].label": "脚本",
+    "file_start_layout.props.title": "起始布局",
+    "file_start_layout_table.props.columns[0].label": "布局",
+    "file_account.props.title": "登录账户",
+    "file_account_table.props.columns[0].label": "账户"
+  }
+}

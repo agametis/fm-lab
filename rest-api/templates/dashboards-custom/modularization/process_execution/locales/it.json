@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Esecuzione di processi e shell",
+    "description": "Inventario dell'esecuzione esterna di processi/shell: Send Event e Perform AppleScript (filtrati per Step_ID, indipendenti dalla lingua) più le chiamate MBS Shell / RunTask / Process (risolte tramite calls_pluginfunction). Mostra dove la soluzione cede il controllo al sistema operativo."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Punti di contatto",
+    "summary_kpistrip.props.items[1].label": "Send Event",
+    "summary_kpistrip.props.items[2].label": "AppleScript",
+    "summary_kpistrip.props.items[3].label": "Chiamate di processo MBS",
+    "summary_kpistrip.props.items[4].label": "File interessati",
+    "by_mechanism.props.title": "Per meccanismo",
+    "by_mechanism_table.props.columns[0].label": "Meccanismo",
+    "by_mechanism_table.props.columns[1].label": "Tipo",
+    "by_mechanism_table.props.columns[2].label": "Punti di chiamata",
+    "by_mechanism_table.props.columns[3].label": "File",
+    "findings.props.title": "Occorrenze",
+    "findings_table.props.columns[0].label": "Meccanismo",
+    "findings_table.props.columns[1].label": "Tipo rif.",
+    "findings_table.props.columns[2].label": "Script/Oggetto",
+    "findings_table.props.columns[3].label": "Passo/Funzione",
+    "findings_table.props.columns[4].label": "File",
+    "findings_table.props.columns[5].label": "#",
+    "markdown.props.content": "## Note\n\nDove la soluzione cede il controllo a un **processo esterno o alla shell**. I passi nativi sono filtrati per Step_ID (indipendente dalla lingua): *Send Event* (57), *Perform AppleScript* (67). Le chiamate di processo MBS vengono lette dai link `calls_pluginfunction` risolti: `Shell.*`, `RunTask.*`, `Process.*`.\n\n- **KPI come filtri**: *Send Event* e *AppleScript* filtrano l'elenco di dettaglio su quel meccanismo.\n- **Per meccanismo**: fai clic su una riga per filtrare le occorrenze.\n- **Navigazione**: facendo clic su un'occorrenza si apre il portatore (Script + ancora del passo, o l'oggetto dietro una chiamata MBS).\n- **Regole correlate**: le regole di severità derivate si trovano sotto *Static Code Analysis*.\n- **Ordinamento**: tutte le intestazioni di colonna sono cliccabili (▲▼)."
+  }
+}

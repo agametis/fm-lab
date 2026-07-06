@@ -8,9 +8,11 @@
   "tags": ["system"],
   "entry": "layout.json",
   "datasets": [
-    { "id": "directory_status",   "source": "builtin:xml_directory_status" },
-    { "id": "last_run",           "source": "builtin:xml_last_run" },
-    { "id": "xml_semantic_names", "source": "builtin:xml_semantic_names" }
+    { "id": "directory_status",     "source": "builtin:xml_directory_status" },
+    { "id": "last_run",             "source": "builtin:xml_last_run" },
+    { "id": "xml_import_integrity",         "source": "builtin:xml_import_integrity" },
+    { "id": "xml_import_integrity_details", "source": "builtin:xml_import_integrity_details" },
+    { "id": "xml_semantic_names",   "source": "builtin:xml_semantic_names" }
   ],
   "params": [
     { "name": "autostart", "type": "string", "required": false,

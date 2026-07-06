@@ -1,0 +1,196 @@
+/* BaseTable-Detail – strukturierte Darstellung (Feld-Typ-Statistik +
+   sortierbare, klickbare Felder- und Table-Occurrence-Tabellen). */
+
+.fm-bt {
+  padding: 0.5rem 0.25rem;
+}
+
+/* ── Metadaten (Key/Value) ── */
+.fm-bt-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.15rem 1rem;
+  margin: 0.25rem 0 1.25rem;
+  font-size: 0.85rem;
+}
+.fm-bt-meta dt { color: var(--color-text-muted); font-weight: 600; }
+.fm-bt-meta dd {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+/* ── Statistik-Tabellen im Top-Block (nebeneinander) ── */
+.fm-bt-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin: 0.25rem 0 1.5rem;
+}
+.fm-bt-stats-table { min-width: 220px; max-width: 320px; }
+.fm-bt-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.fm-bt-total td {
+  font-weight: 700;
+  border-top: 2px solid var(--color-border-strong);
+  color: var(--color-text-primary);
+}
+
+/* ── Suchleiste (über beiden Tabellen) ── */
+.fm-bt-toolbar {
+  margin: 1.25rem 0 0.5rem;
+}
+.fm-bt-search {
+  width: 100%;
+  max-width: 420px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+.fm-bt-search:focus-visible {
+  outline: 2px solid var(--color-accent-ring);
+  outline-offset: -1px;
+  border-color: var(--color-accent);
+}
+
+/* ── Filter-Chips (Typ + Datentyp) ── */
+.fm-bt-filters {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  margin: 0 0 0.7rem;
+}
+.fm-bt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+.fm-bt-chips-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  min-width: 4.5rem;
+}
+.fm-bt-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fm-bt-chip:hover { border-color: var(--color-accent); color: var(--color-text-primary); }
+.fm-bt-chip:focus-visible {
+  outline: 2px solid var(--color-accent-ring);
+  outline-offset: 1px;
+}
+.fm-bt-chip--active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+.fm-bt-chip--active:hover { color: #fff; }
+.fm-bt-chip-count { font-variant-numeric: tabular-nums; opacity: 0.75; }
+.fm-bt-chip--clear {
+  border-style: dashed;
+  color: var(--color-text-muted);
+  background: transparent;
+}
+
+/* ── Abschnitte ── */
+.fm-bt-section { margin: 1.5rem 0; }
+.fm-bt-section-head {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0 0 0.5rem;
+}
+.fm-bt-sec-count { color: var(--color-text-muted); font-weight: 400; }
+
+/* ── Basistabelle (Felder / TOs) ── */
+.fm-bt-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.88rem;
+}
+.fm-bt-table th,
+.fm-bt-table td {
+  text-align: left;
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+.fm-bt-table thead th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--color-border-strong);
+}
+.fm-bt-table tfoot td { border-bottom: none; }
+
+/* Sortierbare Spaltenköpfe. */
+.fm-bt-th-sort {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.fm-bt-th-sort:hover { color: var(--color-text-secondary); }
+.fm-bt-th-sort:focus-visible {
+  outline: 2px solid var(--color-accent-ring);
+  outline-offset: -2px;
+}
+.fm-bt-table--sortable thead th[aria-sort="ascending"],
+.fm-bt-table--sortable thead th[aria-sort="descending"] {
+  color: var(--color-text-primary);
+}
+
+/* Klickbare Zeilen (→ Feld-/TO-Detail). */
+.fm-bt-table--clickable tbody tr { cursor: pointer; }
+.fm-bt-row:hover { background: var(--color-hover-bg); }
+.fm-bt-row:focus-visible {
+  outline: 2px solid var(--color-accent-ring);
+  outline-offset: -2px;
+}
+.fm-bt-name {
+  font-weight: 500;
+  color: var(--color-accent-soft-fg);
+}
+.fm-bt-empty { color: var(--color-text-muted); }
+.fm-bt-noresults {
+  color: var(--color-text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: 0.75rem;
+}
+.fm-bt-flag { color: var(--color-text-muted); font-size: 0.8rem; font-weight: 400; }
+
+/* Scope-Badge (lokal / Cross-File). */
+.fm-bt-scope {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.fm-bt-scope--local {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-muted);
+}
+.fm-bt-scope--cross {
+  background: var(--color-accent-soft-bg);
+  color: var(--color-accent-soft-fg);
+}

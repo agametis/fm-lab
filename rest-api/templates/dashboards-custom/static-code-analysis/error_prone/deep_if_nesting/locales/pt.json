@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Aninhamento If profundo",
+    "description": "Regra propensa a erros — etapas aninhadas em cinco ou mais níveis If. Condições profundas são difíceis de ler e testar.\n\nBaseado na regra PMD AvoidDeeplyNestedIfStmts — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#avoiddeeplynestedifstmts"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Aninhamento If profundo",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhum bloco If profundamente aninhado encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Profundidade"
+  }
+}

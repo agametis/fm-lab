@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { PrimitiveProps } from '../types';
-import { formatTableCell } from './_format';
+import { formatTableCell, formatKpiValue } from './_format';
 import { translateCellValue } from './_cellTranslate';
 import { useRowSearch } from './_useRowSearch';
 import { dispatchAction } from '../actions';
@@ -77,6 +77,17 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
   // Pro-Datei-Checkmark). Nur die xml_convert-Datei-Status-Tabelle setzt das.
   const liveHighlightField = props.liveHighlightField as string | undefined;
   const liveStatusField = props.liveStatusField as string | undefined;
+  // Opt-in Summary-Zusätze in der Zähler-Zeile über der Tabelle (nur die
+  // xml_convert-Datei-Status-Tabelle nutzt das): `summaryNewField`/`summaryNewValue`
+  // zählen die Zeilen mit einem bestimmten Feld-Wert (z.B. status="new") → "· N neu";
+  // `summarySizeField` summiert ein Byte-Feld (z.B. size) → "· Gesamtgröße X".
+  const summaryNewField = props.summaryNewField as string | undefined;
+  const summaryNewValue = props.summaryNewValue as string | undefined;
+  const summarySizeField = props.summarySizeField as string | undefined;
+  // Opt-in: Zähler-/Status-Zeile immer rendern, auch wenn das Suchfeld (noch)
+  // ausgeblendet ist (z.B. wenige Dateien). Ohne diese Prop erscheint die Zeile
+  // wie bisher nur zusammen mit dem Suchfeld.
+  const alwaysShowCount = (props.alwaysShowCount as boolean) ?? false;
   const liveStates = useXmlConvertFileStates(!!liveHighlightField);
   const rows = dataset?.data ?? [];
   const [searchParams] = useSearchParams();
@@ -147,6 +158,22 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
     );
   }, [search.filtered, sortField, sortDir, lang]);
 
+  // Summary-Kennzahlen über den aktuell sichtbaren (gefilterten) Zeilen, damit
+  // sie konsistent zum angezeigten "N Einträge" bleiben.
+  const summaryNewCount = useMemo(() => {
+    if (!summaryNewField) return null;
+    const want = String(summaryNewValue ?? '');
+    return sortedRows.reduce(
+      (acc, r) => acc + (String(r[summaryNewField] ?? '') === want ? 1 : 0),
+      0,
+    );
+  }, [sortedRows, summaryNewField, summaryNewValue]);
+
+  const summaryTotalSize = useMemo(() => {
+    if (!summarySizeField) return null;
+    return sortedRows.reduce((acc, r) => acc + (Number(r[summarySizeField]) || 0), 0);
+  }, [sortedRows, summarySizeField]);
+
   if (rows.length === 0) {
     return <div className="dash-table__empty">{empty?.message ?? t('common:noEntries')}</div>;
   }
@@ -189,21 +216,31 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
           ))}
         </div>
       )}
-      {search.visible && (
+      {(alwaysShowCount || search.visible) && (
         <div className="dash-search-bar">
           <span className="dash-search-bar__count">
             {t('detail:autoTable.rowCount', { count: sortedRows.length })}
             {hasQuery && sortedRows.length !== search.totalCount && (
               <> · {t('detail:autoTable.filteredFrom', { count: search.totalCount })}</>
             )}
+            {summaryNewCount != null && summaryNewCount > 0 && (
+              <> · {t('detail:autoTable.newCount', { count: summaryNewCount })}</>
+            )}
+            {summaryTotalSize != null && (
+              <> · {t('detail:autoTable.totalSize', {
+                size: formatKpiValue(summaryTotalSize, 'filesize', lang),
+              })}</>
+            )}
           </span>
-          <input
-            type="search"
-            className="dash-search-bar__input"
-            placeholder={search.placeholder}
-            value={search.query}
-            onChange={e => search.setQuery(e.target.value)}
-          />
+          {search.visible && (
+            <input
+              type="search"
+              className="dash-search-bar__input"
+              placeholder={search.placeholder}
+              value={search.query}
+              onChange={e => search.setQuery(e.target.value)}
+            />
+          )}
         </div>
       )}
       <table className="dash-table">

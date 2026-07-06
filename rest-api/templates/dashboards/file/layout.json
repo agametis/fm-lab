@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": { "columns": 12, "gap": 16 },
+    "children": [
+      {
+        "type": "Card",
+        "id": "file_not_found",
+        "props": { "span": 12, "title": "File not found", "variant": "hero" },
+        "visibleWhen": { "dataset": "file_guard", "field": "not_found", "truthy": true },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "file_not_found_md",
+            "props": { "content": "No file with this name exists in the current database. Open a file from the **home** page." }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "file_info",
+        "props": { "span": 12, "title": "File info", "variant": "hero" },
+        "visibleWhen": { "dataset": "file_guard", "field": "not_found", "truthy": false },
+        "data": { "dataset": "file_info" },
+        "children": [
+          {
+            "type": "Row",
+            "props": { "gap": 16, "align": "center" },
+            "children": [
+              {
+                "type": "KPIStrip",
+                "id": "file_metrics_kpistrip",
+                "props": {
+                  "items": [
+                    { "label": "Objects", "field": "total_objects", "format": "number",
+                      "onClick": { "action": "applyFilter", "args": { "file": "{{File_Name}}" } } },
+                    { "label": "References", "field": "total_links", "format": "number" },
+                    { "label": "FM version", "field": "fm_version" },
+                    { "label": "DDR info", "field": "has_ddr", "format": "badge" },
+                    { "label": "Last import", "field": "import_ts", "format": "date:relative" },
+                    { "label": "Min. version", "field": "min_version" }
+                  ]
+                }
+              },
+              {
+                "type": "KPIStrip",
+                "id": "file_size_kpistrip",
+                "data": { "dataset": "source_size" },
+                "props": {
+                  "items": [
+                    { "label": "File size", "field": "size_bytes", "format": "filesize" }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "DefinitionList",
+            "id": "file_settings_list",
+            "props": {
+              "items": [
+                { "label": "Auto-login", "field": "auto_login", "format": "badge" },
+                { "label": "Save credentials", "field": "save_credentials", "format": "badge" },
+                { "label": "Sign-in fields", "field": "show_signin", "format": "badge" },
+                { "label": "Encryption", "field": "encryption", "format": "badge" },
+                { "label": "Hide WebDirect", "field": "hide_webdirect", "format": "badge" },
+                { "label": "Hide client sharing", "field": "hide_client", "format": "badge" },
+                { "label": "Spelling underline", "field": "spelling", "format": "badge" }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "file_object_counts",
+        "props": { "span": 12, "title": "Objects" },
+        "visibleWhen": { "dataset": "file_guard", "field": "not_found", "truthy": false },
+        "data": { "dataset": "object_counts" },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "file_object_counts_kpistrip",
+            "props": {
+              "items": [
+                { "label": "Scripts", "field": "scripts",
+                  "onClick": { "action": "applyFilter", "args": { "type": "Script", "file": "{{File_Name}}" } } },
+                { "label": "Tables", "field": "tables",
+                  "onClick": { "action": "applyFilter", "args": { "type": "BaseTable", "file": "{{File_Name}}" } } },
+                { "label": "Fields", "field": "fields",
+                  "onClick": { "action": "applyFilter", "args": { "type": "Field", "file": "{{File_Name}}" } } },
+                { "label": "TOs", "field": "occurrences",
+                  "onClick": { "action": "applyFilter", "args": { "type": "TableOccurrence", "file": "{{File_Name}}" } } },
+                { "label": "Relationships", "field": "relationships",
+                  "onClick": { "action": "applyFilter", "args": { "type": "Relationship", "file": "{{File_Name}}" } } },
+                { "label": "Layouts", "field": "layouts",
+                  "onClick": { "action": "applyFilter", "args": { "type": "Layout", "file": "{{File_Name}}" } } },
+                { "label": "Value lists", "field": "value_lists",
+                  "onClick": { "action": "applyFilter", "args": { "type": "ValueList", "file": "{{File_Name}}" } } },
+                { "label": "Custom fns", "field": "custom_functions",
+                  "onClick": { "action": "applyFilter", "args": { "type": "CustomFunction", "file": "{{File_Name}}" } } },
+                { "label": "Variables", "field": "variables",
+                  "onClick": { "action": "applyFilter", "args": { "type": "Variable", "file": "{{File_Name}}" } } }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "file_triggers",
+        "props": { "span": 12, "title": "Triggered scripts" },
+        "visibleWhen": { "dataset": "file_guard", "field": "has_triggers", "truthy": true },
+        "data": { "dataset": "triggers" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "file_triggers_table",
+            "props": {
+              "rowKey": "target_uuid",
+              "density": "comfortable",
+              "columns": [
+                { "field": "Trigger_Action", "label": "Event" },
+                { "field": "target_name", "label": "Script" }
+              ],
+              "onRowClick": { "action": "openObject", "args": { "uuid": "{{target_uuid}}", "file": "{{File_Name}}" } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "file_start_layout",
+        "props": { "span": 6, "title": "Start layout" },
+        "visibleWhen": { "dataset": "file_guard", "field": "has_start_layout", "truthy": true },
+        "data": { "dataset": "start_layout" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "file_start_layout_table",
+            "props": {
+              "rowKey": "target_uuid",
+              "density": "comfortable",
+              "columns": [
+                { "field": "target_name", "label": "Layout" }
+              ],
+              "onRowClick": { "action": "openObject", "args": { "uuid": "{{target_uuid}}", "file": "{{File_Name}}" } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "file_account",
+        "props": { "span": 6, "title": "Login account" },
+        "visibleWhen": { "dataset": "file_guard", "field": "has_account", "truthy": true },
+        "data": { "dataset": "account" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "file_account_table",
+            "props": {
+              "rowKey": "target_name",
+              "density": "comfortable",
+              "columns": [
+                { "field": "target_name", "label": "Account" }
+              ],
+              "onRowClick": { "action": "openObject", "args": { "uuid": "{{target_uuid}}", "file": "{{File_Name}}" } }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

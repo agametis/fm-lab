@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Export Records in Loop",
+    "description": "Regola di prestazioni: Export Records dentro un Loop scrive un file a ogni iterazione."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Export Records in Loop",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Nessun risultato per «Export Records in Loop».",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Passo",
+    "findings_table.props.columns[3].label": "Profondità"
+  }
+}

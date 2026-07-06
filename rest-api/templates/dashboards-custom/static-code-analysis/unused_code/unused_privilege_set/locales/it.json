@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Set di privilegi inutilizzato",
+    "description": "Regola di codice inutilizzato: set di privilegi personalizzati non assegnati ad alcun account (quelli integrati [Accesso completo] / [Solo immissione dati] / [Sola lettura] sono esclusi)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Set di privilegi inutilizzato",
+    "findings_table.props.searchPlaceholder": "Cerca file o set…",
+    "findings_table.props.empty.message": "Nessun set di privilegi inutilizzato trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Set di privilegi"
+  }
+}

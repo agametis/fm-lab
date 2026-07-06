@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Adresse IP codée en dur dans un calcul",
+    "description": "Règle de sécurité/maintenabilité : fragments de calcul contenant une adresse IPv4 littérale (p. ex. un hôte FTP/SMTP). Les hôtes codés en dur cassent lors des changements réseau.\n\nD’après la règle PMD AvoidUsingHardCodedIP — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#avoidusinghardcodedip"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Adresse IP codée en dur dans un calcul",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un script ou une IP…",
+    "findings_table.props.empty.message": "Aucune adresse IP codée en dur trouvée dans les calculs.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Trouvé dans",
+    "findings_table.props.columns[2].label": "IP"
+  }
+}

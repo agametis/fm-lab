@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": { "columns": 12, "gap": 16 },
+    "children": [
+      {
+        "type": "Card",
+        "id": "hc_kpi_card",
+        "props": { "span": 12, "variant": "hero" },
+        "data": { "dataset": "hc_kpi" },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "hc_kpi_strip",
+            "props": {
+              "items": [
+                {
+                  "label": "All checks",
+                  "field": "total",
+                  "format": "number",
+                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "severity": "", "file": "{{file}}" } } }
+                },
+                {
+                  "label": "Errors",
+                  "field": "error",
+                  "format": "number",
+                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "severity": "error", "file": "{{file}}" } } }
+                },
+                {
+                  "label": "Warnings",
+                  "field": "warn",
+                  "format": "number",
+                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "severity": "warn", "file": "{{file}}" } } }
+                },
+                {
+                  "label": "Info",
+                  "field": "info",
+                  "format": "number",
+                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "severity": "info", "file": "{{file}}" } } }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hc_security_card",
+        "props": { "span": 4, "title": "Security" },
+        "data": { "dataset": "hc_security" },
+        "children": [
+          {
+            "type": "List",
+            "id": "hc_security_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{label}}",
+                "secondary": "{{value}}",
+                "badge": "{{severity}}",
+                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+              },
+              "empty": { "message": "Nothing to report." }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hc_fields_card",
+        "props": { "span": 4, "title": "Fields" },
+        "data": { "dataset": "hc_fields" },
+        "children": [
+          {
+            "type": "List",
+            "id": "hc_fields_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{label}}",
+                "secondary": "{{value}}",
+                "badge": "{{severity}}",
+                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+              },
+              "empty": { "message": "Nothing to report." }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hc_scripts_card",
+        "props": { "span": 4, "title": "Scripts" },
+        "data": { "dataset": "hc_scripts" },
+        "children": [
+          {
+            "type": "List",
+            "id": "hc_scripts_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{label}}",
+                "secondary": "{{value}}",
+                "badge": "{{severity}}",
+                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+              },
+              "empty": { "message": "Nothing to report." }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hc_relationships_card",
+        "props": { "span": 4, "title": "Relationships" },
+        "data": { "dataset": "hc_relationships" },
+        "children": [
+          {
+            "type": "List",
+            "id": "hc_relationships_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{label}}",
+                "secondary": "{{value}}",
+                "badge": "{{severity}}",
+                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+              },
+              "empty": { "message": "Nothing to report." }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hc_tables_card",
+        "props": { "span": 4, "title": "Tables & occurrences" },
+        "data": { "dataset": "hc_tables" },
+        "children": [
+          {
+            "type": "List",
+            "id": "hc_tables_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{label}}",
+                "secondary": "{{value}}",
+                "badge": "{{severity}}",
+                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+              },
+              "empty": { "message": "Nothing to report." }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hc_layouts_card",
+        "props": { "span": 4, "title": "Layouts" },
+        "data": { "dataset": "hc_layouts" },
+        "children": [
+          {
+            "type": "List",
+            "id": "hc_layouts_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{label}}",
+                "secondary": "{{value}}",
+                "badge": "{{severity}}",
+                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+              },
+              "empty": { "message": "Nothing to report." }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hc_variables_card",
+        "props": { "span": 4, "title": "Variables" },
+        "data": { "dataset": "hc_variables" },
+        "children": [
+          {
+            "type": "List",
+            "id": "hc_variables_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{label}}",
+                "secondary": "{{value}}",
+                "badge": "{{severity}}",
+                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+              },
+              "empty": { "message": "Nothing to report." }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hc_valuelists_card",
+        "props": { "span": 4, "title": "Value lists" },
+        "data": { "dataset": "hc_valuelists" },
+        "children": [
+          {
+            "type": "List",
+            "id": "hc_valuelists_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{label}}",
+                "secondary": "{{value}}",
+                "badge": "{{severity}}",
+                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+              },
+              "empty": { "message": "Nothing to report." }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hc_customfunctions_card",
+        "props": { "span": 4, "title": "Custom functions" },
+        "data": { "dataset": "hc_customfunctions" },
+        "children": [
+          {
+            "type": "List",
+            "id": "hc_customfunctions_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{label}}",
+                "secondary": "{{value}}",
+                "badge": "{{severity}}",
+                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+              },
+              "empty": { "message": "Nothing to report." }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

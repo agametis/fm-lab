@@ -1,0 +1,35 @@
+{
+  "manifest": {
+    "title": "Filsystemåtkomst",
+    "description": "Inventering av alla lösningens beröringspunkter med filsystemet, klassificerade efter operation och API-grupp, med detaljvisning ner till anropsstället. Täcker inbyggda FileMaker-kommandon (Data File API, Import/Insert, Export/Save — Step_ID-styrda, språkoberoende) och MBS-pluginfunktioner (Files / Text / Container / Path / Folders / FileDialog, upplösta via calls_pluginfunction-länkar). Nätverksåtkomst stannar i APIs-panelen. Utöka WHEN-grenarna för projektspecifika MBS-komponenter."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Beröringspunkter",
+    "summary_kpistrip.props.items[1].label": "Kritisk (write+delete)",
+    "summary_kpistrip.props.items[2].label": "Delete",
+    "summary_kpistrip.props.items[3].label": "Berörda filer",
+    "summary_kpistrip.props.items[4].label": "MBS-anrop",
+    "summary_kpistrip.props.items[5].label": "Inbyggda steg",
+    "fs_groups.props.title": "Grupper (API-grupp × operation)",
+    "fs_groups_table.props.columns[0].label": "API-grupp",
+    "fs_groups_table.props.columns[1].label": "Operation",
+    "fs_groups_table.props.columns[2].label": "Träffar",
+    "fs_groups_table.props.columns[3].label": "Filer",
+    "findings.props.title": "Beröringspunkter (anropsställen)",
+    "findings_table.props.columns[0].label": "Grupp",
+    "findings_table.props.columns[1].label": "Operation",
+    "findings_table.props.columns[2].label": "Reftyp",
+    "findings_table.props.columns[3].label": "Skript/Objekt",
+    "findings_table.props.columns[4].label": "Steg/Funktion",
+    "findings_table.props.columns[5].label": "Fil",
+    "findings_table.props.columns[6].label": "#",
+    "fs_paths.props.title": "Sökvägsliteraler (vart skriver / läser lösningen?)",
+    "fs_paths_table.props.columns[0].label": "Sökvägsliteral",
+    "fs_paths_table.props.columns[1].label": "Katalog",
+    "fs_paths_table.props.columns[2].label": "Script",
+    "fs_paths_table.props.columns[3].label": "Step",
+    "fs_paths_table.props.columns[4].label": "Fil",
+    "fs_paths_table.props.columns[5].label": "#",
+    "markdown.props.content": "## Anmärkningar\n\nInventering av **varje beröringspunkt med filsystemet** i lösningen — inbyggda FileMaker-kommandon och MBS-pluginfunktioner. Nätverks-/webbåtkomst stannar i panelen *APIs och externa gränssnitt*; `Import Records` visas i båda (gränssnittsindikator vs. filsystemsläsning).\n\n- **Inbyggda kommandon är Step_ID-styrda** (språkoberoende). SaXML skriver stegnamnet på den exporterande klientens gränssnittsspråk (detta korpus blandar `Datensätze als Excel speichern` och `Save Records as PDF`), så logiken klassificerar på det numeriska `Step_ID`, aldrig på namnet. Täckta: Data File API (188–199), Import/Insert (35, 131, 56, 158, 159, 161), Export/Save (36, 132, 143, 144, 152, 225, 37, 3, 96).\n- **MBS-funktioner** läses från de upplösta `calls_pluginfunction`-länkarna (`MBS:<Komponent>.<Funktion>`), inte via textmatchning — därför är var-används-navigeringen exakt. Filsystemskomponenter: `Files.*`, `Path.*`, `Folders.*`, `FileDialog.*`, plus fil-I/O-funktionerna i `Text.*` (Read/Write/AppendTextFile) och `Container.*` (Export/ReadFile/WriteFile). Skiftlägesokänslig (korpuset innehåller både `FileMakerPathToNativePath` och `FilemakerPathToNativePath`).\n- **Operationer**: `read` / `write` / `delete` / `probe` (finns/storlek/datum) / `import` / `export` / `launch` / `mount` / `dialog` (användarförmedlad) / `path` (sökvägshjälpare) / `manage` (open/close/position/rename). Okända `Files.*`-funktioner faller till `operation = other` — synliga, inte förlorade.\n- **KPI:er som filter**: *Kritisk (write+delete)* och *Delete* filtrerar detaljlistan till de riskfyllda operationerna. *Beröringspunkter*, *Berörda filer*, *MBS-anrop* och *Inbyggda steg* är statistikrutor.\n- **Grupper**: klicka på en *API-grupp × operation*-cell för att filtrera detaljlistan på den.\n- **Sökvägsliteraler**: `file:` / `filewin:` / `filemac:`-literaler extraherade från skriptstegsformler, normaliserade till katalognivå — besvarar *vart* lösningen läser/skriver. Hårdkodade absoluta sökvägar dyker upp här.\n- **Navigering**: att klicka på en beröringspunkt öppnar bäraren (Script + steg-ankare, eller Custom Function / Fält / Layout-objekt bakom ett MBS-anrop).\n- **Utöka**: lägg till projektspecifika skrivande MBS-komponenter (XL.Book.Save, DynaPDF.Save, Archive/Compression, …) som ytterligare WHEN-grenar i `data/findings.sql` **och** `data/fs_groups.sql` (håll båda synkroniserade).\n- **Relaterade regler**: de härledda allvarlighetsreglerna (skrivning utan felkontroll, hårdkodad absolut sökväg, delete-användning) finns under *Statisk kodanalys*.\n- **Sortering**: alla kolumnrubriker är klickbara (▲▼)."
+  }
+}

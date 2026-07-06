@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FieldTokens } from '../script/calcTokens';
 import { HighlightRefContext } from '../script/highlightContext';
-import { CalcTokenSpan } from './CalcTokenSpan';
+import { CalcTokenList } from './CalcTokenSpan';
 import './CustomFunctionViewer.css';
 import './FieldViewer.css';
 
@@ -93,7 +93,12 @@ export const FieldViewer: React.FC<FieldViewerProps> = ({ data, highlightRefUuid
             {field.autoEnterType && (
               <>
                 <dt>{t('detail:fieldViewer.autoEnter')}</dt>
-                <dd>{field.autoEnterType}</dd>
+                <dd>
+                  {field.autoEnterType}
+                  {field.autoEnterType === 'ConstantData' && field.constantData != null && (
+                    <span className="fm-field-constant"> = <code>{field.constantData}</code></span>
+                  )}
+                </dd>
               </>
             )}
             {field.comment && (
@@ -110,9 +115,7 @@ export const FieldViewer: React.FC<FieldViewerProps> = ({ data, highlightRefUuid
             <div className="fm-field-formula-label">{formulaLabel}</div>
             <pre className="fm-customfunction-body">
               <code>
-                {data.tokens.map((tok, idx) => (
-                  <CalcTokenSpan key={idx} token={tok} />
-                ))}
+                <CalcTokenList tokens={data.tokens} />
               </code>
             </pre>
           </div>

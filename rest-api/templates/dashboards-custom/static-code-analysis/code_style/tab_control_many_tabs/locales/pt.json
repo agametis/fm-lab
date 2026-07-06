@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Controle de abas com muitas abas",
+    "description": "Regra de estilo de código — controles de abas com mais de seis abas. Abas em excesso ocultam conteúdo e dificultam a navegação. Limite ajustável pelo controle deslizante (padrão 6)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Controle de abas com muitas abas",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou Layout…",
+    "findings_table.props.empty.message": "Nenhum controle de abas sobrecarregado encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Abas",
+    "threshold_slider.props.label": "Abas por controle de abas (mínimo)",
+    "threshold_slider.props.valueSuffix": "abas"
+  }
+}

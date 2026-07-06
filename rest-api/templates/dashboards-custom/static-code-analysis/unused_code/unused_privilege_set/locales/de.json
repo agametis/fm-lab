@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Ungenutztes Berechtigungsset",
+    "description": "Unused-Code-Regel — eigene Berechtigungssets, die keinem Account zugewiesen sind (die eingebauten [Vollzugriff] / [Dateneingabe] / [Nur-Lesen] sind ausgenommen)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Ungenutztes Berechtigungsset",
+    "findings_table.props.searchPlaceholder": "Datei oder Set suchen…",
+    "findings_table.props.empty.message": "Keine ungenutzten Berechtigungssets gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Berechtigungsset"
+  }
+}

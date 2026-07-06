@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "深层 If 嵌套",
+    "description": "易错规则 — 嵌套达五层或更多 If 层级的步骤。深层条件难以阅读和测试。\n\n基于 PMD 规则 AvoidDeeplyNestedIfStmts — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#avoiddeeplynestedifstmts"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "深层 If 嵌套",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到深层嵌套的 If 块。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "深度"
+  }
+}

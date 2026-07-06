@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Relación de producto cartesiano (×)",
+    "description": "Regla de propensión a errores: relaciones con el operador de producto cartesiano (×). Relacionan cada registro con todos; rara vez es intencionado y es fácil dejarlo por descuido."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Relación de producto cartesiano (×)",
+    "findings_table.props.searchPlaceholder": "Buscar aparición de tabla…",
+    "findings_table.props.empty.message": "No se encontraron relaciones de producto cartesiano.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "TO izquierda",
+    "findings_table.props.columns[2].label": "TO derecha"
+  }
+}

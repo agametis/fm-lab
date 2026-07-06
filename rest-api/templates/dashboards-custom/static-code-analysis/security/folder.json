@@ -1,0 +1,17 @@
+{
+  "title": "Security",
+  "icon": "shield-alert",
+  "order": 3,
+  "locales": {
+    "de": "Sicherheit",
+    "es": "Seguridad",
+    "fr": "Sécurité",
+    "it": "Sicurezza",
+    "ja": "セキュリティ",
+    "ko": "보안",
+    "nl": "Beveiliging",
+    "pt": "Segurança",
+    "sv": "Säkerhet",
+    "zh-Hans": "安全"
+  }
+}

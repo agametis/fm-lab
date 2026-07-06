@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Plugin-Abhängigkeit",
+    "description": "Plugin-Abhängigkeits-Inventar: Call-Sites je Plugin-Komponente (MBS und andere) × Datei, aufgelöst über calls_pluginfunction, plus Install-Plug-In-File-Steps. Risiko-Sicht — welche Module wären ohne das Plugin tot?"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Plugin-Call-Sites",
+    "summary_kpistrip.props.items[1].label": "Komponenten",
+    "summary_kpistrip.props.items[2].label": "Funktionen",
+    "summary_kpistrip.props.items[3].label": "Betroffene Dateien",
+    "summary_kpistrip.props.items[4].label": "Install-Plug-In-Steps",
+    "components.props.title": "Komponenten",
+    "components_table.props.columns[0].label": "Plugin",
+    "components_table.props.columns[1].label": "Komponente",
+    "components_table.props.columns[2].label": "Call-Sites",
+    "components_table.props.columns[3].label": "Funktionen",
+    "components_table.props.columns[4].label": "Dateien",
+    "top_functions.props.title": "Meistgenutzte Funktionen",
+    "top_functions_table.props.columns[0].label": "Funktion",
+    "top_functions_table.props.columns[1].label": "Komponente",
+    "top_functions_table.props.columns[2].label": "Call-Sites",
+    "top_functions_table.props.columns[3].label": "Dateien",
+    "markdown.props.content": "## Hinweise\n\nVon welchen **Plugins** die Lösung abhängt und wo. Call-Sites werden aus den aufgelösten `calls_pluginfunction`-Links gelesen (`MBS:<Komponente>.<Funktion>`), daher navigiert die *Meistgenutzte-Funktionen*-Liste direkt in die Where-used-Sicht der Plugin-Funktion.\n\n- **Komponenten**: Call-Sites, verschiedene Funktionen und betroffene Dateien je Plugin-Komponente. Klick auf eine Komponente filtert die Funktions-Liste.\n- **Risiko-Sicht**: ein Modul, das auf einer Komponente mit vielen Call-Sites aufsetzt, ist ohne installiertes Plugin tot — *Install-Plug-In-File*-Steps zeigen, wo die Lösung Plugins selbst installiert.\n- **Navigation**: Klick auf eine Funktion öffnet ihr Plugin-Funktions-Detail (Where-used).\n- **Zugehörige Regeln**: abgeleitete Severity-Regeln liegen unter *Statische Code-Analyse*.\n- **Sortierung**: alle Spaltenüberschriften sind klickbar (▲▼)."
+  }
+}

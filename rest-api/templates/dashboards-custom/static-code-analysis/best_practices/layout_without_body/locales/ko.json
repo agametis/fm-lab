@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "본문 부분이 없는 Layout",
+    "description": "모범 사례 규칙 — 본문 부분이 없는 Layout. 본문이 없으면 양식/목록 보기에서 레코드가 표시되지 않습니다. 대개 방치되었거나 잘못 만든 Layout입니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "본문 부분이 없는 Layout",
+    "findings_table.props.searchPlaceholder": "파일 또는 Layout 검색…",
+    "findings_table.props.empty.message": "본문이 없는 Layout을 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

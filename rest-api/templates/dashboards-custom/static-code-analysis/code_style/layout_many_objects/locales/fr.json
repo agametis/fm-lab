@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Layout avec de nombreux objets",
+    "description": "Règle de style de code/performance : Layouts avec de nombreux objets. Les Layouts lourds s’affichent lentement et sont difficiles à maintenir. Seuil réglable via le curseur (par défaut 250)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "threshold_slider.props.label": "Objets par Layout (minimum)",
+    "threshold_slider.props.valueSuffix": "objets",
+    "findings_card.props.title": "Layout avec de nombreux objets",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un Layout…",
+    "findings_table.props.empty.message": "Aucun Layout surchargé trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objets"
+  }
+}

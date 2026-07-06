@@ -1,0 +1,47 @@
+/* Tokenisierte „Berechnungen"-Sektion der Custom-Menu-Detailansicht.
+   Angelehnt an .fm-customfunction-body (gleicher Monospace-Token-Look). */
+
+.fm-menu-calcs {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--fm-border, rgba(128, 128, 128, 0.25));
+  padding-top: 0.75rem;
+}
+
+.fm-menu-calcs-heading {
+  font-size: 0.95rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.fm-menu-calcs-error {
+  font-size: 0.8rem;
+  opacity: 0.75;
+  margin-bottom: 0.5rem;
+}
+
+.fm-menu-calc {
+  margin-bottom: 0.85rem;
+}
+
+.fm-menu-calc-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-bottom: 0.15rem;
+}
+
+.fm-menu-calc-static {
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+.fm-menu-calc-body {
+  margin: 0;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  background: var(--fm-code-bg, rgba(128, 128, 128, 0.08));
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}

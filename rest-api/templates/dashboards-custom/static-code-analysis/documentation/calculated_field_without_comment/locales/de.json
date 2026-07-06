@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Berechnungsfeld ohne Kommentar",
+    "description": "Dokumentations-Regel — Berechnungsfelder mit leerem Feldkommentar. Die Formel ist oft nicht selbsterklärend und verdient eine Notiz.\n\nAngelehnt an die PMD-Regel CommentRequired — https://docs.pmd-code.org/latest/pmd_rules_java_documentation.html#commentrequired Ein Filter-Schalter über der Tabelle wechselt zwischen Objekten ohne und mit Kommentar (die kommentierten dienen als Vorlage/Inspiration)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Berechnungsfeld ohne Kommentar",
+    "findings_table.props.searchPlaceholder": "Datei, Tabelle oder Feld suchen…",
+    "findings_table.props.empty.message": "Keine undokumentierten Berechnungsfelder gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Tabelle",
+    "findings_table.props.columns[2].label": "Feld",
+    "comment_filter.props.options[0].label": "ohne Kommentar",
+    "comment_filter.props.options[1].label": "mit Kommentar"
+  }
+}

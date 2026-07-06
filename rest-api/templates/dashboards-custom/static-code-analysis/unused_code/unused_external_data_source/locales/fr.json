@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Source de données externe inutilisée",
+    "description": "Règle de code inutilisé : sources de données externes référencées par aucune occurrence de table."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Source de données externe inutilisée",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un nom…",
+    "findings_table.props.empty.message": "Aucune correspondance trouvée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Nom"
+  }
+}

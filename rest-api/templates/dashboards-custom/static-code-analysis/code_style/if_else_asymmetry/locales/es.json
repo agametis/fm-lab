@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Asimetría de bloques If/Else",
+    "description": "Regla de estilo de código: scripts con bloques If/Else en los que la rama If es notablemente más larga que la rama Else. Candidatos a refactorizarse en retornos tempranos o guard clauses. Umbrales ajustables con los controles deslizantes de la cabecera (predeterminado If ≥ 10, Else ≤ 2 pasos)."
+  },
+  "layout": {
+    "if_else_kpi_kpistrip.props.items[0].label": "Bloques asimétricos",
+    "if_else_kpi_kpistrip.props.items[1].label": "Scripts afectados",
+    "if_else_kpi_kpistrip.props.items[2].label": "Archivos afectados",
+    "if_else_kpi_kpistrip.props.items[3].label": "Rama If más larga",
+    "if_else_blocks.props.title": "Scripts con If largo / Else corto",
+    "if_else_blocks_table.props.columns[0].label": "Archivo",
+    "if_else_blocks_table.props.columns[1].label": "Nombre del script",
+    "if_else_blocks_table.props.columns[2].label": "Posición del If",
+    "if_else_blocks_table.props.columns[3].label": "Pasos del If",
+    "if_else_blocks_table.props.columns[4].label": "Pasos del Else",
+    "if_else_blocks_table.props.columns[5].label": "Puntuación",
+    "if_else_blocks_table.props.empty.message": "No se encontraron bloques If/Else asimétricos."
+  }
+}

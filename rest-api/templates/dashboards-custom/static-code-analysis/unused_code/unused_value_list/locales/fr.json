@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Liste de valeurs inutilisée",
+    "description": "Règle de code inutilisé : listes de valeurs non liées à un champ/objet de Layout, un tri ou un wrapper externe."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Liste de valeurs inutilisée",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un nom…",
+    "findings_table.props.empty.message": "Aucune correspondance trouvée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Nom"
+  }
+}

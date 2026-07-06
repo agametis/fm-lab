@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Kommentartäthet i skript",
+    "description": "Dokumentationsregel — jämför skript efter totalt antal steg, verkliga kommentarssteg och kommentarer med enbart blanksteg, med en kommentartäthetsfaktor för varje. Kompletterar den binära regeln \"Odokumenterat skript\" genom att bedöma hur välkommenterade omfattande skript är. Minsta antal steg justerbart via reglaget i sidhuvudet (standard 10)."
+  },
+  "layout": {
+    "script_comment_density_kpi_kpistrip.props.items[0].label": "Skript totalt",
+    "script_comment_density_kpi_kpistrip.props.items[1].label": "Med ≥ min_steps",
+    "script_comment_density_kpi_kpistrip.props.items[2].label": "Utan kommentar",
+    "script_comment_density_kpi_kpistrip.props.items[3].label": "Median kommentar %",
+    "script_comment_density.props.title": "Skript efter antal steg, kommentarer och tomrum",
+    "script_comment_density_table.props.columns[0].label": "Skript",
+    "script_comment_density_table.props.columns[1].label": "Fil",
+    "script_comment_density_table.props.columns[2].label": "Totalt steg",
+    "script_comment_density_table.props.columns[3].label": "Riktiga kommentarer",
+    "script_comment_density_table.props.columns[4].label": "Tomma steg",
+    "script_comment_density_table.props.columns[5].label": "Kommentar %",
+    "script_comment_density_table.props.columns[6].label": "Tomrum %",
+    "script_comment_density_table.props.empty.message": "Inga skript matchar det aktuella filtret.",
+    "threshold_slider.props.label": "Minsta antal steg per skript",
+    "threshold_slider.props.valueSuffix": "steg"
+  }
+}

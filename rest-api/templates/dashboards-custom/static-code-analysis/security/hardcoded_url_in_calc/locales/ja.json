@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "計算内のハードコードされた URL",
+    "description": "セキュリティ/保守性ルール — リテラルの http(s):// URL を含む計算チャンク。ハードコードされたエンドポイントは脆く、インフラを露呈します。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "計算内のハードコードされた URL",
+    "findings_table.props.searchPlaceholder": "ファイル・スクリプト・URL を検索…",
+    "findings_table.props.empty.message": "計算内にハードコードされた URL は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "検出場所",
+    "findings_table.props.columns[2].label": "URL"
+  }
+}

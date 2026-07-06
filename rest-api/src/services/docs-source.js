@@ -2,6 +2,7 @@ const db = require('../config/database');
 const docsManifest = require('./docs-manifest');
 const adapters = require('./plugin-docs/adapters');
 const docsContent = require('./docs-content');
+const { sqlPluginSubName } = require('../utils/plugin-name');
 
 /**
  * Docs Source Service (v2)
@@ -259,15 +260,20 @@ async function loadFunctionUuidMap(setId, fns) {
   if (!fns.length) return map;
 
   if (setId === 'mbs') {
+    // Docset-Funktionsnamen sind bereits die fachlichen SubNames (z.B.
+    // `FM.InsertRecord`). Der Katalog-Object_Name ist `MBS:<Sub>::<Sub>`
+    // (früher `MBS::<Sub>`), daher wird über den extrahierten SubName gematcht —
+    // format-tolerant, vgl. utils/plugin-name.js.
+    const subExpr = sqlPluginSubName('Object_Name');
     const namesSql = fns
-      .map(r => `'MBS::${String(r.name).replace(/'/g, "''")}'`)
+      .map(r => `'${String(r.name).replace(/'/g, "''")}'`)
       .join(',');
     try {
       const sql = `
-        SELECT REPLACE(Object_Name, 'MBS::', '') AS subname, Object_UUID
+        SELECT ${subExpr} AS subname, Object_UUID
         FROM ObjectCatalog
         WHERE Object_Type = 'PluginFunction'
-          AND Object_Name IN (${namesSql})
+          AND ${subExpr} IN (${namesSql})
       `;
       const result = await db.executeQuery(sql);
       for (const row of result.rows) map.set(row.subname, row.Object_UUID);
@@ -344,7 +350,9 @@ function buildFunctionBadgeAction(setId, fn, uuid) {
   let q = '';
   if (setId === 'mbs') {
     type = 'PluginFunction';
-    q = `MBS::${fn.id}`;
+    // Fallback-Namensfilter: der SubName (fn.id) ist Teilstring des
+    // Katalog-Object_Name `MBS:<Sub>::<Sub>` → ohne `MBS::`-Präfix suchen.
+    q = fn.id;
   } else if (setId === 'claris-help') {
     if (String(fn.id || '').startsWith('fn:')) type = 'BuiltinFunction';
     else if (String(fn.id || '').startsWith('ss:')) type = 'ScriptStepType';

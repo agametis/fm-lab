@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Globale variabele slechts in één script gebruikt",
+    "description": "Codestijlregel — globale ($$) variabelen die binnen één enkel script worden ingesteld en gelezen. Een lokale ($) variabele zou de bedoeling beter uitdrukken.\n\nGebaseerd op de PMD-regel GlobalVariable — https://docs.pmd-code.org/latest/pmd_rules_ecmascript_bestpractices.html#globalvariable"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Globale variabele slechts in één script gebruikt",
+    "findings_table.props.searchPlaceholder": "Variabele zoeken…",
+    "findings_table.props.empty.message": "Geen globale variabelen in slechts één script gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Variabele",
+    "findings_table.props.columns[2].label": "Leesbewerkingen"
+  }
+}

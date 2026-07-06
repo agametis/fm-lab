@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Deaktivierter Account",
+    "description": "Unused-Code-/Sicherheits-Regel — deaktivierte Accounts. Alte deaktivierte Accounts sollten entfernt werden, um die Sicherheitsfläche sauber zu halten."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Deaktivierter Account",
+    "findings_table.props.searchPlaceholder": "Datei oder Account suchen…",
+    "findings_table.props.empty.message": "Keine deaktivierten Accounts gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Account",
+    "findings_table.props.columns[2].label": "Berechtigungsset"
+  }
+}

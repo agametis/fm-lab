@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "未记录的脚本",
+    "description": "文档规则 — 没有任何注释步骤的非平凡脚本（10 步以上）。难以交接或维护。\n\n基于 PMD 规则 CommentRequired — https://docs.pmd-code.org/latest/pmd_rules_java_documentation.html#commentrequired 表格上方的筛选开关可在无注释和有注释的对象之间切换（有注释的可作为模板/参考）。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "未记录的脚本",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到未记录的脚本。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "步骤数",
+    "comment_filter.props.options[0].label": "未记录",
+    "comment_filter.props.options[1].label": "已记录"
+  }
+}

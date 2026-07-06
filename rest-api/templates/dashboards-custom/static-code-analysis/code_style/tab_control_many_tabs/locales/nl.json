@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Tabbesturing met veel tabbladen",
+    "description": "Codestijlregel — tabbesturingen met meer dan zes tabbladen. Te veel tabbladen verbergen inhoud en zijn lastig te navigeren. Drempel instelbaar via de schuifregelaar (standaard 6)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Tabbesturing met veel tabbladen",
+    "findings_table.props.searchPlaceholder": "Bestand of Layout zoeken…",
+    "findings_table.props.empty.message": "Geen overladen tabbesturingen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tabbladen",
+    "threshold_slider.props.label": "Tabbladen per tabbesturing (minimum)",
+    "threshold_slider.props.valueSuffix": "tabbladen"
+  }
+}

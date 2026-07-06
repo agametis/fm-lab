@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "다중 필드 관계",
+    "description": "코드 스타일 규칙 — 필드 조건자가 세 개 이상인 관계. 매우 넓은 조인 키는 따라가기 어렵고 종종 키 필드가 없음을 나타냅니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "다중 필드 관계",
+    "findings_table.props.searchPlaceholder": "테이블 어커런스 검색…",
+    "findings_table.props.empty.message": "다중 필드 관계를 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "왼쪽 TO",
+    "findings_table.props.columns[2].label": "오른쪽 TO",
+    "findings_table.props.columns[3].label": "조건자"
+  }
+}

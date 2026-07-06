@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Plugin-beroende",
+    "description": "Inventering av plugin-beroenden: anropsställen per plugin-komponent (MBS och andra) × fil, upplösta via calls_pluginfunction, samt Install Plug-In File-steg. En riskvy — vilka moduler skulle vara döda utan plugin-programmet?"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Plugin-anropsställen",
+    "summary_kpistrip.props.items[1].label": "Komponenter",
+    "summary_kpistrip.props.items[2].label": "Funktioner",
+    "summary_kpistrip.props.items[3].label": "Berörda filer",
+    "summary_kpistrip.props.items[4].label": "Install Plug-In-steg",
+    "components.props.title": "Komponenter",
+    "components_table.props.columns[0].label": "Plugin",
+    "components_table.props.columns[1].label": "Komponent",
+    "components_table.props.columns[2].label": "Anropsställen",
+    "components_table.props.columns[3].label": "Funktioner",
+    "components_table.props.columns[4].label": "Filer",
+    "top_functions.props.title": "Mest använda funktioner",
+    "top_functions_table.props.columns[0].label": "Funktion",
+    "top_functions_table.props.columns[1].label": "Komponent",
+    "top_functions_table.props.columns[2].label": "Anropsställen",
+    "top_functions_table.props.columns[3].label": "Filer",
+    "markdown.props.content": "## Anmärkningar\n\nVilka **plugin-program** lösningen är beroende av, och var. Anropsställen läses från de upplösta `calls_pluginfunction`-länkarna (`MBS:<Komponent>.<Funktion>`), så listan *Mest använda funktioner* navigerar direkt till plugin-funktionens where-used-vy.\n\n- **Komponenter**: anropsställen, distinkta funktioner och berörda filer per plugin-komponent. Klicka på en komponent för att filtrera funktionslistan.\n- **Riskvy**: en modul som bygger på en komponent med många anropsställen är död utan det installerade plugin-programmet — *Install Plug-In File*-steg visar var lösningen själv installerar plugin-program.\n- **Navigering**: att klicka på en funktion öppnar dess plugin-funktionsdetalj (where-used).\n- **Relaterade regler**: härledda allvarlighetsregler finns under *Static Code Analysis*.\n- **Sortering**: alla kolumnrubriker är klickbara (▲▼)."
+  }
+}

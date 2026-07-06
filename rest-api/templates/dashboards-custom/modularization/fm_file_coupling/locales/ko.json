@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "FileMaker 파일 결합",
+    "description": "솔루션의 FileMaker 파일 간 모듈 결합 매트릭스: 파일 간 ObjectLinks를 소스 파일 × 대상 파일 × 링크 역할로 집계하고, 선언된 외부 FileMaker 데이터 소스와 파일 간 접근 권한을 더한 것입니다. \"어떤 모듈이 어떤 모듈에 의존하는가?\"를 표 형식의 감사 뷰로 답하며 Graph Atlas를 보완합니다."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "파일 간 링크",
+    "summary_kpistrip.props.items[1].label": "결합된 파일 쌍",
+    "summary_kpistrip.props.items[2].label": "소스 파일",
+    "summary_kpistrip.props.items[3].label": "최대 팬아웃",
+    "summary_kpistrip.props.items[4].label": "외부 FM 소스",
+    "summary_kpistrip.props.items[5].label": "파일 권한",
+    "by_role.props.title": "링크 역할별 결합",
+    "by_role_table.props.columns[0].label": "링크 역할",
+    "by_role_table.props.columns[1].label": "유형",
+    "by_role_table.props.columns[2].label": "링크",
+    "by_role_table.props.columns[3].label": "쌍",
+    "by_role_table.props.columns[4].label": "소스 파일",
+    "by_role_table.props.columns[5].label": "대상 파일",
+    "coupling.props.title": "결합 매트릭스 (소스 → 대상)",
+    "coupling_table.props.columns[0].label": "소스 파일",
+    "coupling_table.props.columns[1].label": "대상 파일",
+    "coupling_table.props.columns[2].label": "링크",
+    "coupling_table.props.columns[3].label": "역할",
+    "coupling_table.props.columns[4].label": "상위 역할",
+    "coupling_details.props.title": "결합 세부 정보 (개별 링크)",
+    "coupling_details_table.props.columns[0].label": "소스 파일",
+    "coupling_details_table.props.columns[1].label": "소스 유형",
+    "coupling_details_table.props.columns[2].label": "소스 객체",
+    "coupling_details_table.props.columns[3].label": "역할",
+    "coupling_details_table.props.columns[4].label": "대상 파일",
+    "coupling_details_table.props.columns[5].label": "대상 유형",
+    "coupling_details_table.props.columns[6].label": "대상 객체",
+    "external_sources.props.title": "외부 FileMaker 데이터 소스 (선언된 결합)",
+    "external_sources_table.props.columns[0].label": "출처 파일",
+    "external_sources_table.props.columns[1].label": "소스 선언",
+    "external_sources_table.props.columns[2].label": "TOs",
+    "external_sources_table.props.columns[3].label": "예시 TO",
+    "markdown.props.content": "## 참고\n\n**모듈화 카테고리의 핵심 대시보드** — *어떤 모듈이 어떤 모듈에 의존하는가?* 에 직접 답하며 Graph Atlas를 표 형식의 감사 뷰로 보완합니다.\n\n- **KPI**: *파일 간 링크* = `Is_Cross_File = TRUE`이고 소스/대상 파일이 서로 다른 모든 운영 `ObjectLinks`. *결합된 파일 쌍* = 고유한 방향성 (소스 → 대상) 쌍. *최대 팬아웃* = 단일 소스 파일에서 도달하는 고유한 대상 파일의 최대 수. *외부 FM 소스* = 고유한 FileMaker 데이터 소스 선언. *파일 권한* = `FileAccessAuthorizations`의 행 수.\n- **링크 역할별 결합**: 파일 간 트래픽이 종류별(`displays_field`, `reads_field`, `calls_script`, `base_table`, …)로 어떻게 나뉘는지. 역할을 클릭하면 세부 목록이 해당 역할로 필터링됩니다.\n- **결합 매트릭스**: 방향성 파일 쌍마다 한 행으로 링크 수, 고유 역할 수, 상위 역할 미리보기를 표시합니다. 쌍을 클릭하면 세부 목록이 정확히 그 소스 → 대상 결합으로 필터링됩니다.\n- **결합 세부 정보**: 선택한 쌍/역할 뒤에 있는 개별 링크 — 파일 B의 대상 객체를 참조하는 파일 A의 소스 객체. 행을 클릭하면 **대상** 객체가 열립니다.\n- **외부 FM 소스**: 선언적 측면 — 어떤 파일이 어떤 다른 파일을 외부 데이터 소스로 등록하는지(실제 객체 트래픽과는 무관). 행을 클릭하면 해당 소스의 알파벳순 첫 번째 테이블 어커런스가 열립니다.\n- 파일 간 링크는 본질적으로 운영적입니다(구조적 포함은 FileMaker에서 파일 경계를 넘지 않습니다). 따라서 구조 열은 없습니다.\n- **관련 규칙**: 과도한 결합에 대한 파생된 심각도 규칙은 *Static Code Analysis* 아래에 있습니다.\n- **정렬**: 모든 열 머리글은 클릭 가능합니다(▲▼)."
+  }
+}

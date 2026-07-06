@@ -40,7 +40,13 @@ layout_objects_raw AS (
     lo.Tooltip_Calculation_Text,
     lo.Label_Calculation_Text,
     lo.Text_Content,
-    CAST(lo.Object_XML AS VARCHAR) LIKE '%<ConditionalFormat%' AS Has_Conditional_Fmt,
+    -- Bedingte Formatierung. Das Element <ConditionalFormat> existiert im SaXML
+    -- NICHT (Marker war immer false → 0 Treffer trotz 12k+ betroffener Objekte). Realer
+    -- Marker: <Conditions> umschließt DIREKT ein <Formatting> (whitespace-tolerant, da im
+    -- gespeicherten XML Newlines zwischen den Tags stehen). Plain <Formatting> wäre zu breit
+    -- (fängt die Daten-Formatierung aus <ExtendedAttributes>); <Conditions><Hide> ist die
+    -- bedingte Sichtbarkeit (separat). Kein ':'-Token → API-:param-Präprozessor unkritisch.
+    regexp_matches(CAST(lo.Object_XML AS VARCHAR), '<Conditions>\s*<Formatting') AS Has_Conditional_Fmt,
     lo.Layout_ID,
     lo.File_Name
   FROM LayoutObjects lo

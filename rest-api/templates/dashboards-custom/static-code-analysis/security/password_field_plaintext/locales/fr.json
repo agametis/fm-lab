@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Champ de mot de passe stocké en clair",
+    "description": "Règle de sécurité : champs normaux (stockés) dont le nom évoque un mot de passe/PIN. Sauf si le fichier a le chiffrement au repos (EAR) activé, FileMaker stocke les valeurs en clair. La colonne « Encryption at rest » indique l’état EAR de chaque fichier."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Champ de mot de passe stocké en clair",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, une table ou un champ…",
+    "findings_table.props.empty.message": "Aucun champ de mot de passe en clair trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Table",
+    "findings_table.props.columns[2].label": "Champ",
+    "findings_table.props.columns[3].label": "Encryption at rest"
+  }
+}

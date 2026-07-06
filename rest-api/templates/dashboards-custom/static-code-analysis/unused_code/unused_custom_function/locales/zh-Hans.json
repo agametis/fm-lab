@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "未使用的 Custom Function",
+    "description": "未使用代码规则 — 未被任何计算、脚本或其他函数调用的 Custom Function。\n\n基于 PMD 规则 UnusedPrivateMethod — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatemethod"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "未使用的 Custom Function",
+    "findings_table.props.searchPlaceholder": "搜索文件或名称…",
+    "findings_table.props.empty.message": "未找到匹配项。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "名称"
+  }
+}

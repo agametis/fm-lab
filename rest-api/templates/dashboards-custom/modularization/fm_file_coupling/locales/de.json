@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "FileMaker-Datei-Kopplung",
+    "description": "Modul-Kopplungs-Matrix zwischen den FileMaker-Dateien der Lösung: Cross-File-ObjectLinks aggregiert nach Quelldatei × Zieldatei × Link-Rolle, plus die deklarierten externen FileMaker-Datenquellen und Datei-Zugriffs-Autorisierungen. Beantwortet „welches Modul hängt an welchem?“ als tabellarische Audit-Sicht, ergänzend zum Graph-Atlas."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Cross-File-Links",
+    "summary_kpistrip.props.items[1].label": "Gekoppelte Datei-Paare",
+    "summary_kpistrip.props.items[2].label": "Quelldateien",
+    "summary_kpistrip.props.items[3].label": "Max. Fan-out",
+    "summary_kpistrip.props.items[4].label": "Externe FM-Quellen",
+    "summary_kpistrip.props.items[5].label": "Datei-Autorisierungen",
+    "by_role.props.title": "Kopplung nach Link-Rolle",
+    "by_role_table.props.columns[0].label": "Link-Rolle",
+    "by_role_table.props.columns[1].label": "Typ",
+    "by_role_table.props.columns[2].label": "Links",
+    "by_role_table.props.columns[3].label": "Paare",
+    "by_role_table.props.columns[4].label": "Quelldateien",
+    "by_role_table.props.columns[5].label": "Zieldateien",
+    "coupling.props.title": "Kopplungs-Matrix (Quelle → Ziel)",
+    "coupling_table.props.columns[0].label": "Quelldatei",
+    "coupling_table.props.columns[1].label": "Zieldatei",
+    "coupling_table.props.columns[2].label": "Links",
+    "coupling_table.props.columns[3].label": "Rollen",
+    "coupling_table.props.columns[4].label": "Top-Rollen",
+    "coupling_details.props.title": "Kopplungs-Details (einzelne Links)",
+    "coupling_details_table.props.columns[0].label": "Quelldatei",
+    "coupling_details_table.props.columns[1].label": "Quelltyp",
+    "coupling_details_table.props.columns[2].label": "Quell-Objekt",
+    "coupling_details_table.props.columns[3].label": "Rolle",
+    "coupling_details_table.props.columns[4].label": "Zieldatei",
+    "coupling_details_table.props.columns[5].label": "Zieltyp",
+    "coupling_details_table.props.columns[6].label": "Ziel-Objekt",
+    "external_sources.props.title": "Externe FileMaker-Datenquellen (deklarierte Kopplung)",
+    "external_sources_table.props.columns[0].label": "Aus Datei",
+    "external_sources_table.props.columns[1].label": "Deklariert Quelle",
+    "external_sources_table.props.columns[2].label": "TOs",
+    "external_sources_table.props.columns[3].label": "Beispiel-TO",
+    "markdown.props.content": "## Hinweise\n\n**Das Kern-Dashboard der Kategorie Modularisierung** — es beantwortet *welches Modul hängt an welchem?* direkt und ergänzt den Graph-Atlas um eine tabellarische Audit-Sicht.\n\n- **KPIs**: *Cross-File-Links* = alle operativen `ObjectLinks` mit `Is_Cross_File = TRUE` und unterschiedlicher Quell-/Zieldatei. *Gekoppelte Datei-Paare* = eindeutige gerichtete (Quelle → Ziel) Paare. *Max. Fan-out* = höchste Anzahl unterschiedlicher Zieldateien, die von einer Quelldatei erreicht werden. *Externe FM-Quellen* = eindeutige FileMaker-Datenquellen-Deklarationen. *Datei-Autorisierungen* = Zeilen in `FileAccessAuthorizations`.\n- **Kopplung nach Link-Rolle**: wie sich der Cross-File-Verkehr nach Art aufteilt (`displays_field`, `reads_field`, `calls_script`, `base_table`, …). Klick auf eine Rolle filtert die Detailliste auf diese Rolle.\n- **Kopplungs-Matrix**: eine Zeile je gerichtetem Datei-Paar mit Link-Anzahl, Anzahl verschiedener Rollen und einer Vorschau der Top-Rollen. Klick auf ein Paar filtert die Detailliste auf genau diese Quelle → Ziel-Kopplung.\n- **Kopplungs-Details**: die einzelnen Links hinter einem gewählten Paar / einer Rolle — das Quell-Objekt in Datei A, das ein Ziel-Objekt in Datei B referenziert. Klick auf eine Zeile öffnet das **Ziel**-Objekt.\n- **Externe FM-Quellen**: die deklarative Seite — welche Datei registriert welche andere Datei als externe Datenquelle (unabhängig vom tatsächlichen Objekt-Verkehr). Klick auf eine Zeile öffnet die alphabetisch erste Tabellenauftreten dieser Quelle.\n- Cross-File-Links sind naturgemäß operativ (strukturelle Containment-Beziehungen überschreiten in FileMaker nie eine Dateigrenze), daher gibt es keine Structural-Spalte.\n- **Zugehörige Regeln**: die abgeleiteten Severity-Regeln für übermäßige Kopplung liegen unter *Statische Code-Analyse*.\n- **Sortierung**: alle Spaltenüberschriften sind klickbar (▲▼)."
+  }
+}

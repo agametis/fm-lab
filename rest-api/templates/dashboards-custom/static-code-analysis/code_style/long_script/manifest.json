@@ -1,0 +1,71 @@
+{
+  "locked": true,
+  "id": "long_script",
+  "version": "1.0.0",
+  "title": "Long Script",
+  "description": "Code-style rule — scripts with more than 150 steps. Very long scripts are hard to read, test and reuse.\n\nBased on the PMD rule ExcessiveMethodLength — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessivemethodlength Threshold adjustable via the header slider (default 150).",
+  "author": "fm-lab rules",
+  "icon": "scroll",
+  "category": "code_style",
+  "tags": [
+    "rule",
+    "pmd",
+    "code_style"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "code_style",
+    "rationale": "Long scripts concentrate too much responsibility in one place.",
+    "remediation": "Extract cohesive sections into sub-scripts with clear parameters.",
+    "meta": {
+      "name": "Long Script",
+      "author": "fm-lab rules",
+      "source": "PMD",
+      "url": "https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessivemethodlength",
+      "description": "Code-style rule — scripts with more than 150 steps. Very long scripts are hard to read, test and reuse. Threshold adjustable via the header slider (default 150).",
+      "created": "2026-07-01",
+      "references": [
+        {
+          "project": "PMD",
+          "rule": "ExcessiveMethodLength",
+          "url": "https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessivemethodlength"
+        }
+      ]
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    },
+    {
+      "name": "min_steps",
+      "type": "number",
+      "required": false,
+      "description": "Minimum steps per script (header slider; default 150)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

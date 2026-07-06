@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Script-Kommentar-Dichte",
+    "description": "Dokumentations-Regel — vergleicht Scripts nach Gesamt-Step-Anzahl, echten Kommentar-Steps und reinen Whitespace-Kommentaren inklusive Kommentar-Dichte-Faktor. Ergänzt die binäre Regel „Undokumentiertes Script“, indem sie bewertet, wie gut umfangreichere Scripts kommentiert sind. Mindest-Step-Anzahl über den Kopf-Slider einstellbar (Standard 10)."
+  },
+  "layout": {
+    "script_comment_density_kpi_kpistrip.props.items[0].label": "Scripts gesamt",
+    "script_comment_density_kpi_kpistrip.props.items[1].label": "Ab min_steps",
+    "script_comment_density_kpi_kpistrip.props.items[2].label": "Ohne Kommentar",
+    "script_comment_density_kpi_kpistrip.props.items[3].label": "Median Kommentar-%",
+    "script_comment_density.props.title": "Scripts nach Step-Anzahl, Kommentaren und Whitespace",
+    "script_comment_density_table.props.columns[0].label": "Script",
+    "script_comment_density_table.props.columns[1].label": "Datei",
+    "script_comment_density_table.props.columns[2].label": "Steps gesamt",
+    "script_comment_density_table.props.columns[3].label": "Echte Kommentare",
+    "script_comment_density_table.props.columns[4].label": "Whitespace-Steps",
+    "script_comment_density_table.props.columns[5].label": "Kommentar-%",
+    "script_comment_density_table.props.columns[6].label": "Whitespace-%",
+    "script_comment_density_table.props.empty.message": "Keine Scripts entsprechen dem Filter.",
+    "threshold_slider.props.label": "Schritte pro Script (Minimum)",
+    "threshold_slider.props.valueSuffix": "Schritte"
+  }
+}

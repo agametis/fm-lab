@@ -1,0 +1,58 @@
+{
+  "id": "self_recursive_script",
+  "version": "1.0.0",
+  "title": "Self-recursive Script",
+  "description": "Error-prone rule — scripts that call themselves. Recursion can be intentional, but without a solid exit condition it risks a stack overflow.",
+  "author": "fm-lab rules",
+  "icon": "refresh-cw",
+  "category": "error_prone",
+  "tags": [
+    "rule",
+    "pmd",
+    "error_prone"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "error_prone",
+    "rationale": "Self-recursion without a guaranteed base case can exhaust the call stack.",
+    "remediation": "Confirm a reliable exit condition, or rewrite as a loop.",
+    "meta": {
+      "name": "Self-recursive Script",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Error-prone rule — scripts that call themselves. Recursion can be intentional, but without a solid exit condition it risks a stack overflow.",
+      "created": "2026-07-01",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "URL fisso nel calcolo",
+    "description": "Regola di sicurezza/manutenibilità: frammenti di calcolo con un URL http(s):// letterale. Gli endpoint fissi sono fragili e rivelano l’infrastruttura."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "URL fisso nel calcolo",
+    "findings_table.props.searchPlaceholder": "Cerca file, script o URL…",
+    "findings_table.props.empty.message": "Nessun URL fisso trovato nei calcoli.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Trovato in",
+    "findings_table.props.columns[2].label": "URL"
+  }
+}

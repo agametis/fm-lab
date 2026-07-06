@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "以明文显示的密码字段",
+    "description": "安全规则 — 密码/PIN 字段在布局上由一个并非\"加密编辑框\"的对象显示，因此该值以明文出现在布局上。按布局对象逐条列出（同一字段可能在多个布局上可见）。\n\n补充存储规则(password_field_plaintext)：此处针对的是在布局对象层面决定的屏幕显示，而非字段本身。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "以明文显示的密码字段",
+    "findings_table.props.searchPlaceholder": "搜索字段或布局…",
+    "findings_table.props.empty.message": "没有以明文显示的密码字段。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "字段",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

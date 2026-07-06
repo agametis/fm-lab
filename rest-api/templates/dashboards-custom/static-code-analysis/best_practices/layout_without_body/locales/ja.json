@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "本体パートのない Layout",
+    "description": "ベストプラクティスルール — 本体パートのない Layout。本体がないとフォーム／リスト表示でレコードが表示されません。多くは迷子や作りかけの Layout です。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "本体パートのない Layout",
+    "findings_table.props.searchPlaceholder": "ファイルまたは Layout を検索…",
+    "findings_table.props.empty.message": "本体パートのない Layout は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

@@ -28,20 +28,30 @@ The first release focuses on this core: reliable **XML conversion**, a comprehen
 
 **Addendum:** [Claris has announced upcoming agentic coding functionality for FileMaker](https://www.claris.com/blog/2026/how-claris-is-building-for-what-comes-next) for the upcoming releases. This does not contradict the goals of this project, but rather emphasizes the need for a solid foundation for code analysis and tooling in the FileMaker ecosystem. The architecture of fm-lab is designed to be flexible and adaptable, so it can integrate with Claris's AI coding features as they evolve, while also providing value to developers who want to leverage AI tools in their workflows today.
 
+## Analysis workflows
+
+FM-Lab supports four complementary approaches to analyzing a FileMaker solution:
+
+- **Interactive exploration** - browse the solution through a web frontend with rich navigation, visualizations, and drill-down views
+- **Static code analysis** - detect known patterns, issues, and structural signals through targeted catalog queries
+- **Graph-based analysis** - inspect object relationships using graph algorithms, visual maps, and LLM-assisted reasoning
+- **Agent-based analysis** - give AI agents direct, structured access to the knowledge graph, metadata, and documentation context
+
 ## Features
 
-- **XML Ingestion Pipeline** — for FileMaker XML exports into a DuckDB database using a flexible SQL template system, designed for easy maintenance and updates as FileMaker evolves ♻️
-- **Katana-Engine** — XML chunking + streaming, enabling massive catalogs to be processed with minimal memory usage and maximum parallelism. 🔪
-- **Detailed Object Catalog** — a set of detailed tables covering the relevant FileMaker object types, with a universal catalog linking objects and their dependencies for fast cross-reference queries 🔗
-- **Detailed Reference Catalog** — localized tables for all documented FileMaker script steps and functions, providing reference queries and inline help-docs across up to 11 locales 📄
-- **DuckDB Backend** — In-process analytical database engine for fast and flexible queries without server setup, often delivering results in milliseconds, even for large solutions 🚀
+- **XML Ingestion Pipeline** — converts FileMaker XML exports into a DuckDB database using a flexible SQL template system, designed for easy maintenance and updates as FileMaker evolves ♻️
+- **Katana-Engine** — XML chunking and streaming for processing massive catalogs with minimal memory usage and maximum parallelism 🔪
+- **Detailed Object Catalog** — detailed tables for the relevant FileMaker object types, combined with a universal catalog that links objects and their dependencies for fast cross-reference queries 🔗
+- **Detailed Reference Catalog** — localized tables for documented FileMaker script steps and functions, providing reference queries and inline help docs across up to 11 locales 📄
+- **DuckDB Backend** — in-process analytical database engine for fast and flexible queries without server setup, often delivering results in milliseconds, even for large solutions 🚀
 - **REST API** — Express server providing HTTP access to the analysis database, enabling integration with external tools and services 🧩
-- **Web Client** — React/Vite frontend for interactive exploration of the solution's structure and dependencies with rich visualizations 🔎
-- **Graph-based Analysis** — an interactive Graph Explorer for the full object graph, with automatic community detection that reveals named clusters across the solution — transforming thousands of objects and links into a navigable graph map. 🕸️
-- **Claude Skills** — Slash commands for agentic analysis workflows in Claude Code, supported by helpers for XML conversion and documentation setup — complementing interactive exploration with deep, solution-aware inspection beyond scripted analysis. 🤖
-- **Comprehensive Docs** — Easy-to-install documentation of FileMaker Pro and MBS plugin functions 📚
-- **Plugin System** — Open architecture for adding new tools and integrations, starting with **[fmIDE](https://github.com/fmIDE/fmIDE)** as a first-class citizen to provide direct navigation into FileMaker's Script Workspace 🛠️
-- **Prepared for AI code generation** — The architecture and data model are designed to support AI-driven code generation, augmented by reliable context from the object catalog and the integrated docs 🧠
+- **Web Client** — React/Vite frontend for interactive exploration of the solution structure and dependencies with rich visualizations 🔎
+- **Dashboard System** — library of predefined analysis patterns, with support for custom queries and custom dashboards 📁
+- **Graph Explorer** — interactive navigation of the full object graph, with automatic community detection that reveals named clusters across the solution and turns thousands of objects and links into a navigable graph map 🕸️
+- **Claude Skills** — slash commands for agentic analysis workflows in Claude Code, supported by helpers for XML conversion and documentation setup, enabling deep, solution-aware inspection beyond scripted analysis 🤖
+- **Comprehensive Docs** — easy-to-install documentation for FileMaker Pro and MBS plugin functions 📚
+- **Plugin System** — open architecture for adding new tools and integrations, starting with **[fmIDE](https://github.com/fmIDE/fmIDE)** as a first-class citizen to provide direct navigation into FileMaker's Script Workspace 🛠️
+- **Prepared for AI code generation** — architecture and data model designed to support AI-driven code generation, augmented by reliable context from the object catalog and the integrated documentation 🧠
 
 ## [Architecture](docs/fm-lab/Wiki/Architecture.md)
 
@@ -129,6 +139,7 @@ FileMaker XML exports are supported on all platforms where FileMaker Pro is avai
 ## Prerequisites for the Analysis Tool (Standalone via GUI or REST API)
 
 - [DuckDB CLI](https://duckdb.org/docs/installation/) ≥ 1.5.4
+- The **webbed** community extension for DuckDB (the XML reader). `tools/init.sh` installs it automatically when missing.
 - Node.js ≥ 20, npm ≥ 10
 - FileMaker Pro (for the SaXML export, SaXML v2.1.0.0+ / FileMaker 19+)
 
@@ -282,6 +293,7 @@ The project has grown along a clear arc — from a solid foundation toward an in
 - **v0.8.0 – v0.8.2** · _Katana XML engine_ — optimized and powerful XML ingestion.
 - **v0.8.3 – v0.8.5** · _Graph-based analysis_ — community detection, semantic naming, and an interactive Graph Explorer.
 - **v0.8.6** · _Docker installer_ - including all dependencies for easy setup. Experimental Windows support via Docker on WSL2.
+- **v0.8.7 – v0.8.8** · _Static code analysis_ - predefined inspection queries for standard checks, completion of the object catalog, and expanded reference coverage.
 
 - More details in [`CHANGELOG.md`](CHANGELOG.md) — release history
 

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Table de base avec de nombreuses occurrences",
+    "description": "Règle de style de code : tables de base avec plus de huit occurrences de table. Un nombre très élevé indique un graphe de relations enchevêtré."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Table de base avec de nombreuses occurrences",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou une table…",
+    "findings_table.props.empty.message": "Aucune table de base avec de nombreuses occurrences trouvée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Table de base",
+    "findings_table.props.columns[2].label": "Occurrences"
+  }
+}

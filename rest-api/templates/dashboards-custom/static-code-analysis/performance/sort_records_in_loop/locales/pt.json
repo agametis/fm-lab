@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Sort Records em Loop",
+    "description": "Regra de desempenho — Sort Records dentro de um Loop; ordenar a cada iteração raramente é intencional."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Sort Records em Loop",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhuma ocorrência para \"Sort Records em Loop\" encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Etapa",
+    "findings_table.props.columns[3].label": "Profundidade"
+  }
+}

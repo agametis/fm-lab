@@ -1,0 +1,300 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpistrip",
+            "props": {
+              "items": [
+                {
+                  "label": "Cross-file links",
+                  "field": "total_links",
+                  "format": "number"
+                },
+                {
+                  "label": "Coupled file pairs",
+                  "field": "coupled_pairs",
+                  "format": "number"
+                },
+                {
+                  "label": "Source files",
+                  "field": "source_files",
+                  "format": "number"
+                },
+                {
+                  "label": "Max fan-out",
+                  "field": "max_fan_out",
+                  "format": "number"
+                },
+                {
+                  "label": "External FM sources",
+                  "field": "external_sources",
+                  "format": "number"
+                },
+                {
+                  "label": "File authorizations",
+                  "field": "file_authorizations",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "by_role",
+        "props": {
+          "span": 12,
+          "title": "Coupling by link role"
+        },
+        "data": {
+          "dataset": "by_role"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "by_role_table",
+            "props": {
+              "rowKey": "link_role",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                {
+                  "field": "link_role",
+                  "label": "Link role",
+                  "format": "badge"
+                },
+                {
+                  "field": "link_type",
+                  "label": "Type"
+                },
+                {
+                  "field": "links",
+                  "label": "Links",
+                  "align": "right"
+                },
+                {
+                  "field": "pairs",
+                  "label": "Pairs",
+                  "align": "right"
+                },
+                {
+                  "field": "source_files",
+                  "label": "Src files",
+                  "align": "right"
+                },
+                {
+                  "field": "target_files",
+                  "label": "Tgt files",
+                  "align": "right"
+                }
+              ],
+              "onRowClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "fm_file_coupling",
+                  "params": {
+                    "link_role": "{{link_role}}"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "coupling",
+        "props": {
+          "span": 12,
+          "title": "Coupling matrix (source → target)"
+        },
+        "data": {
+          "dataset": "coupling"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "coupling_table",
+            "props": {
+              "rowKey": "source_file",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                {
+                  "field": "source_file",
+                  "label": "Source file"
+                },
+                {
+                  "field": "target_file",
+                  "label": "Target file"
+                },
+                {
+                  "field": "links",
+                  "label": "Links",
+                  "align": "right"
+                },
+                {
+                  "field": "roles",
+                  "label": "Roles",
+                  "align": "right"
+                },
+                {
+                  "field": "sample_roles",
+                  "label": "Top roles"
+                }
+              ],
+              "onRowClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "fm_file_coupling",
+                  "params": {
+                    "source_file": "{{source_file}}",
+                    "target_file": "{{target_file}}"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "coupling_details",
+        "props": {
+          "span": 12,
+          "title": "Coupling details (individual links)"
+        },
+        "data": {
+          "dataset": "coupling_details"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "coupling_details_table",
+            "props": {
+              "rowKey": "target_uuid",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                {
+                  "field": "source_file",
+                  "label": "Src file"
+                },
+                {
+                  "field": "source_type",
+                  "label": "Src type",
+                  "format": "badge"
+                },
+                {
+                  "field": "source_object",
+                  "label": "Source object"
+                },
+                {
+                  "field": "link_role",
+                  "label": "Role",
+                  "format": "badge"
+                },
+                {
+                  "field": "target_file",
+                  "label": "Tgt file"
+                },
+                {
+                  "field": "target_type",
+                  "label": "Tgt type",
+                  "format": "badge"
+                },
+                {
+                  "field": "target_object",
+                  "label": "Target object"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{target_uuid}}",
+                  "type": "{{target_type}}",
+                  "file": "{{target_file}}"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "external_sources",
+        "props": {
+          "span": 12,
+          "title": "External FileMaker data sources (declared coupling)"
+        },
+        "data": {
+          "dataset": "external_sources"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "external_sources_table",
+            "props": {
+              "rowKey": "sample_to_uuid",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                {
+                  "field": "from_file",
+                  "label": "From file"
+                },
+                {
+                  "field": "to_source",
+                  "label": "Declares source"
+                },
+                {
+                  "field": "to_count",
+                  "label": "TOs",
+                  "align": "right"
+                },
+                {
+                  "field": "sample_to_name",
+                  "label": "Sample TO"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{sample_to_uuid}}",
+                  "type": "TableOccurrence"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Markdown",
+        "id": "markdown",
+        "props": {
+          "span": 12,
+          "content": "## Notes\n\n**The core dashboard of the Modularization category** — it answers *which module depends on which?* directly and complements the Graph Atlas with a tabular audit view.\n\n- **KPIs**: *Cross-file links* = all operational `ObjectLinks` with `Is_Cross_File = TRUE` and distinct source/target file. *Coupled file pairs* = distinct directed (source → target) pairs. *Max fan-out* = highest number of distinct target files reached from a single source file. *External FM sources* = distinct FileMaker data-source declarations. *File authorizations* = rows in `FileAccessAuthorizations`.\n- **Coupling by link role**: how the cross-file traffic breaks down by kind (`displays_field`, `reads_field`, `calls_script`, `base_table`, …). Click a role to filter the detail list to that role.\n- **Coupling matrix**: one row per directed file pair with the link count, the number of distinct roles and a preview of the top roles. Click a pair to filter the detail list to exactly that source → target coupling.\n- **Coupling details**: the individual links behind a selected pair / role — the source object in file A referencing a target object in file B. Click a row to open the **target** object.\n- **External FM sources**: the declarative side — which file registers which other file as an external data source (independent of actual object traffic). Click a row to open the alphabetically first table occurrence of that source.\n- Cross-file links are operational by nature (structural containment never crosses a file boundary in FileMaker), so there is no structural column.\n- **Related rules**: the derived severity rules for excessive coupling live under *Static Code Analysis*.\n- **Sorting**: all column headings are clickable (▲▼)."
+        }
+      }
+    ]
+  }
+}

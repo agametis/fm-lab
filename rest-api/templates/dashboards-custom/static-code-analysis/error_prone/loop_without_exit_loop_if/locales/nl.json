@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Loop zonder Exit Loop If",
+    "description": "Foutgevoelige regel — scripts met een Loop maar zonder betrouwbare afsluiter: geen Exit Loop If en geen \"Ga naar record/verzoek/pagina\" of \"Ga naar portaalrij\" met \"Afsluiten na laatste\" binnen de Loop. De overige Loops draaien mogelijk eindeloos."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Loop zonder Exit Loop If",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen Loops zonder Exit Loop If gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Loops"
+  }
+}

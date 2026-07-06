@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Set Field By Name (destino dinâmico)",
+    "description": "Regra de estilo de código — etapas Set Field By Name. O campo de destino é calculado em tempo de execução, de modo que a análise estática e a refatoração não conseguem acompanhá-lo."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Set Field By Name (destino dinâmico)",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhuma etapa Set Field By Name encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Etapa"
+  }
+}

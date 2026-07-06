@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Control de pestañas con muchas pestañas",
+    "description": "Regla de estilo de código: controles de pestañas con más de seis pestañas. Demasiadas pestañas ocultan contenido y dificultan la navegación. Umbral ajustable con el control deslizante (predeterminado 6)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Control de pestañas con muchas pestañas",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o Layout…",
+    "findings_table.props.empty.message": "No se encontraron controles de pestañas sobrecargados.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Pestañas",
+    "threshold_slider.props.label": "Pestañas por control de pestañas (mínimo)",
+    "threshold_slider.props.valueSuffix": "pestañas"
+  }
+}

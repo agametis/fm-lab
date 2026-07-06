@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "缺少 Exit Loop If 的 Loop",
+    "description": "易错规则 — 有 Loop 但缺少可靠终止条件的脚本：Loop 内既无 Exit Loop If，也无带\"到最后一条后退出\"的\"转到记录/请求/页\"或\"转到门户行\"。其余 Loop 可能无限运行。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "缺少 Exit Loop If 的 Loop",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到缺少 Exit Loop If 的 Loop。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "Loop 数"
+  }
+}

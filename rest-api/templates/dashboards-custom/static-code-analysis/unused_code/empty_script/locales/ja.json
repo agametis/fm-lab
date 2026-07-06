@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "空のスクリプト",
+    "description": "未使用コードルール — ステップが 1 つもないスクリプト。多くは実装されなかったプレースホルダーです。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "空のスクリプト",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "空のスクリプトは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト"
+  }
+}

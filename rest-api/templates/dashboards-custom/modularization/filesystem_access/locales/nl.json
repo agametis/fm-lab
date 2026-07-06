@@ -1,0 +1,35 @@
+{
+  "manifest": {
+    "title": "Bestandssysteemtoegang",
+    "description": "Inventaris van alle bestandssysteem-contactpunten van de oplossing, geclassificeerd op bewerking en API-groep, met drilldown tot de aanroeplocatie. Dekt native FileMaker-commando's (Data File API, Import/Insert, Export/Save — Step_ID-gestuurd, locale-onafhankelijk) en MBS-pluginfuncties (Files / Text / Container / Path / Folders / FileDialog, opgelost via calls_pluginfunction-koppelingen). Netwerktoegang blijft in het APIs-dashboard. Breid de WHEN-takken uit voor projectspecifieke MBS-componenten."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Contactpunten",
+    "summary_kpistrip.props.items[1].label": "Kritiek (write+delete)",
+    "summary_kpistrip.props.items[2].label": "Delete",
+    "summary_kpistrip.props.items[3].label": "Betrokken bestanden",
+    "summary_kpistrip.props.items[4].label": "MBS-aanroepen",
+    "summary_kpistrip.props.items[5].label": "Native stappen",
+    "fs_groups.props.title": "Groepen (API-groep × bewerking)",
+    "fs_groups_table.props.columns[0].label": "API-groep",
+    "fs_groups_table.props.columns[1].label": "Bewerking",
+    "fs_groups_table.props.columns[2].label": "Treffers",
+    "fs_groups_table.props.columns[3].label": "Bestanden",
+    "findings.props.title": "Contactpunten (aanroeplocaties)",
+    "findings_table.props.columns[0].label": "Groep",
+    "findings_table.props.columns[1].label": "Bewerking",
+    "findings_table.props.columns[2].label": "Ref-type",
+    "findings_table.props.columns[3].label": "Script/Object",
+    "findings_table.props.columns[4].label": "Stap/Functie",
+    "findings_table.props.columns[5].label": "Bestand",
+    "findings_table.props.columns[6].label": "#",
+    "fs_paths.props.title": "Pad-literalen (waar schrijft / leest de oplossing?)",
+    "fs_paths_table.props.columns[0].label": "Pad-literaal",
+    "fs_paths_table.props.columns[1].label": "Directory",
+    "fs_paths_table.props.columns[2].label": "Script",
+    "fs_paths_table.props.columns[3].label": "Step",
+    "fs_paths_table.props.columns[4].label": "Bestand",
+    "fs_paths_table.props.columns[5].label": "#",
+    "markdown.props.content": "## Opmerkingen\n\nInventaris van **elk bestandssysteem-contactpunt** van de oplossing — native FileMaker-commando's en MBS-pluginfuncties. Netwerk-/webtoegang blijft in het *APIs en externe interfaces*-dashboard; `Import Records` verschijnt in beide (interface-indicator vs. bestandssysteem-leestoegang).\n\n- **Native commando's zijn Step_ID-gestuurd** (locale-onafhankelijk). SaXML schrijft de stapnaam in de UI-taal van de exporterende client (dit corpus mengt `Datensätze als Excel speichern` en `Save Records as PDF`), dus de logica classificeert op de numerieke `Step_ID`, nooit op de naam. Gedekt: Data File API (188–199), Import/Insert (35, 131, 56, 158, 159, 161), Export/Save (36, 132, 143, 144, 152, 225, 37, 3, 96).\n- **MBS-functies** worden gelezen uit de opgeloste `calls_pluginfunction`-koppelingen (`MBS:<Component>.<Functie>`), niet via tekstvergelijking — daardoor is de waar-gebruikt-navigatie exact. Bestandssysteemcomponenten: `Files.*`, `Path.*`, `Folders.*`, `FileDialog.*`, plus de bestand-I/O-functies van `Text.*` (Read/Write/AppendTextFile) en `Container.*` (Export/ReadFile/WriteFile). Hoofdletterongevoelig (het corpus bevat zowel `FileMakerPathToNativePath` als `FilemakerPathToNativePath`).\n- **Bewerkingen**: `read` / `write` / `delete` / `probe` (bestaat/grootte/datum) / `import` / `export` / `launch` / `mount` / `dialog` (gebruiker-bemiddeld) / `path` (padhulpfuncties) / `manage` (open/close/position/rename). Onbekende `Files.*`-functies vallen terug op `operation = other` — zichtbaar, niet verloren.\n- **KPI's als filters**: *Kritiek (write+delete)* en *Delete* filteren de detaillijst op de risicovolle bewerkingen. *Contactpunten*, *Betrokken bestanden*, *MBS-aanroepen* en *Native stappen* zijn statistiektegels.\n- **Groepen**: klik op een *API-groep × bewerking*-cel om de detaillijst daarop te filteren.\n- **Pad-literalen**: `file:` / `filewin:` / `filemac:`-literalen uit script-stapformules, genormaliseerd op directoryniveau — beantwoordt *waar* de oplossing leest/schrijft. Hardgecodeerde absolute paden verschijnen hier.\n- **Navigatie**: klikken op een contactpunt opent de drager (Script + stapanker, of de Custom Function / het Veld / het Layout-object achter een MBS-aanroep).\n- **Uitbreiden**: voeg projectspecifieke schrijvende MBS-componenten (XL.Book.Save, DynaPDF.Save, Archive/Compression, …) toe als extra WHEN-takken in `data/findings.sql` **en** `data/fs_groups.sql` (houd beide synchroon).\n- **Gerelateerde regels**: de afgeleide ernst-regels (schrijven zonder foutcontrole, hardgecodeerd absoluut pad, delete-gebruik) staan onder *Statische Code-analyse*.\n- **Sorteren**: alle kolomkoppen zijn klikbaar (▲▼)."
+  }
+}

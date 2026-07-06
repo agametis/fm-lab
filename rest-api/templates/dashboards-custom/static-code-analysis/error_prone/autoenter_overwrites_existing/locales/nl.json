@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Auto-invoerberekening overschrijft bestaande waarde",
+    "description": "Foutgevoelige regel — velden waarvan de auto-invoerberekening een bestaande waarde vervangt. Dit kan gebruikersinvoer bij elke wijziging stil overschrijven."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Auto-invoerberekening overschrijft bestaande waarde",
+    "findings_table.props.searchPlaceholder": "Bestand, tabel of veld zoeken…",
+    "findings_table.props.empty.message": "Geen overschrijvende auto-invoerberekeningen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Tabel",
+    "findings_table.props.columns[2].label": "Veld"
+  }
+}

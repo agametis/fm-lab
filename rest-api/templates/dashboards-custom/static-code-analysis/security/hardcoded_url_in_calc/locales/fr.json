@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "URL codée en dur dans un calcul",
+    "description": "Règle de sécurité/maintenabilité : fragments de calcul contenant une URL http(s):// littérale. Les points de terminaison codés en dur sont fragiles et révèlent l’infrastructure."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "URL codée en dur dans un calcul",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un script ou une URL…",
+    "findings_table.props.empty.message": "Aucune URL codée en dur trouvée dans les calculs.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Trouvé dans",
+    "findings_table.props.columns[2].label": "URL"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "笛卡尔积(×)关系",
+    "description": "易错规则 — 使用笛卡尔积运算符(×)的关系。它们将每条记录与所有记录关联；很少是有意为之，且容易被无意保留。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "笛卡尔积(×)关系",
+    "findings_table.props.searchPlaceholder": "搜索表实例…",
+    "findings_table.props.empty.message": "未找到笛卡尔积关系。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "左 TO",
+    "findings_table.props.columns[2].label": "右 TO"
+  }
+}

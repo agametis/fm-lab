@@ -10,6 +10,7 @@
     "files_table.props.columns[4].label": "Importerad",
     "files_table.props.empty.message": "Inga filer i XML-katalogen.",
     "last_run.props.title": "Senaste konvertering",
+    "import_integrity.props.title": "Importintegritet",
     "graph_communities.props.title": "Graf-communities",
     "graph_communities_desc.props.content": "Struktur- och namngivningstäckning för de upptäckta modulerna. Bygg om partitionen med knappen; (om)döp nya moduler med färdigheten `/fm-graph-cluster`."
   }

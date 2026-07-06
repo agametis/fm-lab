@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Dependência de plugins",
+    "description": "Inventário de dependências de plugins: pontos de chamada por componente de plugin (MBS e outros) × arquivo, resolvidos via calls_pluginfunction, mais as etapas Install Plug-In File. Uma visão de risco — quais módulos ficariam mortos sem o plugin?"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Pontos de chamada de plugins",
+    "summary_kpistrip.props.items[1].label": "Componentes",
+    "summary_kpistrip.props.items[2].label": "Funções",
+    "summary_kpistrip.props.items[3].label": "Arquivos afetados",
+    "summary_kpistrip.props.items[4].label": "Etapas Install Plug-In",
+    "components.props.title": "Componentes",
+    "components_table.props.columns[0].label": "Plugin",
+    "components_table.props.columns[1].label": "Componente",
+    "components_table.props.columns[2].label": "Pontos de chamada",
+    "components_table.props.columns[3].label": "Funções",
+    "components_table.props.columns[4].label": "Arquivos",
+    "top_functions.props.title": "Funções mais usadas",
+    "top_functions_table.props.columns[0].label": "Função",
+    "top_functions_table.props.columns[1].label": "Componente",
+    "top_functions_table.props.columns[2].label": "Pontos de chamada",
+    "top_functions_table.props.columns[3].label": "Arquivos",
+    "markdown.props.content": "## Observações\n\nDe quais **plugins** a solução depende, e onde. Os pontos de chamada são lidos dos links `calls_pluginfunction` resolvidos (`MBS:<Componente>.<Função>`), de modo que a lista *Funções mais usadas* navega diretamente para a visão de onde-usado da função do plugin.\n\n- **Componentes**: pontos de chamada, funções distintas e arquivos afetados por componente de plugin. Clique em um componente para filtrar a lista de funções.\n- **Visão de risco**: um módulo construído sobre um componente com muitos pontos de chamada fica morto sem esse plugin instalado — as etapas *Install Plug-In File* mostram onde a solução instala plugins por conta própria.\n- **Navegação**: clicar em uma função abre o detalhe de sua função de plugin (onde-usado).\n- **Regras relacionadas**: as regras de severidade derivadas ficam em *Static Code Analysis*.\n- **Ordenação**: todos os cabeçalhos de coluna são clicáveis (▲▼)."
+  }
+}

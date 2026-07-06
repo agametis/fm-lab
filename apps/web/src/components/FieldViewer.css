@@ -32,6 +32,15 @@
   color: var(--color-text-muted);
 }
 
+/* Fester Vorgabewert bei AutoEnter „ConstantData" — inline hinter dem Typ. */
+.fm-field-constant code {
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  background: var(--color-surface-sunken, rgba(127, 127, 127, 0.12));
+  color: var(--color-text-primary);
+  font-size: 0.8rem;
+}
+
 .fm-field-formula-label {
   font-size: 0.78rem;
   color: var(--color-text-muted);

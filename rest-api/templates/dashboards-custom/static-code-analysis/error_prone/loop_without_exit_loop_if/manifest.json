@@ -1,0 +1,58 @@
+{
+  "id": "loop_without_exit_loop_if",
+  "version": "1.0.0",
+  "title": "Loop without Exit Loop If",
+  "description": "Error-prone rule — scripts with a Loop but no reliable terminator: neither an Exit Loop If nor a \"Go to Record/Request/Page\" or \"Go to Portal Row\" with \"Exit after last\" inside the loop. The remaining loops risk running forever.",
+  "author": "fm-lab rules",
+  "icon": "repeat",
+  "category": "error_prone",
+  "tags": [
+    "rule",
+    "pmd",
+    "error_prone"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "error_prone",
+    "rationale": "A loop without an explicit Exit Loop If risks an infinite loop if the implicit exit is missing.",
+    "remediation": "Confirm a reliable exit condition (Exit Loop If, or Go to Record/Portal Row with \"exit after last\").",
+    "meta": {
+      "name": "Loop without Exit Loop If",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Error-prone rule — scripts with a Loop but no reliable terminator: neither an Exit Loop If nor a \"Go to Record/Request/Page\" or \"Go to Portal Row\" with \"Exit after last\" inside the loop. The remaining loops risk running forever.",
+      "created": "2026-07-01",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

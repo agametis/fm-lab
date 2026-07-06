@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Plugin-afhankelijkheid",
+    "description": "Inventaris van plugin-afhankelijkheden: aanroeplocaties per plugincomponent (MBS en andere) × bestand, opgelost via calls_pluginfunction, plus Install Plug-In File-stappen. Een risicoweergave — welke modules zouden dood zijn zonder de plugin?"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Plugin-aanroeplocaties",
+    "summary_kpistrip.props.items[1].label": "Componenten",
+    "summary_kpistrip.props.items[2].label": "Functies",
+    "summary_kpistrip.props.items[3].label": "Betrokken bestanden",
+    "summary_kpistrip.props.items[4].label": "Install Plug-In-stappen",
+    "components.props.title": "Componenten",
+    "components_table.props.columns[0].label": "Plugin",
+    "components_table.props.columns[1].label": "Component",
+    "components_table.props.columns[2].label": "Aanroeplocaties",
+    "components_table.props.columns[3].label": "Functies",
+    "components_table.props.columns[4].label": "Bestanden",
+    "top_functions.props.title": "Meest gebruikte functies",
+    "top_functions_table.props.columns[0].label": "Functie",
+    "top_functions_table.props.columns[1].label": "Component",
+    "top_functions_table.props.columns[2].label": "Aanroeplocaties",
+    "top_functions_table.props.columns[3].label": "Bestanden",
+    "markdown.props.content": "## Opmerkingen\n\nVan welke **plugins** de oplossing afhankelijk is, en waar. Aanroeplocaties worden gelezen uit de opgeloste `calls_pluginfunction`-koppelingen (`MBS:<Component>.<Functie>`), zodat de lijst *Meest gebruikte functies* rechtstreeks naar de where-used-weergave van de pluginfunctie navigeert.\n\n- **Componenten**: aanroeplocaties, afzonderlijke functies en betrokken bestanden per plugincomponent. Klik op een component om de functielijst te filteren.\n- **Risicoweergave**: een module die op een component met veel aanroeplocaties is gebouwd, is dood zonder die geïnstalleerde plugin — *Install Plug-In File*-stappen tonen waar de oplossing zelf plugins installeert.\n- **Navigatie**: klikken op een functie opent het detail van de pluginfunctie (where-used).\n- **Gerelateerde regels**: afgeleide ernstregels staan onder *Static Code Analysis*.\n- **Sortering**: alle kolomkoppen zijn klikbaar (▲▼)."
+  }
+}

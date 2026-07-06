@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Healthchecks",
+    "description": "Samengestelde, op objecttype gegroepeerde health-checks met live tellingen, elk gekoppeld aan hun static-code-analysis-regeldashboard."
+  },
+  "layout": {
+    "hc_kpi_strip.props.items[0].label": "Alle checks",
+    "hc_kpi_strip.props.items[1].label": "Fouten",
+    "hc_kpi_strip.props.items[2].label": "Waarschuwingen",
+    "hc_kpi_strip.props.items[3].label": "Info",
+    "hc_security_card.props.title": "Beveiliging",
+    "hc_security_list.props.empty.message": "Niets te melden.",
+    "hc_fields_card.props.title": "Velden",
+    "hc_fields_list.props.empty.message": "Niets te melden.",
+    "hc_scripts_card.props.title": "Scripts",
+    "hc_scripts_list.props.empty.message": "Niets te melden.",
+    "hc_relationships_card.props.title": "Relaties",
+    "hc_relationships_list.props.empty.message": "Niets te melden.",
+    "hc_tables_card.props.title": "Tabellen & voorkomens",
+    "hc_tables_list.props.empty.message": "Niets te melden.",
+    "hc_layouts_card.props.title": "Lay-outs",
+    "hc_layouts_list.props.empty.message": "Niets te melden.",
+    "hc_variables_card.props.title": "Variabelen",
+    "hc_variables_list.props.empty.message": "Niets te melden.",
+    "hc_valuelists_card.props.title": "Waardelijsten",
+    "hc_valuelists_list.props.empty.message": "Niets te melden.",
+    "hc_customfunctions_card.props.title": "Aangepaste functies",
+    "hc_customfunctions_list.props.empty.message": "Niets te melden."
+  }
+}

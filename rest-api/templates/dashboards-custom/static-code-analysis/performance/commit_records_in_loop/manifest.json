@@ -1,0 +1,58 @@
+{
+  "id": "commit_records_in_loop",
+  "version": "1.0.0",
+  "title": "Commit Records inside Loop",
+  "description": "Performance rule — Commit Records/Requests inside a Loop writes to the database on every iteration.",
+  "author": "fm-lab rules",
+  "icon": "gauge",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "pmd",
+    "performance"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "performance",
+    "rationale": "Committing per iteration multiplies record locks and server round-trips.",
+    "remediation": "Commit once after the loop where the data model allows it.",
+    "meta": {
+      "name": "Commit Records inside Loop",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Performance rule — Commit Records/Requests inside a Loop writes to the database on every iteration.",
+      "created": "2026-07-01",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

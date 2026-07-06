@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Commit Records（Loop 内）",
+    "description": "性能规则 — Loop 内的 Commit Records/Requests 每次迭代都会写入数据库。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "Commit Records（Loop 内）",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到与\"Commit Records（Loop 内）\"匹配的项。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "步骤",
+    "findings_table.props.columns[3].label": "深度"
+  }
+}

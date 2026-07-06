@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Lista de valores con valores fijos",
+    "description": "Regla de estilo de código: listas de valores creadas a partir de valores propios (fijos) en lugar de un campo. Las listas fijas quedan obsoletas y los usuarios no pueden mantenerlas."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Lista de valores con valores fijos",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o lista de valores…",
+    "findings_table.props.empty.message": "No se encontraron listas de valores fijas.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Lista de valores",
+    "findings_table.props.columns[2].label": "Valores"
+  }
+}

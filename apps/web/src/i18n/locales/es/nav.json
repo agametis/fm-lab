@@ -1,4 +1,8 @@
 {
+  "fileActions": {
+    "search": "Búsqueda",
+    "drilldown": "Desglose"
+  },
   "modeTabsAriaLabel": "Modo de vista",
   "breadcrumbs": {
     "search": "Buscar",

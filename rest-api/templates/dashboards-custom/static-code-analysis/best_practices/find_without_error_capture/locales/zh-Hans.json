@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "缺少 Set Error Capture 的 Perform Find",
+    "description": "最佳实践规则 — 含 Perform Find 但没有 Set Error Capture [开启] 的脚本。\"无记录\"对话框可能在脚本执行中途打断用户。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "缺少 Set Error Capture 的 Perform Find",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到缺少错误捕获的查找。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "查找数"
+  }
+}

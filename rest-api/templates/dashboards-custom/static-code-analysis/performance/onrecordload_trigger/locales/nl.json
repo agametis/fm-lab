@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "OnRecordLoad-trigger",
+    "description": "Prestatieregel — OnRecordLoad-scripttriggers. Ze vuren voor elk record dat zichtbaar wordt; zware scripts hier vertragen lijstweergaven en zoekopdrachten."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "OnRecordLoad-trigger",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen OnRecordLoad-triggers gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Triggerscript",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

@@ -10,6 +10,7 @@
     "files_table.props.columns[4].label": "Importiert",
     "files_table.props.empty.message": "Keine Dateien im XML-Verzeichnis vorhanden.",
     "last_run.props.title": "Letzte Konvertierung",
+    "import_integrity.props.title": "Import-Integrität",
     "graph_communities.props.title": "Graph-Communities",
     "graph_communities_desc.props.content": "Struktur- & Benennungs-Abdeckung der erkannten Module. Partition per Button neu erstellen; neue Module mit dem Skill `/fm-graph-cluster` (neu) benennen."
   }

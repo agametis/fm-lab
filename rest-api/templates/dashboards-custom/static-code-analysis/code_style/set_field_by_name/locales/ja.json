@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Set Field By Name（動的なターゲット）",
+    "description": "コードスタイルルール — Set Field By Name ステップ。対象フィールドが実行時に計算されるため、静的解析やリファクタリングが追跡できません。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "Set Field By Name（動的なターゲット）",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "Set Field By Name ステップは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "ステップ"
+  }
+}

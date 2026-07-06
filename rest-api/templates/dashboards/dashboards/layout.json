@@ -22,6 +22,7 @@
             "props": {
               "viewToggle": true,
               "minTileWidth": 260,
+              "groupBy": "folder",
               "tile": {
                 "title": "{{title}}",
                 "subtitle": "{{description}}",

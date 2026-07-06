@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Hardgecodeerde URL in berekening",
+    "description": "Beveiligings-/onderhoudbaarheidsregel — berekeningsfragmenten met een letterlijke http(s)://-URL. Hardgecodeerde eindpunten zijn broos en verraden de infrastructuur."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Hardgecodeerde URL in berekening",
+    "findings_table.props.searchPlaceholder": "Bestand, script of URL zoeken…",
+    "findings_table.props.empty.message": "Geen hardgecodeerde URL’s in berekeningen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Gevonden in",
+    "findings_table.props.columns[2].label": "URL"
+  }
+}

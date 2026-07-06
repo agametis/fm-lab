@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Tabelle mit vielen Feldern",
+    "description": "Code-Style-Regel — Basistabellen mit mehr als 100 Feldern. Eine sehr breite Tabelle vermischt oft mehrere Belange, die in eigene Tabellen gehören.\n\nAngelehnt an die PMD-Regel TooManyFields — https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#toomanyfields Schwelle über den Schieberegler einstellbar (Vorgabe 100)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Tabelle mit vielen Feldern",
+    "findings_table.props.searchPlaceholder": "Datei oder Tabelle suchen…",
+    "findings_table.props.empty.message": "Keine sehr breiten Tabellen gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Tabelle",
+    "findings_table.props.columns[2].label": "Felder",
+    "threshold_slider.props.label": "Felder pro Tabelle (Minimum)",
+    "threshold_slider.props.valueSuffix": "Felder"
+  }
+}

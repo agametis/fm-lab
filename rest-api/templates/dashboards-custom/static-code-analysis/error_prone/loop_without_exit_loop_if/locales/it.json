@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Loop senza Exit Loop If",
+    "description": "Regola soggetta a errori: script con un Loop ma senza terminatore affidabile: né Exit Loop If né un «Vai a record/richiesta/pagina» o «Vai a riga di portale» con «Esci dopo l’ultimo» dentro il Loop. I Loop restanti rischiano di girare all’infinito."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Loop senza Exit Loop If",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Nessun Loop senza Exit Loop If trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Loops"
+  }
+}

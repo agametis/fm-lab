@@ -80,14 +80,25 @@ base AS (
   WHERE getvariable('mode') = 'logical'
   UNION ALL
   -- Fokus-Brücke (logical): ist der Fokus selbst ein Sub-Objekt (ScriptStep /
-  -- LayoutObject), wurden alle seine operationalen Kanten auf den Container
-  -- hochgezogen → die echte strukturelle Parent-Kante (Fokus → Script/Layout) hält
-  -- den Einstieg anschlussfähig. Greift nur für den Fokus.
+  -- LayoutObject / CustomMenuItem), wurden alle seine operationalen Kanten auf den
+  -- Container hochgezogen (bzw. sind Builtins/ausgeblendet) → die echte strukturelle
+  -- Parent-Kante (Fokus → Script/Layout/CustomMenu) hält den Einstieg anschlussfähig.
+  -- Greift nur für den Fokus.
   SELECT a, a_file, b, b_file, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
   FROM raw_links
   WHERE getvariable('mode') = 'logical'
     AND a = getvariable('focus')
-    AND Link_Role IN ('parent_layout', 'parent_script')
+    AND Link_Role IN ('parent_layout', 'parent_script', 'parent_menu')
+  UNION ALL
+  -- Fokus-Brücke Container-Seite: ist der Fokus ein CustomMenu, seine
+  -- CustomMenuItems (parent_menu) als strukturelle Kinder zeigen. Menüs haben
+  -- wenige Items und die Item↔Menü-Struktur ist die fachlich relevante Sicht
+  -- (bei Skripten mit vielen Steps bewusst NICHT — daher auf parent_menu skopiert).
+  SELECT a, a_file, b, b_file, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
+  FROM raw_links
+  WHERE getvariable('mode') = 'logical'
+    AND b = getvariable('focus')
+    AND Link_Role = 'parent_menu'
   UNION ALL
   SELECT a, a_file, b, b_file, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
   FROM raw_links
@@ -115,10 +126,13 @@ edges AS (
   SELECT b AS a, b_file AS a_file, a AS b, a_file AS b_file FROM base_f WHERE getvariable('direction') IN ('in', 'both')
   UNION
   -- Fokus-Brücke richtungsunabhängig walkbar halten (auch bei direction='in').
+  -- a=focus: Sub-Objekt → Container (parent_*). b=focus: CustomMenu → seine Items
+  -- (parent_menu, Container-Seite) — beide strukturell, beide Richtungen erreichbar.
   SELECT a, a_file, b, b_file FROM base_f
   WHERE getvariable('mode') = 'logical'
-    AND a = getvariable('focus')
     AND Link_Type = 'structural'
+    AND (a = getvariable('focus')
+         OR (b = getvariable('focus') AND Link_Role = 'parent_menu'))
 ),
 -- 6) Fokus-Saat: (UUID, File). focus_file wird durchgereicht; fehlt es (Nicht-Klon,
 --    Downgrade), wird die eindeutige Datei aus dem Katalog aufgelöst. (Bei KLON ohne

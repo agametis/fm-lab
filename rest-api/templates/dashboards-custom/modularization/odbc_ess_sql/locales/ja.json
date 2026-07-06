@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "ODBC / ESS / SQL",
+    "description": "外部SQLデータアクセスのインベントリ: Execute SQLステップ (Step_ID 117)、ODBC / ESSデータソース (FileMaker以外の外部ソース)、およびfmxdbc (ODBC/JDBC) の付与。汎用テンプレートであり、現在コーパスにODBCソースがない場合でも役立ちます。"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Execute SQLステップ",
+    "summary_kpistrip.props.items[1].label": "ODBC / ESSソース",
+    "summary_kpistrip.props.items[2].label": "fmxdbc付与",
+    "summary_kpistrip.props.items[3].label": "SQLを含むファイル",
+    "findings.props.title": "Execute SQLステップ",
+    "findings_table.props.columns[0].label": "スクリプト",
+    "findings_table.props.columns[1].label": "ステップ",
+    "findings_table.props.columns[2].label": "SQL (プレビュー)",
+    "findings_table.props.columns[3].label": "ファイル",
+    "findings_table.props.columns[4].label": "#",
+    "ess_sources.props.title": "ODBC / ESSデータソース",
+    "ess_sources_table.props.emptyMessage": "ODBC / ESSソースはありません — すべての外部ソースはFileMakerです。",
+    "ess_sources_table.props.columns[0].label": "ソース",
+    "ess_sources_table.props.columns[1].label": "タイプ",
+    "ess_sources_table.props.columns[2].label": "TOs",
+    "ess_sources_table.props.columns[3].label": "ファイル",
+    "grants.props.title": "ODBC / xDBC付与 (fmxdbc)",
+    "grants_table.props.emptyMessage": "fmxdbcを付与する権限セットはありません。",
+    "grants_table.props.columns[0].label": "拡張アクセス権",
+    "grants_table.props.columns[1].label": "権限セット",
+    "grants_table.props.columns[2].label": "ファイル",
+    "markdown.props.content": "## 注記\n\n外部**SQL**データアクセス。*Execute SQL* はStep_IDでゲートされています (117、ロケール非依存 — このコーパスでは `SQL ausführen` としてエクスポートされます)。ODBC / ESSソースは外部データソースカタログのFileMaker以外のエントリです。`fmxdbc` 付与は、どの権限セットがODBC/JDBCアクセスを許可するかを示します。\n\n- これは**汎用テンプレート**です: コーパスには現在ODBC/ESSソースがなく (すべての外部ソースはFileMaker)、Execute SQLステップが1つあります — このダッシュボードは再利用可能なライブラリエントリとして引き続き役立ちます。\n- **ナビゲーション**: Execute SQLステップをクリックすると、そのステップでスクリプトが開きます。ODBC/ESSソースは最初のtable occurrenceを開きます。付与は権限セットを開きます。\n- **関連ルール**: 派生した重大度ルールは *Static Code Analysis* にあります。\n- **並べ替え**: すべての列見出しはクリック可能です (▲▼)。"
+  }
+}

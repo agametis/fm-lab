@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Elenco valori inutilizzato",
+    "description": "Regola di codice inutilizzato: elenchi valori non collegati ad alcun campo/oggetto di Layout, ordinamento o wrapper esterno."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Elenco valori inutilizzato",
+    "findings_table.props.searchPlaceholder": "Cerca file o nome…",
+    "findings_table.props.empty.message": "Nessun risultato trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Nome"
+  }
+}

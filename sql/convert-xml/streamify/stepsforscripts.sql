@@ -34,7 +34,16 @@ script_steps AS (
         unnest(xml_extract_elements(steps_wrapped, '/ObjectList/Step')) as step_xml
     FROM scripts_resolved
 )
-INSERT INTO StepsForScripts
+-- Explizite Spaltenliste (18 P1-Spalten): P3 verbreitert die Tabelle um die
+-- abgeleitete Spalte Inserted_Text (ALTER TABLE, details:~1037). Ein spaltenloser
+-- INSERT bricht dann auf dem sequentiellen Incremental-Pfad (P1 direkt gegen die
+-- bestehende Master-/Test-DB, JOBS=1) mit "excluded has 18 columns … 19 specified".
+-- Der Parallel-Pfad (frische Teil-DBs + INSERT BY NAME) war nie betroffen.
+INSERT INTO StepsForScripts (
+    Script_ID, Script_Name, Script_UUID, Step_Index, Step_ID, Step_Name,
+    Is_Enabled, Step_UUID, DDR_Hash, DDR_UUID, Parameters_XML, Step_XML,
+    Parameter_Type, Variable_Name, Calculation_Text, Boolean_Type, Boolean_Value,
+    File_Name)
 SELECT
     Script_ID,
     Script_Name,
@@ -77,3 +86,21 @@ ON CONFLICT (Step_UUID, File_Name) DO UPDATE SET
     Calculation_Text = EXCLUDED.Calculation_Text,
     Boolean_Type = EXCLUDED.Boolean_Type,
     Boolean_Value = EXCLUDED.Boolean_Value;
+
+-- Zensus (Dup-Absorption): geparste Step-Records dieses Laufs/Chunks — SAX-Fassung,
+-- quellgleich zum Zensus im DOM-Block der Basis (dort begründet): Script-Records
+-- streamen, Steps nur ZÄHLEN (keine Spalten-Extrakte). Gleicher WHERE-Filter wie
+-- der Katalog-INSERT oben (ObjectList IS NOT NULL; Scripts ohne Steps zählen 0).
+INSERT INTO DuplicateAbsorptions
+SELECT getvariable('fm_file'), 'StepsForScripts', 'Step_UUID,File_Name',
+       COALESCE(getvariable('seq_offset'), 0)::BIGINT,
+       COALESCE(SUM(len(xml_extract_elements('<ObjectList>' || ObjectList || '</ObjectList>', '/ObjectList/Step'))), 0)
+FROM read_xml(
+    getvariable('fm_xml'),
+    record_element='SFS_Script',
+    maximum_file_size=getvariable('dom_threshold'),
+    streaming=getvariable('use_streaming'),
+    columns={'ObjectList': 'VARCHAR'}
+)
+WHERE ObjectList IS NOT NULL
+ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;

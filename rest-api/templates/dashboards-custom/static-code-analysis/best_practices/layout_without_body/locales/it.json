@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Layout senza corpo",
+    "description": "Regola di buone pratiche: Layout senza parte corpo. Senza corpo i record non vengono mostrati in vista modulo/elenco; di solito un Layout smarrito o mal costruito."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Layout senza corpo",
+    "findings_table.props.searchPlaceholder": "Cerca file o Layout…",
+    "findings_table.props.empty.message": "Nessun Layout senza corpo trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

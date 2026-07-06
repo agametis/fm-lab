@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Lege If-tak",
+    "description": "Foutgevoelige regel — een If direct gevolgd door Else / Else If / End If, dus een tak zonder stappen. Vaak een overblijfsel of logicafout.\n\nGebaseerd op de PMD-regel EmptyControlStatement — https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#emptycontrolstatement"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Lege If-tak",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen lege If-takken gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Stap"
+  }
+}

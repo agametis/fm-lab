@@ -1,0 +1,17 @@
+{
+  "title": "Best practices",
+  "icon": "check-circle",
+  "order": 7,
+  "locales": {
+    "de": "Best Practices",
+    "es": "Buenas prácticas",
+    "fr": "Bonnes pratiques",
+    "it": "Buone pratiche",
+    "ja": "ベストプラクティス",
+    "ko": "모범 사례",
+    "nl": "Best practices",
+    "pt": "Boas práticas",
+    "sv": "Bästa praxis",
+    "zh-Hans": "最佳实践"
+  }
+}

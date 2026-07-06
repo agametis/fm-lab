@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Script lungo",
+    "description": "Regola di stile del codice: script con più di 150 passi. Gli script molto lunghi sono difficili da leggere, testare e riutilizzare.\n\nBasato sulla regola PMD ExcessiveMethodLength — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessivemethodlength Soglia regolabile tramite il cursore (predefinito 150)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Script lungo",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Nessuno script eccessivamente lungo trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Passi",
+    "threshold_slider.props.label": "Passi per script (minimo)",
+    "threshold_slider.props.valueSuffix": "passi"
+  }
+}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { FMObject } from '../types';
+import { parsePluginFunctionName } from '../lib/objectName';
 
 interface ObjectHeaderProps {
   object: FMObject;
@@ -32,6 +33,13 @@ export const ObjectHeader: React.FC<ObjectHeaderProps> = ({ object }) => {
   const { t } = useTranslation(['common', 'detail']);
   const [copied, setCopied] = useState(false);
 
+  // PluginFunctions tragen einen redundanten Katalognamen (`MBS:<Sub>::<Sub>`);
+  // für die Anzeige lösen wir ihn in Funktionsname + Komponente auf.
+  const isPluginFn = object.Object_Type === 'PluginFunction';
+  const pluginParts = isPluginFn ? parsePluginFunctionName(object.Object_Name) : null;
+  const titleText = pluginParts ? pluginParts.name
+    : (object.Object_Name || t('detail:objectHeader.noName'));
+
   const handleCopyUUID = async () => {
     try {
       await navigator.clipboard.writeText(object.Object_UUID);
@@ -56,8 +64,15 @@ export const ObjectHeader: React.FC<ObjectHeaderProps> = ({ object }) => {
       </div>
       <div className="detail-header-row detail-header-row--bottom">
         <div className="detail-title-row">
-          <h1 id="object-title" className="detail-title">
-            {object.Object_Name || t('detail:objectHeader.noName')}
+          <h1
+            id="object-title"
+            className="detail-title"
+            title={isPluginFn ? object.Object_Name : undefined}
+          >
+            {titleText}
+            {pluginParts?.component && (
+              <span className="detail-title-plugin-component"> · {pluginParts.component}</span>
+            )}
           </h1>
           <span className="object-type">{displayObjectType(object.Object_Type, object.Source_Table)}</span>
           {object.Object_Type === 'TableOccurrence' && object.File_Name && (

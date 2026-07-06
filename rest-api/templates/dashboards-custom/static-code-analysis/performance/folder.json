@@ -1,0 +1,17 @@
+{
+  "title": "Performance",
+  "icon": "gauge",
+  "order": 1,
+  "locales": {
+    "de": "Performance",
+    "es": "Rendimiento",
+    "fr": "Performance",
+    "it": "Prestazioni",
+    "ja": "パフォーマンス",
+    "ko": "성능",
+    "nl": "Prestaties",
+    "pt": "Desempenho",
+    "sv": "Prestanda",
+    "zh-Hans": "性能"
+  }
+}

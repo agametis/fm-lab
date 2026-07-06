@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Account con [Accesso completo]",
+    "description": "Regola di sicurezza: account con il set di privilegi [Accesso completo]. Ogni account ad accesso completo è una chiave universale senza restrizioni; mantenerne il numero al minimo."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Account con [Accesso completo]",
+    "findings_table.props.searchPlaceholder": "Cerca file o account…",
+    "findings_table.props.empty.message": "Nessun account con [Accesso completo] trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Account"
+  }
+}

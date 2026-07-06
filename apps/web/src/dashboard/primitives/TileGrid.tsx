@@ -70,6 +70,93 @@ export function TileGrid({ node, dataset, navigate }: PrimitiveProps) {
     clickable: !!tile.onClick,
   });
 
+  // Renders one block of rows as either tiles or a list. Reused per folder group.
+  const renderRows = (subset: Record<string, unknown>[]) =>
+    mode === 'list' ? (
+      <ul className="dash-navlist">
+        {subset.map((row, i) => {
+          const c = buildCell(row);
+          return (
+            <li key={i}>
+              <button
+                type="button"
+                className={`dash-navlist__item${c.clickable ? ' dash-navlist__item--clickable' : ''}`}
+                onClick={c.clickable ? () => dispatchAction(tile.onClick, row, { navigate }) : undefined}
+                disabled={!c.clickable}
+              >
+                <span className="dash-navlist__title">{c.title}</span>
+                {c.subtitle && <span className="dash-navlist__subtitle">{c.subtitle}</span>}
+                {c.badge && <span className="dash-navlist__badge">{c.badge}</span>}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    ) : (
+      <div className="dash-tilegrid" style={gridStyle}>
+        {subset.map((row, i) => {
+          const c = buildCell(row);
+          return (
+            <button
+              key={i}
+              type="button"
+              className={`dash-tile${c.clickable ? ' dash-tile--clickable' : ''}`}
+              onClick={c.clickable ? () => dispatchAction(tile.onClick, row, { navigate }) : undefined}
+              disabled={!c.clickable}
+            >
+              <span className="dash-tile__title">{c.title}</span>
+              {c.subtitle && <span className="dash-tile__subtitle">{c.subtitle}</span>}
+              {c.badge && <span className="dash-tile__badge">{c.badge}</span>}
+            </button>
+          );
+        })}
+      </div>
+    );
+
+  // Optional folder grouping: when `groupBy` names a row field (e.g. "folder"),
+  // rows are partitioned into sections with a header. Root rows (empty/null group
+  // value) render first under a localized "General" header; folders follow, sorted.
+  const groupByField = node.props?.groupBy as string | undefined;
+  const groups: { key: string; label: string; rows: Record<string, unknown>[] }[] = [];
+  if (groupByField) {
+    const byKey = new Map<string, Record<string, unknown>[]>();
+    for (const row of search.filtered) {
+      const raw = row[groupByField];
+      const key = raw == null ? '' : String(raw);
+      if (!byKey.has(key)) byKey.set(key, []);
+      byKey.get(key)!.push(row);
+    }
+    // Humanized fallback when no server-provided localized label is available.
+    const folderLabelFallback = (key: string) =>
+      key
+        .split('/')
+        .map((seg) => tx(seg.replace(/[-_]/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())))
+        .join(' / ');
+    const keys = [...byKey.keys()].sort((a, b) => {
+      if (a === '') return -1;
+      if (b === '') return 1;
+      return a.localeCompare(b);
+    });
+    for (const key of keys) {
+      const rows = byKey.get(key)!;
+      // Prefer the localized folder label the server attaches per row (`folder_label`);
+      // all rows in a group share the same folder, so the first row is authoritative.
+      const serverLabel = key !== '' ? (rows[0]?.folder_label as string | undefined) : undefined;
+      groups.push({
+        key,
+        label:
+          key === ''
+            ? (t('common:general', { defaultValue: 'General' }) as string)
+            : serverLabel || folderLabelFallback(key),
+        rows,
+      });
+    }
+  }
+  const rootCount = groupByField
+    ? (groups.find((g) => g.key === '')?.rows.length ?? 0)
+    : search.filtered.length;
+  const nestedCount = groupByField ? groups.some((g) => g.key !== '') : false;
+
   return (
     <div className="dash-tilegrid-wrap">
       {viewToggle && (
@@ -110,7 +197,7 @@ export function TileGrid({ node, dataset, navigate }: PrimitiveProps) {
           </div>
           {/* Entry-count meta (2-state, folder-ready) */}
           <span className="dash-viewbar__count">
-            {formatEntryCount(rows.length, rows.length, false)}
+            {formatEntryCount(rootCount, rows.length, nestedCount)}
           </span>
         </div>
       )}
@@ -133,45 +220,20 @@ export function TileGrid({ node, dataset, navigate }: PrimitiveProps) {
         </div>
       )}
 
-      {mode === 'list' ? (
-        <ul className="dash-navlist">
-          {search.filtered.map((row, i) => {
-            const c = buildCell(row);
-            return (
-              <li key={i}>
-                <button
-                  type="button"
-                  className={`dash-navlist__item${c.clickable ? ' dash-navlist__item--clickable' : ''}`}
-                  onClick={c.clickable ? () => dispatchAction(tile.onClick, row, { navigate }) : undefined}
-                  disabled={!c.clickable}
-                >
-                  <span className="dash-navlist__title">{c.title}</span>
-                  {c.subtitle && <span className="dash-navlist__subtitle">{c.subtitle}</span>}
-                  {c.badge && <span className="dash-navlist__badge">{c.badge}</span>}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <div className="dash-tilegrid" style={gridStyle}>
-          {search.filtered.map((row, i) => {
-            const c = buildCell(row);
-            return (
-              <button
-                key={i}
-                type="button"
-                className={`dash-tile${c.clickable ? ' dash-tile--clickable' : ''}`}
-                onClick={c.clickable ? () => dispatchAction(tile.onClick, row, { navigate }) : undefined}
-                disabled={!c.clickable}
-              >
-                <span className="dash-tile__title">{c.title}</span>
-                {c.subtitle && <span className="dash-tile__subtitle">{c.subtitle}</span>}
-                {c.badge && <span className="dash-tile__badge">{c.badge}</span>}
-              </button>
-            );
-          })}
+      {groupByField ? (
+        <div className="dash-tilegroups">
+          {groups.map((g) => (
+            <section key={g.key || '__root__'} className="dash-tilegroup">
+              <h3 className="dash-tilegroup__title">
+                {g.label}
+                <span className="dash-tilegroup__count">{formatEntryCount(g.rows.length, g.rows.length, false)}</span>
+              </h3>
+              {renderRows(g.rows)}
+            </section>
+          ))}
         </div>
+      ) : (
+        renderRows(search.filtered)
       )}
 
       {hasQuery && search.filtered.length === 0 && (

@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Layout met veel objecten",
+    "description": "Codestijl-/prestatieregel — Layouts met veel objecten. Zware Layouts renderen traag en zijn lastig te onderhouden. Drempel instelbaar via de schuifregelaar (standaard 250)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "threshold_slider.props.label": "Objecten per Layout (minimum)",
+    "threshold_slider.props.valueSuffix": "objecten",
+    "findings_card.props.title": "Layout met veel objecten",
+    "findings_table.props.searchPlaceholder": "Bestand of Layout zoeken…",
+    "findings_table.props.empty.message": "Geen overladen Layouts gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objecten"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Registersteuerung mit vielen Reitern",
+    "description": "Code-Style-Regel — Registersteuerungen mit mehr als sechs Reitern. Zu viele Reiter verstecken Inhalte und sind schwer navigierbar. Schwelle über den Schieberegler einstellbar (Vorgabe 6)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Registersteuerung mit vielen Reitern",
+    "findings_table.props.searchPlaceholder": "Datei oder Layout suchen…",
+    "findings_table.props.empty.message": "Keine überladenen Registersteuerungen gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Reiter",
+    "threshold_slider.props.label": "Reiter pro Tab-Control (Minimum)",
+    "threshold_slider.props.valueSuffix": "Reiter"
+  }
+}

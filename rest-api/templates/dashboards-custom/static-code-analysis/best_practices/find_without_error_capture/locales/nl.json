@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Perform Find zonder Set Error Capture",
+    "description": "Best-practice-regel — scripts met Perform Find maar zonder Set Error Capture [Aan]. Een \"geen records\"-dialoog kan de gebruiker midden in het script onderbreken."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Perform Find zonder Set Error Capture",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen zoekopdrachten zonder foutafvang gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Zoekopdrachten"
+  }
+}

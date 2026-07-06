@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "不平衡的 If / End If",
+    "description": "易错规则 — If/End If 配对不平衡，或关闭了从未打开的 If 的脚本。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "不平衡的 If / End If",
+    "findings_table.props.searchPlaceholder": "搜索文件、脚本或结果…",
+    "findings_table.props.empty.message": "未找到不平衡的 If / End If 块。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "结果"
+  }
+}

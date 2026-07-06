@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "プラグイン依存関係",
+    "description": "プラグイン依存関係のインベントリ: プラグインコンポーネント（MBS など）× ファイルごとの呼び出し箇所を calls_pluginfunction 経由で解決し、Install Plug-In File ステップも含めます。リスクビュー — プラグインがなければどのモジュールが機能しなくなるか？"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "プラグイン呼び出し箇所",
+    "summary_kpistrip.props.items[1].label": "コンポーネント",
+    "summary_kpistrip.props.items[2].label": "関数",
+    "summary_kpistrip.props.items[3].label": "影響を受けるファイル",
+    "summary_kpistrip.props.items[4].label": "Install Plug-In ステップ",
+    "components.props.title": "コンポーネント",
+    "components_table.props.columns[0].label": "プラグイン",
+    "components_table.props.columns[1].label": "コンポーネント",
+    "components_table.props.columns[2].label": "呼び出し箇所",
+    "components_table.props.columns[3].label": "関数",
+    "components_table.props.columns[4].label": "ファイル",
+    "top_functions.props.title": "最も使用されている関数",
+    "top_functions_table.props.columns[0].label": "関数",
+    "top_functions_table.props.columns[1].label": "コンポーネント",
+    "top_functions_table.props.columns[2].label": "呼び出し箇所",
+    "top_functions_table.props.columns[3].label": "ファイル",
+    "markdown.props.content": "## 注記\n\nソリューションがどの **プラグイン** にどこで依存しているか。呼び出し箇所は解決済みの `calls_pluginfunction` リンク（`MBS:<コンポーネント>.<関数>`）から読み取られるため、*最も使用されている関数* のリストからプラグイン関数の使用箇所ビューへ直接移動できます。\n\n- **コンポーネント**: プラグインコンポーネントごとの呼び出し箇所、個別の関数、影響を受けるファイル。コンポーネントをクリックすると関数リストが絞り込まれます。\n- **リスクビュー**: 呼び出し箇所の多いコンポーネント上に構築されたモジュールは、そのプラグインがインストールされていなければ機能しません — *Install Plug-In File* ステップは、ソリューション自身がどこでプラグインをインストールしているかを示します。\n- **ナビゲーション**: 関数をクリックすると、そのプラグイン関数の詳細（使用箇所）が開きます。\n- **関連ルール**: 派生した重大度ルールは *Static Code Analysis* にあります。\n- **並べ替え**: すべての列見出しはクリック可能です（▲▼）。"
+  }
+}

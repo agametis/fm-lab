@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Nome de script duplicado",
+    "description": "Regra propensa a erros — dois ou mais scripts com o mesmo nome dentro de um arquivo. Artefato frequente de copiar e colar que torna ambíguo \"chamar script pelo nome\"."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Nome de script duplicado",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhum nome de script duplicado encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

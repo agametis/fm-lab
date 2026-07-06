@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Ungenutzte Custom Function",
+    "description": "Unused-Code-Regel — Custom Functions, die aus keiner Berechnung, keinem Script und keiner anderen Funktion aufgerufen werden.\n\nAngelehnt an die PMD-Regel UnusedPrivateMethod — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatemethod"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Ungenutzte Custom Function",
+    "findings_table.props.searchPlaceholder": "Datei oder Name suchen…",
+    "findings_table.props.empty.message": "Keine Treffer gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Name"
+  }
+}

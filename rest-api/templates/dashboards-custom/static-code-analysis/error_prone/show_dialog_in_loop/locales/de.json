@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Show Custom Dialog in der Loop",
+    "description": "Fehleranfälligkeits-/UX-Regel — Show Custom Dialog innerhalb einer Loop öffnet pro Durchlauf einen modalen Dialog und fängt den Nutzer in Wiederhol-Abfragen."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Show Custom Dialog in der Loop",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Kein Show Custom Dialog innerhalb einer Loop gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Schritt",
+    "findings_table.props.columns[3].label": "Status",
+    "scope_filter.props.options[0].label": "Inaktive ignorieren",
+    "scope_filter.props.options[1].label": "Alle"
+  }
+}

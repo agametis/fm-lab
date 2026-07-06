@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Ungenutzte Basistabelle",
+    "description": "Unused-Code-Regel — Basistabellen ohne Tabellenauftreten. Ohne Auftreten ist die Tabelle im Beziehungsgraphen nicht erreichbar."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Ungenutzte Basistabelle",
+    "findings_table.props.searchPlaceholder": "Datei oder Name suchen…",
+    "findings_table.props.empty.message": "Keine Treffer gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Name"
+  }
+}

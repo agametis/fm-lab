@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Lösenordsfält visas i klartext",
+    "description": "Säkerhetsregel — ett lösenords-/PIN-fält visas på en layout av ett objekt som inte är en \"krypterad redigeringsruta\", så värdet visas i klartext på layouten. Listas per layoutobjekt (samma fält kan vara synligt på flera layouter).\n\nKompletterar lagringsregeln (password_field_plaintext): detta gäller skärmvisningen, som avgörs på layoutobjektsnivå, inte på fältet."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Lösenordsfält visas i klartext",
+    "findings_table.props.searchPlaceholder": "Sök fält eller layout…",
+    "findings_table.props.empty.message": "Inga lösenordsfält visas i klartext.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Fält",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

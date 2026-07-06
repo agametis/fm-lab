@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Hårdkodad URL i beräkning",
+    "description": "Säkerhets-/underhållsregel — beräkningsfragment med en literal http(s)://-URL. Hårdkodade slutpunkter är sköra och avslöjar infrastrukturen."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Hårdkodad URL i beräkning",
+    "findings_table.props.searchPlaceholder": "Sök fil, skript eller URL…",
+    "findings_table.props.empty.message": "Inga hårdkodade URL:er hittades i beräkningar.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Hittad i",
+    "findings_table.props.columns[2].label": "URL"
+  }
+}

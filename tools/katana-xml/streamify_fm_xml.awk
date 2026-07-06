@@ -28,63 +28,18 @@
 #
 # Usage: awk -v rules="LayoutCatalog:Layout:LC_Layout" -f streamify_fm_xml.awk < in.xml > out.xml
 
+# Regel-Parsing + Rename leben seit A-W1-Fortsetzung (Paket 2) in
+# katana_common.awk (parse_rules/rename_line) — identisch vom Fuse konsumiert.
+# A-K2 ist dort gelöst: umbenannt wird nur das Struktur-Tag am Zeilenanfang,
+# nie roher CDATA-Inhalt.
 BEGIN {
     if (rules == "")
         rules = "LayoutCatalog:Layout:LC_Layout"
-    nr = split(rules, R, ",")
-    for (i = 1; i <= nr; i++) {
-        # je Regel: Branch, Element, NewName
-        gsub(/^[ \t]+|[ \t]+$/, "", R[i])
-        if (R[i] == "") continue
-        np = split(R[i], P, ":")
-        if (np != 3) { print "streamify_fm_xml.awk: ungültige Regel '" R[i] "'" > "/dev/stderr"; exit 2 }
-        rb = P[1]; re = P[2]; rn = P[3]
-        rule_branch[++nrules] = rb
-        rule_elem[nrules]     = re
-        rule_new[nrules]      = rn
-    }
+    parse_rules(rules, "streamify_fm_xml.awk")
 }
-
-# Tiefe (führende Tabs) der aktuellen Zeile bestimmen.
-function depth_of(line,   d) { d = 0; while (substr(line, d + 1, 1) == "\t") d++; return d }
 
 {
     line = $0
-    d = depth_of(line)
-
-    # 1) Branch-CLOSE zuerst: deaktiviert das Flag, BEVOR auf dieser Zeile etwas
-    #    umbenannt würde (die Close-Zeile selbst trägt keinen Record-Anker).
-    for (i = 1; i <= nrules; i++) {
-        b = rule_branch[i]
-        if (branch_open[b] && d == branch_depth[b] && line ~ ("^\t*</" b ">[ \t]*$")) {
-            branch_open[b] = 0
-        }
-    }
-
-    # 2) Renaming: für jede Regel, deren Branch gerade offen ist, das Ziel-Element
-    #    (Open-/Close-Tag) auf dieser Zeile umbenennen. Präzise Boundaries.
-    for (i = 1; i <= nrules; i++) {
-        b = rule_branch[i]
-        if (!branch_open[b]) continue
-        e = rule_elem[i]; nn = rule_new[i]
-        # awk-gsub kennt KEINE Backreferences → Boundaries explizit (kein Capture).
-        # Open-Tag mit Attributen / self-closing:  "<Elem "  (Leerzeichen grenzt ab,
-        #   matcht NICHT <ElemObject/<ElemTheme…). Open-Tag ohne Attribute: "<Elem>".
-        #   Close-Tag: "</Elem>".
-        gsub("<" e " ",  "<" nn " ",  line)
-        gsub("<" e ">",  "<" nn ">",  line)
-        gsub("</" e ">", "</" nn ">", line)
-    }
-
-    # 3) Branch-OPEN zuletzt: aktiviert das Flag für Folgezeilen (nicht die
-    #    Branch-Zeile selbst). Self-closing Branch (<Branch …/>) ignorieren.
-    for (i = 1; i <= nrules; i++) {
-        b = rule_branch[i]
-        if (!branch_open[b] && line ~ ("^\t*<" b "[ >]") && line !~ /\/>[ \t]*$/ && line !~ ("</" b ">[ \t]*$")) {
-            branch_open[b] = 1
-            branch_depth[b] = d
-        }
-    }
-
+    rename_line()
     print line
 }

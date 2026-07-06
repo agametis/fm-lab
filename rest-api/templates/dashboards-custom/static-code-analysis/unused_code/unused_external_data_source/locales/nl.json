@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Ongebruikte externe gegevensbron",
+    "description": "Ongebruikte-code-regel — externe gegevensbronnen waarnaar door geen enkele tabelinstantie wordt verwezen."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Ongebruikte externe gegevensbron",
+    "findings_table.props.searchPlaceholder": "Bestand of naam zoeken…",
+    "findings_table.props.empty.message": "Geen resultaten gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Naam"
+  }
+}

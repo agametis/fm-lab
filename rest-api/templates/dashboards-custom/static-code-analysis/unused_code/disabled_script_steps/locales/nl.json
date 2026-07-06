@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Script met veel uitgeschakelde stappen",
+    "description": "Ongebruikte-code-regel — scripts met vijf of meer uitgeschakelde stappen. Uitgeschakelde stappen zijn uitgecommentarieerde code die het script vervuilt en lezers verwart."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Script met veel uitgeschakelde stappen",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen scripts met veel uitgeschakelde stappen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Uitgeschakeld"
+  }
+}

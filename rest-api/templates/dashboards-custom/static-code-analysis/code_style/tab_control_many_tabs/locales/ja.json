@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "タブの多いタブコントロール",
+    "description": "コードスタイルルール — タブが 6 個を超えるタブコントロール。タブが多すぎるとコンテンツが隠れ、ナビゲーションが難しくなります。 しきい値はスライダーで調整可能（既定 6）。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "タブの多いタブコントロール",
+    "findings_table.props.searchPlaceholder": "ファイルまたは Layout を検索…",
+    "findings_table.props.empty.message": "過負荷なタブコントロールは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "タブ数",
+    "threshold_slider.props.label": "タブコントロールあたりのタブ数（最小）",
+    "threshold_slider.props.valueSuffix": "タブ"
+  }
+}

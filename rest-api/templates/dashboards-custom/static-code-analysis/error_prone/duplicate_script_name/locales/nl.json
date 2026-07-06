@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Dubbele scriptnaam",
+    "description": "Foutgevoelige regel — twee of meer scripts met dezelfde naam binnen één bestand. Een veelvoorkomend kopieer-plak-artefact dat \"script op naam aanroepen\" dubbelzinnig maakt."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Dubbele scriptnaam",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen dubbele scriptnamen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

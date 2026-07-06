@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Auto-Eingabe-Berechnung überschreibt Bestand",
+    "description": "Fehleranfälligkeits-Regel — Felder, deren Auto-Eingabe-Berechnung einen bestehenden Wert ersetzt. Das kann Nutzereingaben bei jeder Änderung still überschreiben."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Auto-Eingabe-Berechnung überschreibt Bestand",
+    "findings_table.props.searchPlaceholder": "Datei, Tabelle oder Feld suchen…",
+    "findings_table.props.empty.message": "Keine überschreibenden Auto-Eingabe-Berechnungen gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Tabelle",
+    "findings_table.props.columns[2].label": "Feld"
+  }
+}

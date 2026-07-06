@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Relation multichamp",
+    "description": "Règle de style de code : relations avec trois prédicats de champ ou plus. Les clés de jointure très larges sont difficiles à suivre et signalent souvent l’absence d’un champ clé."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Relation multichamp",
+    "findings_table.props.searchPlaceholder": "Rechercher une occurrence de table…",
+    "findings_table.props.empty.message": "Aucune relation multichamp trouvée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "TO gauche",
+    "findings_table.props.columns[2].label": "TO droite",
+    "findings_table.props.columns[3].label": "Prédicats"
+  }
+}

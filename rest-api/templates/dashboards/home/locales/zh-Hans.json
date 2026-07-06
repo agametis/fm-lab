@@ -36,7 +36,7 @@
     "dashboards.props.subtitle": "预设分析",
     "custom_queries.props.label": "自定义查询",
     "custom_queries.props.subtitle": "可复用 SQL 模板",
-    "markdown.props.content": "## 提示\n\n- **搜索:** 在搜索框输入名称以过滤对象 — 仪表盘会自动隐藏。\n- **文件:** 点击文件表中的一行可为后续所有视图设定文件过滤。\n- **导航:** *仪表盘* 打开精选分析,*自定义查询* 列出所有可复用 SQL 模板,*文档* 显示已安装的文档来源。",
+    "markdown.props.content": "## 提示\n\n- **搜索:** 在搜索框输入名称以过滤对象 — 仪表盘会自动隐藏。\n- **文件:** 点击文件表中的某一行会打开该文件的视图。\n- **导航:** *仪表盘* 打开精选分析,*自定义查询* 列出所有可复用 SQL 模板,*文档* 显示已安装的文档来源。",
     "docs.props.label": "文档",
     "docs.props.subtitle": "已安装的文档来源"
   }

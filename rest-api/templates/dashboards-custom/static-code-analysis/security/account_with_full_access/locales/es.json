@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Cuenta con [Acceso completo]",
+    "description": "Regla de seguridad: cuentas con el conjunto de privilegios [Acceso completo]. Cada cuenta de acceso completo es una llave maestra sin restricciones; mantenga el número al mínimo."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Cuenta con [Acceso completo]",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o cuenta…",
+    "findings_table.props.empty.message": "No se encontraron cuentas con [Acceso completo].",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Cuenta"
+  }
+}

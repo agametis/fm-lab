@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Script mit vielen deaktivierten Schritten",
+    "description": "Unused-Code-Regel — Scripts mit fünf oder mehr deaktivierten Schritten. Deaktivierte Schritte sind auskommentierter Code, der das Script überfrachtet und Leser verwirrt."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Script mit vielen deaktivierten Schritten",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Keine Scripts mit vielen deaktivierten Schritten gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Deaktiviert"
+  }
+}

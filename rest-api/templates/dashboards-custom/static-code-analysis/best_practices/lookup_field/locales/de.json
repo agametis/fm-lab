@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Lookup-Feld",
+    "description": "Bestandsaufnahme der per Lookup gefüllten Felder. Ein Lookup erfasst einen Wert bewusst zum Setzzeitpunkt (Momentaufnahme) — oft genau so gewollt (z. B. Preis, Steuersatz oder Anschrift auf einem Beleg einfrieren). Auflistung zur Übersicht, nicht als Fehler."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Lookup-Feld",
+    "findings_table.props.searchPlaceholder": "Datei, Feld oder Quelle suchen…",
+    "findings_table.props.empty.message": "Keine Lookup-Felder gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Feld",
+    "findings_table.props.columns[2].label": "Lookup-Quelle"
+  }
+}

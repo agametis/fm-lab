@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "FileMaker ファイル結合",
+    "description": "ソリューションの FileMaker ファイル間のモジュール結合マトリクス: ファイル間の ObjectLinks を、ソースファイル × ターゲットファイル × リンクロールで集計し、宣言された外部 FileMaker データソースとファイル間アクセス認可を加えたものです。「どのモジュールがどれに依存しているか？」を表形式の監査ビューとして回答し、Graph Atlas を補完します。"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "ファイル間リンク",
+    "summary_kpistrip.props.items[1].label": "結合されたファイルペア",
+    "summary_kpistrip.props.items[2].label": "ソースファイル",
+    "summary_kpistrip.props.items[3].label": "最大ファンアウト",
+    "summary_kpistrip.props.items[4].label": "外部 FM ソース",
+    "summary_kpistrip.props.items[5].label": "ファイル認可",
+    "by_role.props.title": "リンクロール別の結合",
+    "by_role_table.props.columns[0].label": "リンクロール",
+    "by_role_table.props.columns[1].label": "種類",
+    "by_role_table.props.columns[2].label": "リンク",
+    "by_role_table.props.columns[3].label": "ペア",
+    "by_role_table.props.columns[4].label": "ソースファイル",
+    "by_role_table.props.columns[5].label": "ターゲットファイル",
+    "coupling.props.title": "結合マトリクス（ソース → ターゲット）",
+    "coupling_table.props.columns[0].label": "ソースファイル",
+    "coupling_table.props.columns[1].label": "ターゲットファイル",
+    "coupling_table.props.columns[2].label": "リンク",
+    "coupling_table.props.columns[3].label": "ロール",
+    "coupling_table.props.columns[4].label": "上位ロール",
+    "coupling_details.props.title": "結合の詳細（個々のリンク）",
+    "coupling_details_table.props.columns[0].label": "ソースファイル",
+    "coupling_details_table.props.columns[1].label": "ソース種類",
+    "coupling_details_table.props.columns[2].label": "ソースオブジェクト",
+    "coupling_details_table.props.columns[3].label": "ロール",
+    "coupling_details_table.props.columns[4].label": "ターゲットファイル",
+    "coupling_details_table.props.columns[5].label": "ターゲット種類",
+    "coupling_details_table.props.columns[6].label": "ターゲットオブジェクト",
+    "external_sources.props.title": "外部 FileMaker データソース（宣言された結合）",
+    "external_sources_table.props.columns[0].label": "元ファイル",
+    "external_sources_table.props.columns[1].label": "宣言されたソース",
+    "external_sources_table.props.columns[2].label": "TOs",
+    "external_sources_table.props.columns[3].label": "サンプル TO",
+    "markdown.props.content": "## 注記\n\n**モジュール化カテゴリの中核ダッシュボード** — *どのモジュールがどれに依存しているか？* に直接回答し、Graph Atlas を表形式の監査ビューで補完します。\n\n- **KPI**: *ファイル間リンク* = `Is_Cross_File = TRUE` かつソース／ターゲットファイルが異なるすべての運用 `ObjectLinks`。*結合されたファイルペア* = 一意の有向（ソース → ターゲット）ペア。*最大ファンアウト* = 単一のソースファイルから到達する一意のターゲットファイルの最大数。*外部 FM ソース* = 一意の FileMaker データソース宣言。*ファイル認可* = `FileAccessAuthorizations` の行数。\n- **リンクロール別の結合**: ファイル間トラフィックが種類別（`displays_field`、`reads_field`、`calls_script`、`base_table`、…）にどう分かれるか。ロールをクリックすると、詳細リストがそのロールで絞り込まれます。\n- **結合マトリクス**: 有向ファイルペアごとに 1 行で、リンク数、一意のロール数、上位ロールのプレビューを表示します。ペアをクリックすると、詳細リストがちょうどそのソース → ターゲット結合で絞り込まれます。\n- **結合の詳細**: 選択したペア／ロールの背後にある個々のリンク — ファイル A のソースオブジェクトがファイル B のターゲットオブジェクトを参照します。行をクリックすると**ターゲット**オブジェクトが開きます。\n- **外部 FM ソース**: 宣言的な側面 — どのファイルがどの別のファイルを外部データソースとして登録するか（実際のオブジェクトトラフィックとは無関係）。行をクリックすると、そのソースのアルファベット順で最初のテーブルオカレンスが開きます。\n- ファイル間リンクは本質的に運用的です（構造的な包含は FileMaker でファイル境界を越えることはありません）。そのため構造列はありません。\n- **関連ルール**: 過度な結合に対する派生した重大度ルールは *Static Code Analysis* にあります。\n- **並べ替え**: すべての列見出しはクリック可能です（▲▼）。"
+  }
+}

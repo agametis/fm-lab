@@ -1,0 +1,17 @@
+{
+  "title": "Unused code",
+  "icon": "trash-2",
+  "order": 4,
+  "locales": {
+    "de": "Ungenutzter Code",
+    "es": "Código sin usar",
+    "fr": "Code inutilisé",
+    "it": "Codice inutilizzato",
+    "ja": "未使用コード",
+    "ko": "미사용 코드",
+    "nl": "Ongebruikte code",
+    "pt": "Código não utilizado",
+    "sv": "Oanvänd kod",
+    "zh-Hans": "未使用代码"
+  }
+}

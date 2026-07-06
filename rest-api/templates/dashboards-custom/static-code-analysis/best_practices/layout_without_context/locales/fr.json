@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Layout sans contexte de table",
+    "description": "Règle de bonne pratique : Layouts sans contexte d’occurrence de table. Ils ne peuvent pas afficher de données d’enregistrement et sont souvent des Layouts orphelins ou utilitaires."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Layout sans contexte de table",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un Layout…",
+    "findings_table.props.empty.message": "Aucun Layout sans contexte trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

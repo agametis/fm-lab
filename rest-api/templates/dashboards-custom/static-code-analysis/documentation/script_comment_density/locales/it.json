@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Densità dei commenti negli script",
+    "description": "Regola di documentazione: confronta gli script per numero totale di passi, passi di commento reali e commenti di soli spazi, con un fattore di densità dei commenti per ciascuno. Integra la regola binaria «Script non documentato» valutando quanto sono ben commentati gli script sostanziali. Numero minimo di passi regolabile tramite il cursore dell’intestazione (predefinito 10)."
+  },
+  "layout": {
+    "script_comment_density_kpi_kpistrip.props.items[0].label": "Script totali",
+    "script_comment_density_kpi_kpistrip.props.items[1].label": "Con ≥ min_steps",
+    "script_comment_density_kpi_kpistrip.props.items[2].label": "Senza commenti",
+    "script_comment_density_kpi_kpistrip.props.items[3].label": "Mediana commento %",
+    "script_comment_density.props.title": "Script per numero di passi, commenti e spazi",
+    "script_comment_density_table.props.columns[0].label": "Script",
+    "script_comment_density_table.props.columns[1].label": "File",
+    "script_comment_density_table.props.columns[2].label": "Passi totali",
+    "script_comment_density_table.props.columns[3].label": "Commenti reali",
+    "script_comment_density_table.props.columns[4].label": "Passi vuoti",
+    "script_comment_density_table.props.columns[5].label": "Commento %",
+    "script_comment_density_table.props.columns[6].label": "Spazi %",
+    "script_comment_density_table.props.empty.message": "Nessuno script corrisponde al filtro corrente.",
+    "threshold_slider.props.label": "Passi minimi per script",
+    "threshold_slider.props.valueSuffix": "passi"
+  }
+}

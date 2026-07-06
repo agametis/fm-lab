@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Lookup-fält",
+    "description": "Inventering av fält som fylls via lookup. En lookup fångar avsiktligt ett värde vid tidpunkten det sätts (ögonblicksbild) — ofta precis vad som avses (t.ex. att frysa ett pris, en skattesats eller en adress på ett dokument). Listas som översikt, inte som fel."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Lookup-fält",
+    "findings_table.props.searchPlaceholder": "Sök fil, fält eller källa…",
+    "findings_table.props.empty.message": "Inga lookup-fält hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Fält",
+    "findings_table.props.columns[2].label": "Lookup-källa"
+  }
+}

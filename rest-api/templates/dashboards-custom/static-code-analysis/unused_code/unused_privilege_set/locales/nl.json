@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Ongebruikte bevoegdhedenset",
+    "description": "Ongebruikte-code-regel — eigen bevoegdhedensets die aan geen enkel account zijn toegewezen (de ingebouwde [Volledige toegang] / [Alleen gegevensinvoer] / [Alleen-lezen] zijn uitgesloten)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Ongebruikte bevoegdhedenset",
+    "findings_table.props.searchPlaceholder": "Bestand of set zoeken…",
+    "findings_table.props.empty.message": "Geen ongebruikte bevoegdhedensets gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Bevoegdhedenset"
+  }
+}

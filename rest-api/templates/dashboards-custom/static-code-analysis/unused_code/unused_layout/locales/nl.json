@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Ongebruikte Layout",
+    "description": "Ongebruikte-code-regel — Layouts waar geen script naartoe navigeert. Controleer: Layouts die alleen op naam of handmatig worden geopend kunnen hier verschijnen."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Ongebruikte Layout",
+    "findings_table.props.searchPlaceholder": "Bestand of naam zoeken…",
+    "findings_table.props.empty.message": "Geen resultaten gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Naam"
+  }
+}

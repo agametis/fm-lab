@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Wachtwoordveld opgeslagen als platte tekst",
+    "description": "Beveiligingsregel — normale (opgeslagen) velden waarvan de naam op een wachtwoord/PIN wijst. Tenzij het bestand versleuteling in rust (EAR) heeft ingeschakeld, slaat FileMaker de waarden onversleuteld op. De kolom \"Encryption at rest\" toont de EAR-status per bestand."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Wachtwoordveld opgeslagen als platte tekst",
+    "findings_table.props.searchPlaceholder": "Bestand, tabel of veld zoeken…",
+    "findings_table.props.empty.message": "Geen wachtwoordvelden in platte tekst gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Tabel",
+    "findings_table.props.columns[2].label": "Veld",
+    "findings_table.props.columns[3].label": "Encryption at rest"
+  }
+}

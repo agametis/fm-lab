@@ -24,6 +24,7 @@ import {
   XmlImportPage,
   DocsSetPage,
   DocsCategoryPage,
+  FileDetailPage,
 } from './dashboard/LeitPages';
 import { DocsEntryView } from './docs/DocsEntryView';
 
@@ -600,6 +601,7 @@ function App() {
         }
       />
       <Route path="/layout/:uuid" element={<LayoutView />} />
+      <Route path="/file/:filename" element={<FileDetailPage />} />
       {/* Leitseiten (bare routes) — vor den :param-Routen */}
       <Route path="/dashboard" element={<DashboardsPage />} />
       <Route path="/dashboard/:id" element={<DashboardView />} />

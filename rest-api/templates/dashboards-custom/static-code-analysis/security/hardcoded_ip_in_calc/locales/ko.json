@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "계산식에 하드코딩된 IP 주소",
+    "description": "보안/유지보수 규칙 — 리터럴 IPv4 주소(예: FTP/SMTP 호스트)가 포함된 계산 청크. 하드코딩된 호스트는 네트워크가 바뀌면 깨집니다.\n\nPMD 규칙 AvoidUsingHardCodedIP — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#avoidusinghardcodedip"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "계산식에 하드코딩된 IP 주소",
+    "findings_table.props.searchPlaceholder": "파일, 스크립트 또는 IP 검색…",
+    "findings_table.props.empty.message": "계산식에서 하드코딩된 IP 주소를 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "발견 위치",
+    "findings_table.props.columns[2].label": "IP"
+  }
+}

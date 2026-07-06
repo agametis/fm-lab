@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "含大量已禁用步骤的脚本",
+    "description": "未使用代码规则 — 含五个或更多已禁用步骤的脚本。已禁用步骤是被注释掉的代码，会使脚本臃肿并让读者困惑。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "含大量已禁用步骤的脚本",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到含大量已禁用步骤的脚本。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "已禁用"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Exit Script i Loop",
+    "description": "Felbenägen regel — Exit Script i en Loop. Att lämna ett skript mitt i Loopen hoppar över Loop-rensningen och överraskar anropare."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Exit Script i Loop",
+    "findings_table.props.searchPlaceholder": "Sök fil eller skript…",
+    "findings_table.props.empty.message": "Inget Exit Script i en Loop hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Skript",
+    "findings_table.props.columns[2].label": "Steg"
+  }
+}

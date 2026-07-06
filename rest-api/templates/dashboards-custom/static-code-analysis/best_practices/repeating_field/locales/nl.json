@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Herhalend veld",
+    "description": "Best-practice-regel — velden met meer dan één herhaling. Herhalende velden zijn lastig te bevragen en te rapporteren; een gerelateerde tabel is meestal beter."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Herhalend veld",
+    "findings_table.props.searchPlaceholder": "Bestand, tabel of veld zoeken…",
+    "findings_table.props.empty.message": "Geen herhalende velden gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Tabel",
+    "findings_table.props.columns[2].label": "Veld",
+    "findings_table.props.columns[3].label": "Herh."
+  }
+}

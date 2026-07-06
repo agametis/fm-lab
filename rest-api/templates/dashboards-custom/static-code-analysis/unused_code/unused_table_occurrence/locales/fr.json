@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Occurrence de table inutilisée",
+    "description": "Règle de code inutilisé : occurrences de table ne servant ni de contexte de Layout, ni de source de portail, ni de cible GTRR, ni de côté de relation."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Occurrence de table inutilisée",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un nom…",
+    "findings_table.props.empty.message": "Aucune correspondance trouvée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Nom"
+  }
+}

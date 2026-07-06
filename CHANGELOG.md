@@ -12,6 +12,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.8.8] — 2026-07-06
+
+Catalog completeness — closing the last where-used gaps across menus, calculations, buttons, and cross-file relationships — plus a broad hardening, bugfix, and optimization pass.
+
+- **Catalog completeness** — new reference classes so objects previously reachable only through indirect paths now appear in where-used and dependency analysis (schema 1.6.1)
+  - **Custom Menus & menu items** parsed into the catalog with a detail view; submenu items link to the menu they open
+  - **Calculation-chunk references** resolved from layout-object formulas (conditional formatting, hide, tooltip, …) and other calc contexts
+  - **SQL and plugin calls** resolved — MBS function names qualified, `FM.RunScript` wired to `calls_script`, and field usage inside SQL wrappers surfaced
+  - **Button-embedded script steps** — a button that runs a single step now contributes the same navigation/reference links as the script side, with correct Go-to-Related-Record table-occurrence semantics
+  - **External table occurrences** in `RelationshipCatalog` resolved across files
+  - **Value-list sort references** captured, and **locale-independent step-role mapping** — field references no longer fall through on localized exports
+- **Hardening, bugfixes & optimizations** (prominent items)
+  - **XML pipeline hardening** — the Katana engine refactored into a shared library, with byte-identical output verified end-to-end
+  - **webbed v2.4.0** adopted (signed community build) — fixes SAX-streaming double-encoding of non-ASCII content; the version check is raised accordingly
+  - **Converter quality-test harness** — a data-driven, end-to-end check catalog that guards conversion correctness against a baseline
+  - **XML import integrity dashboard** — surfaces duplicate-absorption and consistency findings from the import directly in the web client
+  - **Reference hygiene** — empty-string references normalized away, removing phantom links from where-used
+  - Frontend detail-view optimizations — file, value-list (with full-text search), and base-table detail views
+  - dashboards / custom-queries cleanup
+
+---
+
+## [0.8.7] — 2026-07-03
+
+Static code analysis as a first-class layer: curated rule bundles run as live catalog queries and surface as localized, drill-down dashboards.
+
+- **Static Code Analysis** — PMD-inspired rule bundles that flag known issues and structural signals across the solution
+  - Rules run as **live dashboard datasets** — no separate runner or scan step; each rule is a targeted catalog query, always in sync with the latest import
+  - Grouped into categories — **best practices, code style, documentation, error-prone, performance, security, unused code** — plus a **modularization** category (file coupling and inventories for filesystem access and process / server-side / email / plugin / ODBC usage)
+  - **Overview with health KPIs** — the implemented checks at a glance, with object-type-grouped live counts and a security group, each drilling down into its findings
+  - Analysis foundation: per-step control-flow metadata and a materialized script block-tree (Loop / If nesting depth) that power block-level rules such as unbalanced If or loop-without-exit
+  - Fully **localized across all 11 languages**, with reusable API filter-sets for the dashboards
+
+---
+
 ## [0.8.6] — 2026-06-30
 
 A containerized setup for fm-lab with a clear Quickstart path, a version manifest that tracks every moving part, and a round of UI refinements.

@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Open URL in der Loop",
+    "description": "Performance-/UX-Regel — Open URL innerhalb einer Loop startet pro Durchlauf einen externen Handler."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Open URL in der Loop",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Kein Treffer für „Open URL in der Loop\" gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Schritt",
+    "findings_table.props.columns[3].label": "Tiefe"
+  }
+}

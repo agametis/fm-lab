@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Custom Function sin usar",
+    "description": "Regla de código sin usar: Custom Functions que no se llaman desde ningún cálculo, script ni otra función.\n\nBasado en la regla de PMD UnusedPrivateMethod — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatemethod"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Custom Function sin usar",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o nombre…",
+    "findings_table.props.empty.message": "No se encontraron coincidencias.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Nombre"
+  }
+}

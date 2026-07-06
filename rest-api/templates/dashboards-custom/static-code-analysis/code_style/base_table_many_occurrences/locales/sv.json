@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Bastabell med många förekomster",
+    "description": "Kodstilsregel — bastabeller med fler än åtta tabellförekomster. Ett mycket högt antal tyder på en trasslig relationsgraf."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Bastabell med många förekomster",
+    "findings_table.props.searchPlaceholder": "Sök fil eller tabell…",
+    "findings_table.props.empty.message": "Inga bastabeller med många förekomster hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Bastabell",
+    "findings_table.props.columns[2].label": "Förekomster"
+  }
+}

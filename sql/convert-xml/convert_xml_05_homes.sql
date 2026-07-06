@@ -1,5 +1,5 @@
 -- ============================================
--- build_resolutions.sql
+-- convert_xml_05_homes.sql — Phase 5 der XML-Konvertierungs-Pipeline
 -- ============================================
 -- Datei-übergreifende Heimat-Auflösungs-Tabellen.
 -- Wird nach allen File-Imports vom Batch-Skript einmalig aufgerufen
@@ -37,8 +37,14 @@ WHERE oc.Object_Type IN (
     'Field', 'Script', 'Layout', 'CustomFunction', 'ValueList',
     'Theme', 'CustomMenu', 'ScriptTrigger', 'Account', 'PrivilegeSet',
     'ExternalDataSource', 'BaseDirectory', 'LayoutPart',
-    'BaseTable', 'TableOccurrence', 'Relationship'
+    'BaseTable', 'TableOccurrence', 'Relationship',
+    -- B-C6: Typenliste nachgezogen (fehlten seit ihrer Einführung)
+    'CustomMenuSet', 'CustomMenuItem', 'ExtendedPrivilege'
 )
+-- B-C6: deterministischer Gewinner bei Klon-UUIDs (gleiche UUID in mehreren
+-- Dateien) — vorher entschied die Scan-Reihenfolge über ON CONFLICT DO NOTHING.
+QUALIFY ROW_NUMBER() OVER (PARTITION BY oc.Object_UUID
+                           ORDER BY oc.File_Name, oc.Object_Type, oc.Object_Name) = 1
 ON CONFLICT (Object_UUID) DO NOTHING;
 
 -- Block 2: BaseTable-Heimat über Feld-Anzahl auflösen.
@@ -264,11 +270,29 @@ WHERE a <> b   -- durch Hochziehen entstandene Selbst-Schleifen verwerfen
 -- ClusterEdgesBase — bisheriger Cluster-Kantensatz: LogicalLinks minus Builtins,
 -- (source,target)-dedupliziert. Builtin-Filter lebt genau HIER (einmal). Führt
 -- Source_File/Target_File mit (Klon-Knoten-Key).
-CREATE OR REPLACE VIEW ClusterEdgesBase AS
+--
+-- MATERIALISIERT: als reine View-Kette wurde LogicalLinks von
+-- ClusterGodNodes/ClusterEdges/Full-Graph-Queries bis ~5× pro Query evaluiert
+-- (inkl. Anti-Joins) — das bekannte OOM-Muster der READ_ONLY-API (8 Threads/2 GB,
+-- clusteredges-view-double-scan-oom). Die Materialisierung liegt in der TABLE
+-- ClusterEdgesBaseMat (klein: 4 UUID-/Datei-Spalten, dedupliziert; bei jedem Batch
+-- neu gebaut, volatil wie ClusterNodeUniverse, via Sync in der API-Kopie).
+-- ClusterEdgesBase bleibt unter ihrem dokumentierten Namen eine DÜNNE VIEW über
+-- der Mat-Tabelle — bewusst NICHT selbst als Tabelle: DuckDBs DROP … IF EXISTS
+-- scheitert bei Typ-Mismatch (View↔Table) in BEIDEN Richtungen, eine In-Place-
+-- Umwandlung des Namens ist also nicht idempotent skriptbar. Mit neuem Mat-Namen
+-- sind alle Zustände sicher: fresh (nichts da), legacy (ClusterEdgesBase=View →
+-- CREATE OR REPLACE VIEW ersetzt), steady (View über Mat). GodNodes/ClusterEdges
+-- bleiben billige Views; LogicalLinks bleibt View (Explorer/where-used filtern
+-- sie stark — Materialisierung brächte dort nichts).
+CREATE OR REPLACE TABLE ClusterEdgesBaseMat AS
 SELECT DISTINCT Source_UUID, Source_File, Target_UUID, Target_File
 FROM LogicalLinks
 WHERE Source_UUID NOT IN (SELECT Object_UUID FROM ObjectCatalog WHERE Object_Type = 'BuiltinFunction')
   AND Target_UUID NOT IN (SELECT Object_UUID FROM ObjectCatalog WHERE Object_Type = 'BuiltinFunction');
+
+CREATE OR REPLACE VIEW ClusterEdgesBase AS
+SELECT Source_UUID, Source_File, Target_UUID, Target_File FROM ClusterEdgesBaseMat;
 
 -- ClusterGodNodes — querschneidende Knoten (Stufe D-Kriterium, partition-unabhängig).
 -- file_spread = #distinkte Dateien unter den Nachbarn; own_file_share = Anteil der

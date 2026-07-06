@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Undokumentiertes Script",
+    "description": "Dokumentations-Regel — nicht-triviale Scripts (10+ Schritte) ohne einen einzigen Kommentar-Schritt. Schwer zu übergeben oder zu warten.\n\nAngelehnt an die PMD-Regel CommentRequired — https://docs.pmd-code.org/latest/pmd_rules_java_documentation.html#commentrequired Ein Filter-Schalter über der Tabelle wechselt zwischen Objekten ohne und mit Kommentar (die kommentierten dienen als Vorlage/Inspiration)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Undokumentiertes Script",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Keine undokumentierten Scripts gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Schritte",
+    "comment_filter.props.options[0].label": "undokumentiert",
+    "comment_filter.props.options[1].label": "dokumentiert"
+  }
+}

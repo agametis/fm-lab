@@ -29,10 +29,99 @@ This is the high-level structure of the XML export produced from a FileMaker fil
             <AccountsCatalog membercount="6">...</AccountsCatalog>
             <StepsForScripts membercount="82">...</StepsForScripts>
             <CustomMenuCatalog membercount="24">...</CustomMenuCatalog>
+            <CustomMenuSetCatalog membercount="3">...</CustomMenuSetCatalog>
+            <FileAccessCatalog sameHost="False" required="True">...</FileAccessCatalog>
+            <Library membercount="2">...</Library>
             <PasteIndexList membercount="0"></PasteIndexList>
         </AddAction>
     </Structure>
+    <Metadata membercount="1">
+        <AddAction membercount="9">…file options (see below)…</AddAction>
+    </Metadata>
+    <DDR_INFO>…calculation/script chunks (only with "Include details for analysis tools")…</DDR_INFO>
+</FMSaveAsXML>
 ```
+
+**Further branches (quick reference → DuckDB table):**
+
+| Branch | Content | Table(s) |
+|---|---|---|
+| `CustomMenuSetCatalog` | Menu sets with a `CustomMenuReference` member list | `CustomMenuSetCatalog` |
+| `FileAccessCatalog` | Inter-file authorizations (`UUID` entries with a file reference) | `FileAccessAuthorizations` |
+| `Library` | Library entries (binary blobs; only metadata retained) | `LibraryReferences` |
+| `Metadata/AddAction` | File options: `PageSetup`, `Encryption`, `Minimum`, `Login` (type=1 + `AccountName` = auto-login!), `ShowSignInFields`, `Spelling`, `Hide*Sharing`, `Defaults/LayoutReference` (start layout), file-global `ScriptTriggers` | `FileOptionsCatalog`, `ScriptTriggers` |
+| `DDR_INFO/Calculation` | Formula chunks per calc anchor `_<UUID>_<kind>` (hash → `DDRREF` joins) | `DDR_Calculations` |
+| `DDR_INFO/Script` | Human-readable script-step texts | `DDR_ScriptSteps` |
+| `PrivilegeSet/access/Records/Custom` | Custom Record Privileges (table × operation, calcs, field level) | `PrivilegeSetRecordAccess`, `PrivilegeSetFieldAccess` |
+| `PrivilegeSet/access/{Layouts,ValueLists,Scripts}/Custom` | Object-level Custom Privileges | `PrivilegeSetObjectAccess` |
+
+Note on the name collision: theme-internal `<Metadata><namedstyles>` blocks (inside
+`ThemeCatalog`) are NOT the file-options branch — only a `<Metadata>` with an
+`<AddAction>` child counts (the P1 parser filters accordingly).
+
+## Custom sort by value list (`<Sort type="Custom">` with `<ValueListReference>`)
+
+A custom sort order carries its reference value list as a `<ValueListReference>`
+next to the `<PrimaryField>`. **Only** `<Sort type="Custom">` carries such a reference.
+Four carriers (all → link role `sorts_by_valuelist`, distinguished by `Source_Type`):
+
+| Carrier | Path | Source in the converter |
+|---|---|---|
+| "Sort Records" script step (step ID 39) | `Step > ParameterValues > Parameter > SortSpecification > SortList > Sort[Custom]` | P2 via `StepsForScripts.Step_XML` |
+| Portal sort | `LayoutObject[Portal] > Portal > SortSpecification > SortList > Sort[Custom]` | P2 via `LayoutObjects.Object_XML` (anchored path) |
+| Button-embedded sort step | `LayoutObject > GroupedButton/Button > action > Step[39] > … > Sort[Custom]` | P2 via `LayoutObjects.Object_XML` (anchored path) |
+| Relationship sort ("Sort records") | `Relationship > {Left,Right}Table > SortSpecification > SortList > Sort[Custom]` | P1 `RelationshipCatalog` (`Left/Right_Sort_ValueList_UUIDs`) |
+
+Note on `Object_XML` extractions: the fragment contains the **full subtree** of a
+layout object — a `//` XPath would additionally match inherited portal sorts on ancestor
+containers (Panel/Tab Control). Hence absolute paths anchored to the owning object.
+
+## Button-embedded step references (`GroupedButton/Button > action > Step`)
+
+Instead of a script call (`<ScriptReference>` → `triggers_script`), a button can execute a
+**single embedded script step**. Its references produce the same **reused** link roles as
+the script side (`Source_Type='LayoutObject'` distinguishes the carrier; no new registry
+roles). Extraction in P2 from `LayoutObjects.Object_XML` with the `action/Step` path
+anchored at the button (the `action` branch contains no child objects — those live under
+`…/ObjectList` — so `//` **inside** the anchored `action/Step` is duplicate-free). FileMaker
+allows only **one** step per button.
+
+| Reference class | `Ref_Type` | Path (under `action/Step`) | Link role |
+|---|---|---|---|
+| Layout (Go to Layout step 6, GTRR target layout step 74) | `layout_step` | `//LayoutReference` (scalar `[1]`) | `navigates_to_layout` |
+| TableOccurrence (**GTRR only**, step 74) | `table_occurrence_step` | `//TableOccurrenceReference` (scalar `[1]`) | `navigates_to_to` |
+| Field (Go to Field 17, Sort Records 39, …) | `field_step` | `ParameterValues//FieldReference` | via `ScriptStepRoleMap` (`navigates_to_field`/`sorts_by_field`/… ; fallback `references_field`) |
+
+**Semantic gating** as on the script side: `navigates_to_to` applies **only** to GTRR
+(`Step_ID=74`). A Go-to-Field / Sort-Records step does carry a `<TableOccurrenceReference>`,
+but that is the **context TO** of the target/sort field, not a navigation target (the script
+side stores it analogously in `XMLStepReferences.TO_UUID`, not as a link). The step `@id` is
+carried along in the additive column `XMLLayoutReferences.Step_ID` and carries the
+locale-independent field role. Closes the largest remaining where-used gap class (layouts
+reachable only via a button appeared as false positives in `unused_layout`).
+
+## External value lists (`<Source value="External">`)
+
+A local value-list wrapper can source its values from a VL in **another file**:
+
+```xml
+<ValueList>
+    <ValueListReference id="7" name="Lieferbedingung" UUID="44639478-…"/>  <!-- self-identity -->
+    <Source value="External"/>
+    <External>
+        <DataSourceReference id="64" name="Gruppen" UUID="AFA2D47E-…">
+            <UniversalPathList>file:Gruppen</UniversalPathList>
+        </DataSourceReference>
+        <ValueListReference id="9" name="Lieferbedingungen" UUID=""/>      <!-- target VL: UUID EMPTY! -->
+    </External>
+</ValueList>
+```
+
+The target `ValueListReference` carries an **empty UUID** — resolution runs via the data
+source (→ target file) + VL `id` (fallback: name). Converter: `OptionsForValueLists.External_*`
+columns (P1) → links `ValueList → ValueList (source_valuelist)` and
+`ValueList → ExternalDataSource (data_source)` (P4); unresolvable targets are reported by
+`v_check_external_vl_unresolved` (P6).
 
 ## CustomFunction calculations — format differs by SaXML version
 

@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Table avec de nombreux champs",
+    "description": "Règle de style de code : tables de base avec plus de 100 champs. Une table très large mêle souvent plusieurs préoccupations qui devraient avoir leurs propres tables.\n\nD’après la règle PMD TooManyFields — https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#toomanyfields Seuil réglable via le curseur (par défaut 100)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Table avec de nombreux champs",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou une table…",
+    "findings_table.props.empty.message": "Aucune table très large trouvée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Table",
+    "findings_table.props.columns[2].label": "Champs",
+    "threshold_slider.props.label": "Champs par table (minimum)",
+    "threshold_slider.props.valueSuffix": "champs"
+  }
+}

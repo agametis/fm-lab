@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "电子邮件集成",
+    "description": "出站电子邮件发送的清单：Send Mail 步骤（Step_ID 63）按发送途径（SMTP 服务器与电子邮件客户端）分类，附带提取的 SMTP 主机和硬编码凭据标志（与安全相关），以及 MBS SendMail 调用。通过 cURL 的 SMTP 仍保留在 API 仪表板中。"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Send Mail 步骤",
+    "summary_kpistrip.props.items[1].label": "通过 SMTP",
+    "summary_kpistrip.props.items[2].label": "通过 Client",
+    "summary_kpistrip.props.items[3].label": "硬编码凭据",
+    "summary_kpistrip.props.items[4].label": "MBS 邮件调用",
+    "summary_kpistrip.props.items[5].label": "受影响的文件",
+    "by_mode.props.title": "按发送途径",
+    "by_mode_table.props.columns[0].label": "发送途径",
+    "by_mode_table.props.columns[1].label": "调用点",
+    "by_mode_table.props.columns[2].label": "文件",
+    "by_mode_table.props.columns[3].label": "硬编码认证",
+    "findings.props.title": "调用点",
+    "findings_table.props.columns[0].label": "发送途径",
+    "findings_table.props.columns[1].label": "机制",
+    "findings_table.props.columns[2].label": "脚本/对象",
+    "findings_table.props.columns[3].label": "SMTP 主机",
+    "findings_table.props.columns[4].label": "硬编码认证",
+    "findings_table.props.columns[5].label": "文件",
+    "findings_table.props.columns[6].label": "#",
+    "markdown.props.content": "## 说明\n\n出站 **电子邮件**。*Send Mail*（Step_ID 63）根据 DDR 步骤文本按发送途径分类：**SMTP 服务器** 与 **电子邮件客户端**。当步骤使用 SMTP 服务器时，会提取主机；带有内联 `Password:` 的步骤会被标记为 **硬编码凭据**（一项安全发现——密码值本身永远不会显示）。MBS `SendMail.*` / `EmailParser.*` 调用从已解析的 `calls_pluginfunction` 链接中读取。\n\n- **作为筛选器的 KPI**：*通过 SMTP* 和 *通过 Client* 会筛选详细列表。\n- **硬编码凭据**：嵌入步骤中的 SMTP 服务器、端口和密码在部署时会失效，并将机密泄露到 DDR 中。\n- **范围**：基于 cURL 的 SMTP（`MBS:CURL.*`）仍保留在 *API 和外部接口* 仪表板中。\n- **导航**：单击调用点会打开载体（脚本 + 步骤锚点，或 MBS 调用背后的对象）。\n- **相关规则**：派生的严重性规则位于 *Static Code Analysis* 下。\n- **排序**：所有列标题均可点击（▲▼）。"
+  }
+}

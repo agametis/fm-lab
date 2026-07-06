@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "E-postintegration",
+    "description": "Inventering av utgående e-postutskick: Send Mail-steg (Step_ID 63) klassificerade efter sändningsväg (SMTP-server kontra e-postklient), med den extraherade SMTP-värden och en flagga för hårdkodade autentiseringsuppgifter (säkerhetsrelevant), plus MBS SendMail-anrop. cURL-SMTP stannar kvar i API-panelen."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Send Mail-steg",
+    "summary_kpistrip.props.items[1].label": "via SMTP",
+    "summary_kpistrip.props.items[2].label": "via Client",
+    "summary_kpistrip.props.items[3].label": "Hårdkodade autentiseringsuppgifter",
+    "summary_kpistrip.props.items[4].label": "MBS-e-postanrop",
+    "summary_kpistrip.props.items[5].label": "Berörda filer",
+    "by_mode.props.title": "Efter sändningsväg",
+    "by_mode_table.props.columns[0].label": "Sändningsväg",
+    "by_mode_table.props.columns[1].label": "Anropsställen",
+    "by_mode_table.props.columns[2].label": "Filer",
+    "by_mode_table.props.columns[3].label": "Hårdkodad auth",
+    "findings.props.title": "Anropsställen",
+    "findings_table.props.columns[0].label": "Sändningsväg",
+    "findings_table.props.columns[1].label": "Mekanism",
+    "findings_table.props.columns[2].label": "Skript/Objekt",
+    "findings_table.props.columns[3].label": "SMTP-värd",
+    "findings_table.props.columns[4].label": "Hårdkodad auth",
+    "findings_table.props.columns[5].label": "Fil",
+    "findings_table.props.columns[6].label": "#",
+    "markdown.props.content": "## Anmärkningar\n\nUtgående **e-post**. *Send Mail* (Step_ID 63) klassificeras efter sändningsväg utifrån DDR-stegtexten: **SMTP-server** kontra **e-postklient**. När steget använder en SMTP-server extraheras värden; ett steg med ett inline-`Password:` flaggas som **hårdkodade autentiseringsuppgifter** (ett säkerhetsfynd — själva lösenordsvärdet visas aldrig). MBS `SendMail.*` / `EmailParser.*`-anrop läses från de upplösta `calls_pluginfunction`-länkarna.\n\n- **KPI:er som filter**: *via SMTP* och *via Client* filtrerar detaljlistan.\n- **Hårdkodade autentiseringsuppgifter**: SMTP-server, port och lösenord inbyggda i steget går sönder vid driftsättning och läcker hemligheter till DDR.\n- **Omfattning**: cURL-baserad SMTP (`MBS:CURL.*`) stannar kvar i panelen *API:er och externa gränssnitt*.\n- **Navigering**: att klicka på ett anropsställe öppnar bäraren (Skript + steganker, eller objektet bakom ett MBS-anrop).\n- **Relaterade regler**: härledda allvarlighetsregler finns under *Static Code Analysis*.\n- **Sortering**: alla kolumnrubriker är klickbara (▲▼)."
+  }
+}

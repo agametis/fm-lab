@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "繰り返しフィールド",
+    "description": "ベストプラクティスルール — 繰り返しが 2 回以上あるフィールド。繰り返しフィールドはクエリや集計が難しく、通常は関連テーブルのほうが適しています。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "繰り返しフィールド",
+    "findings_table.props.searchPlaceholder": "ファイル・テーブル・フィールドを検索…",
+    "findings_table.props.empty.message": "繰り返しフィールドは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "テーブル",
+    "findings_table.props.columns[2].label": "フィールド",
+    "findings_table.props.columns[3].label": "繰り返し"
+  }
+}

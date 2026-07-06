@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Custom Function inutilizzata",
+    "description": "Regola di codice inutilizzato: Custom Functions non chiamate da alcun calcolo, script o altra funzione.\n\nBasato sulla regola PMD UnusedPrivateMethod — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatemethod"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Custom Function inutilizzata",
+    "findings_table.props.searchPlaceholder": "Cerca file o nome…",
+    "findings_table.props.empty.message": "Nessun risultato trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Nome"
+  }
+}

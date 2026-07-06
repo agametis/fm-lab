@@ -1,0 +1,42 @@
+{
+  "manifest": {
+    "title": "Vista file",
+    "description": "Vista dettagliata per file: metadati, opzioni file, KPI degli oggetti e gli script attivati / layout iniziale / account di accesso."
+  },
+  "layout": {
+    "file_not_found.props.title": "File non trovato",
+    "file_not_found_md.props.content": "Nessun file con questo nome esiste nel database corrente. Apri un file dalla pagina **iniziale**.",
+    "file_info.props.title": "Info file",
+    "file_metrics_kpistrip.props.items[0].label": "Oggetti",
+    "file_metrics_kpistrip.props.items[1].label": "Riferimenti",
+    "file_metrics_kpistrip.props.items[2].label": "Versione FM",
+    "file_metrics_kpistrip.props.items[3].label": "Info DDR",
+    "file_metrics_kpistrip.props.items[4].label": "Ultimo import",
+    "file_metrics_kpistrip.props.items[5].label": "Versione minima",
+    "file_size_kpistrip.props.items[0].label": "Dimensione file",
+    "file_settings_list.props.items[0].label": "Login automatico",
+    "file_settings_list.props.items[1].label": "Salva credenziali",
+    "file_settings_list.props.items[2].label": "Campi di accesso",
+    "file_settings_list.props.items[3].label": "Crittografia",
+    "file_settings_list.props.items[4].label": "Nascondi condivisione WebDirect",
+    "file_settings_list.props.items[5].label": "Nascondi condivisione client",
+    "file_settings_list.props.items[6].label": "Sottolinea ortografia",
+    "file_object_counts.props.title": "Oggetti",
+    "file_object_counts_kpistrip.props.items[0].label": "Script",
+    "file_object_counts_kpistrip.props.items[1].label": "Tabelle",
+    "file_object_counts_kpistrip.props.items[2].label": "Campi",
+    "file_object_counts_kpistrip.props.items[3].label": "TO",
+    "file_object_counts_kpistrip.props.items[4].label": "Relazioni",
+    "file_object_counts_kpistrip.props.items[5].label": "Layout",
+    "file_object_counts_kpistrip.props.items[6].label": "Elenchi valori",
+    "file_object_counts_kpistrip.props.items[7].label": "Funzioni pers.",
+    "file_object_counts_kpistrip.props.items[8].label": "Variabili",
+    "file_triggers.props.title": "Script attivati",
+    "file_triggers_table.props.columns[0].label": "Evento",
+    "file_triggers_table.props.columns[1].label": "Script",
+    "file_start_layout.props.title": "Layout iniziale",
+    "file_start_layout_table.props.columns[0].label": "Layout",
+    "file_account.props.title": "Account di accesso",
+    "file_account_table.props.columns[0].label": "Account"
+  }
+}

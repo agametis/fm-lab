@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Healthchecks",
+    "description": "객체 유형별로 그룹화한 선별된 상태 점검을 실시간 개수와 함께 표시하며, 각 항목은 해당 정적 코드 분석 규칙 대시보드로 연결됩니다."
+  },
+  "layout": {
+    "hc_kpi_strip.props.items[0].label": "모든 점검",
+    "hc_kpi_strip.props.items[1].label": "오류",
+    "hc_kpi_strip.props.items[2].label": "경고",
+    "hc_kpi_strip.props.items[3].label": "정보",
+    "hc_security_card.props.title": "보안",
+    "hc_security_list.props.empty.message": "보고할 항목이 없습니다.",
+    "hc_fields_card.props.title": "필드",
+    "hc_fields_list.props.empty.message": "보고할 항목이 없습니다.",
+    "hc_scripts_card.props.title": "스크립트",
+    "hc_scripts_list.props.empty.message": "보고할 항목이 없습니다.",
+    "hc_relationships_card.props.title": "관계",
+    "hc_relationships_list.props.empty.message": "보고할 항목이 없습니다.",
+    "hc_tables_card.props.title": "테이블 및 오커런스",
+    "hc_tables_list.props.empty.message": "보고할 항목이 없습니다.",
+    "hc_layouts_card.props.title": "레이아웃",
+    "hc_layouts_list.props.empty.message": "보고할 항목이 없습니다.",
+    "hc_variables_card.props.title": "변수",
+    "hc_variables_list.props.empty.message": "보고할 항목이 없습니다.",
+    "hc_valuelists_card.props.title": "값 목록",
+    "hc_valuelists_list.props.empty.message": "보고할 항목이 없습니다.",
+    "hc_customfunctions_card.props.title": "사용자 정의 함수",
+    "hc_customfunctions_list.props.empty.message": "보고할 항목이 없습니다."
+  }
+}

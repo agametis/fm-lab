@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Replace Field Contents",
+    "description": "오류 유발 규칙 — Replace Field Contents 단계. 실행 취소 없이 전체 찾은 집합의 필드를 덮어씁니다. 찾은 집합이 잘못되면 많은 레코드를 조용히 손상시킵니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "Replace Field Contents",
+    "findings_table.props.searchPlaceholder": "파일 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "Replace Field Contents 단계를 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "스크립트",
+    "findings_table.props.columns[2].label": "단계"
+  }
+}

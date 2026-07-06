@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Tabla base con muchas apariciones",
+    "description": "Regla de estilo de código: tablas base con más de ocho apariciones de tabla. Un número muy alto indica un grafo de relaciones enredado."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Tabla base con muchas apariciones",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o tabla…",
+    "findings_table.props.empty.message": "No se encontraron tablas base con muchas apariciones.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Tabla base",
+    "findings_table.props.columns[2].label": "Apariciones"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Layout não utilizado",
+    "description": "Regra de código não utilizado — Layouts para os quais nenhum script navega. Verifique: Layouts abertos apenas por nome ou manualmente podem aparecer aqui."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Layout não utilizado",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou nome…",
+    "findings_table.props.empty.message": "Nenhuma correspondência encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Nome"
+  }
+}

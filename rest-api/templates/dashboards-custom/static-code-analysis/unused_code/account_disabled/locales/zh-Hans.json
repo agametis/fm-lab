@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "已禁用的账户",
+    "description": "未使用代码/安全规则 — 已禁用的账户。应删除旧的已禁用账户，以保持安全面的整洁。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "已禁用的账户",
+    "findings_table.props.searchPlaceholder": "搜索文件或账户…",
+    "findings_table.props.empty.message": "未找到已禁用的账户。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "账户",
+    "findings_table.props.columns[2].label": "权限集"
+  }
+}

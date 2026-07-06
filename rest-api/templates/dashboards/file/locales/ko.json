@@ -1,0 +1,42 @@
+{
+  "manifest": {
+    "title": "파일 보기",
+    "description": "파일별 상세 보기: 메타데이터, 파일 옵션, 오브젝트 KPI 및 트리거된 스크립트 / 시작 레이아웃 / 로그인 계정."
+  },
+  "layout": {
+    "file_not_found.props.title": "파일을 찾을 수 없음",
+    "file_not_found_md.props.content": "현재 데이터베이스에 이 이름의 파일이 없습니다. **홈** 페이지에서 파일을 여세요.",
+    "file_info.props.title": "파일 정보",
+    "file_metrics_kpistrip.props.items[0].label": "오브젝트",
+    "file_metrics_kpistrip.props.items[1].label": "참조",
+    "file_metrics_kpistrip.props.items[2].label": "FM 버전",
+    "file_metrics_kpistrip.props.items[3].label": "DDR 정보",
+    "file_metrics_kpistrip.props.items[4].label": "마지막 가져오기",
+    "file_metrics_kpistrip.props.items[5].label": "최소 버전",
+    "file_size_kpistrip.props.items[0].label": "파일 크기",
+    "file_settings_list.props.items[0].label": "자동 로그인",
+    "file_settings_list.props.items[1].label": "자격 증명 저장",
+    "file_settings_list.props.items[2].label": "로그인 필드",
+    "file_settings_list.props.items[3].label": "암호화",
+    "file_settings_list.props.items[4].label": "WebDirect 공유 숨기기",
+    "file_settings_list.props.items[5].label": "클라이언트 공유 숨기기",
+    "file_settings_list.props.items[6].label": "맞춤법 밑줄",
+    "file_object_counts.props.title": "오브젝트",
+    "file_object_counts_kpistrip.props.items[0].label": "스크립트",
+    "file_object_counts_kpistrip.props.items[1].label": "테이블",
+    "file_object_counts_kpistrip.props.items[2].label": "필드",
+    "file_object_counts_kpistrip.props.items[3].label": "TO",
+    "file_object_counts_kpistrip.props.items[4].label": "관계",
+    "file_object_counts_kpistrip.props.items[5].label": "레이아웃",
+    "file_object_counts_kpistrip.props.items[6].label": "값 목록",
+    "file_object_counts_kpistrip.props.items[7].label": "사용자 함수",
+    "file_object_counts_kpistrip.props.items[8].label": "변수",
+    "file_triggers.props.title": "트리거된 스크립트",
+    "file_triggers_table.props.columns[0].label": "이벤트",
+    "file_triggers_table.props.columns[1].label": "스크립트",
+    "file_start_layout.props.title": "시작 레이아웃",
+    "file_start_layout_table.props.columns[0].label": "레이아웃",
+    "file_account.props.title": "로그인 계정",
+    "file_account_table.props.columns[0].label": "계정"
+  }
+}

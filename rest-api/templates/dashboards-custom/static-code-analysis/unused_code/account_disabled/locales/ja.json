@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "無効なアカウント",
+    "description": "未使用コード/セキュリティルール — 無効化されたアカウント。古い無効アカウントは、セキュリティ範囲を清潔に保つために削除すべきです。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "無効なアカウント",
+    "findings_table.props.searchPlaceholder": "ファイルまたはアカウントを検索…",
+    "findings_table.props.empty.message": "無効なアカウントは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "アカウント",
+    "findings_table.props.columns[2].label": "権限セット"
+  }
+}

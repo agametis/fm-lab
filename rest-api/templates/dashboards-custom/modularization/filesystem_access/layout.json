@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpistrip",
+            "props": {
+              "items": [
+                {
+                  "label": "Touchpoints",
+                  "field": "touchpoints",
+                  "format": "number"
+                },
+                {
+                  "label": "Critical (write+delete)",
+                  "field": "critical",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "filesystem_access",
+                      "params": {
+                        "operation": "write"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Delete",
+                  "field": "delete_hits",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "filesystem_access",
+                      "params": {
+                        "operation": "delete"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Files affected",
+                  "field": "files_affected",
+                  "format": "number"
+                },
+                {
+                  "label": "MBS calls",
+                  "field": "mbs_hits",
+                  "format": "number"
+                },
+                {
+                  "label": "Native steps",
+                  "field": "native_hits",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "fs_groups",
+        "props": {
+          "span": 12,
+          "title": "Groups (API group × operation)"
+        },
+        "data": {
+          "dataset": "fs_groups"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "fs_groups_table",
+            "props": {
+              "rowKey": "api_group",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                {
+                  "field": "api_group",
+                  "label": "API group",
+                  "format": "badge"
+                },
+                {
+                  "field": "operation",
+                  "label": "Operation",
+                  "format": "badge"
+                },
+                {
+                  "field": "hits",
+                  "label": "Hits",
+                  "align": "right"
+                },
+                {
+                  "field": "files",
+                  "label": "Files",
+                  "align": "right"
+                }
+              ],
+              "onRowClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "filesystem_access",
+                  "params": {
+                    "api_group": "{{api_group}}",
+                    "operation": "{{operation}}"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings",
+        "props": {
+          "span": 12,
+          "title": "Touchpoints (call sites)"
+        },
+        "data": {
+          "dataset": "findings"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                {
+                  "field": "api_group",
+                  "label": "Group",
+                  "format": "badge"
+                },
+                {
+                  "field": "operation",
+                  "label": "Operation",
+                  "format": "badge"
+                },
+                {
+                  "field": "ref_type",
+                  "label": "Ref type",
+                  "format": "badge"
+                },
+                {
+                  "field": "carrier",
+                  "label": "Script/Object"
+                },
+                {
+                  "field": "detail",
+                  "label": "Step/Function"
+                },
+                {
+                  "field": "file",
+                  "label": "File"
+                },
+                {
+                  "field": "step_index",
+                  "label": "#",
+                  "align": "right"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "{{nav_type}}",
+                  "file": "{{file}}",
+                  "params": {
+                    "step": "{{step_uuid}}"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "fs_paths",
+        "props": {
+          "span": 12,
+          "title": "Path literals (where does it write / read?)"
+        },
+        "data": {
+          "dataset": "fs_paths"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "fs_paths_table",
+            "props": {
+              "rowKey": "step_uuid",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                {
+                  "field": "path_literal",
+                  "label": "Path literal"
+                },
+                {
+                  "field": "directory",
+                  "label": "Directory"
+                },
+                {
+                  "field": "carrier",
+                  "label": "Script"
+                },
+                {
+                  "field": "detail",
+                  "label": "Step"
+                },
+                {
+                  "field": "file",
+                  "label": "File"
+                },
+                {
+                  "field": "step_index",
+                  "label": "#",
+                  "align": "right"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "Script",
+                  "file": "{{file}}",
+                  "params": {
+                    "step": "{{step_uuid}}"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Markdown",
+        "id": "markdown",
+        "props": {
+          "span": 12,
+          "content": "## Notes\n\nInventory of **every file-system touchpoint** of the solution — native FileMaker commands and MBS plugin functions. Network / web access stays in the *APIs & external interfaces* dashboard; `Import Records` appears in both (interface indicator vs. file read).\n\n- **Native commands are Step_ID-gated** (locale-independent). SaXML writes the step name in the exporting client's UI language (this corpus mixes `Datensätze als Excel speichern` and `Save Records as PDF`), so the classification keys on the numeric `Step_ID`, never the name. Covered: Data File API (188–199), Import/Insert (35, 131, 56, 158, 159, 161), Export/Save (36, 132, 143, 144, 152, 225, 37, 3, 96).\n- **MBS functions** are read from the resolved `calls_pluginfunction` links (`MBS:<Component>.<Function>`), not by text matching — so the where-used navigation is exact. Filesystem components: `Files.*`, `Path.*`, `Folders.*`, `FileDialog.*`, plus the file-I/O functions of `Text.*` (Read/Write/AppendTextFile) and `Container.*` (Export/ReadFile/WriteFile). Case-insensitive (the corpus contains both `FileMakerPathToNativePath` and `FilemakerPathToNativePath`).\n- **Operations**: `read` / `write` / `delete` / `probe` (exists/size/date) / `import` / `export` / `launch` / `mount` / `dialog` (user-mediated) / `path` (path helpers) / `manage` (open/close/position/rename). Unknown `Files.*` functions fall to `operation = other` — visible, not lost.\n- **KPIs as filters**: *Critical (write+delete)* and *Delete* filter the detail list to the risky operations. *Touchpoints*, *Files affected*, *MBS calls* and *Native steps* are statistics tiles.\n- **Groups**: click an *API group × operation* cell to filter the detail list to it.\n- **Path literals**: `file:` / `filewin:` / `filemac:` literals extracted from script-step formulas, normalized to the directory level — answers *where* the solution reads/writes. Hard-coded absolute paths surface here.\n- **Navigation**: clicking a touchpoint opens the carrier (Script + step anchor, or the Custom Function / Field / Layout object behind an MBS call).\n- **Extending**: add project-specific writing MBS components (XL.Book.Save, DynaPDF.Save, Archive/Compression, …) as extra WHEN branches in `data/findings.sql` **and** `data/fs_groups.sql` (keep both in sync).\n- **Related rules**: the derived severity rules (write without error check, hard-coded absolute path, delete usage) live under *Static Code Analysis*.\n- **Sorting**: all column headings are clickable (▲▼)."
+        }
+      }
+    ]
+  }
+}

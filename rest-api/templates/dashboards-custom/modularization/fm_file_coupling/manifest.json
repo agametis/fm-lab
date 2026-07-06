@@ -1,0 +1,85 @@
+{
+  "id": "fm_file_coupling",
+  "version": "1.0.0",
+  "title": "FileMaker file coupling",
+  "description": "Module-coupling matrix between the FileMaker files of the solution: cross-file ObjectLinks aggregated by source file × target file × link role, plus the declared external FileMaker data sources and inter-file access authorizations. Answers \"which module depends on which?\" as a tabular audit view complementing the Graph Atlas.",
+  "author": "fm-lab",
+  "icon": "share-2",
+  "tags": [
+    "template",
+    "modularization",
+    "coupling",
+    "cross-file"
+  ],
+  "entry": "layout.json",
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "coupling",
+      "source": "bundle:data/coupling.sql",
+      "params": {
+        "limit": 300
+      }
+    },
+    {
+      "id": "by_role",
+      "source": "bundle:data/by_role.sql",
+      "params": {
+        "limit": 60
+      }
+    },
+    {
+      "id": "coupling_details",
+      "source": "bundle:data/coupling_details.sql",
+      "params": {
+        "limit": 300
+      }
+    },
+    {
+      "id": "external_sources",
+      "source": "bundle:data/external_sources.sql",
+      "params": {
+        "limit": 40
+      }
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter) — matches the file as source or target of a coupling."
+    },
+    {
+      "name": "source_file",
+      "type": "string",
+      "required": false,
+      "description": "Restricts the detail list to couplings originating in this file. 'All' (or empty) lifts the filter."
+    },
+    {
+      "name": "target_file",
+      "type": "string",
+      "required": false,
+      "description": "Restricts the detail list to couplings targeting this file. 'All' (or empty) lifts the filter."
+    },
+    {
+      "name": "link_role",
+      "type": "string",
+      "required": false,
+      "description": "Restricts the detail list to a specific link role (e.g. displays_field, calls_script). 'All' (or empty) lifts the filter."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of rows returned by the detail / matrix lists."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Lange berekeningsformule",
+    "description": "Codestijlregel — berekeningsvelden waarvan de formule 2000 tekens overschrijdt. Enorme formules zijn moeilijk te lezen en te debuggen.\n\nGebaseerd op de PMD-regel ExcessiveMethodLength — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessivemethodlength Drempel instelbaar via de schuifregelaar (standaard 2000)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Lange berekeningsformule",
+    "findings_table.props.searchPlaceholder": "Bestand of veld zoeken…",
+    "findings_table.props.empty.message": "Geen buitensporig lange berekeningen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Veld",
+    "findings_table.props.columns[2].label": "Lengte",
+    "threshold_slider.props.label": "Formulelengte (minimum, tekens)",
+    "threshold_slider.props.valueSuffix": "tekens"
+  }
+}

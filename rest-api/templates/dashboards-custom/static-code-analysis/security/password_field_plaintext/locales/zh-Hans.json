@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "以明文存储的密码字段",
+    "description": "安全规则 — 名称暗示密码/PIN 的普通（存储）字段。除非文件启用了静态加密(EAR)，否则 FileMaker 会以未加密方式存储字段值。\"Encryption at rest\"列显示每个文件的 EAR 状态。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "以明文存储的密码字段",
+    "findings_table.props.searchPlaceholder": "搜索文件、表或字段…",
+    "findings_table.props.empty.message": "未找到明文密码字段。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "表",
+    "findings_table.props.columns[2].label": "字段",
+    "findings_table.props.columns[3].label": "Encryption at rest"
+  }
+}

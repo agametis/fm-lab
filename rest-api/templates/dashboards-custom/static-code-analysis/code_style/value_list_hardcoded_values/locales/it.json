@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Elenco valori con valori fissi",
+    "description": "Regola di stile del codice: elenchi valori creati da valori personalizzati (fissi) anziché da un campo. Gli elenchi fissi diventano obsoleti e gli utenti non possono mantenerli."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Elenco valori con valori fissi",
+    "findings_table.props.searchPlaceholder": "Cerca file o elenco valori…",
+    "findings_table.props.empty.message": "Nessun elenco valori fisso trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Elenco valori",
+    "findings_table.props.columns[2].label": "Valori"
+  }
+}

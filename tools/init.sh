@@ -98,6 +98,33 @@ check_duckdb_baseline() {
   fi
 }
 
+# Ensure the webbed community extension is loadable for the ACTIVE DuckDB version.
+# webbed provides read_xml — the hard core of the convert pipeline. DuckDB stores
+# extensions per version, so a DuckDB upgrade (e.g. 1.5.3 → 1.5.4) orphans a
+# previously-working webbed: LOAD then fails for the new version until reinstalled.
+# Probe LOAD; on failure auto-install from the community repo (needs network) and
+# re-probe. Persistent failure is a hard error — without webbed every conversion
+# fails with a cascade of "table does not exist". Needs $DUCKDB_BIN + $DUCKDB_VER.
+check_webbed_extension() {
+  local rc
+  "$DUCKDB_BIN" :memory: -c "LOAD webbed;" >/dev/null 2>&1 && rc=0 || rc=$?
+  if [ "$rc" -eq 0 ]; then
+    info "webbed extension: loadable"
+    return 0
+  fi
+  warn "webbed extension not loadable for $DUCKDB_VER — installing from the community repo…"
+  if "$DUCKDB_BIN" :memory: -c "FORCE INSTALL webbed FROM community; LOAD webbed;" >/dev/null 2>&1; then
+    info "webbed extension: installed for $DUCKDB_VER"
+    summary_add "webbed            (re)installed for $DUCKDB_VER"
+  else
+    error "webbed extension could not be installed — the XML conversion needs it (read_xml)."
+    echo  "    Fix manually (needs internet):  \"$DUCKDB_BIN\" -c \"FORCE INSTALL webbed FROM community;\""
+    echo  "    Note: DuckDB stores extensions per version — reinstall webbed after every DuckDB upgrade."
+    summary_add "webbed            MISSING — run: FORCE INSTALL webbed FROM community;"
+    ok=false
+  fi
+}
+
 header "fm-lab init"
 echo "  Project root: $PROJECT_ROOT"
 [ -n "$FMLAB_VERSION" ] && echo "  Version: $FMLAB_VERSION"
@@ -131,6 +158,7 @@ if [ -n "$DUCKDB_BIN" ]; then
   DUCKDB_DIR=$(dirname "$DUCKDB_BIN")
   info "DuckDB: $DUCKDB_VER ($DUCKDB_BIN)"
   check_duckdb_baseline "$DUCKDB_VER"
+  check_webbed_extension
 else
   error "DuckDB CLI not found. Install it from https://duckdb.org/docs/installation/"
   ok=false

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Account disattivato",
+    "description": "Regola di codice inutilizzato/sicurezza: account disattivati. I vecchi account disattivati vanno rimossi per mantenere pulita la superficie di sicurezza."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Account disattivato",
+    "findings_table.props.searchPlaceholder": "Cerca file o account…",
+    "findings_table.props.empty.message": "Nessun account disattivato trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Account",
+    "findings_table.props.columns[2].label": "Set di privilegi"
+  }
+}

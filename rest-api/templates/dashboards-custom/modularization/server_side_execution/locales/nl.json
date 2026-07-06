@@ -1,0 +1,29 @@
+{
+  "manifest": {
+    "title": "Uitvoering aan serverzijde",
+    "description": "Wat er (mogelijk) op de server draait: Perform Script on Server, Execute FileMaker Data API en Install OnTimer Script (Step_ID-gated), plus de servergerelateerde Extended Privilege-verleningen (fmrest, fmurlscript, fmodata, fmxml, fmphp, fmextscriptaccess). Een toegangsauditweergave van het serveroppervlak."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Perform Script on Server",
+    "summary_kpistrip.props.items[1].label": "Execute Data API",
+    "summary_kpistrip.props.items[2].label": "Install OnTimer",
+    "summary_kpistrip.props.items[3].label": "Betrokken bestanden",
+    "summary_kpistrip.props.items[4].label": "Serververleningen",
+    "by_kind.props.title": "Per mechanisme",
+    "by_kind_table.props.columns[0].label": "Mechanisme",
+    "by_kind_table.props.columns[1].label": "Aanroeppunten",
+    "by_kind_table.props.columns[2].label": "Bestanden",
+    "by_kind_table.props.columns[3].label": "Scripts",
+    "findings.props.title": "Vindplaatsen",
+    "findings_table.props.columns[0].label": "Mechanisme",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Step",
+    "findings_table.props.columns[3].label": "Bestand",
+    "findings_table.props.columns[4].label": "#",
+    "grants.props.title": "Server-/API-verleningen (Extended Privileges)",
+    "grants_table.props.columns[0].label": "Extended Privilege",
+    "grants_table.props.columns[1].label": "Privilegeset",
+    "grants_table.props.columns[2].label": "Bestand",
+    "markdown.props.content": "## Opmerkingen\n\nWat er (mogelijk) op de **server** draait. Native steps zijn Step_ID-gated (taalonafhankelijk): *Perform Script on Server* (164), *Execute FileMaker Data API* (203), *Install OnTimer Script* (148).\n\n- **KPI's als filters**: de step-KPI's filteren de vindplaatsen op dat mechanisme.\n- **Server-/API-verleningen**: welke privilegesets de servergerelateerde Extended Privileges verlenen (`fmrest`, `fmurlscript`, `fmodata`, `fmxml`, `fmphp`, `fmextscriptaccess`). Klik op een rij om de privilegeset te openen.\n- **Navigatie**: klikken op een vindplaats opent het script bij de step.\n- **Gerelateerde regels**: afgeleide severity-regels staan onder *Static Code Analysis*.\n- **Sorteren**: alle kolomkoppen zijn klikbaar (▲▼)."
+  }
+}

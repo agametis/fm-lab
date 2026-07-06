@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "깊게 중첩된 Loop",
+    "description": "성능 규칙 — 세 개 이상의 중첩된 Loop가 있는 스크립트. 중첩 반복은 바깥쪽 한 번마다 작업량을 배가시킵니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "깊게 중첩된 Loop",
+    "findings_table.props.searchPlaceholder": "파일 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "깊게 중첩된 Loop를 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "스크립트",
+    "findings_table.props.columns[2].label": "깊이"
+  }
+}

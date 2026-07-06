@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Lookup フィールド",
+    "description": "Lookup で値が入るフィールドの一覧。Lookup は設定時点の値を意図的に取り込みます（スナップショット）。多くはまさにそれが狙い（例：伝票上の価格・税率・住所を固定）です。エラーではなく概要として列挙します。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "Lookup フィールド",
+    "findings_table.props.searchPlaceholder": "ファイル・フィールド・ソースを検索…",
+    "findings_table.props.empty.message": "Lookup フィールドは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "フィールド",
+    "findings_table.props.columns[2].label": "Lookup ソース"
+  }
+}

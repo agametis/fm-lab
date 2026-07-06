@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "ODBC / ESS / SQL",
+    "description": "外部 SQL 数据访问清单：Execute SQL 步骤 (Step_ID 117)、ODBC / ESS 数据源 (非 FileMaker 外部源) 以及 fmxdbc (ODBC/JDBC) 授权。一个通用模板 — 即使当前语料库没有 ODBC 源也很有用。"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Execute SQL 步骤",
+    "summary_kpistrip.props.items[1].label": "ODBC / ESS 源",
+    "summary_kpistrip.props.items[2].label": "fmxdbc 授权",
+    "summary_kpistrip.props.items[3].label": "含 SQL 的文件",
+    "findings.props.title": "Execute SQL 步骤",
+    "findings_table.props.columns[0].label": "脚本",
+    "findings_table.props.columns[1].label": "步骤",
+    "findings_table.props.columns[2].label": "SQL (预览)",
+    "findings_table.props.columns[3].label": "文件",
+    "findings_table.props.columns[4].label": "#",
+    "ess_sources.props.title": "ODBC / ESS 数据源",
+    "ess_sources_table.props.emptyMessage": "没有 ODBC / ESS 源 — 所有外部源均为 FileMaker。",
+    "ess_sources_table.props.columns[0].label": "源",
+    "ess_sources_table.props.columns[1].label": "类型",
+    "ess_sources_table.props.columns[2].label": "TOs",
+    "ess_sources_table.props.columns[3].label": "文件",
+    "grants.props.title": "ODBC / xDBC 授权 (fmxdbc)",
+    "grants_table.props.emptyMessage": "没有权限集授予 fmxdbc。",
+    "grants_table.props.columns[0].label": "扩展权限",
+    "grants_table.props.columns[1].label": "权限集",
+    "grants_table.props.columns[2].label": "文件",
+    "markdown.props.content": "## 说明\n\n外部 **SQL** 数据访问。*Execute SQL* 由 Step_ID 控制 (117，与语言无关 — 在此语料库中导出为 `SQL ausführen`)。ODBC / ESS 源是外部数据源目录中的非 FileMaker 条目；`fmxdbc` 授权显示哪些权限集允许 ODBC/JDBC 访问。\n\n- 这是一个**通用模板**：语料库当前没有 ODBC/ESS 源 (所有外部源均为 FileMaker) 以及一个 Execute SQL 步骤 — 该仪表板作为可重用的库条目仍然有用。\n- **导航**：点击 Execute SQL 步骤会在该步骤处打开脚本；ODBC/ESS 源会打开其第一个 table occurrence；授权会打开权限集。\n- **相关规则**：派生的严重性规则位于 *Static Code Analysis* 下。\n- **排序**：所有列标题均可点击 (▲▼)。"
+  }
+}

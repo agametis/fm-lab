@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Healthchecks",
+    "description": "Controlli di integrità curati e raggruppati per tipo di oggetto con conteggi in tempo reale, ciascuno collegato al proprio dashboard di regole di analisi statica del codice."
+  },
+  "layout": {
+    "hc_kpi_strip.props.items[0].label": "Tutti i controlli",
+    "hc_kpi_strip.props.items[1].label": "Errori",
+    "hc_kpi_strip.props.items[2].label": "Avvisi",
+    "hc_kpi_strip.props.items[3].label": "Info",
+    "hc_security_card.props.title": "Sicurezza",
+    "hc_security_list.props.empty.message": "Niente da segnalare.",
+    "hc_fields_card.props.title": "Campi",
+    "hc_fields_list.props.empty.message": "Niente da segnalare.",
+    "hc_scripts_card.props.title": "Script",
+    "hc_scripts_list.props.empty.message": "Niente da segnalare.",
+    "hc_relationships_card.props.title": "Relazioni",
+    "hc_relationships_list.props.empty.message": "Niente da segnalare.",
+    "hc_tables_card.props.title": "Tabelle e occorrenze",
+    "hc_tables_list.props.empty.message": "Niente da segnalare.",
+    "hc_layouts_card.props.title": "Formati",
+    "hc_layouts_list.props.empty.message": "Niente da segnalare.",
+    "hc_variables_card.props.title": "Variabili",
+    "hc_variables_list.props.empty.message": "Niente da segnalare.",
+    "hc_valuelists_card.props.title": "Liste valori",
+    "hc_valuelists_list.props.empty.message": "Niente da segnalare.",
+    "hc_customfunctions_card.props.title": "Funzioni personalizzate",
+    "hc_customfunctions_list.props.empty.message": "Niente da segnalare."
+  }
+}

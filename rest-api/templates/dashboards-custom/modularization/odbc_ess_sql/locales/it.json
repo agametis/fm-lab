@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "ODBC / ESS / SQL",
+    "description": "Inventario dell'accesso ai dati SQL esterni: passi Execute SQL (Step_ID 117), origini dati ODBC / ESS (origini esterne non FileMaker) e concessioni fmxdbc (ODBC/JDBC). Un modello generico — utile anche dove il corpus attualmente non ha origini ODBC."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Passi Execute SQL",
+    "summary_kpistrip.props.items[1].label": "Origini ODBC / ESS",
+    "summary_kpistrip.props.items[2].label": "Concessioni fmxdbc",
+    "summary_kpistrip.props.items[3].label": "File con SQL",
+    "findings.props.title": "Passi Execute SQL",
+    "findings_table.props.columns[0].label": "Script",
+    "findings_table.props.columns[1].label": "Passo",
+    "findings_table.props.columns[2].label": "SQL (anteprima)",
+    "findings_table.props.columns[3].label": "File",
+    "findings_table.props.columns[4].label": "#",
+    "ess_sources.props.title": "Origini dati ODBC / ESS",
+    "ess_sources_table.props.emptyMessage": "Nessuna origine ODBC / ESS — tutte le origini esterne sono FileMaker.",
+    "ess_sources_table.props.columns[0].label": "Origine",
+    "ess_sources_table.props.columns[1].label": "Tipo",
+    "ess_sources_table.props.columns[2].label": "TOs",
+    "ess_sources_table.props.columns[3].label": "File",
+    "grants.props.title": "Concessioni ODBC / xDBC (fmxdbc)",
+    "grants_table.props.emptyMessage": "Nessun set di privilegi concede fmxdbc.",
+    "grants_table.props.columns[0].label": "Privilegio esteso",
+    "grants_table.props.columns[1].label": "Set di privilegi",
+    "grants_table.props.columns[2].label": "File",
+    "markdown.props.content": "## Note\n\nAccesso ai dati **SQL** esterni. *Execute SQL* è condizionato da Step_ID (117, indipendente dalla lingua — in questo corpus viene esportato come `SQL ausführen`). Le origini ODBC / ESS sono le voci non FileMaker del catalogo delle origini dati esterne; le concessioni `fmxdbc` mostrano quali set di privilegi consentono l'accesso ODBC/JDBC.\n\n- Questo è un **modello generico**: il corpus attualmente non ha origini ODBC/ESS (tutte le origini esterne sono FileMaker) e un passo Execute SQL — la dashboard resta utile come voce riutilizzabile della libreria.\n- **Navigazione**: fare clic su un passo Execute SQL apre lo script in corrispondenza del passo; un'origine ODBC/ESS apre la sua prima table occurrence; una concessione apre il set di privilegi.\n- **Regole correlate**: le regole di severità derivate si trovano sotto *Static Code Analysis*.\n- **Ordinamento**: tutte le intestazioni di colonna sono cliccabili (▲▼)."
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "manifest": {
+    "title": "Bestandsweergave",
+    "description": "Detailweergave per bestand: metadata, bestandsopties, object-KPI's en de getriggerde scripts / startlay-out / aanmeldaccount."
+  },
+  "layout": {
+    "file_not_found.props.title": "Bestand niet gevonden",
+    "file_not_found_md.props.content": "Er bestaat geen bestand met deze naam in de huidige database. Open een bestand vanaf de **home**-pagina.",
+    "file_info.props.title": "Bestandsinfo",
+    "file_metrics_kpistrip.props.items[0].label": "Objecten",
+    "file_metrics_kpistrip.props.items[1].label": "Referenties",
+    "file_metrics_kpistrip.props.items[2].label": "FM-versie",
+    "file_metrics_kpistrip.props.items[3].label": "DDR-info",
+    "file_metrics_kpistrip.props.items[4].label": "Laatste import",
+    "file_metrics_kpistrip.props.items[5].label": "Min. versie",
+    "file_size_kpistrip.props.items[0].label": "Bestandsgrootte",
+    "file_settings_list.props.items[0].label": "Auto-login",
+    "file_settings_list.props.items[1].label": "Inloggegevens opslaan",
+    "file_settings_list.props.items[2].label": "Aanmeldvelden",
+    "file_settings_list.props.items[3].label": "Versleuteling",
+    "file_settings_list.props.items[4].label": "WebDirect-delen verbergen",
+    "file_settings_list.props.items[5].label": "Client-delen verbergen",
+    "file_settings_list.props.items[6].label": "Spelling onderstrepen",
+    "file_object_counts.props.title": "Objecten",
+    "file_object_counts_kpistrip.props.items[0].label": "Scripts",
+    "file_object_counts_kpistrip.props.items[1].label": "Tabellen",
+    "file_object_counts_kpistrip.props.items[2].label": "Velden",
+    "file_object_counts_kpistrip.props.items[3].label": "TO’s",
+    "file_object_counts_kpistrip.props.items[4].label": "Relaties",
+    "file_object_counts_kpistrip.props.items[5].label": "Layouts",
+    "file_object_counts_kpistrip.props.items[6].label": "Waardelijsten",
+    "file_object_counts_kpistrip.props.items[7].label": "Aangepaste fns",
+    "file_object_counts_kpistrip.props.items[8].label": "Variabelen",
+    "file_triggers.props.title": "Getriggerde scripts",
+    "file_triggers_table.props.columns[0].label": "Gebeurtenis",
+    "file_triggers_table.props.columns[1].label": "Script",
+    "file_start_layout.props.title": "Startlay-out",
+    "file_start_layout_table.props.columns[0].label": "Layout",
+    "file_account.props.title": "Aanmeldaccount",
+    "file_account_table.props.columns[0].label": "Account"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Werteliste mit hartkodierten Werten",
+    "description": "Code-Style-Regel — Wertelisten aus eigenen (hartkodierten) Werten statt aus einem Feld. Hartkodierte Listen veralten und lassen sich von Nutzern nicht pflegen."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Werteliste mit hartkodierten Werten",
+    "findings_table.props.searchPlaceholder": "Datei oder Werteliste suchen…",
+    "findings_table.props.empty.message": "Keine hartkodierten Wertelisten gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Werteliste",
+    "findings_table.props.columns[2].label": "Werte"
+  }
+}

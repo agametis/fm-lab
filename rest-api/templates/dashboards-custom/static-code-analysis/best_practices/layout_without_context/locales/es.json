@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Layout sin contexto de tabla",
+    "description": "Regla de buenas prácticas: Layouts sin contexto de aparición de tabla. No pueden mostrar datos de registros y suelen ser Layouts huérfanos o auxiliares."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Layout sin contexto de tabla",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o Layout…",
+    "findings_table.props.empty.message": "No se encontraron Layouts sin contexto.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

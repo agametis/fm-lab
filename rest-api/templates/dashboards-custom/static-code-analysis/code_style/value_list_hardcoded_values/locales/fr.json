@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Liste de valeurs avec valeurs codées en dur",
+    "description": "Règle de style de code : listes de valeurs créées à partir de valeurs personnalisées (codées en dur) plutôt que d’un champ. Les listes codées en dur deviennent obsolètes et ne peuvent pas être maintenues par les utilisateurs."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Liste de valeurs avec valeurs codées en dur",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou une liste de valeurs…",
+    "findings_table.props.empty.message": "Aucune liste de valeurs codée en dur trouvée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Liste de valeurs",
+    "findings_table.props.columns[2].label": "Valeurs"
+  }
+}

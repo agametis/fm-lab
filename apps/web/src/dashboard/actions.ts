@@ -9,6 +9,7 @@ import { substituteDeep } from './tokens';
 
 export type ActionName =
   | 'openObject'
+  | 'openFile'
   | 'openDashboard'
   | 'openDocsEntry'
   | 'navigate'
@@ -80,6 +81,14 @@ export function resolveAction(
 }
 
 /**
+ * "Mode"-Params, die bei openDashboard-Selbstnavigation (Klick innerhalb
+ * desselben Dashboards) erhalten bleiben — im Gegensatz zu Filter-Params
+ * (api_family, host, ref_type, …), die klick-skopiert zurückgesetzt werden.
+ * `api_set` = Klassifikations-Set, `file` = App-Dateifilter, `comment` = Kommentar-Linse.
+ */
+const STICKY_DASHBOARD_PARAMS = ['api_set', 'file', 'comment'];
+
+/**
  * Führt eine Action aus. Unbekannte Actions werden geloggt, aber ignoriert.
  */
 export function dispatchAction(
@@ -124,6 +133,19 @@ export function dispatchAction(
       ctx.navigate(`/object/${encodeURIComponent(uuid)}${qs ? '?' + qs : ''}`);
       return;
     }
+    case 'openFile': {
+      // Navigates to the file-detail view /file/:filename. Dedicated action
+      // (not `navigate`) because file names carry spaces/special chars — the
+      // generic path substitution does not URL-encode, so we encode here
+      // (symmetric with openObject) and the route param is auto-decoded.
+      const file = String(args.file || '');
+      if (!file) {
+        console.warn('[dashboard] openFile called without file', args);
+        return;
+      }
+      ctx.navigate(`/file/${encodeURIComponent(file)}`);
+      return;
+    }
     case 'openDashboard': {
       const id = String(args.id || '');
       if (!id) {
@@ -143,6 +165,24 @@ export function dispatchAction(
         }
       }
       const merged = nested ?? flat;
+      // Mode-Params bei Selbstnavigation bewahren (siehe STICKY_DASHBOARD_PARAMS):
+      // openDashboard ersetzt sonst den ganzen Querystring → ein aktives api_set
+      // ginge verloren, eine Familie aus diesem Set verschwände und die Detailliste
+      // bliebe leer. Neue Args gewinnen über den bewahrten Wert.
+      try {
+        const curId = decodeURIComponent(
+          window.location.pathname.split('/').filter(Boolean).pop() || '',
+        );
+        if (curId === id) {
+          const cur = new URLSearchParams(window.location.search);
+          for (const key of STICKY_DASHBOARD_PARAMS) {
+            const value = cur.get(key);
+            if (value != null && value !== '' && !(key in merged)) merged[key] = value;
+          }
+        }
+      } catch {
+        // Kein window (SSR/Tests) — Bewahrung überspringen.
+      }
       const qs = Object.keys(merged).length > 0
         ? '?' +
           new URLSearchParams(
@@ -185,6 +225,11 @@ export function dispatchAction(
     }
     case 'applyFilter': {
       const usp = new URLSearchParams();
+      // Tree/Hierarchie-Deep-Link: mode=tree schaltet die Startseite in den
+      // Hierarchie-Modus, subtype wählt den Baum (script/layout/customfunction).
+      // SearchView liest beide beim Mount aus der URL.
+      if (args.mode) usp.set('mode', String(args.mode));
+      if (args.subtype) usp.set('subtype', String(args.subtype));
       if (args.q) usp.set('q', String(args.q));
       if (args.type) usp.set('type', String(args.type));
       if (args.file) usp.set('file', String(args.file));

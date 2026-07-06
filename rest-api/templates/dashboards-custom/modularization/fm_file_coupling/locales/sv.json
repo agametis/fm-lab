@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "FileMaker-filkoppling",
+    "description": "Modulkopplingsmatris mellan lösningens FileMaker-filer: ObjectLinks mellan filer aggregerade per källfil × målfil × länkroll, plus de deklarerade externa FileMaker-datakällorna och åtkomstauktoriseringar mellan filer. Besvarar \"vilken modul beror på vilken?\" som en tabellbaserad granskningsvy, som komplement till Graph Atlas."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Länkar mellan filer",
+    "summary_kpistrip.props.items[1].label": "Kopplade filpar",
+    "summary_kpistrip.props.items[2].label": "Källfiler",
+    "summary_kpistrip.props.items[3].label": "Max fan-out",
+    "summary_kpistrip.props.items[4].label": "Externa FM-källor",
+    "summary_kpistrip.props.items[5].label": "Filauktoriseringar",
+    "by_role.props.title": "Koppling per länkroll",
+    "by_role_table.props.columns[0].label": "Länkroll",
+    "by_role_table.props.columns[1].label": "Typ",
+    "by_role_table.props.columns[2].label": "Länkar",
+    "by_role_table.props.columns[3].label": "Par",
+    "by_role_table.props.columns[4].label": "Källfiler",
+    "by_role_table.props.columns[5].label": "Målfiler",
+    "coupling.props.title": "Kopplingsmatris (källa → mål)",
+    "coupling_table.props.columns[0].label": "Källfil",
+    "coupling_table.props.columns[1].label": "Målfil",
+    "coupling_table.props.columns[2].label": "Länkar",
+    "coupling_table.props.columns[3].label": "Roller",
+    "coupling_table.props.columns[4].label": "Topproller",
+    "coupling_details.props.title": "Kopplingsdetaljer (enskilda länkar)",
+    "coupling_details_table.props.columns[0].label": "Källfil",
+    "coupling_details_table.props.columns[1].label": "Källtyp",
+    "coupling_details_table.props.columns[2].label": "Källobjekt",
+    "coupling_details_table.props.columns[3].label": "Roll",
+    "coupling_details_table.props.columns[4].label": "Målfil",
+    "coupling_details_table.props.columns[5].label": "Måltyp",
+    "coupling_details_table.props.columns[6].label": "Målobjekt",
+    "external_sources.props.title": "Externa FileMaker-datakällor (deklarerad koppling)",
+    "external_sources_table.props.columns[0].label": "Från fil",
+    "external_sources_table.props.columns[1].label": "Deklarerar källa",
+    "external_sources_table.props.columns[2].label": "TOs",
+    "external_sources_table.props.columns[3].label": "Exempel-TO",
+    "markdown.props.content": "## Anmärkningar\n\n**Kärndashboarden för kategorin Modularisering** — den besvarar *vilken modul beror på vilken?* direkt och kompletterar Graph Atlas med en tabellbaserad granskningsvy.\n\n- **KPI:er**: *Länkar mellan filer* = alla operativa `ObjectLinks` med `Is_Cross_File = TRUE` och olika käll-/målfil. *Kopplade filpar* = unika riktade (källa → mål) par. *Max fan-out* = det högsta antalet distinkta målfiler som nås från en enda källfil. *Externa FM-källor* = distinkta deklarationer av FileMaker-datakällor. *Filauktoriseringar* = rader i `FileAccessAuthorizations`.\n- **Koppling per länkroll**: hur trafiken mellan filer fördelas efter typ (`displays_field`, `reads_field`, `calls_script`, `base_table`, …). Klicka på en roll för att filtrera detaljlistan på den rollen.\n- **Kopplingsmatris**: en rad per riktat filpar med antalet länkar, antalet distinkta roller och en förhandsvisning av topprollerna. Klicka på ett par för att filtrera detaljlistan exakt på den källa → mål-kopplingen.\n- **Kopplingsdetaljer**: de enskilda länkarna bakom ett valt par / en vald roll — källobjektet i fil A som refererar till ett målobjekt i fil B. Klicka på en rad för att öppna **mål**-objektet.\n- **Externa FM-källor**: den deklarativa sidan — vilken fil som registrerar vilken annan fil som extern datakälla (oberoende av den faktiska objekttrafiken). Klicka på en rad för att öppna den alfabetiskt första tabellförekomsten för den källan.\n- Länkar mellan filer är operativa till sin natur (strukturell inneslutning korsar aldrig en filgräns i FileMaker), så det finns ingen strukturell kolumn.\n- **Relaterade regler**: de härledda allvarlighetsreglerna för överdriven koppling finns under *Static Code Analysis*.\n- **Sortering**: alla kolumnrubriker är klickbara (▲▼)."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Replace Field Contents",
+    "description": "易错规则 — Replace Field Contents 步骤。它们会在整个查找集中无法撤销地覆盖字段；错误的查找集会悄悄损坏大量记录。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "Replace Field Contents",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到 Replace Field Contents 步骤。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "步骤"
+  }
+}

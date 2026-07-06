@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Script não utilizado",
+    "description": "Regra de código não utilizado — scripts não chamados por nenhum outro script e não iniciados por nenhum acionador. Verifique: inícios manuais ou por menu personalizado podem aparecer aqui.\n\nBaseado na regra PMD UnusedPrivateMethod — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatemethod"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Script não utilizado",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhum script não utilizado encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Tabela base não utilizada",
+    "description": "Regra de código não utilizado — tabelas base sem ocorrência de tabela. Sem uma ocorrência, a tabela é inacessível no gráfico de relacionamentos."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Tabela base não utilizada",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou nome…",
+    "findings_table.props.empty.message": "Nenhuma correspondência encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Nome"
+  }
+}

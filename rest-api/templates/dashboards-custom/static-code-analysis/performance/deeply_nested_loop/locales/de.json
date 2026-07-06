@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Tief verschachtelte Loop",
+    "description": "Performance-Regel — Scripts mit drei oder mehr verschachtelten Loops. Verschachtelte Iteration vervielfacht die Arbeit je äußerem Durchlauf."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Tief verschachtelte Loop",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Keine tief verschachtelten Loops gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Tiefe"
+  }
+}

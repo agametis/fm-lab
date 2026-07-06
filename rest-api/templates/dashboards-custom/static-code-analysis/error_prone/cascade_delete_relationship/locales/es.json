@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Relación con eliminación en cascada",
+    "description": "Regla de propensión a errores: relaciones que eliminan registros relacionados en uno o ambos lados. Una eliminación incorrecta borra silenciosamente registros hijos; revise cada una."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Relación con eliminación en cascada",
+    "findings_table.props.searchPlaceholder": "Buscar aparición de tabla…",
+    "findings_table.props.empty.message": "No se encontraron relaciones con eliminación en cascada.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "TO izquierda",
+    "findings_table.props.columns[2].label": "TO derecha",
+    "findings_table.props.columns[3].label": "Cascada"
+  }
+}

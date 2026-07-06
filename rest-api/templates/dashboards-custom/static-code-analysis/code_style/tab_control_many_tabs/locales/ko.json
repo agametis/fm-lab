@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "탭이 많은 탭 컨트롤",
+    "description": "코드 스타일 규칙 — 탭이 여섯 개를 초과하는 탭 컨트롤. 탭이 너무 많으면 콘텐츠가 가려지고 탐색이 어려워집니다. 임계값은 슬라이더로 조정 가능(기본값 6)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "탭이 많은 탭 컨트롤",
+    "findings_table.props.searchPlaceholder": "파일 또는 Layout 검색…",
+    "findings_table.props.empty.message": "과도한 탭 컨트롤을 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "탭 수",
+    "threshold_slider.props.label": "탭 컨트롤당 탭 수(최소)",
+    "threshold_slider.props.valueSuffix": "탭"
+  }
+}

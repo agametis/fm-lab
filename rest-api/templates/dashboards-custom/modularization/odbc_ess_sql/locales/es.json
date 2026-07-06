@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "ODBC / ESS / SQL",
+    "description": "Inventario del acceso a datos SQL externos: pasos Execute SQL (Step_ID 117), fuentes de datos ODBC / ESS (fuentes externas no FileMaker) y concesiones fmxdbc (ODBC/JDBC). Una plantilla genérica, útil incluso donde el corpus actualmente no tiene fuentes ODBC."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Pasos Execute SQL",
+    "summary_kpistrip.props.items[1].label": "Fuentes ODBC / ESS",
+    "summary_kpistrip.props.items[2].label": "Concesiones fmxdbc",
+    "summary_kpistrip.props.items[3].label": "Archivos con SQL",
+    "findings.props.title": "Pasos Execute SQL",
+    "findings_table.props.columns[0].label": "Script",
+    "findings_table.props.columns[1].label": "Paso",
+    "findings_table.props.columns[2].label": "SQL (vista previa)",
+    "findings_table.props.columns[3].label": "Archivo",
+    "findings_table.props.columns[4].label": "#",
+    "ess_sources.props.title": "Fuentes de datos ODBC / ESS",
+    "ess_sources_table.props.emptyMessage": "No hay fuentes ODBC / ESS — todas las fuentes externas son FileMaker.",
+    "ess_sources_table.props.columns[0].label": "Fuente",
+    "ess_sources_table.props.columns[1].label": "Tipo",
+    "ess_sources_table.props.columns[2].label": "TOs",
+    "ess_sources_table.props.columns[3].label": "Archivo",
+    "grants.props.title": "Concesiones ODBC / xDBC (fmxdbc)",
+    "grants_table.props.emptyMessage": "Ningún conjunto de privilegios concede fmxdbc.",
+    "grants_table.props.columns[0].label": "Privilegio extendido",
+    "grants_table.props.columns[1].label": "Conjunto de privilegios",
+    "grants_table.props.columns[2].label": "Archivo",
+    "markdown.props.content": "## Notas\n\nAcceso a datos **SQL** externos. *Execute SQL* está condicionado por Step_ID (117, independiente del idioma — en este corpus se exporta como `SQL ausführen`). Las fuentes ODBC / ESS son las entradas no FileMaker del catálogo de fuentes de datos externas; las concesiones `fmxdbc` muestran qué conjuntos de privilegios permiten el acceso ODBC/JDBC.\n\n- Esta es una **plantilla genérica**: el corpus actualmente no tiene fuentes ODBC/ESS (todas las fuentes externas son FileMaker) y un paso Execute SQL — el panel sigue siendo útil como entrada reutilizable de la biblioteca.\n- **Navegación**: hacer clic en un paso Execute SQL abre el script en ese paso; una fuente ODBC/ESS abre su primera table occurrence; una concesión abre el conjunto de privilegios.\n- **Reglas relacionadas**: las reglas de severidad derivadas se encuentran en *Static Code Analysis*.\n- **Ordenación**: todos los encabezados de columna son clicables (▲▼)."
+  }
+}

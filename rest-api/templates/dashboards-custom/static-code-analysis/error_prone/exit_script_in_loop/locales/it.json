@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Exit Script in Loop",
+    "description": "Regola soggetta a errori: Exit Script dentro un Loop. Uscire da uno script a metà del Loop salta la pulizia del Loop e sorprende i chiamanti."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Exit Script in Loop",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Nessun Exit Script in un Loop trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Passo"
+  }
+}

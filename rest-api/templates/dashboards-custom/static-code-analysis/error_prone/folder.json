@@ -1,0 +1,17 @@
+{
+  "title": "Error-prone",
+  "icon": "bug",
+  "order": 2,
+  "locales": {
+    "de": "Fehleranfällig",
+    "es": "Propenso a errores",
+    "fr": "Sujet aux erreurs",
+    "it": "Soggetto a errori",
+    "ja": "エラーを招きやすい",
+    "ko": "오류 유발",
+    "nl": "Foutgevoelig",
+    "pt": "Propenso a erros",
+    "sv": "Felbenäget",
+    "zh-Hans": "易错"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "locked": true,
+  "id": "credentials_in_scripts",
+  "version": "1.0.0",
+  "title": "Credentials in scripts",
+  "description": "Security rule — script steps that reference credential-related keywords (password, secret, apikey, token, …) across all files. Actual values are masked with ***** so the dashboard never leaks plaintext secrets.\n\nReplaces the earlier DDR-calculation heuristic (hardcoded_credential): this bundle scans every script step, masks the values and adds keyword chips plus a multi-file view.",
+  "author": "fm-lab rules",
+  "icon": "shield-alert",
+  "category": "security",
+  "tags": ["rule", "security", "scripts"],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "critical",
+    "category": "security",
+    "rationale": "A credential referenced literally in a script step ends up in the DDR, in backups and in every copy of the file.",
+    "remediation": "Move the secret into a protected settings field, a server-side parameter, or an external secret store.",
+    "meta": {
+      "name": "Credentials in scripts",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Security rule — script steps that reference credential-related keywords, with the values masked so no plaintext secret is exposed.",
+      "created": "2026-07-03",
+      "references": [
+        {
+          "project": "PMD",
+          "rule": "HardCodedCryptoKey",
+          "url": "https://docs.pmd-code.org/latest/pmd_rules_java_security.html#hardcodedcryptokey"
+        }
+      ]
+    }
+  },
+  "datasets": [
+    { "id": "credentials_kpi",      "source": "bundle:data/credentials_kpi.sql" },
+    { "id": "credentials_findings", "source": "bundle:data/credentials_findings.sql" }
+  ],
+  "params": [
+    { "name": "file", "type": "string", "required": false,
+      "description": "Optional file filter — derived from the app-level filter." }
+  ],
+  "permissions": { "read_only": true, "allow_navigation": true }
+}

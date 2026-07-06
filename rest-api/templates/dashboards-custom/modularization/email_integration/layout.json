@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": { "columns": 12, "gap": 16 },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary",
+        "props": { "span": 12, "variant": "hero" },
+        "data": { "dataset": "summary" },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpistrip",
+            "props": {
+              "items": [
+                { "label": "Send Mail steps", "field": "send_mail_steps", "format": "number" },
+                { "label": "via SMTP", "field": "via_smtp", "format": "number", "onClick": { "action": "openDashboard", "args": { "id": "email_integration", "params": { "mode": "SMTP" } } } },
+                { "label": "via Client", "field": "via_client", "format": "number", "onClick": { "action": "openDashboard", "args": { "id": "email_integration", "params": { "mode": "Client" } } } },
+                { "label": "Hard-coded credentials", "field": "hardcoded_credentials", "format": "number" },
+                { "label": "MBS mail calls", "field": "mbs_mail_calls", "format": "number" },
+                { "label": "Files affected", "field": "files_affected", "format": "number" }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "by_mode",
+        "props": { "span": 12, "title": "By delivery mode" },
+        "data": { "dataset": "by_mode" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "by_mode_table",
+            "props": {
+              "rowKey": "mode",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                { "field": "mode", "label": "Mode", "format": "badge" },
+                { "field": "callsites", "label": "Call sites", "align": "right" },
+                { "field": "files", "label": "Files", "align": "right" },
+                { "field": "with_hardcoded_auth", "label": "Hard-coded auth", "align": "right" }
+              ],
+              "onRowClick": { "action": "openDashboard", "args": { "id": "email_integration", "params": { "mode": "{{mode}}" } } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings",
+        "props": { "span": 12, "title": "Call sites" },
+        "data": { "dataset": "findings" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                { "field": "mode", "label": "Mode", "format": "badge" },
+                { "field": "mechanism", "label": "Mechanism" },
+                { "field": "carrier", "label": "Script/Object" },
+                { "field": "smtp_host", "label": "SMTP host" },
+                { "field": "hardcoded_auth", "label": "Hard-coded auth", "format": "boolean" },
+                { "field": "file", "label": "File" },
+                { "field": "step_index", "label": "#", "align": "right" }
+              ],
+              "onRowClick": { "action": "openObject", "args": { "uuid": "{{nav_uuid}}", "type": "{{nav_type}}", "file": "{{file}}", "params": { "step": "{{step_uuid}}" } } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Markdown",
+        "id": "markdown",
+        "props": {
+          "span": 12,
+          "content": "## Notes\n\nOutbound **email**. *Send Mail* (Step_ID 63) is classified by delivery path from the DDR step text: **SMTP server** vs. **email client**. When the step uses an SMTP server, the host is extracted; a step carrying an inline `Password:` is flagged as **hard-coded credentials** (a security finding — the password value itself is never displayed). MBS `SendMail.*` / `EmailParser.*` calls are read from the resolved `calls_pluginfunction` links.\n\n- **KPIs as filters**: *via SMTP* and *via Client* filter the detail list.\n- **Hard-coded credentials**: SMTP server, port and password baked into the step break on deployment and leak secrets into the DDR.\n- **Scope**: cURL-based SMTP (`MBS:CURL.*`) stays in the *APIs & external interfaces* dashboard.\n- **Navigation**: clicking a call site opens the carrier (Script + step anchor, or the object behind an MBS call).\n- **Related rules**: derived severity rules live under *Static Code Analysis*.\n- **Sorting**: all column headings are clickable (▲▼)."
+        }
+      }
+    ]
+  }
+}

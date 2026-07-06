@@ -12,7 +12,6 @@ WITH cf AS (
     cf.CF_Name,
     cf.File_Name,
     cf.Parameters,
-    cf.DDR_Hash,
     ccf.Calculation_Code
   FROM CustomFunctionsCatalog cf
   LEFT JOIN CalcsForCustomFunctions ccf
@@ -23,13 +22,20 @@ WITH cf AS (
     AND (getvariable('file') IS NULL OR cf.File_Name = getvariable('file'))
   LIMIT 1
 ),
--- Calc_Hash is not unique across DDR_Calculations: multiple Calc_UUIDs may share
--- a hash (semantic dedup). Pick exactly one Calc_UUID for the JOIN to avoid
--- a cross product over identical chunk sequences.
+-- Robuste Calc-Auflösung über die kanonische Anker-Registry v_calc_anchors.
+-- NICHT über Calc_Hash: der Hash ist NICHT eindeutig — mehrere Calc_UUIDs teilen
+-- sich einen Hash. Meist sind das identische Mehrdatei-Kopien derselben CF (harmlos),
+-- vereinzelt aber ECHTE Kollisionen unterschiedlicher Formeln → ein MIN(Calc_UUID)
+-- pro Hash lieferte dann fremde Chunks. Zudem ist CF_UUID bei Klonen dateiübergreifend
+-- nicht eindeutig. Erst die robuste Kombination Owner-UUID + Owner-Datei löst
+-- eindeutig auf (1:1); der DDR-JOIN wird ebenfalls datei-skopiert.
 calc_uuid AS (
-  SELECT MIN(d.Calc_UUID) AS Calc_UUID
-  FROM DDR_Calculations d, cf
-  WHERE d.Calc_Hash = cf.DDR_Hash
+  SELECT va.Calc_UUID, va.Owner_File AS File_Name
+  FROM v_calc_anchors va, cf
+  WHERE va.Owner_Type = 'CustomFunction'
+    AND va.Owner_UUID = cf.CF_UUID
+    AND va.Owner_File = cf.File_Name
+  LIMIT 1
 )
 SELECT
   cf.CF_UUID AS object_uuid,
@@ -45,6 +51,7 @@ FROM cf
 LEFT JOIN calc_uuid ON TRUE
 LEFT JOIN DDR_Calculations d
   ON d.Calc_UUID = calc_uuid.Calc_UUID
+ AND d.File_Name = calc_uuid.File_Name
 -- CustomFunctionRef-Chunks tragen anders als FieldRef nur den CF-Namen, keine
 -- UUID. Für Cross-Navigation (klickbarer Link) UND Cross-Reference-Highlight
 -- lösen wir den Namen file-lokal über ObjectHomes auf (CF-Namen sind je Datei

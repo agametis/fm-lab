@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Script vuoto",
+    "description": "Regola di codice inutilizzato: script senza alcun passo. Di solito segnaposto mai implementati."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Script vuoto",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Nessuno script vuoto trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

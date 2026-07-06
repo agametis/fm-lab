@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Globale Variable nur in einem Script",
+    "description": "Code-Style-Regel — globale ($$) Variablen, die nur in einem einzigen Script gesetzt und gelesen werden. Eine lokale ($) Variable wäre klarer.\n\nAngelehnt an die PMD-Regel GlobalVariable — https://docs.pmd-code.org/latest/pmd_rules_ecmascript_bestpractices.html#globalvariable"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Globale Variable nur in einem Script",
+    "findings_table.props.searchPlaceholder": "Variable suchen…",
+    "findings_table.props.empty.message": "Keine Ein-Script-Globals gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Variable",
+    "findings_table.props.columns[2].label": "Lesezugriffe"
+  }
+}

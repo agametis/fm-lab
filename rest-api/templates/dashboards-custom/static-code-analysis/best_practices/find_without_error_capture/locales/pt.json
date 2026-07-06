@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Perform Find sem Set Error Capture",
+    "description": "Regra de boas práticas — scripts com Perform Find mas sem Set Error Capture [Ativado]. Uma caixa de diálogo \"nenhum registro\" pode interromper o usuário no meio do script."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Perform Find sem Set Error Capture",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhuma busca sem captura de erros encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Buscas"
+  }
+}

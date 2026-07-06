@@ -1,4 +1,8 @@
 {
+  "fileActions": {
+    "search": "検索",
+    "drilldown": "ドリルダウン"
+  },
   "modeTabsAriaLabel": "表示モード",
   "breadcrumbs": {
     "search": "検索",

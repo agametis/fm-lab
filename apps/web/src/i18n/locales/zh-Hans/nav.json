@@ -1,4 +1,8 @@
 {
+  "fileActions": {
+    "search": "搜索",
+    "drilldown": "下钻"
+  },
   "modeTabsAriaLabel": "查看模式",
   "breadcrumbs": {
     "search": "搜索",

@@ -85,6 +85,8 @@ const environment = {
     // ID-Kollisionen (Override-Pattern für lokale Erweiterungen).
     dashboardsDir: process.env.DASHBOARDS_DIR || path.resolve(__dirname, '../../templates/dashboards'),
     dashboardsCustomDir: process.env.DASHBOARDS_CUSTOM_DIR || path.resolve(__dirname, '../../templates/dashboards-custom'),
+    // Exportierte Library-Pakete (.zip) aus dem Ordner-Export (Feature C/D, E1).
+    dashboardsPackagesDir: process.env.DASHBOARDS_PACKAGES_DIR || path.resolve(__dirname, '../../templates/dashboards-packages'),
     cacheEnabled: process.env.TEMPLATE_CACHE_ENABLED !== 'false',
     cacheTTL: parseInt(process.env.TEMPLATE_CACHE_TTL) || 3600000, // 1 hour
   },

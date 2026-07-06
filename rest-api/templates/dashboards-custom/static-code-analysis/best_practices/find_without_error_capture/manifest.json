@@ -1,0 +1,58 @@
+{
+  "id": "find_without_error_capture",
+  "version": "1.0.0",
+  "title": "Perform Find without Set Error Capture",
+  "description": "Best-practice rule — scripts that Perform Find but never Set Error Capture [On]. A \"no records\" dialog can interrupt the user mid-script.",
+  "author": "fm-lab rules",
+  "icon": "shield-question",
+  "category": "best_practices",
+  "tags": [
+    "rule",
+    "pmd",
+    "best_practices"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "best_practices",
+    "rationale": "Without error capture, a failed find shows a modal dialog and derails automation.",
+    "remediation": "Set Error Capture [On] before the find and handle Get(LastError) explicitly.",
+    "meta": {
+      "name": "Perform Find without Set Error Capture",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Best-practice rule — scripts that Perform Find but never Set Error Capture [On]. A \"no records\" dialog can interrupt the user mid-script.",
+      "created": "2026-07-01",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

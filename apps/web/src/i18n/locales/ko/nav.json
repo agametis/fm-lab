@@ -1,4 +1,8 @@
 {
+  "fileActions": {
+    "search": "검색",
+    "drilldown": "드릴다운"
+  },
   "modeTabsAriaLabel": "보기 모드",
   "breadcrumbs": {
     "search": "검색",

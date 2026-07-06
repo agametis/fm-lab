@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "스크립트 주석 밀도",
+    "description": "문서화 규칙 — 스크립트를 전체 단계 수, 실제 주석 단계, 공백만 있는 주석으로 비교하고 각각에 주석 밀도 계수를 부여합니다. 이진 규칙 \"문서화되지 않은 스크립트\"를 보완하여 상당한 규모의 스크립트가 얼마나 잘 주석되어 있는지 평가합니다. 최소 단계 수는 헤더 슬라이더로 조정 가능(기본값 10)."
+  },
+  "layout": {
+    "script_comment_density_kpi_kpistrip.props.items[0].label": "전체 스크립트",
+    "script_comment_density_kpi_kpistrip.props.items[1].label": "min_steps 이상",
+    "script_comment_density_kpi_kpistrip.props.items[2].label": "주석 없음",
+    "script_comment_density_kpi_kpistrip.props.items[3].label": "주석 비율 중앙값",
+    "script_comment_density.props.title": "단계 수·주석·공백 기준 스크립트 비교",
+    "script_comment_density_table.props.columns[0].label": "스크립트",
+    "script_comment_density_table.props.columns[1].label": "파일",
+    "script_comment_density_table.props.columns[2].label": "전체 단계",
+    "script_comment_density_table.props.columns[3].label": "실제 주석",
+    "script_comment_density_table.props.columns[4].label": "공백 단계",
+    "script_comment_density_table.props.columns[5].label": "주석 %",
+    "script_comment_density_table.props.columns[6].label": "공백 %",
+    "script_comment_density_table.props.empty.message": "현재 필터와 일치하는 스크립트가 없습니다.",
+    "threshold_slider.props.label": "스크립트당 최소 단계 수",
+    "threshold_slider.props.valueSuffix": "단계"
+  }
+}

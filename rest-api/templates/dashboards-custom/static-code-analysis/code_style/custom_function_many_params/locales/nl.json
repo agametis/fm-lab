@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Custom Function met veel parameters",
+    "description": "Codestijlregel — Custom Functions met vijf of meer parameters. Lange signaturen zijn lastig correct aan te roepen.\n\nGebaseerd op de PMD-regel ExcessiveParameterList — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessiveparameterlist"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Custom Function met veel parameters",
+    "findings_table.props.searchPlaceholder": "Bestand of functie zoeken…",
+    "findings_table.props.empty.message": "Geen Custom Functions met veel parameters gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Custom Function",
+    "findings_table.props.columns[2].label": "Parameters"
+  }
+}

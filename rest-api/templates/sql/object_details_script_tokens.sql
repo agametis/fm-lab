@@ -3,7 +3,7 @@
 -- @params: uuid (required)
 -- @output_format: tokens
 -- @author: Marcel
--- @version: 1.0
+-- @version: 1.2
 -- @tags: scripts, script-steps, ddr, tokens
 
 WITH step_changes AS (
@@ -22,6 +22,19 @@ WITH step_changes AS (
     -- (der READ_ONLY-API-Server kann webbed nicht laden). Der tokens.formatter
     -- normalisiert/kürzt nur noch für die Anzeige.
     s.Inserted_Text AS inserted_text,
+    -- Kommentartext (nur Step_ID 89): DDR-unabhängig in P3 vorberechnet
+    -- (StepsForScripts.Comment_Text, aus <Comment value="…"/> bzw. <Comment>…</Comment>).
+    -- Fallback für Dateien ohne DDR-Info, deren Kommentare sonst als leere
+    -- Zeilen erschienen; bei vorhandenem DDR gewinnt unten weiter d.Step_Text.
+    s.Comment_Text AS comment_text,
+    -- Fallback-Payloads für Steps OHNE DDR-Text (Dateien ohne DDR-Info): bereits
+    -- in P1 materialisierte Step-Bestandteile, aus denen der tokens.formatter eine
+    -- Klartext-Näherung komponiert (Step-Name [ $Var ; Refs ; Flag ; Calc ]).
+    -- Bei vorhandenem DDR bleiben sie ungenutzt (d.Step_Text gewinnt).
+    s.Calculation_Text AS calculation_text,
+    s.Variable_Name AS variable_name,
+    s.Boolean_Type AS boolean_type,
+    s.Boolean_Value AS boolean_value,
     CASE
       WHEN s.Step_Name IN ('If', 'Loop') THEN 1
       WHEN s.Step_Name IN ('End If', 'End Loop') THEN -1
@@ -68,12 +81,22 @@ SELECT
                           'Commit Transaction','Revert Transaction','Open Transaction')
          AND d.Step_Text IS NOT NULL
     THEN regexp_replace(d.Step_Text, '\s*\[\s*\]\s*$', '')
+    -- Kommentare DDR-unabhängig: ohne DDR-Zeile (Has_DDR_INFO=False) liefert die
+    -- P3-Hilfsspalte den Text; mit DDR bleibt d.Step_Text maßgeblich (Regression 0).
+    WHEN sd.Step_ID = 89 THEN COALESCE(d.Step_Text, sd.comment_text)
     ELSE d.Step_Text
   END AS step_text,
   sd.inserted_text AS inserted_text,
+  sd.calculation_text AS calculation_text,
+  sd.variable_name AS variable_name,
+  sd.boolean_type AS boolean_type,
+  sd.boolean_value AS boolean_value,
+  -- has_ddr: unterscheidet im Formatter "DDR-Zeile fehlt für diesen Step" von
+  -- "Datei hat gar kein DDR" — die Fallback-Komposition greift nur ohne DDR-Text.
+  (d.Step_UUID IS NOT NULL) AS has_ddr,
   CASE
-    WHEN sd.Step_ID = 89 AND d.Step_Text IS NULL THEN 'empty'
-    WHEN sd.Step_ID = 89                          THEN 'comment'
+    WHEN sd.Step_ID = 89 AND COALESCE(d.Step_Text, sd.comment_text) IS NULL THEN 'empty'
+    WHEN sd.Step_ID = 89                                                     THEN 'comment'
     ELSE 'step'
   END AS kind
 FROM step_depths sd

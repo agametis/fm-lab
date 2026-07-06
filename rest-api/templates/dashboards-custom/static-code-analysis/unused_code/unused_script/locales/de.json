@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Ungenutztes Script",
+    "description": "Unused-Code-Regel — Scripts, die von keinem Script aufgerufen und von keinem Trigger gestartet werden. Prüfen: manuelle / Custom-Menü-Starts können hier erscheinen.\n\nAngelehnt an die PMD-Regel UnusedPrivateMethod — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatemethod"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Ungenutztes Script",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Keine ungenutzten Scripts gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

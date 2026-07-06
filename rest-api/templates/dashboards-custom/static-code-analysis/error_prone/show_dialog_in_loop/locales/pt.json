@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Show Custom Dialog em Loop",
+    "description": "Regra propensa a erros/UX — Show Custom Dialog dentro de um Loop abre uma caixa de diálogo modal a cada iteração e prende o usuário em perguntas repetidas."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Show Custom Dialog em Loop",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhum Show Custom Dialog em um Loop encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Etapa",
+    "findings_table.props.columns[3].label": "Status",
+    "scope_filter.props.options[0].label": "Ignorar inativos",
+    "scope_filter.props.options[1].label": "Todos"
+  }
+}

@@ -10,6 +10,7 @@
     "files_table.props.columns[4].label": "已导入",
     "files_table.props.empty.message": "XML 目录中没有文件。",
     "last_run.props.title": "上次转换",
+    "import_integrity.props.title": "导入完整性",
     "graph_communities.props.title": "图社区",
     "graph_communities_desc.props.content": "已检测模块的结构与命名覆盖率。用按钮重建分区；用 `/fm-graph-cluster` 技能（重新）命名新模块。"
   }

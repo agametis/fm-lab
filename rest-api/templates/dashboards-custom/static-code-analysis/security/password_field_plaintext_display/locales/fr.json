@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Champ de mot de passe affiché en clair",
+    "description": "Règle de sécurité : un champ de mot de passe/PIN est affiché sur un modèle par un objet qui n’est pas un « champ de saisie masqué », la valeur apparaît donc en clair sur le modèle. Listé par objet de modèle (le même champ peut être visible sur plusieurs modèles).\n\nComplète la règle de stockage (password_field_plaintext) : il s’agit ici de l’affichage à l’écran, décidé au niveau de l’objet de modèle, pas du champ."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Champ de mot de passe affiché en clair",
+    "findings_table.props.searchPlaceholder": "Rechercher un champ ou un layout…",
+    "findings_table.props.empty.message": "Aucun champ de mot de passe affiché en clair.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Champ",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

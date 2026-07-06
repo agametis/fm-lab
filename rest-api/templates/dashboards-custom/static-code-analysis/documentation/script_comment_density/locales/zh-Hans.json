@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "脚本注释密度",
+    "description": "文档规则 — 按总步骤数、真实注释步骤和仅空白的注释比较脚本，并为每个给出注释密度系数。通过评估较大规模脚本的注释完善程度，补充二元规则\"未记录的脚本\"。最小步骤数可通过页首滑块调整（默认 10）。"
+  },
+  "layout": {
+    "script_comment_density_kpi_kpistrip.props.items[0].label": "脚本总数",
+    "script_comment_density_kpi_kpistrip.props.items[1].label": "≥ min_steps",
+    "script_comment_density_kpi_kpistrip.props.items[2].label": "无注释",
+    "script_comment_density_kpi_kpistrip.props.items[3].label": "注释率中位数",
+    "script_comment_density.props.title": "按步骤数、注释和空白比较脚本",
+    "script_comment_density_table.props.columns[0].label": "脚本",
+    "script_comment_density_table.props.columns[1].label": "文件",
+    "script_comment_density_table.props.columns[2].label": "步骤总数",
+    "script_comment_density_table.props.columns[3].label": "真实注释",
+    "script_comment_density_table.props.columns[4].label": "空白步骤",
+    "script_comment_density_table.props.columns[5].label": "注释 %",
+    "script_comment_density_table.props.columns[6].label": "空白 %",
+    "script_comment_density_table.props.empty.message": "没有脚本符合当前筛选条件。",
+    "threshold_slider.props.label": "每个脚本的最小步骤数",
+    "threshold_slider.props.valueSuffix": "步"
+  }
+}

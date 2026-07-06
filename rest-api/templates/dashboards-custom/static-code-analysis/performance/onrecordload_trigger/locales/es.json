@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Activador OnRecordLoad",
+    "description": "Regla de rendimiento: activadores de script OnRecordLoad. Se ejecutan por cada registro que se vuelve visible; scripts pesados aquí ralentizan las vistas de lista y las búsquedas."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Activador OnRecordLoad",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o script…",
+    "findings_table.props.empty.message": "No se encontraron activadores OnRecordLoad.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Script de activación",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

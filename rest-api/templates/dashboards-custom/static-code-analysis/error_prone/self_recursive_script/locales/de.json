@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Selbst-rekursives Script",
+    "description": "Fehleranfälligkeits-Regel — Scripts, die sich selbst aufrufen. Rekursion kann gewollt sein, ohne solide Abbruchbedingung droht aber ein Stack-Overflow."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Selbst-rekursives Script",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Keine selbst-rekursiven Scripts gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

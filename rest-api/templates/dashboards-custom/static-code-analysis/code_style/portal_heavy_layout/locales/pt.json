@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Layout com muitos portais",
+    "description": "Regra de estilo de código/desempenho — Layouts com mais de seis portais. Muitos portais puxam cada um um conjunto relacionado e deixam o Layout mais lento. Limite ajustável pelo controle deslizante (padrão 6)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Layout com muitos portais",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou Layout…",
+    "findings_table.props.empty.message": "Nenhum Layout com muitos portais encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Portais",
+    "threshold_slider.props.label": "Portais por Layout (mínimo)",
+    "threshold_slider.props.valueSuffix": "portais"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "E-mailintegratie",
+    "description": "Inventaris van uitgaande e-mailverzending: Send Mail-stappen (Step_ID 63) geclassificeerd op verzendweg (SMTP-server versus e-mailclient), met de geëxtraheerde SMTP-host en een vlag voor hardgecodeerde inloggegevens (beveiligingsrelevant), plus MBS SendMail-aanroepen. cURL-SMTP blijft in het API-dashboard."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Send Mail-stappen",
+    "summary_kpistrip.props.items[1].label": "via SMTP",
+    "summary_kpistrip.props.items[2].label": "via Client",
+    "summary_kpistrip.props.items[3].label": "Hardgecodeerde inloggegevens",
+    "summary_kpistrip.props.items[4].label": "MBS-mailaanroepen",
+    "summary_kpistrip.props.items[5].label": "Betrokken bestanden",
+    "by_mode.props.title": "Op verzendweg",
+    "by_mode_table.props.columns[0].label": "Verzendweg",
+    "by_mode_table.props.columns[1].label": "Aanroeplocaties",
+    "by_mode_table.props.columns[2].label": "Bestanden",
+    "by_mode_table.props.columns[3].label": "Hardgecodeerde auth",
+    "findings.props.title": "Aanroeplocaties",
+    "findings_table.props.columns[0].label": "Verzendweg",
+    "findings_table.props.columns[1].label": "Mechanisme",
+    "findings_table.props.columns[2].label": "Script/Object",
+    "findings_table.props.columns[3].label": "SMTP-host",
+    "findings_table.props.columns[4].label": "Hardgecodeerde auth",
+    "findings_table.props.columns[5].label": "Bestand",
+    "findings_table.props.columns[6].label": "#",
+    "markdown.props.content": "## Opmerkingen\n\nUitgaande **e-mail**. *Send Mail* (Step_ID 63) wordt op basis van de DDR-staptekst geclassificeerd op verzendweg: **SMTP-server** versus **e-mailclient**. Wanneer de stap een SMTP-server gebruikt, wordt de host geëxtraheerd; een stap met een inline `Password:` wordt gemarkeerd als **hardgecodeerde inloggegevens** (een beveiligingsbevinding — de wachtwoordwaarde zelf wordt nooit weergegeven). MBS `SendMail.*` / `EmailParser.*`-aanroepen worden gelezen uit de opgeloste `calls_pluginfunction`-links.\n\n- **KPI's als filters**: *via SMTP* en *via Client* filteren de detaillijst.\n- **Hardgecodeerde inloggegevens**: SMTP-server, poort en wachtwoord die vast in de stap zijn opgenomen, breken bij deployment en lekken geheimen in de DDR.\n- **Reikwijdte**: cURL-gebaseerde SMTP (`MBS:CURL.*`) blijft in het dashboard *API's en externe interfaces*.\n- **Navigatie**: klikken op een aanroeplocatie opent de drager (Script + stapanker, of het object achter een MBS-aanroep).\n- **Gerelateerde regels**: afgeleide severity-regels bevinden zich onder *Static Code Analysis*.\n- **Sortering**: alle kolomkoppen zijn klikbaar (▲▼)."
+  }
+}

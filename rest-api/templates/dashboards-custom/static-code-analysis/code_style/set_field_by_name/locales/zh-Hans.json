@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Set Field By Name（动态目标）",
+    "description": "代码风格规则 — Set Field By Name 步骤。目标字段在运行时计算，因此静态分析和重构无法追踪它。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "Set Field By Name（动态目标）",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到 Set Field By Name 步骤。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "步骤"
+  }
+}

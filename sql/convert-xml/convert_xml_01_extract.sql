@@ -24,8 +24,43 @@
 --   Drift-Indikator herangezogen wird. build_resolutions.sql bewusst NICHT
 --   enthalten, weil es nur abgeleitete Tabellen anlegt.
 
--- @SCHEMA_VERSION 1.4.1
--- @SCHEMA_VERSION_DATE 2026-06-23
+-- @SCHEMA_VERSION 1.6.1
+-- @SCHEMA_VERSION_DATE 2026-07-04
+-- @SCHEMA_CHANGELOG 1.6.1: RelationshipCatalog erfasst jetzt Beziehungen mit
+--   Prädikat-Feldern auf externen TO-Seiten (F-1b). Der frühere UUID-Pflicht-Filter
+--   verwarf die GESAMTE Beziehung, wenn ein Prädikat-Feld einer anderen Datei gehörte
+--   (FieldReference@UUID="") → 393 fehlende Beziehungen (17 %). Neu: strukturelle
+--   Gültigkeitsprüfung (Prädikat-Feld-id statt UUID), leere Feld-UUID → NULL
+--   (NULLIF), P4 löst über (Field_TO_UUID, Field_ID) auf die kanonische Feld-UUID
+--   auf (analog Sort-Feld-Block). Keine Spalten-/Tabellen-Änderung — reine
+--   Extraktions-Semantik (Datengewinn) → Version-Bump nur wg. Hash-Drift-Wächter.
+--   Korpus 1961 → 2354 Beziehungen; neuer P6-View v_check_relationship_field_resolution.
+-- @SCHEMA_CHANGELOG 1.5.2: FileOptionsCatalog +6 Spalten aus dem Metadata-
+--   AddAction-Zweig: SavePassword (Save_Password_Keychain/_RequireMobile —
+--   "Gespeicherte Anmeldeinformationen für die Authentifizierung zulassen",
+--   sicherheitsrelevant, eigenständig vom Auto-Login <Login>) + PageSetup
+--   (PageSetup_Orientation/_Scale/_Width/_Height — Druck-Standard, nur extrahiert,
+--   nicht im GUI). Element-Universum via Prod-Korpus + ooe-fm-Referenz verifiziert
+--   ("Toolbar ausblenden" existiert in SaXML bis FM22 nicht). Additiv, aber
+--   Spalten-Erweiterung → Version-Bump (Master-Rebuild nötig).
+-- @SCHEMA_CHANGELOG 1.5.1: Layout-MenuSet + Sub-Summary-Umbruchfeld: Layouts
+--   +3 Spalten (L_MenuSet_ID/_Name/_UUID aus CustomMenuSetReference, Built-in-
+--   Default id=0 → NULL), LayoutParts +6 Spalten (Part_Seq, Break_Field_ID/
+--   _Name/_UUID, Break_TO_Name/_UUID) + PK-Erweiterung um Part_Seq (B-K5:
+--   mehrere Parts gleicher Art kollabierten). LayoutPart-Composite-UUID neu:
+--   'part_'-Präfix + Part_Seq (B-C4-Teilaspekt). Neue Link-Rollen:
+--   uses_menuset (Layout→CustomMenuSet), breaks_on_field (LayoutPart→Field;
+--   Platzhalter-FieldReference id=0 → NULL, Kante nur für Sub-Summary-Parts —
+--   Grand-Summary-Leftovers sind kein Usage-Signal).
+-- @SCHEMA_CHANGELOG 1.5.0: Abdeckungs-Erweiterung: FieldsForTables
+--   +18 Spalten (Validation_*, Storage_*, Serial_*, Summary_*), Layouts +5 Spalten
+--   (L_TO_UUID, L_Width, L_Theme_*), neue Tabelle FileOptionsCatalog (Metadata-
+--   Branch: Encryption/Minimum/Login/Defaults/Sharing). Neue Referenz
+--   XMLStepReferences Ref_Type='menuset' (Install Menu Set). Neue Link-Rollen:
+--   grants_privilege, uses_theme, installs_menuset, LayoutPart→parent_layout,
+--   uses_valuelist(validation), summarizes_field, default_layout,
+--   auto_login_account. Additiv, aber Spalten-Erweiterung bestehender Tabellen
+--   → Version-Bump (Turbo-Merge INSERT BY NAME braucht den Master-Rebuild).
 -- @SCHEMA_CHANGELOG 1.4.1: CalcsForCustomFunctions auch für SaXML v2.3.0.0 (FM 26+),
 --   wo <Calculation> in <CustomFunction> eingebettet ist statt in einer separaten
 --   <CalcsForCustomFunctions>-Sektion. Struktur-tolerante Doppel-Extraktion (Legacy +
@@ -204,6 +239,7 @@ CREATE TABLE IF NOT EXISTS XMLMetadata (
     PRIMARY KEY (File_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 -- XMLMetadata befüllen — aus dem konsolidierten _root_attrs (kein eigener Root-Read).
 INSERT INTO XMLMetadata
 SELECT
@@ -228,6 +264,7 @@ ON CONFLICT (File_UUID, File_Name) DO UPDATE SET
 -- ========================================
 -- Tabelle für Metadaten aller importierten FileMaker-Dateien
 -- Wird bei jedem Import aktualisiert (UPSERT)
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS FilesCatalog (
     File_Name VARCHAR PRIMARY KEY,          -- Dateiname ohne .fmp12 Suffix
     File_FullName VARCHAR,                  -- Dateiname mit .fmp12 Suffix
@@ -241,6 +278,7 @@ CREATE TABLE IF NOT EXISTS FilesCatalog (
 );
 
 -- FilesCatalog befüllen (UPSERT bei wiederholten Importen)
+-- @P1_SECTION:main@
 INSERT INTO FilesCatalog (File_Name, File_FullName, File_UUID, FileMaker_Version, Has_DDR_INFO, Import_Timestamp, XML_Path)
 SELECT
     file_name as File_Name,
@@ -252,13 +290,62 @@ SELECT
     getvariable('fm_xml') as XML_Path
 FROM _root_attrs
 ON CONFLICT (File_Name) DO UPDATE SET
+    -- B-K4-Audit: File_FullName/File_UUID fehlten (stale nach Re-Export mit
+    -- geänderter UUID). Jede Nicht-PK-Spalte gehört in SET.
+    File_FullName = EXCLUDED.File_FullName,
+    File_UUID = EXCLUDED.File_UUID,
     Import_Timestamp = EXCLUDED.Import_Timestamp,
     FileMaker_Version = EXCLUDED.FileMaker_Version,
     Has_DDR_INFO = EXCLUDED.Has_DDR_INFO,
     XML_Path = EXCLUDED.XML_Path;
 
 
+-- DuplicateAbsorptions
+-- @END_P1_SECTION@
+-- DuplicateAbsorptions — Dup-Absorption-Zensus (Monitoring, additiv).
+-- Der Per-File-Upsert (ON CONFLICT auf UUID-PK) kollabiert Quellobjekte mit
+-- identischer UUID still zu einer Zeile (Quelldefekt-Klasse B-K3: FileMaker-Export
+-- mit doppelten UUIDs, deterministisch last-write-wins). Dieser Zensus schreibt je
+-- (Katalog, Datei) die Zahl der GEPARSTEN Quell-Records (VOR dem Upsert-Dedup);
+-- der P6-Check v_check_absorbed_dups vergleicht live gegen die gespeicherten
+-- Zeilen und weist die Differenz (= absorbierte Dubletten) im Import-Report aus.
+-- Chunk_Seq: beim Sub-Chunking (--split) schreibt jeder Chunk seine eigene Zeile
+-- (Chunk_Seq = seq_offset, unsplit = 0) — der Check summiert je (Katalog, Datei).
+-- Das ist robust gegen Dup-Paare, die über eine Chunk-Grenze gespalten werden
+-- (die Quell-Summe zählt schlicht alle geparsten Records), und verträgt den
+-- parallelen Chunk-Merge (ON CONFLICT DO NOTHING trifft nur identische Chunk-Zeilen).
+-- Kein Zeilen-Erhalt, keine Verhaltensänderung — reines Sichtbarmachen.
+CREATE TABLE IF NOT EXISTS DuplicateAbsorptions (
+    File_Name VARCHAR NOT NULL,
+    Catalog VARCHAR NOT NULL,          -- Tabellenname, z. B. 'StepsForScripts'
+    PK_Columns VARCHAR,                -- Provenienz, z. B. 'Step_UUID,File_Name'
+    Chunk_Seq BIGINT NOT NULL DEFAULT 0,
+    Source_Records BIGINT,             -- geparste Quell-Records dieses Chunks
+    PRIMARY KEY (Catalog, File_Name, Chunk_Seq)
+);
+
+-- DuplicateAbsorptionDetails — Objekt-Merkmale der KOLLIDIERENDEN Objekte je Dup-UUID
+-- (Erweiterung 2026-07-06). Der Zensus oben zählt nur den VERLUST; diese
+-- Tabelle nennt zusätzlich Typ + Name der Objekte, die still kollabiert sind — damit
+-- der Entwickler die Schwere einschätzen und im Export gezielt suchen kann. Befüllt aus
+-- dem Pre-Dedup-Rowset (vor dem ON-CONFLICT-Kollaps), je kollidierendem Vorkommen eine
+-- Zeile, NUR für UUIDs mit COUNT(*)>1 (korpusweit ~wenige Zeilen → winzig). Rein additiv
+-- (Anzeige), kein Zeilen-Erhalt, keine synthetischen UUIDs. Occurrence_Seq numeriert die
+-- Vorkommen einer UUID in XML-Reihenfolge (1,2,…) → der Namens-/Kontext-UNTERSCHIED der
+-- Zwillinge ist das eigentliche Signal (z. B. dasselbe UUID in zwei verschiedenen Scripts).
+CREATE TABLE IF NOT EXISTS DuplicateAbsorptionDetails (
+    File_Name VARCHAR NOT NULL,
+    Catalog VARCHAR NOT NULL,          -- Tabellenname, z. B. 'ScriptCatalog'
+    Object_UUID VARCHAR NOT NULL,      -- die doppelt vergebene Quell-UUID
+    Object_Name VARCHAR,               -- Name des Objekts (bzw. Container-Script bei Steps)
+    Object_Type VARCHAR,               -- Objekttyp (Script/Folder/Separator, ScriptStep …)
+    Occurrence_Seq BIGINT NOT NULL,    -- 1,2,… je Vorkommen der UUID (XML-Reihenfolge)
+    Chunk_Seq BIGINT NOT NULL DEFAULT 0,
+    PRIMARY KEY (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq)
+);
+
 -- ExternalDataSourceCatalog
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS ExternalDataSourceCatalog (
     DS_ID BIGINT,
     DS_Name VARCHAR,
@@ -269,6 +356,7 @@ CREATE TABLE IF NOT EXISTS ExternalDataSourceCatalog (
     PRIMARY KEY (DS_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 )
@@ -302,8 +390,23 @@ ON CONFLICT (DS_UUID, File_Name) DO UPDATE SET
     DS_Type = EXCLUDED.DS_Type,
     Path = EXCLUDED.Path;
 
+-- Zensus (Dup-Absorption): geparste Quell-Records, minimaler Re-Read (nur id).
+INSERT INTO DuplicateAbsorptions
+SELECT getvariable('fm_file'), 'ExternalDataSourceCatalog', 'DS_UUID,File_Name',
+       COALESCE(getvariable('seq_offset'), 0)::BIGINT, COUNT(*)
+FROM read_xml(
+    getvariable('fm_xml'),
+    root_element='ExternalDataSourceCatalog',
+    record_element='ExternalDataSource',
+    maximum_file_size=getvariable('dom_threshold'),
+    streaming=getvariable('use_streaming'),
+    columns={'id': 'BIGINT'}
+)
+ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
 
 -- BaseTableCatalog
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS BaseTableCatalog (
     BT_ID BIGINT,
     BT_Name VARCHAR,
@@ -312,13 +415,14 @@ CREATE TABLE IF NOT EXISTS BaseTableCatalog (
     PRIMARY KEY (BT_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 )
 INSERT INTO BaseTableCatalog
 SELECT
     id AS BT_ID,
-    name AS BT_Name,
+    xml_unescape(name) AS BT_Name,
     UUID->>'#text' AS BT_UUID,
     fn.File_Name as File_Name
 FROM read_xml(
@@ -338,8 +442,23 @@ ON CONFLICT (BT_UUID, File_Name) DO UPDATE SET
     BT_ID = EXCLUDED.BT_ID,
     BT_Name = EXCLUDED.BT_Name;
 
+-- Zensus (Dup-Absorption): geparste Quell-Records, minimaler Re-Read (nur id).
+INSERT INTO DuplicateAbsorptions
+SELECT getvariable('fm_file'), 'BaseTableCatalog', 'BT_UUID,File_Name',
+       COALESCE(getvariable('seq_offset'), 0)::BIGINT, COUNT(*)
+FROM read_xml(
+    getvariable('fm_xml'),
+    root_element='BaseTableCatalog',
+    record_element='BaseTable',
+    maximum_file_size=getvariable('dom_threshold'),
+    streaming=getvariable('use_streaming'),
+    columns={'id': 'BIGINT'}
+)
+ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
 
 -- TableOccurrenceCatalog
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS TableOccurrenceCatalog (
     TO_ID BIGINT,
     TO_Name VARCHAR,
@@ -365,6 +484,7 @@ CREATE TABLE IF NOT EXISTS TableOccurrenceCatalog (
     PRIMARY KEY (TO_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 )
@@ -379,14 +499,14 @@ INSERT INTO TableOccurrenceCatalog (
 )
 SELECT
     id AS TO_ID,
-    name AS TO_Name,
+    xml_unescape(name) AS TO_Name,
     type AS TO_Type,
     UUID->>'#text' AS TO_UUID,
     BaseTableSourceReference.DataSourceReference.id AS DS_ID,
     BaseTableSourceReference.DataSourceReference.name AS DS_Name,
     BaseTableSourceReference.DataSourceReference.UUID AS DS_UUID,
     BaseTableSourceReference.BaseTableReference.id AS BT_ID,
-    BaseTableSourceReference.BaseTableReference.name AS BT_Name,
+    xml_unescape(BaseTableSourceReference.BaseTableReference.name) AS BT_Name,
     BaseTableSourceReference.BaseTableReference.UUID AS BT_UUID,
     View AS View_State,
     height AS Box_Height,
@@ -451,8 +571,23 @@ ON CONFLICT (TO_UUID, File_Name) DO UPDATE SET
     Color_B = EXCLUDED.Color_B,
     Color_Alpha = EXCLUDED.Color_Alpha;
 
+-- Zensus (Dup-Absorption): geparste Quell-Records, minimaler Re-Read (nur id).
+INSERT INTO DuplicateAbsorptions
+SELECT getvariable('fm_file'), 'TableOccurrenceCatalog', 'TO_UUID,File_Name',
+       COALESCE(getvariable('seq_offset'), 0)::BIGINT, COUNT(*)
+FROM read_xml(
+    getvariable('fm_xml'),
+    root_element='TableOccurrenceCatalog',
+    record_element='TableOccurrence',
+    maximum_file_size=getvariable('dom_threshold'),
+    streaming=getvariable('use_streaming'),
+    columns={'id': 'BIGINT'}
+)
+ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
 
 -- RelationshipCatalog
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS RelationshipCatalog (
     Rel_ID BIGINT,
     Left_TO_Name VARCHAR,
@@ -491,25 +626,40 @@ CREATE TABLE IF NOT EXISTS RelationshipCatalog (
     Left_Sort_Enabled BOOLEAN,
     Left_Sort_Fields VARCHAR,
     Left_Sort_Field_UUIDs VARCHAR[],
+    -- _Field_IDs / _Field_TO_UUIDs: index-gleich zu _Field_UUIDs. Die FieldReference-UUID
+    -- der Sortfelder ist kontext-synthetisch (pro Feld×TO) → P4 löst über (TO_UUID, Feld-ID)
+    -- auf die kanonische Feld-UUID auf (analog Prädikatfelder). Feld-ID ist entity-frei.
+    Left_Sort_Field_IDs BIGINT[],
+    Left_Sort_Field_TO_UUIDs VARCHAR[],
+    -- _ValueList_UUIDs: Custom-Sortierung nach Werteliste (<Sort type="Custom"> mit
+    -- <ValueListReference>) je Seite. Nur Sort-Einträge MIT VL-UUID (list_filter, analog
+    -- _Field_UUIDs). Speist in P4 Relationship→ValueList (sorts_by_valuelist, Subrole
+    -- left/right) — vorher erschien eine NUR als Relationship-Sortier-Referenz genutzte
+    -- Werteliste in Where-used/Dead-Code als ungenutzt.
+    Left_Sort_ValueList_UUIDs VARCHAR[],
     Right_Sort_Enabled BOOLEAN,
     Right_Sort_Fields VARCHAR,
     Right_Sort_Field_UUIDs VARCHAR[],
+    Right_Sort_Field_IDs BIGINT[],
+    Right_Sort_Field_TO_UUIDs VARCHAR[],
+    Right_Sort_ValueList_UUIDs VARCHAR[],
     File_Name VARCHAR,
     PRIMARY KEY (Rel_ID, File_Name, Predicate_Index)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 )
 INSERT INTO RelationshipCatalog
 SELECT
     id AS Rel_ID,
-    LeftTable.TableOccurrenceReference.name AS Left_TO_Name,
+    xml_unescape(LeftTable.TableOccurrenceReference.name) AS Left_TO_Name,
     LeftTable.TableOccurrenceReference.id AS Left_TO_ID,
     LeftTable.TableOccurrenceReference.UUID AS Left_TO_UUID,
     LeftTable.cascadeDelete AS Left_Delete,
     LeftTable.cascadeCreate AS Left_Create,
-    RightTable.TableOccurrenceReference.name AS Right_TO_Name,
+    xml_unescape(RightTable.TableOccurrenceReference.name) AS Right_TO_Name,
     RightTable.TableOccurrenceReference.id AS Right_TO_ID,
     RightTable.TableOccurrenceReference.UUID AS Right_TO_UUID,
     RightTable.cascadeDelete AS Right_Delete,
@@ -518,12 +668,15 @@ SELECT
     pe.idx AS Predicate_Index,
     pe.jp.LeftField.FieldReference.name AS Left_Field_Name,
     pe.jp.LeftField.FieldReference.id AS Left_Field_ID,
-    pe.jp.LeftField.FieldReference.UUID AS Left_Field_UUID,
+    -- Externe TO-Seite: die Feld-Entität gehört der anderen Datei → FieldReference@UUID=""
+    -- (leerer String). Als NULL normalisieren, damit P4 die kanonische Feld-UUID über
+    -- (Field_TO_UUID, Field_ID) auflöst statt einen Leerstring-Link zu erzeugen (F-1b).
+    NULLIF(pe.jp.LeftField.FieldReference.UUID, '') AS Left_Field_UUID,
     pe.jp.LeftField.FieldReference.TableOccurrenceReference.name AS Left_Field_TO_Name,
     pe.jp.LeftField.FieldReference.TableOccurrenceReference.UUID AS Left_Field_TO_UUID,
     pe.jp.RightField.FieldReference.name AS Right_Field_Name,
     pe.jp.RightField.FieldReference.id AS Right_Field_ID,
-    pe.jp.RightField.FieldReference.UUID AS Right_Field_UUID,
+    NULLIF(pe.jp.RightField.FieldReference.UUID, '') AS Right_Field_UUID,
     pe.jp.RightField.FieldReference.TableOccurrenceReference.name AS Right_Field_TO_Name,
     pe.jp.RightField.FieldReference.TableOccurrenceReference.UUID AS Right_Field_TO_UUID,
     -- Sortierfelder je Seite (konstant über die Prädikat-Zeilen einer Relation):
@@ -533,10 +686,28 @@ SELECT
                 lambda s, i: s.PrimaryField.FieldReference.name
                   || CASE WHEN s.type = 'Descending' THEN ' (absteigend)' ELSE '' END), ', ')
          ELSE NULL END AS Left_Sort_Fields,
+    -- Index-gleiche Arrays: erst die Sort-Liste auf Einträge MIT FieldReference-UUID
+    -- filtern, dann UUID / id / TO-UUID daraus ableiten → alle drei bleiben ausgerichtet.
     CASE WHEN LeftTable.SortSpecification.value
-         THEN list_filter(list_transform(LeftTable.SortSpecification.SortList.Sort,
-                lambda s, i: s.PrimaryField.FieldReference.UUID), lambda u: u IS NOT NULL)
+         THEN list_transform(list_filter(LeftTable.SortSpecification.SortList.Sort,
+                lambda s: s.PrimaryField.FieldReference.UUID IS NOT NULL),
+                lambda s: s.PrimaryField.FieldReference.UUID)
          ELSE NULL END AS Left_Sort_Field_UUIDs,
+    CASE WHEN LeftTable.SortSpecification.value
+         THEN list_transform(list_filter(LeftTable.SortSpecification.SortList.Sort,
+                lambda s: s.PrimaryField.FieldReference.UUID IS NOT NULL),
+                lambda s: s.PrimaryField.FieldReference.id)
+         ELSE NULL END AS Left_Sort_Field_IDs,
+    CASE WHEN LeftTable.SortSpecification.value
+         THEN list_transform(list_filter(LeftTable.SortSpecification.SortList.Sort,
+                lambda s: s.PrimaryField.FieldReference.UUID IS NOT NULL),
+                lambda s: s.PrimaryField.FieldReference.TableOccurrenceReference.UUID)
+         ELSE NULL END AS Left_Sort_Field_TO_UUIDs,
+    CASE WHEN LeftTable.SortSpecification.value
+         THEN list_transform(list_filter(LeftTable.SortSpecification.SortList.Sort,
+                lambda s: s.ValueListReference.UUID IS NOT NULL),
+                lambda s: s.ValueListReference.UUID)
+         ELSE NULL END AS Left_Sort_ValueList_UUIDs,
     RightTable.SortSpecification.value AS Right_Sort_Enabled,
     CASE WHEN RightTable.SortSpecification.value
          THEN array_to_string(list_transform(RightTable.SortSpecification.SortList.Sort,
@@ -544,9 +715,25 @@ SELECT
                   || CASE WHEN s.type = 'Descending' THEN ' (absteigend)' ELSE '' END), ', ')
          ELSE NULL END AS Right_Sort_Fields,
     CASE WHEN RightTable.SortSpecification.value
-         THEN list_filter(list_transform(RightTable.SortSpecification.SortList.Sort,
-                lambda s, i: s.PrimaryField.FieldReference.UUID), lambda u: u IS NOT NULL)
+         THEN list_transform(list_filter(RightTable.SortSpecification.SortList.Sort,
+                lambda s: s.PrimaryField.FieldReference.UUID IS NOT NULL),
+                lambda s: s.PrimaryField.FieldReference.UUID)
          ELSE NULL END AS Right_Sort_Field_UUIDs,
+    CASE WHEN RightTable.SortSpecification.value
+         THEN list_transform(list_filter(RightTable.SortSpecification.SortList.Sort,
+                lambda s: s.PrimaryField.FieldReference.UUID IS NOT NULL),
+                lambda s: s.PrimaryField.FieldReference.id)
+         ELSE NULL END AS Right_Sort_Field_IDs,
+    CASE WHEN RightTable.SortSpecification.value
+         THEN list_transform(list_filter(RightTable.SortSpecification.SortList.Sort,
+                lambda s: s.PrimaryField.FieldReference.UUID IS NOT NULL),
+                lambda s: s.PrimaryField.FieldReference.TableOccurrenceReference.UUID)
+         ELSE NULL END AS Right_Sort_Field_TO_UUIDs,
+    CASE WHEN RightTable.SortSpecification.value
+         THEN list_transform(list_filter(RightTable.SortSpecification.SortList.Sort,
+                lambda s: s.ValueListReference.UUID IS NOT NULL),
+                lambda s: s.ValueListReference.UUID)
+         ELSE NULL END AS Right_Sort_ValueList_UUIDs,
     fn.File_Name as File_Name
 FROM read_xml(
     getvariable('fm_xml'),
@@ -566,7 +753,9 @@ FROM read_xml(
                 "SortList" STRUCT(
                     "Sort" STRUCT(
                         type VARCHAR,
-                        "PrimaryField" STRUCT(FieldReference STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR))
+                        "PrimaryField" STRUCT(FieldReference STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR,
+                            "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR))),
+                        "ValueListReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
                     )[]
                 )
             )
@@ -580,7 +769,9 @@ FROM read_xml(
                 "SortList" STRUCT(
                     "Sort" STRUCT(
                         type VARCHAR,
-                        "PrimaryField" STRUCT(FieldReference STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR))
+                        "PrimaryField" STRUCT(FieldReference STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR,
+                            "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR))),
+                        "ValueListReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
                     )[]
                 )
             )
@@ -609,8 +800,13 @@ FROM read_xml(
 -- jetzt N Zeilen mit eindeutigem Predicate_Index statt einer (vgl. Schema-PK).
 CROSS JOIN UNNEST(list_transform(JoinPredicateList.JoinPredicate, lambda jp, i: {idx: i, jp: jp})) AS t(pe)
 CROSS JOIN filename_normalized fn
-WHERE pe.jp.LeftField.FieldReference.UUID IS NOT NULL
-  AND pe.jp.RightField.FieldReference.UUID IS NOT NULL
+-- F-1b: strukturelle statt UUID-Gültigkeit. Der frühere UUID-IS-NOT-NULL-Filter verwarf
+-- die GESAMTE Beziehung (alle Prädikat-Zeilen), wenn ein Prädikat-Feld auf einer externen
+-- TO-Seite lag (FieldReference@UUID=""). Prädikat-Feld-id ist entity-frei und immer gesetzt
+-- → als Gültigkeits-Kriterium tragfähig; die leere Feld-UUID wird oben zu NULL normalisiert
+-- und in P4 über (Field_TO_UUID, Field_ID) kanonisch aufgelöst.
+WHERE pe.jp.LeftField.FieldReference.id IS NOT NULL
+  AND pe.jp.RightField.FieldReference.id IS NOT NULL
 ON CONFLICT (Rel_ID, File_Name, Predicate_Index) DO UPDATE SET
     Left_TO_Name = EXCLUDED.Left_TO_Name,
     Left_TO_ID = EXCLUDED.Left_TO_ID,
@@ -625,21 +821,62 @@ ON CONFLICT (Rel_ID, File_Name, Predicate_Index) DO UPDATE SET
     Operator = EXCLUDED.Operator,
     Left_Field_Name = EXCLUDED.Left_Field_Name,
     Left_Field_ID = EXCLUDED.Left_Field_ID,
+    -- B-K4 (UPSERT-Drift, real eingetreten): Left/Right_Field_UUID fehlten in der
+    -- SET-Liste → inkonsistente Zeile nach inkrementellem Re-Import, falsche
+    -- left_field/right_field-Links. Regel: JEDE Nicht-PK-Spalte gehört in SET.
+    Left_Field_UUID = EXCLUDED.Left_Field_UUID,
     Left_Field_TO_Name = EXCLUDED.Left_Field_TO_Name,
     Left_Field_TO_UUID = EXCLUDED.Left_Field_TO_UUID,
     Right_Field_Name = EXCLUDED.Right_Field_Name,
     Right_Field_ID = EXCLUDED.Right_Field_ID,
+    Right_Field_UUID = EXCLUDED.Right_Field_UUID,
     Right_Field_TO_Name = EXCLUDED.Right_Field_TO_Name,
     Right_Field_TO_UUID = EXCLUDED.Right_Field_TO_UUID,
     Left_Sort_Enabled = EXCLUDED.Left_Sort_Enabled,
     Left_Sort_Fields = EXCLUDED.Left_Sort_Fields,
     Left_Sort_Field_UUIDs = EXCLUDED.Left_Sort_Field_UUIDs,
+    Left_Sort_Field_IDs = EXCLUDED.Left_Sort_Field_IDs,
+    Left_Sort_Field_TO_UUIDs = EXCLUDED.Left_Sort_Field_TO_UUIDs,
+    Left_Sort_ValueList_UUIDs = EXCLUDED.Left_Sort_ValueList_UUIDs,
     Right_Sort_Enabled = EXCLUDED.Right_Sort_Enabled,
     Right_Sort_Fields = EXCLUDED.Right_Sort_Fields,
-    Right_Sort_Field_UUIDs = EXCLUDED.Right_Sort_Field_UUIDs;
+    Right_Sort_Field_UUIDs = EXCLUDED.Right_Sort_Field_UUIDs,
+    Right_Sort_Field_IDs = EXCLUDED.Right_Sort_Field_IDs,
+    Right_Sort_Field_TO_UUIDs = EXCLUDED.Right_Sort_Field_TO_UUIDs,
+    Right_Sort_ValueList_UUIDs = EXCLUDED.Right_Sort_ValueList_UUIDs;
+
+-- Zensus (Dup-Absorption): Quell-Rowset = ein Record je Join-Prädikat (UNNEST) mit
+-- demselben UUID-Filter wie der Katalog-INSERT; minimaler Re-Read (nur Prädikat-UUIDs).
+INSERT INTO DuplicateAbsorptions
+SELECT getvariable('fm_file'), 'RelationshipCatalog', 'Rel_ID,File_Name,Predicate_Index',
+       COALESCE(getvariable('seq_offset'), 0)::BIGINT, COUNT(*)
+FROM (
+    SELECT unnest(JoinPredicateList.JoinPredicate) AS jp
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='RelationshipCatalog',
+        record_element='Relationship',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'JoinPredicateList': 'STRUCT(
+                "JoinPredicate" STRUCT(
+                    "LeftField" STRUCT(FieldReference STRUCT(id BIGINT)),
+                    "RightField" STRUCT(FieldReference STRUCT(id BIGINT))
+                )[]
+            )'
+        }
+    )
+)
+-- Gleiches Gültigkeits-Kriterium wie der Katalog-INSERT (strukturell/id-basiert, F-1b).
+WHERE jp.LeftField.FieldReference.id IS NOT NULL
+  AND jp.RightField.FieldReference.id IS NOT NULL
+ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
 
 
 -- FieldsForTables
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS FieldsForTables (
     Table_ID BIGINT,
     Table_Name VARCHAR,
@@ -671,23 +908,46 @@ CREATE TABLE IF NOT EXISTS FieldsForTables (
     AE_Calc_AlwaysEvaluate BOOLEAN,     -- Bei jeder Änderung neu berechnen?
     -- ConstantData (nur für AutoEnter_Type = 'ConstantData')
     AE_ConstantData VARCHAR,            -- Fester Standardwert
+    -- Validierung (Schema 1.5.0)
+    Validation_Type VARCHAR,            -- 'OnlyDuringDataEntry' | 'Always'
+    Validation_AllowOverride BOOLEAN,
+    Validation_NotEmpty BOOLEAN,
+    Validation_Unique BOOLEAN,
+    Validation_Existing BOOLEAN,
+    Validation_VL_ID BIGINT,            -- ValueList-Validierung (Where-used-Kante!)
+    Validation_VL_Name VARCHAR,
+    Validation_VL_UUID VARCHAR,
+    -- Storage/Indexierung (Schema 1.5.0; Is_Global/Max_Repetitions oben)
+    Storage_AutoIndex BOOLEAN,
+    Storage_Index VARCHAR,              -- 'None' | 'All' | 'Minimal'
+    Storage_StoreCalcResults BOOLEAN,   -- nur Calculated Fields
+    -- SerialNumber-Details (nur AutoEnter_Type = 'SerialNumber')
+    Serial_Increment VARCHAR,
+    Serial_NextValue VARCHAR,
+    Serial_Generate VARCHAR,            -- 'OnCreation' | 'OnCommit'
+    -- Summary-Definition (nur fieldtype = 'Summary'; FieldReference-UUID ist
+    -- kanonisch (BaseTable-Kontext, korpus-verifiziert) → direkte Where-used-Kante
+    Summary_Operation VARCHAR,          -- 'Total' | 'Average' | 'Count' | …
+    Summary_Field_Name VARCHAR,
+    Summary_Field_UUID VARCHAR,
     File_Name VARCHAR,
     PRIMARY KEY (Field_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 )
 INSERT INTO FieldsForTables
 SELECT
     BaseTableReference.id AS Table_ID,
-    BaseTableReference.name AS Table_Name,
+    xml_unescape(BaseTableReference.name) AS Table_Name,
     BaseTableReference.UUID AS Table_UUID,
     f.id AS Field_ID,
-    f.name AS Field_Name,
+    xml_unescape(f.name) AS Field_Name,
     f.fieldtype AS Field_Type,
     f.datatype AS Data_Type,
-    f.comment AS Field_Comment,
+    ws_restore(f.comment) AS Field_Comment,
     f.UUID."#text" AS Field_UUID,
     f.Storage.global AS Is_Global,
     f.Storage.maxRepetitions AS Max_Repetitions,
@@ -709,8 +969,29 @@ SELECT
     f.AutoEnter.Calculated.Calculation.DDRREF.hash AS AE_Calc_Hash,
     f.AutoEnter.overwriteExisting AS AE_Calc_OverwriteExisting,
     f.AutoEnter.alwaysEvaluate AS AE_Calc_AlwaysEvaluate,
-    -- ConstantData
-    f.AutoEnter.ConstantData AS AE_ConstantData,
+    -- ConstantData. ws_restore (B-K6): fester Standardwert kann CR enthalten.
+    ws_restore(f.AutoEnter.ConstantData) AS AE_ConstantData,
+    -- Validierung
+    NULLIF(f.Validation.type, '') AS Validation_Type,
+    f.Validation.allowOverride AS Validation_AllowOverride,
+    f.Validation.notEmpty AS Validation_NotEmpty,
+    f.Validation."unique" AS Validation_Unique,
+    f.Validation.existing AS Validation_Existing,
+    f.Validation.ValueListReference.id AS Validation_VL_ID,
+    xml_unescape(f.Validation.ValueListReference.name) AS Validation_VL_Name,
+    f.Validation.ValueListReference.UUID AS Validation_VL_UUID,
+    -- Storage/Indexierung
+    f.Storage.autoIndex AS Storage_AutoIndex,
+    f.Storage."index" AS Storage_Index,
+    f.Storage.storeCalculationResults AS Storage_StoreCalcResults,
+    -- SerialNumber
+    f.AutoEnter.SerialNumber.increment AS Serial_Increment,
+    f.AutoEnter.SerialNumber.nextvalue AS Serial_NextValue,
+    f.AutoEnter.SerialNumber.generate AS Serial_Generate,
+    -- Summary
+    NULLIF(f.SummaryInfo.operation, '') AS Summary_Operation,
+    xml_unescape(f.SummaryInfo.SummaryField.FieldReference.name) AS Summary_Field_Name,
+    f.SummaryInfo.SummaryField.FieldReference.UUID AS Summary_Field_UUID,
     fn.File_Name as File_Name
 FROM read_xml(
     getvariable('fm_xml'),
@@ -729,7 +1010,28 @@ FROM read_xml(
                 "datatype" VARCHAR,
                 "comment" VARCHAR,
                 "UUID" STRUCT("#text" VARCHAR),
-                "Storage" STRUCT("global" BOOLEAN, "maxRepetitions" INTEGER),
+                "Storage" STRUCT(
+                    "global" BOOLEAN,
+                    "maxRepetitions" INTEGER,
+                    "autoIndex" BOOLEAN,
+                    "index" VARCHAR,
+                    "storeCalculationResults" BOOLEAN
+                ),
+                "Validation" STRUCT(
+                    "type" VARCHAR,
+                    "allowOverride" BOOLEAN,
+                    "notEmpty" BOOLEAN,
+                    "unique" BOOLEAN,
+                    "existing" BOOLEAN,
+                    "ValueListReference" STRUCT("id" BIGINT, "name" VARCHAR, "UUID" VARCHAR)
+                ),
+                "SummaryInfo" STRUCT(
+                    "operation" VARCHAR,
+                    "restartEachGroup" BOOLEAN,
+                    "SummaryField" STRUCT(
+                        "FieldReference" STRUCT("id" BIGINT, "name" VARCHAR, "UUID" VARCHAR)
+                    )
+                ),
                 "Calculation" STRUCT("DDRREF" STRUCT("hash" VARCHAR), "Text" VARCHAR),
                 "AutoEnter" STRUCT(
                     "type" VARCHAR,
@@ -737,6 +1039,11 @@ FROM read_xml(
                     "overwriteExisting" BOOLEAN,
                     "alwaysEvaluate" BOOLEAN,
                     "ConstantData" VARCHAR,
+                    "SerialNumber" STRUCT(
+                        "increment" VARCHAR,
+                        "nextvalue" VARCHAR,
+                        "generate" VARCHAR
+                    ),
                     "Looked_up" STRUCT(
                         "dontCopyIfEmpty" BOOLEAN,
                         "noMatchCopyOption" VARCHAR,
@@ -791,10 +1098,46 @@ ON CONFLICT (Field_UUID, File_Name) DO UPDATE SET
     AE_Calc_Hash = EXCLUDED.AE_Calc_Hash,
     AE_Calc_OverwriteExisting = EXCLUDED.AE_Calc_OverwriteExisting,
     AE_Calc_AlwaysEvaluate = EXCLUDED.AE_Calc_AlwaysEvaluate,
-    AE_ConstantData = EXCLUDED.AE_ConstantData;
+    AE_ConstantData = EXCLUDED.AE_ConstantData,
+    Validation_Type = EXCLUDED.Validation_Type,
+    Validation_AllowOverride = EXCLUDED.Validation_AllowOverride,
+    Validation_NotEmpty = EXCLUDED.Validation_NotEmpty,
+    Validation_Unique = EXCLUDED.Validation_Unique,
+    Validation_Existing = EXCLUDED.Validation_Existing,
+    Validation_VL_ID = EXCLUDED.Validation_VL_ID,
+    Validation_VL_Name = EXCLUDED.Validation_VL_Name,
+    Validation_VL_UUID = EXCLUDED.Validation_VL_UUID,
+    Storage_AutoIndex = EXCLUDED.Storage_AutoIndex,
+    Storage_Index = EXCLUDED.Storage_Index,
+    Storage_StoreCalcResults = EXCLUDED.Storage_StoreCalcResults,
+    Serial_Increment = EXCLUDED.Serial_Increment,
+    Serial_NextValue = EXCLUDED.Serial_NextValue,
+    Serial_Generate = EXCLUDED.Serial_Generate,
+    Summary_Operation = EXCLUDED.Summary_Operation,
+    Summary_Field_Name = EXCLUDED.Summary_Field_Name,
+    Summary_Field_UUID = EXCLUDED.Summary_Field_UUID;
+
+-- Zensus (Dup-Absorption): Quell-Rowset = ein Record je Feld (UNNEST je FieldCatalog)
+-- mit demselben id-Filter wie der Katalog-INSERT; minimaler Re-Read (nur Feld-id).
+INSERT INTO DuplicateAbsorptions
+SELECT getvariable('fm_file'), 'FieldsForTables', 'Field_UUID,File_Name',
+       COALESCE(getvariable('seq_offset'), 0)::BIGINT, COUNT(*)
+FROM read_xml(
+    getvariable('fm_xml'),
+    root_element='FieldsForTables',
+    record_element='FieldCatalog',
+    max_depth=10,
+    maximum_file_size=getvariable('dom_threshold'),
+    streaming=getvariable('use_streaming'),
+    columns={'ObjectList': 'STRUCT("Field" STRUCT("id" BIGINT)[])'}
+)
+CROSS JOIN UNNEST(ObjectList.Field) AS t(f)
+WHERE f.id IS NOT NULL
+ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
 
 
 -- ValueListCatalog
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS ValueListCatalog (
     VL_ID BIGINT,
     VL_Name VARCHAR,
@@ -804,13 +1147,14 @@ CREATE TABLE IF NOT EXISTS ValueListCatalog (
     PRIMARY KEY (VL_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 )
 INSERT INTO ValueListCatalog
 SELECT
     id AS VL_ID,
-    name AS VL_Name,
+    xml_unescape(name) AS VL_Name,
     Source.value AS Source_Type,
     UUID."#text" AS VL_UUID,
     fn.File_Name as File_Name
@@ -835,40 +1179,92 @@ ON CONFLICT (VL_UUID, File_Name) DO UPDATE SET
     VL_Name = EXCLUDED.VL_Name,
     Source_Type = EXCLUDED.Source_Type;
 
+-- Zensus (Dup-Absorption): geparste Quell-Records mit demselben id-Filter
+-- wie der Katalog-INSERT; minimaler Re-Read (nur id).
+INSERT INTO DuplicateAbsorptions
+SELECT getvariable('fm_file'), 'ValueListCatalog', 'VL_UUID,File_Name',
+       COALESCE(getvariable('seq_offset'), 0)::BIGINT, COUNT(*)
+FROM read_xml(
+    getvariable('fm_xml'),
+    root_element='ValueListCatalog',
+    record_element='ValueList',
+    maximum_file_size=getvariable('dom_threshold'),
+    streaming=getvariable('use_streaming'),
+    columns={'id': 'BIGINT'}
+)
+WHERE id IS NOT NULL
+ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
 
 -- OptionsForValueLists (Details und Werte)
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS OptionsForValueLists (
     VL_ID BIGINT,
     VL_Name VARCHAR,
     VL_UUID VARCHAR,
     Source_Type VARCHAR,
     Custom_Values VARCHAR[],
+    -- Primärfeld: FileMaker-Struktur ist Field/PrimaryField/FieldReference (NICHT
+    -- Source/FieldReference — der alte Pfad lieferte durchweg NULL → 0 ValueList-Links).
     Field_ID BIGINT,
     Field_Name VARCHAR,
     Field_UUID VARCHAR,
     TO_ID BIGINT,
     TO_Name VARCHAR,
     TO_UUID VARCHAR,
+    Field_Sort BOOLEAN,
+    -- Zweitfeld (Field/SecondaryField): „auch Werte aus zweitem Feld anzeigen" +
+    -- Sortierung (@sort). Echte Feldabhängigkeit → eigener source_field-Link (Subrole).
+    Secondary_Field_ID BIGINT,
+    Secondary_Field_Name VARCHAR,
+    Secondary_Field_UUID VARCHAR,
+    Secondary_TO_ID BIGINT,
+    Secondary_TO_Name VARCHAR,
+    Secondary_TO_UUID VARCHAR,
+    Secondary_Sort BOOLEAN,
+    -- External-Werteliste (Source value="External"): lokaler Wrapper auf eine VL einer
+    -- anderen Datei. Die Ziel-ValueListReference trägt im XML eine LEERE UUID → P4 löst
+    -- über DataSourceReference (→ Zieldatei) + VL-id (Fallback Name) auf und erzeugt
+    -- ValueList→ValueList (source_valuelist) + ValueList→ExternalDataSource (data_source).
+    External_DS_ID BIGINT,
+    External_DS_Name VARCHAR,
+    External_DS_UUID VARCHAR,
+    External_VL_ID BIGINT,
+    External_VL_Name VARCHAR,
     File_Name VARCHAR,
     PRIMARY KEY (VL_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 )
 INSERT INTO OptionsForValueLists
 SELECT
     ValueListReference.id AS VL_ID,
-    ValueListReference.name AS VL_Name,
+    xml_unescape(ValueListReference.name) AS VL_Name,
     ValueListReference.UUID AS VL_UUID,
     Source.value AS Source_Type,
     [v."#text" for v in CustomValues.Text] AS Custom_Values,
-    Source.FieldReference.id AS Field_ID,
-    Source.FieldReference.name AS Field_Name,
-    Source.FieldReference.UUID AS Field_UUID,
-    Source.FieldReference.TableOccurrenceReference.id AS TO_ID,
-    Source.FieldReference.TableOccurrenceReference.name AS TO_Name,
-    Source.FieldReference.TableOccurrenceReference.UUID AS TO_UUID,
+    Field.PrimaryField.FieldReference.id AS Field_ID,
+    xml_unescape(Field.PrimaryField.FieldReference.name) AS Field_Name,
+    Field.PrimaryField.FieldReference.UUID AS Field_UUID,
+    Field.PrimaryField.FieldReference.TableOccurrenceReference.id AS TO_ID,
+    xml_unescape(Field.PrimaryField.FieldReference.TableOccurrenceReference.name) AS TO_Name,
+    Field.PrimaryField.FieldReference.TableOccurrenceReference.UUID AS TO_UUID,
+    Field.PrimaryField.sort AS Field_Sort,
+    Field.SecondaryField.FieldReference.id AS Secondary_Field_ID,
+    Field.SecondaryField.FieldReference.name AS Secondary_Field_Name,
+    Field.SecondaryField.FieldReference.UUID AS Secondary_Field_UUID,
+    Field.SecondaryField.FieldReference.TableOccurrenceReference.id AS Secondary_TO_ID,
+    Field.SecondaryField.FieldReference.TableOccurrenceReference.name AS Secondary_TO_Name,
+    Field.SecondaryField.FieldReference.TableOccurrenceReference.UUID AS Secondary_TO_UUID,
+    Field.SecondaryField.sort AS Secondary_Sort,
+    External.DataSourceReference.id AS External_DS_ID,
+    xml_unescape(External.DataSourceReference.name) AS External_DS_Name,
+    External.DataSourceReference.UUID AS External_DS_UUID,
+    External.ValueListReference.id AS External_VL_ID,
+    xml_unescape(External.ValueListReference.name) AS External_VL_Name,
     fn.File_Name as File_Name
 FROM read_xml(
     getvariable('fm_xml'),
@@ -879,20 +1275,41 @@ FROM read_xml(
     streaming=getvariable('use_streaming'),
     columns={
         'ValueListReference': 'STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)',
-        'Source': 'STRUCT(
-            value VARCHAR,
-            "FieldReference" STRUCT(
-                id BIGINT,
-                name VARCHAR,
-                UUID VARCHAR,
-                "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
+        'Source': 'STRUCT(value VARCHAR)',
+        'Field': 'STRUCT(
+            "PrimaryField" STRUCT(
+                "show" BOOLEAN, "sort" BOOLEAN,
+                "FieldReference" STRUCT(
+                    id BIGINT, name VARCHAR, UUID VARCHAR,
+                    "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
+                )
+            ),
+            "SecondaryField" STRUCT(
+                "show" BOOLEAN, "sort" BOOLEAN,
+                "FieldReference" STRUCT(
+                    id BIGINT, name VARCHAR, UUID VARCHAR,
+                    "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
+                )
             )
         )',
-        'CustomValues': 'STRUCT("Text" STRUCT("#text" VARCHAR)[])'
+        'CustomValues': 'STRUCT("Text" STRUCT("#text" VARCHAR)[])',
+        'External': 'STRUCT(
+            "DataSourceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR),
+            "ValueListReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
+        )'
     }
 )
 CROSS JOIN filename_normalized fn
+-- Source-Wächter: record_element='ValueList' matcht NICHT nur die Einträge unter
+-- <OptionsForValueLists>, sondern auch die <ValueList>-Knoten des PrivilegeSet-
+-- access-Baums (Custom ValueList Privileges) — die tragen eine GÜLTIGE
+-- ValueListReference (gleiche VL-UUID!) und würden per last-write-wins die echten
+-- Options-Zeilen überschreiben (Source_Type=NULL). Echte Options-Einträge tragen
+-- IMMER ein <Source>-Element (FromField/Custom/External; Korpus: 0 Ausnahmen),
+-- die Privilege-Knoten nie → der Filter grenzt exakt ab. Vom Dup-Absorption-
+-- Zensus aufgedeckt (Test-Set: 4 Privilege-Zeilen kollabierten still).
 WHERE ValueListReference.id IS NOT NULL
+  AND Source.value IS NOT NULL
 ON CONFLICT (VL_UUID, File_Name) DO UPDATE SET
     VL_ID = EXCLUDED.VL_ID,
     VL_Name = EXCLUDED.VL_Name,
@@ -903,10 +1320,42 @@ ON CONFLICT (VL_UUID, File_Name) DO UPDATE SET
     Field_UUID = EXCLUDED.Field_UUID,
     TO_ID = EXCLUDED.TO_ID,
     TO_Name = EXCLUDED.TO_Name,
-    TO_UUID = EXCLUDED.TO_UUID;
+    TO_UUID = EXCLUDED.TO_UUID,
+    Field_Sort = EXCLUDED.Field_Sort,
+    Secondary_Field_ID = EXCLUDED.Secondary_Field_ID,
+    Secondary_Field_Name = EXCLUDED.Secondary_Field_Name,
+    Secondary_Field_UUID = EXCLUDED.Secondary_Field_UUID,
+    Secondary_TO_ID = EXCLUDED.Secondary_TO_ID,
+    Secondary_TO_Name = EXCLUDED.Secondary_TO_Name,
+    Secondary_TO_UUID = EXCLUDED.Secondary_TO_UUID,
+    Secondary_Sort = EXCLUDED.Secondary_Sort,
+    External_DS_ID = EXCLUDED.External_DS_ID,
+    External_DS_Name = EXCLUDED.External_DS_Name,
+    External_DS_UUID = EXCLUDED.External_DS_UUID,
+    External_VL_ID = EXCLUDED.External_VL_ID,
+    External_VL_Name = EXCLUDED.External_VL_Name;
+
+-- Zensus (Dup-Absorption): geparste Quell-Records mit denselben Filtern wie der
+-- Katalog-INSERT (ValueListReference.id + Source-Wächter, s. o.); minimaler Re-Read.
+INSERT INTO DuplicateAbsorptions
+SELECT getvariable('fm_file'), 'OptionsForValueLists', 'VL_UUID,File_Name',
+       COALESCE(getvariable('seq_offset'), 0)::BIGINT, COUNT(*)
+FROM read_xml(
+    getvariable('fm_xml'),
+    root_element='OptionsForValueLists',
+    record_element='ValueList',
+    max_depth=10,
+    maximum_file_size=getvariable('dom_threshold'),
+    streaming=getvariable('use_streaming'),
+    columns={'ValueListReference': 'STRUCT(id BIGINT)', 'Source': 'STRUCT(value VARCHAR)'}
+)
+WHERE ValueListReference.id IS NOT NULL
+  AND Source.value IS NOT NULL
+ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
 
 
 -- CustomFunctionsCatalog
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS CustomFunctionsCatalog (
     CF_ID BIGINT,
     CF_Name VARCHAR,
@@ -923,10 +1372,11 @@ CREATE TABLE IF NOT EXISTS CustomFunctionsCatalog (
 -- eingebetteten Formelkörper. So kostet der Embedded-Pfad keinen zusätzlichen XML-Parse.
 -- Die Spalte `Calculation` ist NULL für SaXML ≤ v2.2.x (FM ≤ 22) — dort liegen die
 -- Formeln in einer separaten Top-Level-Sektion <CalcsForCustomFunctions> (weiter unten).
+-- @P1_SECTION:main@
 CREATE OR REPLACE TEMP TABLE _cf_catalog_raw AS
 SELECT
     id AS CF_ID,
-    name AS CF_Name,
+    xml_unescape(name) AS CF_Name,
     Display AS CF_Display,
     UUID->>'#text' AS CF_UUID,
     [p.name for p in ObjectList.Parameter] AS Parameters,
@@ -966,8 +1416,17 @@ ON CONFLICT (CF_UUID, File_Name) DO UPDATE SET
     Parameters = EXCLUDED.Parameters,
     DDR_Hash = EXCLUDED.DDR_Hash;
 
+-- Zensus (Dup-Absorption): liest aus der bereits materialisierten TEMP-Stufe
+-- _cf_catalog_raw (kein zweiter XML-Parse; der Katalog-INSERT hat keinen Filter).
+INSERT INTO DuplicateAbsorptions
+SELECT getvariable('fm_file'), 'CustomFunctionsCatalog', 'CF_UUID,File_Name',
+       COALESCE(getvariable('seq_offset'), 0)::BIGINT, COUNT(*)
+FROM _cf_catalog_raw
+ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
 
 -- CalcsForCustomFunctions
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS CalcsForCustomFunctions (
     CF_ID BIGINT,
     CF_Name VARCHAR,
@@ -980,13 +1439,14 @@ CREATE TABLE IF NOT EXISTS CalcsForCustomFunctions (
     PRIMARY KEY (CF_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 )
 INSERT INTO CalcsForCustomFunctions
 SELECT
     CustomFunctionReference.id AS CF_ID,
-    CustomFunctionReference.name AS CF_Name,
+    xml_unescape(CustomFunctionReference.name) AS CF_Name,
     CustomFunctionReference.UUID AS CF_UUID,
     ws_restore(Calculation.Text) AS Calculation_Code,
     [ {'type': c.type, 'content': c."#text"} for c in Calculation.ChunkList.Chunk ] AS Code_Chunks,
@@ -1065,6 +1525,7 @@ WHERE cf.CF_UUID = calc.CF_UUID
 -- Script_ID ist NICHT die UI-Reihenfolge — FileMaker numeriert Scripts sequentiell beim
 -- Anlegen, nicht beim Ordnen. Für korrekte Stack-Berechnung der Folder muss die echte
 -- XML-Reihenfolge erhalten bleiben.
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS ScriptCatalog (
     Script_ID BIGINT,
     Script_Name VARCHAR,
@@ -1082,6 +1543,7 @@ CREATE TABLE IF NOT EXISTS ScriptCatalog (
     PRIMARY KEY (Script_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 ),
@@ -1138,8 +1600,64 @@ ON CONFLICT (Script_UUID, File_Name) DO UPDATE SET
     Full_Access = EXCLUDED.Full_Access,
     Sequence_ID = EXCLUDED.Sequence_ID;
 
+-- Dup-Absorption-DETAILS (ScriptCatalog): Typ + Name der kollidierenden Scripts je
+-- doppelt vergebener UUID. Liest denselben Quell-Rowset wie der Katalog-
+-- INSERT oben (ScriptCatalog ist NICHT sub-gechunkt → Feed nur aus 'main', kein Turbo-
+-- Multifed-Sonderfall). DELETE-vor-INSERT hält den Detail-Satz je (Katalog, Datei) beim
+-- Re-Import frisch (analog zum per-Datei-Overwrite des Zensus). Bit-identisch zum
+-- Katalog-INSERT (rein additiv, eigene Tabelle, keine Änderung bestehender Statements).
+DELETE FROM DuplicateAbsorptionDetails
+WHERE Catalog = 'ScriptCatalog'
+  AND File_Name = getvariable('fm_file')
+  AND Chunk_Seq = COALESCE(getvariable('seq_offset'), 0)::BIGINT;
+
+INSERT INTO DuplicateAbsorptionDetails
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq)
+WITH src AS (
+    SELECT
+        UUID->>'#text' AS Object_UUID,
+        xml_unescape(name) AS Object_Name,
+        CASE WHEN isFolder = 'True' THEN 'Folder'
+             WHEN COALESCE(isSeparatorItem, False) THEN 'Separator'
+             ELSE 'Script' END AS Object_Type,
+        ROW_NUMBER() OVER () AS xml_ord
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='ScriptCatalog',
+        record_element='Script',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'id': 'BIGINT',
+            'name': 'VARCHAR',
+            'isFolder': 'VARCHAR',
+            'isSeparatorItem': 'BOOLEAN',
+            'UUID': 'STRUCT("#text" VARCHAR, modifications BIGINT, userName VARCHAR, accountName VARCHAR, timestamp VARCHAR)'
+        }
+    )
+    WHERE id IS NOT NULL
+),
+dups AS (
+    SELECT Object_UUID FROM src
+    WHERE Object_UUID IS NOT NULL
+    GROUP BY Object_UUID HAVING COUNT(*) > 1
+)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    'ScriptCatalog' AS Catalog,
+    s.Object_UUID,
+    s.Object_Name,
+    s.Object_Type,
+    ROW_NUMBER() OVER (PARTITION BY s.Object_UUID ORDER BY s.xml_ord) AS Occurrence_Seq,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq
+FROM src s
+JOIN dups d USING (Object_UUID)
+ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
+
 
 -- StepsForScripts
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS StepsForScripts (
     Script_ID BIGINT,
     Script_Name VARCHAR,
@@ -1169,6 +1687,7 @@ CREATE TABLE IF NOT EXISTS StepsForScripts (
 -- ADD COLUMN für inkrementelle DBs ohne Force-Rebuild.
 ALTER TABLE StepsForScripts ADD COLUMN IF NOT EXISTS Step_XML VARCHAR;
 
+-- @P1_SECTION:StepsForScripts@
 -- @STREAMIFY_BLOCK:stepsforscripts@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
@@ -1200,7 +1719,16 @@ script_steps AS (
         unnest(xml_extract_elements(script_xml, '/Script/ObjectList/Step')) as step_xml
     FROM scripts_resolved
 )
-INSERT INTO StepsForScripts
+-- Explizite Spaltenliste (18 P1-Spalten): P3 verbreitert die Tabelle um die
+-- abgeleitete Spalte Inserted_Text (ALTER TABLE, details:~1037). Ein spaltenloser
+-- INSERT bricht dann auf dem sequentiellen Incremental-Pfad (P1 direkt gegen die
+-- bestehende Master-/Test-DB, JOBS=1) mit "excluded has 18 columns … 19 specified".
+-- Der Parallel-Pfad (frische Teil-DBs + INSERT BY NAME) war nie betroffen.
+INSERT INTO StepsForScripts (
+    Script_ID, Script_Name, Script_UUID, Step_Index, Step_ID, Step_Name,
+    Is_Enabled, Step_UUID, DDR_Hash, DDR_UUID, Parameters_XML, Step_XML,
+    Parameter_Type, Variable_Name, Calculation_Text, Boolean_Type, Boolean_Value,
+    File_Name)
 SELECT
     Script_ID,
     Script_Name,
@@ -1245,6 +1773,25 @@ ON CONFLICT (Step_UUID, File_Name) DO UPDATE SET
     Calculation_Text = EXCLUDED.Calculation_Text,
     Boolean_Type = EXCLUDED.Boolean_Type,
     Boolean_Value = EXCLUDED.Boolean_Value;
+
+-- Zensus (Dup-Absorption): geparste Step-Records dieses Laufs/Chunks. Leichter
+-- Zweit-Read (Script-Fragmente unnesten, Steps nur ZÄHLEN — keine Spalten-Extrakte,
+-- DOM bleibt pro Script-Fragment beschränkt). Kein staged-Refactor des bewährten
+-- Katalog-INSERTs: Materialisieren der Step-Fragmente (TEMP-Stage) würde die größte
+-- Roh-Spalte doppelt durch die Storage schreiben und die Upsert-Reihenfolge riskieren.
+-- Beim Sub-Chunking schreibt jeder Chunk seine eigene Zeile (Chunk_Seq=seq_offset);
+-- der P6-Check summiert — grenz-robust (zählt schlicht alle geparsten Records).
+-- Liegt INNERHALB des STREAMIFY-Blocks: die SAX-Fassung führt ihren eigenen,
+-- quellgleichen Zensus (sql/convert-xml/streamify/stepsforscripts.sql).
+INSERT INTO DuplicateAbsorptions
+SELECT getvariable('fm_file'), 'StepsForScripts', 'Step_UUID,File_Name',
+       COALESCE(getvariable('seq_offset'), 0)::BIGINT,
+       COALESCE(SUM(len(xml_extract_elements(script_xml, '/Script/ObjectList/Step'))), 0)
+FROM (
+    SELECT unnest(xml_extract_elements(xml, '//StepsForScripts/Script')) as script_xml
+    FROM read_xml_objects(getvariable('fm_xml'), maximum_file_size=getvariable('max_filesize'))
+)
+ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
 -- @END_STREAMIFY_BLOCK@
 
 
@@ -1254,11 +1801,25 @@ ON CONFLICT (Step_UUID, File_Name) DO UPDATE SET
 -- Folder_Type / Is_Separator analog zu ScriptCatalog: Layouts können im
 -- "Manage Layouts"-Dialog Ordner und Trennlinien enthalten (isFolder="True"/"Marker").
 -- Sequence_ID: laufende Nummer in der XML-Reihenfolge (siehe Hinweis bei ScriptCatalog).
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS Layouts (
     L_ID BIGINT,
     L_Name VARCHAR,
     L_UUID VARCHAR,
     L_TO_Name VARCHAR,
+    -- Layout-Metadaten (Schema 1.5.0)
+    L_TO_UUID VARCHAR,       -- Kontext-TO per UUID (statt fragiler Namens-Auflösung)
+    L_Width INTEGER,         -- Layout-Breite in px
+    L_Theme_ID BIGINT,       -- LayoutThemeReference (→ uses_theme-Kante)
+    L_Theme_Name VARCHAR,
+    L_Theme_UUID VARCHAR,
+    -- Layout-MenuSet (Schema 1.5.1): CustomMenuSetReference im Layout-Tail
+    -- (nach GridStyle/Options). id=0 / name="[File Default]" / UUID="" ist der
+    -- Built-in-Default (kein Custom-MenuSet) → wird bereits hier auf NULL
+    -- normalisiert; nur echte Referenzen (id≠0) → uses_menuset-Kante in P4.
+    L_MenuSet_ID BIGINT,
+    L_MenuSet_Name VARCHAR,
+    L_MenuSet_UUID VARCHAR,
     Folder_Type VARCHAR,
     Is_Separator BOOLEAN,
     Sequence_ID BIGINT,
@@ -1266,13 +1827,15 @@ CREATE TABLE IF NOT EXISTS Layouts (
     PRIMARY KEY (L_UUID, File_Name)
 );
 
+-- @P1_SECTION:LayoutCatalog@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 ),
 layout_records AS (
     SELECT
         ROW_NUMBER() OVER () + getvariable('seq_offset')::BIGINT AS Sequence_ID,
-        id, name, isFolder, isSeparatorItem, UUID, TableOccurrenceReference
+        id, name, width, isFolder, isSeparatorItem, UUID, TableOccurrenceReference,
+        LayoutThemeReference, MenuSet
     FROM read_xml(
         getvariable('fm_xml'),
         root_element='LayoutCatalog',
@@ -1282,10 +1845,13 @@ layout_records AS (
         columns={
             'id': 'BIGINT',
             'name': 'VARCHAR',
+            'width': 'INTEGER',
             'isFolder': 'VARCHAR',
             'isSeparatorItem': 'BOOLEAN',
             'UUID': 'STRUCT("#text" VARCHAR)',
-            'TableOccurrenceReference': 'STRUCT(name VARCHAR)'
+            'TableOccurrenceReference': 'STRUCT(name VARCHAR, UUID VARCHAR)',
+            'LayoutThemeReference': 'STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)',
+            'MenuSet': 'STRUCT("CustomMenuSetReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR))'
         }
     )
     -- Folder-Records (isFolder='True'/'Marker') haben keine TableOccurrenceReference;
@@ -1297,7 +1863,19 @@ SELECT
     lr.id AS L_ID,
     xml_unescape(lr.name) AS L_Name,
     lr.UUID."#text" AS L_UUID,
-    lr.TableOccurrenceReference.name AS L_TO_Name,
+    xml_unescape(lr.TableOccurrenceReference.name) AS L_TO_Name,
+    lr.TableOccurrenceReference.UUID AS L_TO_UUID,
+    lr.width AS L_Width,
+    lr.LayoutThemeReference.id AS L_Theme_ID,
+    lr.LayoutThemeReference.name AS L_Theme_Name,
+    lr.LayoutThemeReference.UUID AS L_Theme_UUID,
+    -- Built-in-Default (id=0, "[File Default]") → NULL-Trio
+    CASE WHEN lr.MenuSet.CustomMenuSetReference.id != 0
+         THEN lr.MenuSet.CustomMenuSetReference.id END AS L_MenuSet_ID,
+    CASE WHEN lr.MenuSet.CustomMenuSetReference.id != 0
+         THEN xml_unescape(lr.MenuSet.CustomMenuSetReference.name) END AS L_MenuSet_Name,
+    CASE WHEN lr.MenuSet.CustomMenuSetReference.id != 0
+         THEN NULLIF(lr.MenuSet.CustomMenuSetReference.UUID, '') END AS L_MenuSet_UUID,
     lr.isFolder AS Folder_Type,
     COALESCE(lr.isSeparatorItem, False) AS Is_Separator,
     lr.Sequence_ID,
@@ -1308,15 +1886,30 @@ ON CONFLICT (L_UUID, File_Name) DO UPDATE SET
     L_ID = EXCLUDED.L_ID,
     L_Name = EXCLUDED.L_Name,
     L_TO_Name = EXCLUDED.L_TO_Name,
+    L_TO_UUID = EXCLUDED.L_TO_UUID,
+    L_Width = EXCLUDED.L_Width,
+    L_Theme_ID = EXCLUDED.L_Theme_ID,
+    L_Theme_Name = EXCLUDED.L_Theme_Name,
+    L_Theme_UUID = EXCLUDED.L_Theme_UUID,
+    L_MenuSet_ID = EXCLUDED.L_MenuSet_ID,
+    L_MenuSet_Name = EXCLUDED.L_MenuSet_Name,
+    L_MenuSet_UUID = EXCLUDED.L_MenuSet_UUID,
     Folder_Type = EXCLUDED.Folder_Type,
     Is_Separator = EXCLUDED.Is_Separator,
     Sequence_ID = EXCLUDED.Sequence_ID;
 
 
 -- LayoutParts
+-- @END_P1_SECTION@
+-- Part_Seq (Schema 1.5.1, B-K5): laufende Part-Nummer je Layout (XML-Reihenfolge,
+-- 1-basiert). Der alte PK (Layout_ID, Part_Kind, File_Name) kollabierte mehrere
+-- Parts gleicher Art (z.B. 3× Leading Sub-summary, kind=3) auf eine Zeile.
+-- Break_*-Spalten: Umbruchfeld einer Sub-Summary aus Part/Definition/FieldReference
+-- (+ TableOccurrenceReference-Kind) → breaks_on_field-Kante in P4.
 CREATE TABLE IF NOT EXISTS LayoutParts (
     Layout_ID BIGINT,
     Layout_Name VARCHAR,
+    Part_Seq INTEGER,
     Part_Type VARCHAR,
     Part_Kind INTEGER,
     Definition_Type VARCHAR,
@@ -1325,10 +1918,16 @@ CREATE TABLE IF NOT EXISTS LayoutParts (
     Part_Absolute INTEGER,
     Part_Options INTEGER,
     Object_Count BIGINT,
+    Break_Field_ID BIGINT,
+    Break_Field_Name VARCHAR,
+    Break_Field_UUID VARCHAR,
+    Break_TO_Name VARCHAR,
+    Break_TO_UUID VARCHAR,
     File_Name VARCHAR,
-    PRIMARY KEY (Layout_ID, Part_Kind, File_Name)
+    PRIMARY KEY (Layout_ID, Part_Seq, File_Name)
 );
 
+-- @P1_SECTION:LayoutCatalog@
 -- @STREAMIFY_BLOCK:layoutparts@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
@@ -1350,37 +1949,81 @@ layouts_resolved AS (
     FROM raw_layouts
     WHERE xml_extract_text(layout_xml, '/Layout/@id')[1] IS NOT NULL
 ),
-layout_parts AS (
+layout_parts_list AS (
     SELECT
         Layout_ID,
         Layout_Name,
-        unnest(xml_extract_elements(layout_xml, '/Layout/PartsList/Part')) as part_xml
+        xml_extract_elements(layout_xml, '/Layout/PartsList/Part') as parts
     FROM layouts_resolved
+),
+layout_parts AS (
+    -- Zip-Unnest: unnest() und generate_subscripts() laufen positionsgleich →
+    -- Part_Seq = Listenposition (XML-Reihenfolge, 1-basiert; B-K5).
+    SELECT
+        Layout_ID,
+        Layout_Name,
+        unnest(parts) as part_xml,
+        generate_subscripts(parts, 1) as Part_Seq
+    FROM layout_parts_list
+),
+parts_extracted AS (
+    SELECT
+        Layout_ID,
+        Layout_Name,
+        Part_Seq,
+        xml_extract_text(part_xml, '/Part/@type')[1] as Part_Type,
+        xml_extract_text(part_xml, '/Part/@kind')[1]::INTEGER as Part_Kind,
+        xml_extract_text(part_xml, '/Part/Definition/@type')[1] as Definition_Type,
+        xml_extract_text(part_xml, '/Part/Definition/@kind')[1]::INTEGER as Definition_Kind,
+        xml_extract_text(part_xml, '/Part/Definition/@size')[1]::INTEGER as Part_Size,
+        xml_extract_text(part_xml, '/Part/Definition/@absolute')[1]::INTEGER as Part_Absolute,
+        xml_extract_text(part_xml, '/Part/Definition/@Options')[1]::INTEGER as Part_Options,
+        list_count(xml_extract_elements(part_xml, '/Part/ObjectList/LayoutObject')) as Object_Count,
+        xml_extract_text(part_xml, '/Part/Definition/FieldReference/@id')[1]::BIGINT as Break_Field_ID,
+        xml_unescape(xml_extract_text(part_xml, '/Part/Definition/FieldReference/@name')[1]) as Break_Field_Name,
+        xml_extract_text(part_xml, '/Part/Definition/FieldReference/@UUID')[1] as Break_Field_UUID,
+        xml_unescape(xml_extract_text(part_xml, '/Part/Definition/FieldReference/TableOccurrenceReference/@name')[1]) as Break_TO_Name,
+        xml_extract_text(part_xml, '/Part/Definition/FieldReference/TableOccurrenceReference/@UUID')[1] as Break_TO_UUID
+    FROM layout_parts
 )
 INSERT INTO LayoutParts
 SELECT
     Layout_ID,
     Layout_Name,
-    xml_extract_text(part_xml, '/Part/@type')[1] as Part_Type,
-    xml_extract_text(part_xml, '/Part/@kind')[1]::INTEGER as Part_Kind,
-    xml_extract_text(part_xml, '/Part/Definition/@type')[1] as Definition_Type,
-    xml_extract_text(part_xml, '/Part/Definition/@kind')[1]::INTEGER as Definition_Kind,
-    xml_extract_text(part_xml, '/Part/Definition/@size')[1]::INTEGER as Part_Size,
-    xml_extract_text(part_xml, '/Part/Definition/@absolute')[1]::INTEGER as Part_Absolute,
-    xml_extract_text(part_xml, '/Part/Definition/@Options')[1]::INTEGER as Part_Options,
-    list_count(xml_extract_elements(part_xml, '/Part/ObjectList/LayoutObject')) as Object_Count,
+    Part_Seq,
+    Part_Type,
+    Part_Kind,
+    Definition_Type,
+    Definition_Kind,
+    Part_Size,
+    Part_Absolute,
+    Part_Options,
+    Object_Count,
+    -- Leere Platzhalter-Referenz (id=0, leerer Name — Body/Header/Footer tragen
+    -- sie flächig) → NULL-Quintett; nur echte FieldReferences bleiben stehen.
+    CASE WHEN Break_Field_ID != 0 THEN Break_Field_ID END as Break_Field_ID,
+    CASE WHEN Break_Field_ID != 0 THEN Break_Field_Name END as Break_Field_Name,
+    CASE WHEN Break_Field_ID != 0 THEN Break_Field_UUID END as Break_Field_UUID,
+    CASE WHEN Break_Field_ID != 0 THEN Break_TO_Name END as Break_TO_Name,
+    CASE WHEN Break_Field_ID != 0 THEN Break_TO_UUID END as Break_TO_UUID,
     fn.File_Name as File_Name
-FROM layout_parts
+FROM parts_extracted
 CROSS JOIN filename_normalized fn
-ON CONFLICT (Layout_ID, Part_Kind, File_Name) DO UPDATE SET
+ON CONFLICT (Layout_ID, Part_Seq, File_Name) DO UPDATE SET
     Layout_Name = EXCLUDED.Layout_Name,
     Part_Type = EXCLUDED.Part_Type,
+    Part_Kind = EXCLUDED.Part_Kind,
     Definition_Type = EXCLUDED.Definition_Type,
     Definition_Kind = EXCLUDED.Definition_Kind,
     Part_Size = EXCLUDED.Part_Size,
     Part_Absolute = EXCLUDED.Part_Absolute,
     Part_Options = EXCLUDED.Part_Options,
-    Object_Count = EXCLUDED.Object_Count;
+    Object_Count = EXCLUDED.Object_Count,
+    Break_Field_ID = EXCLUDED.Break_Field_ID,
+    Break_Field_Name = EXCLUDED.Break_Field_Name,
+    Break_Field_UUID = EXCLUDED.Break_Field_UUID,
+    Break_TO_Name = EXCLUDED.Break_TO_Name,
+    Break_TO_UUID = EXCLUDED.Break_TO_UUID;
 -- @END_STREAMIFY_BLOCK@
 
 
@@ -1395,6 +2038,7 @@ ON CONFLICT (Layout_ID, Part_Kind, File_Name) DO UPDATE SET
 -- - Level 1+: Verschachtelte Objekte in Portals, Groups, Tab Controls, etc.
 -- ========================================
 
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS LayoutObjects (
     Layout_ID BIGINT,
     Part_Type VARCHAR,
@@ -1421,6 +2065,7 @@ CREATE TABLE IF NOT EXISTS LayoutObjects (
     PRIMARY KEY (Object_UUID, File_Name)
 );
 
+-- @P1_SECTION:LayoutCatalog@
 -- @STREAMIFY_BLOCK:layoutobjects@
 WITH RECURSIVE filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
@@ -1463,7 +2108,7 @@ root_objects AS (
         Part_Type,
         xml_extract_text(object_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
         xml_extract_text(object_xml, '/LayoutObject/@type')[1] as Object_Type,
-        xml_extract_text(object_xml, '/LayoutObject/@name')[1] as Object_Name,
+        xml_unescape(xml_extract_text(object_xml, '/LayoutObject/@name')[1]) as Object_Name,
         xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::INTEGER as Object_Kind,
         xml_extract_text(object_xml, '/LayoutObject/@hash')[1] as Object_Hash,
         xml_extract_text(object_xml, '/LayoutObject/UUID')[1] as Object_UUID,
@@ -1525,7 +2170,7 @@ nested_objects AS (
         parent.Part_Type,
         xml_extract_text(child_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
         xml_extract_text(child_xml, '/LayoutObject/@type')[1] as Object_Type,
-        xml_extract_text(child_xml, '/LayoutObject/@name')[1] as Object_Name,
+        xml_unescape(xml_extract_text(child_xml, '/LayoutObject/@name')[1]) as Object_Name,
         xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::INTEGER as Object_Kind,
         xml_extract_text(child_xml, '/LayoutObject/@hash')[1] as Object_Hash,
         xml_extract_text(child_xml, '/LayoutObject/UUID')[1] as Object_UUID,
@@ -1558,21 +2203,27 @@ nested_objects AS (
     FROM nested_objects parent
     CROSS JOIN LATERAL unnest(
         -- Achsen-Wahl pro Parent-Typ (ein einziger rekursiver Term, da
-        -- WITH RECURSIVE nur einen rekursiven Term erlaubt):
+        -- WITH RECURSIVE nur einen rekursiven Term erlaubt). DIREKTE Kind-Achsen
+        -- (B-K1): die frühere Descendant-Achse '//ObjectList/LayoutObject'
+        -- emittierte JEDEN Nachfahren am obersten Container; das min-Nesting-
+        -- Dedup unten machte daraus eine systematisch flachgeklopfte Hierarchie
+        -- (Panels korpus-weit 0 Kinder, max. Nesting 2 statt 4).
         --   * 'Popover Button': exakter Kind-Pfad zum PopoverPanel, das
         --     direktes Kind von <PopoverButton> ist (NICHT unter <ObjectList>).
-        --     Damit wird das Panel als eigene Zeile emittiert (Parent = Button,
-        --     Nesting +1). Der Button greift bewusst NICHT die Descendant-Achse,
-        --     sonst würde der Panel-Inhalt eine Ebene zu hoch direkt am Button
-        --     hängen.
-        --   * alle anderen Container: unveränderte Descendant-Achse
-        --     '//ObjectList/LayoutObject'. Das emittierte PopoverPanel ist
-        --     selbst Whitelist-Parent und nimmt hierüber seine ObjectList-
-        --     Inhalte als direkte Kinder auf -> korrektes Re-Parenting.
+        --   * 'PopoverPanel': seine ObjectList ist DIREKTES Kind des
+        --     <LayoutObject> (einziger Typ ohne Wrapper-Element).
+        --   * alle anderen Container: '/LayoutObject/*/ObjectList/LayoutObject'
+        --     — genau EIN typspezifisches Wrapper-Element (<Portal>, <Group>,
+        --     <TabControlObj>, <GroupedButton>, …) zwischen LayoutObject und
+        --     ObjectList; korpus-verifiziert (kein Typ mit 2 Wrapper-Ebenen,
+        --     Summe Root+direkte Kinder == Objektbestand, 12 bekannte
+        --     Doppel-Serialisierungen fängt das Dedup unten).
         CASE
             WHEN parent.Object_Type = 'Popover Button'
                 THEN xml_extract_elements(parent.object_xml, '/LayoutObject/PopoverButton/LayoutObject')
-            ELSE xml_extract_elements(parent.object_xml, '//ObjectList/LayoutObject')
+            WHEN parent.Object_Type = 'PopoverPanel'
+                THEN xml_extract_elements(parent.object_xml, '/LayoutObject/ObjectList/LayoutObject')
+            ELSE xml_extract_elements(parent.object_xml, '/LayoutObject/*/ObjectList/LayoutObject')
         END
     ) WITH ORDINALITY AS t(child_xml, z_order)
     WHERE parent.Object_Type IN (
@@ -1597,7 +2248,19 @@ SELECT
     Object_Name,
     Object_Kind,
     Object_Hash,
-    Object_UUID,
+    -- NULL-PK-Guard (B-K2): der PK (Object_UUID, File_Name) verbietet NULL —
+    -- ein einziges Objekt ohne UUID bräche sonst das GESAMTE INSERT. Deterministischer,
+    -- serialisierungs-unabhängiger md5-Fallback aus extrahierten Identitätsfeldern
+    -- (Muster ScriptTriggers-Owner_UUID; Roh-XML hashen würde unter SAX divergieren).
+    COALESCE(Object_UUID, md5(
+        'LayoutObjectNoUUID|' ||
+        COALESCE(Layout_ID::VARCHAR, '') || '|' ||
+        COALESCE(Object_ID::VARCHAR, '') || '|' ||
+        COALESCE(Object_Type, '') || '|' ||
+        COALESCE(Part_Type, '') || '|' ||
+        COALESCE(Nesting_Level::VARCHAR, '') || '|' ||
+        COALESCE(Z_Order::VARCHAR, '')
+    )) as Object_UUID,
     Bounds_Top,
     Bounds_Left,
     Bounds_Bottom,
@@ -1614,16 +2277,14 @@ SELECT
     -- Roh-XML-Fragment: 0x7F-Sentinel -> LF (siehe Parameters_XML/Step_XML oben).
     ws_restore(object_xml::VARCHAR) as Object_XML,
     fn.File_Name as File_Name
--- DETERMINISTISCHES DEDUP (Chunk-Invarianz,
--- These 1b): Die Descendant-Achse '//ObjectList/LayoutObject' im rekursiven Term
--- emittiert tief verschachtelte Objekte MEHRFACH (einmal pro Container-Vorfahre, je
--- mit anderem Nesting_Level/Parent). Das ON-CONFLICT-„last writer" war reihenfolge-
--- abhängig und damit chunk-zusammensetzungs-sensitiv (Sub-Chunking eines Layout-
--- Katalogs verschob 51 Objekte um +1). Wir wählen pro (Layout_ID, Object_UUID)
--- deterministisch die FLACHSTE Emission (min Nesting_Level) — reproduziert das bisher
--- de-facto-stabile Verhalten (rekursiver CTE emittiert level-aufsteigend) und ist
--- jetzt reihenfolge-/chunk-invariant. NULL-UUID-Objekte (kein Conflict-Key) bleiben
--- alle erhalten (sie werden nie per UPSERT zusammengeführt).
+-- DETERMINISTISCHES DEDUP (Chunk-Invarianz, These 1b): Mit den direkten
+-- Kind-Achsen (B-K1, s. o.) wird jedes Objekt strukturell genau EINMAL emittiert —
+-- mit einer korpus-realen Ausnahme: FileMaker serialisiert manche Objekte doppelt
+-- (am Part-Root UND in einer GroupedButton-ObjectList; 12 Fälle im Korpus). Das
+-- Dedup wählt pro (Layout_ID, Object_UUID) deterministisch die FLACHSTE Emission
+-- (min Nesting_Level → Root gewinnt, identisch zum bisherigen Ergebnis) und bleibt
+-- damit reihenfolge-/chunk-invariant. NULL-UUID-Objekte (kein Conflict-Key) bleiben
+-- alle erhalten; ihr PK entsteht per md5-Fallback im SELECT oben.
 FROM (
     SELECT *,
         ROW_NUMBER() OVER (PARTITION BY Layout_ID, Object_UUID
@@ -1653,12 +2314,80 @@ ON CONFLICT (Object_UUID, File_Name) DO UPDATE SET
     ScriptTrigger_Parameter_Text = EXCLUDED.ScriptTrigger_Parameter_Text,
     Text_Content = EXCLUDED.Text_Content,
     Object_XML = EXCLUDED.Object_XML;
+
+-- Zensus (Dup-Absorption): deduplizierte Emissionsmenge des LayoutObjects-INSERTs.
+-- Schlanke Zweit-Rekursion (gleiche Kind-Achsen/Container-Typen wie oben), aber OHNE
+-- die ~15 Spalten-Extrakte je Objekt — nur Typ/UUID fürs Zählen. Gezählt wird wie im
+-- INSERT-Dedup: je (Layout_ID, Object_UUID) EINE Emission (die 12 bekannten
+-- FileMaker-Doppel-Serialisierungen zählen nicht als Verlust), NULL-UUID-Objekte
+-- einzeln (md5-Fallback-PK, kollisionsfrei). Differenz zur gespeicherten Zeilenzahl
+-- = layout-übergreifend kollabierte UUID-Dubletten (B-K3).
+-- Liegt INNERHALB des STREAMIFY-Blocks: die SAX-Fassung führt ihren eigenen,
+-- quellgleichen Zensus (sql/convert-xml/streamify/layoutobjects.sql).
+WITH RECURSIVE census_parts AS (
+    SELECT
+        xml_extract_text(layout_xml, '/Layout/@id')[1]::BIGINT as Layout_ID,
+        unnest(xml_extract_elements(layout_xml, '/Layout/PartsList/Part')) as part_xml
+    FROM (
+        SELECT unnest(xml_extract_elements(xml, '//LayoutCatalog/Layout')) as layout_xml
+        FROM read_xml_objects(getvariable('fm_xml'), maximum_file_size=getvariable('max_filesize'))
+    )
+),
+census_objects AS (
+    SELECT
+        Layout_ID,
+        xml_extract_text(object_xml, '/LayoutObject/@type')[1] as Object_Type,
+        xml_extract_text(object_xml, '/LayoutObject/UUID')[1] as Object_UUID,
+        object_xml
+    FROM census_parts
+    CROSS JOIN LATERAL unnest(
+        xml_extract_elements(part_xml, '/Part/ObjectList/LayoutObject')
+    ) AS t(object_xml)
+
+    UNION ALL
+
+    SELECT
+        parent.Layout_ID,
+        xml_extract_text(child_xml, '/LayoutObject/@type')[1] as Object_Type,
+        xml_extract_text(child_xml, '/LayoutObject/UUID')[1] as Object_UUID,
+        child_xml as object_xml
+    FROM census_objects parent
+    CROSS JOIN LATERAL unnest(
+        CASE
+            WHEN parent.Object_Type = 'Popover Button'
+                THEN xml_extract_elements(parent.object_xml, '/LayoutObject/PopoverButton/LayoutObject')
+            WHEN parent.Object_Type = 'PopoverPanel'
+                THEN xml_extract_elements(parent.object_xml, '/LayoutObject/ObjectList/LayoutObject')
+            ELSE xml_extract_elements(parent.object_xml, '/LayoutObject/*/ObjectList/LayoutObject')
+        END
+    ) AS t(child_xml)
+    WHERE parent.Object_Type IN (
+        'Portal',
+        'Group',
+        'Tab Control',
+        'Panel',
+        'Container',
+        'Button Bar',
+        'Slide Control',
+        'Grouped Button',
+        'PopoverPanel',
+        'Popover Button'
+    )
+)
+INSERT INTO DuplicateAbsorptions
+SELECT getvariable('fm_file'), 'LayoutObjects', 'Object_UUID,File_Name',
+       COALESCE(getvariable('seq_offset'), 0)::BIGINT,
+       COUNT(*) FILTER (WHERE Object_UUID IS NULL)
+         + COUNT(DISTINCT (Layout_ID, Object_UUID)) FILTER (WHERE Object_UUID IS NOT NULL)
+FROM census_objects
+ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
 -- @END_STREAMIFY_BLOCK@
 
 
 
 
 -- AccountsCatalog
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS AccountsCatalog (
     Account_ID BIGINT,
     Account_Kind INTEGER,
@@ -1674,6 +2403,7 @@ CREATE TABLE IF NOT EXISTS AccountsCatalog (
     PRIMARY KEY (Account_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 )
@@ -1684,8 +2414,8 @@ SELECT
     a.type AS Account_Type,
     a.enable AS Is_Enabled,
     a.UUID."#text" AS Account_UUID,
-    a.Description AS Description,
-    a.Authentication.AccountName AS Account_Name,
+    ws_restore(a.Description) AS Description,
+    xml_unescape(a.Authentication.AccountName) AS Account_Name,
     a.Authentication.PasswordEncrypted AS Password_Encrypted,
     a.PrivilegeSetReference.id AS PrivilegeSet_ID,
     a.PrivilegeSetReference.name AS PrivilegeSet_Name,
@@ -1730,8 +2460,27 @@ ON CONFLICT (Account_UUID, File_Name) DO UPDATE SET
     PrivilegeSet_ID = EXCLUDED.PrivilegeSet_ID,
     PrivilegeSet_Name = EXCLUDED.PrivilegeSet_Name;
 
+-- Zensus (Dup-Absorption): Quell-Rowset = ein Record je Account (UNNEST) mit
+-- demselben id-Filter wie der Katalog-INSERT; minimaler Re-Read (nur Account-id).
+INSERT INTO DuplicateAbsorptions
+SELECT getvariable('fm_file'), 'AccountsCatalog', 'Account_UUID,File_Name',
+       COALESCE(getvariable('seq_offset'), 0)::BIGINT, COUNT(*)
+FROM read_xml(
+    getvariable('fm_xml'),
+    root_element='AccountsCatalog',
+    record_element='ObjectList',
+    max_depth=10,
+    maximum_file_size=getvariable('dom_threshold'),
+    streaming=getvariable('use_streaming'),
+    columns={'Account': 'STRUCT(id BIGINT)[]'}
+)
+CROSS JOIN UNNEST(Account) AS t(a)
+WHERE a.id IS NOT NULL
+ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
 
 -- PrivilegeSetsCatalog
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS PrivilegeSetsCatalog (
     PrivilegeSet_ID BIGINT,
     PrivilegeSet_Name VARCHAR,
@@ -1771,6 +2520,7 @@ CREATE TABLE IF NOT EXISTS PrivilegeSetsCatalog (
     PRIMARY KEY (PrivilegeSet_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 ),
@@ -1784,7 +2534,7 @@ SELECT
     xml_extract_text(ps_xml, '/PrivilegeSet/@id')[1]::BIGINT as PrivilegeSet_ID,
     xml_extract_text(ps_xml, '/PrivilegeSet/@name')[1] as PrivilegeSet_Name,
     xml_extract_text(ps_xml, '/PrivilegeSet/UUID')[1] as PrivilegeSet_UUID,
-    xml_extract_text(ps_xml, '/PrivilegeSet/Description')[1] as Description,
+    ws_restore(xml_extract_text(ps_xml, '/PrivilegeSet/Description')[1]) as Description,
     xml_extract_text(ps_xml, '/PrivilegeSet/access/@default')[1] = 'True' as Is_Default_Access,
     xml_extract_text(ps_xml, '/PrivilegeSet/access/Records/@Create')[1] = 'True' as Records_Create,
     xml_extract_text(ps_xml, '/PrivilegeSet/access/Records/@Edit')[1] = 'True' as Records_Edit,
@@ -1868,6 +2618,7 @@ ON CONFLICT (PrivilegeSet_UUID, File_Name) DO UPDATE SET
 -- Tabellen (BaseTable_* = NULL, Table_Type = 'New'). Access_Mode bleibt VARCHAR
 -- (keine Enum), damit unbekannte @access-Modi nicht verloren gehen.
 -- ========================================
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS PrivilegeSetRecordAccess (
     PrivilegeSet_ID BIGINT,
     PrivilegeSet_Name VARCHAR,
@@ -1893,6 +2644,7 @@ CREATE TABLE IF NOT EXISTS PrivilegeSetRecordAccess (
 -- Chunk OHNE diesen Branch die von einem anderen Chunk derselben Datei eingefügten
 -- Zeilen löschen (DELETE-then-INSERT, kein UPSERT). Nicht-gesplittet: Branch immer
 -- präsent → Verhalten unverändert.
+-- @P1_SECTION:main@
 DELETE FROM PrivilegeSetRecordAccess WHERE File_Name IN (
     SELECT regexp_replace(
         xml_extract_text(xml, '/FMSaveAsXML/@File')[1], '\.fmp12$', ''
@@ -2018,6 +2770,7 @@ WHERE ra.PrivilegeSet_UUID IS NOT NULL;
 -- (kein Signal). Die Where-Used-Lücke schließt weiterhin allein Stufe 1 (Calc-Refs);
 -- restricts_field ist eine Einschränkung, keine Nutzung.
 -- ========================================
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS PrivilegeSetFieldAccess (
     PrivilegeSet_ID BIGINT,
     PrivilegeSet_Name VARCHAR,
@@ -2035,6 +2788,7 @@ CREATE TABLE IF NOT EXISTS PrivilegeSetFieldAccess (
 
 -- Idempotenz: bestehende Einträge der aktuellen Datei entfernen (1:N, kein PK).
 -- Chunk-Guard (I2): nur löschen, wenn der Chunk PrivilegeSetsCatalog enthält.
+-- @P1_SECTION:main@
 DELETE FROM PrivilegeSetFieldAccess WHERE File_Name IN (
     SELECT regexp_replace(
         xml_extract_text(xml, '/FMSaveAsXML/@File')[1], '\.fmp12$', ''
@@ -2113,6 +2867,7 @@ WHERE f.PrivilegeSet_UUID IS NOT NULL;
 -- (Block 36) — analog zur Feld-Ebene NUR Restriktionen (Access_Mode <> 'ReadWrite');
 -- voll-offene Objekte erzeugen keine Links (kein Signal bei hohem Volumen).
 -- ========================================
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS PrivilegeSetObjectAccess (
     PrivilegeSet_ID BIGINT,
     PrivilegeSet_Name VARCHAR,
@@ -2130,6 +2885,7 @@ CREATE TABLE IF NOT EXISTS PrivilegeSetObjectAccess (
 
 -- Idempotenz: bestehende Einträge der aktuellen Datei entfernen (1:N, kein PK).
 -- Chunk-Guard (I2): nur löschen, wenn der Chunk PrivilegeSetsCatalog enthält.
+-- @P1_SECTION:main@
 DELETE FROM PrivilegeSetObjectAccess WHERE File_Name IN (
     SELECT regexp_replace(
         xml_extract_text(xml, '/FMSaveAsXML/@File')[1], '\.fmp12$', ''
@@ -2215,6 +2971,7 @@ WHERE i.PrivilegeSet_UUID IS NOT NULL;
 -- ========================================
 
 -- DDR_ScriptSteps: Lesbare Script-Schritte aus DDR_INFO
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS DDR_ScriptSteps (
     Step_UUID VARCHAR,
     Step_Hash VARCHAR,
@@ -2223,6 +2980,7 @@ CREATE TABLE IF NOT EXISTS DDR_ScriptSteps (
     PRIMARY KEY (Step_UUID, File_Name)
 );
 
+-- @P1_SECTION:Script,DDR_INFO@
 -- @STREAMIFY_BLOCK:ddr_scriptsteps@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
@@ -2236,7 +2994,7 @@ INSERT INTO DDR_ScriptSteps
 SELECT
     regexp_extract(
         step_elem::VARCHAR,
-        '<_([0-9A-F-]+)',
+        '<_([0-9A-Fa-f-]+)',   -- B-R9: Hex-Klasse case-tolerant wie die P2/P3-Anker ([0-9A-Fa-f-]{36})
         1
     ) as Step_UUID,
     xml_extract_text(step_elem, '//*/@hash')[1] as Step_Hash,
@@ -2252,6 +3010,7 @@ ON CONFLICT (Step_UUID, File_Name) DO UPDATE SET
 
 
 -- DDR_Calculations: Formel-Chunks für Abhängigkeitsanalyse
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS DDR_Calculations (
     Calc_UUID VARCHAR,
     Calc_Hash VARCHAR,
@@ -2262,6 +3021,7 @@ CREATE TABLE IF NOT EXISTS DDR_Calculations (
     PRIMARY KEY (Calc_UUID, Chunk_Index, File_Name)
 );
 
+-- @P1_SECTION:Calculation,DDR_INFO@
 -- @STREAMIFY_BLOCK:ddr_calculations@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
@@ -2310,10 +3070,13 @@ SELECT
     Calc_Hash,
     chunk_index as Chunk_Index,
     xml_extract_text(chunk_xml, '/Chunk/@type')[1] as Chunk_Type,
-    COALESCE(
+    -- ws_restore (B-K6): Chunk_Content ist Formel-Text — ohne Restore leakte der
+    -- 0x7F-Sentinel bei CR-haltigen Formeln in alle Downstream-Konsumenten
+    -- (Variablen-Parser, Menü-Kanten, Referenz-Regexe).
+    ws_restore(COALESCE(
         xml_extract_text(chunk_xml, 'text()')[1],
         chunk_xml::VARCHAR
-    ) as Chunk_Content,
+    )) as Chunk_Content,
     fn.File_Name as File_Name
 FROM calc_with_chunks
 CROSS JOIN filename_normalized fn
@@ -2336,6 +3099,7 @@ ON CONFLICT (Calc_UUID, Chunk_Index, File_Name) DO UPDATE SET
 -- ============================================
 -- Sehr einfach: Liste von Object-IDs
 -- Wird verwendet für Copy/Paste Operations
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS PasteIndexList (
     Object_ID BIGINT,
     List_Index BIGINT,
@@ -2343,6 +3107,7 @@ CREATE TABLE IF NOT EXISTS PasteIndexList (
     PRIMARY KEY (Object_ID, File_Name)
 );
 
+-- @P1_SECTION:main@
 -- @STREAMIFY_BLOCK:pasteindexlist@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
@@ -2370,6 +3135,7 @@ ON CONFLICT (Object_ID, File_Name) DO UPDATE SET
 -- ============================================
 -- Basis-Directory der FileMaker-Datei
 -- Pattern: XPath für nested Element
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS BaseDirectoryCatalog (
     BD_Name VARCHAR,
     BD_ID BIGINT,
@@ -2379,6 +3145,7 @@ CREATE TABLE IF NOT EXISTS BaseDirectoryCatalog (
     PRIMARY KEY (BD_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 -- @STREAMIFY_BLOCK:basedirectorycatalog@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
@@ -2416,6 +3183,7 @@ ON CONFLICT (BD_UUID, File_Name) DO UPDATE SET
 -- kollabierte ON CONFLICT DO UPDATE beliebig viele Trigger-Instanzen auf eine
 -- Row ("letzter gewinnt", ~96% Verlust). Der Trigger wird erst durch
 -- (Trigger_ID, Owner_UUID, File_Name) eindeutig.
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS ScriptTriggers (
     Trigger_ID BIGINT,
     Trigger_Action VARCHAR,
@@ -2435,6 +3203,7 @@ CREATE TABLE IF NOT EXISTS ScriptTriggers (
 -- erfasst wird: Object-Level-Trigger liegen INNERHALB von Layouts, daher greift
 -- die Layout-Stufe nur die DIREKTEN Trigger des <Layout> (Pfad /Layout/Script...),
 -- nicht die der enthaltenen <LayoutObject>.
+-- @P1_SECTION:main,LayoutCatalog@
 -- @STREAMIFY_BLOCK:scripttriggers@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
@@ -2526,6 +3295,7 @@ ON CONFLICT (Trigger_ID, Owner_UUID, File_Name) DO UPDATE SET
 -- ============================================
 -- Erweiterte Berechtigungen (fmwebdirect, fmxdbc, fmapp, etc.)
 -- Pattern: XPath mit UNNEST für PrivilegeSetReferences
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS ExtendedPrivilegesCatalog (
     EP_ID BIGINT,
     EP_Name VARCHAR,
@@ -2537,6 +3307,7 @@ CREATE TABLE IF NOT EXISTS ExtendedPrivilegesCatalog (
     PRIMARY KEY (EP_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 -- @STREAMIFY_BLOCK:extendedprivilegescatalog@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
@@ -2549,8 +3320,8 @@ raw_privileges AS (
 INSERT INTO ExtendedPrivilegesCatalog
 SELECT
     xml_extract_text(priv_xml, '/ExtendedPrivilege/@id')[1]::BIGINT as EP_ID,
-    xml_extract_text(priv_xml, '/ExtendedPrivilege/@name')[1] as EP_Name,
-    xml_extract_text(priv_xml, '/ExtendedPrivilege/Description/text()')[1] as EP_Description,
+    xml_unescape(xml_extract_text(priv_xml, '/ExtendedPrivilege/@name')[1]) as EP_Name,
+    ws_restore(xml_extract_text(priv_xml, '/ExtendedPrivilege/Description/text()')[1]) as EP_Description,
     xml_extract_text(priv_xml, '/ExtendedPrivilege/UUID/text()')[1] as EP_UUID,
 
     -- Array of PrivilegeSet IDs und Namen
@@ -2579,6 +3350,7 @@ ON CONFLICT (EP_UUID, File_Name) DO UPDATE SET
 -- ============================================
 -- Benutzerdefinierte Menüs mit verschachtelter Hierarchie
 -- Pattern: XPath mit JSON für polymorphe Strukturen
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS CustomMenuCatalog (
     Menu_ID BIGINT,
     Menu_Name VARCHAR,
@@ -2588,6 +3360,7 @@ CREATE TABLE IF NOT EXISTS CustomMenuCatalog (
     PRIMARY KEY (Menu_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 ),
@@ -2599,11 +3372,14 @@ raw_menus AS (
 INSERT INTO CustomMenuCatalog
 SELECT
     xml_extract_text(menu_xml, '/CustomMenu/@id')[1]::BIGINT as Menu_ID,
-    xml_extract_text(menu_xml, '/CustomMenu/@name')[1] as Menu_Name,
+    xml_unescape(xml_extract_text(menu_xml, '/CustomMenu/@name')[1]) as Menu_Name,
     xml_extract_text(menu_xml, '/CustomMenu/UUID/text()')[1] as Menu_UUID,
 
-    -- Vollständige Menü-Struktur als XML (enthält verschachtelte Items)
-    menu_xml::VARCHAR as Menu_XML,
+    -- Vollständige Menü-Struktur als XML (enthält verschachtelte Items).
+    -- ws_restore (B-K6): Menu_XML ist Calc-Anker der Menü-Kanten (CustomMenuItem-
+    -- Extraktion + Install-/Title-Formeln) — Sentinel darf nicht persistieren.
+    -- Item_XML (CustomMenuItemCatalog) liest aus DIESER Spalte → transitiv restauriert.
+    ws_restore(menu_xml::VARCHAR) as Menu_XML,
 
     fn.File_Name as File_Name
 
@@ -2617,6 +3393,66 @@ ON CONFLICT (Menu_UUID, File_Name) DO UPDATE SET
 
 
 -- ============================================
+-- 24a. CustomMenuItemCatalog (AP-3, D-2)
+-- ============================================
+-- Menü-Items als eigene Objekte (Voraussetzung dafür, dass die 8.177 Install-
+-- + 426 Name-Anker der Items in v_calc_anchors auflösen und Item-Formel-Kanten
+-- ein echtes Quell-Objekt bekommen). Ein <CustomMenuItem> trägt <UUID> (= der
+-- _<UUID>_Install / _<UUID>_Name-Calc-Anker), @hash, @index, @isSubMenuItem,
+-- @isSeparatorItem und <Command @name @id>. Extrahiert aus dem bereits in
+-- CustomMenuCatalog abgelegten Menu_XML dieser Datei (kein Re-Parsing der XML).
+-- @END_P1_SECTION@
+CREATE TABLE IF NOT EXISTS CustomMenuItemCatalog (
+    Item_UUID VARCHAR,
+    Item_Hash VARCHAR,
+    Item_Index INTEGER,
+    Is_SubMenuItem BOOLEAN,
+    Is_SeparatorItem BOOLEAN,
+    Command_Name VARCHAR,
+    Command_ID VARCHAR,
+    Menu_ID BIGINT,
+    Menu_UUID VARCHAR,
+    Menu_Name VARCHAR,
+    Item_XML VARCHAR,
+    File_Name VARCHAR,
+    PRIMARY KEY (Item_UUID, File_Name)
+);
+
+-- @P1_SECTION:main@
+WITH exploded AS (
+    SELECT
+        m.File_Name, m.Menu_ID, m.Menu_UUID, m.Menu_Name,
+        unnest(xml_extract_elements(m.Menu_XML, '//CustomMenuItem'))::VARCHAR AS Item_XML
+    FROM CustomMenuCatalog m
+    WHERE m.File_Name = getvariable('fm_file')
+)
+INSERT INTO CustomMenuItemCatalog
+SELECT
+    upper(xml_extract_text(Item_XML, '/CustomMenuItem/UUID')[1])                 AS Item_UUID,
+    xml_extract_text(Item_XML, '/CustomMenuItem/@hash')[1]                       AS Item_Hash,
+    TRY_CAST(xml_extract_text(Item_XML, '/CustomMenuItem/@index')[1] AS INTEGER) AS Item_Index,
+    xml_extract_text(Item_XML, '/CustomMenuItem/@isSubMenuItem')[1] = 'True'     AS Is_SubMenuItem,
+    xml_extract_text(Item_XML, '/CustomMenuItem/@isSeparatorItem')[1] = 'True'   AS Is_SeparatorItem,
+    xml_extract_text(Item_XML, '/CustomMenuItem/Command/@name')[1]               AS Command_Name,
+    xml_extract_text(Item_XML, '/CustomMenuItem/Command/@id')[1]                 AS Command_ID,
+    Menu_ID, Menu_UUID, Menu_Name, Item_XML, File_Name
+FROM exploded
+WHERE Item_XML IS NOT NULL
+  AND xml_extract_text(Item_XML, '/CustomMenuItem/UUID')[1] IS NOT NULL
+ON CONFLICT (Item_UUID, File_Name) DO UPDATE SET
+    Item_Hash = EXCLUDED.Item_Hash,
+    Item_Index = EXCLUDED.Item_Index,
+    Is_SubMenuItem = EXCLUDED.Is_SubMenuItem,
+    Is_SeparatorItem = EXCLUDED.Is_SeparatorItem,
+    Command_Name = EXCLUDED.Command_Name,
+    Command_ID = EXCLUDED.Command_ID,
+    Menu_ID = EXCLUDED.Menu_ID,
+    Menu_UUID = EXCLUDED.Menu_UUID,
+    Menu_Name = EXCLUDED.Menu_Name,
+    Item_XML = EXCLUDED.Item_XML;
+
+
+-- ============================================
 -- 24b. FileAccessAuthorizations
 -- ============================================
 -- Datei-Zugriffsschutz: welche Dateien/Plugins dürfen diese Datei referenzieren.
@@ -2625,6 +3461,7 @@ ON CONFLICT (Menu_UUID, File_Name) DO UPDATE SET
 --   <Source @CreationAccountName @CreationTimestamp/> <UUID>#text</UUID>
 --   <Display>CDATA</Display> <Authentication>hash</Authentication> <TagList/>.
 -- read_xml_objects + XPath (kein typisiertes record_element → kein globales Leck).
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS FileAccessAuthorizations (
     Auth_ID BIGINT,
     Auth_Type VARCHAR,                  -- Local | External
@@ -2640,6 +3477,7 @@ CREATE TABLE IF NOT EXISTS FileAccessAuthorizations (
     PRIMARY KEY (Auth_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 ),
@@ -2688,6 +3526,7 @@ ON CONFLICT (Auth_UUID, File_Name) DO UPDATE SET
 -- (Der Top-Level <CustomMenuSetReference> unter dem Katalog = Default-Set-Verweis, NICHT
 --  in ObjectList → vom XPath ausgeschlossen.) Member-IDs/-Namen als Arrays; P4 entfaltet
 --  sie zu CustomMenuSet→CustomMenu-Links (Auflösung per @id + File_Name).
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS CustomMenuSetCatalog (
     MenuSet_ID BIGINT,
     MenuSet_Name VARCHAR,
@@ -2699,6 +3538,7 @@ CREATE TABLE IF NOT EXISTS CustomMenuSetCatalog (
     PRIMARY KEY (MenuSet_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 ),
@@ -2710,8 +3550,8 @@ raw_menusets AS (
 INSERT INTO CustomMenuSetCatalog
 SELECT
     xml_extract_text(ms_xml, '/CustomMenuSet/@id')[1]::BIGINT as MenuSet_ID,
-    xml_extract_text(ms_xml, '/CustomMenuSet/@name')[1] as MenuSet_Name,
-    xml_extract_text(ms_xml, '/CustomMenuSet/@comment')[1] as Comment,
+    xml_unescape(xml_extract_text(ms_xml, '/CustomMenuSet/@name')[1]) as MenuSet_Name,
+    ws_restore(xml_extract_text(ms_xml, '/CustomMenuSet/@comment')[1]) as Comment,
     xml_extract_text(ms_xml, '/CustomMenuSet/UUID/text()')[1] as MenuSet_UUID,
     list(xml_extract_text(ref_xml, '/CustomMenuReference/@id')[1]::BIGINT)
         FILTER (WHERE ref_xml IS NOT NULL) as Member_Menu_IDs,
@@ -2743,6 +3583,7 @@ ON CONFLICT (MenuSet_UUID, File_Name) DO UPDATE SET
 --   Analysewert; ihr Byte-Schnitt im Phase-S-Preprocessing ist ein separater Schritt
 --   („Phase-S-Schnitt", gebündelt mit der Phase-S-Fusion). Diese
 --   Tabelle ist unabhängig davon korrekt (parst die Referenzen, ob Blobs da sind oder nicht).
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS LibraryReferences (
     Library_ID BIGINT,
     Library_Key VARCHAR,                -- Inhalts-Hash (Where-used-Schlüssel für Bilder)
@@ -2754,6 +3595,7 @@ CREATE TABLE IF NOT EXISTS LibraryReferences (
     PRIMARY KEY (Library_ID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 ),
@@ -2780,6 +3622,7 @@ ON CONFLICT (Library_ID, File_Name) DO UPDATE SET
 -- CSS-Regelsätze für Layouts
 -- Pattern: XPath mit JSON für CSS-Strukturen
 -- HINWEIS: Theme-Struktur ist sehr komplex mit CSS-Definitionen
+-- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS ThemeCatalog (
     Theme_ID BIGINT,
     Theme_Name VARCHAR,
@@ -2789,6 +3632,7 @@ CREATE TABLE IF NOT EXISTS ThemeCatalog (
     PRIMARY KEY (Theme_UUID, File_Name)
 );
 
+-- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
 ),
@@ -2800,11 +3644,12 @@ raw_themes AS (
 INSERT INTO ThemeCatalog
 SELECT
     xml_extract_text(theme_xml, '/Theme/@id')[1]::BIGINT as Theme_ID,
-    xml_extract_text(theme_xml, '/Theme/@name')[1] as Theme_Name,
+    xml_unescape(xml_extract_text(theme_xml, '/Theme/@name')[1]) as Theme_Name,
     xml_extract_text(theme_xml, '/Theme/UUID/text()')[1] as Theme_UUID,
 
-    -- Vollständige Theme-Struktur als JSON (enthält CSS-Regelsätze)
-    theme_xml::VARCHAR as Theme_XML,
+    -- Vollständige Theme-Struktur als JSON (enthält CSS-Regelsätze).
+    -- ws_restore (B-K6): Sentinel darf nicht in gespeichertem Roh-XML persistieren.
+    ws_restore(theme_xml::VARCHAR) as Theme_XML,
 
     fn.File_Name as File_Name
 
@@ -2818,6 +3663,123 @@ ON CONFLICT (Theme_UUID, File_Name) DO UPDATE SET
 
 
 -- ============================================
+-- FileOptionsCatalog (Metadata-Branch, Schema 1.5.0)
+-- ============================================
+-- Datei-Optionen aus <Metadata>/<AddAction>: Verschlüsselungsstatus, Mindest-
+-- version, Auto-Login (SICHERHEITSRELEVANT: Login type='1' + AccountName =
+-- automatische Anmeldung), Sharing-Sichtbarkeit, Default-Layout ("wechseln zu"
+-- beim Öffnen → default_layout-Kante in P4, schließt eine Where-used-Lücke).
+-- Die Metadata-ScriptTrigger (OnFirstWindowOpen etc.) werden separat vom
+-- ScriptTriggers-Block erfasst (Owner = File). Genau ein <Metadata> pro Datei.
+-- Login-Semantik: type='-1' = kein Auto-Login; type='1' = Auto-Login mit Konto.
+-- @END_P1_SECTION@
+CREATE TABLE IF NOT EXISTS FileOptionsCatalog (
+    File_Name VARCHAR PRIMARY KEY,
+    Encryption_Type VARCHAR,        -- '0' = unverschlüsselt
+    Min_Version VARCHAR,            -- Mindest-FileMaker-Version (z.B. '12.0')
+    Min_Version_Value VARCHAR,
+    Login_Type VARCHAR,
+    Login_AccountName VARCHAR,      -- nur bei Auto-Login (type='1')
+    Show_SignIn_Fields BOOLEAN,
+    Spelling_Underline BOOLEAN,
+    Hide_WebDirect_Sharing BOOLEAN,
+    Hide_Client_Sharing BOOLEAN,
+    Default_Layout_ID BIGINT,       -- Defaults/LayoutReference (Start-Layout)
+    Default_Layout_Name VARCHAR,
+    Default_Layout_UUID VARCHAR,
+    -- Schema 1.5.2: SavePassword ("Gespeicherte Anmeldeinformationen zulassen",
+    -- eigenständig vom Auto-Login <Login>) + PageSetup (Druck-Standard)
+    Save_Password_Keychain BOOLEAN,     -- keychain="True" → Speichern erlaubt
+    Save_Password_RequireMobile BOOLEAN,-- auf Mobilgeräten erneut anfordern
+    PageSetup_Orientation VARCHAR,      -- 'Portrait'/'Landscape'
+    PageSetup_Scale VARCHAR,            -- Druck-Skalierung in %
+    PageSetup_Width VARCHAR,            -- Papierbreite (1/100 Zoll)
+    PageSetup_Height VARCHAR            -- Papierhöhe (1/100 Zoll)
+);
+
+-- @P1_SECTION:main@
+DELETE FROM FileOptionsCatalog WHERE File_Name = getvariable('fm_file');
+
+WITH filename_normalized AS (
+    SELECT getvariable('fm_file') as File_Name
+)
+INSERT INTO FileOptionsCatalog
+SELECT
+    fn.File_Name,
+    m.AddAction.Encryption.type AS Encryption_Type,
+    m.AddAction.Minimum.version AS Min_Version,
+    m.AddAction.Minimum.value AS Min_Version_Value,
+    m.AddAction.Login.type AS Login_Type,
+    NULLIF(m.AddAction.Login.AccountName, '') AS Login_AccountName,
+    m.AddAction.ShowSignInFields.enable AS Show_SignIn_Fields,
+    m.AddAction.Spelling.underline AS Spelling_Underline,
+    m.AddAction.HideWebDirectSharing.enable AS Hide_WebDirect_Sharing,
+    m.AddAction.HideClientSharing.enable AS Hide_Client_Sharing,
+    m.AddAction.Defaults.LayoutReference.id AS Default_Layout_ID,
+    xml_unescape(m.AddAction.Defaults.LayoutReference.name) AS Default_Layout_Name,
+    m.AddAction.Defaults.LayoutReference.UUID AS Default_Layout_UUID,
+    m.AddAction.SavePassword.keychain AS Save_Password_Keychain,
+    m.AddAction.SavePassword.requireMobile AS Save_Password_RequireMobile,
+    m.AddAction.PageSetup.Orientation.name AS PageSetup_Orientation,
+    m.AddAction.PageSetup.scale.value AS PageSetup_Scale,
+    m.AddAction.PageSetup.size.width AS PageSetup_Width,
+    m.AddAction.PageSetup.size.height AS PageSetup_Height
+FROM read_xml(
+    getvariable('fm_xml'),
+    record_element='Metadata',
+    maximum_file_size=getvariable('dom_threshold'),
+    streaming=getvariable('use_streaming'),
+    columns={
+        'AddAction': 'STRUCT(
+            "Encryption" STRUCT("type" VARCHAR),
+            "Minimum" STRUCT("version" VARCHAR, "value" VARCHAR),
+            "Login" STRUCT("type" VARCHAR, "AccountName" VARCHAR),
+            "ShowSignInFields" STRUCT("enable" BOOLEAN),
+            "Spelling" STRUCT("underline" BOOLEAN),
+            "HideWebDirectSharing" STRUCT("enable" BOOLEAN),
+            "HideClientSharing" STRUCT("enable" BOOLEAN),
+            "Defaults" STRUCT(
+                "LayoutReference" STRUCT("id" BIGINT, "name" VARCHAR, "UUID" VARCHAR)
+            ),
+            "SavePassword" STRUCT("keychain" BOOLEAN, "requireMobile" BOOLEAN),
+            "PageSetup" STRUCT(
+                "Orientation" STRUCT("name" VARCHAR, "value" VARCHAR),
+                "size" STRUCT("height" VARCHAR, "width" VARCHAR),
+                "scale" STRUCT("value" VARCHAR)
+            )
+        )'
+    }
+) m
+CROSS JOIN filename_normalized fn
+-- WICHTIG: record_element='Metadata' matcht AUCH die Theme-internen
+-- <Metadata><namedstyles>-Blöcke (ThemeCatalog). Nur der echte Datei-Options-
+-- Branch trägt <AddAction> → filtern; Ein-Zeilen-Guard gegen pathologische
+-- Mehrfach-Treffer (Zeilen wären ohnehin identisch, PK-Schutz).
+WHERE m.AddAction IS NOT NULL
+QUALIFY ROW_NUMBER() OVER () = 1
+ON CONFLICT (File_Name) DO UPDATE SET
+    Encryption_Type = EXCLUDED.Encryption_Type,
+    Min_Version = EXCLUDED.Min_Version,
+    Min_Version_Value = EXCLUDED.Min_Version_Value,
+    Login_Type = EXCLUDED.Login_Type,
+    Login_AccountName = EXCLUDED.Login_AccountName,
+    Show_SignIn_Fields = EXCLUDED.Show_SignIn_Fields,
+    Spelling_Underline = EXCLUDED.Spelling_Underline,
+    Hide_WebDirect_Sharing = EXCLUDED.Hide_WebDirect_Sharing,
+    Hide_Client_Sharing = EXCLUDED.Hide_Client_Sharing,
+    Default_Layout_ID = EXCLUDED.Default_Layout_ID,
+    Default_Layout_Name = EXCLUDED.Default_Layout_Name,
+    Default_Layout_UUID = EXCLUDED.Default_Layout_UUID,
+    Save_Password_Keychain = EXCLUDED.Save_Password_Keychain,
+    Save_Password_RequireMobile = EXCLUDED.Save_Password_RequireMobile,
+    PageSetup_Orientation = EXCLUDED.PageSetup_Orientation,
+    PageSetup_Scale = EXCLUDED.PageSetup_Scale,
+    PageSetup_Width = EXCLUDED.PageSetup_Width,
+    PageSetup_Height = EXCLUDED.PageSetup_Height;
+
+
+-- ============================================
+-- @END_P1_SECTION@
 -- SchemaInfo aktualisieren
 -- ============================================
 -- Letzter Schritt: nach erfolgreichem Import den Schema-Stand persistieren.

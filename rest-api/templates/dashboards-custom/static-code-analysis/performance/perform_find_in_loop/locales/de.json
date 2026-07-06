@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Perform Find in der Loop",
+    "description": "Performance-Regel — Perform-Find-Schritte innerhalb einer Loop. Jeder Durchlauf löst eine vollständige Suche aus."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Perform Find in der Loop",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Kein Perform Find innerhalb einer Loop gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Schritt",
+    "findings_table.props.columns[3].label": "Tiefe"
+  }
+}

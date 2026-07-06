@@ -1,0 +1,35 @@
+{
+  "manifest": {
+    "title": "Acesso ao sistema de arquivos",
+    "description": "Inventário de todos os pontos de contato da solução com o sistema de arquivos, classificados por operação e grupo de API, com detalhamento até o ponto de chamada. Cobre comandos nativos do FileMaker (Data File API, Import/Insert, Export/Save — controlados por Step_ID, independentes de idioma) e funções do plugin MBS (Files / Text / Container / Path / Folders / FileDialog, resolvidas via links calls_pluginfunction). Os acessos de rede permanecem no painel de APIs. Estenda as ramificações WHEN para componentes MBS específicos do projeto."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Pontos de contato",
+    "summary_kpistrip.props.items[1].label": "Crítico (write+delete)",
+    "summary_kpistrip.props.items[2].label": "Delete",
+    "summary_kpistrip.props.items[3].label": "Arquivos afetados",
+    "summary_kpistrip.props.items[4].label": "Chamadas MBS",
+    "summary_kpistrip.props.items[5].label": "Etapas nativas",
+    "fs_groups.props.title": "Grupos (grupo de API × operação)",
+    "fs_groups_table.props.columns[0].label": "Grupo de API",
+    "fs_groups_table.props.columns[1].label": "Operação",
+    "fs_groups_table.props.columns[2].label": "Ocorrências",
+    "fs_groups_table.props.columns[3].label": "Arquivos",
+    "findings.props.title": "Pontos de contato (pontos de chamada)",
+    "findings_table.props.columns[0].label": "Grupo",
+    "findings_table.props.columns[1].label": "Operação",
+    "findings_table.props.columns[2].label": "Tipo de ref.",
+    "findings_table.props.columns[3].label": "Script/Objeto",
+    "findings_table.props.columns[4].label": "Etapa/Função",
+    "findings_table.props.columns[5].label": "Arquivo",
+    "findings_table.props.columns[6].label": "#",
+    "fs_paths.props.title": "Literais de caminho (onde a solução escreve / lê?)",
+    "fs_paths_table.props.columns[0].label": "Literal de caminho",
+    "fs_paths_table.props.columns[1].label": "Diretório",
+    "fs_paths_table.props.columns[2].label": "Script",
+    "fs_paths_table.props.columns[3].label": "Step",
+    "fs_paths_table.props.columns[4].label": "Arquivo",
+    "fs_paths_table.props.columns[5].label": "#",
+    "markdown.props.content": "## Observações\n\nInventário de **todos os pontos de contato com o sistema de arquivos** da solução — comandos nativos do FileMaker e funções do plugin MBS. Os acessos de rede/web permanecem no painel *APIs e interfaces externas*; `Import Records` aparece em ambos (indicador de interface vs. leitura do sistema de arquivos).\n\n- **Os comandos nativos são controlados por Step_ID** (independentes de idioma). O SaXML grava o nome da etapa no idioma da interface do cliente que exporta (este corpus mistura `Datensätze als Excel speichern` e `Save Records as PDF`), portanto a lógica classifica pelo `Step_ID` numérico, nunca pelo nome. Cobertos: Data File API (188–199), Import/Insert (35, 131, 56, 158, 159, 161), Export/Save (36, 132, 143, 144, 152, 225, 37, 3, 96).\n- **As funções MBS** são lidas dos links `calls_pluginfunction` resolvidos (`MBS:<Componente>.<Função>`), não por correspondência de texto — assim a navegação de onde-é-usado é exata. Componentes do sistema de arquivos: `Files.*`, `Path.*`, `Folders.*`, `FileDialog.*`, além das funções de E/S de arquivos de `Text.*` (Read/Write/AppendTextFile) e `Container.*` (Export/ReadFile/WriteFile). Sem distinção de maiúsculas/minúsculas (o corpus contém tanto `FileMakerPathToNativePath` quanto `FilemakerPathToNativePath`).\n- **Operações**: `read` / `write` / `delete` / `probe` (existe/tamanho/data) / `import` / `export` / `launch` / `mount` / `dialog` (mediado pelo usuário) / `path` (auxiliares de caminho) / `manage` (open/close/position/rename). Funções `Files.*` desconhecidas recaem em `operation = other` — visíveis, não perdidas.\n- **KPIs como filtros**: *Crítico (write+delete)* e *Delete* filtram a lista de detalhes nas operações de risco. *Pontos de contato*, *Arquivos afetados*, *Chamadas MBS* e *Etapas nativas* são blocos estatísticos.\n- **Grupos**: clique em uma célula *grupo de API × operação* para filtrar a lista de detalhes.\n- **Literais de caminho**: literais `file:` / `filewin:` / `filemac:` extraídos das fórmulas das etapas de script, normalizados ao nível de diretório — responde *onde* a solução lê/escreve. Caminhos absolutos codificados aparecem aqui.\n- **Navegação**: clicar em um ponto de contato abre o portador (Script + âncora da etapa, ou a Custom Function / o Campo / o objeto de Layout por trás de uma chamada MBS).\n- **Estender**: adicione componentes MBS de escrita específicos do projeto (XL.Book.Save, DynaPDF.Save, Archive/Compression, …) como ramificações WHEN adicionais em `data/findings.sql` **e** `data/fs_groups.sql` (mantenha ambos sincronizados).\n- **Regras relacionadas**: as regras de severidade derivadas (escrita sem verificação de erro, caminho absoluto codificado, uso de delete) estão em *Análise Estática de Código*.\n- **Ordenação**: todos os cabeçalhos de coluna são clicáveis (▲▼)."
+  }
+}

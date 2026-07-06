@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Tabella base con molte occorrenze",
+    "description": "Regola di stile del codice: tabelle base con più di otto occorrenze di tabella. Un numero molto alto indica un grafo delle relazioni ingarbugliato."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Tabella base con molte occorrenze",
+    "findings_table.props.searchPlaceholder": "Cerca file o tabella…",
+    "findings_table.props.empty.message": "Nessuna tabella base con molte occorrenze trovata.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tabella base",
+    "findings_table.props.columns[2].label": "Occorrenze"
+  }
+}

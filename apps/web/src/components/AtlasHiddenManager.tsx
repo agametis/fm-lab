@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fetchHidden, setNodeVisibility, type HiddenNode } from '../lib/annotationsApi';
 import { getTypeColor } from '../lib/graphColors';
+import { formatObjectDisplayName } from '../lib/objectName';
 
 /**
  * „Ausgeblendete verwalten" — Recovery-Liste für vom Nutzer ausgeblendete Knoten.
@@ -59,7 +60,7 @@ export default function AtlasHiddenManager({ onClose, onChanged }: Props) {
             {items.map((n) => (
               <li key={`${n.uuid}::${n.file ?? ''}`} className="atlas-hiddenlist-row">
                 {n.type && <span className="atlas-typeswatch" style={{ background: getTypeColor(n.type) }} />}
-                <span className="atlas-hiddenlist-label" title={n.label}>{n.label}</span>
+                <span className="atlas-hiddenlist-label" title={n.label}>{formatObjectDisplayName(n.type ?? '', n.label)}</span>
                 {n.file && <span className="atlas-hiddenlist-file">{n.file}</span>}
                 <button
                   type="button"

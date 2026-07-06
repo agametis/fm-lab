@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Exit Loop If のない Loop",
+    "description": "エラーを招きやすいルール — Loop はあるが確実な終了条件がないスクリプト。Loop 内に Exit Loop If も、「最後で終了」付きの「レコード/リクエスト/ページへ移動」や「ポータル行へ移動」もありません。残った Loop は無限に回る恐れがあります。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "Exit Loop If のない Loop",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "Exit Loop If のない Loop は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "Loop 数"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Lista de valores sin usar",
+    "description": "Regla de código sin usar: listas de valores no vinculadas a ningún campo/objeto de Layout, orden ni envoltorio externo."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Lista de valores sin usar",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o nombre…",
+    "findings_table.props.empty.message": "No se encontraron coincidencias.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Nombre"
+  }
+}

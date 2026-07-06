@@ -1,0 +1,35 @@
+{
+  "manifest": {
+    "title": "文件系统访问",
+    "description": "解决方案所有文件系统接触点的清单，按操作和 API 组分类，可下钻到调用位置。涵盖原生 FileMaker 命令（Data File API、Import/Insert、Export/Save — 由 Step_ID 控制，与区域设置无关）和 MBS 插件函数（Files / Text / Container / Path / Folders / FileDialog，通过 calls_pluginfunction 链接解析）。网络访问保留在 APIs 仪表板中。为项目特定的 MBS 组件扩展 WHEN 分支。"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "接触点",
+    "summary_kpistrip.props.items[1].label": "关键（write+delete）",
+    "summary_kpistrip.props.items[2].label": "Delete",
+    "summary_kpistrip.props.items[3].label": "受影响的文件",
+    "summary_kpistrip.props.items[4].label": "MBS 调用",
+    "summary_kpistrip.props.items[5].label": "原生步骤",
+    "fs_groups.props.title": "组（API 组 × 操作）",
+    "fs_groups_table.props.columns[0].label": "API 组",
+    "fs_groups_table.props.columns[1].label": "操作",
+    "fs_groups_table.props.columns[2].label": "命中数",
+    "fs_groups_table.props.columns[3].label": "文件",
+    "findings.props.title": "接触点（调用位置）",
+    "findings_table.props.columns[0].label": "组",
+    "findings_table.props.columns[1].label": "操作",
+    "findings_table.props.columns[2].label": "引用类型",
+    "findings_table.props.columns[3].label": "脚本/对象",
+    "findings_table.props.columns[4].label": "步骤/函数",
+    "findings_table.props.columns[5].label": "文件",
+    "findings_table.props.columns[6].label": "#",
+    "fs_paths.props.title": "路径字面量（解决方案在何处写入 / 读取？）",
+    "fs_paths_table.props.columns[0].label": "路径字面量",
+    "fs_paths_table.props.columns[1].label": "目录",
+    "fs_paths_table.props.columns[2].label": "Script",
+    "fs_paths_table.props.columns[3].label": "Step",
+    "fs_paths_table.props.columns[4].label": "文件",
+    "fs_paths_table.props.columns[5].label": "#",
+    "markdown.props.content": "## 说明\n\n解决方案**每个文件系统接触点**的清单 — 原生 FileMaker 命令和 MBS 插件函数。网络/Web 访问保留在 *APIs 与外部接口* 仪表板中；`Import Records` 出现在两者中（接口指示器 vs. 文件系统读取）。\n\n- **原生命令由 Step_ID 控制**（与区域设置无关）。SaXML 以导出客户端的界面语言写入步骤名称（此语料库混合了 `Datensätze als Excel speichern` 和 `Save Records as PDF`），因此逻辑按数字 `Step_ID` 分类，而不是按名称。已涵盖：Data File API (188–199)、Import/Insert (35, 131, 56, 158, 159, 161)、Export/Save (36, 132, 143, 144, 152, 225, 37, 3, 96)。\n- **MBS 函数**从已解析的 `calls_pluginfunction` 链接（`MBS:<组件>.<函数>`）读取，而非通过文本匹配 — 因此使用位置导航是精确的。文件系统组件：`Files.*`、`Path.*`、`Folders.*`、`FileDialog.*`，以及 `Text.*` 的文件 I/O 函数（Read/Write/AppendTextFile）和 `Container.*`（Export/ReadFile/WriteFile）。不区分大小写（语料库同时包含 `FileMakerPathToNativePath` 和 `FilemakerPathToNativePath`）。\n- **操作**：`read` / `write` / `delete` / `probe`（存在/大小/日期） / `import` / `export` / `launch` / `mount` / `dialog`（用户中介） / `path`（路径辅助函数） / `manage`（open/close/position/rename）。未知的 `Files.*` 函数归入 `operation = other` — 可见，不丢失。\n- **KPI 作为过滤器**：*关键（write+delete）* 和 *Delete* 将详细列表过滤为高风险操作。*接触点*、*受影响的文件*、*MBS 调用* 和 *原生步骤* 是统计磁贴。\n- **组**：单击 *API 组 × 操作* 单元格可将详细列表过滤到该项。\n- **路径字面量**：从脚本步骤公式中提取的 `file:` / `filewin:` / `filemac:` 字面量，规范化到目录级别 — 回答解决方案在*何处*读写。硬编码的绝对路径在此显现。\n- **导航**：单击接触点会打开载体（Script + 步骤锚点，或 MBS 调用背后的 Custom Function / 字段 / Layout 对象）。\n- **扩展**：将项目特定的写入 MBS 组件（XL.Book.Save、DynaPDF.Save、Archive/Compression、…）作为额外的 WHEN 分支添加到 `data/findings.sql` **和** `data/fs_groups.sql`（保持两者同步）。\n- **相关规则**：派生的严重性规则（无错误检查的写入、硬编码的绝对路径、delete 使用）位于*静态代码分析*下。\n- **排序**：所有列标题均可点击（▲▼）。"
+  }
+}

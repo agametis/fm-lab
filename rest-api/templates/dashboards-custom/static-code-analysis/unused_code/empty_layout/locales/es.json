@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Layout vacío",
+    "description": "Regla de código sin usar: layouts sin ningún objeto de Layout. Suelen ser marcadores de posición que nunca se desarrollaron."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Layout vacío",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o Layout…",
+    "findings_table.props.empty.message": "No se encontraron Layouts vacíos.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

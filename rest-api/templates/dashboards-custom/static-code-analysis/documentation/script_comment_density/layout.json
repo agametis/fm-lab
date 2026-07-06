@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "script_comment_density_kpi",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "script_comment_density_kpi"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "script_comment_density_kpi_kpistrip",
+            "props": {
+              "items": [
+                {
+                  "label": "Scripts total",
+                  "field": "scripts_total",
+                  "format": "number"
+                },
+                {
+                  "label": "With ≥ min_steps",
+                  "field": "scripts_substantial",
+                  "format": "number"
+                },
+                {
+                  "label": "Without any comment",
+                  "field": "scripts_without_comment",
+                  "format": "number"
+                },
+                {
+                  "label": "Median comment %",
+                  "field": "median_comment_pct",
+                  "format": "number"
+                }
+              ]
+            }
+          },
+          {
+            "type": "Slider",
+            "id": "threshold_slider",
+            "props": {
+              "param": "min_steps",
+              "label": "Minimum steps per script",
+              "min": 0,
+              "default": 10,
+              "step": 5,
+              "maxField": "max_total_steps",
+              "valueSuffix": "steps"
+            },
+            "data": {
+              "dataset": "script_comment_density_kpi"
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "script_comment_density",
+        "props": {
+          "span": 12,
+          "title": "Scripts by step count, comments and whitespace"
+        },
+        "data": {
+          "dataset": "script_comment_density"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "script_comment_density_table",
+            "props": {
+              "rowKey": "uuid",
+              "density": "comfortable",
+              "sortable": true,
+              "columns": [
+                {
+                  "field": "name",
+                  "label": "Script"
+                },
+                {
+                  "field": "file",
+                  "label": "File"
+                },
+                {
+                  "field": "total_steps",
+                  "label": "Total steps",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "real_comments",
+                  "label": "Real comments",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "whitespace_steps",
+                  "label": "Whitespace steps",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "comment_pct",
+                  "label": "Comment %",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "whitespace_pct",
+                  "label": "Whitespace %",
+                  "align": "right",
+                  "format": "number"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{uuid}}",
+                  "type": "Script"
+                }
+              },
+              "empty": {
+                "message": "No scripts match the current filter."
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

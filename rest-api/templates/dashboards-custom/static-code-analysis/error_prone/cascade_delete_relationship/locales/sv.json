@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Relation med kaskadborttagning",
+    "description": "Felbenägen regel — relationer som tar bort relaterade poster på ena eller båda sidor. En felaktig borttagning raderar i tysthet underordnade poster; granska var och en."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Relation med kaskadborttagning",
+    "findings_table.props.searchPlaceholder": "Sök tabellförekomst…",
+    "findings_table.props.empty.message": "Inga relationer med kaskadborttagning hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Vänster TO",
+    "findings_table.props.columns[2].label": "Höger TO",
+    "findings_table.props.columns[3].label": "Kaskad"
+  }
+}

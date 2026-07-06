@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "未使用のベーステーブル",
+    "description": "未使用コードルール — テーブルオカレンスのないベーステーブル。オカレンスがないと、そのテーブルはリレーションシップグラフから到達できません。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "未使用のベーステーブル",
+    "findings_table.props.searchPlaceholder": "ファイルまたは名前を検索…",
+    "findings_table.props.empty.message": "該当する項目は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "名前"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "manifest": {
+    "title": "Esecuzione lato server",
+    "description": "Ciò che viene eseguito (potenzialmente) sul server: Perform Script on Server, Execute FileMaker Data API e Install OnTimer Script (delimitati da Step_ID), oltre alle concessioni di Extended Privilege rilevanti per il server (fmrest, fmurlscript, fmodata, fmxml, fmphp, fmextscriptaccess). Una vista di audit degli accessi della superficie server."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Perform Script on Server",
+    "summary_kpistrip.props.items[1].label": "Execute Data API",
+    "summary_kpistrip.props.items[2].label": "Install OnTimer",
+    "summary_kpistrip.props.items[3].label": "File interessati",
+    "summary_kpistrip.props.items[4].label": "Concessioni server",
+    "by_kind.props.title": "Per meccanismo",
+    "by_kind_table.props.columns[0].label": "Meccanismo",
+    "by_kind_table.props.columns[1].label": "Punti di chiamata",
+    "by_kind_table.props.columns[2].label": "File",
+    "by_kind_table.props.columns[3].label": "Script",
+    "findings.props.title": "Occorrenze",
+    "findings_table.props.columns[0].label": "Meccanismo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Step",
+    "findings_table.props.columns[3].label": "File",
+    "findings_table.props.columns[4].label": "#",
+    "grants.props.title": "Concessioni server/API (Extended Privileges)",
+    "grants_table.props.columns[0].label": "Extended Privilege",
+    "grants_table.props.columns[1].label": "Set di privilegi",
+    "grants_table.props.columns[2].label": "File",
+    "markdown.props.content": "## Note\n\nCiò che viene eseguito (potenzialmente) sul **server**. Gli step nativi sono delimitati da Step_ID (indipendenti dalla lingua): *Perform Script on Server* (164), *Execute FileMaker Data API* (203), *Install OnTimer Script* (148).\n\n- **KPI come filtri**: i KPI degli step filtrano le occorrenze su quel meccanismo.\n- **Concessioni server/API**: quali set di privilegi concedono gli Extended Privileges rilevanti per il server (`fmrest`, `fmurlscript`, `fmodata`, `fmxml`, `fmphp`, `fmextscriptaccess`). Fai clic su una riga per aprire il set di privilegi.\n- **Navigazione**: fare clic su un'occorrenza apre lo script allo step.\n- **Regole correlate**: le regole di severità derivate si trovano sotto *Static Code Analysis*.\n- **Ordinamento**: tutte le intestazioni di colonna sono cliccabili (▲▼)."
+  }
+}

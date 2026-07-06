@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "对象众多的 Layout",
+    "description": "代码风格/性能规则 — 对象众多的 Layout。繁重的 Layout 渲染缓慢且难以维护。 阈值可通过滑块调整（默认 250）。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "threshold_slider.props.label": "每个 Layout 的对象数（最小）",
+    "threshold_slider.props.valueSuffix": "对象",
+    "findings_card.props.title": "对象众多的 Layout",
+    "findings_table.props.searchPlaceholder": "搜索文件或 Layout…",
+    "findings_table.props.empty.message": "未找到过载的 Layout。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "对象数"
+  }
+}

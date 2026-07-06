@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Tabela com muitos campos",
+    "description": "Regra de estilo de código — tabelas base com mais de 100 campos. Uma tabela muito ampla costuma misturar várias preocupações que deveriam ter tabelas próprias.\n\nBaseado na regra PMD TooManyFields — https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#toomanyfields Limite ajustável pelo controle deslizante (padrão 100)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Tabela com muitos campos",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou tabela…",
+    "findings_table.props.empty.message": "Nenhuma tabela muito ampla encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Tabela",
+    "findings_table.props.columns[2].label": "Campos",
+    "threshold_slider.props.label": "Campos por tabela (mínimo)",
+    "threshold_slider.props.valueSuffix": "campos"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Script com muitas etapas desativadas",
+    "description": "Regra de código não utilizado — scripts com cinco ou mais etapas desativadas. Etapas desativadas são código comentado que sobrecarrega o script e confunde os leitores."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Script com muitas etapas desativadas",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhum script com muitas etapas desativadas encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Desativadas"
+  }
+}

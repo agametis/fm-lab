@@ -1,0 +1,107 @@
+/* ValueList-Detail – strukturierte Darstellung (Custom Values als Tabelle,
+   Field-/External-Quelle als klickbare Chunks). */
+
+.fm-vl {
+  padding: 0.5rem 0.25rem;
+}
+
+/* ── Metadaten (Key/Value) ── */
+.fm-vl-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.15rem 1rem;
+  margin: 0.25rem 0 1.25rem;
+  font-size: 0.85rem;
+}
+.fm-vl-meta dt { color: var(--color-text-muted); font-weight: 600; }
+.fm-vl-meta dd {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+/* ── Abschnitte ── */
+.fm-vl-section { margin: 1.25rem 0; }
+.fm-vl-section-head {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0 0 0.5rem;
+}
+.fm-vl-count { color: var(--color-text-muted); font-weight: 400; }
+
+/* ── Custom Values Tabelle ── */
+.fm-vl-table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 640px;
+  font-size: 0.88rem;
+}
+.fm-vl-table th,
+.fm-vl-table td {
+  text-align: left;
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.fm-vl-table thead th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--color-border-strong);
+}
+/* Sortierbare Spaltenköpfe (# | Wert). */
+.fm-vl-th-sort {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.fm-vl-th-sort:hover { color: var(--color-text-secondary); }
+.fm-vl-th-sort:focus-visible {
+  outline: 2px solid var(--color-accent-ring);
+  outline-offset: -2px;
+}
+.fm-vl-table--sortable thead th[aria-sort="ascending"],
+.fm-vl-table--sortable thead th[aria-sort="descending"] {
+  color: var(--color-text-primary);
+}
+.fm-vl-table tbody tr:hover { background: var(--color-hover-bg); }
+.fm-vl-col-idx {
+  width: 3rem;
+  color: var(--color-text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.fm-vl-empty-value { color: var(--color-text-muted); font-style: italic; }
+
+/* ── Field-/External-Quelle (Key/Value + Chunks) ── */
+.fm-vl-source {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1rem;
+  align-items: baseline;
+  font-size: 0.88rem;
+  max-width: 640px;
+}
+.fm-vl-source dt { color: var(--color-text-muted); font-weight: 600; }
+.fm-vl-source dd { margin: 0; }
+
+/* Klickbare Chunks (TO / Feld / Werteliste / Datenquelle). */
+.fm-vl-chunk {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  background: var(--color-accent-soft-bg);
+  color: var(--color-accent-soft-fg);
+  text-decoration: none;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.85rem;
+}
+a.fm-vl-chunk:hover {
+  background: var(--color-accent);
+  color: #fff;
+}
+/* Nicht-klickbarer Chunk (unaufgelöste Referenz) dezenter. */
+span.fm-vl-chunk {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-muted);
+}
+.fm-vl-flag { color: var(--color-text-muted); font-size: 0.8rem; }

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Lista de valores com valores fixos",
+    "description": "Regra de estilo de código — listas de valores criadas a partir de valores personalizados (fixos) em vez de um campo. Listas fixas ficam desatualizadas e não podem ser mantidas pelos usuários."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Lista de valores com valores fixos",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou lista de valores…",
+    "findings_table.props.empty.message": "Nenhuma lista de valores fixa encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Lista de valores",
+    "findings_table.props.columns[2].label": "Valores"
+  }
+}

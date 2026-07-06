@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { RefOriginState } from '../hooks/useRefOrigin';
+import { formatObjectDisplayName } from '../lib/objectName';
 
 interface RefOriginPillProps {
   state: RefOriginState;
@@ -101,7 +102,7 @@ export const RefOriginPill: React.FC<RefOriginPillProps> = ({
       <span className="ref-pill-label">
         {t('detail:refPill.label')} <span className="ref-pill-type">{o.type}</span>
         <span className="ref-pill-sep"> · </span>
-        <span className="ref-pill-name">{o.name}</span>
+        <span className="ref-pill-name" title={o.name}>{formatObjectDisplayName(o.type, o.name)}</span>
         {o.file && (
           <span className="ref-pill-file"> ({o.file})</span>
         )}

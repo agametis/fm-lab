@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Campo de contraseña mostrado en texto plano",
+    "description": "Regla de seguridad: un campo de contraseña/PIN se muestra en una presentación mediante un objeto que no es un «campo de edición cifrado», por lo que el valor aparece en texto plano en la presentación. Se lista por objeto de presentación (el mismo campo puede verse en varias presentaciones).\n\nComplementa la regla de almacenamiento (password_field_plaintext): aquí se trata de la visualización en pantalla, decidida a nivel del objeto de presentación, no del campo."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Campo de contraseña mostrado en texto plano",
+    "findings_table.props.searchPlaceholder": "Buscar campo o layout…",
+    "findings_table.props.empty.message": "No hay campos de contraseña mostrados en texto plano.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Campo",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

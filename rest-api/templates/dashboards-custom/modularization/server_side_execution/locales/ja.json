@@ -1,0 +1,29 @@
+{
+  "manifest": {
+    "title": "サーバーサイド実行",
+    "description": "サーバー上で（潜在的に）実行される処理: Perform Script on Server、Execute FileMaker Data API、Install OnTimer Script（Step_ID でゲート）、およびサーバー関連の Extended Privilege 付与（fmrest、fmurlscript、fmodata、fmxml、fmphp、fmextscriptaccess）。サーバー領域のアクセス監査ビュー。"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Perform Script on Server",
+    "summary_kpistrip.props.items[1].label": "Execute Data API",
+    "summary_kpistrip.props.items[2].label": "Install OnTimer",
+    "summary_kpistrip.props.items[3].label": "影響を受けるファイル",
+    "summary_kpistrip.props.items[4].label": "サーバー付与",
+    "by_kind.props.title": "メカニズム別",
+    "by_kind_table.props.columns[0].label": "メカニズム",
+    "by_kind_table.props.columns[1].label": "呼び出し箇所",
+    "by_kind_table.props.columns[2].label": "ファイル",
+    "by_kind_table.props.columns[3].label": "スクリプト",
+    "findings.props.title": "検出箇所",
+    "findings_table.props.columns[0].label": "メカニズム",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "Step",
+    "findings_table.props.columns[3].label": "ファイル",
+    "findings_table.props.columns[4].label": "#",
+    "grants.props.title": "サーバー/API 付与 (Extended Privileges)",
+    "grants_table.props.columns[0].label": "Extended Privilege",
+    "grants_table.props.columns[1].label": "アクセス権セット",
+    "grants_table.props.columns[2].label": "ファイル",
+    "markdown.props.content": "## 注記\n\n**サーバー** 上で（潜在的に）実行される処理です。ネイティブ Step は Step_ID でゲートされます（ロケール非依存）: *Perform Script on Server* (164)、*Execute FileMaker Data API* (203)、*Install OnTimer Script* (148)。\n\n- **フィルターとしての KPI**: Step の KPI は検出箇所をそのメカニズムに絞り込みます。\n- **サーバー/API 付与**: どのアクセス権セットがサーバー関連の Extended Privileges を付与しているか（`fmrest`、`fmurlscript`、`fmodata`、`fmxml`、`fmphp`、`fmextscriptaccess`）。行をクリックするとアクセス権セットが開きます。\n- **ナビゲーション**: 検出箇所をクリックすると、その Step でスクリプトが開きます。\n- **関連ルール**: 派生した重大度ルールは *Static Code Analysis* にあります。\n- **並べ替え**: すべての列見出しはクリック可能です（▲▼）。"
+  }
+}

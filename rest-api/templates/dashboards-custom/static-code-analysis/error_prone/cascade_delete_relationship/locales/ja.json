@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "カスケード削除リレーションシップ",
+    "description": "エラーを招きやすいルール — 一方または両側で関連レコードを削除するリレーションシップ。誤った削除は子レコードを黙って消します。個々に確認してください。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "カスケード削除リレーションシップ",
+    "findings_table.props.searchPlaceholder": "テーブルオカレンスを検索…",
+    "findings_table.props.empty.message": "カスケード削除リレーションシップは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "左 TO",
+    "findings_table.props.columns[2].label": "右 TO",
+    "findings_table.props.columns[3].label": "カスケード"
+  }
+}

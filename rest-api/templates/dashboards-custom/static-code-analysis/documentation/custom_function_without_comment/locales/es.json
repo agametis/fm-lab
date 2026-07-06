@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Custom Function sin comentario",
+    "description": "Regla de documentación: Custom Functions cuya fórmula no contiene ningún comentario. Sobre todo las funciones compartidas necesitan contratos documentados.\n\nBasado en la regla de PMD CommentRequired — https://docs.pmd-code.org/latest/pmd_rules_java_documentation.html#commentrequired Un conmutador de filtro sobre la tabla alterna entre objetos sin y con comentario (los comentados sirven de plantilla/inspiración)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Custom Function sin comentario",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o función…",
+    "findings_table.props.empty.message": "No se encontraron Custom Functions sin documentar.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Custom Function",
+    "comment_filter.props.options[0].label": "sin comentario",
+    "comment_filter.props.options[1].label": "con comentario"
+  }
+}

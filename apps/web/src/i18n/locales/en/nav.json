@@ -1,5 +1,9 @@
 {
   "modeTabsAriaLabel": "View mode",
+  "fileActions": {
+    "search": "Search",
+    "drilldown": "Drill-down"
+  },
   "breadcrumbs": {
     "search": "Search",
     "analyses": "Analyses",

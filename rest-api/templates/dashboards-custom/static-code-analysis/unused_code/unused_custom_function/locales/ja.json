@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "未使用の Custom Function",
+    "description": "未使用コードルール — どの計算・スクリプト・他の関数からも呼び出されない Custom Function。\n\nPMD ルール UnusedPrivateMethod — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatemethod"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "未使用の Custom Function",
+    "findings_table.props.searchPlaceholder": "ファイルまたは名前を検索…",
+    "findings_table.props.empty.message": "該当する項目は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "名前"
+  }
+}

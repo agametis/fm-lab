@@ -36,7 +36,7 @@
     "dashboards.props.subtitle": "Análisis preparados",
     "custom_queries.props.label": "Consultas personalizadas",
     "custom_queries.props.subtitle": "Plantillas SQL reutilizables",
-    "markdown.props.content": "## Consejos\n\n- **Búsqueda:** escribe un nombre en el buscador para filtrar objetos — el dashboard desaparece automáticamente.\n- **Archivos:** un clic en una fila de la tabla de archivos fija el filtro de archivo para todas las vistas siguientes.\n- **Navegación:** *Dashboards* abre análisis curados, *Consultas personalizadas* lista todas las plantillas SQL reutilizables, *Documentación* muestra las fuentes instaladas.",
+    "markdown.props.content": "## Consejos\n\n- **Búsqueda:** escribe un nombre en el buscador para filtrar objetos — el dashboard desaparece automáticamente.\n- **Archivos:** un clic en una fila de la tabla de archivos abre la vista del archivo.\n- **Navegación:** *Dashboards* abre análisis curados, *Consultas personalizadas* lista todas las plantillas SQL reutilizables, *Documentación* muestra las fuentes instaladas.",
     "docs.props.label": "Documentación",
     "docs.props.subtitle": "Fuentes de documentación instaladas"
   }

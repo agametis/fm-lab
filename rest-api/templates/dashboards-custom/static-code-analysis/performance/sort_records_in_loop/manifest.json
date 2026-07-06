@@ -1,0 +1,58 @@
+{
+  "id": "sort_records_in_loop",
+  "version": "1.0.0",
+  "title": "Sort Records inside Loop",
+  "description": "Performance rule — Sort Records executed inside a Loop; sorting per iteration is rarely intended.",
+  "author": "fm-lab rules",
+  "icon": "gauge",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "pmd",
+    "performance"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "performance",
+    "rationale": "Sorting the found set on every loop iteration is expensive and usually redundant.",
+    "remediation": "Sort once before the loop, or drop the in-loop sort entirely.",
+    "meta": {
+      "name": "Sort Records inside Loop",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Performance rule — Sort Records executed inside a Loop; sorting per iteration is rarely intended.",
+      "created": "2026-07-01",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

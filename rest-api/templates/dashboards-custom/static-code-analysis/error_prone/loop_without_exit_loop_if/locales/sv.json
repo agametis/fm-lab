@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Loop utan Exit Loop If",
+    "description": "Felbenägen regel — skript med en Loop men utan tillförlitlig avslutning: varken Exit Loop If eller ett \"Gå till post/begäran/sida\" eller \"Gå till portalrad\" med \"Avsluta efter sista\" inuti Loopen. Återstående Loops kan köra i all oändlighet."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Loop utan Exit Loop If",
+    "findings_table.props.searchPlaceholder": "Sök fil eller skript…",
+    "findings_table.props.empty.message": "Inga Loops utan Exit Loop If hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Skript",
+    "findings_table.props.columns[2].label": "Loops"
+  }
+}

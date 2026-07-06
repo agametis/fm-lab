@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Go to Related Record in der Loop",
+    "description": "Performance-Regel — Go to Related Record innerhalb einer Loop wechselt pro Durchlauf Kontext und Fundmenge."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Go to Related Record in der Loop",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Kein Treffer für „Go to Related Record in der Loop\" gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Schritt",
+    "findings_table.props.columns[3].label": "Tiefe"
+  }
+}

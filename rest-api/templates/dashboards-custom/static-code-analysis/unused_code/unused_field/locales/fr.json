@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Champ inutilisé",
+    "description": "Règle de code inutilisé : champs qui ne sont nulle part lus, affichés, définis, recherchés, triés, importés ni exportés.\n\nD’après la règle PMD UnusedPrivateField — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatefield"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Champ inutilisé",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un nom…",
+    "findings_table.props.empty.message": "Aucune correspondance trouvée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Nom"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Healthchecks",
+    "description": "オブジェクトタイプ別にグループ化した厳選ヘルスチェックをライブ件数付きで表示し、それぞれ対応する静的コード解析ルールのダッシュボードにリンクします。"
+  },
+  "layout": {
+    "hc_kpi_strip.props.items[0].label": "すべてのチェック",
+    "hc_kpi_strip.props.items[1].label": "エラー",
+    "hc_kpi_strip.props.items[2].label": "警告",
+    "hc_kpi_strip.props.items[3].label": "情報",
+    "hc_security_card.props.title": "セキュリティ",
+    "hc_security_list.props.empty.message": "報告する項目はありません。",
+    "hc_fields_card.props.title": "フィールド",
+    "hc_fields_list.props.empty.message": "報告する項目はありません。",
+    "hc_scripts_card.props.title": "スクリプト",
+    "hc_scripts_list.props.empty.message": "報告する項目はありません。",
+    "hc_relationships_card.props.title": "リレーション",
+    "hc_relationships_list.props.empty.message": "報告する項目はありません。",
+    "hc_tables_card.props.title": "テーブルとオカレンス",
+    "hc_tables_list.props.empty.message": "報告する項目はありません。",
+    "hc_layouts_card.props.title": "レイアウト",
+    "hc_layouts_list.props.empty.message": "報告する項目はありません。",
+    "hc_variables_card.props.title": "変数",
+    "hc_variables_list.props.empty.message": "報告する項目はありません。",
+    "hc_valuelists_card.props.title": "値一覧",
+    "hc_valuelists_list.props.empty.message": "報告する項目はありません。",
+    "hc_customfunctions_card.props.title": "カスタム関数",
+    "hc_customfunctions_list.props.empty.message": "報告する項目はありません。"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "manifest": {
+    "title": "ファイル表示",
+    "description": "ファイルごとの詳細ビュー：メタデータ、ファイルオプション、オブジェクトの KPI、およびトリガされたスクリプト／開始レイアウト／ログインアカウント。"
+  },
+  "layout": {
+    "file_not_found.props.title": "ファイルが見つかりません",
+    "file_not_found_md.props.content": "現在のデータベースにこの名前のファイルは存在しません。**ホーム**ページからファイルを開いてください。",
+    "file_info.props.title": "ファイル情報",
+    "file_metrics_kpistrip.props.items[0].label": "オブジェクト",
+    "file_metrics_kpistrip.props.items[1].label": "参照",
+    "file_metrics_kpistrip.props.items[2].label": "FM バージョン",
+    "file_metrics_kpistrip.props.items[3].label": "DDR 情報",
+    "file_metrics_kpistrip.props.items[4].label": "最終インポート",
+    "file_metrics_kpistrip.props.items[5].label": "最小バージョン",
+    "file_size_kpistrip.props.items[0].label": "ファイルサイズ",
+    "file_settings_list.props.items[0].label": "自動ログイン",
+    "file_settings_list.props.items[1].label": "資格情報を保存",
+    "file_settings_list.props.items[2].label": "サインインフィールド",
+    "file_settings_list.props.items[3].label": "暗号化",
+    "file_settings_list.props.items[4].label": "WebDirect 共有を非表示",
+    "file_settings_list.props.items[5].label": "クライアント共有を非表示",
+    "file_settings_list.props.items[6].label": "スペルに下線",
+    "file_object_counts.props.title": "オブジェクト",
+    "file_object_counts_kpistrip.props.items[0].label": "スクリプト",
+    "file_object_counts_kpistrip.props.items[1].label": "テーブル",
+    "file_object_counts_kpistrip.props.items[2].label": "フィールド",
+    "file_object_counts_kpistrip.props.items[3].label": "TO",
+    "file_object_counts_kpistrip.props.items[4].label": "リレーション",
+    "file_object_counts_kpistrip.props.items[5].label": "レイアウト",
+    "file_object_counts_kpistrip.props.items[6].label": "値一覧",
+    "file_object_counts_kpistrip.props.items[7].label": "カスタム関数",
+    "file_object_counts_kpistrip.props.items[8].label": "変数",
+    "file_triggers.props.title": "トリガされたスクリプト",
+    "file_triggers_table.props.columns[0].label": "イベント",
+    "file_triggers_table.props.columns[1].label": "スクリプト",
+    "file_start_layout.props.title": "開始レイアウト",
+    "file_start_layout_table.props.columns[0].label": "レイアウト",
+    "file_account.props.title": "ログインアカウント",
+    "file_account_table.props.columns[0].label": "アカウント"
+  }
+}

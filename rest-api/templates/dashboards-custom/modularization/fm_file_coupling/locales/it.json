@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "Accoppiamento dei file FileMaker",
+    "description": "Matrice di accoppiamento dei moduli tra i file FileMaker della soluzione: ObjectLinks tra file aggregati per file di origine × file di destinazione × ruolo di collegamento, più le origini dati FileMaker esterne dichiarate e le autorizzazioni di accesso tra file. Risponde a «quale modulo dipende da quale?» come vista di audit tabellare, a complemento del Graph Atlas."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Collegamenti tra file",
+    "summary_kpistrip.props.items[1].label": "Coppie di file accoppiate",
+    "summary_kpistrip.props.items[2].label": "File di origine",
+    "summary_kpistrip.props.items[3].label": "Fan-out max.",
+    "summary_kpistrip.props.items[4].label": "Origini FM esterne",
+    "summary_kpistrip.props.items[5].label": "Autorizzazioni file",
+    "by_role.props.title": "Accoppiamento per ruolo di collegamento",
+    "by_role_table.props.columns[0].label": "Ruolo di collegamento",
+    "by_role_table.props.columns[1].label": "Tipo",
+    "by_role_table.props.columns[2].label": "Collegamenti",
+    "by_role_table.props.columns[3].label": "Coppie",
+    "by_role_table.props.columns[4].label": "File di origine",
+    "by_role_table.props.columns[5].label": "File di destinazione",
+    "coupling.props.title": "Matrice di accoppiamento (origine → destinazione)",
+    "coupling_table.props.columns[0].label": "File di origine",
+    "coupling_table.props.columns[1].label": "File di destinazione",
+    "coupling_table.props.columns[2].label": "Collegamenti",
+    "coupling_table.props.columns[3].label": "Ruoli",
+    "coupling_table.props.columns[4].label": "Ruoli principali",
+    "coupling_details.props.title": "Dettagli di accoppiamento (collegamenti individuali)",
+    "coupling_details_table.props.columns[0].label": "File di origine",
+    "coupling_details_table.props.columns[1].label": "Tipo origine",
+    "coupling_details_table.props.columns[2].label": "Oggetto di origine",
+    "coupling_details_table.props.columns[3].label": "Ruolo",
+    "coupling_details_table.props.columns[4].label": "File di destinazione",
+    "coupling_details_table.props.columns[5].label": "Tipo destinazione",
+    "coupling_details_table.props.columns[6].label": "Oggetto di destinazione",
+    "external_sources.props.title": "Origini dati FileMaker esterne (accoppiamento dichiarato)",
+    "external_sources_table.props.columns[0].label": "Dal file",
+    "external_sources_table.props.columns[1].label": "Dichiara origine",
+    "external_sources_table.props.columns[2].label": "TOs",
+    "external_sources_table.props.columns[3].label": "TO di esempio",
+    "markdown.props.content": "## Note\n\n**La dashboard centrale della categoria Modularizzazione** — risponde direttamente a *quale modulo dipende da quale?* e completa il Graph Atlas con una vista di audit tabellare.\n\n- **KPI**: *Collegamenti tra file* = tutti gli `ObjectLinks` operativi con `Is_Cross_File = TRUE` e file di origine/destinazione distinti. *Coppie di file accoppiate* = coppie orientate (origine → destinazione) distinte. *Fan-out max.* = il numero più alto di file di destinazione distinti raggiunti da un singolo file di origine. *Origini FM esterne* = dichiarazioni distinte di origini dati FileMaker. *Autorizzazioni file* = righe in `FileAccessAuthorizations`.\n- **Accoppiamento per ruolo di collegamento**: come si suddivide il traffico tra file per tipo (`displays_field`, `reads_field`, `calls_script`, `base_table`, …). Fai clic su un ruolo per filtrare l'elenco dei dettagli su quel ruolo.\n- **Matrice di accoppiamento**: una riga per coppia di file orientata con il numero di collegamenti, il numero di ruoli distinti e un'anteprima dei ruoli principali. Fai clic su una coppia per filtrare l'elenco dei dettagli esattamente su quell'accoppiamento origine → destinazione.\n- **Dettagli di accoppiamento**: i singoli collegamenti dietro una coppia / un ruolo selezionato — l'oggetto di origine nel file A che referenzia un oggetto di destinazione nel file B. Fai clic su una riga per aprire l'oggetto **di destinazione**.\n- **Origini FM esterne**: il lato dichiarativo — quale file registra quale altro file come origine dati esterna (indipendentemente dal traffico effettivo di oggetti). Fai clic su una riga per aprire la prima occorrenza di tabella in ordine alfabetico di quella origine.\n- I collegamenti tra file sono operativi per natura (il containment strutturale non attraversa mai un confine di file in FileMaker), quindi non c'è una colonna strutturale.\n- **Regole correlate**: le regole di severità derivate per l'accoppiamento eccessivo si trovano sotto *Static Code Analysis*.\n- **Ordinamento**: tutte le intestazioni di colonna sono cliccabili (▲▼)."
+  }
+}

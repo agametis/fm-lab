@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Exit Script em Loop",
+    "description": "Regra propensa a erros — Exit Script dentro de um Loop. Sair de um script no meio do Loop ignora a limpeza do Loop e surpreende quem o chama."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Exit Script em Loop",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhum Exit Script em um Loop encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Etapa"
+  }
+}

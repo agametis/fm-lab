@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Layout avec de nombreux portails",
+    "description": "Règle de style de code/performance : Layouts avec plus de six portails. De nombreux portails tirent chacun un ensemble lié et ralentissent le Layout. Seuil réglable via le curseur (par défaut 6)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Layout avec de nombreux portails",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un Layout…",
+    "findings_table.props.empty.message": "Aucun Layout riche en portails trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Portails",
+    "threshold_slider.props.label": "Portails par Layout (minimum)",
+    "threshold_slider.props.valueSuffix": "portails"
+  }
+}

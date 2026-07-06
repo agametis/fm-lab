@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "빈 Else 분기",
+    "description": "오류 유발 규칙 — Else 바로 뒤에 End If가 오는, 즉 단계가 없는 Else 분기. 대개 잔재입니다.\n\nPMD 규칙 EmptyControlStatement — https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#emptycontrolstatement"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "빈 Else 분기",
+    "findings_table.props.searchPlaceholder": "파일 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "빈 Else 분기를 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "스크립트",
+    "findings_table.props.columns[2].label": "단계"
+  }
+}

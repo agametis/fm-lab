@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "플러그인 의존성",
+    "description": "플러그인 의존성 인벤토리: 플러그인 컴포넌트(MBS 및 기타) × 파일별 호출 지점을 calls_pluginfunction으로 해석하고 Install Plug-In File 단계를 포함합니다. 위험 관점 — 플러그인이 없으면 어떤 모듈이 죽는가?"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "플러그인 호출 지점",
+    "summary_kpistrip.props.items[1].label": "컴포넌트",
+    "summary_kpistrip.props.items[2].label": "함수",
+    "summary_kpistrip.props.items[3].label": "영향받는 파일",
+    "summary_kpistrip.props.items[4].label": "Install Plug-In 단계",
+    "components.props.title": "컴포넌트",
+    "components_table.props.columns[0].label": "플러그인",
+    "components_table.props.columns[1].label": "컴포넌트",
+    "components_table.props.columns[2].label": "호출 지점",
+    "components_table.props.columns[3].label": "함수",
+    "components_table.props.columns[4].label": "파일",
+    "top_functions.props.title": "가장 많이 사용된 함수",
+    "top_functions_table.props.columns[0].label": "함수",
+    "top_functions_table.props.columns[1].label": "컴포넌트",
+    "top_functions_table.props.columns[2].label": "호출 지점",
+    "top_functions_table.props.columns[3].label": "파일",
+    "markdown.props.content": "## 참고\n\n솔루션이 어떤 **플러그인** 에 어디서 의존하는지. 호출 지점은 해석된 `calls_pluginfunction` 링크(`MBS:<컴포넌트>.<함수>`)에서 읽어오므로, *가장 많이 사용된 함수* 목록에서 플러그인 함수의 사용처 보기로 바로 이동합니다.\n\n- **컴포넌트**: 플러그인 컴포넌트별 호출 지점, 고유 함수, 영향받는 파일. 컴포넌트를 클릭하면 함수 목록이 필터링됩니다.\n- **위험 관점**: 호출 지점이 많은 컴포넌트 위에 구축된 모듈은 해당 플러그인이 설치되지 않으면 죽습니다 — *Install Plug-In File* 단계는 솔루션이 스스로 플러그인을 설치하는 위치를 보여줍니다.\n- **탐색**: 함수를 클릭하면 해당 플러그인 함수의 상세(사용처)가 열립니다.\n- **관련 규칙**: 파생된 심각도 규칙은 *Static Code Analysis* 아래에 있습니다.\n- **정렬**: 모든 열 머리글을 클릭할 수 있습니다(▲▼)."
+  }
+}

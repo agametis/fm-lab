@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Exécution de processus et shell",
+    "description": "Inventaire de l'exécution externe de processus/shell : Send Event et Perform AppleScript (filtrés par Step_ID, indépendants de la langue) plus les appels MBS Shell / RunTask / Process (résolus via calls_pluginfunction). Montre où la solution cède le contrôle au système d'exploitation."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Points de contact",
+    "summary_kpistrip.props.items[1].label": "Send Event",
+    "summary_kpistrip.props.items[2].label": "AppleScript",
+    "summary_kpistrip.props.items[3].label": "Appels de processus MBS",
+    "summary_kpistrip.props.items[4].label": "Fichiers concernés",
+    "by_mechanism.props.title": "Par mécanisme",
+    "by_mechanism_table.props.columns[0].label": "Mécanisme",
+    "by_mechanism_table.props.columns[1].label": "Type",
+    "by_mechanism_table.props.columns[2].label": "Points d'appel",
+    "by_mechanism_table.props.columns[3].label": "Fichiers",
+    "findings.props.title": "Occurrences",
+    "findings_table.props.columns[0].label": "Mécanisme",
+    "findings_table.props.columns[1].label": "Type de réf.",
+    "findings_table.props.columns[2].label": "Script/Objet",
+    "findings_table.props.columns[3].label": "Étape/Fonction",
+    "findings_table.props.columns[4].label": "Fichier",
+    "findings_table.props.columns[5].label": "#",
+    "markdown.props.content": "## Remarques\n\nOù la solution cède le contrôle à un **processus externe ou au shell**. Les étapes natives sont filtrées par Step_ID (indépendant de la langue) : *Send Event* (57), *Perform AppleScript* (67). Les appels de processus MBS sont lus à partir des liens `calls_pluginfunction` résolus : `Shell.*`, `RunTask.*`, `Process.*`.\n\n- **KPI comme filtres** : *Send Event* et *AppleScript* filtrent la liste de détail sur ce mécanisme.\n- **Par mécanisme** : cliquez sur une ligne pour filtrer les occurrences.\n- **Navigation** : cliquer sur une occurrence ouvre le porteur (Script + ancre d'étape, ou l'objet derrière un appel MBS).\n- **Règles associées** : les règles de sévérité dérivées se trouvent sous *Static Code Analysis*.\n- **Tri** : tous les en-têtes de colonne sont cliquables (▲▼)."
+  }
+}

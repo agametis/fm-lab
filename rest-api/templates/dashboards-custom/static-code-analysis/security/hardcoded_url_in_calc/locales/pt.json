@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "URL fixo em cálculo",
+    "description": "Regra de segurança/manutenibilidade — trechos de cálculo com uma URL http(s):// literal. Endpoints fixos são frágeis e revelam a infraestrutura."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "URL fixo em cálculo",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, script ou URL…",
+    "findings_table.props.empty.message": "Nenhuma URL fixa encontrada nos cálculos.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Encontrado em",
+    "findings_table.props.columns[2].label": "URL"
+  }
+}

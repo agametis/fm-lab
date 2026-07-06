@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "Integrazione e-mail",
+    "description": "Inventario dell'invio di e-mail in uscita: passaggi Send Mail (Step_ID 63) classificati per via di invio (server SMTP o client di posta), con l'host SMTP estratto e un flag per le credenziali codificate in modo fisso (rilevanti per la sicurezza), oltre alle chiamate MBS SendMail. L'SMTP tramite cURL rimane nel dashboard delle API."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Passaggi Send Mail",
+    "summary_kpistrip.props.items[1].label": "via SMTP",
+    "summary_kpistrip.props.items[2].label": "via Client",
+    "summary_kpistrip.props.items[3].label": "Credenziali codificate",
+    "summary_kpistrip.props.items[4].label": "Chiamate mail MBS",
+    "summary_kpistrip.props.items[5].label": "File interessati",
+    "by_mode.props.title": "Per via di invio",
+    "by_mode_table.props.columns[0].label": "Via di invio",
+    "by_mode_table.props.columns[1].label": "Punti di chiamata",
+    "by_mode_table.props.columns[2].label": "File",
+    "by_mode_table.props.columns[3].label": "Auth codificata",
+    "findings.props.title": "Punti di chiamata",
+    "findings_table.props.columns[0].label": "Via di invio",
+    "findings_table.props.columns[1].label": "Meccanismo",
+    "findings_table.props.columns[2].label": "Script/Oggetto",
+    "findings_table.props.columns[3].label": "Host SMTP",
+    "findings_table.props.columns[4].label": "Auth codificata",
+    "findings_table.props.columns[5].label": "File",
+    "findings_table.props.columns[6].label": "#",
+    "markdown.props.content": "## Note\n\nPosta elettronica **in uscita**. *Send Mail* (Step_ID 63) viene classificato in base alla via di invio a partire dal testo DDR del passaggio: **server SMTP** o **client di posta**. Quando il passaggio utilizza un server SMTP, l'host viene estratto; un passaggio con un `Password:` in linea è contrassegnato come **credenziali codificate in modo fisso** (un rilievo di sicurezza — il valore della password stessa non viene mai visualizzato). Le chiamate MBS `SendMail.*` / `EmailParser.*` vengono lette dai link `calls_pluginfunction` risolti.\n\n- **KPI come filtri**: *via SMTP* e *via Client* filtrano l'elenco dei dettagli.\n- **Credenziali codificate in modo fisso**: server SMTP, porta e password incorporati nel passaggio si rompono durante il deployment e fanno trapelare segreti nel DDR.\n- **Ambito**: l'SMTP basato su cURL (`MBS:CURL.*`) rimane nel dashboard *API e interfacce esterne*.\n- **Navigazione**: facendo clic su un punto di chiamata si apre il portatore (Script + ancora del passaggio, o l'oggetto dietro una chiamata MBS).\n- **Regole correlate**: le regole di severità derivate si trovano sotto *Static Code Analysis*.\n- **Ordinamento**: tutte le intestazioni di colonna sono cliccabili (▲▼)."
+  }
+}

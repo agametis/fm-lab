@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Konto med [Fullständig åtkomst]",
+    "description": "Säkerhetsregel — konton med behörighetsuppsättningen [Fullständig åtkomst]. Varje konto med fullständig åtkomst är en obegränsad huvudnyckel; håll antalet minimalt."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Konto med [Fullständig åtkomst]",
+    "findings_table.props.searchPlaceholder": "Sök fil eller konto…",
+    "findings_table.props.empty.message": "Inga konton med [Fullständig åtkomst] hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Konto"
+  }
+}

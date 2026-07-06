@@ -1,0 +1,29 @@
+{
+  "manifest": {
+    "title": "Serverseitige Ausführung",
+    "description": "Was (potenziell) auf dem Server läuft: Perform Script on Server, Execute FileMaker Data API und Install OnTimer Script (Step_ID-gated), plus die server-relevanten Extended-Privilege-Grants (fmrest, fmurlscript, fmodata, fmxml, fmphp, fmextscriptaccess). Eine Zugriffs-Audit-Sicht der Server-Oberfläche."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Perform Script on Server",
+    "summary_kpistrip.props.items[1].label": "Execute Data API",
+    "summary_kpistrip.props.items[2].label": "Install OnTimer",
+    "summary_kpistrip.props.items[3].label": "Betroffene Dateien",
+    "summary_kpistrip.props.items[4].label": "Server-Grants",
+    "by_kind.props.title": "Nach Mechanismus",
+    "by_kind_table.props.columns[0].label": "Mechanismus",
+    "by_kind_table.props.columns[1].label": "Call-Sites",
+    "by_kind_table.props.columns[2].label": "Dateien",
+    "by_kind_table.props.columns[3].label": "Scripts",
+    "findings.props.title": "Fundstellen",
+    "findings_table.props.columns[0].label": "Mechanismus",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Step",
+    "findings_table.props.columns[3].label": "Datei",
+    "findings_table.props.columns[4].label": "#",
+    "grants.props.title": "Server-/API-Grants (Extended Privileges)",
+    "grants_table.props.columns[0].label": "Extended Privilege",
+    "grants_table.props.columns[1].label": "Privilege-Set",
+    "grants_table.props.columns[2].label": "Datei",
+    "markdown.props.content": "## Hinweise\n\nWas (potenziell) auf dem **Server** läuft. Native Steps sind Step_ID-gated (locale-unabhängig): *Perform Script on Server* (164), *Execute FileMaker Data API* (203), *Install OnTimer Script* (148).\n\n- **KPIs als Filter**: die Step-KPIs filtern die Fundstellen auf diesen Mechanismus.\n- **Server-/API-Grants**: welche Privilege-Sets die server-relevanten Extended Privileges gewähren (`fmrest`, `fmurlscript`, `fmodata`, `fmxml`, `fmphp`, `fmextscriptaccess`). Klick auf eine Zeile öffnet das Privilege-Set.\n- **Navigation**: Klick auf eine Fundstelle öffnet das Script am Step.\n- **Zugehörige Regeln**: abgeleitete Severity-Regeln liegen unter *Statische Code-Analyse*.\n- **Sortierung**: alle Spaltenüberschriften sind klickbar (▲▼)."
+  }
+}

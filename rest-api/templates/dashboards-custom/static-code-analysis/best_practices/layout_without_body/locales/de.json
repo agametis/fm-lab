@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Layout ohne Körper-Bereich",
+    "description": "Best-Practice-Regel — Layouts ohne Körper-Bereich. Ohne Körper werden Datensätze in Formular-/Listenansicht nicht dargestellt; meist ein verirrtes oder falsch gebautes Layout."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Layout ohne Körper-Bereich",
+    "findings_table.props.searchPlaceholder": "Datei oder Layout suchen…",
+    "findings_table.props.empty.message": "Keine Layouts ohne Körper gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

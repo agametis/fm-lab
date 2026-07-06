@@ -1,0 +1,42 @@
+{
+  "manifest": {
+    "title": "Filvy",
+    "description": "Detaljvy per fil: metadata, filalternativ, objekt-KPI:er och de utlösta skripten / startlayout / inloggningskonto."
+  },
+  "layout": {
+    "file_not_found.props.title": "Filen hittades inte",
+    "file_not_found_md.props.content": "Det finns ingen fil med det här namnet i den aktuella databasen. Öppna en fil från **start**sidan.",
+    "file_info.props.title": "Filinfo",
+    "file_metrics_kpistrip.props.items[0].label": "Objekt",
+    "file_metrics_kpistrip.props.items[1].label": "Referenser",
+    "file_metrics_kpistrip.props.items[2].label": "FM-version",
+    "file_metrics_kpistrip.props.items[3].label": "DDR-info",
+    "file_metrics_kpistrip.props.items[4].label": "Senaste import",
+    "file_metrics_kpistrip.props.items[5].label": "Minsta version",
+    "file_size_kpistrip.props.items[0].label": "Filstorlek",
+    "file_settings_list.props.items[0].label": "Autoinloggning",
+    "file_settings_list.props.items[1].label": "Spara inloggningsuppgifter",
+    "file_settings_list.props.items[2].label": "Inloggningsfält",
+    "file_settings_list.props.items[3].label": "Kryptering",
+    "file_settings_list.props.items[4].label": "Dölj WebDirect-delning",
+    "file_settings_list.props.items[5].label": "Dölj klientdelning",
+    "file_settings_list.props.items[6].label": "Understryk stavning",
+    "file_object_counts.props.title": "Objekt",
+    "file_object_counts_kpistrip.props.items[0].label": "Skript",
+    "file_object_counts_kpistrip.props.items[1].label": "Tabeller",
+    "file_object_counts_kpistrip.props.items[2].label": "Fält",
+    "file_object_counts_kpistrip.props.items[3].label": "TO",
+    "file_object_counts_kpistrip.props.items[4].label": "Relationer",
+    "file_object_counts_kpistrip.props.items[5].label": "Layouter",
+    "file_object_counts_kpistrip.props.items[6].label": "Värdelistor",
+    "file_object_counts_kpistrip.props.items[7].label": "Anpassade fns",
+    "file_object_counts_kpistrip.props.items[8].label": "Variabler",
+    "file_triggers.props.title": "Utlösta skript",
+    "file_triggers_table.props.columns[0].label": "Händelse",
+    "file_triggers_table.props.columns[1].label": "Skript",
+    "file_start_layout.props.title": "Startlayout",
+    "file_start_layout_table.props.columns[0].label": "Layout",
+    "file_account.props.title": "Inloggningskonto",
+    "file_account_table.props.columns[0].label": "Konto"
+  }
+}

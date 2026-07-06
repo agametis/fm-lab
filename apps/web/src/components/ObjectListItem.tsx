@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { components } from '@packages/shared/types';
 import { Slot } from '../plugins';
 import { buildObjectPath } from '../lib/navigation';
+import { formatObjectDisplayName } from '../lib/objectName';
 
 type FMObject = components['schemas']['FMObject'];
 
@@ -83,6 +84,12 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
   const hasUsage = typeof aggObject.usage_count === 'number';
   const hasCategory = aggObject.category != null && aggObject.category !== '';
   const isScriptStep = object.Object_Type === 'ScriptStep' && typeof object.Step_Text === 'string' && object.Step_Text.length > 0;
+  // ValueList-Treffer über hinterlegte Custom-Values: die passenden Werte werden
+  // unter dem Werteliste-Namen angezeigt (analog zum Step-Text bei ScriptSteps).
+  const matchedValues = object.Object_Type === 'ValueList'
+    && typeof object.Matched_Values === 'string' && object.Matched_Values.length > 0
+    ? object.Matched_Values
+    : null;
 
   return (
     <div style={style} className="object-list-item-wrapper">
@@ -94,7 +101,7 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
         role="button"
         aria-label={t('detail:objectListItem.showAria', {
           type: object.Object_Type,
-          name: (isScriptStep ? object.Step_Text : object.Object_Name) || noName,
+          name: (isScriptStep ? object.Step_Text : formatObjectDisplayName(object.Object_Type, object.Object_Name)) || noName,
         }) as string}
       >
         <div className="object-header">
@@ -103,8 +110,8 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
               {highlightMatch(object.Step_Text as string, searchTerm)}
             </code>
           ) : (
-            <strong className="object-name">
-              {object.Object_Name || noName}
+            <strong className="object-name" title={object.Object_Name || undefined}>
+              {formatObjectDisplayName(object.Object_Type, object.Object_Name) || noName}
             </strong>
           )}
           {hasCategory && (
@@ -209,9 +216,17 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
             </small>
           </div>
         ) : (
-          object.File_Name && (
+          (object.File_Name || matchedValues) && (
             <div className="object-details">
-              <small>{object.File_Name}</small>
+              {matchedValues && (
+                <small className="object-value-match" title={matchedValues}>
+                  <span className="value-match-label">
+                    {t('detail:objectListItem.valueListMatch')}:
+                  </span>{' '}
+                  {highlightMatch(matchedValues, searchTerm)}
+                </small>
+              )}
+              {object.File_Name && <small>{object.File_Name}</small>}
             </div>
           )
         )}

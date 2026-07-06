@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Lang script",
+    "description": "Codestijlregel — scripts met meer dan 150 stappen. Zeer lange scripts zijn moeilijk te lezen, testen en hergebruiken.\n\nGebaseerd op de PMD-regel ExcessiveMethodLength — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessivemethodlength Drempel instelbaar via de schuifregelaar (standaard 150)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Lang script",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen buitensporig lange scripts gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Stappen",
+    "threshold_slider.props.label": "Stappen per script (minimum)",
+    "threshold_slider.props.valueSuffix": "stappen"
+  }
+}

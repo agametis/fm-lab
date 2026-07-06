@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Go to Layout em Loop",
+    "description": "Regra de desempenho — Go to Layout dentro de um Loop força uma troca de contexto a cada iteração."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Go to Layout em Loop",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhuma ocorrência para \"Go to Layout em Loop\" encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Etapa",
+    "findings_table.props.columns[3].label": "Profundidade"
+  }
+}

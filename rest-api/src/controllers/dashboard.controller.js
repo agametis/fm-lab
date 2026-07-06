@@ -5,7 +5,6 @@ const { SUPPORTED_LANGUAGE_CODES, DEFAULT_LANGUAGE, resolveLanguage } = require(
 
 /**
  * Dashboard Controller
- * PRD: project/prd_dashboards.md §7.2 (Routes).
  *
  *   GET /api/dashboards                       List available bundles
  *   GET /api/dashboards/:id                   Manifest + layout (localised)
@@ -46,16 +45,17 @@ async function listDashboards(req, res, next) {
     const localised = await Promise.all(
       bundles.map(async (b) => {
         const { manifest } = await dashboardI18nService.resolveBundleForLanguage(b, lang);
-        return manifest;
+        return { manifest, folder: b.folder || null };
       }),
     );
-    const data = localised.map((m) => ({
+    const data = localised.map(({ manifest: m, folder }) => ({
       id: m.id,
       title: m.title,
       description: m.description || null,
       icon: m.icon || null,
       tags: m.tags || [],
       category: m.category || null,
+      folder: folder || null,
       author: m.author || null,
       version: m.version || null,
     }));

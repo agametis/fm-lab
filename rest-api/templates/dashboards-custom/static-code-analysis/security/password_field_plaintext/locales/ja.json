@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "パスワードフィールドが平文で保存",
+    "description": "セキュリティルール — 名前がパスワード/PIN を示す通常（保存）フィールド。ファイルで保存時暗号化（EAR）が有効でない限り、FileMaker は値を暗号化せずに保存します。「Encryption at rest」列に各ファイルの EAR 状態を表示します。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "パスワードフィールドが平文で保存",
+    "findings_table.props.searchPlaceholder": "ファイル・テーブル・フィールドを検索…",
+    "findings_table.props.empty.message": "平文のパスワードフィールドは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "テーブル",
+    "findings_table.props.columns[2].label": "フィールド",
+    "findings_table.props.columns[3].label": "Encryption at rest"
+  }
+}

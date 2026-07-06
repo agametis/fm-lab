@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Loop profondamente annidata",
+    "description": "Regola di prestazioni: script con tre o più Loop annidate. L’iterazione annidata moltiplica il lavoro a ogni passata esterna."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Loop profondamente annidata",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Nessuna Loop profondamente annidata trovata.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Profondità"
+  }
+}

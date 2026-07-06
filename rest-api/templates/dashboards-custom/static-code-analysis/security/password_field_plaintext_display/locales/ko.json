@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "비밀번호 필드가 평문으로 표시됨",
+    "description": "보안 규칙 — 비밀번호/PIN 필드가 \"암호화된 편집 상자\"가 아닌 개체로 레이아웃에 표시되어 값이 레이아웃에 평문으로 나타납니다. 레이아웃 개체 단위로 나열됩니다(같은 필드가 여러 레이아웃에 보일 수 있음).\n\n저장 규칙(password_field_plaintext)을 보완합니다. 여기서는 필드가 아니라 레이아웃 개체 수준에서 결정되는 화면 표시가 대상입니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "비밀번호 필드가 평문으로 표시됨",
+    "findings_table.props.searchPlaceholder": "필드 또는 레이아웃 검색…",
+    "findings_table.props.empty.message": "평문으로 표시되는 비밀번호 필드가 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "필드",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

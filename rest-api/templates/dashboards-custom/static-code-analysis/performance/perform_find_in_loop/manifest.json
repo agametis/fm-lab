@@ -1,0 +1,58 @@
+{
+  "id": "perform_find_in_loop",
+  "version": "1.0.0",
+  "title": "Perform Find inside Loop",
+  "description": "Performance rule — Perform Find steps executed inside a Loop. Every iteration triggers a full find.",
+  "author": "fm-lab rules",
+  "icon": "alert-triangle",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "pmd",
+    "performance"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "performance",
+    "rationale": "A Perform Find inside a Loop re-queries the database on every iteration.",
+    "remediation": "Move the find out of the loop, or replace it with a relationship / ExecuteSQL lookup.",
+    "meta": {
+      "name": "Perform Find inside Loop",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Performance rule — Perform Find steps executed inside a Loop. Every iteration triggers a full find.",
+      "created": "2026-07-01",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

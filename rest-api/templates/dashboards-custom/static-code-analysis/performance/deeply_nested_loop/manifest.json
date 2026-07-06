@@ -1,0 +1,58 @@
+{
+  "id": "deeply_nested_loop",
+  "version": "1.0.0",
+  "title": "Deeply nested Loop",
+  "description": "Performance rule — scripts with three or more nested Loops. Nested iteration multiplies the work per outer pass.",
+  "author": "fm-lab rules",
+  "icon": "layers",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "pmd",
+    "performance"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "performance",
+    "rationale": "Triple-nested loops scale poorly; the inner body runs O(n³) times.",
+    "remediation": "Flatten the iteration with a relationship / ExecuteSQL join, or precompute the inner set.",
+    "meta": {
+      "name": "Deeply nested Loop",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Performance rule — scripts with three or more nested Loops. Nested iteration multiplies the work per outer pass.",
+      "created": "2026-07-01",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

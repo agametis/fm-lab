@@ -21,6 +21,7 @@ import {
 import { useDepthProfile } from '../hooks/useDepthProfile';
 import { usePanelResize } from '../hooks/usePanelResize';
 import { getCommunityColor } from '../lib/graphColors';
+import { formatObjectDisplayName } from '../lib/objectName';
 import '../views/GraphExplorerView.css';
 
 /** Backend-Default node_limit von /api/graph/subgraph — Basis des Clipping-Hinweises. */
@@ -212,7 +213,7 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
     useEffect(() => {
       if (!data) return;
       const focusNode = data.nodes.find((n) => n.isFocus);
-      if (focusNode) setFocusLabel(focusNode.label);
+      if (focusNode) setFocusLabel(formatObjectDisplayName(focusNode.type, focusNode.label));
       setSelectedNode((prev) => (prev ? data.nodes.find((n) => n.id === prev.id) ?? null : null));
       setSelectedFile((prev) => (prev && data.nodes.some((n) => n.file === prev) ? prev : null));
       setSelectedCommunity((prev) => (prev !== null && data.nodes.some((n) => n.community === prev) ? prev : null));
@@ -262,7 +263,7 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
               communityCount: new Set(
                 data.nodes.filter((n) => n.community !== null).map((n) => n.community),
               ).size,
-              focusLabel: data.nodes.find((n) => n.isFocus)?.label ?? null,
+              focusLabel: (() => { const f = data.nodes.find((n) => n.isFocus); return f ? formatObjectDisplayName(f.type, f.label) : null; })(),
             }
           : null,
       );

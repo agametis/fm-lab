@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Insert from URL（Loop 内）",
+    "description": "パフォーマンスルール — Loop 内の Insert from URL は反復のたびにネットワークリクエストを送信します。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "Insert from URL（Loop 内）",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "「Insert from URL（Loop 内）」に一致する項目は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "ステップ",
+    "findings_table.props.columns[3].label": "深さ"
+  }
+}

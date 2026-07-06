@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "긴 계산식",
+    "description": "코드 스타일 규칙 — 수식이 2000자를 초과하는 계산 필드. 거대한 수식은 읽기와 디버깅이 어렵습니다.\n\nPMD 규칙 ExcessiveMethodLength — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessivemethodlength 임계값은 슬라이더로 조정 가능(기본값 2000)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "긴 계산식",
+    "findings_table.props.searchPlaceholder": "파일 또는 필드 검색…",
+    "findings_table.props.empty.message": "지나치게 긴 계산을 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "필드",
+    "findings_table.props.columns[2].label": "길이",
+    "threshold_slider.props.label": "수식 길이(최소, 문자)",
+    "threshold_slider.props.valueSuffix": "문자"
+  }
+}

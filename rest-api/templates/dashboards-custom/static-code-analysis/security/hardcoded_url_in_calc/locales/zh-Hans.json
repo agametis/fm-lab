@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "计算中的硬编码 URL",
+    "description": "安全/可维护性规则 — 含有字面 http(s):// URL 的计算块。硬编码端点脆弱且会泄露基础设施。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "计算中的硬编码 URL",
+    "findings_table.props.searchPlaceholder": "搜索文件、脚本或 URL…",
+    "findings_table.props.empty.message": "未在计算中找到硬编码的 URL。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "发现于",
+    "findings_table.props.columns[2].label": "URL"
+  }
+}

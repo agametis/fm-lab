@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Ongebruikte tabelinstantie",
+    "description": "Ongebruikte-code-regel — tabelinstanties die niet dienen als Layout-context, portaalbron, GTRR-doel of relatiezijde."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Ongebruikte tabelinstantie",
+    "findings_table.props.searchPlaceholder": "Bestand of naam zoeken…",
+    "findings_table.props.empty.message": "Geen resultaten gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Naam"
+  }
+}

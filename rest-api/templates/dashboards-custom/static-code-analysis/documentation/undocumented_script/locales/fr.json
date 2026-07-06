@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Script non documenté",
+    "description": "Règle de documentation : scripts non triviaux (10+ étapes) sans une seule étape de commentaire. Difficiles à transmettre ou à maintenir.\n\nD’après la règle PMD CommentRequired — https://docs.pmd-code.org/latest/pmd_rules_java_documentation.html#commentrequired Un commutateur de filtre au-dessus du tableau bascule entre les objets sans et avec commentaire (les commentés servent de modèle/inspiration)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Script non documenté",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un script…",
+    "findings_table.props.empty.message": "Aucun script non documenté trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Étapes",
+    "comment_filter.props.options[0].label": "non documenté",
+    "comment_filter.props.options[1].label": "documenté"
+  }
+}

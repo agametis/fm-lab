@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Compte avec [Accès intégral]",
+    "description": "Règle de sécurité : comptes dotés du jeu de privilèges [Accès intégral]. Chaque compte à accès intégral est un passe-partout sans restriction ; réduisez-en le nombre au minimum."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Compte avec [Accès intégral]",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un compte…",
+    "findings_table.props.empty.message": "Aucun compte avec [Accès intégral] trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Compte"
+  }
+}

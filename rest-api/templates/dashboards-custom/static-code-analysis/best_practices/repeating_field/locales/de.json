@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Wiederholfeld",
+    "description": "Best-Practice-Regel — Felder mit mehr als einer Wiederholung. Wiederholfelder sind schwer abzufragen und auszuwerten; eine verknüpfte Tabelle ist meist besser."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Wiederholfeld",
+    "findings_table.props.searchPlaceholder": "Datei, Tabelle oder Feld suchen…",
+    "findings_table.props.empty.message": "Keine Wiederholfelder gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Tabelle",
+    "findings_table.props.columns[2].label": "Feld",
+    "findings_table.props.columns[3].label": "Wdh."
+  }
+}

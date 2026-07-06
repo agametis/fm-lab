@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": { "columns": 12, "gap": 16 },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary",
+        "props": { "span": 12, "variant": "hero" },
+        "data": { "dataset": "summary" },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpistrip",
+            "props": {
+              "items": [
+                { "label": "Execute SQL steps", "field": "execute_sql_steps", "format": "number" },
+                { "label": "ODBC / ESS sources", "field": "ess_sources", "format": "number" },
+                { "label": "fmxdbc grants", "field": "fmxdbc_grants", "format": "number" },
+                { "label": "Files with SQL", "field": "files_with_sql", "format": "number" }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings",
+        "props": { "span": 12, "title": "Execute SQL steps" },
+        "data": { "dataset": "findings" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "step_uuid",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                { "field": "carrier", "label": "Script" },
+                { "field": "detail", "label": "Step" },
+                { "field": "sql_preview", "label": "SQL (preview)" },
+                { "field": "file", "label": "File" },
+                { "field": "step_index", "label": "#", "align": "right" }
+              ],
+              "onRowClick": { "action": "openObject", "args": { "uuid": "{{nav_uuid}}", "type": "Script", "file": "{{file}}", "params": { "step": "{{step_uuid}}" } } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "ess_sources",
+        "props": { "span": 12, "title": "ODBC / ESS data sources" },
+        "data": { "dataset": "ess_sources" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "ess_sources_table",
+            "props": {
+              "rowKey": "sample_to_uuid",
+              "density": "compact",
+              "sortable": true,
+              "emptyMessage": "No ODBC / ESS sources — all external sources are FileMaker.",
+              "columns": [
+                { "field": "source_name", "label": "Source" },
+                { "field": "source_type", "label": "Type", "format": "badge" },
+                { "field": "to_count", "label": "TOs", "align": "right" },
+                { "field": "file", "label": "File" }
+              ],
+              "onRowClick": { "action": "openObject", "args": { "uuid": "{{sample_to_uuid}}", "type": "TableOccurrence" } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "grants",
+        "props": { "span": 12, "title": "ODBC / xDBC grants (fmxdbc)" },
+        "data": { "dataset": "grants" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "grants_table",
+            "props": {
+              "rowKey": "nav_uuid",
+              "density": "compact",
+              "sortable": true,
+              "emptyMessage": "No privilege set grants fmxdbc.",
+              "columns": [
+                { "field": "extended_privilege", "label": "Extended privilege", "format": "badge" },
+                { "field": "privilege_set", "label": "Privilege set" },
+                { "field": "file", "label": "File" }
+              ],
+              "onRowClick": { "action": "openObject", "args": { "uuid": "{{nav_uuid}}", "type": "PrivilegeSet", "file": "{{file}}" } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Markdown",
+        "id": "markdown",
+        "props": {
+          "span": 12,
+          "content": "## Notes\n\nExternal **SQL** data access. *Execute SQL* is Step_ID-gated (117, locale-independent — in this corpus it is exported as `SQL ausführen`). ODBC / ESS sources are the non-FileMaker entries of the external-data-source catalog; `fmxdbc` grants show which privilege sets allow ODBC/JDBC access.\n\n- This is a **generic template**: the corpus currently has no ODBC/ESS sources (all external sources are FileMaker) and one Execute SQL step — the dashboard stays useful as a reusable library entry.\n- **Navigation**: clicking an Execute SQL step opens the script at the step; an ODBC/ESS source opens its first table occurrence; a grant opens the privilege set.\n- **Related rules**: derived severity rules live under *Static Code Analysis*.\n- **Sorting**: all column headings are clickable (▲▼)."
+        }
+      }
+    ]
+  }
+}

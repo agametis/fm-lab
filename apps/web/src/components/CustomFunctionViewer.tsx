@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import type { CustomFunctionTokens } from '../script/calcTokens';
 import { HighlightRefContext } from '../script/highlightContext';
-import { CalcTokenSpan } from './CalcTokenSpan';
+import { CalcTokenList } from './CalcTokenSpan';
 import './CustomFunctionViewer.css';
 
 interface CustomFunctionViewerProps {
@@ -72,9 +72,7 @@ export const CustomFunctionViewer: React.FC<CustomFunctionViewerProps> = ({ data
         </div>
         <pre className="fm-customfunction-body">
           <code>
-            {data.tokens.map((tok, idx) => (
-              <CalcTokenSpan key={idx} token={tok} />
-            ))}
+            <CalcTokenList tokens={data.tokens} />
           </code>
         </pre>
       </div>

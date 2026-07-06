@@ -1,0 +1,58 @@
+{
+  "id": "set_field_by_name",
+  "version": "1.0.0",
+  "title": "Set Field By Name (dynamic target)",
+  "description": "Code-style rule — Set Field By Name steps. The target field is computed at runtime, so static analysis and refactoring cannot follow it.",
+  "author": "fm-lab rules",
+  "icon": "type",
+  "category": "code_style",
+  "tags": [
+    "rule",
+    "pmd",
+    "code_style"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "code_style",
+    "rationale": "A dynamic field target is invisible to where-used and rename tooling.",
+    "remediation": "Prefer a static Set Field where the target is known at design time.",
+    "meta": {
+      "name": "Set Field By Name (dynamic target)",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Code-style rule — Set Field By Name steps. The target field is computed at runtime, so static analysis and refactoring cannot follow it.",
+      "created": "2026-07-01",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

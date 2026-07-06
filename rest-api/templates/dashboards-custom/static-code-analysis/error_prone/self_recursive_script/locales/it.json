@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Script auto-ricorsivo",
+    "description": "Regola soggetta a errori: script che chiamano se stessi. La ricorsione può essere voluta, ma senza una solida condizione di arresto rischia un overflow dello stack."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Script auto-ricorsivo",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Nessuno script auto-ricorsivo trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

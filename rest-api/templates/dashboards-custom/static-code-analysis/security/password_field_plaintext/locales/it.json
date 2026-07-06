@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Campo password memorizzato in chiaro",
+    "description": "Regola di sicurezza: campi normali (memorizzati) il cui nome suggerisce una password/PIN. A meno che il file non abbia la cifratura a riposo (EAR) attiva, FileMaker memorizza i valori in chiaro. La colonna «Encryption at rest» mostra lo stato EAR di ciascun file."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Campo password memorizzato in chiaro",
+    "findings_table.props.searchPlaceholder": "Cerca file, tabella o campo…",
+    "findings_table.props.empty.message": "Nessun campo password in chiaro trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tabella",
+    "findings_table.props.columns[2].label": "Campo",
+    "findings_table.props.columns[3].label": "Encryption at rest"
+  }
+}

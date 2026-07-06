@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Jeu de privilèges inutilisé",
+    "description": "Règle de code inutilisé : jeux de privilèges personnalisés assignés à aucun compte (les intégrés [Accès intégral] / [Saisie de données seule] / [Lecture seule] sont exclus)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Jeu de privilèges inutilisé",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un jeu…",
+    "findings_table.props.empty.message": "Aucun jeu de privilèges inutilisé trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Jeu de privilèges"
+  }
+}

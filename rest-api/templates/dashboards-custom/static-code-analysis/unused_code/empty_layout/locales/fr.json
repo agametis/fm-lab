@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Layout vide",
+    "description": "Règle de code inutilisé : Layouts sans aucun objet. Généralement des espaces réservés jamais développés."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Layout vide",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un Layout…",
+    "findings_table.props.empty.message": "Aucun Layout vide trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

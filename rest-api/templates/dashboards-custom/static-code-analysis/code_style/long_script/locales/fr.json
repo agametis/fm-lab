@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Script long",
+    "description": "Règle de style de code : scripts avec plus de 150 étapes. Les scripts très longs sont difficiles à lire, tester et réutiliser.\n\nD’après la règle PMD ExcessiveMethodLength — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessivemethodlength Seuil réglable via le curseur (par défaut 150)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Script long",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un script…",
+    "findings_table.props.empty.message": "Aucun script excessivement long trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Étapes",
+    "threshold_slider.props.label": "Étapes par script (minimum)",
+    "threshold_slider.props.valueSuffix": "étapes"
+  }
+}

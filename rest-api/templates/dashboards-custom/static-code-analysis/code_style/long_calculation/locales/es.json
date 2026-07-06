@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Fórmula de cálculo larga",
+    "description": "Regla de estilo de código: campos de cálculo cuya fórmula supera los 2000 caracteres. Las fórmulas enormes son difíciles de leer y depurar.\n\nBasado en la regla de PMD ExcessiveMethodLength — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessivemethodlength Umbral ajustable con el control deslizante (predeterminado 2000)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Fórmula de cálculo larga",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o campo…",
+    "findings_table.props.empty.message": "No se encontraron cálculos excesivamente largos.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Campo",
+    "findings_table.props.columns[2].label": "Longitud",
+    "threshold_slider.props.label": "Longitud de fórmula (mínimo, caracteres)",
+    "threshold_slider.props.valueSuffix": "caracteres"
+  }
+}

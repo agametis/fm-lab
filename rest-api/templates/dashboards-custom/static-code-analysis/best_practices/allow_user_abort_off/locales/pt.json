@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Allow User Abort [Desativado]",
+    "description": "Regra de boas práticas — etapas Allow User Abort [Desativado]. Desativar o cancelamento pode prender o usuário em um script longo ou em loop."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Allow User Abort [Desativado]",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhuma etapa Allow User Abort [Desativado] encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Etapa"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "空脚本",
+    "description": "未使用代码规则 — 完全没有步骤的脚本。通常是从未实现的占位符。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "空脚本",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到空脚本。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本"
+  }
+}

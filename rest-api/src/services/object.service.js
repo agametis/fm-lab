@@ -362,14 +362,63 @@ const STEP_TEXT_EXPR = `
 `;
 
 /**
+ * ValueList-Volltext-Branch: findet Wertelisten, deren NAME **oder** deren
+ * hinterlegte Custom-Values auf das Suchmuster passen. Bei einem Wert-Treffer
+ * werden die passenden Werte (max. 20) in `Matched_Values` aggregiert, damit
+ * das Frontend unter dem Werteliste-Namen anzeigen kann, WELCHER Wert getroffen
+ * hat (analog zum Step_Text-Breadcrumb bei ScriptSteps).
+ *
+ * Custom_Values liegt im Export als EIN newline-verbundenes Array-Element →
+ * pro Zeile via string_split(chr(10)) entpacken; trailing \r (CRLF) strippen.
+ *
+ * Zwei `?`-Parameter in Textreihenfolge:
+ *   1. Wert-Match (im LATERAL-Aggregat)
+ *   2. Name-Match (Object_Name ILIKE)
+ * Der Aufrufer hängt bei Bedarf `AND oc.File_Name = ?` an.
+ */
+const VALUELIST_SEARCH_BRANCH = `
+  SELECT
+    oc.Object_UUID, oc.Object_Type, oc.Object_Name, oc.File_Name,
+    oc.Source_Table, oc.Object_ID,
+    CAST(NULL AS VARCHAR) AS Step_Text,
+    CAST(NULL AS VARCHAR) AS Script_Name,
+    CAST(NULL AS INTEGER) AS Step_Index,
+    m.Matched_Values
+  FROM ObjectCatalog oc
+  LEFT JOIN LATERAL (
+    SELECT string_agg(mv.val, ', ') AS Matched_Values
+    FROM (
+      SELECT rtrim(t.val, chr(13)) AS val
+      FROM OptionsForValueLists ovl,
+           LATERAL unnest(
+             flatten(list_transform(ovl.Custom_Values, lambda x: string_split(x, chr(10))))
+           ) AS t(val)
+      WHERE ovl.VL_UUID = oc.Object_UUID
+        AND ovl.File_Name = oc.File_Name
+        AND ovl.Custom_Values IS NOT NULL
+        AND rtrim(t.val, chr(13)) ILIKE ?
+      LIMIT 20
+    ) mv
+  ) m ON TRUE
+  WHERE oc.Object_Type = 'ValueList'
+    AND (oc.Object_Name ILIKE ? OR m.Matched_Values IS NOT NULL)
+`;
+
+/**
  * Baut den Standard-Such-SQL und die Parameter-Liste.
  *
- * Drei Pfade je nach Filter-Konstellation:
- *  - dbType gesetzt (≠ ScriptStep): plain ObjectCatalog-Match auf Object_Name.
- *  - dbType nicht gesetzt, name selektiv: UNION ALL (non-ScriptStep via Object_Name)
- *    + (ScriptStep via Step_Text). Beide Branches schließen DDR-Internals aus.
- *  - dbType nicht gesetzt, name = '%'-only: nur non-ScriptStep — Initial-Load,
- *    keine 196k Steps in der Default-Liste.
+ * Vier Pfade je nach Filter-Konstellation:
+ *  - dbType === 'ValueList': dedizierter Wert-Branch (Name **oder** Custom-Value
+ *    matcht, mit Matched_Values in der Response).
+ *  - dbType sonst gesetzt (≠ ScriptStep): plain ObjectCatalog-Match auf Object_Name.
+ *  - dbType nicht gesetzt, name selektiv: UNION ALL (non-ScriptStep/ValueList via
+ *    Object_Name) + (ValueList via Name/Wert) + (ScriptStep via Step_Text).
+ *    Alle Branches schließen DDR-Internals aus.
+ *  - dbType nicht gesetzt, name = '%'-only: nur non-ScriptStep (inkl. ValueList
+ *    per Name) — Initial-Load, keine 196k Steps / Wert-Scans in der Default-Liste.
+ *
+ * Alle Branches liefern dieselbe Spaltenmenge (…, Step_Text, Script_Name,
+ * Step_Index, Matched_Values), damit die UNION-Zweige typkompatibel sind.
  *
  * @param {Object} opts - {name, dbType, file, limit, offset, countOnly?}
  * @returns {{sql: string, params: Array}}
@@ -377,14 +426,34 @@ const STEP_TEXT_EXPR = `
 function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false }) {
   const params = [];
 
-  // Pfad A: expliziter Type-Filter (nicht ScriptStep — der wird oben abgefangen)
+  // Pfad A0: expliziter ValueList-Filter → Wert-Branch (Name ODER Custom-Value).
+  if (dbType === 'ValueList') {
+    let inner = VALUELIST_SEARCH_BRANCH;
+    params.push(name, name); // 1. Wert-Match, 2. Name-Match
+    if (file) {
+      inner += ' AND oc.File_Name = ?';
+      params.push(file);
+    }
+    if (countOnly) {
+      return { sql: `SELECT COUNT(*) AS count FROM (${inner}) c`, params };
+    }
+    let sql = `SELECT * FROM (${inner}) c ORDER BY Object_Name`;
+    if (limit > 0) {
+      sql += ' LIMIT ? OFFSET ?';
+      params.push(limit, offset);
+    }
+    return { sql, params };
+  }
+
+  // Pfad A: expliziter Type-Filter (nicht ScriptStep/ValueList — oben abgefangen)
   if (dbType) {
     const typeFilter = buildTypeFilter(dbType);
     let inner = `
       SELECT Object_UUID, Object_Type, Object_Name, File_Name, Source_Table, Object_ID,
              CAST(NULL AS VARCHAR) AS Step_Text,
              CAST(NULL AS VARCHAR) AS Script_Name,
-             CAST(NULL AS INTEGER) AS Step_Index
+             CAST(NULL AS INTEGER) AS Step_Index,
+             CAST(NULL AS VARCHAR) AS Matched_Values
       FROM ObjectCatalog
       WHERE Object_Name ILIKE ?
         AND Object_Type NOT IN ('DDR_ScriptStep', 'DDR_Calculation')
@@ -407,15 +476,22 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false }
   }
 
   // Pfad B/C: kein Type-Filter
-  // Non-ScriptStep-Branch (Object_Name-Match, ScriptSteps explizit ausgeschlossen)
+  // Non-ScriptStep-Branch (Object_Name-Match). ScriptSteps immer ausgeschlossen;
+  // ValueLists nur im Volltext-Modus (dort übernimmt sie der Wert-Branch unten,
+  // sonst käme jede Werteliste doppelt) — im Wildcard-Modus bleiben sie hier.
+  const isWildcardOnly = !name.replace(/%/g, '').trim();
+  const nonStepExcluded = isWildcardOnly
+    ? "'DDR_ScriptStep', 'DDR_Calculation', 'ScriptStep'"
+    : "'DDR_ScriptStep', 'DDR_Calculation', 'ScriptStep', 'ValueList'";
   let nonStepInner = `
     SELECT Object_UUID, Object_Type, Object_Name, File_Name, Source_Table, Object_ID,
            CAST(NULL AS VARCHAR) AS Step_Text,
            CAST(NULL AS VARCHAR) AS Script_Name,
-           CAST(NULL AS INTEGER) AS Step_Index
+           CAST(NULL AS INTEGER) AS Step_Index,
+           CAST(NULL AS VARCHAR) AS Matched_Values
     FROM ObjectCatalog
     WHERE Object_Name ILIKE ?
-      AND Object_Type NOT IN ('DDR_ScriptStep', 'DDR_Calculation', 'ScriptStep')
+      AND Object_Type NOT IN (${nonStepExcluded})
   `;
   params.push(name);
   if (file) {
@@ -423,9 +499,8 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false }
     params.push(file);
   }
 
-  // Wildcard-only ('%' bzw. nur Wildcards): ScriptStep-Branch weglassen, sonst
-  // landen 196k Steps in der Default-Liste ohne erkennbaren Nutzen.
-  const isWildcardOnly = !name.replace(/%/g, '').trim();
+  // Wildcard-only ('%' bzw. nur Wildcards): ScriptStep- und ValueList-Wert-Branch
+  // weglassen, sonst landen 196k Steps bzw. teure Wert-Scans in der Default-Liste.
   if (isWildcardOnly) {
     if (countOnly) {
       return { sql: `SELECT COUNT(*) AS count FROM (${nonStepInner}) c`, params };
@@ -438,6 +513,14 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false }
     return { sql, params };
   }
 
+  // ValueList-Wert-Branch (Name ODER Custom-Value, mit Matched_Values)
+  let vlInner = VALUELIST_SEARCH_BRANCH;
+  params.push(name, name); // 1. Wert-Match, 2. Name-Match
+  if (file) {
+    vlInner += ' AND oc.File_Name = ?';
+    params.push(file);
+  }
+
   // ScriptStep-Branch (Step_Text-Match, mit Anreicherung der Step-Spalten)
   let stepInner = `
     SELECT
@@ -445,7 +528,8 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false }
       oc.Source_Table, oc.Object_ID,
       ${STEP_TEXT_EXPR} AS Step_Text,
       s.Script_Name,
-      s.Step_Index
+      s.Step_Index,
+      CAST(NULL AS VARCHAR) AS Matched_Values
     FROM ObjectCatalog oc
     LEFT JOIN StepsForScripts s ON s.Step_UUID = oc.Object_UUID
     LEFT JOIN DDR_ScriptSteps ddr ON ddr.Step_UUID = oc.Object_UUID
@@ -458,7 +542,7 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false }
     params.push(file);
   }
 
-  const combined = `(${nonStepInner}) UNION ALL (${stepInner})`;
+  const combined = `(${nonStepInner}) UNION ALL (${vlInner}) UNION ALL (${stepInner})`;
   if (countOnly) {
     return { sql: `SELECT COUNT(*) AS count FROM (${combined}) c`, params };
   }
@@ -492,13 +576,17 @@ async function searchObjects(searchOptions) {
     //   1. dbType === 'ScriptStep'  → searchScriptSteps (oben abgefangen).
     //   2. dbType ist ein anderer Typ → ObjectCatalog mit Type-Filter; ScriptSteps
     //      kommen hier nicht vor.
-    //   3. Kein dbType-Filter        → UNION ALL:
-    //        a) Non-ScriptStep mit Object_Name-Match.
-    //        b) ScriptStep mit Step_Text-Match (Skriptname-Treffer würden
+    //   3. dbType === 'ValueList'    → buildSearchSql Wert-Branch (Name ODER
+    //      Custom-Value, mit Matched_Values in der Response).
+    //   4. Kein dbType-Filter        → UNION ALL:
+    //        a) Non-ScriptStep/ValueList mit Object_Name-Match.
+    //        b) ValueList mit Name- ODER Custom-Value-Match (Matched_Values).
+    //        c) ScriptStep mit Step_Text-Match (Skriptname-Treffer würden
     //           sonst die Trefferliste überschwemmen — der Script-Treffer
     //           selbst erscheint ja schon in (a)).
-    //      Wildcard-only-Suche ('%') überspringt (b), weil dann sonst 196k
-    //      Steps in die Initial-Liste flössen.
+    //      Wildcard-only-Suche ('%') überspringt (b)+(c), weil dann sonst 196k
+    //      Steps bzw. teure Wert-Scans in die Initial-Liste flössen (ValueLists
+    //      erscheinen im Wildcard-Modus per Name über (a)).
     const { sql, params } = buildSearchSql({ name, dbType, file, limit, offset });
 
     const result = await db.executeQuery(sql, params);

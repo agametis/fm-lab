@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Healthchecks",
+    "description": "Kuratierte, nach Objekttyp gruppierte Health-Checks mit Live-Zählern, die jeweils in ihr Static-Code-Analysis-Regel-Dashboard verlinken."
+  },
+  "layout": {
+    "hc_kpi_strip.props.items[0].label": "Alle Checks",
+    "hc_kpi_strip.props.items[1].label": "Fehler",
+    "hc_kpi_strip.props.items[2].label": "Warnungen",
+    "hc_kpi_strip.props.items[3].label": "Info",
+    "hc_security_card.props.title": "Sicherheit",
+    "hc_security_list.props.empty.message": "Nichts zu berichten.",
+    "hc_fields_card.props.title": "Felder",
+    "hc_fields_list.props.empty.message": "Nichts zu berichten.",
+    "hc_scripts_card.props.title": "Skripte",
+    "hc_scripts_list.props.empty.message": "Nichts zu berichten.",
+    "hc_relationships_card.props.title": "Beziehungen",
+    "hc_relationships_list.props.empty.message": "Nichts zu berichten.",
+    "hc_tables_card.props.title": "Tabellen & Auftreten",
+    "hc_tables_list.props.empty.message": "Nichts zu berichten.",
+    "hc_layouts_card.props.title": "Layouts",
+    "hc_layouts_list.props.empty.message": "Nichts zu berichten.",
+    "hc_variables_card.props.title": "Variablen",
+    "hc_variables_list.props.empty.message": "Nichts zu berichten.",
+    "hc_valuelists_card.props.title": "Wertelisten",
+    "hc_valuelists_list.props.empty.message": "Nichts zu berichten.",
+    "hc_customfunctions_card.props.title": "Benutzerdefinierte Funktionen",
+    "hc_customfunctions_list.props.empty.message": "Nichts zu berichten."
+  }
+}

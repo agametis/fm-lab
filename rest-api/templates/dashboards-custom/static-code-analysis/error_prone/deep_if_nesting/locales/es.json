@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Anidamiento If profundo",
+    "description": "Regla de propensión a errores: pasos anidados cinco o más niveles If de profundidad. Las condiciones profundas son difíciles de leer y probar.\n\nBasado en la regla de PMD AvoidDeeplyNestedIfStmts — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#avoiddeeplynestedifstmts"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Anidamiento If profundo",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o script…",
+    "findings_table.props.empty.message": "No se encontraron bloques If profundamente anidados.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Profundidad"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Contrôle d’onglets avec de nombreux onglets",
+    "description": "Règle de style de code : contrôles d’onglets avec plus de six onglets. Trop d’onglets masquent le contenu et compliquent la navigation. Seuil réglable via le curseur (par défaut 6)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Contrôle d’onglets avec de nombreux onglets",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un Layout…",
+    "findings_table.props.empty.message": "Aucun contrôle d’onglets surchargé trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Onglets",
+    "threshold_slider.props.label": "Onglets par contrôle d’onglets (minimum)",
+    "threshold_slider.props.valueSuffix": "onglets"
+  }
+}

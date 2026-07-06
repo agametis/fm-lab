@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Allow User Abort [Aus]",
+    "description": "Best-Practice-Regel — Allow-User-Abort-[Aus]-Schritte. Das Deaktivieren des Abbruchs kann den Nutzer in einem langen oder schleifenden Script gefangen halten."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Allow User Abort [Aus]",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Keine Allow-User-Abort-[Aus]-Schritte gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Schritt"
+  }
+}

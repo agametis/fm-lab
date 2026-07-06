@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Set Field By Name (destinazione dinamica)",
+    "description": "Regola di stile del codice: passi Set Field By Name. Il campo di destinazione è calcolato in fase di esecuzione, quindi analisi statica e refactoring non possono seguirlo."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Set Field By Name (destinazione dinamica)",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Nessun passo Set Field By Name trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Passo"
+  }
+}

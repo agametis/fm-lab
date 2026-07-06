@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Show Custom Dialog（Loop 内）",
+    "description": "エラー/UX ルール — Loop 内の Show Custom Dialog は反復のたびにモーダルダイアログを開き、ユーザーを繰り返しの確認に閉じ込めます。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "Show Custom Dialog（Loop 内）",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "Loop 内の Show Custom Dialog は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "ステップ",
+    "findings_table.props.columns[3].label": "状態",
+    "scope_filter.props.options[0].label": "無効を無視",
+    "scope_filter.props.options[1].label": "すべて"
+  }
+}

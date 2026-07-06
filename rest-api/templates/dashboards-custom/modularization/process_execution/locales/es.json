@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Ejecución de procesos y shell",
+    "description": "Inventario de la ejecución externa de procesos/shell: Send Event y Perform AppleScript (con Step_ID, independiente del idioma) más las llamadas MBS Shell / RunTask / Process (resueltas mediante calls_pluginfunction). Muestra dónde la solución cede el control al sistema operativo."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Puntos de contacto",
+    "summary_kpistrip.props.items[1].label": "Send Event",
+    "summary_kpistrip.props.items[2].label": "AppleScript",
+    "summary_kpistrip.props.items[3].label": "Llamadas de proceso MBS",
+    "summary_kpistrip.props.items[4].label": "Archivos afectados",
+    "by_mechanism.props.title": "Por mecanismo",
+    "by_mechanism_table.props.columns[0].label": "Mecanismo",
+    "by_mechanism_table.props.columns[1].label": "Tipo",
+    "by_mechanism_table.props.columns[2].label": "Puntos de llamada",
+    "by_mechanism_table.props.columns[3].label": "Archivos",
+    "findings.props.title": "Hallazgos",
+    "findings_table.props.columns[0].label": "Mecanismo",
+    "findings_table.props.columns[1].label": "Tipo de ref.",
+    "findings_table.props.columns[2].label": "Script/Objeto",
+    "findings_table.props.columns[3].label": "Paso/Función",
+    "findings_table.props.columns[4].label": "Archivo",
+    "findings_table.props.columns[5].label": "#",
+    "markdown.props.content": "## Notas\n\nDónde la solución cede el control a un **proceso externo o la shell**. Los pasos nativos se filtran por Step_ID (independiente del idioma): *Send Event* (57), *Perform AppleScript* (67). Las llamadas de proceso MBS se leen de los enlaces `calls_pluginfunction` resueltos: `Shell.*`, `RunTask.*`, `Process.*`.\n\n- **KPIs como filtros**: *Send Event* y *AppleScript* filtran la lista de detalle a ese mecanismo.\n- **Por mecanismo**: haz clic en una fila para filtrar los hallazgos.\n- **Navegación**: al hacer clic en un hallazgo se abre el portador (Script + anclaje del paso, o el objeto detrás de una llamada MBS).\n- **Reglas relacionadas**: las reglas de severidad derivadas se encuentran en *Static Code Analysis*.\n- **Ordenación**: todos los encabezados de columna son clicables (▲▼)."
+  }
+}

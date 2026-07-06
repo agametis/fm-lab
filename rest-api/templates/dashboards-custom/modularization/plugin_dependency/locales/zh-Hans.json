@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "插件依赖",
+    "description": "插件依赖清单：按插件组件（MBS 及其他）× 文件统计调用点，通过 calls_pluginfunction 解析，并包含 Install Plug-In File 步骤。风险视图——如果没有插件，哪些模块会失效？"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "插件调用点",
+    "summary_kpistrip.props.items[1].label": "组件",
+    "summary_kpistrip.props.items[2].label": "函数",
+    "summary_kpistrip.props.items[3].label": "受影响的文件",
+    "summary_kpistrip.props.items[4].label": "Install Plug-In 步骤",
+    "components.props.title": "组件",
+    "components_table.props.columns[0].label": "插件",
+    "components_table.props.columns[1].label": "组件",
+    "components_table.props.columns[2].label": "调用点",
+    "components_table.props.columns[3].label": "函数",
+    "components_table.props.columns[4].label": "文件",
+    "top_functions.props.title": "最常用的函数",
+    "top_functions_table.props.columns[0].label": "函数",
+    "top_functions_table.props.columns[1].label": "组件",
+    "top_functions_table.props.columns[2].label": "调用点",
+    "top_functions_table.props.columns[3].label": "文件",
+    "markdown.props.content": "## 说明\n\n该解决方案依赖哪些 **插件** 以及依赖位置。调用点从已解析的 `calls_pluginfunction` 链接（`MBS:<组件>.<函数>`）中读取，因此 *最常用的函数* 列表可直接导航到该插件函数的使用位置视图。\n\n- **组件**：每个插件组件的调用点、不同函数以及受影响的文件。点击某个组件可筛选函数列表。\n- **风险视图**：构建在具有大量调用点的组件之上的模块，若未安装该插件便会失效——*Install Plug-In File* 步骤显示解决方案自身在何处安装插件。\n- **导航**：点击某个函数会打开其插件函数详情（使用位置）。\n- **相关规则**：派生的严重性规则位于 *Static Code Analysis* 之下。\n- **排序**：所有列标题均可点击（▲▼）。"
+  }
+}

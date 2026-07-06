@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Variável global usada em apenas um script",
+    "description": "Regra de estilo de código — variáveis globais ($$) definidas e lidas dentro de um único script. Uma variável local ($) expressaria melhor a intenção.\n\nBaseado na regra PMD GlobalVariable — https://docs.pmd-code.org/latest/pmd_rules_ecmascript_bestpractices.html#globalvariable"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Variável global usada em apenas um script",
+    "findings_table.props.searchPlaceholder": "Pesquisar variável…",
+    "findings_table.props.empty.message": "Nenhuma variável global de um único script encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Variável",
+    "findings_table.props.columns[2].label": "Leituras"
+  }
+}

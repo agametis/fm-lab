@@ -36,7 +36,7 @@
     "dashboards.props.subtitle": "Förberedda analyser",
     "custom_queries.props.label": "Anpassade frågor",
     "custom_queries.props.subtitle": "Återanvändbara SQL-mallar",
-    "markdown.props.content": "## Tips\n\n- **Sök:** skriv ett namn i sökfältet för att filtrera objekt — dashboarden döljs automatiskt.\n- **Filer:** klicka på en rad i filtabellen för att aktivera filfiltret för alla efterföljande vyer.\n- **Navigering:** *Dashboards* öppnar kurerade analyser, *Anpassade frågor* listar alla återanvändbara SQL-mallar, *Dokumentation* visar installerade källor.",
+    "markdown.props.content": "## Tips\n\n- **Sök:** skriv ett namn i sökfältet för att filtrera objekt — dashboarden döljs automatiskt.\n- **Filer:** att klicka på en rad i filtabellen öppnar filvyn.\n- **Navigering:** *Dashboards* öppnar kurerade analyser, *Anpassade frågor* listar alla återanvändbara SQL-mallar, *Dokumentation* visar installerade källor.",
     "docs.props.label": "Dokumentation",
     "docs.props.subtitle": "Installerade dokumentationskällor"
   }

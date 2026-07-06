@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "パラメータの多い Custom Function",
+    "description": "コードスタイルルール — パラメータが 5 個以上の Custom Function。長いシグネチャは正しく呼び出すのが難しくなります。\n\nPMD ルール ExcessiveParameterList — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessiveparameterlist"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "パラメータの多い Custom Function",
+    "findings_table.props.searchPlaceholder": "ファイルまたは関数を検索…",
+    "findings_table.props.empty.message": "パラメータの多い Custom Function は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Custom Function",
+    "findings_table.props.columns[2].label": "パラメータ"
+  }
+}

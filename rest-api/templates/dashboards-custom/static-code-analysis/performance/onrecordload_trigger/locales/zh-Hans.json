@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "OnRecordLoad 触发器",
+    "description": "性能规则 — OnRecordLoad 脚本触发器。每有一条记录变为可见就会触发；此处脚本过重会拖慢列表视图和查找。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "OnRecordLoad 触发器",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到 OnRecordLoad 触发器。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "触发脚本",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

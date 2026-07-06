@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Acionador OnRecordLoad",
+    "description": "Regra de desempenho — acionadores de script OnRecordLoad. Disparam para cada registro que se torna visível; scripts pesados aqui deixam as visualizações em lista e as buscas mais lentas."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Acionador OnRecordLoad",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhum acionador OnRecordLoad encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script de acionamento",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

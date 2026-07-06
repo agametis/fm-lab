@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Origine dati esterna inutilizzata",
+    "description": "Regola di codice inutilizzato: origini dati esterne non referenziate da alcuna occorrenza di tabella."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Origine dati esterna inutilizzata",
+    "findings_table.props.searchPlaceholder": "Cerca file o nome…",
+    "findings_table.props.empty.message": "Nessun risultato trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Nome"
+  }
+}

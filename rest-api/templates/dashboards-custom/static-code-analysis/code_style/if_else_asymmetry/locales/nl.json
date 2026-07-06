@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "If/Else-blok-asymmetrie",
+    "description": "Codestijlregel — scripts met If/Else-blokken waarin de If-tak aanzienlijk langer is dan de Else-tak. Kandidaten voor refactoring naar early returns of guard clauses. Drempels instelbaar via de schuifregelaars in de koptekst (standaard If ≥ 10, Else ≤ 2 stappen)."
+  },
+  "layout": {
+    "if_else_kpi_kpistrip.props.items[0].label": "Asymmetrische blokken",
+    "if_else_kpi_kpistrip.props.items[1].label": "Betrokken scripts",
+    "if_else_kpi_kpistrip.props.items[2].label": "Betrokken bestanden",
+    "if_else_kpi_kpistrip.props.items[3].label": "Langste If-tak",
+    "if_else_blocks.props.title": "Scripts met lange If / korte Else",
+    "if_else_blocks_table.props.columns[0].label": "Bestand",
+    "if_else_blocks_table.props.columns[1].label": "Scriptnaam",
+    "if_else_blocks_table.props.columns[2].label": "If-positie",
+    "if_else_blocks_table.props.columns[3].label": "If-stappen",
+    "if_else_blocks_table.props.columns[4].label": "Else-stappen",
+    "if_else_blocks_table.props.columns[5].label": "Score",
+    "if_else_blocks_table.props.empty.message": "Geen asymmetrische If/Else-blokken gevonden."
+  }
+}

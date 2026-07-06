@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Campo não utilizado",
+    "description": "Regra de código não utilizado — campos que não são lidos, exibidos, definidos, buscados, ordenados, importados nem exportados em lugar algum.\n\nBaseado na regra PMD UnusedPrivateField — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatefield"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Campo não utilizado",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou nome…",
+    "findings_table.props.empty.message": "Nenhuma correspondência encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Nome"
+  }
+}

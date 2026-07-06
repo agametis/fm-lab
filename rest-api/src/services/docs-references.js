@@ -1,6 +1,7 @@
 const { LRUCache } = require('lru-cache');
 const db = require('../config/database');
 const docsManifest = require('./docs-manifest');
+const { sqlPluginSubName } = require('../utils/plugin-name');
 
 /**
  * Docs References Service
@@ -13,7 +14,9 @@ const docsManifest = require('./docs-manifest');
  *   - references: false → API liefert null, Frontend rendert keine Pill
  *
  * Aktuell implementiert:
- *   - MBS    → PluginFunction Object_Name = 'MBS::<id>' → ObjectLinks(calls_pluginfunction)
+ *   - MBS    → PluginFunction Object_Name = 'MBS:<Sub>::<Sub>' (fachliche fn_id =
+ *              SubName hinter dem letzten '::', vgl. utils/plugin-name.js) →
+ *              ObjectLinks(calls_pluginfunction)
  *   - Claris → BuiltinFunction + ScriptStepType → Reference-DB Name-Lookup
  *
  * Für Claris:
@@ -44,9 +47,13 @@ function clearCache() {
 }
 
 async function referencesPerFunctionMbs() {
+  // fn_id = fachlicher SubName (deckt sich mit der Docset-Function-ID). Der
+  // Katalog-Object_Name ist `MBS:<Sub>::<Sub>`; SubName = Teil hinter dem
+  // letzten `::` (format-tolerant, vgl. utils/plugin-name.js).
+  const subExpr = sqlPluginSubName('oc.Object_Name');
   const sql = `
     SELECT
-      REPLACE(oc.Object_Name, 'MBS::', '') AS fn_id,
+      ${subExpr} AS fn_id,
       COUNT(*) AS ref_count
     FROM ObjectCatalog oc
     JOIN ObjectLinks ol ON oc.Object_UUID = ol.Target_UUID
@@ -64,10 +71,11 @@ async function referencesPerFunctionMbs() {
 
 async function referencesPerCategoryMbs() {
   // MBS-Kategorie = Component-Präfix. Wir aggregieren über alle PluginFunction-Calls
-  // und schneiden den Namen am ersten Punkt ab (MBS::List.AddValue → List).
+  // und schneiden den SubName am ersten Punkt ab (`MBS:List.AddValue::List.AddValue`
+  // → SubName `List.AddValue` → `List`; format-tolerant, vgl. utils/plugin-name.js).
   const sql = `
     SELECT
-      split_part(REPLACE(oc.Object_Name, 'MBS::', ''), '.', 1) AS category,
+      split_part(${sqlPluginSubName('oc.Object_Name')}, '.', 1) AS category,
       COUNT(*) AS ref_count
     FROM ObjectCatalog oc
     JOIN ObjectLinks ol ON oc.Object_UUID = ol.Target_UUID

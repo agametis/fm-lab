@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Set Error Capture のない Perform Find",
+    "description": "ベストプラクティスルール — Perform Find があるのに Set Error Capture [オン] がないスクリプト。「該当レコードなし」ダイアログがスクリプトの途中でユーザーを中断させることがあります。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "Set Error Capture のない Perform Find",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "エラーキャプチャのない検索は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "Find 数"
+  }
+}

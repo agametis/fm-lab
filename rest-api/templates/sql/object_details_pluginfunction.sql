@@ -5,8 +5,8 @@
 -- @author: Marcel
 -- @version: 1.0
 -- @tags: pluginfunction, details, mbs
--- @note: Synthetic ObjectCatalog entry — Object_Name = 'MBS::XL.Book.AddFormat'
---        for container plugins, 'Fensternamen' for non-container plugins.
+-- @note: Synthetic ObjectCatalog entry — Object_Name = 'MBS:XL.Book.AddFormat::XL.Book.AddFormat'
+--        for container plugins (früher 'MBS::<Sub>'), 'Fensternamen' for non-container plugins.
 --        Aggregates callers from PluginFunctionUsages via ObjectLinks (calls_pluginfunction).
 
 WITH self AS (
@@ -19,13 +19,15 @@ WITH self AS (
 self_parts AS (
   SELECT
     Object_Name,
-    -- 'MBS::XL.Book.AddFormat' → Plugin='MBS', SubName='XL.Book.AddFormat'
-    -- 'Fensternamen' → Plugin='Fensternamen', SubName=NULL
+    -- 'MBS:XL.Book.AddFormat::XL.Book.AddFormat' → Plugin='MBS', SubName='XL.Book.AddFormat'
+    -- (format-tolerant auch für altes 'MBS::<Sub>'), 'Fensternamen' → Plugin='Fensternamen', SubName=NULL.
+    -- Plugin-Namespace = vor dem ersten ':'; SubName = hinter dem letzten '::'.
+    -- Kanonische Regel: rest-api/src/utils/plugin-name.js.
     CASE WHEN Object_Name LIKE '%::%'
-         THEN regexp_extract(Object_Name, '^([^:]+)::', 1)
+         THEN regexp_extract(Object_Name, '^([^:]+):', 1)
          ELSE Object_Name END as Plugin_Name,
     CASE WHEN Object_Name LIKE '%::%'
-         THEN regexp_extract(Object_Name, '^[^:]+::(.+)$', 1)
+         THEN regexp_replace(Object_Name, '^.*::', '')
          ELSE NULL END as Sub_Name
   FROM self
 ),

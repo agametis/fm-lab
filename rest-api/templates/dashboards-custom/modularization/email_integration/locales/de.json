@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "E-Mail-Integration",
+    "description": "Inventar des ausgehenden E-Mail-Versands: Send-Mail-Steps (Step_ID 63) klassifiziert nach Versandweg (SMTP-Server vs. E-Mail-Client), mit extrahiertem SMTP-Host und Flag für hartkodierte Zugangsdaten (sicherheitsrelevant), plus MBS SendMail-Aufrufe. cURL-SMTP bleibt im APIs-Dashboard."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Send-Mail-Steps",
+    "summary_kpistrip.props.items[1].label": "via SMTP",
+    "summary_kpistrip.props.items[2].label": "via Client",
+    "summary_kpistrip.props.items[3].label": "Hartkodierte Zugangsdaten",
+    "summary_kpistrip.props.items[4].label": "MBS-Mail-Aufrufe",
+    "summary_kpistrip.props.items[5].label": "Betroffene Dateien",
+    "by_mode.props.title": "Nach Versandweg",
+    "by_mode_table.props.columns[0].label": "Versandweg",
+    "by_mode_table.props.columns[1].label": "Call-Sites",
+    "by_mode_table.props.columns[2].label": "Dateien",
+    "by_mode_table.props.columns[3].label": "Hartkodierte Auth",
+    "findings.props.title": "Fundstellen",
+    "findings_table.props.columns[0].label": "Versandweg",
+    "findings_table.props.columns[1].label": "Mechanismus",
+    "findings_table.props.columns[2].label": "Script/Objekt",
+    "findings_table.props.columns[3].label": "SMTP-Host",
+    "findings_table.props.columns[4].label": "Hartkodierte Auth",
+    "findings_table.props.columns[5].label": "Datei",
+    "findings_table.props.columns[6].label": "#",
+    "markdown.props.content": "## Hinweise\n\nAusgehender **E-Mail-Versand**. *Send Mail* (Step_ID 63) wird anhand des DDR-Step-Texts nach Versandweg klassifiziert: **SMTP-Server** vs. **E-Mail-Client**. Nutzt der Step einen SMTP-Server, wird der Host extrahiert; ein Step mit inline `Password:` wird als **hartkodierte Zugangsdaten** markiert (sicherheitsrelevant — der Passwortwert selbst wird nie angezeigt). MBS `SendMail.*` / `EmailParser.*`-Aufrufe werden aus den aufgelösten `calls_pluginfunction`-Links gelesen.\n\n- **KPIs als Filter**: *via SMTP* und *via Client* filtern die Detailliste.\n- **Hartkodierte Zugangsdaten**: SMTP-Server, Port und Passwort fest im Step brechen beim Deployment und leaken Secrets in die DDR.\n- **Abgrenzung**: cURL-basiertes SMTP (`MBS:CURL.*`) bleibt im Dashboard *APIs & externe Schnittstellen*.\n- **Navigation**: Klick auf eine Fundstelle öffnet den Träger (Script + Step-Anchor bzw. das Objekt hinter einem MBS-Aufruf).\n- **Zugehörige Regeln**: abgeleitete Severity-Regeln liegen unter *Statische Code-Analyse*.\n- **Sortierung**: alle Spaltenüberschriften sind klickbar (▲▼)."
+  }
+}

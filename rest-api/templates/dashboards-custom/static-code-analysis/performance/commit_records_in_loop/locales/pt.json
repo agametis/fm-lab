@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Commit Records em Loop",
+    "description": "Regra de desempenho — Commit Records/Requests dentro de um Loop grava no banco de dados a cada iteração."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Commit Records em Loop",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhuma ocorrência para \"Commit Records em Loop\" encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Etapa",
+    "findings_table.props.columns[3].label": "Profundidade"
+  }
+}

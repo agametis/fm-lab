@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "レコードをソートするリレーションシップ",
+    "description": "ベストプラクティスルール — 関連レコードをソートするリレーションシップ。ソートは評価のたびに実行され、ポータルや Lookup を遅くすることがあります。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "レコードをソートするリレーションシップ",
+    "findings_table.props.searchPlaceholder": "テーブルオカレンスを検索…",
+    "findings_table.props.empty.message": "ソートされたリレーションシップは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "左 TO",
+    "findings_table.props.columns[2].label": "右 TO",
+    "findings_table.props.columns[3].label": "ソート"
+  }
+}

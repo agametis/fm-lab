@@ -65,6 +65,13 @@
   line-height: 1.2;
 }
 
+/* Plugin-Namespace (z.B. „· MBS") als dezenter Zusatz hinter dem Funktionsnamen. */
+.detail-title-plugin-component {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
 .detail-source {
   font-size: 0.85rem;
   color: var(--color-text-muted);

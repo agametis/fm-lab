@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Healthchecks",
+    "description": "Comprobaciones de estado curadas y agrupadas por tipo de objeto con recuentos en vivo, cada una enlazada a su panel de reglas de análisis estático de código."
+  },
+  "layout": {
+    "hc_kpi_strip.props.items[0].label": "Todas las comprobaciones",
+    "hc_kpi_strip.props.items[1].label": "Errores",
+    "hc_kpi_strip.props.items[2].label": "Advertencias",
+    "hc_kpi_strip.props.items[3].label": "Información",
+    "hc_security_card.props.title": "Seguridad",
+    "hc_security_list.props.empty.message": "Nada que informar.",
+    "hc_fields_card.props.title": "Campos",
+    "hc_fields_list.props.empty.message": "Nada que informar.",
+    "hc_scripts_card.props.title": "Scripts",
+    "hc_scripts_list.props.empty.message": "Nada que informar.",
+    "hc_relationships_card.props.title": "Relaciones",
+    "hc_relationships_list.props.empty.message": "Nada que informar.",
+    "hc_tables_card.props.title": "Tablas y ocurrencias",
+    "hc_tables_list.props.empty.message": "Nada que informar.",
+    "hc_layouts_card.props.title": "Presentaciones",
+    "hc_layouts_list.props.empty.message": "Nada que informar.",
+    "hc_variables_card.props.title": "Variables",
+    "hc_variables_list.props.empty.message": "Nada que informar.",
+    "hc_valuelists_card.props.title": "Listas de valores",
+    "hc_valuelists_list.props.empty.message": "Nada que informar.",
+    "hc_customfunctions_card.props.title": "Funciones personalizadas",
+    "hc_customfunctions_list.props.empty.message": "Nada que informar."
+  }
+}

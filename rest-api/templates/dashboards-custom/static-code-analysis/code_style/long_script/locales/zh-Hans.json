@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "过长的脚本",
+    "description": "代码风格规则 — 步骤超过 150 的脚本。过长的脚本难以阅读、测试和复用。\n\n基于 PMD 规则 ExcessiveMethodLength — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessivemethodlength 阈值可通过滑块调整（默认 150）。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "过长的脚本",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到过长的脚本。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "步骤数",
+    "threshold_slider.props.label": "每个脚本的步骤数（最小）",
+    "threshold_slider.props.valueSuffix": "步骤"
+  }
+}

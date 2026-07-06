@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Lookup 字段",
+    "description": "通过 Lookup 填充的字段清单。Lookup 会在设值时刻有意捕获一个值（快照）——通常正是所需（例如在单据上冻结价格、税率或地址）。此处仅作概览列出，并非错误。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "Lookup 字段",
+    "findings_table.props.searchPlaceholder": "搜索文件、字段或来源…",
+    "findings_table.props.empty.message": "未找到 Lookup 字段。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "字段",
+    "findings_table.props.columns[2].label": "Lookup 来源"
+  }
+}

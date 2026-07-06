@@ -285,7 +285,7 @@
                 }
               ],
               "onRowClick": {
-                "action": "applyFilter",
+                "action": "openFile",
                 "args": {
                   "file": "{{File_Name}}"
                 }
@@ -383,7 +383,7 @@
         "id": "markdown",
         "props": {
           "span": 12,
-          "content": "## Tips\n\n- **Search:** type a name into the search box to filter objects — the dashboard hides automatically.\n- **Files:** clicking a row in the files table sets the active file filter for all subsequent views.\n- **Navigation:** *Dashboards* opens curated analyses, *Custom queries* lists every reusable SQL template, *Docs* shows installed documentation sources."
+          "content": "## Tips\n\n- **Search:** type a name into the search box to filter objects — the dashboard hides automatically.\n- **Files:** clicking a row in the files table opens that file's detail view.\n- **Navigation:** *Dashboards* opens curated analyses, *Custom queries* lists every reusable SQL template, *Docs* shows installed documentation sources."
         }
       }
     ]

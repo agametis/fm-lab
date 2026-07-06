@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "フィールドの多いテーブル",
+    "description": "コードスタイルルール — フィールドが 100 個を超えるベーステーブル。非常に幅広いテーブルは、独立したテーブルにすべき複数の関心事を混在させがちです。\n\nPMD ルール TooManyFields — https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#toomanyfields しきい値はスライダーで調整可能（既定 100）。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "フィールドの多いテーブル",
+    "findings_table.props.searchPlaceholder": "ファイルまたはテーブルを検索…",
+    "findings_table.props.empty.message": "非常に幅広いテーブルは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "テーブル",
+    "findings_table.props.columns[2].label": "フィールド数",
+    "threshold_slider.props.label": "テーブルあたりのフィールド数（最小）",
+    "threshold_slider.props.valueSuffix": "フィールド"
+  }
+}

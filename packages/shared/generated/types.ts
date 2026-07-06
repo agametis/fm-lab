@@ -553,7 +553,7 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /** @enum {string} */
-        ObjectType: "BaseTable" | "TableOccurrence" | "Relationship" | "Field" | "ValueList" | "CustomFunction" | "Script" | "ScriptStep" | "Layout" | "LayoutObject" | "LayoutPart" | "Account" | "PrivilegeSet" | "ExtendedPrivilege" | "Theme" | "CustomMenu" | "ScriptTrigger" | "ExternalDataSource" | "BaseDirectory" | "Variable";
+        ObjectType: "BaseTable" | "TableOccurrence" | "Relationship" | "Field" | "ValueList" | "CustomFunction" | "Script" | "ScriptStep" | "Layout" | "LayoutObject" | "LayoutPart" | "Account" | "PrivilegeSet" | "ExtendedPrivilege" | "Theme" | "CustomMenu" | "ScriptTrigger" | "ExternalDataSource" | "BaseDirectory" | "Variable" | "Folder" | "File" | "PluginFunction" | "PluginComponent" | "CustomMenuItem" | "BuiltinFunction" | "ScriptStepType" | "PasteIndexObject";
         /** @enum {string} */
         OutputFormat: "json" | "raw" | "text" | "short" | "detailed" | "html" | "markdown" | "content" | "mermaid" | "mermaid-raw";
         /** @enum {string} */
@@ -591,6 +591,13 @@ export interface components {
              *     script editor numbering.
              */
             Step_Index?: number | null;
+            /**
+             * @description Comma-separated list of the custom values that matched the search
+             *     term (ValueList results only, max. 20). Set only when a value list
+             *     was hit through its stored values rather than its name; the
+             *     search-result UI displays it below the value-list name.
+             */
+            Matched_Values?: string | null;
         };
         ObjectReference: {
             Target_UUID?: string;

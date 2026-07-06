@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Leerer If-Zweig",
+    "description": "Fehleranfälligkeits-Regel — ein If, dem direkt Else / Else If / End If folgt, also ein Zweig ohne Schritte. Oft ein Rest oder Logikfehler.\n\nAngelehnt an die PMD-Regel EmptyControlStatement — https://docs.pmd-code.org/latest/pmd_rules_java_codestyle.html#emptycontrolstatement"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Leerer If-Zweig",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Keine leeren If-Zweige gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Schritt"
+  }
+}

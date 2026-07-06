@@ -1,4 +1,4 @@
-<!-- @CLAUDE_MD_VERSION 0.8.6 -->
+<!-- @CLAUDE_MD_VERSION 0.8.8 -->
 # FileMaker XML Analysis
 
 ## Role
@@ -39,10 +39,26 @@ and memory peak low.
 
 P1 runs once per file; P2–P6 run once after all files are imported (batch-wide).
 
+**Analysis views (static code analysis).** After P6, a separate **batch-wide, table-only**
+phase runs `sql/create_analysis_views.sql` (hooked into the orchestrator analogous to P5/P6,
+in both the batch and single-file paths). It builds the foundation for the PMD-inspired
+rule bundles and is rebuilt on **every** convert-xml run (volatile, like the universal
+catalogs — never put it in P2, which is partitioned read-only). It produces:
+`step_metadata` (Step_ID → block-/semantic markers: `is_control_flow`/`control_kind`/
+`loop_delta`/`if_delta`/`has_side_effects`/`is_find_mode`/`is_mutation`/`deprecated_in` —
+the single source of the control-flow deltas) and `v_script_block_tree` (MATERIALIZED:
+per-step Loop/If nesting depth, **PARTITION BY `(File_Name, Script_ID)`** — *not* `Script_UUID`,
+which is non-unique in 2 merge-artifact cases; If-depth clamped via `GREATEST(0,…)`, raw
+`if_running_depth` kept for the unbalanced-if rule). Consumed by the `static-code-analysis/` rule
+bundles in `rest-api/templates/dashboards-custom/`.
+
 P5 also creates **graph views** (read-only helpers over the universal catalogs):
 `LogicalLinks` (operational links, sub-objects hoisted to their container, containment
 scaffold + orphans removed, **local variables `$x` excluded**) and the cluster-edge chain
-`ClusterEdgesBase` (= `LogicalLinks` minus `BuiltinFunction`) → `ClusterGodNodes` (cross-cutting
+`ClusterEdgesBase` (= `LogicalLinks` minus `BuiltinFunction`; **materialized**: the data lives
+in the TABLE `ClusterEdgesBaseMat`, rebuilt on every P5 run, with `ClusterEdgesBase` as a thin
+view over it — avoids the multi-evaluation OOM of the pure view chain in the READ_ONLY API)
+→ `ClusterGodNodes` (cross-cutting
 "god-nodes": neighbours span ≥8 files **and** ≤40 % in their own file — generic MBS-plugin utilities
 + global config/auth fields; **Stufe D**) → `ClusterEdges` (= `ClusterEdgesBase` minus
 `ClusterGodNodes`). `ClusterEdges` is the single source of truth for the community-detection edge
@@ -90,7 +106,7 @@ code 7 (CLI).
 
 ## Available DuckDB tables
 
-The table names mirror the XML branches of the corresponding object types. 33 tables in total:
+The table names mirror the XML branches of the corresponding object types. The most important ones:
 
 - **XMLMetadata** — Root attributes of the XML file (version, DDR-Info status)
 - **ExternalDataSourceCatalog** — External data sources
@@ -103,10 +119,10 @@ The table names mirror the XML branches of the corresponding object types. 33 ta
 - **ScriptCatalog** — All scripts, folders and separators
 - **StepsForScripts** — Script steps with parameters
 - **Layouts** — Layouts of the solution
-- **LayoutObjects** — All layout objects across all layouts (22 types, up to 4 nesting levels)
-- **LayoutParts** — Layout sections (Header, Body, Footer)
+- **LayoutObjects** — All layout objects across all layouts (22 types, real container hierarchy via direct child axes; corpus reaches nesting depth 5)
+- **LayoutParts** — Layout sections (Header, Body, Footer, Sub-summaries; one row per part via `Part_Seq` — multiple sub-summaries of the same kind stay distinct; `Break_Field_*`/`Break_TO_*` = sub-summary break field)
 - **ValueListCatalog** — Value lists
-- **OptionsForValueLists** — Details of value lists (CustomValues, field references)
+- **OptionsForValueLists** — Details of value lists (CustomValues, field references, External source: `External_DS_*`/`External_VL_*` columns for value lists sourced from another file)
 - **AccountsCatalog** — User accounts
 - **PrivilegeSetsCatalog** — Privilege sets
 - **PrivilegeSetRecordAccess** — Custom Record Privileges, table level (per Privilege Set × table × operation View/Edit/Create/Delete; access mode, calc text/hash, evaluation context)
@@ -119,12 +135,20 @@ The table names mirror the XML branches of the corresponding object types. 33 ta
 - **ScriptTriggers** — Script triggers (OnFirstWindowOpen, OnLastWindowClose, etc.)
 - **ExtendedPrivilegesCatalog** — Extended privileges (fmwebdirect, fmxdbc, fmapp, etc.)
 - **CustomMenuCatalog** — Custom menus with nested hierarchy
+- **CustomMenuItemCatalog** — Individual menu items (from Menu_XML: commands, submenu/separator flags)
+- **CustomMenuSetCatalog** — Menu sets with member-menu ID lists
 - **ThemeCatalog** — CSS rule sets for layouts
+- **FileOptionsCatalog** — File options from the Metadata branch: encryption status, minimum version, **auto-login account (security-relevant)**, sharing visibility, default/start layout (→ `default_layout` link)
+- **FileAccessAuthorizations** — Inter-file access authorizations
+- **LibraryReferences** — Library references (metadata only, blobs discarded)
+- **LinkRoleRegistry** — Machine-readable semantics per link role (`usage`/`containment`/`restriction`, `Counts_For_Where_Used`) — P6 warns when an ObjectLinks role lacks a registry entry
+- **ScriptStepRoleMap** — Curated Step_ID → Link_Role mapping for Script→Field links (locale-independent; `Step/@name` is localized in SaXML exports). Canonical_Name documents the English reference name; IDs verified against the reference index `fm_reference.duckdb` (`script_steps.step_id` ≙ SaXML `Step/@id`), which is deliberately NOT a runtime dependency of the converter
 - **FilesCatalog** — Metadata of all imported FileMaker files (multi-file support)
 - **ObjectCatalog** — Central object registry covering all 25+ object types across all files
 - **ObjectLinks** — Links between objects (operational & structural, including cross-file links)
 - **VariableUsages** — Every individual variable usage with its context (script, field, layout)
 - **VariablesCatalog** — Aggregated overview per variable (set/read counts, scope, files)
+- **DuplicateAbsorptions** — Dup-absorption census (monitoring): parsed source-record counts per catalog × file × chunk, written in P1. The P6 view `v_check_absorbed_dups` compares against live row counts — a positive difference means the per-file upsert silently collapsed duplicate-UUID source objects (export defect class B-K3); reported as a warn finding in the import report
 
 
 ### Important columns
@@ -159,6 +183,14 @@ In addition to the base columns (Table_ID/Name/UUID, Field_ID/Name/Type, Data_Ty
 
 **Note:** `Calculation_Text`/`DDR_Hash` apply to `fieldtype="Calculated"` (true Calculated Fields), while `AE_Calc_Text`/`AE_Calc_Hash` apply to `fieldtype="Normal"` with an AutoEnter calculation. A field never has both populated at the same time.
 
+**Validation / storage / serial / summary columns (schema 1.5.0):**
+- `Validation_Type/_AllowOverride/_NotEmpty/_Unique/_Existing` — field validation options; `Validation_VL_ID/_Name/_UUID` — validation by value list (→ `uses_valuelist` link, Subrole `validation`)
+- `Storage_AutoIndex`, `Storage_Index` (`None`/`All`/`Minimal`), `Storage_StoreCalcResults` — indexing/storage options
+- `Serial_Increment/_NextValue/_Generate` — serial-number details (only `AutoEnter_Type='SerialNumber'`)
+- `Summary_Operation`, `Summary_Field_Name/_UUID` — summary definition (only `fieldtype='Summary'`; → `summarizes_field` link)
+
+**Layouts metadata columns (schema 1.5.0):** `L_TO_UUID` (context TO by UUID), `L_Width`, `L_Theme_ID/_Name/_UUID` (→ `uses_theme` link).
+
 ### LayoutObjects structure
 
 The **LayoutObjects** table contains all layout objects with the following key columns:
@@ -176,7 +208,7 @@ The **LayoutObjects** table contains all layout objects with the following key c
 
 **Nesting:**
 - `Parent_Object_ID` — Reference to the parent object (NULL = top-level)
-- `Nesting_Level` — Nesting level (0 = top-level, 1-4 = nested)
+- `Nesting_Level` — Nesting level (0 = top-level; nested containers reach depth 5 in practice — e.g. Tab Control → Panel → Group → Grouped Button → object)
 
 **Polymorphic properties:**
 - `Object_XML` — Full object definition as a raw XML fragment (queryable via `xml_extract_text(Object_XML, '/xpath')[1]`)
@@ -238,7 +270,7 @@ The variable parser (integrated into `sql/create_universal_catalogs.sql`) extrac
 **Prefix convention for Display_Name:**
 - `$` → local, `$$` → global, `$$$` → superglobal (synthetic, MBS Plugin)
 
-**ObjectCatalog integration:** Global, local and superglobal variables are registered as `GlobalVariable`, `LocalVariable`, `SuperglobalVariable`. UUID = `md5(Variable_Name || '::' || File_Name)`.
+**ObjectCatalog integration:** Variables are registered with `Object_Type = 'Variable'` (scope lives in the name prefix and in VariablesCatalog). UUID = `md5(Variable_Scope || '::' || Scope_Anchor || '::' || Variable_Name)` — the scope anchor is the script for local variables, the file for global variables, `__global` for superglobals.
 
 **ObjectLinks roles:** `sets_variable`, `reads_variable`, `displays_variable`
 
@@ -344,7 +376,7 @@ The universal catalogs enable fast cross-reference analyses across all object ty
 - `Is_Cross_File` — Cross-file link?
 - `Source_File` / `Target_File` — File names for multi-file analyses
 
-**Implemented link types (38 in total):**
+**Implemented link roles (58 registered: 48 usage, 8 containment, 2 restriction — authoritative list incl. semantics: `LinkRoleRegistry` table):**
 - Field → BaseTable (parent_table)
 - Field → Field (lookup_source) — Lookup target field references the source field
 - Field → TableOccurrence (lookup_relationship) — Lookup target field uses this relationship
@@ -362,23 +394,41 @@ The universal catalogs enable fast cross-reference analyses across all object ty
 - LayoutObject → ValueList (uses_valuelist) — Field uses the value list
 - LayoutObject → TableOccurrence (portal_context) — Portal data source
 - LayoutObject → Variable (displays_variable, reads_variable) — Merge variable, trigger parameter, DDR formulas (Conditional, Hide, Tooltip, etc.)
+- LayoutObject → Layout/TableOccurrence/Field (navigates_to_layout, navigates_to_to, navigates_to_field/sorts_by_field/… via `ScriptStepRoleMap`) — **button-eingebetteter Ein-Step** (`GroupedButton/Button/action/Step`): ein Button kann statt eines Script-Aufrufs einen einzelnen Script-Step ausführen. Dessen Referenzen erzeugen dieselben **wiederverwendeten** Rollen wie die Script-Seite (der `Source_Type='LayoutObject'` unterscheidet den Träger; keine neuen Registry-Rollen). P2-Extraktion aus `Object_XML` mit am Button verankertem `action/Step`-Pfad (`Ref_Type='layout_step'`/`table_occurrence_step'`/`field_step'`; Step-`@id` in additiver Spalte `XMLLayoutReferences.Step_ID` trägt die locale-unabhängige Feld-Rolle). Semantik-Gating wie die Script-Seite: `navigates_to_to` nur für GTRR (`Step_ID=74`) — der Kontext-TO eines Go-to-Field-/Sort-Steps ist kein Navigationsziel. Schließt die größte verbleibende Where-used-Lückenklasse (nur per Button erreichbare Layouts erschienen als False Positives in `unused_layout`)
 - ScriptStep → Script (parent_script, structural)
 - Script → Script (calls_script)
-- Script → Field (sets_field, navigates_to_field)
+- Script → Field (sets_field, navigates_to_field; plus reads_field/finds_in_field/sorts_by_field/imports_to_field/exports_from_field/inputs_to_field per step-type group, and references_field as the fallback for uncurated step types). Role assignment is locale-independent via the step ID (`ScriptStepRoleMap` table, curated Step_ID → Link_Role): SaXML writes `Step/@name` in the exporting client's UI language, so name matching broke for localized (German) exports. Uncurated step IDs land in references_field and are reported by the P6 check `v_check_step_roles` for follow-up curation
 - Script → Layout (navigates_to_layout) — Go to Layout steps (und das Ziel-Layout von „Go to Related Record")
 - Script → TableOccurrence (navigates_to_to) — Sprungziel-TO von „Go to Related Record" (`Ref_Type='tableOccurrence'`). Schließt die Where-used-Lücke für TOs, die nur als GTRR-Ziel dienen (sonst als ungenutzt erschienen)
+- Script → ValueList (sorts_by_valuelist) — Referenz-Werteliste einer Custom-Sortierung in „Sort Records" (`<Sort type="Custom">` mit `<ValueListReference>`; `Ref_Type='valuelist'`). Schließt die Where-used-Lücke für Wertelisten, die nur als Sortier-Referenz dienen (analog navigates_to_to; das Sortier-*Feld* wird bereits über `sorts_by_field` verlinkt)
+- LayoutObject → ValueList (sorts_by_valuelist, Subrole `portal`/`button`) — Custom-Sortierung eines Portals bzw. eines button-eingebetteten Sort-Steps. P2-Extraktion über `Object_XML` mit am besitzenden Objekt **verankerten** Pfaden (`Ref_Type='valuelist_sort'`; `//`-XPath würde geerbte Portal-Sorts an Ancestor-Containern doppelt matchen, da `Object_XML` den vollen Subtree enthält)
+- Relationship → ValueList (sorts_by_valuelist, Subrole `left`/`right`) — Custom-Sortierung einer Beziehungsseite („Datensätze sortieren"; `RelationshipCatalog.Left/Right_Sort_ValueList_UUIDs`, analog `sort_field`)
+- ValueList → ValueList (source_valuelist) — External-Werteliste: lokaler Wrapper (`<Source value="External">`) → Ziel-VL der Quelldatei. Die Ziel-UUID ist im XML LEER → Auflösung über Datenquelle (Zieldatei) + VL-ID (Fallback Name); unaufgelöste Ziele meldet P6 `v_check_external_vl_unresolved`
+- ValueList → ExternalDataSource (data_source) — Datenquelle eines External-Wrappers (gleiche Rolle wie TableOccurrence → ExternalDataSource)
 - Script → Variable (sets_variable, reads_variable) — Script sets/reads the variable
 - CustomFunction → Variable (reads_variable, sets_variable) — CF references the variable
 - ValueList → Field (source_field)
 - ValueList → TableOccurrence (source_table)
 - ScriptTrigger → Script (trigger_script)
-- ScriptTrigger → Layout/LayoutObject/File (trigger_owner) — structural back-link from a trigger to its owner; Link_Subrole = trigger type (e.g. `OnObjectSave`). Lets "which triggers hang on layout/object/file X?" be a direct graph query. Unresolvable owners (currently PopoverPanel objects not emitted by the LayoutObject parser) are skipped via a NULL-safe guard, never producing orphaned links
+- ScriptTrigger → Layout/LayoutObject/File (trigger_owner) — structural back-link from a trigger to its owner; Link_Subrole = trigger type (e.g. `OnObjectSave`). Lets "which triggers hang on layout/object/file X?" be a direct graph query. All owner classes resolve (PopoverPanels are emitted by the LayoutObject parser); a NULL-safe guard keeps hypothetical unresolvable owners from producing orphaned links
 - Account → PrivilegeSet (privilege_set)
 - PrivilegeSet → Field (reads_field) — field referenced by a Custom Record Privilege calc; Link_Subrole = `<Operation>:<Table>` (closes the where-used gap for fields used only in record-access calcs)
 - PrivilegeSet → Variable (reads_variable) — variable read by a Custom Record Privilege calc (e.g. `$$__Rechte_Bearbeiten`); via `VariableUsages.Context_Type='record_access_calc'`. Bidirectionally traversable: forward = which variables a set reads, reverse (Target_UUID) = the set appears in the variable's where-used alongside scripts/layouts. A *read*, not a restriction — counts for where-used/dead-code (unlike `restricts_*`)
 - PrivilegeSet → CustomFunction (calls_customfunction) / PrivilegeSet → PluginFunction (calls_pluginfunction) — CF/plugin called by a Custom Record Privilege calc; resolved via the generic XMLCalcReferences/PluginFunctionUsages passes
 - PrivilegeSet → Field (restricts_field) — field-level Custom Record Privilege restriction; Link_Subrole = access mode. Scoped to restrictions only (`Access_Mode <> 'ReadWrite'`); a restriction is *not* a usage, so this never affects where-used/dead-code analysis
 - PrivilegeSet → Layout/ValueList/Script (restricts_object) — object-level Custom Privilege restriction; Link_Subrole = access mode. Scoped to restrictions only; folders/separators are excluded (registered as `Folder`, not the object class)
+- PrivilegeSet → ExtendedPrivilege (grants_privilege) — which sets grant fmapp/fmxdbc/fmwebdirect etc. (access audit)
+- Layout → Theme (uses_theme) — layouts carrying a `LayoutThemeReference` (theme cleanup: which themes are in use?)
+- Layout → CustomMenuSet (uses_menuset) — layout-bound menu set (`CustomMenuSetReference` in the layout tail; the built-in default id=0/"[File Default]" is normalized to NULL in P1 and produces no link)
+- Script → CustomMenuSet (installs_menuset) — Install-Menu-Set steps (via `XMLStepReferences` Ref_Type='menuset')
+- CustomMenuItem → CustomMenu (opens_menu) — Submenu-Item (`isSubMenuItem="True"`) → das Menü, das es öffnet (`CustomMenuReference/@id`, ohne UUID → P4 löst per `(File_Name, Menu_ID)` gegen `CustomMenuCatalog` auf; Menü-IDs datei-lokal). Echte Verwendung, bewusst NICHT `parent_menu` (der containment-artige Owner-Backlink): schließt die Where-used-Lücke für Menüs, die nur als Submenu eines anderen dienen (die müssen kein Menü-Set-Mitglied sein → `contains_menu` deckt sie nicht ab) und macht die Menü-Hierarchie navigierbar. Nicht auflösbare Ziel-IDs (Built-in-Menü / außerhalb des Korpus) meldet P6 `v_check_submenu_unresolved`
+- LayoutPart → Layout (parent_layout, structural) — parts anchored to their layout; Link_Subrole = part type
+- LayoutPart → Field (breaks_on_field) — sub-summary break field (`Part/Definition/FieldReference`); Link_Subrole = part type. Closes the where-used gap for fields used only as a sub-summary break
+- Field → ValueList (uses_valuelist, Subrole `validation`) — field validation by value list (a VL used only for validation no longer appears unused)
+- Field → Field (summarizes_field) — summary field → summarized field; Link_Subrole = operation (Total/Average/…)
+- File → Layout (default_layout) — start layout from the file options
+- File → Account (auto_login_account) — auto-login account from the file options (security-relevant; unresolved when the referenced account does not exist)
+- PluginFunction naming: qualified as `MBS:<Sub>::<Sub>` (e.g. `MBS:List.Sort::List.Sort`); PluginComponents aggregate as `MBS::<Component>` via `groups_into`
 
 
 ## Accessing the object data

@@ -19,6 +19,15 @@ LOAD webbed;
 -- Decode der Variable_Name-Extraktion unten. Idempotent → identitaets-neutral solange ON.
 SET VARIABLE wa_entity_decode = true;
 
+-- Workaround-Disable-Flag (Registry-Capability sax_attr_entities → wa_attr_unescape,
+-- Default ON). Gatet den zweiten html_unescape-Pass der Inserted_Text-Ableitung unten:
+-- der webbed-SAX-Serializer doppel-escaped numerische Char-Refs im Attribut-@value
+-- (Quelle `&#38;` → Roh-Step_XML `&amp;#38;`), sodass xml_extract_text nur EINMAL
+-- dekodiert und `&#38;` stehen bleibt. DOM schreibt `&amp;` → bereits `&` → der
+-- zweite Pass ist dort No-op (idempotent, identitaets-neutral solange ON). OFF, sobald
+-- webbed SAX-Attribut-Entities selbst DOM-treu serialisiert.
+SET VARIABLE wa_attr_unescape = true;
+
 -- Phase 0: XML-Referenzen (erstellt von convert_xml.sql)
 -- ############################################################
 -- XMLLayoutReferences und XMLStepReferences werden direkt in
@@ -93,13 +102,22 @@ SELECT DISTINCT
          ELSE regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) END as Variable_Name
 FROM DDR_Calculations
 WHERE Chunk_Type = 'VariableReference'
-  AND regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) IS NOT NULL;
+  AND regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) IS NOT NULL
+  -- FileMaker schreibt bei beim Export FEHLENDER Plugin-Funktion den Platzhalter
+  -- <Chunk type="VariableReference">Function Missing</Chunk> — das ist KEINE Variable.
+  -- Ohne Ausschluss landet 'Function Missing' als let_local in VariableUsages/
+  -- VariablesCatalog/ObjectCatalog und maskiert die eigentliche Info (Plugin fehlte).
+  -- Literal (englisch, kein Präfix/keine Entities) → Roh-Extract-Vergleich ist locale-
+  -- robust; kein reales Variablenobjekt heißt exakt so (korpus-verifiziert). Die Zahl
+  -- der so verworfenen Chunks meldet P6 als Info-Finding (v_check_function_missing).
+  AND regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) <> 'Function Missing';
 
 -- 3a: Variablen in Calculated Fields (FieldsForTables.DDR_Hash)
 INSERT INTO VariableUsages
 SELECT
     vr.Variable_Name,
     CASE
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -124,6 +142,7 @@ INSERT INTO VariableUsages
 SELECT
     vr.Variable_Name,
     CASE
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -149,6 +168,7 @@ INSERT INTO VariableUsages
 SELECT
     vr.Variable_Name,
     CASE
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -184,6 +204,7 @@ WITH step_hashes AS (
 SELECT
     vr.Variable_Name,
     CASE
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -227,6 +248,7 @@ INSERT INTO VariableUsages
 SELECT
     vr.Variable_Name,
     CASE
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -282,6 +304,7 @@ WITH lo_hashes AS (
 SELECT
     vr.Variable_Name,
     CASE
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -321,6 +344,7 @@ INSERT INTO VariableUsages
 SELECT
     vr.Variable_Name,
     CASE
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -344,13 +368,59 @@ WHERE ra.DDR_Hash IS NOT NULL;
 
 
 -- ========================================
+-- A.3h: Variablen in Custom-Menü-Formeln (AP-3C)
+-- ========================================
+-- Install-/Title-/Name-Calcs von Menüs bzw. Menü-Items können Variablen lesen
+-- (z. B. $$Modul in einer Install-Bedingung). Analog A.3g (record_access_calc):
+-- kein generischer XMLCalcReferences→VariableUsages-Pfad existiert. Context_Type
+-- 'custom_menu_calc' macht die Nutzung im Variablen-Where-Used sichtbar.
+-- Owner (Menü/Item) + Subrole (Install|Title|Name) aus dem Calc-Anker; Hash-Join
+-- gegen die bereits kollabierten _DDR_VarRefs_Distinct.
+INSERT INTO VariableUsages
+SELECT
+    vr.Variable_Name,
+    CASE
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
+        WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
+        WHEN vr.Variable_Name LIKE '$%' THEN 'local'
+        ELSE 'let_local'
+    END as Variable_Scope,
+    'read' as Usage_Type,
+    'custom_menu_calc' as Context_Type,
+    mo.Src_UUID as Context_UUID,
+    mo.Context_Name as Context_Name,
+    NULL as Script_Name,
+    NULL as Script_UUID,
+    NULL as Step_Index,
+    NULL as Table_Name,
+    NULL as Field_Name,
+    vr.Calc_Hash,
+    'ddr_chunk' as Source,
+    vr.File_Name
+FROM _DDR_VarRefs_Distinct vr
+JOIN (
+    SELECT DISTINCT
+        d.Calc_Hash, d.File_Name, o.Src_UUID,
+        o.Menu_Name || ' › ' || regexp_replace(d.Calc_UUID, '^_[0-9A-Fa-f-]{36}_?', '') AS Context_Name
+    FROM DDR_Calculations d
+    JOIN (
+        SELECT upper(Menu_UUID) AS Anchor_UUID, File_Name, Menu_UUID AS Src_UUID, Menu_Name FROM CustomMenuCatalog
+        UNION ALL
+        SELECT upper(Item_UUID), File_Name, Item_UUID,
+               Menu_Name || ' › ' || COALESCE(NULLIF(Command_Name, ''), '(Item)') FROM CustomMenuItemCatalog
+    ) o ON o.Anchor_UUID = upper(regexp_extract(d.Calc_UUID, '_([0-9A-Fa-f-]{36})', 1))
+       AND o.File_Name = d.File_Name
+) mo ON vr.Calc_Hash = mo.Calc_Hash AND vr.File_Name = mo.File_Name;
+
+
+-- ========================================
 -- A.4: Set Variable Schritte → VariableUsages
 -- ========================================
 
 INSERT INTO VariableUsages
 SELECT
     Variable_Name,
-    CASE WHEN Variable_Name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
+    CASE WHEN Variable_Name LIKE '$$$%' THEN 'superglobal' WHEN Variable_Name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
     'set' as Usage_Type,
     'script_step' as Context_Type,
     Script_UUID as Context_UUID,
@@ -364,7 +434,7 @@ SELECT
     'set_variable_step' as Source,
     File_Name
 FROM StepsForScripts
-WHERE Step_Name = 'Set Variable'
+WHERE Step_ID = 141  -- 'Set Variable' (Step-ID statt lokalisiertem Namen)
   AND Variable_Name IS NOT NULL;
 
 
@@ -380,7 +450,7 @@ WHERE Step_Name = 'Set Variable'
 INSERT INTO VariableUsages
 SELECT
     var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
+    CASE WHEN var_name LIKE '$$$%' THEN 'superglobal' WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
     'set' as Usage_Type,
     'script_step' as Context_Type,
     Script_UUID as Context_UUID,
@@ -398,7 +468,7 @@ CROSS JOIN LATERAL unnest(
     regexp_extract_all(CAST(Parameters_XML AS VARCHAR),
         '<Variable value="([^"]+)"', 1)
 ) as t(var_name)
-WHERE Step_Name != 'Set Variable'
+WHERE Step_ID != 141  -- 'Set Variable'
   AND CAST(Parameters_XML AS VARCHAR) LIKE '%<Variable value="%';
 
 
@@ -425,9 +495,11 @@ SELECT
     'mbs_variable_call' as Source,
     File_Name
 FROM StepsForScripts
-WHERE Calculation_Text LIKE '%Variable.Set%' OR Calculation_Text LIKE '%FM.VariableSet%'
-  AND regexp_extract(Calculation_Text,
-        '(?:FM\.VariableSet|Variable\.Set)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
+-- B-R2: OR-Zweige geklammert — vorher band AND stärker, der Guard galt nur
+-- für den zweiten LIKE-Zweig (latent, 0 Treffer im Korpus).
+WHERE (Calculation_Text LIKE '%Variable.Set%' OR Calculation_Text LIKE '%FM.VariableSet%')
+  AND NULLIF(regexp_extract(Calculation_Text,
+        '(?:FM\.VariableSet|Variable\.Set)\s*"\s*;\s*"([^"]+)"', 1), '') IS NOT NULL;
 
 -- 5b: Variable.Get / FM.VariableGet / Variable.Exists / Variable.Lookup in Script-Schritten
 INSERT INTO VariableUsages
@@ -452,8 +524,8 @@ WHERE (Calculation_Text LIKE '%Variable.Get%'
     OR Calculation_Text LIKE '%FM.VariableGet%'
     OR Calculation_Text LIKE '%Variable.Exists%'
     OR Calculation_Text LIKE '%Variable.Lookup%')
-  AND regexp_extract(Calculation_Text,
-        '(?:FM\.VariableGet|Variable\.Get|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
+  AND NULLIF(regexp_extract(Calculation_Text,
+        '(?:FM\.VariableGet|Variable\.Get|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1), '') IS NOT NULL;
 
 -- 5c: Variable.Append / Variable.AppendValue / Variable.AppendJSON / Variable.Add in Script-Schritten
 INSERT INTO VariableUsages
@@ -478,8 +550,8 @@ WHERE (Calculation_Text LIKE '%Variable.Append%'
     OR Calculation_Text LIKE '%Variable.AppendValue%'
     OR Calculation_Text LIKE '%Variable.AppendJSON%'
     OR Calculation_Text LIKE '%Variable.Add%')
-  AND regexp_extract(Calculation_Text,
-        '(?:Variable\.Append|Variable\.AppendValue|Variable\.AppendJSON|Variable\.Add)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
+  AND NULLIF(regexp_extract(Calculation_Text,
+        '(?:Variable\.Append|Variable\.AppendValue|Variable\.AppendJSON|Variable\.Add)\s*"\s*;\s*"([^"]+)"', 1), '') IS NOT NULL;
 
 -- 5d: Variable.Clear in Script-Schritten
 INSERT INTO VariableUsages
@@ -500,10 +572,12 @@ SELECT
     'mbs_variable_call' as Source,
     File_Name
 FROM StepsForScripts
+-- B-R9: kein NOT-LIKE-ClearAll-Ausschluss mehr — er verwarf MISCH-Steps
+-- (Clear("x") + ClearAll im selben Step). Die Regex matcht ClearAll ohnehin
+-- nicht (nach 'Variable.Clear' folgt dort 'A', kein '"').
 WHERE Calculation_Text LIKE '%Variable.Clear%'
-  AND Calculation_Text NOT LIKE '%Variable.ClearAll%'
-  AND regexp_extract(Calculation_Text,
-        '(?:Variable\.Clear)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
+  AND NULLIF(regexp_extract(Calculation_Text,
+        '(?:Variable\.Clear)\s*"\s*;\s*"([^"]+)"', 1), '') IS NOT NULL;
 
 -- 5e: MBS Superglobale in Calculated Fields (FieldsForTables.Calculation_Text)
 INSERT INTO VariableUsages
@@ -529,8 +603,8 @@ WHERE Calculation_Text IS NOT NULL
     OR Calculation_Text LIKE '%FM.VariableGet%'
     OR Calculation_Text LIKE '%Variable.Exists%'
     OR Calculation_Text LIKE '%Variable.Lookup%')
-  AND regexp_extract(Calculation_Text,
-        '(?:FM\.VariableGet|Variable\.Get|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
+  AND NULLIF(regexp_extract(Calculation_Text,
+        '(?:FM\.VariableGet|Variable\.Get|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1), '') IS NOT NULL;
 
 -- 5f: MBS Superglobale in AutoEnter Calculated Fields (FieldsForTables.AE_Calc_Text)
 INSERT INTO VariableUsages
@@ -556,8 +630,8 @@ WHERE AE_Calc_Text IS NOT NULL
     OR AE_Calc_Text LIKE '%FM.VariableGet%'
     OR AE_Calc_Text LIKE '%Variable.Exists%'
     OR AE_Calc_Text LIKE '%Variable.Lookup%')
-  AND regexp_extract(AE_Calc_Text,
-        '(?:FM\.VariableGet|Variable\.Get|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
+  AND NULLIF(regexp_extract(AE_Calc_Text,
+        '(?:FM\.VariableGet|Variable\.Get|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1), '') IS NOT NULL;
 
 -- 5g: MBS Superglobale in CustomFunctions (CalcsForCustomFunctions.Calculation_Code)
 INSERT INTO VariableUsages
@@ -588,8 +662,24 @@ WHERE Calculation_Code IS NOT NULL
     OR Calculation_Code LIKE '%FM.VariableSet%'
     OR Calculation_Code LIKE '%Variable.Exists%'
     OR Calculation_Code LIKE '%Variable.Lookup%')
-  AND regexp_extract(Calculation_Code,
-        '(?:FM\.VariableGet|Variable\.Get|FM\.VariableSet|Variable\.Set|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1) IS NOT NULL;
+  AND NULLIF(regexp_extract(Calculation_Code,
+        '(?:FM\.VariableGet|Variable\.Get|FM\.VariableSet|Variable\.Set|Variable\.Exists|Variable\.Lookup)\s*"\s*;\s*"([^"]+)"', 1), '') IS NOT NULL;
+
+
+-- MBS-Superglobale (Variable.Set/Get/…) tragen den vom Script übergebenen
+-- LITERALNAMEN. Beginnt der mit '$$' (FM-Global-Schreibweise), kollidiert er im
+-- Explorer/ObjectCatalog namensgleich mit einer ECHTEN FM-Global gleichen Namens —
+-- zwei Objekte, gleicher Object_Name, unterschiedlicher Scope (global vs superglobal)
+-- → Identitäts-Verwirrung. MBS-Variablen sind aber ein SEPARATER Speicher (Plugin-
+-- Memory), nicht die FM-Global; die Objekt-Trennung ist korrekt, nur namentlich
+-- unsichtbar. Konvention (CLAUDE.md; Display_Name-Logik in VariablesCatalog unten):
+-- superglobal ⇒ '$$$'-Präfix. Hier den GESPEICHERTEN Namen auf dieselbe Normalform
+-- bringen (identische Formel wie Display_Name → Variable_Name == Display_Name,
+-- idempotent: '$$$x' bleibt '$$$x'). Scope bleibt superglobal. Muss VOR dem
+-- VariablesCatalog-Build (Z.~864) und vor P4 laufen — hier korrekt platziert.
+UPDATE VariableUsages
+SET Variable_Name = '$$$' || regexp_replace(Variable_Name, '^\$+', '')
+WHERE Source = 'mbs_variable_call';
 
 
 -- ========================================
@@ -599,7 +689,7 @@ WHERE Calculation_Code IS NOT NULL
 INSERT INTO VariableUsages
 SELECT
     var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
+    CASE WHEN var_name LIKE '$$$%' THEN 'superglobal' WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
     'read' as Usage_Type,
     'layout_object' as Context_Type,
     lo.Object_UUID as Context_UUID,
@@ -629,7 +719,7 @@ WHERE lo.Object_Type = 'Text'
 INSERT INTO VariableUsages
 SELECT
     var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
+    CASE WHEN var_name LIKE '$$$%' THEN 'superglobal' WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
     'read' as Usage_Type,
     'layout_object' as Context_Type,
     lo.Object_UUID as Context_UUID,
@@ -645,8 +735,9 @@ SELECT
 FROM LayoutObjects lo
 JOIN Layouts l ON lo.Layout_ID = l.L_ID AND lo.File_Name = l.File_Name
 CROSS JOIN LATERAL unnest(
+    -- B-R9: ohne Space in der Klasse (war greedy über Wortgrenzen) + B-R7 Unicode
     regexp_extract_all(lo.ScriptTrigger_Parameter_Text,
-        '\$\$?[a-zA-Z_][a-zA-Z0-9_ ]*')
+        '\$\$?\$?[\p{L}_][\p{L}\p{N}_]*')
 ) as t(var_name)
 WHERE lo.ScriptTrigger_Parameter_Text IS NOT NULL
   AND lo.ScriptTrigger_Parameter_Text LIKE '%$%';
@@ -660,7 +751,7 @@ WHERE lo.ScriptTrigger_Parameter_Text IS NOT NULL
 INSERT INTO VariableUsages
 SELECT
     var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
+    CASE WHEN var_name LIKE '$$$%' THEN 'superglobal' WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
     'read' as Usage_Type,
     'script_step' as Context_Type,
     s.Script_UUID as Context_UUID,
@@ -676,17 +767,17 @@ SELECT
 FROM StepsForScripts s
 JOIN XMLMetadata m ON s.File_Name = m.Filename
 CROSS JOIN LATERAL unnest(
-    regexp_extract_all(s.Calculation_Text, '\$\$?[a-zA-Z_][a-zA-Z0-9_]*')
+    regexp_extract_all(s.Calculation_Text, '\$\$?\$?[\p{L}_][\p{L}\p{N}_]*')
 ) as t(var_name)
 WHERE m.Has_DDR_INFO = 'False'
   AND s.Calculation_Text IS NOT NULL
-  AND s.Step_Name != 'Set Variable';
+  AND s.Step_ID != 141;  -- 'Set Variable'
 
 -- 7b: Regex-Variablen aus Calculated Fields (nur Dateien ohne DDR)
 INSERT INTO VariableUsages
 SELECT
     var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
+    CASE WHEN var_name LIKE '$$$%' THEN 'superglobal' WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
     'read' as Usage_Type,
     'calculation' as Context_Type,
     f.Field_UUID as Context_UUID,
@@ -702,7 +793,7 @@ SELECT
 FROM FieldsForTables f
 JOIN XMLMetadata m ON f.File_Name = m.Filename
 CROSS JOIN LATERAL unnest(
-    regexp_extract_all(f.Calculation_Text, '\$\$?[a-zA-Z_][a-zA-Z0-9_]*')
+    regexp_extract_all(f.Calculation_Text, '\$\$?\$?[\p{L}_][\p{L}\p{N}_]*')
 ) as t(var_name)
 WHERE m.Has_DDR_INFO = 'False'
   AND f.Calculation_Text IS NOT NULL;
@@ -711,7 +802,7 @@ WHERE m.Has_DDR_INFO = 'False'
 INSERT INTO VariableUsages
 SELECT
     var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
+    CASE WHEN var_name LIKE '$$$%' THEN 'superglobal' WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
     'read' as Usage_Type,
     'auto_enter_calc' as Context_Type,
     f.Field_UUID as Context_UUID,
@@ -727,7 +818,7 @@ SELECT
 FROM FieldsForTables f
 JOIN XMLMetadata m ON f.File_Name = m.Filename
 CROSS JOIN LATERAL unnest(
-    regexp_extract_all(f.AE_Calc_Text, '\$\$?[a-zA-Z_][a-zA-Z0-9_]*')
+    regexp_extract_all(f.AE_Calc_Text, '\$\$?\$?[\p{L}_][\p{L}\p{N}_]*')
 ) as t(var_name)
 WHERE m.Has_DDR_INFO = 'False'
   AND f.AE_Calc_Text IS NOT NULL;
@@ -736,7 +827,7 @@ WHERE m.Has_DDR_INFO = 'False'
 INSERT INTO VariableUsages
 SELECT
     var_name as Variable_Name,
-    CASE WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
+    CASE WHEN var_name LIKE '$$$%' THEN 'superglobal' WHEN var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
     'read' as Usage_Type,
     'custom_function' as Context_Type,
     ccf.CF_UUID as Context_UUID,
@@ -752,7 +843,7 @@ SELECT
 FROM CalcsForCustomFunctions ccf
 JOIN XMLMetadata m ON ccf.File_Name = m.Filename
 CROSS JOIN LATERAL unnest(
-    regexp_extract_all(ccf.Calculation_Code, '\$\$?[a-zA-Z_][a-zA-Z0-9_]*')
+    regexp_extract_all(ccf.Calculation_Code, '\$\$?\$?[\p{L}_][\p{L}\p{N}_]*')
 ) as t(var_name)
 WHERE m.Has_DDR_INFO = 'False'
   AND ccf.Calculation_Code IS NOT NULL;
@@ -989,7 +1080,55 @@ FROM with_levels t;
 -- EINMAL auf der Master-DB, wo StepsForScripts ein Base-Table ist. Additiv/idempotent
 -- (analog Step_XML in P1); ein Rebuild recreiert die Tabelle in P1 ohne die Spalte,
 -- P3 fügt sie hier wieder hinzu.
+-- Zweiter Decode-Pass (wa_attr_unescape-gegatet, Default ON): unter SAX doppel-escaped
+-- webbed numerische Char-Refs im @value (Quelle `&#38;` → Roh-Step_XML `&amp;#38;`), sodass
+-- xml_extract_text nur den aeusseren `&amp;` aufloest und `&#38;` (bzw. `&#60;`/`&#62;`/
+-- `&#34;`/`&#39;`) im Text zurueckbleibt.
+-- CHIRURGISCH — nur die 5 XML-predefined NUMERISCHEN Refs ersetzen; KEIN html_unescape:
+-- html_unescape fasst auch literale `&`/named entities/Markup im Insert-Text an (mangelt
+-- z.B. HTML-Rich-Text: 1385→1380 Zeichen, obwohl kein `&#` enthalten). Der ordered-replace
+-- laesst literales `&`, `&amp;`/`&lt;`/... und Markup unveraendert → praktisch No-op auf dem
+-- DOM-Wert (0 Kollateral im Korpus, byte-identisch) und stellt DOM≡SAX her.
+-- BEKANNTER TRADEOFF (NICHT garantiert No-op): der Replace laeuft NACH der Entity-
+-- Dekodierung, daher wird ein Text, der LITERAL die Zeichenfolge `&#38;` (bzw. `&#60;`/…)
+-- enthaelt (z.B. Doku ueber XML-Entities), auch auf dem DOM-Pfad zu `&`/… verfaelscht. Nach
+-- single-decode ist dieser Fall vom SAX-Doppel-Escape prinzipiell nicht unterscheidbar →
+-- im Korpus 0 Treffer, aber theoretisch moeglich; endgueltige Loesung bleibt der webbed-
+-- Upstream-Fix.
 ALTER TABLE StepsForScripts ADD COLUMN IF NOT EXISTS Inserted_Text VARCHAR;
 UPDATE StepsForScripts
-SET Inserted_Text = xml_extract_text(Step_XML, '//Parameter[@type=''Text'']/Text/@value')[1]
-WHERE Step_Name = 'Insert Text';
+SET Inserted_Text = CASE WHEN getvariable('wa_attr_unescape')
+        THEN replace(replace(replace(replace(replace(
+                 xml_extract_text(Step_XML, '//Parameter[@type=''Text'']/Text/@value')[1],
+                 '&#38;','&'), '&#60;','<'), '&#62;','>'), '&#34;','"'), '&#39;','''')
+        ELSE xml_extract_text(Step_XML, '//Parameter[@type=''Text'']/Text/@value')[1] END
+WHERE Step_ID = 61;  -- 'Insert Text'
+
+
+-- ============================================
+-- A.8: StepsForScripts.Comment_Text — Kommentartext für DDR-lose Dateien
+-- ============================================
+-- Die Script-Detailansicht (object_details_script_tokens.sql) bezieht Text UND
+-- kind-Klassifikation jeder Zeile aus dem DDR-Join — Dateien OHNE DDR-Info
+-- (Has_DDR_INFO=False) rendern Kommentar-Steps dadurch als leere Zeilen
+-- (kind='empty'), obwohl der Text die ganze Zeit in Step_XML liegt. Analog
+-- Inserted_Text (A.7) hier beim Konvertieren in eine Hilfsspalte vorberechnet;
+-- der READ_ONLY-API-Server macht nur noch COALESCE (kann webbed nicht laden).
+-- Beide Comment-Formen: Attribut <Comment value="…"/> (Korpus-Standard) und
+-- Element <Comment>…</Comment> (Fallback); leere Platzhalter (<Comment/>)
+-- bleiben NULL → kind='empty', konsistent mit der Dashboard-Heuristik
+-- (leere Kommentare = keine Dokumentation). Entity-Dekodierung durch
+-- xml_extract_text; @value-Pfad mit demselben wa_attr_unescape-gegateten
+-- Zweitpass wie A.7 (SAX-Doppel-Escape numerischer Char-Refs, chirurgisch —
+-- inkl. des in A.7 dokumentierten Tradeoffs bei literalen `&#NN;`-Strings).
+ALTER TABLE StepsForScripts ADD COLUMN IF NOT EXISTS Comment_Text VARCHAR;
+UPDATE StepsForScripts
+SET Comment_Text = COALESCE(
+        NULLIF(CASE WHEN getvariable('wa_attr_unescape')
+            THEN replace(replace(replace(replace(replace(
+                     xml_extract_text(Step_XML, '//Comment/@value')[1],
+                     '&#38;','&'), '&#60;','<'), '&#62;','>'), '&#34;','"'), '&#39;','''')
+            ELSE xml_extract_text(Step_XML, '//Comment/@value')[1] END, ''),
+        NULLIF(xml_extract_text(Step_XML, '//Comment')[1], '')
+    )
+WHERE Step_ID = 89;  -- '# (comment)'

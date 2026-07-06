@@ -1,0 +1,29 @@
+{
+  "manifest": {
+    "title": "服务器端执行",
+    "description": "（潜在地）在服务器上运行的内容：Perform Script on Server、Execute FileMaker Data API 和 Install OnTimer Script（按 Step_ID 限定），以及与服务器相关的 Extended Privilege 授权（fmrest、fmurlscript、fmodata、fmxml、fmphp、fmextscriptaccess）。这是服务器面的访问审计视图。"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Perform Script on Server",
+    "summary_kpistrip.props.items[1].label": "Execute Data API",
+    "summary_kpistrip.props.items[2].label": "Install OnTimer",
+    "summary_kpistrip.props.items[3].label": "受影响的文件",
+    "summary_kpistrip.props.items[4].label": "服务器授权",
+    "by_kind.props.title": "按机制",
+    "by_kind_table.props.columns[0].label": "机制",
+    "by_kind_table.props.columns[1].label": "调用点",
+    "by_kind_table.props.columns[2].label": "文件",
+    "by_kind_table.props.columns[3].label": "脚本",
+    "findings.props.title": "发现项",
+    "findings_table.props.columns[0].label": "机制",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "Step",
+    "findings_table.props.columns[3].label": "文件",
+    "findings_table.props.columns[4].label": "#",
+    "grants.props.title": "服务器/API 授权 (Extended Privileges)",
+    "grants_table.props.columns[0].label": "Extended Privilege",
+    "grants_table.props.columns[1].label": "权限集",
+    "grants_table.props.columns[2].label": "文件",
+    "markdown.props.content": "## 说明\n\n（潜在地）在**服务器**上运行的内容。原生 step 按 Step_ID 限定（与语言无关）：*Perform Script on Server* (164)、*Execute FileMaker Data API* (203)、*Install OnTimer Script* (148)。\n\n- **作为筛选器的 KPI**：step 的 KPI 会将发现项筛选到该机制。\n- **服务器/API 授权**：哪些权限集授予了与服务器相关的 Extended Privileges（`fmrest`、`fmurlscript`、`fmodata`、`fmxml`、`fmphp`、`fmextscriptaccess`）。点击某一行可打开该权限集。\n- **导航**：点击某个发现项会在对应 step 处打开脚本。\n- **相关规则**：派生的严重性规则位于 *Static Code Analysis* 下。\n- **排序**：所有列标题均可点击（▲▼）。"
+  }
+}

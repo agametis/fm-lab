@@ -6,8 +6,10 @@
 -- @version: 1.0
 -- @tags: fields, ddr, tokens
 -- @note: Liefert Calculation-Tokens für Calculated- und AutoEnter-Calculated-Felder.
---        Bei beiden gefüllt würde DDR_Hash (echte Calculated Fields) priorisiert.
+--        Calc-Instanz robust über v_calc_anchors (Owner-UUID + Owner-Datei) aufgelöst
+--        — NICHT über den mehrdeutigen Calc_Hash (siehe Kommentar an der calc_uuid-CTE).
 --        Plain-Text aus Calculation_Text bzw. AE_Calc_Text (XML CDATA, vollständig).
+--        AE_ConstantData liefert den festen Vorgabewert bei AutoEnter „ConstantData".
 
 WITH fld AS (
   SELECT
@@ -21,11 +23,7 @@ WITH fld AS (
     f.Max_Repetitions,
     f.Field_Comment,
     f.AutoEnter_Type,
-    f.Calculation_Text,
-    f.AE_Calc_Text,
-    f.DDR_Hash,
-    f.AE_Calc_Hash,
-    COALESCE(f.DDR_Hash, f.AE_Calc_Hash) AS Effective_Hash,
+    f.AE_ConstantData,
     COALESCE(f.Calculation_Text, f.AE_Calc_Text) AS Effective_Text
   FROM FieldsForTables f
   JOIN ObjectCatalog oc ON f.Field_UUID = oc.Object_UUID AND f.File_Name = oc.File_Name
@@ -34,14 +32,21 @@ WITH fld AS (
     AND (getvariable('file') IS NULL OR f.File_Name = getvariable('file'))
   LIMIT 1
 ),
--- Calc_Hash ist nicht eindeutig: mehrere Calc_UUIDs können sich einen Hash teilen
--- (semantische Dedup). Wir nehmen exakt eine Calc_UUID pro Hash, um doppelte
--- Chunk-Reihen zu vermeiden (analog object_details_customfunction_tokens.sql).
+-- Robuste Calc-Auflösung über die kanonische Anker-Registry v_calc_anchors.
+-- NICHT über Calc_Hash: der Hash ist NICHT eindeutig — semantisch-triviale Formeln
+-- (z.B. Auto-Enter-„Konto-Name") teilen sich einen Hash über viele fremde Owner
+-- (~16 % der Calc-Felder betroffen); ein MIN(Calc_UUID) pro Hash lieferte die
+-- Chunks eines FREMDEN Felds → falsche Formel. Auch Calc_UUID/Field_UUID allein
+-- genügt nicht, weil Field_UUID bei Klonen mehrfach (über Dateien) vorkommt.
+-- Erst die robuste Kombination Owner-UUID + Owner-Datei löst eindeutig auf (1:1),
+-- und der DDR-JOIN wird ebenfalls datei-skopiert (analog custommenu-Templates).
 calc_uuid AS (
-  SELECT MIN(d.Calc_UUID) AS Calc_UUID
-  FROM DDR_Calculations d, fld
-  WHERE d.Calc_Hash = fld.Effective_Hash
-    AND fld.Effective_Hash IS NOT NULL
+  SELECT va.Calc_UUID, va.Owner_File AS File_Name
+  FROM v_calc_anchors va, fld
+  WHERE va.Owner_Type = 'Field'
+    AND va.Owner_UUID = fld.Field_UUID
+    AND va.Owner_File = fld.File_Name
+  LIMIT 1
 )
 SELECT
   fld.Field_UUID         AS object_uuid,
@@ -54,6 +59,7 @@ SELECT
   fld.Max_Repetitions    AS max_repetitions,
   fld.Field_Comment      AS field_comment,
   fld.AutoEnter_Type     AS auto_enter_type,
+  fld.AE_ConstantData    AS ae_constant_data,
   fld.Effective_Text     AS plain_text,
   d.Chunk_Index          AS chunk_index,
   d.Chunk_Type           AS chunk_type,
@@ -63,6 +69,7 @@ FROM fld
 LEFT JOIN calc_uuid ON TRUE
 LEFT JOIN DDR_Calculations d
   ON d.Calc_UUID = calc_uuid.Calc_UUID
+ AND d.File_Name = calc_uuid.File_Name
 -- CustomFunctionRef-Chunks tragen anders als FieldRef nur den CF-Namen, keine
 -- UUID. Für Cross-Navigation (klickbarer Link) UND Cross-Reference-Highlight
 -- lösen wir den Namen file-lokal über ObjectHomes auf (CF-Namen sind je Datei

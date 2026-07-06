@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "全局存储字段",
+    "description": "最佳实践规则 — 全局存储字段。全局值按会话、按用户生效；过度使用会使状态难以追踪。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "全局存储字段",
+    "findings_table.props.searchPlaceholder": "搜索文件、表或字段…",
+    "findings_table.props.empty.message": "未找到全局存储字段。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "表",
+    "findings_table.props.columns[2].label": "字段"
+  }
+}

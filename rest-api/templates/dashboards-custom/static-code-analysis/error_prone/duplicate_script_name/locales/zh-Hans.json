@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "重复的脚本名称",
+    "description": "易错规则 — 同一文件中有两个或更多同名脚本。常见的复制粘贴产物，使\"按名称调用脚本\"变得含糊。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "重复的脚本名称",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到重复的脚本名称。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本"
+  }
+}

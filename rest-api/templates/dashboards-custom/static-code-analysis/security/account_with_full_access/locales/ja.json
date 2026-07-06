@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "[フルアクセス] のアカウント",
+    "description": "セキュリティルール — [フルアクセス] 権限セットを持つアカウント。フルアクセスのアカウントは制限のないマスターキーです。数は最小限に保ってください。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "[フルアクセス] のアカウント",
+    "findings_table.props.searchPlaceholder": "ファイルまたはアカウントを検索…",
+    "findings_table.props.empty.message": "[フルアクセス] のアカウントは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "アカウント"
+  }
+}

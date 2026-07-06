@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Commentaardichtheid in scripts",
+    "description": "Documentatieregel — vergelijkt scripts op totaal aantal stappen, echte commentaarstappen en commentaren met alleen witruimte, met voor elk een commentaardichtheidsfactor. Vormt een aanvulling op de binaire regel \"Ongedocumenteerd script\" door te beoordelen hoe goed omvangrijke scripts becommentarieerd zijn. Minimum aantal stappen instelbaar via de schuifregelaar in de koptekst (standaard 10)."
+  },
+  "layout": {
+    "script_comment_density_kpi_kpistrip.props.items[0].label": "Scripts totaal",
+    "script_comment_density_kpi_kpistrip.props.items[1].label": "Met ≥ min_steps",
+    "script_comment_density_kpi_kpistrip.props.items[2].label": "Zonder commentaar",
+    "script_comment_density_kpi_kpistrip.props.items[3].label": "Mediaan commentaar %",
+    "script_comment_density.props.title": "Scripts naar stappenaantal, commentaren en witruimte",
+    "script_comment_density_table.props.columns[0].label": "Script",
+    "script_comment_density_table.props.columns[1].label": "Bestand",
+    "script_comment_density_table.props.columns[2].label": "Totaal stappen",
+    "script_comment_density_table.props.columns[3].label": "Echte commentaren",
+    "script_comment_density_table.props.columns[4].label": "Lege stappen",
+    "script_comment_density_table.props.columns[5].label": "Commentaar %",
+    "script_comment_density_table.props.columns[6].label": "Witruimte %",
+    "script_comment_density_table.props.empty.message": "Geen scripts komen overeen met het filter.",
+    "threshold_slider.props.label": "Minimaal aantal stappen per script",
+    "threshold_slider.props.valueSuffix": "stappen"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "文書化されていないスクリプト",
+    "description": "ドキュメントルール — コメントステップが 1 つもない、些細でないスクリプト（10 ステップ以上）。引き継ぎや保守が困難です。\n\nPMD ルール CommentRequired — https://docs.pmd-code.org/latest/pmd_rules_java_documentation.html#commentrequired テーブル上部のフィルタースイッチで、コメントなしとありのオブジェクトを切り替えられます（コメント付きは手本／参考になります）。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "文書化されていないスクリプト",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "文書化されていないスクリプトは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "ステップ数",
+    "comment_filter.props.options[0].label": "未文書化",
+    "comment_filter.props.options[1].label": "文書化済み"
+  }
+}

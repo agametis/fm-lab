@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "スクリプトのコメント密度",
+    "description": "ドキュメントルール — スクリプトを総ステップ数、実際のコメントステップ、空白のみのコメントで比較し、それぞれにコメント密度係数を付けます。二値ルール「文書化されていないスクリプト」を補完し、相当量のスクリプトがどれだけコメントされているかを評価します。最小ステップ数はヘッダーのスライダーで調整可能（既定 10）。"
+  },
+  "layout": {
+    "script_comment_density_kpi_kpistrip.props.items[0].label": "スクリプト総数",
+    "script_comment_density_kpi_kpistrip.props.items[1].label": "min_steps 以上",
+    "script_comment_density_kpi_kpistrip.props.items[2].label": "コメントなし",
+    "script_comment_density_kpi_kpistrip.props.items[3].label": "コメント率 中央値",
+    "script_comment_density.props.title": "ステップ数・コメント・空白によるスクリプト比較",
+    "script_comment_density_table.props.columns[0].label": "スクリプト",
+    "script_comment_density_table.props.columns[1].label": "ファイル",
+    "script_comment_density_table.props.columns[2].label": "総ステップ数",
+    "script_comment_density_table.props.columns[3].label": "実コメント",
+    "script_comment_density_table.props.columns[4].label": "空白ステップ",
+    "script_comment_density_table.props.columns[5].label": "コメント %",
+    "script_comment_density_table.props.columns[6].label": "空白 %",
+    "script_comment_density_table.props.empty.message": "現在のフィルターに一致するスクリプトはありません。",
+    "threshold_slider.props.label": "スクリプトあたりの最小ステップ数",
+    "threshold_slider.props.valueSuffix": "ステップ"
+  }
+}

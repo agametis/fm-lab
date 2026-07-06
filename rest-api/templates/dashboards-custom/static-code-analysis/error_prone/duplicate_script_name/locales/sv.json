@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Dubblett av skriptnamn",
+    "description": "Felbenägen regel — två eller fler skript med samma namn i en fil. Ett vanligt kopiera-klistra-artefakt som gör \"anropa skript efter namn\" tvetydigt."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Dubblett av skriptnamn",
+    "findings_table.props.searchPlaceholder": "Sök fil eller skript…",
+    "findings_table.props.empty.message": "Inga dubbletter av skriptnamn hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Skript"
+  }
+}

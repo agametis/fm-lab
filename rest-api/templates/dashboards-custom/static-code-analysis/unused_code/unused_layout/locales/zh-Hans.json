@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "未使用的 Layout",
+    "description": "未使用代码规则 — 没有任何脚本导航到的 Layout。请核查：仅按名称或手动打开的 Layout 可能出现在此。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "未使用的 Layout",
+    "findings_table.props.searchPlaceholder": "搜索文件或名称…",
+    "findings_table.props.empty.message": "未找到匹配项。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "名称"
+  }
+}

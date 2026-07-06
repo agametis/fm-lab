@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "If / End If déséquilibré",
+    "description": "Règle sujette aux erreurs : scripts dont l’imbrication If/End If ne s’équilibre pas, ou qui ferment un If jamais ouvert."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "If / End If déséquilibré",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un script ou un résultat…",
+    "findings_table.props.empty.message": "Aucun bloc If / End If déséquilibré trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Résultat"
+  }
+}

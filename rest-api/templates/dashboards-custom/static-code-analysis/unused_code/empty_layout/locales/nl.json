@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Lege Layout",
+    "description": "Ongebruikte-code-regel — Layouts zonder enige Layout-objecten. Meestal placeholders die nooit zijn uitgewerkt."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Lege Layout",
+    "findings_table.props.searchPlaceholder": "Bestand of Layout zoeken…",
+    "findings_table.props.empty.message": "Geen lege Layouts gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

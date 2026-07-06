@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "ODBC / ESS / SQL",
+    "description": "Inventering av extern SQL-dataåtkomst: Execute SQL-steg (Step_ID 117), ODBC / ESS-datakällor (externa icke-FileMaker-källor) och fmxdbc (ODBC/JDBC) behörigheter. En generisk mall — användbar även där korpusen för närvarande inte har några ODBC-källor."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Execute SQL-steg",
+    "summary_kpistrip.props.items[1].label": "ODBC / ESS-källor",
+    "summary_kpistrip.props.items[2].label": "fmxdbc-behörigheter",
+    "summary_kpistrip.props.items[3].label": "Filer med SQL",
+    "findings.props.title": "Execute SQL-steg",
+    "findings_table.props.columns[0].label": "Skript",
+    "findings_table.props.columns[1].label": "Steg",
+    "findings_table.props.columns[2].label": "SQL (förhandsvisning)",
+    "findings_table.props.columns[3].label": "Fil",
+    "findings_table.props.columns[4].label": "#",
+    "ess_sources.props.title": "ODBC / ESS-datakällor",
+    "ess_sources_table.props.emptyMessage": "Inga ODBC / ESS-källor — alla externa källor är FileMaker.",
+    "ess_sources_table.props.columns[0].label": "Källa",
+    "ess_sources_table.props.columns[1].label": "Typ",
+    "ess_sources_table.props.columns[2].label": "TOs",
+    "ess_sources_table.props.columns[3].label": "Fil",
+    "grants.props.title": "ODBC / xDBC-behörigheter (fmxdbc)",
+    "grants_table.props.emptyMessage": "Ingen behörighetsuppsättning beviljar fmxdbc.",
+    "grants_table.props.columns[0].label": "Utökad behörighet",
+    "grants_table.props.columns[1].label": "Behörighetsuppsättning",
+    "grants_table.props.columns[2].label": "Fil",
+    "markdown.props.content": "## Anmärkningar\n\nExtern **SQL**-dataåtkomst. *Execute SQL* är Step_ID-styrd (117, språkoberoende — i denna korpus exporteras den som `SQL ausführen`). ODBC / ESS-källor är de icke-FileMaker-poster i katalogen över externa datakällor; `fmxdbc`-behörigheter visar vilka behörighetsuppsättningar som tillåter ODBC/JDBC-åtkomst.\n\n- Detta är en **generisk mall**: korpusen har för närvarande inga ODBC/ESS-källor (alla externa källor är FileMaker) och ett Execute SQL-steg — instrumentpanelen förblir användbar som en återanvändbar bibliotekspost.\n- **Navigering**: att klicka på ett Execute SQL-steg öppnar skriptet vid steget; en ODBC/ESS-källa öppnar sin första table occurrence; en behörighet öppnar behörighetsuppsättningen.\n- **Relaterade regler**: härledda allvarlighetsregler finns under *Static Code Analysis*.\n- **Sortering**: alla kolumnrubriker är klickbara (▲▼)."
+  }
+}

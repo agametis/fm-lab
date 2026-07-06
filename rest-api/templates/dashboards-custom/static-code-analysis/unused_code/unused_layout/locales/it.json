@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Layout inutilizzato",
+    "description": "Regola di codice inutilizzato: Layout verso cui nessuno script naviga. Da verificare: i Layout aperti solo per nome o manualmente possono comparire qui."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Layout inutilizzato",
+    "findings_table.props.searchPlaceholder": "Cerca file o nome…",
+    "findings_table.props.empty.message": "Nessun risultato trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Nome"
+  }
+}

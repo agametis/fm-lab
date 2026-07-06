@@ -18,6 +18,7 @@
  */
 
 const path = require('path');
+const { sqlPluginSubName } = require('../utils/plugin-name');
 
 // Repo-Root, damit read_csv() den CSV-Pfad robust auflöst.
 // __dirname = rest-api/src/services → drei Ebenen nach oben.
@@ -235,11 +236,14 @@ function buildCategoryCTE(dbType, refAttached) {
           )
           SELECT
             oc.Object_UUID,
+            -- Container-Plugin (MBS) = Name beginnt mit 'MBS:' (altes 'MBS::<Sub>'
+            -- wie neues 'MBS:<Sub>::<Sub>'); Component aus CSV oder aus dem SubName-
+            -- Praefix. SubName = Teil hinter dem letzten '::', vgl. utils/plugin-name.js.
             CASE
-              WHEN oc.Object_Name LIKE 'MBS::%'
+              WHEN oc.Object_Name LIKE 'MBS:%'
                 THEN COALESCE(
                   cm.component_name,
-                  split_part(regexp_replace(oc.Object_Name, '^MBS::', ''), '.', 1)
+                  split_part(${sqlPluginSubName('oc.Object_Name')}, '.', 1)
                 )
               ELSE NULL
             END AS category,
@@ -247,7 +251,7 @@ function buildCategoryCTE(dbType, refAttached) {
             FALSE         AS is_get_subparam
           FROM ObjectCatalog oc
           LEFT JOIN mbs_map cm
-            ON cm.function_name = regexp_replace(oc.Object_Name, '^MBS::', '')
+            ON cm.function_name = ${sqlPluginSubName('oc.Object_Name')}
           WHERE oc.Object_Type = 'PluginFunction'
         )
       `;

@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Beräknat fält utan kommentar",
+    "description": "Dokumentationsregel — beräknade fält med tom fältkommentar. Formeln är ofta inte självförklarande och förtjänar en notering.\n\nBaserad på PMD-regeln CommentRequired — https://docs.pmd-code.org/latest/pmd_rules_java_documentation.html#commentrequired En filterväxlare ovanför tabellen växlar mellan objekt utan och med kommentar (de kommenterade fungerar som mall/inspiration)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Beräknat fält utan kommentar",
+    "findings_table.props.searchPlaceholder": "Sök fil, tabell eller fält…",
+    "findings_table.props.empty.message": "Inga odokumenterade beräknade fält hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Tabell",
+    "findings_table.props.columns[2].label": "Fält",
+    "comment_filter.props.options[0].label": "utan kommentar",
+    "comment_filter.props.options[1].label": "med kommentar"
+  }
+}

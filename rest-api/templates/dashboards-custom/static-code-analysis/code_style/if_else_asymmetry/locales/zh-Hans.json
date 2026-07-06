@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "If/Else 块不对称性",
+    "description": "代码风格规则 — 含 If/Else 块且 If 分支明显长于 Else 分支的脚本。可重构为提前返回或卫语句的候选项。阈值可通过页首滑块调整（默认 If ≥ 10，Else ≤ 2 步）。"
+  },
+  "layout": {
+    "if_else_kpi_kpistrip.props.items[0].label": "不对称块",
+    "if_else_kpi_kpistrip.props.items[1].label": "受影响脚本",
+    "if_else_kpi_kpistrip.props.items[2].label": "受影响文件",
+    "if_else_kpi_kpistrip.props.items[3].label": "最长 If 分支",
+    "if_else_blocks.props.title": "长 If / 短 Else 的脚本",
+    "if_else_blocks_table.props.columns[0].label": "文件",
+    "if_else_blocks_table.props.columns[1].label": "脚本名称",
+    "if_else_blocks_table.props.columns[2].label": "If 位置",
+    "if_else_blocks_table.props.columns[3].label": "If 步骤数",
+    "if_else_blocks_table.props.columns[4].label": "Else 步骤数",
+    "if_else_blocks_table.props.columns[5].label": "评分",
+    "if_else_blocks_table.props.empty.message": "未找到不对称的 If/Else 块。"
+  }
+}

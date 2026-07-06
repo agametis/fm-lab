@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Campo repetido",
+    "description": "Regra de boas práticas — campos com mais de uma repetição. Campos repetidos são difíceis de consultar e reportar; uma tabela relacionada costuma ser melhor."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Campo repetido",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, tabela ou campo…",
+    "findings_table.props.empty.message": "Nenhum campo repetido encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Tabela",
+    "findings_table.props.columns[2].label": "Campo",
+    "findings_table.props.columns[3].label": "Rep."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Open URL dans une Loop",
+    "description": "Règle de performance/UX : Open URL dans une Loop lance un gestionnaire externe à chaque itération."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Open URL dans une Loop",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un script…",
+    "findings_table.props.empty.message": "Aucune correspondance trouvée pour « Open URL dans une Loop ».",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Étape",
+    "findings_table.props.columns[3].label": "Profondeur"
+  }
+}

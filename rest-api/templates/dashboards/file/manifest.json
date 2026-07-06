@@ -1,0 +1,24 @@
+{
+  "id": "file",
+  "version": "1.0.0",
+  "title": "File view",
+  "description": "Per-file detail view: metadata, file options, object KPIs and the triggered scripts / start layout / login account.",
+  "author": "fm-lab core",
+  "icon": "file",
+  "tags": ["internal"],
+  "entry": "layout.json",
+  "datasets": [
+    { "id": "file_guard",    "source": "bundle:data/file_guard.sql" },
+    { "id": "file_info",     "source": "bundle:data/file_info.sql" },
+    { "id": "source_size",   "source": "builtin:file_source_size" },
+    { "id": "object_counts", "source": "bundle:data/object_counts.sql" },
+    { "id": "triggers",      "source": "bundle:data/triggers.sql" },
+    { "id": "start_layout",  "source": "bundle:data/start_layout.sql" },
+    { "id": "account",       "source": "bundle:data/account.sql" }
+  ],
+  "params": [
+    { "name": "file", "type": "string", "required": true,
+      "description": "File_Name of the FileMaker file to display." }
+  ],
+  "permissions": { "read_only": true, "allow_navigation": true }
+}

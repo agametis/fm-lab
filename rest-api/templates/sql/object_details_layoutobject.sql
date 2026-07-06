@@ -3,9 +3,11 @@
 -- @params: uuid (required)
 -- @output_format: content
 -- @author: Marcel
--- @version: 1.0
+-- @version: 2.0
 -- @tags: layoutobjects, details, calculations, hide, tooltip, scripttrigger
--- @note: Shows LayoutObject properties, calculations (Hide, Tooltip, Label, ScriptTrigger), and references
+-- @note: Shows LayoutObject properties, ALL attached calculations (generic via v_calc_anchors: Hide,
+--        Tooltip, Label, ScriptTrigger, Conditional Formatting, Portal filter, Web-Viewer URL,
+--        Placeholder, Tab/Popover title, Button action …), static vs. formula, and references
 
 WITH object_match AS (
   SELECT
@@ -13,10 +15,6 @@ WITH object_match AS (
     lo.Layout_ID, lo.Part_Type, lo.Object_Kind,
     lo.Bounds_Top, lo.Bounds_Left, lo.Bounds_Bottom, lo.Bounds_Right,
     lo.Parent_Object_ID, lo.Nesting_Level,
-    lo.Hide_Calculation_Text,
-    lo.Tooltip_Calculation_Text,
-    lo.Label_Calculation_Text,
-    lo.ScriptTrigger_Parameter_Text,
     lo.File_Name
   FROM LayoutObjects lo
   -- Clone-Scoping: Object_UUID ist über Modul-Dateien hinweg geklont → auf die aufgelöste Datei einschränken
@@ -39,6 +37,22 @@ parent_object AS (
     AND File_Name = (SELECT File_Name FROM object_match)
   LIMIT 1
 ),
+-- AP-2: ALLE am Objekt hängenden Berechnungen — generisch aus der kanonischen
+-- Calc-Anker-Registry v_calc_anchors (Display_Text ist bereits entity-dekodiert).
+calc_anchors AS (
+  SELECT
+    va.Kind_Label, va.Calc_Kind, va.Is_Static, va.Display_Text, va.Calc_Hash,
+    ROW_NUMBER() OVER (ORDER BY va.Is_Static, va.Calc_Kind) AS ord
+  FROM v_calc_anchors va
+  WHERE va.Owner_UUID = getvariable('uuid')
+    AND (getvariable('file') IS NULL OR va.Owner_File = getvariable('file'))
+    AND va.Owner_Type = 'LayoutObject'
+),
+calc_lines AS (
+  SELECT ord, Kind_Label, Is_Static,
+    string_split(replace(COALESCE(Display_Text, ''), chr(13), chr(10)), chr(10)) AS arr
+  FROM calc_anchors
+),
 -- All operational references (Field, Script connections)
 child_refs AS (
   SELECT
@@ -46,6 +60,7 @@ child_refs AS (
     oc.Object_Name as Target_Name,
     oc.File_Name as Target_File,
     ol.Link_Role,
+    ol.Link_Subrole,
     ol.Is_Cross_File
   FROM ObjectLinks ol
   -- Clone-Scoping: geklonte UUIDs → Link und Ziel-Catalog auf die aufgelöste Datei einschränken
@@ -95,75 +110,26 @@ SELECT content FROM (
 
   UNION ALL
 
-  -- Hide Calculation
-  SELECT 5, 0, '' WHERE (SELECT Hide_Calculation_Text FROM object_match) IS NOT NULL
+  -- Calculations block (generic) — one section per attached calc, static vs. formula
+  SELECT 5, 0, '' WHERE (SELECT COUNT(*) FROM calc_anchors) > 0
   UNION ALL
-  SELECT 5, 1, '--- Hide Condition ---'
-  WHERE (SELECT Hide_Calculation_Text FROM object_match) IS NOT NULL
+  SELECT 5, 1,
+    '--- Calculations (' || CAST((SELECT COUNT(*) FROM calc_anchors) AS VARCHAR) || ') ---'
+  WHERE (SELECT COUNT(*) FROM calc_anchors) > 0
   UNION ALL
-  SELECT 5, 2 + ROW_NUMBER() OVER (), '  ' || line
+  -- Per-calc header line: "  <Kind_Label> [static|formula]:"
+  SELECT 5, CAST(ca.ord * 1000 AS INTEGER),
+    '  ' || ca.Kind_Label || CASE WHEN ca.Is_Static THEN '  [static]:' ELSE '  [formula]:' END
+  FROM calc_anchors ca
+  UNION ALL
+  -- Per-calc body lines (indented reconstruction / literal)
+  SELECT 5, CAST(cl.ord * 1000 + line_no AS INTEGER), '      ' || line
   FROM (
-    SELECT UNNEST(string_split(
-      replace((SELECT Hide_Calculation_Text FROM object_match), chr(13), chr(10)),
-      chr(10)
-    )) as line
-  )
-  WHERE (SELECT Hide_Calculation_Text FROM object_match) IS NOT NULL
-
-  UNION ALL
-
-  -- Tooltip Calculation
-  SELECT 6, 0, '' WHERE (SELECT Tooltip_Calculation_Text FROM object_match) IS NOT NULL
-  UNION ALL
-  SELECT 6, 1, '--- Tooltip ---'
-  WHERE (SELECT Tooltip_Calculation_Text FROM object_match) IS NOT NULL
-  UNION ALL
-  SELECT 6, 2 + ROW_NUMBER() OVER (), '  ' || line
-  FROM (
-    SELECT UNNEST(string_split(
-      replace((SELECT Tooltip_Calculation_Text FROM object_match), chr(13), chr(10)),
-      chr(10)
-    )) as line
-  )
-  WHERE (SELECT Tooltip_Calculation_Text FROM object_match) IS NOT NULL
-
-  UNION ALL
-
-  -- Label Calculation
-  SELECT 7, 0, '' WHERE (SELECT Label_Calculation_Text FROM object_match) IS NOT NULL
-  UNION ALL
-  SELECT 7, 1, '--- Calculated Label ---'
-  WHERE (SELECT Label_Calculation_Text FROM object_match) IS NOT NULL
-  UNION ALL
-  SELECT 7, 2 + ROW_NUMBER() OVER (), '  ' || line
-  FROM (
-    SELECT UNNEST(string_split(
-      replace((SELECT Label_Calculation_Text FROM object_match), chr(13), chr(10)),
-      chr(10)
-    )) as line
-  )
-  WHERE (SELECT Label_Calculation_Text FROM object_match) IS NOT NULL
-
-  UNION ALL
-
-  -- ScriptTrigger Parameters
-  SELECT 8, 0, ''
-  WHERE (SELECT ScriptTrigger_Parameter_Text FROM object_match) IS NOT NULL
-    AND (SELECT ScriptTrigger_Parameter_Text FROM object_match) != ''
-  UNION ALL
-  SELECT 8, 1, '--- ScriptTrigger Parameter ---'
-  WHERE (SELECT ScriptTrigger_Parameter_Text FROM object_match) IS NOT NULL
-    AND (SELECT ScriptTrigger_Parameter_Text FROM object_match) != ''
-  UNION ALL
-  SELECT 8, 2 + ROW_NUMBER() OVER (), '  ' || line
-  FROM (
-    SELECT UNNEST(string_split(
-      replace((SELECT ScriptTrigger_Parameter_Text FROM object_match), chr(13), chr(10)),
-      chr(10)
-    )) as line
-  )
-  WHERE (SELECT ScriptTrigger_Parameter_Text FROM object_match) IS NOT NULL
-    AND (SELECT ScriptTrigger_Parameter_Text FROM object_match) != ''
+    SELECT ord, Is_Static,
+      unnest(arr) AS line,
+      unnest(range(1, length(arr) + 1)) AS line_no
+    FROM calc_lines
+  ) cl
 
   UNION ALL
 
@@ -176,11 +142,11 @@ SELECT content FROM (
 
   UNION ALL
 
-  -- Reference entries
-  SELECT 11, ROW_NUMBER() OVER (ORDER BY Target_Type, Target_Name),
+  -- Reference entries (Link_Subrole = calc_kind origin, when present)
+  SELECT 11, CAST(ROW_NUMBER() OVER (ORDER BY Target_Type, Target_Name) AS INTEGER),
     '  -> ' || Target_Type || ': ' || Target_Name
     || CASE WHEN Is_Cross_File THEN ' [' || Target_File || ']' ELSE '' END
-    || ' (' || Link_Role || ')'
+    || ' (' || Link_Role || COALESCE(' · ' || Link_Subrole, '') || ')'
   FROM child_refs
 ) details
 ORDER BY sort_key, sub_key;

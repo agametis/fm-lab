@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Go to Related Record em Loop",
+    "description": "Regra de desempenho — Go to Related Record dentro de um Loop troca o contexto e o conjunto encontrado a cada iteração."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Go to Related Record em Loop",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhuma ocorrência para \"Go to Related Record em Loop\" encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Etapa",
+    "findings_table.props.columns[3].label": "Profundidade"
+  }
+}

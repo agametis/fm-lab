@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Tabela base com muitas ocorrências",
+    "description": "Regra de estilo de código — tabelas base com mais de oito ocorrências de tabela. Um número muito alto indica um gráfico de relacionamentos emaranhado."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Tabela base com muitas ocorrências",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou tabela…",
+    "findings_table.props.empty.message": "Nenhuma tabela base com muitas ocorrências encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Tabela base",
+    "findings_table.props.columns[2].label": "Ocorrências"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "複数フィールドのリレーションシップ",
+    "description": "コードスタイルルール — フィールド述語が 3 つ以上のリレーションシップ。非常に幅広い結合キーは追いにくく、多くはキーフィールドの欠如を示します。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "複数フィールドのリレーションシップ",
+    "findings_table.props.searchPlaceholder": "テーブルオカレンスを検索…",
+    "findings_table.props.empty.message": "複数フィールドのリレーションシップは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "左 TO",
+    "findings_table.props.columns[2].label": "右 TO",
+    "findings_table.props.columns[3].label": "述語数"
+  }
+}

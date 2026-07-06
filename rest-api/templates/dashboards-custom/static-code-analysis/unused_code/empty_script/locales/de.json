@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Leeres Script",
+    "description": "Unused-Code-Regel — Scripts ohne jeden Schritt. Meist nie umgesetzte Platzhalter."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Leeres Script",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Keine leeren Scripts gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

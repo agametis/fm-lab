@@ -1,4 +1,5 @@
-import { useParams } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { DashboardHost } from './DashboardHost';
 import { SubNav } from '../components/SubNav';
@@ -22,6 +23,7 @@ function BundlePage({
   params,
   pageTitle,
   pageDescription,
+  titleActions,
 }: {
   id: string;
   ctx: BreadcrumbCtx;
@@ -34,15 +36,51 @@ function BundlePage({
    */
   pageTitle?: string;
   pageDescription?: string;
+  /** Optional right-aligned quick-jump buttons on the title row. */
+  titleActions?: ReactNode;
 }) {
   const { t } = useTranslation(['nav']);
   return (
     <div className="app">
       <SubNav breadcrumbs={buildBreadcrumb(ctx, t)} />
       <StatusBar />
-      {pageTitle && <TitleBox title={pageTitle} subtitle={pageDescription} />}
+      {pageTitle && <TitleBox title={pageTitle} subtitle={pageDescription} actions={titleActions} />}
       <DashboardHost id={id} params={params} />
     </div>
+  );
+}
+
+/**
+ * `/file/:filename` → `file` bundle (per-file detail view). Breadcrumb
+ * `Home / {Dateiname}`. The file name is passed both as the bundle param
+ * (drives the `:file`-scoped datasets) and as the page title.
+ */
+export function FileDetailPage() {
+  const { filename } = useParams<{ filename: string }>();
+  const { t } = useTranslation(['nav']);
+  const file = filename ?? '';
+  const enc = encodeURIComponent(file);
+  const titleActions = (
+    <>
+      <Link className="title-box__action" to={`/?file=${enc}`}>
+        {t('nav:fileActions.search', { defaultValue: 'Search' })}
+      </Link>
+      <Link
+        className="title-box__action"
+        to={`/atlas?segment_by=file&seg=${enc}&seg_label=${enc}`}
+      >
+        {t('nav:fileActions.drilldown', { defaultValue: 'Drill-down' })}
+      </Link>
+    </>
+  );
+  return (
+    <BundlePage
+      id="file"
+      ctx={{ kind: 'file', fileLabel: file }}
+      params={{ file }}
+      pageTitle={file}
+      titleActions={titleActions}
+    />
   );
 }
 

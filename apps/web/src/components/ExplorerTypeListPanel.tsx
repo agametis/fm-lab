@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { getTypeColor } from '../lib/graphColors';
+import { formatObjectDisplayName } from '../lib/objectName';
 import type { GraphNode } from '../hooks/useSubgraph';
 
 /**
@@ -159,7 +160,7 @@ export function ExplorerTypeListPanel(props: ExplorerTypeListPanelProps) {
                     title={n.label}
                   >
                     <span className="explorer-type-dot" style={{ background: getTypeColor(n.type) }} />
-                    <span className="explorer-neighbor-label">{n.label}</span>
+                    <span className="explorer-neighbor-label">{formatObjectDisplayName(n.type, n.label)}</span>
                     {info?.role && <span className="explorer-neighbor-role-label">{info.role}</span>}
                     {n.file && n.file !== focusFile && <span className="explorer-neighbor-role">{n.file}</span>}
                     {n.isFocus ? (

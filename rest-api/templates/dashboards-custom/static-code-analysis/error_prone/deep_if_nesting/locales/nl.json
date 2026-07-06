@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Diepe If-nesting",
+    "description": "Foutgevoelige regel — stappen die vijf of meer If-niveaus diep genest zijn. Diepe voorwaarden zijn moeilijk te lezen en te testen.\n\nGebaseerd op de PMD-regel AvoidDeeplyNestedIfStmts — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#avoiddeeplynestedifstmts"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Diepe If-nesting",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen diep geneste If-blokken gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Diepte"
+  }
+}

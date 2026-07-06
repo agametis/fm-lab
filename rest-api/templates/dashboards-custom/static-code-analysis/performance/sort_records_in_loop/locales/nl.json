@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Sort Records in Loop",
+    "description": "Prestatieregel — Sort Records binnen een Loop; sorteren per iteratie is zelden bedoeld."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Sort Records in Loop",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen treffer voor \"Sort Records in Loop\" gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Stap",
+    "findings_table.props.columns[3].label": "Diepte"
+  }
+}

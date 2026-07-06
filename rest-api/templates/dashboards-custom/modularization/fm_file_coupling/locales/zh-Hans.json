@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "FileMaker 文件耦合",
+    "description": "解决方案中 FileMaker 文件之间的模块耦合矩阵：按源文件 × 目标文件 × 链接角色聚合的跨文件 ObjectLinks，加上已声明的外部 FileMaker 数据源和文件间访问授权。以表格化审计视图回答“哪个模块依赖于哪个模块？”，作为 Graph Atlas 的补充。"
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "跨文件链接",
+    "summary_kpistrip.props.items[1].label": "已耦合的文件对",
+    "summary_kpistrip.props.items[2].label": "源文件",
+    "summary_kpistrip.props.items[3].label": "最大扇出",
+    "summary_kpistrip.props.items[4].label": "外部 FM 数据源",
+    "summary_kpistrip.props.items[5].label": "文件授权",
+    "by_role.props.title": "按链接角色的耦合",
+    "by_role_table.props.columns[0].label": "链接角色",
+    "by_role_table.props.columns[1].label": "类型",
+    "by_role_table.props.columns[2].label": "链接",
+    "by_role_table.props.columns[3].label": "文件对",
+    "by_role_table.props.columns[4].label": "源文件",
+    "by_role_table.props.columns[5].label": "目标文件",
+    "coupling.props.title": "耦合矩阵（源 → 目标）",
+    "coupling_table.props.columns[0].label": "源文件",
+    "coupling_table.props.columns[1].label": "目标文件",
+    "coupling_table.props.columns[2].label": "链接",
+    "coupling_table.props.columns[3].label": "角色",
+    "coupling_table.props.columns[4].label": "主要角色",
+    "coupling_details.props.title": "耦合详情（单个链接）",
+    "coupling_details_table.props.columns[0].label": "源文件",
+    "coupling_details_table.props.columns[1].label": "源类型",
+    "coupling_details_table.props.columns[2].label": "源对象",
+    "coupling_details_table.props.columns[3].label": "角色",
+    "coupling_details_table.props.columns[4].label": "目标文件",
+    "coupling_details_table.props.columns[5].label": "目标类型",
+    "coupling_details_table.props.columns[6].label": "目标对象",
+    "external_sources.props.title": "外部 FileMaker 数据源（已声明的耦合）",
+    "external_sources_table.props.columns[0].label": "来自文件",
+    "external_sources_table.props.columns[1].label": "声明数据源",
+    "external_sources_table.props.columns[2].label": "TOs",
+    "external_sources_table.props.columns[3].label": "示例 TO",
+    "markdown.props.content": "## 说明\n\n**模块化类别的核心仪表板** — 它直接回答*哪个模块依赖于哪个模块？*，并以表格化审计视图补充 Graph Atlas。\n\n- **KPI**：*跨文件链接* = 所有 `Is_Cross_File = TRUE` 且源/目标文件不同的运行 `ObjectLinks`。*已耦合的文件对* = 不同的有向（源 → 目标）文件对。*最大扇出* = 从单个源文件到达的不同目标文件的最大数量。*外部 FM 数据源* = 不同的 FileMaker 数据源声明。*文件授权* = `FileAccessAuthorizations` 中的行数。\n- **按链接角色的耦合**：跨文件流量如何按种类（`displays_field`、`reads_field`、`calls_script`、`base_table`、…）划分。点击某个角色可将详情列表筛选为该角色。\n- **耦合矩阵**：每个有向文件对一行，包含链接数量、不同角色的数量以及主要角色的预览。点击某个文件对可将详情列表精确筛选为该源 → 目标耦合。\n- **耦合详情**：所选文件对/角色背后的单个链接 — 文件 A 中引用文件 B 中目标对象的源对象。点击某一行可打开**目标**对象。\n- **外部 FM 数据源**：声明性一面 — 哪个文件将哪个其他文件注册为外部数据源（与实际对象流量无关）。点击某一行可打开该数据源按字母顺序排列的第一个表实例。\n- 跨文件链接本质上是运行性的（结构性包含在 FileMaker 中从不跨越文件边界），因此没有结构列。\n- **相关规则**：针对过度耦合的派生严重性规则位于 *Static Code Analysis* 下。\n- **排序**：所有列标题均可点击（▲▼）。"
+  }
+}

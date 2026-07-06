@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Kreuzprodukt-Beziehung (×)",
+    "description": "Fehleranfälligkeits-Regel — Beziehungen mit dem Kreuzprodukt-Operator (×). Sie verbinden jeden Datensatz mit jedem; selten beabsichtigt und leicht versehentlich stehen geblieben."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Kreuzprodukt-Beziehung (×)",
+    "findings_table.props.searchPlaceholder": "Tabellenauftreten suchen…",
+    "findings_table.props.empty.message": "Keine Kreuzprodukt-Beziehungen gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Linke TO",
+    "findings_table.props.columns[2].label": "Rechte TO"
+  }
+}

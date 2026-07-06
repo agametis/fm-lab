@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Prozess- & Shell-Ausführung",
+    "description": "Inventar der externen Prozess-/Shell-Ausführung: Send Event und Perform AppleScript (Step_ID-gated, locale-unabhängig) plus MBS Shell / RunTask / Process-Aufrufe (aufgelöst über calls_pluginfunction). Zeigt, wo die Lösung die Kontrolle an das Betriebssystem übergibt."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Touchpoints",
+    "summary_kpistrip.props.items[1].label": "Send Event",
+    "summary_kpistrip.props.items[2].label": "AppleScript",
+    "summary_kpistrip.props.items[3].label": "MBS-Prozessaufrufe",
+    "summary_kpistrip.props.items[4].label": "Betroffene Dateien",
+    "by_mechanism.props.title": "Nach Mechanismus",
+    "by_mechanism_table.props.columns[0].label": "Mechanismus",
+    "by_mechanism_table.props.columns[1].label": "Art",
+    "by_mechanism_table.props.columns[2].label": "Call-Sites",
+    "by_mechanism_table.props.columns[3].label": "Dateien",
+    "findings.props.title": "Fundstellen",
+    "findings_table.props.columns[0].label": "Mechanismus",
+    "findings_table.props.columns[1].label": "Ref-Typ",
+    "findings_table.props.columns[2].label": "Script/Objekt",
+    "findings_table.props.columns[3].label": "Step/Funktion",
+    "findings_table.props.columns[4].label": "Datei",
+    "findings_table.props.columns[5].label": "#",
+    "markdown.props.content": "## Hinweise\n\nWo die Lösung die Kontrolle an einen **externen Prozess oder die Shell** übergibt. Native Steps sind Step_ID-gated (locale-unabhängig): *Send Event* (57), *Perform AppleScript* (67). MBS-Prozessaufrufe werden aus den aufgelösten `calls_pluginfunction`-Links gelesen: `Shell.*`, `RunTask.*`, `Process.*`.\n\n- **KPIs als Filter**: *Send Event* und *AppleScript* filtern die Detailliste auf diesen Mechanismus.\n- **Nach Mechanismus**: Klick auf eine Zeile filtert die Fundstellen.\n- **Navigation**: Klick auf eine Fundstelle öffnet den Träger (Script + Step-Anchor bzw. das Objekt hinter einem MBS-Aufruf).\n- **Zugehörige Regeln**: abgeleitete Severity-Regeln liegen unter *Statische Code-Analyse*.\n- **Sortierung**: alle Spaltenüberschriften sind klickbar (▲▼)."
+  }
+}

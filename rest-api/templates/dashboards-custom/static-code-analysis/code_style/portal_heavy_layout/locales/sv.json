@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Layout med många portaler",
+    "description": "Kodstils-/prestandaregel — Layouter med fler än sex portaler. Många portaler hämtar var sin relaterad mängd och gör Layouten långsammare. Tröskeln justerbar via reglaget (standard 6)."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Layout med många portaler",
+    "findings_table.props.searchPlaceholder": "Sök fil eller Layout…",
+    "findings_table.props.empty.message": "Inga portaltunga Layouter hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Portaler",
+    "threshold_slider.props.label": "Portaler per Layout (minimum)",
+    "threshold_slider.props.valueSuffix": "portaler"
+  }
+}

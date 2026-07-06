@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Allow User Abort [オフ]",
+    "description": "ベストプラクティスルール — Allow User Abort [オフ] ステップ。中止を無効にすると、長いスクリプトやループ中にユーザーを閉じ込める恐れがあります。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "Allow User Abort [オフ]",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "Allow User Abort [オフ] ステップは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "ステップ"
+  }
+}

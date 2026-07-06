@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Healthchecks",
+    "description": "按对象类型分组的精选健康检查，附带实时计数，每项均链接到其对应的静态代码分析规则仪表板。"
+  },
+  "layout": {
+    "hc_kpi_strip.props.items[0].label": "所有检查",
+    "hc_kpi_strip.props.items[1].label": "错误",
+    "hc_kpi_strip.props.items[2].label": "警告",
+    "hc_kpi_strip.props.items[3].label": "信息",
+    "hc_security_card.props.title": "安全",
+    "hc_security_list.props.empty.message": "无可报告项。",
+    "hc_fields_card.props.title": "字段",
+    "hc_fields_list.props.empty.message": "无可报告项。",
+    "hc_scripts_card.props.title": "脚本",
+    "hc_scripts_list.props.empty.message": "无可报告项。",
+    "hc_relationships_card.props.title": "关系",
+    "hc_relationships_list.props.empty.message": "无可报告项。",
+    "hc_tables_card.props.title": "表与表实例",
+    "hc_tables_list.props.empty.message": "无可报告项。",
+    "hc_layouts_card.props.title": "布局",
+    "hc_layouts_list.props.empty.message": "无可报告项。",
+    "hc_variables_card.props.title": "变量",
+    "hc_variables_list.props.empty.message": "无可报告项。",
+    "hc_valuelists_card.props.title": "值列表",
+    "hc_valuelists_list.props.empty.message": "无可报告项。",
+    "hc_customfunctions_card.props.title": "自定义函数",
+    "hc_customfunctions_list.props.empty.message": "无可报告项。"
+  }
+}

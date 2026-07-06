@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Loop sem Exit Loop If",
+    "description": "Regra propensa a erros — scripts com um Loop mas sem terminador confiável: nem Exit Loop If nem um \"Ir para registro/requisição/página\" ou \"Ir para linha de portal\" com \"Sair após o último\" dentro do Loop. Os Loops restantes podem rodar indefinidamente."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Loop sem Exit Loop If",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhum Loop sem Exit Loop If encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Loops"
+  }
+}

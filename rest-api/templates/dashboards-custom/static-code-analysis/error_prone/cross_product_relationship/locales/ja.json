@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "デカルト積（×）リレーションシップ",
+    "description": "エラーを招きやすいルール — デカルト積演算子（×）を使うリレーションシップ。すべてのレコードを互いに結び付けます。意図されることはまれで、うっかり残りがちです。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "デカルト積（×）リレーションシップ",
+    "findings_table.props.searchPlaceholder": "テーブルオカレンスを検索…",
+    "findings_table.props.empty.message": "デカルト積リレーションシップは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "左 TO",
+    "findings_table.props.columns[2].label": "右 TO"
+  }
+}

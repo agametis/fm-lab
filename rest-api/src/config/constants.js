@@ -41,7 +41,7 @@ const OBJECT_TYPES = [
  * Pseudo-Token-Types: synthetische Aggregat-Einträge, die Inline-Filter
  * (?withUsage / ?withCategory / ?category / ?sort) und den /api/list/categories
  * Endpoint unterstützen. PluginComponent ist bewusst NICHT enthalten — es
- * ist selbst die Category-Ebene (vgl. PRD §1.3, §7.1).
+ * ist selbst die Category-Ebene.
  */
 const PSEUDO_TOKEN_TYPES = [
   "ScriptStepType",
@@ -53,7 +53,7 @@ const PSEUDO_TOKEN_TYPES = [
  * Folder Pseudo-Types
  * Folder ist im Datenmodell ein einziger Object_Type ('Folder'), aber im API-Sprachgebrauch
  * trennen wir nach Source_Table, damit Konsumenten zwischen Script-/Layout-Folder unterscheiden
- * können (siehe project/prd_webclient_treeview.md, Verfeinerung 2).
+ * können.
  */
 const FOLDER_PSEUDO_TYPES = {
   ScriptFolder: "ScriptCatalog",
@@ -157,7 +157,7 @@ const ERROR_CODES = {
 /**
  * Reference-DB: unterstützte Sprachen pro Domain.
  * Steps haben 11 Sprachen (inkl. en + zh-Hans), Functions nur 9 (kein en, kein zh-Hans).
- * Für Functions in 'en' liefert der Service `canonical_name` als Display-Name (siehe PRD §9.4).
+ * Für Functions in 'en' liefert der Service `canonical_name` als Display-Name.
  */
 const REFERENCE_STEP_LANGUAGES = [
   "en",
@@ -189,7 +189,7 @@ const REFERENCE_CONTENT_LEVELS = ["meta", "summary", "full"];
 /**
  * Mapping DB-Sprachcode ↔ Mirror-Verzeichnis-Code. Die DB nutzt 'zh-Hans', der
  * vom Skill `install-claris-docs` gepflegte Mirror verwendet 'zh' (URL-Segment
- * der Claris-Site). Siehe PRD §5.13 und §9.9.
+ * der Claris-Site).
  */
 const REFERENCE_LANG_TO_MIRROR_DIR = { "zh-Hans": "zh" };
 
@@ -248,6 +248,8 @@ const DETAIL_TEMPLATE_MAP = {
   PluginFunction: "object_details_pluginfunction",
   ScriptStepType: "object_details_scriptsteptype",
   PluginComponent: "object_details_plugincomponent",
+  CustomMenu: "object_details_custommenu",
+  CustomMenuItem: "object_details_custommenuitem",
 };
 
 /**

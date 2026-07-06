@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Djup If-nästling",
+    "description": "Felbenägen regel — steg som är nästlade fem eller fler If-nivåer djupt. Djupa villkor är svåra att läsa och testa.\n\nBaserad på PMD-regeln AvoidDeeplyNestedIfStmts — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#avoiddeeplynestedifstmts"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Djup If-nästling",
+    "findings_table.props.searchPlaceholder": "Sök fil eller skript…",
+    "findings_table.props.empty.message": "Inga djupt nästlade If-block hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Skript",
+    "findings_table.props.columns[2].label": "Djup"
+  }
+}

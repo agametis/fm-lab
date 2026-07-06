@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "Integración de correo electrónico",
+    "description": "Inventario del envío de correo electrónico saliente: pasos Send Mail (Step_ID 63) clasificados por vía de envío (servidor SMTP frente a cliente de correo), con el host SMTP extraído y una marca para credenciales codificadas de forma fija (relevante para la seguridad), además de llamadas MBS SendMail. El SMTP por cURL permanece en el panel de APIs."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Pasos Send Mail",
+    "summary_kpistrip.props.items[1].label": "vía SMTP",
+    "summary_kpistrip.props.items[2].label": "vía Client",
+    "summary_kpistrip.props.items[3].label": "Credenciales codificadas",
+    "summary_kpistrip.props.items[4].label": "Llamadas de correo MBS",
+    "summary_kpistrip.props.items[5].label": "Archivos afectados",
+    "by_mode.props.title": "Por vía de envío",
+    "by_mode_table.props.columns[0].label": "Vía de envío",
+    "by_mode_table.props.columns[1].label": "Puntos de llamada",
+    "by_mode_table.props.columns[2].label": "Archivos",
+    "by_mode_table.props.columns[3].label": "Auth codificada",
+    "findings.props.title": "Puntos de llamada",
+    "findings_table.props.columns[0].label": "Vía de envío",
+    "findings_table.props.columns[1].label": "Mecanismo",
+    "findings_table.props.columns[2].label": "Script/Objeto",
+    "findings_table.props.columns[3].label": "Host SMTP",
+    "findings_table.props.columns[4].label": "Auth codificada",
+    "findings_table.props.columns[5].label": "Archivo",
+    "findings_table.props.columns[6].label": "#",
+    "markdown.props.content": "## Notas\n\nCorreo electrónico **saliente**. *Send Mail* (Step_ID 63) se clasifica según la vía de envío a partir del texto DDR del paso: **servidor SMTP** frente a **cliente de correo**. Cuando el paso utiliza un servidor SMTP, se extrae el host; un paso con un `Password:` en línea se marca como **credenciales codificadas de forma fija** (un hallazgo de seguridad — el valor de la contraseña en sí nunca se muestra). Las llamadas MBS `SendMail.*` / `EmailParser.*` se leen de los enlaces `calls_pluginfunction` resueltos.\n\n- **KPIs como filtros**: *vía SMTP* y *vía Client* filtran la lista de detalle.\n- **Credenciales codificadas de forma fija**: el servidor SMTP, el puerto y la contraseña incrustados en el paso se rompen durante el despliegue y filtran secretos al DDR.\n- **Alcance**: el SMTP basado en cURL (`MBS:CURL.*`) permanece en el panel *APIs e interfaces externas*.\n- **Navegación**: al hacer clic en un punto de llamada se abre el portador (Script + ancla del paso, o el objeto detrás de una llamada MBS).\n- **Reglas relacionadas**: las reglas de severidad derivadas se encuentran en *Static Code Analysis*.\n- **Ordenación**: todos los encabezados de columna se pueden pulsar (▲▼)."
+  }
+}

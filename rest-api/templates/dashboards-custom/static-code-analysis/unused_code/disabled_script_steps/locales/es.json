@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Script con muchos pasos desactivados",
+    "description": "Regla de código sin usar: scripts con cinco o más pasos desactivados. Los pasos desactivados son código comentado que sobrecarga el script y confunde a los lectores."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Script con muchos pasos desactivados",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o script…",
+    "findings_table.props.empty.message": "No se encontraron scripts con muchos pasos desactivados.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Desactivados"
+  }
+}

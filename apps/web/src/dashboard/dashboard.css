@@ -144,6 +144,43 @@
   color: var(--color-info-fg);
 }
 
+/* --- DefinitionList (compact Label | Value settings panel) --- */
+.dash-deflist {
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  max-width: 560px;
+}
+.dash-deflist__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.dash-deflist__row:last-child { border-bottom: none; }
+.dash-deflist__label {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+.dash-deflist__value {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-align: right;
+}
+.dash-deflist__value.dash-badge {
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-info-bg);
+  color: var(--color-info-fg);
+}
+
 /* --- List --- */
 .dash-list {
   list-style: none;
@@ -411,6 +448,32 @@
   flex-wrap: wrap;
   gap: 6px;
   padding: 0 0 8px 0;
+}
+.dash-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 8px 0;
+}
+.dash-select__label {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+.dash-select__control {
+  font-family: inherit;
+  font-size: 0.82rem;
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+.dash-select__control:hover,
+.dash-select__control:focus {
+  border-color: var(--color-accent);
+  outline: none;
 }
 .dash-chip {
   display: inline-flex;
@@ -682,6 +745,30 @@
 }
 .dash-viewbar__count {
   font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Folder grouping (TileGrid groupBy) --- */
+.dash-tilegroups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.dash-tilegroup__title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 6px;
+}
+.dash-tilegroup__count {
+  font-size: 0.8rem;
+  font-weight: 400;
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -1523,4 +1610,97 @@
 .sn-rebuild-log--error {
   color: var(--color-error-fg);
   border-color: var(--color-error-border);
+}
+
+/* Threshold slider (Slider primitive) — drives a getvariable() param via the
+ * URL so the rule SQL re-runs at the chosen threshold. Accent-colored track,
+ * value read-out to the right of the caption. */
+.dash-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dash-slider__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dash-slider__label {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+.dash-slider__value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.dash-slider__track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dash-slider__bound {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  min-width: 2.5em;
+  text-align: center;
+}
+.dash-slider__input {
+  flex: 1;
+  accent-color: var(--color-accent, var(--color-accent-soft-bg));
+  cursor: pointer;
+}
+
+/* Import-Integrität (Dup-Absorption-Zensus, xml_convert). ①-OK-Zustand: ruhige
+ * grüne Statuszeile; ②-Warn-Zustand: Warn-Kopf + Detailtabelle + B-K3-Fußtext. */
+.xml-integrity--ok {
+  padding: 6px 4px;
+  color: var(--color-success-fg);
+  font-size: 0.9rem;
+}
+.xml-integrity__ok-mark {
+  font-weight: 700;
+}
+.xml-integrity__head {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 10px;
+  color: var(--color-warning-fg);
+  font-weight: 600;
+}
+.xml-integrity__warn-mark {
+  font-size: 1.05em;
+}
+.xml-integrity__foot {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--color-warning-fg);
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+  border-radius: 8px;
+}
+.xml-integrity__hint {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+.xml-integrity__details {
+  margin-top: 14px;
+}
+.xml-integrity__more {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+.xml-integrity__details-head {
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
 }

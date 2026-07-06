@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "깊은 If 중첩",
+    "description": "오류 유발 규칙 — If가 다섯 단계 이상 중첩된 단계. 깊은 조건은 읽기와 테스트가 어렵습니다.\n\nPMD 규칙 AvoidDeeplyNestedIfStmts — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#avoiddeeplynestedifstmts"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "깊은 If 중첩",
+    "findings_table.props.searchPlaceholder": "파일 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "깊게 중첩된 If 블록을 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "스크립트",
+    "findings_table.props.columns[2].label": "깊이"
+  }
+}

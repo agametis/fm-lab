@@ -10,6 +10,7 @@
     "files_table.props.columns[4].label": "Importé",
     "files_table.props.empty.message": "Aucun fichier dans le répertoire XML.",
     "last_run.props.title": "Dernière conversion",
+    "import_integrity.props.title": "Intégrité de l'import",
     "graph_communities.props.title": "Communautés du graphe",
     "graph_communities_desc.props.content": "Couverture de structure et de nommage des modules détectés. Reconstruisez la partition avec le bouton ; (re)nommez les nouveaux modules avec la skill `/fm-graph-cluster`."
   }

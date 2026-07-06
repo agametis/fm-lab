@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { getTypeColor } from '../lib/graphColors';
+import { formatObjectDisplayName } from '../lib/objectName';
 import type { GraphNode } from '../hooks/useSubgraph';
 
 /**
@@ -46,7 +47,7 @@ export function ExplorerInspectPanel(props: ExplorerInspectPanelProps) {
     >
       <div className="explorer-inspect-head">
         <span className="explorer-type-dot" style={{ background: getTypeColor(node.type) }} />
-        <h2 className="explorer-inspect-title" title={node.label}>{node.label}</h2>
+        <h2 className="explorer-inspect-title" title={node.label}>{formatObjectDisplayName(node.type, node.label)}</h2>
         <button type="button" className="explorer-inspect-close" onClick={onClose} aria-label={t('common:back') as string}>
           ✕
         </button>
@@ -91,7 +92,7 @@ export function ExplorerInspectPanel(props: ExplorerInspectPanelProps) {
                     {direction === 'out' ? '→' : '←'}
                   </span>
                   <span className="explorer-type-dot" style={{ background: getTypeColor(n.type) }} />
-                  <span className="explorer-neighbor-label" title={n.label}>{n.label}</span>
+                  <span className="explorer-neighbor-label" title={n.label}>{formatObjectDisplayName(n.type, n.label)}</span>
                   <span className="explorer-neighbor-role">{role}</span>
                 </button>
               </li>

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Waardelijst met hardgecodeerde waarden",
+    "description": "Codestijlregel — waardelijsten opgebouwd uit eigen (hardgecodeerde) waarden in plaats van een veld. Hardgecodeerde lijsten verouderen en kunnen niet door gebruikers worden onderhouden."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Waardelijst met hardgecodeerde waarden",
+    "findings_table.props.searchPlaceholder": "Bestand of waardelijst zoeken…",
+    "findings_table.props.empty.message": "Geen hardgecodeerde waardelijsten gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Waardelijst",
+    "findings_table.props.columns[2].label": "Waarden"
+  }
+}

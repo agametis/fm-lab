@@ -1,0 +1,42 @@
+{
+  "manifest": {
+    "title": "Vista de ficheiro",
+    "description": "Vista detalhada por ficheiro: metadados, opções de ficheiro, KPIs de objetos e os scripts acionados / esquema inicial / conta de início de sessão."
+  },
+  "layout": {
+    "file_not_found.props.title": "Ficheiro não encontrado",
+    "file_not_found_md.props.content": "Não existe nenhum ficheiro com este nome na base de dados atual. Abra um ficheiro a partir da página **inicial**.",
+    "file_info.props.title": "Informação do ficheiro",
+    "file_metrics_kpistrip.props.items[0].label": "Objetos",
+    "file_metrics_kpistrip.props.items[1].label": "Referências",
+    "file_metrics_kpistrip.props.items[2].label": "Versão FM",
+    "file_metrics_kpistrip.props.items[3].label": "Info DDR",
+    "file_metrics_kpistrip.props.items[4].label": "Última importação",
+    "file_metrics_kpistrip.props.items[5].label": "Versão mínima",
+    "file_size_kpistrip.props.items[0].label": "Tamanho do ficheiro",
+    "file_settings_list.props.items[0].label": "Início automático",
+    "file_settings_list.props.items[1].label": "Guardar credenciais",
+    "file_settings_list.props.items[2].label": "Campos de início de sessão",
+    "file_settings_list.props.items[3].label": "Encriptação",
+    "file_settings_list.props.items[4].label": "Ocultar partilha WebDirect",
+    "file_settings_list.props.items[5].label": "Ocultar partilha com clientes",
+    "file_settings_list.props.items[6].label": "Sublinhar ortografia",
+    "file_object_counts.props.title": "Objetos",
+    "file_object_counts_kpistrip.props.items[0].label": "Scripts",
+    "file_object_counts_kpistrip.props.items[1].label": "Tabelas",
+    "file_object_counts_kpistrip.props.items[2].label": "Campos",
+    "file_object_counts_kpistrip.props.items[3].label": "TOs",
+    "file_object_counts_kpistrip.props.items[4].label": "Relações",
+    "file_object_counts_kpistrip.props.items[5].label": "Layouts",
+    "file_object_counts_kpistrip.props.items[6].label": "Listas de valores",
+    "file_object_counts_kpistrip.props.items[7].label": "Funções pers.",
+    "file_object_counts_kpistrip.props.items[8].label": "Variáveis",
+    "file_triggers.props.title": "Scripts acionados",
+    "file_triggers_table.props.columns[0].label": "Evento",
+    "file_triggers_table.props.columns[1].label": "Script",
+    "file_start_layout.props.title": "Esquema inicial",
+    "file_start_layout_table.props.columns[0].label": "Layout",
+    "file_account.props.title": "Conta de início de sessão",
+    "file_account_table.props.columns[0].label": "Conta"
+  }
+}

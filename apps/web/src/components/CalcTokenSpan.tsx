@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { CalcToken } from '../script/calcTokens';
+import type { ScriptRef } from '../script/types';
 import { FunctionTokenSpan } from './FunctionTokenSpan';
+import { PluginRefSpan } from './RefSpan';
 import {
   useHighlightRefUuids,
   isUuidHighlighted,
@@ -66,32 +68,36 @@ export const CalcTokenSpan: React.FC<{ token: CalcToken }> = ({ token }) => {
           {text}
         </span>
       );
-    case 'pluginFunction':
-      // Cross-Navigation zur PluginFunction-Detail-Seite.
-      // Popover (Plugin-Doku) wird vom übergeordneten CustomFunctionViewer/
-      // FieldViewer nicht über CalcTokenSpan dargestellt — wir bleiben hier
-      // bei einem einfachen Link-Wrapper.
-      if (token.uuid) {
-        return (
-          <Link
-            to={buildObjectPath(token.uuid, currentUuid ?? null)}
-            className={`fm-ref fm-ref--pluginFunction fm-ref-link${hlClass}`}
-            data-ref-type="pluginFunction"
-            title={`${token.subFunction ? `${text}: ${token.subFunction}` : text}  (Klick → Detail-Seite)`}
-          >
-            {text}
-          </Link>
-        );
-      }
+    case 'pluginFunction': {
+      // Parität zur Script-Ansicht: dieselbe PluginRefSpan-Komponente wie in
+      // RefSpan (Subfunktions-Doku-Popover + Komponenten-Link + Navigation zur
+      // PluginFunction-Detail-Seite). Der MBS-Container bleibt der sichtbare
+      // Link-Text, das Popover löst die eigentliche Subfunktion (z.B. CURL.New)
+      // auf. Wir mappen den CalcToken auf einen minimalen ScriptRef.
+      const reference: ScriptRef = {
+        type: 'pluginFunction',
+        name: token.content,
+        uuid: token.uuid,
+        subFunction: token.subFunction,
+      };
+      const navPath = token.uuid
+        ? buildObjectPath(token.uuid, currentUuid ?? null)
+        : null;
+      // Nach dem Subfunktions-Hoisting (siehe hoistPluginSubfunctionLinks) ist
+      // der sichtbare Text bereits die Subfunktion → keine redundante `X: X`-Tooltip.
+      const title = token.subFunction && token.subFunction !== text
+        ? `${text}: ${token.subFunction}`
+        : text;
       return (
-        <span
+        <PluginRefSpan
+          reference={reference}
+          text={text}
           className={`fm-ref fm-ref--pluginFunction${hlClass}`}
-          data-ref-type="pluginFunction"
-          title={token.subFunction ? `${text}: ${token.subFunction}` : text}
-        >
-          {text}
-        </span>
+          title={title}
+          navPath={navPath}
+        />
       );
+    }
     case 'variable':
       return (
         <span
@@ -127,3 +133,58 @@ export const CalcTokenSpan: React.FC<{ token: CalcToken }> = ({ token }) => {
       return <span className="fm-customfunction-text">{text}</span>;
   }
 };
+
+/**
+ * Verschiebt bei Container-Plugin-Aufrufen (MBS) den Link vom `MBS`-Container auf
+ * den fachlichen Subfunktions-Namen — analog zur Script-Ansicht (tokenize.ts
+ * `refMatchText`), die den Subfunktions-String im Text unterstreicht, nicht `MBS`.
+ *
+ * Die Calc-Token-API liefert `MBS` als eigenes pluginFunction-Token, gefolgt von
+ * einem Text-Token, das den Subfunktions-Namen als String-Argument enthält
+ * (`( "CURL.New" ; … )`). Wir demoten `MBS` zu Klartext und heben den
+ * Subfunktions-Namen (mit UUID + Popover-Trigger) als verlinktes pluginFunction-
+ * Token in den Folge-Text. Findet sich der Subfunktions-Name nicht im direkten
+ * Folge-Token (oder fehlt UUID/subFunction), bleibt das Token unverändert
+ * (Fallback: `MBS` bleibt der Link).
+ */
+export function hoistPluginSubfunctionLinks(tokens: CalcToken[]): CalcToken[] {
+  const out: CalcToken[] = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    const next = tokens[i + 1];
+    if (
+      t.type === 'pluginFunction' &&
+      t.uuid &&
+      t.subFunction &&
+      next &&
+      next.type === 'text'
+    ) {
+      const idx = next.content.indexOf(t.subFunction);
+      if (idx >= 0) {
+        out.push({ type: 'text', content: t.content }); // 'MBS' → Klartext
+        const prefix = next.content.slice(0, idx);
+        const suffix = next.content.slice(idx + t.subFunction.length);
+        if (prefix) out.push({ type: 'text', content: prefix });
+        out.push({ ...t, content: t.subFunction }); // verlinkter Subfunktions-Name
+        if (suffix) out.push({ type: 'text', content: suffix });
+        i++; // Folge-Text-Token konsumiert
+        continue;
+      }
+    }
+    out.push(t);
+  }
+  return out;
+}
+
+/**
+ * Rendert eine Calc-Token-Liste mit vorgeschaltetem Subfunktions-Hoisting.
+ * Gemeinsame Nutzung durch CustomFunction-/Field-/CustomMenu-/PrivilegeSet-Viewer,
+ * damit MBS-Aufrufe überall wie in der Script-Ansicht dargestellt werden.
+ */
+export const CalcTokenList: React.FC<{ tokens: CalcToken[] }> = ({ tokens }) => (
+  <>
+    {hoistPluginSubfunctionLinks(tokens).map((tok, idx) => (
+      <CalcTokenSpan key={idx} token={tok} />
+    ))}
+  </>
+);

@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Ongebruikt script",
+    "description": "Ongebruikte-code-regel — scripts die door geen ander script worden aangeroepen en door geen enkele trigger worden gestart. Controleer: handmatige of aangepaste-menustarts kunnen hier verschijnen.\n\nGebaseerd op de PMD-regel UnusedPrivateMethod — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatemethod"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Ongebruikt script",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen ongebruikte scripts gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

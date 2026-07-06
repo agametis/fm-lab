@@ -1,0 +1,29 @@
+{
+  "manifest": {
+    "title": "Execução no lado do servidor",
+    "description": "O que é executado (potencialmente) no servidor: Perform Script on Server, Execute FileMaker Data API e Install OnTimer Script (delimitados por Step_ID), além das concessões de Extended Privilege relevantes para o servidor (fmrest, fmurlscript, fmodata, fmxml, fmphp, fmextscriptaccess). Uma visão de auditoria de acesso da superfície do servidor."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Perform Script on Server",
+    "summary_kpistrip.props.items[1].label": "Execute Data API",
+    "summary_kpistrip.props.items[2].label": "Install OnTimer",
+    "summary_kpistrip.props.items[3].label": "Arquivos afetados",
+    "summary_kpistrip.props.items[4].label": "Concessões de servidor",
+    "by_kind.props.title": "Por mecanismo",
+    "by_kind_table.props.columns[0].label": "Mecanismo",
+    "by_kind_table.props.columns[1].label": "Pontos de chamada",
+    "by_kind_table.props.columns[2].label": "Arquivos",
+    "by_kind_table.props.columns[3].label": "Scripts",
+    "findings.props.title": "Ocorrências",
+    "findings_table.props.columns[0].label": "Mecanismo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Step",
+    "findings_table.props.columns[3].label": "Arquivo",
+    "findings_table.props.columns[4].label": "#",
+    "grants.props.title": "Concessões de servidor/API (Extended Privileges)",
+    "grants_table.props.columns[0].label": "Extended Privilege",
+    "grants_table.props.columns[1].label": "Conjunto de privilégios",
+    "grants_table.props.columns[2].label": "Arquivo",
+    "markdown.props.content": "## Observações\n\nO que é executado (potencialmente) no **servidor**. Os steps nativos são delimitados por Step_ID (independentes de idioma): *Perform Script on Server* (164), *Execute FileMaker Data API* (203), *Install OnTimer Script* (148).\n\n- **KPIs como filtros**: os KPIs de step filtram as ocorrências para esse mecanismo.\n- **Concessões de servidor/API**: quais conjuntos de privilégios concedem os Extended Privileges relevantes para o servidor (`fmrest`, `fmurlscript`, `fmodata`, `fmxml`, `fmphp`, `fmextscriptaccess`). Clique em uma linha para abrir o conjunto de privilégios.\n- **Navegação**: clicar em uma ocorrência abre o script no step.\n- **Regras relacionadas**: as regras de severidade derivadas ficam em *Static Code Analysis*.\n- **Ordenação**: todos os cabeçalhos de coluna são clicáveis (▲▼)."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "深い If ネスト",
+    "description": "エラーを招きやすいルール — If が 5 段以上ネストしたステップ。深い条件は読みにくく、テストしにくくなります。\n\nPMD ルール AvoidDeeplyNestedIfStmts — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#avoiddeeplynestedifstmts"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "深い If ネスト",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "深くネストされた If ブロックは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "深さ"
+  }
+}

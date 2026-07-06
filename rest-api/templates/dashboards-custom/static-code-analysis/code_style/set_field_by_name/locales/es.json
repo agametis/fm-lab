@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Set Field By Name (destino dinámico)",
+    "description": "Regla de estilo de código: pasos Set Field By Name. El campo de destino se calcula en tiempo de ejecución, por lo que el análisis estático y la refactorización no pueden seguirlo."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Set Field By Name (destino dinámico)",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o script…",
+    "findings_table.props.empty.message": "No se encontraron pasos Set Field By Name.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Paso"
+  }
+}

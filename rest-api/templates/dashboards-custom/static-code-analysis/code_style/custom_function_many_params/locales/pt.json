@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Custom Function com muitos parâmetros",
+    "description": "Regra de estilo de código — Custom Functions com cinco ou mais parâmetros. Assinaturas longas são difíceis de chamar corretamente.\n\nBaseado na regra PMD ExcessiveParameterList — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessiveparameterlist"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Custom Function com muitos parâmetros",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou função…",
+    "findings_table.props.empty.message": "Nenhuma Custom Function com muitos parâmetros encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Custom Function",
+    "findings_table.props.columns[2].label": "Parâmetros"
+  }
+}

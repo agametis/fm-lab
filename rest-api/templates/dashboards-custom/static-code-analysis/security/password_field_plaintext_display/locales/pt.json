@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Campo de senha exibido em texto simples",
+    "description": "Regra de segurança — um campo de senha/PIN é exibido em um layout por um objeto que não é uma \"caixa de edição criptografada\", então o valor aparece em texto simples no layout. Listado por objeto de layout (o mesmo campo pode estar visível em vários layouts).\n\nComplementa a regra de armazenamento (password_field_plaintext): aqui trata-se da exibição na tela, decidida no nível do objeto de layout, não do campo."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Campo de senha exibido em texto simples",
+    "findings_table.props.searchPlaceholder": "Pesquisar campo ou layout…",
+    "findings_table.props.empty.message": "Nenhum campo de senha é exibido em texto simples.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Campo",
+    "findings_table.props.columns[2].label": "Layout"
+  }
+}

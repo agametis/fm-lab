@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Loop profundamente aninhada",
+    "description": "Regra de desempenho — scripts com três ou mais Loops aninhadas. A iteração aninhada multiplica o trabalho a cada passagem externa."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Loop profundamente aninhada",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhuma Loop profundamente aninhada encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Profundidade"
+  }
+}

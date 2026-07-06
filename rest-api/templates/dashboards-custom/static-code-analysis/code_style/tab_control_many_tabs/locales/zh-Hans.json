@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "选项卡众多的选项卡控件",
+    "description": "代码风格规则 — 选项卡超过六个的选项卡控件。选项卡过多会隐藏内容且难以导航。 阈值可通过滑块调整（默认 6）。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "选项卡众多的选项卡控件",
+    "findings_table.props.searchPlaceholder": "搜索文件或 Layout…",
+    "findings_table.props.empty.message": "未找到过载的选项卡控件。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "选项卡数",
+    "threshold_slider.props.label": "每个选项卡控件的选项卡数（最小）",
+    "threshold_slider.props.valueSuffix": "选项卡"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Custom Function med många parametrar",
+    "description": "Kodstilsregel — Custom Functions med fem eller fler parametrar. Långa signaturer är svåra att anropa korrekt.\n\nBaserad på PMD-regeln ExcessiveParameterList — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#excessiveparameterlist"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Custom Function med många parametrar",
+    "findings_table.props.searchPlaceholder": "Sök fil eller funktion…",
+    "findings_table.props.empty.message": "Inga Custom Functions med många parametrar hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Custom Function",
+    "findings_table.props.columns[2].label": "Parametrar"
+  }
+}

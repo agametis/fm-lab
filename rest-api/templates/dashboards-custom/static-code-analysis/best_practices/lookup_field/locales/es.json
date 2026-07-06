@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Campo de lookup",
+    "description": "Inventario de los campos rellenados mediante lookup. Un lookup captura deliberadamente un valor en el momento de fijarlo (instantánea), a menudo justo lo deseado (p. ej., congelar un precio, un tipo impositivo o una dirección en un documento). Listado a modo de resumen, no como error."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Campo de lookup",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, campo u origen…",
+    "findings_table.props.empty.message": "No se encontraron campos de lookup.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Campo",
+    "findings_table.props.columns[2].label": "Origen del lookup"
+  }
+}

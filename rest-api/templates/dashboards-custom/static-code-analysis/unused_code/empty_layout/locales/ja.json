@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "空の Layout",
+    "description": "未使用コードルール — Layout オブジェクトが 1 つもない Layout。多くは作り込まれなかったプレースホルダーです。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "空の Layout",
+    "findings_table.props.searchPlaceholder": "ファイルまたは Layout を検索…",
+    "findings_table.props.empty.message": "空の Layout は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

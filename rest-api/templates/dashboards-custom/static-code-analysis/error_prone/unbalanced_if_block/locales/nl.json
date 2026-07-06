@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Ongebalanceerde If / End If",
+    "description": "Foutgevoelige regel — scripts waarvan de If/End If-nesting niet klopt, of die een nooit geopende If sluiten."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Ongebalanceerde If / End If",
+    "findings_table.props.searchPlaceholder": "Bestand, script of bevinding zoeken…",
+    "findings_table.props.empty.message": "Geen ongebalanceerde If / End If-blokken gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Bevinding"
+  }
+}

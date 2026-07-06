@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "全局变量中的机密",
+    "description": "安全规则 — 名称暗示机密（密码、令牌、API 密钥）的全局/超全局变量。全局变量在整个会话期间持续存在。\n\n基于 PMD 规则 GlobalVariable — https://docs.pmd-code.org/latest/pmd_rules_ecmascript_bestpractices.html#globalvariable"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "全局变量中的机密",
+    "findings_table.props.searchPlaceholder": "搜索变量…",
+    "findings_table.props.empty.message": "未在全局变量中找到机密。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "变量",
+    "findings_table.props.columns[2].label": "作用域"
+  }
+}

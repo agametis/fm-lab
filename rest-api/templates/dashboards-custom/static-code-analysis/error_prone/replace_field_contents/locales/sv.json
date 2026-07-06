@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Replace Field Contents",
+    "description": "Felbenägen regel — Replace Field Contents-steg. De skriver över fältet i hela träffmängden utan ångra; en felaktig träffmängd förstör i tysthet många poster."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "findings_card.props.title": "Replace Field Contents",
+    "findings_table.props.searchPlaceholder": "Sök fil eller skript…",
+    "findings_table.props.empty.message": "Inga Replace Field Contents-steg hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Skript",
+    "findings_table.props.columns[2].label": "Steg"
+  }
+}

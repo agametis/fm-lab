@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Imbrication If profonde",
+    "description": "Règle sujette aux erreurs : étapes imbriquées à cinq niveaux If ou plus. Les conditions profondes sont difficiles à lire et à tester.\n\nD’après la règle PMD AvoidDeeplyNestedIfStmts — https://docs.pmd-code.org/latest/pmd_rules_java_design.html#avoiddeeplynestedifstmts"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Imbrication If profonde",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un script…",
+    "findings_table.props.empty.message": "Aucun bloc If profondément imbriqué trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Profondeur"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Leeg script",
+    "description": "Ongebruikte-code-regel — scripts zonder enige stap. Meestal placeholders die nooit zijn geïmplementeerd."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Leeg script",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen lege scripts gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script"
+  }
+}

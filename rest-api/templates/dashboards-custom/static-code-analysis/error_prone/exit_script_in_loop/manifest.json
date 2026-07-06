@@ -1,0 +1,58 @@
+{
+  "id": "exit_script_in_loop",
+  "version": "1.0.0",
+  "title": "Exit Script inside Loop",
+  "description": "Error-prone rule — Exit Script executed inside a Loop. Leaving a script mid-loop skips the loop cleanup and surprises callers.",
+  "author": "fm-lab rules",
+  "icon": "log-out",
+  "category": "error_prone",
+  "tags": [
+    "rule",
+    "pmd",
+    "error_prone"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "error_prone",
+    "rationale": "Exiting inside a loop bypasses any post-loop logic and makes control flow hard to follow.",
+    "remediation": "Set a flag and Exit Loop If, then exit the script after the loop.",
+    "meta": {
+      "name": "Exit Script inside Loop",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Error-prone rule — Exit Script executed inside a Loop. Leaving a script mid-loop skips the loop cleanup and surprises callers.",
+      "created": "2026-07-01",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Exit Script in der Loop",
+    "description": "Fehleranfälligkeits-Regel — Exit Script innerhalb einer Loop. Ein Script mitten in der Loop zu verlassen überspringt das Loop-Cleanup und überrascht Aufrufer."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Exit Script in der Loop",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Kein Exit Script innerhalb einer Loop gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Schritt"
+  }
+}

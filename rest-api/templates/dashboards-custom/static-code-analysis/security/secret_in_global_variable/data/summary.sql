@@ -1,0 +1,17 @@
+-- Auto-generiert aus dem core der Rule (secret_in_global_variable). Nicht von Hand editieren.
+SELECT
+    COUNT(*)                     AS finding_count,
+    'warning'          AS severity,
+    COUNT(DISTINCT file_name)   AS affected_files
+FROM (
+SELECT 'secret-in-global-variable' AS rule_id, 'warning' AS severity,
+    CASE WHEN len(v.Files) > 0 THEN v.Files[1] ELSE '—' END AS file_name,
+    v.Display_Name AS variable_name, v.Variable_Scope AS scope,
+    v.Set_Count AS set_count, v.Read_Count AS read_count,
+    row_number() OVER (ORDER BY v.Display_Name) AS row_key
+FROM VariablesCatalog v
+WHERE v.Variable_Scope IN ('global', 'superglobal')
+  AND regexp_matches(LOWER(v.Display_Name), '(password|passwort|secret|token|apikey|api_key)')
+  AND (getvariable('file') IS NULL OR list_contains(v.Files, getvariable('file')))
+ORDER BY v.Display_Name
+) _summary;

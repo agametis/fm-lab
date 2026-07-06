@@ -1,4 +1,8 @@
 {
+  "fileActions": {
+    "search": "Zoeken",
+    "drilldown": "Drill-down"
+  },
   "modeTabsAriaLabel": "Weergavemodus",
   "breadcrumbs": {
     "search": "Zoeken",

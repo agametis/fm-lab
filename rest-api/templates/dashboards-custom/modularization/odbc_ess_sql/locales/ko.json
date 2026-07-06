@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "ODBC / ESS / SQL",
+    "description": "외부 SQL 데이터 액세스 인벤토리: Execute SQL 단계 (Step_ID 117), ODBC / ESS 데이터 소스 (FileMaker가 아닌 외부 소스) 및 fmxdbc (ODBC/JDBC) 권한 부여. 범용 템플릿으로, 현재 코퍼스에 ODBC 소스가 없는 경우에도 유용합니다."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Execute SQL 단계",
+    "summary_kpistrip.props.items[1].label": "ODBC / ESS 소스",
+    "summary_kpistrip.props.items[2].label": "fmxdbc 권한 부여",
+    "summary_kpistrip.props.items[3].label": "SQL 포함 파일",
+    "findings.props.title": "Execute SQL 단계",
+    "findings_table.props.columns[0].label": "스크립트",
+    "findings_table.props.columns[1].label": "단계",
+    "findings_table.props.columns[2].label": "SQL (미리보기)",
+    "findings_table.props.columns[3].label": "파일",
+    "findings_table.props.columns[4].label": "#",
+    "ess_sources.props.title": "ODBC / ESS 데이터 소스",
+    "ess_sources_table.props.emptyMessage": "ODBC / ESS 소스가 없습니다 — 모든 외부 소스는 FileMaker입니다.",
+    "ess_sources_table.props.columns[0].label": "소스",
+    "ess_sources_table.props.columns[1].label": "유형",
+    "ess_sources_table.props.columns[2].label": "TOs",
+    "ess_sources_table.props.columns[3].label": "파일",
+    "grants.props.title": "ODBC / xDBC 권한 부여 (fmxdbc)",
+    "grants_table.props.emptyMessage": "fmxdbc를 부여하는 권한 세트가 없습니다.",
+    "grants_table.props.columns[0].label": "확장 권한",
+    "grants_table.props.columns[1].label": "권한 세트",
+    "grants_table.props.columns[2].label": "파일",
+    "markdown.props.content": "## 참고\n\n외부 **SQL** 데이터 액세스. *Execute SQL* 은 Step_ID로 게이트됩니다 (117, 로케일 독립적 — 이 코퍼스에서는 `SQL ausführen` 으로 내보내집니다). ODBC / ESS 소스는 외부 데이터 소스 카탈로그의 FileMaker가 아닌 항목입니다. `fmxdbc` 권한 부여는 어떤 권한 세트가 ODBC/JDBC 액세스를 허용하는지 보여줍니다.\n\n- 이것은 **범용 템플릿**입니다: 코퍼스에는 현재 ODBC/ESS 소스가 없고 (모든 외부 소스는 FileMaker) Execute SQL 단계가 하나 있습니다 — 이 대시보드는 재사용 가능한 라이브러리 항목으로 계속 유용합니다.\n- **탐색**: Execute SQL 단계를 클릭하면 해당 단계에서 스크립트가 열립니다. ODBC/ESS 소스는 첫 번째 table occurrence를 엽니다. 권한 부여는 권한 세트를 엽니다.\n- **관련 규칙**: 파생된 심각도 규칙은 *Static Code Analysis* 아래에 있습니다.\n- **정렬**: 모든 열 머리글은 클릭할 수 있습니다 (▲▼)."
+  }
+}

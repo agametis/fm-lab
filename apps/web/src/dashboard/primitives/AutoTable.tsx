@@ -51,6 +51,17 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
   const rows = dataset?.data ?? [];
   const meta = metaDatasetId ? datasets[metaDatasetId]?.data?.[0] : undefined;
 
+  // Optionale, client-seitige Chip-Leiste über einer Ergebnis-Spalte. Der
+  // Feldname kommt aus dem Meta-Dataset (`chip_filter`, aus dem SQL-Frontmatter
+  // `-- @chip_filter: <spalte>`) oder direkt aus den Props. Counts werden über
+  // die geladenen Zeilen gezählt — kein zweiter Query, kein Server-Param. Die
+  // Facetten-Buckets werden bewusst in der SQL geformt (ein Chip pro Wert), was
+  // die Grammatik hier auf einen einzelnen Feldnamen reduziert.
+  const chipFilterField =
+    (meta?.chip_filter as string | null | undefined) ??
+    (props.chipFilter as string | undefined) ??
+    null;
+
   const clickAction =
     (meta?.click_action as string | null | undefined) ??
     (props.clickAction as string | undefined) ??
@@ -78,19 +89,41 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(0);
+  const [chipValue, setChipValue] = useState<string | null>(null);
+
+  // Chip-Optionen: ein Chip je Feld-Wert mit Live-Count über die geladenen
+  // Zeilen, nach Häufigkeit (desc) sortiert. Greift VOR der Volltextsuche.
+  const chipOptions = useMemo(() => {
+    if (!chipFilterField) return [] as { value: string; count: number }[];
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+      const v = row[chipFilterField];
+      if (v == null) continue;
+      const key = String(v);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .map(([value, count]) => ({ value, count }))
+      .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value, lang));
+  }, [rows, chipFilterField, lang]);
+
+  const chipFiltered = useMemo(() => {
+    if (!chipFilterField || chipValue === null) return rows;
+    return rows.filter(row => String(row[chipFilterField] ?? '') === chipValue);
+  }, [rows, chipFilterField, chipValue]);
 
   // Filter
   const filtered = useMemo(() => {
-    if (!search.trim()) return rows;
+    if (!search.trim()) return chipFiltered;
     const needle = search.trim().toLowerCase();
-    return rows.filter(row =>
+    return chipFiltered.filter(row =>
       columns.some(c => {
         const v = row[c.field];
         if (v === null || v === undefined) return false;
         return String(v).toLowerCase().includes(needle);
       }),
     );
-  }, [rows, search, columns]);
+  }, [chipFiltered, search, columns]);
 
   // Sortierung
   const sorted = useMemo(() => {
@@ -133,11 +166,34 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
 
   return (
     <div className="dash-autotable">
+      {chipFilterField && chipOptions.length > 0 && (
+        <div className="dash-chip-bar" role="group" aria-label={t('common:all') as string}>
+          <button
+            type="button"
+            className={`dash-chip${chipValue === null ? ' dash-chip--active' : ''}`}
+            onClick={() => { setChipValue(null); setPage(0); }}
+          >
+            {t('common:all') as string}
+            <span className="dash-chip__count">{rows.length}</span>
+          </button>
+          {chipOptions.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              className={`dash-chip${chipValue === opt.value ? ' dash-chip--active' : ''}`}
+              onClick={() => { setChipValue(opt.value); setPage(0); }}
+            >
+              {opt.value}
+              <span className="dash-chip__count">{opt.count}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="dash-autotable__head">
         <span className="dash-autotable__count">
           {t('detail:autoTable.rowCount', { count: total })}
-          {search.trim() && total !== rows.length && (
-            <> · {t('detail:autoTable.filteredFrom', { count: rows.length })}</>
+          {search.trim() && total !== chipFiltered.length && (
+            <> · {t('detail:autoTable.filteredFrom', { count: chipFiltered.length })}</>
           )}
           {paginate && pageCount > 1 && (
             <> · {t('detail:autoTable.page', { current: safePage + 1, total: pageCount })}</>

@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "未使用のスクリプト",
+    "description": "未使用コードルール — 他のどのスクリプトからも呼び出されず、どのトリガーからも起動されないスクリプト。確認：手動やカスタムメニューからの起動がここに現れることがあります。\n\nPMD ルール UnusedPrivateMethod — https://docs.pmd-code.org/latest/pmd_rules_java_bestpractices.html#unusedprivatemethod"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "未使用のスクリプト",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "未使用のスクリプトは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト"
+  }
+}

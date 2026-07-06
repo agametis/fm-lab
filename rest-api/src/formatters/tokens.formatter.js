@@ -136,7 +136,15 @@ function tokenFromChunk(chunk, idx, allChunks) {
     tok.uuid = md5(`BuiltinFunction::${content}`);
   }
   if (apiType === 'pluginFunction') {
-    tok.uuid = md5(`PluginFunction::${content}::${tok.subFunction || ''}`);
+    // Der Katalog-UUID basiert auf dem vollen Plugin_Function_Name. Bei
+    // Container-Plugins (MBS) ist das `<Plugin>:<SubName>` (EINFACHER Doppelpunkt),
+    // NICHT nur der bloße Container-Name `MBS` — vgl. convert_xml_04_catalog.sql:
+    // md5('PluginFunction::' || Plugin_Function_Name || '::' || SubName).
+    // `content` trägt hier nur den Container-Namen; der SubName wird oben aus den
+    // Nachbar-Chunks aufgelöst. Ohne diese Rekonstruktion zeigt der Link auf eine
+    // nicht existierende UUID (Objekt-Detailseite: „not found").
+    const pfName = tok.subFunction ? `${content}:${tok.subFunction}` : content;
+    tok.uuid = md5(`PluginFunction::${pfName}::${tok.subFunction || ''}`);
   }
   // CustomFunctionRef-Chunks tragen — anders als FieldRef — keine UUID im
   // CDATA, nur den Namen. Die Field-/CustomFunction-Token-Templates lösen ihn
@@ -226,6 +234,60 @@ function extractSubFunctionFromNeighbors(idx, allChunks) {
 // "Insert Text [ $Header ]"). Längere Werte werden mit "…" gekürzt.
 const INSERTED_TEXT_MAX = 200;
 
+// Anzeige-Obergrenze für Formeln in der Fallback-Komposition (Steps ohne DDR-Text).
+// Zeilenumbrüche bleiben erhalten (DDR-Texte tragen sie ebenfalls), nur die Länge
+// wird gedeckelt, damit Monster-Calcs die Step-Zeile nicht sprengen.
+const FALLBACK_CALC_MAX = 400;
+
+/**
+ * Klartext-Näherung für Script-Steps OHNE DDR-Text (Dateien ohne DDR-Info).
+ * Komponiert aus den in P1/P2 bereits materialisierten Step-Bestandteilen:
+ *   <Step-Name> [ $Variable ; Step-XML-Refs (Script/Layout/Feld/TO/…) ; Flag ; Formel ]
+ * Bewusst eine HEURISTIK (Phase 2a): step-typ-spezifische Optionen/Flags, die nur im
+ * Step_XML stehen (Sortierkriterien, Import-Mappings, Dialog-Buttons …), fehlen —
+ * deren FM-getreue Rekonstruktion ist Phase 2b (P3-vorberechnete Spalte).
+ * Bei vorhandenem DDR wird diese Funktion
+ * nie aufgerufen (d.Step_Text gewinnt im SQL/Aufrufer).
+ */
+function composeFallbackStepText(row, stepRefs) {
+  const parts = [];
+
+  // 1. Variable (Set Variable LHS) — Ref-Duplikat wird unten ausgefiltert.
+  if (row.variable_name) parts.push(row.variable_name);
+
+  // 2. Step-XML-Referenzen (aufgelöste Namen aus P2): Script-/Layout-/Menüset-
+  //    Namen in typografischen Quotes (wie im deutschen DDR-Text), Felder als
+  //    TO::Feld, TOs/Wertelisten nackt.
+  for (const r of stepRefs || []) {
+    if (!r.name) continue;
+    if (r.type === 'variable') continue; // deckt variable_name bereits ab
+    if (r.type === 'script' || r.type === 'layout' || r.type === 'menuset') {
+      parts.push(`„${r.name}“`);
+    } else if (r.table) {
+      parts.push(`${r.table}::${r.name}`);
+    } else {
+      parts.push(r.name);
+    }
+  }
+
+  // 3. Erstes Boolean-Flag (z.B. "With dialog"): Label kommt englisch aus dem
+  //    Step-XML-Attribut, Wert FM-üblich als Ein/Aus.
+  if (row.boolean_type) {
+    parts.push(`${row.boolean_type}: ${String(row.boolean_value) === 'True' ? 'Ein' : 'Aus'}`);
+  }
+
+  // 4. Formel-Klartext (erste Calculation des Steps; If/Set Variable/Set Field/
+  //    Exit/Custom Dialog …). Länge gedeckelt, Zeilenumbrüche bleiben.
+  if (row.calculation_text) {
+    let calc = String(row.calculation_text).trim();
+    if (calc.length > FALLBACK_CALC_MAX) calc = calc.slice(0, FALLBACK_CALC_MAX) + '…';
+    if (calc) parts.push(calc);
+  }
+
+  if (parts.length === 0) return null; // parameterloser Step → Step-Name allein ist korrekt
+  return `${row.step_name} [ ${parts.join(' ; ')} ]`;
+}
+
 /**
  * Bereitet den Insert-Text-Payload (StepsForScripts.Inserted_Text) für die Anzeige
  * auf: der Wert ist bereits in P2 (xml_extract_text) entity-DEKODIERT, hier wird er
@@ -256,6 +318,22 @@ function formatScript(rows, { object, refs }) {
   // — first-wins-Semantik sorgt dafür, dass Step-XML-Refs gewinnen.
   const refsByLine = {};
   const seenByLine = {};
+  // Step-XML-Refs (source_priority=0) separat je Zeile sammeln — Rohstoff für die
+  // Fallback-Komposition bei Steps ohne DDR-Text. Calc-Refs (priority=1) bleiben
+  // außen vor (sie stammen aus der Formel, die als calculation_text ohnehin
+  // vollständig angehängt wird — sonst doppelte Nennung).
+  const stepRefsByLine = {};
+  if (Array.isArray(refs)) {
+    for (const r of refs) {
+      if (Number(r.source_priority) === 0) {
+        (stepRefsByLine[r.line_index] ??= []).push({
+          type: r.type,
+          name: r.name,
+          table: r.to_name || null,
+        });
+      }
+    }
+  }
   if (Array.isArray(refs)) {
     for (const r of refs) {
       const slot = (refsByLine[r.line_index] ??= []);
@@ -325,7 +403,11 @@ function formatScript(rows, { object, refs }) {
     // anhängen (analog der mehrzeiligen DDR-Bracket-Notation). Der Tokenizer
     // rendert Strings/Zahlen darin korrekt; der angehängte Literal matcht keine
     // Ref (außer er enthält zufällig exakt einen Ref-Namen — harmlos).
-    const baseText = row.step_text || row.step_name;
+    // Ohne DDR-Text (Datei ohne DDR-Info): Klartext-Näherung aus den
+    // materialisierten Step-Bestandteilen komponieren (Phase 2a); erst wenn auch
+    // das nichts hergibt (parameterloser Step), bleibt der Step-Name allein.
+    const fallback = row.step_text ? null : composeFallbackStepText(row, stepRefsByLine[row.line_index]);
+    const baseText = row.step_text || fallback || row.step_name;
     const inserted = formatInsertedText(row.inserted_text);
     const text = inserted ? `${baseText}\r[ ${inserted} ]` : baseText;
     return {
@@ -335,6 +417,9 @@ function formatScript(rows, { object, refs }) {
       stepUuid: row.step_uuid,
       stepTypeUuid: row.step_type_uuid,
       text,
+      // Kennzeichnung für Konsumenten/Styling: Text ist eine komponierte
+      // Näherung, kein FM-generierter DDR-Text.
+      ...(fallback ? { textSource: 'fallback' } : {}),
       ...(lineRefs && lineRefs.length ? { refs: lineRefs } : {}),
     };
   });
@@ -422,6 +507,7 @@ function formatField(rows, { object }) {
     maxRepetitions:  head.max_repetitions != null ? Number(head.max_repetitions) : 1,
     comment:         head.field_comment ?? null,
     autoEnterType:   head.auto_enter_type ?? null,
+    constantData:    head.ae_constant_data ?? null,
   };
 
   const chunkRows = rows
@@ -444,6 +530,68 @@ function formatField(rows, { object }) {
     tokens,
     plainText,
   };
+}
+
+/**
+ * Custom Menu: mehrere Berechnungen (Menü-eigene + pro-Item) als je ein Token-Block.
+ * Zeilen kommen block-sortiert (block_id, chunk_index) aus object_details_custommenu_tokens.sql;
+ * pro block_id wird — analog CustomFunction — aus den Chunk-Reihen eine Token-Folge gebaut und
+ * gegen den Klartext (plain_text) abgeglichen. Statische Blöcke (calc_is_static) ohne Chunks
+ * fallen auf ein reines Text-Token zurück.
+ */
+function formatCustomMenu(rows, { object }) {
+  if (!rows || rows.length === 0) {
+    return { kind: 'custommenu', object, calcs: [] };
+  }
+
+  const head = rows[0];
+  const enrichedObject = {
+    ...object,
+    uuid: head.object_uuid || object.uuid,
+    name: head.object_name || object.name,
+    file: head.object_file || object.file,
+  };
+
+  // Zeilen nach Block gruppieren (Reihenfolge aus dem ORDER BY beibehalten).
+  const byBlock = new Map();
+  for (const r of rows) {
+    if (!byBlock.has(r.block_id)) {
+      byBlock.set(r.block_id, {
+        blockId: r.block_id,
+        prefix: r.block_prefix,
+        label: r.calc_label,
+        isStatic: r.calc_is_static === true || r.calc_is_static === 'true',
+        plainText: r.plain_text != null ? String(r.plain_text) : '',
+        chunkRows: [],
+      });
+    }
+    if (r.chunk_index !== null && r.chunk_index !== undefined) {
+      byBlock.get(r.block_id).chunkRows.push({
+        chunk_type: r.chunk_type,
+        chunk_content: r.chunk_content,
+        ref_uuid: r.chunk_ref_uuid,
+      });
+    }
+  }
+
+  const calcs = Array.from(byBlock.values()).map(b => {
+    const rawTokens = b.chunkRows.map((c, i, arr) => tokenFromChunk(c, i, arr));
+    let tokens;
+    if (b.chunkRows.length > 0) {
+      tokens = b.plainText ? reconcileTokensWithPlainText(rawTokens, b.plainText) : rawTokens;
+    } else {
+      // Rein statischer Block ohne Chunks → Klartext als einzelnes Text-Token.
+      tokens = b.plainText ? [{ type: 'text', content: b.plainText }] : [];
+    }
+    return {
+      label: b.prefix ? `${b.prefix} · ${b.label}` : b.label,
+      isStatic: b.isStatic,
+      tokens,
+      plainText: b.plainText || tokens.map(t => t.content).join(''),
+    };
+  });
+
+  return { kind: 'custommenu', object: enrichedObject, calcs };
 }
 
 function formatCalculation(rows, { object }) {
@@ -481,6 +629,8 @@ function format(data, options = {}) {
       return formatCustomFunction(data || [], { object });
     case 'field':
       return formatField(data || [], { object });
+    case 'custommenu':
+      return formatCustomMenu(data || [], { object });
     case 'calculation':
       return formatCalculation(data || [], { object });
     default:

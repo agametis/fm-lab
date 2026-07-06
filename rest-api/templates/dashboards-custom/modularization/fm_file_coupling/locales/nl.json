@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "FileMaker-bestandskoppeling",
+    "description": "Module-koppelingsmatrix tussen de FileMaker-bestanden van de oplossing: bestandsoverschrijdende ObjectLinks geaggregeerd per bronbestand × doelbestand × linkrol, plus de gedeclareerde externe FileMaker-gegevensbronnen en toegangsautorisaties tussen bestanden. Beantwoordt \"welke module hangt aan welke?\" als een tabellarische auditweergave, ter aanvulling op de Graph Atlas."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Bestandsoverschrijdende links",
+    "summary_kpistrip.props.items[1].label": "Gekoppelde bestandsparen",
+    "summary_kpistrip.props.items[2].label": "Bronbestanden",
+    "summary_kpistrip.props.items[3].label": "Max. fan-out",
+    "summary_kpistrip.props.items[4].label": "Externe FM-bronnen",
+    "summary_kpistrip.props.items[5].label": "Bestandsautorisaties",
+    "by_role.props.title": "Koppeling per linkrol",
+    "by_role_table.props.columns[0].label": "Linkrol",
+    "by_role_table.props.columns[1].label": "Type",
+    "by_role_table.props.columns[2].label": "Links",
+    "by_role_table.props.columns[3].label": "Paren",
+    "by_role_table.props.columns[4].label": "Bronbestanden",
+    "by_role_table.props.columns[5].label": "Doelbestanden",
+    "coupling.props.title": "Koppelingsmatrix (bron → doel)",
+    "coupling_table.props.columns[0].label": "Bronbestand",
+    "coupling_table.props.columns[1].label": "Doelbestand",
+    "coupling_table.props.columns[2].label": "Links",
+    "coupling_table.props.columns[3].label": "Rollen",
+    "coupling_table.props.columns[4].label": "Toprollen",
+    "coupling_details.props.title": "Koppelingsdetails (afzonderlijke links)",
+    "coupling_details_table.props.columns[0].label": "Bronbestand",
+    "coupling_details_table.props.columns[1].label": "Brontype",
+    "coupling_details_table.props.columns[2].label": "Bronobject",
+    "coupling_details_table.props.columns[3].label": "Rol",
+    "coupling_details_table.props.columns[4].label": "Doelbestand",
+    "coupling_details_table.props.columns[5].label": "Doeltype",
+    "coupling_details_table.props.columns[6].label": "Doelobject",
+    "external_sources.props.title": "Externe FileMaker-gegevensbronnen (gedeclareerde koppeling)",
+    "external_sources_table.props.columns[0].label": "Vanuit bestand",
+    "external_sources_table.props.columns[1].label": "Declareert bron",
+    "external_sources_table.props.columns[2].label": "TOs",
+    "external_sources_table.props.columns[3].label": "Voorbeeld-TO",
+    "markdown.props.content": "## Opmerkingen\n\n**Het kern-dashboard van de categorie Modularisatie** — het beantwoordt *welke module hangt aan welke?* rechtstreeks en vult de Graph Atlas aan met een tabellarische auditweergave.\n\n- **KPI's**: *Bestandsoverschrijdende links* = alle operationele `ObjectLinks` met `Is_Cross_File = TRUE` en een verschillend bron-/doelbestand. *Gekoppelde bestandsparen* = unieke gerichte (bron → doel) paren. *Max. fan-out* = het hoogste aantal verschillende doelbestanden dat vanuit één bronbestand wordt bereikt. *Externe FM-bronnen* = unieke declaraties van FileMaker-gegevensbronnen. *Bestandsautorisaties* = rijen in `FileAccessAuthorizations`.\n- **Koppeling per linkrol**: hoe het bestandsoverschrijdende verkeer zich opsplitst naar soort (`displays_field`, `reads_field`, `calls_script`, `base_table`, …). Klik op een rol om de detaillijst op die rol te filteren.\n- **Koppelingsmatrix**: één rij per gericht bestandspaar met het aantal links, het aantal verschillende rollen en een voorbeeld van de toprollen. Klik op een paar om de detaillijst precies op die bron → doel-koppeling te filteren.\n- **Koppelingsdetails**: de afzonderlijke links achter een geselecteerd paar / rol — het bronobject in bestand A dat verwijst naar een doelobject in bestand B. Klik op een rij om het **doel**-object te openen.\n- **Externe FM-bronnen**: de declaratieve kant — welk bestand welk ander bestand registreert als externe gegevensbron (onafhankelijk van het werkelijke objectverkeer). Klik op een rij om het alfabetisch eerste tabelvoorkomen van die bron te openen.\n- Bestandsoverschrijdende links zijn van nature operationeel (structurele containment overschrijdt in FileMaker nooit een bestandsgrens), dus er is geen structurele kolom.\n- **Gerelateerde regels**: de afgeleide ernstregels voor overmatige koppeling staan onder *Static Code Analysis*.\n- **Sorteren**: alle kolomkoppen zijn klikbaar (▲▼)."
+  }
+}

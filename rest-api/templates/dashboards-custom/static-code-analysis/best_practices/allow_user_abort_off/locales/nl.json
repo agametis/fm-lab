@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Allow User Abort [Uit]",
+    "description": "Best-practice-regel — Allow User Abort [Uit]-stappen. Het uitschakelen van afbreken kan de gebruiker vastzetten in een lang of lopend script."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Allow User Abort [Uit]",
+    "findings_table.props.searchPlaceholder": "Bestand of script zoeken…",
+    "findings_table.props.empty.message": "Geen Allow User Abort [Uit]-stappen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Stap"
+  }
+}

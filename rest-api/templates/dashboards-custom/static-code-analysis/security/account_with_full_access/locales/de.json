@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Account mit [Vollzugriff]",
+    "description": "Sicherheits-Regel — Accounts mit dem Berechtigungsset [Vollzugriff]. Jeder Vollzugriffs-Account ist ein uneingeschränkter Generalschlüssel; die Anzahl minimal halten."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Account mit [Vollzugriff]",
+    "findings_table.props.searchPlaceholder": "Datei oder Account suchen…",
+    "findings_table.props.empty.message": "Keine [Vollzugriff]-Accounts gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Account"
+  }
+}

@@ -20,8 +20,9 @@ raw_privileges AS (
 INSERT INTO ExtendedPrivilegesCatalog
 SELECT
     xml_extract_text(priv_xml, '/ExtendedPrivilege/@id')[1]::BIGINT as EP_ID,
-    xml_extract_text(priv_xml, '/ExtendedPrivilege/@name')[1] as EP_Name,
-    xml_extract_text(priv_xml, '/ExtendedPrivilege/Description/text()')[1] as EP_Description,
+    -- xml_unescape/ws_restore (B-K7/B-K6) — identisch zur DOM-Basis (Begründung dort).
+    xml_unescape(xml_extract_text(priv_xml, '/ExtendedPrivilege/@name')[1]) as EP_Name,
+    ws_restore(xml_extract_text(priv_xml, '/ExtendedPrivilege/Description/text()')[1]) as EP_Description,
     xml_extract_text(priv_xml, '/ExtendedPrivilege/UUID/text()')[1] as EP_UUID,
 
     -- Array of PrivilegeSet IDs und Namen

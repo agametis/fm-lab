@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "비활성 계정",
+    "description": "미사용 코드/보안 규칙 — 비활성화된 계정. 오래된 비활성 계정은 보안 표면을 깨끗하게 유지하기 위해 제거해야 합니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "비활성 계정",
+    "findings_table.props.searchPlaceholder": "파일 또는 계정 검색…",
+    "findings_table.props.empty.message": "비활성 계정을 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "계정",
+    "findings_table.props.columns[2].label": "권한 세트"
+  }
+}

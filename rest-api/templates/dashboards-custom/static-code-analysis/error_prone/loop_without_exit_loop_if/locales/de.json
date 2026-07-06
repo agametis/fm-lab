@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Loop ohne Exit Loop If",
+    "description": "Fehleranfälligkeits-Regel — Scripts mit Loop, aber ohne verlässliche Abbruch-Bedingung: weder „Verlasse Schleife (wenn)\" noch ein „Gehe zu Datensatz/Abfrage/Seite\" bzw. „Gehe zu Portalzeile\" mit „Ende nach letztem\" innerhalb der Schleife. Die verbleibenden Schleifen laufen evtl. endlos."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Loop ohne Exit Loop If",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Keine Loops ohne Exit Loop If gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Loops"
+  }
+}

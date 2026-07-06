@@ -1,0 +1,18 @@
+{
+  "title": "Static Code Analysis",
+  "icon": "shield-check",
+  "description": "Static code analysis rules, run live against the converted solution. Individual rules link to their prior-art reference (e.g. the analogous PMD rule) where one exists.",
+  "order": 1,
+  "locales": {
+    "de": "Statische Code-Analyse",
+    "es": "Análisis estático de código",
+    "fr": "Analyse statique du code",
+    "it": "Analisi statica del codice",
+    "ja": "静的コード解析",
+    "ko": "정적 코드 분석",
+    "nl": "Statische codeanalyse",
+    "pt": "Análise estática de código",
+    "sv": "Statisk kodanalys",
+    "zh-Hans": "静态代码分析"
+  }
+}

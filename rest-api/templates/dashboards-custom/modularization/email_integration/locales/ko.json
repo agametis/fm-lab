@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "이메일 통합",
+    "description": "발신 이메일 전송 인벤토리: Send Mail 단계(Step_ID 63)를 전송 경로(SMTP 서버 대 이메일 클라이언트)별로 분류하고, 추출된 SMTP 호스트와 하드코딩된 자격 증명 플래그(보안 관련), 그리고 MBS SendMail 호출을 포함합니다. cURL SMTP는 API 대시보드에 남아 있습니다."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Send Mail 단계",
+    "summary_kpistrip.props.items[1].label": "SMTP 경유",
+    "summary_kpistrip.props.items[2].label": "Client 경유",
+    "summary_kpistrip.props.items[3].label": "하드코딩된 자격 증명",
+    "summary_kpistrip.props.items[4].label": "MBS 메일 호출",
+    "summary_kpistrip.props.items[5].label": "영향받는 파일",
+    "by_mode.props.title": "전송 경로별",
+    "by_mode_table.props.columns[0].label": "전송 경로",
+    "by_mode_table.props.columns[1].label": "호출 위치",
+    "by_mode_table.props.columns[2].label": "파일",
+    "by_mode_table.props.columns[3].label": "하드코딩된 인증",
+    "findings.props.title": "호출 위치",
+    "findings_table.props.columns[0].label": "전송 경로",
+    "findings_table.props.columns[1].label": "메커니즘",
+    "findings_table.props.columns[2].label": "스크립트/객체",
+    "findings_table.props.columns[3].label": "SMTP 호스트",
+    "findings_table.props.columns[4].label": "하드코딩된 인증",
+    "findings_table.props.columns[5].label": "파일",
+    "findings_table.props.columns[6].label": "#",
+    "markdown.props.content": "## 참고\n\n발신 **이메일**. *Send Mail*(Step_ID 63)은 DDR 단계 텍스트에서 전송 경로에 따라 분류됩니다: **SMTP 서버** 대 **이메일 클라이언트**. 단계가 SMTP 서버를 사용하는 경우 호스트가 추출됩니다. 인라인 `Password:`를 포함하는 단계는 **하드코딩된 자격 증명**으로 표시됩니다(보안 지적 사항 — 비밀번호 값 자체는 절대 표시되지 않습니다). MBS `SendMail.*` / `EmailParser.*` 호출은 확인된 `calls_pluginfunction` 링크에서 읽어옵니다.\n\n- **필터로서의 KPI**: *SMTP 경유*와 *Client 경유*는 상세 목록을 필터링합니다.\n- **하드코딩된 자격 증명**: 단계에 내장된 SMTP 서버, 포트 및 비밀번호는 배포 시 손상되고 DDR로 비밀을 유출합니다.\n- **범위**: cURL 기반 SMTP(`MBS:CURL.*`)는 *API 및 외부 인터페이스* 대시보드에 남아 있습니다.\n- **탐색**: 호출 위치를 클릭하면 캐리어(스크립트 + 단계 앵커, 또는 MBS 호출 뒤의 객체)가 열립니다.\n- **관련 규칙**: 파생된 심각도 규칙은 *Static Code Analysis* 아래에 있습니다.\n- **정렬**: 모든 열 머리글을 클릭할 수 있습니다(▲▼)."
+  }
+}

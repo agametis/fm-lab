@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Segredo em variável global",
+    "description": "Regra de segurança — variáveis globais/superglobais cujo nome sugere um segredo (senha, token, chave de API). As globais persistem durante toda a sessão.\n\nBaseado na regra PMD GlobalVariable — https://docs.pmd-code.org/latest/pmd_rules_ecmascript_bestpractices.html#globalvariable"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Segredo em variável global",
+    "findings_table.props.searchPlaceholder": "Pesquisar variável…",
+    "findings_table.props.empty.message": "Nenhum segredo encontrado em variáveis globais.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Variável",
+    "findings_table.props.columns[2].label": "Escopo"
+  }
+}

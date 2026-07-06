@@ -1,0 +1,35 @@
+{
+  "id": "generic",
+  "label": "Generic",
+  "locales": {
+    "de": "Generisch",
+    "es": "Genérico",
+    "fr": "Générique",
+    "it": "Generico",
+    "ja": "汎用",
+    "ko": "일반",
+    "nl": "Generiek",
+    "pt": "Genérico",
+    "sv": "Generisk",
+    "zh-Hans": "通用"
+  },
+  "description": "Broadly chosen cloud / SaaS / communication / AI default classification. Copy this file to define a project-specific set.",
+  "rules": [
+    { "family": "AWS", "ilike": ["%amazonaws.com%", "%aws.amazon.com%", "%s3.%"] },
+    { "family": "Cloudflare", "ilike": ["%cloudflare%", "%workers.dev%", "%imagedelivery%"] },
+    { "family": "Azure", "ilike": ["%azurewebsites%", "%azure.com%", "%azureedge%"] },
+    { "family": "GCP", "ilike": ["%googleapis%", "%googleusercontent%", "%cloud.google%"] },
+    { "family": "Google", "ilike": ["%google.%", "%goo.gl%", "%youtube%"] },
+    { "family": "Source Hosting", "ilike": ["%github.%", "%githubusercontent%", "%gitlab.%", "%bitbucket.%"] },
+    { "family": "Payment", "ilike": ["%paypal%", "%stripe.com%", "%squareup%", "%braintree%", "%adyen%"] },
+    { "family": "Mail Provider", "ilike": ["%sendgrid%", "%mailgun%", "%postmarkapp%", "%mailchimp%", "%sparkpost%"] },
+    { "family": "SMS/Voice", "ilike": ["%twilio%", "%vonage%", "%messagebird%", "%plivo%"] },
+    { "family": "Communication", "ilike": ["%slack.com%", "%discord.com%", "%teams.microsoft%", "%zoom.us%"] },
+    { "family": "AI APIs", "ilike": ["%openai.com%", "%anthropic.com%", "%cohere.%", "%huggingface%", "%mistral.%"] },
+    { "family": "Microsoft 365", "ilike": ["%microsoft.com%", "%office.com%", "%office365%", "%sharepoint%"] },
+    { "family": "Schemas/Referenz", "ilike": ["%w3.org%", "%xmlsoap%", "%tempuri%", "%schema.org%", "%json-schema%"] },
+    { "family": "Internal LAN", "regex": "https?://(192\\.168|127\\.0|10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)" },
+    { "family": "Localhost", "ilike": ["%localhost%", "%0.0.0.0%"] },
+    { "family": "FileMaker Community", "source_type": "Custom Function", "in_comment": true }
+  ]
+}

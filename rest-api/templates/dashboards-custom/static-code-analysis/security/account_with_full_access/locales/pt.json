@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Conta com [Acesso completo]",
+    "description": "Regra de segurança — contas com o conjunto de privilégios [Acesso completo]. Cada conta de acesso completo é uma chave-mestra irrestrita; mantenha o número mínimo."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Conta com [Acesso completo]",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou conta…",
+    "findings_table.props.empty.message": "Nenhuma conta com [Acesso completo] encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Conta"
+  }
+}

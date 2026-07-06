@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "If/Else 블록 비대칭",
+    "description": "코드 스타일 규칙 — If 분기가 Else 분기보다 현저히 긴 If/Else 블록이 있는 스크립트. 조기 반환이나 가드 절로 리팩터링할 후보입니다. 임계값은 헤더 슬라이더로 조정 가능(기본값 If ≥ 10, Else ≤ 2단계)."
+  },
+  "layout": {
+    "if_else_kpi_kpistrip.props.items[0].label": "비대칭 블록 수",
+    "if_else_kpi_kpistrip.props.items[1].label": "영향받은 스크립트",
+    "if_else_kpi_kpistrip.props.items[2].label": "영향받은 파일",
+    "if_else_kpi_kpistrip.props.items[3].label": "가장 긴 If 분기",
+    "if_else_blocks.props.title": "긴 If / 짧은 Else 스크립트",
+    "if_else_blocks_table.props.columns[0].label": "파일",
+    "if_else_blocks_table.props.columns[1].label": "스크립트 이름",
+    "if_else_blocks_table.props.columns[2].label": "If 위치",
+    "if_else_blocks_table.props.columns[3].label": "If 단계 수",
+    "if_else_blocks_table.props.columns[4].label": "Else 단계 수",
+    "if_else_blocks_table.props.columns[5].label": "점수",
+    "if_else_blocks_table.props.empty.message": "비대칭 If/Else 블록을 찾을 수 없습니다."
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "重複するスクリプト名",
+    "description": "エラーを招きやすいルール — 1 つのファイル内で同名のスクリプトが 2 つ以上ある。コピー＆ペーストでよく生じ、「名前でスクリプトを呼び出す」を曖昧にします。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "重複するスクリプト名",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "重複するスクリプト名は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "Couplage des fichiers FileMaker",
+    "description": "Matrice de couplage des modules entre les fichiers FileMaker de la solution : ObjectLinks inter-fichiers agrégés par fichier source × fichier cible × rôle de lien, plus les sources de données FileMaker externes déclarées et les autorisations d'accès inter-fichiers. Répond à « quel module dépend de quel autre ? » sous forme de vue d'audit tabulaire, en complément du Graph Atlas."
+  },
+  "layout": {
+    "summary_kpistrip.props.items[0].label": "Liens inter-fichiers",
+    "summary_kpistrip.props.items[1].label": "Paires de fichiers couplées",
+    "summary_kpistrip.props.items[2].label": "Fichiers sources",
+    "summary_kpistrip.props.items[3].label": "Fan-out max.",
+    "summary_kpistrip.props.items[4].label": "Sources FM externes",
+    "summary_kpistrip.props.items[5].label": "Autorisations de fichier",
+    "by_role.props.title": "Couplage par rôle de lien",
+    "by_role_table.props.columns[0].label": "Rôle de lien",
+    "by_role_table.props.columns[1].label": "Type",
+    "by_role_table.props.columns[2].label": "Liens",
+    "by_role_table.props.columns[3].label": "Paires",
+    "by_role_table.props.columns[4].label": "Fichiers sources",
+    "by_role_table.props.columns[5].label": "Fichiers cibles",
+    "coupling.props.title": "Matrice de couplage (source → cible)",
+    "coupling_table.props.columns[0].label": "Fichier source",
+    "coupling_table.props.columns[1].label": "Fichier cible",
+    "coupling_table.props.columns[2].label": "Liens",
+    "coupling_table.props.columns[3].label": "Rôles",
+    "coupling_table.props.columns[4].label": "Rôles principaux",
+    "coupling_details.props.title": "Détails du couplage (liens individuels)",
+    "coupling_details_table.props.columns[0].label": "Fichier source",
+    "coupling_details_table.props.columns[1].label": "Type source",
+    "coupling_details_table.props.columns[2].label": "Objet source",
+    "coupling_details_table.props.columns[3].label": "Rôle",
+    "coupling_details_table.props.columns[4].label": "Fichier cible",
+    "coupling_details_table.props.columns[5].label": "Type cible",
+    "coupling_details_table.props.columns[6].label": "Objet cible",
+    "external_sources.props.title": "Sources de données FileMaker externes (couplage déclaré)",
+    "external_sources_table.props.columns[0].label": "Depuis le fichier",
+    "external_sources_table.props.columns[1].label": "Déclare la source",
+    "external_sources_table.props.columns[2].label": "TOs",
+    "external_sources_table.props.columns[3].label": "TO exemple",
+    "markdown.props.content": "## Remarques\n\n**Le tableau de bord central de la catégorie Modularisation** — il répond directement à *quel module dépend de quel autre ?* et complète le Graph Atlas par une vue d'audit tabulaire.\n\n- **KPIs** : *Liens inter-fichiers* = tous les `ObjectLinks` opérationnels avec `Is_Cross_File = TRUE` et fichier source/cible distinct. *Paires de fichiers couplées* = paires dirigées (source → cible) distinctes. *Fan-out max.* = le plus grand nombre de fichiers cibles distincts atteints depuis un seul fichier source. *Sources FM externes* = déclarations distinctes de sources de données FileMaker. *Autorisations de fichier* = lignes dans `FileAccessAuthorizations`.\n- **Couplage par rôle de lien** : comment le trafic inter-fichiers se répartit par type (`displays_field`, `reads_field`, `calls_script`, `base_table`, …). Cliquez sur un rôle pour filtrer la liste de détails sur ce rôle.\n- **Matrice de couplage** : une ligne par paire de fichiers dirigée avec le nombre de liens, le nombre de rôles distincts et un aperçu des rôles principaux. Cliquez sur une paire pour filtrer la liste de détails exactement sur ce couplage source → cible.\n- **Détails du couplage** : les liens individuels derrière une paire / un rôle sélectionné — l'objet source dans le fichier A référençant un objet cible dans le fichier B. Cliquez sur une ligne pour ouvrir l'objet **cible**.\n- **Sources FM externes** : le côté déclaratif — quel fichier enregistre quel autre fichier comme source de données externe (indépendamment du trafic réel d'objets). Cliquez sur une ligne pour ouvrir la première occurrence de table par ordre alphabétique de cette source.\n- Les liens inter-fichiers sont opérationnels par nature (le containment structurel ne franchit jamais une limite de fichier dans FileMaker), il n'y a donc pas de colonne structurelle.\n- **Règles associées** : les règles de sévérité dérivées pour un couplage excessif se trouvent sous *Static Code Analysis*.\n- **Tri** : tous les en-têtes de colonne sont cliquables (▲▼)."
+  }
+}

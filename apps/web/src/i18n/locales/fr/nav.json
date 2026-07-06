@@ -1,4 +1,8 @@
 {
+  "fileActions": {
+    "search": "Recherche",
+    "drilldown": "Exploration"
+  },
   "modeTabsAriaLabel": "Mode d’affichage",
   "breadcrumbs": {
     "search": "Recherche",

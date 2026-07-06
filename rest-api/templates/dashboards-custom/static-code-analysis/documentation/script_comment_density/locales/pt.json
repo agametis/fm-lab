@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Densidade de comentários em scripts",
+    "description": "Regra de documentação — compara os scripts por número total de etapas, etapas de comentário reais e comentários apenas com espaços em branco, com um fator de densidade de comentários para cada um. Complementa a regra binária \"Script não documentado\" avaliando quão bem comentados estão os scripts substanciais. Número mínimo de etapas ajustável pelo controle deslizante do cabeçalho (padrão 10)."
+  },
+  "layout": {
+    "script_comment_density_kpi_kpistrip.props.items[0].label": "Scripts no total",
+    "script_comment_density_kpi_kpistrip.props.items[1].label": "Com ≥ min_steps",
+    "script_comment_density_kpi_kpistrip.props.items[2].label": "Sem comentário",
+    "script_comment_density_kpi_kpistrip.props.items[3].label": "Mediana comentário %",
+    "script_comment_density.props.title": "Scripts por número de passos, comentários e espaços",
+    "script_comment_density_table.props.columns[0].label": "Script",
+    "script_comment_density_table.props.columns[1].label": "Arquivo",
+    "script_comment_density_table.props.columns[2].label": "Passos totais",
+    "script_comment_density_table.props.columns[3].label": "Comentários reais",
+    "script_comment_density_table.props.columns[4].label": "Passos vazios",
+    "script_comment_density_table.props.columns[5].label": "Comentário %",
+    "script_comment_density_table.props.columns[6].label": "Espaços %",
+    "script_comment_density_table.props.empty.message": "Nenhum script corresponde ao filtro atual.",
+    "threshold_slider.props.label": "Etapas mínimas por script",
+    "threshold_slider.props.valueSuffix": "etapas"
+  }
+}

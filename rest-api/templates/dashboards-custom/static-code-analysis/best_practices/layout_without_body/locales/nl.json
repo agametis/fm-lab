@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Layout zonder body",
+    "description": "Best-practice-regel — Layouts zonder body-onderdeel. Zonder body worden records niet getoond in formulier-/lijstweergave; meestal een verdwaalde of verkeerd gebouwde Layout."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Layout zonder body",
+    "findings_table.props.searchPlaceholder": "Bestand of Layout zoeken…",
+    "findings_table.props.empty.message": "Geen Layouts zonder body gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout"
+  }
+}

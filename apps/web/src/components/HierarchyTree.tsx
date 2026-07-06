@@ -6,6 +6,7 @@ import { ReferencesFilter } from './ReferencesFilter';
 import { useUrlState, stringSetCodec, type UrlStateCodec } from '../hooks/useUrlState';
 import { buildNavigablePath } from '../lib/navigation';
 import { useCurrentFile } from '../lib/currentFileContext';
+import { formatObjectDisplayName } from '../lib/objectName';
 
 const EMPTY_TYPES = new Set<string>();
 
@@ -47,11 +48,13 @@ function buildSearchText(ref: ReferenceItem): string {
 
 /**
  * Generische Sortier-Schlüssel für Referenzen — unabhängig vom Objekttyp.
- * 'origin' = Herkunft (Datei → Typ → Name); 'name' = Objektname → Datei.
+ * 'origin' = Herkunft (Datei → Typ → Name); 'name' = Objektname → Datei;
+ * 'role' = Link-Rolle (die rechts eingeblendete reads_variable/sets_variable/…),
+ * dann Objektname als Tiebreaker.
  * Die Datei ist die abstrakte Herkunfts-Ebene (bei Feldern implizit über die TO,
  * bei Scripts/Layouts/etc. direkt), daher für ALLE Referenz-Typen sinnvoll.
  */
-type RefSortKey = 'origin' | 'name';
+type RefSortKey = 'origin' | 'name' | 'role';
 interface RefSortState { key: RefSortKey; dir: 'asc' | 'desc'; }
 
 function compareRefs(a: ReferenceItem, b: ReferenceItem, key: RefSortKey): number {
@@ -59,6 +62,9 @@ function compareRefs(a: ReferenceItem, b: ReferenceItem, key: RefSortKey): numbe
     (x ?? '').localeCompare(y ?? '', undefined, { sensitivity: 'base', numeric: true });
   if (key === 'origin') {
     return cmp(a.File_Name, b.File_Name) || cmp(a.Object_Type, b.Object_Type) || cmp(a.Object_Name, b.Object_Name);
+  }
+  if (key === 'role') {
+    return cmp(a.Link_Role, b.Link_Role) || cmp(a.Object_Name, b.Object_Name) || cmp(a.File_Name, b.File_Name);
   }
   return cmp(a.Object_Name, b.Object_Name) || cmp(a.File_Name, b.File_Name);
 }
@@ -311,15 +317,15 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
         aria-label={isNavigable
           ? t('detail:hierarchyTree.itemAriaLabel', {
               type: ref.Object_Type,
-              name: ref.Object_Name,
+              name: formatObjectDisplayName(ref.Object_Type, ref.Object_Name),
             }) as string
-          : `${ref.Object_Type}: ${ref.Object_Name}`}
+          : `${ref.Object_Type}: ${formatObjectDisplayName(ref.Object_Type, ref.Object_Name)}`}
       >
         <span className="object-type">
           {ref.Object_Type}
         </span>
-        <span className="ref-name">
-          {ref.Object_Name}
+        <span className="ref-name" title={ref.Object_Name}>
+          {formatObjectDisplayName(ref.Object_Type, ref.Object_Name)}
         </span>
         {/* Meta-Gruppe (Zähler · Rolle · Datei · Badges · Pfeil) — wrappt als EIN
             Block unter den Namen, sobald die Breite nicht reicht; erst bei ganz
@@ -415,6 +421,13 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
           onClick={() => toggleSort('name')}
         >
           {t('detail:hierarchyTree.sortName', { defaultValue: 'Name' })}{sortArrow('name')}
+        </button>
+        <button
+          type="button"
+          className={`reference-sort-btn${refSort.key === 'role' ? ' is-active' : ''}`}
+          onClick={() => toggleSort('role')}
+        >
+          {t('detail:hierarchyTree.sortRole', { defaultValue: 'Link Rolle' })}{sortArrow('role')}
         </button>
       </div>
       {showDirBar && renderDirectionFilter()}

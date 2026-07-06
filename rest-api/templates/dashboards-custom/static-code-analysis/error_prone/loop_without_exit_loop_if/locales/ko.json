@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "title": "Exit Loop If 없는 Loop",
+    "description": "오류 유발 규칙 — Loop는 있으나 신뢰할 수 있는 종료 조건이 없는 스크립트. Loop 안에 Exit Loop If도, \"마지막 후 종료\"가 설정된 \"레코드/요청/페이지로 이동\"이나 \"포털 행으로 이동\"도 없습니다. 남은 Loop는 무한히 실행될 수 있습니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "Exit Loop If 없는 Loop",
+    "findings_table.props.searchPlaceholder": "파일 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "Exit Loop If 없는 Loop를 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "스크립트",
+    "findings_table.props.columns[2].label": "Loop 수"
+  }
+}

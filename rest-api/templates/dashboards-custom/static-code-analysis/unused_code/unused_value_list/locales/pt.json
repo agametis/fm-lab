@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "title": "Lista de valores não utilizada",
+    "description": "Regra de código não utilizado — listas de valores não vinculadas a nenhum campo/objeto de Layout, ordenação ou wrapper externo."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Lista de valores não utilizada",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou nome…",
+    "findings_table.props.empty.message": "Nenhuma correspondência encontrada.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Nome"
+  }
+}
