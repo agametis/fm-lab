@@ -18,11 +18,17 @@
   "dockerComposeFile": ["../docker-compose.yml"],
 
   // Attach to the API service (it carries the full toolchain: DuckDB CLI, webbed,
-  // Node/npm, the conversion harness). Its command is overridden so the container
-  // stays alive for development; you start the servers deliberately (see below).
+  // Node/npm, the conversion harness). Its command is overridden so the container stays
+  // alive for development; the servers are then auto-started by postStartCommand below.
   "service": "api",
   "overrideCommand": true,
   "workspaceFolder": "/workspaces/fm-lab",
+
+  // Dev-container model: everything runs in the ONE attached container (api). Limiting
+  // runServices to `api` keeps the separate `web` service (pure-docker path) from also
+  // starting — otherwise a second Vite + a proxy to the idled api:3003 would surface a
+  // broken UI. `setup` is still pulled in automatically via api's depends_on.
+  "runServices": ["api"],
 
   "remoteUser": "node",
 
@@ -54,9 +60,13 @@
   // node_modules volumes this is a no-op; otherwise it bootstraps here.
   "postCreateCommand": "test -d node_modules/.bin || (sudo /usr/local/bin/init-node-modules.sh /workspaces/fm-lab && npm install && npm run build:shared)",
 
-  // Forward both servers to the host. Start them from a terminal with:
-  //   bash tools/start-servers.sh
-  // (launches the REST API on 3003 and the Vite web client on 5173 in this container).
+  // Auto-start the stack on every container start — no terminal, no manual step. This
+  // launches the REST API (3003) and the Vite web client (5173) in this container;
+  // start-servers.sh is idempotent, so a restart re-attaches instead of double-starting.
+  "postStartCommand": "bash tools/start-servers.sh",
+
+  // Forward both servers to the host; once Vite listens on 5173 the auto-forward opens
+  // the browser on the entry page (working UI — the API on 3003 is up in the same box).
   "forwardPorts": [3003, 5173],
   "portsAttributes": {
     "3003": { "label": "REST-API", "onAutoForward": "silent" },

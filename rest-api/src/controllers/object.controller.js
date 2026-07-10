@@ -274,11 +274,73 @@ async function getDetails(req, res, next) {
 }
 
 /**
+ * ?enrich=<lang> für step-basierte Token-Payloads (Script/ScriptStep/LayoutObject-
+ * Step): pro Step-Line Display-Name/Beschreibung/Help-URL aus der Reference-DB
+ * ergänzen (Lookup über Step-ID, sprach-unabhängig vom lokalisierten Step_Name) und
+ * Function-Refs (type='function') aus Step-Calcs anreichern. Mutiert payload.lines
+ * in-place. Gibt das Meta-Fragment zurück ({ enrich } bzw. Soft-Fail
+ * { enrich:null, enrich_error }); wirft bei ungültiger Sprache.
+ */
+async function enrichStepLines(payload, enrich) {
+  try {
+    const enrichLang = referenceService.resolveStepLang(enrich);
+    const stepMeta = await referenceService.getStepMetaMap(enrichLang);
+
+    const fnRefs = [];
+    for (const line of payload.lines) {
+      if (line.stepId != null) {
+        const m = stepMeta.get(line.stepId);
+        if (m) {
+          line.stepDisplayName = m.displayName;
+          line.stepDescription = m.description;
+          line.stepHelpUrl     = m.helpUrl;
+          line.stepLocalHelpUrl = m.localHelpUrl;
+          line.stepCategoryId  = m.categoryId;
+        }
+      }
+      if (Array.isArray(line.refs)) {
+        for (const r of line.refs) {
+          if (r.type === 'function') fnRefs.push(r);
+        }
+      }
+    }
+    if (fnRefs.length > 0) {
+      const adapted = fnRefs.map((r) => ({ type: 'function', content: r.name, __ref: r }));
+      await referenceService.enrichFunctionTokens(adapted, enrichLang);
+      for (const a of adapted) {
+        if (typeof a.functionId === 'number') {
+          const r = a.__ref;
+          r.functionId          = a.functionId;
+          r.functionCanonical   = a.functionCanonical;
+          if (a.functionSubParameter) r.functionSubParameter = a.functionSubParameter;
+          r.functionDisplayName = a.functionDisplayName;
+          r.functionSignature   = a.functionSignature;
+          r.functionPurpose     = a.functionPurpose;
+          r.functionReturnType  = a.functionReturnType;
+          r.functionHelpUrl     = a.functionHelpUrl;
+          r.functionLocalHelpUrl = a.functionLocalHelpUrl;
+        }
+      }
+    }
+    return { enrich: enrichLang };
+  } catch (e) {
+    if (e.code === 'REF_LANG_INVALID') {
+      throw createError('VALIDATION_ERROR', e.message, e.details || {});
+    }
+    if (e.code === 'REF_NOT_ATTACHED') {
+      return { enrich: null, enrich_error: e.code };
+    }
+    throw e;
+  }
+}
+
+/**
  * format=tokens dispatcher for /api/get-details.
  *
  * Looks up the object type from ObjectCatalog, then runs the token-specific
  * SQL template(s) for that type and feeds the rows through the tokens formatter.
- * Currently supported: Script, CustomFunction. Other types return 400.
+ * Currently supported: Script, ScriptStep, LayoutObject (button-embedded step),
+ * CustomFunction, Field, CustomMenu, CustomMenuItem. Other types return 400.
  */
 async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) {
   // 1. Look up object metadata so we know which token template to run.
@@ -619,11 +681,44 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
       template_used: cmTemplate,
     };
     debugSql = debug ? cmResult.sql : null;
+  } else if (objectType === 'LayoutObject') {
+    // Button-eingebetteter Einzel-Step (Grouped Button / Button): als 1-Zeilen-
+    // Tokens-Payload rendern, damit das Frontend den Klartext-Step mit Step-Namen-
+    // Tooltip (enrich) und verlinkten Parametern zeigt (wie im Script-Detail).
+    // Objekte ohne eingebetteten Step liefern 0 Zeilen → das Frontend rendert
+    // keine Step-Sektion.
+    const stepResult = await templateService.executeTemplate(
+      'object_details_layoutobject_step_tokens',
+      { uuid, file: resolvedFile },
+      'report'
+    );
+    const refsResult = await templateService.executeTemplate(
+      'object_references_layoutobject_step',
+      { uuid, file: resolvedFile },
+      'report'
+    );
+
+    payload = formatters.format(stepResult.data, 'tokens', {
+      kind: 'script',
+      object: baseObject,
+      refs: refsResult.data,
+    });
+
+    if (enrich) {
+      metaInfo = { ...metaInfo, ...(await enrichStepLines(payload, enrich)) };
+    }
+
+    metaInfo = {
+      ...metaInfo,
+      template_used: 'object_details_layoutobject_step_tokens',
+      references_template: 'object_references_layoutobject_step',
+    };
+    debugSql = debug ? `${stepResult.sql}\n\n-- references:\n${refsResult.sql}` : null;
   } else {
     throw createError(
       'VALIDATION_ERROR',
       `format=tokens is not supported for object type '${objectType}'`,
-      { uuid, objectType, supported: ['Script', 'ScriptStep', 'CustomFunction', 'Field', 'CustomMenu', 'CustomMenuItem'] }
+      { uuid, objectType, supported: ['Script', 'ScriptStep', 'LayoutObject', 'CustomFunction', 'Field', 'CustomMenu', 'CustomMenuItem'] }
     );
   }
 

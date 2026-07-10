@@ -1,12 +1,12 @@
 #!/bin/bash
-# katana-xml/lib/convert_preprocess.sh — Stage-1-Pre-Processor: Encoding-Erkennung,
-# Byte-Clean (UTF-8/BOM/CR-Sentinel/C0-Strip) + DDR-Recmap-Bestimmung.
+# katana-xml/lib/convert_preprocess.sh — stage-1 pre-processor: encoding detection,
+# byte clean (UTF-8/BOM/CR-sentinel/C0-strip) + DDR recmap determination.
 #
-# Modul von tools/convert_fm_xml.sh (§7.1 Shell-Split) — reine Code-Bewegung,
-# Verhalten unverändert. NICHT eigenständig ausführbar: wird vom Treiber
-# ge-sourced (Existenz-Check dort, A-B10) und nutzt dessen Globals
-# (WS_SENTINEL_ON, DDR_*-Konfiguration, Report-Zähler PRE_*).
-# bash-3.2-Disziplin (macOS system-bash): kein `case` in $(…), kein bash-4+.
+# Module of tools/convert_fm_xml.sh (shell split) — pure code movement,
+# behaviour unchanged. NOT independently executable: is sourced by the driver
+# (existence check there, A-B10) and uses its globals
+# (WS_SENTINEL_ON, DDR_* configuration, report counters PRE_*).
+# bash-3.2 discipline (macOS system bash): no `case` in $(…), no bash-4+.
 
 # BOM-detect and iconv to UTF-8 first (GNU grep/awk see raw bytes otherwise and silently
 # miss everything — the interactive ugrep shim auto-decodes, which once masked this).
@@ -56,7 +56,7 @@ _ddr_recmap_for_file() {
     local f="$1" R M m_cap
     R=$(_ddr_count_records "$f")
     [ "$R" -lt 1 ] && return 0
-    # "Nur sehr große Dateien" — applies in BOTH modes. Without it, a small explicit M
+    # "Only very large files" — applies in BOTH modes. Without it, a small explicit M
     # multiplies the corpus-wide chunk count across all files (the 119k-explosion shape).
     # Small files' Calc chunk has no DOM-peak problem, so sub-chunking them is pointless.
     [ "$R" -lt "$DDR_MIN_RECORDS" ] && return 0
@@ -145,13 +145,13 @@ preprocess_file() {
     PRE_CR_COUNT=$(tr -dc '\r' < "$TMP_UTF8" | wc -c | tr -d ' ')
     PRE_DEL_GUARD_COUNT=$(tr -dc '\177' < "$TMP_UTF8" | wc -c | tr -d ' ')
 
-    # (c2) DEL guard → (b) CR→DEL [chr(127)-Sentinel, nur wenn WS_SENTINEL_ON] → (c) strip C0.
-    # Sentinel ON (Default/altes webbed): heutiges Verhalten — CR (0x0D) → 0x7F (DEL), damit
-    # webbeds frueherer #73-Whitespace-Collapse den Umbruch nicht frisst; die SQL holt 0x7F→LF
-    # zurueck (ws_restore). Sentinel OFF (Probe: webbed bewahrt Whitespace nativ): CR→DEL
-    # ueberspringen — CR ist NICHT im C0-Strip-Set, ueberlebt also bis zum Parser, der es nativ
-    # zu LF normalisiert; ws_restore wird dann zum No-op. Gemeinsame Quelle WS_SENTINEL_ON
-    # mit der SQL-Injektion (wa_ws_sentinel). DEL-Guard + C0-Strip laufen in beiden Faellen.
+    # (c2) DEL guard → (b) CR→DEL [chr(127) sentinel, only when WS_SENTINEL_ON] → (c) strip C0.
+    # Sentinel ON (default/old webbed): current behaviour — CR (0x0D) → 0x7F (DEL) so that
+    # webbed's earlier #73 whitespace collapse does not eat the linebreak; the SQL brings 0x7F→LF
+    # back (ws_restore). Sentinel OFF (probe: webbed preserves whitespace natively): skip CR→DEL
+    # — CR is NOT in the C0-strip set, so it survives to the parser, which normalizes it natively
+    # to LF; ws_restore then becomes a no-op. Shared source WS_SENTINEL_ON
+    # with the SQL injection (wa_ws_sentinel). DEL guard + C0 strip run in both cases.
     if [ "${WS_SENTINEL_ON:-true}" = "false" ]; then
         if ! tr -d '\177' < "$TMP_UTF8" \
                 | tr -d '\000-\010\013\014\016-\037' > "$OUT"; then

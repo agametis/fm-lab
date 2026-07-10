@@ -1,6 +1,6 @@
 #!/bin/bash
 # FileMaker XML to DuckDB Conversion Script
-# version 5.0.0 - 2026-07-02
+# version 5.1.0 - 2026-07-08
 #
 #
 #   *** KATANA XML Engine ***
@@ -114,7 +114,7 @@
 #   5 - XML preprocessing failed
 #   6 - Schema drift detected (single mode or --no-auto-heal): manual rebuild required
 #   7 - Concurrency lock collided (another convert is already running)
-#   8 - webbed/xml extension too old (no read_xml 'streaming' parameter — Stufe b version gate)
+#   8 - webbed/xml extension too old (no read_xml 'streaming' parameter — stage b version gate)
 
 # Constants
 # Converter version (SemVer): version of THIS ingestion script, independent of the
@@ -130,14 +130,14 @@
 #   2.2.0 — file parallelism (--jobs N): Phase 1 concurrently into part DBs +
 #           merge into the master DB (bit-identical). Log options extended with
 #           jobs/parallel.
-#   2.3.0 — Merge dedup hardening (Stufe a):
+#   2.3.0 — Merge dedup hardening (stage a):
 #           the chunk/part-union merges (catmerge, _turbo_build_part, parquet variant) now carry
 #           `ON CONFLICT DO NOTHING` on PK/UNIQUE tables → cross-chunk record overlap or clone
 #           UUIDs no longer crash the catalog build with a duplicate-key error (a1). Absorbed
 #           duplicates are logged (a2). Sync no longer blocked by a single failed file and refuses
 #           to publish a master without ObjectCatalog (a4). Bit-identical on clean data.
 #           [Tester-Vorabpatch — bugfix-only.]
-#   2.4.0 — webbed capability gate (Stufe b): startup probe of the actually
+#   2.4.0 — webbed capability gate (stage b): startup probe of the actually
 #           loaded webbed → clear upfront abort (exit 8) when it lacks the read_xml 'streaming'
 #           parameter (the real version floor, previously a cryptic mid-run Binder Error), plus
 #           capability provenance logging (streaming-param / nested-attr-SAX-fix). Capability-driven
@@ -180,12 +180,12 @@ if [ -n "${LC_ALL:-}" ]; then
 fi
 export LC_NUMERIC=C
 
-# CONVERTER_VERSION ist NICHT die Anzeige-Version (die steht im Header Z. 3 und
-# speist version.json → xml_import), sondern der OPERATIVE Invalidierungs-Token
-# des Turbo-Manifests: er wird pro Datei in manifest_file persistiert; weicht er
-# beim nächsten --changed-only-Lauf ab, wird voll neu konvertiert. Bumpen, sobald
-# sich das KONVERTIERUNGS-ERGEBNIS ändern kann (neue Spalten, geänderte
-# Extraktion/Normalisierung) — unabhängig von Header- oder @SCHEMA_VERSION.
+# CONVERTER_VERSION is NOT the display version (that lives in the header line 3 and
+# feeds version.json → xml_import), but the OPERATIVE invalidation token
+# of the turbo manifest: it is persisted per file in manifest_file; if it differs
+# on the next --changed-only run, a full re-conversion is triggered. Bump it as soon
+# as the CONVERSION RESULT can change (new columns, changed
+# extraction/normalization) — independent of the header or @SCHEMA_VERSION.
 CONVERTER_VERSION="2.5.2"
 PROJECT_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel 2>/dev/null || (cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd))"
 # Six-phase pipeline. Phase 1 (extraction, the only XML-reading phase) and Phase 2
@@ -201,8 +201,8 @@ ANALYSIS_VIEWS_TEMPLATE="$PROJECT_ROOT/sql/create_analysis_views.sql"
 # (StepsForScripts, DDR_INFO) into their own chunks to lower the
 # Phase-1 peak memory. P2–P5 run unchanged, batch-wide.
 SPLITTER_AWK="$PROJECT_ROOT/tools/katana-xml/split_fm_xml.awk"
-# Gemeinsame Katana-Kernfunktionen (A-W1): wird bei JEDEM Splitter-/Fuse-/Renamer-
-# Aufruf per zusätzlichem -f VOR der spezifischen Datei geladen.
+# Shared Katana core functions (A-W1): loaded on EVERY splitter/fuse/renamer
+# call via an additional -f BEFORE the specific file.
 KATANA_COMMON_AWK="$PROJECT_ROOT/tools/katana-xml/katana_common.awk"
 # Turbo Phase-S pass fusion: ONE awk pass replaces
 # clean(tr)+counts(wc/tr)+streamify-rename+split. Used only on the turbo path.
@@ -212,16 +212,16 @@ TURBO_FUSE_AWK="$PROJECT_ROOT/tools/katana-xml/turbo_phaseS_fuse.awk"
 # is enforced via LC_ALL=C at the call site (mawk is byte-transparent).
 AWK_BIN="${FM_AWK_BIN:-$(command -v mawk || command -v gawk || command -v awk)}"
 
-# A-B9: macOS-/BSD-date kennt %N nicht (liefert das literal 'N' → alle Dauern
-# verlieren die Subsekunden bzw. tragen '…N'-Reste). Einmalige Fähigkeitsprobe;
-# Fallback = ganze Sekunden. Alle Zeitmessungen nutzen now_epoch().
+# A-B9: macOS/BSD date does not know %N (returns the literal 'N' → all durations
+# lose the sub-seconds or carry '…N' remnants). One-off capability probe;
+# fallback = whole seconds. All time measurements use now_epoch().
 if case "$(date +%N 2>/dev/null)" in (*[!0-9]*|'') false ;; (*) true ;; esac; then
     now_epoch() { date +%s.%N; }
 else
     now_epoch() { date +%s; }
 fi
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-# §6.1: Startzeit für den last_xml_run-Stempel (UTC, ISO — Format wie der API-Record)
+# start time for the last_xml_run stamp (UTC, ISO — same format as the API record)
 RUN_STARTED_AT=$(date -u '+%Y-%m-%dT%H:%M:%S.000Z')
 
 # NDJSON-Mode helpers (shared with installer skills). Sourcing the file gives
@@ -230,24 +230,24 @@ RUN_STARTED_AT=$(date -u '+%Y-%m-%dT%H:%M:%S.000Z')
 # unchanged. When the REST-API spawns the script with --quiet (POST
 # /api/xml/convert), every emit_* writes NDJSON to stdout instead.
 QUIET_MODE=false
-# Existenz-Check vor jedem source (A-B10): ein fehlendes Modul bricht sofort
-# mit klarer Meldung ab, statt später an undefinierten Funktionen zu sterben.
-[ -f "$PROJECT_ROOT/tools/install_modes.sh" ] || { echo "ERROR: Modul fehlt: tools/install_modes.sh" >&2; exit 1; }
+# Existence check before every source (A-B10): a missing module aborts immediately
+# with a clear message instead of dying later on undefined functions.
+[ -f "$PROJECT_ROOT/tools/install_modes.sh" ] || { echo "ERROR: Module missing: tools/install_modes.sh" >&2; exit 1; }
 # shellcheck source=tools/install_modes.sh
 source "$PROJECT_ROOT/tools/install_modes.sh"
 
 # ---------------------------------------------------------------------------
-# Modul-Bibliotheken (§7.1 Shell-Split) — reine Code-Bewegung aus dieser Datei:
-#   lib/webbed_caps.sh         webbed Capability-/Versions-Probes
-#   lib/convert_preprocess.sh  Stage-1-Pre-Processor (Encoding/Byte-Clean/DDR-Recmap)
-#   lib/convert_turbo.sh       Turbo-Pipeline (Phase S/D/C) + Parallel-P1/Catmerge
-#   lib/convert_report.sh      Conversion-Log v2 (Text-Log + JSON-Sidecar)
-# Die Libs definieren nur Funktionen (+ Modul-Zustandsvariablen ohne
-# Abhängigkeiten) — frühes Sourcing ändert daher keine Ausführungsreihenfolge.
+# Module libraries (shell split) — pure code movement out of this file:
+#   lib/webbed_caps.sh         webbed capability/version probes
+#   lib/convert_preprocess.sh  stage-1 pre-processor (encoding/byte-clean/DDR-recmap)
+#   lib/convert_turbo.sh       turbo pipeline (phase S/D/C) + parallel-P1/catmerge
+#   lib/convert_report.sh      conversion log v2 (text log + JSON sidecar)
+# The libs only define functions (+ module state variables without
+# dependencies) — early sourcing therefore does not change the execution order.
 # ---------------------------------------------------------------------------
 for _fm_lib in webbed_caps convert_preprocess convert_turbo convert_report; do
     if [ ! -f "$PROJECT_ROOT/tools/katana-xml/lib/${_fm_lib}.sh" ]; then
-        echo "ERROR: Modul-Bibliothek fehlt: tools/katana-xml/lib/${_fm_lib}.sh" >&2
+        echo "ERROR: Module library missing: tools/katana-xml/lib/${_fm_lib}.sh" >&2
         exit 1
     fi
     # shellcheck source=/dev/null
@@ -304,34 +304,34 @@ WEBBED_STREAM_THRESHOLD="${FM_DOM_THRESHOLD:-1000000}"
 # (hybrid model): the default path stays pure DOM/stock (no auto-streaming). The
 # activation decision is made AFTER arg parsing (STREAMIFY_MODE is not yet known here).
 PATCHED_WEBBED_ACTIVE=false
-# Stufe b1: --streamify auf SIGNIERTEM Stock-webbed (kein Dev-Patch), sobald dieses den
-# nested-attr-SAX-Fix (#98) trägt. Wie PATCHED_WEBBED_ACTIVE, aber OHNE LOAD-Redirect/-unsigned
-# (Stock lädt per `LOAD webbed;`). Finale Entscheidung fällt nach der Capability-Probe.
+# stage b1: --streamify on the SIGNED stock webbed (no dev patch), as soon as it carries the
+# nested-attr SAX fix (#98). Like PATCHED_WEBBED_ACTIVE, but WITHOUT the LOAD redirect/-unsigned
+# (stock loads via `LOAD webbed;`). The final decision is made after the capability probe.
 STOCK_STREAMING_ACTIVE=false
 
 # ----------------------------------------------------------------------------
-# → ausgelagert nach tools/katana-xml/lib/webbed_caps.sh (§7.1 Shell-Split)
-# nested_attr_sax (#98) → Flag use_streaming. EINMAL aus dem Manifest aufgeloest und
-# als Single Source von _probe_webbed_caps (Startup-Log/Floor) UND der
-# @WEBBED_SELFTEST@-Injektion (run_p1_on) genutzt. Hardcode-Fallback = das bisherige
-# Verhalten, falls das Manifest fehlt.
+# → moved to tools/katana-xml/lib/webbed_caps.sh (shell split)
+# nested_attr_sax (#98) → flag use_streaming. Resolved ONCE from the manifest and
+# used as the single source of _probe_webbed_caps (startup log/floor) AND the
+# @WEBBED_SELFTEST@ injection (run_p1_on). Hardcode fallback = the previous
+# behavior if the manifest is missing.
 _vc_nested_probe_sql="$(_vc_probe_sql nested_attr_sax)"
 if [ -z "$_vc_nested_probe_sql" ]; then
     _vc_nested_probe_sql="SELECT COALESCE(MAX(CASE WHEN CustomFunctionReference.UUID IS NOT NULL THEN 1 ELSE 0 END),0) FROM read_xml('$WEBBED_SAX_PROBE', root_element='CalcsForCustomFunctions', record_element='CustomFunctionCalc', maximum_file_size=100, streaming=true, columns={'CustomFunctionReference':'STRUCT(UUID VARCHAR)'})"
 fi
-# sax_cr_parity (#109) → Flag sax_text_faithful. Probe gegen die eigene CR-Fixture
-# (probe_fixture im Manifest). 1 = SAX bewahrt CR DOM-treu (gefixt), sonst CR→Space.
-# Speist die Auto-Default-SAX-Entscheidung (nur text-treu, wenn #109 da). Hardcode-Fallback.
+# sax_cr_parity (#109) → flag sax_text_faithful. Probe against its own CR fixture
+# (probe_fixture in the manifest). 1 = SAX preserves CR DOM-faithfully (fixed), otherwise CR→Space.
+# Feeds the auto-default-SAX decision (text-faithful only when #109 is present). Hardcode fallback.
 WEBBED_CR_PROBE="$PROJECT_ROOT/sql/convert-xml/fixtures/webbed_cr_probe.xml"
 _vc_cr_probe_sql="$(_vc_probe_sql sax_cr_parity)"
 if [ -z "$_vc_cr_probe_sql" ]; then
     _vc_cr_probe_sql="SELECT COALESCE(MAX(CASE WHEN contains(Parameter.Text.value, chr(13)) THEN 1 ELSE 0 END),0) FROM read_xml('$WEBBED_CR_PROBE', root_element='CRProbe', record_element='Step', maximum_file_size=100, streaming=true, columns={'Parameter':'STRUCT(\"Text\" STRUCT(value VARCHAR))'})"
 fi
-# whitespace_preservation (#73) → Flag wa_ws_sentinel. Probe testet, ob das geladene
-# webbed internen Whitespace im DEFAULT-DOM-Pfad bewahrt (typisierter Read UND Fragment-
-# xml_extract_text) statt ihn zu kollabieren. 1 = bewahrt → der chr(127)-Sentinel ist
-# redundant (wa_ws_sentinel=false, Preproc CR→0x7F entfällt). 0/alt → Sentinel ON
-# (konservativ). DOM-Pfad (KEIN streaming erzwingen). Hardcode-Fallback wie bei #109.
+# whitespace_preservation (#73) → flag wa_ws_sentinel. The probe tests whether the loaded
+# webbed preserves internal whitespace in the DEFAULT DOM path (typed read AND fragment
+# xml_extract_text) instead of collapsing it. 1 = preserved → the chr(127) sentinel is
+# redundant (wa_ws_sentinel=false, preproc CR→0x7F is dropped). 0/old → sentinel ON
+# (conservative). DOM path (do NOT force streaming). Hardcode fallback as with #109.
 WEBBED_WS_PROBE="$PROJECT_ROOT/sql/convert-xml/fixtures/webbed_ws_probe.xml"
 _vc_ws_probe_sql="$(_vc_probe_sql whitespace_preservation)"
 if [ -z "$_vc_ws_probe_sql" ]; then
@@ -425,7 +425,7 @@ NEST_MAP="${FM_NEST_MAP:-}"
 # multiplies the chunk count (~380k DDR records corpus-wide; M=3 → ~119k chunks, which once
 # crashed the container — 1 chunk = 1 XML file = 1 part-DB = 1 merge in Phase D). M is
 # therefore NEVER applied raw: it is computed PER FILE so a single file never exceeds
-# FM_DDR_MAX_CHUNKS chunks (M is RAISED if needed — "M im Zweifel erhöhen"). Files below the
+# FM_DDR_MAX_CHUNKS chunks (M is RAISED if needed — "raise M when in doubt"). Files below the
 # Calc-record gate are not sub-chunked at all, so only genuinely large files are touched.
 # A global Phase-S guard (FM_MAX_TOTAL_CHUNKS) is the corpus-wide backstop on top of this.
 #
@@ -469,9 +469,9 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --memory_limit)
-            # Guard vor shift 2: ist das Flag letztes Argument, shiftet bash 3.2
-            # nicht → die while-Schleife hinge endlos (gilt für alle wertnehmenden Flags).
-            [ $# -ge 2 ] || { echo "ERROR: $1 braucht einen Wert"; exit 1; }
+            # Guard before shift 2: if the flag is the last argument, bash 3.2 does
+            # not shift → the while loop would hang forever (applies to all value-taking flags).
+            [ $# -ge 2 ] || { echo "ERROR: $1 needs a value"; exit 1; }
             MEMORY_LIMIT="$2"
             shift 2
             ;;
@@ -503,7 +503,7 @@ while [[ $# -gt 0 ]]; do
         --subchunk)
             # Additionally cut the heavy separated branches (StepsForScripts) into
             # pieces of N records each. Implies --split.
-            [ $# -ge 2 ] || { echo "ERROR: $1 braucht einen Wert"; exit 1; }
+            [ $# -ge 2 ] || { echo "ERROR: $1 needs a value"; exit 1; }
             SUBCHUNK="$2"; SUBCHUNK_SOURCE="flag"; SPLIT_MODE=true; MODE_EXPLICIT=true
             shift 2
             ;;
@@ -540,7 +540,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --jobs)
-            [ $# -ge 2 ] || { echo "ERROR: $1 braucht einen Wert"; exit 1; }
+            [ $# -ge 2 ] || { echo "ERROR: $1 needs a value"; exit 1; }
             JOBS="$2"
             shift 2
             ;;
@@ -549,7 +549,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --attempt)
-            [ $# -ge 2 ] || { echo "ERROR: $1 braucht einen Wert"; exit 1; }
+            [ $# -ge 2 ] || { echo "ERROR: $1 needs a value"; exit 1; }
             ATTEMPT="$2"
             shift 2
             ;;
@@ -558,7 +558,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --retry-reason)
-            [ $# -ge 2 ] || { echo "ERROR: $1 braucht einen Wert"; exit 1; }
+            [ $# -ge 2 ] || { echo "ERROR: $1 needs a value"; exit 1; }
             RETRY_REASON="$2"
             shift 2
             ;;
@@ -567,7 +567,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --retry-of)
-            [ $# -ge 2 ] || { echo "ERROR: $1 braucht einen Wert"; exit 1; }
+            [ $# -ge 2 ] || { echo "ERROR: $1 needs a value"; exit 1; }
             RETRY_OF="$2"
             shift 2
             ;;
@@ -584,7 +584,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --*)
             echo "ERROR: Unknown flag: $1"
-            echo "Usage: $0 <xml-filename> [--force-rebuild] | --batch [--fail-fast] [--force-rebuild] [--no-auto-heal] [--memory_limit <wert>] [--split] [--turbo] [--changed-only] [--auto] [--jobs <N>] [--quiet] [--attempt <N>] [--retry-reason <slug>] [--retry-of <log-id>] | --test [--fail-fast] [--force-rebuild] [--split]"
+            echo "Usage: $0 <xml-filename> [--force-rebuild] | --batch [--fail-fast] [--force-rebuild] [--no-auto-heal] [--memory_limit <value>] [--split] [--turbo] [--changed-only] [--auto] [--jobs <N>] [--quiet] [--attempt <N>] [--retry-reason <slug>] [--retry-of <log-id>] | --test [--fail-fast] [--force-rebuild] [--split]"
             exit 1
             ;;
         *)
@@ -603,7 +603,7 @@ done
 # being silently passed through to DuckDB as SET memory_limit='...'.
 if [ -n "$MEMORY_LIMIT" ]; then
     if ! [[ "$MEMORY_LIMIT" =~ ^[0-9]+([.][0-9]+)?([KkMmGgTt][Ii]?[Bb]|%)$ ]]; then
-        echo "ERROR: Ungültiges --memory_limit '$MEMORY_LIMIT'. Erwartet z.B. 4GB, 512MB, 60%."
+        echo "ERROR: Invalid --memory_limit '$MEMORY_LIMIT'. Expected e.g. 4GB, 512MB, 60%."
         exit 1
     fi
 fi
@@ -684,66 +684,66 @@ _detect_avail_mb() {
     echo "$res"
 }
 
-# ── webbed Capability-Probe (VOR der Mode-Wahl) ───────────────────────────────
-# Probt das tatsaechlich geladene webbed gegen die Registry-Fixtures, BEVOR der
-# adaptive Default SAX-vs-DOM entscheidet (Auto-Default-SAX-Gate). Zwei Capabilities:
-#   • nested_attr_sax (#98)  → streaming-Param vorhanden + SAX liefert genestete Attr
-#     (Versions-Floor: fehlt der streaming-Param → klarer Vorab-Abbruch Exit 8).
-#   • sax_cr_parity (#109)   → SAX bewahrt CR DOM-treu (sonst CR→Space, Mehrzeilen-Verlust).
-# Proben kommen aus der datengetriebenen Registry (tools/katana-xml/version_check.json).
-# FM_SKIP_WEBBED_PROBE=1 ueberspringt (⇒ konservativ: keine Capability bestaetigt → DOM).
+# ── webbed capability probe (BEFORE the mode choice) ──────────────────────────
+# Probes the actually loaded webbed against the registry fixtures, BEFORE the
+# adaptive default decides SAX-vs-DOM (auto-default-SAX gate). Two capabilities:
+#   • nested_attr_sax (#98)  → streaming param present + SAX delivers nested attr
+#     (version floor: if the streaming param is missing → clear upfront abort exit 8).
+#   • sax_cr_parity (#109)   → SAX preserves CR DOM-faithfully (otherwise CR→Space, multi-line loss).
+# The probes come from the data-driven registry (tools/katana-xml/version_check.json).
+# FM_SKIP_WEBBED_PROBE=1 skips it (⇒ conservative: no capability confirmed → DOM).
 WEBBED_HAS_STREAMING_PARAM=unknown
 WEBBED_HAS_NESTED_ATTR_FIX=false
 WEBBED_HAS_CR_PARITY=false
 WEBBED_HAS_WS_PRESERVE=false
 WEBBED_PROBE_RAN=false
-# chr(127)-Sentinel-Gate (#73): ON = Workaround aktiv (Default, konservativ). Wird unten
-# auf OFF gesetzt, falls die Probe bestaetigt, dass webbed Whitespace nativ bewahrt.
-# Single Source für (a) die Preproc-Gatung (preprocess_file tr-Pipeline + awk -v ws_sentinel)
-# UND (b) die SQL-Injektion von wa_ws_sentinel am @WEBBED_SELFTEST@-Marker.
+# chr(127) sentinel gate (#73): ON = workaround active (default, conservative). Set to OFF
+# below if the probe confirms that webbed preserves whitespace natively.
+# Single source for (a) the preproc gating (preprocess_file tr pipeline + awk -v ws_sentinel)
+# AND (b) the SQL injection of wa_ws_sentinel at the @WEBBED_SELFTEST@ marker.
 WS_SENTINEL_ON=true
-# → ausgelagert nach tools/katana-xml/lib/webbed_caps.sh (§7.1 Shell-Split)
+# → moved to tools/katana-xml/lib/webbed_caps.sh (shell split)
 if [ -z "${FM_SKIP_WEBBED_PROBE:-}" ] && [ -f "$WEBBED_SAX_PROBE" ]; then
     _probe_webbed_caps
     WEBBED_PROBE_RAN=true
     if [ "$WEBBED_HAS_STREAMING_PARAM" = "false" ]; then
-        echo "ERROR: Die geladene webbed/xml-Extension kennt den read_xml-Parameter 'streaming' nicht (zu alt)."
-        echo "       fm-lab benötigt DuckDB ≥ 1.5 mit aktuellem webbed/xml. Bitte beide aktualisieren"
-        echo "       (z. B. in DuckDB: FORCE INSTALL webbed FROM community;) und erneut starten."
-        echo "       Umgehung auf eigenes Risiko (z. B. bei Fehldetektion): FM_SKIP_WEBBED_PROBE=1."
+        echo "ERROR: The loaded webbed/xml extension does not know the read_xml parameter 'streaming' (too old)."
+        echo "       fm-lab requires DuckDB ≥ 1.5 with a current webbed/xml. Please update both"
+        echo "       (e.g. in DuckDB: FORCE INSTALL webbed FROM community;) and restart."
+        echo "       Bypass at your own risk (e.g. on misdetection): FM_SKIP_WEBBED_PROBE=1."
         exit 8
     fi
-    # streaming-Param=unknown ⇒ die Probe lieferte weder 0/1 noch "Invalid named
-    # parameter" — praktisch immer, weil `LOAD webbed` selbst fehlschlug (Extension
-    # für die aktive DuckDB-Version nicht vorhanden). Hart abbrechen statt still in
-    # einen DOM-Lauf zu rutschen, der an jedem read_xml scheitert (→ hunderte
-    # Folgefehler "Table … does not exist"). Klartext + tatsächliche webbed-Meldung.
+    # streaming param=unknown ⇒ the probe returned neither 0/1 nor "Invalid named
+    # parameter" — practically always because `LOAD webbed` itself failed (extension
+    # not present for the active DuckDB version). Hard-abort instead of silently sliding
+    # into a DOM run that fails on every read_xml (→ hundreds of
+    # follow-up errors "Table … does not exist"). Plain text + the actual webbed message.
     if [ "$WEBBED_HAS_STREAMING_PARAM" = "unknown" ]; then
-        echo "ERROR: Die webbed/xml-Extension ließ sich nicht laden (LOAD webbed fehlgeschlagen)."
-        echo "       Wahrscheinlichste Ursache: webbed ist für die aktive DuckDB-Version nicht installiert."
-        echo "       DuckDB legt Extensions PRO Version ab — nach einem DuckDB-Update (z. B. 1.5.3 → 1.5.4)"
-        echo "       muss webbed neu installiert werden."
-        echo "       Beheben:  \"$DUCKDB_BIN\" -c \"FORCE INSTALL webbed FROM community;\""
+        echo "ERROR: The webbed/xml extension could not be loaded (LOAD webbed failed)."
+        echo "       Most likely cause: webbed is not installed for the active DuckDB version."
+        echo "       DuckDB stores extensions PER version — after a DuckDB update (e.g. 1.5.3 → 1.5.4)"
+        echo "       webbed must be reinstalled."
+        echo "       Fix:  \"$DUCKDB_BIN\" -c \"FORCE INSTALL webbed FROM community;\""
         if [ -n "${WEBBED_PROBE_RAW:-}" ]; then
-            echo "       webbed-Meldung: $WEBBED_PROBE_RAW"
+            echo "       webbed message: $WEBBED_PROBE_RAW"
         fi
-        echo "       Umgehung auf eigenes Risiko (z. B. bei Fehldetektion): FM_SKIP_WEBBED_PROBE=1."
+        echo "       Bypass at your own risk (e.g. on misdetection): FM_SKIP_WEBBED_PROBE=1."
         exit 8
     fi
-    # #73: webbed bewahrt Whitespace nativ → Sentinel aus (Preproc CR→0x7F entfällt,
-    # SQL-ws_restore wird No-op). Sonst konservativ ON. Gemeinsame Quelle für Preproc + SQL.
+    # #73: webbed preserves whitespace natively → sentinel off (preproc CR→0x7F is dropped,
+    # SQL ws_restore becomes a no-op). Otherwise conservatively ON. Shared source for preproc + SQL.
     [ "$WEBBED_HAS_WS_PRESERVE" = "true" ] && WS_SENTINEL_ON=false || WS_SENTINEL_ON=true
 fi
-# Operator-/Test-Override für den chr(127)-Sentinel (analog FM_FORCE_DOM): 1/true = ON
-# erzwingen, 0/false = OFF erzwingen. Setzt die Probe-Entscheidung ausser Kraft und
-# aktiviert die SQL-Injektion auch ohne gelaufene Probe (Identitaets-Tests; Fehldetektion).
+# Operator/test override for the chr(127) sentinel (analogous to FM_FORCE_DOM): 1/true = force ON,
+# 0/false = force OFF. Overrides the probe decision and
+# activates the SQL injection even without a run probe (identity tests; misdetection).
 WS_SENTINEL_FORCED=""
 case "${FM_FORCE_WS_SENTINEL:-}" in
     1|true|on|ON|TRUE)     WS_SENTINEL_ON=true;  WS_SENTINEL_FORCED=" (FM_FORCE_WS_SENTINEL)" ;;
     0|false|off|OFF|FALSE) WS_SENTINEL_ON=false; WS_SENTINEL_FORCED=" (FM_FORCE_WS_SENTINEL)" ;;
 esac
 if [ "$WEBBED_PROBE_RAN" = "true" ]; then
-    $QUIET_MODE || echo "webbed-Capabilities [Registry: ${WEBBED_VERSION_CHECK_MANIFEST#$PROJECT_ROOT/}]: streaming-Param=$WEBBED_HAS_STREAMING_PARAM · nested-attr-SAX(#98)=$WEBBED_HAS_NESTED_ATTR_FIX · sax-cr-parity(#109)=$WEBBED_HAS_CR_PARITY · ws-preserve(#73)=$WEBBED_HAS_WS_PRESERVE → chr(127)-Sentinel=$([ "$WS_SENTINEL_ON" = "true" ] && echo ON || echo OFF)${WS_SENTINEL_FORCED}"
+    $QUIET_MODE || echo "webbed capabilities [registry: ${WEBBED_VERSION_CHECK_MANIFEST#$PROJECT_ROOT/}]: streaming-param=$WEBBED_HAS_STREAMING_PARAM · nested-attr-SAX(#98)=$WEBBED_HAS_NESTED_ATTR_FIX · sax-cr-parity(#109)=$WEBBED_HAS_CR_PARITY · ws-preserve(#73)=$WEBBED_HAS_WS_PRESERVE → chr(127)-sentinel=$([ "$WS_SENTINEL_ON" = "true" ] && echo ON || echo OFF)${WS_SENTINEL_FORCED}"
 fi
 
 # Streamify (SAX) path assets — defined BEFORE the adaptive default so it can
@@ -760,13 +760,13 @@ STREAMIFY_SQL="$PROJECT_ROOT/sql/convert-xml/convert_xml_01_extract.streamify.sq
 _STREAMIFY_PRECOND_MSG=""
 _streamify_preconditions_ok() {
     if [ ! -f "$STREAMIFY_RENAMER" ] || ! command -v awk >/dev/null 2>&1; then
-        _STREAMIFY_PRECOND_MSG="braucht awk + $STREAMIFY_RENAMER"; return 1
+        _STREAMIFY_PRECOND_MSG="needs awk + $STREAMIFY_RENAMER"; return 1
     fi
     if [ ! -f "$STREAMIFY_SQL" ]; then
-        _STREAMIFY_PRECOND_MSG="streamify-SQL-Variante fehlt ($STREAMIFY_SQL; per tools/gen_streamify_sql.sh generieren)"; return 1
+        _STREAMIFY_PRECOND_MSG="streamify SQL variant missing ($STREAMIFY_SQL; generate via tools/gen_streamify_sql.sh)"; return 1
     fi
     if ! bash "$PROJECT_ROOT/tools/gen_streamify_sql.sh" --check >/dev/null 2>&1; then
-        _STREAMIFY_PRECOND_MSG="streamify-SQL-Generat ist stale (tools/gen_streamify_sql.sh ausführen und committen)"; return 1
+        _STREAMIFY_PRECOND_MSG="streamify SQL generate is stale (run tools/gen_streamify_sql.sh and commit)"; return 1
     fi
     return 0
 }
@@ -786,16 +786,16 @@ if ! $MODE_EXPLICIT && ! $TEST_MODE; then
     TURBO_MODE=true; SPLIT_MODE=true; AUTO_MODE=true
     if [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ] && [ "$WEBBED_HAS_CR_PARITY" = "true" ] && [ "${FM_FORCE_DOM:-}" != "1" ] && _streamify_preconditions_ok; then
         STREAMIFY_MODE=true
-        echo "Hinweis: Adaptiver Default — SAX-Streaming (webbed mit #98 nested-attr UND #109 CR-Parität → text-treu) + Turbo + Auto-Backoff. Opt-out: FM_FORCE_DOM=1 oder ein expliziter Modus-Flag (z. B. --split)."
+        echo "Note: adaptive default — SAX streaming (webbed with #98 nested-attr AND #109 CR-parity → text-faithful) + turbo + auto-backoff. Opt-out: FM_FORCE_DOM=1 or an explicit mode flag (e.g. --split)."
     elif [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ] && [ "$WEBBED_HAS_CR_PARITY" = "true" ] && [ "${FM_FORCE_DOM:-}" != "1" ]; then
-        # webbed KÖNNTE SAX (text-treu), aber der streamify-Pfad ist nicht bereit →
-        # sicherer DOM-Fallback statt hartem Abbruch (der adaptive Default darf nie
-        # eine Konvertierung blockieren, die der Nutzer gar nicht streamen wollte).
-        echo "Hinweis: Adaptiver Default — Turbo (DOM, chunked) + Auto-Backoff. (webbed könnte SAX, aber der streamify-Pfad ist nicht bereit: $_STREAMIFY_PRECOND_MSG → DOM-Fallback.)"
+        # webbed COULD do SAX (text-faithful), but the streamify path is not ready →
+        # safe DOM fallback instead of a hard abort (the adaptive default must never
+        # block a conversion the user never asked to stream).
+        echo "Note: adaptive default — turbo (DOM, chunked) + auto-backoff. (webbed could do SAX, but the streamify path is not ready: $_STREAMIFY_PRECOND_MSG → DOM fallback.)"
     elif [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ] && [ "${FM_FORCE_DOM:-}" != "1" ]; then
-        echo "Hinweis: Adaptiver Default — Turbo (DOM, chunked) + Auto-Backoff. (#98 da, aber #109 CR-Parität fehlt → DOM bleibt text-treu; --streamify nur als Opt-in mit Text-Caveat.)"
+        echo "Note: adaptive default — turbo (DOM, chunked) + auto-backoff. (#98 present, but #109 CR-parity missing → DOM stays text-faithful; --streamify only as opt-in with a text caveat.)"
     else
-        echo "Hinweis: Adaptiver Default — Turbo (DOM, chunked) + Auto-Backoff (nie harter RAM-Abbruch).$([ "$WEBBED_HAS_NESTED_ATTR_FIX" != "true" ] && echo ' (Kein #98-fähiges webbed → kein SAX.)')"
+        echo "Note: adaptive default — turbo (DOM, chunked) + auto-backoff (never a hard RAM abort).$([ "$WEBBED_HAS_NESTED_ATTR_FIX" != "true" ] && echo ' (No #98-capable webbed → no SAX.)')"
     fi
 fi
 
@@ -811,13 +811,13 @@ if $STREAMIFY_MODE && [ "${FM_FORCE_DOM:-}" != "1" ]; then _streaming_mode=true;
 # untouched. The default recmap covers LayoutCatalog+StepsForScripts (both chunk-invariant).
 if $TURBO_MODE && [ "$SUBCHUNK_SOURCE" = "default" ] && [ "${SUBCHUNK:-0}" -eq 0 ]; then
     SUBCHUNK="$TURBO_SUBCHUNK_DEFAULT"
-    echo "Hinweis: Turbo-Windowing-Default — --subchunk $SUBCHUNK (LayoutCatalog+StepsForScripts; senkt P1-Peak). Opt-out: FM_SUBCHUNK=0."
+    echo "Note: turbo windowing default — --subchunk $SUBCHUNK (LayoutCatalog+StepsForScripts; lowers the P1 peak). Opt-out: FM_SUBCHUNK=0."
 fi
 # DDR_INFO split as the default in turbo mode (additive-identical).
 # Applies only when no explicit FM_NEST_MAP is set and FM_DDR_NEST≠0.
 if $TURBO_MODE && [ -z "$NEST_MAP" ] && [ "${FM_DDR_NEST:-1}" != "0" ]; then
     NEST_MAP="DDR_INFO:Calculation,Script"
-    echo "Hinweis: Turbo-DDR-Nest — DDR_INFO → Calculation- + Script-Chunk (halbiert den DDR-Long-Pole). Opt-out: FM_DDR_NEST=0."
+    echo "Note: turbo DDR nest — DDR_INFO → Calculation + Script chunk (halves the DDR long pole). Opt-out: FM_DDR_NEST=0."
 fi
 # DDR-2-level sub-chunk engagement is resolved further down, AFTER _avail_mb is known
 # (the auto path keys off effectively-available RAM). The M itself is computed per file
@@ -857,17 +857,17 @@ if $TURBO_MODE && [ -n "$NEST_MAP" ]; then
         '')                                  # unset → auto path (RAM-pressure gated)
             if [ "${_avail_mb:-0}" -gt 0 ] && [ "${_avail_mb:-0}" -lt "$DDR_AUTO_AVAIL_MB" ]; then
                 DDR_SUBCHUNK_ACTIVE=true; DDR_AUTO_MODE=true; DDR_REQ_M="$DDR_AUTO_M"
-                echo "Hinweis: DDR-Subchunk (auto — avail ${_avail_mb}MB < ${DDR_AUTO_AVAIL_MB}MB): nur Calculation, Dateien ≥${DDR_MIN_RECORDS} Calc-Records, M≥${DDR_AUTO_M}, Per-Datei-Deckel ${DDR_MAX_CHUNKS} Chunks."
+                echo "Note: DDR subchunk (auto — avail ${_avail_mb}MB < ${DDR_AUTO_AVAIL_MB}MB): Calculation only, files ≥${DDR_MIN_RECORDS} Calc records, M≥${DDR_AUTO_M}, per-file cap ${DDR_MAX_CHUNKS} chunks."
             fi ;;
         0|*[!0-9]*) : ;;                     # 0 or non-numeric → hard off
         *)                                   # explicit positive M → on for every DDR file
             DDR_SUBCHUNK_ACTIVE=true; DDR_AUTO_MODE=false; DDR_REQ_M="$DDR_SUBCHUNK"
-            echo "Hinweis: DDR-Subchunk (explizit): nur Calculation, Dateien ≥${DDR_MIN_RECORDS} Calc-Records, M≥${DDR_REQ_M}, Per-Datei-Deckel ${DDR_MAX_CHUNKS} Chunks." ;;
+            echo "Note: DDR subchunk (explicit): Calculation only, files ≥${DDR_MIN_RECORDS} Calc records, M≥${DDR_REQ_M}, per-file cap ${DDR_MAX_CHUNKS} chunks." ;;
     esac
 fi
 
 # Decodes $1 to UTF-8 on stdout: the FileMaker exports are UTF-16LE (BOM fffe); we
-# → ausgelagert nach tools/katana-xml/lib/convert_preprocess.sh (§7.1 Shell-Split)
+# → moved to tools/katana-xml/lib/convert_preprocess.sh (shell split)
 
 # Dynamic --jobs default (only when neither a flag nor FM_JOBS nor 'auto').
 if [ "$JOBS_SOURCE" = "dynamic" ]; then
@@ -876,7 +876,7 @@ if [ "$JOBS_SOURCE" = "dynamic" ]; then
         [ "$JOBS" -lt 1 ] && JOBS=1
         _cap=$(( _nproc < _job_cap ? _nproc : _job_cap ))
         [ "$JOBS" -gt "$_cap" ] && JOBS=$_cap
-        echo "Hinweis: --jobs dynamisch = $JOBS ($($_streaming_mode && echo streaming || echo DOM), avail=${_avail_mb}MB, nproc=$_nproc). Override: --jobs N oder FM_JOBS."
+        echo "Note: --jobs dynamic = $JOBS ($($_streaming_mode && echo streaming || echo DOM), avail=${_avail_mb}MB, nproc=$_nproc). Override: --jobs N or FM_JOBS."
     else
         JOBS=1   # /proc/meminfo unreadable → conservatively sequential
     fi
@@ -884,7 +884,7 @@ fi
 
 # Validation (positive integer).
 if ! [[ "$JOBS" =~ ^[0-9]+$ ]] || [ "$JOBS" -lt 1 ]; then
-    echo "ERROR: Ungültiges --jobs '$JOBS'. Erwartet positive Ganzzahl, 'auto' oder leer (dynamisch)."
+    echo "ERROR: Invalid --jobs '$JOBS'. Expected a positive integer, 'auto' or empty (dynamic)."
     exit 1
 fi
 
@@ -897,7 +897,7 @@ if ! $_streaming_mode && ! $TURBO_MODE && ! $SPLIT_MODE && [ "$_avail_mb" -gt 0 
    && [ "$_avail_mb" -lt "$_mem_base" ] \
    && [ -f "$PROJECT_ROOT/tools/katana-xml/split_fm_xml.awk" ] && [ "${FM_SKIP_MEM_CHECK:-}" != "1" ]; then
     SPLIT_MODE=true
-    echo "Hinweis: Klassischer DOM bei knappem RAM (avail=${_avail_mb}MB < ${_mem_base}MB) → --split automatisch (senkt Pro-Datei-Peak ~20 %, bit-identisch). Robuster Default ist --turbo --auto. FM_SKIP_MEM_CHECK=1 unterdrückt."
+    echo "Note: classic DOM on tight RAM (avail=${_avail_mb}MB < ${_mem_base}MB) → --split automatically (lowers the per-file peak ~20 %, bit-identical). The robust default is --turbo --auto. FM_SKIP_MEM_CHECK=1 suppresses this."
 fi
 
 # Effective floor: --split lowers the classic-DOM peak (~10 → ~8 GB measured).
@@ -910,10 +910,10 @@ if ! $_streaming_mode && ! $TURBO_MODE && $SPLIT_MODE; then _eff_floor="${FM_DOM
 # (point at the now-default turbo+auto). FM_SKIP_MEM_CHECK=1 disables the check.
 if [ "$_avail_mb" -gt 0 ] && [ "$_avail_mb" -lt "$_eff_floor" ] && [ "${FM_SKIP_MEM_CHECK:-}" != "1" ]; then
     if $_streaming_mode || $TURBO_MODE; then
-        echo "WARNUNG: MemAvailable ${_avail_mb}MB < Boden ${_eff_floor}MB — Großdateien spillen/resplitten (langsamer)$($AUTO_MODE && echo ', --auto fängt OOM ab')."
+        echo "WARNING: MemAvailable ${_avail_mb}MB < floor ${_eff_floor}MB — large files spill/resplit (slower)$($AUTO_MODE && echo ', --auto catches OOM')."
     else
-        echo "ERROR: MemAvailable ${_avail_mb}MB < DOM-Boden ${_eff_floor}MB. Klassischer DOM lädt das ganze Dokument in RAM (NICHT spillbar, memory_limit greift nicht) → OOM für Großdateien."
-        echo "       Robuster Default: --turbo --auto (chunked, spillbar/resplittbar, ~2,5 GB-Boden). Sonst: --streamify (SAX, ~halber RAM + Spill), mehr RAM, oder FM_SKIP_MEM_CHECK=1 (auf eigenes Risiko)."
+        echo "ERROR: MemAvailable ${_avail_mb}MB < DOM floor ${_eff_floor}MB. Classic DOM loads the whole document into RAM (NOT spillable, memory_limit does not apply) → OOM for large files."
+        echo "       Robust default: --turbo --auto (chunked, spillable/resplittable, ~2.5 GB floor). Otherwise: --streamify (SAX, ~half the RAM + spill), more RAM, or FM_SKIP_MEM_CHECK=1 (at your own risk)."
         exit 1
     fi
 fi
@@ -924,7 +924,7 @@ fi
 # FM_FORCE_DOM=1 forces DOM even with --streamify.
 if $STREAMIFY_MODE; then
     if [ "${FM_FORCE_DOM:-}" = "1" ]; then
-        echo "ERROR: --streamify und FM_FORCE_DOM=1 schließen sich aus."
+        echo "ERROR: --streamify and FM_FORCE_DOM=1 are mutually exclusive."
         exit 1
     fi
     # Preconditions (renamer/awk, generate present + fresh). For EXPLICIT --streamify
@@ -932,21 +932,21 @@ if $STREAMIFY_MODE; then
     # already validated these above and would have fallen back to DOM otherwise, so it
     # never reaches here in a broken state — no need to re-run the ~1 s freshness gate.
     if $MODE_EXPLICIT && ! _streamify_preconditions_ok; then
-        echo "ERROR: --streamify abgebrochen — $_STREAMIFY_PRECOND_MSG."
+        echo "ERROR: --streamify aborted — $_STREAMIFY_PRECOND_MSG."
         exit 1
     fi
     SQL_TEMPLATE="$STREAMIFY_SQL"
-    # webbed-Binär-Entscheidung. --streamify braucht ein webbed mit dem nested-attr-SAX-Fix
+    # webbed binary decision. --streamify needs a webbed with the nested-attr SAX fix
     # (teaguesterling/duckdb_webbed#98):
-    #   1) Dev-Patch unter $WEBBED_PATCHED_EXT vorhanden → unsigniert laden (-unsigned + LOAD-Redirect).
-    #   2) Stufe b1: sonst SIGNIERTES Stock-webbed, SOFERN es #98 trägt — der Nachweis kommt aus der
-    #      Startup-Capability-Probe (läuft weiter unten), daher fällt die finale Stock-Entscheidung dort.
+    #   1) dev patch present under $WEBBED_PATCHED_EXT → load unsigned (-unsigned + LOAD redirect).
+    #   2) stage b1: otherwise SIGNED stock webbed, PROVIDED it carries #98 — the proof comes from the
+    #      startup capability probe (runs further below), so the final stock decision is made there.
     if [ -f "$WEBBED_PATCHED_EXT" ]; then
         PATCHED_WEBBED_ACTIVE=true
-        echo "Hinweis: --streamify aktiv — Renamer + gepatchtes (unsigniertes) webbed + streamify-SQL (RAM-Senkung Schwergewichte)."
+        echo "Note: --streamify active — renamer + patched (unsigned) webbed + streamify SQL (RAM reduction on the heavyweights)."
     else
         STREAMIFY_WANTS_STOCK=true
-        echo "Hinweis: --streamify aktiv — Renamer + streamify-SQL; kein Dev-Patch → signiertes Stock-webbed wird nach der Capability-Probe geprüft (#98)."
+        echo "Note: --streamify active — renamer + streamify SQL; no dev patch → the signed stock webbed is checked after the capability probe (#98)."
     fi
 fi
 
@@ -966,12 +966,12 @@ fi
 # the aggregate peak of a wave is the max over the N files running simultaneously
 # (no hard RAM cap).
 if [ "$JOBS" -gt 1 ] && $SPLIT_MODE; then
-    echo "Hinweis: --jobs $JOBS mit --split — Parallelität über Dateien + Chunking je Datei."
+    echo "Note: --jobs $JOBS with --split — parallelism across files + chunking per file."
 fi
 
 # Validate --attempt: positive integer, default 1 (analogous to --memory_limit).
 if ! [[ "$ATTEMPT" =~ ^[0-9]+$ ]] || [ "$ATTEMPT" -lt 1 ]; then
-    echo "ERROR: Ungültiges --attempt '$ATTEMPT'. Erwartet positive Ganzzahl (>= 1)."
+    echo "ERROR: Invalid --attempt '$ATTEMPT'. Expected a positive integer (>= 1)."
     exit 1
 fi
 
@@ -995,31 +995,31 @@ if [ -z "$MODE" ]; then
         shopt -u nullglob
         _DEFAULT_N=${#_DEFAULT_XMLS[@]}
         if [ "$_DEFAULT_N" -gt 1 ]; then
-            read -r -p "$_DEFAULT_N XML-Dateien in xml/ gefunden — Batch-Verarbeitung starten? [Y/n] " _DEFAULT_ANS
+            read -r -p "$_DEFAULT_N XML files found in xml/ — start batch processing? [Y/n] " _DEFAULT_ANS
             if [[ -z "$_DEFAULT_ANS" || "$_DEFAULT_ANS" =~ ^[Yy] ]]; then
                 MODE="batch"
             else
-                echo "Abgebrochen."
+                echo "Aborted."
                 exit 0
             fi
         elif [ "$_DEFAULT_N" -eq 1 ]; then
             _DEFAULT_FILE=$(basename "${_DEFAULT_XMLS[0]}")
-            read -r -p "Eine XML-Datei gefunden ($_DEFAULT_FILE) — verarbeiten? [Y/n] " _DEFAULT_ANS
+            read -r -p "One XML file found ($_DEFAULT_FILE) — process it? [Y/n] " _DEFAULT_ANS
             if [[ -z "$_DEFAULT_ANS" || "$_DEFAULT_ANS" =~ ^[Yy] ]]; then
                 MODE="single"
                 FILENAME="$_DEFAULT_FILE"
             else
-                echo "Abgebrochen."
+                echo "Aborted."
                 exit 0
             fi
         else
-            echo "Keine XML-Dateien in xml/ gefunden."
-            echo "Usage: $0 <xml-filename> [--force-rebuild] | --batch [--fail-fast] [--force-rebuild] [--no-auto-heal] [--memory_limit <wert>] [--split] [--turbo] [--changed-only] [--auto] [--jobs <N>] | --test [--fail-fast] [--force-rebuild] [--split] [--turbo]"
+            echo "No XML files found in xml/."
+            echo "Usage: $0 <xml-filename> [--force-rebuild] | --batch [--fail-fast] [--force-rebuild] [--no-auto-heal] [--memory_limit <value>] [--split] [--turbo] [--changed-only] [--auto] [--jobs <N>] | --test [--fail-fast] [--force-rebuild] [--split] [--turbo]"
             exit 1
         fi
     else
         echo "ERROR: No argument provided"
-        echo "Usage: $0 <xml-filename> [--force-rebuild] | --batch [--fail-fast] [--force-rebuild] [--no-auto-heal] [--memory_limit <wert>] [--split] [--turbo] [--changed-only] [--auto] [--jobs <N>] | --test [--fail-fast] [--force-rebuild] [--split] [--turbo]"
+        echo "Usage: $0 <xml-filename> [--force-rebuild] | --batch [--fail-fast] [--force-rebuild] [--no-auto-heal] [--memory_limit <value>] [--split] [--turbo] [--changed-only] [--auto] [--jobs <N>] | --test [--fail-fast] [--force-rebuild] [--split] [--turbo]"
         exit 1
     fi
 fi
@@ -1047,24 +1047,24 @@ else
     LOG_PREFIX="batch_import"
 fi
 
-# (Die webbed-Capability-Probe (#98 + #109) + der streaming-Param-Floor-Check laufen
-#  jetzt WEITER OBEN, VOR dem adaptiven Default — damit die Auto-SAX-Entscheidung die
-#  Proben einbeziehen kann. WEBBED_HAS_NESTED_ATTR_FIX/-CR_PARITY/-STREAMING_PARAM sind
-#  hier bereits gesetzt.)
+# (The webbed capability probe (#98 + #109) + the streaming-param floor check now run
+#  FURTHER UP, BEFORE the adaptive default — so the auto-SAX decision can take the
+#  probes into account. WEBBED_HAS_NESTED_ATTR_FIX/-CR_PARITY/-STREAMING_PARAM are
+#  already set here.)
 
-# Stufe b1 — finale Stock-Streaming-Entscheidung NACH der Capability-Probe (die
-# WEBBED_HAS_NESTED_ATTR_FIX setzt). Nur wenn --streamify OHNE Dev-Patch angefordert wurde
-# (STREAMIFY_WANTS_STOCK): das signierte Stock-webbed muss den nested-attr-SAX-Fix (#98)
-# tragen. Probe übersprungen (FM_SKIP_WEBBED_PROBE) ⇒ Fix unbestätigt ⇒ konservativer Abbruch.
+# stage b1 — final stock-streaming decision AFTER the capability probe (which
+# sets WEBBED_HAS_NESTED_ATTR_FIX). Only when --streamify was requested WITHOUT a dev patch
+# (STREAMIFY_WANTS_STOCK): the signed stock webbed must carry the nested-attr SAX fix (#98).
+# Probe skipped (FM_SKIP_WEBBED_PROBE) ⇒ fix unconfirmed ⇒ conservative abort.
 if [ "${STREAMIFY_WANTS_STOCK:-}" = "true" ]; then
     if [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ]; then
         STOCK_STREAMING_ACTIVE=true
-        $QUIET_MODE || echo "Hinweis: --streamify auf signiertem Stock-webbed — #98 per Probe bestätigt, kein Dev-Patch nötig (Stufe b1)."
+        $QUIET_MODE || echo "Note: --streamify on signed stock webbed — #98 confirmed by the probe, no dev patch needed (stage b1)."
     else
-        echo "ERROR: --streamify braucht ein webbed mit dem nested-attr-SAX-Fix (teaguesterling/duckdb_webbed#98)."
-        echo "       Das geladene Stock-webbed trägt ihn nicht bzw. die Probe wurde übersprungen"
-        echo "       (nested-attr-SAX-Fix=$WEBBED_HAS_NESTED_ATTR_FIX). → signiertes webbed v2.2.1+ installieren,"
-        echo "       FM_WEBBED_EXT auf ein passendes Artefakt setzen, oder das Standard-'--batch' (DOM) nutzen."
+        echo "ERROR: --streamify needs a webbed with the nested-attr SAX fix (teaguesterling/duckdb_webbed#98)."
+        echo "       The loaded stock webbed does not carry it, or the probe was skipped"
+        echo "       (nested-attr-SAX-fix=$WEBBED_HAS_NESTED_ATTR_FIX). → install signed webbed v2.2.1+,"
+        echo "       set FM_WEBBED_EXT to a suitable artifact, or use the standard '--batch' (DOM)."
         exit 1
     fi
 fi
@@ -1074,9 +1074,9 @@ fi
 # logic — then exit WITHOUT generating a single chunk. The safe way to preview the cap.
 if [ -n "${FM_DDR_PLAN:-}" ]; then
     echo "=== DDR-Subchunk Plan-Dry-Run (XML_DIR=$XML_DIR) ==="
-    echo "  engaged=$DDR_SUBCHUNK_ACTIVE  auto=$DDR_AUTO_MODE  M_floor=$DDR_REQ_M  cap=$DDR_MAX_CHUNKS/Datei  min_records=$DDR_MIN_RECORDS  avail=${_avail_mb}MB"
+    echo "  engaged=$DDR_SUBCHUNK_ACTIVE  auto=$DDR_AUTO_MODE  M_floor=$DDR_REQ_M  cap=$DDR_MAX_CHUNKS/file  min_records=$DDR_MIN_RECORDS  avail=${_avail_mb}MB"
     if ! $DDR_SUBCHUNK_ACTIVE; then
-        echo "  → DDR-Subchunk greift NICHT (Default-Verhalten: 1 Calculation- + 1 Script-Chunk je Datei)."
+        echo "  → DDR subchunk does NOT engage (default behavior: 1 Calculation + 1 Script chunk per file)."
     else
         _plan_tot=0; _plan_files=0; _plan_max=0
         for _pf in "$XML_DIR"/*.xml; do
@@ -1085,12 +1085,12 @@ if [ -n "${FM_DDR_PLAN:-}" ]; then
             _m="${_rm#Calculation:*:}"; _m="${_m%% *}"
             _r=$(_ddr_count_records "$_pf")
             _ch=$(( (_r + _m - 1) / _m ))
-            printf "  %-32s R=%-6d M=%-5d → %d Chunks\n" "$(basename "$_pf")" "$_r" "$_m" "$_ch"
+            printf "  %-32s R=%-6d M=%-5d → %d chunks\n" "$(basename "$_pf")" "$_r" "$_m" "$_ch"
             _plan_tot=$(( _plan_tot + _ch )); _plan_files=$(( _plan_files + 1 ))
             [ "$_ch" -gt "$_plan_max" ] && _plan_max="$_ch"
         done
         echo "  ----------------------------------------------------------------"
-        echo "  $_plan_files Datei(en) subgechunkt · GESAMT $_plan_tot DDR-Chunks · max/Datei $_plan_max"
+        echo "  $_plan_files file(s) sub-chunked · TOTAL $_plan_tot DDR chunks · max/file $_plan_max"
     fi
     exit 0
 fi
@@ -1160,10 +1160,10 @@ if $TURBO_MODE; then
             TURBO_WORKER_THREADS="$DUCKDB_THREADS"
         fi
     fi
-    $QUIET_MODE || echo "Hinweis: Turbo-Worker-Threads = $TURBO_WORKER_THREADS (≈Kerne/W; W=$TURBO_W, Kerne=$_tw_cores). P2–P6 behalten DUCKDB_THREADS=${DUCKDB_THREADS:-default}. Override: FM_TURBO_WORKER_THREADS."
+    $QUIET_MODE || echo "Note: turbo worker threads = $TURBO_WORKER_THREADS (≈cores/W; W=$TURBO_W, cores=$_tw_cores). P2–P6 keep DUCKDB_THREADS=${DUCKDB_THREADS:-default}. Override: FM_TURBO_WORKER_THREADS."
 fi
 
-# → ausgelagert nach tools/katana-xml/lib/convert_turbo.sh (§7.1 Shell-Split)
+# → moved to tools/katana-xml/lib/convert_turbo.sh (shell split)
 
 # REST-API copy target (production mode only)
 REST_API_DB_DIR="$PROJECT_ROOT/rest-api/db"
@@ -1181,12 +1181,12 @@ acquire_lock() {
         return 0
     fi
     mkdir -p "$FMLAB_DIR"
-    # Atomare Erzeugung via noclobber (O_EXCL) statt Check-then-Write: das alte
-    # Muster hatte ein TOCTOU-Fenster, in dem REST-API und CLI das Lock GLEICHZEITIG
-    # nehmen konnten (A-B4). Das Dateiformat (PID/Timestamp/Modus) bleibt unverändert —
-    # die REST-API liest und schreibt dasselbe File (xml-convert.js, recluster.service.js).
-    # Bis zu 3 Versuche: existiert das Lock, wird der Owner geprüft; stale → entfernen
-    # und atomar neu versuchen (kein Fenster zwischen rm und Neuanlage).
+    # Atomic creation via noclobber (O_EXCL) instead of check-then-write: the old
+    # pattern had a TOCTOU window in which REST-API and CLI could take the lock
+    # SIMULTANEOUSLY (A-B4). The file format (PID/timestamp/mode) stays unchanged —
+    # the REST-API reads and writes the same file (xml-convert.js, recluster.service.js).
+    # Up to 3 attempts: if the lock exists, the owner is checked; stale → remove
+    # and retry atomically (no window between rm and re-creation).
     local attempt OWNER_PID OWNER_INFO
     for attempt in 1 2 3; do
         if ( set -C; {
@@ -1197,10 +1197,10 @@ acquire_lock() {
             LOCK_OWNED=true
             return 0
         fi
-        # Lock existiert: Owner-PID prüfen. Nur numerische PIDs an kill -0 geben
-        # (A-S3 — Garbage im Lock-File wird als stale behandelt statt kill zu füttern).
-        # Bekannte Limitation: PID-Reuse kann einen fremden Prozess als Owner
-        # fehlinterpretieren (false positive) — akzeptiert, da kurzlebige Locks.
+        # Lock exists: check the owner PID. Only pass numeric PIDs to kill -0
+        # (A-S3 — garbage in the lock file is treated as stale instead of feeding kill).
+        # Known limitation: PID reuse can misinterpret a foreign process as the owner
+        # (false positive) — accepted, since locks are short-lived.
         OWNER_PID=$(head -n1 "$LOCK_FILE" 2>/dev/null | tr -d '[:space:]')
         if [[ "$OWNER_PID" =~ ^[0-9]+$ ]] && kill -0 "$OWNER_PID" 2>/dev/null; then
             OWNER_INFO=$(cat "$LOCK_FILE" 2>/dev/null | tr '\n' ' ')
@@ -1211,7 +1211,7 @@ acquire_lock() {
         emit_warn "Removing stale lock file (owner PID ${OWNER_PID:-?} is gone)"
         rm -f "$LOCK_FILE"
     done
-    emit_error "Lock konnte nicht erworben werden: $LOCK_FILE"
+    emit_error "Lock could not be acquired: $LOCK_FILE"
     return 1
 }
 
@@ -1222,16 +1222,16 @@ release_lock() {
     fi
 }
 
-# stamp_last_run <true|false> <exit_code> [<processed> <total>] — §6.1:
-# CLI-Läufe spiegeln ihren Ausgang nach .fmlab/last_xml_run.json, damit das
-# Web-Frontend auch Fehlschläge (und Erfolge) von Kommandozeilen-Läufen sieht.
-# NICHT stempeln: --quiet (der REST-API-Server persistiert den Record selbst,
-# inkl. Event-Historie — rest-api/src/services/xml-convert.js), Test-Modus
-# (fm_test.duckdb, kein Produktions-Lauf) und Läufe ohne Lock-Besitz (ein am
-# Lock abgewiesener Zweitlauf darf den Record des AKTIVEN Laufs nicht
-# überschreiben). Schema additiv zum API-Record ($schema_version 1); `source`
-# markiert den CLI-Ursprung. LAST_RUN_STAMPED verhindert Doppel-Stempel
-# (expliziter Aufruf + EXIT-Trap-Fallback).
+# stamp_last_run <true|false> <exit_code> [<processed> <total>]
+# CLI runs mirror their outcome to .fmlab/last_xml_run.json so the
+# web frontend sees failures (and successes) of command-line runs too.
+# Do NOT stamp: --quiet (the REST-API server persists the record itself,
+# including event history — rest-api/src/services/xml-convert.js), test mode
+# (fm_test.duckdb, not a production run) and runs without lock ownership (a
+# second run rejected at the lock must not overwrite the record of the ACTIVE
+# run). Schema additive to the API record ($schema_version 1); `source`
+# marks the CLI origin. LAST_RUN_STAMPED prevents a double stamp
+# (explicit call + EXIT-trap fallback).
 LAST_RUN_STAMPED=false
 stamp_last_run() {
     local _ok="$1" _rc="${2:-1}" _processed="${3:-0}" _total="${4:-0}"
@@ -1250,9 +1250,9 @@ stamp_last_run() {
     return 0
 }
 
-# §6.9: Anker-Quote der Calculation-Chunks — läuft NACH dem Analysis-Views-Build
-# (v_calc_anchors entsteht erst dort, postprocess_db liefe zu früh). Reportet die
-# unresolved-Quote; >10 % = warn (Anker-Regression), sonst info bei >0.
+# anchor rate of the Calculation chunks — runs AFTER the analysis-views build
+# (v_calc_anchors only comes into being there, postprocess_db would run too early). Reports the
+# unresolved rate; >10 % = warn (anchor regression), otherwise info when >0.
 postcheck_calc_anchors() {
     [ -f "$DB_FILE" ] || return 0
     local anchors_exist
@@ -1265,18 +1265,18 @@ postcheck_calc_anchors() {
     if [ "$total" -gt 0 ] && [ "$unres" -gt 0 ]; then
         pct=$(awk -v u="$unres" -v t="$total" 'BEGIN { printf "%.1f", (u/t)*100 }')
         if awk -v p="$pct" 'BEGIN { exit !(p > 10) }'; then
-            add_finding resolution warn "Calc-Anker unresolved: $unres von $total ($pct%)" "Anker-Auflösung (v_calc_anchors) auf Regression prüfen (AP-1-Klasse)"
+            add_finding resolution warn "Calc anchors unresolved: $unres of $total ($pct%)" "Check anchor resolution (v_calc_anchors) for regression (AP-1 class)"
         else
-            add_finding resolution info "Calc-Anker unresolved: $unres von $total ($pct%)" "Erwartbarer Teil-Korpus-Rest; steigt die Quote, Anker-Auflösung prüfen"
+            add_finding resolution info "Calc anchors unresolved: $unres of $total ($pct%)" "Expected partial-corpus remainder; if the rate rises, check anchor resolution"
         fi
     fi
     return 0
 }
 
-# EXIT-Trap-Fallback (§6.1): JEDER Fehler-Exit vor dem regulären Abschluss
-# (Schema-Check, Preflight, DuckDB-Fehler, …) stempelt ok:false — ohne jeden
-# einzelnen exit-Pfad instrumentieren zu müssen. Reguläre Enden stempeln
-# explizit (mit processed/total) und setzen LAST_RUN_STAMPED.
+# EXIT-trap fallback : EVERY error exit before the regular completion
+# (schema check, preflight, DuckDB error, …) stamps ok:false — without having to
+# instrument every single exit path. Regular endings stamp
+# explicitly (with processed/total) and set LAST_RUN_STAMPED.
 _stamp_on_exit() {
     local _rc=$?
     if [ "$_rc" -ne 0 ] && [ "${LAST_RUN_STAMPED:-false}" = "false" ]; then
@@ -1341,7 +1341,7 @@ sync_to_rest_api() {
         _oc_rows=0
     fi
     if ! [ "${_oc_rows:-0}" -gt 0 ] 2>/dev/null; then
-        emit_warn "Sync übersprungen: Master ohne befüllte ObjectCatalog (Katalog-Build unvollständig) — die REST-API würde sonst HTTP 500 liefern."
+        emit_warn "Sync skipped: master without a populated ObjectCatalog (catalog build incomplete) — the REST-API would otherwise return HTTP 500."
         return 1
     fi
 
@@ -1388,7 +1388,7 @@ sync_to_rest_api() {
 }
 
 # ============================================================================
-# Phase 7 — Auto-Clustering (Rohform) · R1 cluster.json reuse
+# Phase 7 — auto clustering (raw) · R1 cluster.json reuse
 # ============================================================================
 
 # read_cluster_json — echoes "engine|resolution|seed" for Auto-P7 / Re-Cluster.
@@ -1428,22 +1428,22 @@ read_cluster_json() {
 # mask the drift signal. Runs INSIDE the held xml_convert.lock (cluster.sh
 # takes no own lock → no deadlock) and BEFORE the single pipeline sync (so the
 # sync carries the fresh ObjectClusters/CommunityNames to the copy). P7 errors are
-# non-fatal (nachgelagert, nicht datenkritisch) — warn + Warn-finish, never a
+# non-fatal (downstream, not data-critical) — warn + warn-finish, never a
 # fail_fast_stop. Production only (TEST_MODE uses a throwaway DB).
 run_phase7_clustering() {
     if $TEST_MODE; then
         return 0
     fi
 
-    # FM_SKIP_CLUSTER=1 ueberspringt die Auto-Clustering-Phase (P7) vollstaendig.
-    # Genutzt vom Converter-Quality-Test (tools/tests/quality/): die Community-
-    # Erkennung ist fuer die Katalog-Qualitaet irrelevant und kostet nur Laufzeit.
-    # ACHTUNG: --force-rebuild wischt den Cluster-Layer weiterhin (das passiert im
-    # Schema-Reset, nicht hier); P7 baut ihn danach nur nicht neu auf. Nach einer
-    # Test-Serie also das Produktions-Set neu einspielen + fm-graph-cluster-Re-Run.
+    # FM_SKIP_CLUSTER=1 skips the auto-clustering phase (P7) entirely.
+    # Used by the converter quality test (tools/tests/quality/): community
+    # detection is irrelevant to catalog quality and only costs runtime.
+    # NOTE: --force-rebuild still wipes the cluster layer (that happens in the
+    # schema reset, not here); P7 just does not rebuild it afterwards. So after a
+    # test series, re-import the production set + re-run fm-graph-cluster.
     if [ "${FM_SKIP_CLUSTER:-}" = "1" ]; then
-        phase_progress cluster 0 "Clustering übersprungen (FM_SKIP_CLUSTER=1)"
-        $QUIET_MODE || echo "Phase 7 (Clustering): übersprungen (FM_SKIP_CLUSTER=1)"
+        phase_progress cluster 0 "Clustering skipped (FM_SKIP_CLUSTER=1)"
+        $QUIET_MODE || echo "Phase 7 (Clustering): skipped (FM_SKIP_CLUSTER=1)"
         return 0
     fi
 
@@ -1460,13 +1460,13 @@ run_phase7_clustering() {
         # Incremental into a clustered DB → skip. The bar reaches 100 via the sync
         # (which now fills the `cluster` segment); a single start marker keeps the
         # segment from looking stuck while avoiding a misleading "── P7 ──" banner.
-        phase_progress cluster 0 "Clustering übersprungen (inkrementell)"
-        $QUIET_MODE || echo "Phase 7 (Clustering): übersprungen (inkrementeller Import in geclusterte DB)"
+        phase_progress cluster 0 "Clustering skipped (incremental)"
+        $QUIET_MODE || echo "Phase 7 (Clustering): skipped (incremental import into an already-clustered DB)"
         return 0
     fi
 
     phase_begin P7 Clustering
-    phase_progress cluster 0 "Community-Erkennung (Phase 7)…"
+    phase_progress cluster 0 "Community detection (Phase 7)…"
     if ! $QUIET_MODE; then
         echo "========================================="
         echo "Community detection (Phase 7)..."
@@ -1497,14 +1497,14 @@ run_phase7_clustering() {
     rm -f "$_p7_log"
 
     if [ "$_rc" -ne 0 ]; then
-        emit_warn "Phase 7 (Clustering) fehlgeschlagen (rc=$_rc) — Import bleibt erfolgreich, Partition unverändert."
-        phase_finish "Clustering fehlgeschlagen (rc=$_rc)" "{\"cluster_failed\":true,\"rc\":$_rc}"
+        emit_warn "Phase 7 (Clustering) failed (rc=$_rc) — the import stays successful, the partition unchanged."
+        phase_finish "Clustering failed (rc=$_rc)" "{\"cluster_failed\":true,\"rc\":$_rc}"
         return 0
     fi
 
     local _comm
     _comm=$(pp_num "SELECT COUNT(DISTINCT Community) FROM CommunityNames")
-    phase_finish "$(group_de "$_comm") Communities (Rohform)" "{\"communities\":$_comm}"
+    phase_finish "$(group_de "$_comm") communities (raw)" "{\"communities\":$_comm}"
     return 0
 }
 
@@ -1533,8 +1533,8 @@ read_template_schema_info() {
     hash_files_raw=$(grep -m1 '^-- @SCHEMA_HASH_FILES ' "$SQL_TEMPLATE" | cut -d' ' -f3-)
 
     if [ -z "$SCHEMA_VERSION_EXPECTED" ] || [ -z "$hash_files_raw" ]; then
-        echo "ERROR: SQL-Template fehlt @SCHEMA_VERSION oder @SCHEMA_HASH_FILES im Header."
-        echo "       Datei: $SQL_TEMPLATE"
+        echo "ERROR: SQL template is missing @SCHEMA_VERSION or @SCHEMA_HASH_FILES in the header."
+        echo "       File: $SQL_TEMPLATE"
         exit 1
     fi
 
@@ -1544,7 +1544,7 @@ read_template_schema_info() {
     for f in $hash_files_raw; do
         abs_paths+=("$PROJECT_ROOT/$f")
         if [ ! -f "$PROJECT_ROOT/$f" ]; then
-            echo "ERROR: SQL-Template-Referenz fehlt: $PROJECT_ROOT/$f"
+            echo "ERROR: SQL template reference missing: $PROJECT_ROOT/$f"
             exit 1
         fi
     done
@@ -1581,16 +1581,16 @@ compute_schema_state() {
 
     if [ ! -f "$DB_FILE" ]; then
         SCHEMA_ACTION="fresh_build"
-        SCHEMA_REASON="DB-Datei existiert nicht — normaler Erst-Import"
+        SCHEMA_REASON="DB file does not exist — normal initial import"
     elif [ -z "$SCHEMA_VERSION_DB" ]; then
         SCHEMA_ACTION="rebuild"
-        SCHEMA_REASON="DB ohne SchemaInfo-Tabelle (Pre-Versioning-Stand oder Datei korrupt)"
+        SCHEMA_REASON="DB without a SchemaInfo table (pre-versioning state or file corrupt)"
     elif [ "$SCHEMA_VERSION_DB" != "$SCHEMA_VERSION_EXPECTED" ]; then
         SCHEMA_ACTION="rebuild"
-        SCHEMA_REASON="Schema-Version $SCHEMA_VERSION_DB → $SCHEMA_VERSION_EXPECTED"
+        SCHEMA_REASON="Schema version $SCHEMA_VERSION_DB → $SCHEMA_VERSION_EXPECTED"
     elif [ "$SCHEMA_HASH_DB" != "$SCHEMA_HASH_EXPECTED" ]; then
         SCHEMA_ACTION="warn"
-        SCHEMA_REASON="Schema-Hash drift erkannt (Version unverändert) — Rebuild empfohlen via --force-rebuild"
+        SCHEMA_REASON="Schema hash drift detected (version unchanged) — rebuild recommended via --force-rebuild"
     else
         SCHEMA_ACTION="incremental"
         SCHEMA_REASON="Schema OK (v$SCHEMA_VERSION_DB)"
@@ -1629,17 +1629,17 @@ delete_db_for_rebuild() {
 
     if [[ -t 0 ]] && ! $FORCE_REBUILD; then
         echo ""
-        echo "  Grund: $reason"
-        echo "  Lösche $DB_FILE und baue neu auf? [y/N] "
+        echo "  Reason: $reason"
+        echo "  Delete $DB_FILE and rebuild from scratch? [y/N] "
         read -r CONFIRM
         if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
-            echo "  Abgebrochen."
+            echo "  Aborted."
             exit 6
         fi
     fi
 
     rm -f "$DB_FILE"
-    echo "  ✓ DB gelöscht: $DB_FILE"
+    echo "  ✓ DB deleted: $DB_FILE"
 }
 
 # ============================================================================
@@ -1679,8 +1679,9 @@ memory_limit_prefix() {
 # Phase 2 — reference resolution
 # Runs convert_xml_02_resolve.sql exactly ONCE after all Phase-1 imports.
 # Table-only (no read_xml, no fm_xml binding): rebuilds XMLStepReferences,
-# XMLLayoutReferences, MBS_SubnameMap, GetSubparameterMap, XMLCalcReferences and
-# PluginFunctionUsages for ALL File_Names from the P1 tables. Must run before
+# XMLLayoutReferences, LayoutObjectSteps, MBS_SubnameMap, GetSubparameterMap,
+# XMLCalcReferences and PluginFunctionUsages for ALL File_Names from the P1 tables.
+# Must run before
 # convert_xml_04_catalog.sql (ObjectLinks depends on the P2 tables).
 # Writes stdout+stderr to $1. Returns: DuckDB exit code.
 # ============================================================================
@@ -1780,7 +1781,7 @@ run_phase2_partitioned() {
     local K="$1" logfile="$2" p2_thr="${3:-}"
     local partdir; partdir="$(mktemp -d)"
     : > "$logfile"
-    [ -n "$p2_thr" ] && echo "P2 partitioniert ×$K, ⌊cores/K⌋=$p2_thr Threads/Slice" >> "$logfile"
+    [ -n "$p2_thr" ] && echo "P2 partitioned ×$K, ⌊cores/K⌋=$p2_thr threads/slice" >> "$logfile"
 
     # 1) File partition by weight (LayoutObjects + StepsForScripts = the
     #    xml_extract-heavy sources). Greedy LPT: heaviest file first into the
@@ -1799,7 +1800,7 @@ run_phase2_partitioned() {
     # If the partition stayed empty (FilesCatalog empty / query error) → error;
     # the caller does NOT fall back to single-pass (it would see the same empty source).
     if ! ls "$partdir"/bin_*.list >/dev/null 2>&1; then
-        echo "ERROR: P2-Partition leer (FilesCatalog?)" >> "$logfile"
+        echo "ERROR: P2 partition empty (FilesCatalog?)" >> "$logfile"
         rm -rf "$partdir"; return 1
     fi
 
@@ -1826,7 +1827,7 @@ run_phase2_partitioned() {
         fi
     done
     if [ "$rc" -ne 0 ] || [ ${#slices[@]} -eq 0 ]; then
-        echo "ERROR: ≥1 P2-Slice fehlgeschlagen (rc=$rc, ok=${#slices[@]}/$K)" >> "$logfile"
+        echo "ERROR: ≥1 P2 slice failed (rc=$rc, ok=${#slices[@]}/$K)" >> "$logfile"
         rm -rf "$partdir"; return 1
     fi
 
@@ -1838,7 +1839,7 @@ run_phase2_partitioned() {
     msql="$(mktemp)"
     {
         for s in "${slices[@]}"; do echo "ATTACH '$s' AS s${ai} (READ_ONLY);"; ai=$((ai+1)); done
-        for tbl in XMLStepReferences XMLLayoutReferences MBS_SubnameMap GetSubparameterMap XMLCalcReferences PluginFunctionUsages; do
+        for tbl in XMLStepReferences XMLLayoutReferences LayoutObjectSteps MBS_SubnameMap GetSubparameterMap XMLCalcReferences PluginFunctionUsages; do
             echo "DROP TABLE IF EXISTS $tbl;"
             echo "CREATE TABLE $tbl AS SELECT * FROM s0.$tbl LIMIT 0;"
             j=0
@@ -1869,12 +1870,12 @@ run_phase2() {
     else p2_thr=$(( _nproc / K )); [ "$p2_thr" -lt 1 ] && p2_thr=1; fi
     local templog; templog=$(mktemp); local rc=0
     if (cd "$PROJECT_ROOT" && run_phase2_partitioned "$K" "$templog" "$p2_thr"); then
-        echo "✓ $label (partitioniert ×$K, ${p2_thr} Threads/Slice)"
+        echo "✓ $label (partitioned ×$K, ${p2_thr} threads/slice)"
     else
-        echo "✗ WARNING: $label (partitioniert ×$K) failed"
+        echo "✗ WARNING: $label (partitioned ×$K) failed"
         {
             echo "================================================================================"
-            echo "ERROR: $label (partitioniert ×$K)"
+            echo "ERROR: $label (partitioned ×$K)"
             echo "Time: $(date '+%Y-%m-%d %H:%M:%S')"
             echo "================================================================================"
             cat "$templog"; echo ""
@@ -1903,10 +1904,10 @@ run_p1_on() {
     local seqoff="${P1_SEQ_OFFSET:-0}"
     case "$seqoff" in ''|*[!0-9]*) seqoff=0 ;; esac
     local tsql; tsql="$(mktemp)"
-    # $xfile landet als sed-Replacement UND SQL-Literal: erst fürs SQL die
-    # Quotes verdoppeln ('→''), dann die sed-aktiven Zeichen (\ & /) im
-    # Replacement escapen — sonst bricht z.B. O'Brien.xml das SQL (Injection in
-    # die schreibfähige Session) bzw. '&' expandiert sed-seitig zum Pattern.
+    # $xfile lands as a sed replacement AND an SQL literal: first double the
+    # quotes for the SQL ('→''), then escape the sed-active characters (\ & /) in the
+    # replacement — otherwise e.g. O'Brien.xml breaks the SQL (injection into
+    # the writable session) or '&' expands to the pattern on the sed side.
     local xfile_esc="${xfile//\'/\'\'}"
     xfile_esc="${xfile_esc//\\/\\\\}"
     xfile_esc="${xfile_esc//&/\\&}"
@@ -1917,25 +1918,25 @@ run_p1_on() {
         -e "s/SET VARIABLE seq_offset = [0-9]*;/SET VARIABLE seq_offset = $seqoff;/" \
         "$SQL_TEMPLATE" > "$tsql"
 
-    # ---- Sektions-Dispatch (§2.4.1, Parse-Amplifikation) ----
-    # Im Turbo-Modus enthält ein Chunk genau EINEN Katalog-Branch (Chunkmap kennt
-    # ihn); trotzdem lief bisher pro Chunk das VOLLE P1-Skript (~40 read_xml über
-    # jeden Chunk — Parse-Volumen ~40× Korpusgröße). Die @P1_SECTION:<cat,...>@-
-    # Marker im Template taggen jede Extraktion mit ihren Quell-Katalogen —
-    # exakt gespiegelt an _turbo_catalog_owned() + Multi-fed (ScriptTriggers:
-    # main+LayoutCatalog): der katalog-granulare Merge übernimmt aus einem Chunk
-    # ohnehin NUR die owned Tabellen, übersprungene Sektionen hätten also leere/
-    # verworfene Ergebnisse geliefert → Ergebnis bit-identisch per Konstruktion.
-    # CREATE TABLE/Prelude/SchemaInfo sind ungetaggt (laufen immer, Schema-Parität
-    # der Chunk-DBs bleibt gewahrt). Aktiv NUR wenn der Aufrufer FM_P1_CATALOG
-    # setzt (Turbo-Chunk-Worker); Opt-out FM_P1_DISPATCH=0. Unbekannte Kataloge
-    # laufen voll (Fallback — katalog-granularer Merge lehnt sie ohnehin ab).
+    # ---- Section dispatch (parse amplification) ----
+    # In turbo mode a chunk contains exactly ONE catalog branch (the chunk map knows
+    # it); nevertheless the FULL P1 script ran per chunk so far (~40 read_xml over
+    # every chunk — parse volume ~40× the corpus size). The @P1_SECTION:<cat,...>@
+    # markers in the template tag each extraction with its source catalogs —
+    # mirrored exactly on _turbo_catalog_owned() + multi-fed (ScriptTriggers:
+    # main+LayoutCatalog): the catalog-granular merge takes ONLY the owned tables
+    # from a chunk anyway, so skipped sections would have delivered empty/
+    # discarded results → the result is bit-identical by construction.
+    # CREATE TABLE/prelude/SchemaInfo are untagged (they always run, so the schema parity
+    # of the chunk DBs is preserved). Active ONLY when the caller sets FM_P1_CATALOG
+    # (turbo chunk worker); opt-out FM_P1_DISPATCH=0. Unknown catalogs
+    # run in full (fallback — the catalog-granular merge rejects them anyway).
     if [ -n "${FM_P1_CATALOG:-}" ] && [ "${FM_P1_DISPATCH:-1}" != "0" ]; then
         awk -v cat="$FM_P1_CATALOG" '
             /^-- @P1_SECTION:/ {
                 spec = $0
                 sub(/^-- @P1_SECTION:/, "", spec); sub(/@.*/, "", spec)
-                # index() statt ~ (kein Regex — Katalognamen literal matchen)
+                # index() instead of ~ (no regex — match catalog names literally)
                 skip = (index("," spec ",", "," cat ",") > 0) ? 0 : 1
                 next
             }
@@ -1946,15 +1947,15 @@ run_p1_on() {
         mv "$tsql.2" "$tsql"
     fi
 
-    # Capability-Self-Test am Marker @WEBBED_SELFTEST@ injizieren. Zwei unabhaengige Teile:
-    #   (1) #73 chr(127)-Sentinel (wa_ws_sentinel) — modus-UNABHAENGIG (DOM wie SAX): wird
-    #       injiziert, sobald die Capability-Probe lief; sonst greift der SQL-Default ON.
-    #       WS_SENTINEL_ON ist die Single Source (auch fuer die bash/awk-Preproc-Gatung) →
-    #       SQL und Preproc bleiben pro Batch konsistent. true/false = SQL-Boolean-Literal.
-    #   (2) nested-attr-SAX (use_streaming/dom_threshold) — NUR im Streaming-Modus relevant:
-    #       liest die #98-Probe mit erzwungenem SAX; nur ein webbed mit Fix → use_streaming=
-    #       true → dom_threshold gesenkt. NUR der unsignierte Dev-Patch braucht zusaetzlich
-    #       den LOAD-Redirect + -unsigned; signiertes Stock-webbed laedt per `LOAD webbed;`.
+    # Inject the capability self-test at the @WEBBED_SELFTEST@ marker. Two independent parts:
+    #   (1) #73 chr(127) sentinel (wa_ws_sentinel) — mode-INDEPENDENT (DOM as well as SAX): is
+    #       injected as soon as the capability probe ran; otherwise the SQL default ON applies.
+    #       WS_SENTINEL_ON is the single source (also for the bash/awk preproc gating) →
+    #       SQL and preproc stay consistent per batch. true/false = SQL boolean literal.
+    #   (2) nested-attr SAX (use_streaming/dom_threshold) — relevant ONLY in streaming mode:
+    #       reads the #98 probe with forced SAX; only a webbed with the fix → use_streaming=
+    #       true → dom_threshold lowered. ONLY the unsigned dev patch additionally needs
+    #       the LOAD redirect + -unsigned; signed stock webbed loads via `LOAD webbed;`.
     local duck_flags=()
     local selftest=""
     if [ "$WEBBED_PROBE_RAN" = "true" ] || [ -n "${FM_FORCE_WS_SENTINEL:-}" ]; then
@@ -1963,12 +1964,12 @@ run_p1_on() {
     if $PATCHED_WEBBED_ACTIVE || $STOCK_STREAMING_ACTIVE; then
         selftest="${selftest:+$selftest }SET VARIABLE use_streaming = ((${_vc_nested_probe_sql}) = 1); SET VARIABLE dom_threshold = (CASE WHEN getvariable('use_streaming') THEN ${WEBBED_STREAM_THRESHOLD} ELSE getvariable('max_filesize') END);"
     fi
-    # A-S2 + A-B6: Marker-Ersetzung per awk/ENVIRON statt `sed -i -e` —
-    #   (1) sed mit '|'-Delimiter bricht, sobald das Manifest-SQL ein legitimes
-    #       '||' (SQL-Concat) oder Newlines enthält; ENVIRON umgeht jede
-    #       Delimiter-/Escape-Verarbeitung (auch '\' bleibt roh).
-    #   (2) BSD-sed interpretiert `-i -e` als Backup-Suffix '-e' und leakte pro
-    #       Chunk-Aufruf eine `$tsql-e`-Datei nach TMPDIR (macOS, Turbo: hunderte).
+    # A-S2 + A-B6: marker replacement via awk/ENVIRON instead of `sed -i -e` —
+    #   (1) sed with a '|' delimiter breaks as soon as the manifest SQL contains a legitimate
+    #       '||' (SQL concat) or newlines; ENVIRON bypasses any
+    #       delimiter/escape processing (even '\' stays raw).
+    #   (2) BSD sed interprets `-i -e` as the backup suffix '-e' and leaked one
+    #       `$tsql-e` file to TMPDIR per chunk call (macOS, turbo: hundreds).
     local _load_redirect=""
     if $PATCHED_WEBBED_ACTIVE; then
         duck_flags+=(-unsigned)
@@ -2051,7 +2052,7 @@ check_disk_space() {
     done
     [ -z "$worst_free" ] && return 0   # df not parseable → don't block
     if [ "$worst_free" -lt "$floor" ]; then
-        local msg="Zu wenig freier Speicher${label:+ ($label)}: nur ${worst_free} MB frei auf $worst (Mindestens ${floor} MB nötig; Override: FM_MIN_DISK_MB)."
+        local msg="Not enough free disk space${label:+ ($label)}: only ${worst_free} MB free on $worst (at least ${floor} MB needed; override: FM_MIN_DISK_MB)."
         log_error_section "Disk space low${label:+ — $label}" < <(echo "$msg"; echo ""; _disk_snapshot "$STREAMING_DIR" "$DB_DIR" "$LOG_DIR" "${TMPDIR:-/tmp}")
         emit_error "$msg"
         return 1
@@ -2110,9 +2111,9 @@ _tree_rss_kb() {
 # KB → integer MB (for log lines/tables).
 _kb_mb() { awk -v k="${1:-0}" 'BEGIN{ printf "%d", (k+0)/1024 }'; }
 
-# → ausgelagert nach tools/katana-xml/lib/convert_turbo.sh (§7.1 Shell-Split)
+# → moved to tools/katana-xml/lib/convert_turbo.sh (shell split)
 
-# → ausgelagert nach tools/katana-xml/lib/convert_preprocess.sh (§7.1 Shell-Split)
+# → moved to tools/katana-xml/lib/convert_preprocess.sh (shell split)
 
 # ============================================================================
 # Function: Process a single XML file
@@ -2130,7 +2131,7 @@ process_single_file() {
 
     # 2. Create temporary working directory
     local TEMP_DIR=$(mktemp -d)
-    trap "rm -rf '$TEMP_DIR'; trap - RETURN" RETURN  # A-B10: Cleanup + Trap selbst räumen (sonst feuert er bei jedem späteren Return erneut)
+    trap "rm -rf '$TEMP_DIR'; trap - RETURN" RETURN  # A-B10: cleanup + clear the trap itself (otherwise it fires again on every later return)
 
     # 3. Pre-Processor (stage 1): encoding→UTF-8 (BOM sniffing) + special-char
     #    cleanup in one step. Produces the cleaned UTF-8 file directly.
@@ -2158,9 +2159,9 @@ process_single_file() {
         local RENAMED="$TEMP_DIR/${BASENAME}_streamify.xml"
         if awk -v rules="$STREAMIFY_RULES" -f "$KATANA_COMMON_AWK" -f "$STREAMIFY_RENAMER" < "$PRE_OUTPUT" > "$RENAMED" 2>"$TEMP_DIR/streamify_err.log"; then
             mv "$RENAMED" "$PRE_OUTPUT"
-            echo "  Streamify-Renaming angewandt (rules: $STREAMIFY_RULES)"
+            echo "  Streamify renaming applied (rules: $STREAMIFY_RULES)"
         else
-            echo "  ERROR: Streamify-Renaming fehlgeschlagen"
+            echo "  ERROR: Streamify renaming failed"
             sed 's/^/    /' "$TEMP_DIR/streamify_err.log" 2>/dev/null
             return 5
         fi
@@ -2275,7 +2276,7 @@ process_single_file() {
                 FROM read_csv('$CHUNK_DIR/chunkmap.tsv', delim='\t', header=false,
                      columns={'catalog':'VARCHAR','split_number':'INTEGER','record_count':'INTEGER','sub_m':'INTEGER','chunk_file':'VARCHAR'});
                 " >>"$ERROR_LOG" 2>&1; then
-                echo "  ERROR: Chunkmap-Load fehlgeschlagen"
+                echo "  ERROR: Chunk map load failed"
                 sed 's/^/    /' "$ERROR_LOG"; cat "$ERROR_LOG"
                 return 3
             fi
@@ -2354,7 +2355,7 @@ pp_num() {
     if [[ "$v" =~ ^[0-9]+$ ]]; then echo "$v"; else echo 0; fi
 }
 
-# add_finding <kategorie> <schweregrad ok|warn|error> <nachricht> <fix-hint>
+# add_finding <category> <severity ok|warn|error> <message> <fix-hint>
 add_finding() {
     POSTCHECK_FINDINGS+=("$1|$2|$3|$4")
     case "$2" in
@@ -2378,7 +2379,7 @@ postprocess_db() {
     # The views stay in the DB and are thus usable for REST-API/ad-hoc too.
     if [ -f "$VALIDATE_TEMPLATE" ]; then
         { memory_limit_prefix; cat "$VALIDATE_TEMPLATE"; } | "$DUCKDB_BIN" "$DB_FILE" >/dev/null 2>&1 \
-            || emit_warn "Phase-6-Prüf-Views konnten nicht erstellt werden (Post-Checks evtl. unvollständig)"
+            || emit_warn "Phase-6 check views could not be created (post-checks may be incomplete)"
     fi
 
     local files_n; files_n=$(pp_num "SELECT files_n FROM v_check_counts")
@@ -2388,7 +2389,7 @@ postprocess_db() {
         CHECKS_RUN=$((CHECKS_RUN + 1))
         local bt; bt=$(pp_num "SELECT basetables_n FROM v_check_counts")
         if [ "$bt" -eq 0 ]; then
-            add_finding plausibility warn "BaseTableCatalog leer trotz $files_n importierter Datei(en)" "Import unvollständig? convert_xml_01_extract.sql-Lauf prüfen"
+            add_finding plausibility warn "BaseTableCatalog empty despite $files_n imported file(s)" "Import incomplete? Check the convert_xml_01_extract.sql run"
         fi
 
         CHECKS_RUN=$((CHECKS_RUN + 1))
@@ -2396,7 +2397,7 @@ postprocess_db() {
         lay=$(pp_num "SELECT layouts_n FROM v_check_counts")
         lobj=$(pp_num "SELECT layoutobjects_n FROM v_check_counts")
         if [ "$lay" -gt 0 ] && [ "$lobj" -eq 0 ]; then
-            add_finding plausibility warn "$lay Layout(s), aber 0 LayoutObjects" "LayoutObject-Parser prüfen"
+            add_finding plausibility warn "$lay Layout(s), but 0 LayoutObjects" "Check the LayoutObject parser"
         fi
 
         CHECKS_RUN=$((CHECKS_RUN + 1))
@@ -2404,7 +2405,7 @@ postprocess_db() {
         scr=$(pp_num "SELECT scripts_n FROM v_check_counts")
         steps=$(pp_num "SELECT steps_n FROM v_check_counts")
         if [ "$scr" -gt 0 ] && [ "$steps" -eq 0 ]; then
-            add_finding plausibility warn "$scr Script(s), aber 0 StepsForScripts" "Script-Step-Parser prüfen"
+            add_finding plausibility warn "$scr Script(s), but 0 StepsForScripts" "Check the script-step parser"
         fi
     fi
 
@@ -2415,7 +2416,7 @@ postprocess_db() {
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local c1; c1=$(pp_num "SELECT bad_calc_uuid FROM v_check_calc_uuid")
     if [ "$c1" -gt 0 ]; then
-        add_finding consistency warn "$c1 DDR_Calculations-Zeile(n) mit leerer/NULL Calc_UUID" "ObjectList-Element-Form prüfen (Calc_UUID-Slot-Regex in convert_xml_01_extract.sql)"
+        add_finding consistency warn "$c1 DDR_Calculations row(s) with an empty/NULL Calc_UUID" "Check the ObjectList element form (Calc_UUID slot regex in convert_xml_01_extract.sql)"
     fi
 
     # Orphan same-file link targets (true count, no cap): ObjectLinks targets
@@ -2431,13 +2432,13 @@ postprocess_db() {
     missing_ext=$(pp_num "SELECT missing_ext_files FROM v_check_orphan_links")
     if [ "$orphans" -gt 0 ]; then
         if [ "$missing_ext" -gt 0 ]; then
-            add_finding consistency info "$orphans verwaiste Referenz-Ziel(e) — erwartbar: $missing_ext referenzierte externe Datei(en) nicht importiert (Teil-Korpus)" "Für vollständige Auflösung alle referenzierten FileMaker-Dateien nach xml/ importieren"
+            add_finding consistency info "$orphans orphaned reference target(s) — expected: $missing_ext referenced external file(s) not imported (partial corpus)" "For complete resolution, import all referenced FileMaker files into xml/"
         else
-            add_finding consistency warn "$orphans verwaiste Same-File-Link-Ziel(e) fehlen in ObjectCatalog (Korpus vollständig)" "Echte tote Referenzen — referenzielle Integrität prüfen"
+            add_finding consistency warn "$orphans orphaned same-file link target(s) missing in ObjectCatalog (corpus complete)" "Genuine dead references — check referential integrity"
         fi
     fi
 
-    # Synthetic regression (§6.2 guard): a derived role/object type must not be
+    # Synthetic regression (guard): a derived role/object type must not be
     # empty while its source is populated — catches silent 0-row INSERTs after
     # pattern/naming drift (the PluginComponent 'MBS::%'-vs-'MBS:%' class).
     CHECKS_RUN=$((CHECKS_RUN + 1))
@@ -2446,10 +2447,10 @@ postprocess_db() {
     if [ "$synth_bad" -gt 0 ]; then
         local synth_rules
         synth_rules=$(pp_query "SELECT string_agg(rule, ', ') FROM v_check_synthetic WHERE source_n > 0 AND derived_n = 0")
-        add_finding regression warn "$synth_bad Synthetik-Regel(n) verletzt: ${synth_rules:-?} (Quelle befüllt, abgeleitete Zeilen = 0)" "Stummen 0-Zeilen-INSERT des zugehörigen P4-Blocks prüfen (Pattern-/Namenskonventions-Drift)"
+        add_finding regression warn "$synth_bad synthetic rule(s) violated: ${synth_rules:-?} (source populated, derived rows = 0)" "Check the silent 0-row INSERT of the associated P4 block (pattern/naming-convention drift)"
     fi
 
-    # Orphan link SOURCES + NULL-target stock (§6.5 guard). Sources are same-file
+    # Orphan link SOURCES + NULL-target stock (guard). Sources are same-file
     # by construction → an orphan source is an integrity problem even on a partial
     # corpus (unlike orphan targets above).
     CHECKS_RUN=$((CHECKS_RUN + 1))
@@ -2458,12 +2459,12 @@ postprocess_db() {
     null_tgt=$(pp_num "SELECT null_target_links FROM v_check_orphan_sources")
     null_xf=$(pp_num "SELECT null_crossfile_links FROM v_check_orphan_sources")
     if [ "$orph_src" -gt 0 ] || [ "$null_tgt" -gt 0 ]; then
-        add_finding consistency warn "ObjectLinks-Hygiene: $orph_src verwaiste Link-QUELLE(n), $null_tgt Link(s) mit NULL-Target" "Quell-Filter der P4-Link-Blöcke (B-C1-Klasse) bzw. LEFT-JOIN-NULL-Durchreichung (B-C3) prüfen"
+        add_finding consistency warn "ObjectLinks hygiene: $orph_src orphaned link SOURCE(s), $null_tgt link(s) with a NULL target" "Check the source filter of the P4 link blocks (B-C1 class) or the LEFT-JOIN NULL pass-through (B-C3)"
     elif [ "$null_xf" -gt 0 ]; then
-        add_finding consistency info "$null_xf Link(s) mit Is_Cross_File=NULL (Konsumenten müssen NULL-safe sein)" "Is_Cross_File-Semantik der P4-Blöcke vereinheitlichen (COALESCE auf FALSE)"
+        add_finding consistency info "$null_xf link(s) with Is_Cross_File=NULL (consumers must be NULL-safe)" "Unify the Is_Cross_File semantics of the P4 blocks (COALESCE to FALSE)"
     fi
 
-    # Resolution rate per Ref_Type (§6.6 guard): the resolvers claim ≈97–99 % —
+    # Resolution rate per Ref_Type (guard): the resolvers claim ≈97–99 % —
     # a join/scoping rework silently dropping links would show up here first.
     # Threshold 90 % on types with ≥ 50 rows (assessment here, data in the view).
     CHECKS_RUN=$((CHECKS_RUN + 1))
@@ -2472,65 +2473,65 @@ postprocess_db() {
     if [ "$lowres_n" -gt 0 ]; then
         local lowres_detail
         lowres_detail=$(pp_query "SELECT string_agg(source || '/' || ref_type || '=' || quote_pct || '%', ', ') FROM v_check_resolution WHERE total >= 50 AND quote_pct < 90")
-        add_finding resolution warn "Auflösungsquote unter 90%: ${lowres_detail:-?}" "Resolver-Joins in convert_xml_02_resolve.sql auf Drift prüfen (Scoping/Namens-Join)"
+        add_finding resolution warn "Resolution rate below 90%: ${lowres_detail:-?}" "Check the resolver joins in convert_xml_02_resolve.sql for drift (scoping/name join)"
     fi
 
-    # F-1b: Auflösungsquote der Relationship-Prädikat-Felder (informativ). Externe
-    # TO-Seiten tragen leere Feld-UUIDs; unaufgelöst bleiben legitim die Fälle ohne
-    # importierte Zieldatei (Teil-Korpus) → INFO, kein Fehler.
+    # F-1b: resolution rate of the relationship predicate fields (informational). External
+    # TO sides carry empty field UUIDs; the cases without an imported target file legitimately
+    # stay unresolved (partial corpus) → INFO, not an error.
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local relfield_detail
     relfield_detail=$(pp_query "SELECT string_agg(ref_type || '=' || resolved || '/' || total || ' (' || quote_pct || '%)', ', ' ORDER BY ref_type) FROM v_check_relationship_field_resolution")
     if [ -n "${relfield_detail:-}" ]; then
-        add_finding relationship_fields info "Relationship-Prädikat-Feld-Auflösung: ${relfield_detail}" "Nicht aufgelöste = externe TO-Ziele ohne importierte Datei (Teil-Korpus, erwartbar)"
+        add_finding relationship_fields info "Relationship predicate field resolution: ${relfield_detail}" "Unresolved = external TO targets without an imported file (partial corpus, expected)"
     fi
 
-    # Link-role registry completeness (§7.6): every active role must be classified.
+    # Link-role registry completeness : every active role must be classified.
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local unreg_roles
     unreg_roles=$(pp_num "SELECT unregistered_roles FROM v_check_link_roles")
     if [ "$unreg_roles" -gt 0 ]; then
         local unreg_list
         unreg_list=$(pp_query "SELECT role_list FROM v_check_link_roles")
-        add_finding registry warn "$unreg_roles Link-Rolle(n) ohne Registry-Eintrag: ${unreg_list:-?}" "LinkRoleRegistry in convert_xml_04_catalog.sql um die neue(n) Rolle(n) ergänzen (usage/containment/restriction)"
+        add_finding registry warn "$unreg_roles link role(s) without a registry entry: ${unreg_list:-?}" "Add the new role(s) to LinkRoleRegistry in convert_xml_04_catalog.sql (usage/containment/restriction)"
     fi
 
-    # §6.4: (Object_UUID, File_Name)-Dubletten im ObjectCatalog (Composite-UUID-
-    # Kollisions-Klasse B-C4) — heute 0, deshalb billiger, harter Wächter.
+    # (Object_UUID, File_Name) duplicates in ObjectCatalog (composite-UUID
+    # collision class B-C4) — 0 today, hence a cheap, hard guard.
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local cat_dups
     cat_dups=$(pp_num "SELECT dup_n FROM v_check_catalog_dups")
     if [ "$cat_dups" -gt 0 ]; then
         local dup_sample
         dup_sample=$(pp_query "SELECT sample FROM v_check_catalog_dups")
-        add_finding consistency warn "$cat_dups ObjectCatalog-Dublette(n) (Object_UUID, File_Name): ${dup_sample:-?}" "Composite-UUID-Formeln (Namespace-Präfixe) bzw. doppelt registrierende Katalog-Blöcke in convert_xml_04_catalog.sql prüfen"
+        add_finding consistency warn "$cat_dups ObjectCatalog duplicate(s) (Object_UUID, File_Name): ${dup_sample:-?}" "Check the composite-UUID formulas (namespace prefixes) or doubly-registering catalog blocks in convert_xml_04_catalog.sql"
     fi
 
-    # §6.7: Kardinalitäten (Klon-Fan-out) — 1:1-Strukturkanten dürfen nicht auffächern.
+    # cardinalities (clone fan-out) — 1:1 structural edges must not fan out.
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local card_bad
     card_bad=$(pp_num "SELECT COALESCE(SUM(violation_n),0) FROM v_check_cardinality")
     if [ "$card_bad" -gt 0 ]; then
         local card_detail
         card_detail=$(pp_query "SELECT string_agg(rule || '=' || violation_n, ', ') FROM v_check_cardinality")
-        add_finding consistency warn "Kardinalitäts-Verletzung(en): ${card_detail:-?}" "UUID-Scoping der betroffenen P4-Link-Blöcke prüfen (Klon-Fan-out-Klasse)"
+        add_finding consistency warn "Cardinality violation(s): ${card_detail:-?}" "Check the UUID scoping of the affected P4 link blocks (clone-fan-out class)"
     fi
 
-    # §6.8: XML-Record-Zählung vs. Katalog-Zeilen (Sequence_ID-Kontinuität) —
-    # COUNT < MAX(Sequence_ID) ⇒ UPSERT hat UUID-Dubletten still kollabiert (B-K3).
+    # XML record count vs. catalog rows (Sequence_ID continuity) —
+    # COUNT < MAX(Sequence_ID) ⇒ the UPSERT silently collapsed UUID duplicates (B-K3).
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local seq_bad
     seq_bad=$(pp_num "SELECT COUNT(*) FROM v_check_xml_counts")
     if [ "$seq_bad" -gt 0 ]; then
         local seq_detail
         seq_detail=$(pp_query "SELECT string_agg(catalog || '/' || File_Name || ' (' || rows_n || '≠' || max_seq || ')', ', ') FROM v_check_xml_counts")
-        add_finding consistency warn "Sequenz-Lücke(n) — XML-Records vs. Katalog-Zeilen: ${seq_detail:-?}" "UUID-Dubletten in der Quelldatei (Merge-Artefakt-Klasse B-K3) — Export prüfen bzw. Dedup-Stufe"
+        add_finding consistency warn "Sequence gap(s) — XML records vs. catalog rows: ${seq_detail:-?}" "UUID duplicates in the source file (merge-artifact class B-K3) — check the export or the dedup stage"
     fi
 
-    # §6.9: Generischer Dup-Absorption-Zensus (alle zensierten UUID-PK-Kataloge).
-    # Source_Records (P1-Zensus) vs. live gezählte Katalog-Zeilen — Absorbed > 0
-    # ⇒ stiller Zeilenverlust durch UUID-Dubletten im Export (B-K3), jetzt über
-    # alle zensierten Kataloge sichtbar (vorher nur ScriptCatalog/Layouts via §6.8).
+    # generic dup-absorption census (all censused UUID-PK catalogs).
+    # Source_Records (P1 census) vs. live-counted catalog rows — Absorbed > 0
+    # ⇒ silent row loss from UUID duplicates in the export (B-K3), now visible across
+    # all censused catalogs (previously only ScriptCatalog/Layouts).
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local abs_bad
     abs_bad=$(pp_num "SELECT COUNT(*) FROM v_check_absorbed_dups")
@@ -2539,81 +2540,81 @@ postprocess_db() {
         abs_total=$(pp_num "SELECT COALESCE(SUM(Absorbed),0) FROM v_check_absorbed_dups")
         abs_detail=$(pp_query "SELECT string_agg(Catalog || '/' || File_Name || ' (−' || Absorbed || ')', ', ' ORDER BY Absorbed DESC) FROM v_check_absorbed_dups")
         add_finding consistency warn \
-          "$abs_total absorbierte UUID-Dublette(n) über ${abs_bad} Katalog/Datei-Kombination(en): ${abs_detail:-?}" \
-          "Quelldefekt (doppelte UUIDs im FileMaker-Export, Klasse B-K3) — Export prüfen. Konverter dedupliziert deterministisch (last-write-wins); Behebung nur per Quellkorrektur"
+          "$abs_total absorbed UUID duplicate(s) across ${abs_bad} catalog/file combination(s): ${abs_detail:-?}" \
+          "Source defect (duplicate UUIDs in the FileMaker export, class B-K3) — check the export. The converter deduplicates deterministically (last-write-wins); the fix is only a source correction"
     fi
 
-    # §6.10: Chunk_Type-NULL in DDR_Calculations — P1-Pfad-Drift-Detektor.
+    # Chunk_Type NULL in DDR_Calculations — P1-path drift detector.
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local ct_null
     ct_null=$(pp_num "SELECT null_n FROM v_check_chunk_type_null")
     if [ "$ct_null" -gt 0 ]; then
-        add_finding consistency warn "$ct_null DDR-Chunk(s) mit Chunk_Type=NULL" "P1-DDR-Extraktion (Chunk_Type-Ableitung) hat sich geändert — P2-Chunk-Logik arbeitet sonst blind"
+        add_finding consistency warn "$ct_null DDR chunk(s) with Chunk_Type=NULL" "The P1 DDR extraction (Chunk_Type derivation) has changed — the P2 chunk logic otherwise works blind"
     fi
 
-    # Step-Rollen-Kuration (Step-ID-Mapping): Feld-Referenzen unkuratierter
-    # Step-Typen fallen auf references_field zurück — Where-used bleibt korrekt,
-    # nur die Rollen-Differenzierung (sets/reads/…) fehlt → info, kein Fehler.
+    # Step-role curation (step-ID mapping): field references of uncurated
+    # step types fall back to references_field — where-used stays correct,
+    # only the role differentiation (sets/reads/…) is missing → info, not an error.
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local unmapped_steps
     unmapped_steps=$(pp_num "SELECT unmapped_types FROM v_check_step_roles")
     if [ "$unmapped_steps" -gt 0 ]; then
         local unmapped_detail
         unmapped_detail=$(pp_query "SELECT detail FROM v_check_step_roles")
-        add_finding registry info "$unmapped_steps Step-Typ(en) ohne Rollen-Kuration (references_field-Fallback): ${unmapped_detail:-?}" "ScriptStepRoleMap in convert_xml_04_catalog.sql um die Step-ID(s) ergänzen"
+        add_finding registry info "$unmapped_steps step type(s) without role curation (references_field fallback): ${unmapped_detail:-?}" "Add the step ID(s) to ScriptStepRoleMap in convert_xml_04_catalog.sql"
     fi
 
-    # §F-3: Submenu-Ziel-Auflösung — Items mit nicht auflösbarer Ziel-Menü-ID (kein
-    # Custom-Menu-Treffer, z.B. Built-in-Menü) erhalten keinen opens_menu-Link. Wird
-    # ausgewiesen statt still verschluckt; kein Fehler (Built-in-Submenus sind legitim).
+    # submenu target resolution — items with an unresolvable target menu ID (no
+    # custom-menu match, e.g. a built-in menu) get no opens_menu link. It is
+    # reported instead of silently swallowed; not an error (built-in submenus are legitimate).
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local submenu_unres
     submenu_unres=$(pp_num "SELECT unresolved_n FROM v_check_submenu_unresolved")
     if [ "$submenu_unres" -gt 0 ]; then
         local submenu_files
         submenu_files=$(pp_query "SELECT files FROM v_check_submenu_unresolved")
-        add_finding registry info "$submenu_unres Submenu-Item(s) ohne auflösbares Ziel-Menü (opens_menu): ${submenu_files:-?}" "Ziel-@id verweist auf ein Built-in-Menü oder ein Menü außerhalb des Korpus"
+        add_finding registry info "$submenu_unres submenu item(s) without a resolvable target menu (opens_menu): ${submenu_files:-?}" "The target @id points to a built-in menu or a menu outside the corpus"
     fi
 
-    # §1.2: „Function Missing"-Platzhalter — beim Export fehlende Plugin-Funktion.
-    # P3 verwirft die Chunks aus der Variablen-Extraktion; hier als Info sichtbar
-    # machen (Export unvollständig → betroffene Referenzen unauflösbar).
+    # „Function Missing" placeholder — a plugin function missing at export time.
+    # P3 discards the chunks from the variable extraction; make it visible here as info
+    # (export incomplete → the affected references are unresolvable).
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local fm_missing
     fm_missing=$(pp_num "SELECT chunk_n FROM v_check_function_missing")
     if [ "$fm_missing" -gt 0 ]; then
         local fm_files
         fm_files=$(pp_query "SELECT files FROM v_check_function_missing")
-        add_finding plugin info "$fm_missing „Function Missing\"-Chunk(s) — Plugin-Funktion beim Export nicht geladen: ${fm_files:-?}" "Auf dem exportierenden Client fehlt ein Plugin; die betroffenen Funktionsreferenzen sind im DDR unauflösbar (aus der Variablen-Extraktion verworfen)"
+        add_finding plugin info "$fm_missing „Function Missing\" chunk(s) — plugin function not loaded at export time: ${fm_files:-?}" "A plugin is missing on the exporting client; the affected function references are unresolvable in the DDR (discarded from the variable extraction)"
     fi
 
-    # §4.4.2: unbekannte LayoutObject-Typen (nach der P4-Locale-Normalisierung). > 0 ⇒
-    # neuer Locale-Name (Mapping erweitern) oder echter neuer FileMaker-Typ (Kanon-Set).
+    # unknown LayoutObject types (after the P4 locale normalization). > 0 ⇒
+    # a new locale name (extend the mapping) or a genuine new FileMaker type (canon set).
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local unk_types
     unk_types=$(pp_num "SELECT COUNT(*) FROM v_check_unknown_object_types")
     if [ "$unk_types" -gt 0 ]; then
         local unk_detail
         unk_detail=$(pp_query "SELECT string_agg(Object_Type || ' ×' || n, ', ' ORDER BY n DESC) FROM v_check_unknown_object_types")
-        add_finding consistency warn "$unk_types unbekannte(r) LayoutObject-Typ(en): ${unk_detail:-?}" "Locale-Name? DE→EN-Mapping in convert_xml_04_catalog.sql (§4.4.2) ergänzen. Echter neuer FileMaker-Typ? Kanon-Set in v_check_unknown_object_types erweitern"
+        add_finding consistency warn "$unk_types unknown LayoutObject type(s): ${unk_detail:-?}" "Locale name? Add the DE→EN mapping in convert_xml_04_catalog.sql . Genuine new FileMaker type? Extend the canon set in v_check_unknown_object_types"
     fi
 
-    # §1.8: unbekannte LayoutPart-Typen (nach der P4-Locale-Normalisierung). > 0 ⇒
-    # neuer Locale-Name (Mapping erweitern) oder echter neuer Part-Typ (Kanon-Set).
+    # unknown LayoutPart types (after the P4 locale normalization). > 0 ⇒
+    # a new locale name (extend the mapping) or a genuine new part type (canon set).
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local unk_parts
     unk_parts=$(pp_num "SELECT COUNT(*) FROM v_check_unknown_part_types")
     if [ "$unk_parts" -gt 0 ]; then
         local unkp_detail
         unkp_detail=$(pp_query "SELECT string_agg(Part_Type || ' ×' || n, ', ' ORDER BY n DESC) FROM v_check_unknown_part_types")
-        add_finding consistency warn "$unk_parts unbekannte(r) LayoutPart-Typ(en): ${unkp_detail:-?}" "Locale-Name? DE→EN-Mapping in convert_xml_04_catalog.sql (§1.8) ergänzen (verpasste Sub-summary-Namen kosten breaks_on_field-Links). Echter neuer Part-Typ? Kanon-Set in v_check_unknown_part_types erweitern"
+        add_finding consistency warn "$unk_parts unknown LayoutPart type(s): ${unkp_detail:-?}" "Locale name? Add the DE→EN mapping in convert_xml_04_catalog.sql (missed sub-summary names cost breaks_on_field links). Genuine new part type? Extend the canon set in v_check_unknown_part_types"
     fi
 
     # Schema consistency: DB SchemaInfo == template version (double-check of the detection)
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local db_ver; db_ver=$(pp_query "SELECT db_version FROM v_check_schema")
     if [ -n "$db_ver" ] && [ -n "$SCHEMA_VERSION_EXPECTED" ] && [ "$db_ver" != "$SCHEMA_VERSION_EXPECTED" ]; then
-        add_finding consistency warn "SchemaInfo-Version $db_ver ≠ Template-Version $SCHEMA_VERSION_EXPECTED" "Rebuild via --batch --force-rebuild"
+        add_finding consistency warn "SchemaInfo version $db_ver ≠ template version $SCHEMA_VERSION_EXPECTED" "Rebuild via --batch --force-rebuild"
     fi
 
     local ok_n=$((CHECKS_RUN - POSTCHECK_WARN))
@@ -2641,24 +2642,24 @@ classify_error() {
     # is the same OOM in disguise on some VMs (macOS/Docker-Desktop) → treat it as OOM too.
     if echo "$txt" | grep -qiE 'out of memory|failed to allocate|exceeds.*memory_limit|exit code: 1(37|43)'; then
         ERR_CATEGORY="oom"
-        ERR_RETRY_HINT="OOM (exit 137=SIGKILL / 143=SIGTERM): mehr RAM/Spill (DUCKDB_TEMP_DIR) oder --split/--turbo --auto bzw. reduziertes --memory_limit"
+        ERR_RETRY_HINT="OOM (exit 137=SIGKILL / 143=SIGTERM): more RAM/spill (DUCKDB_TEMP_DIR) or --split/--turbo --auto or a reduced --memory_limit"
     elif echo "$txt" | grep -qiE 'invalid input error.*invalid|invalid xml|not well-formed|parser error'; then
         ERR_CATEGORY="invalid_xml"
-        ERR_RETRY_HINT="Pre-Processor/Quelle prüfen — evtl. ungültige Zeichen in der XML"
+        ERR_RETRY_HINT="Check the pre-processor/source — possibly invalid characters in the XML"
     # IMPORTANT: match only the REAL iconv message ("UTF-8 conversion failed") —
     # NOT the generic "DuckDB conversion failed", otherwise every DuckDB error
     # (incl. OOM) would be wrongly classified as encoding.
     elif echo "$txt" | grep -qiE 'iconv|UTF-8 conversion failed'; then
         ERR_CATEGORY="encoding"
-        ERR_RETRY_HINT="Encoding der Quelle prüfen (BOM-Detection greift; binär-Detection deutet auf altes file -I)"
+        ERR_RETRY_HINT="Check the source encoding (BOM detection applies; binary detection points to an old file -I)"
     else
         case "$rc" in
-            2) ERR_CATEGORY="encoding";           ERR_RETRY_HINT="Encoding der Quelle prüfen" ;;
-            4) ERR_CATEGORY="unsupported_format";  ERR_RETRY_HINT="Re-Export aus FileMaker 19+ als SaXML v2.1+" ;;
-            5) ERR_CATEGORY="invalid_xml";         ERR_RETRY_HINT="Pre-Processor/Quelle prüfen" ;;
+            2) ERR_CATEGORY="encoding";           ERR_RETRY_HINT="Check the source encoding" ;;
+            4) ERR_CATEGORY="unsupported_format";  ERR_RETRY_HINT="Re-export from FileMaker 19+ as SaXML v2.1+" ;;
+            5) ERR_CATEGORY="invalid_xml";         ERR_RETRY_HINT="Check the pre-processor/source" ;;
             6) ERR_CATEGORY="schema_drift";        ERR_RETRY_HINT="--batch --force-rebuild" ;;
-            7) ERR_CATEGORY="lock";                ERR_RETRY_HINT="später erneut; ggf. stale Lock entfernen" ;;
-            *) ERR_CATEGORY="sql_error";           ERR_RETRY_HINT="Error-Log prüfen, Stelle benennen" ;;
+            7) ERR_CATEGORY="lock";                ERR_RETRY_HINT="Retry later; remove a stale lock if needed" ;;
+            *) ERR_CATEGORY="sql_error";           ERR_RETRY_HINT="Check the error log, pinpoint the location" ;;
         esac
     fi
 }
@@ -2673,7 +2674,7 @@ finalize_run() {
     # Show collected warn findings from the post-checks
     if [ "${#POSTCHECK_FINDINGS[@]}" -gt 0 ]; then
         echo ""
-        echo "Post-Checks (Stufe 3):"
+        echo "Post-Checks (Stage 3):"
         local f
         for f in "${POSTCHECK_FINDINGS[@]}"; do
             local cat="${f%%|*}"; local rest="${f#*|}"
@@ -2687,7 +2688,7 @@ finalize_run() {
     # Classify failed files + suggest a retry command
     if [ "${#FAILED_FILES_INFO[@]}" -gt 0 ]; then
         echo ""
-        echo "Fehler-Klassifikation & Wiederholungs-Vorschläge:"
+        echo "Error classification & retry suggestions:"
         local entry
         for entry in "${FAILED_FILES_INFO[@]}"; do
             local file="${entry%%|*}"; local rest="${entry#*|}"
@@ -2695,9 +2696,9 @@ finalize_run() {
             echo "  ✗ $file  [$cat]"
             echo "      → $hint"
             if [ "$cat" = "oom" ]; then
-                echo "      Wiederholen: $self \"$file\" --memory_limit 4GB"
+                echo "      Retry: $self \"$file\" --memory_limit 4GB"
             elif [ "$cat" = "schema_drift" ]; then
-                echo "      Wiederholen: $self --batch --force-rebuild"
+                echo "      Retry: $self --batch --force-rebuild"
             fi
             if $QUIET_MODE; then
                 _emit_json retry filename "$file" category "$cat" hint "$hint"
@@ -2706,7 +2707,7 @@ finalize_run() {
     fi
 }
 
-# → ausgelagert nach tools/katana-xml/lib/convert_report.sh (§7.1 Shell-Split)
+# → moved to tools/katana-xml/lib/convert_report.sh (shell split)
 
 # run_pipeline_step <label> <sql-file...> — runs a table-only SQL pass
 # (cd PROJECT_ROOT for relative CSV paths, memory_limit_prefix prepended).
@@ -2744,7 +2745,7 @@ fail_fast_stop() {
     echo "Error log: $ERROR_LOG_FILE"
     echo ""
     emit_done false "Failed during: $1"
-    stamp_last_run false 1 "${SUCCESS_COUNT:-0}" "${TOTAL:-0}"   # §6.1: Fail-Fast stempeln
+    stamp_last_run false 1 "${SUCCESS_COUNT:-0}" "${TOTAL:-0}"   # stamp fail-fast
     exit 1
 }
 
@@ -2761,9 +2762,9 @@ if ! acquire_lock; then
     exit 7
 fi
 
-# Turbo-DBs (Chunkmap/Manifest) erst NACH dem Lock initialisieren (A-B2):
-# das CREATE OR REPLACE der Chunkmap darf den Plan eines laufenden Imports
-# nicht zerstören, bevor der Lock-Konflikt erkannt ist.
+# Initialize the turbo DBs (chunkmap/manifest) only AFTER the lock (A-B2):
+# the CREATE OR REPLACE of the chunkmap must not destroy the plan of a running
+# import before the lock conflict is detected.
 init_turbo_dbs
 
 # Set the phase budget for the progress bar — the SQL pipeline phases as labelled
@@ -2802,7 +2803,7 @@ if ! $QUIET_MODE; then
         echo "DB Version:        $SCHEMA_VERSION_DB"
         echo "DB Hash:           ${SCHEMA_HASH_DB:0:12}…"
     else
-        echo "DB Version:        <keine SchemaInfo / DB existiert nicht>"
+        echo "DB Version:        <no SchemaInfo / DB does not exist>"
     fi
     echo "Action:            $SCHEMA_ACTION"
     echo "Reason:            $SCHEMA_REASON"
@@ -2816,42 +2817,42 @@ phase_progress chunk 5 "Schema check complete"
 # 1. --force-rebuild overrides all detection results
 if $FORCE_REBUILD && [ -f "$DB_FILE" ]; then
     echo ""
-    echo "  ⚠ --force-rebuild aktiv: DB wird vor dem Import gelöscht"
-    delete_db_for_rebuild "--force-rebuild explizit gesetzt"
+    echo "  ⚠ --force-rebuild active: the DB is deleted before the import"
+    delete_db_for_rebuild "--force-rebuild explicitly set"
     SCHEMA_ACTION_EXECUTED="force_rebuild"
 fi
 
-# 2. Schema-Drift behandeln
+# 2. Handle schema drift
 if [ "$SCHEMA_ACTION" = "rebuild" ] && ! $FORCE_REBUILD; then
     if $NO_AUTO_HEAL; then
         echo ""
-        echo "ERROR: Schema-Drift erkannt und --no-auto-heal aktiv → Abbruch."
+        echo "ERROR: Schema drift detected and --no-auto-heal active → abort."
         echo "       $SCHEMA_REASON"
         echo ""
-        echo "       Manueller Rebuild: bash \"$0\" --batch --force-rebuild"
+        echo "       Manual rebuild: bash \"$0\" --batch --force-rebuild"
         exit 6
     fi
 
     if [[ "$MODE" == "single" ]]; then
         echo ""
-        echo "ERROR: Schema-Drift erkannt — DB ist nicht kompatibel mit aktuellen SQL-Templates."
-        echo "       DB-Version: ${SCHEMA_VERSION_DB:-<none>}   Template-Version: $SCHEMA_VERSION_EXPECTED"
+        echo "ERROR: Schema drift detected — the DB is not compatible with the current SQL templates."
+        echo "       DB version: ${SCHEMA_VERSION_DB:-<none>}   Template version: $SCHEMA_VERSION_EXPECTED"
         echo "       Reason: $SCHEMA_REASON"
         echo ""
-        echo "Auto-Heal ist im Single-File-Modus deaktiviert (würde alle anderen Dateien"
-        echo "aus der DB verlieren). Wähle einen der folgenden Wege:"
+        echo "Auto-heal is disabled in single-file mode (it would lose all other files"
+        echo "from the DB). Choose one of the following paths:"
         echo ""
-        echo "  Empfohlen:  bash \"$0\" --batch --force-rebuild"
-        echo "              (löscht DB, importiert alle XML-Dateien aus xml/ neu)"
+        echo "  Recommended:  bash \"$0\" --batch --force-rebuild"
+        echo "                (deletes the DB, re-imports all XML files from xml/)"
         echo ""
-        echo "  Manuell:    rm \"$DB_FILE\" && bash \"$0\" \"$FILENAME\""
-        echo "              (Vorsicht: andere Dateien sind dann nicht mehr in der DB)"
+        echo "  Manual:       rm \"$DB_FILE\" && bash \"$0\" \"$FILENAME\""
+        echo "                (caution: other files are then no longer in the DB)"
         exit 6
     fi
 
     # Batch mode: perform auto-heal
     echo ""
-    echo "  ⚠ Auto-Heal: DB wird gelöscht und im Batch-Modus neu aufgebaut"
+    echo "  ⚠ Auto-heal: the DB is deleted and rebuilt in batch mode"
     delete_db_for_rebuild "$SCHEMA_REASON"
     SCHEMA_ACTION_EXECUTED="auto_heal_rebuild"
 fi
@@ -2883,7 +2884,7 @@ if [[ "$MODE" == "batch" ]]; then
     # 1. Discover all XML files
     shopt -s nullglob  # Return empty array if no matches
     XML_FILES=("$XML_DIR"/*.xml)
-    shopt -u nullglob  # A-B10: nicht global gesetzt lassen (ändert spätere Glob-Semantik)
+    shopt -u nullglob  # A-B10: do not leave it globally set (changes later glob semantics)
     TOTAL=${#XML_FILES[@]}
 
     if [ $TOTAL -eq 0 ]; then
@@ -2941,13 +2942,13 @@ if [[ "$MODE" == "batch" ]]; then
         P1_PREPROCESSED=true
         PARTDB_DIR=$(mktemp -d)
         if $QUIET_MODE; then
-            emit_log "Turbo: Phase S/D/C ($TURBO_W Worker, Chunkmap-getrieben)"
+            emit_log "Turbo: phase S/D/C ($TURBO_W workers, chunkmap-driven)"
         else
-            echo "Turbo-Engine: Phase S/D/C, $TURBO_W Worker, $TOTAL Dateien → Chunkmap + chunk_<id>.duckdb"
+            echo "Turbo engine: phase S/D/C, $TURBO_W workers, $TOTAL files → chunkmap + chunk_<id>.duckdb"
         fi
         run_turbo_pipeline
         if [ "${TURBO_RC:-0}" -ne 0 ]; then
-            echo "ERROR: Turbo-Konsolidierung fehlgeschlagen (rc=$TURBO_RC)"
+            echo "ERROR: Turbo consolidation failed (rc=$TURBO_RC)"
             [ -f "$PARTDB_DIR/merge.log" ] && sed 's/^/    /' "$PARTDB_DIR/merge.log"
             [ -f "$PARTDB_DIR/catmerge.log" ] && { echo "    --- catmerge.log ---"; sed 's/^/    /' "$PARTDB_DIR/catmerge.log"; }
             rm -rf "$PARTDB_DIR"
@@ -2969,16 +2970,16 @@ if [[ "$MODE" == "batch" ]]; then
         P1_PREPROCESSED=true
         PARTDB_DIR=$(mktemp -d)
         if $QUIET_MODE; then
-            emit_log "Phase 1 parallel: $JOBS Worker für $TOTAL Dateien (Teil-DBs + Merge)"
+            emit_log "Phase 1 parallel: $JOBS workers for $TOTAL files (part DBs + merge)"
         else
-            echo "Phase 1 parallel: $JOBS Worker, $TOTAL Dateien → Teil-DBs + Merge"
+            echo "Phase 1 parallel: $JOBS workers, $TOTAL files → part DBs + merge"
         fi
         run_p1_parallel
         # Sign of life for the (otherwise silent) merge phase at the convert→catalog boundary.
-        phase_progress extract 100 "Teil-DBs mergen…"
+        phase_progress extract 100 "Merging part DBs…"
         merge_part_dbs
         if [ "${MERGE_RC:-0}" -ne 0 ]; then
-            echo "ERROR: Merge der Teil-DBs fehlgeschlagen (rc=$MERGE_RC)"
+            echo "ERROR: Merge of the part DBs failed (rc=$MERGE_RC)"
             [ -f "$PARTDB_DIR/merge.log" ] && sed 's/^/    /' "$PARTDB_DIR/merge.log"
             [ -f "$PARTDB_DIR/catmerge.log" ] && { echo "    --- catmerge.log ---"; sed 's/^/    /' "$PARTDB_DIR/catmerge.log"; }
             rm -rf "$PARTDB_DIR"
@@ -2999,13 +3000,13 @@ if [[ "$MODE" == "batch" ]]; then
         # On the quiet-parallel path run_p1_parallel already emitted file_start/progress
         # live in waves — do not fire them again here (else double counting). In all
         # other cases as before; the report work further below runs path-independently.
-        # Opt 2 (Log-Entrümpelung): Im preprocessten Pfad (Turbo/Parallel) steht das
-        # Datei-Ergebnis bereits in den Sidecars. Unveränderte (Manifest-Skip, rc 0 +
-        # .unchanged) und übersprungene (nicht unterstütztes Format, rc 4) Dateien
-        # erzeugen im Web-Log KEINE „Processing"/file_start-Zeile mehr — die
-        # ⏭️-Status-Tabelle (file_skip aus Phase S) deckt sie ohnehin ab. Das terminale
-        # `file`-Event bleibt erhalten (Node-Zähler processed/total) und wird
-        # frontend-seitig (eventToLine) nicht als Zeile gerendert.
+        # Opt 2 (log declutter): on the preprocessed path (turbo/parallel) the
+        # file result already sits in the sidecars. Unchanged (manifest skip, rc 0 +
+        # .unchanged) and skipped (unsupported format, rc 4) files
+        # no longer produce a „Processing"/file_start line in the web log — the
+        # ⏭️ status table (file_skip from Phase S) covers them anyway. The terminal
+        # `file` event is preserved (Node counter processed/total) and is
+        # not rendered as a line on the frontend side (eventToLine).
         PRE_QUIET_SKIP=false
         if $P1_PREPROCESSED; then
             PRE_RC=$(cat "$PARTDB_DIR/${i}.rc" 2>/dev/null); PRE_RC=${PRE_RC:-3}
@@ -3028,7 +3029,7 @@ if [[ "$MODE" == "batch" ]]; then
 
             if $QUIET_MODE; then
                 if $PRE_QUIET_SKIP; then
-                    :   # unverändert/übersprungen → keine Processing/file_start-Zeile (siehe oben)
+                    :   # unchanged/skipped → no Processing/file_start line (see above)
                 else
                     # file_start: carries the total and the current filename already
                     # before the (long) DuckDB block, so the frontend can fill the status
@@ -3069,7 +3070,7 @@ if [[ "$MODE" == "batch" ]]; then
             if $QUIET_MODE; then
                 _emit_json file filename "$BASENAME" index "int=$CURRENT" total "int=$TOTAL" ok "bool=true" status "unchanged"
             else
-                echo "  ↻ Unverändert (übersprungen)"
+                echo "  ↻ Unchanged (skipped)"
             fi
         elif [ $RESULT -eq 0 ]; then
             ((SUCCESS_COUNT++))
@@ -3164,7 +3165,7 @@ if [[ "$MODE" == "batch" ]]; then
     # Finish P1: determine object counts + load per-file objects.
     P1_OBJ=$(count_table_sum "${P1_OBJECT_TABLES[@]}")
     P1_DDR=$(pp_num "SELECT COUNT(*) FROM DDR_Calculations")
-    phase_finish "$(group_de "$P1_OBJ") Objekte (+$(group_de "$P1_DDR") DDR-Chunks)" \
+    phase_finish "$(group_de "$P1_OBJ") objects (+$(group_de "$P1_DDR") DDR chunks)" \
         "{\"objects_extracted\":$P1_OBJ,\"ddr_calc_chunks\":$P1_DDR}"
     load_per_file_objects
 
@@ -3172,11 +3173,11 @@ if [[ "$MODE" == "batch" ]]; then
     # FM_T3_KEEP (T-3 probe) holds the artifacts back (otherwise deleted globally here).
     $P1_PREPROCESSED && [ -z "${FM_T3_KEEP:-}" ] && rm -rf "$PARTDB_DIR"
 
-    # ── Short-Circuit: nichts geändert → P2–P6 + Sync überspringen ──────────────
-    # (gesetzt von run_turbo_pipeline: 0 pending-Chunks + Kataloge bereits 'ok').
-    # Der gesamte Katalog-Rebuild- + Sync-Block läuft NUR, wenn etwas zu tun ist; der
-    # Abschlussreport (BATCH_END/emit_done, weiter unten) läuft in BEIDEN Fällen. Der
-    # Block-Körper bleibt bewusst auf seiner bisherigen Einrückung (minimaler Diff).
+    # ── Short-circuit: nothing changed → skip P2–P6 + sync ──────────────────────
+    # (set by run_turbo_pipeline: 0 pending chunks + catalogs already 'ok').
+    # The entire catalog-rebuild + sync block runs ONLY when there is something to do; the
+    # final report (BATCH_END/emit_done, further below) runs in BOTH cases. The
+    # block body deliberately keeps its previous indentation (minimal diff).
     if ! $TURBO_NO_CHANGES; then
     # 6. Phase 2 (Resolve) — reference resolution (table-only, ONCE after all
     # imports). Rebuilds XMLStep/Layout/Calc refs, MBS/GetSub, PluginUsages from the
@@ -3190,7 +3191,7 @@ if [[ "$MODE" == "batch" ]]; then
     phase_begin P2 Resolve
     run_phase2 "Phase 2 Reference Resolution"; rc=$?
     P2_REF=$(count_table_sum XMLCalcReferences XMLStepReferences XMLLayoutReferences PluginFunctionUsages MBS_SubnameMap GetSubparameterMap)
-    phase_finish "$(group_de "$P2_REF") Referenzen" "{\"references_resolved\":$P2_REF}"
+    phase_finish "$(group_de "$P2_REF") references" "{\"references_resolved\":$P2_REF}"
     [ "$rc" = 2 ] && fail_fast_stop "Phase 2 Reference Resolution"
     echo ""
 
@@ -3204,10 +3205,10 @@ if [[ "$MODE" == "batch" ]]; then
         echo "========================================="
     fi
     phase_begin P3 Details
-    run_pipeline_step "Phase 3 Details (Variablen)" "$PROJECT_ROOT/sql/convert-xml/convert_xml_03_details.sql"; rc=$?
+    run_pipeline_step "Phase 3 Details (Variables)" "$PROJECT_ROOT/sql/convert-xml/convert_xml_03_details.sql"; rc=$?
     P3_USAGES=$(pp_num "SELECT COUNT(*) FROM VariableUsages")
     P3_VARS=$(pp_num "SELECT COUNT(*) FROM VariablesCatalog")
-    phase_finish "$(group_de "$P3_USAGES") Verwend. · $(group_de "$P3_VARS") Var." \
+    phase_finish "$(group_de "$P3_USAGES") usages · $(group_de "$P3_VARS") vars" \
         "{\"variable_usages\":$P3_USAGES,\"variables_distinct\":$P3_VARS}"
     [ "$rc" = 2 ] && fail_fast_stop "Phase 3 Details"
     echo ""
@@ -3220,21 +3221,21 @@ if [[ "$MODE" == "batch" ]]; then
         echo "========================================="
     fi
     phase_begin P4 Catalog
-    # MBS-Komponenten-CSV absichern: data/mbs_component_exceptions.csv wird vom
-    # install-mbs-docs-Skill aus dem MBS-Docset erzeugt und ist optional. Fehlt sie
-    # (Docset nicht installiert), einen Header-only-Stub anlegen, damit das read_csv in
-    # P4 nicht hart fehlert — die Komponenten-Auflösung fällt dann per COALESCE auf die
-    # Namens-Heuristik zurück (dokumentierte Absicht in convert_xml_04_catalog.sql).
-    # Überschreibt eine vorhandene echte CSV NIE (nur bei Nichtexistenz).
+    # Safeguard the MBS component CSV: data/mbs_component_exceptions.csv is produced by
+    # the install-mbs-docs skill from the MBS docset and is optional. If it is missing
+    # (docset not installed), create a header-only stub so the read_csv in
+    # P4 does not hard-fail — the component resolution then falls back via COALESCE to the
+    # name heuristic (documented intent in convert_xml_04_catalog.sql).
+    # NEVER overwrites an existing real CSV (only on non-existence).
     if [ ! -f "$PROJECT_ROOT/data/mbs_component_exceptions.csv" ]; then
         mkdir -p "$PROJECT_ROOT/data"
         printf 'Funktionsname,Component\n' > "$PROJECT_ROOT/data/mbs_component_exceptions.csv"
-        $QUIET_MODE || echo "Hinweis: MBS-Komponenten-CSV fehlt (MBS-Docset nicht installiert) → Header-Stub angelegt; P4 nutzt die Namens-Heuristik. Exakte Komponenten-Zuordnung: install-mbs-docs ausführen."
+        $QUIET_MODE || echo "Note: MBS component CSV missing (MBS docset not installed) → header stub created; P4 uses the name heuristic. For an exact component mapping: run install-mbs-docs."
     fi
-    run_pipeline_step "Phase 4 Catalog (Objekte+Links)" "$PROJECT_ROOT/sql/convert-xml/convert_xml_04_catalog.sql"; rc=$?
+    run_pipeline_step "Phase 4 Catalog (Objects+Links)" "$PROJECT_ROOT/sql/convert-xml/convert_xml_04_catalog.sql"; rc=$?
     P4_OBJ=$(pp_num "SELECT COUNT(*) FROM ObjectCatalog")
     P4_LINKS=$(pp_num "SELECT COUNT(*) FROM ObjectLinks")
-    phase_finish "$(group_de "$P4_OBJ") Objekte · $(group_de "$P4_LINKS") Links" \
+    phase_finish "$(group_de "$P4_OBJ") objects · $(group_de "$P4_LINKS") links" \
         "{\"objects_registered\":$P4_OBJ,\"links\":$P4_LINKS}"
     [ "$rc" = 2 ] && fail_fast_stop "Phase 4 Catalog"
     echo ""
@@ -3250,7 +3251,7 @@ if [[ "$MODE" == "batch" ]]; then
     run_pipeline_step "Phase 5 Homes (Cross-File)" "$PROJECT_ROOT/sql/convert-xml/convert_xml_05_homes.sql"; rc=$?
     P5_HOMES=$(pp_num "SELECT COUNT(*) FROM ObjectHomes")
     P5_TO=$(pp_num "SELECT COUNT(*) FROM TableOccurrenceResolution")
-    phase_finish "$(group_de "$P5_HOMES") Heimaten · $(group_de "$P5_TO") TO" \
+    phase_finish "$(group_de "$P5_HOMES") homes · $(group_de "$P5_TO") TO" \
         "{\"object_homes\":$P5_HOMES,\"to_resolutions\":$P5_TO}"
     [ "$rc" = 2 ] && fail_fast_stop "Phase 5 Homes"
     echo ""
@@ -3266,25 +3267,25 @@ if [[ "$MODE" == "batch" ]]; then
     phase_begin P6 Validate
     phase_progress validate 0 "Running checks (Phase 6)..."
     postprocess_db
-    phase_finish "$CHECKS_RUN Checks · $POSTCHECK_WARN Warnungen" \
+    phase_finish "$CHECKS_RUN checks · $POSTCHECK_WARN warnings" \
         "{\"checks_run\":$CHECKS_RUN,\"warnings\":$POSTCHECK_WARN}"
     if ! $QUIET_MODE; then echo ""; fi
 
-    # 7aa2. Analysis-Views (statische Code-Analyse) — eigene batch-weite, table-only
-    # Phase NACH P6. Wie die universal catalogs bei jedem Lauf neu gebaut. Non-fatal:
-    # ein Fehler hier darf die Publikation der fertigen Kataloge nicht blockieren.
+    # 7aa2. Analysis views (static code analysis) — its own batch-wide, table-only
+    # phase AFTER P6. Rebuilt on every run, like the universal catalogs. Non-fatal:
+    # an error here must not block the publication of the finished catalogs.
     if [ -f "$ANALYSIS_VIEWS_TEMPLATE" ]; then
         $QUIET_MODE || echo "Building analysis views (static code analysis)..."
         run_pipeline_step "Analysis Views (SCA)" "$ANALYSIS_VIEWS_TEMPLATE" >/dev/null 2>&1 \
             && { $QUIET_MODE || echo "✓ Analysis views built"; } \
             || echo "✗ WARNING: Analysis views failed (run --batch first?)"
-        postcheck_calc_anchors   # §6.9: braucht v_calc_anchors (entsteht erst hier)
+        postcheck_calc_anchors   # needs v_calc_anchors (only comes into being here)
         $QUIET_MODE || echo ""
     fi
 
-    # Kataloge vollständig (P2–P6) für den aktuellen Manifest-Stand gebaut → Marker
-    # auf 'ok' (Gate für den nächsten „nichts geändert"-Short-Circuit). Turbo-Konzept
-    # (Manifest existiert nur dort) → auf den Turbo-Pfad beschränkt.
+    # Catalogs fully built (P2–P6) for the current manifest state → set the marker
+    # to 'ok' (gate for the next „nothing changed" short-circuit). A turbo concept
+    # (the manifest exists only there) → restricted to the turbo path.
     $TURBO_MODE && _catalogs_state_set ok
 
     # The post-processor checks now fill the WHOLE validate segment (94..97); the
@@ -3292,7 +3293,7 @@ if [[ "$MODE" == "batch" ]]; then
     # bar stays monotonic when Auto-P7 runs between the checks and the sync.
     phase_progress validate 100 "Checks complete"
 
-    # 7a2. Phase 7 (Clustering) — Auto-Community-Erkennung (Rohform), BEFORE the
+    # 7a2. Phase 7 (Clustering) — auto community detection (raw), BEFORE the
     # sync so the single pipeline sync carries the fresh ObjectClusters/
     # CommunityNames to the copy. Gated: only on a from-scratch build or a
     # DB without a partition; incremental imports skip it. Non-fatal.
@@ -3313,7 +3314,7 @@ if [[ "$MODE" == "batch" ]]; then
         fi
     fi
     if $DO_SYNC; then
-        [ ${#FAILED_FILES[@]} -gt 0 ] && emit_warn "Sync trotz ${#FAILED_FILES[@]} fehlgeschlagener Datei(en) (erfolgreich: $SUCCESS_COUNT). FM_SYNC_STRICT=1 erzwingt striktes Verhalten."
+        [ ${#FAILED_FILES[@]} -gt 0 ] && emit_warn "Sync despite ${#FAILED_FILES[@]} failed file(s) (successful: $SUCCESS_COUNT). FM_SYNC_STRICT=1 enforces strict behavior."
         if ! $QUIET_MODE; then
             echo "========================================="
             echo "Syncing database to rest-api/..."
@@ -3324,9 +3325,9 @@ if [[ "$MODE" == "batch" ]]; then
     else
         # No sync (test mode / nothing published): still drive the bar to 100 so
         # the `cluster` segment completes instead of sticking at its start.
-        phase_progress cluster 100 "fertig"
+        phase_progress cluster 100 "done"
     fi
-    fi   # ── Ende Short-Circuit-Block (! $TURBO_NO_CHANGES): P2–P6 + Sync ──
+    fi   # ── End of short-circuit block (! $TURBO_NO_CHANGES): P2–P6 + sync ──
 
     # 8. End timer for entire batch + run end time
     BATCH_END=$(now_epoch)
@@ -3387,17 +3388,17 @@ if [[ "$MODE" == "batch" ]]; then
     if [ ${#FAILED_FILES[@]} -gt 0 ]; then
         emit_progress validate 100 "Done with errors"
         emit_done false "Failed files: ${#FAILED_FILES[@]}, Post-Check warnings: $POSTCHECK_WARN"
-        stamp_last_run false 1 "$SUCCESS_COUNT" "$TOTAL"   # §6.1: CLI-Fehlschlag stempeln
+        stamp_last_run false 1 "$SUCCESS_COUNT" "$TOTAL"   # stamp CLI failure
         exit 1
     fi
 
     emit_progress validate 100 "Done"
     if [ "$POSTCHECK_WARN" -gt 0 ]; then
-        emit_done true "Successful: $SUCCESS_COUNT, Skipped: $SKIPPED_COUNT, Warnings: $POSTCHECK_WARN (gültig-mit-Warnung)"
+        emit_done true "Successful: $SUCCESS_COUNT, Skipped: $SKIPPED_COUNT, Warnings: $POSTCHECK_WARN (valid-with-warning)"
     else
         emit_done true "Successful: $SUCCESS_COUNT, Skipped: $SKIPPED_COUNT"
     fi
-    stamp_last_run true 0 "$SUCCESS_COUNT" "$TOTAL"        # §6.1: auch CLI-Erfolg spiegeln
+    stamp_last_run true 0 "$SUCCESS_COUNT" "$TOTAL"        # mirror CLI success too
     exit 0
 
 elif [[ "$MODE" == "single" ]]; then
@@ -3465,7 +3466,7 @@ elif [[ "$MODE" == "single" ]]; then
     load_per_file_objects
     P1_OBJ=$(lookup_file_objects "${BASENAME}"); [ -z "$P1_OBJ" ] && P1_OBJ=0
     P1_DDR=$(pp_num "SELECT COUNT(*) FROM DDR_Calculations WHERE File_Name = '${BASENAME%.xml}'")
-    phase_finish "$(group_de "$P1_OBJ") Objekte (+$(group_de "$P1_DDR") DDR-Chunks)" \
+    phase_finish "$(group_de "$P1_OBJ") objects (+$(group_de "$P1_DDR") DDR chunks)" \
         "{\"objects_extracted\":$P1_OBJ,\"ddr_calc_chunks\":$P1_DDR}"
 
     if [ "$SINGLE_RC" -eq 0 ]; then
@@ -3476,7 +3477,7 @@ elif [[ "$MODE" == "single" ]]; then
         run_phase2 "Phase 2 Reference Resolution" >/dev/null 2>&1 \
             && echo "✓ Phase 2 references resolved" || echo "✗ WARNING: Phase 2 reference resolution failed"
         P2_REF=$(count_table_sum XMLCalcReferences XMLStepReferences XMLLayoutReferences PluginFunctionUsages MBS_SubnameMap GetSubparameterMap)
-        phase_finish "$(group_de "$P2_REF") Referenzen" "{\"references_resolved\":$P2_REF}"
+        phase_finish "$(group_de "$P2_REF") references" "{\"references_resolved\":$P2_REF}"
 
         # Phase 5 (Homes) — rebuild resolutions in single mode too.
         # Depends on ObjectCatalog; in single mode ObjectCatalog is NOT updated —
@@ -3489,23 +3490,23 @@ elif [[ "$MODE" == "single" ]]; then
             && echo "✓ Resolution tables built" || echo "✗ WARNING: Resolution tables failed (run --batch first?)"
         P5_HOMES=$(pp_num "SELECT COUNT(*) FROM ObjectHomes")
         P5_TO=$(pp_num "SELECT COUNT(*) FROM TableOccurrenceResolution")
-        phase_finish "$(group_de "$P5_HOMES") Heimaten · $(group_de "$P5_TO") TO" \
+        phase_finish "$(group_de "$P5_HOMES") homes · $(group_de "$P5_TO") TO" \
             "{\"object_homes\":$P5_HOMES,\"to_resolutions\":$P5_TO}"
 
         # Phase 6 (Validate) — post-processor: consistency checks (Calc_UUID guard C1).
         echo ""
         phase_begin P6 Validate
         postprocess_db
-        phase_finish "$CHECKS_RUN Checks · $POSTCHECK_WARN Warnungen" \
+        phase_finish "$CHECKS_RUN checks · $POSTCHECK_WARN warnings" \
             "{\"checks_run\":$CHECKS_RUN,\"warnings\":$POSTCHECK_WARN}"
 
-        # Analysis-Views (statische Code-Analyse) — batch-weite, table-only Phase nach P6.
+        # Analysis views (static code analysis) — batch-wide, table-only phase after P6.
         if [ -f "$ANALYSIS_VIEWS_TEMPLATE" ]; then
             echo ""
             echo "Building analysis views (static code analysis)..."
             run_pipeline_step "Analysis Views (SCA)" "$ANALYSIS_VIEWS_TEMPLATE" >/dev/null 2>&1 \
                 && echo "✓ Analysis views built" || echo "✗ WARNING: Analysis views failed (run --batch first?)"
-            postcheck_calc_anchors   # §6.9
+            postcheck_calc_anchors
         fi
 
         # Sync hook also in single-file mode (production mode).
@@ -3537,11 +3538,11 @@ elif [[ "$MODE" == "single" ]]; then
         else
             emit_done true "Single-file import successful"
         fi
-        stamp_last_run true 0 1 1                                   # §6.1
+        stamp_last_run true 0 1 1
         exit 0
     else
         emit_done false "Single-file import failed (exit $SINGLE_RC)"
-        stamp_last_run false "$SINGLE_RC" 0 1                       # §6.1
+        stamp_last_run false "$SINGLE_RC" 0 1
         exit $SINGLE_RC
     fi
 fi

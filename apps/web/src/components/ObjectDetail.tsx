@@ -9,6 +9,9 @@ import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
 import { ScriptDetail } from './ScriptDetail';
 import { ScriptStepDetail } from './ScriptStepDetail';
+import { ScriptViewer } from './ScriptViewer';
+import { useScriptTokens } from '../hooks/useScriptTokens';
+import { useApiLang } from '../hooks/useApiLang';
 import { CustomFunctionDetail } from './CustomFunctionDetail';
 import { CustomMenuDetail } from './CustomMenuDetail';
 import { FieldDetail } from './FieldDetail';
@@ -162,6 +165,46 @@ const GenericObjectDetail: React.FC<ObjectDetailProps> = ({ uuid, objectType, hi
 };
 
 /**
+ * Klartext-Darstellung des button-eingebetteten Script-Steps (Grouped Button /
+ * Button). Nutzt dieselbe Token-Pipeline wie der Script-Detail-View (kind:'script',
+ * 1-Zeilen-Payload) — das Backend liefert für ein Button-LayoutObject den Step als
+ * Tokens, sodass ScriptViewer/ScriptStepSpan/RefSpan das Klartext-Rendering, den
+ * Step-Namen-Tooltip (enrich) und die klickbaren Parameter übernehmen.
+ *
+ * LayoutObjects ohne eingebetteten Step liefern 0 Zeilen → die Sektion entfällt
+ * komplett (kein Header, kein Platzhalter).
+ */
+const LayoutObjectStepView: React.FC<{ uuid: string }> = ({ uuid }) => {
+  const { t } = useTranslation(['detail']);
+  const lang = useApiLang();
+  const currentFile = useCurrentFile();
+  const { data } = useScriptTokens(uuid, lang, currentFile);
+
+  if (!data || !data.lines || data.lines.length === 0) return null;
+
+  return (
+    <div className="object-detail layoutobject-step" aria-label={t('detail:buttonStep.heading', { defaultValue: 'Button-Aktion' }) as string}>
+      <h2 className="type-detail-heading">{t('detail:buttonStep.heading', { defaultValue: 'Button-Aktion' })}</h2>
+      <ScriptViewer tokens={data} hideToolbar />
+    </div>
+  );
+};
+
+/**
+ * LayoutObject-Detail: bestehende Text-Ansicht (Position, Kalkulationen,
+ * Referenzen) plus — bei Buttons — die Klartext-Sektion des eingebetteten Steps
+ * oberhalb.
+ */
+const LayoutObjectDetail: React.FC<ObjectDetailProps> = ({ uuid, objectType, highlightText }) => {
+  return (
+    <>
+      <LayoutObjectStepView uuid={uuid} />
+      <GenericObjectDetail uuid={uuid} objectType={objectType} highlightText={highlightText} />
+    </>
+  );
+};
+
+/**
  * Unified Object Detail Component.
  * - Layouts: interactive LayoutCanvas (Hover, Suche, Filter, Cross-Nav)
  * - Other types: formatted text in a code block
@@ -211,6 +254,15 @@ export const ObjectDetail: React.FC<ObjectDetailProps> = ({
   }
   if (objectType === 'BaseTable') {
     return <BaseTableDetail uuid={uuid} />;
+  }
+  if (objectType === 'LayoutObject') {
+    return (
+      <LayoutObjectDetail
+        uuid={uuid}
+        objectType={objectType}
+        highlightText={highlightText}
+      />
+    );
   }
   return (
     <GenericObjectDetail

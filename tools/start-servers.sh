@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# start-servers.sh — Startet REST-API (Port 3003) und Frontend (Port 5173)
+# start-servers.sh — Starts REST API (port 3003) and frontend (port 5173)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Farben (nur bei Terminal-Output)
+# Colors (only for terminal output)
 if [ -t 1 ]; then
   GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; BOLD='\033[1m'; NC='\033[0m'
 else
@@ -17,19 +17,31 @@ warn()  { echo -e "${YELLOW}⚠${NC} $1"; }
 error() { echo -e "${RED}✗${NC} $1"; }
 header(){ echo -e "\n${BOLD}$1${NC}"; }
 
-# Lauscht ein Prozess auf dem Port? (lsof falls vorhanden, sonst ss — Linux)
+# Is a process listening on the port? (lsof → ss → curl HTTP probe as a third fallback).
+# The curl fallback is essential for the base dev container, which has NEITHER lsof NOR
+# ss — without it, wait_for_port always failed there (F-C1) even though the server was
+# running. A successful curl connect (even on HTTP 4xx) proves a listener.
 port_listening() {
   local port=$1
   if command -v lsof &>/dev/null; then
     lsof -nP -iTCP:"$port" 2>/dev/null | grep -q LISTEN
   elif command -v ss &>/dev/null; then
     ss -tlnH 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${port}\$"
+  elif command -v curl &>/dev/null; then
+    curl -s -o /dev/null --max-time 1 "http://localhost:${port}/" 2>/dev/null
   else
     return 1
   fi
 }
 
-# PID auf einem Port ermitteln (lsof falls vorhanden, sonst ss — IPv6-safe)
+# HTTP GET successful (2xx)? Used for the foreign-process / identity check. If curl is
+# missing, return 0 (can't check → trust the listener, legacy behavior).
+http_ok() {
+  command -v curl &>/dev/null || return 0
+  curl -fs --max-time 2 "$1" >/dev/null 2>&1
+}
+
+# Determine the PID on a port (lsof if available, otherwise ss — IPv6-safe)
 get_listen_pid() {
   local port=$1
   if command -v lsof &>/dev/null; then
@@ -40,7 +52,7 @@ get_listen_pid() {
   fi
 }
 
-# Warte bis ein Port antwortet (max $2 Sekunden)
+# Wait until a port responds (max $2 seconds)
 wait_for_port() {
   local port=$1 max=${2:-5} i=0
   while [ $i -lt $max ]; do
@@ -104,83 +116,101 @@ export PATH="$(dirname "$NODE_BIN"):$PATH"
 api_started=false
 frontend_started=false
 
+# Ensure the log dir exists — nohup redirects into logs/*.log and would fail if the
+# directory is missing (e.g. a fresh checkout without the logs/.gitkeep placeholder).
+mkdir -p "$PROJECT_ROOT/logs"
+
 # ─── REST-API ────────────────────────────────────────────────
 header "REST-API (Port 3003)"
 
-# Prüfe DB-Kopie
+# Check the DB copy
 if [ ! -f "$PROJECT_ROOT/rest-api/db/fm_catalog.duckdb" ]; then
-  error "Datenbank nicht gefunden: rest-api/db/fm_catalog.duckdb"
-  error "Bitte zuerst 'convert-xml --batch' ausführen."
+  error "Database not found: rest-api/db/fm_catalog.duckdb"
+  error "Please run 'convert-xml --batch' first."
   exit 1
 fi
 
-# Prüfe ob bereits aktiv
-API_PID=$(get_listen_pid 3003 || true)
-if [ -n "$API_PID" ]; then
-  info "REST-API läuft bereits (PID $API_PID)"
+# Check whether it's already active — and whether the listener really is OUR API (not a
+# foreign process on 3003). Identity via /api/version (F-A6).
+if port_listening 3003; then
+  API_PID=$(get_listen_pid 3003 || true)
+  if http_ok http://localhost:3003/api/version; then
+    info "REST API already running${API_PID:+ (PID $API_PID)}"
+  else
+    error "Port 3003 is in use${API_PID:+ (PID $API_PID)}, but /api/version does not respond — foreign process?"
+    error "Please free the port (tools/stop-servers.sh) or stop the foreign service."
+    exit 1
+  fi
 else
-  # Server starten
+  # Start the server
   cd "$PROJECT_ROOT/rest-api"
   nohup "$NODE_BIN" src/index.js > "$PROJECT_ROOT/logs/rest-api.log" 2>&1 &
   API_PID=$!
   cd "$PROJECT_ROOT"
 
   if wait_for_port 3003 5; then
-    info "REST-API gestartet (PID $API_PID)"
+    info "REST API started (PID $API_PID)"
     api_started=true
   else
-    error "REST-API konnte nicht gestartet werden. Log:"
+    error "REST API could not be started. Log:"
     tail -20 "$PROJECT_ROOT/logs/rest-api.log" 2>/dev/null || true
     exit 1
   fi
 fi
 
-# Version abrufen
+# Fetch the version
 API_VERSION=$(curl -s http://localhost:3003/api/version 2>/dev/null || echo "")
 if [ -n "$API_VERSION" ]; then
   TABLE_COUNT=$(echo "$API_VERSION" | grep -o '"tableCount":[0-9]*' | grep -o '[0-9]*' || echo "?")
-  info "API antwortet — $TABLE_COUNT Tabellen geladen"
+  info "API responds — $TABLE_COUNT tables loaded"
 else
-  warn "API läuft, aber /api/version antwortet nicht"
+  warn "API is running, but /api/version does not respond"
 fi
 
 # ─── Frontend ────────────────────────────────────────────────
 header "Frontend (Port 5173)"
 
-# Prüfe Vite-Installation
+# Check the Vite installation
 if [ ! -f "$PROJECT_ROOT/node_modules/.bin/vite" ]; then
-  error "Vite nicht gefunden. Bitte im Projekt-Root 'npm install' ausführen."
+  error "Vite not found. Please run 'npm install' in the project root."
   exit 1
 fi
 
-# Prüfe ob bereits aktiv
-FE_PID=$(get_listen_pid 5173 || true)
-if [ -n "$FE_PID" ]; then
-  info "Frontend läuft bereits (PID $FE_PID)"
+# Check whether it's already active — and whether it really is the Vite dev server (not a
+# foreign service on 5173). Identity via /@vite/client (only Vite serves that, F-A6).
+if port_listening 5173; then
+  FE_PID=$(get_listen_pid 5173 || true)
+  if http_ok http://localhost:5173/@vite/client; then
+    info "Frontend already running${FE_PID:+ (PID $FE_PID)}"
+  else
+    error "Port 5173 is in use${FE_PID:+ (PID $FE_PID)}, but it is not a Vite dev server — foreign process?"
+    error "Please free the port (tools/stop-servers.sh) or stop the foreign service."
+    exit 1
+  fi
 else
-  # Vite starten
+  # Start Vite
   cd "$PROJECT_ROOT/apps/web"
   nohup "$NPM_BIN" run dev > "$PROJECT_ROOT/logs/frontend.log" 2>&1 &
   FE_PID=$!
   cd "$PROJECT_ROOT"
 
   if wait_for_port 5173 8; then
-    # PID nochmal lesen (npm spawnt Child-Prozess)
+    # Read the PID again (npm spawns a child process)
     FE_PID=$(get_listen_pid 5173 || true)
-    info "Frontend gestartet (PID $FE_PID)"
+    info "Frontend started (PID $FE_PID)"
     frontend_started=true
   else
-    error "Frontend konnte nicht gestartet werden. Log:"
+    error "Frontend could not be started. Log:"
     tail -20 "$PROJECT_ROOT/logs/frontend.log" 2>/dev/null || true
     exit 1
   fi
 fi
 
-# ─── Zusammenfassung ─────────────────────────────────────────
+# ─── Summary ─────────────────────────────────────────────────
 header "Status"
-echo "  REST-API:  http://localhost:3003  $([ "$api_started" = true ] && echo '(neu gestartet)' || echo '(lief bereits)')"
-echo "  Frontend:  http://localhost:5173  $([ "$frontend_started" = true ] && echo '(neu gestartet)' || echo '(lief bereits)')"
+echo "  REST API:  http://localhost:3003  $([ "$api_started" = true ] && echo '(newly started)' || echo '(already running)')"
+echo "  Frontend:  http://localhost:5173  $([ "$frontend_started" = true ] && echo '(newly started)' || echo '(already running)')"
 echo ""
-echo "  Stoppen:   tools/stop-servers.sh"
-echo "  API-Log:   logs/rest-api.log"
-echo "  FE-Log:    logs/frontend.log"
+echo "  Stop:      tools/stop-servers.sh"
+echo "  API log:   logs/rest-api.log"
+echo "  FE log:    logs/frontend.log"

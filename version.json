@@ -1,36 +1,36 @@
 {
   "manifest_schema": "1.0",
-  "version": "0.8.8",
-  "generated_at": "2026-07-06T20:38:21.088Z",
-  "source_commit": "0dfb7f4",
+  "version": "0.8.9",
+  "generated_at": "2026-07-10T10:32:46.613Z",
+  "source_commit": "fa12e54",
   "components": {
     "rest_api": {
       "scheme": "A",
-      "version": "0.8.8",
+      "version": "0.8.9",
       "source": "rest-api/package.json",
       "on_change": "restart_api"
     },
     "web": {
       "scheme": "A",
-      "version": "0.8.8",
+      "version": "0.8.9",
       "source": "apps/web/package.json",
       "on_change": "rebuild_web"
     },
     "claude_md": {
       "scheme": "A",
-      "version": "0.8.8",
+      "version": "0.8.9",
       "source": "CLAUDE.md",
       "on_change": "copy_file"
     },
     "schema": {
       "scheme": "B",
-      "version": "1.6.1",
+      "version": "1.7.0",
       "source": "sql/convert-xml/convert_xml_01_extract.sql",
       "on_change": "force_rebuild_db"
     },
     "xml_import": {
       "scheme": "B",
-      "version": "5.0.0",
+      "version": "5.1.0",
       "source": "tools/convert_fm_xml.sh",
       "on_change": "reconvert_xml"
     },
@@ -85,7 +85,7 @@
     },
     {
       "name": "filemaker-function-reference",
-      "version": "0.8.5"
+      "version": "0.8.9"
     },
     {
       "name": "mbs-function-reference",
@@ -101,11 +101,19 @@
     },
     {
       "name": "fm-graph-cluster",
-      "version": "0.8.5"
+      "version": "0.8.9"
+    },
+    {
+      "name": "fm-open",
+      "version": "0.8.9"
+    },
+    {
+      "name": "fm-show",
+      "version": "0.8.9"
     },
     {
       "name": "create-custom-dashboard",
-      "version": "0.8.5"
+      "version": "0.8.9"
     },
     {
       "name": "skill-creator",

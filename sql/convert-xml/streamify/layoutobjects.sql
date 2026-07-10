@@ -40,7 +40,10 @@ root_objects AS (
         Layout_ID,
         Part_Type,
         xml_extract_text(object_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
-        xml_extract_text(object_xml, '/LayoutObject/@type')[1] as Object_Type,
+        fm_canon_layout_type(
+            xml_extract_text(object_xml, '/LayoutObject/@type')[1],
+            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::INTEGER,
+            object_xml) as Object_Type,
         xml_unescape(xml_extract_text(object_xml, '/LayoutObject/@name')[1]) as Object_Name,
         xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::INTEGER as Object_Kind,
         xml_extract_text(object_xml, '/LayoutObject/@hash')[1] as Object_Hash,
@@ -85,7 +88,10 @@ nested_objects AS (
         parent.Layout_ID,
         parent.Part_Type,
         xml_extract_text(child_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
-        xml_extract_text(child_xml, '/LayoutObject/@type')[1] as Object_Type,
+        fm_canon_layout_type(
+            xml_extract_text(child_xml, '/LayoutObject/@type')[1],
+            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::INTEGER,
+            child_xml) as Object_Type,
         xml_unescape(xml_extract_text(child_xml, '/LayoutObject/@name')[1]) as Object_Name,
         xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::INTEGER as Object_Kind,
         xml_extract_text(child_xml, '/LayoutObject/@hash')[1] as Object_Hash,
@@ -222,7 +228,10 @@ WITH RECURSIVE census_parts AS (
 census_objects AS (
     SELECT
         Layout_ID,
-        xml_extract_text(object_xml, '/LayoutObject/@type')[1] as Object_Type,
+        fm_canon_layout_type(
+            xml_extract_text(object_xml, '/LayoutObject/@type')[1],
+            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::INTEGER,
+            object_xml) as Object_Type,
         xml_extract_text(object_xml, '/LayoutObject/UUID')[1] as Object_UUID,
         object_xml
     FROM census_parts
@@ -234,7 +243,10 @@ census_objects AS (
 
     SELECT
         parent.Layout_ID,
-        xml_extract_text(child_xml, '/LayoutObject/@type')[1] as Object_Type,
+        fm_canon_layout_type(
+            xml_extract_text(child_xml, '/LayoutObject/@type')[1],
+            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::INTEGER,
+            child_xml) as Object_Type,
         xml_extract_text(child_xml, '/LayoutObject/UUID')[1] as Object_UUID,
         child_xml as object_xml
     FROM census_objects parent

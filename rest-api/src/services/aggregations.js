@@ -1,7 +1,7 @@
 /**
  * Aggregations-Helper für Pseudo-Token-Listen-Endpoints.
  *
- * PRD prd_pseudo_object_types_filter.md §7.4: Baut SQL-Snippets für
+ * Baut SQL-Snippets für
  *   - ?withUsage=true   → usage_count je Token (Aggregation aus StepsForScripts/ObjectLinks)
  *   - ?withCategory=true → category/category_id Live-Join aus ref-Schema bzw. CSV
  *   - ?category=A,B,C   → WHERE-Clause-Filter
@@ -191,13 +191,13 @@ function buildCategoryCTE(dbType, refAttached) {
       // Drei Fälle:
       //   1) Tokens mit Wrapper 'Get(...)' → direkt Category 7 'Get Functions'
       //      (Reference-DB-Lookup würde fehlschlagen, weil ref-Schreibweise
-      //       `Get ( ... )` mit Leerzeichen ist — PRD §6.3.2).
+      //       `Get ( ... )` mit Leerzeichen ist).
       //   2) Andere Tokens → normaler Lookup über function_name_lookup.
       //      Ausnahme: nackte Get-Sub-Parameter (z.B. 'DesktopPfad', 'SystemDatum')
       //      sind XML-Parser-Artefakte aus Get(...)-Argumenten; die Reference-DB
       //      ordnet sie der Get-Funktions-Familie zu (is_get_function=1).
       //      Wir blenden ihre Category aus, damit der Get-Functions-Bucket
-      //      nicht aufgebläht wird (PRD §3.1 erwartet genau 71 Get-Sub-Parameter).
+      //      nicht aufgebläht wird (erwartet genau 71 Get-Sub-Parameter).
       //   3) Tokens ohne Match → category = NULL (UI rendert "Sonstige").
       return `
         cat_agg AS (
@@ -490,7 +490,7 @@ function buildSortOrder(sort, hasUsage, hasCategory, dbType) {
  * ============================================================
  * Aggregiert die in der Lösung vorkommenden Categories eines Pseudo-Typs
  * mit token_count und total_usage. Liefert die Daten-Basis für die
- * Filter-Pillen im Frontend (PRD §7.2, §8.2).
+ * Filter-Pillen im Frontend.
  */
 
 /**

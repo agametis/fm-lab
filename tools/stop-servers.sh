@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# stop-servers.sh — Stoppt Frontend (Port 5173) und REST-API (Port 3003)
+# stop-servers.sh — Stops frontend (port 5173) and REST API (port 3003)
 set -euo pipefail
 
-# Farben (nur bei Terminal-Output)
+# Colors (only for terminal output)
 if [ -t 1 ]; then
   GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; BOLD='\033[1m'; NC='\033[0m'
 else
@@ -14,7 +14,7 @@ warn()  { echo -e "${YELLOW}⚠${NC} $1"; }
 error() { echo -e "${RED}✗${NC} $1"; }
 header(){ echo -e "\n${BOLD}$1${NC}"; }
 
-# Alle PIDs auf einem Port ermitteln (lsof falls vorhanden, sonst ss — IPv6-safe)
+# Determine all PIDs on a port (lsof if available, otherwise ss — IPv6-safe)
 get_listen_pids() {
   local port=$1
   if command -v lsof &>/dev/null; then
@@ -25,36 +25,36 @@ get_listen_pids() {
   fi
 }
 
-# Prozesse auf einem Port graceful stoppen
+# Gracefully stop processes on a port
 stop_port() {
   local port=$1 label=$2
   local pids
   pids=$(get_listen_pids "$port")
 
   if [ -z "$pids" ]; then
-    info "Kein $label auf Port $port aktiv"
+    info "No $label active on port $port"
     return 1
   fi
 
-  # SIGTERM senden
+  # Send SIGTERM
   for pid in $pids; do
     kill "$pid" 2>/dev/null || true
   done
 
-  # Kurz warten und prüfen
+  # Wait briefly and check
   sleep 1
   local remaining
   remaining=$(get_listen_pids "$port")
 
   if [ -n "$remaining" ]; then
-    # SIGKILL als Fallback
+    # SIGKILL as a fallback
     for pid in $remaining; do
       kill -9 "$pid" 2>/dev/null || true
     done
     sleep 0.5
-    warn "$label gestoppt (SIGKILL für PID $remaining)"
+    warn "$label stopped (SIGKILL for PID $remaining)"
   else
-    info "$label gestoppt (PID $pids)"
+    info "$label stopped (PID $pids)"
   fi
   return 0
 }
@@ -62,23 +62,23 @@ stop_port() {
 fe_stopped=false
 api_stopped=false
 
-# ─── Frontend zuerst (damit der Browser keine API-Fehler sieht) ──
+# ─── Frontend first (so the browser doesn't see API errors) ──
 header "Frontend (Port 5173)"
-if stop_port 5173 "Frontend-Server"; then
+if stop_port 5173 "frontend server"; then
   fe_stopped=true
 fi
 
-# ─── REST-API ────────────────────────────────────────────────
-header "REST-API (Port 3003)"
-if stop_port 3003 "REST-API-Server"; then
+# ─── REST API ────────────────────────────────────────────────
+header "REST API (Port 3003)"
+if stop_port 3003 "REST API server"; then
   api_stopped=true
 fi
 
-# ─── Zusammenfassung ─────────────────────────────────────────
+# ─── Summary ─────────────────────────────────────────────────
 header "Status"
 if [ "$fe_stopped" = true ] || [ "$api_stopped" = true ]; then
-  [ "$api_stopped" = true ] && echo "  REST-API:  gestoppt" || echo "  REST-API:  war nicht aktiv"
-  [ "$fe_stopped" = true ]  && echo "  Frontend:  gestoppt" || echo "  Frontend:  war nicht aktiv"
+  [ "$api_stopped" = true ] && echo "  REST API:  stopped" || echo "  REST API:  was not active"
+  [ "$fe_stopped" = true ]  && echo "  Frontend:  stopped" || echo "  Frontend:  was not active"
 else
-  echo "  Keine Server waren aktiv."
+  echo "  No servers were active."
 fi

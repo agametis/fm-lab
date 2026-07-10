@@ -7,7 +7,7 @@ const { sqlPluginSubName } = require('../utils/plugin-name');
  * Docs References Service
  *
  * Aggregiert "Anzahl Code-Referenzen pro Function/Category" für die
- * Counter-Pills im Frontend (siehe project/prd_docs_redesign.md §7.3).
+ * Counter-Pills im Frontend.
  *
  * Gating über catalog[].references:
  *   - references: true  → Aggregations-Queries werden ausgeführt

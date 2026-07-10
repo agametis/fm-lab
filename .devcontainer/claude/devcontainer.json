@@ -24,6 +24,11 @@
   "overrideCommand": true,
   "workspaceFolder": "/workspaces/fm-lab",
 
+  // Everything runs in the ONE attached container (api). Limiting runServices to `api`
+  // keeps the separate `web` service (pure-docker path) from also starting; `setup` is
+  // still pulled in via api's depends_on.
+  "runServices": ["api"],
+
   "remoteUser": "node",
 
   "customizations": {
@@ -53,9 +58,12 @@
   // (permissions + the duckdb-skills marketplace) when the repo doesn't have one yet.
   "postCreateCommand": "test -d node_modules/.bin || (sudo /usr/local/bin/init-node-modules.sh /workspaces/fm-lab && npm install && npm run build:shared); test -f .claude/settings.json || cp /opt/fmlab/claude-settings.seed.json .claude/settings.json",
 
-  // Apply the opt-in egress firewall on each start (the overlay grants NET_ADMIN/
-  // NET_RAW; the script no-ops gracefully if the caps are ever removed).
-  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh",
+  // On each start: apply the opt-in egress firewall (the overlay grants NET_ADMIN/
+  // NET_RAW; the script no-ops gracefully if the caps are ever removed), log the Claude
+  // Code auth state + next step, then auto-start the stack (REST API 3003 + Vite 5173)
+  // so the container is immediately usable — Claude itself is reached via the VS Code
+  // plugin, no terminal step. start-servers.sh is idempotent across restarts.
+  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh; /usr/local/bin/claude-auth-preflight.sh || true; bash tools/start-servers.sh",
 
   "forwardPorts": [3003, 5173],
   "portsAttributes": {

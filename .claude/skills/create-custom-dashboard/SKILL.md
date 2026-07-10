@@ -1,6 +1,6 @@
 ---
 name: create-custom-dashboard
-version: 0.8.5
+version: 0.8.9
 description: Interactively creates a new custom dashboard bundle for the fm-lab dashboard system. Asks the user about the desired dashboard content, drafts SQL queries, shows sample results, proposes a presentation format, asks for a name, and generates the full bundle directory under `rest-api/templates/dashboards-custom/<id>/`. Triggers (English): "/create-custom-dashboard", "create a new dashboard for X", "new dashboard", "build a dashboard that shows X". Triggers (German): "erstelle ein neues Dashboard für X", "neues Dashboard", "baue ein Dashboard das X zeigt".
 ---
 
@@ -412,7 +412,7 @@ For anything else (layout schema errors, dataset name mismatch, JSON parse error
 
 ##### 5.6.5 Probe each dataset (optional — only if the project's DuckDB is accessible)
 
-If a local DuckDB binary is reachable (per the resolver in CLAUDE.md), do a minimal smoke-run of each declared dataset with default param values:
+If a local DuckDB binary is reachable (per the resolver in `docs/agents/tooling.md`), do a minimal smoke-run of each declared dataset with default param values:
 
 ```bash
 # Replace <sql_file> and any required params with the manifest defaults

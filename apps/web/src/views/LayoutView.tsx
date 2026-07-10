@@ -1,12 +1,14 @@
-import { useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLayoutData } from '../hooks/useLayoutData';
 import { LayoutCanvas, type LayoutCanvasHandle } from '../components/LayoutCanvas';
 import { SubNav } from '../components/SubNav';
 import { StatusBar } from '../components/StatusBar';
+import { RefOriginPill } from '../components/RefOriginPill';
 import { buildBreadcrumb } from '../lib/navigation';
 import { useEscapeStack } from '../hooks/useEscapeStack';
+import { useRefOrigin } from '../hooks/useRefOrigin';
 import { useUrlState } from '../hooks/useUrlState';
 import { CurrentFileContext } from '../lib/currentFileContext';
 import './LayoutView.css';
@@ -22,6 +24,27 @@ export function LayoutView() {
   const [fileParam] = useUrlState<string>('file', '');
   const { data, loading, error } = useLayoutData(uuid, fileParam || null);
 
+  // Cross-Reference Highlight: `?ref=` markiert das Origin-Objekt auf dem
+  // Canvas — gleiche Verdrahtung wie DetailView → ObjectDetail → LayoutCanvas
+  // (useRefOrigin degradiert bei No-Match still auf ein leeres Set).
+  const [refParam, setRefParam] = useUrlState<string>('ref', '');
+  const refOrigin = useRefOrigin(uuid, refParam || null, fileParam || null);
+  const dismissRefOrigin = useCallback(() => setRefParam(''), [setRefParam]);
+
+  // Echte Trefferzahl auf dem Canvas (matchUuids ∩ Layout-Objekte) für die
+  // RefOriginPill: der Server zählt nur Container-Matches OHNE die Origin-UUID —
+  // ist das ref-Objekt selbst ein LayoutObject dieses Layouts (Normalfall der
+  // Deep-Links), wäre der Server-Count 0 und die Pill bliebe trotz sichtbarem
+  // Highlight unsichtbar.
+  const liveMatchCount = useMemo(() => {
+    if (!data || refOrigin.matchUuids.size === 0) return undefined;
+    let n = 0;
+    for (const o of data.objects) {
+      if (refOrigin.matchUuids.has(o.object_uuid)) n++;
+    }
+    return n;
+  }, [data, refOrigin.matchUuids]);
+
   // Zurück: bevorzugt vorigen Eintrag, sonst Startseite (analog RelationshipGraphView).
   const handleBack = () => {
     if (location.key !== 'default') navigate(-1);
@@ -32,7 +55,8 @@ export function LayoutView() {
   //   1. Tooltip → schließen
   //   2. Suche / Selektion → leeren (kombiniert wie bisher)
   //   3. Typ-Filter → leeren
-  //   4. Zurück.
+  //   4. Ref-Highlight → beenden
+  //   5. Zurück.
   useEscapeStack([
     () => {
       if (canvasRef.current?.hasTooltip()) {
@@ -56,6 +80,13 @@ export function LayoutView() {
       return false;
     },
     () => {
+      if (refParam) {
+        dismissRefOrigin();
+        return true;
+      }
+      return false;
+    },
+    () => {
       handleBack();
       return true;
     },
@@ -70,7 +101,17 @@ export function LayoutView() {
           t,
         )}
       />
-      <StatusBar onBack={handleBack} />
+      <StatusBar
+        onBack={handleBack}
+        message={refParam ? (
+          <RefOriginPill
+            state={refOrigin}
+            rawRef={refParam}
+            onDismiss={dismissRefOrigin}
+            liveMatchCount={liveMatchCount}
+          />
+        ) : undefined}
+      />
       <header className="layout-view-header">
         <h1>
           Layout
@@ -93,7 +134,12 @@ export function LayoutView() {
           <div className="layout-view-empty">{t('common:layout.empty')}</div>
         )}
         {!loading && !error && data && data.objects.length > 0 && (
-          <LayoutCanvas ref={canvasRef} data={data} />
+          <LayoutCanvas
+            ref={canvasRef}
+            data={data}
+            externalMatchUuids={refOrigin.matchUuids}
+            onClearRef={dismissRefOrigin}
+          />
         )}
       </div>
     </div>

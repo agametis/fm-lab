@@ -3,5 +3,5 @@
   "filemaker_coverage": "22",
   "source_version": "v21",
   "generated_at": "2026-06-28T00:00:00Z",
-  "_note": "Übergangs-Sidecar für die fm_reference-DB-Version (Plan §13). Quelle der Wahrheit wird später die eingebettete reference_meta-Tabelle aus dem fm-spec-Schwesterprojekt. Bis dahin hier manuell gepflegt; der Manifest-Generator liest diese Datei read-only (kein DuckDB-Lock)."
+  "_note": "Transitional sidecar for the fm_reference DB version. The source of truth will later be the embedded reference_meta table from the fm-spec sister project. Until then it is maintained manually here; the manifest generator reads this file read-only (no DuckDB lock)."
 }

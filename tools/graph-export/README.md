@@ -1,11 +1,13 @@
 # Community Detection
 
-Standalone batch that computes **community / module clusters** over the FileMaker
-object graph and writes them into the master DuckDB, so the Graph Explorer can
-color nodes by module.
+Batch that computes **community / module clusters** over the FileMaker object
+graph and writes them into the master DuckDB, so the Graph Explorer can color
+nodes by module.
 
-This is **not** part of the `convert-xml` pipeline — run it manually after a
-(re-)import. See _"Why standalone"_ below.
+It runs **two ways**: automatically as the gated **Phase 7** of the `convert-xml`
+pipeline (from-scratch / force-rebuild imports only — see _"Why gated"_ below), and
+standalone via the command below for a manual (re-)cluster (the `fm-graph-cluster`
+skill drives it this way for resolution sweeps + semantic naming).
 
 ## Run
 
@@ -138,14 +140,14 @@ on databases that never clustered (community stays `null`). The standalone
 `/graph` view exposes a Type↔Community color toggle + legend; the embedded
 object-view panel does not.
 
-## Why standalone, not part of the import pipeline
+## Why gated, not run on every import
 
 > **Disclaimer — illustrative numbers only.** The figures below come from a single
 > run against one example FileMaker solution. That solution is **not necessarily
 > representative**; the numbers are for illustration and **cannot be transferred 1:1**
 > to your own solutions (graph size, density and hardware all change them). The
-> _conclusion_ that follows holds regardless — it is about keeping the pure-SQL
-> import separate from extra (Node) code, not about any particular runtime.
+> _conclusion_ that follows holds regardless — it is about why re-clustering is gated
+> to from-scratch imports, not about any particular runtime.
 
 Example run (one sample solution):
 
@@ -154,12 +156,14 @@ Example run (one sample solution):
 - result: **453** communities, largest 4 879, avg 125 members
 - total wall-clock incl. export + load: **~1–2 s**
 
-The compute itself is cheap, **but** it needs Node + `graphology` and the fully
-built `ObjectCatalog`/`ObjectLinks`. The import pipeline is otherwise pure DuckDB
-SQL; folding a Node step into it would add a runtime dependency to **every** import
-for a one-off gain. **Recommendation: keep it a standalone tail step** (run after the
-import), and revisit only if module coloring becomes a default expectation of every
-import.
+The compute itself is cheap, **but** it needs Node (or Python) and the fully built
+`ObjectCatalog`/`ObjectLinks`. The import pipeline is otherwise pure DuckDB SQL. It
+therefore runs as a **gated tail phase (P7)**: only on from-scratch / force-rebuild
+imports (or when `ObjectClusters` is empty), **never** on incremental imports —
+`cluster.sh` has no warm start, so re-partitioning every import would churn community
+boundaries in untouched files and mask the drift signal. P7 is non-fatal, and
+`FM_SKIP_CLUSTER=1` disables it. It writes only the **raw** partition; semantic naming
++ the resolution sweep stay the `fm-graph-cluster` skill's job.
 
 ## Dependencies
 

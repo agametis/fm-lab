@@ -1,4 +1,7 @@
 {
+  "buttonStep": {
+    "heading": "Ação do botão"
+  },
   "autoTable": {
     "rowCount_one": "{{count}} entrada",
     "rowCount_other": "{{count}} entradas",

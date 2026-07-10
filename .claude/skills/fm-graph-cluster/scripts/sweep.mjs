@@ -61,7 +61,7 @@ const EXPORT_SQL = path.join(TOOLS_DIR, 'graph_export_logical.sql');
 const LOUVAIN = path.join(TOOLS_DIR, 'cluster_louvain.mjs');
 const LEIDEN = path.join(TOOLS_DIR, 'cluster_leiden.py');
 
-// ── Locate duckdb (CLAUDE.md well-known locations) ──────────────────────────
+// ── Locate duckdb (docs/agents/tooling.md well-known locations) ─────────────
 function findDuckdb() {
   const which = spawnSync('bash', ['-lc', 'command -v duckdb'], { encoding: 'utf8' });
   if (which.status === 0 && which.stdout.trim()) return which.stdout.trim();
@@ -75,7 +75,7 @@ function findDuckdb() {
 }
 const DUCKDB = findDuckdb();
 if (!DUCKDB) {
-  console.error('ERROR: duckdb binary not found (see CLAUDE.md for install locations).');
+  console.error('ERROR: duckdb binary not found (see docs/agents/tooling.md for install locations).');
   process.exit(3);
 }
 

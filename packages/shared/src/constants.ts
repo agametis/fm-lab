@@ -1,5 +1,5 @@
 /**
- * Shared Constants for FileMaker DuckDB Analysis API
+ * Shared Constants for FM-Lab REST API
  * Extracted from rest-api/src/config/constants.js
  *
  * These constants are shared between:
@@ -45,7 +45,7 @@ export type ObjectType = typeof OBJECT_TYPES[number];
 
 /**
  * Pseudo-Token-Types — synthetische Aggregat-Einträge mit Inline-Filter-
- * Unterstützung (Categories, Usage, Sort). Vgl. PRD prd_pseudo_object_types_filter.md §1.3.
+ * Unterstützung (Categories, Usage, Sort).
  *
  * PluginComponent ist bewusst NICHT enthalten — es ist selbst die Category-Ebene
  * und unterstützt nur ?with_usage / ?sort, kein ?with_category / ?category.

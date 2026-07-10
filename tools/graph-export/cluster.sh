@@ -45,7 +45,7 @@ CACHE_TAU_PURITY="${FMLAB_CACHE_TAU_PURITY:-0.6}"
 CACHE_TAU_COVERAGE="${FMLAB_CACHE_TAU_COVERAGE:-0.5}"
 CACHE_FLOOR="${FMLAB_CACHE_FLOOR:-0.5}"
 
-# ── Locate duckdb (CLAUDE.md well-known locations) ──────────────────────────
+# ── Locate duckdb (docs/agents/tooling.md well-known locations) ─────────────
 DUCKDB=""
 if command -v duckdb >/dev/null 2>&1; then
   DUCKDB="$(command -v duckdb)"
@@ -56,7 +56,7 @@ elif [ -x "/opt/homebrew/bin/duckdb" ]; then
 elif [ -x "/usr/local/bin/duckdb" ]; then
   DUCKDB="/usr/local/bin/duckdb"
 else
-  echo "ERROR: duckdb binary not found (see CLAUDE.md for install locations)." >&2
+  echo "ERROR: duckdb binary not found (see docs/agents/tooling.md for install locations)." >&2
   exit 3
 fi
 

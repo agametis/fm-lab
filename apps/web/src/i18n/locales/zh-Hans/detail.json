@@ -1,4 +1,7 @@
 {
+  "buttonStep": {
+    "heading": "按钮操作"
+  },
   "autoTable": {
     "rowCount_one": "{{count}} 条",
     "rowCount_other": "{{count}} 条",

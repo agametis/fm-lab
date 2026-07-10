@@ -29,6 +29,23 @@ header() { echo -e "\n${BOLD}$1${NC}"; }
 SUMMARY=()
 summary_add() { SUMMARY+=("$1"); }
 
+# ─── Error handling ───────────────────────────────────────────
+# On any uncaught failure (set -e), report which phase broke, where the logs are, and
+# how to resume — instead of a bare non-zero exit with no context (F-A7). CURRENT_STEP
+# is updated before each phase; explicit `exit N` (e.g. the prereq gate) does not
+# trigger ERR, so those keep their own tailored message.
+CURRENT_STEP="starting up"
+on_error() {
+  local ec=$?
+  echo ""
+  error "init.sh failed during: ${CURRENT_STEP} (exit ${ec})"
+  echo  "    Logs:   logs/rest-api.log · logs/frontend.log  (plus the convert log printed above, if any)"
+  echo  "    Retry:  bash tools/init.sh          — idempotent; unchanged steps are skipped or fast"
+  echo  "    Detail: bash tools/init.sh --verbose"
+  exit "$ec"
+}
+trap on_error ERR
+
 # ─── FM-Lab version (central manifest version.json) ───────────
 # Shown at the very top so the user always sees which fm-lab build they
 # are setting up. jq-optional: falls back to a sed scrape of the first
@@ -125,13 +142,70 @@ check_webbed_extension() {
   fi
 }
 
+# ─── Resource floors (advisory) ───────────────────────────────
+# Soft thresholds for a comfortable convert of large catalogs. DuckDB's memory peak
+# scales with the catalog size and spills to disk; below these floors the convert still
+# runs (adaptive OOM-backoff) but slower. WARN only — never abort (mirrors the DuckDB
+# baseline pattern). Kept as script defaults for now; a data-driven home next to
+# tested_baseline is possible later.
+RAM_MIN_GB=6
+DISK_MIN_GB=20
+check_resources() {
+  # ── RAM ── Linux via /proc/meminfo, macOS via sysctl hw.memsize.
+  local ram_gb="" kb bytes
+  if [ -r /proc/meminfo ]; then
+    kb=$(awk '/^MemTotal:/ {print $2; exit}' /proc/meminfo 2>/dev/null)
+    [ -n "$kb" ] && ram_gb=$(( kb / 1024 / 1024 ))
+  elif command -v sysctl >/dev/null 2>&1; then
+    bytes=$(sysctl -n hw.memsize 2>/dev/null)
+    [ -n "$bytes" ] && ram_gb=$(( bytes / 1024 / 1024 / 1024 ))
+  fi
+  if [ -n "$ram_gb" ]; then
+    if [ "$ram_gb" -lt "$RAM_MIN_GB" ]; then
+      warn "Only ${ram_gb} GB RAM detected — ≥ ${RAM_MIN_GB} GB recommended for large solutions."
+      echo  "    Conversion still works (adaptive OOM-backoff), but large catalogs run slower."
+      summary_add "RAM               ${ram_gb} GB (< ${RAM_MIN_GB} GB recommended)"
+    else
+      info "RAM: ${ram_gb} GB"
+    fi
+  fi
+  # ── Free disk on the project volume ── POSIX `df -Pk` (portable columns).
+  local disk_gb="" avail_kb
+  avail_kb=$(df -Pk "$PROJECT_ROOT" 2>/dev/null | awk 'NR==2 {print $4; exit}')
+  [ -n "$avail_kb" ] && disk_gb=$(( avail_kb / 1024 / 1024 ))
+  if [ -n "$disk_gb" ]; then
+    if [ "$disk_gb" -lt "$DISK_MIN_GB" ]; then
+      warn "Only ${disk_gb} GB free disk on the project volume — ≥ ${DISK_MIN_GB} GB recommended."
+      echo  "    The DuckDB catalog + spill can reach double-digit GB on large solutions."
+      summary_add "Disk              ${disk_gb} GB free (< ${DISK_MIN_GB} GB recommended)"
+    else
+      info "Disk: ${disk_gb} GB free"
+    fi
+  fi
+}
+
 header "fm-lab init"
 echo "  Project root: $PROJECT_ROOT"
 [ -n "$FMLAB_VERSION" ] && echo "  Version: $FMLAB_VERSION"
 [ "$VERBOSE" = true ] && echo "  Mode: verbose (--verbose)"
 
+# ─── OS guard (Windows shells) ────────────────────────────────
+# The bash harness (init + convert + server scripts) is only supported on
+# macOS/Linux (incl. WSL2). Under Git-Bash / MSYS / Cygwin the run would fail
+# diffusely later (paths, `find`, missing tools). Detect it here and point the
+# user to the supported Windows path (Docker Desktop + WSL2) — fail early, clearly.
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*)
+    error "Native Windows shells (Git-Bash / MSYS / Cygwin) are not supported."
+    echo  "    On Windows, run fm-lab via Docker Desktop + WSL2 (clone the repo INSIDE the WSL2 filesystem)."
+    echo  "    See the README Quickstart → Windows section. Aborting."
+    exit 1
+    ;;
+esac
+
 # ─── Prerequisites ────────────────────────────────────────────
 
+CURRENT_STEP="checking prerequisites"
 header "Checking prerequisites"
 
 ok=true
@@ -200,19 +274,28 @@ if [ "$ok" = false ]; then
   exit 1
 fi
 
-# ─── npm install ──────────────────────────────────────────────
+# ─── Resources (advisory) ─────────────────────────────────────
 
-header "Installing dependencies (this may take 1–2 minutes)"
+header "Checking resources (advisory)"
+check_resources
+
+# ─── Bootstrap (deps + shared build + env + placeholder DB) ───
+# Shared with the Docker `setup` service via tools/bootstrap.sh — single source of
+# truth for these idempotent steps, so the native and Docker bootstrap can't drift
+# (F-B7). Native-only follow-ups (.claude settings, DuckDB PATH) stay below.
+
+CURRENT_STEP="bootstrapping (npm install / build:shared)"
+header "Bootstrapping project (deps + shared build + env; this may take 1–2 minutes)"
 cd "$PROJECT_ROOT"
 T0=$SECONDS
 if [ "$VERBOSE" = true ]; then
-  npm install
+  DUCKDB_BIN="$DUCKDB_BIN" bash "$SCRIPT_DIR/bootstrap.sh" "$PROJECT_ROOT"
 else
-  npm install --silent
+  FMLAB_BOOTSTRAP_QUIET=1 DUCKDB_BIN="$DUCKDB_BIN" bash "$SCRIPT_DIR/bootstrap.sh" "$PROJECT_ROOT"
 fi
 PKG_COUNT=$(find node_modules -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
-info "Dependencies installed (~${PKG_COUNT} packages, $((SECONDS - T0))s)"
-summary_add "npm install       ~${PKG_COUNT} packages ($((SECONDS - T0))s)"
+info "Bootstrap done — deps + shared build + env + placeholder DB (~${PKG_COUNT} packages, $((SECONDS - T0))s)"
+summary_add "bootstrap         npm install + build:shared + env + placeholder DB (~${PKG_COUNT} pkgs, $((SECONDS - T0))s)"
 
 # ─── .claude/settings.json ────────────────────────────────────
 
@@ -273,45 +356,6 @@ NODEEOF
   summary_add "Claude Code PATH   $DUCKDB_DIR added to .claude/settings.json"
 fi
 
-# ─── Build shared package ─────────────────────────────────────
-
-header "Building shared package"
-T0=$SECONDS
-if [ "$VERBOSE" = true ]; then
-  npm run build:shared
-else
-  npm run build:shared --silent
-fi
-info "packages/shared built ($((SECONDS - T0))s)"
-summary_add "packages/shared   TypeScript → dist/ ($((SECONDS - T0))s)"
-
-# ─── Environment files ────────────────────────────────────────
-
-header "Environment files"
-
-ENV_CREATED=()
-if [ ! -f "$PROJECT_ROOT/rest-api/.env" ]; then
-  cp "$PROJECT_ROOT/rest-api/.env.example" "$PROJECT_ROOT/rest-api/.env"
-  info "Created rest-api/.env"
-  ENV_CREATED+=("rest-api/.env")
-else
-  info "rest-api/.env already exists"
-fi
-
-if [ ! -f "$PROJECT_ROOT/apps/web/.env" ]; then
-  cp "$PROJECT_ROOT/apps/web/.env.example" "$PROJECT_ROOT/apps/web/.env"
-  info "Created apps/web/.env"
-  ENV_CREATED+=("apps/web/.env")
-else
-  info "apps/web/.env already exists"
-fi
-
-if [ ${#ENV_CREATED[@]} -gt 0 ]; then
-  summary_add "env files         created: ${ENV_CREATED[*]}"
-else
-  summary_add "env files         already present (skipped)"
-fi
-
 # ─── Logs directory ───────────────────────────────────────────
 
 mkdir -p "$PROJECT_ROOT/logs"
@@ -337,6 +381,26 @@ print_summary() {
 if [ "$XML_FILES" -eq 0 ]; then
   warn "No XML files found in xml/."
   summary_add "XML conversion    skipped (no files in xml/)"
+
+  # bootstrap.sh already seeded the empty placeholder catalog, so the READ_ONLY API can
+  # boot on a fresh clone BEFORE any XML is converted (same as the Docker `setup`
+  # service). Start the servers so the web client's guided empty-state card takes over
+  # immediately (export instructions → open folder → one-click convert, live progress) —
+  # the native path reaches the same betriebsbereit UX as Docker.
+  header "Starting servers"
+  if [ -f "$PROJECT_ROOT/rest-api/db/fm_catalog.duckdb" ] && bash "$SCRIPT_DIR/start-servers.sh"; then
+    summary_add "servers started   http://localhost:3003  |  http://localhost:5173"
+    print_summary
+    echo ""
+    echo "  → Open http://localhost:5173 — the guided empty-state walks you through"
+    echo "    exporting your FileMaker solution and converting it (one click, live progress)."
+    echo ""
+    echo "  CLI alternative: drop .xml file(s) into xml/ and run  bash tools/convert_fm_xml.sh --batch"
+    echo ""
+    exit 0
+  fi
+
+  # Fallback: no placeholder DB (DuckDB missing) or server start failed → guide by text.
   print_summary
   echo ""
   echo "  Next step:"
@@ -349,20 +413,28 @@ if [ "$XML_FILES" -eq 0 ]; then
   exit 0
 fi
 
-# --batch picks the adaptive default itself (Turbo + --auto OOM-backoff, plus SAX
-# streaming when the patched webbed is present) — no manual mode flag needed; it
-# never hard-aborts on tight RAM. FM_FORCE_DOM=1 keeps turbo+auto but on DOM.
-CONVERT_ARGS=(--batch)
-info "Found $XML_FILES XML file(s) in xml/ — starting conversion (adaptive mode)"
-T0=$SECONDS
-bash "$SCRIPT_DIR/convert_fm_xml.sh" "${CONVERT_ARGS[@]}"
-summary_add "XML conversion    $XML_FILES file(s) → fm_catalog.duckdb ($((SECONDS - T0))s)"
-
-# ─── Start servers ────────────────────────────────────────────
-
+# ─── Start servers BEFORE the convert ─────────────────────────
+# bootstrap.sh already seeded the placeholder catalog, so the READ_ONLY API boots now
+# and the web client is up while the convert runs. In production mode (--batch) the
+# convert syncs the finished catalog to the API copy and triggers /api/admin/reload, so
+# the already-running server picks up the real data automatically — no restart, and the
+# progress is watchable in the browser instead of a blocking terminal phase (F-A4).
+CURRENT_STEP="starting servers"
 header "Starting servers"
 bash "$SCRIPT_DIR/start-servers.sh"
 summary_add "servers started   http://localhost:3003  |  http://localhost:5173"
+
+# --batch picks the adaptive default itself (Turbo + --auto OOM-backoff, plus SAX
+# streaming when the patched webbed is present) — no manual mode flag needed; it
+# never hard-aborts on tight RAM. FM_FORCE_DOM=1 keeps turbo+auto but on DOM.
+CURRENT_STEP="converting XML (bash tools/convert_fm_xml.sh --batch)"
+header "FileMaker XML conversion"
+CONVERT_ARGS=(--batch)
+info "Found $XML_FILES XML file(s) in xml/ — starting conversion (adaptive mode)"
+echo "  Follow live progress in the web client:  http://localhost:5173  (XML import dashboard)"
+T0=$SECONDS
+bash "$SCRIPT_DIR/convert_fm_xml.sh" "${CONVERT_ARGS[@]}"
+summary_add "XML conversion    $XML_FILES file(s) → fm_catalog.duckdb ($((SECONDS - T0))s)"
 
 print_summary
 echo ""

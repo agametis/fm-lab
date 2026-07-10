@@ -42,6 +42,12 @@ services:
       - CLAUDE_CONFIG_DIR=/home/node/.claude
       - ANTHROPIC_API_KEY          # API-key billing (passed through only if set on the host)
       - CLAUDE_CODE_OAUTH_TOKEN    # subscription token from `claude setup-token` (only if set)
+    # Log the Claude Code auth state + the exact next step before booting the API, so
+    # the agent decision/auth is a guided step in the `up` log (F-B2). The preflight
+    # never fails the boot; the API then starts unchanged. (In the VS Code devcontainer
+    # variant the command is overridden by VS Code — there the preflight runs from
+    # postStartCommand instead.)
+    command: ["bash", "-lc", "/usr/local/bin/claude-auth-preflight.sh || true; cd rest-api && exec node src/index.js"]
     volumes:
       - type: bind
         source: .

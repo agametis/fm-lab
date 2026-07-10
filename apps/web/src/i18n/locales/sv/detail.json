@@ -1,4 +1,7 @@
 {
+  "buttonStep": {
+    "heading": "Knappåtgärd"
+  },
   "autoTable": {
     "rowCount_one": "{{count}} post",
     "rowCount_other": "{{count}} poster",

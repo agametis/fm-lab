@@ -1,4 +1,7 @@
 {
+  "buttonStep": {
+    "heading": "Knopactie"
+  },
   "autoTable": {
     "rowCount_one": "{{count}} vermelding",
     "rowCount_other": "{{count}} vermeldingen",

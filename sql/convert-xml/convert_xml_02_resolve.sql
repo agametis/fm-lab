@@ -653,6 +653,54 @@ FROM (
 WHERE Ref_UUID IS NOT NULL AND Ref_UUID <> '';
 
 -- ============================================
+-- LayoutObjectSteps — Kern-Attribute des button-eingebetteten Steps
+-- ============================================
+-- Materialisiert pro Button-Objekt (Grouped Button / Button) den EINEN eingebetteten
+-- Script-Step, damit die READ_ONLY-API-Detailansicht ihn als Klartext-Token rendern
+-- kann (analog zum Script-Detail). Der API-Server kann webbed NICHT laden → alle
+-- xml_extract-Zugriffe müssen HIER (Konvertierung, webbed geladen) passieren.
+--   - Step_ID/Step_Name/Step_Enabled: Kopf des Steps (Step_Name ist in der Export-
+--     sprache lokalisiert — wie DDR_ScriptSteps.Step_Text, also intern konsistent).
+--   - StepText_Hash: DDRREF kind="StepText" → JOIN auf DDR_ScriptSteps.Step_Hash für
+--     den FM-generierten Klartext ("Go to Layout [ … ]"). NULL ohne DDR-Info.
+-- Verankerte Pfade (/LayoutObject/<Wrapper>/action/Step): NUR der eigene Step des
+-- Objekts, nicht die Steps verschachtelter Kind-Buttons (die haben eigene Zeilen).
+CREATE TABLE IF NOT EXISTS LayoutObjectSteps (
+    Object_UUID   VARCHAR,
+    File_Name     VARCHAR,
+    Step_ID       INTEGER,
+    Step_Name     VARCHAR,
+    Step_Enabled  BOOLEAN,
+    StepText_Hash VARCHAR,
+    PRIMARY KEY (Object_UUID, File_Name)
+);
+
+INSERT INTO LayoutObjectSteps (Object_UUID, File_Name, Step_ID, Step_Name, Step_Enabled, StepText_Hash)
+SELECT ou, File_Name, sid, sname,
+       CASE WHEN lower(COALESCE(senable, 'true')) = 'false' THEN FALSE ELSE TRUE END AS Step_Enabled,
+       shash
+FROM (
+    SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+           TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@id')[1] AS INTEGER) AS sid,
+           xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@name')[1] AS sname,
+           xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@enable')[1] AS senable,
+           NULLIF(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/DDRREF[@kind=''StepText'']/@hash')[1], '') AS shash,
+           File_Name
+    FROM LayoutObjects
+    WHERE Object_Type = 'Grouped Button' AND Object_XML LIKE '%<action>%<Step %'
+    UNION ALL
+    SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+           TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@id')[1] AS INTEGER) AS sid,
+           xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@name')[1] AS sname,
+           xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@enable')[1] AS senable,
+           NULLIF(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/DDRREF[@kind=''StepText'']/@hash')[1], '') AS shash,
+           File_Name
+    FROM LayoutObjects
+    WHERE Object_Type = 'Button' AND Object_XML LIKE '%<action>%<Step %'
+)
+WHERE ou IS NOT NULL AND sid IS NOT NULL;
+
+-- ============================================
 -- MBS_SubnameMap
 -- ============================================
 -- Pro `MBS`-PluginFunctionRef-Chunk wird der fachliche MBS-Funktionsname (erstes

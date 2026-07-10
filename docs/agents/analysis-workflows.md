@@ -1,0 +1,59 @@
+# Analytic Workflows — Skills, Patterns & Pitfalls
+
+> Referenced from CLAUDE.md §5. How to run FileMaker solution analyses:
+> which skill for which question, canonical SQL patterns, and the traps
+> that produce wrong conclusions.
+
+## Supported task classes
+
+You support the developer in typical analysis steps on their FileMaker application:
+- Questions about object lists
+- Questions about individual objects, their constituents and their links within the application
+- Questions about dependencies between same or different objects
+- Questions about missing links or orphaned objects
+- Questions about the context in which an object is used
+- Visualization of relationships as text lists or Mermaid diagrams
+
+## Skill selection
+
+| Question shape | Tool |
+|---|---|
+| "Describe script/field/layout X" (technical: structure, flow, dependencies) | **`fm-summarize`** (`--short` for 1–2 paragraphs) |
+| "What is X *for*? What business logic is behind X?" (semantic: call chain, triggers, naming, comments of linked objects) | **`fm-analyze`** (`--short` available) |
+| "Which modules does this solution consist of?" / community & hub analysis | **`fm-graph-cluster`** |
+| "Show me X in FileMaker" | **`fm-open`** |
+| "Show me X in FM-Lab / the browser" (detail, references, graph) | **`fm-show`** |
+| Lists, counts, cross-references, ad-hoc questions | direct SQL on the master DB |
+
+Prefer the skills over ad-hoc SQL for single-object analyses — they encapsulate
+resolution (name → UUID across files) and dependency traversal correctly.
+
+## Standard analysis loop (ad-hoc SQL)
+
+1. **Analyze the question** — which FileMaker object types are relevant?
+2. **Identify the matching table(s)** — start from `ObjectCatalog`/`ObjectLinks` for existence & linkage, drill into the type tables for detail (see `schema-reference.md`)
+3. **Build the query** — DuckDB SQL; patterns in `query-cookbook.md`, templates in `sql/sample_queries.sql`
+4. **Run it** against `db/fm_catalog.duckdb` (master — never the REST-API copy)
+5. **Present the result** — understandable prose/tables; Mermaid for relationship visualizations
+
+## Pitfalls that produce wrong conclusions
+
+- **Restriction links are not usage.** `restricts_field`/`restricts_object` (privilege restrictions) must never make an object appear "used". Authoritative flag: `LinkRoleRegistry.Counts_For_Where_Used` — filter on it in dead-code/unused queries instead of hand-picking roles.
+- **`Link_Type='structural'` is containment, not usage.** Where-used questions almost always mean `Link_Type='operational'`.
+- **Step names are localized.** `StepsForScripts.Step_Name` / `Step/@name` is written in the exporting client's UI language. Match steps via `Step_ID` (`ScriptStepRoleMap`, `step_metadata`), never via name literals.
+- **DDR-Info is optional.** `DDR_ScriptSteps`/`DDR_Calculations` are only populated when `XMLMetadata.Has_DDR_INFO = 'True'` — check before relying on formula-chunk analysis; degrade gracefully (see the CASE pattern in `query-cookbook.md`).
+- **Non-obvious usage sources still count.** GTRR target TOs, sort value lists, sub-summary break fields, button-embedded steps and privilege-calc references are linked like any other reference — treat every source in the schema as equal (see `schema-reference.md`). If something still looks unused, check the P6 `v_check_*` views before declaring it dead.
+- **Local variables are per-script objects.** A `$var` in two scripts is two distinct catalog objects (scope anchor = script). Global `$$`/superglobal `$$$` variables are file-/corpus-wide.
+- **God-nodes are filtered only in clustering.** `ClusterEdges` drops cross-cutting god-nodes; `LogicalLinks` and where-used keep them.
+
+## Graph & module analysis
+
+- `LogicalLinks` — cleaned operational graph (Explorer/where-used view)
+- `ClusterEdges` — clustering edge set (single source of truth for community detection)
+- `fm-graph-cluster` sweeps resolutions, names communities semantically (`CommunityNames.Semantic_Name`), writes a report to `output/` and syncs the partition to the Graph Explorer
+- After `convert-xml --force-rebuild` the cluster layer is wiped → re-run `fm-graph-cluster`
+
+## Consistency & quality checks
+
+- P6 check views `v_check_*` surface unresolved references, uncurated step IDs, absorbed duplicates etc. — query them when an analysis result looks implausible.
+- The converter quality test suite lives in `tools/tests/quality/` (data-driven E2E check catalog).

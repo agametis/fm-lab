@@ -9,7 +9,7 @@ const normalizeQueryKeys = require('./middleware/query-normalizer');
 const debugSessionMiddleware = require('./middleware/debug-session');
 
 /**
- * FileMaker DuckDB Analysis API
+ * FM-Lab REST API
  * Express application setup
  */
 
@@ -42,7 +42,7 @@ app.use('/api', routes);
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'FileMaker DuckDB Analysis API',
+    message: 'FM-Lab REST API',
     version: require('../package.json').version,
     endpoints: {
       version: '/api/version',
@@ -112,7 +112,7 @@ async function start() {
     const server = app.listen(environment.port, environment.host, () => {
       console.log('');
       console.log('========================================');
-      console.log('FileMaker DuckDB Analysis API');
+      console.log('FM-Lab REST API');
       console.log('========================================');
       console.log(`Environment: ${environment.nodeEnv}`);
       console.log(`Server: http://${environment.host}:${environment.port}`);
@@ -134,6 +134,11 @@ async function start() {
       console.log(`  GET  /api/report         - Execute report SQL template`);
       console.log(`  GET  /api/plugin-docs    - Plugin function documentation (MBS, ...)`);
       console.log(`  GET  /api/reference/*    - FileMaker Reference (Steps, Functions, Help)`);
+      console.log('');
+      console.log('========================================');
+      console.log(`✅ FM-Lab ready → open the web client at http://localhost:5173`);
+      console.log(`   (REST-API: http://${environment.host}:${environment.port}/api)`);
+      console.log('========================================');
       console.log('');
     });
 

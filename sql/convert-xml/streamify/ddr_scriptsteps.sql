@@ -21,10 +21,21 @@ ddr_script_raw AS (
 )
 INSERT INTO DDR_ScriptSteps
 SELECT
-    regexp_extract(
-        step_elem::VARCHAR,
-        '<_([0-9A-Fa-f-]+)',   -- B-R9: Hex-Klasse case-tolerant wie die P2/P3-Anker ([0-9A-Fa-f-]{36})
-        1
+    -- UUID-lose StepText-Records (button-eingebettete Einzel-Steps: <_ hash="…">, ohne
+    -- Element-UUID) fallen auf 'hash:'||Step_Hash zurück. Ohne diesen Fallback kollidieren
+    -- ALLE UUID-losen Records auf dem leeren PK (Step_UUID='') und ON CONFLICT behält pro
+    -- Datei nur EINEN — die Button-Step-Klartexte gingen so verloren (via DDRREF-Hash
+    -- auflösbar für die LayoutObject-Detailansicht).
+    COALESCE(
+        NULLIF(
+            regexp_extract(
+                step_elem::VARCHAR,
+                '<_([0-9A-Fa-f-]+)',   -- B-R9: Hex-Klasse case-tolerant wie die P2/P3-Anker ([0-9A-Fa-f-]{36})
+                1
+            ),
+            ''
+        ),
+        'hash:' || xml_extract_text(step_elem, '//*/@hash')[1]
     ) as Step_UUID,
     xml_extract_text(step_elem, '//*/@hash')[1] as Step_Hash,
     ws_restore(xml_extract_text(step_elem, '//text()')[1]) as Step_Text,

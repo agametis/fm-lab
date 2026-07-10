@@ -1,4 +1,7 @@
 {
+  "buttonStep": {
+    "heading": "Azione del pulsante"
+  },
   "autoTable": {
     "rowCount_one": "{{count}} voce",
     "rowCount_other": "{{count}} voci",

@@ -94,7 +94,7 @@ To determine whether the extended entries are present, check the `Has_DDR_INFO="
 
 ## Further `AddAction` catalogs (validated against real exports)
 
-Beyond the catalogs shown in the high-level listing above, real `SaveAsXML` exports contain additional `<AddAction>` catalogs that were missing from the manual schema. The four below were confirmed by scanning **all 57 production files** (`tools/_xml_schema_tree.py`, byte-accurate `expat` streaming). They are conditional — each only appears when the corresponding feature is used, so the file count varies. `membercount` on `<AddAction>` therefore differs per file.
+Beyond the catalogs shown in the high-level listing above, real `SaveAsXML` exports contain additional `<AddAction>` catalogs that were missing from the manual schema. The four below were confirmed by scanning **all 57 production files** (byte-accurate `expat` streaming). They are conditional — each only appears when the corresponding feature is used, so the file count varies. `membercount` on `<AddAction>` therefore differs per file.
 
 > Note: `<Structure>` may also contain a sibling `<ModifyAction>` (incremental change set) next to `<AddAction>`, carrying the same catalog element types (e.g. `FieldsForTables`, `LayoutCatalog`) for objects to be modified rather than added.
 
@@ -139,7 +139,7 @@ Companion to `CustomMenuCatalog`: the **menu sets** (named collections of custom
 
 ### LibraryCatalog
 
-Holds **embedded binary media** (e.g. SVG/PNG used by themes, buttons or layout graphics). Each `<LibraryReference id key>` pairs with a `<StreamList>` of `<Stream>` elements whose text content is the payload, encoded per `type` (`Base64`, `Hex`, or `id`). This is pure blob data (no analysis value) and is the single largest contributor to the `main` chunk — see [project/plan_xml_diff_streaming_turbo_v3.md](../../project/plan_xml_diff_streaming_turbo_v3.md) Anhang A.
+Holds **embedded binary media** (e.g. SVG/PNG used by themes, buttons or layout graphics). Each `<LibraryReference id key>` pairs with a `<StreamList>` of `<Stream>` elements whose text content is the payload, encoded per `type` (`Base64`, `Hex`, or `id`). This is pure blob data (no analysis value) and is the single largest contributor to the `main` chunk.
 
 ```XML
 <LibraryCatalog membercount="1">

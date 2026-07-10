@@ -152,8 +152,7 @@ The location of a custom function's calculation body changed between SaXML versi
 
 The exact FM version that introduced the embedded format is unknown (between v2.2.3.0 / FM 22
 and v2.3.0.0 / FM 26). The extractor handles **both** forms via a structure-tolerant double
-extraction (no version switch) — see
-`project/bugreports/2026-06-23_Philipp-Puls_CustomFunctions_v26.md`.
+extraction (no version switch).
 
 > The high-level structure block above (`version="2.2.0.0"`, with a top-level
 > `<CalcsForCustomFunctions>`) reflects the FM 19 export; under v2.3.0.0 that section

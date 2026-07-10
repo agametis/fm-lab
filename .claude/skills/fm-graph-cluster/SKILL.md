@@ -1,6 +1,6 @@
 ---
 name: fm-graph-cluster
-version: 0.8.5
+version: 0.8.9
 description: Segments the FileMaker object graph in `db/fm_catalog.duckdb` into modules/communities, finds the best resolution for this solution's size by sweeping candidate resolutions and scoring them (modularity Q + distribution guardrails), names the communities semantically (CommunityNames.Semantic_Name, optionally Semantic_Description in --deep-research), writes an analysis report to `output/`, and syncs the named partition to the Graph Explorer. Orchestrates the existing tools/graph-export tooling (cluster.sh, cluster_louvain.mjs/cluster_leiden.py, cluster_load.sql); it does not replace it. Triggers (English): "/fm-graph-cluster", "cluster the graph", "detect communities/modules", "name the clusters", "segment the solution into modules". Triggers (German): "/fm-graph-cluster", "clustere den Graph", "finde die Module/Communities", "benenne die Cluster", "segmentiere die Lösung in Module".
 ---
 
@@ -19,7 +19,7 @@ already built. What this skill adds: **automatic resolution selection** and **se
 
 - **DuckDB CLI**: `duckdb` in PATH; fallbacks (VS Code does not inherit the shell PATH, check in
   this order): `~/.duckdb/cli/latest/duckdb` → `/opt/homebrew/bin/duckdb` → `/usr/local/bin/duckdb`.
-  **Never install DuckDB yourself** — if none is found, point the user to CLAUDE.md.
+  **Never install DuckDB yourself** — if none is found, point the user to `docs/agents/tooling.md`.
 - **Database**: master `db/fm_catalog.duckdb` only. **Never** read from `rest-api/db/` (API-internal, may be stale).
   - **read-only** for all measuring (Preflight, sweep, naming-hint reads, report data).
   - **read-write only** for: the final `cluster.sh` run (Phase E) and the naming `UPDATE`s (F/G).
@@ -82,7 +82,7 @@ python3 -c "import igraph" 2>/dev/null && echo "leiden available" || echo "leide
 ```
 
 **Abort conditions** (each with a concrete next step):
-- No DuckDB → point to CLAUDE.md install section (never install yourself).
+- No DuckDB → point to `docs/agents/tooling.md` (binary locations; never install yourself).
 - `objects = 0` **or** `op_links = 0` → "Graph not built — run `convert-xml` / Graphify first."
 - `cluster_edges_view = 0` **or** `logical_links_view = 0` → the DB was built **before** the
   graph views existed. → "Re-run `convert-xml --batch` (P5 creates `LogicalLinks`/`ClusterEdges`)."

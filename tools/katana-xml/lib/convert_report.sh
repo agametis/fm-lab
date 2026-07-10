@@ -1,12 +1,12 @@
 #!/bin/bash
-# katana-xml/lib/convert_report.sh — Conversion-Log v2: Phasen-Timeline, Objekt-Zähler,
-# Environment-Kontext, Text-Log + JSON-Sidecar (write_text_log/write_json_sidecar).
+# katana-xml/lib/convert_report.sh — Conversion log v2: Phase Timeline, object counts,
+# environment context, text log + JSON sidecar (write_text_log/write_json_sidecar).
 #
-# Modul von tools/convert_fm_xml.sh (§7.1 Shell-Split) — reine Code-Bewegung,
-# Verhalten unverändert. NICHT eigenständig ausführbar: wird vom Treiber
-# ge-sourced (Existenz-Check dort, A-B10) und nutzt dessen Globals; die
-# Log-Zustands-Arrays (PH_*/FL_*/FO_*) leben hier und werden beim Sourcing initialisiert.
-# bash-3.2-Disziplin (macOS system-bash): kein `case` in $(…), kein bash-4+.
+# Module of tools/convert_fm_xml.sh (shell split) — pure code movement,
+# behaviour unchanged. NOT independently executable: it is sourced by the driver
+# (existence check there, A-B10) and uses its globals; the
+# log-state arrays (PH_*/FL_*/FO_*) live here and are initialized on sourcing.
+# bash-3.2 discipline (macOS system bash): no `case` in $(…), no bash-4+.
 
 # ============================================================================
 # Conversion log v2
@@ -15,7 +15,7 @@
 # exactly ONCE at the end of the run (write_text_log / write_json_sidecar).
 # ============================================================================
 
-# --- Phasen-Sammlung (parallele Arrays) ---
+# --- Phase collection (parallel arrays) ---
 PH_ID=();    PH_NAME=();     PH_START_ISO=(); PH_END_ISO=()
 PH_DUR=();   PH_PROD_TXT=(); PH_PROD_JSON=()
 _PH_CUR_ID=""; _PH_CUR_NAME=""; _PH_CUR_START_EPOCH=""; _PH_CUR_START_ISO=""
@@ -46,7 +46,7 @@ phase_begin() {
 
 # phase_finish <produced_text> <produced_json> — closes the current phase.
 # Quiet/web: emits a live `phase` marker (state=done) carrying the duration and
-# the produced summary (e.g. "12.345 Referenzen") — the per-phase result line.
+# the produced summary (e.g. "12.345 references") — the per-phase result line.
 phase_finish() {
     local end_epoch end_iso dur
     end_epoch=$(now_epoch); end_iso=$(iso_now)
@@ -59,7 +59,7 @@ phase_finish() {
         duration "$(dur_human "$dur")" produced "$1"
 }
 
-# group_de <int> → deutsche Tausender-Punkte (903141 → 903.141).
+# group_de <int> → German thousands separators (903141 → 903.141).
 group_de() {
     awk -v n="$1" 'BEGIN{
         s=sprintf("%d", n+0); out=""; c=0
@@ -68,7 +68,7 @@ group_de() {
     }'
 }
 
-# dur_human <seconds> → "54m 34.5s" bzw. "11.8s".
+# dur_human <seconds> → "54m 34.5s" or "11.8s".
 dur_human() {
     awk -v d="$1" 'BEGIN{
         if(d+0>=60){ m=int(d/60); s=d-m*60; printf "%dm %.1fs", m, s }
@@ -84,10 +84,10 @@ fmt_gib() {
 # phase_label_txt <id> <name> — decorative column label for the timeline.
 phase_label_txt() {
     case "$1" in
-        P1) echo "Extract  (XML → Tabellen)" ;;
-        P2) echo "Resolve  Referenzen" ;;
-        P3) echo "Details  (Variablen)" ;;
-        P4) echo "Catalog  (Objekte+Links)" ;;
+        P1) echo "Extract  (XML → tables)" ;;
+        P2) echo "Resolve  references" ;;
+        P3) echo "Details  (variables)" ;;
+        P4) echo "Catalog  (objects+links)" ;;
         P5) echo "Homes    (Cross-File)" ;;
         P6) echo "Validate (Post-Checks)" ;;
         P7) echo "Cluster  (Communities)" ;;
@@ -242,7 +242,7 @@ collect_duckdb_settings() {
             ENV_SPILL_DEDICATED=true
         fi
     fi
-    if $ENV_SPILL_DEDICATED; then ENV_SPILL_DEDICATED_TXT="dediziertes Volume"; else ENV_SPILL_DEDICATED_TXT="shared"; fi
+    if $ENV_SPILL_DEDICATED; then ENV_SPILL_DEDICATED_TXT="dedicated volume"; else ENV_SPILL_DEDICATED_TXT="shared"; fi
 }
 
 # build_run_meta — derived display strings (Options/Attempt/Mode) for the header.
@@ -305,7 +305,7 @@ write_text_log() {
         printf '  RAM limit:       %s  (swap %s)\n' "$(fmt_gib "$ENV_RAM_BYTES")" "$(fmt_gib "$ENV_SWAP_BYTES")"
         printf '  DuckDB:          %s\n' "$ENV_DUCKDB_DISPLAY"
         printf '  DuckDB threads:  %s\n' "$ENV_DUCKDB_THREADS"
-        printf '  DuckDB memory:   %s (effektiv)\n' "$ENV_DUCKDB_MEM"
+        printf '  DuckDB memory:   %s (effective)\n' "$ENV_DUCKDB_MEM"
         printf '  Spill dir:       %s  (%s, max %s)\n' "$ENV_SPILL_DIR" "$ENV_SPILL_DEDICATED_TXT" "$ENV_SPILL_MAX"
         printf '  preserve_order:  %s\n' "$ENV_PRESERVE_ORDER"
         printf -- '--------------------------------------------------------------------------------\n'
@@ -319,9 +319,9 @@ write_text_log() {
 
         printf '\n'
         printf '================================================================================\n'
-        printf 'Phase Timeline                              (P2–P6 batch-weit, nicht pro Datei)\n'
+        printf 'Phase Timeline                                (P2–P6 batch-wide, not per file)\n'
         printf '================================================================================\n'
-        printf '%-4s %-26s %-9s %-9s %-13s %s\n' "#" "Phase" "Start" "End" "Duration" "Produziert"
+        printf '%-4s %-26s %-9s %-9s %-13s %s\n' "#" "Phase" "Start" "End" "Duration" "Produced"
         printf -- '--------------------------------------------------------------------------------\n'
         for i in "${!PH_ID[@]}"; do
             printf '%-4s %-26s %-9s %-9s %-13s %s\n' \
@@ -330,13 +330,13 @@ write_text_log() {
                 "$(dur_human "${PH_DUR[$i]}")" "${PH_PROD_TXT[$i]}"
         done
         printf -- '--------------------------------------------------------------------------------\n'
-        printf '%-51s %s\n' "                                          Σ Phasen" "$(dur_human "$phases_sum")"
+        printf '%-51s %s\n' "                                          Σ Phases" "$(dur_human "$phases_sum")"
 
         printf '\n'
         printf '================================================================================\n'
-        printf 'P1 · Extract — pro Datei                                  (Substep von Phase 1)\n'
+        printf 'P1 · Extract — per file                                (substep of Phase 1)\n'
         printf '================================================================================\n'
-        printf '%-11s %-33s %-12s %-10s %-11s %s\n' "Fertig um" "Datei" "Dauer" "Peak-RSS" "Sys-Avail↓" "Objekte"
+        printf '%-11s %-33s %-12s %-10s %-11s %s\n' "Finished at" "File" "Duration" "Peak-RSS" "Sys-Avail↓" "Objects"
         printf -- '--------------------------------------------------------------------------------\n'
         local sum_obj=0 j objs objs_disp peak_disp avail_disp
         for j in "${!FL_NAME[@]}"; do
@@ -348,7 +348,7 @@ write_text_log() {
                 "${FL_COMPLETED[$j]#*T}" "${FL_NAME[$j]}" "${FL_DUR[$j]}" "$peak_disp" "$avail_disp" "$objs_disp"
         done
         printf -- '--------------------------------------------------------------------------------\n'
-        printf '%-11s %-33s %11.3fs %-10s %-11s %s\n' "" "Σ ${#FL_NAME[@]} Dateien" "$phases_sum" "" "" "$(group_de "$sum_obj")"
+        printf '%-11s %-33s %11.3fs %-10s %-11s %s\n' "" "Σ ${#FL_NAME[@]} files" "$phases_sum" "" "" "$(group_de "$sum_obj")"
 
         if [ "$SKIPPED_COUNT" -gt 0 ]; then
             printf '\nSkipped Files (unsupported format):\n'
@@ -526,5 +526,5 @@ finalize_logs() {
     [ -z "$RUN_ENDED_HUMAN" ] && RUN_ENDED_HUMAN=$(date '+%Y-%m-%d %H:%M:%S')
     [ -z "$RUN_ENDED_ISO" ]   && RUN_ENDED_ISO=$(iso_now)
     write_text_log "$LOG_FILE"
-    write_json_sidecar "$JSON_FILE" || emit_warn "JSON-Sidecar konnte nicht geschrieben werden ($JSON_FILE)"
+    write_json_sidecar "$JSON_FILE" || emit_warn "JSON sidecar could not be written ($JSON_FILE)"
 }

@@ -24,8 +24,18 @@
 --   Drift-Indikator herangezogen wird. build_resolutions.sql bewusst NICHT
 --   enthalten, weil es nur abgeleitete Tabellen anlegt.
 
--- @SCHEMA_VERSION 1.6.1
--- @SCHEMA_VERSION_DATE 2026-07-04
+-- @SCHEMA_VERSION 1.7.0
+-- @SCHEMA_VERSION_DATE 2026-07-08
+-- @SCHEMA_CHANGELOG 1.7.0: Button-eingebettete Script-Steps als Klartext im
+--   LayoutObject-Detail (wie Script-Detail). (a) DDR_ScriptSteps: UUID-lose
+--   StepText-Records (button-eingebettete Steps <_ hash="…">) fallen auf
+--   'hash:'||Step_Hash zurück statt auf den leeren PK zu kollabieren (nur EINER
+--   pro Datei überlebte) — der Klartext ist so via DDRREF-Hash auflösbar.
+--   (b) Neue P2-Tabelle LayoutObjectSteps (Object_UUID, File_Name, Step_ID,
+--   Step_Name, Step_Enabled, StepText_Hash): materialisiert pro Button-Objekt den
+--   eigenen action/Step, damit die READ_ONLY-API (kann webbed nicht laden) ihn ohne
+--   xml_extract als Tokens rendern kann. Additiv (neue Tabelle + Extraktions-
+--   Semantik) → Version-Bump wg. Hash-Drift-Wächter (Master-Rebuild).
 -- @SCHEMA_CHANGELOG 1.6.1: RelationshipCatalog erfasst jetzt Beziehungen mit
 --   Prädikat-Feldern auf externen TO-Seiten (F-1b). Der frühere UUID-Pflicht-Filter
 --   verwarf die GESAMTE Beziehung, wenn ein Prädikat-Feld einer anderen Datei gehörte
@@ -118,6 +128,70 @@ CREATE OR REPLACE MACRO xml_unescape(s) AS
 -- [Sentinel OFF], fuer typisierte Reads UND Fragment-Extraktion.
 CREATE OR REPLACE MACRO ws_restore(s) AS
     CASE WHEN getvariable('wa_ws_sentinel') THEN replace(s, chr(127), chr(10)) ELSE s END;
+
+-- fm_canon_layout_type: locale-robuste Kanonisierung des LayoutObject-Typs.
+-- `LayoutObject/@type` ist im SaXML-Export LOKALISIERT (dt. Client: „Ausschnitt"=Portal,
+-- „Tastenleiste"=Button Bar, „Einblendmenü"=Pop-up Menu, „Bearbeitungsfeld"=Edit Box …).
+-- Ohne Normalisierung tragen non-EN-Exporte deutsche Typnamen UND — schwerwiegender — die
+-- Container-Rekursion unten (`WHERE parent.Object_Type IN (<engl. Namen>)`) descendet nicht
+-- in lokalisierte Container → deren Kind-Objekte gehen still verloren (fehlende displays_field-
+-- Links, leere Portale/Button-Bars/Tab-Panels). Diese Kanonisierung läuft an der Extraktion,
+-- also BEVOR die Rekursion auf `parent.Object_Type` filtert → schließt beide Lücken zugleich.
+--
+-- Ist der Rohtyp bereits ein kanonischer englischer Name (englische Exporte), wird er
+-- UNVERÄNDERT durchgereicht: die erste WHEN-Klausel greift und die CASE-Kurzschluss-Semantik
+-- fasst `oxml` nie an → englischer Korpus bit-identisch UND ohne XML-Zusatzparsing.
+-- Nur für nicht-kanonische (lokalisierte) Rohtypen leitet der Macro aus locale-UNABHÄNGIGEN
+-- Signalen ab (Wrapper-ELEMENTNAMEN sind im Export IMMER englisch; nur @type ist übersetzt):
+--   * @kind (numerisch) als Primärschalter — 1:1 für kind 2..7,9..18 (korpus-verifiziert);
+--   * kind=8 (Group vs Grouped Button): Grouped Button hat das direkte Kind
+--     /LayoutObject/GroupedButton/action, ein einfacher Group nicht;
+--   * kind=1 (Feld-Controls): /LayoutObject/Field/Display/@Style — 0=Edit Box, 1=Drop-down
+--     List, 2=Pop-up Menu, 3=Checkbox Set, 4=Radio Button Set, 6=Drop-down Calendar,
+--     7=Concealed Edit Box. (Das Container-FELD hat ebenfalls Style 0, kommt aber
+--     unlokalisiert als „Container" durch → bleibt via Kanon-Pfad korrekt, wird nie
+--     abgeleitet.) Direkte Kind-Achsen statt //-Deszendenten, damit verschachtelte
+--     Kinder den Elterntyp nicht verfälschen.
+-- Unbekannter kind ⇒ Rohtyp behalten; P6 v_check_unknown_object_types meldet ihn zur Kuration.
+CREATE OR REPLACE MACRO fm_canon_layout_type(raw_type, kind, oxml) AS (
+    CASE
+        WHEN raw_type IN (
+            'Text', 'Edit Box', 'Grouped Button', 'Rectangle', 'Line', 'Graphic',
+            'Group', 'Checkbox Set', 'Button', 'Container', 'Portal', 'Drop-down List',
+            'Panel', 'Radio Button Set', 'Button Bar', 'PopoverPanel', 'Popover Button',
+            'Pop-up Menu', 'Tab Control', 'Web Viewer', 'Oval', 'Rounded Rectangle',
+            'Concealed Edit Box', 'Slide Control', 'Drop-down Calendar'
+        ) THEN raw_type
+        WHEN kind = 2  THEN 'Text'
+        WHEN kind = 3  THEN 'Graphic'
+        WHEN kind = 4  THEN 'Line'
+        WHEN kind = 5  THEN 'Rectangle'
+        WHEN kind = 6  THEN 'Rounded Rectangle'
+        WHEN kind = 7  THEN 'Oval'
+        WHEN kind = 8  THEN CASE WHEN len(xml_extract_elements(oxml, '/LayoutObject/GroupedButton/action')) > 0
+                                 THEN 'Grouped Button' ELSE 'Group' END
+        WHEN kind = 9  THEN 'Portal'
+        WHEN kind = 10 THEN 'Button'
+        WHEN kind = 11 THEN 'Tab Control'
+        WHEN kind = 12 THEN 'Panel'
+        WHEN kind = 13 THEN 'Web Viewer'
+        WHEN kind = 14 THEN 'Popover Button'
+        WHEN kind = 15 THEN 'PopoverPanel'
+        WHEN kind = 16 THEN 'Slide Control'
+        WHEN kind = 17 THEN 'Panel'
+        WHEN kind = 18 THEN 'Button Bar'
+        WHEN kind = 1  THEN CASE xml_extract_text(oxml, '/LayoutObject/Field/Display/@Style')[1]
+                                WHEN '1' THEN 'Drop-down List'
+                                WHEN '2' THEN 'Pop-up Menu'
+                                WHEN '3' THEN 'Checkbox Set'
+                                WHEN '4' THEN 'Radio Button Set'
+                                WHEN '6' THEN 'Drop-down Calendar'
+                                WHEN '7' THEN 'Concealed Edit Box'
+                                ELSE 'Edit Box'
+                            END
+        ELSE raw_type
+    END
+);
 
 -- json_escape() Macro entfernt: xml_to_json() wird nicht mehr verwendet.
 -- Stattdessen speichern wir rohes XML (Object_XML, Parameters_XML, Menu_XML, Theme_XML)
@@ -2107,7 +2181,10 @@ root_objects AS (
         Layout_ID,
         Part_Type,
         xml_extract_text(object_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
-        xml_extract_text(object_xml, '/LayoutObject/@type')[1] as Object_Type,
+        fm_canon_layout_type(
+            xml_extract_text(object_xml, '/LayoutObject/@type')[1],
+            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::INTEGER,
+            object_xml) as Object_Type,
         xml_unescape(xml_extract_text(object_xml, '/LayoutObject/@name')[1]) as Object_Name,
         xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::INTEGER as Object_Kind,
         xml_extract_text(object_xml, '/LayoutObject/@hash')[1] as Object_Hash,
@@ -2169,7 +2246,10 @@ nested_objects AS (
         parent.Layout_ID,
         parent.Part_Type,
         xml_extract_text(child_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
-        xml_extract_text(child_xml, '/LayoutObject/@type')[1] as Object_Type,
+        fm_canon_layout_type(
+            xml_extract_text(child_xml, '/LayoutObject/@type')[1],
+            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::INTEGER,
+            child_xml) as Object_Type,
         xml_unescape(xml_extract_text(child_xml, '/LayoutObject/@name')[1]) as Object_Name,
         xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::INTEGER as Object_Kind,
         xml_extract_text(child_xml, '/LayoutObject/@hash')[1] as Object_Hash,
@@ -2336,7 +2416,10 @@ WITH RECURSIVE census_parts AS (
 census_objects AS (
     SELECT
         Layout_ID,
-        xml_extract_text(object_xml, '/LayoutObject/@type')[1] as Object_Type,
+        fm_canon_layout_type(
+            xml_extract_text(object_xml, '/LayoutObject/@type')[1],
+            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::INTEGER,
+            object_xml) as Object_Type,
         xml_extract_text(object_xml, '/LayoutObject/UUID')[1] as Object_UUID,
         object_xml
     FROM census_parts
@@ -2348,7 +2431,10 @@ census_objects AS (
 
     SELECT
         parent.Layout_ID,
-        xml_extract_text(child_xml, '/LayoutObject/@type')[1] as Object_Type,
+        fm_canon_layout_type(
+            xml_extract_text(child_xml, '/LayoutObject/@type')[1],
+            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::INTEGER,
+            child_xml) as Object_Type,
         xml_extract_text(child_xml, '/LayoutObject/UUID')[1] as Object_UUID,
         child_xml as object_xml
     FROM census_objects parent
@@ -2992,10 +3078,21 @@ ddr_script_raw AS (
 )
 INSERT INTO DDR_ScriptSteps
 SELECT
-    regexp_extract(
-        step_elem::VARCHAR,
-        '<_([0-9A-Fa-f-]+)',   -- B-R9: Hex-Klasse case-tolerant wie die P2/P3-Anker ([0-9A-Fa-f-]{36})
-        1
+    -- UUID-lose StepText-Records (button-eingebettete Einzel-Steps: <_ hash="…">, ohne
+    -- Element-UUID) fallen auf 'hash:'||Step_Hash zurück. Ohne diesen Fallback kollidieren
+    -- ALLE UUID-losen Records auf dem leeren PK (Step_UUID='') und ON CONFLICT behält pro
+    -- Datei nur EINEN — die Button-Step-Klartexte gingen so verloren (via DDRREF-Hash
+    -- auflösbar für die LayoutObject-Detailansicht).
+    COALESCE(
+        NULLIF(
+            regexp_extract(
+                step_elem::VARCHAR,
+                '<_([0-9A-Fa-f-]+)',   -- B-R9: Hex-Klasse case-tolerant wie die P2/P3-Anker ([0-9A-Fa-f-]{36})
+                1
+            ),
+            ''
+        ),
+        'hash:' || xml_extract_text(step_elem, '//*/@hash')[1]
     ) as Step_UUID,
     xml_extract_text(step_elem, '//*/@hash')[1] as Step_Hash,
     ws_restore(xml_extract_text(step_elem, '//text()')[1]) as Step_Text,

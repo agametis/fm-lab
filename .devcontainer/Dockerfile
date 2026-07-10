@@ -199,6 +199,13 @@ RUN chmod +x /usr/local/bin/init-firewall.sh && \
   echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/node-firewall && \
   chmod 0440 /etc/sudoers.d/node-firewall
 
+# Auth preflight — logs the Claude Code credential state (env / saved login) + the exact
+# next command at container start, so the agent decision + auth are a guided step rather
+# than something the user discovers at the first interactive `claude`. Runs unprivileged;
+# never fails the boot (always exits 0).
+COPY claude-auth-preflight.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/claude-auth-preflight.sh
+
 # Project-settings seed (permissions + the duckdb-skills marketplace + enabledPlugins).
 # Fallback only: the public repo already ships a committed .claude/settings.json (kept in
 # sync from tools/publish-assets/.claude-settings.json by the publisher). The devcontainer

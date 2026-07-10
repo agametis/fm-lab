@@ -1,6 +1,6 @@
 ---
 name: filemaker-function-reference
-version: 0.8.5
+version: 0.8.9
 description: Lookup documentation for FileMaker functions and ScriptSteps via local DuckDB reference index and Claris-Online-Help mirror (or online fallback). Supports direct function lookup and thematic search. Triggers (English): "explain FileMaker function X", "what does X do", "show all FileMaker functions for [topic]". Triggers (German): "Was macht die Funktion X", "Erkläre mir die FileMaker Funktion X", "Welche FileMaker Funktionen gibt es für X". Triggers (Spanish): "¿Qué hace la función X?", "¿Qué funciones de FileMaker existen para X?". Triggers (French): "Que fait la fonction X ?", "Quelles fonctions FileMaker existent pour X ?". Triggers (Italian): "Cosa fa la funzione X?", "Quali funzioni FileMaker esistono per X?". Triggers (Dutch): "Wat doet de functie X?", "Welke FileMaker functies bestaan er voor X?". Triggers (Portuguese): "O que faz a função X?", "Quais funções do FileMaker existem para X?". Triggers (Swedish): "Vad gör funktionen X?", "Vilka FileMaker-funktioner finns för X?". Triggers (Japanese): "X関数は何をしますか", "Xに関するFileMaker関数を教えて". Triggers (Korean): "X 함수는 무엇을 하나요", "X 관련 FileMaker 함수 알려줘". Triggers (Chinese): "X 函数有什么作用", "有哪些关于 X 的 FileMaker 函数".
 ---
 
@@ -76,7 +76,7 @@ Language segments in the DB vs. mirror:
 
 ### Determining the default language
 
-1. **User default**: Use the main language declared in `CLAUDE.md` / the project context (in fm-lab: **German / `de`**). If no explicit setting exists, fall back to `en`.
+1. **User default**: Use the working language per the `language:` setting in `CLAUDE.md` §2 (`auto` = detect from the user's prompts; a pinned value like `de` wins). If neither resolves, fall back to `en`.
 
 2. **Explicit request**: If the user prompt indicates a different language preference (e.g. "explain in English", "dame la respuesta en español"), set the target language accordingly.
 

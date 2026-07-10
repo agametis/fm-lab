@@ -12,6 +12,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.8.9] — 2026-07-10
+
+Getting into fm-lab: a single onboarding command for shell users, a slimmed-down CLAUDE.md backed by a reference-doc layer, and two new skills for jumping from an object straight into FileMaker or the web client — plus catalog and frontend refinements.
+
+- **Onboarding & the `fmlab` command** — one entry point after a clone, for both shell paths
+  - **`tools/fmlab.sh`** — a single wrapper that asks two questions (Docker? then Claude?) and lands you directly in the product: the web client in the browser, or a Claude Code session in the container; answering "no" to Docker hands off to the native `init.sh` path so it is never called by hand.
+  - **Docker-with-agent path** — bring the health-gated stack up in the background and drop straight into an agent session (`fmlab up --claude`), or (re)attach to an already-running stack (`fmlab agent`)
+  - **Init hardening** — `init.sh` gains an explicit **webbed capability check** with graceful error fallbacks, a `bootstrap.sh` step, and a `.env.example` for first-run configuration; the public dev-container/compose bundle picks up the same auth-preflight
+- **CLAUDE.md & skill-system refactoring** — the project brief becomes a lean router into a reference-doc layer
+  - **CLAUDE.md slimmed from ~700 to ~115 lines** — the deep material moved into a dedicated `docs/agents/` set (`schema-reference`, `analysis-workflows`, `codegen-workflows`, `codegen-registry`, `pipeline-reference`, `query-cookbook`, `tooling`), each linked from the relevant section instead of inlined
+  - **Codegen capability protocol** — a discover → select → apply → fallback flow for FileMaker-artifact skills that no longer assumes any specific skill is installed, with a `codegen-registry.md` mapping and a skill-independent validation gate
+- **Two new skills — `fm-open` & `fm-show`** — close the loop from analysis back to the object
+  - **`fm-open`** — opens a FileMaker object directly in FileMaker Pro via an fmIDE `fmp://` deep link, after verifying through the REST API that the fmIDE plugin is enabled and the target script exists
+  - **`fm-show`** — opens the object in the FM-Lab web frontend (detail / references / graph view), working from inside the dev container by opening the browser on the host
+  - **Shared resolver layer** — a common `_shared/` helper set (`resolve-object`, `open_url.sh`) so both skills resolve an object reference and launch a link the same way
+- **Catalog & frontend refinements** (schema 1.7.0, XML import 5.1.0)
+  - **LayoutObject type canonicalization** — localized layout-object `@type` values are normalized to their canonical English form, fixing a silent loss of container-kind objects on localized exports
+  - **Button-embedded script steps as interactive tokens** — a script step that hangs directly on a layout button now renders in the frontend with the same tokenized, clickable model as script bodies, via a dedicated step-token endpoint and SQL
+  - **Frontend bugfixes** — object-name display and plugin-function name rendering corrected across the calculation/token viewers (`CalcTokenSpan`, CustomFunction / Field / CustomMenu / PrivilegeSet viewers)
+
+---
+
 ## [0.8.8] — 2026-07-06
 
 Catalog completeness — closing the last where-used gaps across menus, calculations, buttons, and cross-file relationships — plus a broad hardening, bugfix, and optimization pass.
@@ -559,7 +581,26 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 
 ---
 
-<!-- Link references — activate once the first tag exists in this repository:
-[Unreleased]: https://github.com/marcelmore/fm-lab/compare/v0.6.0...HEAD
-[0.6.0]: https://github.com/marcelmore/fm-lab/releases/tag/v0.6.0
--->
+<!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
+     versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
+     intentionally left unlinked and render as plain text. Add a line here per new tag. -->
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.8.9...HEAD
+[0.8.9]: https://github.com/marcel-more/fm-lab/compare/v0.8.8...v0.8.9
+[0.8.8]: https://github.com/marcel-more/fm-lab/compare/v0.8.6...v0.8.8
+[0.8.6]: https://github.com/marcel-more/fm-lab/compare/v0.8.5...v0.8.6
+[0.8.5]: https://github.com/marcel-more/fm-lab/compare/v0.8.4...v0.8.5
+[0.8.4]: https://github.com/marcel-more/fm-lab/compare/v0.8.3...v0.8.4
+[0.8.3]: https://github.com/marcel-more/fm-lab/compare/v0.8.2...v0.8.3
+[0.8.2]: https://github.com/marcel-more/fm-lab/compare/v0.7.4...v0.8.2
+[0.7.4]: https://github.com/marcel-more/fm-lab/compare/v0.7.3...v0.7.4
+[0.7.3]: https://github.com/marcel-more/fm-lab/compare/v0.7.2...v0.7.3
+[0.7.2]: https://github.com/marcel-more/fm-lab/compare/v0.7.1...v0.7.2
+[0.7.1]: https://github.com/marcel-more/fm-lab/compare/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/marcel-more/fm-lab/compare/v0.6.9...v0.7.0
+[0.6.9]: https://github.com/marcel-more/fm-lab/compare/v0.6.7...v0.6.9
+[0.6.7]: https://github.com/marcel-more/fm-lab/compare/v0.6.6...v0.6.7
+[0.6.6]: https://github.com/marcel-more/fm-lab/compare/v0.6.5...v0.6.6
+[0.6.5]: https://github.com/marcel-more/fm-lab/compare/v0.6.4...v0.6.5
+[0.6.4]: https://github.com/marcel-more/fm-lab/compare/v0.6.1...v0.6.4
+[0.6.1]: https://github.com/marcel-more/fm-lab/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/marcel-more/fm-lab/releases/tag/v0.6.0

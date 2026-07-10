@@ -1,17 +1,17 @@
 #!/bin/bash
-# katana-xml/lib/convert_turbo.sh — Turbo-Pipeline: Phase S (Split), D (Dispatch),
-# C (Catmerge) + Parallel-P1 (Teil-DBs/Merge), Manifest & Katalog-Gates.
+# katana-xml/lib/convert_turbo.sh — Turbo pipeline: Phase S (Split), D (Dispatch),
+# C (Catmerge) + parallel P1 (part DBs/merge), manifest & catalog gates.
 #
-# Modul von tools/convert_fm_xml.sh (§7.1 Shell-Split) — reine Code-Bewegung,
-# Verhalten unverändert. NICHT eigenständig ausführbar: wird vom Treiber
-# ge-sourced (Existenz-Check dort, A-B10) und nutzt dessen Globals
+# Module of tools/convert_fm_xml.sh (shell split) — pure code movement,
+# behavior unchanged. NOT independently executable: it is sourced by the driver
+# (existence check there, A-B10) and uses its globals
 # (DB_FILE, JOBS, TURBO_*, SUBCHUNK/RECMAP/NEST_MAP, AWK_BIN, …).
-# bash-3.2-Disziplin (macOS system-bash): kein `case` in $(…), kein bash-4+.
+# bash-3.2 discipline (macOS system bash): no `case` in $(…), no bash-4+.
 
-# Turbo-DB-Initialisierung (Chunkmap/Manifest). Als Funktion NACH dem Lock-Erwerb
-# aufgerufen (A-B2): das frühere Top-Level-`CREATE OR REPLACE TABLE chunkmap` lief
-# VOR acquire_lock — ein zweiter Start zerstörte den Chunkmap-Plan eines laufenden
-# Imports und scheiterte erst DANACH am Lock (Exit 7).
+# Turbo DB initialization (chunk map/manifest). Called as a function AFTER lock
+# acquisition (A-B2): the earlier top-level `CREATE OR REPLACE TABLE chunkmap` ran
+# BEFORE acquire_lock — a second start destroyed the chunk-map plan of a running
+# import and only failed on the lock AFTERWARDS (exit 7).
 init_turbo_dbs() {
     $TURBO_MODE || return 0
     mkdir -p "$STREAMING_DIR"
@@ -31,7 +31,7 @@ init_turbo_dbs() {
             est_bytes     BIGINT,        -- UTF-8 bytes of the chunk XML (granularity/backoff)
             status        VARCHAR,       -- pending | done | …
             attempt       INTEGER        -- backoff counter
-        );" >/dev/null 2>&1 || { echo "ERROR: Chunkmap-DB ($CHUNKMAP_DB) konnte nicht initialisiert werden."; exit 3; }
+        );" >/dev/null 2>&1 || { echo "ERROR: Chunk-map DB ($CHUNKMAP_DB) could not be initialized."; exit 3; }
     # Manifest (PERSISTENT): one row per source XML (key = XML base name).
     # internal_file_name = the internal FileMaker File_Name (multiple XML exports of the
     # same FileMaker file share it → Phase R must treat them as a group; collision case).
@@ -48,7 +48,7 @@ init_turbo_dbs() {
             converter_version  VARCHAR,              -- drift forces a full rebuild
             schema_version     VARCHAR,              -- drift forces a full rebuild
             last_ingest_ts     TIMESTAMP
-        );" >/dev/null 2>&1 || { echo "ERROR: Manifest-DB ($MANIFEST_DB) konnte nicht initialisiert werden."; exit 3; }
+        );" >/dev/null 2>&1 || { echo "ERROR: Manifest DB ($MANIFEST_DB) could not be initialized."; exit 3; }
     # manifest_catalog (PERSISTENT): one row per (file × catalog).
     # catalog_hash = md5(string_agg(content_hash ORDER BY split_number)) over all
     # sub-chunks of the split-group. Gates the (expensive) P1 parse per catalog: same
@@ -62,16 +62,16 @@ init_turbo_dbs() {
             record_count   BIGINT,        -- plausibility/telemetry
             last_ingest_ts TIMESTAMP,
             PRIMARY KEY (file_name, catalog)
-        );" >/dev/null 2>&1 || { echo "ERROR: manifest_catalog konnte nicht initialisiert werden."; exit 3; }
-    # pipeline_state (PERSISTENT): kleine Key/Value-Tabelle. Schlüssel 'catalogs_built'
-    # = 'ok', sobald P2–P6 für den aktuellen Manifest-Stand VOLLSTÄNDIG durchliefen.
-    # Gate für den „nichts geändert"-Short-Circuit (sicher gegen einen Abbruch zwischen
-    # Phase C [Manifest geschrieben] und P6 [Kataloge fertig]).
+        );" >/dev/null 2>&1 || { echo "ERROR: manifest_catalog could not be initialized."; exit 3; }
+    # pipeline_state (PERSISTENT): small key/value table. Key 'catalogs_built'
+    # = 'ok' as soon as P2–P6 ran COMPLETELY for the current manifest state.
+    # Gate for the "no changes" short-circuit (safe against an abort between
+    # Phase C [manifest written] and P6 [catalogs done]).
     "$DUCKDB_BIN" "$MANIFEST_DB" -c "
         CREATE TABLE IF NOT EXISTS pipeline_state (
             key   VARCHAR PRIMARY KEY,
             value VARCHAR
-        );" >/dev/null 2>&1 || { echo "ERROR: pipeline_state konnte nicht initialisiert werden."; exit 3; }
+        );" >/dev/null 2>&1 || { echo "ERROR: pipeline_state could not be initialized."; exit 3; }
 }
 
 # ── Chunk/part-union merge hardening (a1) ──
@@ -98,7 +98,7 @@ _oc_clause() { case " $2 " in *" $1 "*) printf ' ON CONFLICT DO NOTHING' ;; *) p
 # Boolean membership: is token $1 in the space-delimited set $2?
 _in_set() { case " $2 " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 
-# Schema-Drift-Schutz. Emits CREATE TABLE IF NOT EXISTS DDL (columns + NOT NULL + PRIMARY
+# Schema-drift protection. Emits CREATE TABLE IF NOT EXISTS DDL (columns + NOT NULL + PRIMARY
 # KEY, reconstructed from the seed DB $1) for the tables named in $2 (a comma-quoted IN
 # list, e.g. "'A','B'"). Used before an incremental merge so a NEWLY-added part table
 # exists in the master WITH its PK — required because the merge INSERT carries
@@ -181,7 +181,7 @@ _turbo_catmerge_dup_report() {
              - (SELECT COUNT(*) FROM (SELECT DISTINCT $_cols FROM read_parquet('$_pqdir/$_t/*.parquet')));"
         n=$("$DUCKDB_BIN" ":memory:" -noheader -list -c "$_q" 2>/dev/null)
         [ -n "$n" ] && [ "$n" -gt 0 ] 2>/dev/null && \
-            emit_warn "katmerge: $n doppelte PK in '$_t' absorbiert (Chunk-Overlap/Klon, a1) — Daten konsistent, aber prüfenswert."
+            emit_warn "katmerge: $n duplicate PK in '$_t' absorbed (chunk overlap/clone, a1) — data consistent, but worth checking."
     done <<< "$_map"
     return 0
 }
@@ -288,9 +288,9 @@ run_p1_parallel() {
         done
 
         # (b) collect finished workers (sentinel file), free the slot immediately.
-        # Zombie-Fallback (A-B5, Muster _turbo_dispatch): ein OOM-/SIGKILL-getöteter
-        # Worker hinterlässt KEIN Sentinel — ohne den kill-0-Fallback pollte der
-        # Pool endlos. Fehlendes .rc wird downstream als Fehler gewertet.
+        # Zombie fallback (A-B5, pattern _turbo_dispatch): an OOM-/SIGKILL-killed
+        # worker leaves NO sentinel — without the kill-0 fallback the pool would poll
+        # forever. A missing .rc is treated downstream as an error.
         any=false
         for ((s = 0; s < JOBS; s++)); do
             pid=${slot_pid[$s]}; [ "$pid" -eq 0 ] && continue
@@ -302,7 +302,7 @@ run_p1_parallel() {
         done
 
         if $QUIET_MODE && $any; then
-            phase_progress extract $(( 10 + (done_count * 90) / n )) "Phase 1: $done_count/$n Dateien"
+            phase_progress extract $(( 10 + (done_count * 90) / n )) "Phase 1: $done_count/$n files"
         fi
         $any || sleep 0.1   # only wait if nothing finished (avoid a busy-spin)
     done
@@ -349,9 +349,9 @@ merge_part_dbs() {
     local fn_tables; fn_tables=$("$DUCKDB_BIN" -readonly "$seed_db" -noheader -list -c \
         "SELECT DISTINCT table_name FROM information_schema.columns WHERE table_schema='main' AND column_name='File_Name';" 2>/dev/null)
 
-    # Schema-Drift-Schutz (inkrementell): eine NEU eingeführte Part-Tabelle, die im
-    # BESTEHENDEN Master noch fehlt, mit ihrem PK aus dem Part-Schema anlegen, bevor der
-    # DELETE/INSERT-Loop (inkl. ON CONFLICT DO NOTHING) sie referenziert.
+    # Schema-drift protection (incremental): create a NEWLY-introduced part table that is
+    # still missing in the EXISTING master, with its PK from the part schema, before the
+    # DELETE/INSERT loop (incl. ON CONFLICT DO NOTHING) references it.
     _turbo_seed_missing_tables "$seed_db" "$DB_FILE" "$PARTDB_DIR/merge.log" "$tables"
     [ "$MERGE_RC" -ne 0 ] && return $MERGE_RC
 
@@ -401,7 +401,7 @@ _turbo_merge_parquet() {
     done
     [ ${#parts[@]} -eq 0 ] && return 0
     # Incremental (master exists) not covered parquet-side in the prototype → fallback.
-    [ -f "$DB_FILE" ] && { echo "  [parquet] Master existiert (Inkrement) → Fallback merge_part_dbs" >&2; merge_part_dbs; return $?; }
+    [ -f "$DB_FILE" ] && { echo "  [parquet] master exists (incremental) → fallback merge_part_dbs" >&2; merge_part_dbs; return $?; }
 
     # Seed: cp parts[0] (schema + SchemaInfo + part0 data) — identical to merge_part_dbs.
     cp "${parts[0]}" "$DB_FILE" || { MERGE_RC=1; return 1; }
@@ -591,7 +591,7 @@ _turbo_merge_catalog() {
     done
     for cat in $_seencat; do
         owned="$(_turbo_catalog_owned "$cat")"
-        [ "$owned" = "?" ] && { echo "  [catmerge] unbekannter Katalog '$cat' → Abbruch" >&2; MERGE_RC=2; return 2; }
+        [ "$owned" = "?" ] && { echo "  [catmerge] unknown catalog '$cat' → abort" >&2; MERGE_RC=2; return 2; }
         [ "$owned" = "__MAIN__" ] && continue
         for tk in $owned; do OWNER_K+=("$tk"); OWNER_V+=("$cat"); done
     done
@@ -607,10 +607,10 @@ _turbo_merge_catalog() {
         "$DUCKDB_BIN" "$DB_FILE" -c "$del" >/dev/null 2>&1
     fi
 
-    # Schema-Drift-Schutz (inkrementell): fehlt eine Chunk-Tabelle im BESTEHENDEN Master —
-    # z. B. eine NEU eingeführte Katalog-/Monitoring-Tabelle, deren Schema-Bump noch keinen
-    # Full-Rebuild ausgelöst hat — legen wir sie MIT PK aus dem Chunk-Schema an, BEVOR die
-    # DELETE/INSERT-Pässe unten sie referenzieren (inkl. ON CONFLICT DO NOTHING).
+    # Schema-drift protection (incremental): if a chunk table is missing in the EXISTING
+    # master — e.g. a NEWLY-introduced catalog/monitoring table whose schema bump has not yet
+    # triggered a full rebuild — we create it WITH its PK from the chunk schema, BEFORE the
+    # DELETE/INSERT passes below reference it (incl. ON CONFLICT DO NOTHING).
     _turbo_seed_missing_tables "$seed_chunk" "$DB_FILE" "$PARTDB_DIR/catmerge.log" "$tables"
     [ "$MERGE_RC" -ne 0 ] && return $MERGE_RC
 
@@ -741,11 +741,11 @@ _turbo_split_one_file() {
     # iconv keeps the BOM; the fused awk strips it (NR==1). No more _clean.xml
     # round-trip — clean/rename/split/counts is done by the single awk pass below.
     local UTF8="$cdir/${BASENAME}.utf8.xml"
-    # UTF-8-Vollkopie sparen (§2.4.3): ist die Quelle bereits UTF-8, wird sie
-    # downstream NUR gelesen (Root-Check, DDR-Recmap-Scan, fused-awk < "$UTF8") —
-    # die frühere cp-Kopie duplizierte GB-Dateien rein als awk-Futter. Stattdessen
-    # direkt auf $src zeigen; _UTF8_IS_SRC bewacht die rm-Cleanups (das Original
-    # darf nie gelöscht werden). Der iconv-Zweig (UTF-16) bleibt unverändert.
+    # Save the full UTF-8 copy : if the source is already UTF-8, it is
+    # ONLY read downstream (root check, DDR recmap scan, fused awk < "$UTF8") —
+    # the earlier cp copy duplicated GB-sized files purely as awk fodder. Instead
+    # point directly at $src; _UTF8_IS_SRC guards the rm cleanups (the original
+    # must never be deleted). The iconv branch (UTF-16) stays unchanged.
     local _UTF8_IS_SRC=false
     local PRE_ENCODING; PRE_ENCODING=$(detect_encoding "$src")
     [ -n "$_t5_on" ] && echo "@T5 ${idx} iconv_start $(now_epoch)" >>"$out"
@@ -795,9 +795,9 @@ _turbo_split_one_file() {
     local _rules=""; $STREAMIFY_MODE && _rules="$STREAMIFY_RULES"
     local NCHUNKS
     [ -n "$_t5_on" ] && echo "@T5 ${idx} fuse_start $(now_epoch)" >>"$out"
-    # ws_sentinel=1/0 gatet die CR→0x7F-Wandlung im Byte-Clean (clean_line) — Spiegel der
-    # bash-preprocess_file-Gatung (WS_SENTINEL_ON). 0 = webbed bewahrt Whitespace nativ →
-    # CR bleibt erhalten (Parser normalisiert zu LF). Default 1 (Sentinel ON, konservativ).
+    # ws_sentinel=1/0 gates the CR→0x7F conversion in the byte clean (clean_line) — mirror of
+    # the bash preprocess_file gating (WS_SENTINEL_ON). 0 = webbed preserves whitespace natively →
+    # CR is kept (parser normalizes to LF). Default 1 (sentinel ON, conservative).
     local _ws_sentinel=1; [ "${WS_SENTINEL_ON:-true}" = "false" ] && _ws_sentinel=0
     NCHUNKS=$(LC_ALL=C "$AWK_BIN" -v outdir="$cdir" -v subchunk="$SUBCHUNK" -v recmap="$EFFECTIVE_RECMAP" \
                   -v nest="$NEST_MAP" -v ws_sentinel="$_ws_sentinel" \
@@ -815,8 +815,8 @@ _turbo_split_one_file() {
         IFS=$'\t' read -r _ _ PRE_CR_COUNT PRE_DEL_GUARD_COUNT PRE_STRIPPED < "$cdir/counts.tsv"
     fi
     echo "  Preprocessed (enc=$PRE_ENCODING): replaced_cr=$PRE_CR_COUNT del_guard=$PRE_DEL_GUARD_COUNT stripped_invalid=$PRE_STRIPPED" >>"$out"
-    $STREAMIFY_MODE && echo "  Streamify-Renaming angewandt (rules: $STREAMIFY_RULES)" >>"$out"
-    echo "  Phase S: $NCHUNKS chunk(s) geplant" >>"$out"
+    $STREAMIFY_MODE && echo "  Streamify renaming applied (rules: $STREAMIFY_RULES)" >>"$out"
+    echo "  Phase S: $NCHUNKS chunk(s) planned" >>"$out"
 
     # est_bytes per chunk (UTF-8 size) for heaviest-first dispatch (LPT).
     # content_hash per chunk (sha256 of the PREPROCESSED chunk bytes):
@@ -867,7 +867,7 @@ _turbo_load_chunkmap_one() {
         FROM (SELECT p, h FROM read_csv('$cdir/hashes.tsv', delim='\t', header=false, columns={'p':'VARCHAR','h':'VARCHAR'})) h
         WHERE chunkmap.chunk_path = h.p AND chunkmap.content_hash IS NULL;
         " >>"$out" 2>&1; then
-        echo "  ERROR: Chunkmap-Load fehlgeschlagen" >>"$out"; return 3
+        echo "  ERROR: Chunk-map load failed" >>"$out"; return 3
     fi
     return 0
 }
@@ -903,7 +903,7 @@ _turbo_chunk_worker() {
         local _fc="${FM_AUTO_TEST_OOM%%:*}" _fn="${FM_AUTO_TEST_OOM##*:}"
         [ "$_fn" = "$FM_AUTO_TEST_OOM" ] && _fn=1
         if [ "$ccat" = "$_fc" ] && [ "${catt:-1}" -le "$_fn" ] && [ "${crc:-0}" -gt 1 ]; then
-            echo "[FM_AUTO_TEST_OOM] simulierter OOM: catalog=$ccat attempt=$catt rc=$crc" > "$clog"
+            echo "[FM_AUTO_TEST_OOM] simulated OOM: catalog=$ccat attempt=$catt rc=$crc" > "$clog"
             echo 137 > "$STREAMING_DIR/chunk_${cid}.rc"; : > "$STREAMING_DIR/chunk_${cid}.done"; return 0
         fi
     fi
@@ -913,9 +913,9 @@ _turbo_chunk_worker() {
     # Env-guarded per-chunk duration for the LPT-floor measurement. Default-off
     # (no .dur, no behavior change → byte identity untouched).
     local _t4t0=""; [ -n "${FM_T4_TRACE:-}" ] && _t4t0=$(now_epoch)
-    # FM_P1_CATALOG aktiviert den Sektions-Dispatch in run_p1_on (§2.4.1): der
-    # Chunk enthält genau den Katalog $ccat → nur dessen Sektionen (+ ungetaggte
-    # Pflichtteile) laufen. Opt-out global via FM_P1_DISPATCH=0.
+    # FM_P1_CATALOG activates the section dispatch in run_p1_on : the
+    # chunk contains exactly the catalog $ccat → only its sections (+ untagged
+    # mandatory parts) run. Opt-out globally via FM_P1_DISPATCH=0.
     P1_TARGET_DB="$pdb" P1_SEQ_OFFSET="$coff" FM_P1_CATALOG="$ccat" run_p1_on "$(dirname "$cpath")" "$(basename "$cpath")" "$clog"
     local rc=$?
     [ -n "$_t4t0" ] && awk -v a="$(now_epoch)" -v b="$_t4t0" 'BEGIN{printf "%.3f", a-b}' > "$STREAMING_DIR/chunk_${cid}.dur"
@@ -1006,7 +1006,7 @@ _turbo_dispatch() {
 
     # ---- Phase-D per-file chunk bookkeeping (quiet/web only) ----------------
     # Drives the import_start / import_progress / import_done lifecycle so the
-    # file-status table shows ✴️ + a live "k von N" chunk counter and flips to ✅
+    # file-status table shows ✴️ + a live "k of N" chunk counter and flips to ✅
     # once a file's last chunk lands. Built ONCE up front (survives --auto backoff
     # rounds): totals come from the chunkmap (skipped_unchanged chunks excluded),
     # the done counter accumulates. bash-3-safe: parallel indexed arrays + a linear
@@ -1059,13 +1059,13 @@ _turbo_dispatch() {
         # Per-round disk guard: each chunk writes its own chunk_<id>.duckdb (+ .out/.rc/
         # .done sidecars). If the volume is already tight, dispatching only deepens the
         # "No space left on device" cascade — stop now with a logged root cause.
-        if ! check_disk_space "Phase D (Runde $round, $n Chunks ausstehend)"; then
-            echo "  ✗ Phase D abgebrochen: kein Speicher mehr frei (Details im Error-Log)." >&2
+        if ! check_disk_space "Phase D (round $round, $n chunks pending)"; then
+            echo "  ✗ Phase D aborted: no disk space left (details in the error log)." >&2
             break
         fi
         local W="${TURBO_W:-1}"; [ "$W" -lt 1 ] && W=1
-        if $QUIET_MODE; then emit_log "Phase D (Runde $round): $n Chunks auf $W Worker"
-        else echo "  Phase D (Runde $round): $n Chunks auf $W Worker → chunk_<id>.duckdb"; fi
+        if $QUIET_MODE; then emit_log "Phase D (round $round): $n chunks on $W worker"
+        else echo "  Phase D (round $round): $n chunks on $W worker → chunk_<id>.duckdb"; fi
 
         local i=0 done_count=0 s pid any
         local -a slot_pid slot_k
@@ -1079,10 +1079,10 @@ _turbo_dispatch() {
                     _d_slot=${_D_chunkslot[${CID[$i]}]:-}
                     if [ -n "$_d_slot" ] && [ "${_D_started[$_d_slot]:-0}" -eq 0 ]; then
                         _D_started[$_d_slot]=1
-                        # done/total mitsenden, damit der Datei-Fortschrittsbalken im
-                        # Frontend sofort bei 0 % startet (statt bis zum ersten reapten
-                        # Chunk indeterminiert zu pulsen — der erste/schwerste Chunk kann
-                        # mehrere Sekunden laufen). total steht hier bereits fest (Planung).
+                        # Send done/total so the file progress bar in the
+                        # frontend starts at 0 % immediately (instead of pulsing
+                        # indeterminately until the first reaped chunk — the first/heaviest
+                        # chunk can run several seconds). total is already fixed here (planning).
                         _emit_json import_start filename "${_D_slot_disp[$_d_slot]}" done "int=0" total "int=${_D_total[$_d_slot]}"
                     fi
                 fi
@@ -1100,7 +1100,7 @@ _turbo_dispatch() {
                 if [ -f "$STREAMING_DIR/chunk_${CID[${slot_k[$s]}]}.done" ] || ! kill -0 "$pid" 2>/dev/null; then
                     wait "$pid" 2>/dev/null
                     # Lifecycle: chunk reaped → bump the file's done counter, emit
-                    # import_progress (✴️ "k von N"); last chunk → import_done (✅).
+                    # import_progress (✴️ "k of N"); last chunk → import_done (✅).
                     if $QUIET_MODE; then
                         _d_slot=${_D_chunkslot[${CID[${slot_k[$s]}]}]:-}
                         if [ -n "$_d_slot" ]; then
@@ -1115,7 +1115,7 @@ _turbo_dispatch() {
                     slot_pid[$s]=0; done_count=$((done_count + 1)); any=true
                 fi
             done
-            if $QUIET_MODE && $any; then phase_progress import $(( (done_count * 100) / n )) "Phase D: $done_count/$n Chunks"; fi
+            if $QUIET_MODE && $any; then phase_progress import $(( (done_count * 100) / n )) "Phase D: $done_count/$n chunks"; fi
             $any || sleep 0.1
         done
 
@@ -1141,15 +1141,15 @@ _turbo_dispatch() {
                     echo "chunk_path=${CPATH[$s]:-?}"
                     echo "--- chunk_${cid}.out ---"
                     if [ -s "$STREAMING_DIR/chunk_${cid}.out" ]; then cat "$STREAMING_DIR/chunk_${cid}.out"
-                    else echo "(leer oder fehlend — Worker konnte sein Log evtl. nicht schreiben, z.B. Disk voll)"; fi
+                    else echo "(empty or missing — the worker may not have been able to write its log, e.g. disk full)"; fi
                 } | log_error_section "Phase D chunk $cid failed (rc=$r, catalog=${CCAT[$s]:-?})"
             fi
         done
-        # A-B8: rc prüfen — ein still verschlucktes Status-UPDATE ließe --auto
-        # dieselben 'oom'-Chunks endlos erneut dispatchen (Chunkmap bleibt stale).
+        # A-B8: check rc — a silently swallowed status UPDATE would let --auto
+        # re-dispatch the same 'oom' chunks forever (the chunk map stays stale).
         if [ -n "$upd" ] && ! "$DUCKDB_BIN" "$CHUNKMAP_DB" -c "$upd" >/dev/null 2>&1; then
-            echo "  ✗ Chunk-Status-UPDATE fehlgeschlagen (chunkmap nicht schreibbar?) — Dispatch-Runde abgebrochen." >&2
-            echo "chunkmap-UPDATE fehlgeschlagen: $CHUNKMAP_DB" | log_error_section "Phase D chunk-status UPDATE failed"
+            echo "  ✗ Chunk status UPDATE failed (chunk map not writable?) — dispatch round aborted." >&2
+            echo "chunk-map UPDATE failed: $CHUNKMAP_DB" | log_error_section "Phase D chunk-status UPDATE failed"
             break
         fi
 
@@ -1162,18 +1162,18 @@ _turbo_dispatch() {
         for cid in "${ooms[@]}"; do
             if _turbo_resplit_chunk "$cid"; then
                 progress=true
-                if $QUIET_MODE; then emit_log "Auto-Backoff: Chunk $cid OOM → feiner geschnitten"
-                else echo "  ↯ Auto-Backoff: Chunk $cid OOM → split-group feiner (M halbiert), re-dispatch"; fi
+                if $QUIET_MODE; then emit_log "Auto-backoff: chunk $cid OOM → split finer"
+                else echo "  ↯ Auto-backoff: chunk $cid OOM → split-group finer (M halved), re-dispatch"; fi
             else
                 diag=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT file_name||' / '||catalog||' (records='||COALESCE(record_count,0)||', attempt='||attempt||', est_bytes='||COALESCE(est_bytes,0)||')' FROM chunkmap WHERE chunk_id=$cid;")
                 "$DUCKDB_BIN" "$CHUNKMAP_DB" -c "UPDATE chunkmap SET status='error' WHERE chunk_id=$cid;" >/dev/null 2>&1
-                echo "  ✗ Auto-Backoff erschöpft: $diag — passt nicht ins Speicherband (nicht weiter teilbar oder K erreicht)." >&2
+                echo "  ✗ Auto-backoff exhausted: $diag — does not fit into the memory band (not further divisible or K reached)." >&2
                 {
-                    echo "Auto-Backoff erschöpft (nicht weiter teilbar oder K=${FM_AUTO_MAX_ATTEMPT:-4} Versuche erreicht)."
+                    echo "Auto-backoff exhausted (not further divisible or K=${FM_AUTO_MAX_ATTEMPT:-4} attempts reached)."
                     echo "$diag"
                     echo "--- chunk_${cid}.out ---"
                     if [ -s "$STREAMING_DIR/chunk_${cid}.out" ]; then cat "$STREAMING_DIR/chunk_${cid}.out"
-                    else echo "(leer oder fehlend)"; fi
+                    else echo "(empty or missing)"; fi
                 } | log_error_section "Phase D chunk $cid OOM — Backoff exhausted"
             fi
         done
@@ -1250,10 +1250,10 @@ INCR_SKIP=()
 _turbo_phase_r() {
     INCR_SKIP=()
     $CHANGED_ONLY || return 0
-    $FORCE_REBUILD && { echo "  --changed-only + --force-rebuild → Voll-Build (Manifest ignoriert)"; return 0; }
-    [ -f "$DB_FILE" ] || { echo "  --changed-only: Master fehlt → Voll-Build (kein Skip)"; return 0; }
+    $FORCE_REBUILD && { echo "  --changed-only + --force-rebuild → full build (manifest ignored)"; return 0; }
+    [ -f "$DB_FILE" ] || { echo "  --changed-only: master missing → full build (no skip)"; return 0; }
     local mcount; mcount=$("$DUCKDB_BIN" -readonly "$MANIFEST_DB" -noheader -list -c "SELECT COUNT(*) FROM manifest_file;" 2>/dev/null)
-    [ "${mcount:-0}" -eq 0 ] && { echo "  --changed-only: leeres Manifest → Voll-Build"; return 0; }
+    [ "${mcount:-0}" -eq 0 ] && { echo "  --changed-only: empty manifest → full build"; return 0; }
 
     local i fn mt sz rec m_mt m_sz m_hash m_conv m_schema m_internal h
     local -a cand_internal     # idx → internal_file_name (skip candidates); integer keys → indexed
@@ -1270,7 +1270,7 @@ _turbo_phase_r() {
         [ -z "$rec" ] && continue   # new file → treat as changed (no skip)
         IFS=$'\t' read -r m_mt m_sz m_hash m_conv m_schema m_internal <<< "$rec"
         if [ "$m_conv" != "$CONVERTER_VERSION" ] || [ "$m_schema" != "$SCHEMA_VERSION_EXPECTED" ]; then
-            echo "  --changed-only: Konverter/Schema-Drift → Voll-Build (alles neu)"
+            echo "  --changed-only: converter/schema drift → full build (everything new)"
             INCR_SKIP=(); return 0
         fi
         if [ "$mt" = "$m_mt" ] && [ "$sz" = "$m_sz" ]; then
@@ -1323,7 +1323,7 @@ _turbo_catalog_gate() {
             JOIN mf.manifest_catalog mc
               ON mc.file_name = cur.file_name AND mc.catalog = cur.catalog
              AND mc.catalog_hash = cur.h
-            -- Nur wenn KEINE interne File_Name-Kollision unter den Batch-Dateien:
+            -- Only if there is NO internal File_Name collision among the batch files:
             WHERE NOT EXISTS (
                 SELECT 1 FROM mf.manifest_file f1
                 JOIN mf.manifest_file f2
@@ -1395,15 +1395,15 @@ _turbo_write_manifest() {
     done
 }
 
-# catalogs_built-Marker (pipeline_state in der Manifest-DB) lesen/schreiben.
-# 'ok' ⇔ P2–P6 wurden zuletzt für den aktuellen Manifest-Stand vollständig gebaut.
-# Read echot den Wert (leer, wenn DB/Tabelle/Zeile fehlt → konservativ „nicht ok").
+# Read/write the catalogs_built marker (pipeline_state in the manifest DB).
+# 'ok' ⇔ P2–P6 were last built completely for the current manifest state.
+# Read echoes the value (empty if the DB/table/row is missing → conservatively "not ok").
 _catalogs_state() {
     [ -f "$MANIFEST_DB" ] || { echo ""; return 0; }
     "$DUCKDB_BIN" -readonly "$MANIFEST_DB" -noheader -list -c \
         "SELECT value FROM pipeline_state WHERE key='catalogs_built';" 2>/dev/null
 }
-# _catalogs_state_set <ok|building> — idempotenter Upsert (Fehler nicht fatal).
+# _catalogs_state_set <ok|building> — idempotent upsert (errors not fatal).
 _catalogs_state_set() {
     [ -f "$MANIFEST_DB" ] || return 0
     "$DUCKDB_BIN" "$MANIFEST_DB" -c \
@@ -1436,8 +1436,8 @@ run_turbo_pipeline() {
     _turbo_phase_r
     local _nskip=${#INCR_SKIP[@]}
     if $CHANGED_ONLY && [ "$_nskip" -gt 0 ]; then
-        if $QUIET_MODE; then emit_log "Phase R: $_nskip/$TOTAL Datei(en) unverändert → übersprungen"
-        else echo "Phase R: $_nskip/$TOTAL Datei(en) unverändert → übersprungen (Manifest)"; fi
+        if $QUIET_MODE; then emit_log "Phase R: $_nskip/$TOTAL file(s) unchanged → skipped"
+        else echo "Phase R: $_nskip/$TOTAL file(s) unchanged → skipped (manifest)"; fi
     fi
 
     # ---- Phase S (P2.3: parallel split pool + serial chunkmap load) ----
@@ -1447,8 +1447,8 @@ run_turbo_pipeline() {
     # in the main process in strict file order → identity W_S-invariant.
     # W_S = FM_PHASE_S_JOBS (default JOBS); the I/O-saturation / S→C question is decided
     # by the bench matrix, NOT the identity (which is by construction).
-    if $QUIET_MODE; then emit_log "Phase S: $TOTAL Datei(en) splitten + Chunkmap planen"
-    else echo "Phase S: $TOTAL Datei(en) splitten + Chunkmap planen"; fi
+    if $QUIET_MODE; then emit_log "Phase S: split $TOTAL file(s) + plan chunk map"
+    else echo "Phase S: split $TOTAL file(s) + plan chunk map"; fi
     local i
     local -a FILE_SPLIT_RC
     local SJOBS="${FM_PHASE_S_JOBS:-$JOBS}"; [ "$SJOBS" -ge 1 ] 2>/dev/null || SJOBS=1
@@ -1458,7 +1458,7 @@ run_turbo_pipeline() {
     # Lifecycle event (quiet/web only): file_skip → ⏭️ in the file-status table.
     for i in "${!XML_FILES[@]}"; do
         if [ -n "${INCR_SKIP[$i]}" ]; then
-            echo "  unverändert (Manifest-Skip)" > "$PARTDB_DIR/${i}.out"
+            echo "  unchanged (manifest skip)" > "$PARTDB_DIR/${i}.out"
             : > "$PARTDB_DIR/${i}.unchanged"
             echo "0" > "$PARTDB_DIR/${i}.splitrc"
             echo "0.000" > "$PARTDB_DIR/${i}.dur"
@@ -1467,7 +1467,7 @@ run_turbo_pipeline() {
     done
 
     # Slot pool: split only non-skip files (in parallel, without the chunkmap INSERT).
-    # Lifecycle event: file_plan → 🟡 (geplant) for every file that will be processed.
+    # Lifecycle event: file_plan → 🟡 (planned) for every file that will be processed.
     local -a _sq=()
     for i in "${!XML_FILES[@]}"; do
         if [ -z "${INCR_SKIP[$i]}" ]; then
@@ -1484,28 +1484,28 @@ run_turbo_pipeline() {
             i=${_sq[$_si]}
             rm -f "$PARTDB_DIR/${i}.done"
             _turbo_split_worker "$i" &
-            # Lifecycle event: chunk_start → 🔥 (wird gerade gechunkt).
+            # Lifecycle event: chunk_start → 🔥 (currently being chunked).
             $QUIET_MODE && _emit_json chunk_start filename "$(basename "${XML_FILES[$i]}")"
             _sslot_pid[$_ss]=$!; _sslot_idx[$_ss]=$i; _si=$((_si + 1))
         done
         _sany=false
         for ((_ss = 0; _ss < SJOBS; _ss++)); do
             _spid=${_sslot_pid[$_ss]}; [ "$_spid" -eq 0 ] && continue
-            # Zombie-Fallback (A-B5, Muster _turbo_dispatch): OOM-gekillte Worker
-            # hinterlassen kein Sentinel → ohne kill-0-Fallback pollt der Pool endlos.
-            # Fehlendes .splitrc wird unten als rc=3 (Fehler) gewertet.
+            # Zombie fallback (A-B5, pattern _turbo_dispatch): OOM-killed workers
+            # leave no sentinel → without the kill-0 fallback the pool polls forever.
+            # A missing .splitrc is treated below as rc=3 (error).
             if [ -f "$PARTDB_DIR/${_sslot_idx[$_ss]}.done" ] || ! kill -0 "$_spid" 2>/dev/null; then
                 wait "$_spid" 2>/dev/null
-                # Lifecycle event: chunk_done → 🟢 (Split fertig, wartet auf Import).
+                # Lifecycle event: chunk_done → 🟢 (split done, waiting for import).
                 $QUIET_MODE && _emit_json chunk_done filename "$(basename "${XML_FILES[${_sslot_idx[$_ss]}]}")"
                 _sslot_pid[$_ss]=0; _sdone=$((_sdone + 1)); _sany=true
             fi
         done
-        # Opt 1: Phase S füllt das `chunk`-Balkensegment (0-25) live mit dem
-        # Split-Pool-Fortschritt — sonst stünde der Balken die ganze Split-Phase auf
-        # ~5 % und spränge erst beim ersten Phase-D-Worker auf das Import-Segment.
+        # Opt 1: Phase S fills the `chunk` bar segment (0-25) live with the
+        # split-pool progress — otherwise the bar would sit at ~5 % for the whole
+        # split phase and only jump to the import segment at the first Phase-D worker.
         if $QUIET_MODE && $_sany && [ "$_sn" -gt 0 ]; then
-            phase_progress chunk $(( (_sdone * 100) / _sn )) "Phase S: $_sdone/$_sn Dateien gesplittet"
+            phase_progress chunk $(( (_sdone * 100) / _sn )) "Phase S: $_sdone/$_sn files split"
         fi
         $_sany || sleep 0.1
     done
@@ -1525,31 +1525,31 @@ run_turbo_pipeline() {
         local _nskipcat
         _nskipcat=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT COUNT(*) FROM chunkmap WHERE status='skipped_unchanged';" 2>/dev/null)
         if [ "${_nskipcat:-0}" -gt 0 ]; then
-            if $QUIET_MODE; then emit_log "Phase S: $_nskipcat Katalog-Chunk(s) unverändert → übersprungen (manifest_catalog)"
-            else echo "  Phase S: $_nskipcat Katalog-Chunk(s) unverändert → übersprungen (manifest_catalog)"; fi
+            if $QUIET_MODE; then emit_log "Phase S: $_nskipcat catalog chunk(s) unchanged → skipped (manifest_catalog)"
+            else echo "  Phase S: $_nskipcat catalog chunk(s) unchanged → skipped (manifest_catalog)"; fi
         fi
     fi
 
-    # ---- Phase S → „nichts geändert"-Short-Circuit-Entscheidung ----
-    # 'main' wird NIE gegated → jede nicht-manifest-übersprungene Datei erzeugt ≥1
-    # 'pending'-Chunk. Also bedeutet pending==0 exakt „keine einzige Datei geändert".
-    # Dann ist der Master-DB byte-identisch zum Vorlauf → P2–P6 + Sync sind reine
-    # Wiederholungen. Nur überspringen, wenn der catalogs_built-Marker bestätigt, dass die
-    # Kataloge zuletzt VOLLSTÄNDIG (bis P6) gebaut wurden (Absicherung gegen Abbruch
-    # zwischen Phase C und P6). --force-rebuild übergeht das bewusst.
+    # ---- Phase S → "no changes" short-circuit decision ----
+    # 'main' is NEVER gated → every non-manifest-skipped file produces ≥1
+    # 'pending' chunk. So pending==0 means exactly "not a single file changed".
+    # Then the master DB is byte-identical to the previous run → P2–P6 + sync are pure
+    # repetitions. Only skip if the catalogs_built marker confirms that the
+    # catalogs were last built COMPLETELY (through P6) (safeguard against an abort
+    # between Phase C and P6). --force-rebuild deliberately overrides this.
     if $CHANGED_ONLY && ! $FORCE_REBUILD; then
         local _pending
         _pending=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT COUNT(*) FROM chunkmap WHERE status='pending';" 2>/dev/null)
-        [[ "$_pending" =~ ^[0-9]+$ ]] || _pending=1   # Query-Fehler → sicherheitshalber NICHT skippen
+        [[ "$_pending" =~ ^[0-9]+$ ]] || _pending=1   # query error → do NOT skip, to be safe
         if [ "$_pending" -eq 0 ] && [ "$(_catalogs_state)" = "ok" ]; then
             TURBO_NO_CHANGES=true
-            if $QUIET_MODE; then emit_log "Phase S: keine Änderungen erkannt → Katalog-Rebuild (P2–P6) + Sync übersprungen (DB bereits aktuell)"
-            else echo "Phase S: keine Änderungen erkannt → Katalog-Rebuild (P2–P6) + Sync übersprungen (DB bereits aktuell)"; fi
+            if $QUIET_MODE; then emit_log "Phase S: no changes detected → catalog rebuild (P2–P6) + sync skipped (DB already up to date)"
+            else echo "Phase S: no changes detected → catalog rebuild (P2–P6) + sync skipped (DB already up to date)"; fi
         fi
     fi
-    # Dieser Lauf verändert P1/Kataloge (oder die Kataloge sind noch nicht 'ok') →
-    # Marker invalidieren, damit ein Abbruch zwischen Phase C und P6 beim nächsten Lauf
-    # NICHT fälschlich überspringt. Erst nach erfolgreichem P6 wieder auf 'ok' setzen.
+    # This run changes P1/catalogs (or the catalogs are not yet 'ok') →
+    # invalidate the marker so an abort between Phase C and P6 does NOT wrongly
+    # skip on the next run. Set back to 'ok' only after a successful P6.
     $TURBO_NO_CHANGES || _catalogs_state_set building
 
     # ---- Phase S (explosion guard): hard ceiling on the total planned chunk count ----
@@ -1565,17 +1565,17 @@ run_turbo_pipeline() {
         _tot_chunks=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT COUNT(*) FROM chunkmap;" 2>/dev/null)
         [[ "$_tot_chunks" =~ ^[0-9]+$ ]] || _tot_chunks=0
         if [ "$_tot_chunks" -gt "$_max_chunks" ]; then
-            { echo "✗ Phase-S-Abbruch: $_tot_chunks geplante Chunks überschreiten den Sicherheits-Deckel FM_MAX_TOTAL_CHUNKS=$_max_chunks."
-              echo "  Schutz gegen Chunk-Explosion (1 Chunk ≈ 1 DuckDB-Prozess + Merge in Phase D — der 119k-Crash)."
-              echo "  Häufigste Ursache: DDR-Subchunk. Abhilfe: M erhöhen (FM_DDR_AUTO_M / FM_DDR_SUBCHUNK)"
-              echo "  oder die Record-Schwelle anheben (FM_DDR_MIN_RECORDS)."
-              echo "  Bewusst gewollt? Deckel anheben: FM_MAX_TOTAL_CHUNKS=$((_tot_chunks + 1))  (oder 0 = aus)."
+            { echo "✗ Phase S abort: $_tot_chunks planned chunks exceed the safety cap FM_MAX_TOTAL_CHUNKS=$_max_chunks."
+              echo "  Protection against chunk explosion (1 chunk ≈ 1 DuckDB process + merge in Phase D — the 119k crash)."
+              echo "  Most common cause: DDR sub-chunk. Remedy: raise M (FM_DDR_AUTO_M / FM_DDR_SUBCHUNK)"
+              echo "  or raise the record threshold (FM_DDR_MIN_RECORDS)."
+              echo "  Deliberately intended? Raise the cap: FM_MAX_TOTAL_CHUNKS=$((_tot_chunks + 1))  (or 0 = off)."
             } | log_error_section "Phase S chunk-count guard ($_tot_chunks > $_max_chunks)"
-            echo "  ✗ Phase S abgebrochen: zu viele Chunks ($_tot_chunks > $_max_chunks). Details im Error-Log." >&2
+            echo "  ✗ Phase S aborted: too many chunks ($_tot_chunks > $_max_chunks). Details in the error log." >&2
             TURBO_RC=9; return 9
         fi
-        if $QUIET_MODE; then emit_log "Phase S: $_tot_chunks Chunk(s) geplant (Deckel $_max_chunks)"
-        else echo "  Phase S: $_tot_chunks Chunk(s) geplant (Deckel $_max_chunks)"; fi
+        if $QUIET_MODE; then emit_log "Phase S: $_tot_chunks chunk(s) planned (cap $_max_chunks)"
+        else echo "  Phase S: $_tot_chunks chunk(s) planned (cap $_max_chunks)"; fi
     fi
 
     # ---- Phase D (worker pool over all chunks) ----
@@ -1592,8 +1592,8 @@ run_turbo_pipeline() {
     if [ -z "${FM_TURBO_NO_CATMERGE:-}" ] && _turbo_catmerge_ok; then
         USE_CATMERGE=true
     elif [ -z "${FM_TURBO_NO_CATMERGE:-}" ]; then
-        if $QUIET_MODE; then emit_log "Hinweis: katalog-granularer Merge nicht anwendbar (unbekannter Katalog ODER File_Name-Kollision) → Part-Pfad"
-        else echo "  Hinweis: katalog-granularer Merge nicht anwendbar (unbekannter Katalog ODER File_Name-Kollision) → Part-Pfad"; fi
+        if $QUIET_MODE; then emit_log "Note: catalog-granular merge not applicable (unknown catalog OR File_Name collision) → part path"
+        else echo "  Note: catalog-granular merge not applicable (unknown catalog OR File_Name collision) → part path"; fi
     fi
     if $USE_CATMERGE; then
         # ---- Phase C CATALOG-GRANULAR (collapses stages 1+2): no part DBs ----
@@ -1606,8 +1606,8 @@ run_turbo_pipeline() {
             echo "$rc" > "$PARTDB_DIR/${i}.rc"
         done
         _t3 C2_start
-        if $QUIET_MODE; then phase_progress import 100 "Phase C: Chunks → Master (katalog-granular)…"
-        else echo "  Phase C: Chunks → Master mergen (katalog-granular, DELETE-by-File + Wildcard-INSERT)…"; fi
+        if $QUIET_MODE; then phase_progress import 100 "Phase C: chunks → master (catalog-granular)…"
+        else echo "  Phase C: merge chunks → master (catalog-granular, DELETE-by-File + wildcard INSERT)…"; fi
         _turbo_merge_catalog
         _t3 C2_end
         TURBO_RC=${MERGE_RC:-0}
@@ -1625,8 +1625,8 @@ run_turbo_pipeline() {
 
         # ---- Phase C, stage 2: parts → master (proven merge_part_dbs) ----
         _t3 C2_start
-        if $QUIET_MODE; then phase_progress import 100 "Phase C: Parts → Master mergen…"
-        else echo "  Phase C: Parts in den Master mergen… $([ -n "${FM_TURBO_PARQUET:-}" ] && echo '(Parquet-Wildcard)')"; fi
+        if $QUIET_MODE; then phase_progress import 100 "Phase C: merge parts → master…"
+        else echo "  Phase C: merge parts into the master… $([ -n "${FM_TURBO_PARQUET:-}" ] && echo '(parquet wildcard)')"; fi
         if [ -n "${FM_TURBO_PARQUET:-}" ]; then _turbo_merge_parquet; else merge_part_dbs; fi
         _t3 C2_end
         TURBO_RC=${MERGE_RC:-0}
