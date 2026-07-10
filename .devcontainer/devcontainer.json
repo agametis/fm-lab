@@ -63,7 +63,17 @@
   // Auto-start the stack on every container start — no terminal, no manual step. This
   // launches the REST API (3003) and the Vite web client (5173) in this container;
   // start-servers.sh is idempotent, so a restart re-attaches instead of double-starting.
-  "postStartCommand": "bash tools/start-servers.sh",
+  //
+  // `setsid` is the process HANDOVER across the init phase: postStartCommand runs in a
+  // docker-exec session, and start-servers.sh backgrounds the servers into THAT session's
+  // process group (a non-interactive shell has no job control, so `&` does not fork off a
+  // new group). When the lifecycle command finishes and the exec session is torn down, the
+  // group is signalled — killing the just-started servers (dead ports → white page). setsid
+  // runs the script in its OWN new session/group, decoupled from the exec teardown, so the
+  // servers survive. Only this dev-container autostart path needs it; native/manual runs
+  // (persistent terminal) and the pure-docker path (foreground PID-1 servers) are unaffected,
+  // so the shared start-servers.sh stays generic.
+  "postStartCommand": "setsid bash tools/start-servers.sh",
 
   // Forward both servers to the host; once Vite listens on 5173 the auto-forward opens
   // the browser on the entry page (working UI — the API on 3003 is up in the same box).

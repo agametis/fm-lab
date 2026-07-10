@@ -119,6 +119,13 @@ services:
     environment:
       <<: *fmlab-env
       HOST: "0.0.0.0"   # bind for port forwarding (dev default localhost is host-only)
+      # In the VS Code Dev Container path the servers are auto-started INSIDE this api
+      # container by postStartCommand → tools/start-servers.sh (which runs `npm run dev`
+      # with no --host). Vite then reads its bind address from VITE_DEV_HOST
+      # (vite.config.ts); without it Vite binds container-loopback and forwardPorts 5173
+      # reaches nothing. Harmless to the pure-docker path (there api runs only node, and
+      # Vite lives in the separate `web` service which sets its own VITE_DEV_HOST).
+      VITE_DEV_HOST: "0.0.0.0"
     command: ["bash", "-lc", "cd rest-api && exec node src/index.js"]
     ports:
       - "3003:3003"
@@ -135,8 +142,9 @@ services:
       start_period: 30s
 
   # Web client (Vite dev server over the mounted source). Port 5173 → host browser.
-  # The browser talks to the API via the forwarded host port (VITE_API_URL default
-  # http://localhost:3003), so no container DNS is needed.
+  # The browser talks to the API same-origin over /api (VITE_API_URL seeds empty →
+  # proxy mode); Vite proxies /api server-side to VITE_API_PROXY_TARGET below, so no
+  # container DNS reaches the browser and the host port mapping is irrelevant.
   web:
     <<: *fmlab-service
     depends_on:

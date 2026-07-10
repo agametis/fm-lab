@@ -63,7 +63,14 @@
   // Code auth state + next step, then auto-start the stack (REST API 3003 + Vite 5173)
   // so the container is immediately usable — Claude itself is reached via the VS Code
   // plugin, no terminal step. start-servers.sh is idempotent across restarts.
-  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh; /usr/local/bin/claude-auth-preflight.sh || true; bash tools/start-servers.sh",
+  //
+  // `setsid` on the start-servers.sh call is the process HANDOVER across the init phase:
+  // it runs the script in its OWN session/group, decoupled from the docker-exec session of
+  // this postStartCommand. Without it the backgrounded servers stay in the exec's process
+  // group and are killed when the lifecycle command's session is torn down (dead ports →
+  // white page). The firewall + auth-preflight steps stay in the foreground (they must
+  // complete first); only the long-running server launch is handed off.
+  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh; /usr/local/bin/claude-auth-preflight.sh || true; setsid bash tools/start-servers.sh",
 
   "forwardPorts": [3003, 5173],
   "portsAttributes": {
