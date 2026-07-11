@@ -92,6 +92,14 @@ export interface DatasetResult {
   data: Array<Record<string, unknown>>;
   meta: { source: string; [k: string]: unknown };
   error?: string;
+  /**
+   * Set by the backend when a dataset could not run because nothing has been
+   * imported yet (the referenced analysis table/view only exists after import)
+   * AND the catalog is empty. Such a "failure" is the empty state, not an
+   * error — the DashboardHost gates the whole page on it, individual cards
+   * degrade to their empty message. `'no_import'` is the only value today.
+   */
+  emptyReason?: 'no_import' | string;
 }
 
 export type DashboardDataResponse = Record<string, DatasetResult>;

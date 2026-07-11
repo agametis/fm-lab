@@ -213,7 +213,11 @@
   "settingsView": {
     "backAria": "検索に戻る",
     "backLabel": "戻る",
-    "title": "プラグイン管理",
+    "title": "設定",
+    "fmSpec": {
+      "heading": "fm-spec",
+      "details": "詳細"
+    },
     "loading": "プラグインを読み込み中…",
     "empty": "インストールされたプラグインはありません。",
     "loadError": "読み込みに失敗しました",
@@ -246,6 +250,9 @@
       "rescanning": "スキャン中…",
       "empty": "まだスキャンしていません。「再スキャン」をクリックしてください。",
       "colVersion": "バージョン"
+    },
+    "versions": {
+      "fmSpec": "fm-spec"
     }
   },
   "objectHeader": {

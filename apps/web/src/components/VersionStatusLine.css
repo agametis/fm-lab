@@ -15,3 +15,11 @@
 .version-status-line__item {
   white-space: nowrap;
 }
+
+.version-status-line__link {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.version-status-line__link:hover {
+  text-decoration: underline;
+}

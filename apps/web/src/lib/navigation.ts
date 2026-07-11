@@ -53,6 +53,9 @@ export type BreadcrumbCtx =
   | { kind: 'docsCategory'; setId: string; setLabel: string; categoryLabel: string }
   | { kind: 'xmlImport' }
   | { kind: 'cluster' }
+  | { kind: 'fmSpec' }
+  | { kind: 'fmSpecStep'; stepName: string }
+  | { kind: 'fmSpecFunction'; name: string }
   | { kind: 'settings' };
 
 /** Letzten Crumb auf aktiv (kein Link) setzen — Regel 4. */
@@ -118,6 +121,12 @@ export function buildBreadcrumb(ctx: BreadcrumbCtx, t: TranslateFn): BreadcrumbI
       return finalize([home, { label: t('nav:crumbs.xmlImport'), path: '/xml-import' }]);
     case 'cluster':
       return finalize([home, { label: t('nav:crumbs.cluster'), path: '/cluster' }]);
+    case 'fmSpec':
+      return finalize([home, { label: t('nav:crumbs.fmSpec'), path: '/fm-spec' }]);
+    case 'fmSpecStep':
+      return finalize([home, { label: t('nav:crumbs.fmSpec'), path: '/fm-spec' }, { label: ctx.stepName, path: null }]);
+    case 'fmSpecFunction':
+      return finalize([home, { label: t('nav:crumbs.fmSpec'), path: '/fm-spec' }, { label: ctx.name, path: null }]);
     case 'settings':
       return finalize([home, { label: t('nav:crumbs.settings'), path: '/settings' }]);
   }

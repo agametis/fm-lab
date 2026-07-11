@@ -12,6 +12,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.8.10] — 2026-07-11
+
+The bundled FileMaker reference grows from a localized help cache into a full, browsable standard specification — and becomes the foundation for a new, reference-driven script-generation skill.
+
+- **FileMaker standard reference** — the bundled reference database (`fm_reference.duckdb`) is rebuilt from a full FileMaker specification, no longer just a localized help cache
+  - **Complete step & function surface** — all 206 script steps and 373 functions with their SaXML signatures, per-step platform compatibility, and the FileMaker version each was introduced in
+  - **Machine-readable step grammar** — every step's option/parameter structure captured with enumerated option values, so a generator can emit valid step XML from the spec instead of hand-maintained templates
+  - **Normalization passes** — boolean option polarity canonicalized and a compact text-form spec, so equivalent steps compare identically regardless of how the export phrased them
+- **fm-spec Schema Viewer in the web client** — the reference becomes browsable, not just queryable
+  - **Step and function detail views** — signature, parameters, compatibility, origin version, grammar, and a language selector
+  - **New reference endpoints** — `/api/reference/meta`, `/reference/steps/:id/grammar`, `/reference/steps/:id/langs`, extending the existing help / lookup layer
+- **Server lifecycle & onboarding hardening**
+  - **Unified `start-servers.sh` / `stop-servers.sh`** — the four start/stop helper commands become thin delegators with a target argument (`api` | `frontend` | `all`) and a robust port-detection cascade
+  - **Fail-fast on double start** — a pre-flight probe plus error handler in the REST-API entry point stops a second server instance cleanly
+  - **Docker path fixes** — preflight warning, port binding, and the background → agent process handoff corrected for the containerized Quickstart
+  - **`package-lock.json` committed** so a native (non-Docker) start on macOS / Windows installs a consistent dependency tree; a `marked` ESM-loading fix keeps the docs layer working on Node 20
+- **Web client refinements**
+  - **Empty-state components** — clearer chrome and guidance when the catalog holds no data yet
+  - **Sorting & search** — corrected sort order and search-parameter handling in object lists
+  - **Graceful DDR-Info fallback** — views degrade cleanly when a file was exported without DDR information
+
+---
+
 ## [0.8.9] — 2026-07-10
 
 Getting into fm-lab: a single onboarding command for shell users, a slimmed-down CLAUDE.md backed by a reference-doc layer, and two new skills for jumping from an object straight into FileMaker or the web client — plus catalog and frontend refinements.
@@ -584,7 +607,8 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 <!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
      versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
      intentionally left unlinked and render as plain text. Add a line here per new tag. -->
-[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.8.9...HEAD
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.8.10...HEAD
+[0.8.10]: https://github.com/marcel-more/fm-lab/compare/v0.8.9...v0.8.10
 [0.8.9]: https://github.com/marcel-more/fm-lab/compare/v0.8.8...v0.8.9
 [0.8.8]: https://github.com/marcel-more/fm-lab/compare/v0.8.6...v0.8.8
 [0.8.6]: https://github.com/marcel-more/fm-lab/compare/v0.8.5...v0.8.6

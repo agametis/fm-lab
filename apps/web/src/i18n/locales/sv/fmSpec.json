@@ -1,0 +1,125 @@
+{
+  "title": "fm-spec",
+  "subtitle": "Schemavisare för den generativa referensen",
+  "loading": "Laddar…",
+  "error": "Fel",
+  "dash": "—",
+  "help": {
+    "open": "Hjälp"
+  },
+  "search": {
+    "placeholder": "Filtrera…"
+  },
+  "list": {
+    "count": "{{shown}} / {{total}}"
+  },
+  "tabs": {
+    "steps": "ScriptSteps",
+    "functions": "Funktioner",
+    "locales": "Språk"
+  },
+  "header": {
+    "schemaVersion": "Schema",
+    "coverage": "FM-version",
+    "built": "Byggd",
+    "steps": "ScriptSteps",
+    "functions": "Funktioner",
+    "locales": "Språk",
+    "localesValue": "{{steps}} / {{functions}}",
+    "grammar": "Grammatiktäckning",
+    "grammarValue": "{{covered}}/{{total}} steg",
+    "attribution": "Dokumentationsinnehåll © Claris International Inc. FileMaker och Claris är varumärken som tillhör Claris International Inc. Detta projekt är inte anslutet till eller godkänt av Claris. Se SOURCES för fullständig tillskrivning."
+  },
+  "steps": {
+    "col": {
+      "id": "Steg-ID",
+      "name": "Namn (EN)",
+      "categoryId": "Kategori-ID",
+      "category": "Kategori",
+      "originVersion": "Ursprungsversion",
+      "grammar": "Grammatik"
+    },
+    "grammarYes": "ja",
+    "grammarNo": "nej"
+  },
+  "functions": {
+    "col": {
+      "id": "Funktions-ID",
+      "name": "Namn",
+      "category": "Kategori",
+      "returnType": "Returtyp",
+      "originVersion": "Ursprungsversion"
+    },
+    "detail": {
+      "returnType": "Returtyp",
+      "parameters": "Parametrar",
+      "noParams": "Inga parametrar",
+      "optional": "valfri",
+      "variadic": "variadisk",
+      "signature": "Signatur",
+      "purpose": "Syfte",
+      "example": "Exempel"
+    }
+  },
+  "params": {
+    "col": {
+      "index": "#",
+      "name": "Namn",
+      "description": "Beskrivning"
+    }
+  },
+  "locales": {
+    "col": {
+      "code": "Språk",
+      "steps": "Stegtäckning",
+      "functions": "Funktionstäckning",
+      "parameters": "Parameterrader"
+    }
+  },
+  "step": {
+    "slug": "Slug",
+    "section": {
+      "localized": "Lokaliserade stegdata",
+      "parameters": "Strukturerade parametrar",
+      "grammar": "XMLSnippet-grammatik",
+      "saxml": "SaXML-detaljer"
+    },
+    "localized": {
+      "language": "Språk",
+      "displayName": "Visningsnamn",
+      "description": "Beskrivning",
+      "help": "Hjälp"
+    },
+    "params": {
+      "none": "Inga parametrar"
+    },
+    "grammar": {
+      "template": "Snippetmall",
+      "copy": "Kopiera",
+      "copied": "Kopierat",
+      "elementOrder": "Elementordning",
+      "evidence": "Bevis",
+      "notAvailable": "Grammatik ännu inte fångad — våg W4",
+      "options": "Alternativ",
+      "constraints": "Begränsningar",
+      "opt": {
+        "key": "Nyckel",
+        "type": "Typ",
+        "required": "Obligatorisk",
+        "label": "Etikett (EN)",
+        "xmlPath": "XML-sökväg",
+        "evidence": "Bevis",
+        "values": "Värden",
+        "invertedHint": "Etikettens semantik är inverterad i förhållande till XML-tillståndet — true_text/false_text bär redan den fullständiga text→XML-mappningen; invertera aldrig igen.",
+        "docOnly": "Dokumenterat av Claris, men inte roundtrip-verifierat — kontrollera beteendet efter inklistring."
+      }
+    },
+    "saxml": {
+      "paramTypes": "Sekvens av parametertyper",
+      "example": "SaXML-exempel",
+      "hint": "SaXML och fmxmlsnippet är två olika representationer av samma steg.",
+      "none": "Ingen SaXML-mappning fångad.",
+      "sourceNote": "De levererade uppgifterna är källneutrala: de innehåller inga källhänvisningar, författar- eller företagsnamn eller korpusartefakter. Exempelpayloads som visas per steg är syntetiska."
+    }
+  }
+}

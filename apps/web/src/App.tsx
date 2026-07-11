@@ -9,7 +9,7 @@ import { OBJECT_TYPES } from '@packages/shared/constants';
 const PSEUDO_TYPE_GROUP = ['ScriptStepType', 'BuiltinFunction', 'PluginComponent', 'PluginFunction'] as const;
 const PSEUDO_TYPE_SET = new Set<string>(PSEUDO_TYPE_GROUP);
 import { useInfiniteSearch, useDebounce, useScrollRestore, CONNECTION_ERROR } from './hooks';
-import { VirtualList, DetailView, SearchOptions, FolderTree, PseudoTokenView, StartHeader, SubNav, StatusBar, Filterbar, type FolderTreeSubtype } from './components';
+import { VirtualList, DetailView, SearchOptions, FolderTree, PseudoTokenView, StartHeader, SubNav, StatusBar, Filterbar, AppFooter, type FolderTreeSubtype } from './components';
 import { buildObjectPath, buildBreadcrumb } from './lib/navigation';
 import { SettingsView } from './views/SettingsView';
 import { RelationshipGraphView } from './views/RelationshipGraphView';
@@ -43,6 +43,17 @@ const GraphAtlasView = lazy(() =>
 // Cluster-Übersicht (/cluster) — eigener Chunk (lazy, wie Atlas).
 const ClusterView = lazy(() =>
   import('./views/ClusterView').then((m) => ({ default: m.ClusterView })),
+);
+
+// fm-spec Schema-Viewer (/fm-spec) — eigener Chunk (lazy).
+const FmSpecView = lazy(() =>
+  import('./views/FmSpecView').then((m) => ({ default: m.FmSpecView })),
+);
+const FmSpecStepView = lazy(() =>
+  import('./views/FmSpecStepView').then((m) => ({ default: m.FmSpecStepView })),
+);
+const FmSpecFunctionView = lazy(() =>
+  import('./views/FmSpecFunctionView').then((m) => ({ default: m.FmSpecFunctionView })),
 );
 
 /**
@@ -564,6 +575,9 @@ function SearchView() {
           filter={debouncedSearchName}
         />
       )}
+
+      {/* Discreet brand/license footer — start page only (Klasse S). */}
+      {isStart && <AppFooter />}
     </div>
   );
 }
@@ -597,6 +611,30 @@ function App() {
         element={
           <Suspense fallback={<div className="graph-explorer-placeholder">…</div>}>
             <ClusterView />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/fm-spec"
+        element={
+          <Suspense fallback={<div className="graph-explorer-placeholder">…</div>}>
+            <FmSpecView />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/fm-spec/step/:stepId"
+        element={
+          <Suspense fallback={<div className="graph-explorer-placeholder">…</div>}>
+            <FmSpecStepView />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/fm-spec/function/:functionId"
+        element={
+          <Suspense fallback={<div className="graph-explorer-placeholder">…</div>}>
+            <FmSpecFunctionView />
           </Suspense>
         }
       />

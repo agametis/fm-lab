@@ -21,7 +21,8 @@
     "docs": "Documentation",
     "xmlImport": "Import XML",
     "cluster": "Clusters",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "fmSpec": "fm-spec"
   },
   "errors": {
     "noDashboardId": "Aucun identifiant de tableau de bord fourni.",
@@ -110,5 +111,10 @@
     "disabledDuringFilter": "Désactivé pendant le filtrage",
     "folderDetailsTitle": "Afficher les détails du dossier",
     "noName": "(sans nom)"
+  },
+  "noData": {
+    "title": "Aucune donnée pour l’instant",
+    "message": "Aucune solution FileMaker n’a encore été importée. Importez d’abord un export XML pour utiliser cette vue.",
+    "backToStart": "Retour à l’accueil"
   }
 }

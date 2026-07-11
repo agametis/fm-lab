@@ -1,0 +1,125 @@
+{
+  "title": "fm-spec",
+  "subtitle": "生成リファレンス用のスキーマビューア",
+  "loading": "読み込み中…",
+  "error": "エラー",
+  "dash": "—",
+  "help": {
+    "open": "ヘルプ"
+  },
+  "search": {
+    "placeholder": "フィルタ…"
+  },
+  "list": {
+    "count": "{{shown}} / {{total}}"
+  },
+  "tabs": {
+    "steps": "ScriptSteps",
+    "functions": "関数",
+    "locales": "言語"
+  },
+  "header": {
+    "schemaVersion": "スキーマ",
+    "coverage": "FMバージョン",
+    "built": "ビルド日時",
+    "steps": "ScriptSteps",
+    "functions": "関数",
+    "locales": "言語",
+    "localesValue": "{{steps}} / {{functions}}",
+    "grammar": "文法カバレッジ",
+    "grammarValue": "{{covered}}/{{total}} ステップ",
+    "attribution": "ドキュメントコンテンツ © Claris International Inc. FileMaker および Claris は Claris International Inc. の商標です。本プロジェクトは Claris と提携しておらず、Claris の承認も受けていません。完全な帰属表示は SOURCES を参照してください。"
+  },
+  "steps": {
+    "col": {
+      "id": "ステップ ID",
+      "name": "名前 (EN)",
+      "categoryId": "カテゴリ ID",
+      "category": "カテゴリ",
+      "originVersion": "登場バージョン",
+      "grammar": "文法"
+    },
+    "grammarYes": "あり",
+    "grammarNo": "なし"
+  },
+  "functions": {
+    "col": {
+      "id": "関数 ID",
+      "name": "名前",
+      "category": "カテゴリ",
+      "returnType": "戻り値の型",
+      "originVersion": "登場バージョン"
+    },
+    "detail": {
+      "returnType": "戻り値の型",
+      "parameters": "パラメータ",
+      "noParams": "パラメータなし",
+      "optional": "省略可",
+      "variadic": "可変長",
+      "signature": "シグネチャ",
+      "purpose": "目的",
+      "example": "例"
+    }
+  },
+  "params": {
+    "col": {
+      "index": "#",
+      "name": "名前",
+      "description": "説明"
+    }
+  },
+  "locales": {
+    "col": {
+      "code": "言語",
+      "steps": "ステップカバレッジ",
+      "functions": "関数カバレッジ",
+      "parameters": "パラメータ行数"
+    }
+  },
+  "step": {
+    "slug": "slug",
+    "section": {
+      "localized": "ローカライズされたステップデータ",
+      "parameters": "構造化パラメータ",
+      "grammar": "XMLSnippet 文法",
+      "saxml": "SaXML の詳細"
+    },
+    "localized": {
+      "language": "言語",
+      "displayName": "表示名",
+      "description": "説明",
+      "help": "ヘルプ"
+    },
+    "params": {
+      "none": "パラメータなし"
+    },
+    "grammar": {
+      "template": "スニペットテンプレート",
+      "copy": "コピー",
+      "copied": "コピーしました",
+      "elementOrder": "要素の順序",
+      "evidence": "根拠",
+      "notAvailable": "文法はまだ取得されていません — ウェーブ W4",
+      "options": "オプション",
+      "constraints": "制約",
+      "opt": {
+        "key": "キー",
+        "type": "型",
+        "required": "必須",
+        "label": "ラベル (EN)",
+        "xmlPath": "XML パス",
+        "evidence": "根拠",
+        "values": "値",
+        "invertedHint": "ラベルの意味は XML の状態に対して反転しています — true_text/false_text にテキスト→XML の完全な対応が含まれるため、追加の反転は不要です。",
+        "docOnly": "Claris のドキュメントに記載されていますが、ラウンドトリップ検証はされていません — ペースト後に動作を確認してください。"
+      }
+    },
+    "saxml": {
+      "paramTypes": "パラメータ型のシーケンス",
+      "example": "SaXMLの例",
+      "hint": "SaXMLとfmxmlsnippetは同じステップの2つの異なる表現です。",
+      "none": "SaXML マッピングは取得されていません。",
+      "sourceNote": "配布されるデータはソース中立です。出典の引用、著者名や会社名、コーパスの痕跡を含みません。各ステップに表示される例のペイロードは合成されたものです。"
+    }
+  }
+}

@@ -21,7 +21,8 @@
     "docs": "ドキュメント",
     "xmlImport": "XMLインポート",
     "cluster": "クラスタ",
-    "settings": "設定"
+    "settings": "設定",
+    "fmSpec": "fm-spec"
   },
   "errors": {
     "noDashboardId": "ダッシュボード ID が指定されていません。",
@@ -110,5 +111,10 @@
     "disabledDuringFilter": "フィルタリング中は無効",
     "folderDetailsTitle": "フォルダーの詳細を表示",
     "noName": "(名前なし)"
+  },
+  "noData": {
+    "title": "データがまだありません",
+    "message": "FileMaker ソリューションがまだインポートされていません。このビューを使用するには、まず XML エクスポートをインポートしてください。",
+    "backToStart": "スタート画面に戻る"
   }
 }

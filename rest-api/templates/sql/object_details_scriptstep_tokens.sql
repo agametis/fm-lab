@@ -40,6 +40,11 @@ SELECT
     WHEN s.Step_ID = 89                          THEN 'comment'
     ELSE 'step'
   END AS kind,
+  -- Find-/Sort-Payload (Perform Find 28, Enter Find Mode 22, Constrain 126,
+  -- Extend 127, Sort Records 39): Such-/Sortierkriterien stehen nur im Step_XML
+  -- — Konsistenz mit dem mehrzeiligen Script-Tokens-Template (der
+  -- tokens.formatter hängt sie an).
+  CASE WHEN s.Step_ID IN (22, 28, 39, 126, 127) THEN s.Step_XML END AS step_xml,
   -- Parent-Script-Kontext (vom Controller in object.parentScript gepackt)
   s.Script_UUID AS parent_script_uuid,
   s.Script_Name AS parent_script_name,

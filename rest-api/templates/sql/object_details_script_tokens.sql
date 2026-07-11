@@ -35,6 +35,13 @@ WITH step_changes AS (
     s.Variable_Name AS variable_name,
     s.Boolean_Type AS boolean_type,
     s.Boolean_Value AS boolean_value,
+    -- Find-/Sort-Payload (Perform Find 28, Enter Find Mode 22, Constrain 126,
+    -- Extend 127, Sort Records 39): Suchkriterien (<find criteria="…"> je
+    -- FieldReference) und Sortierkriterien (<Sort type="…"> + optionale
+    -- ValueListReference) stehen NUR im Step_XML — weder DDR-Step_Text-Fallback
+    -- noch die aufgelösten Step-Refs tragen sie. Der tokens.formatter parst die
+    -- Struktur und hängt sie als Klammer-Segmente an die Zeile.
+    CASE WHEN s.Step_ID IN (22, 28, 39, 126, 127) THEN s.Step_XML END AS step_xml,
     CASE
       WHEN s.Step_Name IN ('If', 'Loop') THEN 1
       WHEN s.Step_Name IN ('End If', 'End Loop') THEN -1
@@ -91,6 +98,7 @@ SELECT
   sd.variable_name AS variable_name,
   sd.boolean_type AS boolean_type,
   sd.boolean_value AS boolean_value,
+  sd.step_xml AS step_xml,
   -- has_ddr: unterscheidet im Formatter "DDR-Zeile fehlt für diesen Step" von
   -- "Datei hat gar kein DDR" — die Fallback-Komposition greift nur ohne DDR-Text.
   (d.Step_UUID IS NOT NULL) AS has_ddr,

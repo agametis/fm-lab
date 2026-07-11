@@ -213,7 +213,11 @@
   "settingsView": {
     "backAria": "Tillbaka till sök",
     "backLabel": "Tillbaka",
-    "title": "Plugin-hantering",
+    "title": "Inställningar",
+    "fmSpec": {
+      "heading": "fm-spec",
+      "details": "Detaljer"
+    },
     "loading": "Läser in plugins…",
     "empty": "Inga plugins installerade.",
     "loadError": "Det gick inte att läsa in",
@@ -246,6 +250,9 @@
       "rescanning": "Skannar…",
       "empty": "Ingen skanning ännu. Klicka på \"Skanna om\".",
       "colVersion": "Version"
+    },
+    "versions": {
+      "fmSpec": "fm-spec"
     }
   },
   "objectHeader": {

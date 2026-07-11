@@ -21,7 +21,8 @@
     "docs": "Docs",
     "xmlImport": "XML Import",
     "cluster": "Clusters",
-    "settings": "Settings"
+    "settings": "Settings",
+    "fmSpec": "fm-spec"
   },
   "entryType": {
     "dashboard": "Dashboard"
@@ -130,5 +131,10 @@
     "category":      "Category",
     "docset":        "Docset",
     "references":    "Code references"
+  },
+  "noData": {
+    "title": "No data yet",
+    "message": "No FileMaker solution has been imported yet. Import an XML export first to use this view.",
+    "backToStart": "Back to start"
   }
 }

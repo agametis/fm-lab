@@ -213,7 +213,11 @@
   "settingsView": {
     "backAria": "Volver a la búsqueda",
     "backLabel": "Atrás",
-    "title": "Gestión de plugins",
+    "title": "Configuración",
+    "fmSpec": {
+      "heading": "fm-spec",
+      "details": "Detalles"
+    },
     "loading": "Cargando plugins…",
     "empty": "No hay plugins instalados.",
     "loadError": "Error al cargar",
@@ -246,6 +250,9 @@
       "rescanning": "Escaneando…",
       "empty": "Aún sin escaneo. Haz clic en «Reescanear».",
       "colVersion": "Versión"
+    },
+    "versions": {
+      "fmSpec": "fm-spec"
     }
   },
   "objectHeader": {

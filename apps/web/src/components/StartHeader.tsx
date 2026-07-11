@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ThemeToggle } from './ThemeToggle';
 import { LanguageSelector } from './LanguageSelector';
+import { GitHubLink } from './GitHubLink';
 
 interface StartHeaderProps {
   /** Active main-nav mode. */
@@ -29,6 +30,7 @@ export function StartHeader({ mode, onSelectMode }: StartHeaderProps) {
       <div className="app-title-row">
         <h1>{t('common:appTitle')}</h1>
         <div className="app-title-actions">
+          <GitHubLink />
           <LanguageSelector />
           <ThemeToggle />
         </div>

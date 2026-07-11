@@ -90,10 +90,10 @@ async function getDashboardData(req, res, next) {
     // i18n language is filtered out of the user-facing param list but kept as
     // `_lang` so builtin resolvers (e.g. localized doc categories) can use it.
     params._lang = pickLang(req.query);
-    const datasets = await dashboardService.executeAllDatasets(bundle, params);
+    const { datasets, catalogEmpty } = await dashboardService.executeAllDatasets(bundle, params);
     res.json({
       success: true,
-      data: { datasets },
+      data: { datasets, catalogEmpty },
       meta: { dashboard_id: id, params_used: params },
     });
   } catch (err) {

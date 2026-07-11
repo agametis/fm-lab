@@ -21,7 +21,8 @@
     "docs": "문서",
     "xmlImport": "XML 가져오기",
     "cluster": "클러스터",
-    "settings": "설정"
+    "settings": "설정",
+    "fmSpec": "fm-spec"
   },
   "errors": {
     "noDashboardId": "대시보드 ID가 지정되지 않았습니다.",
@@ -110,5 +111,10 @@
     "disabledDuringFilter": "필터링 중에는 비활성화됨",
     "folderDetailsTitle": "폴더 세부 정보 표시",
     "noName": "(이름 없음)"
+  },
+  "noData": {
+    "title": "아직 데이터가 없습니다",
+    "message": "아직 FileMaker 솔루션을 가져오지 않았습니다. 이 보기를 사용하려면 먼저 XML 내보내기를 가져오세요.",
+    "backToStart": "시작 화면으로 돌아가기"
   }
 }

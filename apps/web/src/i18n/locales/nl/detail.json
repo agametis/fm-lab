@@ -213,7 +213,11 @@
   "settingsView": {
     "backAria": "Terug naar zoeken",
     "backLabel": "Terug",
-    "title": "Pluginbeheer",
+    "title": "Instellingen",
+    "fmSpec": {
+      "heading": "fm-spec",
+      "details": "Details"
+    },
     "loading": "Plugins worden geladen…",
     "empty": "Geen plugins geïnstalleerd.",
     "loadError": "Laden mislukt",
@@ -246,6 +250,9 @@
       "rescanning": "Scannen…",
       "empty": "Nog geen scan. Klik op \"Opnieuw scannen\".",
       "colVersion": "Versie"
+    },
+    "versions": {
+      "fmSpec": "fm-spec"
     }
   },
   "objectHeader": {

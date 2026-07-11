@@ -1,5 +1,6 @@
 {
-  "appTitle": "FileMaker Object Browser",
+  "appTitle": "FM-Lab Browser",
+  "githubLabel": "Bekijk op GitHub",
   "loading": "Laden…",
   "retry": "Opnieuw proberen",
   "back": "Terug",

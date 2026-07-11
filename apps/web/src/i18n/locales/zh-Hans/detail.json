@@ -213,7 +213,11 @@
   "settingsView": {
     "backAria": "返回搜索",
     "backLabel": "返回",
-    "title": "插件管理",
+    "title": "设置",
+    "fmSpec": {
+      "heading": "fm-spec",
+      "details": "详情"
+    },
     "loading": "正在加载插件…",
     "empty": "没有已安装的插件。",
     "loadError": "加载失败",
@@ -246,6 +250,9 @@
       "rescanning": "正在扫描…",
       "empty": "尚未扫描。请点击“重新扫描”。",
       "colVersion": "版本"
+    },
+    "versions": {
+      "fmSpec": "fm-spec"
     }
   },
   "objectHeader": {

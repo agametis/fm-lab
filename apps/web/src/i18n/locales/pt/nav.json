@@ -21,7 +21,8 @@
     "docs": "Documentação",
     "xmlImport": "Importar XML",
     "cluster": "Clusters",
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "fmSpec": "fm-spec"
   },
   "errors": {
     "noDashboardId": "Nenhum id de dashboard fornecido.",
@@ -110,5 +111,10 @@
     "disabledDuringFilter": "Desativado durante a filtragem",
     "folderDetailsTitle": "Mostrar detalhes da pasta",
     "noName": "(sem nome)"
+  },
+  "noData": {
+    "title": "Ainda sem dados",
+    "message": "Nenhuma solução FileMaker foi importada ainda. Importe primeiro uma exportação XML para usar esta visualização.",
+    "backToStart": "Voltar ao início"
   }
 }

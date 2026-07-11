@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { useTemplateQuery } from '../hooks/useTemplateQuery';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
+import { NoDataYet } from './NoDataYet';
 import { buildObjectPath } from '../lib/navigation';
+import { isNoImportError } from '../lib/errors';
 import './FolderTree.css';
 
 const ROW_HEIGHT = 36;
@@ -240,6 +242,11 @@ export const FolderTree: React.FC<FolderTreeProps> = ({ subtype, file, filter })
     return <LoadingSpinner message={t('nav:folderTree.loading') as string} />;
   }
   if (error) {
+    // Kein Import vorhanden → die FolderHierarchy-View existiert noch nicht.
+    // Statt des rohen Katalog-Fehlers eine neutrale "noch keine Daten"-Info.
+    if (isNoImportError(error)) {
+      return <NoDataYet />;
+    }
     return <ErrorMessage message={error} onRetry={retry} />;
   }
   if (!rows.length) {

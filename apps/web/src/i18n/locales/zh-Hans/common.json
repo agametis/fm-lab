@@ -1,5 +1,6 @@
 {
-  "appTitle": "FileMaker Object Browser",
+  "appTitle": "FM-Lab Browser",
+  "githubLabel": "在 GitHub 上查看",
   "loading": "加载中…",
   "retry": "重试",
   "back": "返回",

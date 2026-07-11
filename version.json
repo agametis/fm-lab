@@ -1,8 +1,8 @@
 {
   "manifest_schema": "1.0",
   "version": "0.8.9",
-  "generated_at": "2026-07-10T10:32:46.613Z",
-  "source_commit": "fa12e54",
+  "generated_at": "2026-07-11T20:48:06.206Z",
+  "source_commit": "4e7a89d",
   "components": {
     "rest_api": {
       "scheme": "A",
@@ -36,7 +36,7 @@
     },
     "fm_reference": {
       "scheme": "B",
-      "version": "1.0.0",
+      "version": "1.7.1",
       "filemaker_coverage": "22",
       "source": "rest-api/db/fm_reference.meta.json",
       "on_change": "copy_reference_db_reload_api"
@@ -118,6 +118,11 @@
     {
       "name": "skill-creator",
       "version": "0.8.5"
+    },
+    {
+      "name": "fm-generate-script",
+      "version": "0.8.10",
+      "scope": "local"
     }
   ],
   "engine_baseline": {

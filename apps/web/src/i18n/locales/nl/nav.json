@@ -21,7 +21,8 @@
     "docs": "Documentatie",
     "xmlImport": "XML-import",
     "cluster": "Clusters",
-    "settings": "Instellingen"
+    "settings": "Instellingen",
+    "fmSpec": "fm-spec"
   },
   "errors": {
     "noDashboardId": "Geen dashboard-id opgegeven.",
@@ -110,5 +111,10 @@
     "disabledDuringFilter": "Uitgeschakeld tijdens filteren",
     "folderDetailsTitle": "Mapdetails tonen",
     "noName": "(geen naam)"
+  },
+  "noData": {
+    "title": "Nog geen gegevens",
+    "message": "Er is nog geen FileMaker-oplossing geïmporteerd. Importeer eerst een XML-export om deze weergave te gebruiken.",
+    "backToStart": "Terug naar startpagina"
   }
 }

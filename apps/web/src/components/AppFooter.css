@@ -1,0 +1,23 @@
+.app-footer {
+  margin-top: auto;
+  padding: 1rem 0.5rem;
+  border-top: 1px solid var(--color-border-subtle, var(--color-border));
+  text-align: center;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.app-footer__brand {
+  font-weight: 700;
+}
+
+.app-footer__link {
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.app-footer__link:hover {
+  color: var(--color-accent);
+}

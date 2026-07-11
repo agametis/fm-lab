@@ -16,19 +16,11 @@
 
 | Artifact type | Preferred skill | Level | Notes |
 |---|---|---|---|
+| Script (fmxmlsnippet) | `fm-generate-script` | project | Reference-driven pipeline (lint → resolve → table-driven emit → gate); NOT in `publish-manifest.json` `include_skills` — in published setups this row dangles and falls back to discovery (A2), which is intended |
 | Custom function | — | — | No skill → fallback path (A4) |
 | Schema (table/field) | — | — | No skill → fallback path (A4) |
 | Layout / layout objects | — | — | Deliberately no skill (generation too unreliable without live feedback) → fallback path with explicit caveat |
 | Value list | — | — | No skill → fallback path (A4) |
-
-**Script (fmxmlsnippet) is intentionally not pinned here.** A script-generation
-skill is *not* part of the public repo (not in `publish-manifest.json`
-`include_skills`), so a hard row would dangle in every published setup. Left to the
-discovery protocol instead (A2 Step 1): where a script-generating skill *is*
-installed — a local/third-party skill, or the future curated collection — its
-description (`…generates FileMaker scripts / fmxmlsnippet…`) is matched
-automatically; where none is installed, the fallback path (A4) applies. Add an
-explicit row only for a skill that also ships in `include_skills`.
 
 ## Target-solution conventions (artifact-internals language layer)
 
@@ -39,7 +31,7 @@ generation time.
 
 | Convention | Value | Source |
 |---|---|---|
-| FM calc function-name locale | `de` (German function names) | existing convention of the current solution |
+| FM calc function-name locale | solution displays `de`; **generated snippet calcs use canonical EN function names** (`Get`, not `Hole`) | maintainer decision |
 | Script/object naming language | `auto` | derive from ScriptCatalog naming |
 | Comment language in generated scripts | `auto` | derive from existing script comments |
 | MBS plugin in use | yes | PluginFunctionUsages non-empty |

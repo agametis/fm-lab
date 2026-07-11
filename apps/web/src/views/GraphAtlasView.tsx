@@ -7,6 +7,8 @@ import { buildObjectPath } from '../lib/navigation';
 import type { BreadcrumbItem } from '../types';
 import { SubNav } from '../components/SubNav';
 import { StatusBar } from '../components/StatusBar';
+import { NoDataYet } from '../components/NoDataYet';
+import { isNoImportError } from '../lib/errors';
 import { AtlasNameStatus } from '../components/AtlasNameStatus';
 import type { PanelTarget } from '../components/AtlasInfoPanel';
 import type { TileInfoKind } from '../components/AtlasTreemap';
@@ -225,6 +227,10 @@ export function GraphAtlasView() {
   const lenses: Lenses = useMemo(() => ({ view, weight, excluded, topN }), [view, weight, excluded, topN]);
   const query = useMemo<AtlasQuery>(() => buildAtlasQuery(drill, lenses, isTopology), [drill, lenses, isTopology]);
   const { data, loading, error, refetch } = useGraphOverview(query);
+  // Kein Import vorhanden → die Cluster-/Graph-Views (ClusterEdges, …) existieren
+  // noch nicht. Statt des rohen Katalog-Fehlers eine neutrale "noch keine
+  // Daten"-Info mit Rückweg zur Startseite.
+  const noImport = isNoImportError(error);
 
   // „(...)"-Optionen-Panel (flüchtig, NICHT in der URL — anders als der Drill).
   const [panelTarget, setPanelTarget] = useState<PanelTarget | null>(null);
@@ -565,7 +571,8 @@ export function GraphAtlasView() {
       )}
 
       <div className="atlas-body">
-        {error && <div className="atlas-state atlas-error">{t('error', { message: error })}</div>}
+        {error && noImport && <NoDataYet />}
+        {error && !noImport && <div className="atlas-state atlas-error">{t('error', { message: error })}</div>}
         {!error && loading && !hasContent && <div className="atlas-state">{t('loading')}</div>}
         {!error && !loading && !hasContent && <div className="atlas-state">{t('empty')}</div>}
         {!error && isTopology && metaNodes.length > 0 && (

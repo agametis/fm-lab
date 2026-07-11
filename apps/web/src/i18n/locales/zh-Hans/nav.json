@@ -21,7 +21,8 @@
     "docs": "文档",
     "xmlImport": "XML 导入",
     "cluster": "聚类",
-    "settings": "设置"
+    "settings": "设置",
+    "fmSpec": "fm-spec"
   },
   "errors": {
     "noDashboardId": "未提供仪表板 ID。",
@@ -110,5 +111,10 @@
     "disabledDuringFilter": "筛选过程中已禁用",
     "folderDetailsTitle": "显示文件夹详情",
     "noName": "(无名称)"
+  },
+  "noData": {
+    "title": "暂无数据",
+    "message": "尚未导入任何 FileMaker 解决方案。请先导入 XML 导出文件以使用此视图。",
+    "backToStart": "返回首页"
   }
 }

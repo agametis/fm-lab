@@ -213,7 +213,11 @@
   "settingsView": {
     "backAria": "검색으로 돌아가기",
     "backLabel": "뒤로",
-    "title": "플러그인 관리",
+    "title": "설정",
+    "fmSpec": {
+      "heading": "fm-spec",
+      "details": "상세"
+    },
     "loading": "플러그인 로딩 중…",
     "empty": "설치된 플러그인이 없습니다.",
     "loadError": "불러오기 실패",
@@ -246,6 +250,9 @@
       "rescanning": "스캔 중…",
       "empty": "아직 스캔하지 않았습니다. \"다시 스캔\"을 클릭하세요.",
       "colVersion": "버전"
+    },
+    "versions": {
+      "fmSpec": "fm-spec"
     }
   },
   "objectHeader": {

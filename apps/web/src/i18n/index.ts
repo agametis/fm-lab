@@ -136,9 +136,22 @@ import jaCluster     from './locales/ja/cluster.json';
 import koCluster     from './locales/ko/cluster.json';
 import zhHansCluster from './locales/zh-Hans/cluster.json';
 
+// fm-spec Schema-Viewer namespace (/fm-spec) for all languages.
+import enFmSpec     from './locales/en/fmSpec.json';
+import deFmSpec     from './locales/de/fmSpec.json';
+import esFmSpec     from './locales/es/fmSpec.json';
+import frFmSpec     from './locales/fr/fmSpec.json';
+import itFmSpec     from './locales/it/fmSpec.json';
+import nlFmSpec     from './locales/nl/fmSpec.json';
+import ptFmSpec     from './locales/pt/fmSpec.json';
+import svFmSpec     from './locales/sv/fmSpec.json';
+import jaFmSpec     from './locales/ja/fmSpec.json';
+import koFmSpec     from './locales/ko/fmSpec.json';
+import zhHansFmSpec from './locales/zh-Hans/fmSpec.json';
+
 export const LANGUAGE_STORAGE_KEY = 'fmlab.lang';
 
-export const I18N_NAMESPACES = ['common', 'nav', 'detail', 'errors', 'types', 'dashboard', 'explorer', 'atlas', 'cluster'] as const;
+export const I18N_NAMESPACES = ['common', 'nav', 'detail', 'errors', 'types', 'dashboard', 'explorer', 'atlas', 'cluster', 'fmSpec'] as const;
 
 const resources = {
   en: {
@@ -151,6 +164,7 @@ const resources = {
     explorer:  enExplorer,
     atlas:     enAtlas,
     cluster:     enCluster,
+    fmSpec:      enFmSpec,
   },
   de: {
     common:    deCommon,
@@ -162,6 +176,7 @@ const resources = {
     explorer:  deExplorer,
     atlas:     deAtlas,
     cluster:     deCluster,
+    fmSpec:      deFmSpec,
   },
   es: {
     common:    esCommon,
@@ -172,6 +187,7 @@ const resources = {
     dashboard: esDashboard,
     atlas:     esAtlas,
     cluster:     esCluster,
+    fmSpec:      esFmSpec,
     explorer:  esExplorer,
   },
   fr: {
@@ -183,6 +199,7 @@ const resources = {
     dashboard: frDashboard,
     atlas:     frAtlas,
     cluster:     frCluster,
+    fmSpec:      frFmSpec,
     explorer:  frExplorer,
   },
   it: {
@@ -194,6 +211,7 @@ const resources = {
     dashboard: itDashboard,
     atlas:     itAtlas,
     cluster:     itCluster,
+    fmSpec:      itFmSpec,
     explorer:  itExplorer,
   },
   nl: {
@@ -205,6 +223,7 @@ const resources = {
     dashboard: nlDashboard,
     atlas:     nlAtlas,
     cluster:     nlCluster,
+    fmSpec:      nlFmSpec,
     explorer:  nlExplorer,
   },
   pt: {
@@ -216,6 +235,7 @@ const resources = {
     dashboard: ptDashboard,
     atlas:     ptAtlas,
     cluster:     ptCluster,
+    fmSpec:      ptFmSpec,
     explorer:  ptExplorer,
   },
   sv: {
@@ -227,6 +247,7 @@ const resources = {
     dashboard: svDashboard,
     atlas:     svAtlas,
     cluster:     svCluster,
+    fmSpec:      svFmSpec,
     explorer:  svExplorer,
   },
   ja: {
@@ -238,6 +259,7 @@ const resources = {
     dashboard: jaDashboard,
     atlas:     jaAtlas,
     cluster:     jaCluster,
+    fmSpec:      jaFmSpec,
     explorer:  jaExplorer,
   },
   ko: {
@@ -249,6 +271,7 @@ const resources = {
     dashboard: koDashboard,
     atlas:     koAtlas,
     cluster:     koCluster,
+    fmSpec:      koFmSpec,
     explorer:  koExplorer,
   },
   'zh-Hans': {
@@ -260,6 +283,7 @@ const resources = {
     dashboard: zhHansDashboard,
     atlas:     zhHansAtlas,
     cluster:     zhHansCluster,
+    fmSpec:      zhHansFmSpec,
     explorer:  zhHansExplorer,
   },
 };

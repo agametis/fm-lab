@@ -213,7 +213,11 @@
   "settingsView": {
     "backAria": "Torna alla ricerca",
     "backLabel": "Indietro",
-    "title": "Gestione plugin",
+    "title": "Impostazioni",
+    "fmSpec": {
+      "heading": "fm-spec",
+      "details": "Dettagli"
+    },
     "loading": "Caricamento dei plugin…",
     "empty": "Nessun plugin installato.",
     "loadError": "Caricamento non riuscito",
@@ -246,6 +250,9 @@
       "rescanning": "Scansione…",
       "empty": "Nessuna scansione. Fai clic su «Riesegui scansione».",
       "colVersion": "Versione"
+    },
+    "versions": {
+      "fmSpec": "fm-spec"
     }
   },
   "objectHeader": {

@@ -8,6 +8,7 @@ import type {
 } from '../api/dashboardApi';
 import { DashboardRenderer } from './DashboardRenderer';
 import { TitleBox } from '../components/TitleBox';
+import { NoDataYet } from '../components/NoDataYet';
 import './dashboard.css';
 
 interface Props {
@@ -173,6 +174,21 @@ export function DashboardHost({ id, params, showManifestTitle }: Props) {
   }
   if (!envelope || !datasets) {
     return <div className="dash-host">{t('dashboard.noData')}</div>;
+  }
+
+  // Leerzustand-Gate (kein Import): Sobald ein Dataset dieses Bundles nur wegen
+  // fehlenden Imports leer ist (`emptyReason: 'no_import'`, vom Backend NUR bei
+  // leerem Katalog gesetzt), zeigen wir statt des Grids EINE neutrale Karte mit
+  // „Zurück zur Startseite" — konsistent zu Hierarchie/Atlas. Bundles, die auf
+  // leerem Katalog sinnvoll bleiben (Home mit Import-Karte, Doku, die Index-
+  // Listen), setzen den Marker nie und rendern normal weiter.
+  const noImport = Object.values(datasets).some(d => d?.emptyReason === 'no_import');
+  if (noImport) {
+    return (
+      <div className="dash-host">
+        <NoDataYet />
+      </div>
+    );
   }
 
   return (

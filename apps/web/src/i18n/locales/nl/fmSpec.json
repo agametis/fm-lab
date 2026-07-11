@@ -1,0 +1,125 @@
+{
+  "title": "fm-spec",
+  "subtitle": "Schemaviewer voor de generatieve referentie",
+  "loading": "Laden…",
+  "error": "Fout",
+  "dash": "—",
+  "help": {
+    "open": "Help"
+  },
+  "search": {
+    "placeholder": "Filteren…"
+  },
+  "list": {
+    "count": "{{shown}} / {{total}}"
+  },
+  "tabs": {
+    "steps": "ScriptSteps",
+    "functions": "Functies",
+    "locales": "Talen"
+  },
+  "header": {
+    "schemaVersion": "Schema",
+    "coverage": "FM-versie",
+    "built": "Gebouwd op",
+    "steps": "ScriptSteps",
+    "functions": "Functies",
+    "locales": "Talen",
+    "localesValue": "{{steps}} / {{functions}}",
+    "grammar": "Grammaticadekking",
+    "grammarValue": "{{covered}}/{{total}} stappen",
+    "attribution": "Documentatie-inhoud © Claris International Inc. FileMaker en Claris zijn handelsmerken van Claris International Inc. Dit project is niet verbonden aan of goedgekeurd door Claris. Zie SOURCES voor volledige attributie."
+  },
+  "steps": {
+    "col": {
+      "id": "Stap-ID",
+      "name": "Naam (EN)",
+      "categoryId": "Categorie-ID",
+      "category": "Categorie",
+      "originVersion": "Oorspronkelijke versie",
+      "grammar": "Grammatica"
+    },
+    "grammarYes": "ja",
+    "grammarNo": "nee"
+  },
+  "functions": {
+    "col": {
+      "id": "Functie-ID",
+      "name": "Naam",
+      "category": "Categorie",
+      "returnType": "Retourtype",
+      "originVersion": "Oorspronkelijke versie"
+    },
+    "detail": {
+      "returnType": "Retourtype",
+      "parameters": "Parameters",
+      "noParams": "Geen parameters",
+      "optional": "optioneel",
+      "variadic": "variadisch",
+      "signature": "Signatuur",
+      "purpose": "Doel",
+      "example": "Voorbeeld"
+    }
+  },
+  "params": {
+    "col": {
+      "index": "#",
+      "name": "Naam",
+      "description": "Beschrijving"
+    }
+  },
+  "locales": {
+    "col": {
+      "code": "Taal",
+      "steps": "Stappendekking",
+      "functions": "Functiedekking",
+      "parameters": "Parameterrijen"
+    }
+  },
+  "step": {
+    "slug": "Slug",
+    "section": {
+      "localized": "Gelokaliseerde stapgegevens",
+      "parameters": "Gestructureerde parameters",
+      "grammar": "XMLSnippet-grammatica",
+      "saxml": "SaXML-details"
+    },
+    "localized": {
+      "language": "Taal",
+      "displayName": "Weergavenaam",
+      "description": "Beschrijving",
+      "help": "Help"
+    },
+    "params": {
+      "none": "Geen parameters"
+    },
+    "grammar": {
+      "template": "Snippetsjabloon",
+      "copy": "Kopiëren",
+      "copied": "Gekopieerd",
+      "elementOrder": "Elementvolgorde",
+      "evidence": "Bewijs",
+      "notAvailable": "Grammatica nog niet vastgelegd — golf W4",
+      "options": "Opties",
+      "constraints": "Beperkingen",
+      "opt": {
+        "key": "Sleutel",
+        "type": "Type",
+        "required": "Vereist",
+        "label": "Label (EN)",
+        "xmlPath": "XML-pad",
+        "evidence": "Bewijs",
+        "values": "Waarden",
+        "invertedHint": "De labelsemantiek is omgekeerd ten opzichte van de XML-status — true_text/false_text bevatten al de volledige tekst→XML-toewijzing; nooit extra omkeren.",
+        "docOnly": "Gedocumenteerd door Claris, maar niet roundtrip-geverifieerd — gedrag na het plakken controleren."
+      }
+    },
+    "saxml": {
+      "paramTypes": "Parametertypesequentie",
+      "example": "SaXML-voorbeeld",
+      "hint": "SaXML en fmxmlsnippet zijn twee verschillende representaties van dezelfde stap.",
+      "none": "Geen SaXML-toewijzing vastgelegd.",
+      "sourceNote": "De geleverde gegevens zijn bronneutraal: ze bevatten geen broncitaten, auteurs- of bedrijfsnamen, en geen corpusartefacten. De per stap getoonde voorbeeldpayloads zijn synthetisch."
+    }
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "title": "fm-spec",
+  "subtitle": "Visualizzatore di schema per il riferimento generativo",
+  "loading": "Caricamento…",
+  "error": "Errore",
+  "dash": "—",
+  "help": {
+    "open": "Aiuto"
+  },
+  "search": {
+    "placeholder": "Filtra…"
+  },
+  "list": {
+    "count": "{{shown}} / {{total}}"
+  },
+  "tabs": {
+    "steps": "ScriptSteps",
+    "functions": "Funzioni",
+    "locales": "Lingue"
+  },
+  "header": {
+    "schemaVersion": "Schema",
+    "coverage": "Versione FM",
+    "built": "Compilato il",
+    "steps": "ScriptSteps",
+    "functions": "Funzioni",
+    "locales": "Lingue",
+    "localesValue": "{{steps}} / {{functions}}",
+    "grammar": "Copertura della grammatica",
+    "grammarValue": "{{covered}}/{{total}} passi",
+    "attribution": "Contenuti della documentazione © Claris International Inc. FileMaker e Claris sono marchi di Claris International Inc. Questo progetto non è affiliato né approvato da Claris. Vedi SOURCES per l’attribuzione completa."
+  },
+  "steps": {
+    "col": {
+      "id": "ID passo",
+      "name": "Nome (EN)",
+      "categoryId": "ID categoria",
+      "category": "Categoria",
+      "originVersion": "Versione di origine",
+      "grammar": "Grammatica"
+    },
+    "grammarYes": "sì",
+    "grammarNo": "no"
+  },
+  "functions": {
+    "col": {
+      "id": "ID funzione",
+      "name": "Nome",
+      "category": "Categoria",
+      "returnType": "Tipo restituito",
+      "originVersion": "Versione di origine"
+    },
+    "detail": {
+      "returnType": "Tipo restituito",
+      "parameters": "Parametri",
+      "noParams": "Nessun parametro",
+      "optional": "opzionale",
+      "variadic": "variadico",
+      "signature": "Firma",
+      "purpose": "Scopo",
+      "example": "Esempio"
+    }
+  },
+  "params": {
+    "col": {
+      "index": "#",
+      "name": "Nome",
+      "description": "Descrizione"
+    }
+  },
+  "locales": {
+    "col": {
+      "code": "Lingua",
+      "steps": "Copertura dei passi",
+      "functions": "Copertura delle funzioni",
+      "parameters": "Righe di parametri"
+    }
+  },
+  "step": {
+    "slug": "Slug",
+    "section": {
+      "localized": "Dati del passo localizzati",
+      "parameters": "Parametri strutturati",
+      "grammar": "Grammatica XMLSnippet",
+      "saxml": "Dettagli SaXML"
+    },
+    "localized": {
+      "language": "Lingua",
+      "displayName": "Nome visualizzato",
+      "description": "Descrizione",
+      "help": "Aiuto"
+    },
+    "params": {
+      "none": "Nessun parametro"
+    },
+    "grammar": {
+      "template": "Modello di snippet",
+      "copy": "Copia",
+      "copied": "Copiato",
+      "elementOrder": "Ordine degli elementi",
+      "evidence": "Evidenza",
+      "notAvailable": "Grammatica non ancora acquisita — ondata W4",
+      "options": "Opzioni",
+      "constraints": "Vincoli",
+      "opt": {
+        "key": "Chiave",
+        "type": "Tipo",
+        "required": "Obbligatorio",
+        "label": "Etichetta (EN)",
+        "xmlPath": "Percorso XML",
+        "evidence": "Evidenza",
+        "values": "Valori",
+        "invertedHint": "La semantica dell'etichetta è invertita rispetto allo stato XML — true_text/false_text contengono già la mappatura completa testo→XML; non invertire mai di nuovo.",
+        "docOnly": "Documentato da Claris, ma non verificato tramite roundtrip — verificare il comportamento dopo l'incollaggio."
+      }
+    },
+    "saxml": {
+      "paramTypes": "Sequenza di tipi di parametro",
+      "example": "Esempio SaXML",
+      "hint": "SaXML e fmxmlsnippet sono due rappresentazioni distinte dello stesso passo.",
+      "none": "Nessuna mappatura SaXML acquisita.",
+      "sourceNote": "I dati forniti sono neutrali rispetto alle fonti: non contengono citazioni di fonti, nomi di autori o aziende, né artefatti di corpus. I payload di esempio mostrati per ogni step sono sintetici."
+    }
+  }
+}

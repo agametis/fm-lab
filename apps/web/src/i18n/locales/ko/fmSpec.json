@@ -1,0 +1,125 @@
+{
+  "title": "fm-spec",
+  "subtitle": "생성 참조를 위한 스키마 뷰어",
+  "loading": "로딩 중…",
+  "error": "오류",
+  "dash": "—",
+  "help": {
+    "open": "도움말"
+  },
+  "search": {
+    "placeholder": "필터…"
+  },
+  "list": {
+    "count": "{{shown}} / {{total}}"
+  },
+  "tabs": {
+    "steps": "ScriptSteps",
+    "functions": "함수",
+    "locales": "언어"
+  },
+  "header": {
+    "schemaVersion": "스키마",
+    "coverage": "FM 버전",
+    "built": "빌드 시각",
+    "steps": "ScriptSteps",
+    "functions": "함수",
+    "locales": "언어",
+    "localesValue": "{{steps}} / {{functions}}",
+    "grammar": "문법 커버리지",
+    "grammarValue": "{{covered}}/{{total}} 단계",
+    "attribution": "문서 콘텐츠 © Claris International Inc. FileMaker 및 Claris는 Claris International Inc.의 상표입니다. 이 프로젝트는 Claris와 제휴하거나 승인받지 않았습니다. 전체 출처 표시는 SOURCES를 참조하십시오."
+  },
+  "steps": {
+    "col": {
+      "id": "단계 ID",
+      "name": "이름 (EN)",
+      "categoryId": "카테고리 ID",
+      "category": "카테고리",
+      "originVersion": "최초 버전",
+      "grammar": "문법"
+    },
+    "grammarYes": "예",
+    "grammarNo": "아니오"
+  },
+  "functions": {
+    "col": {
+      "id": "함수 ID",
+      "name": "이름",
+      "category": "카테고리",
+      "returnType": "반환 유형",
+      "originVersion": "최초 버전"
+    },
+    "detail": {
+      "returnType": "반환 유형",
+      "parameters": "매개변수",
+      "noParams": "매개변수 없음",
+      "optional": "선택 사항",
+      "variadic": "가변 인자",
+      "signature": "시그니처",
+      "purpose": "목적",
+      "example": "예시"
+    }
+  },
+  "params": {
+    "col": {
+      "index": "#",
+      "name": "이름",
+      "description": "설명"
+    }
+  },
+  "locales": {
+    "col": {
+      "code": "언어",
+      "steps": "단계 커버리지",
+      "functions": "함수 커버리지",
+      "parameters": "매개변수 행"
+    }
+  },
+  "step": {
+    "slug": "slug",
+    "section": {
+      "localized": "지역화된 단계 데이터",
+      "parameters": "구조화된 매개변수",
+      "grammar": "XMLSnippet 문법",
+      "saxml": "SaXML 세부 정보"
+    },
+    "localized": {
+      "language": "언어",
+      "displayName": "표시 이름",
+      "description": "설명",
+      "help": "도움말"
+    },
+    "params": {
+      "none": "매개변수 없음"
+    },
+    "grammar": {
+      "template": "스니펫 템플릿",
+      "copy": "복사",
+      "copied": "복사됨",
+      "elementOrder": "요소 순서",
+      "evidence": "근거",
+      "notAvailable": "문법이 아직 수집되지 않음 — 웨이브 W4",
+      "options": "옵션",
+      "constraints": "제약 조건",
+      "opt": {
+        "key": "키",
+        "type": "유형",
+        "required": "필수",
+        "label": "레이블 (EN)",
+        "xmlPath": "XML 경로",
+        "evidence": "근거",
+        "values": "값",
+        "invertedHint": "레이블 의미가 XML 상태와 반전되어 있습니다 — true_text/false_text에 텍스트→XML 매핑이 완전히 포함되어 있으므로 추가로 반전하지 마십시오.",
+        "docOnly": "Claris 문서에 기재되어 있지만 라운드트립 검증은 되지 않았습니다 — 붙여넣기 후 동작을 확인하십시오."
+      }
+    },
+    "saxml": {
+      "paramTypes": "매개변수 유형 시퀀스",
+      "example": "SaXML 예시",
+      "hint": "SaXML과 fmxmlsnippet은 동일한 스텝의 서로 다른 두 표현입니다.",
+      "none": "수집된 SaXML 매핑이 없습니다.",
+      "sourceNote": "제공되는 데이터는 출처 중립적입니다. 출처 인용, 저작자 또는 회사 이름, 코퍼스 아티팩트를 포함하지 않습니다. 각 단계에 표시되는 예제 페이로드는 합성된 것입니다."
+    }
+  }
+}

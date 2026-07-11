@@ -21,7 +21,8 @@
     "docs": "Dokumentation",
     "xmlImport": "XML-import",
     "cluster": "Kluster",
-    "settings": "Inställningar"
+    "settings": "Inställningar",
+    "fmSpec": "fm-spec"
   },
   "errors": {
     "noDashboardId": "Inget dashboard-id angivet.",
@@ -110,5 +111,10 @@
     "disabledDuringFilter": "Avaktiverat vid filtrering",
     "folderDetailsTitle": "Visa mappdetaljer",
     "noName": "(inget namn)"
+  },
+  "noData": {
+    "title": "Inga data ännu",
+    "message": "Ingen FileMaker-lösning har importerats ännu. Importera först en XML-export för att använda den här vyn.",
+    "backToStart": "Tillbaka till startsidan"
   }
 }

@@ -1,0 +1,125 @@
+{
+  "title": "fm-spec",
+  "subtitle": "生成式参考的架构查看器",
+  "loading": "加载中…",
+  "error": "错误",
+  "dash": "—",
+  "help": {
+    "open": "帮助"
+  },
+  "search": {
+    "placeholder": "筛选…"
+  },
+  "list": {
+    "count": "{{shown}} / {{total}}"
+  },
+  "tabs": {
+    "steps": "ScriptSteps",
+    "functions": "函数",
+    "locales": "语言"
+  },
+  "header": {
+    "schemaVersion": "架构",
+    "coverage": "FM 版本",
+    "built": "构建于",
+    "steps": "ScriptSteps",
+    "functions": "函数",
+    "locales": "语言",
+    "localesValue": "{{steps}} / {{functions}}",
+    "grammar": "语法覆盖率",
+    "grammarValue": "{{covered}}/{{total}} 个步骤",
+    "attribution": "文档内容 © Claris International Inc. FileMaker 和 Claris 是 Claris International Inc. 的商标。本项目与 Claris 无关联，也未获其认可。完整署名请参见 SOURCES。"
+  },
+  "steps": {
+    "col": {
+      "id": "步骤 ID",
+      "name": "名称 (EN)",
+      "categoryId": "类别 ID",
+      "category": "类别",
+      "originVersion": "起始版本",
+      "grammar": "语法"
+    },
+    "grammarYes": "是",
+    "grammarNo": "否"
+  },
+  "functions": {
+    "col": {
+      "id": "函数 ID",
+      "name": "名称",
+      "category": "类别",
+      "returnType": "返回类型",
+      "originVersion": "起始版本"
+    },
+    "detail": {
+      "returnType": "返回类型",
+      "parameters": "参数",
+      "noParams": "无参数",
+      "optional": "可选",
+      "variadic": "可变参数",
+      "signature": "签名",
+      "purpose": "用途",
+      "example": "示例"
+    }
+  },
+  "params": {
+    "col": {
+      "index": "#",
+      "name": "名称",
+      "description": "说明"
+    }
+  },
+  "locales": {
+    "col": {
+      "code": "语言",
+      "steps": "步骤覆盖率",
+      "functions": "函数覆盖率",
+      "parameters": "参数行数"
+    }
+  },
+  "step": {
+    "slug": "slug",
+    "section": {
+      "localized": "本地化步骤数据",
+      "parameters": "结构化参数",
+      "grammar": "XMLSnippet 语法",
+      "saxml": "SaXML 详情"
+    },
+    "localized": {
+      "language": "语言",
+      "displayName": "显示名称",
+      "description": "说明",
+      "help": "帮助"
+    },
+    "params": {
+      "none": "无参数"
+    },
+    "grammar": {
+      "template": "代码片段模板",
+      "copy": "复制",
+      "copied": "已复制",
+      "elementOrder": "元素顺序",
+      "evidence": "证据",
+      "notAvailable": "语法尚未采集 — 波次 W4",
+      "options": "选项",
+      "constraints": "约束",
+      "opt": {
+        "key": "键",
+        "type": "类型",
+        "required": "必填",
+        "label": "标签 (EN)",
+        "xmlPath": "XML 路径",
+        "evidence": "证据",
+        "values": "值",
+        "invertedHint": "标签语义与 XML 状态相反 — true_text/false_text 已包含完整的文本→XML 映射；切勿再次反转。",
+        "docOnly": "已由 Claris 文档记载，但未经往返验证 — 粘贴后请验证行为。"
+      }
+    },
+    "saxml": {
+      "paramTypes": "参数类型序列",
+      "example": "SaXML 示例",
+      "hint": "SaXML 与 fmxmlsnippet 是同一步骤的两种不同表示形式。",
+      "none": "未采集到 SaXML 映射。",
+      "sourceNote": "随附的数据是来源中立的：不含任何来源引用、作者或公司名称，也没有语料库痕迹。每个步骤中显示的示例载荷均为合成内容。"
+    }
+  }
+}

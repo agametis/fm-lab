@@ -42,7 +42,7 @@ FM-Lab supports four complementary approaches to analyzing a FileMaker solution:
 - **XML Ingestion Pipeline** — converts FileMaker XML exports into a DuckDB database using a flexible SQL template system, designed for easy maintenance and updates as FileMaker evolves ♻️
 - **Katana-Engine** — XML chunking and streaming for processing massive catalogs with minimal memory usage and maximum parallelism 🔪
 - **Detailed Object Catalog** — detailed tables for the relevant FileMaker object types, combined with a universal catalog that links objects and their dependencies for fast cross-reference queries 🔗
-- **Detailed Reference Catalog** — localized tables for documented FileMaker script steps and functions, providing reference queries and inline help docs across up to 11 locales 📄
+- **Detailed Reference Catalog** — localized reference tables for documented FileMaker script steps and functions, enabling linting and inline help across up to 11 locales 📄
 - **DuckDB Backend** — in-process analytical database engine for fast and flexible queries without server setup, often delivering results in milliseconds, even for large solutions 🚀
 - **REST API** — Express server providing HTTP access to the analysis database, enabling integration with external tools and services 🧩
 - **Web Client** — React/Vite frontend for interactive exploration of the solution structure and dependencies with rich visualizations 🔎
@@ -76,6 +76,7 @@ Learn how FM-Lab turns FileMaker XML exports into a structured Object Catalog an
 - **Web Client** (`apps/web/`) — React/Vite frontend
 - **Tools** (`tools/`) — Utility scripts for various tasks.
 - **Docs** (`docs/`) — Documentation files for FileMaker Pro and MBS plugin functions, installable via Web frontend or Claude Skills.
+- **fm-spec** (`rest-api/db/fm_reference.duckdb`) — Reference tables for FileMaker script steps and functions, providing queryable syntax and grammar definitions for linting.
 - **Claude Skills** (`.claude/skills/`) — Contains Claude Code skills and slash commands for installation, conversion, lookup and analysis.
 - **Plugin registry** (`.fmlab/`) — Registry and preferences for FM-Lab plugins.
 
@@ -86,19 +87,12 @@ The only prerequisite on your machine is **[Docker](https://docs.docker.com/get-
 ```bash
 git clone https://github.com/marcel-more/fm-lab.git
 cd fm-lab
-bash tools/fmlab.sh up      # answers two questions, then opens the product
+bash tools/fmlab.sh up  # answers two questions, then starts
 ```
 
 `fmlab.sh up` asks **“Use Docker?”** and **“Start with the Claude Code agent?”**, brings the stack up in the background, and drops you straight into the product — the web client in your browser, or a live Claude Code session in the terminal. Then **drop your FileMaker XML export** into `xml/` (FileMaker Pro ▸ Tools ▸ Save a Copy as XML — enable “Include details for analysis tools”; one file per solution file) and click **XML conversion** in the web client. **Done** — explore the object catalog, dependencies and the Graph Explorer.
 
-Want the raw `docker compose` commands, the native (no-Docker) path, or the agent details? → **[Setup](#setup)**.
-
 ## Setup
-
-```bash
-git clone https://github.com/marcel-more/fm-lab.git
-cd fm-lab
-```
 
 There are **three ways** to run FM-Lab. They share the same catalog and settings in the cloned repo, so you can switch between them freely (e.g. add the agent later — nothing is lost).
 
@@ -106,10 +100,14 @@ There are **three ways** to run FM-Lab. They share the same catalog and settings
 
 For running **from a shell** (with or without Docker), the wrapper is the single entry point. It asks two questions and then does the right thing — nothing hidden: every `docker compose …` command it runs is printed first.
 
-```bash
-bash tools/fmlab.sh up
-#  Use Docker? [Y/n]                        → No  = native setup on this host (way c)
-#  Start with the Claude Code agent? [y/N]  → Yes = Claude overlay · No = analysis only
+```
+#  Use Docker? [Y/n]
+     → Yes = Docker start            (way a)
+     → No  = native setup on host    (way c)
+
+#  Start with the Claude Code agent? [y/N]
+     → Yes = Claude overlay
+     → No  = analysis only
 ```
 
 Skip the prompts with flags: `--docker` / `--native`, `--claude` / `--no-claude`, `-d` (background only). `bash tools/fmlab.sh down` stops the stack, `… logs` follows the logs, `… agent` re-attaches Claude to a running stack.
@@ -129,16 +127,17 @@ The image ships every prerequisite pinned to a tested version (DuckDB CLI + webb
 
 The catalog (`db/`), conversions and settings live in the cloned repo **on the host**, so they survive restarts; updating is a plain `git pull` (the repo is mounted, not baked into the image). This is also the **Windows** path — the whole POSIX layer runs inside Linux, so the host OS no longer matters.
 
-### b) VS Code Dev Container
+### b) VS Code Dev Container (easy start)
 
-Open the repo in VS Code → **“Reopen in Container”** → pick **fm-lab** or **fm-lab + Claude Code**. Everything starts automatically — bootstrap, both servers, and the browser opens the web client. In the Claude variant the egress firewall and a credentials preflight run on start, and you reach the agent through the **Claude Code VS Code extension** — no terminal step.
+Open the repository in VS Code with the **Dev Containers** extension installed, select **“Reopen in Container”** → pick **`fm-lab`** or **`fm-lab + Claude Code`**. Everything starts automatically — bootstrap, both servers, and the browser opens the web client. In the Claude variant the egress firewall and a credentials preflight run on start, and you reach the agent through the **Claude Code for VS Code** extension — no terminal steps required.
+Recommended if you already work in VS Code.
 
 ### c) Native (no Docker, macOS / Linux)
 
 For a host install without Docker, answer **No** to “Use Docker?”, or go straight there:
 
 ```bash
-bash tools/fmlab.sh up --native      # hands off to tools/init.sh
+bash tools/fmlab.sh up --native   # hands off to tools/init.sh
 ```
 
 `init.sh` checks the [prerequisites](#prerequisites), installs dependencies, seeds the environment, starts the servers, and converts any XML already in `xml/`. Native **Windows** is not supported — use way a) or b) via Docker Desktop + WSL2.
@@ -149,24 +148,24 @@ The Claude variant adds the **[Claude Code](https://docs.claude.com/en/docs/clau
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.claude.yml up
-docker compose exec -it api claude        # sign in once; the login then persists
+docker compose exec -it api claude  # sign in once; login then persists
 ```
 
 On first launch choose **“Claude account with subscription”** and complete the browser sign-in once — persisted in a named volume, so it survives restarts.
 
-> **The sign-in URL wraps across terminal lines — don’t select it by hand.** A truncated URL fails with _“Invalid response_type”_ / _“Unknown scope”_. Copy it with **`c`** (OSC-52 terminals such as iTerm2), or paste it into an editor and remove every line break first — then paste the returned code at the `Paste code here` prompt.
+> **The sign-in URL wraps across terminal lines — don’t select it by hand.** A truncated URL fails with _“Invalid response_type”_ . Copy it with **`c`** or paste it into an editor and remove every line break first. After visiting the Claude authentication page: paste the returned code at the `Paste code here` prompt.
 
 **No browser at hand?** Put credentials in a `.env` next to the compose files instead — `ANTHROPIC_API_KEY=…` (API-key billing) or `CLAUDE_CODE_OAUTH_TOKEN=…` (from `claude setup-token`). No secret is ever stored in the image.
 
-The agent stack also grants an **opt-in egress firewall** (allowlist: npm, GitHub, the Anthropic API, the DuckDB extension host, the VS Code marketplace) — applied automatically in the Dev Container; otherwise Claude Code’s permission prompts remain your safeguard.
+The agent stack also grants an **opt-in egress firewall** (allowlist: npm, GitHub, the Anthropic API, the DuckDB extension host, the VS Code marketplace) — applied automatically in the Dev Container.
 
 ### Configuration and platform notes
 
 **Tuning (optional):** copy `.env.example` to `.env` next to `docker-compose.yml` and uncomment what you need:
 
 ```bash
-FMLAB_MEM_LIMIT=8g        # per-container RAM cap (raise for very large solutions)
-FMLAB_DUCKDB_THREADS=4    # DuckDB thread cap (raise on hosts with more cores)
+FMLAB_MEM_LIMIT=8g      # RAM cap (raise for large solutions)
+FMLAB_DUCKDB_THREADS=4  # thread cap (raise on hosts with more cores)
 ```
 
 **Windows:** use **Docker Desktop with the WSL2 backend** and keep the cloned repo **inside** the WSL2 distribution (e.g. `~/projects/…`), **not** on the Windows drive (`/mnt/c/…`) — a repo on `/mnt/c` suffers slow bind mounts and file-watcher (inotify) problems.
@@ -189,27 +188,22 @@ Export **each file** of your solution via `Tools > Save a Copy As XML` (SaXML) i
 **Convert** — click **XML conversion** in the web client (live progress, persistent log, no terminal), use the `/convert-xml` skill, or the CLI:
 
 ```bash
-bash tools/convert_fm_xml.sh --turbo           # streaming; only changed catalogs
-bash tools/convert_fm_xml.sh --batch           # standard; all files in xml/
+bash tools/convert_fm_xml.sh --turbo  # streaming; only changed catalogs
+bash tools/convert_fm_xml.sh --batch  # standard; all files in xml/
 bash tools/convert_fm_xml.sh "MyDatabase.xml"  # a single file
 ```
 
-(Docker: prefix with `docker compose exec api`, or run the one-shot job `docker compose run --rm ingestion`.)
-
-**Servers** — start with `bash tools/fmlab.sh up` (Docker) or `bash tools/start-servers.sh` (native); stop with `bash tools/fmlab.sh down` or `bash tools/stop-servers.sh`.
-
-<details><summary><b>Manual start (power users)</b></summary>
-
-Run the REST API and web client as standalone services:
+**Servers**
 
 ```bash
-# REST API (port 3003)
-cd rest-api && cp .env.example .env && npm run dev
+## Docker
+bash tools/fmlab.sh up         # start servers
+bash tools/fmlab.sh down       # stop servers
 
-# Web client (port 5173)
-cd apps/web && cp .env.example .env && npm run dev
+## native
+bash tools/start-servers.sh    # start servers
+bash tools/stop-servers.sh     # stop servers
 ```
-</details>
 
 ## Further Documentation
 
@@ -242,10 +236,18 @@ The project has grown along a clear arc — from a solid foundation toward an in
 - **v0.8.3 – v0.8.5** · _Graph-based analysis_ — community detection, semantic naming, and an interactive Graph Explorer.
 - **v0.8.6** · _Docker installer_ - including all dependencies for easy setup. Experimental Windows support via Docker on WSL2.
 - **v0.8.7 – v0.8.8** · _Static code analysis_ - predefined inspection queries for standard checks, completion of the object catalog, and expanded reference coverage.
+- **v0.8.9 – v0.8.10** · _fm-spec sidecar + system prompt cleanup_ - groundwork for reliable agentic code generation.
 
 - More details in [`CHANGELOG.md`](CHANGELOG.md) — release history
 
 The core architecture is in place and ready for real-world use. Many more features are under active development — stay tuned for updates! 😎
+
+## Your role as a supporter
+
+- The pre-release stage involves extensive groundwork and architectural decision-making, requiring strong discipline from the maintainer.
+- Development takes place in a private repository. This public repository contains a subset that is synchronized for releases only.
+- Suggestions are welcome, but pull requests cannot be merged because of the static publishing pipeline.
+- To report an issue or request a feature, please use the **Issues** or **Discussions** section on GitHub, or contact the maintainer through another channel.
 
 ## Roadmap
 
@@ -288,3 +290,10 @@ This software is provided "as is", without warranty of any kind, express or impl
 ### License
 
 MIT — see [`LICENSE`](LICENSE).
+
+---
+
+### Data sources & attribution
+
+The bundled FileMaker reference database (`rest-api/db/fm_reference.duckdb`)
+describes script steps, functions and their grammar. Its contents draw on several sources; see [`SOURCES.md`](SOURCES.md) for the full list.

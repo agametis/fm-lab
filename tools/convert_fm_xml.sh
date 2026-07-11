@@ -136,7 +136,6 @@
 #           UUIDs no longer crash the catalog build with a duplicate-key error (a1). Absorbed
 #           duplicates are logged (a2). Sync no longer blocked by a single failed file and refuses
 #           to publish a master without ObjectCatalog (a4). Bit-identical on clean data.
-#           [Tester-Vorabpatch — bugfix-only.]
 #   2.4.0 — webbed capability gate (stage b): startup probe of the actually
 #           loaded webbed → clear upfront abort (exit 8) when it lacks the read_xml 'streaming'
 #           parameter (the real version floor, previously a cryptic mid-run Binder Error), plus

@@ -32,6 +32,7 @@ const stepMetaByLang = new Map();
 function clearCaches() {
   metaCache.clear();
   stepMetaByLang.clear();
+  refTableExistsCache.clear();
 }
 
 function isStepLang(lang) {
@@ -85,6 +86,25 @@ function normalizeRow(row) {
 
 function mirrorLangDir(lang) {
   return REFERENCE_LANG_TO_MIRROR_DIR[lang] || lang;
+}
+
+/**
+ * Prüft, ob eine Tabelle im attachten `ref`-Katalog existiert. Wird genutzt,
+ * um die generativen Tabellen (Referenz ≥ 1.2.0) gegen ältere Referenzen
+ * abzusichern (Konsumenten-Schutz). Ergebnis wird pro Prozess
+ * gecacht (Schema ändert sich nicht zur Laufzeit).
+ */
+const refTableExistsCache = new Map();
+async function refTableExists(name) {
+  if (refTableExistsCache.has(name)) return refTableExistsCache.get(name);
+  const r = await db.executeQuery(
+    `SELECT 1 FROM information_schema.tables
+     WHERE table_catalog = 'ref' AND table_name = ? LIMIT 1`,
+    [String(name)]
+  );
+  const exists = r.rows.length > 0;
+  refTableExistsCache.set(name, exists);
+  return exists;
 }
 
 /**
@@ -153,8 +173,18 @@ async function listSteps(lang) {
   const cacheKey = `steps-list:${language}`;
   if (metaCache.has(cacheKey)) return metaCache.get(cacheKey);
 
+  // hasGrammar: EXISTS-Prüfung auf step_xml_map — nur wenn die generative
+  // Tabelle vorhanden ist (Referenz ≥ 1.2.0). Bei älterer Referenz degradiert
+  // das Feld auf `false`, ohne die Liste zu brechen.
+  const grammarTable = await refTableExists('step_xml_map');
+  const grammarSelect = grammarTable
+    ? `EXISTS (SELECT 1 FROM ref.step_xml_map m WHERE m.step_id = s.step_id)`
+    : `FALSE`;
+
   const r = await db.executeQuery(`
     SELECT s.step_id, s.url_slug, s.canonical_name, s.category_id,
+           s.origin_version,
+           ${grammarSelect} AS has_grammar,
            sl.display_name, sl.description, sl.url
     FROM ref.script_steps s
     LEFT JOIN ref.script_steps_lang sl
@@ -169,6 +199,8 @@ async function listSteps(lang) {
     displayName: row.display_name || row.canonical_name,
     description: row.description,
     categoryId:  Number(row.category_id),
+    originVersion: row.origin_version || null,
+    hasGrammar:  Boolean(row.has_grammar),
     helpUrl:     row.url,
     localHelpUrl: buildLocalHelpUrl('steps', language, row.url_slug),
   }));
@@ -196,13 +228,13 @@ async function findStepBySlugOrId(idOrSlug) {
   let row;
   if (isNumeric) {
     const r = await db.executeQuery(
-      `SELECT step_id, url_slug, canonical_name, category_id FROM ref.script_steps WHERE step_id = ?`,
+      `SELECT step_id, url_slug, canonical_name, category_id, origin_version FROM ref.script_steps WHERE step_id = ?`,
       [parseInt(idOrSlug, 10)]
     );
     row = r.rows[0];
   } else {
     const r = await db.executeQuery(
-      `SELECT step_id, url_slug, canonical_name, category_id FROM ref.script_steps WHERE url_slug = ? OR canonical_name = ?`,
+      `SELECT step_id, url_slug, canonical_name, category_id, origin_version FROM ref.script_steps WHERE url_slug = ? OR canonical_name = ?`,
       [String(idOrSlug), String(idOrSlug)]
     );
     row = r.rows[0];
@@ -456,7 +488,7 @@ async function lookupToken(token, lang, { all = false } = {}) {
     });
   }
   for (const r of fnRes.rows) {
-    // chunk_role='getparameter' → in canonical='Get' + subParameter aufspalten (PRD §5.8).
+    // chunk_role='getparameter' → in canonical='Get' + subParameter aufspalten.
     // In der Reference-DB ist canonical_name bereits der reine Parameter-Name
     // (z.B. `FileName`, `AccountName`) — kein "Get"-Präfix. Bei Get-Funktionen
     // bilden wir das vollständige Token `Get(canonical_name)` für die UI ab.
@@ -759,6 +791,244 @@ async function getBuildMeta() {
   return meta;
 }
 
+/**
+ * ============================================================================
+ * fm-spec Schema-Viewer
+ * ============================================================================
+ */
+
+/**
+ * Kopfbereich in einem Call: reference_meta + Zähler + Locale-Matrix.
+ * Degradiert definiert, wenn generative Tabellen fehlen (grammarSteps = 0).
+ */
+async function getReferenceMeta() {
+  assertAttached();
+  const cacheKey = 'fmspec-meta';
+  if (metaCache.has(cacheKey)) return metaCache.get(cacheKey);
+
+  // reference_meta ist eine key/value-Tabelle → zu einem Objekt pivotieren.
+  const metaRows = await db.executeQuery(`SELECT key, value FROM ref.reference_meta`);
+  const referenceMeta = {};
+  for (const row of metaRows.rows) referenceMeta[row.key] = row.value;
+
+  const grammarTable = await refTableExists('step_xml_map');
+
+  const [stepCount, fnCount, stepLoc, fnLoc, grammar] = await Promise.all([
+    db.executeQuery(`SELECT COUNT(*) AS n FROM ref.script_steps`),
+    db.executeQuery(`SELECT COUNT(*) AS n FROM ref.functions`),
+    db.executeQuery(`SELECT COUNT(DISTINCT language) AS n FROM ref.script_steps_lang`),
+    db.executeQuery(`SELECT COUNT(DISTINCT language) AS n FROM ref.functions_lang`),
+    grammarTable
+      ? db.executeQuery(`SELECT COUNT(*) AS n FROM ref.step_xml_map`)
+      : Promise.resolve({ rows: [{ n: 0 }] }),
+  ]);
+
+  // Locale-Matrix (deckt Tab 4.3 mit ab). Pro Sprache: Step-/Functions-/
+  // Parameter-Abdeckung. Union der Sprachen aus beiden Domänen.
+  const [stepsByLang, fnsByLang, paramsByLang] = await Promise.all([
+    db.executeQuery(`SELECT language, COUNT(*) AS n FROM ref.script_steps_lang GROUP BY language`),
+    db.executeQuery(`SELECT language, COUNT(*) AS n FROM ref.functions_lang GROUP BY language`),
+    db.executeQuery(`SELECT language, COUNT(*) AS n FROM ref.script_step_parameters_lang GROUP BY language`),
+  ]);
+
+  const localeMap = new Map();
+  const ensure = (code) => {
+    if (!localeMap.has(code)) {
+      localeMap.set(code, { code, steps: 0, functions: 0, stepParameters: 0 });
+    }
+    return localeMap.get(code);
+  };
+  for (const row of stepsByLang.rows) ensure(row.language).steps = Number(row.n);
+  for (const row of fnsByLang.rows) ensure(row.language).functions = Number(row.n);
+  for (const row of paramsByLang.rows) ensure(row.language).stepParameters = Number(row.n);
+  const locales = Array.from(localeMap.values()).sort((a, b) => a.code.localeCompare(b.code));
+
+  const data = {
+    referenceMeta: {
+      schema_version:    referenceMeta.schema_version || null,
+      filemaker_coverage: referenceMeta.filemaker_coverage || null,
+      built_at:          referenceMeta.built_at || null,
+      source_commit:     referenceMeta.source_commit || null,
+    },
+    counts: {
+      scriptSteps:     Number(stepCount.rows[0].n),
+      functions:       Number(fnCount.rows[0].n),
+      stepLocales:     Number(stepLoc.rows[0].n),
+      functionLocales: Number(fnLoc.rows[0].n),
+      grammarSteps:    Number(grammar.rows[0].n),
+    },
+    locales,
+    grammarAvailable: grammarTable,
+  };
+  metaCache.set(cacheKey, data);
+  return data;
+}
+
+/**
+ * Lokalisierte Step-Daten + Parameter über ALLE Sprachen
+ * in einem Call (vermeidet n Requests je Sprache).
+ */
+async function getStepAllLangs(idOrSlug) {
+  assertAttached();
+  const base = await findStepBySlugOrId(idOrSlug);
+  if (!base) return null;
+
+  const [langRes, paramRes] = await Promise.all([
+    db.executeQuery(`
+      SELECT language, display_name, description, parameter, url
+      FROM ref.script_steps_lang
+      WHERE step_id = ?
+      ORDER BY language
+    `, [base.step_id]),
+    db.executeQuery(`
+      SELECT language, param_index, name, description
+      FROM ref.script_step_parameters_lang
+      WHERE step_id = ?
+      ORDER BY language, param_index
+    `, [base.step_id]),
+  ]);
+
+  const paramsByLang = new Map();
+  for (const p of paramRes.rows) {
+    if (!paramsByLang.has(p.language)) paramsByLang.set(p.language, []);
+    paramsByLang.get(p.language).push({
+      index: Number(p.param_index),
+      name: p.name,
+      description: p.description,
+    });
+  }
+
+  const langs = langRes.rows.map((row) => ({
+    language:     row.language,
+    displayName:  row.display_name || base.canonical_name,
+    description:  row.description || null,
+    parameterText: row.parameter || null,
+    helpUrl:      row.url || null,
+    localHelpUrl: buildLocalHelpUrl('steps', row.language, base.url_slug),
+    parameters:   paramsByLang.get(row.language) || [],
+  }));
+
+  return {
+    stepId:        base.step_id,
+    canonicalName: base.canonical_name,
+    urlSlug:       base.url_slug,
+    categoryId:    base.category_id,
+    originVersion: base.origin_version || null,
+    langs,
+  };
+}
+
+/**
+ * Grammatik-Details (Abschnitte 3+4 des Detail-Views).
+ * 404-frei bezüglich Grammatik: existiert keine step_xml_map-Zeile (oder fehlt
+ * die Tabelle bei Referenz < 1.2.0) → `{ available:false, xmlMap:null, … }`.
+ * Ein unbekannter Step wirft dagegen REF_STEP_NOT_FOUND (Controller → 404).
+ */
+async function getStepGrammar(idOrSlug) {
+  assertAttached();
+  const base = await findStepBySlugOrId(idOrSlug);
+  if (!base) {
+    const err = new Error(`No step with id/slug '${idOrSlug}'.`);
+    err.code = 'REF_STEP_NOT_FOUND';
+    throw err;
+  }
+
+  const empty = {
+    stepId: base.step_id,
+    canonicalName: base.canonical_name,
+    available: false,
+    xmlMap: null,
+    options: [],
+    constraints: [],
+  };
+
+  if (!(await refTableExists('step_xml_map'))) return empty;
+
+  // SELECT * — the deployed consumer variant strips curation columns (notes)
+  // and adds payload columns (saxml_example); tolerate both shapes.
+  const mapRes = await db.executeQuery(`
+    SELECT * FROM ref.step_xml_map WHERE step_id = ?
+  `, [base.step_id]);
+  if (mapRes.rows.length === 0) return empty;
+  const m = mapRes.rows[0];
+
+  const [optRes, valRes, conRes] = await Promise.all([
+    db.executeQuery(`
+      SELECT option_key, option_type, required, display_location,
+             display_label_en, true_text, false_text, omit_when_false,
+             inverted_label, xml_path, sort_order, evidence, verified_version
+      FROM ref.step_options
+      WHERE step_id = ?
+      ORDER BY sort_order, option_key
+    `, [base.step_id]),
+    // SELECT * keeps this tolerant across reference schema versions
+    // (per-value `evidence` exists since fm_reference 1.7.0)
+    db.executeQuery(`
+      SELECT *
+      FROM ref.step_option_values
+      WHERE step_id = ?
+      ORDER BY option_key, xml_value
+    `, [base.step_id]),
+    db.executeQuery(`
+      SELECT constraint_kind, detail, evidence, verified_version
+      FROM ref.step_constraints
+      WHERE step_id = ?
+      ORDER BY constraint_kind
+    `, [base.step_id]),
+  ]);
+
+  const valuesByKey = new Map();
+  for (const v of valRes.rows) {
+    if (!valuesByKey.has(v.option_key)) valuesByKey.set(v.option_key, []);
+    valuesByKey.get(v.option_key).push({
+      xmlValue: v.xml_value,
+      displayTextEn: v.display_text_en,
+      evidence: v.evidence ?? null,
+    });
+  }
+
+  const options = optRes.rows.map((o) => ({
+    optionKey:      o.option_key,
+    optionType:     o.option_type,
+    required:       Boolean(o.required),
+    displayLocation: o.display_location,
+    displayLabelEn: o.display_label_en,
+    trueText:       o.true_text,
+    falseText:      o.false_text,
+    omitWhenFalse:  Boolean(o.omit_when_false),
+    invertedLabel:  Boolean(o.inverted_label),
+    xmlPath:        o.xml_path,
+    sortOrder:      o.sort_order != null ? Number(o.sort_order) : null,
+    evidence:       o.evidence,
+    verifiedVersion: o.verified_version,
+    values:         valuesByKey.get(o.option_key) || [],
+  }));
+
+  const constraints = conRes.rows.map((c) => ({
+    constraintKind:  c.constraint_kind,
+    detail:          c.detail,
+    evidence:        c.evidence,
+    verifiedVersion: c.verified_version,
+  }));
+
+  return {
+    stepId: base.step_id,
+    canonicalName: base.canonical_name,
+    available: true,
+    xmlMap: {
+      snippetTemplate:  m.snippet_template,
+      saxmlParamTypes:  m.saxml_param_types,
+      saxmlExample:     m.saxml_example ?? null,
+      elementOrder:     m.element_order,
+      evidence:         m.evidence,
+      verifiedVersion:  m.verified_version,
+      notes:            m.notes ?? null,
+    },
+    options,
+    constraints,
+  };
+}
+
 module.exports = {
   clearCaches,
   // Sprachen
@@ -788,4 +1058,8 @@ module.exports = {
   mirrorLangDir,
   // Build-Info
   getBuildMeta,
+  // fm-spec Schema-Viewer
+  getReferenceMeta,
+  getStepAllLangs,
+  getStepGrammar,
 };

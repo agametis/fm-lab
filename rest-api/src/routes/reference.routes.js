@@ -7,7 +7,7 @@ const environment = require('../config/environment');
 const helpService = require('../services/help.service');
 
 /**
- * Reference-Routes (PRD §5)
+ * Reference-Routes
  *
  * WICHTIG bei Routen-Reihenfolge:
  *   - /help/status muss VOR /help/:lang/:slug stehen (sonst wird 'status' als lang interpretiert)
@@ -54,12 +54,16 @@ router.use('/reference/_static/:lang', (req, res, next) => {
 // Help-HTML (rohes Dokument) — der Slug-Parameter kann '.html'-Suffix tragen
 router.get('/reference/help/:lang/:slug', controller.helpHtml);
 
-// === Categories / Lookup ======================================================
+// === Categories / Lookup / Meta ===============================================
 router.get('/reference/categories', controller.getCategories);
 router.get('/reference/lookup', controller.lookup);
+router.get('/reference/meta', controller.getMeta);
 
 // === Steps ====================================================================
+// Reihenfolge: literale/spezifische Sub-Pfade VOR dem :idOrSlug-Detail.
 router.get('/reference/steps', controller.listSteps);
+router.get('/reference/steps/:idOrSlug/langs', controller.getStepLangs);
+router.get('/reference/steps/:idOrSlug/grammar', controller.getStepGrammar);
 router.get('/reference/steps/:idOrSlug/embed', controller.getStepEmbed);
 router.get('/reference/steps/:idOrSlug', controller.getStep);
 

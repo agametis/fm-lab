@@ -42,6 +42,20 @@ const FIRST_QUOTED_ARG_RE = /\(\s*"([^"]+)"/;
 const FIELD_REF_RE = /<FieldReference[^>]*\bname="([^"]*)"[^>]*\bUUID="([^"]*)"/;
 const TO_REF_RE = /<TableOccurrenceReference[^>]*\bname="([^"]*)"/;
 
+// FindRequestSet im Step_XML (Perform Find / Enter Find Mode / Constrain / Extend):
+// <FindRequest action="find|omit"> mit je 1..n <find criteria="…"> um eine
+// FieldReference. Toleranter als FIELD_REF_RE: kein UUID-Attribut vorausgesetzt.
+const FIND_REQUEST_RE = /<FindRequest\b[^>]*\baction="([^"]*)"[^>]*>([\s\S]*?)<\/FindRequest>/g;
+const FIND_CRITERIA_RE = /<find\b([^>]*)>([\s\S]*?)<\/find>/g;
+const CRITERIA_ATTR_RE = /\bcriteria="([^"]*)"/;
+const FIND_FIELD_NAME_RE = /<FieldReference\b[^>]*\bname="([^"]*)"/;
+
+// SortList im Step_XML (Sort Records): <Sort type="Ascending|Descending|Custom">
+// um PrimaryField/FieldReference; Custom trägt zusätzlich eine ValueListReference.
+// \b nach "Sort" verhindert einen Match auf das umgebende <SortSpecification>.
+const SORT_ENTRY_RE = /<Sort\b[^>]*\btype="([^"]*)"[^>]*>([\s\S]*?)<\/Sort>/g;
+const VALUELIST_NAME_RE = /<ValueListReference\b[^>]*\bname="([^"]*)"/;
+
 /**
  * Strip the outer <Chunk type="…">…</Chunk> wrapper.
  */
@@ -249,7 +263,7 @@ const FALLBACK_CALC_MAX = 400;
  * Bei vorhandenem DDR wird diese Funktion
  * nie aufgerufen (d.Step_Text gewinnt im SQL/Aufrufer).
  */
-function composeFallbackStepText(row, stepRefs) {
+function composeFallbackStepText(row, stepRefs, { skipFields = false } = {}) {
   const parts = [];
 
   // 1. Variable (Set Variable LHS) — Ref-Duplikat wird unten ausgefiltert.
@@ -258,9 +272,14 @@ function composeFallbackStepText(row, stepRefs) {
   // 2. Step-XML-Referenzen (aufgelöste Namen aus P2): Script-/Layout-/Menüset-
   //    Namen in typografischen Quotes (wie im deutschen DDR-Text), Felder als
   //    TO::Feld, TOs/Wertelisten nackt.
+  //    skipFields: bei Find-/Sort-Steps mit geparsten Kriterien entfällt die
+  //    nackte Feld-/Wertelisten-Liste — Felder und Wertelisten erscheinen
+  //    stattdessen im Kriterien-Segment (TO::Feld: „Kriterium“ bzw.
+  //    TO::Feld: Werteliste „X“), sonst doppelte Nennung.
   for (const r of stepRefs || []) {
     if (!r.name) continue;
     if (r.type === 'variable') continue; // deckt variable_name bereits ab
+    if (skipFields && (r.type === 'field' || r.type === 'valueList')) continue;
     if (r.type === 'script' || r.type === 'layout' || r.type === 'menuset') {
       parts.push(`„${r.name}“`);
     } else if (r.table) {
@@ -286,6 +305,103 @@ function composeFallbackStepText(row, stepRefs) {
 
   if (parts.length === 0) return null; // parameterloser Step → Step-Name allein ist korrekt
   return `${row.step_name} [ ${parts.join(' ; ')} ]`;
+}
+
+/**
+ * Parst die FindRequestSet-Struktur aus dem Step_XML eines Find-Steps
+ * (Ergebnismenge suchen / Enter Find Mode / Constrain / Extend Found Set).
+ * Liefert je Request die Aktion (find/omit) und die Kriterien als
+ * {table, field, criteria} — Namen und Kriterium entity-dekodiert.
+ */
+function parseFindRequests(stepXml) {
+  if (!stepXml || stepXml.indexOf('<FindRequestSet') === -1) return [];
+  const requests = [];
+  for (const reqMatch of String(stepXml).matchAll(FIND_REQUEST_RE)) {
+    const action = reqMatch[1];
+    const criteria = [];
+    for (const critMatch of reqMatch[2].matchAll(FIND_CRITERIA_RE)) {
+      const attrMatch = CRITERIA_ATTR_RE.exec(critMatch[1]);
+      const fieldMatch = FIND_FIELD_NAME_RE.exec(critMatch[2]);
+      const toMatch = TO_REF_RE.exec(critMatch[2]);
+      criteria.push({
+        criteria: attrMatch ? decodeXmlEntities(attrMatch[1]) : '',
+        field: fieldMatch ? decodeXmlEntities(fieldMatch[1]) : null,
+        table: toMatch ? decodeXmlEntities(toMatch[1]) : null,
+      });
+    }
+    if (criteria.length > 0) requests.push({ action, criteria });
+  }
+  return requests;
+}
+
+/**
+ * Klammer-Segmente für die Find-Requests eines Steps: pro Request ein Segment
+ * `[ Suchen: TO::Feld: „Kriterium“ ; … ]` bzw. `[ Ausschließen: … ]`.
+ * Requests untereinander sind OR-verknüpft (eigene Segmente), Kriterien
+ * innerhalb eines Requests AND-verknüpft (mit ` ; ` gereiht). Die Segmente
+ * werden mit \r gereiht — das Frontend kollabiert `\r[` inline (analog zur
+ * Inserted-Text-Klammer). Feldnamen in TO::Feld-Notation matchen die
+ * Step-Refs, der Client-Tokenizer verlinkt sie automatisch.
+ */
+function composeFindRequestsText(stepXml) {
+  const requests = parseFindRequests(stepXml);
+  if (requests.length === 0) return null;
+  const segments = requests.map(req => {
+    const crits = req.criteria.map(c => {
+      // Leerer Feldname kommt vor (kaputte FieldReference in der Quell-Lösung,
+      // name="") — als "TO::?" kenntlich machen statt still zu verschlucken.
+      const target = c.table ? `${c.table}::${c.field || '?'}` : (c.field || '?');
+      return `${target}: „${c.criteria}“`;
+    });
+    const label = req.action === 'omit' ? 'Ausschließen' : 'Suchen';
+    return `[ ${label}: ${crits.join(' ; ')} ]`;
+  });
+  return segments.join('\r');
+}
+
+/**
+ * Parst die SortList aus dem Step_XML eines Sortieren-Steps (Sort Records).
+ * Liefert je Sortierkriterium Feld/TO, Richtung (Ascending/Descending/Custom)
+ * und bei Custom den Namen der Werteliste — in Sortier-Prioritätsreihenfolge
+ * (XML-Reihenfolge), Namen entity-dekodiert.
+ */
+function parseSortList(stepXml) {
+  if (!stepXml || stepXml.indexOf('<SortList') === -1) return [];
+  const entries = [];
+  for (const m of String(stepXml).matchAll(SORT_ENTRY_RE)) {
+    const fieldMatch = FIND_FIELD_NAME_RE.exec(m[2]);
+    const toMatch = TO_REF_RE.exec(m[2]);
+    const vlMatch = VALUELIST_NAME_RE.exec(m[2]);
+    entries.push({
+      order: m[1],
+      field: fieldMatch ? decodeXmlEntities(fieldMatch[1]) : null,
+      table: toMatch ? decodeXmlEntities(toMatch[1]) : null,
+      valueList: vlMatch ? decodeXmlEntities(vlMatch[1]) : null,
+    });
+  }
+  return entries;
+}
+
+/**
+ * Klammer-Segment für die Sortierkriterien eines Sort-Records-Steps:
+ * `[ TO::Feld: aufsteigend ; TO::Feld: Werteliste „X“ ; … ]` in
+ * Prioritätsreihenfolge. Analog composeFindRequestsText nur für den
+ * Fallback-Pfad gedacht — der DDR-Step_Text trägt die Sortierung selbst
+ * ("Specified Sort Order: …; ascending").
+ */
+function composeSortListText(stepXml) {
+  const entries = parseSortList(stepXml);
+  if (entries.length === 0) return null;
+  const parts = entries.map(e => {
+    // Leerer Feldname analog Find-Kriterien als "TO::?" kenntlich machen.
+    const target = e.table ? `${e.table}::${e.field || '?'}` : (e.field || '?');
+    let order;
+    if (e.order === 'Descending') order = 'absteigend';
+    else if (e.order === 'Custom') order = e.valueList ? `Werteliste „${e.valueList}“` : 'benutzerdefiniert';
+    else order = 'aufsteigend';
+    return `${target}: ${order}`;
+  });
+  return `[ ${parts.join(' ; ')} ]`;
 }
 
 /**
@@ -406,10 +522,32 @@ function formatScript(rows, { object, refs }) {
     // Ohne DDR-Text (Datei ohne DDR-Info): Klartext-Näherung aus den
     // materialisierten Step-Bestandteilen komponieren (Phase 2a); erst wenn auch
     // das nichts hergibt (parameterloser Step), bleibt der Step-Name allein.
-    const fallback = row.step_text ? null : composeFallbackStepText(row, stepRefsByLine[row.line_index]);
+    // Verbindlichkeits-Kette für den Zeilentext (pro Step, nicht pro Datei —
+    // auch in DDR-Dateien kann eine einzelne DDR-Zeile fehlen):
+    //   1. DDR_ScriptSteps.Step_Text — FM-generiert, maßgeblich. Trägt Such-/
+    //      Sortierkriterien gespeicherter Abfragen bereits selbst ("Specified
+    //      Find Requests: …; Criteria: …" / "Specified Sort Order: …"), darum
+    //      wird ihm NICHTS hinzukomponiert (Dublettengefahr).
+    //   2. Komponierte Näherung aus den P1/P2-Step-Bestandteilen plus — für
+    //      Find-/Sort-Steps — die aus dem Step_XML geparsten Kriterien-Segmente
+    //      (composeFindRequestsText/composeSortListText; die Segmente ersetzen
+    //      dabei die nackte Feld-/Wertelisten-Liste, skipFields). Gekennzeichnet
+    //      als textSource: 'fallback'. Ein Step trägt nie Find UND Sort.
+    //   3. Nackter Step-Name (parameterloser Step).
+    const criteriaSegments = row.step_text
+      ? null
+      : (composeFindRequestsText(row.step_xml) || composeSortListText(row.step_xml));
+    const fallback = row.step_text
+      ? null
+      : composeFallbackStepText(row, stepRefsByLine[row.line_index], { skipFields: !!criteriaSegments });
     const baseText = row.step_text || fallback || row.step_name;
     const inserted = formatInsertedText(row.inserted_text);
-    const text = inserted ? `${baseText}\r[ ${inserted} ]` : baseText;
+    let text = inserted ? `${baseText}\r[ ${inserted} ]` : baseText;
+    if (criteriaSegments) text += `\r${criteriaSegments}`;
+    // Komponiert = Stufe 2 der Kette: auch eine Zeile, die nur aus Step-Name +
+    // Kriterien-Segmenten besteht (fallback null, z.B. Perform Find ohne
+    // weitere Parameter), ist eine Näherung und muss als solche markiert sein.
+    const isComposed = Boolean(fallback || criteriaSegments);
     return {
       ...base,
       stepId: row.step_id,
@@ -419,7 +557,7 @@ function formatScript(rows, { object, refs }) {
       text,
       // Kennzeichnung für Konsumenten/Styling: Text ist eine komponierte
       // Näherung, kein FM-generierter DDR-Text.
-      ...(fallback ? { textSource: 'fallback' } : {}),
+      ...(isComposed ? { textSource: 'fallback' } : {}),
       ...(lineRefs && lineRefs.length ? { refs: lineRefs } : {}),
     };
   });
@@ -645,5 +783,9 @@ module.exports = {
   stripChunkWrap,
   decodeXmlEntities,
   reconcileTokensWithPlainText,
+  parseFindRequests,
+  composeFindRequestsText,
+  parseSortList,
+  composeSortListText,
   CHUNK_TYPE_MAP,
 };

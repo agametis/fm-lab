@@ -218,7 +218,11 @@
   "settingsView": {
     "backAria": "Zurück zur Suche",
     "backLabel": "Zurück",
-    "title": "Plugin-Verwaltung",
+    "title": "Einstellungen",
+    "fmSpec": {
+      "heading": "fm-spec",
+      "details": "Details"
+    },
     "loading": "Lade Plugins…",
     "empty": "Keine Plugins installiert.",
     "loadError": "Fehler beim Laden",
@@ -234,7 +238,8 @@
       "api": "API",
       "frontend": "Frontend",
       "xmlConverter": "XML Konverter",
-      "dbSchema": "DB Schema"
+      "dbSchema": "DB Schema",
+      "fmSpec": "fm-spec"
     },
     "api": {
       "heading": "REST-API-Verbindung",

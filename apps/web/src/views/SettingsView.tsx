@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { PluginCard, type PluginInfo } from '../components/PluginCard';
 import { SubNav } from '../components/SubNav';
 import { StatusBar } from '../components/StatusBar';
@@ -10,6 +11,9 @@ import { useApiHealth } from '../hooks/useApiHealth';
 import { useFeaturesContext } from '../hooks/useFeatures';
 import { FmideFilesPanel } from '../plugins/fmide/components/FmideFilesPanel';
 import { GraphifyExportPanel } from '../plugins/graphify/components/GraphifyExportPanel';
+import { fetchFmSpecMeta, type FmSpecMeta } from '../api/fmSpecApi';
+import { GitHubLink } from '../components/GitHubLink';
+import { AppFooter } from '../components/AppFooter';
 import {
   API_BASE,
   ENV_API_BASE,
@@ -95,6 +99,61 @@ const ApiConnectionSettings: React.FC = () => {
   );
 };
 
+/**
+ * fm-spec entry-point panel: shows the three head KPIs from the fm-spec viewer
+ * (schema version, FileMaker coverage, build date) and a "Details" button that
+ * navigates to the full `/fm-spec` schema viewer. Read-only; degrades to `—`
+ * placeholders while loading or when the reference DB is unreachable.
+ */
+const FmSpecPanel: React.FC = () => {
+  const { t, i18n } = useTranslation(['detail', 'fmSpec']);
+  const navigate = useNavigate();
+  const [meta, setMeta] = useState<FmSpecMeta | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchFmSpecMeta()
+      .then((d) => { if (!cancelled) setMeta(d); })
+      .catch(() => { /* keep placeholders on error */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const dash = '—';
+  const rm = meta?.referenceMeta;
+  const builtAt = rm?.built_at ? new Date(rm.built_at).toLocaleDateString(i18n.language) : dash;
+
+  return (
+    <section className="fmspec-panel">
+      <div className="fmspec-panel__head">
+        <h2 className="api-settings-heading">{t('detail:settingsView.fmSpec.heading')}</h2>
+      </div>
+      <div className="fmspec-panel__row">
+        <div className="fmspec-panel__kpis">
+          <div className="fmspec-panel__kpi">
+            <span className="fmspec-panel__kpi-label">{t('fmSpec:header.schemaVersion')}</span>
+            <span className="fmspec-panel__kpi-value">{rm?.schema_version ?? dash}</span>
+          </div>
+          <div className="fmspec-panel__kpi">
+            <span className="fmspec-panel__kpi-label">{t('fmSpec:header.coverage')}</span>
+            <span className="fmspec-panel__kpi-value">{rm?.filemaker_coverage ?? dash}</span>
+          </div>
+          <div className="fmspec-panel__kpi">
+            <span className="fmspec-panel__kpi-label">{t('fmSpec:header.built')}</span>
+            <span className="fmspec-panel__kpi-value">{builtAt}</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="fmspec-panel__details"
+          onClick={() => navigate('/fm-spec')}
+        >
+          {t('detail:settingsView.fmSpec.details')}
+        </button>
+      </div>
+    </section>
+  );
+};
+
 export const SettingsView: React.FC = () => {
   const { t } = useTranslation(['detail', 'nav']);
   const lang = useApiLang();
@@ -143,13 +202,21 @@ export const SettingsView: React.FC = () => {
 
   return (
     <div className="settings-view">
-      <SubNav breadcrumbs={buildBreadcrumb({ kind: 'settings' }, t)} />
+      {/* GitHub link appears in the nav header only here on the settings page
+          (via the SubNav `actions` slot), left of the language selector —
+          deliberately absent from the neutral SubNav on every other page. */}
+      <SubNav
+        breadcrumbs={buildBreadcrumb({ kind: 'settings' }, t)}
+        actions={<GitHubLink />}
+      />
       <StatusBar message={<VersionStatusLine />} />
       <div className="settings-header">
         <h1>{t('detail:settingsView.title')}</h1>
       </div>
 
       <ApiConnectionSettings />
+
+      <FmSpecPanel />
 
       {loading && <div className="settings-loading">{t('detail:settingsView.loading')}</div>}
       {error && <div className="settings-error">{error}</div>}
@@ -176,6 +243,8 @@ export const SettingsView: React.FC = () => {
           />
         ))}
       </div>
+
+      <AppFooter />
     </div>
   );
 };

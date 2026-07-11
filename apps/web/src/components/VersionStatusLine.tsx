@@ -5,9 +5,9 @@ import './VersionStatusLine.css';
 
 /**
  * Versions-Status-Balken — rendert hinter dem „Zurück"-Button auf
- * /settings die fünf Kern-Versionen, getrennt durch ` · `:
+ * /settings die sechs Kern-Versionen, getrennt durch ` · `:
  *
- *   FM-Lab v0.8.5 · API v0.8.5 · Frontend v0.8.5 · XML Konverter v4.4.2 · DB Schema v1.4.1
+ *   FM-Lab v0.8.9 · API v0.8.9 · Frontend v0.8.9 · XML Konverter v5.1.0 · DB Schema v1.7.0 · fm-spec v1.2.0
  *
  * Mapping:
  *   FM-Lab        = manifest.version (global)
@@ -16,10 +16,12 @@ import './VersionStatusLine.css';
  *                   gebaute Bundle-Version, wahrheitsgetreu zum laufenden Build)
  *   XML Konverter = components.xml_import.version
  *   DB Schema     = components.schema.version
+ *   fm-spec       = components.fm_reference.version
  *
- * fm_reference, Plugins und Skills stehen bewusst NICHT im Balken (kompakte
- * Zeile; gehören in eine spätere Detail-/Update-Ansicht). Bei Fehler/Offline
- * (Manifest null) rendert die Komponente nichts.
+ * Alle Segmente werden als reiner Versionsstring gezeigt (kein Link). Der
+ * Einstieg in den fm-spec Schema-Viewer erfolgt über das eigene fm-spec-Panel
+ * auf der Einstellungen-Seite. Plugins und Skills stehen bewusst NICHT im
+ * Balken. Bei Fehler/Offline (Manifest null) rendert die Komponente nichts.
  */
 export const VersionStatusLine: React.FC = () => {
   const { t } = useTranslation(['detail']);
@@ -33,6 +35,7 @@ export const VersionStatusLine: React.FC = () => {
     { label: t('detail:settingsView.versions.frontend'), version: __APP_VERSION__ },
     { label: t('detail:settingsView.versions.xmlConverter'), version: manifest.components?.xml_import?.version },
     { label: t('detail:settingsView.versions.dbSchema'), version: manifest.components?.schema?.version },
+    { label: t('detail:settingsView.versions.fmSpec'), version: manifest.components?.fm_reference?.version },
   ];
 
   return (

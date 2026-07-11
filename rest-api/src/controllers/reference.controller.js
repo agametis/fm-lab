@@ -7,7 +7,7 @@ const { REFERENCE_CONTENT_LEVELS } = require('../config/constants');
 /**
  * Reference-Controller
  *
- * Endpoints (PRD §5):
+ * Endpoints:
  *
  *   /api/reference/categories?lang=de
  *   /api/reference/steps?lang=de
@@ -21,7 +21,7 @@ const { REFERENCE_CONTENT_LEVELS } = require('../config/constants');
  *   /api/reference/help/status
  *
  * Statische Assets werden NICHT hier, sondern in `routes/reference.routes.js`
- * per express.static gemountet (siehe PRD §5.13).
+ * per express.static gemountet.
  */
 
 const ERROR_STATUS = {
@@ -112,6 +112,46 @@ const listSteps = asyncWrap(async (req, res) => {
       steps,
     },
   });
+});
+
+/**
+ * GET /api/reference/meta — fm-spec Schema-Viewer Kopfbereich
+ */
+const getMeta = asyncWrap(async (req, res) => {
+  const data = await referenceService.getReferenceMeta();
+  res.json({
+    success: true,
+    data,
+    meta: { grammarAvailable: data.grammarAvailable },
+  });
+});
+
+/**
+ * GET /api/reference/steps/:idOrSlug/langs — lokalisierte Step-Daten +
+ * Parameter über alle Sprachen in einem Call.
+ */
+const getStepLangs = asyncWrap(async (req, res) => {
+  const data = await referenceService.getStepAllLangs(req.params.idOrSlug);
+  if (!data) {
+    const suggestions = await referenceService.suggestStepSlugs(req.params.idOrSlug, 5);
+    return sendErr(res, 'REF_STEP_NOT_FOUND',
+      `No step with id/slug '${req.params.idOrSlug}'.`,
+      { suggestions });
+  }
+  res.json({ success: true, data });
+});
+
+/**
+ * GET /api/reference/steps/:idOrSlug/grammar — Grammatik-Details.
+ * 404-frei bzgl. Grammatik: fehlt die Grammatik-Zeile → data:null,
+ * meta.grammarAvailable=false.
+ */
+const getStepGrammar = asyncWrap(async (req, res) => {
+  const data = await referenceService.getStepGrammar(req.params.idOrSlug);
+  if (!data.available) {
+    return res.json({ success: true, data: null, meta: { grammarAvailable: false } });
+  }
+  res.json({ success: true, data, meta: { grammarAvailable: true } });
 });
 
 /**
@@ -332,7 +372,10 @@ function path_relative(absPath) {
 
 module.exports = {
   getCategories,
+  getMeta,
   listSteps,
+  getStepLangs,
+  getStepGrammar,
   getStep,
   getStepEmbed,
   listFunctions,

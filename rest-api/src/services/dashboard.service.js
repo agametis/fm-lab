@@ -1050,16 +1050,51 @@ async function executeDataset(bundle, datasetSpec, requestParams = {}) {
 }
 
 /**
- * Führt alle Datasets eines Bundles parallel aus. Einzel-Fehler werden pro Dataset gekapselt.
+ * DuckDB meldet dies (englisch, locale-unabhängig), wenn ein Dataset auf eine
+ * Katalog-Tabelle/-View zugreift, die erst nach einem XML-Import entsteht. Auf
+ * leerem Katalog heißt das „noch nichts importiert" — kein echter Fehler.
+ */
+function isNoImportError(message) {
+  return typeof message === 'string' && /Table with name\s+\S+\s+does not exist/i.test(message);
+}
+
+/**
+ * True, wenn noch keine FileMaker-Lösung importiert wurde. Die Kern-Kataloge
+ * werden auf frischer DB leer gestubbt (config/database `ensureCoreStubs`),
+ * daher ist dieses COUNT immer sicher; ein unerwarteter Fehler fällt bewusst
+ * auf „nicht leer" zurück, damit wir nie einen echten Fehler hinter dem
+ * Leerzustand verstecken.
+ */
+async function isCatalogEmpty() {
+  try {
+    const r = await db.executeQuery('SELECT COUNT(*) AS n FROM FilesCatalog');
+    return Number(r.rows?.[0]?.n) === 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Führt alle Datasets eines Bundles parallel aus. Einzel-Fehler werden pro
+ * Dataset gekapselt. Zusätzlich wird der Leerzustand ausgewiesen: Ist der
+ * Katalog leer (kein Import), werden „table does not exist"-Fehler NICHT als
+ * roter Fehler durchgereicht, sondern als Leerzustand markiert (`emptyReason:
+ * 'no_import'`) — einzelne Karten zeigen dann „Noch keine Daten.", und der
+ * DashboardHost schaltet die ganze Seite auf die neutrale NoDataYet-Karte.
+ * Echte Template-Bugs auf gefülltem Katalog bleiben laute Fehler.
  */
 async function executeAllDatasets(bundle, requestParams = {}) {
   const specs = bundle.manifest.datasets || [];
+  const catalogEmpty = await isCatalogEmpty();
   const results = await Promise.all(
     specs.map(async spec => {
       try {
         const { data, meta } = await executeDataset(bundle, spec, requestParams);
         return { id: spec.id, data, meta, error: null };
       } catch (err) {
+        if (catalogEmpty && isNoImportError(err.message)) {
+          return { id: spec.id, data: [], meta: { source: spec.source }, error: null, emptyReason: 'no_import' };
+        }
         console.warn(`[dashboard:${bundle.id}] dataset '${spec.id}' failed: ${err.message}`);
         return { id: spec.id, data: [], meta: { source: spec.source }, error: err.message };
       }
@@ -1072,9 +1107,10 @@ async function executeAllDatasets(bundle, requestParams = {}) {
       data: r.data,
       meta: r.meta,
       ...(r.error ? { error: r.error } : {}),
+      ...(r.emptyReason ? { emptyReason: r.emptyReason } : {}),
     };
   }
-  return datasets;
+  return { datasets, catalogEmpty };
 }
 
 /**
