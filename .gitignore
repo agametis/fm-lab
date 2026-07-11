@@ -40,7 +40,11 @@ docs/*
 
 # Node.js dependencies
 node_modules/
-package-lock.json
+# package-lock.json is COMMITTED on purpose (do not ignore it): the lockfile records
+# every native optionalDependency for all OS/CPU combos (@duckdb/node-bindings-*,
+# @esbuild/*, @rollup/rollup-*), so a fresh `npm install` installs the correct
+# per-platform binding deterministically. Without it, npm intermittently skips the
+# current platform's binding (macOS/npm 10.5.2 → MODULE_NOT_FOUND, native start crashes).
 
 # Workspaces - build artifacts
 rest-api/logs
