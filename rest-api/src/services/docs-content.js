@@ -1,4 +1,10 @@
-const { marked } = require('marked');
+// `marked` is ESM-only since v15+ (package.json "type":"module", no CommonJS build).
+// A top-level `require('marked')` therefore throws ERR_REQUIRE_ESM on Node 20 (the
+// project's declared floor) — it only "worked" on Node 22, which permits require(ESM).
+// So we load it lazily via dynamic import() and initialize once at server startup
+// (initMarked, awaited in src/index.js before the HTTP server binds). The render
+// helpers below stay synchronous; they run at request time, long after init.
+let marked = null;
 
 /**
  * Docs Content Renderer
@@ -21,11 +27,6 @@ const { marked } = require('marked');
  *   - Kein Syntax-Highlighting im Backend — verlagert auf den Frontend-Renderer
  *     (Prism/Shiki), damit Theme-Switching live funktioniert.
  */
-
-marked.setOptions({
-  gfm: true,
-  breaks: false,
-});
 
 /**
  * GitHub-Wiki-kompatible Slug-Bildung für Überschriften.
@@ -81,7 +82,18 @@ const headingRenderer = {
 
 const usedSlugs = new Map();
 
-marked.use({ renderer: headingRenderer });
+/**
+ * Loads `marked` (ESM-only) via dynamic import and applies our options + custom
+ * heading renderer. Idempotent — safe to call more than once. Awaited once at server
+ * startup so the synchronous render helpers can rely on `marked` being present.
+ */
+async function initMarked() {
+  if (marked) return marked;
+  ({ marked } = await import('marked'));
+  marked.setOptions({ gfm: true, breaks: false });
+  marked.use({ renderer: headingRenderer });
+  return marked;
+}
 
 const DANGEROUS_TAGS_RE = /<\/?(?:script|style|iframe|object|embed|noscript|template|form|input|button|textarea|select)\b[^>]*>/gi;
 const SCRIPT_BLOCK_RE   = /<script\b[\s\S]*?<\/script>/gi;
@@ -296,6 +308,11 @@ function rewriteMbsDataLinks(html) {
 
 function renderMarkdown(md, { setId, pagePath } = {}) {
   if (!md) return '';
+  if (!marked) {
+    // Should never happen in the server (index.js awaits initMarked() before listen).
+    // A clear error beats a cryptic "Cannot read properties of null (reading 'parse')".
+    throw new Error('docs-content: marked not initialized — call await initMarked() at startup');
+  }
   // Heading-Slug-Tabelle pro Render-Aufruf zurücksetzen, damit Duplikat-
   // Zählung document-local bleibt (analog GitHub).
   usedSlugs.clear();
@@ -338,6 +355,7 @@ function processEntry(entry, { setId, pagePath } = {}) {
 }
 
 module.exports = {
+  initMarked,
   renderMarkdown,
   renderHtml,
   sanitizeHtml,

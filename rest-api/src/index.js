@@ -1,4 +1,5 @@
 const express = require('express');
+const net = require('net');
 const environment = require('./config/environment');
 const db = require('./config/database');
 const routes = require('./routes');
@@ -87,10 +88,57 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 /**
+ * Print the "port already taken" banner. Shared by the pre-flight probe and the
+ * server 'error' backstop so a double-start reads identically from either path.
+ */
+function printPortBusy() {
+  console.error('');
+  console.error('========================================');
+  console.error(`✗ Port ${environment.port} is already in use.`);
+  console.error('  Another FM-Lab API (or a foreign process) is bound there — NOT starting a second one.');
+  console.error('  Stop the running server first:  tools/stop-servers.sh api');
+  console.error('  Or, in the Docker Compose topology, from the HOST:  docker compose restart api');
+  console.error('========================================');
+}
+
+/**
+ * Pre-flight: is something already listening on our port? Resolves true if a TCP
+ * connect succeeds within 1s. Binding 0.0.0.0 while a stale process holds the port
+ * makes Node fire 'listening' (success banner!) AND then 'error' (EADDRINUSE) — so we
+ * probe FIRST and never print the banner on a doomed start. 0.0.0.0/:: aren't valid
+ * connect targets, so we probe loopback (which the wildcard bind covers).
+ */
+function portInUse() {
+  const host =
+    environment.host === '0.0.0.0' || environment.host === '::' || !environment.host
+      ? '127.0.0.1'
+      : environment.host;
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ host, port: environment.port });
+    const done = (result) => {
+      socket.destroy();
+      resolve(result);
+    };
+    socket.setTimeout(1000);
+    socket.once('connect', () => done(true));
+    socket.once('timeout', () => done(false));
+    socket.once('error', () => done(false));
+  });
+}
+
+/**
  * Start server
  */
 async function start() {
   try {
+    // Fail fast on a double-start BEFORE opening the DB or printing the ready banner
+    // (L2 in the server-restart ticket): a stale process on the port would otherwise
+    // keep serving old code while a "successful"-looking boot scrolls past.
+    if (await portInUse()) {
+      printPortBusy();
+      process.exit(1);
+    }
+
     // Initialize database connection
     console.log('Initializing database connection...');
     await db.initialize();
@@ -100,6 +148,12 @@ async function start() {
     // rest of the API runs unchanged.
     await require('./config/annotations-db').initialize();
 
+    // Load `marked` (ESM-only) before serving any request. Done here — not via a
+    // top-level require in docs-content.js — because require(ESM) throws
+    // ERR_REQUIRE_ESM on Node 20 (the project's supported floor). Awaiting it here
+    // guarantees the synchronous docs render helpers have marked ready.
+    await require('./services/docs-content').initMarked();
+
     // Load the last persisted fmIDE scan into memory (no DB query). The scan
     // itself runs on plugin activation and on explicit Rescan, not every boot.
     try {
@@ -108,7 +162,8 @@ async function start() {
       console.warn(`fmIDE status load skipped: ${err.message}`);
     }
 
-    // Start HTTP server
+    // Start HTTP server. The success banner lives INSIDE the listen callback, so it
+    // only prints once the port is actually bound — never on a failed bind.
     const server = app.listen(environment.port, environment.host, () => {
       console.log('');
       console.log('========================================');
@@ -140,6 +195,19 @@ async function start() {
       console.log(`   (REST-API: http://${environment.host}:${environment.port}/api)`);
       console.log('========================================');
       console.log('');
+    });
+
+    // Fail-fast on a bad bind. Without this handler an EADDRINUSE surfaces as an
+    // unhandled 'error' event; worse, a background start could look like it "succeeded"
+    // while a stale process keeps serving the old code on the same port. Print a clear
+    // message and exit non-zero so a double-start is unmistakable (never a silent exit 0).
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        printPortBusy();
+      } else {
+        console.error('HTTP server error:', err);
+      }
+      process.exit(1);
     });
 
     // Graceful shutdown

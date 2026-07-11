@@ -1,9 +1,28 @@
 #!/usr/bin/env bash
-# start-servers.sh — Starts REST API (port 3003) and frontend (port 5173)
+# start-servers.sh — Starts the REST API (port 3003) and/or the frontend (port 5173).
+#
+# Usage:  start-servers.sh [api|frontend|all]   (default: all)
+#   api        start only the REST API
+#   frontend   ensure the API is up, then start the Vite dev server
+#   all        start API, then frontend  (full stack)
+#
+# Runtime scenarios (see project/todo/ticket_server_restart.md):
+#   • native host / VS Code dev container  → FMLAB_RUNTIME unset → this script manages
+#     the processes (nohup node) and is idempotent (port-based detection, no lsof needed).
+#   • Docker Compose topology              → FMLAB_RUNTIME=container → the API/web run as
+#     the container's main process under `restart: unless-stopped`; this script MUST NOT
+#     nohup a second copy. It prints host-side `docker compose` guidance instead.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+TARGET="${1:-all}"
+case "$TARGET" in
+  api|frontend|all) ;;
+  web) TARGET="frontend" ;;
+  *) echo "Usage: $(basename "$0") [api|frontend|all]" >&2; exit 2 ;;
+esac
 
 # Colors (only for terminal output)
 if [ -t 1 ]; then
@@ -16,6 +35,18 @@ info()  { echo -e "${GREEN}✓${NC} $1"; }
 warn()  { echo -e "${YELLOW}⚠${NC} $1"; }
 error() { echo -e "${RED}✗${NC} $1"; }
 header(){ echo -e "\n${BOLD}$1${NC}"; }
+
+# NOTE — no FMLAB_RUNTIME guard here (deliberately). Two topologies set
+# FMLAB_RUNTIME=container yet need OPPOSITE handling, and they are NOT distinguishable by
+# that variable alone:
+#   1. `docker compose up` — the api service's own command runs `node src/index.js` as
+#      PID 1. This script is NEVER invoked there, so there is nothing to guard against.
+#   2. VS Code Dev Container (deploy/devcontainer-public) — a thin wrapper over the same
+#      compose file with `overrideCommand: true`, so node is NOT the container command;
+#      postStartCommand runs THIS script to start node + vite. Here it MUST start them.
+# Keying a guard on FMLAB_RUNTIME broke case 2 (the dev-container autostart no-oped). The
+# idempotent detection below already makes a stray manual `docker compose exec api
+# start-servers.sh` harmless (it reports "already running" instead of double-starting).
 
 # Is a process listening on the port? (lsof → ss → curl HTTP probe as a third fallback).
 # The curl fallback is essential for the base dev container, which has NEITHER lsof NOR
@@ -113,104 +144,129 @@ fi
 # how it was installed (nvm, Homebrew, system).
 export PATH="$(dirname "$NODE_BIN"):$PATH"
 
-api_started=false
-frontend_started=false
-
 # Ensure the log dir exists — nohup redirects into logs/*.log and would fail if the
 # directory is missing (e.g. a fresh checkout without the logs/.gitkeep placeholder).
 mkdir -p "$PROJECT_ROOT/logs"
 
-# ─── REST-API ────────────────────────────────────────────────
-header "REST-API (Port 3003)"
+api_started=false
+frontend_started=false
 
-# Check the DB copy
-if [ ! -f "$PROJECT_ROOT/rest-api/db/fm_catalog.duckdb" ]; then
-  error "Database not found: rest-api/db/fm_catalog.duckdb"
-  error "Please run 'convert-xml --batch' first."
-  exit 1
-fi
+# ─── Start the REST API (idempotent) ─────────────────────────
+start_api() {
+  header "REST-API (Port 3003)"
 
-# Check whether it's already active — and whether the listener really is OUR API (not a
-# foreign process on 3003). Identity via /api/version (F-A6).
-if port_listening 3003; then
-  API_PID=$(get_listen_pid 3003 || true)
-  if http_ok http://localhost:3003/api/version; then
-    info "REST API already running${API_PID:+ (PID $API_PID)}"
-  else
-    error "Port 3003 is in use${API_PID:+ (PID $API_PID)}, but /api/version does not respond — foreign process?"
-    error "Please free the port (tools/stop-servers.sh) or stop the foreign service."
+  # Check the DB copy
+  if [ ! -f "$PROJECT_ROOT/rest-api/db/fm_catalog.duckdb" ]; then
+    error "Database not found: rest-api/db/fm_catalog.duckdb"
+    error "Please run 'convert-xml --batch' first."
     exit 1
   fi
-else
-  # Start the server
-  cd "$PROJECT_ROOT/rest-api"
-  nohup "$NODE_BIN" src/index.js > "$PROJECT_ROOT/logs/rest-api.log" 2>&1 &
-  API_PID=$!
-  cd "$PROJECT_ROOT"
 
-  if wait_for_port 3003 5; then
-    info "REST API started (PID $API_PID)"
-    api_started=true
+  # Check whether it's already active — and whether the listener really is OUR API (not a
+  # foreign process on 3003). Identity via /api/version (F-A6).
+  if port_listening 3003; then
+    API_PID=$(get_listen_pid 3003 || true)
+    if http_ok http://localhost:3003/api/version; then
+      info "REST API already running${API_PID:+ (PID $API_PID)}"
+    else
+      error "Port 3003 is in use${API_PID:+ (PID $API_PID)}, but /api/version does not respond — foreign process?"
+      error "Please free the port (tools/stop-servers.sh api) or stop the foreign service."
+      exit 1
+    fi
   else
-    error "REST API could not be started. Log:"
-    tail -20 "$PROJECT_ROOT/logs/rest-api.log" 2>/dev/null || true
+    # Start the server
+    cd "$PROJECT_ROOT/rest-api"
+    nohup "$NODE_BIN" src/index.js > "$PROJECT_ROOT/logs/rest-api.log" 2>&1 &
+    API_PID=$!
+    cd "$PROJECT_ROOT"
+
+    if wait_for_port 3003 5; then
+      info "REST API started (PID $API_PID)"
+      api_started=true
+    else
+      error "REST API could not be started. Log:"
+      tail -20 "$PROJECT_ROOT/logs/rest-api.log" 2>/dev/null || true
+      exit 1
+    fi
+  fi
+
+  # Fetch the version
+  API_VERSION=$(curl -s http://localhost:3003/api/version 2>/dev/null || echo "")
+  if [ -n "$API_VERSION" ]; then
+    TABLE_COUNT=$(echo "$API_VERSION" | grep -o '"table_count":[0-9]*' | grep -o '[0-9]*' || echo "?")
+    UPTIME=$(echo "$API_VERSION" | grep -o '"uptime_seconds":[0-9]*' | grep -o '[0-9]*' || echo "")
+    info "API responds — $TABLE_COUNT tables loaded${UPTIME:+, uptime ${UPTIME}s}"
+    # A long uptime after a code change means a STALE process is still serving the old
+    # code (the /api/admin/reload trap only reloads the DB, never the code). Flag it.
+    if [ "$api_started" = false ] && [ -n "$UPTIME" ] && [ "$UPTIME" -gt 5 ]; then
+      warn "This process has been up ${UPTIME}s — if you just changed API code, restart it:"
+      warn "  tools/stop-servers.sh api && tools/start-servers.sh api"
+    fi
+  else
+    warn "API is running, but /api/version does not respond"
+  fi
+}
+
+# ─── Start the frontend (idempotent) ─────────────────────────
+start_frontend() {
+  header "Frontend (Port 5173)"
+
+  # Check the Vite installation
+  if [ ! -f "$PROJECT_ROOT/node_modules/.bin/vite" ]; then
+    error "Vite not found. Please run 'npm install' in the project root."
     exit 1
   fi
-fi
 
-# Fetch the version
-API_VERSION=$(curl -s http://localhost:3003/api/version 2>/dev/null || echo "")
-if [ -n "$API_VERSION" ]; then
-  TABLE_COUNT=$(echo "$API_VERSION" | grep -o '"tableCount":[0-9]*' | grep -o '[0-9]*' || echo "?")
-  info "API responds — $TABLE_COUNT tables loaded"
-else
-  warn "API is running, but /api/version does not respond"
-fi
-
-# ─── Frontend ────────────────────────────────────────────────
-header "Frontend (Port 5173)"
-
-# Check the Vite installation
-if [ ! -f "$PROJECT_ROOT/node_modules/.bin/vite" ]; then
-  error "Vite not found. Please run 'npm install' in the project root."
-  exit 1
-fi
-
-# Check whether it's already active — and whether it really is the Vite dev server (not a
-# foreign service on 5173). Identity via /@vite/client (only Vite serves that, F-A6).
-if port_listening 5173; then
-  FE_PID=$(get_listen_pid 5173 || true)
-  if http_ok http://localhost:5173/@vite/client; then
-    info "Frontend already running${FE_PID:+ (PID $FE_PID)}"
-  else
-    error "Port 5173 is in use${FE_PID:+ (PID $FE_PID)}, but it is not a Vite dev server — foreign process?"
-    error "Please free the port (tools/stop-servers.sh) or stop the foreign service."
-    exit 1
-  fi
-else
-  # Start Vite
-  cd "$PROJECT_ROOT/apps/web"
-  nohup "$NPM_BIN" run dev > "$PROJECT_ROOT/logs/frontend.log" 2>&1 &
-  FE_PID=$!
-  cd "$PROJECT_ROOT"
-
-  if wait_for_port 5173 8; then
-    # Read the PID again (npm spawns a child process)
+  # Check whether it's already active — and whether it really is the Vite dev server (not a
+  # foreign service on 5173). Identity via /@vite/client (only Vite serves that, F-A6).
+  if port_listening 5173; then
     FE_PID=$(get_listen_pid 5173 || true)
-    info "Frontend started (PID $FE_PID)"
-    frontend_started=true
+    if http_ok http://localhost:5173/@vite/client; then
+      info "Frontend already running${FE_PID:+ (PID $FE_PID)}"
+    else
+      error "Port 5173 is in use${FE_PID:+ (PID $FE_PID)}, but it is not a Vite dev server — foreign process?"
+      error "Please free the port (tools/stop-servers.sh frontend) or stop the foreign service."
+      exit 1
+    fi
   else
-    error "Frontend could not be started. Log:"
-    tail -20 "$PROJECT_ROOT/logs/frontend.log" 2>/dev/null || true
-    exit 1
+    # Start Vite
+    cd "$PROJECT_ROOT/apps/web"
+    nohup "$NPM_BIN" run dev > "$PROJECT_ROOT/logs/frontend.log" 2>&1 &
+    FE_PID=$!
+    cd "$PROJECT_ROOT"
+
+    if wait_for_port 5173 8; then
+      # Read the PID again (npm spawns a child process)
+      FE_PID=$(get_listen_pid 5173 || true)
+      info "Frontend started (PID $FE_PID)"
+      frontend_started=true
+    else
+      error "Frontend could not be started. Log:"
+      tail -20 "$PROJECT_ROOT/logs/frontend.log" 2>/dev/null || true
+      exit 1
+    fi
   fi
-fi
+}
+
+# ─── Dispatch ────────────────────────────────────────────────
+# The frontend is useless without the API, so `frontend`/`all` always ensure the API
+# first (start_api is idempotent — it no-ops if the API already runs).
+case "$TARGET" in
+  api)       start_api ;;
+  frontend)  start_api; start_frontend ;;
+  all)       start_api; start_frontend ;;
+esac
 
 # ─── Summary ─────────────────────────────────────────────────
 header "Status"
-echo "  REST API:  http://localhost:3003  $([ "$api_started" = true ] && echo '(newly started)' || echo '(already running)')"
-echo "  Frontend:  http://localhost:5173  $([ "$frontend_started" = true ] && echo '(newly started)' || echo '(already running)')"
+if [ "$TARGET" = "api" ] || [ "$TARGET" = "all" ] || [ "$TARGET" = "frontend" ]; then
+  echo "  REST API:  http://localhost:3003  $([ "$api_started" = true ] && echo '(newly started)' || echo '(already running)')"
+fi
+if [ "$TARGET" = "frontend" ] || [ "$TARGET" = "all" ]; then
+  echo "  Frontend:  http://localhost:5173  $([ "$frontend_started" = true ] && echo '(newly started)' || echo '(already running)')"
+fi
 echo ""
 echo "  Stop:      tools/stop-servers.sh"
 echo "  API log:   logs/rest-api.log"
-echo "  FE log:    logs/frontend.log"
+[ "$TARGET" != "api" ] && echo "  FE log:    logs/frontend.log"
+exit 0
