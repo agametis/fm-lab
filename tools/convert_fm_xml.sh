@@ -719,7 +719,8 @@ if [ -z "${FM_SKIP_WEBBED_PROBE:-}" ] && [ -f "$WEBBED_SAX_PROBE" ]; then
     # follow-up errors "Table … does not exist"). Plain text + the actual webbed message.
     if [ "$WEBBED_HAS_STREAMING_PARAM" = "unknown" ]; then
         echo "ERROR: The webbed/xml extension could not be loaded (LOAD webbed failed)."
-        echo "       Most likely cause: webbed is not installed for the active DuckDB version."
+        echo "       A common cause is that webbed is not installed for the active DuckDB version"
+        echo "       (see the webbed message below for the actual reason)."
         echo "       DuckDB stores extensions PER version — after a DuckDB update (e.g. 1.5.3 → 1.5.4)"
         echo "       webbed must be reinstalled."
         echo "       Fix:  \"$DUCKDB_BIN\" -c \"FORCE INSTALL webbed FROM community;\""
@@ -2475,7 +2476,7 @@ postprocess_db() {
         add_finding resolution warn "Resolution rate below 90%: ${lowres_detail:-?}" "Check the resolver joins in convert_xml_02_resolve.sql for drift (scoping/name join)"
     fi
 
-    # F-1b: resolution rate of the relationship predicate fields (informational). External
+    # Resolution rate of the relationship predicate fields (informational). External
     # TO sides carry empty field UUIDs; the cases without an imported target file legitimately
     # stay unresolved (partial corpus) → INFO, not an error.
     CHECKS_RUN=$((CHECKS_RUN + 1))

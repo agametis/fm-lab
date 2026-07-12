@@ -3,6 +3,7 @@
   "emptyFocus": "Öppna ett objekt från dess detaljvy i Grafutforskaren (eller dubbelklicka på en nod) för att utforska dess beroendegraf.",
   "loading": "Läser in grafen…",
   "truncated": "Laddade {{kept}} av {{total}} nåbara noder — minska djupet eller begränsa typfiltret för att ladda alla.",
+  "truncatedMinDepth": "Laddade de {{kept}} mest anslutna av {{total}} grannar — begränsa typfiltret för att ladda ett komplett urval.",
   "stats": {
     "nodes": "{{count}} nod",
     "nodes_other": "{{count}} noder",

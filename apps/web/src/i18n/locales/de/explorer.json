@@ -3,6 +3,7 @@
   "emptyFocus": "Öffne ein Objekt aus der Detailansicht im Graph-Explorer (oder per Doppelklick auf einen Knoten), um seinen Abhängigkeitsgraphen zu erkunden.",
   "loading": "Graph wird geladen…",
   "truncated": "{{kept}} von {{total}} erreichbaren Knoten geladen — Tiefe verringern oder Typ-Filter einschränken, um alle zu laden.",
+  "truncatedMinDepth": "Die {{kept}} am stärksten verbundenen von {{total}} Nachbarn geladen — Typ-Filter einschränken, um einen vollständigen Ausschnitt zu laden.",
   "stats": {
     "nodes": "{{count}} Knoten",
     "nodes_other": "{{count}} Knoten",

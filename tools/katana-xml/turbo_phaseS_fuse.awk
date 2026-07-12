@@ -1,4 +1,4 @@
-# turbo_phaseS_fuse.awk — FUSIONIERTER Phase-S-Pass (plan_xml_diff_streaming_turbo_v3.md, P2.1)
+# turbo_phaseS_fuse.awk — FUSIONIERTER Phase-S-Pass (P2.1)
 #
 # Ersetzt im Turbo-Phase-S-Pfad die bisher GETRENNTEN Voll-Pässe
 #   (1) Byte-Clean  (tr -d '\177' | tr '\r' '\177' | tr -d C0)      [preprocess_file]
@@ -72,6 +72,10 @@ function clean_line(   before) {
 # bleibt nur der Byte-Clean + die Zähler.
 {
     line = $0
+    # Übergroße Binär-Blobs VOR dem Byte-Clean neutralisieren (spart den 4-fach-gsub
+    # von clean_line über eine ggf. mehrere MB lange Base64-Zeile und hält sie aus dem
+    # main-Chunk-Parse). No-Op für Nicht-Blob-Zeilen → byte-identisch für Blob-freie Korpora.
+    binstrip_line()
     clean_line()
     if (nrules > 0) rename_line()
 

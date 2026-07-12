@@ -3,6 +3,7 @@
   "emptyFocus": "Open een object vanuit de detailweergave in de Graafverkenner (of dubbelklik op een knoop) om de afhankelijkheidsgraaf te verkennen.",
   "loading": "Graaf laden…",
   "truncated": "{{kept}} van {{total}} bereikbare knopen geladen — verlaag de diepte of beperk het typefilter om ze allemaal te laden.",
+  "truncatedMinDepth": "De {{kept}} sterkst verbonden van {{total}} buren geladen — beperk het typefilter om een volledige selectie te laden.",
   "stats": {
     "nodes": "{{count}} knoop",
     "nodes_other": "{{count}} knopen",

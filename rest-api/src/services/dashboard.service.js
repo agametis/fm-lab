@@ -52,7 +52,7 @@ const bundleCache = new LRUCache({
   updateAgeOnGet: true,
 });
 
-// Max. Ordner-Tiefe für die rekursive Bundle-Discovery (Baum ≤4, Folders-Doc F-5).
+// Max. Ordner-Tiefe für die rekursive Bundle-Discovery (Baum ≤4).
 const MAX_FOLDER_DEPTH = 4;
 
 // Discovery-Map: id → { id, dir, base, folder }. Einmalig pro Cache-Generation

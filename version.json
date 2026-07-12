@@ -1,24 +1,24 @@
 {
   "manifest_schema": "1.0",
-  "version": "0.8.9",
-  "generated_at": "2026-07-11T20:48:06.206Z",
-  "source_commit": "4e7a89d",
+  "version": "0.8.10",
+  "generated_at": "2026-07-12T19:56:06.199Z",
+  "source_commit": "953dcc2",
   "components": {
     "rest_api": {
       "scheme": "A",
-      "version": "0.8.9",
+      "version": "0.8.10",
       "source": "rest-api/package.json",
       "on_change": "restart_api"
     },
     "web": {
       "scheme": "A",
-      "version": "0.8.9",
+      "version": "0.8.10",
       "source": "apps/web/package.json",
       "on_change": "rebuild_web"
     },
     "claude_md": {
       "scheme": "A",
-      "version": "0.8.9",
+      "version": "0.8.10",
       "source": "CLAUDE.md",
       "on_change": "copy_file"
     },
@@ -36,7 +36,7 @@
     },
     "fm_reference": {
       "scheme": "B",
-      "version": "1.7.1",
+      "version": "1.8.0",
       "filemaker_coverage": "22",
       "source": "rest-api/db/fm_reference.meta.json",
       "on_change": "copy_reference_db_reload_api"
@@ -121,7 +121,7 @@
     },
     {
       "name": "fm-generate-script",
-      "version": "0.8.10",
+      "version": "0.9.0",
       "scope": "local"
     }
   ],

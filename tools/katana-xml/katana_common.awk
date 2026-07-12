@@ -19,6 +19,31 @@
 # Tiefe (führende Tabs) der aktuellen Zeile bestimmen.
 function depth_of(line,   d) { d = 0; while (substr(line, d + 1, 1) == "\t") d++; return d }
 
+# Übergroße eingebettete Binär-Payload auf `line` neutralisieren. FileMaker legt
+# Container-Bilder als Base64-/Hex-Blob in EIN einzeiliges Element
+# <Stream …>PAYLOAD</Stream> (unter <BinaryData>) ab. Eine Payload jenseits des
+# Text-Node-Limits des XML-Parsers (~10 MB in libxml2) sprengt das Parsen des
+# gesamten Chunks; da der Blob in den main-Chunk geroutet wird, reißt das den
+# kompletten Datei-Import mit (irreführende NOT-NULL-Folgekaskade, weil das
+# Wurzel-Attribut-Objekt nie entsteht). Wir entfernen NUR die Roh-Payload; das
+# Element und seine Attribute bleiben unverändert — die Objekt-Analyse braucht die
+# Bytes nie (nur die LibraryReference-Schlüssel), daher ist sie unberührt. No-Op
+# bei Payloads bis `binmax` Bytes (Default 1 MB) → Blob-freie Korpora bleiben
+# byte-identisch. binmax=0 schaltet den Schnitt ab. Voraussetzung (vom Preprocessing
+# erfüllt): ein Struktur-Element pro Zeile, TAB-Einrückung nach Tiefe.
+function binstrip_line(   cap, endpos, tagend, plen) {
+    cap = (binmax == "" ? 1048576 : binmax + 0)
+    if (cap <= 0) return
+    if (line !~ /^\t*<Stream[ >]/) return            # nur ein <Stream>-Element trägt einen Blob
+    endpos = index(line, "</Stream>")
+    if (endpos == 0) return                          # self-closing / keine Payload
+    tagend = index(line, ">")                        # Ende des Öffnungs-Tags <Stream …>
+    if (tagend == 0 || tagend >= endpos) return
+    plen = endpos - tagend - 1                        # Payload-Länge in Bytes
+    if (plen <= cap) return                          # kleine Payload → verbatim behalten (Identität)
+    line = substr(line, 1, tagend) "[binary-payload-stripped:" plen "B]" substr(line, endpos)
+}
+
 # Chunkmap-Eintrag anlegen (No-Op ohne chunkmap-Sidecar). Setzt cur_entry auf den
 # neuen Eintrag, damit ein späteres record_count-Update den richtigen Chunk trifft.
 function rec_entry(cat, sn, sm, fn) {
@@ -38,7 +63,7 @@ function is_record_open(line,   i, rest) {
     i = 0; while (substr(line, i + 1, 1) == "\t") i++
     if (i != sc_recdepth) return 0
     rest = substr(line, i + 1)
-    # Namens-agnostischer Modus (Paket B Tier 2, sc_rec=="*"): JEDES Element-Open-Tag auf
+    # Namens-agnostischer Modus (Tier 2, sc_rec=="*"): JEDES Element-Open-Tag auf
     # Record-Tiefe ist eine Record-Grenze (nicht aber ein Close-Tag </…> — '/' ∉ [A-Za-z_]).
     # Sicher NUR dort, wo es keine Nicht-Record-Geschwister gibt (DDR ObjectList: alle Kinder
     # sind _<UUID>-Records, B.1-verifiziert). sc_recdepth-Filter schließt die tieferen
@@ -187,7 +212,7 @@ function split_init(   k_, i_, j_, np_, rk_, ci_, nn_, cc_, em_, key_, p_, npar_
             if (np_ >= 3 && RMP_[3] != "") RECM[RMP_[1]] = RMP_[3] + 0
         }
     }
-    # NEST (Paket B, v4 §3): zerlegt einen Tiefe-1-Branch in seine Tiefe-2-Kinder,
+    # NEST: zerlegt einen Tiefe-1-Branch in seine Tiefe-2-Kinder,
     # jedes als eigener Chunk MIT Parent-Hülle (z.B. DDR_INFO → Calculation-Chunk +
     # Script-Chunk). Format: "Parent:Child1,Child2 …". Der Parent darf NICHT in SEP
     # stehen (sonst klassische 1-Chunk-Separierung) — unten defensiv entfernt.
@@ -219,7 +244,7 @@ function split_init(   k_, i_, j_, np_, rk_, ci_, nn_, cc_, em_, key_, p_, npar_
     sc_active = 0; sc_rec = ""; sc_recdepth = 0; sc_count = 0
     sc_branchline = ""; sc_pad = ""; sc_tag = ""; sc_M = 0
     sc_nestwrap = 0; sc_nestwrap_open = ""; sc_nestwrap_close = ""
-    # DDR-2-Ebenen-Subchunk (Paket B Tier 2): Records eines NEST-Kindes liegen 2
+    # DDR-2-Ebenen-Subchunk (Tier 2): Records eines NEST-Kindes liegen 2
     # Ebenen unter der Kindzeile (Child → ObjectList → _<UUID>).
     sc_nest2 = 0; sc_prime = 0; sc_nest_open_block = ""; sc_nest_close_block = ""
     sc_c_open = ""; sc_c_close = ""; sc_p_open = ""; sc_p_close = ""
@@ -262,7 +287,7 @@ function route_line(   ctag, cpad, sc_eff_m, sc_will, tag, t, j, pad, eff_m, wil
         return
     }
 
-    # --- (2) NEST-Parent-Wartezustand (Paket B Tier 1): zwischen den Tiefe-2-
+    # --- (2) NEST-Parent-Wartezustand (Tier 1): zwischen den Tiefe-2-
     #     Kindern eines zerlegten Tiefe-1-Parents (DDR_INFO). ---
     if (nest_active) {
         if (line ~ nest_close_re) { nest_active = 0; return }   # synthetischer Parent-Close: verwerfen

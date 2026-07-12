@@ -563,8 +563,11 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
             <div className="graph-explorer-banner" role="status">
               {/* Reiner Hinweis — der Lade-Umfang („Alle Typen / Nur gewählte Typen")
                   steuert das Nachladen jetzt im KNOTENTYPEN-Bereich, nicht hier. */}
+              {/* Bei minimaler Tiefe ist „Tiefe verringern" eine Sackgasse (Regler steht
+                  schon auf 1) — dann nur den weiterhin wirksamen Typ-Filter empfehlen. Die
+                  gehaltenen Knoten sind serverseitig die grad-stärksten je Tiefe. */}
               <span>
-                {t('explorer:truncated', {
+                {t(depth <= 1 ? 'explorer:truncatedMinDepth' : 'explorer:truncated', {
                   kept: data.stats.nodeCount,
                   total: data.stats.totalReachable,
                 })}

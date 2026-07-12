@@ -3,6 +3,7 @@
   "emptyFocus": "Abre um objeto a partir da sua vista de detalhe no Explorador de grafos (ou faz duplo clique num nó) para explorar o seu grafo de dependências.",
   "loading": "A carregar o grafo…",
   "truncated": "Carregados {{kept}} de {{total}} nós alcançáveis — reduza a profundidade ou restrinja o filtro de tipos para carregar todos.",
+  "truncatedMinDepth": "Carregados os {{kept}} vizinhos mais conectados de {{total}} — restrinja o filtro de tipos para carregar um subconjunto completo.",
   "stats": {
     "nodes": "{{count}} nó",
     "nodes_other": "{{count}} nós",

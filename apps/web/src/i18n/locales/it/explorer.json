@@ -3,6 +3,7 @@
   "emptyFocus": "Apri un oggetto dalla sua vista di dettaglio nell'Esploratore di grafi (o fai doppio clic su un nodo) per esplorarne il grafo delle dipendenze.",
   "loading": "Caricamento del grafo…",
   "truncated": "Caricati {{kept}} di {{total}} nodi raggiungibili — riduci la profondità o restringi il filtro dei tipi per caricarli tutti.",
+  "truncatedMinDepth": "Caricati i {{kept}} vicini più connessi di {{total}} — restringi il filtro dei tipi per caricare un sottoinsieme completo.",
   "stats": {
     "nodes": "{{count}} nodo",
     "nodes_other": "{{count}} nodi",

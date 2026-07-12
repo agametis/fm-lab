@@ -539,6 +539,23 @@ _turbo_file_chunks_ok() {
     return 0
 }
 
+# Copy the stderr of file $1's FAILED chunks into the file-level .out sidecar. The
+# catalog-granular merge reads chunks directly (no part DB), so a chunk parse error
+# otherwise never reaches the file .out — the driver's classify_error then only sees
+# the pre/split report and defaults to sql_error, masking the real cause behind the
+# downstream NOT-NULL cascade. Surfacing the chunk stderr lets classify_error name
+# the true category (e.g. invalid_xml, pointing at the pre-processor). Mirrors what
+# the part-DB path (_turbo_build_part) already does with its bad-chunk .out.
+_turbo_append_chunk_errs() {
+    local idx="$1" fn cid
+    fn="$(basename "${XML_FILES[$idx]}")"; fn="${fn%.xml}"
+    while IFS= read -r cid; do
+        [ -z "$cid" ] && continue
+        [ "$(cat "$STREAMING_DIR/chunk_${cid}.rc" 2>/dev/null)" = "0" ] && continue
+        [ -s "$STREAMING_DIR/chunk_${cid}.out" ] && cat "$STREAMING_DIR/chunk_${cid}.out" >> "$PARTDB_DIR/${idx}.out"
+    done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id FROM chunkmap WHERE file_name='${fn//\'/\'\'}' AND status<>'skipped_unchanged';")
+}
+
 # Phase C — CATALOG-GRANULAR (DEFAULT in turbo; opt-out FM_TURBO_NO_CATMERGE). Collapses C1+C2:
 # chunks → master DIRECTLY (no part DBs), per catalog atomic DELETE-by-File + INSERT.
 # Model: each (file×catalog) slice is record-disjoint & self-contained → wholesale
@@ -1602,7 +1619,7 @@ run_turbo_pipeline() {
         for i in "${!XML_FILES[@]}"; do
             if [ -f "$PARTDB_DIR/${i}.unchanged" ]; then echo 0 > "$PARTDB_DIR/${i}.rc"; continue; fi
             rc=${FILE_SPLIT_RC[$i]:-3}
-            [ "$rc" -eq 0 ] && { _turbo_file_chunks_ok "$i" || rc=3; }
+            [ "$rc" -eq 0 ] && { _turbo_file_chunks_ok "$i" || { _turbo_append_chunk_errs "$i"; rc=3; }; }
             echo "$rc" > "$PARTDB_DIR/${i}.rc"
         done
         _t3 C2_start

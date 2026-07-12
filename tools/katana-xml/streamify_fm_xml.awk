@@ -1,11 +1,11 @@
 # streamify_fm_xml.awk — branch-bewusstes Element-Renaming für den --streamify-Pfad
-# der XML-Konvertierung (project/plan_xml_diff_streaming_preprocess.md, Hybrid-Modell).
+# der XML-Konvertierung (Hybrid-Modell).
 #
 # ZWECK
 #   Die `read_xml_objects`-Schwergewichte (LayoutObjects, StepsForScripts, …) lesen
 #   heute das GANZE Dokument als DOM (RAM-Blowup). Um sie per webbed-SAX-Streaming zu
 #   lesen, braucht read_xml(record_element=…) einen EINDEUTIGEN Anker — generische
-#   Namen wie `Layout`/`Script` matchen sonst dokumentweit (Befund §4 Regel 1:
+#   Namen wie `Layout`/`Script` matchen sonst dokumentweit (z. B.
 #   record_element='Layout' → 51 statt 14). Dieser Filter benennt die Wiederhol-
 #   Elemente NUR innerhalb ihres Ziel-Branches eindeutig um (z. B. LayoutCatalog>Layout
 #   → LC_Layout), sodass `record_element='LC_Layout'` exakt die echten Records trifft.
@@ -40,6 +40,9 @@ BEGIN {
 
 {
     line = $0
+    # Übergroße Binär-Blobs (<Stream>-Payload) leeren, damit der nachgelagerte
+    # (SAX-)Parser nicht am Text-Node-Limit scheitert. No-Op für Nicht-Blob-Zeilen.
+    binstrip_line()
     rename_line()
     print line
 }

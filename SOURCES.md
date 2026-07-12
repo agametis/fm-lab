@@ -1,4 +1,4 @@
-# Data Sources & Attribution
+# **fm-spec** Data Sources & Attribution
 
 This file documents the sources behind the bundled FileMaker reference database
 (`rest-api/db/fm_reference.duckdb`). The shipped data is **source-neutral**: it
@@ -16,19 +16,32 @@ database points at this file through its `reference_meta.attribution` key.
 ## CC BY 4.0 (attribution required)
 
 - **"Canonical XML Format for FileMaker Script Steps"** — Andrew Kear, Clockwork
-  Creative Technology. Licensed under
-  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Used for
-  roundtrip-verified fmxmlsnippet skeletons, paste/silent-failure semantics and
-  save constraints.
+  Creative Technology  
+  github.com/andykear/FileMaker-XMLsnippet-Claude-Skill  
+  Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).  
+  Used for roundtrip-verified fmxmlsnippet skeletons, paste/silent-failure semantics and save constraints.
 
 ## MIT
 
-- **fmCheckMate-XSLT** — MrWatson (mrwatson-de). Full-surface test corpus used
-  as primary structural evidence for the step grammar and options.
-- **fm-xml-export-exploder** — Malte Bastian (bc-m). Used to validate the SaXML
-  parameter-type classification.
-- **ooe-fm** ("One Of Everything") — Mislav Kos (Soliant Consulting). Used for
-  SaXML version diffs.
+- **fmCheckMate-XSLT** — Russell Watson  
+  github.com/mrwatson-de/fmCheckMate-XSLT  
+  Full-surface test corpus used as primary structural evidence
+  for the step grammar and options.
+- **fm-xml-export-exploder** — Malte Bastian  
+  github.com/bc-m/fm-xml-export-exploder  
+  Used to validate the SaXML parameter-type classification.
+- **ooe-fm** ("One Of Everything") — Mislav Kos, Soliant Consulting
+  github.com/mislavkos/ooe-fm
+  Used for SaXML version diffs.
+- **fmIDE** — Russell Watson  
+  github.com/fmIDE/fmIDE  
+  Source of action layer (`action_catalog`, `step_action_map`):
+  the fmIDE ActionScript vocabulary, its step mappings
+  and execution metadata.
+- **fmJAML** — Russell Watson  
+  github.com/fmIDE/fmJAML  
+  Authoring notation targeted by the ActionScript emitter;
+  no data imported into reference tables.
 
 ---
 

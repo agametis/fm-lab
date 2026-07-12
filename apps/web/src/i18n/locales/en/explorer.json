@@ -3,6 +3,7 @@
   "emptyFocus": "Open an object from its detail view in the Graph Explorer (or double-tap a node) to start exploring its dependency graph.",
   "loading": "Loading graph…",
   "truncated": "Loaded {{kept}} of {{total}} reachable nodes — lower the depth or narrow the type filter to load them all.",
+  "truncatedMinDepth": "Loaded the {{kept}} most-connected of {{total}} neighbors — narrow the type filter to load a complete slice.",
   "stats": {
     "nodes": "{{count}} node",
     "nodes_other": "{{count}} nodes",

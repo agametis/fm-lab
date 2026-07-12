@@ -3,6 +3,7 @@
   "emptyFocus": "Abre un objeto desde su vista de detalle en el Explorador de grafos (o haz doble clic en un nodo) para empezar a explorar su grafo de dependencias.",
   "loading": "Cargando grafo…",
   "truncated": "Cargados {{kept}} de {{total}} nodos alcanzables — reduce la profundidad o restringe el filtro de tipos para cargarlos todos.",
+  "truncatedMinDepth": "Cargados los {{kept}} vecinos más conectados de {{total}} — restringe el filtro de tipos para cargar un subconjunto completo.",
   "stats": {
     "nodes": "{{count}} nodo",
     "nodes_other": "{{count}} nodos",

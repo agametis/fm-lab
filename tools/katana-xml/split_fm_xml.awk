@@ -1,6 +1,6 @@
 # split_fm_xml.awk — zerteilt eine VORVERARBEITETE FileMaker-SaXML-Datei
 # (UTF-8, CR→DEL bereits angewandt) in chunk-Dateien, um den Spitzen-DOM-Speicher
-# bei Phase 1 zu senken. project/plan_xml_diff.md §4.5 / plan_xml_postprocessor.md §5.3.
+# bei Phase 1 zu senken.
 #
 # STRATEGIE (Diversions-Modell):
 #   Die in der `separate`-Liste genannten Top-Level-Branches werden in EIGENE
@@ -12,7 +12,6 @@
 #     empirisch spurios-frei, siehe I3.1). Senkt main weiter, ändert aber den
 #     RAM-PEAK kaum, wenn ein einzelner Katalog (i.d.R. LayoutCatalog) dominiert —
 #     der Peak wird dann vom größten Einzelkatalog gesetzt, nicht von main.
-#     (Messreihe: project/plan_xml_diff_finegranular.md §12.)
 #
 #   Warum NICHT jeden Katalog separieren? webbeds typisiertes
 #   `read_xml(root_element='X', record_element='Y')` matcht den record_element
@@ -40,7 +39,7 @@
 # Vollständigkeit (jede Quellzeile genau einem Chunk) sichert der Abnahmetest
 # (gesplittet == ungesplittet) im aufrufenden Skript.
 #
-# SUB-CHUNKING (These 1, project/plan_xml_diff_streaming_optimization.md):
+# SUB-CHUNKING:
 #   Optional werden die SCHWERSTEN separierten Branches zusätzlich INNERHALB des
 #   Branches in Stücke von je `subchunk` Records geschnitten — der Peak-DOM-Speicher
 #   eines Branches sinkt damit auf ≈ Branchgröße / (Records / subchunk). Jeder
@@ -65,7 +64,7 @@
 #   Sicher & sinnvoll: StepsForScripts (schwerster separierter Branch, coarse-
 #   Default; Records = <Script> auf Tiefe 4, keine Positionsspalte).
 #
-#   DDR-2-EBENEN-SUBCHUNK (Tier 2, Plan v5 §5/§8.7): die NEST-Kinder DDR_INFO →
+#   DDR-2-EBENEN-SUBCHUNK (Tier 2): die NEST-Kinder DDR_INFO →
 #   Calculation/Script sind sub-chunkbar, OBWOHL ihre Records anonyme UUID-Tag-Namen
 #   tragen — der namens-agnostische Anker sc_rec="*" (is_record_open) erkennt jedes
 #   Element-Open auf Record-Tiefe (Child→ObjectList→_<UUID>, Tiefe Kind+2). Die Records
@@ -87,6 +86,9 @@ BEGIN { split_init() }
 
 {
     line = $0
+    # Übergroße Binär-Blobs (<Stream>-Payload) leeren, BEVOR die Zeile nach main
+    # geroutet wird — sonst sprengt ein >10-MB-Text-Node den main-Chunk-Parse.
+    binstrip_line()
     # Root-Tag + optionale XML-Deklaration merken (für die Branch-Skelette);
     # beide Zeilen laufen unverändert weiter nach main (route_line Zweig 4).
     if (line ~ /^<\?xml/)           xmldecl = line

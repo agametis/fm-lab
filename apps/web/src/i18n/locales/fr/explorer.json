@@ -3,6 +3,7 @@
   "emptyFocus": "Ouvre un objet depuis sa vue de détail dans l'Explorateur de graphe (ou double-clique sur un nœud) pour explorer son graphe de dépendances.",
   "loading": "Chargement du graphe…",
   "truncated": "{{kept}} sur {{total}} nœuds accessibles chargés — réduisez la profondeur ou restreignez le filtre de types pour tous les charger.",
+  "truncatedMinDepth": "Les {{kept}} voisins les plus connectés sur {{total}} chargés — restreignez le filtre de types pour charger un sous-ensemble complet.",
   "stats": {
     "nodes": "{{count}} nœud",
     "nodes_other": "{{count}} nœuds",

@@ -135,9 +135,41 @@ const fcoseLayoutGrouped = {
   padding: 30,
 } as unknown as cytoscape.LayoutOptions;
 
-/** Layout-Profil je nach aktiver Datei-Gruppierung (ruhiger im Gruppen-Modus). */
-function layoutFor(grouped: boolean): cytoscape.LayoutOptions {
+// Ab dieser Knotenzahl wird das Force-Layout gedeckelt (siehe layoutFor). Grad-starke
+// Hubs bringen bis zum Ladedeckel (node_limit) einige hundert bis tausend Knoten mit;
+// ein Force-Layout in voller Qualität läuft dann als schwerer, teils wiederholter
+// synchroner Durchlauf und lässt die Canvas sichtbar flackern. Bis in die Größenordnung
+// einiger hundert Nachbarn bleibt das Layout unverändert.
+const LARGE_GRAPH_NODES = 400;
+// Gedeckeltes Profil für große Graphen: geringere Qualität + fixe Iterationszahl statt
+// des adaptiven Default-Refinements, damit der Layout-Lauf beschränkt und einmalig bleibt.
+const fcoseLayoutLarge = {
+  ...fcoseLayout,
+  quality: 'draft',
+  numIter: 1000,
+} as unknown as cytoscape.LayoutOptions;
+const fcoseLayoutGroupedLarge = {
+  ...fcoseLayoutGrouped,
+  quality: 'draft',
+  numIter: 1000,
+} as unknown as cytoscape.LayoutOptions;
+
+/**
+ * Layout-Profil je nach aktiver Datei-Gruppierung (ruhiger im Gruppen-Modus) und
+ * Graphgröße: ab LARGE_GRAPH_NODES ein gedeckeltes Profil (Draft-Qualität, feste
+ * Iterationszahl), sonst das volle Profil. `nodeCount` optional → ohne Angabe (bzw.
+ * unterhalb der Schwelle) bleibt das Verhalten wie bisher.
+ */
+function layoutFor(grouped: boolean, nodeCount = 0): cytoscape.LayoutOptions {
+  if (nodeCount >= LARGE_GRAPH_NODES) {
+    return grouped ? fcoseLayoutGroupedLarge : fcoseLayoutLarge;
+  }
   return grouped ? fcoseLayoutGrouped : fcoseLayout;
+}
+
+/** Zahl echter Objekt-Knoten (ohne Halos/Datei-Boxen) — Schwellwert-Eingang für layoutFor. */
+function realNodeCount(cy: cytoscape.Core): number {
+  return selectRealNodes(cy).length;
 }
 
 // Degree-scaled diameter: 12 px (leaf) … 48 px (max-degree hub).
@@ -876,7 +908,7 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
       relayout: () => {
         const cy = cyRef.current;
         if (!cy) return;
-        runLayout(cy, layoutFor(groupByFileRef.current), layoutEles(cy));
+        runLayout(cy, layoutFor(groupByFileRef.current, realNodeCount(cy)), layoutEles(cy));
       },
       exportPng: () =>
         cyRef.current?.png({ full: true, scale: 2, bg: 'transparent' }) ?? null,
@@ -899,7 +931,7 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
         }
         // Re-layout keeping existing positions as the starting point so the
         // graph grows outward instead of reshuffling (incremental expand).
-        runLayout(cy, { ...layoutFor(groupByFileRef.current), randomize: false } as cytoscape.LayoutOptions, layoutEles(cy));
+        runLayout(cy, { ...layoutFor(groupByFileRef.current, realNodeCount(cy)), randomize: false } as cytoscape.LayoutOptions, layoutEles(cy));
       },
       collapseHub: (uuid) => {
         const cy = cyRef.current;
@@ -1122,7 +1154,7 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
         if (groupByFileRef.current) {
           applyFileGrouping(cy, true, tRef.current('filter.fileGroupNone', { defaultValue: 'Ohne Datei' }) as string);
         }
-        runLayout(cy, layoutFor(groupByFileRef.current), layoutEles(cy));
+        runLayout(cy, layoutFor(groupByFileRef.current, realNodeCount(cy)), layoutEles(cy));
       } else {
         partitionRef.current = null;
         partitionReportRef.current?.(null);
@@ -1145,7 +1177,7 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
       // layoutEles() bewertet die Box-Sichtbarkeit (hideEmptyFileGroups) selbst neu — Ein-/Ausblenden
       // nicht-verbundener Knoten kann eine Datei-Box leeren/füllen.
       if (cy.elements().length) {
-        runLayout(cy, layoutFor(groupByFileRef.current), layoutEles(cy));
+        runLayout(cy, layoutFor(groupByFileRef.current, realNodeCount(cy)), layoutEles(cy));
       }
     }, [showUnconnected, ready]);
 
@@ -1176,7 +1208,7 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
       if (!groupInitRef.current) { groupInitRef.current = true; return; }
       applyFileGrouping(cy, groupByFile, tRef.current('filter.fileGroupNone', { defaultValue: 'Ohne Datei' }) as string);
       if (cy.elements().length) {
-        runLayout(cy, layoutFor(groupByFileRef.current), layoutEles(cy));
+        runLayout(cy, layoutFor(groupByFileRef.current, realNodeCount(cy)), layoutEles(cy));
       }
     }, [groupByFile, ready]);
 

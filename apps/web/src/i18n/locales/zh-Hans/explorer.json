@@ -3,6 +3,7 @@
   "emptyFocus": "在详情视图中通过图谱浏览器打开某个对象（或双击节点），即可开始探索其依赖关系图。",
   "loading": "正在加载图谱…",
   "truncated": "已加载 {{total}} 个可达节点中的 {{kept}} 个 — 降低深度或缩小类型筛选以加载全部。",
+  "truncatedMinDepth": "已加载 {{total}} 个相邻节点中连接最多的 {{kept}} 个 — 缩小类型筛选以加载完整子集。",
   "stats": {
     "nodes": "{{count}} 个节点",
     "nodes_other": "{{count}} 个节点",

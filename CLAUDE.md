@@ -1,4 +1,4 @@
-<!-- @CLAUDE_MD_VERSION 0.8.9 -->
+<!-- @CLAUDE_MD_VERSION 0.8.10 -->
 # FM-Lab — FileMaker Solution Analysis & Code Generation
 
 ## 1. Role & focus
