@@ -16,6 +16,7 @@
     "install:all": "npm install && npm install --workspaces",
     "version:manifest": "node tools/build-version-manifest.mjs",
     "container:versions": "node tools/build-container-env.mjs",
+    "check:env": "node tools/check-env-example.mjs",
     "clean": "npm run clean --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"

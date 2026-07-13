@@ -12,6 +12,7 @@ fm-lab/
 ├── docs/                       Project documentation
 ├── logs/                       Log files
 ├── packages/                   Shared packages / modules
+├── reference/                  fm-spec DB
 ├── rest-api/                   REST API server with its own read-only DB copy
 ├── scripts/                    Reserved for generation of new scripts (output)
 ├── sql/                        SQL templates (convert_xml.sql, …)
@@ -43,10 +44,12 @@ This is the main ingestion logic and is executed by the DuckDB CLI, which must b
 
 It is populated during XML conversion.
 
+### fm-spec FileMaker Reference
+- `reference/fm_spec.duckdb` — DuckDB database with reference information about FileMaker script steps and functions.
+
 ### REST API
 - `rest-api/` — Express server for HTTP access to the analysis database.
 - `rest-api/db/fm_catalog.duckdb` — DuckDB database for exclusive REST API access.
-- `rest-api/db/fm_reference.duckdb` — DuckDB database with reference information about FileMaker script steps and functions.
 - `rest-api/templates/sql/` — SQL templates for standard queries on API endpoints.
 - `rest-api/templates/sql-custom/` — additional SQL templates for your custom use cases.
 

@@ -68,6 +68,14 @@ apps/*/.env.production
 .claude/settings.local.json
 .claude/worktrees/
 
-# Plugin settings (local, generated on first run)
+# .fmlab runtime state — generated/mutated at runtime, never shipped. MUST mirror the
+# maintainer .gitignore: if one of these is tracked in the public repo, `git pull` on a
+# user's checkout aborts as soon as the app touches it ("local changes would be
+# overwritten"). Keep this block in sync with the .fmlab/ entries in the root .gitignore.
 .fmlab/plugins.json
 .fmlab/plugins/
+.fmlab/docs.json
+.fmlab/user.local.json
+.fmlab/last_xml_run.json
+.fmlab/stream_verify/*.snap
+.fmlab/open-requests/

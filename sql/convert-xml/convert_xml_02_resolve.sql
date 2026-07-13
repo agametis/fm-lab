@@ -790,7 +790,7 @@ QUALIFY ROW_NUMBER() OVER (PARTITION BY pr.Calc_UUID, pr.File_Name, pr.Chunk_Ind
 --   Chunk N+3: NoRef       = ')...'
 -- Bei dynamischen Aufrufen (Get($name) oder Get(Abs(...))) bleibt SubParameter
 -- NULL (Chunk N+2 ist VariableReference, FieldRef oder eine andere Funktion
--- die in der fm_reference NICHT als is_get_function markiert ist).
+-- die in der fm_spec-Referenz NICHT als is_get_function markiert ist).
 -- Die Get-Familie ist hier auf 'Get' beschränkt; lokalisierte Tokens (Holen,
 -- Recibir, …) erscheinen im DDR praktisch nicht, weil FM die FunctionRefs auf
 -- den kanonischen Namen normalisiert. Bei Bedarf erweiterbar.
@@ -1497,7 +1497,7 @@ WHERE d.Chunk_Type = 'VariableReference';
 -- Built-in FileMaker-Funktionen (Get, Case, If, Length, …) erscheinen im DDR als
 -- FunctionRef-Chunks. Wir spiegeln sie als Ref_Type='function' in XMLCalcReferences
 -- für die fünf Quell-Kontexte. Built-ins haben keine UUID in der FileMaker-Lösung —
--- die kanonische Identität liegt in fm_reference.functions / function_name_lookup.
+-- die kanonische Identität liegt in fm_spec.functions / function_name_lookup.
 --
 -- Für den Token 'Get' wird zusätzlich Ref_SubName aus GetSubparameterMap befüllt
 -- (Pendant zur PluginFunction-Sub-Function-Auflösung).

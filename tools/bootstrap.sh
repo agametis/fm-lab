@@ -27,6 +27,55 @@ cd "$ROOT"
 cp -n rest-api/.env.example rest-api/.env 2>/dev/null || true
 cp -n apps/web/.env.example   apps/web/.env   2>/dev/null || true
 
+# 1b · auto-heal stale reference path in an EXISTING rest-api/.env ──────────────────
+# The reference DB was renamed + relocated (db/fm_reference.duckdb →
+# reference/fm_spec.duckdb). A user who updates an OLD checkout via `git pull` keeps
+# their previously-seeded rest-api/.env — the `cp -n` above never overwrites it — so a
+# stale `REFERENCE_DUCKDB_PATH=./db/fm_reference.duckdb` would override the corrected
+# code default and detach the reference DB (503 on every /api/reference endpoint).
+# Rewrite just that one line in place. Surgical (only lines pointing at the vanished old
+# filename `fm_reference.duckdb`) and idempotent (a healed .env no longer matches).
+# Portable: no `sed -i` (BSD vs GNU differ); awk to a temp file + mv.
+_env="rest-api/.env"
+if [ -f "$_env" ] && grep -qE '^[[:space:]]*REFERENCE_DUCKDB_PATH=.*fm_reference\.duckdb' "$_env" 2>/dev/null; then
+  _tmp="$_env.heal.$$"
+  if awk '
+        /^[[:space:]]*REFERENCE_DUCKDB_PATH=.*fm_reference\.duckdb/ {
+          print "REFERENCE_DUCKDB_PATH=../reference/fm_spec.duckdb"; next
+        }
+        { print }
+      ' "$_env" > "$_tmp" 2>/dev/null && mv "$_tmp" "$_env"; then
+    echo "Auto-healed stale REFERENCE_DUCKDB_PATH in rest-api/.env (→ ../reference/fm_spec.duckdb)."
+  else
+    rm -f "$_tmp"
+    echo "⚠  Could not auto-heal rest-api/.env — set REFERENCE_DUCKDB_PATH=../reference/fm_spec.duckdb manually." >&2
+  fi
+fi
+
+# 1c · remove orphaned OLD reference artifacts left by a pre-rename checkout ─────────
+# The reference DB used to live (double-deployed) as rest-api/db/fm_reference.duckdb +
+# docs/claris-help/fm_reference.duckdb with a rest-api/db/fm_reference.meta.json sidecar;
+# it is now the single canonical reference/fm_spec.duckdb. A `git pull` over an OLD
+# checkout brings the new file but leaves the old ones as dead weight (~15–30 MB) and a
+# source of confusion. DELETE — never move: these are shipped, regenerable reference
+# artifacts (not user data), and the old copies are an OLDER build, so moving one over
+# the freshly-pulled reference/fm_spec.duckdb would clobber the correct DB. Guarded on
+# the new canonical file being present, so a half-updated checkout never loses its only
+# reference DB. fm_catalog.duckdb (the user's converted solution) is deliberately NOT
+# touched — only the exact old `fm_reference.*` names.
+if [ -f "reference/fm_spec.duckdb" ]; then
+  for _stale in \
+    rest-api/db/fm_reference.duckdb \
+    rest-api/db/fm_reference.duckdb.wal \
+    rest-api/db/fm_reference.meta.json \
+    rest-api/db/fm_reference.consumer-build.duckdb \
+    docs/claris-help/fm_reference.duckdb; do
+    if [ -e "$_stale" ]; then
+      rm -f "$_stale" && echo "Removed orphaned old reference artifact: $_stale"
+    fi
+  done
+fi
+
 # 2 · dependencies + 3 · shared package ───────────────────────────────────────────
 if [ "${FMLAB_BOOTSTRAP_QUIET:-0}" = "1" ]; then
   npm install --silent
