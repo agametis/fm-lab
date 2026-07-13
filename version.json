@@ -1,8 +1,8 @@
 {
   "manifest_schema": "1.0",
-  "version": "0.8.10",
-  "generated_at": "2026-07-12T19:56:06.199Z",
-  "source_commit": "953dcc2",
+  "version": "0.8.11",
+  "generated_at": "2026-07-13T14:41:23.395Z",
+  "source_commit": "284a680",
   "components": {
     "rest_api": {
       "scheme": "A",
@@ -34,12 +34,12 @@
       "source": "tools/convert_fm_xml.sh",
       "on_change": "reconvert_xml"
     },
-    "fm_reference": {
+    "fm_spec": {
       "scheme": "B",
-      "version": "1.8.0",
+      "version": "1.9.0",
       "filemaker_coverage": "22",
-      "source": "rest-api/db/fm_reference.meta.json",
-      "on_change": "copy_reference_db_reload_api"
+      "source": "reference/fm_spec.meta.json",
+      "on_change": "pull_reference_reload_api"
     }
   },
   "plugins": [

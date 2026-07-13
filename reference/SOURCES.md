@@ -1,7 +1,7 @@
 # **fm-spec** Data Sources & Attribution
 
 This file documents the sources behind the bundled FileMaker reference database
-(`rest-api/db/fm_reference.duckdb`). The shipped data is **source-neutral**: it
+(`reference/fm_spec.duckdb`). The shipped data is **source-neutral**: it
 contains no source citations, author/company names or corpus artifacts. The
 database points at this file through its `reference_meta.attribution` key.
 

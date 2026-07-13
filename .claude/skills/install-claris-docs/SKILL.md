@@ -1,7 +1,7 @@
 ---
 name: install-claris-docs
 version: 0.8.5
-description: Download and install Claris FileMaker Pro online help (help.claris.com) as a local mirror in `docs/claris-help/`. Supports 11 languages with English as the always-included reference language. Also copies the REST-API reference index DB (`fm_reference.duckdb`) into the docs directory for fast slug lookups. Maintains a manifest and per-language version markers and prompts before replacing existing language sets. Triggers (English): "install Claris docs", "install Claris help in German", "update the Claris help mirror". Triggers (German): "installiere die Claris-Hilfe", "Claris-Online-Hilfe auf Deutsch installieren", "Claris-Doku aktualisieren". Triggers (Spanish): "instalar la ayuda de Claris", "actualizar la ayuda Claris". Triggers (French): "installer l'aide Claris", "mettre à jour l'aide Claris". Triggers (Italian): "installa l'aiuto Claris", "aggiorna l'aiuto Claris". Triggers (Dutch): "installeer de Claris-help", "Claris-help bijwerken". Triggers (Portuguese): "instalar a ajuda Claris", "atualizar a ajuda Claris". Triggers (Swedish): "installera Claris-hjälpen", "uppdatera Claris-hjälpen". Triggers (Japanese): "Clarisヘルプをインストール", "Clarisヘルプを更新". Triggers (Korean): "Claris 도움말 설치", "Claris 도움말 업데이트". Triggers (Chinese): "安装 Claris 帮助", "更新 Claris 帮助".
+description: Download and install Claris FileMaker Pro online help (help.claris.com) as a local mirror in `docs/claris-help/`. Supports 11 languages with English as the always-included reference language. Maintains a manifest and per-language version markers and prompts before replacing existing language sets. Triggers (English): "install Claris docs", "install Claris help in German", "update the Claris help mirror". Triggers (German): "installiere die Claris-Hilfe", "Claris-Online-Hilfe auf Deutsch installieren", "Claris-Doku aktualisieren". Triggers (Spanish): "instalar la ayuda de Claris", "actualizar la ayuda Claris". Triggers (French): "installer l'aide Claris", "mettre à jour l'aide Claris". Triggers (Italian): "installa l'aiuto Claris", "aggiorna l'aiuto Claris". Triggers (Dutch): "installeer de Claris-help", "Claris-help bijwerken". Triggers (Portuguese): "instalar a ajuda Claris", "atualizar a ajuda Claris". Triggers (Swedish): "installera Claris-hjälpen", "uppdatera Claris-hjälpen". Triggers (Japanese): "Clarisヘルプをインストール", "Clarisヘルプを更新". Triggers (Korean): "Claris 도움말 설치", "Claris 도움말 업데이트". Triggers (Chinese): "安装 Claris 帮助", "更新 Claris 帮助".
 ---
 
 # Claris Online Help Installation Skill
@@ -14,7 +14,8 @@ Use this skill when:
 - A new language should be added to an existing installation
 - An update to a newer version of the Claris help should be installed
 - The docs need to be reinstalled after corruption or accidental deletion
-- The reference index DB (`fm_reference.duckdb`) should be refreshed so that slug lookups (function / ScriptStep → HTML file) work locally via DuckDB queries
+
+This skill installs **only** the Claris HTML help mirror. The FileMaker reference index DB (`reference/fm_spec.duckdb`) is a separate artifact that ships with the repo — it is not installed or copied here.
 
 The skill automates:
 - Crawling the Claris Online Help (`https://help.claris.com/<lang>/pro-help/content/index.html`)
@@ -23,7 +24,6 @@ The skill automates:
 - Version tracking via HTTP `Last-Modified` (per language)
 - Manifest maintenance in `docs/claris-help/manifest.json`
 - User confirmation when replacing existing language sets
-- **Copying the reference index DB** from `rest-api/db/fm_reference.duckdb` to `docs/claris-help/fm_reference.duckdb` (default step, can be disabled via `--skip-reference-db`)
 
 ## Important: language selection
 
@@ -123,10 +123,8 @@ The script produces structured logging. Report:
 | `--list-languages`    | Print list of available languages (with availability check via HTTP)          |
 | `--max-workers=<n>`   | Number of parallel downloads per language (default: 8)                        |
 | `--dry-run`           | Only run crawling/discovery, do not write any files                           |
-| `--skip-reference-db` | Skip the reference DB copy (default: always copy)                             |
-| `--restart-server`    | Force stop/restart of the API server when copying the ref DB (for edge cases) |
 
-Without parameters, **only English** is installed (plus always the reference DB, if present).
+Without parameters, **only English** is installed.
 
 ## Directory structure
 
@@ -135,7 +133,6 @@ After installation:
 ```
 docs/claris-help/
 ├── manifest.json                     # Global manifest
-├── fm_reference.duckdb               # Reference index DB (copy from rest-api/db/)
 ├── en/                                # English (reference, always included)
 │   ├── .version                       # JSON: Last-Modified + file counts
 │   ├── content/                       # All HTML pages
@@ -151,32 +148,11 @@ docs/claris-help/
 └── ...
 ```
 
-## Reference index DB
+## Reference index DB (separate artifact)
 
-In addition to the HTML mirror, the skill by default copies the reference index database from the REST API into the docs directory:
+The FileMaker reference index database — `reference/fm_spec.duckdb` — is **not** installed by this skill; it is a separate artifact that ships with the repo. Skills such as `filemaker-function-reference`, `fm-summarize` and `fm-analyze` read it directly from `reference/` to resolve a function or ScriptStep to an HTML file in this mirror.
 
-```
-rest-api/db/fm_reference.duckdb  →  docs/claris-help/fm_reference.duckdb
-```
-
-**Purpose:** Quickly identify relevant HTML documents via DuckDB queries — e.g. "Which HTML file documents the function `PatternCount`?" Instead of full-text searching the mirror, a slug lookup against the index DB is enough. Used by `filemaker-function-reference`, `fm-summarize`, `fm-analyze` and other skills whenever they need to resolve a function or ScriptStep to an HTML file.
-
-### Copy strategy
-
-The REST API server attaches the reference DB in **READ\_ONLY mode** (`rest-api/src/config/database.js`), so DuckDB does not create a WAL file and does not hold a write lock. A direct `cp` operation while the server is running is therefore safe — the server keeps reading from the existing file, and the target directory (`docs/claris-help/`) is independent.
-
-**Script flow:**
-
-1. **Check:** Does `rest-api/db/fm_reference.duckdb` exist?
-   - No → step is skipped with a warning (not an error).
-2. **Direct copy** (default): atomic via `*.tmp` + `mv`, without touching the server.
-3. **Fallback on error:** If the direct copy fails and a server is running on port 3003, automatically execute `tools/stop-servers.sh` → copy → `tools/start-servers.sh`.
-4. **`--restart-server` flag:** Force the stop/start cycle even when the direct copy would work (for edge cases or when an explicit server reload is desired).
-5. **`--skip-reference-db` flag:** Skip the step entirely (e.g. when only the HTML docs should be mirrored).
-
-### Source of the reference DB
-
-The reference DB is **not** produced by this skill — it is part of the `rest-api/` setup and is typically distributed alongside the REST API server. If `rest-api/db/fm_reference.duckdb` is missing, that is not an error: the script continues with the HTML downloads and reports `Ref-DB: source not found — skipped` in the summary.
+If present, this skill reads the reference DB read-only for the function/ScriptStep category counts shown on the home dashboard's doc-registry card — but it never writes or copies it.
 
 ### `manifest.json` schema
 
@@ -296,7 +272,7 @@ ERROR: [specific error message]
 ## Notes
 
 - The downloaded files come from a publicly accessible source (Claris Online Help). Local use is typically covered by Claris's documentation license; public re-publishing is NOT permitted.
-- This documentation is used by the `fm_reference.duckdb` setup and the `/api/reference/...` endpoints as the HTML source for full-text extraction.
+- This documentation is used by the `reference/fm_spec.duckdb` setup and the `/api/reference/...` endpoints as the HTML source for full-text extraction.
 - The script is idempotent — running it multiple times is safe.
 - If only individual slugs are missing or outdated, a full reinstall is not necessary — the crawler uses Last-Modified headers per file (HEAD request) to update only changed files.
 - After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.py`, so the web home dashboard's Docs card can list it.

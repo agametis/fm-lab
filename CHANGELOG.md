@@ -12,11 +12,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.8.11] — 2026-07-13
+
+The bundled FileMaker reference gets a clean, self-describing home: one canonical `reference/fm_spec.duckdb`, read by both the API and every agent skill — plus an ActionScript delivery path for generated code and a round of minor bugfixes.
+
+- **Standard reference relocated & renamed** — the reference database becomes a single, brand-aligned artifact
+  - **One canonical file** — `reference/fm_spec.duckdb` (with a `fm_spec.meta.json` sidecar) is now the only copy, read directly by the REST API **and** all agent-facing skills
+  - **Renamed from `fm_reference` to `fm_spec`** — file, version-manifest component, and the `fm-spec` project name now line up
+  - **`install-claris-docs` decoupled** — the docs installer no longer ships a copy of the reference DB; the Claris Help mirror and the reference spec are now independent concerns
+- **fm-spec reference expanded — fmIDE ActionScript / fmJAML** — a second delivery path for generated FileMaker code
+  - **`actionscript` subcommand** in the `fm-generate-script` skill — emits generated steps as fmIDE ActionScript in JSON and fmJAML form, alongside the existing paste-ready fmxmlsnippet path
+  - **Action catalog in the spec** — a machine-readable action/step mapping drives the ActionScript emission from the same reference, with its own validation gate
+- **XML pipeline & converter bugfixes**
+  - **webbed capability probe** no longer aborts (exit 8) when a `.duckdbrc` is present — the probe is isolated from user DuckDB config
+  - **Binary-data split fix** — the streaming split no longer produces an invalid chunk on embedded binary payloads, strips large binary payloads
+
+---
+
 ## [0.8.10] — 2026-07-11
 
 The bundled FileMaker reference grows from a localized help cache into a full, browsable standard specification — and becomes the foundation for a new, reference-driven script-generation skill.
 
-- **FileMaker standard reference** — the bundled reference database (`fm_reference.duckdb`) is rebuilt from a full FileMaker specification, no longer just a localized help cache
+- **FileMaker standard reference** — the bundled reference database (`fm_spec.duckdb`) is rebuilt from a full FileMaker specification, no longer just a localized help cache
   - **Complete step & function surface** — all 206 script steps and 373 functions with their SaXML signatures, per-step platform compatibility, and the FileMaker version each was introduced in
   - **Machine-readable step grammar** — every step's option/parameter structure captured with enumerated option values, so a generator can emit valid step XML from the spec instead of hand-maintained templates
   - **Normalization passes** — boolean option polarity canonicalized and a compact text-form spec, so equivalent steps compare identically regardless of how the export phrased them
@@ -397,7 +414,7 @@ Documentation for FM-Lab
 
 Reference-DB distribution via `install-claris-docs` and consolidation of the function-reference skills.
 
-- **`install-claris-docs`** now copies the REST-API reference index DB (`fm_reference.duckdb`) into `docs/claris-help/` — slug-based lookups for functions and ScriptSteps
+- **`install-claris-docs`** now copies the REST-API reference index DB (`fm_spec.duckdb`) into `docs/claris-help/` — slug-based lookups for functions and ScriptSteps
 - **`filemaker-function-reference`** skill rewritten: uses the local DuckDB reference index (373 functions, 206 ScriptSteps, 19 + 13 categories with localized names, signatures, parameters, URL slugs) instead of the legacy SQLite docset; supports multi-language lookups and falls back to the online Claris Help when a slug is missing locally
 - **`install-filemaker-docs`** skill marked **deprecated** — replaced by `install-claris-docs` (current Claris Online Help, 11 languages, integrated index DB); kept for backwards compatibility but no longer used by any downstream skill
 
@@ -607,7 +624,8 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 <!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
      versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
      intentionally left unlinked and render as plain text. Add a line here per new tag. -->
-[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.8.10...HEAD
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.8.11...HEAD
+[0.8.11]: https://github.com/marcel-more/fm-lab/compare/v0.8.10...v0.8.11
 [0.8.10]: https://github.com/marcel-more/fm-lab/compare/v0.8.9...v0.8.10
 [0.8.9]: https://github.com/marcel-more/fm-lab/compare/v0.8.8...v0.8.9
 [0.8.8]: https://github.com/marcel-more/fm-lab/compare/v0.8.6...v0.8.8

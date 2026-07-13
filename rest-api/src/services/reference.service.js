@@ -10,7 +10,7 @@ const {
 /**
  * Reference-Service
  *
- * Kapselt alle Zugriffe auf die per ATTACH eingebundene fm_reference.duckdb
+ * Kapselt alle Zugriffe auf die per ATTACH eingebundene fm_spec.duckdb
  * (Alias `ref`). Bietet:
  *   - Sprach-Validierung pro Domain (Steps: 11, Functions: 9)
  *   - Bulk-Lookups (Steps/Functions/Categories) mit Pro-Sprache-LRU-Cache
@@ -67,7 +67,7 @@ function resolveFunctionLang(lang) {
 
 function assertAttached() {
   if (!db.isReferenceAttached()) {
-    const err = new Error('Reference-DB not attached. Set REFERENCE_DUCKDB_PATH or copy fm_reference.duckdb into rest-api/db/.');
+    const err = new Error('Reference-DB not attached. Set REFERENCE_DUCKDB_PATH or copy fm_spec.duckdb into reference/.');
     err.code = 'REF_NOT_ATTACHED';
     throw err;
   }
@@ -962,7 +962,7 @@ async function getStepGrammar(idOrSlug) {
       ORDER BY sort_order, option_key
     `, [base.step_id]),
     // SELECT * keeps this tolerant across reference schema versions
-    // (per-value `evidence` exists since fm_reference 1.7.0)
+    // (per-value `evidence` exists only in newer reference builds)
     db.executeQuery(`
       SELECT *
       FROM ref.step_option_values

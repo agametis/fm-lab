@@ -76,7 +76,7 @@ Learn how FM-Lab turns FileMaker XML exports into a structured Object Catalog an
 - **Web Client** (`apps/web/`) — React/Vite frontend
 - **Tools** (`tools/`) — Utility scripts for various tasks.
 - **Docs** (`docs/`) — Documentation files for FileMaker Pro and MBS plugin functions, installable via Web frontend or Claude Skills.
-- **fm-spec** (`rest-api/db/fm_reference.duckdb`) — Reference tables for FileMaker script steps and functions, providing queryable syntax and grammar definitions for linting.
+- **fm-spec** (`reference/fm_spec.duckdb`) — Reference tables for FileMaker script steps and functions, providing queryable syntax and grammar definitions for linting.
 - **Claude Skills** (`.claude/skills/`) — Contains Claude Code skills and slash commands for installation, conversion, lookup and analysis.
 - **Plugin registry** (`.fmlab/`) — Registry and preferences for FM-Lab plugins.
 
@@ -295,5 +295,5 @@ MIT — see [`LICENSE`](LICENSE).
 
 ### Data sources & attribution
 
-The bundled FileMaker reference database (`rest-api/db/fm_reference.duckdb`)
-describes script steps, functions and their grammar. Its contents draw on several sources; see [`SOURCES.md`](SOURCES.md) for the full list.
+The bundled FileMaker reference database (`reference/fm_spec.duckdb`)
+describes script steps, functions and their grammar. Its contents draw on several sources; see [`reference/SOURCES.md`](reference/SOURCES.md) for the full list.

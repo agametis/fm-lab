@@ -21,7 +21,7 @@ function clearSlugMapCache() {
  * claris-duckdb Adapter — IDocSetIndex implementation
  *
  * Liest aus den `ref.*`-Tabellen der attached Reference-DB
- * (`rest-api/db/fm_reference.duckdb`). Diese DB wird vom claris-Installer
+ * (`reference/fm_spec.duckdb`). Diese DB wird von der fm-spec-Pipeline
  * erzeugt und beim Server-Start als `ref` Schema angehängt.
  *
  * Kategorien-IDs sind präfixiert: `fn:<n>` für Funktionen-Kategorien, `ss:<n>`
@@ -378,7 +378,7 @@ async function validate({ catalogEntry, installedEntry } = {}) {
     errors.push('No installed directory configured.');
     return { ok: false, errors };
   }
-  const indexRel = catalogEntry?.index?.path || 'fm_reference.duckdb';
+  const indexRel = catalogEntry?.index?.path || 'fm_spec.duckdb';
   const indexAbs = path.join(dir, indexRel);
   if (!fs.existsSync(indexAbs)) {
     errors.push(`Reference DB missing: ${indexAbs}`);

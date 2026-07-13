@@ -47,7 +47,7 @@ it never blocks the master DB.
 
 | Skill | Installs |
 |---|---|
-| `install-claris-docs` | Claris FileMaker online help mirror → `docs/claris-help/` (11 languages, EN always included) + reference index `fm_reference.duckdb` |
+| `install-claris-docs` | Claris FileMaker online help mirror → `docs/claris-help/` (11 languages, EN always included). The reference index `reference/fm_spec.duckdb` is a separate artifact shipped with the repo |
 | `install-mbs-docs` | MBS plugin documentation |
 | `install-duckdb-docs` | DuckDB documentation (used by `duckdb-skills:duckdb-docs`) |
 | `install-fmide-docs` | fmIDE documentation (GitHub wiki) |

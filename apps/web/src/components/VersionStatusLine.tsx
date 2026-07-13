@@ -16,7 +16,7 @@ import './VersionStatusLine.css';
  *                   gebaute Bundle-Version, wahrheitsgetreu zum laufenden Build)
  *   XML Konverter = components.xml_import.version
  *   DB Schema     = components.schema.version
- *   fm-spec       = components.fm_reference.version
+ *   fm-spec       = components.fm_spec.version
  *
  * Alle Segmente werden als reiner Versionsstring gezeigt (kein Link). Der
  * Einstieg in den fm-spec Schema-Viewer erfolgt über das eigene fm-spec-Panel
@@ -35,7 +35,7 @@ export const VersionStatusLine: React.FC = () => {
     { label: t('detail:settingsView.versions.frontend'), version: __APP_VERSION__ },
     { label: t('detail:settingsView.versions.xmlConverter'), version: manifest.components?.xml_import?.version },
     { label: t('detail:settingsView.versions.dbSchema'), version: manifest.components?.schema?.version },
-    { label: t('detail:settingsView.versions.fmSpec'), version: manifest.components?.fm_reference?.version },
+    { label: t('detail:settingsView.versions.fmSpec'), version: manifest.components?.fm_spec?.version },
   ];
 
   return (

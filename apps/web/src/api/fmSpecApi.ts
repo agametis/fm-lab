@@ -3,7 +3,7 @@ import { API_BASE } from '../config/apiBase';
 /**
  * fm-spec Schema-Viewer API-Client.
  *
- * Rein lesende Endpoints der Referenz-DB (`fm_reference.duckdb`). Plain fetch
+ * Rein lesende Endpoints der Referenz-DB (`fm_spec.duckdb`). Plain fetch
  * wie der Rest des Frontends — kein react-query. Alle Antworten degradieren
  * definiert, wenn die generativen Tabellen fehlen (Referenz < 1.2.0):
  * `grammarAvailable=false`, Grammatik-Blöcke `null`.
@@ -161,7 +161,7 @@ export function fetchStepLangs(idOrSlug: string | number): Promise<StepAllLangs>
 export interface StepOptionValue {
   xmlValue: string;
   displayTextEn: string | null;
-  /** Per-value evidence (fm_reference ≥ 1.7.0); null on older references. */
+  /** Per-value evidence (fm_spec ≥ 1.7.0); null on older references. */
   evidence: string | null;
 }
 

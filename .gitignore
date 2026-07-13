@@ -20,7 +20,11 @@ logs/*
 db/*
 !db/.gitkeep
 # Reference DB is shipped with the repo (FileMaker function and script step reference)
-!rest-api/db/fm_reference.duckdb
+# — the *.duckdb glob above would otherwise drop it, so allow it back in explicitly.
+# SOURCES.md (attribution, sibling of the DB)
+!reference/fm_spec.duckdb
+!reference/fm_spec.meta.json
+!reference/SOURCES.md
 
 # Data directory
 data/*

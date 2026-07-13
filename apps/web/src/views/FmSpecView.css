@@ -366,7 +366,7 @@
 }
 .fmspec-values-toggle:hover { background: var(--color-hover-bg); color: var(--color-text-primary); }
 
-/* Boolean options: display text → XML state mapping (polarity norm, fm_reference 1.7.0) */
+/* Boolean options: display text → XML state mapping (polarity norm) */
 .fmspec-bool-map {
   margin-top: 2px;
   font-size: 0.74rem;

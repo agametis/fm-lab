@@ -76,7 +76,7 @@ Generate the artifact directly, under these ground rules:
 1. **Consult the reference skills first** — `filemaker-function-reference` for native
    functions/steps, `mbs-function-reference` for MBS calls. Never guess signatures.
 2. **fmxmlsnippet basics:** one well-formed `<fmxmlsnippet type="FMObjectList">`
-   snippet, paste-ready; Step-IDs from the reference index (`fm_reference.duckdb`,
+   snippet, paste-ready; Step-IDs from the reference index (`fm_spec.duckdb`,
    `script_steps.step_id`), never from memory; calculations in CDATA; correct
    XML entity escaping.
 3. **Verify references:** every script, layout, field, TO or value list the artifact

@@ -7,18 +7,14 @@
 # English (en) is ALWAYS included as the reference language. Additional
 # languages can be requested via --lang=<code> or --all.
 #
-# Additionally copies the reference index database from
-#   rest-api/db/fm_reference.duckdb  →  docs/claris-help/fm_reference.duckdb
-# (set --skip-reference-db to disable). The REST-API attaches the DB in
-# READ_ONLY mode (no WAL file), so a live copy is safe by default. If the
-# direct copy fails and the API server is running on port 3003, the script
-# falls back to: stop server → copy → restart server (via tools/-scripts).
+# This script installs ONLY the Claris HTML help mirror. The FileMaker
+# reference index DB (reference/fm_spec.duckdb) is a separate artifact that
+# ships with the repo; it is not installed or copied here.
 #
 # Usage:
 #   install_claris_docs.sh [--check|--install] [--quiet]
 #                          [--lang=<code>|all] [--all] [--force]
 #                          [--max-workers=N] [--dry-run] [--list-languages]
-#                          [--skip-reference-db] [--restart-server]
 #
 # Mode flags (from tools/install_modes.sh):
 #   --check:   Probe-only mode (reference language only). Emits a single
@@ -45,11 +41,10 @@ DOCS_DIR="$PROJECT_ROOT/docs/claris-help"
 MANIFEST_FILE="$DOCS_DIR/manifest.json"
 CRAWLER="$SCRIPT_DIR/claris_crawler.py"
 
-REFERENCE_DB_SRC="$PROJECT_ROOT/rest-api/db/fm_reference.duckdb"
-REFERENCE_DB_DST="$DOCS_DIR/fm_reference.duckdb"
-API_PORT=3003
-STOP_SERVERS_SCRIPT="$PROJECT_ROOT/tools/stop-servers.sh"
-START_SERVERS_SCRIPT="$PROJECT_ROOT/tools/start-servers.sh"
+# Read-only reference to the shipped reference DB. Not installed by this script;
+# only read — if present — for the doc-registry category/function counts shown
+# on the home dashboard.
+REFERENCE_DB="$PROJECT_ROOT/reference/fm_spec.duckdb"
 
 BASE_URL="https://help.claris.com"
 ALL_LANGS=(en de es fr it nl pt sv ja ko zh)
@@ -79,7 +74,7 @@ source "$PROJECT_ROOT/tools/install_modes.sh"
 # Phase budget for the SSE progress bar. Per-language crawl gets the lion's
 # share (10-90%); the budget is sliced evenly across the requested languages
 # at runtime once TARGET_LANGS is known.
-set_phase_budget "check:0-5 refdb:5-10 crawl:10-90 manifest:90-94 register:94-98 done:98-100"
+set_phase_budget "check:0-10 crawl:10-90 manifest:90-94 register:94-98 done:98-100"
 
 # Extract --check/--install/--quiet first; the rest is parsed by the existing
 # Claris-specific arg-loop below. The `${REMAINING_ARGS[@]+...}` indirection
@@ -98,8 +93,6 @@ FORCE_INSTALL=false
 MAX_WORKERS=8
 DRY_RUN=false
 LIST_LANGUAGES=false
-SKIP_REFERENCE_DB=false
-FORCE_RESTART_SERVER=false
 
 for arg in "$@"; do
     case "$arg" in
@@ -126,12 +119,6 @@ for arg in "$@"; do
             ;;
         --list-languages)
             LIST_LANGUAGES=true
-            ;;
-        --skip-reference-db)
-            SKIP_REFERENCE_DB=true
-            ;;
-        --restart-server)
-            FORCE_RESTART_SERVER=true
             ;;
         --help|-h)
             sed -n '2,28p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
@@ -187,124 +174,6 @@ human_size() {
     else
         echo "$bytes B"
     fi
-}
-
-# Check whether the REST-API server is listening on its port
-api_server_running() {
-    lsof -nP -iTCP:"$API_PORT" 2>/dev/null | awk '/LISTEN/ {print $2}' | sort -u | head -1
-}
-
-# Atomic copy via .tmp + mv. Returns 0 on success, non-zero on error.
-copy_reference_db_atomic() {
-    local src="$1" dst="$2"
-    local tmp="${dst}.tmp.$$"
-    if cp "$src" "$tmp" 2>/dev/null; then
-        if mv "$tmp" "$dst" 2>/dev/null; then
-            return 0
-        fi
-        rm -f "$tmp"
-        return 1
-    fi
-    rm -f "$tmp"
-    return 1
-}
-
-# Install (= copy) reference DB from REST-API directory into docs/claris-help/.
-#
-# Default strategy: direct copy — the REST-API attaches the DB read-only, so
-# the source file has no write-lock and is safe to read while the server runs.
-# If the direct copy fails or --restart-server was passed, the script stops
-# the API server (via tools/stop-servers.sh), copies, and starts it again
-# (via tools/start-servers.sh).
-install_reference_db() {
-    if $SKIP_REFERENCE_DB; then
-        color_yellow "[ref-db] Skipped (--skip-reference-db)"
-        phase_progress refdb 100 "skipped"
-        return 0
-    fi
-
-    if [ ! -f "$REFERENCE_DB_SRC" ]; then
-        color_yellow "[ref-db] Source not found: $REFERENCE_DB_SRC"
-        echo "         The REST-API reference DB is optional — skipping."
-        REF_DB_STATUS="missing"
-        phase_progress refdb 100 "no source"
-        return 0
-    fi
-
-    if $DRY_RUN; then
-        color_yellow "[ref-db] Dry-run — would copy $REFERENCE_DB_SRC → $REFERENCE_DB_DST"
-        REF_DB_STATUS="dry-run"
-        phase_progress refdb 100 "dry-run"
-        return 0
-    fi
-
-    phase_progress refdb 0 "Installing reference DB..."
-
-    local src_size
-    src_size=$(stat -f%z "$REFERENCE_DB_SRC" 2>/dev/null || stat -c%s "$REFERENCE_DB_SRC" 2>/dev/null || echo 0)
-    color_cyan "[ref-db] Installing reference DB ($(human_size "$src_size"))..."
-
-    mkdir -p "$DOCS_DIR"
-
-    local api_pid
-    api_pid=$(api_server_running || true)
-
-    # Strategy 1: direct copy (default — API is read-only, source is safe to read)
-    if ! $FORCE_RESTART_SERVER; then
-        if copy_reference_db_atomic "$REFERENCE_DB_SRC" "$REFERENCE_DB_DST"; then
-            color_green "[ref-db] OK: copied to $REFERENCE_DB_DST"
-            REF_DB_STATUS="copied"
-            phase_progress refdb 100 "ref-db installed"
-            return 0
-        fi
-        color_yellow "[ref-db] Direct copy failed — falling back to server-restart cycle"
-    fi
-
-    # Strategy 2: stop server → copy → restart
-    if [ -z "$api_pid" ]; then
-        # No server running and direct copy already failed (or forced restart with no server)
-        if copy_reference_db_atomic "$REFERENCE_DB_SRC" "$REFERENCE_DB_DST"; then
-            color_green "[ref-db] OK: copied to $REFERENCE_DB_DST (no server was running)"
-            REF_DB_STATUS="copied"
-            phase_progress refdb 100 "ref-db installed"
-            return 0
-        fi
-        color_red "[ref-db] ERROR: Copy failed and no server is running. Check permissions."
-        REF_DB_STATUS="failed"
-        return 1
-    fi
-
-    if [ ! -x "$STOP_SERVERS_SCRIPT" ] || [ ! -x "$START_SERVERS_SCRIPT" ]; then
-        color_red "[ref-db] ERROR: Direct copy failed and server-restart scripts not executable"
-        echo "         Expected: $STOP_SERVERS_SCRIPT and $START_SERVERS_SCRIPT" >&2
-        REF_DB_STATUS="failed"
-        return 1
-    fi
-
-    color_cyan "[ref-db] Stopping REST-API server (PID $api_pid)..."
-    if ! "$STOP_SERVERS_SCRIPT" >/dev/null 2>&1; then
-        color_yellow "[ref-db] stop-servers.sh returned non-zero; continuing anyway"
-    fi
-
-    local copy_rc=0
-    if copy_reference_db_atomic "$REFERENCE_DB_SRC" "$REFERENCE_DB_DST"; then
-        color_green "[ref-db] OK: copied to $REFERENCE_DB_DST"
-        REF_DB_STATUS="copied-restart"
-    else
-        color_red "[ref-db] ERROR: Copy still failed after stopping server."
-        REF_DB_STATUS="failed"
-        copy_rc=1
-    fi
-
-    color_cyan "[ref-db] Restarting REST-API server..."
-    if "$START_SERVERS_SCRIPT" >/dev/null 2>&1; then
-        color_green "[ref-db] Server restarted"
-    else
-        color_yellow "[ref-db] start-servers.sh returned non-zero — check logs/rest-api.log"
-    fi
-
-    phase_progress refdb 100 ""
-    return $copy_rc
 }
 
 # Get the existing version of a language from .version file
@@ -504,18 +373,6 @@ echo "  Workers:   $MAX_WORKERS"
 if $DRY_RUN; then
     color_yellow "  Mode:      DRY RUN (no files will be written)"
 fi
-if $SKIP_REFERENCE_DB; then
-    echo "  Ref-DB:    disabled (--skip-reference-db)"
-else
-    echo "  Ref-DB:    $REFERENCE_DB_SRC → $REFERENCE_DB_DST"
-fi
-echo ""
-
-# -------------------- Reference DB installation --------------------
-
-REF_DB_STATUS="not-attempted"
-echo "════════════════════════════════════════════════════════════"
-install_reference_db || true
 echo ""
 
 # -------------------- Per-language workflow --------------------
@@ -779,17 +636,19 @@ if ! $DRY_RUN && [ -f "$REGISTER_SCRIPT" ]; then
         LANG_ARGS="--languages $LANG_CSV"
     fi
 
-    # Counts from the reference DB (function + script step categories, totals).
+    # Counts from the shipped reference DB (function + script step categories,
+    # totals) — read-only, if it is present. Optional: absence
+    # just leaves the counts empty on the dashboard card.
     CATEGORY_COUNT=""
     FUNCTION_COUNT=""
-    if [ -f "$REFERENCE_DB_DST" ]; then
+    if [ -f "$REFERENCE_DB" ]; then
         DUCKDB_BIN=$(command -v duckdb || true)
         [ -z "$DUCKDB_BIN" ] && [ -x "$HOME/.duckdb/cli/latest/duckdb" ] && DUCKDB_BIN="$HOME/.duckdb/cli/latest/duckdb"
         [ -z "$DUCKDB_BIN" ] && [ -x "/opt/homebrew/bin/duckdb" ] && DUCKDB_BIN="/opt/homebrew/bin/duckdb"
         if [ -n "$DUCKDB_BIN" ]; then
-            CATEGORY_COUNT=$("$DUCKDB_BIN" "$REFERENCE_DB_DST" -noheader -csv -c \
+            CATEGORY_COUNT=$("$DUCKDB_BIN" -readonly "$REFERENCE_DB" -noheader -csv -c \
                 "SELECT (SELECT COUNT(*) FROM function_categories) + (SELECT COUNT(*) FROM script_steps_categories);" 2>/dev/null || echo "")
-            FUNCTION_COUNT=$("$DUCKDB_BIN" "$REFERENCE_DB_DST" -noheader -csv -c \
+            FUNCTION_COUNT=$("$DUCKDB_BIN" -readonly "$REFERENCE_DB" -noheader -csv -c \
                 "SELECT (SELECT COUNT(*) FROM functions) + (SELECT COUNT(*) FROM script_steps);" 2>/dev/null || echo "")
         fi
     fi
@@ -835,14 +694,6 @@ echo "  Location:    $DOCS_DIR"
 if ! $DRY_RUN; then
     echo "  Manifest:    $MANIFEST_FILE"
 fi
-case "$REF_DB_STATUS" in
-    copied)         echo "  Ref-DB:      $REFERENCE_DB_DST (direct copy)" ;;
-    copied-restart) echo "  Ref-DB:      $REFERENCE_DB_DST (after server-restart cycle)" ;;
-    missing)        echo "  Ref-DB:      source not found — skipped" ;;
-    failed)         echo "  Ref-DB:      FAILED (see log above)" ;;
-    dry-run)        echo "  Ref-DB:      (dry-run, not copied)" ;;
-    *)              echo "  Ref-DB:      $REF_DB_STATUS" ;;
-esac
 echo ""
 
 if [ "$OVERALL_RC" -eq 0 ]; then

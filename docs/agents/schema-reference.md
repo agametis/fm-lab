@@ -43,7 +43,7 @@ The table names mirror the XML branches of the corresponding object types:
 - **FileAccessAuthorizations** — Inter-file access authorizations
 - **LibraryReferences** — Library references (metadata only, blobs discarded)
 - **LinkRoleRegistry** — Machine-readable semantics per link role (`usage`/`containment`/`restriction`, `Counts_For_Where_Used`) — P6 warns when an ObjectLinks role lacks a registry entry
-- **ScriptStepRoleMap** — Curated Step_ID → Link_Role mapping for Script→Field links (locale-independent; `Step/@name` is localized in SaXML exports). Canonical_Name documents the English reference name; IDs verified against the reference index `fm_reference.duckdb` (`script_steps.step_id` ≙ SaXML `Step/@id`), which is deliberately NOT a runtime dependency of the converter
+- **ScriptStepRoleMap** — Curated Step_ID → Link_Role mapping for Script→Field links (locale-independent; `Step/@name` is localized in SaXML exports). Canonical_Name documents the English reference name; IDs verified against the reference index `reference/fm_spec.duckdb` (`script_steps.step_id` ≙ SaXML `Step/@id`), which is deliberately NOT a runtime dependency of the converter
 - **FilesCatalog** — Metadata of all imported FileMaker files (multi-file support)
 - **ObjectCatalog** — Central object registry covering all 25+ object types across all files
 - **ObjectLinks** — Links between objects (operational & structural, including cross-file links)
