@@ -1,8 +1,8 @@
 {
   "manifest_schema": "1.0",
   "version": "0.8.11",
-  "generated_at": "2026-07-13T20:52:06.128Z",
-  "source_commit": "0c558a6",
+  "generated_at": "2026-07-13T21:19:23.155Z",
+  "source_commit": "0a79ee4",
   "components": {
     "rest_api": {
       "scheme": "A",

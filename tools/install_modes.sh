@@ -419,3 +419,38 @@ confirm_or_quiet() {
     echo ""
     [[ $REPLY =~ ^[Yy]$ ]]
 }
+
+# ---------------------------------------------------------------------------
+# Manifest self-heal helper
+# ---------------------------------------------------------------------------
+# Returns 0 if docset <id> is recorded in .fmlab/docs.json installed[], else 1.
+#
+# Installers use this to detect a DESYNCED manifest: the docs are physically
+# present and the version is current, but the installed[] entry is missing —
+# e.g. an older release tracked .fmlab/docs.json and a `git pull` reset it, so
+# the files on disk stay but the registration is gone. In that state the docset
+# vanishes from the web UI and a normal "already up to date" early-exit would
+# loop forever. The installer should instead re-register from the on-disk files
+# (its register_docs() reads counts straight from the local index — no download).
+#
+# Fail-safe: a missing manifest, missing python3, or unreadable JSON returns 0
+# ("registered") so we never nag when we cannot check — or, for a missing
+# manifest, would risk clobbering the maintainer-curated catalog[] by recreating
+# the file from scratch. The real bug (entry lost, file+catalog intact) is the
+# case this heals.
+docs_is_registered() {
+    local id="$1"
+    local manifest="${PROJECT_ROOT}/.fmlab/docs.json"
+    [ -f "$manifest" ] || return 0
+    command -v python3 >/dev/null 2>&1 || return 0
+    python3 - "$manifest" "$id" <<'PY' 2>/dev/null
+import json, sys
+try:
+    data = json.load(open(sys.argv[1]))
+except Exception:
+    sys.exit(0)  # unreadable → don't nag / don't risk recreating the catalog
+installed = data.get("installed") or []
+hit = any(isinstance(e, dict) and e.get("id") == sys.argv[2] for e in installed)
+sys.exit(0 if hit else 1)
+PY
+}

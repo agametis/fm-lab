@@ -121,6 +121,15 @@ check_version() {
 
         if [ "$REMOTE_HASH" = "$LOCAL_HASH" ]; then
             LOCAL_DATE=$(tail -1 "$VERSION_FILE")
+            # Self-heal: docs current but manifest lost its installed[] entry (e.g. a
+            # git pull reset a tracked .fmlab/docs.json). Re-register from the on-disk
+            # files — no download — instead of exiting blind and staying invisible.
+            if ! docs_is_registered fmide; then
+                emit_log "Docs present but missing from .fmlab/docs.json — re-registering (self-heal)."
+                register_docs
+                emit_done true "Re-registered (already up to date)"
+                exit 0
+            fi
             emit_log "Docs are up to date (commit: ${LOCAL_HASH:0:8}, date: $LOCAL_DATE). No action needed."
             emit_done true "Already up to date"
             exit 0
