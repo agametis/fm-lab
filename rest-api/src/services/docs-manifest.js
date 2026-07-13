@@ -24,6 +24,29 @@ function manifestPath() {
   return path.join(repoRoot, '.fmlab', 'docs.json');
 }
 
+// Runtime install-state overlay. Split out of docs.json so the maintainer-curated
+// catalog[] can ship as a tracked file while installed[] — mutated on every install —
+// stays gitignored and never causes a `git pull` conflict. Written by
+// tools/register_docs.py; read here and merged over docs.json.
+function installedOverlayPath() {
+  const repoRoot = settingsStore.resolveRepoRoot();
+  return path.join(repoRoot, '.fmlab', 'docs.installed.json');
+}
+
+// Installed[] from the overlay, or null if the overlay is absent (→ caller falls back
+// to a legacy single-file docs.json that still carries installed[]).
+function readInstalledOverlay() {
+  const file = installedOverlayPath();
+  if (!fs.existsSync(file)) return null;
+  try {
+    const raw = JSON.parse(fs.readFileSync(file, 'utf-8'));
+    return Array.isArray(raw.installed) ? raw.installed : [];
+  } catch (err) {
+    console.warn(`[docs-manifest] failed to read ${file}: ${err.message}`);
+    return [];
+  }
+}
+
 function applyCatalogDefaults(entry) {
   const out = { ...entry };
   if (out.visible === undefined) out.visible = true;
@@ -54,10 +77,24 @@ function readManifestSync() {
     console.warn(`[docs-manifest] failed to read ${file}: ${err.message}`);
     return { $schema_version: CURRENT_SCHEMA_VERSION, catalog: [], installed: [] };
   }
+  // installed[] = baseline from docs.json (pre-installed skill-less sets shipped with the
+  // repo, e.g. fm-lab) MERGED with the runtime overlay (sets the user installed via
+  // install-*-docs). The overlay wins on id collisions. When no overlay exists yet the
+  // baseline stands alone — this is also the backward-compatible path for a legacy
+  // single-file manifest whose installed[] carried everything.
+  const base = Array.isArray(raw.installed) ? raw.installed : [];
+  const overlay = readInstalledOverlay(); // array or null
+  let installed;
+  if (overlay === null) {
+    installed = base;
+  } else {
+    const overlayIds = new Set(overlay.map(e => e && e.id));
+    installed = [...base.filter(e => e && !overlayIds.has(e.id)), ...overlay];
+  }
   return {
     $schema_version: CURRENT_SCHEMA_VERSION,
     catalog: (Array.isArray(raw.catalog) ? raw.catalog : []).map(applyCatalogDefaults),
-    installed: Array.isArray(raw.installed) ? raw.installed : [],
+    installed,
   };
 }
 

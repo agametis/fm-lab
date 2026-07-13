@@ -72,9 +72,12 @@ apps/*/.env.production
 # maintainer .gitignore: if one of these is tracked in the public repo, `git pull` on a
 # user's checkout aborts as soon as the app touches it ("local changes would be
 # overwritten"). Keep this block in sync with the .fmlab/ entries in the root .gitignore.
+# NOTE: .fmlab/docs.json is deliberately NOT here — it ships as a tracked, catalog-only
+# file (the list of available doc-sets). The runtime install-state lives in the
+# gitignored .fmlab/docs.installed.json overlay instead, so pulls never conflict.
 .fmlab/plugins.json
 .fmlab/plugins/
-.fmlab/docs.json
+.fmlab/docs.installed.json
 .fmlab/user.local.json
 .fmlab/last_xml_run.json
 .fmlab/stream_verify/*.snap

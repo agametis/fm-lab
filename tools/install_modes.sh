@@ -440,10 +440,17 @@ confirm_or_quiet() {
 # case this heals.
 docs_is_registered() {
     local id="$1"
-    local manifest="${PROJECT_ROOT}/.fmlab/docs.json"
-    [ -f "$manifest" ] || return 0
+    # installed[] lives in the runtime overlay (.fmlab/docs.installed.json); fall back to
+    # a legacy single-file docs.json that still carries installed[]. Both are read the
+    # same way — the key is present in installed[] or it isn't.
+    local overlay="${PROJECT_ROOT}/.fmlab/docs.installed.json"
+    local legacy="${PROJECT_ROOT}/.fmlab/docs.json"
+    local target=""
+    [ -f "$overlay" ] && target="$overlay"
+    [ -z "$target" ] && [ -f "$legacy" ] && target="$legacy"
+    [ -n "$target" ] || return 0                     # nothing to check → don't nag
     command -v python3 >/dev/null 2>&1 || return 0
-    python3 - "$manifest" "$id" <<'PY' 2>/dev/null
+    python3 - "$target" "$id" <<'PY' 2>/dev/null
 import json, sys
 try:
     data = json.load(open(sys.argv[1]))

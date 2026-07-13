@@ -93,21 +93,6 @@ def _parse_bool_or_none(s: str | None) -> bool | None:
     return None
 
 
-def load_manifest(manifest_path: Path) -> dict:
-    if not manifest_path.exists():
-        return {"$schema_version": CURRENT_SCHEMA_VERSION, "catalog": [], "installed": []}
-    with open(manifest_path, encoding="utf-8") as f:
-        raw = json.load(f)
-    if raw.get("$schema_version") != CURRENT_SCHEMA_VERSION:
-        raise SystemExit(
-            f"register_docs: unsupported $schema_version {raw.get('$schema_version')!r} "
-            f"in {manifest_path} — expected {CURRENT_SCHEMA_VERSION}"
-        )
-    raw.setdefault("catalog", [])
-    raw.setdefault("installed", [])
-    return raw
-
-
 def write_atomic(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(prefix=".docs.", suffix=".json", dir=str(path.parent))
@@ -122,6 +107,26 @@ def write_atomic(path: Path, data: dict) -> None:
         except FileNotFoundError:
             pass
         raise
+
+
+def load_installed(overlay_path: Path) -> list[dict]:
+    """Return the runtime install-state list from the overlay (.fmlab/docs.installed.json).
+
+    The overlay is gitignored and holds ONLY sets registered by install-*-docs runs, so a
+    `git pull` never conflicts with local install state. It is intentionally NOT seeded
+    from docs.json: the shipped docs.json carries the catalog[] plus any pre-installed
+    skill-less sets in its own installed[]; the reader (docs-manifest.js) merges that
+    baseline with this overlay. Seeding here would duplicate the baseline into the overlay
+    and let it drift. Absent overlay → empty (the baseline still shows via the merge).
+    """
+    if overlay_path.exists():
+        with open(overlay_path, encoding="utf-8") as f:
+            return json.load(f).get("installed", []) or []
+    return []
+
+
+def write_installed(overlay_path: Path, installed: list[dict]) -> None:
+    write_atomic(overlay_path, {"$schema_version": CURRENT_SCHEMA_VERSION, "installed": installed})
 
 
 def main() -> int:
@@ -158,15 +163,13 @@ def main() -> int:
     args = parser.parse_args()
 
     root = repo_root()
-    manifest_path = root / ".fmlab" / "docs.json"
-    manifest = load_manifest(manifest_path)
-    installed: list[dict] = manifest["installed"]
+    overlay_path = root / ".fmlab" / "docs.installed.json"
+    installed = load_installed(overlay_path)
     others = [d for d in installed if d.get("id") != args.id]
 
     if args.remove:
-        manifest["installed"] = others
-        write_atomic(manifest_path, manifest)
-        print(f"register_docs: removed '{args.id}' from installed[] in {manifest_path}")
+        write_installed(overlay_path, others)
+        print(f"register_docs: removed '{args.id}' from installed[] in {overlay_path}")
         return 0
 
     entry = {
@@ -183,9 +186,8 @@ def main() -> int:
         },
     }
 
-    manifest["installed"] = others + [entry]
-    write_atomic(manifest_path, manifest)
-    print(f"register_docs: '{args.id}' written to installed[] in {manifest_path}")
+    write_installed(overlay_path, others + [entry])
+    print(f"register_docs: '{args.id}' written to installed[] in {overlay_path}")
     return 0
 
 
