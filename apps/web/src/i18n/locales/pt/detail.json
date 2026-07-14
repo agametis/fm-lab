@@ -253,6 +253,37 @@
     },
     "versions": {
       "fmSpec": "fm-spec"
+    },
+    "solutions": {
+      "heading": "Soluções",
+      "description": "Gerencie as soluções FileMaker deste espaço de trabalho. Cada solução tem a sua própria entrada XML, o seu próprio banco de dados e o seu próprio estado. Ativar muda toda a bancada para essa solução.",
+      "colId": "ID",
+      "colName": "Solução",
+      "colSize": "Tamanho",
+      "colFiles": "Arquivos",
+      "colLastImport": "Última importação",
+      "colDuration": "Duração",
+      "activeBadge": "Ativa",
+      "activate": "Ativar",
+      "activating": "Ativando…",
+      "deleteButton": "Excluir",
+      "deleteConfirm1": "Excluir a solução “{{name}}”? Isto remove TODO o pacote, incluindo os arquivos XML de origem.",
+      "deleteConfirm2": "Excluir “{{id}}” definitivamente? Considere exportar antes (tools/solution.sh export {{id}}). Esta ação não pode ser desfeita.",
+      "newButton": "Nova solução…",
+      "createIdPlaceholder": "ID (nome da pasta, p. ex. erp-live)",
+      "createNamePlaceholder": "Nome de exibição (opcional)",
+      "createButton": "Criar",
+      "createCancel": "Cancelar",
+      "renameTitle": "Renomear solução",
+      "importButton": "Importar XML",
+      "importButtonTitle": "Abrir a importação XML para esta solução (sem ativá-la)",
+      "importRunning": "Importação em andamento…",
+      "renameIdButton": "Alterar ID…",
+      "renameIdTitle": "Alterar o ID do pacote (nome da pasta) — o UUID é mantido",
+      "renameIdPrompt": "Novo ID para “{{id}}”:\n\nAtenção: isto altera o nome da pasta e os caminhos — destinos de exportação e links para o ID antigo deixam de funcionar. Renomear “default” recria um “default” vazio.",
+      "menuLabel": "Ações",
+      "searchPlaceholder": "Filtrar soluções…",
+      "noMatches": "Nenhuma solução corresponde ao filtro."
     }
   },
   "objectHeader": {

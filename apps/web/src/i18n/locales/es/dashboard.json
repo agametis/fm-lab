@@ -21,7 +21,11 @@
     "phaseHomes": "Vincular",
     "phaseValidate": "Validar",
     "chunkCounter": "{{done}} de {{total}}",
-    "phaseCluster": "Comunidades"
+    "phaseCluster": "Comunidades",
+    "abortOomTitle": "Memoria insuficiente",
+    "abortOomBody": "Esta solución es demasiado grande para la memoria disponible de este equipo. Ejecuta la importación en un equipo con más RAM (8 GB o más) o vuelve a intentarlo con un perfil de memoria reducido.",
+    "abortIncompleteTitle": "Compilación incompleta",
+    "abortIncompleteBody": "La resolución de referencias no se completó, por lo que no se pudo crear el catálogo de objetos. Consulta el registro de la ejecución para más detalles."
   },
   "cellValues": {
     "yes": "Sí",

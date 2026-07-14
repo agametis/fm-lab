@@ -40,8 +40,9 @@ locations above, point the user to the installation instructions.
 | `rest-frontend-start` | Starts the Vite frontend dev server on port 5173 |
 | `rest-frontend-stop` | Stops the frontend dev server |
 
-The API server reads its own DB copy (`rest-api/db/fm_catalog.duckdb`, READ_ONLY) —
-it never blocks the master DB.
+The API server reads its own per-solution DB copy
+(`rest-api/db/solutions/<id>/fm_catalog.duckdb`, READ_ONLY, resolved from the active
+solution) — it never blocks the master DB.
 
 ## Documentation mirrors (install/update skills)
 
@@ -60,7 +61,7 @@ All installers check versions and prompt before replacing existing sets.
 |---|---|
 | `install-ooe-fm` | "One Of Everything" FileMaker reference repo (XML test cases) |
 | `install-fm-xml-export-exploder` | Tool for splitting XML exports into components |
-| `test-convert-xml` | Conversion test run: `xml-test/` → `db/fm_test.duckdb` (production DB untouched; auto-provisions ooe-fm data) |
+| `test-convert-xml` | Conversion test run: `tools/tests/fixtures/xml/` → `db/fm_test.duckdb` (production DB untouched; auto-provisions ooe-fm data) |
 
 ## Misc
 

@@ -61,15 +61,16 @@ function convertBigInts(obj) {
  * `columns` MUSS File_Name enthalten (für die matched_files-Liste). Liefert das
  * rohe Query-Result; rows[0] ist garantiert eindeutig aufgelöst.
  *
+ * @param {Object} ctx - Request-Kontext (Solution-Scope)
  * @param {string} uuid
  * @param {string} [file] - optionaler File_Name zur Disambiguierung
  * @param {string} [columns='*'] - SELECT-Spaltenliste (muss File_Name enthalten)
  * @returns {Promise<{rows: Array, meta: Object}>}
  */
-async function resolveByUUID(uuid, file, columns = '*') {
+async function resolveByUUID(ctx, uuid, file, columns = '*') {
   const where = file ? 'Object_UUID = ? AND File_Name = ?' : 'Object_UUID = ?';
   const params = file ? [uuid, file] : [uuid];
-  const result = await db.executeQuery(`SELECT ${columns} FROM ObjectCatalog WHERE ${where}`, params);
+  const result = await db.executeQuery(ctx, `SELECT ${columns} FROM ObjectCatalog WHERE ${where}`, params);
 
   if (result.rows.length === 0) {
     throw createError(
@@ -96,13 +97,14 @@ async function resolveByUUID(uuid, file, columns = '*') {
 
 /**
  * Get object by UUID (clone-aware, see resolveByUUID).
+ * @param {Object} ctx - Request-Kontext (Solution-Scope)
  * @param {string} uuid - Object UUID
  * @param {string} [file] - optional File_Name to disambiguate clone duplicates
  * @returns {Promise<Object>} Object data
  */
-async function getByUUID(uuid, file) {
+async function getByUUID(ctx, uuid, file) {
   try {
-    const result = await resolveByUUID(uuid, file);
+    const result = await resolveByUUID(ctx, uuid, file);
 
     return {
       data: convertBigInts(result.rows[0]),
@@ -116,6 +118,7 @@ async function getByUUID(uuid, file) {
 
 /**
  * List objects by type with optional filters
+ * @param {Object} ctx - Request-Kontext (Solution-Scope)
  * @param {Object} filters - Filter options
  * @param {string} filters.type
  * @param {string} [filters.file]
@@ -126,7 +129,7 @@ async function getByUUID(uuid, file) {
  * @param {string} [filters.sort]         - 'usage' | 'name' | 'category'
  * @returns {Promise<Object>} List of objects with metadata
  */
-async function listObjects(filters) {
+async function listObjects(ctx, filters) {
   try {
     const {
       type,
@@ -171,7 +174,7 @@ async function listObjects(filters) {
         limit,
         refAttached: db.isReferenceAttached(),
       });
-      const result = await db.executeQuery(sql, params);
+      const result = await db.executeQuery(ctx, sql, params);
       return {
         data: convertBigInts(result.rows),
         meta: result.meta,
@@ -209,7 +212,7 @@ async function listObjects(filters) {
       params.push(limit);
     }
 
-    const result = await db.executeQuery(sql, params);
+    const result = await db.executeQuery(ctx, sql, params);
 
     return {
       data: convertBigInts(result.rows),
@@ -240,7 +243,7 @@ function normalizeCategories(category) {
  * Pseudo-Token-Typs { category, token_count, total_usage }, sortiert nach
  * total_usage desc.
  */
-async function listCategorySummary({ type, file }) {
+async function listCategorySummary(ctx, { type, file }) {
   try {
     const dbType = OBJECT_TYPE_MAP[type] || type;
     if (!PSEUDO_TOKEN_TYPES.includes(dbType)) {
@@ -255,7 +258,7 @@ async function listCategorySummary({ type, file }) {
       db.isReferenceAttached(),
       file
     );
-    const result = await db.executeQuery(sql, params);
+    const result = await db.executeQuery(ctx, sql, params);
     return {
       data: convertBigInts(result.rows),
       meta: result.meta,
@@ -268,10 +271,11 @@ async function listCategorySummary({ type, file }) {
 
 /**
  * Count objects with optional grouping
+ * @param {Object} ctx - Request-Kontext (Solution-Scope)
  * @param {Object} options - Count options {type, file, group_by}
  * @returns {Promise<Object>} Count results with metadata
  */
-async function countObjects(options) {
+async function countObjects(ctx, options) {
   try {
     const { type, file, group_by } = options;
 
@@ -332,7 +336,7 @@ async function countObjects(options) {
       }
     }
 
-    const result = await db.executeQuery(sql, params);
+    const result = await db.executeQuery(ctx, sql, params);
 
     return {
       data: convertBigInts(result.rows),
@@ -556,10 +560,11 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false }
 
 /**
  * Search objects by name pattern
+ * @param {Object} ctx - Request-Kontext (Solution-Scope)
  * @param {Object} searchOptions - Search options {name, type, file, limit, offset}
  * @returns {Promise<Object>} Search results with metadata
  */
-async function searchObjects(searchOptions) {
+async function searchObjects(ctx, searchOptions) {
   try {
     const { name, type, file, limit = environment.api.defaultLimit, offset = 0 } = searchOptions;
 
@@ -569,7 +574,7 @@ async function searchObjects(searchOptions) {
     // ScriptStep-Spezialpfad: Volltextsuche im DDR_Step_Text + Comment-Inhalt
     // aus Parameters_XML, mit Script_Name/Step_Index/Step_Text in der Response.
     if (dbType === 'ScriptStep') {
-      return await searchScriptSteps({ name, file, limit, offset });
+      return await searchScriptSteps(ctx, { name, file, limit, offset });
     }
 
     // Suchstrategie (ScriptStep-Filtering):
@@ -589,7 +594,7 @@ async function searchObjects(searchOptions) {
     //      erscheinen im Wildcard-Modus per Name über (a)).
     const { sql, params } = buildSearchSql({ name, dbType, file, limit, offset });
 
-    const result = await db.executeQuery(sql, params);
+    const result = await db.executeQuery(ctx, sql, params);
 
     return {
       data: convertBigInts(result.rows),
@@ -639,7 +644,7 @@ const SCRIPTSTEP_SEARCH_CTE = `
   )
 `;
 
-async function searchScriptSteps({ name, file, limit, offset }) {
+async function searchScriptSteps(ctx, { name, file, limit, offset }) {
   // Filter NUR auf Step_Text. Object_Name enthält bei ScriptSteps auch den
   // Skriptnamen ("<Script> [<Index>] <StepType>") — wenn wir den mitdurch-
   // suchen würden, käme jeder Skriptnamen-Treffer als rauschende Step-Liste
@@ -662,14 +667,14 @@ async function searchScriptSteps({ name, file, limit, offset }) {
     params.push(limit, offset);
   }
 
-  const result = await db.executeQuery(sql, params);
+  const result = await db.executeQuery(ctx, sql, params);
   return {
     data: convertBigInts(result.rows),
     meta: result.meta,
   };
 }
 
-async function countScriptSteps({ name, file }) {
+async function countScriptSteps(ctx, { name, file }) {
   let sql = `${SCRIPTSTEP_SEARCH_CTE}
     SELECT COUNT(*) AS count
     FROM script_steps
@@ -681,7 +686,7 @@ async function countScriptSteps({ name, file }) {
     params.push(file);
   }
 
-  const result = await db.executeQuery(sql, params);
+  const result = await db.executeQuery(ctx, sql, params);
   return {
     data: convertBigInts(result.rows),
     meta: result.meta,
@@ -690,10 +695,11 @@ async function countScriptSteps({ name, file }) {
 
 /**
  * Count search results by name pattern
+ * @param {Object} ctx - Request-Kontext (Solution-Scope)
  * @param {Object} searchOptions - Search options {name, type, file}
  * @returns {Promise<Object>} Count result with metadata
  */
-async function countSearchResults(searchOptions) {
+async function countSearchResults(ctx, searchOptions) {
   try {
     const { name, type, file } = searchOptions;
 
@@ -703,14 +709,14 @@ async function countSearchResults(searchOptions) {
     // ScriptStep-Spezialpfad: muss denselben WHERE-Filter wie searchScriptSteps
     // verwenden, sonst weicht der Total-Count von der gepaginierten Liste ab.
     if (dbType === 'ScriptStep') {
-      return await countScriptSteps({ name, file });
+      return await countScriptSteps(ctx, { name, file });
     }
 
     // Identische Filterlogik wie searchObjects (UNION ALL bei Volltextsuche
     // ohne Type-Filter). Gemeinsamer Builder, damit Count == List-Total.
     const { sql, params } = buildSearchSql({ name, dbType, file, countOnly: true });
 
-    const result = await db.executeQuery(sql, params);
+    const result = await db.executeQuery(ctx, sql, params);
 
     return {
       data: convertBigInts(result.rows),
@@ -737,9 +743,10 @@ async function countSearchResults(searchOptions) {
  * Liefert ein {data, meta}-Objekt (kompatibel zum Standard-References-Pfad)
  * oder NULL, wenn das Objekt kein Pseudo-Typ ist.
  */
-async function getPseudoTypeReferences(uuid, direction, link_type, limit, origin = null) {
+async function getPseudoTypeReferences(ctx, uuid, direction, link_type, limit, origin = null) {
   // Object-Type lookup
   const typeLookup = await db.executeQuery(
+    ctx,
     'SELECT Object_Type, Object_Name FROM ObjectCatalog WHERE Object_UUID = ?',
     [uuid]
   );
@@ -928,9 +935,9 @@ async function getPseudoTypeReferences(uuid, direction, link_type, limit, origin
     const variableParams = limit > 0 ? [origin, uuid, limit] : [origin, uuid];
 
     const [scriptResult, targetResult, variableResult] = await Promise.all([
-      db.executeQuery(scriptSql, scriptParams),
-      db.executeQuery(targetSql, targetParams),
-      db.executeQuery(variableSql, variableParams),
+      db.executeQuery(ctx, scriptSql, scriptParams),
+      db.executeQuery(ctx, targetSql, targetParams),
+      db.executeQuery(ctx, variableSql, variableParams),
     ]);
     return {
       data: convertBigInts([
@@ -985,7 +992,7 @@ async function getPseudoTypeReferences(uuid, direction, link_type, limit, origin
       ${limit > 0 ? 'LIMIT ?' : ''}
     `;
     const params = limit > 0 ? [uuid, limit] : [uuid];
-    const result = await db.executeQuery(sql, params);
+    const result = await db.executeQuery(ctx, sql, params);
     return {
       data: convertBigInts(result.rows),
       meta: { ...result.meta, source: 'pseudo_type_resolver', object_type: objType },
@@ -997,10 +1004,11 @@ async function getPseudoTypeReferences(uuid, direction, link_type, limit, origin
 
 /**
  * Get object references (dependencies)
+ * @param {Object} ctx - Request-Kontext (Solution-Scope)
  * @param {Object} refOptions - Reference options {uuid, direction, link_type, limit}
  * @returns {Promise<Object>} References with metadata
  */
-async function getReferences(refOptions) {
+async function getReferences(ctx, refOptions) {
   try {
     const {
       uuid,
@@ -1020,7 +1028,7 @@ async function getReferences(refOptions) {
     // Pseudo-Type-Sonderfall: ScriptStepType + PluginComponent haben keine
     // (vollständigen) ObjectLinks-Spiegelungen. Die "Verwendet in"-
     // Liste muss daher live aus den Basis-Tabellen aggregiert werden.
-    const pseudoRefs = await getPseudoTypeReferences(uuid, direction, link_type, limit, origin);
+    const pseudoRefs = await getPseudoTypeReferences(ctx, uuid, direction, link_type, limit, origin);
     if (pseudoRefs !== null) return pseudoRefs;
 
     let sql;
@@ -1290,7 +1298,7 @@ async function getReferences(refOptions) {
       params.push(limit);
     }
 
-    const result = await db.executeQuery(sql, params);
+    const result = await db.executeQuery(ctx, sql, params);
 
     return {
       data: convertBigInts(result.rows),
@@ -1306,13 +1314,15 @@ async function getReferences(refOptions) {
  * Get object details using type-specific SQL template
  * Dispatches to object_details_<type>.sql based on Object_Type
  * Falls back to object_details_generic.sql for types without dedicated template
+ * @param {Object} ctx - Request-Kontext (Solution-Scope)
  * @param {string} uuid - Object UUID
  * @returns {Promise<Object>} Detail data with metadata
  */
-async function getDetails(uuid, file) {
+async function getDetails(ctx, uuid, file) {
   try {
     // 1. Look up object type from ObjectCatalog (clone-aware, see resolveByUUID)
     const lookupResult = await resolveByUUID(
+      ctx,
       uuid,
       file,
       'Object_Type, Object_Name, File_Name, Source_Table, Object_ID'
@@ -1332,7 +1342,7 @@ async function getDetails(uuid, file) {
     const hasDedicatedTemplate = objectType in DETAIL_TEMPLATE_MAP;
 
     // 3. Execute the detail template (templates/sql/ = 'report' source)
-    const result = await templateService.executeTemplate(templateName, { uuid, file: resolvedFile }, 'report');
+    const result = await templateService.executeTemplate(ctx, templateName, { uuid, file: resolvedFile }, 'report');
 
     return {
       data: result.data,

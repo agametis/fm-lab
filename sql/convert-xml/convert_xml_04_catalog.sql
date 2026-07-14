@@ -779,7 +779,7 @@ FROM FilesCatalog;
 -- PluginComponent (synthetisch, Category-Aggregat)
 -- ========================================
 -- Komponenten-Mapping aus
---   1) data/mbs_component_exceptions.csv (autoritativ, ~1.021 Mappings)
+--   1) reference/mbs_component_exceptions.csv (autoritativ, ~1.021 Mappings)
 --   2) Default-Heuristik split_part(SubName, '.', 1)
 -- Object_Name folgt der Konvention 'MBS::<Component>' (z.B. 'MBS::XL').
 -- Wird als separater INSERT nach dem CREATE eingefügt, weil die Auflösung
@@ -798,7 +798,7 @@ WITH component_map AS (
     SELECT
         Funktionsname AS function_name,
         Component     AS component_name
-    FROM read_csv('data/mbs_component_exceptions.csv', header=true)
+    FROM read_csv('reference/mbs_component_exceptions.csv', header=true)
 ),
 resolved AS (
     SELECT DISTINCT
@@ -818,7 +818,7 @@ SELECT DISTINCT
     'PluginComponent' as Object_Type,
     'MBS::' || component_name as Object_Name,
     NULL as File_Name,
-    'data/mbs_component_exceptions.csv' as Source_Table,
+    'reference/mbs_component_exceptions.csv' as Source_Table,
     NULL as Object_ID
 FROM resolved
 WHERE component_name IS NOT NULL
@@ -2238,7 +2238,7 @@ WITH component_map AS (
     SELECT
         Funktionsname AS function_name,
         Component     AS component_name
-    FROM read_csv('data/mbs_component_exceptions.csv', header=true)
+    FROM read_csv('reference/mbs_component_exceptions.csv', header=true)
 ),
 resolved AS (
     SELECT

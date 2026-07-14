@@ -26,7 +26,9 @@ let connection = null;
 let available = false;
 
 function dbPath() {
-  return path.resolve(__dirname, '../../', environment.annotations.path);
+  // Per Lösung (Bundle-Master, RW) — zentral aufgelöst in solutions.js;
+  // ANNOTATIONS_DB_PATH überschreibt weiterhin.
+  return require('./solutions').resolveAnnotationsPath();
 }
 
 const SCHEMA = [
@@ -112,8 +114,28 @@ function isAvailable() {
   return available && !!connection;
 }
 
+// Request-Kontext-Kontrakt — wie config/database.js: ctx-erste
+// Signaturen, Phase 1.5 ignoriert ctx funktional (Ausbaustufe M poolt den
+// Sidecar je Lösung mit). Legacy-Form (sql-first) → einmalige WARN.
+const warnedLegacySites = new Set();
+
+function normalizeArgs(ctx, sql, params, fn) {
+  if (typeof ctx === 'string') {
+    const stack = String(new Error().stack || '').split('\n');
+    const line = stack.find((l) => l.includes('/src/') && !l.includes('config/annotations-db.js'));
+    const site = line ? line.trim() : 'unknown';
+    if (!warnedLegacySites.has(site)) {
+      warnedLegacySites.add(site);
+      console.warn(`[annotations-db] DEPRECATED contextless ${fn}() call — pass the request context. At: ${site}`);
+    }
+    return { sql: ctx, params: Array.isArray(sql) ? sql : [] };
+  }
+  return { sql, params: params || [] };
+}
+
 /** Lese-Query → rows (leeres Array, wenn der Sidecar nicht verfügbar ist). */
-async function query(sql, params = []) {
+async function query(ctx, sqlArg, paramsArg = []) {
+  const { sql, params } = normalizeArgs(ctx, sqlArg, paramsArg, 'query');
   if (!isAvailable()) return [];
   let stmt = null;
   try {
@@ -127,7 +149,8 @@ async function query(sql, params = []) {
 }
 
 /** Schreib-Statement (INSERT/UPDATE/DELETE). Wirft, wenn nicht verfügbar. */
-async function run(sql, params = []) {
+async function run(ctx, sqlArg, paramsArg = []) {
+  const { sql, params } = normalizeArgs(ctx, sqlArg, paramsArg, 'run');
   if (!isAvailable()) throw new Error('Annotations sidecar not available');
   let stmt = null;
   try {

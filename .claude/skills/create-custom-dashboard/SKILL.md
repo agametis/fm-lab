@@ -30,7 +30,7 @@ The dashboard resolver searches both directories; in case of an ID collision the
 - **Read-only**: never UPDATE/INSERT/DELETE on the database
 - **Interactive**: steps 3 and 4 wait for user confirmation before files are written
 - **SQL style**: analogous to `rest-api/templates/dashboards/home/data/*.sql` (system reference) and `rest-api/templates/dashboards-custom/script_todos/data/*.sql` (custom reference)
-- **DuckDB path**: if `duckdb` is not in PATH, check the known locations: `~/.duckdb/cli/latest/duckdb`, `/opt/homebrew/bin/duckdb`, `/usr/local/bin/duckdb`
+- **DuckDB path**: binary resolution per CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`); never install DuckDB yourself
 
 ---
 
@@ -71,7 +71,7 @@ Based on the goal, draft a SQL query that returns the relevant data from `db/fm_
 #### Execute the query (LIMIT 10 for preview)
 
 ```bash
-~/.duckdb/cli/latest/duckdb db/fm_catalog.duckdb -c "<SQL with LIMIT 10>"
+duckdb db/fm_catalog.duckdb -c "<SQL with LIMIT 10>"
 ```
 
 On query error: correct it once and re-run. After two failures, involve the user.

@@ -21,7 +21,11 @@
     "phaseHomes": "Länka",
     "phaseValidate": "Validera",
     "chunkCounter": "{{done}} av {{total}}",
-    "phaseCluster": "Communities"
+    "phaseCluster": "Communities",
+    "abortOomTitle": "Otillräckligt minne",
+    "abortOomBody": "Den här lösningen är för stor för det tillgängliga minnet på den här maskinen. Kör importen på en maskin med mer RAM (8 GB eller mer) eller försök igen med en reducerad minnesprofil.",
+    "abortIncompleteTitle": "Ofullständig build",
+    "abortIncompleteBody": "Referenslösningen slutfördes inte, så objektkatalogen kunde inte byggas. Se körningsloggen för detaljer."
   },
   "cellValues": {
     "yes": "Ja",

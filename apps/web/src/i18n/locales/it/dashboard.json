@@ -21,7 +21,11 @@
     "phaseHomes": "Collega",
     "phaseValidate": "Valida",
     "chunkCounter": "{{done}} di {{total}}",
-    "phaseCluster": "Community"
+    "phaseCluster": "Community",
+    "abortOomTitle": "Memoria insufficiente",
+    "abortOomBody": "Questa soluzione è troppo grande per la memoria disponibile su questa macchina. Esegui l'importazione su una macchina con più RAM (8 GB o più) oppure riprova con un profilo di memoria ridotto.",
+    "abortIncompleteTitle": "Build incompleta",
+    "abortIncompleteBody": "La risoluzione dei riferimenti non è stata completata, quindi non è stato possibile creare il catalogo degli oggetti. Controlla il log dell'esecuzione per i dettagli."
   },
   "cellValues": {
     "yes": "Sì",

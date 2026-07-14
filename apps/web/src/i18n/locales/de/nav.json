@@ -31,7 +31,8 @@
     "dashboards": "Übersicht aller verfügbaren Dashboards.",
     "customQueries": "Wiederverwendbare SQL-Vorlagen — eine Kachel öffnet die Analyse.",
     "docs": "In diesem Projekt installierte Dokumentationsquellen.",
-    "xmlImport": "Importiert alle Dateien aus dem xml/-Verzeichnis in die DuckDB."
+    "xmlImport": "Importiert alle Dateien aus dem xml/-Verzeichnis in die DuckDB.",
+    "xmlImportContextNote": "Import einer nicht-aktiven Lösung — die angezeigten Analysedaten ändern sich erst nach dem Aktivieren."
   },
   "errors": {
     "noDashboardId": "Keine Dashboard-ID angegeben.",
@@ -84,11 +85,11 @@
     "tabsAria": "Objekt-Ansichten",
     "noName": "(ohne Namen)",
     "tabs": {
-      "detail":     "Details",
+      "detail": "Details",
       "references": "Referenzen",
-      "graph":      "Graph",
-      "versions":   "Versionen",
-      "notes":      "Notizen"
+      "graph": "Graph",
+      "versions": "Versionen",
+      "notes": "Notizen"
     }
   },
   "pseudoToolbar": {
@@ -122,15 +123,15 @@
     "noName": "(ohne Namen)"
   },
   "docs": {
-    "langFallback":  "Diese Doku ist in der gewählten Sprache nicht verfügbar — Anzeige in {{lang}}.",
-    "openOnline":    "Online öffnen ↗",
+    "langFallback": "Diese Doku ist in der gewählten Sprache nicht verfügbar — Anzeige in {{lang}}.",
+    "openOnline": "Online öffnen ↗",
     "openInBrowser": "Im Browser öffnen",
-    "edit":          "Bearbeiten ↗",
-    "source":        "Quelle",
-    "noContent":     "Kein Inhalt verfügbar.",
-    "category":      "Category",
-    "docset":        "Docset",
-    "references":    "Code-Referenzen"
+    "edit": "Bearbeiten ↗",
+    "source": "Quelle",
+    "noContent": "Kein Inhalt verfügbar.",
+    "category": "Category",
+    "docset": "Docset",
+    "references": "Code-Referenzen"
   },
   "noData": {
     "title": "Noch keine Daten",

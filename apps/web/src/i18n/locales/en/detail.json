@@ -280,6 +280,37 @@
         "export": "Exporting graph…",
         "assemble": "Writing JSON file…"
       }
+    },
+    "solutions": {
+      "heading": "Solutions",
+      "description": "Manage the FileMaker solutions of this workspace. Each solution has its own XML inbox, its own database and its own state. Activating switches the whole workbench to that solution.",
+      "colId": "ID",
+      "colName": "Solution",
+      "colSize": "Size",
+      "colFiles": "Files",
+      "colLastImport": "Last import",
+      "colDuration": "Duration",
+      "activeBadge": "Active",
+      "activate": "Activate",
+      "activating": "Activating…",
+      "deleteButton": "Delete",
+      "deleteConfirm1": "Delete solution “{{name}}”? This removes the ENTIRE bundle including the XML source files.",
+      "deleteConfirm2": "Really delete “{{id}}” permanently? Consider exporting it first (tools/solution.sh export {{id}}). This cannot be undone.",
+      "newButton": "New solution…",
+      "createIdPlaceholder": "ID (folder name, e.g. erp-live)",
+      "createNamePlaceholder": "Display name (optional)",
+      "createButton": "Create",
+      "createCancel": "Cancel",
+      "renameTitle": "Rename solution",
+      "importButton": "XML import",
+      "importButtonTitle": "Open the XML import for this solution (without activating it)",
+      "importRunning": "Import running…",
+      "renameIdButton": "Change ID…",
+      "renameIdTitle": "Change the bundle id (folder name) — the UUID is kept",
+      "renameIdPrompt": "New id for \"{{id}}\":\n\nCaution: this changes the folder name and paths — export targets and links to the old id break. Renaming \"default\" re-creates an empty \"default\".",
+      "menuLabel": "Actions",
+      "searchPlaceholder": "Filter solutions…",
+      "noMatches": "No solutions match the filter."
     }
   },
   "objectHeader": {

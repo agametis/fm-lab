@@ -31,7 +31,7 @@ function indexFile({ catalogEntry, installedEntry }) {
   return path.join(dir, rel);
 }
 
-async function listCategories({ catalogEntry, installedEntry } = {}) {
+async function listCategories(ctx, { catalogEntry, installedEntry } = {}) {
   // Heute nur für mbs verdrahtet — die Path-Resolution im mbs-source ist
   // konfigurationsbasiert. Solange wir nur ein dash-sqlite-Set haben (mbs),
   // ist Delegation der pragmatischste Weg.
@@ -46,7 +46,7 @@ async function listCategories({ catalogEntry, installedEntry } = {}) {
   }));
 }
 
-async function listFunctions({ catalogEntry, installedEntry, categoryId } = {}) {
+async function listFunctions(ctx, { catalogEntry, installedEntry, categoryId } = {}) {
   if (catalogEntry?.id !== 'mbs') return [];
   if (!mbsSource.isAvailable()) return [];
   const { results } = mbsSource.listFunctionsInCategory(categoryId, { limit: 1000 });
@@ -58,7 +58,7 @@ async function listFunctions({ catalogEntry, installedEntry, categoryId } = {}) 
   }));
 }
 
-async function getEntry({ catalogEntry, installedEntry, functionId } = {}) {
+async function getEntry(ctx, { catalogEntry, installedEntry, functionId } = {}) {
   if (catalogEntry?.id !== 'mbs') return null;
   if (!mbsSource.isAvailable()) return null;
   let doc;
@@ -78,7 +78,7 @@ async function getEntry({ catalogEntry, installedEntry, functionId } = {}) {
   };
 }
 
-async function search({ catalogEntry, q, limit = 50 } = {}) {
+async function search(ctx, { catalogEntry, q, limit = 50 } = {}) {
   if (catalogEntry?.id !== 'mbs') return { categories: [], functions: [] };
   if (!mbsSource.isAvailable()) return { categories: [], functions: [] };
   const { results } = mbsSource.searchFunctions(q, { limit });
@@ -98,7 +98,7 @@ async function listLanguages({ installedEntry } = {}) {
   return Array.isArray(installedEntry?.languages) ? installedEntry.languages : ['en'];
 }
 
-async function validate({ catalogEntry, installedEntry } = {}) {
+async function validate(ctx, { catalogEntry, installedEntry } = {}) {
   const errors = [];
   const idx = indexFile({ catalogEntry, installedEntry });
   if (!idx) {

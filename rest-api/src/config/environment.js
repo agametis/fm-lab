@@ -91,6 +91,25 @@ const environment = {
     cacheTTL: parseInt(process.env.TEMPLATE_CACHE_TTL) || 3600000, // 1 hour
   },
 
+  // Multiuser-Stellschrauben: zentral in .fmlab/instance.json (limits-Block),
+  // Env-Variablen überschreiben. Fehlt beides → T1-Defaults (max_converts=1).
+  // Der Convert-Deckel wird an ZWEI Stellen durchgesetzt (API-Hub + Skript);
+  // hier lebt die API-Seite.
+  limits: (() => {
+    let fileLimits = {};
+    try {
+      const raw = require('fs').readFileSync(
+        path.resolve(__dirname, '../../..', '.fmlab', 'instance.json'), 'utf-8');
+      fileLimits = JSON.parse(raw).limits || {};
+    } catch { /* instance.json optional (T1) */ }
+    const fromEnv = parseInt(process.env.FMLAB_MAX_CONVERTS);
+    const fromFile = parseInt(fileLimits.max_converts);
+    return {
+      maxConverts: Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv
+        : (Number.isFinite(fromFile) && fromFile > 0 ? fromFile : 1),
+    };
+  })(),
+
   // XML Import Configuration
   xml: {
     dir: process.env.XML_DIR || '../xml',

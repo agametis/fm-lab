@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { SubNav } from '../components/SubNav';
 import { StatusBar } from '../components/StatusBar';
 import { buildBreadcrumb } from '../lib/navigation';
+import { useApiLang } from '../hooks/useApiLang';
 import {
   fetchStepLangs,
   fetchStepGrammar,
@@ -22,8 +23,8 @@ import './FmSpecView.css';
  */
 export function FmSpecStepView() {
   const { stepId } = useParams();
-  const { t, i18n } = useTranslation(['fmSpec', 'nav']);
-  const uiLang = i18n.language;
+  const { t } = useTranslation(['fmSpec', 'nav']);
+  const uiLang = useApiLang();
   const dash = t('fmSpec:dash');
 
   const [data, setData] = useState<StepAllLangs | null>(null);

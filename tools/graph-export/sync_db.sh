@@ -28,8 +28,21 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-DB_FILE="${1:-$PROJECT_ROOT/db/fm_catalog.duckdb}"
-REST_API_DB_DIR="$PROJECT_ROOT/rest-api/db"
+# Multi-solution: publish into the per-solution API copy. FMLAB_SOLUTION
+# overrides; default = active solution from the pointer file; 'default' last.
+SOLUTION="${FMLAB_SOLUTION:-}"
+if [ -z "$SOLUTION" ] && [ -f "$PROJECT_ROOT/.fmlab/active_solution.json" ]; then
+  SOLUTION=$(sed -n 's/.*"active"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$PROJECT_ROOT/.fmlab/active_solution.json" | head -n1)
+fi
+[ -z "$SOLUTION" ] && SOLUTION="default"
+
+if [ -f "$PROJECT_ROOT/solutions/$SOLUTION/db/fm_catalog.duckdb" ]; then
+  _DEFAULT_DB="$PROJECT_ROOT/solutions/$SOLUTION/db/fm_catalog.duckdb"
+else
+  _DEFAULT_DB="$PROJECT_ROOT/db/fm_catalog.duckdb"
+fi
+DB_FILE="${1:-$_DEFAULT_DB}"
+REST_API_DB_DIR="$PROJECT_ROOT/rest-api/db/solutions/$SOLUTION"
 REST_API_DB_FILE="$REST_API_DB_DIR/fm_catalog.duckdb"
 REST_API_RELOAD_URL="${REST_API_RELOAD_URL:-http://localhost:3003/api/admin/reload}"
 
@@ -40,8 +53,10 @@ fi
 
 if [ -d "$REST_API_DB_DIR" ] || mkdir -p "$REST_API_DB_DIR" 2>/dev/null; then
   if cp "$DB_FILE" "$REST_API_DB_FILE.tmp" && mv -f "$REST_API_DB_FILE.tmp" "$REST_API_DB_FILE"; then
-    echo "→ synced master DB to rest-api/db/"
-    HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$REST_API_RELOAD_URL" 2>/dev/null || echo "000")
+    echo "→ synced master DB to rest-api/db/solutions/$SOLUTION/"
+    HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+      -H 'Content-Type: application/json' -d "{\"solution\":\"$SOLUTION\"}" \
+      "$REST_API_RELOAD_URL" 2>/dev/null || echo "000")
     if [ "$HTTP_CODE" = "200" ]; then
       echo "  REST-API reload triggered"
     else

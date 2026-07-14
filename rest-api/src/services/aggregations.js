@@ -11,7 +11,7 @@
  *
  * Conventions:
  *   - ref-Schema ist via ATTACH bereits READ_ONLY angebunden (database.js).
- *   - data/mbs_component_exceptions.csv wird per read_csv() bei PluginFunction-Joins gelesen.
+ *   - reference/mbs_component_exceptions.csv wird per read_csv() bei PluginFunction-Joins gelesen.
  *     Lookup-Pfad ist relativ zum REST-API-CWD; falls notwendig setzt environment.js den CWD.
  *   - PluginComponent ist KEIN Pseudo-Token-Typ — es hat keine Category über sich,
  *     unterstützt aber ?withUsage (zwei-stufige Aggregation über groups_into+calls_pluginfunction).
@@ -23,7 +23,7 @@ const { sqlPluginSubName } = require('../utils/plugin-name');
 // Repo-Root, damit read_csv() den CSV-Pfad robust auflöst.
 // __dirname = rest-api/src/services → drei Ebenen nach oben.
 const REPO_ROOT = path.resolve(__dirname, '../../..');
-const MBS_CSV_PATH = path.join(REPO_ROOT, 'data', 'mbs_component_exceptions.csv');
+const MBS_CSV_PATH = path.join(REPO_ROOT, 'reference', 'mbs_component_exceptions.csv');
 // DuckDB read_csv() versteht absolute Pfade direkt; Pfad-Literal in SQL einbetten.
 function csvPathLiteral() {
   return `'${MBS_CSV_PATH.replace(/'/g, "''")}'`;

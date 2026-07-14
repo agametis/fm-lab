@@ -24,43 +24,20 @@ The two skills are not mutually exclusive: fm-analyze internally uses many of th
 
 ## Ground rules
 
-- **Database / SQL**: English — table and column names of `db/fm_catalog.duckdb` are English DDL identifiers; never translate them
-- **Database**: `db/fm_catalog.duckdb` — the master catalog file, accessed read-only via the local DuckDB CLI binary (`duckdb` in PATH; fallbacks `~/.duckdb/cli/latest/duckdb`, `/opt/homebrew/bin/duckdb`, `/usr/local/bin/duckdb` — VS Code does not inherit the shell PATH). Never read from `rest-api/db/fm_catalog.duckdb` — that copy is API-internal and may be stale.
-- **Invocation**: `duckdb db/fm_catalog.duckdb -c "<SQL>"` via Bash
+- **Database**: read-only against the master catalog `db/fm_catalog.duckdb` via a plain `duckdb db/fm_catalog.duckdb -c "<SQL>"` (Bash). Invocation rules, DuckDB-binary resolution and the "never read the `rest-api/db` copy" caveat are in CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`) — don't restate them here, and never install DuckDB.
+- **SQL identifiers**: English DDL names — never translate table/column names of the catalog
 - **Read-only**: Never UPDATE/INSERT/DELETE
-- **Before every analysis**: Uniquely identify the object (see Step 1 — same rules as in fm-summarize)
+- **Before every analysis**: Uniquely identify the object (see Step 1)
 - **Mark conclusions**: Clearly separate what is fact (from DB) and what is interpretation (from naming/context). Mark interpretations with hedging vocabulary (see Response language section for per-language equivalents).
 - **Response language**: follows the user's prompt language — see next section
 
 ## Response language
 
-Reply in the language the user used for their prompt — that is the primary signal (e.g. an English question → English response, a Spanish question → Spanish response, even if the project default is German). Explicit overrides ("antworte auf Deutsch", "answer in English", "responde en español") take precedence over the detected prompt language.
-
-**What gets translated to the response language**:
-- Markdown section headers of the report (e.g. EN `### Presumed purpose` ↔ DE `### Vermuteter Zweck` ↔ ES `### Propósito presunto` ↔ FR `### Objectif présumé` ↔ IT `### Scopo presunto` ↔ NL `### Vermoedelijk doel` ↔ PT `### Propósito presumido` ↔ SV `### Antaget syfte` ↔ JA `### 推定される目的` ↔ KO `### 추정 목적` ↔ ZH `### 推测目的`)
-- Prose: Presumed purpose, Business context, Notes, Open questions
-- **Hedging vocabulary** in the response language:
-  - EN: "presumably", "indicates", "suggests", "appears to"
-  - DE: "vermutlich", "deutet darauf hin", "weist auf … hin", "wirkt wie"
-  - ES: "presumiblemente", "indica", "sugiere", "parece"
-  - FR: "vraisemblablement", "indique", "suggère", "semble"
-  - IT: "presumibilmente", "indica", "suggerisce", "sembra"
-  - NL: "vermoedelijk", "wijst op", "suggereert", "lijkt"
-  - PT: "presumivelmente", "indica", "sugere", "parece"
-  - SV: "förmodligen", "tyder på", "antyder", "verkar"
-  - JA: "おそらく", "示唆している", "～と思われる"
-  - KO: "아마도", "시사한다", "～로 보인다"
-  - ZH: "可能", "表明", "暗示", "似乎"
-
-**What stays original / English regardless of response language**:
-- **FileMaker identifiers** (script, field, layout, table, TO, variable names like `$$Modul`, `$kundenID`) — must match the actual FileMaker source 1:1
-- **`Link_Role` values** (`calls_script`, `sets_field`, `triggers_script`, …) — technical labels of the data model
-- **SQL queries, column names, table names of the DuckDB catalog** — always English (DDL identifiers)
-- **CLI flags** (`--short`) and skill-call tokens (`/fm-analyze`)
+Reply in the language of the user's prompt; FileMaker identifiers, `Link_Role` values and
+catalog SQL stay original/English. Full policy and the **per-language hedging vocabulary**
+(mandatory for this skill's interpretations): [`_shared/response-language.md`](../_shared/response-language.md).
 
 ## Output modes
-
-Identical to the convention in [fm-summarize](../fm-summarize/SKILL.md):
 
 ### Standard mode (default)
 
@@ -68,28 +45,10 @@ Full Markdown report with Presumed Purpose, Business Context, Semantic Signals, 
 
 ### Short mode (`--short`)
 
-1-2 paragraphs of **prose**, **no** Markdown sections, **no** tables, **no** code blocks. Contains only the core conclusion of the analysis: what the object does from a business perspective and in which module it operates.
-
-**Activation of short mode**:
-
-1. **Explicit flag** (position free):
-   ```
-   /fm-analyze Faktura_RechnungDrucken --short
-   /fm-analyze --short Faktura_RechnungDrucken
-   ```
-
-2. **Natural language** — automatic activation on trigger words in the request. Detection is **case-insensitive** and language-agnostic; the keyword may appear anywhere in the prompt:
-   - **English**: short, brief, concise analysis, brief analysis, 1-2 sentences, in a few sentences, rough, overview, TL;DR, TLDR
-   - **German**: kurz, knapp, knappe Analyse, Kurzanalyse, 1-2 Sätze, in wenigen Sätzen, grob, überblicksartig
-   - **Spanish**: breve, corto, análisis breve, conciso, en pocas frases, 1-2 frases
-   - **French**: bref, court, analyse brève, concis, en quelques phrases, 1-2 phrases
-   - **Italian**: breve, corto, analisi breve, conciso, in poche frasi, 1-2 frasi
-   - **Dutch**: kort, beknopt, korte analyse, in een paar zinnen, 1-2 zinnen
-   - **Portuguese**: breve, curto, análise breve, conciso, em poucas frases, 1-2 frases
-   - **Swedish**: kort, kortfattat, kort analys, koncis, med några meningar, 1-2 meningar
-   - **Japanese**: 短く, 簡潔に, 簡単に, 簡易分析, 概要, 1-2文で
-   - **Korean**: 짧게, 간단히, 간략히, 간단 분석, 개요, 1-2문장으로
-   - **Chinese**: 简短, 简要, 简要分析, 概要, 1-2句话
+1-2 paragraphs of **prose** with only the core conclusion of the analysis: what the object
+does from a business perspective and in which module it operates. Activation (the `--short`
+flag or natural-language trigger words in 11 languages) and the output prohibitions:
+[`_shared/short-mode.md`](../_shared/short-mode.md).
 
 **Mode differences**:
 
@@ -118,28 +77,19 @@ Full Markdown report with Presumed Purpose, Business Context, Semantic Signals, 
 
 ### Step 1 — Identify object (BLOCKING)
 
-Identical to fm-summarize. Before any further action, the object MUST be unique:
-
-1. UUID given → resolve directly in ObjectCatalog. **If `WHERE Object_UUID = '<UUID>'`
-   returns >1 row** (clone/modular files share the same Object_UUID), the UUID is not
-   unique: add `AND File_Name = '<File>'` when a file is known (`--file <File>` or the
-   conversation identity), else list the matches with **File_Name** and ask. Never take
-   the first row silently.
-2. Name given → ObjectCatalog search (case-insensitive). On multiple hits, offer a selection list and wait for an answer. DO NOT guess.
-3. Context derivation allowed if clear — read **both** UUID and File_Name from the
-   conversation identity (e.g. the fm-summarize header), since the UUID alone can be
-   ambiguous across clones.
-
-```sql
-SELECT Object_UUID, Object_Type, Object_Name, File_Name, Source_Table, Object_ID
-FROM ObjectCatalog
-WHERE LOWER(Object_Name) = LOWER('<Name>')
-ORDER BY Object_Type, File_Name;
-```
+Resolve the input (UUID / name / conversation context) to exactly one object per the
+shared contract in [`_shared/resolve-object.md`](../_shared/resolve-object.md); the queries
+live in [`_shared/scripts/resolve_object.sql`](../_shared/scripts/resolve_object.sql). The
+contract yields a unique `(Object_UUID, Object_Type, Object_Name, File_Name)` — the
+**File_Name is mandatory** (clone/modular files share the same Object_UUID). Never take the
+first row silently on an ambiguous name or clone-shared UUID; present a numbered selection
+list and wait. When deriving from context, read **both** the UUID and File_Name from the
+conversation identity (e.g. the fm-summarize header), since the UUID alone is ambiguous
+across clones. Only after unique identification does the analysis proceed.
 
 ### Step 2 — Load core data of the object
 
-Depending on Object_Type, fetch the type-specific base data — reuse the SQL templates from [fm-summarize](../fm-summarize/SKILL.md). Usually this is sufficient:
+Depending on Object_Type, fetch the type-specific base data — the shared SQL templates in [`_shared/scripts/type_queries.sql`](../_shared/scripts/type_queries.sql) (query IDs S1/F1/L1…). Usually this is sufficient:
 
 - **Script**: ScriptCatalog + StepsForScripts JOIN DDR_ScriptSteps (Step_Text preferred)
 - **Field**: FieldsForTables (incl. Field_Comment, Calculation_Text, AE_Calc_Text)
@@ -182,76 +132,21 @@ ORDER BY Context_Type, Context_Name;
 
 #### 3b — Script call chain (backward and forward)
 
-**Forward** — what does this script call?
+Two recursive queries in [`_shared/scripts/call_chain.sql`](../_shared/scripts/call_chain.sql)
+(substitute `<SCRIPT_UUID>`): **CC-FWD** (forward — what this script calls) and **CC-BWD**
+(backward — who calls it). Both cap depth at 5 hops and return a ready-to-render `Path`
+column (arrow-joined chain).
 
-```sql
-WITH RECURSIVE chain AS (
-    -- Start: this script
-    SELECT
-        ol.Source_UUID, ol.Target_UUID,
-        oc_t.Object_Name AS Target_Name,
-        oc_t.File_Name AS Target_File,
-        1 AS Depth,
-        oc_t.Object_Name AS Path
-    FROM ObjectLinks ol
-    JOIN ObjectCatalog oc_t ON ol.Target_UUID = oc_t.Object_UUID
-    WHERE ol.Source_UUID = '<Script_UUID>'
-      AND ol.Link_Role = 'calls_script'
+**Rendering the result** (feeds Step 5 "Call chain"): render the `Path` rows directly —
+CC-BWD paths *end* at this script (→ the **Incoming** block), CC-FWD paths *start* at it
+(→ the **Outgoing** block). Order by `Depth`; where several paths share a prefix, indent
+the continuations under it. On a high branching factor (more than ~15 distinct paths),
+show only the Depth-1 immediate neighbours plus a few representative deep paths and note
+the truncation — never dump hundreds of rows.
 
-    UNION ALL
-
-    SELECT
-        ol.Source_UUID, ol.Target_UUID,
-        oc_t.Object_Name,
-        oc_t.File_Name,
-        c.Depth + 1,
-        c.Path || ' → ' || oc_t.Object_Name
-    FROM chain c
-    JOIN ObjectLinks ol ON c.Target_UUID = ol.Source_UUID
-    JOIN ObjectCatalog oc_t ON ol.Target_UUID = oc_t.Object_UUID
-    WHERE ol.Link_Role = 'calls_script'
-      AND c.Depth < 5  -- depth limit to prevent cycles
-)
-SELECT DISTINCT Depth, Target_Name, Target_File, Path FROM chain
-ORDER BY Depth, Target_Name;
-```
-
-**Backward** — who calls this script? (analogous, with reversed direction)
-
-```sql
-WITH RECURSIVE callers AS (
-    SELECT
-        ol.Source_UUID,
-        oc_s.Object_Name AS Source_Name,
-        oc_s.File_Name AS Source_File,
-        1 AS Depth,
-        oc_s.Object_Name AS Path
-    FROM ObjectLinks ol
-    JOIN ObjectCatalog oc_s ON ol.Source_UUID = oc_s.Object_UUID
-    WHERE ol.Target_UUID = '<Script_UUID>'
-      AND ol.Link_Role = 'calls_script'
-
-    UNION ALL
-
-    SELECT
-        ol.Source_UUID,
-        oc_s.Object_Name,
-        oc_s.File_Name,
-        c.Depth + 1,
-        oc_s.Object_Name || ' → ' || c.Path
-    FROM callers c
-    JOIN ObjectLinks ol ON c.Source_UUID = ol.Target_UUID
-    JOIN ObjectCatalog oc_s ON ol.Source_UUID = oc_s.Object_UUID
-    WHERE ol.Link_Role = 'calls_script'
-      AND c.Depth < 5
-)
-SELECT DISTINCT Depth, Source_Name, Source_File, Path FROM callers
-ORDER BY Depth, Source_Name;
-```
-
-**Evaluation**: The backward chain (callers) reveals the business trigger: "Called by 'Create invoice'" → the script belongs to invoicing. The forward chain shows which further business building blocks are touched.
-
-**Depth limit**: max. 5 hops, otherwise the output explodes. With a high branching factor, show only the immediate neighbours with example paths if needed.
+**Evaluation**: The backward chain (callers) reveals the business trigger: "Called by
+'Create invoice'" → the script belongs to invoicing. The forward chain shows which further
+business building blocks are touched.
 
 #### 3c — Trigger sources (layout triggers, script triggers, LayoutObject triggers)
 
@@ -435,12 +330,10 @@ In short mode, the section structure above is completely omitted. Instead: **1-2
 2. **In which module / domain?** — at most one half-sentence (e.g. "in the invoicing module")
 3. **(Optional) How is it integrated?** — at most one half-sentence on the caller class, ONLY if it substantially explains the business purpose
 
-**Prohibitions in short mode**:
-- No Markdown headers, no lists, no tables, no code blocks
-- No UUID display
-- No call chain paths
-- No enumeration of semantic signals
-- No separate "Open questions" section (open questions, if any, as a final half-sentence in the prose)
+**Prohibitions**: see [`_shared/short-mode.md`](../_shared/short-mode.md) (no headers,
+lists, tables, code blocks or UUID). Additionally for analyses: **no call-chain paths**,
+**no enumeration of semantic signals**, and **no separate "Open questions" section** (open
+questions, if any, as a final half-sentence in the prose).
 
 **Hedging remains mandatory**: "Presumably", "suggests", "indicates" — interpretations must also be marked as such in short mode.
 
@@ -456,7 +349,7 @@ In short mode, the section structure above is completely omitted. Instead: **1-2
 
 ### Step 6 — Output
 
-Output the report in the chat. Do not write to files (except as part of the planned extension described below — this is identical to fm-summarize).
+Output the report in the chat. Do not write to files.
 
 ## Important notes
 
@@ -517,22 +410,3 @@ The natural-language variants additionally trigger short mode through the keywor
 1. ObjectCatalog → 7 scripts named "Init" in 7 different files
 2. **Output**: Offer list, ask which one is meant. Proceed only after the answer.
 
-## Planned extensions (future expansion stage)
-
-> **Status**: Documentation only — not implemented. Activation will happen once the Obsidian Vault is set up. Specification identical to fm-summarize.
-
-After generating the analysis, the skill is intended to ask the user whether the report should be saved as a note for the FileMaker object in the Obsidian Vault.
-
-- **Target location**: Obsidian Vault with all project notes for the FileMaker solution (path still to be configured)
-- **Storage structure**: Subfolder per Object_Type
-- **File names**: Must contain the Object_UUID (unambiguous referencing even after renaming in FileMaker)
-- **Update behaviour**: Existing notes are NEVER overwritten — new analyses are appended via append (e.g. under `## Analysis <date>`). Reason: content manually added by the user (design decisions, background, ToDos) must be preserved. Compare memory `feedback_obsidian_updates`.
-- **Frontmatter**: YAML with `object_uuid`, `object_type`, `file_name`, `created_at`, plus an `analysis_versions` list that records every analysis iteration
-- **Coexistence with fm-summarize**: Both skills write into the same note file per object. Different sections (`## Technical description` from fm-summarize vs. `## Analysis` from fm-analyze) in the same document bundle the entire body of knowledge per object in one place.
-
-**TODOs before activation**:
-1. Define configuration mechanism for the vault path (jointly with fm-summarize)
-2. Append logic (detection of existing file + separator section with date)
-3. Sanitizing for file names derived from FileMaker names (special characters, spaces)
-4. Coordinate the frontmatter schema with the user
-5. Clarify convention: if fm-summarize and fm-analyze both write sections, who decides the order in the document?

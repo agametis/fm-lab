@@ -38,7 +38,8 @@
 #   convert_fm_xml.sh --batch --no-auto-heal                  # Abort on schema drift instead of rebuilding
 #   convert_fm_xml.sh --batch --memory_limit 4GB              # Limit DuckDB RAM (e.g. 4GB, 60%)
 #   convert_fm_xml.sh --all                                   # Alias for --batch
-#   convert_fm_xml.sh --test                                  # Test mode (xml-test/ → fm_test.duckdb)
+#   convert_fm_xml.sh --batch --solution erp-live             # Import a specific solution bundle (default: active solution)
+#   convert_fm_xml.sh --test                                  # Test mode (tools/tests/fixtures/xml/ → fm_test.duckdb)
 #   convert_fm_xml.sh --test --fail-fast                      # Test mode (stop on first error)
 #
 # Adaptive default (no mode flag): turbo + --auto (OOM backoff) + SAX streaming when
@@ -83,7 +84,11 @@
 #                          (mp=⌈record_count/2⌉) and re-dispatched, until it fits the band
 #                          or the convergence limit (FM_AUTO_MAX_ATTEMPT, default 4)
 #                          is reached; indivisible units (main/DDR_INFO, ≤1 record)
-#                          escalate with a clear diagnosis. Test hook: FM_AUTO_TEST_OOM="Cat[:N]".
+#                          escalate with a clear diagnosis. Test hook: FM_AUTO_TEST_OOM="Cat[:N]"
+#                          (P1 chunk OOM); FM_P2_TEST_OOM="all"|<slice-idx> simulates a P2
+#                          slice OOM → post-P2 gate → clean memory abort (exit 8). Test-only.
+#   --no-auto              Disable the memory backoff even where a mode implies it (e.g.
+#                          --turbo, which otherwise turns --auto on).
 #   --attempt <N>          Attempt counter (1-based, default 1) for retry tracking;
 #                          appears in the log header + JSON sidecar.
 #   --retry-reason <slug>  Reason for the retry run. Enum: oom, split-fallback,
@@ -379,6 +384,16 @@ CHANGED_ONLY=false
 # attempts are exhausted. Catalogs that cannot be split further (main/DDR_INFO, M=1)
 # escalate (clear diagnosis). Implies --turbo. Test hook: FM_AUTO_TEST_OOM="Catalog[:N]".
 AUTO_MODE=false
+# --no-auto: opt out of the memory backoff even when a mode would otherwise imply it
+# (turbo now implies --auto). Power-user override for reproducible single-round runs.
+NO_AUTO=false
+# Reference-resolution (Phase 2) outcome flags. P2_FAILED is set when the resolve
+# step (partitioned or single-pass) did not complete; P2_OOM narrows the cause to a
+# memory kill (worker exited 137/143). The post-P2 gate reads both to stop the
+# pipeline cleanly instead of letting the universal catalogs (P4+) fail on the
+# missing reference tables.
+P2_FAILED=false
+P2_OOM=false
 # Sub-chunking: on --split, additionally cuts the heavy separated branches WITHIN
 # into pieces of SUBCHUNK records each → lowers the per-chunk DOM peak. 0/empty = off
 # (default; --split behaves unchanged). --subchunk N or FM_SUBCHUNK sets N. SUBCHUNK_RECMAP
@@ -453,6 +468,10 @@ MEMORY_LIMIT=""
 # + ~6 GB/worker (NOT spillable). --jobs N (flag) or FM_JOBS (env) override.
 # 1 = sequential; >1 = part-DB parallel path.
 JOBS=""
+# Multi-solution context: production runs operate on ONE solution bundle
+# solutions/<id>/ (XML inbox, master DB, per-solution state). Empty = resolve
+# from the active-solution pointer file (see below); test mode ignores it.
+SOLUTION=""
 # Retry/attempt context (caller-coordinated): the script itself does not know
 # whether this is a retry run — the calling process passes it through.
 ATTEMPT=1
@@ -465,6 +484,15 @@ while [[ $# -gt 0 ]]; do
         --test)
             MODE="batch"
             TEST_MODE=true
+            shift
+            ;;
+        --solution)
+            [ $# -ge 2 ] || { echo "ERROR: $1 needs a value"; exit 1; }
+            SOLUTION="$2"
+            shift 2
+            ;;
+        --solution=*)
+            SOLUTION="${1#*=}"
             shift
             ;;
         --memory_limit)
@@ -514,7 +542,15 @@ while [[ $# -gt 0 ]]; do
             # Turbo engine (chunkmap-driven). Implies --split; the sub-chunk
             # granularity comes from --subchunk/FM_SUBCHUNK or the per-catalog M
             # in the recmap (Branch:RecElem:M). Runs sequentially (dispatcher comes later).
+            # Implies --auto (memory backoff) so an explicit --turbo keeps the OOM
+            # safety net the adaptive default already carries; opt out with --no-auto.
             TURBO_MODE=true; SPLIT_MODE=true; MODE_EXPLICIT=true
+            AUTO_MODE=true
+            shift
+            ;;
+        --no-auto)
+            # Disable the memory backoff even where a mode implies it (see --turbo).
+            NO_AUTO=true; AUTO_MODE=false
             shift
             ;;
         --changed-only|--incremental)
@@ -799,6 +835,10 @@ if ! $MODE_EXPLICIT && ! $TEST_MODE; then
     fi
 fi
 
+# --no-auto wins over every mode that would otherwise imply the backoff (explicit
+# --turbo or the adaptive default), regardless of argument order.
+$NO_AUTO && AUTO_MODE=false
+
 # Effective mode + memory metrics. Streaming: low per-file floor, spillable, cheap
 # workers. DOM: full whole-doc peak, NOT spillable (libxml2 lives outside
 # memory_limit), expensive workers.
@@ -984,18 +1024,56 @@ if [ -n "$RETRY_REASON" ]; then
     esac
 fi
 
+# ── Multi-solution resolution (production modes only) ──
+# Order: --solution flag → active-solution pointer (.fmlab/active_solution.json)
+# → 'default'. The pointer file is the machine-readable source of truth for the
+# active solution; the db/ symlinks are only its convenience projection.
+# Pure-sed JSON extraction — bash-3.2/macOS-safe, no python dependency.
+ACTIVE_SOLUTION_FILE="$PROJECT_ROOT/.fmlab/active_solution.json"
+SOLUTION_FROM_POINTER=false
+if [ -z "$SOLUTION" ] && [ -f "$ACTIVE_SOLUTION_FILE" ]; then
+    SOLUTION=$(sed -n 's/.*"active"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$ACTIVE_SOLUTION_FILE" | head -n1)
+    [ -n "$SOLUTION" ] && SOLUTION_FROM_POINTER=true
+fi
+[ -z "$SOLUTION" ] && SOLUTION="default"
+case "$SOLUTION" in
+    */*|.|..)
+        echo "ERROR: Invalid solution id '$SOLUTION' (must be a plain directory name, no '/')."
+        exit 1
+        ;;
+esac
+# Invariant I1: a pointer naming a deleted/missing solution
+# falls back to 'default' (explicit + WARN). An explicit --solution flag keeps
+# its target (the bundle is created below), only the pointer path heals.
+if $SOLUTION_FROM_POINTER && [ ! -d "$PROJECT_ROOT/solutions/$SOLUTION" ]; then
+    echo "WARNING: active-solution pointer names missing solution '$SOLUTION' — falling back to 'default'."
+    SOLUTION="default"
+fi
+SOLUTION_DIR="$PROJECT_ROOT/solutions/$SOLUTION"
+# Invariant I1: 'default' always exists — restore skeleton + minimal manifest
+# silently (idempotent; API and tools/solution.sh do the same on their side).
+if [ "$SOLUTION" = "default" ] && [ ! -f "$SOLUTION_DIR/solution.json" ]; then
+    mkdir -p "$SOLUTION_DIR/xml" "$SOLUTION_DIR/db" "$SOLUTION_DIR/state/logs" 2>/dev/null
+    _I1_UUID=$( (command -v uuidgen >/dev/null && uuidgen) || python3 -c 'import uuid;print(uuid.uuid4())' )
+    printf '{\n  "manifest_version": 1,\n  "uuid": "%s",\n  "id": "default",\n  "display_name": "default",\n  "description": "",\n  "maintainer": "",\n  "url": "",\n  "contact": { "name": "", "email": "" },\n  "created_at": "%s",\n  "notes": ""\n}\n' \
+        "$_I1_UUID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$SOLUTION_DIR/solution.json"
+fi
+
 # Interactive batch default: an argument-less invocation at a TTY should not hard
 # abort — the most common case is the batch run anyway. Non-interactive (no TTY,
 # e.g. CI / REST-API) keeps the behavior unchanged (argument required) so no
 # automation is blocked.
 if [ -z "$MODE" ]; then
+    # Inbox of the resolved solution; a not-yet-migrated flat xml/ still counts.
+    _INBOX="$SOLUTION_DIR/xml"
+    { [ -d "$_INBOX" ] && ls "$_INBOX"/*.xml >/dev/null 2>&1; } || { ls "$PROJECT_ROOT/xml"/*.xml >/dev/null 2>&1 && _INBOX="$PROJECT_ROOT/xml"; }
     if [[ -t 0 ]] && ! $QUIET_MODE; then
         shopt -s nullglob
-        _DEFAULT_XMLS=("$PROJECT_ROOT/xml"/*.xml)
+        _DEFAULT_XMLS=("$_INBOX"/*.xml)
         shopt -u nullglob
         _DEFAULT_N=${#_DEFAULT_XMLS[@]}
         if [ "$_DEFAULT_N" -gt 1 ]; then
-            read -r -p "$_DEFAULT_N XML files found in xml/ — start batch processing? [Y/n] " _DEFAULT_ANS
+            read -r -p "$_DEFAULT_N XML files found in $_INBOX/ — start batch processing? [Y/n] " _DEFAULT_ANS
             if [[ -z "$_DEFAULT_ANS" || "$_DEFAULT_ANS" =~ ^[Yy] ]]; then
                 MODE="batch"
             else
@@ -1013,38 +1091,56 @@ if [ -z "$MODE" ]; then
                 exit 0
             fi
         else
-            echo "No XML files found in xml/."
-            echo "Usage: $0 <xml-filename> [--force-rebuild] | --batch [--fail-fast] [--force-rebuild] [--no-auto-heal] [--memory_limit <value>] [--split] [--turbo] [--changed-only] [--auto] [--jobs <N>] | --test [--fail-fast] [--force-rebuild] [--split] [--turbo]"
+            echo "No XML files found in $_INBOX/."
+            echo "Usage: $0 <xml-filename> [--force-rebuild] | --batch [--fail-fast] [--force-rebuild] [--no-auto-heal] [--memory_limit <value>] [--split] [--turbo] [--changed-only] [--auto] [--jobs <N>] [--solution <id>] | --test [--fail-fast] [--force-rebuild] [--split] [--turbo]"
             exit 1
         fi
     else
         echo "ERROR: No argument provided"
-        echo "Usage: $0 <xml-filename> [--force-rebuild] | --batch [--fail-fast] [--force-rebuild] [--no-auto-heal] [--memory_limit <value>] [--split] [--turbo] [--changed-only] [--auto] [--jobs <N>] | --test [--fail-fast] [--force-rebuild] [--split] [--turbo]"
+        echo "Usage: $0 <xml-filename> [--force-rebuild] | --batch [--fail-fast] [--force-rebuild] [--no-auto-heal] [--memory_limit <value>] [--split] [--turbo] [--changed-only] [--auto] [--jobs <N>] [--solution <id>] | --test [--fail-fast] [--force-rebuild] [--split] [--turbo]"
         exit 1
     fi
 fi
 
-# Set directories based on mode
+# Set directories based on mode.
+# Test mode stays OUTSIDE the solution tree (fixtures → throwaway fm_test.duckdb);
+# production modes live entirely in the solution bundle solutions/<id>/:
+#   XML inbox        solutions/<id>/xml/
+#   master DB        solutions/<id>/db/fm_catalog.duckdb   (writers use the REAL
+#                    path — never the db/ compat symlink)
+#   run state + logs solutions/<id>/state/{logs,streaming,xml_convert.lock,…}
 if $TEST_MODE; then
-    XML_DIR="$PROJECT_ROOT/xml-test"
+    XML_DIR="$PROJECT_ROOT/tools/tests/fixtures/xml"
     DB_DIR="$PROJECT_ROOT/db"
     DB_FILE="$DB_DIR/fm_test.duckdb"
     LOG_DIR="$PROJECT_ROOT/logs"
     LOG_PREFIX="test_batch_import"
-elif [[ "$MODE" == "single" ]]; then
+    STREAMING_DIR="$DB_DIR/streaming"
+    SOLUTION_STATE_DIR=""   # no solution context in test mode
+else
+    SOLUTION_STATE_DIR="$SOLUTION_DIR/state"
+    XML_DIR="$SOLUTION_DIR/xml"
+    DB_DIR="$SOLUTION_DIR/db"
+    DB_FILE="$DB_DIR/fm_catalog.duckdb"
+    LOG_DIR="$SOLUTION_STATE_DIR/logs"
+    STREAMING_DIR="$SOLUTION_STATE_DIR/streaming"
     # Single-file run: its own log prefix so batch and single logs are
     # distinguishable (a JSON sidecar is written here too).
-    XML_DIR="$PROJECT_ROOT/xml"
-    DB_DIR="$PROJECT_ROOT/db"
-    DB_FILE="$DB_DIR/fm_catalog.duckdb"
-    LOG_DIR="$PROJECT_ROOT/logs"
-    LOG_PREFIX="single_import"
-else
-    XML_DIR="$PROJECT_ROOT/xml"
-    DB_DIR="$PROJECT_ROOT/db"
-    DB_FILE="$DB_DIR/fm_catalog.duckdb"
-    LOG_DIR="$PROJECT_ROOT/logs"
-    LOG_PREFIX="batch_import"
+    if [[ "$MODE" == "single" ]]; then
+        LOG_PREFIX="single_import"
+    else
+        LOG_PREFIX="batch_import"
+    fi
+    mkdir -p "$XML_DIR" "$DB_DIR" "$LOG_DIR" "$STREAMING_DIR" 2>/dev/null
+    # Backward compatibility: a flat, not-yet-migrated xml/ is read as the
+    # inbox of the 'default' solution — warn, do not hard-abort. The DB/state
+    # still land in the bundle; tools/migrate-multisolution.sh is the real fix.
+    if [ "$SOLUTION" = "default" ] && ! ls "$XML_DIR"/*.xml >/dev/null 2>&1 \
+       && ls "$PROJECT_ROOT/xml"/*.xml >/dev/null 2>&1; then
+        echo "WARNING: flat pre-multisolution xml/ detected — using it as the inbox of solution 'default'."
+        echo "         Run tools/migrate-multisolution.sh to complete the layout migration."
+        XML_DIR="$PROJECT_ROOT/xml"
+    fi
 fi
 
 # (The webbed capability probe (#98 + #109) + the streaming-param floor check now run
@@ -1129,9 +1225,12 @@ if [ "${FM_NO_CONSOLE_LOG:-}" != "1" ] && [ "${_FM_CONSOLE_LOG_ACTIVE:-}" != "1"
 fi
 
 # ── Turbo mode: streaming directory + chunkmap ──
-# Transient operative DBs under db/streaming/ (schema separate from fm_catalog.duckdb).
-# Phase S builds the chunkmap (plan), Phase D dispatches chunks in parallel, Phase C merges.
-STREAMING_DIR="$DB_DIR/streaming"
+# Transient operative DBs (schema separate from fm_catalog.duckdb). Location is
+# per mode (set in the path block above): production → solutions/<id>/state/streaming/
+# (manifests are keyed by DB filename and would collide across solutions in a
+# shared dir), test → db/streaming/. Phase S builds the chunkmap (plan), Phase D
+# dispatches chunks in parallel, Phase C merges.
+STREAMING_DIR="${STREAMING_DIR:-$DB_DIR/streaming}"
 # Name the chunkmap (transient, fresh per run) + manifest (persistent) after the
 # master, so test (fm_test) and production (fm_catalog) runs do not overwrite each other.
 _DB_BASE="$(basename "$DB_FILE" .duckdb)"
@@ -1165,22 +1264,71 @@ fi
 
 # → moved to tools/katana-xml/lib/convert_turbo.sh (shell split)
 
-# REST-API copy target (production mode only)
-REST_API_DB_DIR="$PROJECT_ROOT/rest-api/db"
+# REST-API copy target (production mode only) — per-solution READ_ONLY copy.
+# The compat symlink rest-api/db/fm_catalog.duckdb points into this directory
+# for the active solution; the sync always writes the REAL per-solution path.
+REST_API_DB_DIR="$PROJECT_ROOT/rest-api/db/solutions/$SOLUTION"
 REST_API_DB_FILE="$REST_API_DB_DIR/fm_catalog.duckdb"
 REST_API_RELOAD_URL="${REST_API_RELOAD_URL:-http://localhost:3003/api/admin/reload}"
 
 # Lock file for concurrency protection between the skill and the REST-API.
 # Content: owner PID + ISO timestamp + mode (cli|api).
+# PER SOLUTION (solutions/<id>/state/) — imports of different solutions may run
+# in parallel; the same solution twice is rejected (409/emit_error as before).
 # NOT used in test mode — tests run against a separate DB.
 FMLAB_DIR="$PROJECT_ROOT/.fmlab"
-LOCK_FILE="$FMLAB_DIR/xml_convert.lock"
+if $TEST_MODE; then
+    LOCK_FILE="$FMLAB_DIR/xml_convert.lock"   # unused — test mode takes no lock
+else
+    LOCK_FILE="$SOLUTION_STATE_DIR/xml_convert.lock"
+fi
+
+# Global concurrency cap: the converter is RAM/CPU-heavy —
+# N parallel batch runs can take the host down. Counts FOREIGN live per-solution
+# locks (own solution's lock is handled by acquire_lock below). Source of the
+# cap: FMLAB_MAX_CONVERTS env → .fmlab/instance.json limits.max_converts → 1.
+# Enforced here for pure CLI parallelism; the REST-API hub enforces the same cap.
+max_converts() {
+    local cap=""
+    if [ -n "${FMLAB_MAX_CONVERTS:-}" ]; then
+        cap="$FMLAB_MAX_CONVERTS"
+    elif [ -f "$PROJECT_ROOT/.fmlab/instance.json" ]; then
+        cap=$(sed -n 's/.*"max_converts"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' \
+              "$PROJECT_ROOT/.fmlab/instance.json" | head -n1)
+    fi
+    case "$cap" in
+        ''|*[!0-9]*|0) echo 1 ;;
+        *) echo "$cap" ;;
+    esac
+}
+
+count_foreign_live_locks() {
+    local n=0 f pid
+    for f in "$PROJECT_ROOT"/solutions/*/state/xml_convert.lock; do
+        [ -f "$f" ] || continue
+        [ "$f" = "$LOCK_FILE" ] && continue
+        pid=$(head -n1 "$f" 2>/dev/null | tr -d '[:space:]')
+        if [ -n "$pid" ] && [ "$pid" != "$$" ] \
+           && printf '%s' "$pid" | grep -q '^[0-9][0-9]*$' \
+           && kill -0 "$pid" 2>/dev/null; then
+            n=$((n + 1))
+        fi
+    done
+    echo "$n"
+}
 
 acquire_lock() {
     if $TEST_MODE; then
         return 0
     fi
-    mkdir -p "$FMLAB_DIR"
+    local _cap _live
+    _cap=$(max_converts)
+    _live=$(count_foreign_live_locks)
+    if [ "$_live" -ge "$_cap" ]; then
+        emit_error "Concurrent-import limit reached ($_live running, max $_cap) — wait for a running import to finish (FMLAB_MAX_CONVERTS / instance.json limits.max_converts)."
+        return 1
+    fi
+    mkdir -p "$(dirname "$LOCK_FILE")"
     # Atomic creation via noclobber (O_EXCL) instead of check-then-write: the old
     # pattern had a TOCTOU window in which REST-API and CLI could take the lock
     # SIMULTANEOUSLY (A-B4). The file format (PID/timestamp/mode) stays unchanged —
@@ -1222,8 +1370,20 @@ release_lock() {
     fi
 }
 
+# Concurrency cap, layer 2: with a concurrency cap > 1 and no explicit
+# --memory_limit, split DuckDB's default RAM budget (~80% of host RAM) evenly
+# across the possible parallel runs (percentage limits are DuckDB-native).
+# The --auto OOM backoff remains the last line of defense.
+if ! $TEST_MODE && [ -z "$MEMORY_LIMIT" ]; then
+    _MC_CAP=$(max_converts)
+    if [ "$_MC_CAP" -gt 1 ]; then
+        MEMORY_LIMIT="$((80 / _MC_CAP))%"
+        emit_log "Concurrency cap $_MC_CAP > 1 → per-run DuckDB memory_limit $MEMORY_LIMIT"
+    fi
+fi
+
 # stamp_last_run <true|false> <exit_code> [<processed> <total>]
-# CLI runs mirror their outcome to .fmlab/last_xml_run.json so the
+# CLI runs mirror their outcome to solutions/<id>/state/last_xml_run.json so the
 # web frontend sees failures (and successes) of command-line runs too.
 # Do NOT stamp: --quiet (the REST-API server persists the record itself,
 # including event history — rest-api/src/services/xml-convert.js), test mode
@@ -1238,15 +1398,16 @@ stamp_last_run() {
     $QUIET_MODE && return 0
     [ "${TEST_MODE:-false}" = "true" ] && return 0
     [ "${LOCK_OWNED:-false}" = "true" ] || return 0
-    [ -d "$FMLAB_DIR" ] || return 0
+    [ -n "$SOLUTION_STATE_DIR" ] && mkdir -p "$SOLUTION_STATE_DIR" 2>/dev/null
+    [ -d "$SOLUTION_STATE_DIR" ] || return 0
     LAST_RUN_STAMPED=true
     local _now; _now=$(date -u '+%Y-%m-%dT%H:%M:%S.000Z')
     printf '{\n  "$schema_version": 1,\n  "run_id": "%s",\n  "source": "cli",\n  "started_at": "%s",\n  "finished_at": "%s",\n  "duration_ms": null,\n  "ok": %s,\n  "exit_code": %s,\n  "processed": %s,\n  "total": %s,\n  "error_count": %s,\n  "events": []\n}\n' \
         "${RUN_STARTED_AT:-$_now}" "${RUN_STARTED_AT:-$_now}" "$_now" \
         "$_ok" "$_rc" "$_processed" "$_total" \
         "$([ "$_ok" = "true" ] && echo 0 || echo 1)" \
-        > "$FMLAB_DIR/last_xml_run.json.tmp" 2>/dev/null \
-        && mv -f "$FMLAB_DIR/last_xml_run.json.tmp" "$FMLAB_DIR/last_xml_run.json" 2>/dev/null
+        > "$SOLUTION_STATE_DIR/last_xml_run.json.tmp" 2>/dev/null \
+        && mv -f "$SOLUTION_STATE_DIR/last_xml_run.json.tmp" "$SOLUTION_STATE_DIR/last_xml_run.json" 2>/dev/null
     return 0
 }
 
@@ -1350,7 +1511,7 @@ sync_to_rest_api() {
 
     # Atomic replace: copy to .tmp first, then mv
     if cp "$DB_FILE" "$REST_API_DB_FILE.tmp" && mv -f "$REST_API_DB_FILE.tmp" "$REST_API_DB_FILE"; then
-        emit_log "Synced master DB to rest-api/db/fm_catalog.duckdb"
+        emit_log "Synced master DB to rest-api/db/solutions/$SOLUTION/fm_catalog.duckdb"
         phase_progress "$_sync_phase" 85 "Database synced"
     else
         emit_warn "Sync to rest-api/db/ failed"
@@ -1367,7 +1528,12 @@ sync_to_rest_api() {
         return 0
     fi
 
-    local CURL_ARGS=(-sS -X POST --max-time 5 -o /dev/null -w "%{http_code}")
+    # The body names the imported solution — the API reloads only when it is the
+    # active one and otherwise answers with a no-op (the copy is already fresh),
+    # so the hook may fire blindly.
+    local CURL_ARGS=(-sS -X POST --max-time 5 -o /dev/null -w "%{http_code}"
+                     -H "Content-Type: application/json"
+                     -d "{\"solution\":\"$SOLUTION\"}")
     if [ -n "$ADMIN_RELOAD_TOKEN" ]; then
         CURL_ARGS+=(-H "X-Admin-Token: $ADMIN_RELOAD_TOKEN")
     fi
@@ -1388,16 +1554,117 @@ sync_to_rest_api() {
 }
 
 # ============================================================================
+# stamp_solution_manifest — key-scoped merge of the convert-owned blocks
+# (`technical` + `metrics`) into solutions/<id>/solution.json after a
+# successful production import (manifest schema v1). Every writer only touches
+# its OWN keys: the user-owned description block (root) is never rewritten;
+# a missing manifest is created with a minimal root. Non-fatal — a failed
+# stamp never fails the import.
+# ============================================================================
+stamp_solution_manifest() {
+    $TEST_MODE && return 0
+    [ -f "$DB_FILE" ] || return 0
+    if ! command -v python3 >/dev/null 2>&1; then
+        emit_warn "solution.json not stamped (python3 not available)"
+        return 0
+    fi
+    local manifest="$SOLUTION_DIR/solution.json"
+    local tech_json metrics_json
+    tech_json=$("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c "
+        SELECT to_json({
+            filemaker_versions: (SELECT COALESCE(list(DISTINCT FileMaker_Version ORDER BY FileMaker_Version), []) FROM FilesCatalog WHERE FileMaker_Version IS NOT NULL),
+            xml_versions:       (SELECT COALESCE(list(DISTINCT XML_Version ORDER BY XML_Version), []) FROM XMLMetadata WHERE XML_Version IS NOT NULL),
+            has_ddr_info:       (SELECT COALESCE(bool_or(Has_DDR_INFO), false) FROM FilesCatalog)
+        });" 2>/dev/null)
+    metrics_json=$("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c "
+        SELECT to_json({
+            files:   (SELECT COUNT(*) FROM FilesCatalog),
+            objects: (SELECT COUNT(*) FROM ObjectCatalog),
+            links:   (SELECT COUNT(*) FROM ObjectLinks),
+            by_type: (SELECT COALESCE(json_group_object(Object_Type, n), '{}'::JSON)
+                      FROM (SELECT Object_Type, COUNT(*) AS n FROM ObjectCatalog GROUP BY 1 ORDER BY 1))
+        });" 2>/dev/null)
+    if [ -z "$tech_json" ] || [ -z "$metrics_json" ]; then
+        emit_warn "solution.json not stamped (catalog queries failed)"
+        return 0
+    fi
+    if MANIFEST_PATH="$manifest" SOL_ID="$SOLUTION" TECH_JSON="$tech_json" \
+       METRICS_JSON="$metrics_json" SCHEMA_V="${SCHEMA_VERSION_EXPECTED:-}" \
+       CONV_V="$CONVERTER_VERSION" python3 - <<'PYEOF'
+import json, os, sys, uuid, datetime, tempfile
+
+path = os.environ["MANIFEST_PATH"]
+now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+try:
+    with open(path) as f:
+        data = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    data = {
+        "manifest_version": 1,
+        "uuid": str(uuid.uuid4()),
+        "id": os.environ["SOL_ID"],
+        "display_name": os.environ["SOL_ID"],
+        "description": "",
+        "created_at": now,
+    }
+
+tech = json.loads(os.environ["TECH_JSON"])
+tech["db_schema_version"] = os.environ["SCHEMA_V"]
+tech["converter_version"] = os.environ["CONV_V"]
+tech["last_import_at"] = now
+metrics = json.loads(os.environ["METRICS_JSON"])
+metrics["generated_at"] = now
+
+# Key-scoped merge: replace ONLY the convert-owned blocks.
+data["technical"] = tech
+data["metrics"] = metrics
+
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path) or ".", suffix=".tmp")
+with os.fdopen(fd, "w") as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
+    f.write("\n")
+os.replace(tmp, path)
+PYEOF
+    then
+        emit_log "solution.json stamped (technical + metrics)"
+    else
+        emit_warn "solution.json stamp failed (import unaffected)"
+    fi
+    return 0
+}
+
+# ============================================================================
+# prune_solution_logs — per-solution log retention: keep the last
+# FM_LOG_KEEP_RUNS (default 10) convert runs (4 files each) in
+# solutions/<id>/state/logs/. Trivial per directory; runs at the end of every
+# production convert. Test-mode logs live in the top-level logs/ (untouched).
+# ============================================================================
+prune_solution_logs() {
+    $TEST_MODE && return 0
+    [ -d "$LOG_DIR" ] || return 0
+    local keep="${FM_LOG_KEEP_RUNS:-10}"
+    [ "$keep" -ge 1 ] 2>/dev/null || return 0
+    ls -1 "$LOG_DIR" 2>/dev/null \
+        | sed -En 's/^(single_import|batch_import)_([0-9]{8}_[0-9]{6}).*/\2/p' \
+        | sort -u -r | tail -n +$((keep + 1)) | while read -r _ts; do
+            rm -f "$LOG_DIR"/single_import_"${_ts}"* "$LOG_DIR"/batch_import_"${_ts}"* 2>/dev/null
+        done
+    return 0
+}
+
+# ============================================================================
 # Phase 7 — auto clustering (raw) · R1 cluster.json reuse
 # ============================================================================
 
 # read_cluster_json — echoes "engine|resolution|seed" for Auto-P7 / Re-Cluster.
-# Source order: .fmlab/cluster.json (last /fm-graph-cluster sweep winner, R1) →
-# CLUSTER_* env overrides → cluster.sh defaults (auto|1.0|42). A stored 'leiden'
+# Source order: solutions/<id>/state/cluster.json (last /fm-graph-cluster sweep
+# winner, R1; pre-migration fallback .fmlab/cluster.json) → CLUSTER_* env
+# overrides → cluster.sh defaults (auto|1.0|42). A stored 'leiden'
 # engine is downgraded to 'auto' so a host without python3+igraph does not hard-
 # abort cluster.sh (engine fallback); resolution/seed are preserved.
 read_cluster_json() {
-    local f="$PROJECT_ROOT/.fmlab/cluster.json"
+    local f="${SOLUTION_STATE_DIR:-$PROJECT_ROOT/.fmlab}/cluster.json"
+    [ -f "$f" ] || f="$PROJECT_ROOT/.fmlab/cluster.json"
     local engine="auto" res="1.0" seed="42"
     if [ -f "$f" ]; then
         local parsed
@@ -1750,6 +2017,15 @@ _p2_effective_jobs() {
 _p2_worker() {
     local idx="$1" partdir="$2" threads="${3:-}"
     local pdb="$partdir/p2_${idx}.duckdb" list="$partdir/bin_${idx}.list"
+    # Test hook: simulate an OOM SIGKILL for this slice without running DuckDB — writes
+    # rc=137 (and no part DB) so run_phase2_partitioned records the OOM marker → the
+    # post-P2 gate exercises the clean memory abort end-to-end. FM_P2_TEST_OOM="all"
+    # kills every slice, a numeric value kills only that slice index. Never set in production.
+    if [ -n "${FM_P2_TEST_OOM:-}" ] && { [ "$FM_P2_TEST_OOM" = "all" ] || [ "$FM_P2_TEST_OOM" = "$idx" ]; }; then
+        echo "[FM_P2_TEST_OOM] simulated OOM: slice=$idx rc=137" > "$partdir/${idx}.log"
+        echo 137 > "$partdir/${idx}.rc"
+        return 0
+    fi
     local ssql; ssql="$(mktemp)"
     # IN list of this slice's File_Names (single-quoted, internal quotes doubled).
     local infiles
@@ -1824,6 +2100,11 @@ run_phase2_partitioned() {
             slices+=("$partdir/p2_${i}.duckdb")
         else
             rc=1
+            # A slice worker runs as a bare redirect (no pipe), so its rc is the real
+            # DuckDB exit — 137/143 means the kernel killed it under memory pressure.
+            # This function runs in a subshell, so signal the cause to the parent via a
+            # token in the shared logfile rather than a (lost) global assignment.
+            case "$wrc" in 137|143) echo "P2_OOM_MARKER slice rc=$wrc" >> "$logfile" ;; esac
         fi
     done
     if [ "$rc" -ne 0 ] || [ ${#slices[@]} -eq 0 ]; then
@@ -1849,6 +2130,9 @@ run_phase2_partitioned() {
     { memory_limit_prefix; cat "$msql"; } | "$DUCKDB_BIN" "$DB_FILE" >> "$logfile" 2>&1; rc=$?
     rm -f "$msql"
     rm -rf "$partdir"
+    # The merge is the last stage in a pipe → rc is DuckDB's own exit; a memory kill
+    # here (137/143) is an OOM just as a slice kill is. Signal via the logfile (subshell).
+    case "$rc" in 137|143) echo "P2_OOM_MARKER merge rc=$rc" >> "$logfile" ;; esac
     return $rc
 }
 
@@ -1872,6 +2156,14 @@ run_phase2() {
     if (cd "$PROJECT_ROOT" && run_phase2_partitioned "$K" "$templog" "$p2_thr"); then
         echo "✓ $label (partitioned ×$K, ${p2_thr} threads/slice)"
     else
+        # Mark the phase as failed so the post-P2 gate stops the pipeline cleanly
+        # instead of letting the universal catalogs fail on the missing reference
+        # tables. An OOM marker (written by a killed slice/merge, subshell-safe via the
+        # logfile) narrows the cause to memory pressure.
+        P2_FAILED=true
+        # OOM cause: a SIGKILL leaves the subshell marker; a clean DuckDB memory stop
+        # (memory_limit exceeded) leaves its own stderr text. Match both.
+        grep -qiE 'P2_OOM_MARKER|out of memory|failed to allocate|exceeds.*memory_limit' "$templog" 2>/dev/null && P2_OOM=true
         echo "✗ WARNING: $label (partitioned ×$K) failed"
         {
             echo "================================================================================"
@@ -1880,7 +2172,10 @@ run_phase2() {
             echo "================================================================================"
             cat "$templog"; echo ""
         } >> "$ERROR_LOG_FILE"
-        echo "Error details:"; sed 's/^/  /' "$templog"
+        # Suppress the raw DuckDB dump on stdout when it is an OOM — the post-P2 gate
+        # prints a clean, actionable block instead (the full detail stays in the error
+        # log). Non-OOM failures keep the inline detail for quick diagnosis.
+        if ! $P2_OOM; then echo "Error details:"; sed 's/^/  /' "$templog"; fi
         $FAIL_FAST && rc=2
     fi
     rm -f "$templog"
@@ -2654,6 +2949,10 @@ classify_error() {
         ERR_RETRY_HINT="Check the source encoding (BOM detection applies; binary detection points to an old file -I)"
     else
         case "$rc" in
+            # 137=SIGKILL / 143=SIGTERM: an OS/cgroup OOM kill leaves NO stderr, so the
+            # text match above cannot fire — classify by the numeric code so a killed
+            # worker is reported as oom instead of masquerading as a generic sql_error.
+            137|143) ERR_CATEGORY="oom";           ERR_RETRY_HINT="OOM (exit 137=SIGKILL / 143=SIGTERM): more RAM/spill (DUCKDB_TEMP_DIR), --turbo --auto, or a reduced --memory_limit" ;;
             2) ERR_CATEGORY="encoding";           ERR_RETRY_HINT="Check the source encoding" ;;
             4) ERR_CATEGORY="unsupported_format";  ERR_RETRY_HINT="Re-export from FileMaker 19+ as SaXML v2.1+" ;;
             5) ERR_CATEGORY="invalid_xml";         ERR_RETRY_HINT="Check the pre-processor/source" ;;
@@ -2746,6 +3045,137 @@ fail_fast_stop() {
     echo ""
     emit_done false "Failed during: $1"
     stamp_last_run false 1 "${SUCCESS_COUNT:-0}" "${TOTAL:-0}"   # stamp fail-fast
+    exit 1
+}
+
+# EXIT_INSUFFICIENT_MEMORY — dedicated exit code for a memory-induced clean abort.
+# Distinct from the generic failure (1) so callers (the REST-API hub, the web import
+# page) can branch and show the user a memory-specific, actionable message instead of
+# a raw error. Frees a slot beyond the existing per-file categories (2/4/5/6/7).
+EXIT_INSUFFICIENT_MEMORY=8
+
+# _avail_mb_human — render the detected available RAM as a human string (GB), or a
+# fallback token when it could not be determined on this platform.
+_avail_mb_human() {
+    if [ "${_avail_mb:-0}" -gt 0 ]; then
+        awk -v m="$_avail_mb" 'BEGIN{ printf (m>=1024 ? "%.1f GB" : "%d MB"), (m>=1024 ? m/1024 : m) }'
+    else
+        echo "unknown"
+    fi
+}
+
+# _retry_memory_limit — the conservative --memory_limit for an auto-retry: ~60 % of
+# the detected available RAM (env override FM_RETRY_MEMORY_LIMIT wins). Echoes an empty
+# string when RAM is unknown or too low for a safe profile → the caller then skips the
+# retry and shows the memory message instead of launching a doomed second run.
+_retry_memory_limit() {
+    if [ -n "${FM_RETRY_MEMORY_LIMIT:-}" ]; then echo "$FM_RETRY_MEMORY_LIMIT"; return 0; fi
+    [ "${_avail_mb:-0}" -gt 0 ] || return 0
+    local lim=$(( _avail_mb * 60 / 100 ))
+    [ "$lim" -lt 512 ] && return 0   # < 512 MB budget → no safe profile fits
+    echo "${lim}MB"
+}
+
+# _maybe_auto_retry_oom <stage> — pre-flight-guarded, one-shot auto-retry on OOM.
+# Re-runs the whole batch ONCE with a conservative memory profile (turbo+auto with a
+# capped memory_limit, serialised resolve, single-file P1) when the current run was not
+# already a retry AND the environment plausibly has room for the safe profile. On retry
+# it exec's and never returns; otherwise it returns so the caller prints the memory
+# message and exits. Opt out with FM_NO_AUTO_RETRY=1.
+_maybe_auto_retry_oom() {
+    local stage="${1:-conversion}"
+    [ "$MODE" = "batch" ] || return 0
+    # Test mode reuses MODE=batch but writes a throwaway DB — a re-exec would drop --test
+    # and hit the production DB. Never auto-retry there.
+    $TEST_MODE && return 0
+    [ "${ATTEMPT:-1}" -ge 2 ] && return 0
+    [ "${FM_NO_AUTO_RETRY:-0}" = "1" ] && return 0
+    local lim; lim="$(_retry_memory_limit)"
+    [ -n "$lim" ] || return 0   # unknown/too little RAM → no doomed retry, show the message
+    finalize_logs               # close the failed attempt's logs before re-exec
+    if $QUIET_MODE; then
+        _emit_json retry filename "(batch)" category "oom" hint "auto-retry with --memory_limit $lim (attempt 2)"
+    else
+        echo "" >&2
+        echo "↻ Auto-retry with a reduced memory profile (--memory_limit $lim, single-threaded resolve)…" >&2
+        echo "  Reason: $stage ran out of memory. This is attempt 2 of 2; if it fails too, a clear memory message follows." >&2
+        echo "" >&2
+    fi
+    # Conservative safe profile: turbo+auto (spillable/resplittable) + a capped
+    # memory_limit, one P1 file at a time and a serialised single-slice resolve to keep
+    # the peak low; force-rebuild starts from a clean state after the partial attempt.
+    local -a retry=(--batch --auto --force-rebuild --memory_limit "$lim" --jobs 1
+                    --attempt 2 --retry-reason oom)
+    [ -n "$SOLUTION" ] && retry+=(--solution "$SOLUTION")
+    $QUIET_MODE && retry+=(--quiet)
+    # exec keeps the SAME PID and skips the EXIT trap → release the concurrency lock
+    # first, otherwise the re-invoked attempt sees its own still-held lock ("already
+    # running"). The retry re-acquires it fresh.
+    release_lock
+    # Re-invoke through `bash` explicitly: the script is normally launched as
+    # `bash <script>` (no +x bit), so `exec "$0"` would fail with 126 (cannot execute).
+    FM_P2_THREADS=1 FM_P2_JOBS=1 exec "${BASH:-bash}" "$0" "${retry[@]}"
+}
+
+# abort_insufficient_memory <stage> — clean, memory-specific stop. Prints ONE
+# structured block (no raw SQL), writes the logs + JSON sidecar, emits a machine-
+# readable `aborted` event (reason=oom) for the SSE consumers, and exits with the
+# dedicated code. No catalogs are published on this path (the sync never runs), so the
+# previously served database stays intact. Before giving up it may launch a single
+# conservative auto-retry (guarded — see _maybe_auto_retry_oom).
+abort_insufficient_memory() {
+    local stage="${1:-conversion}"
+    _maybe_auto_retry_oom "$stage"   # exec's on retry (never returns); else falls through
+    finalize_logs
+    local avail_h; avail_h="$(_avail_mb_human)"
+    if $QUIET_MODE; then
+        _emit_json aborted reason "oom" stage "$stage" avail_mb "int=${_avail_mb:-0}"
+    else
+        echo "" >&2
+        echo "=========================================" >&2
+        echo "✗ IMPORT ABORTED — not enough memory" >&2
+        echo "=========================================" >&2
+        echo "Stage:      $stage" >&2
+        echo "Available:  $avail_h RAM on this machine" >&2
+        echo "Cause:      the DuckDB process was killed by the operating system (OOM)." >&2
+        echo "" >&2
+        echo "This solution is too large for this environment's memory. Next steps:" >&2
+        echo "  1) Run it on a machine with more RAM (8 GB or more recommended), or" >&2
+        echo "  2) retry with a reduced memory profile:" >&2
+        echo "       convert-xml --batch --auto --memory_limit 4GB" >&2
+        echo "" >&2
+        echo "No catalogs were written from this run; the previously served database is unchanged." >&2
+        echo "Error log:  $ERROR_LOG_FILE" >&2
+        echo "" >&2
+    fi
+    emit_done false "Aborted (insufficient memory) during: $stage"
+    stamp_last_run false "$EXIT_INSUFFICIENT_MEMORY" "${SUCCESS_COUNT:-0}" "${TOTAL:-0}"
+    exit "$EXIT_INSUFFICIENT_MEMORY"
+}
+
+# abort_pipeline_incomplete <stage> — clean stop when a batch-wide phase failed for a
+# non-memory reason and the downstream catalogs cannot be built. Avoids the
+# "table does not exist" cascade from running the dependent phases anyway.
+abort_pipeline_incomplete() {
+    local stage="${1:-a pipeline stage}"
+    finalize_logs
+    if $QUIET_MODE; then
+        _emit_json aborted reason "incomplete" stage "$stage"
+    else
+        echo "" >&2
+        echo "=========================================" >&2
+        echo "✗ IMPORT ABORTED — build incomplete" >&2
+        echo "=========================================" >&2
+        echo "Stage:      $stage" >&2
+        echo "The reference resolution did not complete, so the object catalog cannot be" >&2
+        echo "built. The pipeline stops here instead of producing follow-up errors." >&2
+        echo "" >&2
+        echo "No catalogs were written from this run; the previously served database is unchanged." >&2
+        echo "Error log:  $ERROR_LOG_FILE" >&2
+        echo "" >&2
+    fi
+    emit_done false "Aborted (build incomplete) during: $stage"
+    stamp_last_run false 1 "${SUCCESS_COUNT:-0}" "${TOTAL:-0}"
     exit 1
 }
 
@@ -2872,7 +3302,7 @@ if [[ "$MODE" == "batch" ]]; then
     echo "========================================="
     if $TEST_MODE; then
         echo "FileMaker XML TEST Import"
-        echo "Source: xml-test/ → db/fm_test.duckdb"
+        echo "Source: tools/tests/fixtures/xml/ → db/fm_test.duckdb"
     else
         echo "FileMaker XML Batch Import"
     fi
@@ -3193,6 +3623,17 @@ if [[ "$MODE" == "batch" ]]; then
     P2_REF=$(count_table_sum XMLCalcReferences XMLStepReferences XMLLayoutReferences PluginFunctionUsages MBS_SubnameMap GetSubparameterMap)
     phase_finish "$(group_de "$P2_REF") references" "{\"references_resolved\":$P2_REF}"
     [ "$rc" = 2 ] && fail_fast_stop "Phase 2 Reference Resolution"
+    # Integrity gate: Phase 2 builds the reference tables that Phase 4 (universal
+    # catalogs) reads. If it failed — or produced nothing while Phase 1 did load
+    # objects — stop cleanly here. Running P3–P7 on the missing tables would only spill
+    # "table does not exist" cascades and leave the run without a usable catalog.
+    if $P2_FAILED || { [ "${P1_OBJ:-0}" -gt 0 ] && [ "${P2_REF:-0}" -eq 0 ]; }; then
+        if $P2_OOM; then
+            abort_insufficient_memory "Reference resolution (Phase 2)"
+        else
+            abort_pipeline_incomplete "Phase 2 Reference Resolution"
+        fi
+    fi
     echo ""
 
     # 7. Phase 3 (Details) — variable parser. P3/P4 are now two separate DuckDB
@@ -3221,15 +3662,15 @@ if [[ "$MODE" == "batch" ]]; then
         echo "========================================="
     fi
     phase_begin P4 Catalog
-    # Safeguard the MBS component CSV: data/mbs_component_exceptions.csv is produced by
+    # Safeguard the MBS component CSV: reference/mbs_component_exceptions.csv is produced by
     # the install-mbs-docs skill from the MBS docset and is optional. If it is missing
     # (docset not installed), create a header-only stub so the read_csv in
     # P4 does not hard-fail — the component resolution then falls back via COALESCE to the
     # name heuristic (documented intent in convert_xml_04_catalog.sql).
     # NEVER overwrites an existing real CSV (only on non-existence).
-    if [ ! -f "$PROJECT_ROOT/data/mbs_component_exceptions.csv" ]; then
-        mkdir -p "$PROJECT_ROOT/data"
-        printf 'Funktionsname,Component\n' > "$PROJECT_ROOT/data/mbs_component_exceptions.csv"
+    if [ ! -f "$PROJECT_ROOT/reference/mbs_component_exceptions.csv" ]; then
+        mkdir -p "$PROJECT_ROOT/reference"
+        printf 'Funktionsname,Component\n' > "$PROJECT_ROOT/reference/mbs_component_exceptions.csv"
         $QUIET_MODE || echo "Note: MBS component CSV missing (MBS docset not installed) → header stub created; P4 uses the name heuristic. For an exact component mapping: run install-mbs-docs."
     fi
     run_pipeline_step "Phase 4 Catalog (Objects+Links)" "$PROJECT_ROOT/sql/convert-xml/convert_xml_04_catalog.sql"; rc=$?
@@ -3327,6 +3768,13 @@ if [[ "$MODE" == "batch" ]]; then
         # the `cluster` segment completes instead of sticking at its start.
         phase_progress cluster 100 "done"
     fi
+
+    # 7c. Manifest stamp: refresh the convert-owned technical/metrics
+    # blocks of solutions/<id>/solution.json after any batch that imported
+    # at least one file. Key-scoped merge, never fails the run.
+    if ! $TEST_MODE && [ "${SUCCESS_COUNT:-0}" -gt 0 ]; then
+        stamp_solution_manifest
+    fi
     fi   # ── End of short-circuit block (! $TURBO_NO_CHANGES): P2–P6 + sync ──
 
     # 8. End timer for entire batch + run end time
@@ -3370,6 +3818,9 @@ if [[ "$MODE" == "batch" ]]; then
 
     # Stage 4 — Error-Handling: show collected warnings + retry suggestions
     finalize_run
+
+    # Per-solution log retention: keep the last FM_LOG_KEEP_RUNS runs.
+    prune_solution_logs
 
     # Inform user about log location
     echo ""
@@ -3516,6 +3967,9 @@ elif [[ "$MODE" == "single" ]]; then
                 echo "Syncing database to rest-api/..."
             fi
             sync_to_rest_api
+            # Manifest stamp — single-file imports refresh the
+            # convert-owned blocks too (metrics change with every import).
+            stamp_solution_manifest
         fi
     fi
 
@@ -3526,6 +3980,7 @@ elif [[ "$MODE" == "single" ]]; then
 
     finalize_logs
     finalize_run
+    prune_solution_logs
     echo ""
     echo "Log file:  $LOG_FILE"
     echo "JSON file: $JSON_FILE"

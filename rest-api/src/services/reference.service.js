@@ -43,26 +43,38 @@ function isFunctionLang(lang) {
   return REFERENCE_FUNCTION_LANGUAGES.includes(lang);
 }
 
+/**
+ * Normalisiert eine (evtl. regions-qualifizierte) Locale-Kennung auf einen der
+ * unterstützten Domänen-Codes und fällt sonst sanft auf die Default-Sprache
+ * zurück — statt hart zu werfen.
+ *
+ * Auflösungsreihenfolge:
+ *   1. Exakt-Treffer (case-insensitiv) → kanonische Schreibweise aus `valid`
+ *   2. Regions-Tag (en-US, de-DE, pt-BR, zh-Hant, …) → Match auf dem Primär-Subtag
+ *   3. sonst Default (`en`)
+ *
+ * Beispiele: en-US → en · de_DE → de · zh-CN → zh-Hans (Steps) · xx → en
+ */
+function normalizeRefLang(lang, valid) {
+  const raw = String(lang || environment.reference.defaultLang).trim();
+  const lower = raw.toLowerCase();
+
+  const exact = valid.find((c) => c.toLowerCase() === lower);
+  if (exact) return exact;
+
+  const primary = lower.split(/[-_]/)[0];
+  const byPrimary = valid.find((c) => c.toLowerCase().split('-')[0] === primary);
+  if (byPrimary) return byPrimary;
+
+  return environment.reference.defaultLang;
+}
+
 function resolveStepLang(lang) {
-  const v = lang || environment.reference.defaultLang;
-  if (!isStepLang(v)) {
-    const err = new Error(`Unsupported language '${v}' for steps. Valid: ${REFERENCE_STEP_LANGUAGES.join(', ')}`);
-    err.code = 'REF_LANG_INVALID';
-    err.details = { domain: 'steps', valid: REFERENCE_STEP_LANGUAGES };
-    throw err;
-  }
-  return v;
+  return normalizeRefLang(lang, REFERENCE_STEP_LANGUAGES);
 }
 
 function resolveFunctionLang(lang) {
-  const v = lang || environment.reference.defaultLang;
-  if (!isFunctionLang(v)) {
-    const err = new Error(`Unsupported language '${v}' for functions. Valid: ${REFERENCE_FUNCTION_LANGUAGES.join(', ')}`);
-    err.code = 'REF_LANG_INVALID';
-    err.details = { domain: 'functions', valid: REFERENCE_FUNCTION_LANGUAGES };
-    throw err;
-  }
-  return v;
+  return normalizeRefLang(lang, REFERENCE_FUNCTION_LANGUAGES);
 }
 
 function assertAttached() {
@@ -95,9 +107,9 @@ function mirrorLangDir(lang) {
  * gecacht (Schema ändert sich nicht zur Laufzeit).
  */
 const refTableExistsCache = new Map();
-async function refTableExists(name) {
+async function refTableExists(ctx, name) {
   if (refTableExistsCache.has(name)) return refTableExistsCache.get(name);
-  const r = await db.executeQuery(
+  const r = await db.executeQuery(ctx,
     `SELECT 1 FROM information_schema.tables
      WHERE table_catalog = 'ref' AND table_name = ? LIMIT 1`,
     [String(name)]
@@ -113,13 +125,13 @@ async function refTableExists(name) {
  * ============================================================================
  */
 
-async function getStepCategories(lang) {
+async function getStepCategories(ctx, lang) {
   assertAttached();
   const language = resolveStepLang(lang);
   const cacheKey = `step-cat:${language}`;
   if (metaCache.has(cacheKey)) return metaCache.get(cacheKey);
 
-  const r = await db.executeQuery(`
+  const r = await db.executeQuery(ctx, `
     SELECT c.category_id, c.url_slug, cl.name, cl.url
     FROM ref.script_steps_categories c
     JOIN ref.script_steps_categories_lang cl USING (category_id)
@@ -137,13 +149,13 @@ async function getStepCategories(lang) {
   return data;
 }
 
-async function getFunctionCategories(lang) {
+async function getFunctionCategories(ctx, lang) {
   assertAttached();
   const language = resolveFunctionLang(lang);
   const cacheKey = `fn-cat:${language}`;
   if (metaCache.has(cacheKey)) return metaCache.get(cacheKey);
 
-  const r = await db.executeQuery(`
+  const r = await db.executeQuery(ctx, `
     SELECT c.category_id, c.url_slug, cl.name, cl.url
     FROM ref.function_categories c
     JOIN ref.function_categories_lang cl USING (category_id)
@@ -167,7 +179,7 @@ async function getFunctionCategories(lang) {
  * ============================================================================
  */
 
-async function listSteps(lang) {
+async function listSteps(ctx, lang) {
   assertAttached();
   const language = resolveStepLang(lang);
   const cacheKey = `steps-list:${language}`;
@@ -176,12 +188,12 @@ async function listSteps(lang) {
   // hasGrammar: EXISTS-Prüfung auf step_xml_map — nur wenn die generative
   // Tabelle vorhanden ist (Referenz ≥ 1.2.0). Bei älterer Referenz degradiert
   // das Feld auf `false`, ohne die Liste zu brechen.
-  const grammarTable = await refTableExists('step_xml_map');
+  const grammarTable = await refTableExists(ctx, 'step_xml_map');
   const grammarSelect = grammarTable
     ? `EXISTS (SELECT 1 FROM ref.step_xml_map m WHERE m.step_id = s.step_id)`
     : `FALSE`;
 
-  const r = await db.executeQuery(`
+  const r = await db.executeQuery(ctx, `
     SELECT s.step_id, s.url_slug, s.canonical_name, s.category_id,
            s.origin_version,
            ${grammarSelect} AS has_grammar,
@@ -213,27 +225,27 @@ async function listSteps(lang) {
  * Token-Anreicherer in get-details verwendet, um nicht pro Line eine
  * DB-Query zu fahren.
  */
-async function getStepMetaMap(lang) {
+async function getStepMetaMap(ctx, lang) {
   const language = resolveStepLang(lang);
   if (stepMetaByLang.has(language)) return stepMetaByLang.get(language);
-  const steps = await listSteps(language);
+  const steps = await listSteps(ctx, language);
   const map = new Map(steps.map((s) => [s.stepId, s]));
   stepMetaByLang.set(language, map);
   return map;
 }
 
-async function findStepBySlugOrId(idOrSlug) {
+async function findStepBySlugOrId(ctx, idOrSlug) {
   assertAttached();
   const isNumeric = /^\d+$/.test(String(idOrSlug));
   let row;
   if (isNumeric) {
-    const r = await db.executeQuery(
+    const r = await db.executeQuery(ctx,
       `SELECT step_id, url_slug, canonical_name, category_id, origin_version FROM ref.script_steps WHERE step_id = ?`,
       [parseInt(idOrSlug, 10)]
     );
     row = r.rows[0];
   } else {
-    const r = await db.executeQuery(
+    const r = await db.executeQuery(ctx,
       `SELECT step_id, url_slug, canonical_name, category_id, origin_version FROM ref.script_steps WHERE url_slug = ? OR canonical_name = ?`,
       [String(idOrSlug), String(idOrSlug)]
     );
@@ -242,20 +254,20 @@ async function findStepBySlugOrId(idOrSlug) {
   return row ? normalizeRow(row) : null;
 }
 
-async function getStepDetail(idOrSlug, lang) {
+async function getStepDetail(ctx, idOrSlug, lang) {
   assertAttached();
   const language = resolveStepLang(lang);
-  const base = await findStepBySlugOrId(idOrSlug);
+  const base = await findStepBySlugOrId(ctx, idOrSlug);
   if (!base) return null;
 
-  const r = await db.executeQuery(`
+  const r = await db.executeQuery(ctx, `
     SELECT sl.display_name, sl.description, sl.parameter, sl.url
     FROM ref.script_steps_lang sl
     WHERE sl.step_id = ? AND sl.language = ?
   `, [base.step_id, language]);
   const lang_row = r.rows[0] || {};
 
-  const catRows = await db.executeQuery(`
+  const catRows = await db.executeQuery(ctx, `
     SELECT c.category_id, c.url_slug, c.category_name_en,
            cl.name AS lang_name
     FROM ref.script_steps_categories c
@@ -265,7 +277,7 @@ async function getStepDetail(idOrSlug, lang) {
   `, [language, base.category_id]);
   const catRow = catRows.rows[0] || {};
 
-  const paramsRes = await db.executeQuery(`
+  const paramsRes = await db.executeQuery(ctx, `
     SELECT param_index, name, description
     FROM ref.script_step_parameters_lang
     WHERE step_id = ? AND language = ?
@@ -305,13 +317,13 @@ async function getStepDetail(idOrSlug, lang) {
  * ============================================================================
  */
 
-async function listFunctions(lang) {
+async function listFunctions(ctx, lang) {
   assertAttached();
   const language = resolveFunctionLang(lang);
   const cacheKey = `functions-list:${language}`;
   if (metaCache.has(cacheKey)) return metaCache.get(cacheKey);
 
-  const r = await db.executeQuery(`
+  const r = await db.executeQuery(ctx, `
     SELECT f.function_id, f.opcode, f.canonical_name, f.return_type,
            f.origin_version, f.is_get_function, f.url_slug, f.category_id,
            fl.display_name, fl.signature, fl.purpose, fl.url
@@ -340,19 +352,19 @@ async function listFunctions(lang) {
   return fns;
 }
 
-async function findFunctionByNameOrId(nameOrId) {
+async function findFunctionByNameOrId(ctx, nameOrId) {
   assertAttached();
   const isNumeric = /^\d+$/.test(String(nameOrId));
   let row;
   if (isNumeric) {
-    const r = await db.executeQuery(
+    const r = await db.executeQuery(ctx,
       `SELECT function_id, canonical_name, opcode, category_id, return_type, origin_version, is_get_function, url_slug
        FROM ref.functions WHERE function_id = ?`,
       [parseInt(nameOrId, 10)]
     );
     row = r.rows[0];
   } else {
-    const r = await db.executeQuery(
+    const r = await db.executeQuery(ctx,
       `SELECT function_id, canonical_name, opcode, category_id, return_type, origin_version, is_get_function, url_slug
        FROM ref.functions
        WHERE canonical_name = ? OR url_slug = ?`,
@@ -363,13 +375,13 @@ async function findFunctionByNameOrId(nameOrId) {
   return row ? normalizeRow(row) : null;
 }
 
-async function getFunctionDetail(nameOrId, lang) {
+async function getFunctionDetail(ctx, nameOrId, lang) {
   assertAttached();
   const language = resolveFunctionLang(lang);
-  const base = await findFunctionByNameOrId(nameOrId);
+  const base = await findFunctionByNameOrId(ctx, nameOrId);
   if (!base) return null;
 
-  const r = await db.executeQuery(`
+  const r = await db.executeQuery(ctx, `
     SELECT display_name, signature, description, purpose, notes,
            example_1, return_type_display, url
     FROM ref.functions_lang
@@ -377,7 +389,7 @@ async function getFunctionDetail(nameOrId, lang) {
   `, [base.function_id, language]);
   const lang_row = r.rows[0] || {};
 
-  const catRes = await db.executeQuery(`
+  const catRes = await db.executeQuery(ctx, `
     SELECT c.category_id, c.url_slug, c.category_name,
            cl.name AS lang_name
     FROM ref.function_categories c
@@ -387,7 +399,7 @@ async function getFunctionDetail(nameOrId, lang) {
   `, [language, base.category_id]);
   const catRow = catRes.rows[0] || {};
 
-  const paramsRes = await db.executeQuery(`
+  const paramsRes = await db.executeQuery(ctx, `
     SELECT p.position, p.is_optional, p.is_variadic, pl.name, pl.description
     FROM ref.function_parameters p
     LEFT JOIN ref.function_parameters_lang pl
@@ -439,7 +451,7 @@ async function getFunctionDetail(nameOrId, lang) {
  * ============================================================================
  */
 
-async function lookupToken(token, lang, { all = false } = {}) {
+async function lookupToken(ctx, token, lang, { all = false } = {}) {
   assertAttached();
 
   // Sprach-Filterung pro Domain — Function-Sprachen sind eine Untermenge der
@@ -449,7 +461,7 @@ async function lookupToken(token, lang, { all = false } = {}) {
 
   const primaryFilter = all ? '' : 'AND l.is_primary = 1';
 
-  const stepRes = await db.executeQuery(`
+  const stepRes = await db.executeQuery(ctx, `
     SELECT l.step_id, l.match_source, l.is_primary,
            s.canonical_name, s.url_slug,
            sl.display_name, sl.url
@@ -461,7 +473,7 @@ async function lookupToken(token, lang, { all = false } = {}) {
     ORDER BY l.is_primary DESC, l.step_id
   `, [stepLang || environment.reference.defaultLang, token]);
 
-  const fnRes = await db.executeQuery(`
+  const fnRes = await db.executeQuery(ctx, `
     SELECT l.function_id, l.match_source, l.chunk_role, l.is_primary,
            f.canonical_name, f.url_slug, f.is_get_function,
            fl.display_name, fl.url, fl.purpose, fl.signature
@@ -530,7 +542,7 @@ async function lookupToken(token, lang, { all = false } = {}) {
  * Für die Sprache `en` existiert kein `functions_lang`-Eintrag; wir liefern
  * dann `displayName = canonical_name` und purpose/signature `null`.
  */
-async function enrichFunctionTokens(tokens, lang) {
+async function enrichFunctionTokens(ctx, tokens, lang) {
   if (!Array.isArray(tokens) || tokens.length === 0) return tokens;
   assertAttached();
 
@@ -604,7 +616,7 @@ async function enrichFunctionTokens(tokens, lang) {
       AND l.is_primary = 1
   `;
   const params = useLang ? [useLang, useLang, ...nameList] : nameList;
-  const r = await db.executeQuery(sql, params);
+  const r = await db.executeQuery(ctx, sql, params);
 
   const mirrorLang = useLang ? mirrorLangDir(useLang) : null;
 
@@ -729,15 +741,15 @@ function levenshtein(a, b) {
   return dp[n];
 }
 
-async function suggestStepSlugs(needle, limit = 5) {
+async function suggestStepSlugs(ctx, needle, limit = 5) {
   assertAttached();
-  const r = await db.executeQuery(`SELECT url_slug, canonical_name FROM ref.script_steps`);
+  const r = await db.executeQuery(ctx, `SELECT url_slug, canonical_name FROM ref.script_steps`);
   return rankSuggestions(needle, r.rows.flatMap((x) => [x.url_slug, x.canonical_name]), limit);
 }
 
-async function suggestFunctionNames(needle, limit = 5) {
+async function suggestFunctionNames(ctx, needle, limit = 5) {
   assertAttached();
-  const r = await db.executeQuery(`SELECT canonical_name, url_slug FROM ref.functions`);
+  const r = await db.executeQuery(ctx, `SELECT canonical_name, url_slug FROM ref.functions`);
   return rankSuggestions(needle, r.rows.flatMap((x) => [x.canonical_name, x.url_slug].filter(Boolean)), limit);
 }
 
@@ -779,11 +791,11 @@ function buildLocalHelpUrl(domain, lang, slug) {
  * Build-Metadaten (für Response-Header / -Envelope)
  * ============================================================================
  */
-async function getBuildMeta() {
+async function getBuildMeta(ctx) {
   assertAttached();
   if (metaCache.has('build-meta')) return metaCache.get('build-meta');
   // Quelle für Versions-Info: functions.source_version (FileMaker v21)
-  const r = await db.executeQuery(`SELECT DISTINCT source_version FROM ref.functions LIMIT 1`);
+  const r = await db.executeQuery(ctx, `SELECT DISTINCT source_version FROM ref.functions LIMIT 1`);
   const meta = {
     sourceVersion: r.rows[0]?.source_version || null,
   };
@@ -801,34 +813,34 @@ async function getBuildMeta() {
  * Kopfbereich in einem Call: reference_meta + Zähler + Locale-Matrix.
  * Degradiert definiert, wenn generative Tabellen fehlen (grammarSteps = 0).
  */
-async function getReferenceMeta() {
+async function getReferenceMeta(ctx) {
   assertAttached();
   const cacheKey = 'fmspec-meta';
   if (metaCache.has(cacheKey)) return metaCache.get(cacheKey);
 
   // reference_meta ist eine key/value-Tabelle → zu einem Objekt pivotieren.
-  const metaRows = await db.executeQuery(`SELECT key, value FROM ref.reference_meta`);
+  const metaRows = await db.executeQuery(ctx, `SELECT key, value FROM ref.reference_meta`);
   const referenceMeta = {};
   for (const row of metaRows.rows) referenceMeta[row.key] = row.value;
 
-  const grammarTable = await refTableExists('step_xml_map');
+  const grammarTable = await refTableExists(ctx, 'step_xml_map');
 
   const [stepCount, fnCount, stepLoc, fnLoc, grammar] = await Promise.all([
-    db.executeQuery(`SELECT COUNT(*) AS n FROM ref.script_steps`),
-    db.executeQuery(`SELECT COUNT(*) AS n FROM ref.functions`),
-    db.executeQuery(`SELECT COUNT(DISTINCT language) AS n FROM ref.script_steps_lang`),
-    db.executeQuery(`SELECT COUNT(DISTINCT language) AS n FROM ref.functions_lang`),
+    db.executeQuery(ctx, `SELECT COUNT(*) AS n FROM ref.script_steps`),
+    db.executeQuery(ctx, `SELECT COUNT(*) AS n FROM ref.functions`),
+    db.executeQuery(ctx, `SELECT COUNT(DISTINCT language) AS n FROM ref.script_steps_lang`),
+    db.executeQuery(ctx, `SELECT COUNT(DISTINCT language) AS n FROM ref.functions_lang`),
     grammarTable
-      ? db.executeQuery(`SELECT COUNT(*) AS n FROM ref.step_xml_map`)
+      ? db.executeQuery(ctx, `SELECT COUNT(*) AS n FROM ref.step_xml_map`)
       : Promise.resolve({ rows: [{ n: 0 }] }),
   ]);
 
   // Locale-Matrix (deckt Tab 4.3 mit ab). Pro Sprache: Step-/Functions-/
   // Parameter-Abdeckung. Union der Sprachen aus beiden Domänen.
   const [stepsByLang, fnsByLang, paramsByLang] = await Promise.all([
-    db.executeQuery(`SELECT language, COUNT(*) AS n FROM ref.script_steps_lang GROUP BY language`),
-    db.executeQuery(`SELECT language, COUNT(*) AS n FROM ref.functions_lang GROUP BY language`),
-    db.executeQuery(`SELECT language, COUNT(*) AS n FROM ref.script_step_parameters_lang GROUP BY language`),
+    db.executeQuery(ctx, `SELECT language, COUNT(*) AS n FROM ref.script_steps_lang GROUP BY language`),
+    db.executeQuery(ctx, `SELECT language, COUNT(*) AS n FROM ref.functions_lang GROUP BY language`),
+    db.executeQuery(ctx, `SELECT language, COUNT(*) AS n FROM ref.script_step_parameters_lang GROUP BY language`),
   ]);
 
   const localeMap = new Map();
@@ -868,19 +880,19 @@ async function getReferenceMeta() {
  * Lokalisierte Step-Daten + Parameter über ALLE Sprachen
  * in einem Call (vermeidet n Requests je Sprache).
  */
-async function getStepAllLangs(idOrSlug) {
+async function getStepAllLangs(ctx, idOrSlug) {
   assertAttached();
-  const base = await findStepBySlugOrId(idOrSlug);
+  const base = await findStepBySlugOrId(ctx, idOrSlug);
   if (!base) return null;
 
   const [langRes, paramRes] = await Promise.all([
-    db.executeQuery(`
+    db.executeQuery(ctx, `
       SELECT language, display_name, description, parameter, url
       FROM ref.script_steps_lang
       WHERE step_id = ?
       ORDER BY language
     `, [base.step_id]),
-    db.executeQuery(`
+    db.executeQuery(ctx, `
       SELECT language, param_index, name, description
       FROM ref.script_step_parameters_lang
       WHERE step_id = ?
@@ -924,9 +936,9 @@ async function getStepAllLangs(idOrSlug) {
  * die Tabelle bei Referenz < 1.2.0) → `{ available:false, xmlMap:null, … }`.
  * Ein unbekannter Step wirft dagegen REF_STEP_NOT_FOUND (Controller → 404).
  */
-async function getStepGrammar(idOrSlug) {
+async function getStepGrammar(ctx, idOrSlug) {
   assertAttached();
-  const base = await findStepBySlugOrId(idOrSlug);
+  const base = await findStepBySlugOrId(ctx, idOrSlug);
   if (!base) {
     const err = new Error(`No step with id/slug '${idOrSlug}'.`);
     err.code = 'REF_STEP_NOT_FOUND';
@@ -942,18 +954,18 @@ async function getStepGrammar(idOrSlug) {
     constraints: [],
   };
 
-  if (!(await refTableExists('step_xml_map'))) return empty;
+  if (!(await refTableExists(ctx, 'step_xml_map'))) return empty;
 
   // SELECT * — the deployed consumer variant strips curation columns (notes)
   // and adds payload columns (saxml_example); tolerate both shapes.
-  const mapRes = await db.executeQuery(`
+  const mapRes = await db.executeQuery(ctx, `
     SELECT * FROM ref.step_xml_map WHERE step_id = ?
   `, [base.step_id]);
   if (mapRes.rows.length === 0) return empty;
   const m = mapRes.rows[0];
 
   const [optRes, valRes, conRes] = await Promise.all([
-    db.executeQuery(`
+    db.executeQuery(ctx, `
       SELECT option_key, option_type, required, display_location,
              display_label_en, true_text, false_text, omit_when_false,
              inverted_label, xml_path, sort_order, evidence, verified_version
@@ -963,13 +975,13 @@ async function getStepGrammar(idOrSlug) {
     `, [base.step_id]),
     // SELECT * keeps this tolerant across reference schema versions
     // (per-value `evidence` exists only in newer reference builds)
-    db.executeQuery(`
+    db.executeQuery(ctx, `
       SELECT *
       FROM ref.step_option_values
       WHERE step_id = ?
       ORDER BY option_key, xml_value
     `, [base.step_id]),
-    db.executeQuery(`
+    db.executeQuery(ctx, `
       SELECT constraint_kind, detail, evidence, verified_version
       FROM ref.step_constraints
       WHERE step_id = ?

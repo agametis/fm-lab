@@ -12,6 +12,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.9.0] — 2026-07-14
+
+Two headline steps: multiple FileMaker solutions in one workspace, each in its own self-contained bundle — and the first concrete delivery of reference-driven code generation, where a generated script is validated against the FileMaker spec and the actual object catalog before you ever paste it. Plus a memory-aware XML import, install auto-healing, and a refactored skill layer.
+
+- **Multi-Solution** — manage several FileMaker solutions side by side in a single fm-lab workspace
+  - **One bundle per solution** — each solution is a self-contained directory `solutions/<id>/` with its own `xml/` inbox, DuckDB catalog, and state; backup, hand-off, and archival are a `cp -r` or zip of a single unit. Separate databases mean a query can never silently mix solutions
+  - **Explicit switcher** — a single active-solution toggle in both the CLI (`tools/solution.sh`) and the web client; the REST API resolves every request against the active solution
+  - **`default` solution as the entry point** — a fresh instance always has a `default` solution with a self-healing gate, so an empty workspace and a first import just work; a migration step moves an existing flat workspace into the bundle layout without reconversion
+  - **Solution-aware web client** — a solution picker in the header and a solutions panel in settings (rename, per-solution duration, activate), a dynamic Home tile reflecting the active solution
+  - **Per-solution XML import** — the import is routed by solution id end to end, with parallel per-solution import status; the shared reference (`fm_spec.duckdb`) stays global and solution-independent
+- **Reference-driven script generation** (`fm-generate-script`) — one of the project's core goals, hinted at in earlier releases and now concretely delivered: a generated FileMaker script is verified against the spec and the real object model *before* it leaves the tool
+  - **Seven-stage, reference-driven pipeline** — from a canonical text draft (one step per line, any of the 11 locales) through normalize → lint → resolve → emit → gate to a paste-ready `fmxmlsnippet`; a failure in any check loops back to the draft with findings instead of "continuing with a warning"
+  - **Nothing is hand-written from memory** — the step XML shape is emitted table-driven from `fm_spec.duckdb`, and every object id (fields, layouts, scripts, value lists) is *resolved* against the solution's own `fm_catalog.duckdb` object catalog — real ids, not guesses — with a machine-readable resolution report
+  - **Three-layer validation gate** — every artifact is checked before delivery: well-formed XML, Step- and Function-IDs against the fm-spec reference index, referenced objects against `ObjectCatalog`, and the target solution's naming/language conventions
+  - **fmIDE ActionScript / fmJAML** as a second delivery path alongside the snippet, from the same validated pipeline
+- **Memory-aware XML import** — the conversion adapts to the available RAM instead of crashing
+  - **Memory-limit detection with graceful fallback** — the import detects the memory ceiling (container/cgroup-aware) and scales down rather than aborting; an explicit error trap turns an out-of-memory situation into a clear, actionable message
+  - Frontend surfaces the memory state during a run
+- **Install & onboarding hardening**
+  - **Doc-set install auto-heal** — the Claris / DuckDB / MBS / fmIDE installers recover automatically from an interrupted or drifted install instead of leaving a half-installed set
+  - **`fm_spec` install auto-heal & drift-guard** — the reference install repairs itself and guards against a version/schema drift after a `git pull`
+  - **`.env.example` drift-guard** — a check that keeps the shipped example environment in sync with what the code actually reads, plus a `bootstrap.sh` first-run step
+  - **Docker filesystem preflight** — diagnoses a slow VirtioFS mount and steers the dev container to the faster gRPC FUSE backend
+- **Skills refactoring**
+  - **Shared skill layer** — `fm-summarize` and `fm-analyze` slimmed down onto a common `_shared/` helper set (response-language and short-mode conventions, reusable call-chain and type-query SQL), parity tested against the old versions
+- **Reference viewer fix** — the fm-spec step/function lookup now normalizes a region-qualified or unsupported UI locale (e.g. `pt-BR`, `zh-Hans`) to a supported reference language, falling back to the default, instead of failing with an "unsupported language" error
+
+---
+
 ## [0.8.11] — 2026-07-13
 
 The bundled FileMaker reference gets a clean, self-describing home: one canonical `reference/fm_spec.duckdb`, read by both the API and every agent skill — plus an ActionScript delivery path for generated code and a round of minor bugfixes.
@@ -624,7 +653,8 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 <!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
      versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
      intentionally left unlinked and render as plain text. Add a line here per new tag. -->
-[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.8.11...HEAD
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/marcel-more/fm-lab/compare/v0.8.11...v0.9.0
 [0.8.11]: https://github.com/marcel-more/fm-lab/compare/v0.8.10...v0.8.11
 [0.8.10]: https://github.com/marcel-more/fm-lab/compare/v0.8.9...v0.8.10
 [0.8.9]: https://github.com/marcel-more/fm-lab/compare/v0.8.8...v0.8.9

@@ -1,6 +1,7 @@
 const dashboardService = require('../services/dashboard.service');
 const dashboardI18nService = require('../services/dashboard-i18n.service');
 const environment = require('../config/environment');
+const solutionsConfig = require('../config/solutions');
 const { SUPPORTED_LANGUAGE_CODES, DEFAULT_LANGUAGE, resolveLanguage } = require('../config/languages');
 
 /**
@@ -66,6 +67,35 @@ async function listDashboards(req, res, next) {
   }
 }
 
+/**
+ * Multi-Solution: die Hero-Kachel des Home-Dashboards (`project_summary`)
+ * trägt statt des generischen „Projektüberblick" den Anzeigenamen der aktiven
+ * Lösung. Die `default`-Lösung nutzt ihren `display_name` ebenfalls, sofern
+ * gesetzt — nur ohne Display-Name behält sie den lokalisierten Bundle-Titel.
+ * Liefert bei Override ein GEKLONTES Layout (die i18n-Auflösung gibt gecachte/
+ * geteilte Objekte zurück, die nie mutiert werden dürfen). Nie fatal.
+ */
+function withActiveSolutionTitle(id, layout) {
+  if (id !== 'home' || !layout || !Array.isArray(layout.root && layout.root.children)) {
+    return layout;
+  }
+  try {
+    const active = solutionsConfig.getActiveSolutionId();
+    const manifest = solutionsConfig.readManifest(active);
+    const displayName = manifest && manifest.display_name;
+    // Default-Lösung ohne Display-Name → statischen Kachel-Titel behalten.
+    if (active === solutionsConfig.DEFAULT_ID && !displayName) return layout;
+    const name = displayName || active;
+    const cloned = JSON.parse(JSON.stringify(layout));
+    const card = cloned.root.children.find((c) => c && c.id === 'project_summary');
+    if (!card || !card.props) return layout;
+    card.props.title = name;
+    return cloned;
+  } catch {
+    return layout;
+  }
+}
+
 async function getDashboard(req, res, next) {
   try {
     const { id } = req.params;
@@ -74,7 +104,7 @@ async function getDashboard(req, res, next) {
     const { manifest, layout } = await dashboardI18nService.resolveBundleForLanguage(bundle, lang);
     res.json({
       success: true,
-      data: { manifest, layout },
+      data: { manifest, layout: withActiveSolutionTitle(id, layout) },
       meta: { lang },
     });
   } catch (err) {
@@ -90,7 +120,7 @@ async function getDashboardData(req, res, next) {
     // i18n language is filtered out of the user-facing param list but kept as
     // `_lang` so builtin resolvers (e.g. localized doc categories) can use it.
     params._lang = pickLang(req.query);
-    const { datasets, catalogEmpty } = await dashboardService.executeAllDatasets(bundle, params);
+    const { datasets, catalogEmpty } = await dashboardService.executeAllDatasets(req.solutionContext, bundle, params);
     res.json({
       success: true,
       data: { datasets, catalogEmpty },
@@ -107,7 +137,7 @@ async function getDashboardDataset(req, res, next) {
     const bundle = await dashboardService.getBundle(id);
     const params = extractDashboardParams(req.query);
     params._lang = pickLang(req.query);
-    const result = await dashboardService.executeSingleDataset(bundle, dataset, params);
+    const result = await dashboardService.executeSingleDataset(req.solutionContext, bundle, dataset, params);
     res.json({
       success: true,
       data: result.data,

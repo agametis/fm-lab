@@ -2,18 +2,35 @@ const { DuckDBInstance } = require('@duckdb/node-api');
 const fs = require('fs');
 const path = require('path');
 const environment = require('./environment');
+const solutions = require('./solutions');
 
 let instance   = null;
 let connection = null;
 let reloading  = false;
 let referenceAttached = false;
 
+/**
+ * Aktivieren einer Lösung ohne konvertierte DB: leere Platzhalter-DB anlegen,
+ * damit der READ_ONLY-Open nicht scheitert — der bestehende Empty-State-
+ * Mechanismus (ensureCoreStubs → db_empty=true) übernimmt danach.
+ */
+async function ensurePlaceholderDb(dbPath) {
+  if (fs.existsSync(dbPath)) return;
+  console.log(`Database not found — creating empty placeholder at: ${dbPath}`);
+  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+  const tmp = await DuckDBInstance.create(dbPath);
+  tmp.closeSync();
+}
+
 async function initialize() {
   if (connection) {
     return connection;
   }
 
-  const dbPath = path.resolve(__dirname, '../../', environment.duckdb.path);
+  // Pfadauflösung statt Festpfad — DUCKDB_PATH-Override → aktive Lösung
+  // (rest-api/db/solutions/<id>/) → Legacy-Fallback. Zentral in solutions.js.
+  const dbPath = solutions.resolveDbPath();
+  await ensurePlaceholderDb(dbPath);
   console.log(`Connecting to DuckDB at: ${dbPath}`);
 
   instance = await DuckDBInstance.create(dbPath, {
@@ -128,6 +145,7 @@ async function ensureCoreStubs() {
     const names = Object.keys(CORE_STUB_DDL);
     const inList = names.map((n) => `'${n}'`).join(', ');
     const result = await executeQuery(
+      solutions.serverDefaultContext(),
       `SELECT table_name FROM information_schema.tables
         WHERE table_name IN (${inList})`
     );
@@ -173,9 +191,9 @@ async function reload() {
     await close();
     await initialize();
 
-    const result = await executeQuery('SELECT COUNT(*) AS c FROM duckdb_tables()');
+    const result = await executeQuery(solutions.serverDefaultContext(), 'SELECT COUNT(*) AS c FROM duckdb_tables()');
     const tableCount = result.rows[0]?.c;
-    const dbPath = path.resolve(__dirname, '../../', environment.duckdb.path);
+    const dbPath = solutions.resolveDbPath();
 
     return {
       status: 'reloaded',
@@ -187,14 +205,59 @@ async function reload() {
   }
 }
 
-function getConnection() {
+// ── Request-Kontext-Kontrakt ────────────────────────────────────────────────
+// Phase 1.5: ctx wird funktional IGNORIERT (Singleton bleibt) — aber jede
+// Aufrufstelle deklariert ihn, damit Ausbaustufe M nur noch das Innere dieses
+// Moduls tauscht (Singleton → LRU-Pool, Schlüssel ctx.solution). Zwei Guards:
+//   1. Legacy-Form (sql-first / argloses getConnection) → einmalige WARN je
+//      Aufrufstelle, dann Weiterlauf mit Server-Default.
+//   2. Fremder Kontext (ctx.solution ≠ Server-Default) → WARN je Lösung —
+//      früher Drift-Detektor statt stiller Falschauflösung.
+const warnedLegacySites = new Set();
+const warnedForeignSolutions = new Set();
+
+function callerSite() {
+  const stack = String(new Error().stack || '').split('\n');
+  const line = stack.find((l) => l.includes('/src/') && !l.includes('config/database.js'));
+  return line ? line.trim() : 'unknown';
+}
+
+function warnLegacyOnce(fn) {
+  const site = callerSite();
+  if (warnedLegacySites.has(site)) return;
+  warnedLegacySites.add(site);
+  console.warn(`[db] DEPRECATED contextless ${fn}() call — pass the request context (req.solutionContext / solutions.serverDefaultContext()). At: ${site}`);
+}
+
+function guardContext(ctx, fn) {
+  if (!ctx || typeof ctx.solution !== 'string') {
+    warnLegacyOnce(fn);
+    return solutions.serverDefaultContext();
+  }
+  const active = solutions.getActiveSolutionId();
+  if (ctx.solution !== active && !warnedForeignSolutions.has(ctx.solution)) {
+    warnedForeignSolutions.add(ctx.solution);
+    console.warn(`[db] context targets solution '${ctx.solution}' but this singleton serves '${active}' — per-solution routing needs the stage-M pool`);
+  }
+  return ctx;
+}
+
+function getConnection(ctx) {
+  guardContext(ctx, 'getConnection');
   if (!connection) {
     throw new Error('Database not initialized. Call initialize() first.');
   }
   return connection;
 }
 
-async function executeQuery(sql, params = []) {
+async function executeQuery(ctx, sql, params = []) {
+  // Legacy-Form executeQuery(sql, params) tolerieren (Deprecation-WARN).
+  if (typeof ctx === 'string') {
+    params = Array.isArray(sql) ? sql : [];
+    sql = ctx;
+    ctx = null;
+  }
+  guardContext(ctx, 'executeQuery');
   if (!connection) {
     await initialize();
   }
@@ -260,7 +323,7 @@ async function getDatabaseStats() {
 
   try {
     const fs = require('fs');
-    const dbPath = path.resolve(__dirname, '../../', environment.duckdb.path);
+    const dbPath = solutions.resolveDbPath();
 
     if (fs.existsSync(dbPath)) {
       const fileStats = fs.statSync(dbPath);
@@ -269,14 +332,14 @@ async function getDatabaseStats() {
       stats.size_mb = 0;
     }
 
-    const tableResult = await executeQuery(`
+    const tableResult = await executeQuery(solutions.serverDefaultContext(), `
       SELECT COUNT(*) as table_count
       FROM duckdb_tables()
     `);
     const tableCount = tableResult.rows[0]?.table_count || 0;
     stats.table_count = typeof tableCount === 'bigint' ? Number(tableCount) : tableCount;
 
-    stats.database_path = path.resolve(__dirname, '../../', environment.duckdb.path);
+    stats.database_path = solutions.resolveDbPath();
     stats.connected = !!connection;
     stats.max_memory = environment.duckdb.maxMemory;
     stats.threads = environment.duckdb.threads;
@@ -300,6 +363,7 @@ async function probeMemory() {
   if (!connection) return { error: 'no-connection' };
   try {
     const { rows } = await executeQuery(
+      solutions.serverDefaultContext(),
       `SELECT tag, memory_usage_bytes AS bytes
          FROM duckdb_memory()
         WHERE memory_usage_bytes > 0

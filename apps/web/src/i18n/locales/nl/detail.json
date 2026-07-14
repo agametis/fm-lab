@@ -253,6 +253,37 @@
     },
     "versions": {
       "fmSpec": "fm-spec"
+    },
+    "solutions": {
+      "heading": "Oplossingen",
+      "description": "Beheer de FileMaker-oplossingen van deze workspace. Elke oplossing heeft een eigen XML-invoer, een eigen database en een eigen status. Activeren schakelt de hele workbench om naar die oplossing.",
+      "colId": "ID",
+      "colName": "Oplossing",
+      "colSize": "Grootte",
+      "colFiles": "Bestanden",
+      "colLastImport": "Laatste import",
+      "colDuration": "Duur",
+      "activeBadge": "Actief",
+      "activate": "Activeren",
+      "activating": "Activeren…",
+      "deleteButton": "Verwijderen",
+      "deleteConfirm1": "Oplossing “{{name}}” verwijderen? Dit verwijdert de VOLLEDIGE bundel inclusief de XML-bronbestanden.",
+      "deleteConfirm2": "“{{id}}” echt definitief verwijderen? Overweeg eerst een export (tools/solution.sh export {{id}}). Dit kan niet ongedaan worden gemaakt.",
+      "newButton": "Nieuwe oplossing…",
+      "createIdPlaceholder": "ID (mapnaam, bijv. erp-live)",
+      "createNamePlaceholder": "Weergavenaam (optioneel)",
+      "createButton": "Aanmaken",
+      "createCancel": "Annuleren",
+      "renameTitle": "Oplossing hernoemen",
+      "importButton": "XML-import",
+      "importButtonTitle": "De XML-import voor deze oplossing openen (zonder deze te activeren)",
+      "importRunning": "Import bezig…",
+      "renameIdButton": "ID wijzigen…",
+      "renameIdTitle": "Bundel-ID (mapnaam) wijzigen — de UUID blijft behouden",
+      "renameIdPrompt": "Nieuwe ID voor “{{id}}”:\n\nLet op: dit wijzigt de mapnaam en paden — exportdoelen en links naar de oude ID werken niet meer. Bij het hernoemen van “default” wordt een lege “default” opnieuw aangemaakt.",
+      "menuLabel": "Acties",
+      "searchPlaceholder": "Oplossingen filteren…",
+      "noMatches": "Geen oplossing komt overeen met het filter."
     }
   },
   "objectHeader": {

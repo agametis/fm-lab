@@ -31,7 +31,7 @@ async function putCommunity(req, res, next) {
     if (!isAuthorized(req)) return unauthorized(res);
     assertAvailable();
     const { engine, community, user_name, user_notes } = req.body;
-    const result = await annotationsService.setCommunityAnnotation({
+    const result = await annotationsService.setCommunityAnnotation(req.solutionContext, {
       engine,
       community,
       userName: user_name ?? null,
@@ -50,7 +50,7 @@ async function putNodeVisibility(req, res, next) {
     if (!isAuthorized(req)) return unauthorized(res);
     assertAvailable();
     const { uuid, file, visible } = req.body;
-    const result = await annotationsService.setNodeVisibility({
+    const result = await annotationsService.setNodeVisibility(req.solutionContext, {
       uuid,
       file: file || null, // '' (kein File) ⇒ NULL-File (bare uuid)
       visible,
@@ -65,7 +65,7 @@ async function putNodeVisibility(req, res, next) {
 /** GET /api/annotations/hidden — Recovery-Liste der ausgeblendeten Knoten. */
 async function getHidden(req, res, next) {
   try {
-    const hidden = await annotationsService.listHidden();
+    const hidden = await annotationsService.listHidden(req.solutionContext);
     res.json(buildSuccess({ count: hidden.length, hidden }));
   } catch (error) {
     next(error);

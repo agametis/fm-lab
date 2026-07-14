@@ -66,8 +66,9 @@ After the analysis views, a **batch-only** Phase 7 (`run_phase7_clustering`) run
 `tools/graph-export/cluster.sh` over `ClusterEdges` and writes the module partition
 `ObjectClusters` + `CommunityNames` (**raw**: `Heuristic_Name` only, `Semantic_Name` NULL).
 Engine `auto` → **Leiden** if `python3`+`igraph` import, else the Node **Louvain** baseline;
-engine/resolution/seed come from `.fmlab/cluster.json` (the last `fm-graph-cluster` sweep
-winner). It runs inside the held `xml_convert.lock`, **before** the DB sync (so the copy gets
+engine/resolution/seed come from `solutions/<id>/state/cluster.json` (the last
+`fm-graph-cluster` sweep winner; pre-migration fallback `.fmlab/cluster.json`). It runs
+inside the held per-solution `xml_convert.lock`, **before** the DB sync (so the copy gets
 the fresh partition), and is **non-fatal** — a P7 error leaves the import successful and the
 old partition untouched.
 
@@ -91,19 +92,25 @@ resolution sweep + semantic naming.
 lower the peak DOM memory. P2–P6 are unaffected (table-only, batch-wide). The result is
 bit-identical to the unsplit run.
 
-## DB architecture (two files)
+## DB architecture (two files per solution)
 
-The database lives as two separate instances to avoid read/write conflicts between
-`convert-xml`, the REST API and Claude Code analyses:
+The database lives as two separate instances **per solution** to avoid read/write
+conflicts between `convert-xml`, the REST API and Claude Code analyses:
 
 | File | Purpose | Writers | Readers |
 |---|---|---|---|
-| `db/fm_catalog.duckdb` (**master**) | Single source of truth | `convert-xml` (exclusively) | Claude Code CLI (fm-summarize, fm-analyze, ad-hoc queries) |
-| `rest-api/db/fm_catalog.duckdb` (**copy**) | Read copy for the REST API server | Sync hook in `convert_fm_xml.sh` | REST API server (`READ_ONLY` mode) |
+| `solutions/<id>/db/fm_catalog.duckdb` (**master**) | Single source of truth | `convert-xml` (exclusively) | Claude Code CLI via the compat symlink `db/fm_catalog.duckdb` (fm-summarize, fm-analyze, ad-hoc queries) |
+| `rest-api/db/solutions/<id>/fm_catalog.duckdb` (**copy**) | Read copy for the REST API server | Sync hook in `convert_fm_xml.sh` | REST API server (`READ_ONLY` mode) |
+
+`db/fm_catalog.duckdb` is a symlink onto the **active** solution's master
+(pointer file `.fmlab/active_solution.json`; switch via `tools/solution.sh use <id>`).
+Readers use the symlink; writers always resolve the real bundle path.
 
 **Sync mechanism:** after each successful `convert-xml --batch` (or single-file import in
 production mode), the shell script copies the master DB atomically to
-`rest-api/db/fm_catalog.duckdb` and then calls `POST /api/admin/reload`. The server closes
+`rest-api/db/solutions/<id>/fm_catalog.duckdb` and then calls `POST /api/admin/reload`
+with `{"solution": "<id>"}` — the server reloads only when that solution is the active
+one (otherwise the fresh copy just waits for the next switch). The server closes
 its DuckDB connection and reopens it — no restart required. If the server is not running,
 that is not an error (the sync happens anyway; only the reload trigger is skipped).
 
@@ -126,6 +133,7 @@ duckdb db/fm_catalog.duckdb < sql/convert-xml/convert_xml_06_validate.sql  # P6
 ## Web frontend variant
 
 Sub-dashboard `xml_convert`: same Bash script, spawned via `POST /api/xml/convert` and
-streamed as SSE. The CLI and the web button share a lock file (`.fmlab/xml_convert.lock`)
-so they can't run in parallel — the second caller gets `409 Conflict` (web) or aborts
-with exit code 7 (CLI).
+streamed as SSE. The CLI and the web button share a **per-solution** lock file
+(`solutions/<id>/state/xml_convert.lock`) so the same solution can't be imported in
+parallel — the second caller gets `409 Conflict` (web) or aborts with exit code 7 (CLI).
+Different solutions may convert independently.

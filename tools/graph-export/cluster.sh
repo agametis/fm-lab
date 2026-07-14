@@ -27,9 +27,22 @@ set -u
 # ── Paths ───────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# Multi-solution: writers operate on the REAL bundle path, never through the
+# db/ compat symlink. FMLAB_SOLUTION overrides; default = active solution from
+# the pointer file; unmigrated workspaces fall back to the flat db/ path.
+SOLUTION="${FMLAB_SOLUTION:-}"
+if [ -z "$SOLUTION" ] && [ -f "$PROJECT_ROOT/.fmlab/active_solution.json" ]; then
+  SOLUTION=$(sed -n 's/.*"active"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$PROJECT_ROOT/.fmlab/active_solution.json" | head -n1)
+fi
+[ -z "$SOLUTION" ] && SOLUTION="default"
+if [ -f "$PROJECT_ROOT/solutions/$SOLUTION/db/fm_catalog.duckdb" ]; then
+  _DEFAULT_DB="$PROJECT_ROOT/solutions/$SOLUTION/db/fm_catalog.duckdb"
+else
+  _DEFAULT_DB="$PROJECT_ROOT/db/fm_catalog.duckdb"
+fi
 # DB_FILE override (FMLAB_CLUSTER_DB) — default master; lets tests run against a
 # throwaway copy without touching the production DB. Sync still targets rest-api.
-DB_FILE="${FMLAB_CLUSTER_DB:-$PROJECT_ROOT/db/fm_catalog.duckdb}"
+DB_FILE="${FMLAB_CLUSTER_DB:-$_DEFAULT_DB}"
 EXPORT_SQL="$SCRIPT_DIR/graph_export_logical.sql"
 LOAD_SQL="$SCRIPT_DIR/cluster_load.sql"
 CACHE_SAVE_SQL="$SCRIPT_DIR/cache_save.sql"
@@ -207,7 +220,9 @@ RUN_COMMUNITIES=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
 RUN_NAMED=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
   "SELECT COUNT(*) FILTER (WHERE Semantic_Name IS NOT NULL) FROM CommunityNames;" 2>/dev/null || echo "")
 RUN_FINISHED=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-RUN_DIR="$PROJECT_ROOT/.fmlab"
+# Per-solution state (bundle); unmigrated workspaces fall back to flat .fmlab/.
+RUN_DIR="$PROJECT_ROOT/solutions/$SOLUTION/state"
+[ -d "$RUN_DIR" ] || RUN_DIR="$PROJECT_ROOT/.fmlab"
 RUN_JSON="$RUN_DIR/cluster_run.json"
 # Numerisches JSON-Feld: leer → null, sonst Roh-Zahl (kein Quoting).
 jnum() { if [ -z "$1" ]; then printf 'null'; else printf '%s' "$1"; fi; }
@@ -225,14 +240,14 @@ mkdir -p "$RUN_DIR" 2>/dev/null
   printf '  "finished_at": "%s"\n'    "$RUN_FINISHED"
   printf '}\n'
 } > "$RUN_JSON" 2>/dev/null \
-  && echo "  run-summary → .fmlab/cluster_run.json (modularity=$RUN_MOD nodes=$RUN_NODES)" \
+  && echo "  run-summary → $RUN_JSON (modularity=$RUN_MOD nodes=$RUN_NODES)" \
   || echo "  WARN: could not write cluster_run.json" >&2
 
 # ── 5) Sync master → rest-api copy + reload (optional) ──────────────────────
 # Sync logic lives in sync_db.sh (reused by the fm-graph-cluster skill); the
 # NO_SYNC gate stays here so cluster.sh's own behaviour is unchanged.
 if [ "${FMLAB_CLUSTER_NO_SYNC:-0}" != "1" ]; then
-  bash "$SCRIPT_DIR/sync_db.sh" "$DB_FILE" || echo "  WARN: sync step failed" >&2
+  FMLAB_SOLUTION="$SOLUTION" bash "$SCRIPT_DIR/sync_db.sh" "$DB_FILE" || echo "  WARN: sync step failed" >&2
 fi
 
 echo "done."

@@ -24,7 +24,7 @@
   },
   "theme": {
     "switchToLight": "Schakelen naar lichte modus",
-    "switchToDark":  "Schakelen naar donkere modus"
+    "switchToDark": "Schakelen naar donkere modus"
   },
   "actions": {
     "openInFileMaker": "Openen in FileMaker",
@@ -70,5 +70,10 @@
     "loading": "Dashboard wordt geladen…",
     "loadError": "Laden mislukt: {{message}}",
     "noData": "Geen gegevens beschikbaar."
+  },
+  "solutionPicker": {
+    "label": "Oplossing",
+    "ariaLabel": "Actieve oplossing kiezen",
+    "switchError": "Wisselen van oplossing mislukt: {{message}}"
   }
 }

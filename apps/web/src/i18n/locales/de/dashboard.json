@@ -102,7 +102,11 @@
     "phaseHomes": "Verknüpfen",
     "phaseValidate": "Prüfen",
     "phaseCluster": "Communities",
-    "chunkCounter": "{{done}} von {{total}}"
+    "chunkCounter": "{{done}} von {{total}}",
+    "abortOomTitle": "Nicht genügend Arbeitsspeicher",
+    "abortOomBody": "Diese Lösung ist zu groß für den verfügbaren Speicher dieses Systems. Führe den Import auf einem System mit mehr RAM (8 GB oder mehr) aus oder starte ihn mit reduziertem Speicherprofil erneut.",
+    "abortIncompleteTitle": "Build unvollständig",
+    "abortIncompleteBody": "Die Referenzauflösung wurde nicht abgeschlossen, daher konnte der Objektkatalog nicht gebaut werden. Details im Lauf-Protokoll."
   },
   "semanticNames": {
     "structureLabel": "Struktur",

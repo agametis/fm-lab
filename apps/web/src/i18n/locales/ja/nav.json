@@ -24,6 +24,13 @@
     "settings": "設定",
     "fmSpec": "fm-spec"
   },
+  "leitDescription": {
+    "dashboards": "利用可能なすべてのダッシュボードの一覧。",
+    "customQueries": "再利用可能な SQL テンプレート — タイルをクリックすると分析が開きます。",
+    "docs": "このプロジェクトにインストールされているドキュメントソース。",
+    "xmlImport": "xml/ ディレクトリのすべてのファイルを DuckDB にインポートします。",
+    "xmlImportContextNote": "アクティブでないソリューションのインポートです — 表示される分析データはアクティブ化後に初めて変わります。"
+  },
   "errors": {
     "noDashboardId": "ダッシュボード ID が指定されていません。",
     "noQueryName": "クエリ名が指定されていません。"

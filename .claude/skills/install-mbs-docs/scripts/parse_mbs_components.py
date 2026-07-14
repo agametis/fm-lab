@@ -4,7 +4,7 @@ Parsing-Script für MBS FileMaker Plugin Dokumentation
 Extrahiert nur die Ausnahmen (Funktionen wo Prefix ≠ Component)
 und erstellt eine vereinfachte CSV mit 2 Spalten: Funktionsname, Component
 
-Ausgabe: data/mbs_component_exceptions.csv
+Ausgabe: reference/mbs_component_exceptions.csv
 
 Usage:
   parse_mbs_components.py [PROJECT_ROOT]
@@ -171,7 +171,7 @@ if __name__ == '__main__':
 
     # Definiere Pfade relativ zum PROJECT_ROOT
     docs_path = project_root / 'docs' / 'mbs' / 'Documents'
-    output_file = project_root / 'data' / 'mbs_component_exceptions.csv'
+    output_file = project_root / 'reference' / 'mbs_component_exceptions.csv'
 
     print(f"MBS Component Exceptions Parser")
     print(f"=" * 50)

@@ -253,6 +253,37 @@
     },
     "versions": {
       "fmSpec": "fm-spec"
+    },
+    "solutions": {
+      "heading": "Lösningar",
+      "description": "Hantera FileMaker-lösningarna i denna arbetsyta. Varje lösning har sin egen XML-inkorg, sin egen databas och sitt eget tillstånd. Aktivering växlar hela arbetsbänken till den lösningen.",
+      "colId": "ID",
+      "colName": "Lösning",
+      "colSize": "Storlek",
+      "colFiles": "Filer",
+      "colLastImport": "Senaste import",
+      "colDuration": "Varaktighet",
+      "activeBadge": "Aktiv",
+      "activate": "Aktivera",
+      "activating": "Aktiverar…",
+      "deleteButton": "Ta bort",
+      "deleteConfirm1": "Ta bort lösningen ”{{name}}”? Detta tar bort HELA paketet inklusive XML-källfilerna.",
+      "deleteConfirm2": "Ta bort ”{{id}}” permanent? Överväg att exportera först (tools/solution.sh export {{id}}). Detta kan inte ångras.",
+      "newButton": "Ny lösning…",
+      "createIdPlaceholder": "ID (mappnamn, t.ex. erp-live)",
+      "createNamePlaceholder": "Visningsnamn (valfritt)",
+      "createButton": "Skapa",
+      "createCancel": "Avbryt",
+      "renameTitle": "Byt namn på lösningen",
+      "importButton": "XML-import",
+      "importButtonTitle": "Öppna XML-importen för denna lösning (utan att aktivera den)",
+      "importRunning": "Import pågår…",
+      "renameIdButton": "Ändra ID…",
+      "renameIdTitle": "Ändra paketets ID (mappnamn) — UUID:t behålls",
+      "renameIdPrompt": "Nytt ID för ”{{id}}”:\n\nObs: detta ändrar mappnamnet och sökvägarna — exportmål och länkar till det gamla ID:t slutar fungera. Om ”default” byter namn skapas ett tomt ”default” på nytt.",
+      "menuLabel": "Åtgärder",
+      "searchPlaceholder": "Filtrera lösningar…",
+      "noMatches": "Ingen lösning matchar filtret."
     }
   },
   "objectHeader": {

@@ -1,5 +1,6 @@
 import { API_BASE } from '../../config/apiBase';
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { PrimitiveProps } from '../types';
 import type { XmlConvertEventDetail, XmlConvertStatusDetail } from './XmlConvertControl';
@@ -92,6 +93,16 @@ function eventToLine(evt: Record<string, unknown>): LogLine | null {
           : 'Reload erfolgreich.',
         level: evt.ok === false ? 'error' : 'info',
       };
+    case 'aborted': {
+      const reason = String(evt.reason ?? '');
+      if (reason === 'oom') {
+        return { text: '⚠ Abgebrochen — nicht genügend Arbeitsspeicher (Lösung zu groß für dieses Environment).', level: 'error' };
+      }
+      if (reason === 'incomplete') {
+        return { text: '⚠ Abgebrochen — Build unvollständig (Referenzauflösung fehlgeschlagen).', level: 'error' };
+      }
+      return { text: '── Abgebrochen ──', level: 'warn' };
+    }
     case 'done':
       return {
         text: evt.ok === false
@@ -119,6 +130,11 @@ export function XmlConvertLog({}: PrimitiveProps) {
   // Block 2 als Disclosure: erzwungen offen während eines Laufs, sonst
   // nach User-Toggle. Nach Lauf-Ende/Wiedereintritt default zugeklappt.
   const [userToggled, setUserToggled] = useState(false);
+  // Kontext-Lösung der Import-Seite (?solution_id): das Protokoll gehört zur
+  // Kontext-Lösung, nicht zwingend zur aktiven.
+  const [searchParams] = useSearchParams();
+  const contextSolution = searchParams.get('solution_id');
+  const solutionQuery = contextSolution ? `?solution=${encodeURIComponent(contextSolution)}` : '';
 
   // Initial-Load: persistierter Run-Record.
   useEffect(() => {
@@ -126,7 +142,7 @@ export function XmlConvertLog({}: PrimitiveProps) {
     const apiBase = (API_BASE).replace(/\/+$/, '');
     (async () => {
       try {
-        const res = await fetch(`${apiBase}/api/xml/last-run/log`);
+        const res = await fetch(`${apiBase}/api/xml/last-run/log${solutionQuery}`);
         if (!res.ok) return;
         const json = await res.json();
         if (cancelled) return;
@@ -149,7 +165,7 @@ export function XmlConvertLog({}: PrimitiveProps) {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [solutionQuery]);
 
   // Live-Append: lauscht auf fmlab:xml-convert-event vom Control.
   useEffect(() => {

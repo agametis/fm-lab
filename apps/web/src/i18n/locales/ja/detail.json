@@ -253,6 +253,37 @@
     },
     "versions": {
       "fmSpec": "fm-spec"
+    },
+    "solutions": {
+      "heading": "ソリューション",
+      "description": "このワークスペースの FileMaker ソリューションを管理します。各ソリューションは独自の XML 受信フォルダー、データベース、状態を持ちます。アクティブにすると、ワークベンチ全体がそのソリューションに切り替わります。",
+      "colId": "ID",
+      "colName": "ソリューション",
+      "colSize": "サイズ",
+      "colFiles": "ファイル数",
+      "colLastImport": "最終インポート",
+      "colDuration": "所要時間",
+      "activeBadge": "アクティブ",
+      "activate": "アクティブにする",
+      "activating": "切り替え中…",
+      "deleteButton": "削除",
+      "deleteConfirm1": "ソリューション「{{name}}」を削除しますか？ XML ソースファイルを含むバンドル全体が削除されます。",
+      "deleteConfirm2": "「{{id}}」を完全に削除しますか？ 事前のエクスポートをご検討ください (tools/solution.sh export {{id}})。この操作は元に戻せません。",
+      "newButton": "新しいソリューション…",
+      "createIdPlaceholder": "ID（フォルダー名、例: erp-live）",
+      "createNamePlaceholder": "表示名（省略可）",
+      "createButton": "作成",
+      "createCancel": "キャンセル",
+      "renameTitle": "ソリューション名を変更",
+      "importButton": "XML インポート",
+      "importButtonTitle": "このソリューションの XML インポートを開きます（アクティブにはしません）",
+      "importRunning": "インポート実行中…",
+      "renameIdButton": "ID を変更…",
+      "renameIdTitle": "バンドル ID（フォルダー名）を変更します — UUID は保持されます",
+      "renameIdPrompt": "「{{id}}」の新しい ID:\n\n注意: フォルダー名とパスが変わるため、古い ID を指すエクスポート先やリンクは無効になります。「default」の名前を変更すると、空の「default」が新しく作成されます。",
+      "menuLabel": "アクション",
+      "searchPlaceholder": "ソリューションを絞り込み…",
+      "noMatches": "フィルターに一致するソリューションがありません。"
     }
   },
   "objectHeader": {

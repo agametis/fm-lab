@@ -160,10 +160,10 @@ async function getDocsetInfo(id, lang = 'en') {
   };
 }
 
-async function listDocsetCategories(id, lang = 'en') {
+async function listDocsetCategories(ctx, id, lang = 'en') {
   const adapter = resolveAdapter(id);
   if (!adapter) return [];
-  const cats = await adapter.listCategories({ lang });
+  const cats = await adapter.listCategories(ctx, { lang });
   return cats.map(c => {
     const rowAct = buildCategoryAction(id, c);
     const badgeAct = buildCategoryBadgeAction(id, c);
@@ -179,11 +179,11 @@ async function listDocsetCategories(id, lang = 'en') {
   });
 }
 
-async function getDocsetCategoryInfo(id, categoryId, lang = 'en') {
+async function getDocsetCategoryInfo(ctx, id, categoryId, lang = 'en') {
   const adapter = resolveAdapter(id);
   if (!adapter) return null;
   // Adapter haben keinen dedizierten getCategory — wir filtern aus listCategories.
-  const cats = await adapter.listCategories({ lang });
+  const cats = await adapter.listCategories(ctx, { lang });
   const cat = cats.find(c => c.id === categoryId);
   if (!cat) return null;
 
@@ -213,10 +213,10 @@ async function getDocsetCategoryInfo(id, categoryId, lang = 'en') {
   };
 }
 
-async function listDocsetFunctions(id, categoryId, lang = 'en') {
+async function listDocsetFunctions(ctx, id, categoryId, lang = 'en') {
   const adapter = resolveAdapter(id);
   if (!adapter) return [];
-  const fns = await adapter.listFunctions({ categoryId, lang });
+  const fns = await adapter.listFunctions(ctx, { categoryId, lang });
   if (!fns.length) return [];
 
   // Pseudo-Object-UUIDs (PluginFunction / BuiltinFunction / ScriptStepType)
@@ -225,7 +225,7 @@ async function listDocsetFunctions(id, categoryId, lang = 'en') {
   // mappen wir über die sprach-agnostischen Name-Lookup-Tabellen der
   // Reference-DB (eine function_id kann mehrere lokalisierte Object_Names im
   // Katalog haben — wir picken einen pro id deterministisch via MIN).
-  const uuidMap = await loadFunctionUuidMap(id, fns);
+  const uuidMap = await loadFunctionUuidMap(ctx, id, fns);
 
   return fns.map(fn => {
     const uuid = uuidMap.get(fn.id) || null;
@@ -255,7 +255,7 @@ async function listDocsetFunctions(id, categoryId, lang = 'en') {
  * keys mirror the adapter's id format (PluginFunction-Subname for MBS,
  * `fn:<n>` / `ss:<n>` für Claris).
  */
-async function loadFunctionUuidMap(setId, fns) {
+async function loadFunctionUuidMap(ctx, setId, fns) {
   const map = new Map();
   if (!fns.length) return map;
 
@@ -275,7 +275,7 @@ async function loadFunctionUuidMap(setId, fns) {
         WHERE Object_Type = 'PluginFunction'
           AND ${subExpr} IN (${namesSql})
       `;
-      const result = await db.executeQuery(sql);
+      const result = await db.executeQuery(ctx, sql);
       for (const row of result.rows) map.set(row.subname, row.Object_UUID);
     } catch (err) {
       console.warn(`[docs-source:mbs] uuid lookup failed: ${err.message}`);
@@ -303,7 +303,7 @@ async function loadFunctionUuidMap(setId, fns) {
             AND lk.function_id IN (${fnIds.join(',')})
           GROUP BY lk.function_id
         `;
-        const r = await db.executeQuery(sql);
+        const r = await db.executeQuery(ctx, sql);
         for (const row of r.rows) map.set(`fn:${row.num_id}`, row.uuid);
       } catch (err) {
         console.warn(`[docs-source:claris-help] fn uuid lookup failed: ${err.message}`);
@@ -320,7 +320,7 @@ async function loadFunctionUuidMap(setId, fns) {
             AND lk.step_id IN (${ssIds.join(',')})
           GROUP BY lk.step_id
         `;
-        const r = await db.executeQuery(sql);
+        const r = await db.executeQuery(ctx, sql);
         for (const row of r.rows) map.set(`ss:${row.num_id}`, row.uuid);
       } catch (err) {
         console.warn(`[docs-source:claris-help] ss uuid lookup failed: ${err.message}`);
@@ -365,16 +365,16 @@ function buildFunctionBadgeAction(setId, fn, uuid) {
   };
 }
 
-async function searchDocset(id, q, lang = 'en') {
+async function searchDocset(ctx, id, q, lang = 'en') {
   const adapter = resolveAdapter(id);
   if (!adapter) return { categories: [], functions: [] };
-  return adapter.search({ q, lang });
+  return adapter.search(ctx, { q, lang });
 }
 
-async function getDocsetEntry(id, categoryId, functionId, lang = 'en') {
+async function getDocsetEntry(ctx, id, categoryId, functionId, lang = 'en') {
   const adapter = resolveAdapter(id);
   if (!adapter) return null;
-  const raw = await adapter.getEntry({ categoryId, functionId, lang });
+  const raw = await adapter.getEntry(ctx, { categoryId, functionId, lang });
   if (!raw) return null;
 
   // pagePath = content-root-relative Pfad ohne .md-Endung. Für markdown-fs
@@ -394,7 +394,7 @@ async function getDocsetEntry(id, categoryId, functionId, lang = 'en') {
   // Request brauchen muss. Bei markdown-fs ist die Category leer (die Datei
   // selbst IST die Page).
   const { catalog } = ctxOf(id);
-  const breadcrumb = await buildBreadcrumb({
+  const breadcrumb = await buildBreadcrumb(ctx, {
     catalog,
     setId: id,
     categoryId,
@@ -411,7 +411,7 @@ async function getDocsetEntry(id, categoryId, functionId, lang = 'en') {
  * Erzeugt das Breadcrumb-Array für eine Doc-Entry-View. Jedes Element hat
  * `{ label, href, kind }`; das letzte Element (`kind: 'current'`) hat keinen href.
  */
-async function buildBreadcrumb({ catalog, setId, categoryId, entryId, entryTitle, lang, adapter }) {
+async function buildBreadcrumb(ctx, { catalog, setId, categoryId, entryId, entryTitle, lang, adapter }) {
   const crumbs = [
     { kind: 'root', label: 'Docs', href: '/docs' },
   ];
@@ -431,7 +431,7 @@ async function buildBreadcrumb({ catalog, setId, categoryId, entryId, entryTitle
   if (categoryId && categoryId !== entryId && !categoryId.startsWith('_')) {
     let catName = categoryId;
     try {
-      const cats = await adapter.listCategories({ lang });
+      const cats = await adapter.listCategories(ctx, { lang });
       const found = cats.find(c => c.id === categoryId);
       if (found) catName = found.name;
     } catch { /* fall back to id */ }
@@ -453,10 +453,10 @@ async function buildBreadcrumb({ catalog, setId, categoryId, entryId, entryTitle
   return crumbs;
 }
 
-async function validateDocset(id) {
+async function validateDocset(ctx, id) {
   const adapter = resolveAdapter(id);
   if (!adapter) return { ok: false, errors: ['No adapter configured for this doc-set.'] };
-  return adapter.validate();
+  return adapter.validate(ctx);
 }
 
 module.exports = {

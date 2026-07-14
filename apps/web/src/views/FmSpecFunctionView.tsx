@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { SubNav } from '../components/SubNav';
 import { StatusBar } from '../components/StatusBar';
 import { buildBreadcrumb } from '../lib/navigation';
+import { useApiLang } from '../hooks/useApiLang';
 import { fetchFunctionDetail, resolveHelpHref, type FunctionDetail } from '../api/fmSpecApi';
 import './FmSpecView.css';
 
@@ -18,8 +19,8 @@ const FUNCTION_LANGS = new Set(['en', 'de', 'es', 'fr', 'it', 'nl', 'pt', 'sv', 
  */
 export function FmSpecFunctionView() {
   const { functionId } = useParams();
-  const { t, i18n } = useTranslation(['fmSpec', 'nav']);
-  const uiLang = i18n.language;
+  const { t } = useTranslation(['fmSpec', 'nav']);
+  const uiLang = useApiLang();
   const fnLang = FUNCTION_LANGS.has(uiLang) ? uiLang : 'en';
   const dash = t('fmSpec:dash');
 

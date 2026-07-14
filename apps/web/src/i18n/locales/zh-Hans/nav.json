@@ -24,6 +24,13 @@
     "settings": "设置",
     "fmSpec": "fm-spec"
   },
+  "leitDescription": {
+    "dashboards": "所有可用仪表板的概览。",
+    "customQueries": "可重用的 SQL 模板——点击卡片即可打开分析。",
+    "docs": "此项目中安装的文档来源。",
+    "xmlImport": "将 xml/ 目录中的所有文件导入 DuckDB。",
+    "xmlImportContextNote": "导入的是非活动解决方案——显示的分析数据只有在激活后才会变化。"
+  },
   "errors": {
     "noDashboardId": "未提供仪表板 ID。",
     "noQueryName": "未提供查询名称。"

@@ -207,6 +207,51 @@ start_api() {
   fi
 }
 
+# ─── Frontend filesystem preflight ───────────────────────────
+# Reproduces Vite's async index.html read (see tools/preflight-fs-check.mjs) so a broken
+# workspace mount is reported with a clear fix instead of Vite's cryptic EPERM overlay /
+# white page. Non-fatal: it only WARNS and lets startup continue — if the diagnosis is
+# wrong the user is never blocked, and if it is right the guidance sits right above the
+# failure. Runs unconditionally (even when Vite "already running"), because the classic
+# case is a server that came up but cannot serve index.html.
+preflight_fs() {
+  local target="$PROJECT_ROOT/apps/web/index.html"
+  [ -f "$target" ] || return 0   # nothing to probe (e.g. incomplete checkout) — let Vite handle it
+
+  local out rc
+  set +e
+  out=$("$NODE_BIN" "$PROJECT_ROOT/tools/preflight-fs-check.mjs" "$target" 2>&1)
+  rc=$?
+  set -e
+
+  case "$rc" in
+    0) ;;  # async read clean — nothing to report
+    3)
+      # sync read OK, async open EPERM → the macOS/VirtioFS async-open bug.
+      error "Filesystem preflight: Node cannot open apps/web/index.html asynchronously (EPERM)."
+      warn  "This is the known Docker Desktop / macOS VirtioFS bug — Vite would only show a"
+      warn  "white page / an EPERM overlay. A plain read works, but Vite's async open does not."
+      echo  "  Fix (either one):"
+      echo  "    1) Docker Desktop -> Settings -> General -> 'file sharing implementation':"
+      echo  "       switch VirtioFS -> gRPC FUSE -> Apply & Restart -> restart the dev container."
+      echo  "    2) VS Code -> command palette -> 'Dev Containers: Clone Repository in Container Volume...'"
+      echo  "       (moves the workspace into a named volume; bypasses VirtioFS entirely, and is faster on macOS)."
+      echo  "  Probe: $out"
+      ;;
+    2)
+      # even the synchronous read fails → real permission/ownership/missing-file problem.
+      error "Filesystem preflight: apps/web/index.html is not readable."
+      warn  "Likely an ownership/permission mismatch on the workspace mount (host UID ≠ container 'node')."
+      echo  "  Diagnose & fix:"
+      echo  "    ls -ln apps/web/index.html        # compare the owner UID against \`id\`"
+      echo  "    # from the HOST terminal, as root:"
+      echo  "    docker exec -u 0 <container> chown -R node:node /workspaces/fm-lab/apps/web"
+      echo  "  Probe: $out"
+      ;;
+    *) ;;  # node missing / unexpected — stay silent, don't block startup
+  esac
+}
+
 # ─── Start the frontend (idempotent) ─────────────────────────
 start_frontend() {
   header "Frontend (Port 5173)"
@@ -216,6 +261,9 @@ start_frontend() {
     error "Vite not found. Please run 'npm install' in the project root."
     exit 1
   fi
+
+  # Filesystem preflight — flag a VirtioFS/permission problem before Vite hits it.
+  preflight_fs
 
   # Check whether it's already active — and whether it really is the Vite dev server (not a
   # foreign service on 5173). Identity via /@vite/client (only Vite serves that, F-A6).

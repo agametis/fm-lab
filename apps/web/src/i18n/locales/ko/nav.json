@@ -24,6 +24,13 @@
     "settings": "설정",
     "fmSpec": "fm-spec"
   },
+  "leitDescription": {
+    "dashboards": "사용 가능한 모든 대시보드 개요.",
+    "customQueries": "재사용 가능한 SQL 템플릿 — 타일을 클릭하면 분석이 열립니다.",
+    "docs": "이 프로젝트에 설치된 문서 소스.",
+    "xmlImport": "xml/ 디렉터리의 모든 파일을 DuckDB로 가져옵니다.",
+    "xmlImportContextNote": "활성 상태가 아닌 솔루션을 가져옵니다 — 표시되는 분석 데이터는 활성화한 후에야 바뀝니다."
+  },
   "errors": {
     "noDashboardId": "대시보드 ID가 지정되지 않았습니다.",
     "noQueryName": "쿼리 이름이 지정되지 않았습니다."

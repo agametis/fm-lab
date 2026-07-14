@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Breadcrumbs } from './Breadcrumbs';
 import { ThemeToggle } from './ThemeToggle';
 import { LanguageSelector } from './LanguageSelector';
+import { useActiveSolutionName } from '../lib/activeSolutionName';
 import type { BreadcrumbItem } from '../types';
 
 interface SubNavProps {
@@ -27,6 +28,15 @@ interface SubNavProps {
 export function SubNav({ breadcrumbs, actions }: SubNavProps) {
   const navigate = useNavigate();
   const { t } = useTranslation(['nav']);
+  const solutionName = useActiveSolutionName();
+
+  // Der führende Home-Crumb (path '/') trägt statt des generischen „Start" den
+  // Anzeigenamen der aktiven Lösung — als Wurzel der Breadcrumb-Kette. Ohne
+  // distinkten Namen (Default-Lösung / API offline) bleibt das Home-Label stehen.
+  const crumbs =
+    solutionName && breadcrumbs.length > 0 && breadcrumbs[0].path === '/'
+      ? [{ ...breadcrumbs[0], label: solutionName }, ...breadcrumbs.slice(1)]
+      : breadcrumbs;
 
   return (
     <div className="sub-nav">
@@ -42,7 +52,7 @@ export function SubNav({ breadcrumbs, actions }: SubNavProps) {
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
       </button>
-      <Breadcrumbs items={breadcrumbs} />
+      <Breadcrumbs items={crumbs} />
       <div className="sub-nav__meta">
         {actions}
         <LanguageSelector />

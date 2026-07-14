@@ -38,7 +38,7 @@ function docsetDir({ installedEntry }) {
   return path.resolve(repoRoot(), installedEntry.directory);
 }
 
-async function listCategories({ lang = 'en' } = {}) {
+async function listCategories(ctx, { lang = 'en' } = {}) {
   // `name_en` ist der englische Kanon-Name der Category — wird für den
   // Pseudo-Token-Filter im Code-Reference-Drill-Down benötigt
   // (PseudoTokenView matcht WHERE category = ?, und die SQL-Aggregation
@@ -73,7 +73,7 @@ async function listCategories({ lang = 'en' } = {}) {
     SELECT id, name, name_en, slug, kind, function_count FROM sc
     ORDER BY kind, name
   `;
-  const result = await db.executeQuery(sql);
+  const result = await db.executeQuery(ctx, sql);
   return result.rows.map(r => ({
     id: r.id,
     name: r.name,
@@ -84,7 +84,7 @@ async function listCategories({ lang = 'en' } = {}) {
   }));
 }
 
-async function listFunctions({ categoryId, lang = 'en' } = {}) {
+async function listFunctions(ctx, { categoryId, lang = 'en' } = {}) {
   const [prefix, rawId] = String(categoryId || '').split(':');
   if (!rawId || !/^\d+$/.test(rawId)) return [];
   const numId = parseInt(rawId, 10);
@@ -103,7 +103,7 @@ async function listFunctions({ categoryId, lang = 'en' } = {}) {
       WHERE f.category_id = ${numId}
       ORDER BY display_name
     `;
-    const result = await db.executeQuery(sql);
+    const result = await db.executeQuery(ctx, sql);
     return result.rows.map(r => ({
       id: `fn:${r.id}`,
       name: r.display_name,
@@ -126,7 +126,7 @@ async function listFunctions({ categoryId, lang = 'en' } = {}) {
       WHERE s.category_id = ${numId}
       ORDER BY display_name
     `;
-    const result = await db.executeQuery(sql);
+    const result = await db.executeQuery(ctx, sql);
     return result.rows.map(r => ({
       id: `ss:${r.id}`,
       name: r.display_name,
@@ -147,18 +147,20 @@ async function listFunctions({ categoryId, lang = 'en' } = {}) {
  * scheme; the URL segment differs per language only via the lang path
  * component). Cached for an hour; explicit invalidation via clearSlugMapCache.
  */
-async function loadSlugMap() {
+async function loadSlugMap(ctx) {
   const cached = slugMapCache.get(SLUG_MAP_KEY);
   if (cached) return cached;
   const map = new Map();
   try {
     const fnRes = await db.executeQuery(
+      ctx,
       `SELECT url_slug, function_id, category_id FROM ref.functions`
     );
     for (const r of fnRes.rows) {
       if (r.url_slug) map.set(r.url_slug, { id: `fn:${r.function_id}`, categoryId: `fn:${r.category_id}`, kind: 'fn' });
     }
     const ssRes = await db.executeQuery(
+      ctx,
       `SELECT url_slug, step_id, category_id FROM ref.script_steps`
     );
     for (const r of ssRes.rows) {
@@ -221,7 +223,7 @@ function rewriteHelpLinks(html, lang, slugMap) {
   );
 }
 
-async function getEntry({ functionId, lang = 'en' } = {}) {
+async function getEntry(ctx, { functionId, lang = 'en' } = {}) {
   // functionId formats:
   //   fn:<n>     → function row
   //   ss:<n>     → script-step row
@@ -232,7 +234,7 @@ async function getEntry({ functionId, lang = 'en' } = {}) {
   const prefix = idStr.slice(0, colonIdx);
   const rest = idStr.slice(colonIdx + 1);
 
-  const slugMap = await loadSlugMap();
+  const slugMap = await loadSlugMap(ctx);
 
   // --- Concept pages (Claris topic / overview pages without a DB-side entry) ---
   if (prefix === 'topic') {
@@ -267,7 +269,7 @@ async function getEntry({ functionId, lang = 'en' } = {}) {
              ON fl.function_id = f.function_id AND fl.language = '${lang}'
       WHERE f.function_id = ${numId}
     `;
-    const result = await db.executeQuery(sql);
+    const result = await db.executeQuery(ctx, sql);
     row = result.rows[0] || null;
     if (row) extraMetadata = { canonical: row.canonical_name, signature: row.signature, description: row.description };
   } else if (prefix === 'ss') {
@@ -280,7 +282,7 @@ async function getEntry({ functionId, lang = 'en' } = {}) {
              ON sl.step_id = s.step_id AND sl.language = '${lang}'
       WHERE s.step_id = ${numId}
     `;
-    const result = await db.executeQuery(sql);
+    const result = await db.executeQuery(ctx, sql);
     row = result.rows[0] || null;
     if (row) extraMetadata = { canonical: row.canonical_name };
   } else {
@@ -311,7 +313,7 @@ async function getEntry({ functionId, lang = 'en' } = {}) {
   };
 }
 
-async function search({ q, lang = 'en' } = {}) {
+async function search(ctx, { q, lang = 'en' } = {}) {
   const term = String(q || '').trim();
   if (!term) return { categories: [], functions: [] };
   const like = `%${term.replace(/'/g, "''")}%`;
@@ -336,7 +338,7 @@ async function search({ q, lang = 'en' } = {}) {
     ORDER BY kind, name
     LIMIT 50
   `;
-  const catRes = await db.executeQuery(catSql);
+  const catRes = await db.executeQuery(ctx, catSql);
 
   const fnSql = `
     SELECT 'fn:' || f.function_id AS id,
@@ -359,7 +361,7 @@ async function search({ q, lang = 'en' } = {}) {
     ORDER BY name
     LIMIT 200
   `;
-  const fnRes = await db.executeQuery(fnSql);
+  const fnRes = await db.executeQuery(ctx, fnSql);
 
   return {
     categories: catRes.rows.map(r => ({ id: r.id, name: r.name, kind: r.kind })),
@@ -371,7 +373,7 @@ async function listLanguages({ installedEntry } = {}) {
   return Array.isArray(installedEntry?.languages) ? installedEntry.languages : ['en'];
 }
 
-async function validate({ catalogEntry, installedEntry } = {}) {
+async function validate(ctx, { catalogEntry, installedEntry } = {}) {
   const errors = [];
   const dir = docsetDir({ installedEntry });
   if (!dir) {
@@ -385,7 +387,7 @@ async function validate({ catalogEntry, installedEntry } = {}) {
   }
   // Tabellen-Existenz prüfen (ref-Schema sollte attached sein)
   try {
-    const probe = await db.executeQuery("SELECT COUNT(*) AS n FROM ref.functions LIMIT 1");
+    const probe = await db.executeQuery(ctx, "SELECT COUNT(*) AS n FROM ref.functions LIMIT 1");
     if (!probe?.rows?.length) errors.push('ref.functions table empty');
   } catch (err) {
     errors.push(`ref schema unreadable: ${err.message}`);

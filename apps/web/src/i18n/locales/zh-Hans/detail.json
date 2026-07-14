@@ -253,6 +253,37 @@
     },
     "versions": {
       "fmSpec": "fm-spec"
+    },
+    "solutions": {
+      "heading": "解决方案",
+      "description": "管理此工作区中的 FileMaker 解决方案。每个解决方案都有自己的 XML 收件目录、数据库和状态。激活后，整个工作台将切换到该解决方案。",
+      "colId": "ID",
+      "colName": "解决方案",
+      "colSize": "大小",
+      "colFiles": "文件数",
+      "colLastImport": "上次导入",
+      "colDuration": "耗时",
+      "activeBadge": "当前",
+      "activate": "激活",
+      "activating": "切换中…",
+      "deleteButton": "删除",
+      "deleteConfirm1": "删除解决方案“{{name}}”？这将删除整个包，包括 XML 源文件。",
+      "deleteConfirm2": "确定永久删除“{{id}}”？建议先导出（tools/solution.sh export {{id}}）。此操作无法撤销。",
+      "newButton": "新建解决方案…",
+      "createIdPlaceholder": "ID（文件夹名，如 erp-live）",
+      "createNamePlaceholder": "显示名称（可选）",
+      "createButton": "创建",
+      "createCancel": "取消",
+      "renameTitle": "重命名解决方案",
+      "importButton": "XML 导入",
+      "importButtonTitle": "打开此解决方案的 XML 导入（不激活该方案）",
+      "importRunning": "正在导入…",
+      "renameIdButton": "更改 ID…",
+      "renameIdTitle": "更改包 ID（文件夹名）— UUID 保持不变",
+      "renameIdPrompt": "为“{{id}}”输入新 ID：\n\n注意：这将更改文件夹名和路径——导出目标和指向旧 ID 的链接将失效。重命名“default”会重新创建一个空的“default”。",
+      "menuLabel": "操作",
+      "searchPlaceholder": "筛选解决方案…",
+      "noMatches": "没有解决方案匹配筛选条件。"
     }
   },
   "objectHeader": {

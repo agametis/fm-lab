@@ -24,7 +24,7 @@
   },
   "theme": {
     "switchToLight": "ライトモードに切り替え",
-    "switchToDark":  "ダークモードに切り替え"
+    "switchToDark": "ダークモードに切り替え"
   },
   "actions": {
     "openInFileMaker": "FileMaker で開く",
@@ -70,5 +70,10 @@
     "loading": "ダッシュボードを読み込み中…",
     "loadError": "読み込みに失敗しました: {{message}}",
     "noData": "データがありません。"
+  },
+  "solutionPicker": {
+    "label": "ソリューション",
+    "ariaLabel": "アクティブなソリューションを選択",
+    "switchError": "ソリューションの切り替えに失敗しました: {{message}}"
   }
 }

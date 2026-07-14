@@ -102,7 +102,11 @@
     "phaseHomes": "Link",
     "phaseValidate": "Validate",
     "phaseCluster": "Communities",
-    "chunkCounter": "{{done}} of {{total}}"
+    "chunkCounter": "{{done}} of {{total}}",
+    "abortOomTitle": "Not enough memory",
+    "abortOomBody": "This solution is too large for this machine's available memory. Run the import on a machine with more RAM (8 GB or more) or retry with a reduced memory profile.",
+    "abortIncompleteTitle": "Build incomplete",
+    "abortIncompleteBody": "The reference resolution did not complete, so the object catalog could not be built. Check the run log for details."
   },
   "semanticNames": {
     "structureLabel": "Structure",

@@ -381,7 +381,7 @@ async function resolveApiSet(bundle, setId) {
       || (await loadApiSetFile(path.join(bundle.dir, 'api-sets'), setId));
 }
 
-async function runBundleQuery(bundle, relPath, params) {
+async function runBundleQuery(ctx, bundle, relPath, params) {
   const sqlTemplate = await loadBundleSql(bundle, relPath);
   let sql = templateService.interpolateTemplate(sqlTemplate, params);
   // API-Filter-Set injizieren (nur Datasets mit Platzhalter; alle anderen Bundles
@@ -391,20 +391,20 @@ async function runBundleQuery(bundle, relPath, params) {
     const set = (await resolveApiSet(bundle, setId)) || (await resolveApiSet(bundle, 'generic'));
     sql = sql.split(API_SET_PLACEHOLDER).join(buildClassificationCase(set || {}));
   }
-  const result = await db.executeQuery(sql);
+  const result = await db.executeQuery(ctx, sql);
   return {
     data: convertBigInts(result.rows),
     meta: { source: `bundle:${relPath}`, ...result.meta },
   };
 }
 
-async function runCustomTemplate(name, params) {
-  const result = await templateService.executeTemplate(name, params, 'query');
+async function runCustomTemplate(ctx, name, params) {
+  const result = await templateService.executeTemplate(ctx, name, params, 'query');
   return { data: result.data, meta: { source: `custom:${name}`, ...result.meta } };
 }
 
-async function runReportTemplate(name, params) {
-  const result = await templateService.executeTemplate(name, params, 'report');
+async function runReportTemplate(ctx, name, params) {
+  const result = await templateService.executeTemplate(ctx, name, params, 'report');
   return { data: result.data, meta: { source: `report:${name}`, ...result.meta } };
 }
 
@@ -564,7 +564,7 @@ async function builtinListDashboards(params = {}) {
   return rows;
 }
 
-async function builtinFiles() {
+async function builtinFiles(ctx) {
   const sql = `
     SELECT
       File_Name,
@@ -575,7 +575,7 @@ async function builtinFiles() {
     FROM FilesCatalog
     ORDER BY File_Name
   `;
-  const result = await db.executeQuery(sql);
+  const result = await db.executeQuery(ctx, sql);
   return convertBigInts(result.rows);
 }
 
@@ -690,11 +690,11 @@ async function builtinDocsetInfo(params = {}) {
  * builtin:docset_categories — list of categories for a docset.
  * Params: id (required), lang (optional, default 'en').
  */
-async function builtinDocsetCategories(params = {}) {
+async function builtinDocsetCategories(ctx, params = {}) {
   const docsSource = require('./docs-source');
   const id = params.id;
   if (!id) throw createError('VALIDATION_ERROR', 'builtin:docset_categories requires param "id"');
-  return docsSource.listDocsetCategories(id, params._lang || params.lang || 'en');
+  return docsSource.listDocsetCategories(ctx, id, params._lang || params.lang || 'en');
 }
 
 /**
@@ -702,28 +702,28 @@ async function builtinDocsetCategories(params = {}) {
  * jede Kategorie mit `code_ref_count` (Anzahl Code-Referenzen in der FM-Solution).
  * Bei references: false liefert das Set null pro Eintrag (keine Pill).
  */
-async function builtinDocsetCategoriesWithCounts(params = {}) {
+async function builtinDocsetCategoriesWithCounts(ctx, params = {}) {
   const docsSource = require('./docs-source');
   const docsReferences = require('./docs-references');
   const id = params.id;
   if (!id) throw createError('VALIDATION_ERROR', 'builtin:docset_categories_with_counts requires param "id"');
   const lang = params._lang || params.lang || 'en';
-  const cats = await docsSource.listDocsetCategories(id, lang);
-  return docsReferences.annotateCategoriesWithCounts(id, cats);
+  const cats = await docsSource.listDocsetCategories(ctx, id, lang);
+  return docsReferences.annotateCategoriesWithCounts(ctx, id, cats);
 }
 
 /**
  * builtin:docset_category_info — single-row header for the category dashboard.
  * Params: docset (required), category (required), lang (optional).
  */
-async function builtinDocsetCategoryInfo(params = {}) {
+async function builtinDocsetCategoryInfo(ctx, params = {}) {
   const docsSource = require('./docs-source');
   const docset = params.docset;
   const category = params.category;
   if (!docset || !category) {
     throw createError('VALIDATION_ERROR', 'builtin:docset_category_info requires params "docset" and "category"');
   }
-  const info = await docsSource.getDocsetCategoryInfo(docset, category, params._lang || params.lang || 'en');
+  const info = await docsSource.getDocsetCategoryInfo(ctx, docset, category, params._lang || params.lang || 'en');
   if (!info) return [];
   return [{
     docset,
@@ -743,14 +743,14 @@ async function builtinDocsetCategoryInfo(params = {}) {
  * builtin:docset_functions — list of functions/script-steps in a category.
  * Params: docset (required), category (required), lang (optional).
  */
-async function builtinDocsetFunctions(params = {}) {
+async function builtinDocsetFunctions(ctx, params = {}) {
   const docsSource = require('./docs-source');
   const docset = params.docset;
   const category = params.category;
   if (!docset || !category) {
     throw createError('VALIDATION_ERROR', 'builtin:docset_functions requires params "docset" and "category"');
   }
-  return docsSource.listDocsetFunctions(docset, category, params._lang || params.lang || 'en');
+  return docsSource.listDocsetFunctions(ctx, docset, category, params._lang || params.lang || 'en');
 }
 
 /**
@@ -758,9 +758,22 @@ async function builtinDocsetFunctions(params = {}) {
  * Sub-Dashboard "xml_convert".
  * Liefert pro Datei: filename, size, mtime, status, emoji, imported_at.
  */
-async function builtinXmlDirectoryStatus() {
+/**
+ * Kontext-Lösung der xml_convert-Datasets: das Bundle reicht
+ * `solution_id` aus der Import-Seiten-URL durch. Ungültige/unbekannte IDs
+ * fallen still auf die aktive Lösung zurück (die Endpoints validieren hart,
+ * die Datasets degradieren weich).
+ */
+function contextSolutionParam(params = {}) {
+  const solutions = require('../config/solutions');
+  const id = params.solution_id;
+  if (typeof id === 'string' && solutions.isValidId(id) && solutions.solutionExists(id)) return id;
+  return undefined;
+}
+
+async function builtinXmlDirectoryStatus(ctx, params = {}) {
   const xmlConvert = require('./xml-convert');
-  const status = await xmlConvert.getStatus();
+  const status = await xmlConvert.getStatus(ctx, contextSolutionParam(params));
   return status.files;
 }
 
@@ -799,9 +812,9 @@ async function builtinFileSourceSize(params = {}) {
  * Karte Anzahl, „Ordner öffnen" (nativ) und den Host-Pfad-Fallback (Container)
  * aus einer Quelle. Vom 6-s-Soft-Refresh des Home-Dashboards gepollt.
  */
-async function builtinXmlDirectoryMeta() {
+async function builtinXmlDirectoryMeta(ctx, params = {}) {
   const xmlConvert = require('./xml-convert');
-  const status = await xmlConvert.getStatus();
+  const status = await xmlConvert.getStatus(ctx, contextSolutionParam(params));
   const files = status.files || [];
   const totalBytes = files.reduce((sum, f) => sum + (Number(f.size) || 0), 0);
   return [{
@@ -819,9 +832,9 @@ async function builtinXmlDirectoryMeta() {
  * events[]). Wird im Sub-Dashboard für die Statuszeile über dem Log genutzt.
  * Liefert eine Liste mit 0 oder 1 Eintrag.
  */
-async function builtinXmlLastRun() {
+async function builtinXmlLastRun(ctx, params = {}) {
   const xmlConvert = require('./xml-convert');
-  const data = await xmlConvert.getStatus();
+  const data = await xmlConvert.getStatus(ctx, contextSolutionParam(params));
   return data.last_run ? [data.last_run] : [];
 }
 
@@ -830,9 +843,9 @@ async function builtinXmlLastRun() {
  * für die „Graph-Communities"-Card. Eine Zeile (oder leer, wenn
  * keine Partition existiert → available:false). Vom 6-s-Soft-Refresh gepollt.
  */
-async function builtinXmlSemanticNames() {
+async function builtinXmlSemanticNames(ctx, params = {}) {
   const xmlConvert = require('./xml-convert');
-  const data = await xmlConvert.getStatus();
+  const data = await xmlConvert.getStatus(ctx, contextSolutionParam(params));
   return data.semantic_names ? [data.semantic_names] : [];
 }
 
@@ -844,9 +857,9 @@ async function builtinXmlSemanticNames() {
  * robusten `communityTablesPresent()`-Guard aus graph.service (kein SQL-Crash
  * auf einer ungeclusterten DB, kein Stub-Risiko).
  */
-async function builtinClusterCount() {
+async function builtinClusterCount(ctx) {
   const graphService = require('./graph.service');
-  const stats = await graphService.getCommunityStats();
+  const stats = await graphService.getCommunityStats(ctx);
   const count = stats.clusters_available ? stats.total_communities : null;
   return [{ count }];
 }
@@ -872,8 +885,13 @@ async function builtinClusterCount() {
  * NULL-sicher / Alt-DB-fest: fehlt die View (Alt-DB ohne Zensus), `[]`
  * zurückgeben statt zu crashen. HUGEINT → BIGINT casten (int128-Serialisierung).
  */
-async function builtinXmlImportIntegrity() {
+async function builtinXmlImportIntegrity(ctx, params = {}) {
+  // Kontext ≠ aktive Lösung: die P6-View lebt in der aktiven Copy — für eine
+  // nicht-aktive Lösung ehrlich leer liefern statt fremder Zahlen (Pool → M).
+  const target = contextSolutionParam(params);
+  if (target && target !== require('../config/solutions').getActiveSolutionId()) return [];
   const present = await db.executeQuery(
+    ctx,
     `SELECT COUNT(*) AS cnt FROM information_schema.tables
       WHERE table_name = 'v_check_absorbed_dups'`,
   );
@@ -881,6 +899,7 @@ async function builtinXmlImportIntegrity() {
   const cnt = typeof row.cnt === 'bigint' ? Number(row.cnt) : row.cnt;
   if (cnt < 1) return [];
   const result = await db.executeQuery(
+    ctx,
     `WITH scriptcentric AS (
        SELECT File_Name,
               'ScriptCatalog' AS Catalog,
@@ -917,8 +936,11 @@ async function builtinXmlImportIntegrity() {
  * NULL-sicher / Alt-DB-fest: fehlt die Tabelle (Alt-DB ohne die Erweiterung), `[]`
  * zurückgeben statt zu crashen — analog `builtin:xml_import_integrity`.
  */
-async function builtinXmlImportIntegrityDetails() {
+async function builtinXmlImportIntegrityDetails(ctx, params = {}) {
+  const target = contextSolutionParam(params);
+  if (target && target !== require('../config/solutions').getActiveSolutionId()) return [];
   const present = await db.executeQuery(
+    ctx,
     `SELECT COUNT(*) AS cnt FROM information_schema.tables
       WHERE table_name = 'DuplicateAbsorptionDetails'`,
   );
@@ -926,6 +948,7 @@ async function builtinXmlImportIntegrityDetails() {
   const cnt = typeof row.cnt === 'bigint' ? Number(row.cnt) : row.cnt;
   if (cnt < 1) return [];
   const result = await db.executeQuery(
+    ctx,
     `SELECT Catalog, File_Name, Object_UUID, Object_Name, Object_Type,
             Occurrence_Seq::BIGINT AS Occurrence_Seq
        FROM DuplicateAbsorptionDetails
@@ -938,7 +961,7 @@ async function builtinXmlImportIntegrityDetails() {
  * builtin:docset_functions_with_counts — wie docset_functions, aber annotiert
  * jede Funktion mit `code_ref_count`. Bei references: false → null.
  */
-async function builtinDocsetFunctionsWithCounts(params = {}) {
+async function builtinDocsetFunctionsWithCounts(ctx, params = {}) {
   const docsSource = require('./docs-source');
   const docsReferences = require('./docs-references');
   const docset = params.docset;
@@ -947,8 +970,8 @@ async function builtinDocsetFunctionsWithCounts(params = {}) {
     throw createError('VALIDATION_ERROR', 'builtin:docset_functions_with_counts requires params "docset" and "category"');
   }
   const lang = params._lang || params.lang || 'en';
-  const fns = await docsSource.listDocsetFunctions(docset, category, lang);
-  return docsReferences.annotateFunctionsWithCounts(docset, fns);
+  const fns = await docsSource.listDocsetFunctions(ctx, docset, category, lang);
+  return docsReferences.annotateFunctionsWithCounts(ctx, docset, fns);
 }
 
 // builtin:api_sets_list — verfügbare API-Filter-Sets (Install-Verzeichnis +
@@ -980,23 +1003,23 @@ async function builtinApiSetsList(params = {}) {
 }
 
 const BUILTIN_RESOLVERS = {
-  api_sets_list: builtinApiSetsList,
-  list_custom_queries: builtinListCustomQueries,
-  list_dashboards: builtinListDashboards,
-  list_docs: builtinListDocs,
-  docs_overview_installed: builtinDocsOverviewInstalled,
-  docs_overview_available: builtinDocsOverviewAvailable,
+  api_sets_list: (_ctx, params) => builtinApiSetsList(params),
+  list_custom_queries: (_ctx, params) => builtinListCustomQueries(params),
+  list_dashboards: (_ctx, params) => builtinListDashboards(params),
+  list_docs: (_ctx, params) => builtinListDocs(params),
+  docs_overview_installed: (_ctx, params) => builtinDocsOverviewInstalled(params),
+  docs_overview_available: (_ctx, params) => builtinDocsOverviewAvailable(params),
   files: builtinFiles,
-  query_meta: builtinQueryMeta,
-  docset_info: builtinDocsetInfo,
+  query_meta: (_ctx, params) => builtinQueryMeta(params),
+  docset_info: (_ctx, params) => builtinDocsetInfo(params),
   docset_categories: builtinDocsetCategories,
   docset_categories_with_counts: builtinDocsetCategoriesWithCounts,
   docset_category_info: builtinDocsetCategoryInfo,
   docset_functions: builtinDocsetFunctions,
   docset_functions_with_counts: builtinDocsetFunctionsWithCounts,
   xml_directory_status: builtinXmlDirectoryStatus,
-  xml_directory_listing: builtinXmlDirectoryListing,
-  file_source_size: builtinFileSourceSize,
+  xml_directory_listing: (_ctx, params) => builtinXmlDirectoryListing(params),
+  file_source_size: (_ctx, params) => builtinFileSourceSize(params),
   xml_directory_meta: builtinXmlDirectoryMeta,
   xml_last_run: builtinXmlLastRun,
   xml_semantic_names: builtinXmlSemanticNames,
@@ -1005,12 +1028,12 @@ const BUILTIN_RESOLVERS = {
   cluster_count: builtinClusterCount,
 };
 
-async function runBuiltin(key, params) {
+async function runBuiltin(ctx, key, params) {
   const resolver = BUILTIN_RESOLVERS[key];
   if (!resolver) {
     throw createError('VALIDATION_ERROR', `Unknown builtin dataset: ${key}`, { key });
   }
-  const data = await resolver(params);
+  const data = await resolver(ctx, params);
   return { data: convertBigInts(data), meta: { source: `builtin:${key}` } };
 }
 
@@ -1023,7 +1046,7 @@ async function runBuiltin(key, params) {
  * - manifest.datasets[].params definieren Defaults pro Dataset
  * - requestParams (dashboard-weite Params aus der HTTP-Query) überschreiben
  */
-async function executeDataset(bundle, datasetSpec, requestParams = {}) {
+async function executeDataset(ctx, bundle, datasetSpec, requestParams = {}) {
   const params = { ...(datasetSpec.params || {}), ...requestParams };
   // Token-Substitution in der Source-URI: erlaubt z.B. "custom:{{query}}" im Manifest,
   // damit das `_generic`-Bundle das eigentliche Template per Param wählt.
@@ -1037,13 +1060,13 @@ async function executeDataset(bundle, datasetSpec, requestParams = {}) {
 
   switch (scheme) {
     case 'bundle':
-      return runBundleQuery(bundle, ref, params);
+      return runBundleQuery(ctx, bundle, ref, params);
     case 'custom':
-      return runCustomTemplate(ref, params);
+      return runCustomTemplate(ctx, ref, params);
     case 'report':
-      return runReportTemplate(ref, params);
+      return runReportTemplate(ctx, ref, params);
     case 'builtin':
-      return runBuiltin(ref, params);
+      return runBuiltin(ctx, ref, params);
     default:
       throw createError('VALIDATION_ERROR', `Unknown dataset scheme: ${scheme}`);
   }
@@ -1065,9 +1088,9 @@ function isNoImportError(message) {
  * auf „nicht leer" zurück, damit wir nie einen echten Fehler hinter dem
  * Leerzustand verstecken.
  */
-async function isCatalogEmpty() {
+async function isCatalogEmpty(ctx) {
   try {
-    const r = await db.executeQuery('SELECT COUNT(*) AS n FROM FilesCatalog');
+    const r = await db.executeQuery(ctx, 'SELECT COUNT(*) AS n FROM FilesCatalog');
     return Number(r.rows?.[0]?.n) === 0;
   } catch {
     return false;
@@ -1083,13 +1106,13 @@ async function isCatalogEmpty() {
  * DashboardHost schaltet die ganze Seite auf die neutrale NoDataYet-Karte.
  * Echte Template-Bugs auf gefülltem Katalog bleiben laute Fehler.
  */
-async function executeAllDatasets(bundle, requestParams = {}) {
+async function executeAllDatasets(ctx, bundle, requestParams = {}) {
   const specs = bundle.manifest.datasets || [];
-  const catalogEmpty = await isCatalogEmpty();
+  const catalogEmpty = await isCatalogEmpty(ctx);
   const results = await Promise.all(
     specs.map(async spec => {
       try {
-        const { data, meta } = await executeDataset(bundle, spec, requestParams);
+        const { data, meta } = await executeDataset(ctx, bundle, spec, requestParams);
         return { id: spec.id, data, meta, error: null };
       } catch (err) {
         if (catalogEmpty && isNoImportError(err.message)) {
@@ -1116,7 +1139,7 @@ async function executeAllDatasets(bundle, requestParams = {}) {
 /**
  * Führt ein einzelnes Dataset aus (für Lazy-Reload).
  */
-async function executeSingleDataset(bundle, datasetId, requestParams = {}) {
+async function executeSingleDataset(ctx, bundle, datasetId, requestParams = {}) {
   const spec = (bundle.manifest.datasets || []).find(d => d.id === datasetId);
   if (!spec) {
     throw createError('TEMPLATE_NOT_FOUND', `Dataset '${datasetId}' not found in dashboard '${bundle.id}'`, {
@@ -1124,7 +1147,7 @@ async function executeSingleDataset(bundle, datasetId, requestParams = {}) {
       datasetId,
     });
   }
-  return executeDataset(bundle, spec, requestParams);
+  return executeDataset(ctx, bundle, spec, requestParams);
 }
 
 module.exports = {

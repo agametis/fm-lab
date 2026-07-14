@@ -80,7 +80,7 @@ function humanizeNested(slug) {
   return humanizeSlug(base);
 }
 
-async function listCategories({ catalogEntry, installedEntry } = {}) {
+async function listCategories(ctx, { catalogEntry, installedEntry } = {}) {
   const files = await listMarkdownFiles({ catalogEntry, installedEntry });
   return files.map(f => {
     const slug = slugifyTitle(f);  // strips .md
@@ -94,12 +94,12 @@ async function listCategories({ catalogEntry, installedEntry } = {}) {
   });
 }
 
-async function listFunctions(/* { categoryId, ... } */) {
+async function listFunctions(/* ctx, { categoryId, ... } */) {
   // markdown-fs hat keine Funktionsebene
   return [];
 }
 
-async function getEntry({ catalogEntry, installedEntry, functionId, categoryId } = {}) {
+async function getEntry(ctx, { catalogEntry, installedEntry, functionId, categoryId } = {}) {
   // markdown-fs nutzt categoryId als slug (functionId wird ignoriert / als alias akzeptiert)
   const id = functionId || categoryId;
   if (!id) return null;
@@ -131,10 +131,10 @@ async function getEntry({ catalogEntry, installedEntry, functionId, categoryId }
   };
 }
 
-async function search({ catalogEntry, installedEntry, q } = {}) {
+async function search(ctx, { catalogEntry, installedEntry, q } = {}) {
   const term = String(q || '').trim().toLowerCase();
   if (!term) return { categories: [], functions: [] };
-  const cats = await listCategories({ catalogEntry, installedEntry });
+  const cats = await listCategories(ctx, { catalogEntry, installedEntry });
   const matched = cats.filter(c =>
     c.name.toLowerCase().includes(term) || c.slug.toLowerCase().includes(term)
   );
@@ -145,7 +145,7 @@ async function listLanguages({ installedEntry } = {}) {
   return Array.isArray(installedEntry?.languages) ? installedEntry.languages : ['en'];
 }
 
-async function validate({ catalogEntry, installedEntry } = {}) {
+async function validate(ctx, { catalogEntry, installedEntry } = {}) {
   const errors = [];
   const dir = contentDir({ catalogEntry, installedEntry });
   if (!dir) {

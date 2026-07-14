@@ -332,12 +332,13 @@ async function findInBundleQueries(bundleRoots, templateName) {
 
 /**
  * Execute SQL template with parameters
+ * @param {Object} ctx - Request context ({solution, requested})
  * @param {string} templateName - Template name (without .sql extension)
  * @param {Object} params - Template parameters
  * @param {string} source - 'query' or 'report' (determines directory)
  * @returns {Promise<Object>} Query results with metadata
  */
-async function executeTemplate(templateName, params = {}, source = 'query') {
+async function executeTemplate(ctx, templateName, params = {}, source = 'query') {
   try {
     // Determine template directory based on source
     const templateDir =
@@ -381,7 +382,7 @@ async function executeTemplate(templateName, params = {}, source = 'query') {
     const sql = interpolateTemplate(template.content, params);
 
     // Execute query
-    const result = await db.executeQuery(sql);
+    const result = await db.executeQuery(ctx, sql);
 
     // Validate output
     validateTemplateOutput(result.rows, template.metadata);

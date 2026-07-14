@@ -27,9 +27,10 @@ const SUBTYPE_FOR_TYPE = {
  */
 async function get(req, res, next) {
   try {
+    const ctx = req.solutionContext;
     const { uuid, file, format = 'json', meta, debug } = req.query;
 
-    const result = await objectService.getByUUID(uuid, file);
+    const result = await objectService.getByUUID(ctx, uuid, file);
 
     const formattedData = formatters.format([result.data], format);
 
@@ -53,13 +54,14 @@ async function get(req, res, next) {
  */
 async function list(req, res, next) {
   try {
+    const ctx = req.solutionContext;
     const {
       type, file, limit,
       with_usage, with_category, category, sort,
       format = 'json', meta, debug,
     } = req.query;
 
-    const result = await objectService.listObjects({
+    const result = await objectService.listObjects(ctx, {
       type, file, limit,
       withUsage: with_usage, withCategory: with_category, category, sort,
     });
@@ -89,9 +91,10 @@ async function list(req, res, next) {
  */
 async function listCategories(req, res, next) {
   try {
+    const ctx = req.solutionContext;
     const { type, file, format = 'json', meta, debug } = req.query;
 
-    const result = await objectService.listCategorySummary({ type, file });
+    const result = await objectService.listCategorySummary(ctx, { type, file });
 
     const formattedData = formatters.format(result.data, format);
 
@@ -114,10 +117,12 @@ async function listCategories(req, res, next) {
  */
 async function listWithFolders(req, res, next) {
   try {
+    const ctx = req.solutionContext;
     const { type, file, format = 'json', meta, debug } = req.query;
     const subtype = SUBTYPE_FOR_TYPE[type];
 
     const result = await templateService.executeTemplate(
+      ctx,
       'list_with_folders',
       { subtype, file },
       'query'
@@ -142,9 +147,10 @@ async function listWithFolders(req, res, next) {
  */
 async function count(req, res, next) {
   try {
+    const ctx = req.solutionContext;
     const { type, file, group_by, format = 'json', meta, debug } = req.query;
 
-    const result = await objectService.countObjects({ type, file, group_by });
+    const result = await objectService.countObjects(ctx, { type, file, group_by });
 
     const formattedData = formatters.format(result.data, format);
 
@@ -165,9 +171,10 @@ async function count(req, res, next) {
  */
 async function search(req, res, next) {
   try {
+    const ctx = req.solutionContext;
     const { name, type, file, limit, offset, format = 'json', meta, debug } = req.query;
 
-    const result = await objectService.searchObjects({ name, type, file, limit, offset });
+    const result = await objectService.searchObjects(ctx, { name, type, file, limit, offset });
 
     const formattedData = formatters.format(result.data, format);
 
@@ -192,9 +199,10 @@ async function search(req, res, next) {
  */
 async function searchCount(req, res, next) {
   try {
+    const ctx = req.solutionContext;
     const { name, type, file, format = 'json', meta, debug } = req.query;
 
-    const result = await objectService.countSearchResults({ name, type, file });
+    const result = await objectService.countSearchResults(ctx, { name, type, file });
 
     const formattedData = formatters.format(result.data, format);
 
@@ -219,9 +227,10 @@ async function searchCount(req, res, next) {
  */
 async function references(req, res, next) {
   try {
+    const ctx = req.solutionContext;
     const { uuid, file, origin, direction, link_type, limit, format = 'json', meta, debug } = req.query;
 
-    const result = await objectService.getReferences({ uuid, direction, link_type, limit, file, origin });
+    const result = await objectService.getReferences(ctx, { uuid, direction, link_type, limit, file, origin });
 
     const formattedData = formatters.format(result.data, format);
 
@@ -242,6 +251,7 @@ async function references(req, res, next) {
  */
 async function getDetails(req, res, next) {
   try {
+    const ctx = req.solutionContext;
     const { uuid, file, format = 'json', meta, debug } = req.query;
 
     // format=tokens has its own dispatch path with type-specific templates and
@@ -251,7 +261,7 @@ async function getDetails(req, res, next) {
       return await respondWithTokens(req, res, { uuid, file, meta, debug, enrich: req.query.enrich });
     }
 
-    const result = await objectService.getDetails(uuid, file);
+    const result = await objectService.getDetails(ctx, uuid, file);
 
     // Content templates auto-override to content formatter (except JSON)
     let effectiveFormat = format;
@@ -281,10 +291,10 @@ async function getDetails(req, res, next) {
  * in-place. Gibt das Meta-Fragment zurück ({ enrich } bzw. Soft-Fail
  * { enrich:null, enrich_error }); wirft bei ungültiger Sprache.
  */
-async function enrichStepLines(payload, enrich) {
+async function enrichStepLines(ctx, payload, enrich) {
   try {
     const enrichLang = referenceService.resolveStepLang(enrich);
-    const stepMeta = await referenceService.getStepMetaMap(enrichLang);
+    const stepMeta = await referenceService.getStepMetaMap(ctx, enrichLang);
 
     const fnRefs = [];
     for (const line of payload.lines) {
@@ -306,7 +316,7 @@ async function enrichStepLines(payload, enrich) {
     }
     if (fnRefs.length > 0) {
       const adapted = fnRefs.map((r) => ({ type: 'function', content: r.name, __ref: r }));
-      await referenceService.enrichFunctionTokens(adapted, enrichLang);
+      await referenceService.enrichFunctionTokens(ctx, adapted, enrichLang);
       for (const a of adapted) {
         if (typeof a.functionId === 'number') {
           const r = a.__ref;
@@ -343,8 +353,9 @@ async function enrichStepLines(payload, enrich) {
  * CustomFunction, Field, CustomMenu, CustomMenuItem. Other types return 400.
  */
 async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) {
+  const ctx = req.solutionContext;
   // 1. Look up object metadata so we know which token template to run.
-  const lookup = await objectService.getByUUID(uuid, file);
+  const lookup = await objectService.getByUUID(ctx, uuid, file);
   const objectType = lookup.data.Object_Type;
   const baseObject = {
     uuid,
@@ -367,11 +378,13 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
 
   if (objectType === 'Script') {
     const stepsResult = await templateService.executeTemplate(
+      ctx,
       'object_details_script_tokens',
       { uuid, file: resolvedFile },
       'report'
     );
     const refsResult = await templateService.executeTemplate(
+      ctx,
       'object_references_script',
       { uuid, file: resolvedFile },
       'report'
@@ -389,7 +402,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
     if (enrich) {
       try {
         const enrichLang = referenceService.resolveStepLang(enrich);
-        const stepMeta = await referenceService.getStepMetaMap(enrichLang);
+        const stepMeta = await referenceService.getStepMetaMap(ctx, enrichLang);
 
         // Funktion-Refs (type='function') aus Calcs sammeln — diese werden
         // pro Line in den refs[] geliefert (SQL-Block 6 in object_references_script.sql).
@@ -425,7 +438,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
             content: r.name,
             __ref: r,
           }));
-          await referenceService.enrichFunctionTokens(adapted, enrichLang);
+          await referenceService.enrichFunctionTokens(ctx, adapted, enrichLang);
           for (const a of adapted) {
             if (typeof a.functionId === 'number') {
               const r = a.__ref;
@@ -467,6 +480,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
     // object.parentScript abgelegt, damit das Frontend einen Sprung-Link
     // zum Skript und die Step-Position anzeigen kann.
     const stepResult = await templateService.executeTemplate(
+      ctx,
       'object_details_scriptstep_tokens',
       { uuid, file: resolvedFile },
       'report'
@@ -484,6 +498,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
     // line_index auf 0 mappen (im 1-Zeilen-Payload liegt unsere Zeile bei 0).
     // Das vermeidet eine Duplikation des 265-Zeilen-Refs-Templates.
     const refsResult = await templateService.executeTemplate(
+      ctx,
       'object_references_script',
       { uuid: parentScriptUuid, file: resolvedFile },
       'report'
@@ -512,7 +527,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
     if (enrich) {
       try {
         const enrichLang = referenceService.resolveStepLang(enrich);
-        const stepMeta = await referenceService.getStepMetaMap(enrichLang);
+        const stepMeta = await referenceService.getStepMetaMap(ctx, enrichLang);
 
         const fnRefs = [];
         for (const line of payload.lines) {
@@ -534,7 +549,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
         }
         if (fnRefs.length > 0) {
           const adapted = fnRefs.map((r) => ({ type: 'function', content: r.name, __ref: r }));
-          await referenceService.enrichFunctionTokens(adapted, enrichLang);
+          await referenceService.enrichFunctionTokens(ctx, adapted, enrichLang);
           for (const a of adapted) {
             if (typeof a.functionId === 'number') {
               const r = a.__ref;
@@ -571,6 +586,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
     debugSql = debug ? `${stepResult.sql}\n\n-- references:\n${refsResult.sql}` : null;
   } else if (objectType === 'CustomFunction') {
     const cfResult = await templateService.executeTemplate(
+      ctx,
       'object_details_customfunction_tokens',
       { uuid, file: resolvedFile },
       'report'
@@ -587,7 +603,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
     // hochgereicht.
     if (enrich) {
       try {
-        await referenceService.enrichFunctionTokens(payload.tokens, enrich);
+        await referenceService.enrichFunctionTokens(ctx, payload.tokens, enrich);
         metaInfo = { ...metaInfo, enrich };
       } catch (e) {
         if (e.code === 'REF_LANG_INVALID') {
@@ -608,6 +624,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
     debugSql = debug ? cfResult.sql : null;
   } else if (objectType === 'Field') {
     const fldResult = await templateService.executeTemplate(
+      ctx,
       'object_details_field_tokens',
       { uuid, file: resolvedFile },
       'report'
@@ -622,7 +639,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
     // anreichern. Identische Semantik wie bei CustomFunction.
     if (enrich) {
       try {
-        await referenceService.enrichFunctionTokens(payload.tokens, enrich);
+        await referenceService.enrichFunctionTokens(ctx, payload.tokens, enrich);
         metaInfo = { ...metaInfo, enrich };
       } catch (e) {
         if (e.code === 'REF_LANG_INVALID') {
@@ -646,6 +663,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
       ? 'object_details_custommenuitem_tokens'
       : 'object_details_custommenu_tokens';
     const cmResult = await templateService.executeTemplate(
+      ctx,
       cmTemplate,
       { uuid, file: resolvedFile },
       'report'
@@ -662,7 +680,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
     if (enrich) {
       try {
         const allTokens = (payload.calcs || []).flatMap(c => c.tokens || []);
-        await referenceService.enrichFunctionTokens(allTokens, enrich);
+        await referenceService.enrichFunctionTokens(ctx, allTokens, enrich);
         metaInfo = { ...metaInfo, enrich };
       } catch (e) {
         if (e.code === 'REF_LANG_INVALID') {
@@ -688,11 +706,13 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
     // Objekte ohne eingebetteten Step liefern 0 Zeilen → das Frontend rendert
     // keine Step-Sektion.
     const stepResult = await templateService.executeTemplate(
+      ctx,
       'object_details_layoutobject_step_tokens',
       { uuid, file: resolvedFile },
       'report'
     );
     const refsResult = await templateService.executeTemplate(
+      ctx,
       'object_references_layoutobject_step',
       { uuid, file: resolvedFile },
       'report'
@@ -705,7 +725,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
     });
 
     if (enrich) {
-      metaInfo = { ...metaInfo, ...(await enrichStepLines(payload, enrich)) };
+      metaInfo = { ...metaInfo, ...(await enrichStepLines(ctx, payload, enrich)) };
     }
 
     metaInfo = {
@@ -724,7 +744,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
 
   // Tote Cross-Nav-Links auf nicht-registrierte BuiltinFunctions entfernen
   // (betrifft alle Token-Views: CF/Field/CustomMenu).
-  await pruneDeadBuiltinLinks(payload);
+  await pruneDeadBuiltinLinks(ctx, payload);
 
   return sendFormatted(res, payload, 'tokens', meta ? metaInfo : null, debugSql);
 }
@@ -739,7 +759,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
  * auf ein solches Token auf eine 404-Detailseite. Greift auf payload.tokens
  * (CustomFunction/Field/Calculation) UND payload.calcs[].tokens (CustomMenu).
  */
-async function pruneDeadBuiltinLinks(payload) {
+async function pruneDeadBuiltinLinks(ctx, payload) {
   if (!payload) return;
   const tokenLists = [];
   if (Array.isArray(payload.tokens)) tokenLists.push(payload.tokens);
@@ -763,6 +783,7 @@ async function pruneDeadBuiltinLinks(payload) {
   const ids = Array.from(candidateUuids);
   const placeholders = ids.map(() => '?').join(',');
   const r = await database.executeQuery(
+    ctx,
     `SELECT Object_UUID FROM ObjectCatalog
       WHERE Object_Type = 'BuiltinFunction' AND Object_UUID IN (${placeholders})`,
     ids
@@ -783,9 +804,11 @@ async function pruneDeadBuiltinLinks(payload) {
  */
 async function getCalc(req, res, next) {
   try {
+    const ctx = req.solutionContext;
     const { hash, format = 'tokens', meta, debug, enrich } = req.query;
 
     const result = await templateService.executeTemplate(
+      ctx,
       'object_details_calculation_tokens',
       { hash },
       'report'
@@ -812,7 +835,7 @@ async function getCalc(req, res, next) {
     // ?enrich=<lang> — Calc-Token-Anreicherung via function_name_lookup
     if (enrich) {
       try {
-        await referenceService.enrichFunctionTokens(payload.tokens, enrich);
+        await referenceService.enrichFunctionTokens(ctx, payload.tokens, enrich);
         if (metaInfo) metaInfo.enrich = enrich;
       } catch (e) {
         if (e.code === 'REF_LANG_INVALID') {
@@ -847,6 +870,7 @@ async function getCalc(req, res, next) {
  */
 async function backReferences(req, res, next) {
   try {
+    const ctx = req.solutionContext;
     const { destination, origin, dest_file, origin_file, mode = 'auto', format = 'json', meta, debug } = req.query;
 
     const destUuid = String(destination || '').trim();
@@ -863,7 +887,7 @@ async function backReferences(req, res, next) {
       throw createError('VALIDATION_ERROR',
         '`destination` muss eine UUID sein.', { destination: destUuid });
     }
-    const destObj = await objectService.getByUUID(destUuid, dest_file);
+    const destObj = await objectService.getByUUID(ctx, destUuid, dest_file);
 
     // Origin: UUID-Format ODER Name-Lookup.
     const looksLikeUuid = UUID_REGEX.test(originRaw);
@@ -875,19 +899,19 @@ async function backReferences(req, res, next) {
 
     if (useUuid) {
       try {
-        const o = await objectService.getByUUID(originRaw, origin_file);
+        const o = await objectService.getByUUID(ctx, originRaw, origin_file);
         originObj = o.data;
         matchStrategy = 'uuid';
       } catch (e) {
         if (e.code !== 'OBJECT_NOT_FOUND') throw e;
         // Fallback auf Name, falls UUID nicht im ObjectCatalog existiert.
         if (mode === 'auto') {
-          originObj = await lookupOriginByName(originRaw);
+          originObj = await lookupOriginByName(ctx, originRaw);
           matchStrategy = originObj ? 'name-fallback' : 'unresolved';
         }
       }
     } else if (useName) {
-      originObj = await lookupOriginByName(originRaw);
+      originObj = await lookupOriginByName(ctx, originRaw);
       matchStrategy = originObj ? 'name' : 'unresolved';
     }
 
@@ -907,6 +931,7 @@ async function backReferences(req, res, next) {
     }
 
     const result = await templateService.executeTemplate(
+      ctx,
       'back_references',
       { destination: destUuid, origin: originObj.Object_UUID },
       'report',
@@ -946,7 +971,7 @@ async function backReferences(req, res, next) {
  * Origin-Name-Fallback: exakter Match bevorzugt, sonst kürzester Teiltreffer.
  * Bei Mehrdeutigkeit gewinnt der kürzeste Name (heuristisch der spezifischste).
  */
-async function lookupOriginByName(name) {
+async function lookupOriginByName(ctx, name) {
   const sql = `
     SELECT Object_UUID, Object_Type, Object_Name, File_Name
     FROM ObjectCatalog
@@ -956,7 +981,7 @@ async function lookupOriginByName(name) {
     LIMIT 1
   `;
   const db = require('../config/database');
-  const r = await db.executeQuery(sql, [name, `%${name}%`, name]);
+  const r = await db.executeQuery(ctx, sql, [name, `%${name}%`, name]);
   return r.rows[0] || null;
 }
 

@@ -20,8 +20,9 @@ const subgraphCache = new LRUCache({
   ttl: 1000 * 60 * 5, // 5 min
 });
 
-function subgraphCacheKey(p) {
+function subgraphCacheKey(ctx, p) {
   return [
+    ctx?.solution ?? '',
     p.focus, p.focus_file ?? '', p.depth, p.direction, p.mode,
     p.types ?? '', p.roles ?? '',
     p.include_builtins, p.node_limit, p.hub_degree,
@@ -38,8 +39,9 @@ const overviewCache = new LRUCache({
   ttl: 1000 * 60 * 5, // 5 min
 });
 
-function overviewCacheKey(p) {
+function overviewCacheKey(ctx, p) {
   return [
+    ctx?.solution ?? '',
     p.view, p.level, p.segment_by,
     p.parent_community ?? '', p.parent_file ?? '', p.parent_type ?? '',
     p.weight, p.include_builtins, p.exclude_types ?? '', p.fold, p.limit,
@@ -99,41 +101,48 @@ function escapeLiteral(value) {
  * Memoisiert (einmal pro Prozess); clearCache() setzt zurück, damit ein Reload
  * (frisch geclusterte DB) die Tabellen neu erkennt.
  */
-let _communityTablesPresent = null;
+const _communityTablesPresent = new Map();
 
 /**
  * Aktive Cluster-Engine (single active engine — fm-graph-cluster ersetzt die
  * Partition komplett). Wird als Live-Overlay-Key (`<engine>|<community>`) für
  * User-Community-Annotationen gebraucht und dem Frontend mitgegeben (Write-Key).
- * Memoisiert; clearCache() setzt zurück (nach Reload neu erkennen).
+ * Memoisiert (pro Solution); clearCache() setzt zurück (nach Reload neu erkennen).
  */
-let _activeEngine = null;
+const _activeEngine = new Map();
 
-async function activeEngine() {
-  if (_activeEngine !== null) return _activeEngine;
-  if (!(await communityTablesPresent())) { _activeEngine = ''; return ''; }
+async function activeEngine(ctx) {
+  const key = ctx?.solution ?? '';
+  if (_activeEngine.has(key)) return _activeEngine.get(key);
+  if (!(await communityTablesPresent(ctx))) { _activeEngine.set(key, ''); return ''; }
+  let engine = '';
   try {
     const r = await db.executeQuery(
+      ctx,
       `SELECT Engine FROM ObjectClusters WHERE Engine IS NOT NULL
         GROUP BY Engine ORDER BY COUNT(*) DESC LIMIT 1`
     );
-    _activeEngine = r.rows[0]?.Engine ?? '';
+    engine = r.rows[0]?.Engine ?? '';
   } catch {
-    _activeEngine = '';
+    engine = '';
   }
-  return _activeEngine;
+  _activeEngine.set(key, engine);
+  return engine;
 }
 
-async function communityTablesPresent() {
-  if (_communityTablesPresent !== null) return _communityTablesPresent;
+async function communityTablesPresent(ctx) {
+  const key = ctx?.solution ?? '';
+  if (_communityTablesPresent.has(key)) return _communityTablesPresent.get(key);
   const result = await db.executeQuery(
+    ctx,
     `SELECT COUNT(*) AS cnt FROM information_schema.tables
       WHERE table_name IN ('ObjectClusters', 'CommunityNames')`
   );
   const row = result.rows[0];
   const cnt = typeof row.cnt === 'bigint' ? Number(row.cnt) : row.cnt;
-  _communityTablesPresent = cnt === 2;
-  return _communityTablesPresent;
+  const present = cnt === 2;
+  _communityTablesPresent.set(key, present);
+  return present;
 }
 
 /**
@@ -146,16 +155,16 @@ async function communityTablesPresent() {
  *  - Node-Sichtbarkeit (User-Annotation): unabhängig vom Clustering, läuft auch
  *    ohne Cluster-Tabellen (no-op nur ohne Annotations-Sidecar).
  */
-async function enrichCommunities(nodes) {
+async function enrichCommunities(ctx, nodes) {
   if (nodes.length === 0) return;
 
   const keyOf = (uuid, file) => `${uuid}::${file ?? ''}`;
 
   // ── Node-Sichtbarkeit (immer, cluster-unabhängig) ──
-  const hiddenSet = await annotations.getHiddenKeySet();
+  const hiddenSet = await annotations.getHiddenKeySet(ctx);
   for (const n of nodes) n.hidden = hiddenSet.has(keyOf(n.uuid, n.file));
 
-  if (!(await communityTablesPresent())) {
+  if (!(await communityTablesPresent(ctx))) {
     for (const n of nodes) { n.community = null; n.communityName = null; }
     return;
   }
@@ -169,6 +178,7 @@ async function enrichCommunities(nodes) {
   if (uuids.length === 0) return;
   const inList = uuids.map((u) => `'${escapeLiteral(u)}'`).join(',');
   const result = await db.executeQuery(
+    ctx,
     `SELECT c.Object_UUID AS uuid,
             c.File_Name    AS file,
             c.Community    AS community,
@@ -184,9 +194,9 @@ async function enrichCommunities(nodes) {
   // Namens-Priorität 4-stufig: User_Name (Sidecar) > Semantic_Name (Copy,
   // live) > SemanticNameRestore (Sidecar, R3 — greift nach Force-Rebuild) >
   // Heuristic_Name (Copy). User-Namen überschreiben alles in der Legende.
-  const commMap = await annotations.getCommunityAnnotationMap();
-  const restoreMap = await annotations.getSemanticRestoreMap();
-  const engine = await activeEngine();
+  const commMap = await annotations.getCommunityAnnotationMap(ctx);
+  const restoreMap = await annotations.getSemanticRestoreMap(ctx);
+  const engine = await activeEngine(ctx);
   for (const n of nodes) {
     const hit = byKey.get(keyOf(n.uuid, n.file)) ?? null;
     n.community = hit ? Number(hit.community) : null;
@@ -208,14 +218,16 @@ async function enrichCommunities(nodes) {
  *   - { exists:true, ambiguous:true }     → UUID in mehreren Dateien, ohne focus_file (409)
  *   - { exists:true, ambiguous:false }    → eindeutig (bzw. via focus_file eingegrenzt) → 200
  * Geteilte UUIDs entstehen bei geklonten/modularen Dateien.
+ * @param {Object} ctx - Request-Kontext
  * @param {string} uuid
  * @param {string} [file] - optionaler File_Name (focus_file)
  */
-async function objectFocusStatus(uuid, file) {
+async function objectFocusStatus(ctx, uuid, file) {
   const where = file
     ? `Object_UUID = '${escapeLiteral(uuid)}' AND File_Name = '${escapeLiteral(file)}'`
     : `Object_UUID = '${escapeLiteral(uuid)}'`;
   const result = await db.executeQuery(
+    ctx,
     `SELECT File_Name FROM ObjectCatalog WHERE ${where}`
   );
   const files = [...new Set(result.rows.map((r) => r.File_Name))].sort();
@@ -225,8 +237,8 @@ async function objectFocusStatus(uuid, file) {
 /**
  * Rückwärtskompatibler Existenz-Check (bare UUID, ignoriert Mehrdeutigkeit).
  */
-async function objectExists(uuid, file) {
-  const { exists } = await objectFocusStatus(uuid, file);
+async function objectExists(ctx, uuid, file) {
+  const { exists } = await objectFocusStatus(ctx, uuid, file);
   return exists;
 }
 
@@ -254,14 +266,15 @@ function toSubgraphParams(p) {
  * @param {Object} p - Joi-validierte Query-Params (Defaults bereits angewandt)
  * @returns {Promise<{payload: Object, sql: string}>}
  */
-async function getSubgraph(p) {
-  const cacheKey = subgraphCacheKey(p);
+async function getSubgraph(ctx, p) {
+  const cacheKey = subgraphCacheKey(ctx, p);
   const cached = subgraphCache.get(cacheKey);
   if (cached) {
     return { payload: cached.payload, sql: cached.sql, cached: true };
   }
 
   const result = await templateService.executeTemplate(
+    ctx,
     'graph_subgraph',
     toSubgraphParams(p),
     'report'
@@ -305,7 +318,7 @@ async function getSubgraph(p) {
   }
 
   // P5-Naht: Community-Daten nachreichen (no-op ohne Cluster-Tabellen).
-  await enrichCommunities(nodes);
+  await enrichCommunities(ctx, nodes);
 
   const payload = {
     focus: p.focus,
@@ -338,8 +351,8 @@ async function getSubgraph(p) {
  * 1-Hop-Expansion eines Knotens (Lazy-Expand im Explorer).
  * = Subgraph mit depth=1 — kein eigenes Template nötig.
  */
-async function getNeighbors(p) {
-  return getSubgraph({ ...p, depth: 1 });
+async function getNeighbors(ctx, p) {
+  return getSubgraph(ctx, { ...p, depth: 1 });
 }
 
 /**
@@ -348,8 +361,8 @@ async function getNeighbors(p) {
  */
 const depthProfileCache = new LRUCache({ max: 200, ttl: 1000 * 60 * 5 });
 
-function depthProfileCacheKey(p) {
-  return [p.focus, p.focus_file ?? '', p.direction, p.mode, p.include_builtins, p.types ?? ''].join('|');
+function depthProfileCacheKey(ctx, p) {
+  return [ctx?.solution ?? '', p.focus, p.focus_file ?? '', p.direction, p.mode, p.include_builtins, p.types ?? ''].join('|');
 }
 
 /**
@@ -359,13 +372,14 @@ function depthProfileCacheKey(p) {
  * hitCap signalisiert eine evtl. größere echte Exzentrizität.
  * @returns {Promise<{payload: Object, sql: string}>}
  */
-async function getDepthProfile(p) {
-  const cacheKey = depthProfileCacheKey(p);
+async function getDepthProfile(ctx, p) {
+  const cacheKey = depthProfileCacheKey(ctx, p);
   const cached = depthProfileCache.get(cacheKey);
   if (cached) return { payload: cached.payload, sql: cached.sql, cached: true };
 
   const hardCap = environment.duckdb.graphMaxDepth;
   const result = await templateService.executeTemplate(
+    ctx,
     'graph_depth_profile',
     {
       focus: p.focus,
@@ -412,8 +426,9 @@ async function getDepthProfile(p) {
  * Fokus-Autocomplete über ObjectCatalog (Sucheingabe).
  * @returns {Promise<{payload: Object, sql: string}>}
  */
-async function search(p) {
+async function search(ctx, p) {
   const result = await templateService.executeTemplate(
+    ctx,
     'graph_search',
     { q: p.q, type: p.type ?? null, file: p.file ?? null, limit: p.limit },
     'report'
@@ -644,7 +659,7 @@ function buildTopologyPayload(p, rows) {
  * Läuft VOR dem Caching → der gecachte Payload ist annotationskonsistent; jeder
  * Annotations-Write leert den overviewCache (clearCache) → nie stale.
  */
-async function overlayAnnotations(p, payload) {
+async function overlayAnnotations(ctx, p, payload) {
   const isCommunityAgg =
     payload.view === 'composition' && payload.segment_by === 'community' && payload.level === 'root';
   const isCommunityTopo = payload.view === 'topology' && payload.segment_by === 'community';
@@ -652,9 +667,9 @@ async function overlayAnnotations(p, payload) {
   if (!isCommunityAgg && !isCommunityTopo && !hasLeaves) return;
 
   const [commMap, hiddenSet, engine] = await Promise.all([
-    isCommunityAgg || isCommunityTopo ? annotations.getCommunityAnnotationMap() : Promise.resolve(new Map()),
-    hasLeaves ? annotations.getHiddenKeySet() : Promise.resolve(new Set()),
-    isCommunityAgg || isCommunityTopo ? activeEngine() : Promise.resolve(''),
+    isCommunityAgg || isCommunityTopo ? annotations.getCommunityAnnotationMap(ctx) : Promise.resolve(new Map()),
+    hasLeaves ? annotations.getHiddenKeySet(ctx) : Promise.resolve(new Set()),
+    isCommunityAgg || isCommunityTopo ? activeEngine(ctx) : Promise.resolve(''),
   ]);
 
   const applyCommunity = (obj) => {
@@ -679,6 +694,7 @@ async function overlayAnnotations(p, payload) {
     if (ids.length > 0) {
       try {
         const r = await db.executeQuery(
+          ctx,
           `SELECT Community, Top_Member_UUID FROM CommunityNames
             WHERE Engine = '${escapeLiteral(engine)}' AND Community IN (${ids.join(',')})`
         );
@@ -701,8 +717,8 @@ async function overlayAnnotations(p, payload) {
  * @param {Object} p - Joi-validierte Query-Params (Defaults bereits angewandt)
  * @returns {Promise<{payload: Object, sql: string}>}
  */
-async function getOverview(p, dbg) {
-  const cacheKey = overviewCacheKey(p);
+async function getOverview(ctx, p, dbg) {
+  const cacheKey = overviewCacheKey(ctx, p);
   const cached = overviewCache.get(cacheKey);
   if (cached) {
     dbgOverview(dbg, { kind: 'overview', phase: 'cache_hit', cacheKey });
@@ -715,7 +731,7 @@ async function getOverview(p, dbg) {
   _overviewInflight += 1;
   const enqueuedMs = debugSession.nowMs();
   dbgOverview(dbg, { kind: 'overview', phase: 'enqueue', cacheKey, inflight: _overviewInflight });
-  return runExclusiveOverview(() => executeOverview(p, cacheKey, dbg, enqueuedMs))
+  return runExclusiveOverview(() => executeOverview(ctx, p, cacheKey, dbg, enqueuedMs))
     .finally(() => { _overviewInflight -= 1; });
 }
 
@@ -763,7 +779,7 @@ function startRssSampler(dbg, template) {
   };
 }
 
-async function executeOverview(p, cacheKey, dbg, enqueuedMs) {
+async function executeOverview(ctx, p, cacheKey, dbg, enqueuedMs) {
   // Re-Check: ein vorheriger, identischer Job im Lock könnte den Cache gefüllt haben.
   const cached = overviewCache.get(cacheKey);
   if (cached) {
@@ -788,11 +804,11 @@ async function executeOverview(p, cacheKey, dbg, enqueuedMs) {
     && environment.duckdb.overviewThreads < fullThreads;
   const restoreThreads = async () => {
     if (capThreads) {
-      try { await db.executeQuery(`SET threads=${fullThreads}`); } catch { /* Reload o.ä. */ }
+      try { await db.executeQuery(ctx, `SET threads=${fullThreads}`); } catch { /* Reload o.ä. */ }
     }
   };
   if (capThreads) {
-    try { await db.executeQuery(`SET threads=${environment.duckdb.overviewThreads}`); }
+    try { await db.executeQuery(ctx, `SET threads=${environment.duckdb.overviewThreads}`); }
     catch { /* SET nicht möglich → mit voller Thread-Zahl weiter */ }
   }
 
@@ -800,7 +816,7 @@ async function executeOverview(p, cacheKey, dbg, enqueuedMs) {
   const stopRss = startRssSampler(dbg, template); // In-Query-Peak einfangen
   let result;
   try {
-    result = await templateService.executeTemplate(template, params, 'report');
+    result = await templateService.executeTemplate(ctx, template, params, 'report');
   } catch (err) {
     stopRss();
     await restoreThreads();
@@ -854,7 +870,7 @@ async function executeOverview(p, cacheKey, dbg, enqueuedMs) {
   }
 
   // User-Annotationen über die Payload legen (weiche Naht, no-op ohne Sidecar).
-  await overlayAnnotations(p, payload);
+  await overlayAnnotations(ctx, p, payload);
 
   overviewCache.set(cacheKey, { payload, sql: result.sql });
   return { payload, sql: result.sql, cached: false };
@@ -884,6 +900,11 @@ async function executeOverview(p, cacheKey, dbg, enqueuedMs) {
  * `cluster.json.updated_at` (Config-für-Reuse) zurück. Best-effort, wirft nie.
  */
 function fmlabFilePath(name) {
+  // Per-Solution-State (solutions/<id>/state/); Fallback auf das alte flache
+  // .fmlab/ für unmigrierte Workspaces.
+  const solutions = require('../config/solutions');
+  const p = path.join(solutions.resolveStateDir(), name);
+  if (fs.existsSync(p)) return p;
   return path.join(settingsStore.resolveRepoRoot(), '.fmlab', name);
 }
 
@@ -918,8 +939,8 @@ function readClusterRunSummary() {
   return { run, lastRun };
 }
 
-async function getCommunityStats() {
-  const engine = await activeEngine();
+async function getCommunityStats(ctx) {
+  const engine = await activeEngine(ctx);
   const { run, lastRun } = readClusterRunSummary();
   if (!engine) {
     return {
@@ -945,6 +966,7 @@ async function getCommunityStats() {
   let memberNamed = 0;
   try {
     const r = await db.executeQuery(
+      ctx,
       `SELECT
          COUNT(*)                                                                  AS total,
          COUNT(*) FILTER (WHERE Semantic_Name IS NOT NULL)                         AS semantic,
@@ -964,7 +986,7 @@ async function getCommunityStats() {
 
   // Benutzer-definierte Namen der aktiven Engine (Sidecar-Overlay).
   let userDefined = 0;
-  const commMap = await annotations.getCommunityAnnotationMap();
+  const commMap = await annotations.getCommunityAnnotationMap(ctx);
   const prefix = `${engine}|`;
   for (const [key, ann] of commMap) {
     if (key.startsWith(prefix) && ann.userName && ann.userName.trim()) userDefined += 1;
@@ -1004,15 +1026,16 @@ async function getCommunityStats() {
  * der Explorer-Sprung Klon-disambiguiert seedet. Guard: keine Partition →
  * `{ engine:'', communities: [] }` (Frontend zeigt Empty-State).
  */
-async function getCommunities() {
-  const engine = await activeEngine();
-  if (!engine || !(await communityTablesPresent())) {
+async function getCommunities(ctx) {
+  const engine = await activeEngine(ctx);
+  if (!engine || !(await communityTablesPresent(ctx))) {
     return { engine: '', communities: [] };
   }
 
   let rows = [];
   try {
     const r = await db.executeQuery(
+      ctx,
       `SELECT
          cn.Community            AS community,
          cn.Member_Count         AS member_count,
@@ -1037,8 +1060,8 @@ async function getCommunities() {
     return { engine, communities: [] };
   }
 
-  const commMap = await annotations.getCommunityAnnotationMap();
-  const restoreMap = await annotations.getSemanticRestoreMap();
+  const commMap = await annotations.getCommunityAnnotationMap(ctx);
+  const restoreMap = await annotations.getSemanticRestoreMap(ctx);
 
   const communities = rows.map((r) => {
     const community = Number(r.community);
@@ -1080,8 +1103,8 @@ function clearCache() {
   subgraphCache.clear();
   overviewCache.clear();
   depthProfileCache.clear();
-  _communityTablesPresent = null; // nach Reload neu erkennen (P5-Tabellen könnten neu sein)
-  _activeEngine = null;           // aktive Engine nach Reload neu bestimmen
+  _communityTablesPresent.clear(); // nach Reload neu erkennen (P5-Tabellen könnten neu sein)
+  _activeEngine.clear();           // aktive Engine nach Reload neu bestimmen
 }
 
 module.exports = {

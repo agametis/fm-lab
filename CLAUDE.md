@@ -1,4 +1,4 @@
-<!-- @CLAUDE_MD_VERSION 0.8.10 -->
+<!-- @CLAUDE_MD_VERSION 0.9.0 -->
 # FM-Lab — FileMaker Solution Analysis & Code Generation
 
 ## 1. Role & focus
@@ -14,7 +14,7 @@ Standard loop for every question: *understand the question → pick the table(s)
 
 ## 2. General rules (always apply)
 
-- **Single source of truth:** after import, use ONLY the DuckDB tables — never re-read the XML. Master DB: `db/fm_catalog.duckdb`. Never read `rest-api/db/fm_catalog.duckdb` (API-internal read copy, may be briefly stale).
+- **Single source of truth:** after import, use ONLY the DuckDB tables — never re-read the XML. Master DB: `db/fm_catalog.duckdb` — a **symlink to the active solution** (`solutions/<id>/db/fm_catalog.duckdb`). A workspace manages 1..N solutions as bundles `solutions/<id>/{xml,db,state}`; `.fmlab/active_solution.json` names the active one, `tools/solution.sh use <id>` switches (list/create/export likewise). Read via the symlink; **writers** (convert, cluster) resolve the real bundle path themselves. Never read `rest-api/db/…` (API-internal read copies, may be briefly stale).
 - **DuckDB invocation:** one plain command — `duckdb db/fm_catalog.duckdb -c "…"`. No subshells `( … )`, no `&&`/`||` probing chains, no `$DB` path variables: the permission allow-list matches the command **prefix**, any indirection triggers approval prompts. Never install DuckDB yourself. Binary not on PATH? → `docs/agents/tooling.md`.
 - **Joins:** every table has `…_ID` / `…_Name` / `…_UUID` columns; join across tables via UUID. Script steps are ordered by `Step_Index`.
 - **Don't guess schema details.** When unsure about columns, link roles or XML structure, read the reference first (§4) instead of assuming.
@@ -24,7 +24,7 @@ Standard loop for every question: *understand the question → pick the table(s)
 
 Use the **`convert-xml` skill** — it runs the full pipeline (P1 extract → P6 validate, plus analysis views and P7 auto-clustering):
 
-- Single file: `convert-xml "MyDatabase.xml"` · all files in `xml/`: `convert-xml --batch` · large files: `--batch --split`
+- Single file: `convert-xml "MyDatabase.xml"` · all files in the active solution's inbox `solutions/<id>/xml/`: `convert-xml --batch` · another solution: `--batch --solution <id>` · large files: `--batch --split`
 - Supported input: SaXML v2.1.0.0+ (FileMaker 19+, root `<FMSaveAsXML>`). The older v2.0.0.0 format (`<FMDynamicTemplate>`) is skipped with a warning.
 - After a successful run the master DB is synced to the REST-API copy automatically. CLI and the web import button share a lock file — the second caller fails fast (HTTP 409 / exit 7).
 - Isolated test runs: **`test-convert-xml` skill** (writes `db/fm_test.duckdb`, production DB untouched).

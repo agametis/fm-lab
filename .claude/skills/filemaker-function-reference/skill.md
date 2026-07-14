@@ -114,7 +114,7 @@ When the user asks about **functions on a topic**:
 
 ## Workflow
 
-> **DuckDB path:** If `which duckdb` returns nothing (VS Code does not inherit the shell PATH), use `~/.duckdb/cli/latest/duckdb`, otherwise `/opt/homebrew/bin/duckdb` or `/usr/local/bin/duckdb`. All examples below use the placeholder `duckdb` — replace as needed.
+> **DuckDB path:** binary resolution per CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`). All examples below use the placeholder `duckdb`.
 
 ### For mode 1: Direct lookup
 

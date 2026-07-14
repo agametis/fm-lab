@@ -1,6 +1,6 @@
 ---
-name: convert-fm-xml
-version: 0.8.5
+name: convert-xml
+version: 0.9.0
 description: Convert FileMaker XML export to DuckDB database. Automatically handles UTF-8 encoding conversion and creates analyzed database tables. Triggers (English): "convert XML", "import the FileMaker XML", "/convert-xml", "batch import all XML files". Triggers (German): "konvertiere die XML", "importiere die FileMaker-XML", "alle XML-Dateien importieren". Triggers (Spanish): "convertir el XML", "importar el XML de FileMaker". Triggers (French): "convertir le XML", "importer le XML FileMaker". Triggers (Italian): "converti l'XML", "importa l'XML FileMaker". Triggers (Dutch): "converteer de XML", "importeer de FileMaker-XML". Triggers (Portuguese): "converter o XML", "importar o XML do FileMaker". Triggers (Swedish): "konvertera XML", "importera FileMaker-XML". Triggers (Japanese): "XMLを変換", "FileMaker XMLをインポート". Triggers (Korean): "XML 변환", "FileMaker XML 가져오기". Triggers (Chinese): "转换 XML", "导入 FileMaker XML".
 ---
 
@@ -19,8 +19,8 @@ Use this skill when you need to convert a FileMaker XML export (created via Save
 
 The skill accepts **one required parameter**:
 
-- **XML filename** - The name of the XML file in the `xml/` directory (e.g., "MyDatabase.xml")
-- **--batch** or **--all** - Process all XML files in the `xml/` directory
+- **XML filename** - The name of the XML file in the active solution's inbox `solutions/<id>/xml/` (e.g., "MyDatabase.xml")
+- **--batch** or **--all** - Process all XML files in the active solution's inbox
 
 **Adaptive default (no mode flag):** A bare `convert-xml`/`--batch` auto-selects the
 robust engine — **Turbo** (chunked Phase 1) + **--auto** (OOM backoff via resplit),
@@ -39,12 +39,14 @@ Optional flags (any combination is allowed):
 - **--split** - Chunk Phase 1 per file at top-level branch boundaries (lowers peak DOM memory for very large files; bit-identical to the unsplit run). Explicit (non-turbo) DOM path.
 - **--jobs <N>** - Run Phase 1 for N files **in parallel** (`auto` = all cores), each into its own part-DB, then merge into the master DB. **Default 8** (empirical sweet spot); `1` = sequential. Big batch speedup on multi-core machines; bit-identical to the sequential run. Not combinable with `--split`. RAM note: each worker peaks at ~10× the UTF-8 file size — lower N (e.g. `--jobs 4`) if memory is tight or other processes run concurrently; avoid N≥12 on a 14-GiB box (RAM cliff).
 - **--quiet** - NDJSON output mode for the REST-API SSE bridge. Not intended for interactive use.
+- **--solution <id>** - Import a specific solution bundle (`solutions/<id>/`). Default: the active solution from `.fmlab/active_solution.json` (fallback `default`).
 
 **Concurrency:** The skill and the Web-Frontend (`POST /api/xml/convert`) share
-the same Bash script and a lock file (`.fmlab/xml_convert.lock`). Only one
-conversion can run at a time. If you start the skill while a web-triggered run
-is active, the script exits with code 7. Same protection in the other
-direction (HTTP returns 409).
+the same Bash script and a **per-solution** lock file
+(`solutions/<id>/state/xml_convert.lock`). The same solution can only be
+converted once at a time — if you start the skill while a web-triggered run is
+active, the script exits with code 7 (HTTP side returns 409). Different
+solutions convert independently.
 
 **Single-File Mode:**
 
@@ -76,10 +78,11 @@ convert-xml --batch --force-rebuild
 convert-xml --batch --force-rebuild --jobs auto
 ```
 
-File paths are fixed:
+File paths are per solution (resolved from the active solution or `--solution`):
 
-- Input: `xml/` directory
-- Output: `db/fm_catalog.duckdb`
+- Input: `solutions/<id>/xml/`
+- Output: `solutions/<id>/db/fm_catalog.duckdb` (readable via the compat symlink `db/fm_catalog.duckdb`)
+- Run state + logs: `solutions/<id>/state/`
 
 ## Schema versioning & auto-heal
 
@@ -100,7 +103,7 @@ persisted in the DB table `SchemaInfo`. Possible outcomes:
 
 When invoked with a filename, the skill performs these steps:
 
-1. **Validate** - Check if the XML file exists in `xml/` directory
+1. **Validate** - Check if the XML file exists in the solution's `xml/` inbox
 2. **Detect Encoding** - Use `file -I` to detect file encoding
 3. **Convert if Needed** - If UTF-16, convert to UTF-8 in temporary directory
 4. **Prepare SQL** - Create temporary SQL script with correct paths and filename
@@ -112,7 +115,7 @@ When invoked with a filename, the skill performs these steps:
 
 When invoked with `--batch`, the skill performs these steps:
 
-1. **Discover Files** - Find all `.xml` files in `xml/` directory
+1. **Discover Files** - Find all `.xml` files in the solution's `xml/` inbox
 2. **Validate All** - Check that all files are readable
 3. **Process Sequentially** - For each file:
    - Display progress: "[15/62] Processing: MyDatabase.xml"
@@ -163,11 +166,11 @@ Report the result to the user with appropriate context.
 
 ### File Not Found
 
-If the XML file doesn't exist in `xml/` directory, inform the user and suggest:
+If the XML file doesn't exist in the solution's `xml/` inbox, inform the user and suggest:
 
 - Checking the filename spelling
-- Verifying the file is in the `xml/` directory
-- Listing available XML files with `ls xml/*.xml`
+- Verifying the file is in the solution's inbox (`solutions/<id>/xml/`)
+- Listing available XML files with `ls solutions/<id>/xml/*.xml`
 
 ### Encoding Conversion Failed
 

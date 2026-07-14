@@ -5,6 +5,7 @@ import { SubNav } from '../components/SubNav';
 import { StatusBar } from '../components/StatusBar';
 import { buildBreadcrumb } from '../lib/navigation';
 import { useUrlState } from '../hooks/useUrlState';
+import { useApiLang } from '../hooks/useApiLang';
 import {
   fetchFmSpecMeta,
   fetchFmSpecSteps,
@@ -39,7 +40,9 @@ function catName(categories: RefCategory[], id: number): string {
 export function FmSpecView() {
   const { t, i18n } = useTranslation(['fmSpec', 'nav']);
   const navigate = useNavigate();
-  const uiLang = i18n.language;
+  // Auf einen unterstützten Referenz-Code normalisieren (en-US → en). i18n.language
+  // (volles Regions-Tag) bleibt der Datumsformatierung unten vorbehalten.
+  const uiLang = useApiLang();
   const fnLang = FUNCTION_LANGS.has(uiLang) ? uiLang : 'en';
 
   const [tab, setTab] = useUrlState<TabId>('tab', 'steps', {

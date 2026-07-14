@@ -37,6 +37,15 @@ app.use(express.urlencoded({ extended: true }));
 // dem Body-Parser, damit die Ingestion-Route den Body schon hat.
 app.use(debugSessionMiddleware);
 
+// Solution-Kontext (Multiuser-Vorbereitung): Phase 1 löst jeden Request
+// konstant auf den Server-Default auf; ein mitgesendeter X-Solution-Header wird
+// angenommen, aber (noch) nicht ausgewertet — Ausbaustufe M macht daraus die
+// Per-Tab-Auswahl, ohne dass Query-/Service-Pfade umgebaut werden müssen.
+app.use((req, res, next) => {
+  req.solutionContext = require('./config/solutions').getRequestContext(req);
+  next();
+});
+
 // API Routes
 app.use('/api', routes);
 
@@ -138,6 +147,10 @@ async function start() {
       printPortBusy();
       process.exit(1);
     }
+
+    // Invariante I1: 'default' existiert immer — Bundle-Skelett
+    // + Minimal-Manifest still herstellen, bevor Pfade aufgelöst werden.
+    require('./config/solutions').ensureDefaultSolution();
 
     // Initialize database connection
     console.log('Initializing database connection...');

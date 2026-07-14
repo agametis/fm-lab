@@ -24,7 +24,7 @@
   },
   "theme": {
     "switchToLight": "Växla till ljust läge",
-    "switchToDark":  "Växla till mörkt läge"
+    "switchToDark": "Växla till mörkt läge"
   },
   "actions": {
     "openInFileMaker": "Öppna i FileMaker",
@@ -70,5 +70,10 @@
     "loading": "Läser in dashboard…",
     "loadError": "Det gick inte att läsa in: {{message}}",
     "noData": "Inga data tillgängliga."
+  },
+  "solutionPicker": {
+    "label": "Lösning",
+    "ariaLabel": "Välj aktiv lösning",
+    "switchError": "Byte av lösning misslyckades: {{message}}"
   }
 }

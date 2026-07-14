@@ -24,6 +24,13 @@
     "settings": "Ajustes",
     "fmSpec": "fm-spec"
   },
+  "leitDescription": {
+    "dashboards": "Resumen de todos los paneles disponibles.",
+    "customQueries": "Plantillas SQL reutilizables — haga clic en una tarjeta para abrir un análisis.",
+    "docs": "Fuentes de documentación instaladas en este proyecto.",
+    "xmlImport": "Importa todos los archivos del directorio xml/ a DuckDB.",
+    "xmlImportContextNote": "Importación de una solución no activa — los datos de análisis mostrados solo cambian tras activarla."
+  },
   "errors": {
     "noDashboardId": "No se ha proporcionado el id del dashboard.",
     "noQueryName": "No se ha proporcionado el nombre de la consulta."

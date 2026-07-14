@@ -25,8 +25,9 @@ const OPERATOR_SYMBOLS = {
   Cartesian: '×',
 };
 
-async function fileExists(fileName) {
+async function fileExists(ctx, fileName) {
   const result = await db.executeQuery(
+    ctx,
     `SELECT COUNT(*) as cnt FROM FilesCatalog WHERE File_Name = '${fileName.replace(/'/g, "''")}'`
   );
   const row = result.rows[0];
@@ -63,7 +64,7 @@ async function getGraph(req, res, next) {
     const { fileName } = req.params;
     const { format = 'json', meta, debug } = req.query;
 
-    if (!(await fileExists(fileName))) {
+    if (!(await fileExists(req.solutionContext, fileName))) {
       throw createError(
         'OBJECT_NOT_FOUND',
         `File '${fileName}' not found in FilesCatalog`,
@@ -72,9 +73,9 @@ async function getGraph(req, res, next) {
     }
 
     const [tosResult, relsResult, fieldsResult] = await Promise.all([
-      templateService.executeTemplate('relationship_graph_tos', { file_name: fileName }, 'report'),
-      templateService.executeTemplate('relationship_graph_relationships', { file_name: fileName }, 'report'),
-      templateService.executeTemplate('relationship_graph_fields', { file_name: fileName }, 'report'),
+      templateService.executeTemplate(req.solutionContext, 'relationship_graph_tos', { file_name: fileName }, 'report'),
+      templateService.executeTemplate(req.solutionContext, 'relationship_graph_relationships', { file_name: fileName }, 'report'),
+      templateService.executeTemplate(req.solutionContext, 'relationship_graph_fields', { file_name: fileName }, 'report'),
     ]);
 
     const fieldsByTableUuid = new Map();

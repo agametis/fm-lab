@@ -5,14 +5,14 @@ const markdownFs = require('./markdown-fs');
 /**
  * Adapter-Registry für Doc-Set-Indizes (IDocSetIndex).
  *
- * Jeder Adapter implementiert dieselbe Schnittstelle (siehe project/prd_docs_redesign.md §7.5):
+ * Jeder Adapter implementiert dieselbe Schnittstelle:
  *
- *   listCategories({ lang })                    → Category[]
- *   listFunctions({ categoryId, lang })         → FunctionRef[]
- *   getEntry({ functionId, lang })              → DocEntry
- *   search({ q, lang })                         → { categories, functions }
+ *   listCategories(ctx, { lang })               → Category[]
+ *   listFunctions(ctx, { categoryId, lang })    → FunctionRef[]
+ *   getEntry(ctx, { functionId, lang })         → DocEntry
+ *   search(ctx, { q, lang })                    → { categories, functions }
  *   listLanguages()                             → string[]
- *   validate()                                  → { ok, errors }
+ *   validate(ctx)                               → { ok, errors }
  *
  * Adapter werden über das Manifest (`catalog[].index.adapter`) ausgewählt;
  * mehrere Doc-Sets können denselben Adapter teilen (z.B. fmide + fm-lab → markdown-fs).
@@ -45,12 +45,12 @@ function resolveForDocset(catalogEntry, installedEntry) {
   return {
     id: adapterId,
     raw: adapter,
-    listCategories: (opts = {}) => adapter.listCategories({ catalogEntry, installedEntry, ...opts }),
-    listFunctions: (opts = {}) => adapter.listFunctions({ catalogEntry, installedEntry, ...opts }),
-    getEntry: (opts = {}) => adapter.getEntry({ catalogEntry, installedEntry, ...opts }),
-    search: (opts = {}) => adapter.search({ catalogEntry, installedEntry, ...opts }),
+    listCategories: (ctx, opts = {}) => adapter.listCategories(ctx, { catalogEntry, installedEntry, ...opts }),
+    listFunctions: (ctx, opts = {}) => adapter.listFunctions(ctx, { catalogEntry, installedEntry, ...opts }),
+    getEntry: (ctx, opts = {}) => adapter.getEntry(ctx, { catalogEntry, installedEntry, ...opts }),
+    search: (ctx, opts = {}) => adapter.search(ctx, { catalogEntry, installedEntry, ...opts }),
     listLanguages: () => adapter.listLanguages({ catalogEntry, installedEntry }),
-    validate: () => adapter.validate({ catalogEntry, installedEntry }),
+    validate: (ctx) => adapter.validate(ctx, { catalogEntry, installedEntry }),
   };
 }
 

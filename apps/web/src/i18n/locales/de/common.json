@@ -25,7 +25,7 @@
   },
   "theme": {
     "switchToLight": "Zum Light-Mode wechseln",
-    "switchToDark":  "Zum Dark-Mode wechseln"
+    "switchToDark": "Zum Dark-Mode wechseln"
   },
   "actions": {
     "openInFileMaker": "In FileMaker öffnen",
@@ -71,5 +71,10 @@
     "loading": "Dashboard wird geladen…",
     "loadError": "Fehler beim Laden: {{message}}",
     "noData": "Keine Daten verfügbar."
+  },
+  "solutionPicker": {
+    "label": "Lösung",
+    "ariaLabel": "Aktive Lösung wählen",
+    "switchError": "Lösungswechsel fehlgeschlagen: {{message}}"
   }
 }

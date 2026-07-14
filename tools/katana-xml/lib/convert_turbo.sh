@@ -556,6 +556,19 @@ _turbo_append_chunk_errs() {
     done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id FROM chunkmap WHERE file_name='${fn//\'/\'\'}' AND status<>'skipped_unchanged';")
 }
 
+# Did any chunk of file $1 die from an OOM signal? A memory kill leaves the chunk with
+# status='oom' (set from rc 137/143 during dispatch) and, because SIGKILL leaves no
+# stderr, an empty .out — so the file-level classifier cannot see the cause in the
+# text. Surface it via the per-file rc instead (137), so classify_error reports oom
+# rather than defaulting to a generic sql_error.
+_turbo_file_has_oom() {
+    local idx="$1" fn n
+    fn="$(basename "${XML_FILES[$idx]}")"; fn="${fn%.xml}"
+    n=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c \
+        "SELECT count(*) FROM chunkmap WHERE file_name='${fn//\'/\'\'}' AND status IN ('oom','oom_error');" 2>/dev/null)
+    [ "${n:-0}" -gt 0 ]
+}
+
 # Phase C — CATALOG-GRANULAR (DEFAULT in turbo; opt-out FM_TURBO_NO_CATMERGE). Collapses C1+C2:
 # chunks → master DIRECTLY (no part DBs), per catalog atomic DELETE-by-File + INSERT.
 # Model: each (file×catalog) slice is record-disjoint & self-contained → wholesale
@@ -1183,7 +1196,10 @@ _turbo_dispatch() {
                 else echo "  ↯ Auto-backoff: chunk $cid OOM → split-group finer (M halved), re-dispatch"; fi
             else
                 diag=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT file_name||' / '||catalog||' (records='||COALESCE(record_count,0)||', attempt='||attempt||', est_bytes='||COALESCE(est_bytes,0)||')' FROM chunkmap WHERE chunk_id=$cid;")
-                "$DUCKDB_BIN" "$CHUNKMAP_DB" -c "UPDATE chunkmap SET status='error' WHERE chunk_id=$cid;" >/dev/null 2>&1
+                # Terminal OOM status (distinct from a plain 'error'): the resplit list
+                # only re-picks status='oom', so this both stops the re-dispatch loop AND
+                # keeps the cause visible to _turbo_file_has_oom (→ oom, not sql_error).
+                "$DUCKDB_BIN" "$CHUNKMAP_DB" -c "UPDATE chunkmap SET status='oom_error' WHERE chunk_id=$cid;" >/dev/null 2>&1
                 echo "  ✗ Auto-backoff exhausted: $diag — does not fit into the memory band (not further divisible or K reached)." >&2
                 {
                     echo "Auto-backoff exhausted (not further divisible or K=${FM_AUTO_MAX_ATTEMPT:-4} attempts reached)."
@@ -1620,6 +1636,8 @@ run_turbo_pipeline() {
             if [ -f "$PARTDB_DIR/${i}.unchanged" ]; then echo 0 > "$PARTDB_DIR/${i}.rc"; continue; fi
             rc=${FILE_SPLIT_RC[$i]:-3}
             [ "$rc" -eq 0 ] && { _turbo_file_chunks_ok "$i" || { _turbo_append_chunk_errs "$i"; rc=3; }; }
+            # Preserve an OOM cause as rc 137 so the file is classified as oom, not sql_error.
+            [ "$rc" -ne 0 ] && _turbo_file_has_oom "$i" && rc=137
             echo "$rc" > "$PARTDB_DIR/${i}.rc"
         done
         _t3 C2_start
@@ -1637,6 +1655,8 @@ run_turbo_pipeline() {
             if [ "$rc" -eq 0 ] && [ ! -f "$PARTDB_DIR/${i}.unchanged" ]; then
                 _turbo_build_part "$i"; rc=$?
             fi
+            # Preserve an OOM cause as rc 137 so the file is classified as oom, not sql_error.
+            [ "$rc" -ne 0 ] && _turbo_file_has_oom "$i" && rc=137
             echo "$rc" > "$PARTDB_DIR/${i}.rc"
         done
 

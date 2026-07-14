@@ -21,7 +21,11 @@
     "phaseHomes": "Lier",
     "phaseValidate": "Valider",
     "chunkCounter": "{{done}} sur {{total}}",
-    "phaseCluster": "Communautés"
+    "phaseCluster": "Communautés",
+    "abortOomTitle": "Mémoire insuffisante",
+    "abortOomBody": "Cette solution est trop volumineuse pour la mémoire disponible de cette machine. Lancez l'importation sur une machine avec plus de RAM (8 Go ou plus) ou réessayez avec un profil mémoire réduit.",
+    "abortIncompleteTitle": "Construction incomplète",
+    "abortIncompleteBody": "La résolution des références ne s'est pas terminée ; le catalogue d'objets n'a donc pas pu être créé. Consultez le journal d'exécution pour plus de détails."
   },
   "cellValues": {
     "yes": "Oui",

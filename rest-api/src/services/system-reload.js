@@ -18,6 +18,9 @@ const clarisAdapter = require('./plugin-docs/adapters/claris-duckdb');
  * (Adapter-Refresh nach Installation).
  */
 async function performReload() {
+  // Reload läuft ohne Request — der Kontext ist explizit der Server-Default
+  // (einzige legitime Quelle kontextloser Kontexte).
+  const ctx = require('../config/solutions').serverDefaultContext();
   const result = await db.reload();
   referenceService.clearCaches();
   helpService.clearCache();
@@ -28,14 +31,14 @@ async function performReload() {
   // Rebuild), dann den Cache aus der Copy auffrischen (nur wenn die Copy Namen
   // hat). Best-effort: ein Fehler darf den Reload nie kippen.
   try {
-    await annotationsService.restoreSemanticNamesAfterReload();
+    await annotationsService.restoreSemanticNamesAfterReload(ctx);
   } catch (err) {
     console.warn(`reload: semantic-name restore skipped: ${err.message}`);
   }
   // User-Community-Annotationen auf die (ggf. neue) Cluster-Partition re-mappen
   // (Objekt-Mehrheitsvotum). Best-effort: ein Fehler darf den Reload nie kippen.
   try {
-    await annotationsService.remapAfterReload();
+    await annotationsService.remapAfterReload(ctx);
   } catch (err) {
     console.warn(`reload: annotations remap skipped: ${err.message}`);
   }
@@ -50,7 +53,7 @@ async function performReload() {
   // Best-effort, lazily required so a missing plugin never breaks the reload.
   try {
     const fmide = require('../plugins/fmide/fmide.service');
-    if (fmide.hasScanData()) await fmide.refreshFileStatuses();
+    if (fmide.hasScanData()) await fmide.refreshFileStatuses(ctx);
   } catch (err) {
     console.warn(`reload: fmIDE status refresh skipped: ${err.message}`);
   }

@@ -128,9 +128,9 @@ function unquote(value) {
  * Compute the per-file fmIDE script status from the catalog.
  * Returns { [File_Name]: { script_present, script_valid, fmide_version } }.
  */
-async function computeFileStatuses() {
+async function computeFileStatuses(ctx) {
   const { script_name } = getConfig();
-  const result = await db.executeQuery(scanSql(), [script_name]);
+  const result = await db.executeQuery(ctx, scanSql(), [script_name]);
   const map = {};
   for (const row of result.rows) {
     map[row.file_name] = {
@@ -147,9 +147,9 @@ async function computeFileStatuses() {
  * `.fmlab/plugins/fmide/script_status.json` (best-effort, for inspectability).
  * Safe to call when the DB is unavailable — returns {} and leaves no cache.
  */
-async function refreshFileStatuses() {
+async function refreshFileStatuses(ctx) {
   try {
-    const map = await computeFileStatuses();
+    const map = await computeFileStatuses(ctx);
     fileStatusCache = map;
     try {
       const file = statusFilePath();
@@ -223,7 +223,7 @@ async function getFileStatus(fileName) {
  * Build the Thingamajig URI for a given object.
  * Returns { thingamajig_uri, fmp_url, supported, script_available, … } or null.
  */
-async function buildUri(uuid, configOverrides, file) {
+async function buildUri(ctx, uuid, configOverrides, file) {
   const config = { ...getConfig(), ...configOverrides };
 
   // Fetch the object from ObjectCatalog (clone-aware). Bei geteilter UUID (Klon)
@@ -231,6 +231,7 @@ async function buildUri(uuid, configOverrides, file) {
   // (eindeutig → ok, mehrdeutig → AMBIGUOUS_UUID statt willkürlichem rows[0],
   // sonst zeigte der fmp://-Deeplink in die falsche Klon-Datei).
   const objResult = await db.executeQuery(
+    ctx,
     file
       ? 'SELECT Object_UUID, Object_Type, Object_Name, File_Name FROM ObjectCatalog WHERE Object_UUID = ? AND File_Name = ?'
       : 'SELECT Object_UUID, Object_Type, Object_Name, File_Name FROM ObjectCatalog WHERE Object_UUID = ?',
@@ -277,7 +278,7 @@ async function buildUri(uuid, configOverrides, file) {
   // --- Context types (need JOINs) ---
   else if (objectType === 'ScriptStep') {
     // Navigate to parent script + step number
-    const stepResult = await db.executeQuery(`
+    const stepResult = await db.executeQuery(ctx, `
       SELECT
         oc_script.Object_Name AS Script_Name,
         oc_script.File_Name AS Script_File,
@@ -300,7 +301,7 @@ async function buildUri(uuid, configOverrides, file) {
 
   else if (objectType === 'Field') {
     // Field needs base_table_name as context
-    const tableResult = await db.executeQuery(`
+    const tableResult = await db.executeQuery(ctx, `
       SELECT oc_table.Object_Name AS Table_Name
       FROM ObjectLinks ol
       JOIN ObjectCatalog oc_table ON ol.Target_UUID = oc_table.Object_UUID
@@ -321,7 +322,7 @@ async function buildUri(uuid, configOverrides, file) {
   // --- Indirect mapping (fallback to related object) ---
   else if (objectType === 'Relationship') {
     // Navigate to left TableOccurrence
-    const toResult = await db.executeQuery(`
+    const toResult = await db.executeQuery(ctx, `
       SELECT oc_to.Object_Name AS TO_Name, oc_to.File_Name AS TO_File
       FROM ObjectLinks ol
       JOIN ObjectCatalog oc_to ON ol.Target_UUID = oc_to.Object_UUID
@@ -338,7 +339,7 @@ async function buildUri(uuid, configOverrides, file) {
 
   else if (objectType === 'ScriptTrigger') {
     // Navigate to the triggered script
-    const triggerResult = await db.executeQuery(`
+    const triggerResult = await db.executeQuery(ctx, `
       SELECT oc_script.Object_Name AS Script_Name, oc_script.File_Name AS Script_File
       FROM ObjectLinks ol
       JOIN ObjectCatalog oc_script ON ol.Target_UUID = oc_script.Object_UUID
@@ -386,10 +387,10 @@ async function buildUri(uuid, configOverrides, file) {
 /**
  * Batch: generate URIs for multiple UUIDs.
  */
-async function buildUris(uuids, configOverrides) {
+async function buildUris(ctx, uuids, configOverrides) {
   const results = [];
   for (const uuid of uuids) {
-    const result = await buildUri(uuid, configOverrides);
+    const result = await buildUri(ctx, uuid, configOverrides);
     if (result) results.push(result);
   }
   return results;

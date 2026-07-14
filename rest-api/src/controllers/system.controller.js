@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const solutionsConfig = require('../config/solutions');
 const { buildSuccess } = require('../utils/response-builder');
 const appSettings = require('../config/app-settings');
 const environment = require('../config/environment');
@@ -74,7 +75,7 @@ async function info(req, res, next) {
 
     // Get files from FilesCatalog
     let filesQuery = 'SELECT * FROM FilesCatalog ORDER BY File_Name';
-    const filesResult = await db.executeQuery(filesQuery);
+    const filesResult = await db.executeQuery(req.solutionContext, filesQuery);
 
     // Get object statistics
     let objectStatsQuery = `
@@ -89,8 +90,8 @@ async function info(req, res, next) {
     objectStatsQuery += ' GROUP BY Object_Type ORDER BY count DESC';
 
     const objectStatsResult = file
-      ? await db.executeQuery(objectStatsQuery, [file])
-      : await db.executeQuery(objectStatsQuery);
+      ? await db.executeQuery(req.solutionContext, objectStatsQuery, [file])
+      : await db.executeQuery(req.solutionContext, objectStatsQuery);
 
     // Get link statistics
     let linkStatsQuery = `
@@ -107,8 +108,8 @@ async function info(req, res, next) {
     }
 
     const linkStatsResult = file
-      ? await db.executeQuery(linkStatsQuery, [file, file])
-      : await db.executeQuery(linkStatsQuery);
+      ? await db.executeQuery(req.solutionContext, linkStatsQuery, [file, file])
+      : await db.executeQuery(req.solutionContext, linkStatsQuery);
 
     // Build response
     const totalObjects = objectStatsResult.rows.reduce((sum, row) => sum + bigIntToNumber(row.count), 0);
@@ -118,7 +119,17 @@ async function info(req, res, next) {
       byType[row.Object_Type] = bigIntToNumber(row.count);
     });
 
+    // Aktive Lösung (Multi-Solution) — eigener Schlüssel neben dem
+    // historischen `solution`-Block (der die Datei-/Objektstatistik trägt).
+    const activeId = solutionsConfig.getActiveSolutionId();
+    const activeManifest = solutionsConfig.readManifest(activeId) || {};
+
     const solutionInfo = {
+      active_solution: {
+        id: activeId,
+        display_name: activeManifest.display_name || activeId,
+        uuid: activeManifest.uuid || null,
+      },
       solution: {
         file_count: filesResult.rows.length,
         files: filesResult.rows.map((f) => ({

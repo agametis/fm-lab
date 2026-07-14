@@ -25,9 +25,10 @@ function keyOf(uuid, file) {
  * Map aller Community-Annotationen, gekeyt `<engine>|<community>`.
  * Kleine Tabelle (≤ Anzahl benannter Communities) → ein voller Scan genügt.
  */
-async function getCommunityAnnotationMap() {
+async function getCommunityAnnotationMap(ctx) {
   if (!annoDb.isAvailable()) return new Map();
   const rows = await annoDb.query(
+    ctx,
     `SELECT Engine, Community, User_Name, User_Notes FROM CommunityAnnotation`
   );
   const m = new Map();
@@ -44,9 +45,10 @@ async function getCommunityAnnotationMap() {
  * Set der ausgeblendeten Knoten (`uuid::file`). Die Tabelle hält NUR
  * Hidden-Einträge (sichtbar = Abwesenheit), bleibt also klein.
  */
-async function getHiddenKeySet() {
+async function getHiddenKeySet(ctx) {
   if (!annoDb.isAvailable()) return new Set();
   const rows = await annoDb.query(
+    ctx,
     `SELECT Object_UUID, File_Name FROM NodeVisibility WHERE Visible = FALSE`
   );
   return new Set(rows.map((r) => keyOf(r.Object_UUID, r.File_Name)));
@@ -60,15 +62,17 @@ async function getHiddenKeySet() {
  * Leere/null-Werte löschen das jeweilige Feld; sind beide leer, wird die
  * Annotation samt Snapshot entfernt.
  */
-async function setCommunityAnnotation({ engine, community, userName, userNotes }) {
+async function setCommunityAnnotation(ctx, { engine, community, userName, userNotes }) {
   const name = userName && userName.trim() ? userName.trim() : null;
   const notes = userNotes && userNotes.trim() ? userNotes.trim() : null;
 
   // Bestehende Annotation + Snapshot ersetzen (idempotent).
   await annoDb.run(
+    ctx,
     `DELETE FROM CommunityAnnotation WHERE Engine = '${esc(engine)}' AND Community = ${Number(community)}`
   );
   await annoDb.run(
+    ctx,
     `DELETE FROM CommunityAnnotationMembers WHERE Engine = '${esc(engine)}' AND Community = ${Number(community)}`
   );
 
@@ -77,6 +81,7 @@ async function setCommunityAnnotation({ engine, community, userName, userNotes }
   }
 
   await annoDb.run(
+    ctx,
     `INSERT INTO CommunityAnnotation (Engine, Community, User_Name, User_Notes)
      VALUES ('${esc(engine)}', ${Number(community)},
              ${name === null ? 'NULL' : `'${esc(name)}'`},
@@ -84,7 +89,7 @@ async function setCommunityAnnotation({ engine, community, userName, userNotes }
   );
 
   // Member-Snapshot aus dem READ_ONLY-Katalog ziehen (nur für P4 nötig).
-  await snapshotMembers(engine, community);
+  await snapshotMembers(ctx, engine, community);
 
   return { engine, community: Number(community), userName: name, userNotes: notes, cleared: false };
 }
@@ -94,9 +99,10 @@ async function setCommunityAnnotation({ engine, community, userName, userNotes }
  * fehl (keine Cluster-Tabellen, Reload), bleibt die Live-Annotation trotzdem
  * gesetzt — nur das Offline-Survival-Votum hat dann keine Basis.
  */
-async function snapshotMembers(engine, community) {
+async function snapshotMembers(ctx, engine, community) {
   try {
     const { rows } = await db.executeQuery(
+      ctx,
       `SELECT Object_UUID, File_Name FROM ObjectClusters
         WHERE Community = ? AND Engine = ?`,
       [Number(community), engine]
@@ -106,6 +112,7 @@ async function snapshotMembers(engine, community) {
       .map((r) => `('${esc(engine)}', ${Number(community)}, '${esc(r.Object_UUID)}', ${r.File_Name == null ? 'NULL' : `'${esc(r.File_Name)}'`})`)
       .join(',');
     await annoDb.run(
+      ctx,
       `INSERT INTO CommunityAnnotationMembers (Engine, Community, Object_UUID, File_Name) VALUES ${values}`
     );
   } catch (err) {
@@ -117,15 +124,17 @@ async function snapshotMembers(engine, community) {
  * Node-Sichtbarkeit setzen. visible=true ⇒ Eintrag löschen (Abwesenheit =
  * sichtbar), visible=false ⇒ Hidden-Eintrag schreiben. NULL-File-safe.
  */
-async function setNodeVisibility({ uuid, file, visible }) {
+async function setNodeVisibility(ctx, { uuid, file, visible }) {
   const fileClause = file == null
     ? `File_Name IS NULL`
     : `File_Name = '${esc(file)}'`;
   await annoDb.run(
+    ctx,
     `DELETE FROM NodeVisibility WHERE Object_UUID = '${esc(uuid)}' AND ${fileClause}`
   );
   if (visible === false) {
     await annoDb.run(
+      ctx,
       `INSERT INTO NodeVisibility (Object_UUID, File_Name, Visible)
        VALUES ('${esc(uuid)}', ${file == null ? 'NULL' : `'${esc(file)}'`}, FALSE)`
     );
@@ -137,9 +146,10 @@ async function setNodeVisibility({ uuid, file, visible }) {
  * Alle ausgeblendeten Knoten mit Anzeige-Metadaten (für die Recovery-Liste im
  * `hide`-Modus). Verschneidet die Sidecar-Keys mit dem READ_ONLY-Katalog.
  */
-async function listHidden() {
+async function listHidden(ctx) {
   if (!annoDb.isAvailable()) return [];
   const hidden = await annoDb.query(
+    ctx,
     `SELECT Object_UUID, File_Name, Updated_At FROM NodeVisibility
       WHERE Visible = FALSE ORDER BY Updated_At DESC`
   );
@@ -149,6 +159,7 @@ async function listHidden() {
   let labels = new Map();
   try {
     const { rows } = await db.executeQuery(
+      ctx,
       `SELECT Object_UUID, File_Name, Object_Name, Object_Type
          FROM ObjectCatalog WHERE Object_UUID IN (${inList})`
     );
@@ -186,9 +197,10 @@ async function listHidden() {
 const TAU_PURITY = 0.6;
 const TAU_COVERAGE = 0.5;
 
-async function remapAfterReload() {
+async function remapAfterReload(ctx) {
   if (!annoDb.isAvailable()) return { skipped: 'no-sidecar' };
   const anns = await annoDb.query(
+    ctx,
     `SELECT Engine, Community, User_Name, User_Notes FROM CommunityAnnotation`
   );
   if (anns.length === 0) return { remapped: 0, dropped: 0 };
@@ -197,6 +209,7 @@ async function remapAfterReload() {
   let newEngine = '';
   try {
     const r = await db.executeQuery(
+      ctx,
       `SELECT Engine FROM ObjectClusters WHERE Engine IS NOT NULL
         GROUP BY Engine ORDER BY COUNT(*) DESC LIMIT 1`
     );
@@ -210,6 +223,7 @@ async function remapAfterReload() {
   const candidates = [];
   for (const a of anns) {
     const members = await annoDb.query(
+      ctx,
       `SELECT Object_UUID, File_Name FROM CommunityAnnotationMembers WHERE Engine = ? AND Community = ?`,
       [a.Engine, Number(a.Community)]
     );
@@ -218,6 +232,7 @@ async function remapAfterReload() {
     let rows = [];
     try {
       rows = (await db.executeQuery(
+        ctx,
         `SELECT Object_UUID, File_Name, Community FROM ObjectClusters
           WHERE Engine = '${esc(newEngine)}' AND Object_UUID IN (${inList})`
       )).rows;
@@ -250,17 +265,18 @@ async function remapAfterReload() {
   }
 
   // Sidecar neu schreiben: re-gekeyte Annotationen + frische Member-Snapshots.
-  await annoDb.run(`DELETE FROM CommunityAnnotation`);
-  await annoDb.run(`DELETE FROM CommunityAnnotationMembers`);
+  await annoDb.run(ctx, `DELETE FROM CommunityAnnotation`);
+  await annoDb.run(ctx, `DELETE FROM CommunityAnnotationMembers`);
   let remapped = 0;
   for (const [newComm, c] of best) {
     await annoDb.run(
+      ctx,
       `INSERT INTO CommunityAnnotation (Engine, Community, User_Name, User_Notes)
        VALUES ('${esc(newEngine)}', ${newComm},
                ${c.name == null ? 'NULL' : `'${esc(c.name)}'`},
                ${c.notes == null ? 'NULL' : `'${esc(c.notes)}'`})`
     );
-    await snapshotMembers(newEngine, newComm);
+    await snapshotMembers(ctx, newEngine, newComm);
     remapped += 1;
   }
   const dropped = anns.length - remapped;
@@ -293,13 +309,14 @@ async function remapAfterReload() {
 const SEM_TAU_PURITY = 0.6;
 const SEM_TAU_COVERAGE = 0.5;
 
-async function restoreSemanticNamesAfterReload() {
+async function restoreSemanticNamesAfterReload(ctx) {
   if (!annoDb.isAvailable()) return { skipped: 'no-sidecar' };
 
   // Neue aktive Engine (wie remapAfterReload); ohne Cluster-Tabellen → no-op.
   let newEngine = '';
   try {
     const r = await db.executeQuery(
+      ctx,
       `SELECT Engine FROM ObjectClusters WHERE Engine IS NOT NULL
         GROUP BY Engine ORDER BY COUNT(*) DESC LIMIT 1`
     );
@@ -313,11 +330,12 @@ async function restoreSemanticNamesAfterReload() {
   // Objekte mit gleichem Semantic_Name bildeten eine Community → je Name ein
   // Member-Set, das per Mehrheitsvotum der neuen Community zugeordnet wird.
   const cache = await annoDb.query(
+    ctx,
     `SELECT Object_UUID, File_Name, Semantic_Name, Semantic_Description
        FROM SemanticNameSidecarCache WHERE Semantic_Name IS NOT NULL`
   );
 
-  await annoDb.run(`DELETE FROM SemanticNameRestore`);
+  await annoDb.run(ctx, `DELETE FROM SemanticNameRestore`);
   let restored = 0;
   if (cache.length > 0) {
     const groups = new Map(); // Semantic_Name -> { name, desc, members:[{uuid,file}] }
@@ -335,6 +353,7 @@ async function restoreSemanticNamesAfterReload() {
       let rows = [];
       try {
         rows = (await db.executeQuery(
+          ctx,
           `SELECT Object_UUID, File_Name, Community FROM ObjectClusters
             WHERE Engine = '${esc(newEngine)}' AND Object_UUID IN (${inList})`
         )).rows;
@@ -365,6 +384,7 @@ async function restoreSemanticNamesAfterReload() {
     }
     for (const [newComm, c] of best) {
       await annoDb.run(
+        ctx,
         `INSERT INTO SemanticNameRestore (Engine, Community, Semantic_Name, Semantic_Description)
          VALUES ('${esc(newEngine)}', ${newComm},
                  ${c.name == null ? 'NULL' : `'${esc(c.name)}'`},
@@ -378,13 +398,14 @@ async function restoreSemanticNamesAfterReload() {
   let snapshotted = 0;
   try {
     const live = (await db.executeQuery(
+      ctx,
       `SELECT oc.Object_UUID, oc.File_Name, cn.Semantic_Name, cn.Semantic_Description, oc.Engine
          FROM ObjectClusters oc
          JOIN CommunityNames cn ON cn.Engine = oc.Engine AND cn.Community = oc.Community
         WHERE cn.Semantic_Name IS NOT NULL`
     )).rows;
     if (live.length > 0) {
-      await annoDb.run(`DELETE FROM SemanticNameSidecarCache`);
+      await annoDb.run(ctx, `DELETE FROM SemanticNameSidecarCache`);
       const CHUNK = 1000;
       for (let i = 0; i < live.length; i += CHUNK) {
         const values = live.slice(i, i + CHUNK).map((r) =>
@@ -394,6 +415,7 @@ async function restoreSemanticNamesAfterReload() {
           `${r.Engine == null ? 'NULL' : `'${esc(r.Engine)}'`})`
         ).join(',');
         await annoDb.run(
+          ctx,
           `INSERT INTO SemanticNameSidecarCache
              (Object_UUID, File_Name, Semantic_Name, Semantic_Description, Engine) VALUES ${values}`
         );
@@ -416,9 +438,10 @@ async function restoreSemanticNamesAfterReload() {
  * { semanticName, semanticDescription }. Wird vom Coverage-/Graph-Label-Pfad als
  * 3. Namensquelle gelesen (Priorität: User > Copy-Live > Restore > Heuristik).
  */
-async function getSemanticRestoreMap() {
+async function getSemanticRestoreMap(ctx) {
   if (!annoDb.isAvailable()) return new Map();
   const rows = await annoDb.query(
+    ctx,
     `SELECT Engine, Community, Semantic_Name, Semantic_Description FROM SemanticNameRestore`
   );
   const m = new Map();

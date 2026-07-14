@@ -9,7 +9,7 @@ const settingsStore = require('../plugins/settings-store');
 /**
  * Docs Controller — REST handlers for /api/docs/*
  *
- * Endpoints (siehe project/prd_docs_redesign.md §7.1):
+ * Endpoints:
  *   GET  /api/docs                                  Übersicht (catalog + installed)
  *   GET  /api/docs/:id/status                       Detailstatus + Index-Health
  *   GET  /api/docs/:id/categories?lang=             Kategorien (mit Code-Ref-Counter)
@@ -93,7 +93,7 @@ async function getStatus(req, res, next) {
     const catalog = docsManifest.getCatalogEntry(id);
     if (!catalog) return notFound(res, `Unknown doc-set: ${id}`);
     const installed = docsManifest.getInstalledEntry(id);
-    const index = installed ? await docsSource.validateDocset(id) : { ok: false, errors: ['Not installed.'] };
+    const index = installed ? await docsSource.validateDocset(req.solutionContext, id) : { ok: false, errors: ['Not installed.'] };
     return ok(res, {
       id,
       catalog: publicCatalogShape(catalog),
@@ -115,7 +115,7 @@ async function listCategories(req, res, next) {
     const lang = req.query.lang || 'en';
     const catalog = docsManifest.getCatalogEntry(id);
     if (!catalog) return notFound(res, `Unknown doc-set: ${id}`);
-    const data = await docsSource.listDocsetCategories(id, lang);
+    const data = await docsSource.listDocsetCategories(req.solutionContext, id, lang);
     return ok(res, data, { id, lang, references: catalog.references });
   } catch (err) {
     return next(err);
@@ -131,9 +131,9 @@ async function getCategory(req, res, next) {
     const lang = req.query.lang || 'en';
     const catalog = docsManifest.getCatalogEntry(id);
     if (!catalog) return notFound(res, `Unknown doc-set: ${id}`);
-    const info = await docsSource.getDocsetCategoryInfo(id, cat, lang);
+    const info = await docsSource.getDocsetCategoryInfo(req.solutionContext, id, cat, lang);
     if (!info) return notFound(res, `Category '${cat}' not found in '${id}'`);
-    const functions = await docsSource.listDocsetFunctions(id, cat, lang);
+    const functions = await docsSource.listDocsetFunctions(req.solutionContext, id, cat, lang);
     return ok(res, { info, functions }, { id, lang, references: catalog.references });
   } catch (err) {
     return next(err);
@@ -149,7 +149,7 @@ async function getEntry(req, res, next) {
     const lang = req.query.lang || 'en';
     const catalog = docsManifest.getCatalogEntry(id);
     if (!catalog) return notFound(res, `Unknown doc-set: ${id}`);
-    const entry = await docsSource.getDocsetEntry(id, cat, fn, lang);
+    const entry = await docsSource.getDocsetEntry(req.solutionContext, id, cat, fn, lang);
     if (!entry) return notFound(res, `Entry '${fn}' not found in '${id}/${cat}'`);
     return ok(res, entry, { id, category: cat, lang });
   } catch (err) {
@@ -168,7 +168,7 @@ async function search(req, res, next) {
     if (!q) return validationError(res, 'Query parameter "q" is required.');
     const catalog = docsManifest.getCatalogEntry(id);
     if (!catalog) return notFound(res, `Unknown doc-set: ${id}`);
-    const result = await docsSource.searchDocset(id, q, lang);
+    const result = await docsSource.searchDocset(req.solutionContext, id, q, lang);
     return ok(res, result, { id, q, lang });
   } catch (err) {
     return next(err);

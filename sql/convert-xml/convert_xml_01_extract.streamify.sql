@@ -1570,7 +1570,7 @@ ON CONFLICT (CF_UUID, File_Name) DO UPDATE SET
 -- <CustomFunction> eingebettet; die separate <CalcsForCustomFunctions>-Sektion entfällt.
 -- Quelle ist das oben bereits geparste _cf_catalog_raw → KEIN zusätzlicher XML-Parse.
 -- Code_Chunks = NULL: das eingebettete <Calculation> trägt keine <ChunkList> (verifiziert
--- an xml-test/v26/Ooe.xml) — die Chunks bleiben über DDR_Hash → DDR_Calculations erreichbar.
+-- an tools/tests/fixtures/xml/v26/Ooe.xml) — die Chunks bleiben über DDR_Hash → DDR_Calculations erreichbar.
 -- ON CONFLICT DO NOTHING: trägt eine Datei je beide Formen, gewinnt der Legacy-Pfad oben
 -- (kein Datenverlust). Bei FM ≤ 22 ist Calculation NULL → 0 Zeilen, also ein No-Op.
 INSERT INTO CalcsForCustomFunctions

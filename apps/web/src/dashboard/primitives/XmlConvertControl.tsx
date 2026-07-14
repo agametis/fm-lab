@@ -99,6 +99,11 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
   // Auto-Start-Intent aus dem Empty-State (?autostart=1) — genau einmal beim Mount
   // ausgewertet (Ref, damit ein Re-Render durch das URL-Säubern nicht erneut feuert).
   const autostartRef = useRef(searchParams.get('autostart') === '1');
+  // Kontext-Lösung der Import-Seite (?solution_id=<id>): Status, Start, Stream
+  // und Cancel wirken auf DIESE Lösung — ohne Parameter auf die aktive (Server-
+  // Default). Kein Aktiv-Wechsel durch den Import.
+  const contextSolution = searchParams.get('solution_id') || null;
+  const solutionQuery = contextSolution ? `?solution=${encodeURIComponent(contextSolution)}` : '';
   const mode = (node.props?.mode as string) === 'navigate' ? 'navigate' : 'run';
 
   // Dataset für die Disable-Logik: bevorzugt `directory_status` (im
@@ -114,6 +119,9 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
   const [status, setStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState('');
+  // Reason of a clean self-abort ('oom' | 'incomplete') → renders a localized banner
+  // with actionable guidance; null when no such abort is pending.
+  const [abortNotice, setAbortNotice] = useState<string | null>(null);
   // "Nur geänderte Dateien" (Manifest-Skip auf Datei-Ebene) ist Default; nur
   // geänderte XML werden neu geparst. Toggle aus → voller (Turbo-)Build aller Dateien.
   const [changedOnly, setChangedOnly] = useState(true);
@@ -169,7 +177,7 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
     abortRef.current = ac;
     const apiBase = (API_BASE).replace(/\/+$/, '');
     try {
-      const res = await fetch(`${apiBase}/api/xml/convert/stream`, {
+      const res = await fetch(`${apiBase}/api/xml/convert/stream${solutionQuery}`, {
         headers: { Accept: 'text/event-stream' },
         signal: ac.signal,
       });
@@ -188,6 +196,7 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
       let errorCount = 0;
       let doneOk: boolean | null = null;
       let idle = false;
+      let abortReason: string | null = null;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -227,7 +236,14 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
                 break;
               }
               case 'aborted': {
-                idle = true;
+                // The converter self-aborts cleanly with a reason (oom / incomplete);
+                // a user cancel (or a legacy bare event) carries no such reason → idle.
+                const reason = typeof evt.reason === 'string' ? (evt.reason as string) : '';
+                if (reason === 'oom' || reason === 'incomplete') {
+                  abortReason = reason;   // surfaced as an error banner after the loop
+                } else {
+                  idle = true;
+                }
                 break;
               }
               case 'done': {
@@ -248,9 +264,11 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
           : undefined;
         if (hadError || doneOk === false) {
           setStatus('error');
+          if (abortReason) setAbortNotice(abortReason);
           dispatchStatus({ status: 'error', ok: false, startedAt, finishedAt, durationMs, errorCount });
         } else {
           setStatus('done');
+          setAbortNotice(null);
           dispatchStatus({ status: 'done', ok: true, startedAt, finishedAt, durationMs, errorCount: 0 });
           // Datei-Tabelle UND Community-Gauges neu laden.
           window.dispatchEvent(new CustomEvent('fmlab:reload-dashboard'));
@@ -276,7 +294,7 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
     } finally {
       abortRef.current = null;
     }
-  }, [triggerDissolve]);
+  }, [triggerDissolve, solutionQuery]);
 
   /**
    * Startet einen Lauf: POST /api/xml/convert (202, streamt NICHT mehr selbst) →
@@ -294,6 +312,7 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
     setStatus('running');
     setProgress(0);
     setPhase('');
+    setAbortNotice(null);   // clear a prior memory/incomplete banner on a fresh run
     dispatchStatus({ status: 'running', startedAt });
 
     const apiBase = (API_BASE).replace(/\/+$/, '');
@@ -301,7 +320,7 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
       const res = await fetch(`${apiBase}/api/xml/convert`, {
         method: 'POST',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ changedOnly }),
+        body: JSON.stringify(contextSolution ? { changedOnly, solution: contextSolution } : { changedOnly }),
       });
       if (res.status === 409) {
         // Es läuft bereits (anderer Tab/CLI) → einfach auf den Stream aufspringen.
@@ -326,7 +345,7 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
       dispatchEvent({ event: 'log', level: 'error', msg: (err as Error).message || String(err) });
       dispatchStatus({ status: 'error' });
     }
-  }, [status, changedOnly, subscribeToStream]);
+  }, [status, changedOnly, subscribeToStream, contextSolution]);
 
   // Mount-Detektion: fragt den Server, ob bereits ein Lauf
   // aktiv ist. Falls ja → OHNE POST auf den Stream abonnieren (Wiedereintritt
@@ -337,7 +356,7 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
     (async () => {
       try {
         const apiBase = (API_BASE).replace(/\/+$/, '');
-        const res = await fetch(`${apiBase}/api/xml/status`, { headers: { Accept: 'application/json' } });
+        const res = await fetch(`${apiBase}/api/xml/status${solutionQuery}`, { headers: { Accept: 'application/json' } });
         if (!res.ok) return;
         const json = await res.json().catch(() => null);
         const data = json?.data ?? json;
@@ -394,8 +413,17 @@ export function XmlConvertControl({ node, datasets }: PrimitiveProps) {
 
   const showBar = isRunning || dissolving;
 
+  const abortTitleKey = abortNotice === 'incomplete' ? 'xmlConvert.abortIncompleteTitle' : 'xmlConvert.abortOomTitle';
+  const abortBodyKey = abortNotice === 'incomplete' ? 'xmlConvert.abortIncompleteBody' : 'xmlConvert.abortOomBody';
+
   return (
     <div className="xml-convert-control">
+      {abortNotice && !showBar && (
+        <div className="xml-convert-abort" role="alert">
+          <strong className="xml-convert-abort__title">{t(abortTitleKey) as string}</strong>
+          <span className="xml-convert-abort__body">{t(abortBodyKey) as string}</span>
+        </div>
+      )}
       {showBar ? (
         <div
           className={`xml-convert-progress xml-convert-progress--segmented${dissolving ? ' xml-convert-progress--dissolving' : ''}`}

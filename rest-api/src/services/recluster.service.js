@@ -10,20 +10,29 @@ const settingsStore = require('../plugins/settings-store');
  * R3-Restore + User-Namen-Remap (system-reload.js). Die Roh-Repartition ist billig
  * (kein LLM) — die Struktur-Heilung der ① Drift-Kennzahl.
  *
- * Zero-config (R6): Engine/Resolution/Seed kommen aus `.fmlab/cluster.json`
- * (Skill-Sweep-Gewinner) bzw. den cluster.sh-Defaults — KEIN Granularitäts-Regler.
+ * Zero-config (R6): Engine/Resolution/Seed kommen aus
+ * `solutions/<id>/state/cluster.json` (Skill-Sweep-Gewinner; Fallback
+ * .fmlab/cluster.json aus unmigrierten Workspaces) bzw. den cluster.sh-Defaults
+ * — KEIN Granularitäts-Regler.
  *
  * Concurrency: Re-Cluster und Convert schreiben beide den Master → gegenseitiger
- * Ausschluss. Der Endpoint hält für die Laufzeit das `xml_convert.lock` (Source
- * „cluster"), damit ein paralleler CLI-/API-Import 409 bekommt; cluster.sh selbst
- * nimmt KEINEN Lock (kein Deadlock).
+ * Ausschluss. Der Endpoint hält für die Laufzeit das per-Solution
+ * `xml_convert.lock` (Source „cluster"), damit ein paralleler CLI-/API-Import
+ * 409 bekommt; cluster.sh selbst nimmt KEINEN Lock (kein Deadlock).
  */
+
+const solutions = require('../config/solutions');
 
 const REPO_ROOT = settingsStore.resolveRepoRoot();
 const CLUSTER_SCRIPT = path.join(REPO_ROOT, 'tools', 'graph-export', 'cluster.sh');
-const FMLAB_DIR = path.join(REPO_ROOT, '.fmlab');
-const LOCK_PATH = path.join(FMLAB_DIR, 'xml_convert.lock');
-const CLUSTER_JSON = path.join(FMLAB_DIR, 'cluster.json');
+// Per aktive Lösung aufgelöst (Funktionen statt Konstanten — Lösungswechsel
+// greift ohne Prozess-Neustart).
+function lockPath() { return path.join(solutions.resolveStateDir(), 'xml_convert.lock'); }
+function clusterJsonPath() {
+  const p = path.join(solutions.resolveStateDir(), 'cluster.json');
+  if (fs.existsSync(p)) return p;
+  return path.join(REPO_ROOT, '.fmlab', 'cluster.json');
+}
 
 let reclusterActive = false;
 
@@ -40,7 +49,7 @@ function isReclusterActive() {
 function readClusterConfig() {
   const cfg = { engine: 'auto', resolution: '1.0', seed: '42' };
   try {
-    const raw = JSON.parse(fs.readFileSync(CLUSTER_JSON, 'utf-8'));
+    const raw = JSON.parse(fs.readFileSync(clusterJsonPath(), 'utf-8'));
     if (raw && raw.engine) cfg.engine = String(raw.engine);
     if (raw && raw.resolution != null) cfg.resolution = String(raw.resolution);
     if (raw && raw.seed != null) cfg.seed = String(raw.seed);
@@ -51,15 +60,16 @@ function readClusterConfig() {
 
 function writeLock() {
   try {
-    fs.mkdirSync(FMLAB_DIR, { recursive: true });
-    fs.writeFileSync(LOCK_PATH, `${process.pid}\n${new Date().toISOString()}\ncluster\n`);
+    const p = lockPath();
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, `${process.pid}\n${new Date().toISOString()}\ncluster\n`);
   } catch (err) {
     console.warn(`[recluster] could not write lock: ${err.message}`);
   }
 }
 
 function removeLock() {
-  try { fs.unlinkSync(LOCK_PATH); } catch { /* already gone */ }
+  try { fs.unlinkSync(lockPath()); } catch { /* already gone */ }
 }
 
 /**

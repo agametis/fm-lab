@@ -24,6 +24,13 @@
     "settings": "Inställningar",
     "fmSpec": "fm-spec"
   },
+  "leitDescription": {
+    "dashboards": "Översikt över alla tillgängliga instrumentpaneler.",
+    "customQueries": "Återanvändbara SQL-mallar — klicka på en ruta för att öppna en analys.",
+    "docs": "Dokumentationskällor installerade i detta projekt.",
+    "xmlImport": "Importerar alla filer från katalogen xml/ till DuckDB.",
+    "xmlImportContextNote": "Import av en icke-aktiv lösning — analysdata som visas ändras först efter aktivering."
+  },
   "errors": {
     "noDashboardId": "Inget dashboard-id angivet.",
     "noQueryName": "Inget frågenamn angivet."

@@ -25,7 +25,7 @@
   },
   "theme": {
     "switchToLight": "Switch to light mode",
-    "switchToDark":  "Switch to dark mode"
+    "switchToDark": "Switch to dark mode"
   },
   "actions": {
     "openInFileMaker": "Open in FileMaker",
@@ -71,5 +71,10 @@
     "loading": "Loading dashboard…",
     "loadError": "Failed to load: {{message}}",
     "noData": "No data available."
+  },
+  "solutionPicker": {
+    "label": "Solution",
+    "ariaLabel": "Select the active solution",
+    "switchError": "Switching the solution failed: {{message}}"
   }
 }

@@ -24,7 +24,7 @@
   },
   "theme": {
     "switchToLight": "라이트 모드로 전환",
-    "switchToDark":  "다크 모드로 전환"
+    "switchToDark": "다크 모드로 전환"
   },
   "actions": {
     "openInFileMaker": "FileMaker에서 열기",
@@ -70,5 +70,10 @@
     "loading": "대시보드 로딩 중…",
     "loadError": "불러오기 실패: {{message}}",
     "noData": "사용 가능한 데이터가 없습니다."
+  },
+  "solutionPicker": {
+    "label": "솔루션",
+    "ariaLabel": "활성 솔루션 선택",
+    "switchError": "솔루션 전환 실패: {{message}}"
   }
 }

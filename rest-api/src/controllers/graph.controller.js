@@ -15,8 +15,8 @@ const { createError } = require('../middleware/error-handler');
  * Fokus-Auflösung mit Clone-Disambiguierung. Wirft 404 (unbekannt) bzw. 409
  * (mehrdeutig ohne focus_file) — sonst stiller Treffer auf den falschen Klon.
  */
-async function assertFocusResolvable(focus, focusFile) {
-  const status = await graphService.objectFocusStatus(focus, focusFile);
+async function assertFocusResolvable(ctx, focus, focusFile) {
+  const status = await graphService.objectFocusStatus(ctx, focus, focusFile);
   if (!status.exists) {
     throw createError('OBJECT_NOT_FOUND', `Focus object '${focus}' not found in ObjectCatalog`, { focus });
   }
@@ -35,9 +35,9 @@ async function getSubgraph(req, res, next) {
   try {
     const { format, meta, debug } = req.query;
 
-    await assertFocusResolvable(req.query.focus, req.query.focus_file);
+    await assertFocusResolvable(req.solutionContext, req.query.focus, req.query.focus_file);
 
-    const { payload, sql } = await graphService.getSubgraph(req.query);
+    const { payload, sql } = await graphService.getSubgraph(req.solutionContext, req.query);
     const metaInfo = meta
       ? { focus: payload.focus, ...payload.stats, truncated: payload.truncated }
       : null;
@@ -52,9 +52,9 @@ async function getNeighbors(req, res, next) {
   try {
     const { format, meta, debug } = req.query;
 
-    await assertFocusResolvable(req.query.focus, req.query.focus_file);
+    await assertFocusResolvable(req.solutionContext, req.query.focus, req.query.focus_file);
 
-    const { payload, sql } = await graphService.getNeighbors(req.query);
+    const { payload, sql } = await graphService.getNeighbors(req.solutionContext, req.query);
     const metaInfo = meta
       ? { focus: payload.focus, ...payload.stats, truncated: payload.truncated }
       : null;
@@ -68,7 +68,7 @@ async function getNeighbors(req, res, next) {
 async function getOverview(req, res, next) {
   try {
     const { format, meta, debug } = req.query;
-    const { payload, sql } = await graphService.getOverview(req.query, req.debug);
+    const { payload, sql } = await graphService.getOverview(req.solutionContext, req.query, req.debug);
     const metaInfo = meta
       ? { view: payload.view, segment_by: payload.segment_by, level: payload.level ?? null,
           truncated: payload.truncated ?? null }
@@ -83,7 +83,7 @@ async function getOverview(req, res, next) {
 async function getCommunityStats(req, res, next) {
   try {
     const { format } = req.query;
-    const payload = await graphService.getCommunityStats();
+    const payload = await graphService.getCommunityStats(req.solutionContext);
     return sendFormatted(res, payload, format, null, null);
   } catch (error) {
     next(error);
@@ -94,7 +94,7 @@ async function getCommunityStats(req, res, next) {
 async function getCommunities(req, res, next) {
   try {
     const { format } = req.query;
-    const payload = await graphService.getCommunities();
+    const payload = await graphService.getCommunities(req.solutionContext);
     return sendFormatted(res, payload, format, null, null);
   } catch (error) {
     next(error);
@@ -105,8 +105,8 @@ async function getCommunities(req, res, next) {
 async function getDepthProfile(req, res, next) {
   try {
     const { format, meta, debug } = req.query;
-    await assertFocusResolvable(req.query.focus, req.query.focus_file);
-    const { payload, sql } = await graphService.getDepthProfile(req.query);
+    await assertFocusResolvable(req.solutionContext, req.query.focus, req.query.focus_file);
+    const { payload, sql } = await graphService.getDepthProfile(req.solutionContext, req.query);
     const metaInfo = meta
       ? { focus: payload.focus, direction: payload.direction, maxDepth: payload.maxDepth, hitCap: payload.hitCap }
       : null;
@@ -120,7 +120,7 @@ async function getDepthProfile(req, res, next) {
 async function search(req, res, next) {
   try {
     const { format, meta, debug } = req.query;
-    const { payload, sql } = await graphService.search(req.query);
+    const { payload, sql } = await graphService.search(req.solutionContext, req.query);
     const metaInfo = meta ? { query: payload.query, count: payload.count } : null;
     return sendFormatted(res, payload, format, metaInfo, debug ? sql : null);
   } catch (error) {

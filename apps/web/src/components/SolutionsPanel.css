@@ -1,0 +1,281 @@
+.solutions-panel {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-elevated);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.solutions-panel__error {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: var(--color-danger-bg, rgba(220, 60, 60, 0.12));
+  color: var(--color-danger, #c0392b);
+  font-size: 0.85rem;
+}
+
+.solutions-panel__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.solutions-panel__table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  padding: 0.35rem 0.75rem 0.35rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.solutions-panel__th--sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.solutions-panel__th--sortable:hover {
+  color: var(--color-text-primary);
+}
+
+.solutions-panel__search {
+  width: 100%;
+  max-width: 22rem;
+  height: 32px;
+  margin-bottom: 0.75rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+}
+
+.solutions-panel__search:focus {
+  outline: none;
+  border-color: var(--color-accent, #4a90e2);
+}
+
+.solutions-panel__table td {
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.solutions-panel__row--active td {
+  background: var(--color-accent-soft-bg, rgba(74, 144, 226, 0.1));
+}
+
+.solutions-panel__name {
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+
+.solutions-panel__name--editable {
+  cursor: text;
+}
+
+.solutions-panel__name--editable:hover {
+  text-decoration: underline dotted;
+}
+
+.solutions-panel__rename {
+  padding: 0.1rem 0.25rem;
+  margin-right: 0.35rem;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.solutions-panel__rename:hover {
+  color: var(--color-accent, #4a90e2);
+}
+
+.solutions-panel__rename-input {
+  width: 12rem;
+  height: 28px;
+  margin-right: 0.5rem;
+  padding: 0 0.4rem;
+  border: 1px solid var(--color-accent, #4a90e2);
+  border-radius: 4px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.solutions-panel__id {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  margin-right: 0.5rem;
+}
+
+.solutions-panel__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.5rem;
+  margin-right: 0.5rem;
+  border-radius: 999px;
+  background: var(--color-accent-soft-bg, rgba(74, 144, 226, 0.14));
+  color: var(--color-accent-soft-fg, #4a90e2);
+  font-size: 0.72rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.solutions-panel__badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent, #4a90e2);
+}
+
+.solutions-panel__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Hamburger-Popout: ein dezenter Toggle statt vier nebeneinander liegender
+ * Buttons — spart Platz und bricht auf schmalen Viewports nicht mehr um. */
+.solutions-panel__menu-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.solutions-panel__menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.solutions-panel__menu-toggle:hover,
+.solutions-panel__menu-toggle[aria-expanded='true'] {
+  border-color: var(--color-border);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+
+.solutions-panel__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 11rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0.3rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-elevated);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.solutions-panel__menu-title {
+  padding: 0.2rem 0.55rem 0.35rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.solutions-panel__menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.35rem 0.55rem;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  color: var(--color-text-primary);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.solutions-panel__menu button:hover:not(:disabled) {
+  background: var(--color-bg-surface);
+}
+
+.solutions-panel__menu button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.solutions-panel__delete {
+  color: var(--color-danger, #c0392b) !important;
+}
+
+.solutions-panel__new,
+.solutions-panel__create button {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.solutions-panel__new:hover,
+.solutions-panel__create button:hover:not(:disabled) {
+  border-color: var(--color-accent, #4a90e2);
+}
+
+.solutions-panel__create {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.solutions-panel__create input {
+  flex: 0 1 14rem;
+  height: 30px;
+  padding: 0 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-size: 0.82rem;
+}
+
+.solutions-panel__create button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Live-Import-Status: gleiche Puls-Optik wie die Phasen-Anzeige der
+ * XML-Import-Seite (xml-convert-seg-pulse in dashboard.css). */
+.solutions-panel__importing {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(255, 145, 30, 0.92);
+  color: #1b1b1b;
+  font-weight: 600;
+  animation: solutions-import-pulse 1.4s ease-in-out infinite;
+}
+@keyframes solutions-import-pulse {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .solutions-panel__importing { animation: none; }
+}

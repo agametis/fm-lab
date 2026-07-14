@@ -51,7 +51,7 @@ FM-Lab supports four complementary approaches to analyzing a FileMaker solution:
 - **Claude Skills** — slash commands for agentic analysis workflows in Claude Code, supported by helpers for XML conversion and documentation setup, enabling deep, solution-aware inspection beyond scripted analysis 🤖
 - **Comprehensive Docs** — easy-to-install documentation for FileMaker Pro and MBS plugin functions 📚
 - **Plugin System** — open architecture for adding new tools and integrations, starting with **[fmIDE](https://github.com/fmIDE/fmIDE)** as a first-class citizen to provide direct navigation into FileMaker's Script Workspace 🛠️
-- **Prepared for AI code generation** — architecture and data model designed to support AI-driven code generation, augmented by reliable context from the object catalog and the integrated documentation 🧠
+- **AI Code Generation** — architecture and data model built for AI-driven code generation: every generated artifact is grounded in reliable context from the object catalog and validated against the integrated machine-readable FileMaker syntax and grammar through a multi-step validation pipeline 🧠
 
 ## [Architecture](docs/fm-lab/Wiki/Architecture.md)
 
@@ -69,15 +69,16 @@ Learn how FM-Lab turns FileMaker XML exports into a structured Object Catalog an
 
 ## [Components](docs/fm-lab/Wiki/Components.md)
 
-- **XML (Input)** (`xml/`) — FileMaker XML exports (SaXML) prepared for conversion from your solution.
 - **SQL Templates** (`sql/`) — Conversion templates and parser templates for universal catalogs.
-- **DuckDB Catalog** (`db/`) — The generated DuckDB database containing the extracted FileMaker objects and their relationships.
 - **REST API** (`rest-api/`) — Express server for HTTP access to the analysis database.
 - **Web Client** (`apps/web/`) — React/Vite frontend
-- **Tools** (`tools/`) — Utility scripts for various tasks.
-- **Docs** (`docs/`) — Documentation files for FileMaker Pro and MBS plugin functions, installable via Web frontend or Claude Skills.
+- **Solution Bundles** (`solutions/`) — One or multiple FileMaker solutions to explore. Each solution lives in its own bundle `solutions/<id>/` (XML inbox, database, state); `default` exists out of the box.
+- **XML (Input)** (`solutions/<id>/xml/`) — FileMaker XML exports (SaXML) prepared for conversion from your solution.
+- **Object Catalog (Output)** (`solutions/<id>/db/`) — The generated DuckDB database containing the extracted FileMaker objects and their relationships.
 - **fm-spec** (`reference/fm_spec.duckdb`) — Reference tables for FileMaker script steps and functions, providing queryable syntax and grammar definitions for linting.
-- **Claude Skills** (`.claude/skills/`) — Contains Claude Code skills and slash commands for installation, conversion, lookup and analysis.
+- **Docs** (`docs/`) — Documentation files for FileMaker Pro and MBS plugin functions, installable via Web frontend or Skills.
+- **Tools** (`tools/`) — Utility scripts for various tasks.
+- **Claude Skills** (`.claude/skills/`) — Contains Claude Code skills and slash commands for installation, conversion, lookup, analysis and code generation.
 - **Plugin registry** (`.fmlab/`) — Registry and preferences for FM-Lab plugins.
 
 ## ⚡ Quickstart
@@ -90,7 +91,7 @@ cd fm-lab
 bash tools/fmlab.sh up  # answers two questions, then starts
 ```
 
-`fmlab.sh up` asks **“Use Docker?”** and **“Start with the Claude Code agent?”**, brings the stack up in the background, and drops you straight into the product — the web client in your browser, or a live Claude Code session in the terminal. Then **drop your FileMaker XML export** into `xml/` (FileMaker Pro ▸ Tools ▸ Save a Copy as XML — enable “Include details for analysis tools”; one file per solution file) and click **XML conversion** in the web client. **Done** — explore the object catalog, dependencies and the Graph Explorer.
+`fmlab.sh up` asks **“Use Docker?”** and **“Start with the Claude Code agent?”**, brings the stack up in the background, and drops you straight into the product — the web client in your browser, or a live Claude Code session in the terminal. Then **drop your FileMaker XML export** into `solutions/default/xml/` (FileMaker Pro ▸ Tools ▸ Save a Copy as XML — enable “Include details for analysis tools”; one file per solution file) and click **XML conversion** in the web client. **Done** — explore the object catalog, dependencies and the Graph Explorer.
 
 ## Setup
 
@@ -140,7 +141,9 @@ For a host install without Docker, answer **No** to “Use Docker?”, or go str
 bash tools/fmlab.sh up --native   # hands off to tools/init.sh
 ```
 
-`init.sh` checks the [prerequisites](#prerequisites), installs dependencies, seeds the environment, starts the servers, and converts any XML already in `xml/`. Native **Windows** is not supported — use way a) or b) via Docker Desktop + WSL2.
+`init.sh` checks the [prerequisites](#prerequisites), installs dependencies, seeds the environment, starts the servers, and converts any XML already in `solutions/default/xml/`.
+
+Native Windows is not supported — use way a) or b) via Docker Desktop + WSL2.
 
 ### The AI agent (Claude Code)
 
@@ -189,7 +192,7 @@ Export **each file** of your solution via `Tools > Save a Copy As XML` (SaXML) i
 
 ```bash
 bash tools/convert_fm_xml.sh --turbo  # streaming; only changed catalogs
-bash tools/convert_fm_xml.sh --batch  # standard; all files in xml/
+bash tools/convert_fm_xml.sh --batch  # standard; all files in the active solution's inbox (solutions/default/xml/)
 bash tools/convert_fm_xml.sh "MyDatabase.xml"  # a single file
 ```
 
@@ -237,6 +240,7 @@ The project has grown along a clear arc — from a solid foundation toward an in
 - **v0.8.6** · _Docker installer_ - including all dependencies for easy setup. Experimental Windows support via Docker on WSL2.
 - **v0.8.7 – v0.8.8** · _Static code analysis_ - predefined inspection queries for standard checks, completion of the object catalog, and expanded reference coverage.
 - **v0.8.9 – v0.8.10** · _fm-spec sidecar + system prompt cleanup_ - groundwork for reliable agentic code generation.
+- **v0.9.0** · _Multi-solution support + agentic code generation_ - a generated script is validated against the FileMaker spec and the actual object catalog before being delivered.
 
 - More details in [`CHANGELOG.md`](CHANGELOG.md) — release history
 
@@ -255,11 +259,11 @@ The core architecture is in place and ready for real-world use. Many more featur
 - Windows support (early alpha with v0.8.6)
 - Granular deployment options for separate ingestion, API, and frontend services
 - Multi-user mode
-- Multi-solution support
+- Multi-solution support (✅ with v0.9.0)
 - Snapshots for tracking changes over time
 - Deeper integration with developer tools and workflows, including VS Code, Raycast, Obsidian, and others
 - Support for additional AI agents and agent configuration formats
-- AI-assisted code generation, refactoring, and documentation based on the object catalog
+- AI-assisted code generation, refactoring, and documentation based on the object catalog (✅ with v0.9.0)
 
 ## Vision
 

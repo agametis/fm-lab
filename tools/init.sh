@@ -364,7 +364,10 @@ mkdir -p "$PROJECT_ROOT/logs"
 
 header "FileMaker XML export"
 
-XML_FILES=$(find "$PROJECT_ROOT/xml" -maxdepth 1 -name "*.xml" 2>/dev/null | wc -l | tr -d ' ')
+# XML inbox of the default solution (multi-solution layout); a flat pre-migration
+# xml/ still counts — convert_fm_xml.sh reads it as the 'default' inbox.
+XML_INBOX="$PROJECT_ROOT/solutions/default/xml"
+XML_FILES=$(find "$XML_INBOX" "$PROJECT_ROOT/xml" -maxdepth 1 -name "*.xml" 2>/dev/null | wc -l | tr -d ' ')
 
 print_summary() {
   local elapsed=$((SECONDS - INIT_START))
@@ -379,8 +382,8 @@ print_summary() {
 }
 
 if [ "$XML_FILES" -eq 0 ]; then
-  warn "No XML files found in xml/."
-  summary_add "XML conversion    skipped (no files in xml/)"
+  warn "No XML files found in solutions/default/xml/."
+  summary_add "XML conversion    skipped (no XML files yet)"
 
   # bootstrap.sh already seeded the empty placeholder catalog, so the READ_ONLY API can
   # boot on a fresh clone BEFORE any XML is converted (same as the Docker `setup`
@@ -395,7 +398,7 @@ if [ "$XML_FILES" -eq 0 ]; then
     echo "  → Open http://localhost:5173 — the guided empty-state walks you through"
     echo "    exporting your FileMaker solution and converting it (one click, live progress)."
     echo ""
-    echo "  CLI alternative: drop .xml file(s) into xml/ and run  bash tools/convert_fm_xml.sh --batch"
+    echo "  CLI alternative: drop .xml file(s) into solutions/default/xml/ and run  bash tools/convert_fm_xml.sh --batch"
     echo ""
     exit 0
   fi
@@ -405,7 +408,7 @@ if [ "$XML_FILES" -eq 0 ]; then
   echo ""
   echo "  Next step:"
   echo "  1. Export your FileMaker solution via 'Tools > Save a Copy As XML' + Option 'Include details for analysis tools'"
-  echo "  2. Place the .xml file in the xml/ directory"
+  echo "  2. Place the .xml file in solutions/default/xml/"
   echo "  3. Run:  bash tools/convert_fm_xml.sh --batch"
   echo "           (adaptive: chunked streaming + OOM-backoff automatically; even large solutions on tight RAM)"
   echo "  4. Then: bash tools/start-servers.sh"
@@ -430,7 +433,7 @@ summary_add "servers started   http://localhost:3003  |  http://localhost:5173"
 CURRENT_STEP="converting XML (bash tools/convert_fm_xml.sh --batch)"
 header "FileMaker XML conversion"
 CONVERT_ARGS=(--batch)
-info "Found $XML_FILES XML file(s) in xml/ — starting conversion (adaptive mode)"
+info "Found $XML_FILES XML file(s) — starting conversion (adaptive mode)"
 echo "  Follow live progress in the web client:  http://localhost:5173  (XML import dashboard)"
 T0=$SECONDS
 bash "$SCRIPT_DIR/convert_fm_xml.sh" "${CONVERT_ARGS[@]}"

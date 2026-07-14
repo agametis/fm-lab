@@ -21,7 +21,11 @@
     "phaseHomes": "Koppelen",
     "phaseValidate": "Valideren",
     "chunkCounter": "{{done}} van {{total}}",
-    "phaseCluster": "Communities"
+    "phaseCluster": "Communities",
+    "abortOomTitle": "Onvoldoende geheugen",
+    "abortOomBody": "Deze oplossing is te groot voor het beschikbare geheugen van deze machine. Voer de import uit op een machine met meer RAM (8 GB of meer) of probeer het opnieuw met een beperkt geheugenprofiel.",
+    "abortIncompleteTitle": "Build onvolledig",
+    "abortIncompleteBody": "De referentieresolutie is niet voltooid, waardoor de objectcatalogus niet kon worden gebouwd. Bekijk het uitvoeringslogboek voor details."
   },
   "cellValues": {
     "yes": "Ja",

@@ -253,6 +253,37 @@
     },
     "versions": {
       "fmSpec": "fm-spec"
+    },
+    "solutions": {
+      "heading": "Soluzioni",
+      "description": "Gestisci le soluzioni FileMaker di questo workspace. Ogni soluzione ha la propria casella XML, il proprio database e il proprio stato. Attivare commuta l’intero workbench su quella soluzione.",
+      "colId": "ID",
+      "colName": "Soluzione",
+      "colSize": "Dimensione",
+      "colFiles": "File",
+      "colLastImport": "Ultima importazione",
+      "colDuration": "Durata",
+      "activeBadge": "Attiva",
+      "activate": "Attiva",
+      "activating": "Attivazione…",
+      "deleteButton": "Elimina",
+      "deleteConfirm1": "Eliminare la soluzione “{{name}}”? Verrà rimosso TUTTO il bundle, inclusi i file XML di origine.",
+      "deleteConfirm2": "Eliminare definitivamente “{{id}}”? Valuta prima un export (tools/solution.sh export {{id}}). L’operazione non è reversibile.",
+      "newButton": "Nuova soluzione…",
+      "createIdPlaceholder": "ID (nome cartella, es. erp-live)",
+      "createNamePlaceholder": "Nome visualizzato (facoltativo)",
+      "createButton": "Crea",
+      "createCancel": "Annulla",
+      "renameTitle": "Rinomina soluzione",
+      "importButton": "Importa XML",
+      "importButtonTitle": "Apri l’import XML per questa soluzione (senza attivarla)",
+      "importRunning": "Import in corso…",
+      "renameIdButton": "Cambia ID…",
+      "renameIdTitle": "Cambia l’ID del bundle (nome cartella) — l’UUID viene mantenuto",
+      "renameIdPrompt": "Nuovo ID per “{{id}}”:\n\nAttenzione: questo cambia il nome della cartella e i percorsi — le destinazioni di export e i link al vecchio ID si interrompono. Rinominando “default” viene ricreato un “default” vuoto.",
+      "menuLabel": "Azioni",
+      "searchPlaceholder": "Filtra soluzioni…",
+      "noMatches": "Nessuna soluzione corrisponde al filtro."
     }
   },
   "objectHeader": {

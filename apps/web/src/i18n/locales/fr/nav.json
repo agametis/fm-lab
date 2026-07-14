@@ -24,6 +24,13 @@
     "settings": "Paramètres",
     "fmSpec": "fm-spec"
   },
+  "leitDescription": {
+    "dashboards": "Vue d’ensemble de tous les tableaux de bord disponibles.",
+    "customQueries": "Modèles SQL réutilisables — cliquez sur une tuile pour ouvrir une analyse.",
+    "docs": "Sources de documentation installées dans ce projet.",
+    "xmlImport": "Importe tous les fichiers du répertoire xml/ dans DuckDB.",
+    "xmlImportContextNote": "Import d’une solution non active — les données d’analyse affichées ne changent qu’après son activation."
+  },
   "errors": {
     "noDashboardId": "Aucun identifiant de tableau de bord fourni.",
     "noQueryName": "Aucun nom de requête fourni."

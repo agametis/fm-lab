@@ -131,12 +131,12 @@ The location of a custom function's calculation body changed between SaXML versi
   signature (`id`/`name`/`UUID`/`Display`/parameters). The formula bodies live in a
   **separate top-level `<CalcsForCustomFunctions>`** section, one `<CustomFunctionCalc>`
   per function (with `<CustomFunctionReference>` + `<Calculation>` incl. an inline
-  `<ChunkList>`). *Verified at `xml-test/…_v2_2_3_0__fm_v22_0_4…`.*
+  `<ChunkList>`). *Verified at `tools/tests/fixtures/xml/…_v2_2_3_0__fm_v22_0_4…`.*
 - **SaXML v2.3.0.0 (FileMaker 26+):** the `<CalcsForCustomFunctions>` section is gone;
   `<Calculation>` is **embedded directly inside each `<CustomFunction>`** within
   `<CustomFunctionsCatalog>`. The embedded `<Calculation>` has **no `<ChunkList>`** —
   only `<DDRREF kind="ChunkList" hash="…">` (the chunks remain reachable via the hash in
-  `<DDR_INFO>`) and `<Text>`. *Verified at `xml-test/v26/Ooe.xml` (v2.3.0.0 / FM 26.0.1).*
+  `<DDR_INFO>`) and `<Text>`. *Verified at `tools/tests/fixtures/xml/v26/Ooe.xml` (v2.3.0.0 / FM 26.0.1).*
 
 ```xml
 <!-- v2.3.0.0 (FM 26): Calculation embedded in CustomFunctionsCatalog -->

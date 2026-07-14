@@ -21,7 +21,11 @@
     "phaseHomes": "关联",
     "phaseValidate": "校验",
     "chunkCounter": "已完成 {{done}}/{{total}}",
-    "phaseCluster": "社区"
+    "phaseCluster": "社区",
+    "abortOomTitle": "内存不足",
+    "abortOomBody": "此解决方案对于本机可用内存来说过大。请在内存更大（8 GB 或以上）的机器上运行导入，或使用降低的内存配置重试。",
+    "abortIncompleteTitle": "构建不完整",
+    "abortIncompleteBody": "引用解析未完成，因此无法构建对象目录。请查看运行日志了解详情。"
   },
   "cellValues": {
     "yes": "是",

@@ -280,6 +280,37 @@
         "export": "Exportiere Graph…",
         "assemble": "Schreibe JSON-Datei…"
       }
+    },
+    "solutions": {
+      "heading": "Lösungen",
+      "description": "FileMaker-Lösungen dieses Workspace verwalten. Jede Lösung hat ihren eigenen XML-Eingang, ihre eigene Datenbank und ihren eigenen Zustand. Aktivieren schaltet die gesamte Workbench auf diese Lösung um.",
+      "colId": "ID",
+      "colName": "Lösung",
+      "colSize": "Größe",
+      "colFiles": "Dateien",
+      "colLastImport": "Letzter Import",
+      "colDuration": "Dauer",
+      "activeBadge": "Aktiv",
+      "activate": "Aktivieren",
+      "activating": "Aktiviere…",
+      "deleteButton": "Löschen",
+      "deleteConfirm1": "Lösung „{{name}}\" löschen? Das entfernt das GESAMTE Bundle inklusive der XML-Quelldateien.",
+      "deleteConfirm2": "„{{id}}\" wirklich endgültig löschen? Vorher ggf. exportieren (tools/solution.sh export {{id}}). Das kann nicht rückgängig gemacht werden.",
+      "newButton": "Neue Lösung…",
+      "createIdPlaceholder": "ID (Ordnername, z. B. erp-live)",
+      "createNamePlaceholder": "Anzeigename (optional)",
+      "createButton": "Anlegen",
+      "createCancel": "Abbrechen",
+      "renameTitle": "Lösung umbenennen",
+      "importButton": "XML-Import",
+      "importButtonTitle": "XML-Import für diese Lösung öffnen (ohne sie zu aktivieren)",
+      "importRunning": "Import läuft…",
+      "renameIdButton": "ID ändern…",
+      "renameIdTitle": "Bundle-ID (Ordnername) ändern — die UUID bleibt erhalten",
+      "renameIdPrompt": "Neue ID für „{{id}}\":\n\nAchtung: ändert Ordnername und Pfade — Export-Ziele und Links auf die alte ID brechen. Beim Umbenennen von „default\" wird ein leeres „default\" neu angelegt.",
+      "menuLabel": "Aktionen",
+      "searchPlaceholder": "Lösungen filtern…",
+      "noMatches": "Keine Lösung passt zum Filter."
     }
   },
   "objectHeader": {

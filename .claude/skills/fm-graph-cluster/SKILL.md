@@ -1,6 +1,6 @@
 ---
 name: fm-graph-cluster
-version: 0.8.9
+version: 0.9.0
 description: Segments the FileMaker object graph in `db/fm_catalog.duckdb` into modules/communities, finds the best resolution for this solution's size by sweeping candidate resolutions and scoring them (modularity Q + distribution guardrails), names the communities semantically (CommunityNames.Semantic_Name, optionally Semantic_Description in --deep-research), writes an analysis report to `output/`, and syncs the named partition to the Graph Explorer. Orchestrates the existing tools/graph-export tooling (cluster.sh, cluster_louvain.mjs/cluster_leiden.py, cluster_load.sql); it does not replace it. Triggers (English): "/fm-graph-cluster", "cluster the graph", "detect communities/modules", "name the clusters", "segment the solution into modules". Triggers (German): "/fm-graph-cluster", "clustere den Graph", "finde die Module/Communities", "benenne die Cluster", "segmentiere die Lösung in Module".
 ---
 
@@ -17,9 +17,7 @@ already built. What this skill adds: **automatic resolution selection** and **se
 
 ## Ground rules
 
-- **DuckDB CLI**: `duckdb` in PATH; fallbacks (VS Code does not inherit the shell PATH, check in
-  this order): `~/.duckdb/cli/latest/duckdb` → `/opt/homebrew/bin/duckdb` → `/usr/local/bin/duckdb`.
-  **Never install DuckDB yourself** — if none is found, point the user to `docs/agents/tooling.md`.
+- **DuckDB CLI**: invocation and binary resolution per CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`); never install DuckDB yourself.
 - **Database**: master `db/fm_catalog.duckdb` only. **Never** read from `rest-api/db/` (API-internal, may be stale).
   - **read-only** for all measuring (Preflight, sweep, naming-hint reads, report data).
   - **read-write only** for: the final `cluster.sh` run (Phase E) and the naming `UPDATE`s (F/G).
@@ -60,9 +58,7 @@ A Preflight ─▶ B Init(note) ─▶ C/D Sweep + Ranking ─▶ E Final run (w
 Resolve the DuckDB binary first, then verify (all read-only):
 
 ```bash
-DUCKDB="$(command -v duckdb || true)"; [ -z "$DUCKDB" ] && [ -x "$HOME/.duckdb/cli/latest/duckdb" ] && DUCKDB="$HOME/.duckdb/cli/latest/duckdb"
-[ -z "$DUCKDB" ] && [ -x /opt/homebrew/bin/duckdb ] && DUCKDB=/opt/homebrew/bin/duckdb
-[ -z "$DUCKDB" ] && [ -x /usr/local/bin/duckdb ] && DUCKDB=/usr/local/bin/duckdb
+DUCKDB="$(bash .claude/skills/_shared/scripts/resolve_duckdb_bin.sh)"   # single-source fallback chain
 echo "duckdb: ${DUCKDB:-NOT FOUND}"
 
 # Master DB + graph populated? + the P5 graph views present?
@@ -335,12 +331,15 @@ Unless `--no-sync`: publish master → rest-api copy + reload, exactly once, **a
 Explorer sees the named partition in a single reload:
 
 ```bash
-bash tools/graph-export/sync_db.sh "$PWD/db/fm_catalog.duckdb"
+# No explicit DB path: sync_db.sh resolves the active solution itself
+# (pointer file .fmlab/active_solution.json) and publishes the bundle master
+# to rest-api/db/solutions/<id>/.
+bash tools/graph-export/sync_db.sh
 ```
 
 The report file lives in `output/` and is **not** part of the DB sync.
 
-#### H.4 Persist the winning resolution → `.fmlab/cluster.json` (R1)
+#### H.4 Persist the winning resolution → `solutions/<active>/state/cluster.json` (R1)
 
 Write the sweep winner so the **Auto-P7 pipeline phase** (after a fresh/force rebuild) and the
 **Rebuild-Communities button** (`POST /api/graph/recluster`) re-cluster at the **same** granularity —
@@ -351,7 +350,11 @@ freezes the granularity decision here, in the skill (the only place that explore
 ```bash
 # Values = the winning engine/resolution/seed (the same ones passed to Phase E) +
 # the winner's modularity Q from the sweep JSON. updated_at = ISO-8601.
-cat > "$PWD/.fmlab/cluster.json" <<JSON
+# Target = the per-solution state dir (multi-solution); resolve the active id
+# from .fmlab/active_solution.json (fallback: default).
+ACTIVE=$(sed -n 's/.*"active"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$PWD/.fmlab/active_solution.json" 2>/dev/null | head -n1)
+STATE_DIR="$PWD/solutions/${ACTIVE:-default}/state"; mkdir -p "$STATE_DIR"
+cat > "$STATE_DIR/cluster.json" <<JSON
 { "engine": "<engine>", "resolution": <winner>, "seed": <seed>, "modularity_q": <Q>, "updated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)" }
 JSON
 ```

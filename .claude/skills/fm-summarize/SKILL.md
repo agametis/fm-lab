@@ -10,27 +10,17 @@ Produce a structured, technical description of a FileMaker object based on the D
 
 ## Ground rules
 
-- **Database / SQL**: English — table and column names of `db/fm_catalog.duckdb` are English DDL identifiers; never translate them
-- **Database**: `db/fm_catalog.duckdb` — the master catalog file, accessed read-only via the local DuckDB CLI binary (`duckdb` in PATH; fallbacks `~/.duckdb/cli/latest/duckdb`, `/opt/homebrew/bin/duckdb`, `/usr/local/bin/duckdb` — VS Code does not inherit the shell PATH). Never read from `rest-api/db/fm_catalog.duckdb` — that copy is API-internal and may be stale.
-- **Call**: `duckdb db/fm_catalog.duckdb -c "<SQL>"` via Bash
+- **Database**: read-only against the master catalog `db/fm_catalog.duckdb` via a plain `duckdb db/fm_catalog.duckdb -c "<SQL>"` (Bash). Invocation rules, DuckDB-binary resolution and the "never read the `rest-api/db` copy" caveat are in CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`) — don't restate them here, and never install DuckDB.
+- **SQL identifiers**: English DDL names — never translate table/column names of the catalog
 - **File references**: Markdown links (e.g. `[Script_Name](db/fm_catalog.duckdb)`)
 - **Before every DB query**: make sure the object is uniquely identified (see Step 1)
 - **Response language**: follows the user's prompt language — see next section
 
 ## Response language
 
-Reply in the language the user used for their prompt — that is the primary signal (e.g. an English question → English answer, a Spanish question → Spanish answer, even if the project default is German). Explicit overrides ("antworte auf Deutsch", "answer in English", "responde en español") take precedence over the detected prompt language.
-
-**What gets translated to the response language**:
-- Markdown section headers of the report (e.g. EN `### Purpose` ↔ DE `### Zweck` ↔ ES `### Propósito` ↔ FR `### Objectif` ↔ IT `### Scopo` ↔ NL `### Doel` ↔ PT `### Propósito` ↔ SV `### Syfte` ↔ JA `### 目的` ↔ KO `### 목적` ↔ ZH `### 目的`)
-- Prose: Purpose, Notes, descriptive remarks, hedging vocabulary
-- Generic table column headings (Field / Action / Comment, etc.)
-
-**What stays original / English regardless of response language**:
-- **FileMaker identifiers** (script, field, layout, table, TO, relationship names) — must match the actual FileMaker source 1:1
-- **`Link_Role` values** (`calls_script`, `sets_field`, `displays_field`, `navigates_to_layout`, …) — technical labels of the data model
-- **SQL queries, column names, table names of the DuckDB catalog** — always English (DDL identifiers)
-- **CLI flags** (`--short`) and skill-call tokens (`/fm-summarize`)
+Reply in the language of the user's prompt; FileMaker identifiers, `Link_Role` values and
+catalog SQL stay original/English. Full policy (what is translated vs. kept, per-language
+header examples): [`_shared/response-language.md`](../_shared/response-language.md).
 
 ## Output modes
 
@@ -44,27 +34,9 @@ Detailed Markdown summary with all sections — header, purpose, technical detai
 
 1-2 paragraphs of **prose**, **no** Markdown sections, **no** tables, **no** code blocks. Contains only the essentials: what the object is and what it does, optionally with a rough caller / callee hint.
 
-**Activating short mode**:
-
-1. **Explicit flag** in the skill call — position is free (before or after the object name):
-   ```
-   /fm-summarize Accounting_PrintInvoice --short
-   /fm-summarize --short Accounting_PrintInvoice
-   /fm-summarize --short <UUID>
-   ```
-
-2. **Natural language** — if the user request contains one of the following terms, automatically activate short mode, even without an explicit `--short`. Detection is **case-insensitive** and language-agnostic; the keyword may appear anywhere in the prompt:
-   - **English**: short, brief, brief summary, short description, concise, 1-2 sentences, in a few sentences, rough, overview, TL;DR, TLDR
-   - **German**: kurz, knapp, knappe Zusammenfassung, Kurzbeschreibung, 1-2 Sätze, in wenigen Sätzen, grob, überblicksartig
-   - **Spanish**: breve, corto, resumen breve, descripción breve, conciso, en pocas frases, 1-2 frases
-   - **French**: bref, court, résumé bref, description brève, concis, en quelques phrases, 1-2 phrases
-   - **Italian**: breve, corto, riepilogo breve, descrizione breve, conciso, in poche frasi, 1-2 frasi
-   - **Dutch**: kort, beknopt, korte samenvatting, korte beschrijving, in een paar zinnen, 1-2 zinnen
-   - **Portuguese**: breve, curto, resumo breve, descrição breve, conciso, em poucas frases, 1-2 frases
-   - **Swedish**: kort, kortfattat, kort sammanfattning, kort beskrivning, koncis, med några meningar, 1-2 meningar
-   - **Japanese**: 短く, 簡潔に, 簡単に, 要約, 短い説明, 概要, 1-2文で
-   - **Korean**: 짧게, 간단히, 간략히, 요약, 짧은 설명, 개요, 1-2문장으로
-   - **Chinese**: 简短, 简要, 简单介绍, 简短说明, 概要, 1-2句话
+**Activating short mode** — via the `--short` flag (position-free) or natural-language
+trigger words in any of 11 languages: [`_shared/short-mode.md`](../_shared/short-mode.md)
+defines both, plus the short-mode output prohibitions.
 
 **Mode differences**:
 
@@ -86,216 +58,44 @@ Detailed Markdown summary with all sections — header, purpose, technical detai
 
 ### Step 1 — Identify the object (BLOCKING)
 
-Before any database query for the description runs, the object to be described MUST be unique.
+Resolve the input (UUID / name / conversation context) to exactly one object per the
+shared contract in [`_shared/resolve-object.md`](../_shared/resolve-object.md); the
+queries live in [`_shared/scripts/resolve_object.sql`](../_shared/scripts/resolve_object.sql).
+The contract yields a unique `(Object_UUID, Object_Type, Object_Name, File_Name)` — the
+**File_Name is mandatory**, because clone/modular files share the same Object_UUID.
 
-**Input sources for identification**:
-1. Explicitly passed UUID — directly usable
-2. Explicitly passed name + (optional) type + (optional) file
-3. Derivable from the previous conversation context (e.g. an object previously shown in a list)
-
-**Process**:
-
-1. **If a UUID is provided** → resolve via ObjectCatalog:
-   ```sql
-   SELECT Object_UUID, Object_Type, Object_Name, File_Name, Source_Table, Object_ID
-   FROM ObjectCatalog
-   WHERE Object_UUID = '<UUID>';
-   ```
-   On exactly 1 hit: continue with Step 2.
-   On no hit: inform the user and ask back.
-   **On >1 hit (clone/modular files share the same Object_UUID)**: the UUID is **not**
-   unique. Do **NOT** silently take the first row. If a file is also known (passed as
-   `--file <File>`, or carried in the conversation identity, see below), add
-   `AND File_Name = '<File>'` to resolve. Otherwise list the matches (Type, Name,
-   **File_Name**) and ask the user which file is meant.
-
-2. **If only a name is provided** → search in ObjectCatalog (case-insensitive, exact matches preferred):
-   ```sql
-   SELECT Object_UUID, Object_Type, Object_Name, File_Name, Source_Table
-   FROM ObjectCatalog
-   WHERE LOWER(Object_Name) = LOWER('<Name>')
-   ORDER BY Object_Type, File_Name;
-   ```
-   - **0 matches**: LIKE fallback `LOWER(Object_Name) LIKE LOWER('%<Name>%')`. If still nothing → inform the user, suggest similar objects, DO NOT guess.
-   - **Exactly 1 match**: continue with Step 2.
-   - **>1 matches**: print a list of all matches (type, name, file) and ask the user to choose. Do **NOT** automatically take the first object.
-
-3. **If the context is ambiguous** (e.g. the user says "describe the script" without a clear reference): ask which object is meant. Better to ask once too often than to describe the wrong object.
-
-4. **If a type hint is provided** (e.g. "describe the layout 'Customers'"): add the filter `Object_Type = '<Type>'`.
-
-**Important**: Only after unique identification may the type-specific description workflow start.
+Key rules from the contract: never silently take the first row on an ambiguous name or a
+clone-shared UUID — present a numbered selection list and wait. A type hint
+("describe the *layout* 'Customers'") adds `AND Object_Type = '<Type>'`. Only after unique
+identification does the type-specific workflow (Step 2) start.
 
 ### Step 2 — Retrieve type-specific data
 
-Based on `Object_Type` pick the matching workflow. All queries use `File_Name` AND the respective type UUID, because names are not unique across files.
+Based on `Object_Type` pick the matching template. **The SQL lives in
+[`_shared/scripts/type_queries.sql`](../_shared/scripts/type_queries.sql)** (query IDs in
+brackets below) — substitute the `<UUID>` / `<FILE>` / `<L_ID>` / `<HASH>` tokens and run
+each statement as `duckdb db/fm_catalog.duckdb -c "…"`. Every template filters on
+`File_Name` AND the type UUID, because names and numeric FM IDs are only unique per file.
 
-#### Script
-
-```sql
--- Header
-SELECT * FROM ScriptCatalog WHERE Script_UUID = '<UUID>' AND File_Name = '<File>';
-
--- Steps (DDR_ScriptSteps provides readable text if available)
-SELECT
-    s.Step_Index,
-    s.Step_Name,
-    s.Is_Enabled,
-    s.Variable_Name,
-    s.Calculation_Text,
-    ddr.Step_Text  -- preferred for display if NOT NULL
-FROM StepsForScripts s
-LEFT JOIN DDR_ScriptSteps ddr
-    ON s.DDR_UUID = ddr.Step_UUID
-   AND s.File_Name = ddr.File_Name
-WHERE s.Script_UUID = '<UUID>' AND s.File_Name = '<File>'
-ORDER BY s.Step_Index;
-```
-
-Then dependencies via ObjectLinks (see Step 3). Relevant Link_Roles for scripts:
-- **Called from the script**: Source_UUID = Script-UUID, Link_Role IN (`calls_script`, `sets_field`, `navigates_to_field`, `navigates_to_layout`, `sets_variable`, `reads_variable`)
-- **Who calls this script**: Target_UUID = Script-UUID, Link_Role IN (`calls_script`, `triggers_script`, `trigger_script`)
-
-For scripts, the step-by-step flow is the centrepiece of the summary. Number each step with `Step_Index`. Mark disabled steps with `(disabled)`.
-
-#### Field
-
-```sql
-SELECT *
-FROM FieldsForTables
-WHERE Field_UUID = '<UUID>' AND File_Name = '<File>';
-```
-
-Evaluating the columns:
-- **Basics**: `Field_Name`, `Table_Name`, `Field_Type` (Normal/Calculated/Summary), `Data_Type`, `Field_Comment`, `Is_Global`, `Max_Repetitions`
-- **Calculated Field**: `Calculation_Text` (plain text), `DDR_Hash` for JOIN to DDR_Calculations
-- **AutoEnter**: `AutoEnter_Type` determines the detail columns to display
-  - `Looked_up`: `Lookup_Field_Name`, `Lookup_TO_Name`, `Lookup_DontCopyIfEmpty`, `Lookup_NoMatchOption`
-  - `Calculated`: `AE_Calc_Text`, `AE_Calc_Hash`, `AE_Calc_OverwriteExisting`, `AE_Calc_AlwaysEvaluate`
-  - `ConstantData`: `AE_ConstantData`
-  - `SerialNumber`, `CreationDate`, etc.: only report the type
-
-Optional (if `DDR_Hash` or `AE_Calc_Hash` is present): formula chunks from DDR_Calculations:
-```sql
-SELECT Chunk_Index, Chunk_Type, Chunk_Content
-FROM DDR_Calculations
-WHERE Calc_Hash = '<DDR_Hash or AE_Calc_Hash>'
-  AND File_Name = '<File>'
-ORDER BY Chunk_Index;
-```
-
-Usages via ObjectLinks: `Target_UUID = Field-UUID` shows where the field is used (`displays_field`, `sets_field`, `lookup_source`, `left_field`/`right_field` in Relationships, `source_field` in ValueLists, etc.).
-
-#### Layout
-
-```sql
--- Layout itself
-SELECT L_ID, L_Name, L_TO_Name, File_Name FROM Layouts
-WHERE L_UUID = '<UUID>' AND File_Name = '<File>';
-
--- Sections (Header/Body/Footer/...)
-SELECT * FROM LayoutParts WHERE Layout_ID = <L_ID> AND File_Name = '<File>';
-
--- Object statistics (do not list every object individually — can be hundreds)
-SELECT Object_Type, COUNT(*) AS Anzahl, MAX(Nesting_Level) AS Max_Tiefe
-FROM LayoutObjects
-WHERE Layout_ID = <L_ID> AND File_Name = '<File>'
-GROUP BY Object_Type
-ORDER BY Anzahl DESC;
-
--- Script triggers of the layout
-SELECT * FROM ScriptTriggers
-WHERE Object_UUID = '<L_UUID>' AND File_Name = '<File>';
-```
-
-Use ObjectLinks to determine which fields/scripts/value lists the layout references (Source_File = Layout file, Source_Type = `LayoutObject`, parent_layout points to the layout).
-
-#### CustomFunction
-
-```sql
-SELECT * FROM CustomFunctionsCatalog
-WHERE CF_UUID = '<UUID>' AND File_Name = '<File>';
-
-SELECT Calculation_Code FROM CalcsForCustomFunctions
-WHERE CF_UUID = '<UUID>' AND File_Name = '<File>';
-
--- If DDR_Hash present: chunks with resolved references
-SELECT Chunk_Index, Chunk_Type, Chunk_Content
-FROM DDR_Calculations
-WHERE Calc_Hash = '<DDR_Hash>' AND File_Name = '<File>'
-ORDER BY Chunk_Index;
-```
-
-Usages: ObjectLinks with Target_UUID = CF-UUID shows who calls the CF.
-
-#### ValueList
-
-```sql
-SELECT vl.*, o.Source_Type, o.Custom_Values, o.Field_Name, o.TO_Name
-FROM ValueListCatalog vl
-LEFT JOIN OptionsForValueLists o
-    ON vl.VL_UUID = o.VL_UUID AND vl.File_Name = o.File_Name
-WHERE vl.VL_UUID = '<UUID>' AND vl.File_Name = '<File>';
-```
-
-Usages: ObjectLinks `Target_UUID = VL-UUID`, Link_Role `uses_valuelist` shows layout objects that use this value list.
-
-#### BaseTable
-
-```sql
-SELECT * FROM BaseTableCatalog WHERE BT_UUID = '<UUID>' AND File_Name = '<File>';
-
--- Fields
-SELECT Field_Name, Field_Type, Data_Type, Is_Global, Field_Comment
-FROM FieldsForTables WHERE Table_UUID = '<UUID>' AND File_Name = '<File>'
-ORDER BY Field_ID;
-
--- Table occurrences
-SELECT TO_Name, TO_ID FROM TableOccurrenceCatalog
-WHERE BT_UUID = '<UUID>' AND File_Name = '<File>';
-```
-
-#### TableOccurrence
-
-```sql
-SELECT * FROM TableOccurrenceCatalog WHERE TO_UUID = '<UUID>' AND File_Name = '<File>';
-
--- Relationships this TO participates in
-SELECT * FROM RelationshipCatalog
-WHERE Left_TO_UUID = '<UUID>' OR Right_TO_UUID = '<UUID>'
-  AND File_Name = '<File>';
-```
-
-#### Relationship
-
-```sql
-SELECT * FROM RelationshipCatalog WHERE Rel_ID = <ID> AND File_Name = '<File>';
-```
-
-Relationship predicates are contained in the `Left_*` / `Right_*` columns, operator in `Operator`.
-
-#### Generic fallback (all other Object_Types)
-
-If no type-specific workflow is defined:
-
-```sql
--- Basic info
-SELECT * FROM ObjectCatalog WHERE Object_UUID = '<UUID>';
-
--- Incoming links (what uses the object)
-SELECT Source_Type, Source_File, Link_Role,
-       (SELECT Object_Name FROM ObjectCatalog WHERE Object_UUID = ol.Source_UUID) AS Source_Name
-FROM ObjectLinks ol
-WHERE Target_UUID = '<UUID>'
-ORDER BY Source_Type;
-
--- Outgoing links (what the object uses)
-SELECT Target_Type, Target_File, Link_Role,
-       (SELECT Object_Name FROM ObjectCatalog WHERE Object_UUID = ol.Target_UUID) AS Target_Name
-FROM ObjectLinks ol
-WHERE Source_UUID = '<UUID>'
-ORDER BY Target_Type;
-```
+- **Script** [S1 header, S2 steps]: the step-by-step flow is the centrepiece of the
+  summary — number each step with `Step_Index`, mark disabled steps `(disabled)`, and
+  prefer `DDR_ScriptSteps.Step_Text` when present. Then dependencies via Step 3.
+- **Field** [F1; D1 for DDR chunks if `DDR_Hash`/`AE_Calc_Hash` present]: evaluate
+  `Field_Type` (Normal/Calculated/Summary), `Data_Type`, `Field_Comment`, `Is_Global`;
+  for Calculated read `Calculation_Text`; for AutoEnter let `AutoEnter_Type` select the
+  detail columns (Looked_up / Calculated / ConstantData / SerialNumber …). Usages via
+  ObjectLinks `Target_UUID = Field-UUID` (`displays_field`, `sets_field`, `lookup_source`,
+  `left_field`/`right_field`, `source_field`).
+- **Layout** [L1 layout, L2 parts, L3 object stats, L4 triggers]: never list hundreds of
+  LayoutObjects individually — L3 aggregates. Referenced objects via ObjectLinks
+  (`Source_Type = LayoutObject`, `parent_layout`).
+- **CustomFunction** [CF1, CF2; D1 for DDR chunks]: callers via ObjectLinks
+  `Target_UUID = CF-UUID`.
+- **ValueList** [VL1]: users via ObjectLinks `Target_UUID = VL-UUID`, role `uses_valuelist`.
+- **BaseTable** [BT1, BT2 fields, BT3 table occurrences].
+- **TableOccurrence** [TO1, TO2 relationships].
+- **Relationship** [R1]: predicates in `Left_*`/`Right_*`, operator in `Operator`.
+- **Any other type** [G0 basics, G1 incoming links, G2 outgoing links].
 
 ### Step 3 — Dependencies (for all types)
 
@@ -391,13 +191,9 @@ In short mode the section structure above is dropped entirely. Instead: **1-2 pa
 2. **What does it do?** — 1-3 sentences, core function in your own words
 3. **(Optional) How is it embedded?** — at most one half-sentence about callers or sub-calls, ONLY if it materially illuminates the context
 
-**Prohibitions in short mode**:
-- No Markdown headers (`##`, `###`)
-- No lists, no bullet points
-- No tables
-- No code blocks
-- No UUID display (technical detail information belongs in standard mode)
-- No "Flow" (not even shortened)
+**Prohibitions**: see [`_shared/short-mode.md`](../_shared/short-mode.md) (no headers,
+lists, tables, code blocks or UUID). Additionally for summaries: **no "Flow"** (not even
+shortened).
 
 **Reduced query list in short mode**:
 
@@ -421,7 +217,7 @@ In short mode the section structure above is dropped entirely. Instead: **1-2 pa
 
 ### Step 5 — Output
 
-Print the Markdown summary in chat. Do NOT write a file (except as part of the planned extension described below).
+Print the Markdown summary in chat. Do NOT write a file.
 
 ## Important notes
 
@@ -499,21 +295,3 @@ All four prompts activate short mode; the response is produced in the prompt's l
 2. LIKE fallback `%Kunde%anlegen%` → 1 match: "KundeAnlegen"
 3. **Output**: "A script named 'KundeAnlegenV2' does not exist. Did you perhaps mean 'KundeAnlegen'? Should I describe that one?"
 
-## Planned extensions (future stage)
-
-> **Status**: Documentation only — not implemented. Activation happens once the Obsidian vault is set up.
-
-After producing the summary, the skill should ask the user whether the description should be stored as a note for the FileMaker object. Specification:
-
-- **Target location**: Obsidian vault containing all project notes for the FileMaker solution. Path still to be configured (presumably in a project-local configuration file or environment variable, e.g. `FM_OBSIDIAN_VAULT`).
-- **Storage structure**: one sub-folder per object type (`Scripts/`, `Fields/`, `Layouts/`, `CustomFunctions/`, …).
-- **File names**: must contain the object UUID so the object remains uniquely referenceable even if the FileMaker name changes. Proposal: `<sanitized-name>__<uuid-short>.md`.
-- **Update behaviour**: existing notes are NOT overwritten. Instead the new summary is appended to the existing file (append) — typically with a separator section `## Update <date>`. Rationale: content manually added by the user (e.g. design decisions, ToDos) must not be lost. Compare memory `feedback_obsidian_updates`.
-- **Frontmatter**: when creating a note for the first time, set YAML frontmatter with `object_uuid`, `object_type`, `file_name`, `created_at`.
-- **User interaction**: after printing the summary in chat, ask: "Should I store this description as a note in the Obsidian vault for the object? (y/n)". On yes: check whether a note already exists for the UUID; `create` or `append` accordingly.
-
-**TODOs before activation**:
-1. Decide on a configuration mechanism for the vault path
-2. Implement append logic (detection of existing file + separator section)
-3. Sanitising function for file names derived from FileMaker names (special characters, spaces)
-4. Align frontmatter schema with the user

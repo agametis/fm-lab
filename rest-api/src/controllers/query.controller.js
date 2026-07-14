@@ -52,6 +52,7 @@ async function executeQuery(req, res, next) {
 
     // Execute template
     const result = await templateService.executeTemplate(
+      req.solutionContext,
       template,
       finalParams,
       'query' // Custom templates
@@ -147,6 +148,7 @@ async function executeReport(req, res, next) {
 
     // Execute template
     const result = await templateService.executeTemplate(
+      req.solutionContext,
       template,
       finalParams,
       'report' // Standard report templates

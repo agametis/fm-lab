@@ -18,10 +18,27 @@
   margin: 0;
 }
 
+/* Brand group (GitHub badge + title) — the far-left anchor of the title row;
+   keeps the h1 from being centered by the row's space-between. */
+.app-title-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 .app-title-actions {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+/* Right-side action group of the main nav row: solution picker (when >1
+   solution) directly left of the settings gear. */
+.start-header__nav-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
 }
 
 .app-mode-tabs {

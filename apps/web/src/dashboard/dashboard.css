@@ -39,6 +39,11 @@
 .dash-card--hero {
   background: linear-gradient(180deg, var(--color-accent-soft-bg), var(--color-bg-elevated));
 }
+/* Solution-Titel der Hero-Kachel als Headline: so groß wie die KPI-Werte
+   (--dash-kpi__value), damit er über den folgenden Infos optisch heraussticht. */
+.dash-card--hero .dash-card__title {
+  font-size: 1.4rem;
+}
 .dash-card--navtile {
   padding: 0;
 }
@@ -1149,6 +1154,27 @@
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 12px;
+}
+/* Clean self-abort banner (out of memory / incomplete build). Full-width row at the
+ * top of the control (flex-wrap container → flex-basis 100%), themed like other errors. */
+.xml-convert-abort {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--color-error-bg);
+  color: var(--color-error-fg);
+  border: 1px solid var(--color-error-border);
+  text-align: left;
+}
+.xml-convert-abort__title {
+  font-size: 0.9rem;
+}
+.xml-convert-abort__body {
+  font-size: 0.85rem;
+  line-height: 1.4;
 }
 .xml-convert-changed-only {
   display: inline-flex;

@@ -12,16 +12,30 @@ const environment = require('../config/environment');
  *
  * Spawnt `tools/convert_fm_xml.sh --batch --quiet` und parst dessen NDJSON-Output
  * Zeile für Zeile zu Events. Wird von `POST /api/xml/convert` (SSE) genutzt.
- * Verwaltet außerdem den persistierten Run-Record (.fmlab/last_xml_run.json)
- * und liefert den Status der XML-Dateien für `GET /api/xml/status`.
+ * Verwaltet außerdem den persistierten Run-Record
+ * (solutions/<id>/state/last_xml_run.json) und liefert den Status der
+ * XML-Dateien für `GET /api/xml/status`.
+ *
+ * Multi-Solution: alle Pfade (XML-Eingang, Lock, Run-Record) sind PER LÖSUNG
+ * und werden bei jedem Zugriff über den Request-/Server-Kontext aufgelöst
+ * (Phase 1: konstant die aktive Lösung).
  */
+
+const solutions = require('../config/solutions');
 
 const REPO_ROOT = settingsStore.resolveRepoRoot();
 const SCRIPT_PATH = path.join(REPO_ROOT, 'tools', 'convert_fm_xml.sh');
-const XML_DIR = path.join(REPO_ROOT, 'xml');
-const FMLAB_DIR = path.join(REPO_ROOT, '.fmlab');
-const LAST_RUN_PATH = path.join(FMLAB_DIR, 'last_xml_run.json');
-const LOCK_PATH = path.join(FMLAB_DIR, 'xml_convert.lock');
+// Pfade PER LÖSUNG: jede Funktion nimmt die Ziel-Lösung explizit
+// entgegen; ohne Argument gilt die aktive Lösung (Server-Default). Bewusst
+// Funktionen statt Konstanten, damit ein Lösungswechsel ohne Neustart greift.
+function xmlDirPath(solutionId) {
+  return solutions.xmlDir(solutionId || solutions.getActiveSolutionId());
+}
+function stateDirPath(solutionId) {
+  return solutions.stateDir(solutionId || solutions.getActiveSolutionId());
+}
+function lastRunPath(solutionId) { return path.join(stateDirPath(solutionId), 'last_xml_run.json'); }
+function lockPath(solutionId) { return path.join(stateDirPath(solutionId), 'xml_convert.lock'); }
 
 // ---------------------------------------------------------------------------
 // Laufzeit-/Reveal-Kontext für die „Ordner öffnen"-Affordance der Empty-State-
@@ -47,10 +61,13 @@ function commandOnPath(cmd) {
 
 const RUNTIME = detectRuntime();
 const HOST_REPO_ROOT = String(process.env.FMLAB_HOST_REPO_ROOT || '').trim();
-// Host-xml/-Pfad nur posix verknüpfen (macOS/Linux-Host bzw. Repo INNERHALB WSL2).
-const HOST_XML_DIR = HOST_REPO_ROOT
-  ? `${HOST_REPO_ROOT.replace(/[\\/]+$/, '')}/xml`
-  : null;
+// Host-Pfad des XML-Eingangs der aktiven Lösung (nur Container; posix verknüpft —
+// macOS/Linux-Host bzw. Repo INNERHALB WSL2). Dynamisch wegen Lösungswechsel.
+function hostXmlDir(solutionId) {
+  if (!HOST_REPO_ROOT) return null;
+  const id = solutionId || solutions.getActiveSolutionId();
+  return `${HOST_REPO_ROOT.replace(/[\\/]+$/, '')}/solutions/${id}/xml`;
+}
 const REVEAL_COMMAND = process.platform === 'darwin'
   ? 'open'
   : (process.platform === 'linux' ? 'xdg-open' : null);
@@ -77,18 +94,20 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-async function ensureFmlabDir() {
-  await fsp.mkdir(FMLAB_DIR, { recursive: true });
+async function ensureStateDir(solutionId) {
+  await fsp.mkdir(stateDirPath(solutionId), { recursive: true });
 }
 
 /**
- * Listet das `xml/`-Verzeichnis. Liefert `{ filename, size, mtime }`-Tupel
- * (mtime als ISO-String). Fehlende Verzeichnisse → leere Liste.
+ * Listet den XML-Eingang einer Lösung (Default: aktive). Liefert
+ * `{ filename, size, mtime }`-Tupel (mtime als ISO-String). Fehlende
+ * Verzeichnisse → leere Liste.
  */
-async function listXmlDirectory() {
+async function listXmlDirectory(solutionId) {
+  const dir = xmlDirPath(solutionId);
   let entries;
   try {
-    entries = await fsp.readdir(XML_DIR, { withFileTypes: true });
+    entries = await fsp.readdir(dir, { withFileTypes: true });
   } catch (err) {
     if (err.code === 'ENOENT') return [];
     throw err;
@@ -99,7 +118,7 @@ async function listXmlDirectory() {
     if (!e.name.toLowerCase().endsWith('.xml')) continue;
     if (e.name.startsWith('.')) continue;
     try {
-      const stat = await fsp.stat(path.join(XML_DIR, e.name));
+      const stat = await fsp.stat(path.join(dir, e.name));
       files.push({
         filename: e.name,
         size: stat.size,
@@ -123,32 +142,37 @@ async function listXmlDirectory() {
  * `File_Name` (ohne Pfad und ohne .xml-Suffix). Wir vergleichen daher
  * über die Basis `<File>` (ohne Endung).
  */
-async function readFilesCatalog() {
+// Import_Timestamp wird als UTC-naiver TIMESTAMP gespeichert (s. extract.sql
+// `now() AT TIME ZONE 'UTC'`). Wir serialisieren ihn server-seitig EXPLIZIT als
+// UTC-ISO mit `Z`-Suffix und liefern den Epoch (naiv als UTC interpretiert). So ist
+// die Anzeige TZ-unabhängig — der Browser rendert via `new Date(iso)` korrekt in die
+// lokale Zone, ohne dass ein naiver String fälschlich als Browser-Lokalzeit geparst
+// wird (das war der ~7h/DST-Versatz-Bug). Treiber-Date-vs-String-Mehrdeutigkeit entfällt.
+const FILES_CATALOG_SQL =
+  `SELECT File_Name,
+          strftime(Import_Timestamp, '%Y-%m-%dT%H:%M:%S') || 'Z' AS imported_at,
+          epoch_ms(Import_Timestamp AT TIME ZONE 'UTC')        AS imported_ms
+   FROM FilesCatalog`;
+
+function rowsToCatalogMap(rows) {
+  const map = new Map();
+  for (const row of rows) {
+    if (!row || !row.File_Name) continue;
+    const importedAt = row.imported_at != null ? String(row.imported_at) : null;
+    const importedMs = row.imported_ms != null ? Number(row.imported_ms) : null;
+    map.set(String(row.File_Name).normalize('NFC').toLowerCase(), {
+      file_name: row.File_Name,
+      imported_at: importedAt,
+      imported_ms: Number.isFinite(importedMs) ? importedMs : null,
+    });
+  }
+  return map;
+}
+
+async function readFilesCatalog(ctx) {
   try {
-    // Import_Timestamp wird als UTC-naiver TIMESTAMP gespeichert (s. extract.sql
-    // `now() AT TIME ZONE 'UTC'`). Wir serialisieren ihn server-seitig EXPLIZIT als
-    // UTC-ISO mit `Z`-Suffix und liefern den Epoch (naiv als UTC interpretiert). So ist
-    // die Anzeige TZ-unabhängig — der Browser rendert via `new Date(iso)` korrekt in die
-    // lokale Zone, ohne dass ein naiver String fälschlich als Browser-Lokalzeit geparst
-    // wird (das war der ~7h/DST-Versatz-Bug). Treiber-Date-vs-String-Mehrdeutigkeit entfällt.
-    const { rows } = await db.executeQuery(
-      `SELECT File_Name,
-              strftime(Import_Timestamp, '%Y-%m-%dT%H:%M:%S') || 'Z' AS imported_at,
-              epoch_ms(Import_Timestamp AT TIME ZONE 'UTC')        AS imported_ms
-       FROM FilesCatalog`
-    );
-    const map = new Map();
-    for (const row of rows) {
-      if (!row || !row.File_Name) continue;
-      const importedAt = row.imported_at != null ? String(row.imported_at) : null;
-      const importedMs = row.imported_ms != null ? Number(row.imported_ms) : null;
-      map.set(String(row.File_Name).normalize('NFC').toLowerCase(), {
-        file_name: row.File_Name,
-        imported_at: importedAt,
-        imported_ms: Number.isFinite(importedMs) ? importedMs : null,
-      });
-    }
-    return map;
+    const { rows } = await db.executeQuery(ctx, FILES_CATALOG_SQL);
+    return rowsToCatalogMap(rows);
   } catch (err) {
     // DB fehlt komplett oder Tabelle existiert nicht — als "leer" werten.
     if (/no such table|does not exist|catalog.*FilesCatalog/i.test(err.message)) {
@@ -158,6 +182,35 @@ async function readFilesCatalog() {
       return new Map();
     }
     throw err;
+  }
+}
+
+/**
+ * FilesCatalog einer NICHT-aktiven Lösung: die Singleton-Verbindung hängt an
+ * der aktiven Kopie, also Ad-hoc-READ_ONLY-Open der per-Solution-Kopie und
+ * sofort wieder schließen (der gepoolte Weg kommt mit
+ * Ausbaustufe M). Fehlende Kopie/Tabelle → leere Map, nie werfen.
+ */
+async function readFilesCatalogAdhoc(solutionId) {
+  const dbPath = solutions.apiCopyPath(solutionId);
+  if (!fs.existsSync(dbPath)) return new Map();
+  const { DuckDBInstance } = require('@duckdb/node-api');
+  let instance = null;
+  let connection = null;
+  try {
+    instance = await DuckDBInstance.create(dbPath, { access_mode: 'READ_ONLY' });
+    connection = await instance.connect();
+    const stmt = await connection.prepare(FILES_CATALOG_SQL);
+    const result = await stmt.run();
+    const rows = await result.getRowObjectsJS();
+    try { stmt.destroySync(); } catch { /* freed */ }
+    return rowsToCatalogMap(rows);
+  } catch (err) {
+    console.warn(`[xml-convert] adhoc FilesCatalog read for '${solutionId}' skipped: ${err.message}`);
+    return new Map();
+  } finally {
+    try { if (connection) connection.disconnectSync(); } catch { /* closed */ }
+    try { if (instance) instance.closeSync(); } catch { /* closed */ }
   }
 }
 
@@ -201,12 +254,13 @@ function bandState(pct, warn, crit) {
  * Liefert `{ available:false }`, solange keine Partition/Universe existiert (frischer
  * Import vor dem ersten Cluster-Lauf) → Frontend zeigt beide „--".
  */
-async function computeSemanticNames() {
+async function computeSemanticNames(ctx) {
   const unavailable = { available: false };
 
   // Cluster-/Universe-Tabellen vorhanden? (Copy kann frisch & ungeclustert sein.)
   try {
     const r = await db.executeQuery(
+      ctx,
       `SELECT
          (SELECT COUNT(*) FROM information_schema.tables WHERE table_name='ObjectClusters')      AS oc,
          (SELECT COUNT(*) FROM information_schema.tables WHERE table_name='ClusterNodeUniverse')  AS cnu`
@@ -223,6 +277,7 @@ async function computeSemanticNames() {
   let partitioned = 0;
   try {
     comm = (await db.executeQuery(
+      ctx,
       `WITH comm AS (
          SELECT oc.Engine, oc.Community, COUNT(*) AS u_nodes
          FROM ClusterNodeUniverse u JOIN ObjectClusters oc USING (Object_UUID, File_Name)
@@ -233,9 +288,11 @@ async function computeSemanticNames() {
        FROM comm c LEFT JOIN CommunityNames cn USING (Engine, Community)`
     )).rows;
     universeTotal = Number((await db.executeQuery(
+      ctx,
       `SELECT COUNT(*) AS n FROM ClusterNodeUniverse`
     )).rows[0]?.n ?? 0);
     partitioned = Number((await db.executeQuery(
+      ctx,
       `SELECT COUNT(*) AS n FROM ClusterNodeUniverse u
          JOIN ObjectClusters oc USING (Object_UUID, File_Name)`
     )).rows[0]?.n ?? 0);
@@ -252,9 +309,11 @@ async function computeSemanticNames() {
   let restoredCount = 0;
   try {
     const userRows = await annoDb.query(
+      ctx,
       `SELECT Engine, Community FROM CommunityAnnotation WHERE User_Name IS NOT NULL`
     );
     const restoreRows = await annoDb.query(
+      ctx,
       `SELECT Engine, Community FROM SemanticNameRestore WHERE Semantic_Name IS NOT NULL`
     );
     for (const r of userRows) sidecarNamed.add(`${r.Engine}|${Number(r.Community)}`);
@@ -325,28 +384,38 @@ async function computeSemanticNames() {
   };
 }
 
-async function getStatus() {
+async function getStatus(ctx, solutionId) {
+  // Kontext-Lösung: expliziter Parameter > Request-Kontext.
+  // Nicht-aktive Lösung → FilesCatalog ad-hoc aus deren Kopie; die
+  // semantic_names-Kennzahlen hängen an der aktiven Copy+Sidecar und werden
+  // dort ehrlich als "nicht verfügbar" gemeldet (Pool kommt mit Stufe M).
+  const active = solutions.getActiveSolutionId();
+  const id = solutionId || (ctx && ctx.solution) || active;
+  const isActiveSolution = id === active;
+
   const [files, catalog, semanticNames] = await Promise.all([
-    listXmlDirectory(),
-    readFilesCatalog(),
-    computeSemanticNames().catch((err) => {
-      console.warn(`[xml-convert] semantic_names compute failed: ${err.message}`);
-      return { available: false };
-    }),
+    listXmlDirectory(id),
+    isActiveSolution ? readFilesCatalog(ctx) : readFilesCatalogAdhoc(id),
+    isActiveSolution
+      ? computeSemanticNames(ctx).catch((err) => {
+        console.warn(`[xml-convert] semantic_names compute failed: ${err.message}`);
+        return { available: false };
+      })
+      : Promise.resolve({ available: false }),
   ]);
 
   const dbEmpty = catalog.size === 0;
-  const lastRun = await readLastRunMeta();
+  const lastRun = await readLastRunMeta(id);
 
-  // Billige Running-Detektion (Lock+PID ODER aktiver Hub-Lauf) +
+  // Billige Running-Detektion (Lock+PID ODER aktiver Hub-Lauf der Lösung) +
   // flaches active_run (phase/pct/processed/total) für den 6-s-Soft-Refresh → die
   // UI weiß beim Eintritt sofort „es läuft" und kann auf /convert/stream abonnieren.
   let running = false;
   let activeRun = null;
   try {
     const hub = require('./xml-convert-hub');
-    running = isRunning() || hub.isActive();
-    activeRun = hub.getActiveRunMeta();
+    running = isRunning(id) || hub.isActive(id);
+    activeRun = hub.getActiveRunMeta(id);
   } catch (err) {
     console.warn(`[xml-convert] running-detection skipped: ${err.message}`);
   }
@@ -372,9 +441,13 @@ async function getStatus() {
     };
   });
 
+  const manifest = solutions.readManifest(id) || {};
   return {
-    xml_dir: XML_DIR,
-    host_xml_dir: HOST_XML_DIR,
+    solution: id,
+    solution_display_name: manifest.display_name || id,
+    is_active: isActiveSolution,
+    xml_dir: xmlDirPath(id),
+    host_xml_dir: hostXmlDir(id),
     runtime: RUNTIME,
     can_reveal: CAN_REVEAL,
     db_empty: dbEmpty,
@@ -390,8 +463,8 @@ async function getStatus() {
  * Schmale Variante für das Home-Dashboard im leeren Zustand: Liefert nur die
  * Dateinamen, keine Status-Logik. Für den Monospace-Block.
  */
-async function getDirectoryListing() {
-  const files = await listXmlDirectory();
+async function getDirectoryListing(solutionId) {
+  const files = await listXmlDirectory(solutionId);
   return files.map(f => ({
     filename: f.filename,
     size: f.size,
@@ -406,28 +479,29 @@ async function getDirectoryListing() {
  * ohne Shell (Argument-Array) → keine Command-Injection. Wirft
  * `REVEAL_UNSUPPORTED`, wenn die Laufzeit das Reveal nicht beherrscht (Container).
  */
-async function revealXmlDir() {
+async function revealXmlDir(solutionId) {
   if (!CAN_REVEAL || !REVEAL_COMMAND) {
     const err = new Error('Folder reveal is not supported in this runtime.');
     err.code = 'REVEAL_UNSUPPORTED';
     throw err;
   }
-  await fsp.mkdir(XML_DIR, { recursive: true });
+  const dir = xmlDirPath(solutionId);
+  await fsp.mkdir(dir, { recursive: true });
   await new Promise((resolve, reject) => {
-    const child = spawn(REVEAL_COMMAND, [XML_DIR], { stdio: 'ignore', detached: true });
+    const child = spawn(REVEAL_COMMAND, [dir], { stdio: 'ignore', detached: true });
     child.once('error', reject);
     child.once('spawn', () => { child.unref(); resolve(); });
   });
-  return XML_DIR;
+  return dir;
 }
 
 // ---------------------------------------------------------------------------
 // Run-Record (Persistenz des Logs)
 // ---------------------------------------------------------------------------
 
-async function readLastRun() {
+async function readLastRun(solutionId) {
   try {
-    const raw = await fsp.readFile(LAST_RUN_PATH, 'utf-8');
+    const raw = await fsp.readFile(lastRunPath(solutionId), 'utf-8');
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object') return null;
     return parsed;
@@ -451,8 +525,8 @@ function computeDurationMs(record) {
  * Liest den letzten Run als kompakte Meta-Struktur (ohne `events[]`) für
  * `/api/xml/status`. Spart Bandbreite, wenn niemand das Log braucht.
  */
-async function readLastRunMeta() {
-  const r = await readLastRun();
+async function readLastRunMeta(solutionId) {
+  const r = await readLastRun(solutionId);
   if (!r) return null;
   return {
     run_id: r.run_id,
@@ -466,8 +540,8 @@ async function readLastRunMeta() {
   };
 }
 
-async function readLastRunLog() {
-  const r = await readLastRun();
+async function readLastRunLog(solutionId) {
+  const r = await readLastRun(solutionId);
   if (!r) return null;
   return {
     run_id: r.run_id,
@@ -487,11 +561,12 @@ async function readLastRunLog() {
  * gegen halbgeschriebene Dateien, falls der Server während eines laufenden
  * Streams gekillt wird.
  */
-async function writeRunRecord(record) {
-  await ensureFmlabDir();
-  const tmpPath = `${LAST_RUN_PATH}.tmp`;
+async function writeRunRecord(record, solutionId) {
+  await ensureStateDir(solutionId);
+  const target = lastRunPath(solutionId);
+  const tmpPath = `${target}.tmp`;
   await fsp.writeFile(tmpPath, JSON.stringify(record, null, 2), 'utf-8');
-  await fsp.rename(tmpPath, LAST_RUN_PATH);
+  await fsp.rename(tmpPath, target);
 }
 
 /**
@@ -509,6 +584,10 @@ function newRunRecord() {
     duration_ms: null,
     ok: null,
     exit_code: null,
+    // Set when the converter stops itself cleanly (event `aborted`): 'oom' (out of
+    // memory) or 'incomplete' (a batch-wide phase failed). Lets the status endpoint and
+    // a page reload show the memory-specific message instead of a generic failure.
+    aborted_reason: null,
     processed: 0,
     total: 0,
     error_count: 0,
@@ -520,9 +599,9 @@ function newRunRecord() {
 // Lock-File Inspection (ohne Acquire — das macht das Bash-Skript selbst).
 // ---------------------------------------------------------------------------
 
-function readLockSync() {
+function readLockSync(solutionId) {
   try {
-    const raw = fs.readFileSync(LOCK_PATH, 'utf-8').split('\n');
+    const raw = fs.readFileSync(lockPath(solutionId), 'utf-8').split('\n');
     const pid = Number(String(raw[0] || '').trim());
     if (!Number.isFinite(pid) || pid <= 0) return null;
     return {
@@ -545,13 +624,29 @@ function lockOwnerAlive(pid) {
 }
 
 /**
- * Prüft, ob aktuell eine Konvertierung läuft. True nur wenn die Lock-Datei
- * existiert UND der Owner-PID noch lebt.
+ * Prüft, ob für eine Lösung (Default: aktive) eine Konvertierung läuft. True
+ * nur wenn die Lock-Datei existiert UND der Owner-PID noch lebt.
  */
-function isRunning() {
-  const lock = readLockSync();
+function isRunning(solutionId) {
+  const lock = readLockSync(solutionId);
   if (!lock) return false;
   return lockOwnerAlive(lock.pid);
+}
+
+/**
+ * Lock-Scan über ALLE Lösungen: liefert je Lösung mit
+ * lebendigem Lock `{ solution, pid, started_at, source }`. Sichtbar macht das
+ * auch reine CLI-Läufe, nicht nur Hub-Läufe. Stale Locks (toter PID) zählen nicht.
+ */
+function scanRunningLocks() {
+  const running = [];
+  for (const s of solutions.listSolutions()) {
+    const lock = readLockSync(s.id);
+    if (lock && lockOwnerAlive(lock.pid)) {
+      running.push({ solution: s.id, pid: lock.pid, started_at: lock.started_at, source: lock.source });
+    }
+  }
+  return running;
 }
 
 // ---------------------------------------------------------------------------
@@ -564,7 +659,7 @@ function isRunning() {
  * Aufrufer (Controller) bekommt also keinen leeren Record, falls der Stream
  * abreißt. Resolvet mit `{ exit_code, ok }`.
  */
-function runConverter({ onEvent, signal, changedOnly = true } = {}) {
+function runConverter({ onEvent, signal, changedOnly = true, solution } = {}) {
   return new Promise((resolve, reject) => {
     if (!fs.existsSync(SCRIPT_PATH)) {
       const err = new Error(`Convert script not found: ${SCRIPT_PATH}`);
@@ -576,7 +671,12 @@ function runConverter({ onEvent, signal, changedOnly = true } = {}) {
     // Turbo ist die Default-Engine und immer aktiv. --changed-only (Manifest-Skip
     // auf Datei-Ebene) überspringt unveränderte XML; bei changedOnly=false (UI-Toggle
     // aus) läuft ein voller Turbo-Build (alle Dateien neu, kein Manifest-Skip).
-    const args = [SCRIPT_PATH, '--batch', '--quiet', '--turbo'];
+    // --solution pinnt den Lauf auf die Kontext-Lösung (expliziter
+    // Parameter, sonst Server-Default) — ein Lösungswechsel WÄHREND des Laufs
+    // ändert das Ziel nicht mehr. Run-Record landet im Bundle der Ziel-Lösung.
+    const targetSolution = solution || solutions.getActiveSolutionId();
+    const args = [SCRIPT_PATH, '--batch', '--quiet', '--turbo',
+      '--solution', targetSolution];
     if (changedOnly) args.push('--changed-only');
     const child = spawn('bash', args, {
       cwd: REPO_ROOT,
@@ -598,7 +698,7 @@ function runConverter({ onEvent, signal, changedOnly = true } = {}) {
         try {
           if (persistDirty) {
             persistDirty = false;
-            await writeRunRecord(record);
+            await writeRunRecord(record, targetSolution);
           }
         } catch (err) {
           console.warn(`[xml-convert] persist failed: ${err.message}`);
@@ -637,6 +737,11 @@ function runConverter({ onEvent, signal, changedOnly = true } = {}) {
       }
       if (evt.event === 'log' && evt.level === 'error') {
         // Echte Error-Events zählen ebenfalls — aber nicht doppelt mit `file`.
+      }
+      if (evt.event === 'aborted' && typeof evt.reason === 'string') {
+        // Clean self-abort from the converter (memory / incomplete build). Carried into
+        // the record so a late subscriber or a reload still sees the reason.
+        record.aborted_reason = evt.reason;
       }
       if (evt.event === 'done') {
         record.ok = evt.ok !== false;
@@ -704,7 +809,7 @@ function runConverter({ onEvent, signal, changedOnly = true } = {}) {
 
       // Final persist — ohne Throttle.
       try {
-        await writeRunRecord(record);
+        await writeRunRecord(record, targetSolution);
       } catch (err) {
         console.warn(`[xml-convert] final persist failed: ${err.message}`);
       }
@@ -716,12 +821,13 @@ function runConverter({ onEvent, signal, changedOnly = true } = {}) {
 
 module.exports = {
   SCRIPT_PATH,
-  XML_DIR,
-  LAST_RUN_PATH,
+  xmlDirPath,
+  lastRunPath,
   getStatus,
   getDirectoryListing,
   revealXmlDir,
   readLastRunLog,
   isRunning,
+  scanRunningLocks,
   runConverter,
 };

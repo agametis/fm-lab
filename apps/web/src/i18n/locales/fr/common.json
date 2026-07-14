@@ -24,7 +24,7 @@
   },
   "theme": {
     "switchToLight": "Passer en mode clair",
-    "switchToDark":  "Passer en mode sombre"
+    "switchToDark": "Passer en mode sombre"
   },
   "actions": {
     "openInFileMaker": "Ouvrir dans FileMaker",
@@ -70,5 +70,10 @@
     "loading": "Chargement du tableau de bord…",
     "loadError": "Échec du chargement : {{message}}",
     "noData": "Aucune donnée disponible."
+  },
+  "solutionPicker": {
+    "label": "Solution",
+    "ariaLabel": "Choisir la solution active",
+    "switchError": "Échec du changement de solution : {{message}}"
   }
 }

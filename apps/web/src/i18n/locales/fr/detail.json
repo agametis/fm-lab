@@ -253,6 +253,37 @@
     },
     "versions": {
       "fmSpec": "fm-spec"
+    },
+    "solutions": {
+      "heading": "Solutions",
+      "description": "Gérez les solutions FileMaker de cet espace de travail. Chaque solution possède sa propre boîte de réception XML, sa propre base de données et son propre état. Activer bascule tout l’atelier sur cette solution.",
+      "colId": "ID",
+      "colName": "Solution",
+      "colSize": "Taille",
+      "colFiles": "Fichiers",
+      "colLastImport": "Dernier import",
+      "colDuration": "Durée",
+      "activeBadge": "Active",
+      "activate": "Activer",
+      "activating": "Activation…",
+      "deleteButton": "Supprimer",
+      "deleteConfirm1": "Supprimer la solution « {{name}} » ? Cela supprime TOUT le bundle, y compris les fichiers XML sources.",
+      "deleteConfirm2": "Supprimer définitivement « {{id}} » ? Pensez à l’exporter d’abord (tools/solution.sh export {{id}}). Cette action est irréversible.",
+      "newButton": "Nouvelle solution…",
+      "createIdPlaceholder": "ID (nom de dossier, p. ex. erp-live)",
+      "createNamePlaceholder": "Nom d’affichage (facultatif)",
+      "createButton": "Créer",
+      "createCancel": "Annuler",
+      "renameTitle": "Renommer la solution",
+      "importButton": "Import XML",
+      "importButtonTitle": "Ouvrir l’import XML pour cette solution (sans l’activer)",
+      "importRunning": "Import en cours…",
+      "renameIdButton": "Changer l’ID…",
+      "renameIdTitle": "Changer l’ID du bundle (nom de dossier) — l’UUID est conservé",
+      "renameIdPrompt": "Nouvel ID pour « {{id}} » :\n\nAttention : cela change le nom du dossier et les chemins — les cibles d’export et les liens vers l’ancien ID seront rompus. Renommer « default » recrée un « default » vide.",
+      "menuLabel": "Actions",
+      "searchPlaceholder": "Filtrer les solutions…",
+      "noMatches": "Aucune solution ne correspond au filtre."
     }
   },
   "objectHeader": {

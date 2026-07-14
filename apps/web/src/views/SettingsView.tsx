@@ -9,6 +9,7 @@ import { buildBreadcrumb } from '../lib/navigation';
 import { useApiLang } from '../hooks/useApiLang';
 import { useApiHealth } from '../hooks/useApiHealth';
 import { useFeaturesContext } from '../hooks/useFeatures';
+import { SolutionsPanel } from '../components/SolutionsPanel';
 import { FmideFilesPanel } from '../plugins/fmide/components/FmideFilesPanel';
 import { GraphifyExportPanel } from '../plugins/graphify/components/GraphifyExportPanel';
 import { fetchFmSpecMeta, type FmSpecMeta } from '../api/fmSpecApi';
@@ -215,6 +216,8 @@ export const SettingsView: React.FC = () => {
       </div>
 
       <ApiConnectionSettings />
+
+      <SolutionsPanel />
 
       <FmSpecPanel />
 

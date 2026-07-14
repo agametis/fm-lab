@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { API_BASE } from '../../config/apiBase';
 import type { PrimitiveProps } from '../types';
 
@@ -67,20 +67,26 @@ export function XmlEmptyStateCard({ node, datasets }: PrimitiveProps) {
   const [revealFailed, setRevealFailed] = useState(false);
   const copyTimer = useRef<number | null>(null);
 
+  // Kontext-Lösung der Import-Seite (?solution_id): der Reveal öffnet den
+  // xml/-Ordner DIESER Lösung; ohne Parameter den der aktiven (Home-Karte).
+  const [searchParams] = useSearchParams();
+  const contextSolution = searchParams.get('solution_id');
+
   const onReveal = useCallback(async () => {
     setRevealFailed(false);
     try {
       const apiBase = API_BASE.replace(/\/+$/, '');
       const res = await fetch(`${apiBase}/api/xml/reveal`, {
         method: 'POST',
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(contextSolution ? { solution: contextSolution } : {}),
       });
       // 409 = Reveal in dieser Laufzeit nicht möglich → auf Pfad+Kopieren ausweichen.
       if (!res.ok) setRevealFailed(true);
     } catch {
       setRevealFailed(true);
     }
-  }, []);
+  }, [contextSolution]);
 
   const onCopyPath = useCallback(async () => {
     try {

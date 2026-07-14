@@ -24,7 +24,7 @@
   },
   "theme": {
     "switchToLight": "切换到浅色模式",
-    "switchToDark":  "切换到深色模式"
+    "switchToDark": "切换到深色模式"
   },
   "actions": {
     "openInFileMaker": "在 FileMaker 中打开",
@@ -70,5 +70,10 @@
     "loading": "正在加载仪表板…",
     "loadError": "加载失败:{{message}}",
     "noData": "暂无数据。"
+  },
+  "solutionPicker": {
+    "label": "解决方案",
+    "ariaLabel": "选择当前解决方案",
+    "switchError": "切换解决方案失败：{{message}}"
   }
 }

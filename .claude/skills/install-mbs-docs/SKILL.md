@@ -1,6 +1,6 @@
 ---
 name: install-mbs-docs
-version: 0.8.5
+version: 0.9.0
 description: Download and install MBS Plugin documentation from MonkeyBread Software. Automatically checks for newer versions and prompts before replacing existing docs. Triggers (English): "install MBS docs", "update MBS plugin documentation". Triggers (German): "installiere die MBS-Doku", "MBS-Plugin-Dokumentation aktualisieren". Triggers (Spanish): "instalar la documentación MBS", "actualizar la documentación MBS". Triggers (French): "installer la documentation MBS", "mettre à jour la documentation MBS". Triggers (Italian): "installa la documentazione MBS", "aggiorna la documentazione MBS". Triggers (Dutch): "installeer de MBS-documentatie", "MBS-documentatie bijwerken". Triggers (Portuguese): "instalar a documentação MBS", "atualizar a documentação MBS". Triggers (Swedish): "installera MBS-dokumentationen", "uppdatera MBS-dokumentationen". Triggers (Japanese): "MBSドキュメントをインストール", "MBSドキュメントを更新". Triggers (Korean): "MBS 문서 설치", "MBS 문서 업데이트". Triggers (Chinese): "安装 MBS 文档", "更新 MBS 文档".
 ---
 
@@ -56,7 +56,7 @@ This skill uses bundled scripts that handle all operations:
 - **Component Parser**: `scripts/parse_mbs_components.py`
   - Analyzes MBS function HTML documentation
   - Extracts exceptions where function prefix ≠ component
-  - Creates `data/mbs_component_exceptions.csv`
+  - Creates `reference/mbs_component_exceptions.csv`
   - Called automatically by installation script
 
 ## Working Process
@@ -151,7 +151,7 @@ Analysiere 4567 HTML-Dateien...
 Gesamt analysiert: 4520 Funktionen
 Ausnahmen gefunden: 342
 
-Ausnahmen-CSV erstellt: <project-root>/data/mbs_component_exceptions.csv
+Ausnahmen-CSV erstellt: <project-root>/reference/mbs_component_exceptions.csv
 Anzahl Ausnahmen: 342
 
 Top 10 Components mit Ausnahmen:
@@ -200,7 +200,7 @@ ERROR: [specific error message]
 - Multiple installations will overwrite the existing documentation
 - The script is safe to run multiple times
 - Documentation is required by the `mbs-function-reference` skill
-- Component parsing creates `data/mbs_component_exceptions.csv` automatically
+- Component parsing creates `reference/mbs_component_exceptions.csv` automatically
 - Component exceptions table is used by the `mbs-function-reference` skill for improved function lookup
 - Python 3 is required for component parsing (gracefully skipped if not available)
 - After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.py`, so the web home dashboard's Docs card can list it.

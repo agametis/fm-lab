@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { fetchSolutions } from '../api/solutionsApi';
 import { DashboardHost } from './DashboardHost';
 import { SubNav } from '../components/SubNav';
 import { StatusBar } from '../components/StatusBar';
@@ -123,15 +125,54 @@ export function DocsOverviewPage() {
   );
 }
 
-/** `/xml-import` → `xml_convert` bundle. Breadcrumb `Home / XML Import`. */
+/**
+ * `/xml-import` → `xml_convert` bundle. Breadcrumb `Home / XML Import`.
+ *
+ * Kontext-bewusst: `?solution_id=<id>` importiert eine beliebige Lösung,
+ * OHNE sie zu aktivieren (Einstieg: Settings-Lösungsliste). Ohne Parameter
+ * gilt die aktive Lösung. Die Titelzeile nennt immer die Kontext-Lösung
+ * („XML-Import: <Anzeigename>"); bei Kontext ≠ aktiv erklärt eine Notiz,
+ * dass die angezeigten Analysedaten sich erst nach dem Aktivieren ändern.
+ */
 export function XmlImportPage() {
   const { t } = useTranslation(['nav']);
+  const [searchParams] = useSearchParams();
+  const solutionId = searchParams.get('solution_id') || undefined;
+  const [solutionName, setSolutionName] = useState<string | null>(null);
+  const [isForeign, setIsForeign] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const solutions = await fetchSolutions();
+        if (cancelled) return;
+        const target = solutionId
+          ? solutions.find((s) => s.id === solutionId)
+          : solutions.find((s) => s.is_active);
+        setSolutionName(target ? (target.display_name || target.id) : (solutionId ?? null));
+        setIsForeign(!!target && !target.is_active);
+      } catch {
+        /* Titel degradiert auf den generischen Namen */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [solutionId]);
+
+  const baseTitle = t('nav:crumbs.xmlImport') as string;
   return (
     <BundlePage
       id="xml_convert"
       ctx={{ kind: 'xmlImport' }}
-      pageTitle={t('nav:crumbs.xmlImport') as string}
-      pageDescription={t('nav:leitDescription.xmlImport') as string}
+      params={solutionId ? { solution_id: solutionId } : undefined}
+      pageTitle={solutionName ? `${baseTitle}: ${solutionName}` : baseTitle}
+      pageDescription={
+        isForeign
+          ? (t('nav:leitDescription.xmlImportContextNote', {
+            defaultValue: 'Import einer nicht-aktiven Lösung — die angezeigten Analysedaten ändern sich erst nach dem Aktivieren.',
+          }) as string)
+          : (t('nav:leitDescription.xmlImport') as string)
+      }
     />
   );
 }

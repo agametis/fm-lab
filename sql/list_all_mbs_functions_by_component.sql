@@ -6,7 +6,7 @@
 -- unter Verwendung der Component-Ausnahmen-Tabelle.
 --
 -- Ausnahme-Tabelle:
---   data/mbs_component_exceptions.csv
+--   reference/mbs_component_exceptions.csv
 --
 -- Verwendung:
 --   duckdb db/fm_catalog.duckdb < sql/list_all_mbs_functions_by_component.sql
@@ -59,7 +59,7 @@ ComponentExceptions AS (
   SELECT
     Funktionsname,
     Component
-  FROM read_csv_auto('data/mbs_component_exceptions.csv')
+  FROM read_csv_auto('reference/mbs_component_exceptions.csv')
 ),
 Summary AS (
   -- Aggregiere und kategorisiere die MBS-Funktionen

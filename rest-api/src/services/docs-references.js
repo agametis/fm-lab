@@ -32,7 +32,8 @@ const { sqlPluginSubName } = require('../utils/plugin-name');
  *   • Categories: pro fn: / ss: Category aus den enthaltenen Function-/Step-
  *     Counts aggregiert.
  *
- * Cache: 60 Sekunden TTL pro Set-ID; Invalidation per `clearCache()` (via
+ * Cache: 60 Sekunden TTL pro Lösung+Set-ID (`<ctx.solution>:<setId>`);
+ * Invalidation per `clearCache()` (via
  * /api/admin/reload nach jedem convert-xml-Lauf).
  */
 
@@ -46,7 +47,7 @@ function clearCache() {
   catCache.clear();
 }
 
-async function referencesPerFunctionMbs() {
+async function referencesPerFunctionMbs(ctx) {
   // fn_id = fachlicher SubName (deckt sich mit der Docset-Function-ID). Der
   // Katalog-Object_Name ist `MBS:<Sub>::<Sub>`; SubName = Teil hinter dem
   // letzten `::` (format-tolerant, vgl. utils/plugin-name.js).
@@ -61,7 +62,7 @@ async function referencesPerFunctionMbs() {
       AND ol.Link_Role = 'calls_pluginfunction'
     GROUP BY fn_id
   `;
-  const result = await db.executeQuery(sql);
+  const result = await db.executeQuery(ctx, sql);
   const map = new Map();
   for (const row of result.rows) {
     map.set(row.fn_id, Number(row.ref_count));
@@ -69,7 +70,7 @@ async function referencesPerFunctionMbs() {
   return map;
 }
 
-async function referencesPerCategoryMbs() {
+async function referencesPerCategoryMbs(ctx) {
   // MBS-Kategorie = Component-Präfix. Wir aggregieren über alle PluginFunction-Calls
   // und schneiden den SubName am ersten Punkt ab (`MBS:List.AddValue::List.AddValue`
   // → SubName `List.AddValue` → `List`; format-tolerant, vgl. utils/plugin-name.js).
@@ -83,7 +84,7 @@ async function referencesPerCategoryMbs() {
       AND ol.Link_Role = 'calls_pluginfunction'
     GROUP BY category
   `;
-  const result = await db.executeQuery(sql);
+  const result = await db.executeQuery(ctx, sql);
   const map = new Map();
   for (const row of result.rows) {
     if (row.category) map.set(row.category, Number(row.ref_count));
@@ -103,7 +104,7 @@ async function referencesPerCategoryMbs() {
  *      `is_primary = 1` schließt Ambiguitäten aus (z.B. Alias-Schreibweisen).
  *   3. SUM, weil mehrere Object_Names auf dieselbe function_id mappen können.
  */
-async function referencesPerFunctionClarisFunctions() {
+async function referencesPerFunctionClarisFunctions(ctx) {
   const sql = `
     WITH usage AS (
       SELECT oc.Object_Name AS name, COUNT(*) AS use_count
@@ -120,7 +121,7 @@ async function referencesPerFunctionClarisFunctions() {
     WHERE lk.is_primary = 1
     GROUP BY lk.function_id
   `;
-  const result = await db.executeQuery(sql);
+  const result = await db.executeQuery(ctx, sql);
   return result.rows;
 }
 
@@ -129,7 +130,7 @@ async function referencesPerFunctionClarisFunctions() {
  * Edges existieren heute nicht in ObjectLinks, daher direkte Aggregation auf
  * der Step-Tabelle.
  */
-async function referencesPerFunctionClarisSteps() {
+async function referencesPerFunctionClarisSteps(ctx) {
   const sql = `
     WITH usage AS (
       SELECT Step_Name AS name, COUNT(*) AS use_count
@@ -143,14 +144,14 @@ async function referencesPerFunctionClarisSteps() {
     WHERE lk.is_primary = 1
     GROUP BY lk.step_id
   `;
-  const result = await db.executeQuery(sql);
+  const result = await db.executeQuery(ctx, sql);
   return result.rows;
 }
 
-async function referencesPerFunctionClaris() {
+async function referencesPerFunctionClaris(ctx) {
   const [fns, sts] = await Promise.all([
-    referencesPerFunctionClarisFunctions(),
-    referencesPerFunctionClarisSteps(),
+    referencesPerFunctionClarisFunctions(ctx),
+    referencesPerFunctionClarisSteps(ctx),
   ]);
   const map = new Map();
   for (const row of [...fns, ...sts]) {
@@ -164,7 +165,7 @@ async function referencesPerFunctionClaris() {
  * Funktionen + Script-Steps. Liefert IDs im selben Schema wie
  * `listDocsetCategories` (fn:<n> / ss:<n>).
  */
-async function referencesPerCategoryClaris(fnMap) {
+async function referencesPerCategoryClaris(ctx, fnMap) {
   if (!fnMap || fnMap.size === 0) return new Map();
   // Funktion-IDs ohne Prefix für SQL IN-Listen extrahieren.
   const fnIds = [];
@@ -190,7 +191,7 @@ async function referencesPerCategoryClaris(fnMap) {
       JOIN ref.functions f ON f.function_id = cnt.function_id
       GROUP BY f.category_id
     `;
-    const result = await db.executeQuery(sql);
+    const result = await db.executeQuery(ctx, sql);
     for (const row of result.rows) map.set(row.cat_id, Number(row.total));
   }
 
@@ -203,7 +204,7 @@ async function referencesPerCategoryClaris(fnMap) {
       JOIN ref.script_steps s ON s.step_id = cnt.step_id
       GROUP BY s.category_id
     `;
-    const result = await db.executeQuery(sql);
+    const result = await db.executeQuery(ctx, sql);
     for (const row of result.rows) map.set(row.cat_id, Number(row.total));
   }
   return map;
@@ -212,45 +213,47 @@ async function referencesPerCategoryClaris(fnMap) {
 /**
  * Liefert Map<functionId, count> oder null, wenn das Set nicht referenz-fähig ist.
  */
-async function referencesPerFunction(setId) {
+async function referencesPerFunction(ctx, setId) {
   const catalog = docsManifest.getCatalogEntry(setId);
   if (!catalog || !catalog.references) return null;
-  if (fnCache.has(setId)) return fnCache.get(setId);
+  const cacheKey = `${ctx?.solution ?? ''}:${setId}`;
+  if (fnCache.has(cacheKey)) return fnCache.get(cacheKey);
 
   let map = null;
   try {
     if (setId === 'mbs') {
-      map = await referencesPerFunctionMbs();
+      map = await referencesPerFunctionMbs(ctx);
     } else if (setId === 'claris-help') {
-      map = await referencesPerFunctionClaris();
+      map = await referencesPerFunctionClaris(ctx);
     }
   } catch (err) {
     console.warn(`[docs-references] referencesPerFunction(${setId}) failed: ${err.message}`);
   }
-  fnCache.set(setId, map);
+  fnCache.set(cacheKey, map);
   return map;
 }
 
-async function referencesPerCategory(setId) {
+async function referencesPerCategory(ctx, setId) {
   const catalog = docsManifest.getCatalogEntry(setId);
   if (!catalog || !catalog.references) return null;
-  if (catCache.has(setId)) return catCache.get(setId);
+  const cacheKey = `${ctx?.solution ?? ''}:${setId}`;
+  if (catCache.has(cacheKey)) return catCache.get(cacheKey);
 
   let map = null;
   try {
     if (setId === 'mbs') {
-      map = await referencesPerCategoryMbs();
+      map = await referencesPerCategoryMbs(ctx);
     } else if (setId === 'claris-help') {
       // Reuse the function-level map so wir nicht zweimal über ObjectLinks
       // aggregieren müssen. referencesPerFunction setzt den Cache mit, daher
       // ist der zweite Call hier billig.
-      const fnMap = await referencesPerFunction(setId);
-      if (fnMap) map = await referencesPerCategoryClaris(fnMap);
+      const fnMap = await referencesPerFunction(ctx, setId);
+      if (fnMap) map = await referencesPerCategoryClaris(ctx, fnMap);
     }
   } catch (err) {
     console.warn(`[docs-references] referencesPerCategory(${setId}) failed: ${err.message}`);
   }
-  catCache.set(setId, map);
+  catCache.set(cacheKey, map);
   return map;
 }
 
@@ -258,8 +261,8 @@ async function referencesPerCategory(setId) {
  * Annotiert eine Categories-Liste mit code_ref_count (oder null, wenn Set
  * nicht referenz-fähig ist oder die Kategorie keine Referenzen hat).
  */
-async function annotateCategoriesWithCounts(setId, categories) {
-  const map = await referencesPerCategory(setId);
+async function annotateCategoriesWithCounts(ctx, setId, categories) {
+  const map = await referencesPerCategory(ctx, setId);
   return categories.map(c => ({
     ...c,
     code_ref_count: map ? (map.get(c.id) ?? 0) : null,
@@ -269,8 +272,8 @@ async function annotateCategoriesWithCounts(setId, categories) {
 /**
  * Annotiert eine Functions-Liste mit code_ref_count.
  */
-async function annotateFunctionsWithCounts(setId, functions) {
-  const map = await referencesPerFunction(setId);
+async function annotateFunctionsWithCounts(ctx, setId, functions) {
+  const map = await referencesPerFunction(ctx, setId);
   return functions.map(f => ({
     ...f,
     code_ref_count: map ? (map.get(f.id) ?? 0) : null,

@@ -31,7 +31,8 @@
     "dashboards": "Overview of every available dashboard.",
     "customQueries": "Reusable SQL templates — click a tile to open an analysis.",
     "docs": "Documentation sources installed in this project.",
-    "xmlImport": "Imports all files from the xml/ directory into DuckDB."
+    "xmlImport": "Imports all files from the xml/ directory into DuckDB.",
+    "xmlImportContextNote": "Importing a non-active solution — the displayed analysis data only changes after activating it."
   },
   "errors": {
     "noDashboardId": "No dashboard id supplied.",
@@ -84,11 +85,11 @@
     "tabsAria": "Object views",
     "noName": "(no name)",
     "tabs": {
-      "detail":     "Details",
+      "detail": "Details",
       "references": "References",
-      "graph":      "Graph",
-      "versions":   "Versions",
-      "notes":      "Notes"
+      "graph": "Graph",
+      "versions": "Versions",
+      "notes": "Notes"
     }
   },
   "pseudoToolbar": {
@@ -122,15 +123,15 @@
     "noName": "(no name)"
   },
   "docs": {
-    "langFallback":  "This documentation is not available in the selected language — showing {{lang}}.",
-    "openOnline":    "Open online ↗",
+    "langFallback": "This documentation is not available in the selected language — showing {{lang}}.",
+    "openOnline": "Open online ↗",
     "openInBrowser": "Open in browser",
-    "edit":          "Edit ↗",
-    "source":        "Source",
-    "noContent":     "No content available.",
-    "category":      "Category",
-    "docset":        "Docset",
-    "references":    "Code references"
+    "edit": "Edit ↗",
+    "source": "Source",
+    "noContent": "No content available.",
+    "category": "Category",
+    "docset": "Docset",
+    "references": "Code references"
   },
   "noData": {
     "title": "No data yet",

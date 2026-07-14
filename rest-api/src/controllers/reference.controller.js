@@ -61,8 +61,9 @@ function pickLang(req) {
  * GET /api/reference/categories
  */
 const getCategories = asyncWrap(async (req, res) => {
+  const ctx = req.solutionContext;
   const lang = pickLang(req);
-  const scriptSteps = await referenceService.getStepCategories(lang).catch((e) => {
+  const scriptSteps = await referenceService.getStepCategories(ctx, lang).catch((e) => {
     if (e.code === 'REF_LANG_INVALID') throw e;
     throw e;
   });
@@ -70,12 +71,12 @@ const getCategories = asyncWrap(async (req, res) => {
   // fallen wir auf Default zurück und markieren das.
   let functions, fnLang;
   try {
-    functions = await referenceService.getFunctionCategories(lang);
+    functions = await referenceService.getFunctionCategories(ctx, lang);
     fnLang = lang;
   } catch (e) {
     if (e.code === 'REF_LANG_INVALID') {
       fnLang = environment.reference.defaultLang;
-      functions = await referenceService.getFunctionCategories(fnLang);
+      functions = await referenceService.getFunctionCategories(ctx, fnLang);
     } else {
       throw e;
     }
@@ -93,11 +94,12 @@ const getCategories = asyncWrap(async (req, res) => {
  * GET /api/reference/steps
  */
 const listSteps = asyncWrap(async (req, res) => {
+  const ctx = req.solutionContext;
   const lang = referenceService.resolveStepLang(pickLang(req));
   const [steps, categories, buildMeta] = await Promise.all([
-    referenceService.listSteps(lang),
-    referenceService.getStepCategories(lang),
-    referenceService.getBuildMeta(),
+    referenceService.listSteps(ctx, lang),
+    referenceService.getStepCategories(ctx, lang),
+    referenceService.getBuildMeta(ctx),
   ]);
   res.json({
     success: true,
@@ -118,7 +120,7 @@ const listSteps = asyncWrap(async (req, res) => {
  * GET /api/reference/meta — fm-spec Schema-Viewer Kopfbereich
  */
 const getMeta = asyncWrap(async (req, res) => {
-  const data = await referenceService.getReferenceMeta();
+  const data = await referenceService.getReferenceMeta(req.solutionContext);
   res.json({
     success: true,
     data,
@@ -131,9 +133,10 @@ const getMeta = asyncWrap(async (req, res) => {
  * Parameter über alle Sprachen in einem Call.
  */
 const getStepLangs = asyncWrap(async (req, res) => {
-  const data = await referenceService.getStepAllLangs(req.params.idOrSlug);
+  const ctx = req.solutionContext;
+  const data = await referenceService.getStepAllLangs(ctx, req.params.idOrSlug);
   if (!data) {
-    const suggestions = await referenceService.suggestStepSlugs(req.params.idOrSlug, 5);
+    const suggestions = await referenceService.suggestStepSlugs(ctx, req.params.idOrSlug, 5);
     return sendErr(res, 'REF_STEP_NOT_FOUND',
       `No step with id/slug '${req.params.idOrSlug}'.`,
       { suggestions });
@@ -147,7 +150,7 @@ const getStepLangs = asyncWrap(async (req, res) => {
  * meta.grammarAvailable=false.
  */
 const getStepGrammar = asyncWrap(async (req, res) => {
-  const data = await referenceService.getStepGrammar(req.params.idOrSlug);
+  const data = await referenceService.getStepGrammar(req.solutionContext, req.params.idOrSlug);
   if (!data.available) {
     return res.json({ success: true, data: null, meta: { grammarAvailable: false } });
   }
@@ -158,21 +161,22 @@ const getStepGrammar = asyncWrap(async (req, res) => {
  * GET /api/reference/steps/:idOrSlug
  */
 const getStep = asyncWrap(async (req, res) => {
+  const ctx = req.solutionContext;
   const lang = referenceService.resolveStepLang(pickLang(req));
   const content = normalizeContent(req.query.content);
   if (content === null) {
     return sendErr(res, 'VALIDATION_ERROR',
       `Invalid content level. Allowed: ${REFERENCE_CONTENT_LEVELS.join(', ')}`);
   }
-  const detail = await referenceService.getStepDetail(req.params.idOrSlug, lang);
+  const detail = await referenceService.getStepDetail(ctx, req.params.idOrSlug, lang);
   if (!detail) {
-    const suggestions = await referenceService.suggestStepSlugs(req.params.idOrSlug, 5);
+    const suggestions = await referenceService.suggestStepSlugs(ctx, req.params.idOrSlug, 5);
     return sendErr(res, 'REF_STEP_NOT_FOUND',
       `No step with id/slug '${req.params.idOrSlug}'.`,
       { suggestions });
   }
   // content=summary|full: HTML aus dem lokalen Mirror anhängen
-  const buildMeta = await referenceService.getBuildMeta();
+  const buildMeta = await referenceService.getBuildMeta(ctx);
   const respMeta = { source: 'db', lang, sourceVersion: buildMeta.sourceVersion };
   if (content === 'summary' || content === 'full') {
     const mirrorLang = referenceService.mirrorLangDir(lang);
@@ -194,10 +198,11 @@ const getStep = asyncWrap(async (req, res) => {
  * GET /api/reference/steps/:idOrSlug/embed
  */
 const getStepEmbed = asyncWrap(async (req, res) => {
+  const ctx = req.solutionContext;
   const lang = referenceService.resolveStepLang(pickLang(req));
-  const base = await referenceService.findStepBySlugOrId(req.params.idOrSlug);
+  const base = await referenceService.findStepBySlugOrId(ctx, req.params.idOrSlug);
   if (!base) {
-    const suggestions = await referenceService.suggestStepSlugs(req.params.idOrSlug, 5);
+    const suggestions = await referenceService.suggestStepSlugs(ctx, req.params.idOrSlug, 5);
     return sendErr(res, 'REF_STEP_NOT_FOUND',
       `No step with id/slug '${req.params.idOrSlug}'.`,
       { suggestions });
@@ -217,11 +222,12 @@ const getStepEmbed = asyncWrap(async (req, res) => {
  * GET /api/reference/functions
  */
 const listFunctions = asyncWrap(async (req, res) => {
+  const ctx = req.solutionContext;
   const lang = referenceService.resolveFunctionLang(pickLang(req));
   const [functions, categories, buildMeta] = await Promise.all([
-    referenceService.listFunctions(lang),
-    referenceService.getFunctionCategories(lang),
-    referenceService.getBuildMeta(),
+    referenceService.listFunctions(ctx, lang),
+    referenceService.getFunctionCategories(ctx, lang),
+    referenceService.getBuildMeta(ctx),
   ]);
   res.json({
     success: true,
@@ -242,20 +248,21 @@ const listFunctions = asyncWrap(async (req, res) => {
  * GET /api/reference/functions/:nameOrId
  */
 const getFunction = asyncWrap(async (req, res) => {
+  const ctx = req.solutionContext;
   const lang = referenceService.resolveFunctionLang(pickLang(req));
   const content = normalizeContent(req.query.content);
   if (content === null) {
     return sendErr(res, 'VALIDATION_ERROR',
       `Invalid content level. Allowed: ${REFERENCE_CONTENT_LEVELS.join(', ')}`);
   }
-  const detail = await referenceService.getFunctionDetail(req.params.nameOrId, lang);
+  const detail = await referenceService.getFunctionDetail(ctx, req.params.nameOrId, lang);
   if (!detail) {
-    const suggestions = await referenceService.suggestFunctionNames(req.params.nameOrId, 5);
+    const suggestions = await referenceService.suggestFunctionNames(ctx, req.params.nameOrId, 5);
     return sendErr(res, 'REF_FUNCTION_NOT_FOUND',
       `No function with name/id '${req.params.nameOrId}'.`,
       { suggestions });
   }
-  const buildMeta = await referenceService.getBuildMeta();
+  const buildMeta = await referenceService.getBuildMeta(ctx);
   const respMeta = { source: 'db', lang, sourceVersion: buildMeta.sourceVersion };
   if (content === 'summary' || content === 'full') {
     const mirrorLang = referenceService.mirrorLangDir(lang);
@@ -277,10 +284,11 @@ const getFunction = asyncWrap(async (req, res) => {
  * GET /api/reference/functions/:nameOrId/embed
  */
 const getFunctionEmbed = asyncWrap(async (req, res) => {
+  const ctx = req.solutionContext;
   const lang = referenceService.resolveFunctionLang(pickLang(req));
-  const base = await referenceService.findFunctionByNameOrId(req.params.nameOrId);
+  const base = await referenceService.findFunctionByNameOrId(ctx, req.params.nameOrId);
   if (!base) {
-    const suggestions = await referenceService.suggestFunctionNames(req.params.nameOrId, 5);
+    const suggestions = await referenceService.suggestFunctionNames(ctx, req.params.nameOrId, 5);
     return sendErr(res, 'REF_FUNCTION_NOT_FOUND',
       `No function with name/id '${req.params.nameOrId}'.`,
       { suggestions });
@@ -307,7 +315,7 @@ const lookup = asyncWrap(async (req, res) => {
   }
   const lang = pickLang(req);
   const all = String(req.query.all || '').toLowerCase() === 'true';
-  const matches = await referenceService.lookupToken(token, lang, { all });
+  const matches = await referenceService.lookupToken(req.solutionContext, token, lang, { all });
   res.json({
     success: true,
     data: { token, lang, all, matches },
