@@ -26,7 +26,7 @@ The dashboard resolver searches both directories; in case of an ID collision the
   - **SQL templates** (step 5.2): English only — filenames, parameter names, column aliases, comments. Language-agnostic, never translated.
   - **manifest.json / layout.json** (steps 5.3, 5.4): English defaults for `title`, `description`, card titles, KPI/column labels.
   - **Localization** (step 5.5): for every other supported language create a `locales/<lang>.json` file with translated `title`, `description` and (optionally) layout labels.
-- **Database**: `db/fm_catalog.duckdb` (master — NOT `rest-api/db/`)
+- **Database**: `db/fm_catalog.duckdb` (master — NOT `rest-api/db/`); with an active session pin (`FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2) draft/sample queries run against the literal bundle path `solutions/<id>/db/fm_catalog.duckdb`
 - **Read-only**: never UPDATE/INSERT/DELETE on the database
 - **Interactive**: steps 3 and 4 wait for user confirmation before files are written
 - **SQL style**: analogous to `rest-api/templates/dashboards/home/data/*.sql` (system reference) and `rest-api/templates/dashboards-custom/script_todos/data/*.sql` (custom reference)

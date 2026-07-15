@@ -155,7 +155,44 @@
     "autoEnter": "Auto-immissione",
     "comment": "Commento",
     "calculationFormula": "Formula di calcolo",
-    "autoEnterCalculation": "Calcolo di auto-immissione"
+    "autoEnterCalculation": "Calcolo di auto-immissione",
+    "sectionAutoEnter": "Immissione automatica",
+    "sectionValidation": "Convalida",
+    "sectionStorage": "Memorizzazione",
+    "sectionSummary": "Riepilogo",
+    "type": "Tipo",
+    "no": "No",
+    "serialNext": "Valore successivo",
+    "serialIncrement": "Incremento",
+    "serialGenerate": "Genera",
+    "lookupSource": "Campo di origine",
+    "lookupVia": "Tramite relazione",
+    "lookupDontCopy": "Non copiare i valori vuoti",
+    "lookupNoMatch": "Se non c'è corrispondenza",
+    "calcOverwrite": "Sostituisci il valore esistente",
+    "calcAlwaysEvaluate": "Ricalcola a ogni modifica",
+    "prohibitModification": "Modifica non consentita",
+    "validationMode": "Convalida",
+    "constraints": "Richiede",
+    "constraintNotEmpty": "Non vuoto",
+    "constraintUnique": "Univoco",
+    "constraintExisting": "Esistente",
+    "validationValueList": "Membro di una lista valori",
+    "validationAllowOverride": "L'utente può ignorare",
+    "storageIndex": "Indicizzazione",
+    "storageAutoIndex": "Crea automaticamente gli indici",
+    "storageStoreCalc": "Risultato del calcolo memorizzato",
+    "summaryOperation": "Operazione",
+    "summaryField": "Campo riepilogo",
+    "validationStrict": "Tipo di dati rigoroso",
+    "validationMaxChars": "Caratteri max.",
+    "validationRange": "Nell'intervallo",
+    "validationByCalc": "Convalida tramite calcolo",
+    "validationMessage": "Messaggio personalizzato",
+    "storageIndexLanguage": "Lingua predefinita",
+    "summaryRestartGroup": "Riavvia per ogni gruppo",
+    "summaryRepMode": "Calcola ripetizioni",
+    "calcEvaluatesWhenEmpty": "Calcola anche se i campi sono vuoti"
   },
   "typeDetail": {
     "loading": "Caricamento…",
@@ -256,7 +293,7 @@
     },
     "solutions": {
       "heading": "Soluzioni",
-      "description": "Gestisci le soluzioni FileMaker di questo workspace. Ogni soluzione ha la propria casella XML, il proprio database e il proprio stato. Attivare commuta l’intero workbench su quella soluzione.",
+      "description": "Gestisce le soluzioni FileMaker di questo workspace. Ogni soluzione ha la propria casella XML, il proprio database e il proprio stato. La tua vista segue il selettore nell'intestazione; il valore predefinito del server vale solo per gli accessi senza selezione propria.",
       "colId": "ID",
       "colName": "Soluzione",
       "colSize": "Dimensione",
@@ -264,7 +301,7 @@
       "colLastImport": "Ultima importazione",
       "colDuration": "Durata",
       "activeBadge": "Attiva",
-      "activate": "Attiva",
+      "activate": "Imposta come predefinita del server",
       "activating": "Attivazione…",
       "deleteButton": "Elimina",
       "deleteConfirm1": "Eliminare la soluzione “{{name}}”? Verrà rimosso TUTTO il bundle, inclusi i file XML di origine.",
@@ -396,6 +433,116 @@
     "clearFilter": "Reimposta",
     "noMatches": "Nessun risultato",
     "openField": "Apri dettaglio campo",
-    "openTo": "Apri dettaglio occorrenza tabella"
+    "openTo": "Apri dettaglio occorrenza tabella",
+    "groupAutoEnter": "Immissione automatica",
+    "groupValidation": "Convalida",
+    "groupComment": "Commento",
+    "filterByAutoEnter": "Filtra per immissione automatica",
+    "filterByValidation": "Filtra per convalida",
+    "filterByComment": "Filtra per commento",
+    "aeSerial": "Seriale",
+    "aeLookup": "Ricerca",
+    "aeCalc": "Calcolo",
+    "aeConstant": "Costante",
+    "aeCreation": "Creazione",
+    "aeModification": "Modifica",
+    "aeOther": "Altro",
+    "validated": "convalidato",
+    "notValidated": "non convalidato",
+    "commented": "documentato",
+    "uncommented": "non documentato"
+  },
+  "fieldOptions": {
+    "fieldType": {
+      "Normal": "Normale",
+      "Calculated": "Calcolo",
+      "Summary": "Riepilogo"
+    },
+    "dataType": {
+      "Text": "Testo",
+      "Number": "Numero",
+      "Date": "Data",
+      "Time": "Ora",
+      "Timestamp": "Data e ora",
+      "Binary": "Contenitore"
+    },
+    "autoEnter": {
+      "SerialNumber": "Numero seriale",
+      "Looked_up": "Valore di ricerca",
+      "Calculated": "Valore calcolato",
+      "ConstantData": "Dati (costante)",
+      "CreationDate": "Data di creazione",
+      "CreationTime": "Ora di creazione",
+      "CreationTimestamp": "Data e ora di creazione",
+      "CreationName": "Nome utente di creazione",
+      "CreationAccountName": "Nome account di creazione",
+      "ModificationDate": "Data di modifica",
+      "ModificationTime": "Ora di modifica",
+      "ModificationTimestamp": "Data e ora di modifica",
+      "ModificationName": "Nome utente di modifica",
+      "ModificationAccountName": "Nome account di modifica"
+    },
+    "serialGenerate": {
+      "OnCreation": "Alla creazione",
+      "OnCommit": "Al salvataggio"
+    },
+    "noMatch": {
+      "DoNotCopy": "Non copiare",
+      "ConstantData": "Usa costante"
+    },
+    "validationType": {
+      "Always": "Sempre",
+      "OnlyDuringDataEntry": "Solo durante l'immissione dati"
+    },
+    "index": {
+      "None": "Nessuno",
+      "Minimal": "Minimo",
+      "All": "Tutti"
+    },
+    "summaryOp": {
+      "Total": "Totale",
+      "Average": "Media",
+      "Count": "Conteggio",
+      "Minimum": "Minimo",
+      "Maximum": "Massimo",
+      "StandardDeviation": "Deviazione standard",
+      "FractionOfTotal": "Frazione del totale",
+      "List": "Elenco di",
+      "RunningTotal": "Totale progressivo"
+    },
+    "strictType": {
+      "Numeric": "Solo numerico",
+      "FourDigitYear": "Anno a 4 cifre",
+      "TimeOfDay": "Ora del giorno"
+    },
+    "repMode": {
+      "Together": "Tutte insieme",
+      "Individually": "Individualmente"
+    }
+  },
+  "layoutViewer": {
+    "propertiesHeading": "Proprietà",
+    "contextTable": "Tabella di contesto",
+    "theme": "Tema",
+    "menuSet": "Set di menu",
+    "menuSetDefault": "[Predefinito file]",
+    "width": "Larghezza",
+    "availableViews": "Viste disponibili",
+    "defaultView": "Vista predefinita",
+    "viewForm": "Vista modulo",
+    "viewList": "Vista elenco",
+    "viewTable": "Vista tabella",
+    "baseTheme": "Tema base",
+    "inLayoutMenus": "Nei menu layout",
+    "lastModified": "Ultima modifica",
+    "triggersHeading": "Trigger di script",
+    "noTriggers": "Nessun trigger di script",
+    "yes": "Sì",
+    "no": "No",
+    "optAutoSave": "Salva le modifiche automaticamente",
+    "optFieldFrames": "Cornici campo con record attivo",
+    "optFrameCurrentOnly": "Delimita i campi solo nel record corrente",
+    "optShowCurrentInList": "Indicatore record in vista elenco",
+    "optQuickFind": "Ricerca rapida"
   }
 }

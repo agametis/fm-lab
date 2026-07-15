@@ -10,6 +10,13 @@ const referenceService = require('../services/reference.service');
 // PluginFunction, PluginComponent).
 const UUID_REGEX = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32})$/i;
 
+// Synthetische Katalog-Object_UUIDs für Sub-Knoten ohne native FM-UUID:
+// `trig_<id>_<owner>_<file>` (ScriptTrigger), `part_…` (LayoutPart), `rel_…`
+// (Relationship), `paste_…` (PasteIndexObject), `step_…` (ScriptStep). Gültige
+// Navigations-/Highlight-Ziele — nur das Format weicht ab.
+const SYNTHETIC_ID_RE = /^(trig|part|rel|paste|step)_/;
+const isCatalogUuid = (s) => UUID_REGEX.test(s) || SYNTHETIC_ID_RE.test(s);
+
 /**
  * Object Controller
  * Handles requests for object-related endpoints
@@ -882,15 +889,18 @@ async function backReferences(req, res, next) {
         { destination: destUuid, origin: originRaw });
     }
 
-    // Destination muss eine UUID sein und existieren.
-    if (!UUID_REGEX.test(destUuid)) {
+    // Destination muss eine (echte oder synthetische Katalog-) UUID sein und
+    // existieren. Sub-Knoten wie ScriptTrigger/LayoutPart/Relationship tragen
+    // synthetische Object_UUIDs (`trig_…`, `part_…`, `rel_…`, `paste_…`, `step_…`),
+    // die dennoch gültige Navigations-/Highlight-Ziele sind — Existenz prüft getByUUID.
+    if (!isCatalogUuid(destUuid)) {
       throw createError('VALIDATION_ERROR',
         '`destination` muss eine UUID sein.', { destination: destUuid });
     }
     const destObj = await objectService.getByUUID(ctx, destUuid, dest_file);
 
-    // Origin: UUID-Format ODER Name-Lookup.
-    const looksLikeUuid = UUID_REGEX.test(originRaw);
+    // Origin: (echte/synthetische) UUID ODER Name-Lookup.
+    const looksLikeUuid = isCatalogUuid(originRaw);
     const useUuid = mode === 'uuid' || (mode === 'auto' && looksLikeUuid);
     const useName = mode === 'name' || (mode === 'auto' && !looksLikeUuid);
 

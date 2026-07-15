@@ -10,5 +10,11 @@
   "loadHeading": "Caricamento non riuscito",
   "retryAria": "Riprova",
   "retryLabel": "Riprova",
-  "noConnection": "Nessuna connessione all'API REST. Verifica se il server è in esecuzione."
+  "noConnection": "Nessuna connessione all'API REST. Verifica se il server è in esecuzione.",
+  "schemaDrift": {
+    "heading": "Catalogo obsoleto",
+    "body": "Questa soluzione è stata importata con una versione del catalogo precedente a quella prevista dall'app. Riconverti la sua esportazione XML per ricostruire il catalogo degli oggetti nello schema attuale.",
+    "versions": "Catalogo: {{dbVersion}} · l'app prevede: {{appVersion}}",
+    "action": "Vai alla conversione XML"
+  }
 }

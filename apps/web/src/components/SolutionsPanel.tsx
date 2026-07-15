@@ -337,9 +337,13 @@ export const SolutionsPanel: React.FC = () => {
               <td>{fmtDuration(s.last_run_duration_ms)}</td>
               <td className="solutions-panel__actions">
                 {s.is_active && (
-                  <span className="solutions-panel__badge" title={t('detail:settingsView.solutions.activeBadge') as string}>
+                  <span
+                    className="solutions-panel__badge"
+                    role="img"
+                    title={t('detail:settingsView.solutions.activeBadge') as string}
+                    aria-label={t('detail:settingsView.solutions.activeBadge') as string}
+                  >
                     <span className="solutions-panel__badge-dot" aria-hidden="true" />
-                    {t('detail:settingsView.solutions.activeBadge')}
                   </span>
                 )}
                 <div className="solutions-panel__menu-wrap">

@@ -241,18 +241,25 @@ def _serialize(elem: ET.Element, indent: int, out: list[str]) -> None:
     pad = "  " * indent
     attrs = "".join(f' {k}="{_esc(v, _ATTR_ESC)}"' for k, v in elem.attrib.items())
     children = list(elem)
-    text = (elem.text or "").strip("\n")
+    raw = elem.text or ""
     if elem.tag == "Calculation":
         # CDATA, verbatim content (already plain text in the IR)
-        body = text.strip()
+        body = raw.strip()
         body = body.replace("]]>", "]]]]><![CDATA[>")
         out.append(f"{pad}<{elem.tag}{attrs}><![CDATA[{body}]]></{elem.tag}>")
         return
-    if not children and not text.strip():
+    # A leaf's text is content; template pretty-printing only ever puts
+    # newline+indent into a *parent's* text or a sibling's tail, never a leaf's
+    # own text. So text carrying a newline is formatting (strip it, as before),
+    # but no-newline text is genuine content and is preserved verbatim — a
+    # whitespace-only comment body must serialize as <Text> </Text>, not a
+    # self-closing element.
+    text = raw.strip() if "\n" in raw else raw
+    if not children and not text:
         out.append(f"{pad}<{elem.tag}{attrs}/>")
         return
     if not children:
-        out.append(f"{pad}<{elem.tag}{attrs}>{_esc(text.strip(), _XML_ESC)}</{elem.tag}>")
+        out.append(f"{pad}<{elem.tag}{attrs}>{_esc(text, _XML_ESC)}</{elem.tag}>")
         return
     out.append(f"{pad}<{elem.tag}{attrs}>")
     for child in children:

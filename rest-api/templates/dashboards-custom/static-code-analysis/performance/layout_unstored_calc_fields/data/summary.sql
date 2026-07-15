@@ -1,0 +1,31 @@
+-- @template_type: report
+-- @description: KPI summary for the layout_unstored_calc_fields rule — how many layouts
+--   carry at least one unstored calculation field, split by Default_View (Form/List/Table),
+--   across how many files, and the worst single-layout count. The per-view counts back the
+--   clickable Form/List/Table KPIs and ignore the 'view' filter so they always show totals.
+-- @params: file (optional)
+WITH unstored AS (
+    SELECT Field_UUID
+    FROM FieldsForTables
+    WHERE Field_Type = 'Calculated' AND Storage_StoreCalcResults = FALSE
+),
+per_layout AS (
+    SELECT l.File_Name AS file_name, l.L_UUID AS l_uuid, l.Default_View AS default_view,
+           COUNT(DISTINCT ol.Target_UUID) AS n
+    FROM ObjectLinks ol
+    JOIN unstored u ON u.Field_UUID = ol.Target_UUID
+    JOIN Layouts l  ON l.L_UUID = ol.Source_UUID
+    WHERE ol.Link_Role = 'displays_field'
+      AND (getvariable('file') IS NULL OR l.File_Name = getvariable('file'))
+    GROUP BY l.File_Name, l.L_UUID, l.Default_View
+    HAVING COUNT(DISTINCT ol.Target_UUID) > 0
+)
+SELECT
+    COUNT(*)                                        AS affected_layouts,
+    'warn'                                          AS severity,
+    COUNT(*) FILTER (WHERE default_view = 'Form')   AS view_form,
+    COUNT(*) FILTER (WHERE default_view = 'List')   AS view_list,
+    COUNT(*) FILTER (WHERE default_view = 'Table')  AS view_table,
+    COUNT(DISTINCT file_name)                       AS affected_files,
+    COALESCE(MAX(n), 0)                             AS max_per_layout
+FROM per_layout;

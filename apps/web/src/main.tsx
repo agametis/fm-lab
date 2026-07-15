@@ -5,8 +5,14 @@ import App from './App';
 import { useFeatures, FeaturesContext } from './hooks/useFeatures';
 import { applyServerLanguage } from './i18n'; // initialises i18next before any component renders
 import { API_BASE } from './config/apiBase';
+import { installSolutionFetch } from './lib/solutionFetch';
 import './styles/theme.css';
 import './index.css';
+
+// Stage M (multiuser): instrument ALL API fetches with the per-tab solution
+// context (X-Solution header) + stale-selection recovery. Before the first
+// fetch below so even the config call participates.
+installSolutionFetch();
 
 // Fire-and-forget: ask the REST API for the server-side default language. Uses
 // the effective API base (browser-side override → .env → default) to reach the

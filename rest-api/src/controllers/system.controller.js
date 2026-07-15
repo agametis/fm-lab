@@ -28,7 +28,7 @@ function bigIntToNumber(value) {
  */
 async function version(req, res, next) {
   try {
-    const dbStats = await db.getDatabaseStats();
+    const dbStats = await db.getDatabaseStats(req.solutionContext);
 
     // Build features object from loaded plugins
     const plugins = getLoadedPlugins();
@@ -119,16 +119,30 @@ async function info(req, res, next) {
       byType[row.Object_Type] = bigIntToNumber(row.count);
     });
 
-    // Aktive Lösung (Multi-Solution) — eigener Schlüssel neben dem
+    // Aktive Lösung (= Server-Default) — eigener Schlüssel neben dem
     // historischen `solution`-Block (der die Datei-/Objektstatistik trägt).
     const activeId = solutionsConfig.getActiveSolutionId();
     const activeManifest = solutionsConfig.readManifest(activeId) || {};
+
+    // Aufgelöster Request-Kontext (Ausbaustufe M): die Lösung, die DIESER
+    // Aufrufer sieht — bei gesetztem X-Solution-Header ≠ active_solution.
+    // Das Frontend zeigt „meine Lösung" hieraus, nie aus active_solution.
+    const ctxId = req.solutionContext.solution;
+    const ctxManifest = ctxId === activeId
+      ? activeManifest
+      : (solutionsConfig.readManifest(ctxId) || {});
 
     const solutionInfo = {
       active_solution: {
         id: activeId,
         display_name: activeManifest.display_name || activeId,
         uuid: activeManifest.uuid || null,
+      },
+      context: {
+        id: ctxId,
+        display_name: ctxManifest.display_name || ctxId,
+        uuid: ctxManifest.uuid || null,
+        is_server_default: ctxId === activeId,
       },
       solution: {
         file_count: filesResult.rows.length,

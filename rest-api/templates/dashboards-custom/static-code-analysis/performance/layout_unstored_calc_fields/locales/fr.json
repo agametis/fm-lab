@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Modèles avec calculs non stockés",
+    "description": "Règle de performance — modèles classés selon le nombre de champs de calcul non stockés qu'ils affichent. Chaque calcul non stocké est réévalué pour chaque enregistrement visible ; les modèles qui affichent beaucoup d'enregistrements avec un nombre élevé sont donc les plus coûteux à afficher. La vue par défaut (formulaire/liste/tableau) qualifie le contexte — la liste est la plus critique."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Modèles concernés",
+    "summary_kpi.props.items[1].label": "Formulaire",
+    "summary_kpi.props.items[2].label": "Liste",
+    "summary_kpi.props.items[3].label": "Tableau",
+    "summary_kpi.props.items[4].label": "Fichiers concernés",
+    "summary_kpi.props.items[5].label": "Max. par modèle",
+    "findings_card.props.title": "Modèles avec calculs non stockés",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un modèle ou un contexte…",
+    "findings_table.props.empty.message": "Aucun modèle avec calculs non stockés trouvé.",
+    "findings_table.props.columns[0].label": "Vue",
+    "findings_table.props.columns[1].label": "Calculs non stockés",
+    "findings_table.props.columns[2].label": "Modèle",
+    "findings_table.props.columns[3].label": "Contexte",
+    "findings_table.props.columns[4].label": "Fichier",
+    "findings_table.props.columns[5].label": "Emplacements"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "id": "layout_unstored_calc_fields",
+  "version": "1.0.0",
+  "title": "Layouts with unstored calculations",
+  "description": "Performance rule — layouts ranked by how many unstored calculation fields they display. Each unstored calculation is re-evaluated for every visible record, so layouts that show many records at once and carry a high count are the most expensive to render.",
+  "author": "fm-lab rules",
+  "icon": "layout-list",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "performance"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "performance",
+    "rationale": "Unstored calculation fields hold no value on disk and are evaluated on display. The cost scales with the number of such fields on a layout multiplied by the number of records shown, so a record-list layout with many unstored calculations can become a rendering bottleneck.",
+    "remediation": "Reduce the number of unstored calculations on high-traffic list layouts: store results where the inputs allow it, move heavy calculations to dedicated detail layouts, or replace them with stored/lookup values.",
+    "meta": {
+      "name": "Layouts with unstored calculations",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Per-layout count of displayed unstored calculation fields. Note: FileMaker view type (form/list) is not captured in the catalog, so the placement count is the render-cost proxy.",
+      "created": "2026-07-15",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "view",
+      "type": "string",
+      "required": false,
+      "description": "Optional default-view filter (Form | List | Table), set by clicking a KPI. Empty = all."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of layouts returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

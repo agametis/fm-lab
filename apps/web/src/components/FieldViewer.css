@@ -11,10 +11,12 @@
   grid-template-columns: max-content 1fr;
   column-gap: 0.9rem;
   row-gap: 0.2rem;
-  margin: 0 0 0.6rem 0;
-  padding: 0.2rem 0 0.5rem 0;
+  margin: 0;
+  padding: 0.2rem 0 0.55rem 0;
   font-size: 0.82rem;
-  border-bottom: 1px solid var(--color-border-strong);
+  /* Trenner werden nicht mehr an der dl, sondern an den Bändern gesetzt
+     (.fm-field-sections / .fm-field-formula) — verhindert Doppelstriche,
+     wenn ein Feld keine Options-Sektionen hat. */
 }
 
 .fm-field-props dt {
@@ -41,6 +43,13 @@
   font-size: 0.8rem;
 }
 
+/* Trenner zwischen Optionen (bzw. Identität) und der Calculation-Formel. */
+.fm-field-formula {
+  border-top: 1px solid var(--color-border-strong);
+  padding-top: 0.55rem;
+  margin-top: 0.6rem;
+}
+
 .fm-field-formula-label {
   font-size: 0.78rem;
   color: var(--color-text-muted);
@@ -51,4 +60,88 @@
 
 .fm-field-formula .fm-customfunction-body {
   padding-top: 0;
+}
+
+/* Band der Options-Sektionen — Trenner zwischen Identität und Optionen. */
+.fm-field-sections {
+  border-top: 1px solid var(--color-border-strong);
+  padding-top: 0.5rem;
+}
+
+/* Erste Sektion sitzt direkt unter dem Trenner — kein doppelter Abstand. */
+.fm-field-sections > .fm-field-section:first-child .fm-field-section-title {
+  margin-top: 0;
+}
+
+/* ── Options-Sektionen (Automatische Eingabe / Überprüfung / Speicher / Statistik) ── */
+.fm-field-section {
+  margin: 0 0 0.6rem 0;
+}
+
+.fm-field-section:last-child {
+  margin-bottom: 0;
+}
+
+.fm-field-section-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0.5rem 0 0.3rem 0;
+}
+
+/* Die dl in einer Sektion trägt keine untere Trennlinie (die Sektion selbst gliedert). */
+.fm-field-section .fm-field-props {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Herkunfts-BaseTable hinter dem Quellfeld-Link — dezent, disambiguiert Namensgleiche. */
+.fm-field-origin {
+  color: var(--color-text-muted);
+}
+
+/* Klickbarer Objekt-Link (Lookup-Quellfeld, Summary-Zielfeld) — als Inline-Link. */
+.fm-field-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--color-link, var(--color-accent, #3b82f6));
+  cursor: pointer;
+  text-align: left;
+}
+
+.fm-field-link:hover {
+  text-decoration: underline;
+}
+
+/* Inline-Formel der „Überprüfung durch Berechnung". */
+.fm-field-inline-calc {
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  background: var(--color-surface-sunken, rgba(127, 127, 127, 0.12));
+  color: var(--color-text-primary);
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Aktive Validierungs-Constraints als Pills. */
+.fm-field-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.fm-field-chip {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border-radius: 10px;
+  font-size: 0.74rem;
+  background: var(--color-surface-sunken, rgba(127, 127, 127, 0.12));
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-strong);
 }

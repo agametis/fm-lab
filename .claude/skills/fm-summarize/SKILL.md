@@ -10,7 +10,7 @@ Produce a structured, technical description of a FileMaker object based on the D
 
 ## Ground rules
 
-- **Database**: read-only against the master catalog `db/fm_catalog.duckdb` via a plain `duckdb db/fm_catalog.duckdb -c "<SQL>"` (Bash). Invocation rules, DuckDB-binary resolution and the "never read the `rest-api/db` copy" caveat are in CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`) — don't restate them here, and never install DuckDB.
+- **Database**: read-only against the master catalog `db/fm_catalog.duckdb` via a plain `duckdb db/fm_catalog.duckdb -c "<SQL>"` (Bash). With an active session pin (`FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2) use the literal bundle path `duckdb solutions/<id>/db/fm_catalog.duckdb` instead (resolve once via `tools/solution.sh current`). Invocation rules, DuckDB-binary resolution and the "never read the `rest-api/db` copy" caveat are in CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`) — don't restate them here, and never install DuckDB.
 - **SQL identifiers**: English DDL names — never translate table/column names of the catalog
 - **File references**: Markdown links (e.g. `[Script_Name](db/fm_catalog.duckdb)`)
 - **Before every DB query**: make sure the object is uniquely identified (see Step 1)

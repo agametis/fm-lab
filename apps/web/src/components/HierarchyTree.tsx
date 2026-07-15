@@ -43,6 +43,7 @@ function buildSearchText(ref: ReferenceItem): string {
     ref.Object_Type ?? '',
     ref.Link_Role ?? '',
     ref.File_Name ?? '',
+    ref.Container_Name ?? '',
   ].join(' ').toLowerCase();
 }
 
@@ -61,7 +62,13 @@ function compareRefs(a: ReferenceItem, b: ReferenceItem, key: RefSortKey): numbe
   const cmp = (x: string, y: string) =>
     (x ?? '').localeCompare(y ?? '', undefined, { sensitivity: 'base', numeric: true });
   if (key === 'origin') {
-    return cmp(a.File_Name, b.File_Name) || cmp(a.Object_Type, b.Object_Type) || cmp(a.Object_Name, b.Object_Name);
+    // Zwei-gliedrig: Datei → (Container-/Layout-Name) → Typ → Objektname. Der
+    // Container-Name verortet Sub-Knoten, deren Objektname generisch identisch ist
+    // (z.B. alle „OnLayoutKeystroke"-Trigger) — ohne ihn blieben sie unsortiert.
+    return cmp(a.File_Name, b.File_Name)
+      || cmp(a.Container_Name ?? '', b.Container_Name ?? '')
+      || cmp(a.Object_Type, b.Object_Type)
+      || cmp(a.Object_Name, b.Object_Name);
   }
   if (key === 'role') {
     return cmp(a.Link_Role, b.Link_Role) || cmp(a.Object_Name, b.Object_Name) || cmp(a.File_Name, b.File_Name);
@@ -75,7 +82,7 @@ function compareRefs(a: ReferenceItem, b: ReferenceItem, key: RefSortKey): numbe
  * Includes a type-filter pill bar and a live search input above the lists.
  */
 export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>(({ references }, externalRef) => {
-  const { t } = useTranslation(['detail']);
+  const { t } = useTranslation(['detail', 'types']);
   const navigate = useNavigate();
   const { uuid: currentUuid } = useParams<{ uuid: string }>();
   // Heimat-Datei = Datei des aktuell geöffneten Objekts (der Fokus, in dem die
@@ -322,11 +329,23 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
           : `${ref.Object_Type}: ${formatObjectDisplayName(ref.Object_Type, ref.Object_Name)}`}
       >
         <span className="object-type">
-          {ref.Object_Type}
+          {t(`types:objectTypes.${ref.Object_Type}`, { defaultValue: ref.Object_Type })}
         </span>
         <span className="ref-name" title={ref.Object_Name}>
           {formatObjectDisplayName(ref.Object_Type, ref.Object_Name)}
         </span>
+        {/* Container-Verortung (z.B. Layout eines ScriptTriggers): macht sonst
+            identische Sub-Knoten unterscheidbar. Dateiname nur bei Abweichung vom
+            Fokus-Objekt (referenziertes Script/Layout). */}
+        {ref.Container_Name && (
+          <span className="ref-container" title={ref.Container_Name}>
+            <span className="ref-container-sep" aria-hidden="true">›</span>
+            {ref.Container_Name}
+            {ref.Container_File && ref.Container_File !== focusFile && (
+              <span className="ref-container-file"> ({ref.Container_File})</span>
+            )}
+          </span>
+        )}
         {/* Meta-Gruppe (Zähler · Rolle · Datei · Badges · Pfeil) — wrappt als EIN
             Block unter den Namen, sobald die Breite nicht reicht; erst bei ganz
             wenig Platz brechen ihre Einzelteile weiter um (stufenweise via
@@ -344,7 +363,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
             // genug ist (sonst trägt der Pfeil-Tooltip die Rolle weiter).
             <span className="ref-role-label">{ref.Link_Role}</span>
           )}
-          {ref.File_Name && ref.File_Name !== focusFile && (
+          {ref.File_Name && ref.File_Name !== focusFile && !ref.Container_Name && (
             <span className="ref-file">
               ({ref.File_Name})
             </span>

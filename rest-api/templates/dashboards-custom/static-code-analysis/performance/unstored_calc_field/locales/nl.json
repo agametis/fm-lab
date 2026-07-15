@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Niet-opgeslagen berekeningsveld",
+    "description": "Prestatieregel — berekeningsvelden waarvan het resultaat niet wordt opgeslagen. Niet-opgeslagen berekeningen worden op aanvraag opnieuw berekend; er veel van op één lay-out plaatsen (vooral in lijstweergave) kan het weergeven merkbaar vertragen, omdat de berekening voor elk getoond record opnieuw wordt uitgevoerd."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "summary_kpi.props.items[2].label": "Betrokken tabellen",
+    "findings_card.props.title": "Niet-opgeslagen berekeningsveld",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, tabel of veld…",
+    "findings_table.props.empty.message": "Geen niet-opgeslagen berekeningsvelden gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Tabel",
+    "findings_table.props.columns[2].label": "Veld",
+    "findings_table.props.columns[3].label": "Type"
+  }
+}

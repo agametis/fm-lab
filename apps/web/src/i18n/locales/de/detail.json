@@ -159,8 +159,45 @@
     "repetitions": "Wiederholungen",
     "autoEnter": "Automatische Eingabe",
     "comment": "Kommentar",
-    "calculationFormula": "Calculation Formula",
-    "autoEnterCalculation": "Auto-Enter Calculation"
+    "calculationFormula": "Berechnungsformel",
+    "autoEnterCalculation": "Auto-Eingabe-Berechnung",
+    "sectionAutoEnter": "Automatische Eingabe",
+    "sectionValidation": "Überprüfung",
+    "sectionStorage": "Speicher",
+    "sectionSummary": "Statistik",
+    "type": "Typ",
+    "no": "Nein",
+    "serialNext": "Nächster Wert",
+    "serialIncrement": "Intervall",
+    "serialGenerate": "Erzeugen",
+    "lookupSource": "Quellfeld",
+    "lookupVia": "Über Beziehung",
+    "lookupDontCopy": "Leere Werte nicht kopieren",
+    "lookupNoMatch": "Bei fehlender Übereinstimmung",
+    "calcOverwrite": "Vorhandenen Wert ersetzen",
+    "calcAlwaysEvaluate": "Bei jeder Änderung neu berechnen",
+    "prohibitModification": "Änderung nicht erlaubt",
+    "validationMode": "Überprüfen",
+    "constraints": "Erfordert",
+    "constraintNotEmpty": "Nicht leer",
+    "constraintUnique": "Eindeutig",
+    "constraintExisting": "Vorhanden",
+    "validationValueList": "Aus Werteliste",
+    "validationAllowOverride": "Benutzer darf umgehen",
+    "storageIndex": "Indizierung",
+    "storageAutoIndex": "Indizes automatisch erstellen",
+    "storageStoreCalc": "Berechnungsergebnis gespeichert",
+    "summaryOperation": "Operation",
+    "summaryField": "Statistik-Feld",
+    "validationStrict": "Strenger Datentyp",
+    "validationMaxChars": "Max. Zeichenanzahl",
+    "validationRange": "Im Bereich von",
+    "validationByCalc": "Überprüfung durch Berechnung",
+    "validationMessage": "Eigene Fehlermeldung",
+    "storageIndexLanguage": "Standardsprache",
+    "summaryRestartGroup": "Ergebnis je Gruppe neu",
+    "summaryRepMode": "Wiederholungen berechnen",
+    "calcEvaluatesWhenEmpty": "Berechnet auch bei leeren Feldern"
   },
   "typeDetail": {
     "loading": "Wird geladen…",
@@ -283,7 +320,7 @@
     },
     "solutions": {
       "heading": "Lösungen",
-      "description": "FileMaker-Lösungen dieses Workspace verwalten. Jede Lösung hat ihren eigenen XML-Eingang, ihre eigene Datenbank und ihren eigenen Zustand. Aktivieren schaltet die gesamte Workbench auf diese Lösung um.",
+      "description": "Verwaltet die FileMaker-Lösungen dieses Workspace. Jede Lösung hat einen eigenen XML-Eingang, eine eigene Datenbank und eigenen Zustand. Die eigene Ansicht folgt dem Auswahlmenü im Kopfbereich — der hier gesetzte Server-Default gilt nur für Zugriffe ohne eigene Auswahl.",
       "colId": "ID",
       "colName": "Lösung",
       "colSize": "Größe",
@@ -291,7 +328,7 @@
       "colLastImport": "Letzter Import",
       "colDuration": "Dauer",
       "activeBadge": "Aktiv",
-      "activate": "Aktivieren",
+      "activate": "Als Server-Default setzen",
       "activating": "Aktiviere…",
       "deleteButton": "Löschen",
       "deleteConfirm1": "Lösung „{{name}}\" löschen? Das entfernt das GESAMTE Bundle inklusive der XML-Quelldateien.",
@@ -439,6 +476,116 @@
     "clearFilter": "Zurücksetzen",
     "noMatches": "Keine Treffer",
     "openField": "Feld-Detail öffnen",
-    "openTo": "TO-Detail öffnen"
+    "openTo": "TO-Detail öffnen",
+    "groupAutoEnter": "Auto-Eingabe",
+    "groupValidation": "Validierung",
+    "groupComment": "Kommentar",
+    "filterByAutoEnter": "Nach Auto-Eingabe filtern",
+    "filterByValidation": "Nach Validierung filtern",
+    "filterByComment": "Nach Kommentar filtern",
+    "aeSerial": "Fortlaufend",
+    "aeLookup": "Referenzwert",
+    "aeCalc": "Berechnung",
+    "aeConstant": "Konstante",
+    "aeCreation": "Erstellung",
+    "aeModification": "Änderung",
+    "aeOther": "Sonstige",
+    "validated": "validiert",
+    "notValidated": "nicht validiert",
+    "commented": "dokumentiert",
+    "uncommented": "undokumentiert"
+  },
+  "fieldOptions": {
+    "fieldType": {
+      "Normal": "Normal",
+      "Calculated": "Berechnung",
+      "Summary": "Statistik"
+    },
+    "dataType": {
+      "Text": "Text",
+      "Number": "Zahl",
+      "Date": "Datum",
+      "Time": "Zeit",
+      "Timestamp": "Zeitstempel",
+      "Binary": "Container"
+    },
+    "autoEnter": {
+      "SerialNumber": "Fortlaufende Nummer",
+      "Looked_up": "Referenzwert",
+      "Calculated": "Berechneter Wert",
+      "ConstantData": "Daten (Konstante)",
+      "CreationDate": "Erstellungsdatum",
+      "CreationTime": "Erstellungszeit",
+      "CreationTimestamp": "Erstellungszeitstempel",
+      "CreationName": "Erstellung Benutzername",
+      "CreationAccountName": "Erstellung Kontoname",
+      "ModificationDate": "Änderungsdatum",
+      "ModificationTime": "Änderungszeit",
+      "ModificationTimestamp": "Änderungszeitstempel",
+      "ModificationName": "Änderung Benutzername",
+      "ModificationAccountName": "Änderung Kontoname"
+    },
+    "serialGenerate": {
+      "OnCreation": "Bei Erstellung",
+      "OnCommit": "Bei Eingabe"
+    },
+    "noMatch": {
+      "DoNotCopy": "Nicht kopieren",
+      "ConstantData": "Konstante verwenden"
+    },
+    "validationType": {
+      "Always": "Immer",
+      "OnlyDuringDataEntry": "Nur bei Dateneingabe"
+    },
+    "index": {
+      "None": "Keine",
+      "Minimal": "Minimal",
+      "All": "Alle"
+    },
+    "summaryOp": {
+      "Total": "Summe",
+      "Average": "Mittelwert",
+      "Count": "Anzahl",
+      "Minimum": "Minimum",
+      "Maximum": "Maximum",
+      "StandardDeviation": "Standardabweichung",
+      "FractionOfTotal": "Anteil an Endsumme",
+      "List": "Liste",
+      "RunningTotal": "Laufende Summe"
+    },
+    "strictType": {
+      "Numeric": "Nur numerisch",
+      "FourDigitYear": "4-stellige Jahreszahl",
+      "TimeOfDay": "Zeit des Tages"
+    },
+    "repMode": {
+      "Together": "Alle zusammen",
+      "Individually": "Einzeln"
+    }
+  },
+  "layoutViewer": {
+    "propertiesHeading": "Eigenschaften",
+    "contextTable": "Kontext-Tabelle",
+    "theme": "Design",
+    "menuSet": "Menüset",
+    "menuSetDefault": "[Dateistandard]",
+    "width": "Breite",
+    "availableViews": "Verfügbare Ansichten",
+    "defaultView": "Standardansicht",
+    "viewForm": "Formularansicht",
+    "viewList": "Listenansicht",
+    "viewTable": "Tabellenansicht",
+    "baseTheme": "Basis-Design",
+    "inLayoutMenus": "In Layout-Menüs",
+    "lastModified": "Zuletzt geändert",
+    "triggersHeading": "Script-Trigger",
+    "noTriggers": "Keine Script-Trigger",
+    "yes": "Ja",
+    "no": "Nein",
+    "optAutoSave": "Änderungen automatisch speichern",
+    "optFieldFrames": "Feldrahmen bei aktivem Datensatz",
+    "optFrameCurrentOnly": "Felder nur im aktuellen Datensatz umreißen",
+    "optShowCurrentInList": "Datensatzanzeige in Listenansicht",
+    "optQuickFind": "Schnellsuche"
   }
 }

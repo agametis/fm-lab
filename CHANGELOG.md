@@ -12,6 +12,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.9.2] — 2026-07-15
+
+fm-lab becomes multi-user — several people can work against one instance at the same time, each on their own solution — and the object detail views for fields, layouts, and themes are completed down to every FileMaker option.
+
+- **Multi-user & multi-session** — one running instance now serves several concurrent users, each viewing a different solution
+  - **Per-session solution context** — a session (browser tab, agent, or API client) selects its own active solution independently of the workspace default, so two browser tabs can explore two different solutions side by side; the REST API backs this with a bounded connection pool over the per-solution databases
+  - **Session-pinned agent context** — a Claude Code session can be pinned to a solution (`FMLAB_SOLUTION` / `FMLAB_CONTEXT`) so all reads and fm-lab tools resolve to that solution regardless of the workspace default
+- **Complete field, layout & theme detail views** — every FileMaker option now surfaces in the web client (catalog schema extended for the new values)
+  - **Field detail view** — the full option set: validation (strict / range / by-calculation / message), auto-enter and lookup, storage and indexing incl. index language, and summary modifiers
+  - **Layout detail view** — all layout options, with the layout's theme linked through to its detail view
+  - **Theme detail view** — themes as first-class catalog objects with their human-readable name
+- **New static-analysis checks** — fields with automatic indexing, unstored calculation fields, and layouts that display unstored calculation fields; the overview gains a KPI breakdown by layout type
+- **New `select-solution` skill** — switch the active workspace solution from Claude Code (list, confirm a near-miss, or pick interactively)
+- **Web client & navigation polish**
+  - Settings and the solution picker are reachable from the XML-import page too, and the import page can switch the target solution
+  - Popover panels are no longer clipped when space is tight
+- **Reference & setup** — fm-spec reference raised to schema 1.10.0 (emission-name refinements that feed code generation); the Docker firewall allow-list is extended for the documentation-install helpers (tolerant of CDN IP rotation)
+
+---
+
+## [0.9.1] — 2026-07-15
+
+A robustness release: the catalog now recognizes when it was built by an older fm-lab and asks for a rebuild instead of failing with cryptic errors — plus a batch of fixes surfaced during testing.
+
+- **Schema-drift detection** — the REST API compares the catalog's schema version against what the running server expects and, on a mismatch, shows a clear "re-run the XML import" notice in the web client instead of letting queries fail deep in DuckDB
+- **XML import correctness**
+  - **Calculated-repetition fix** — a Set Field step whose repetition is itself a calculation stored the repetition expression instead of the actual calculation in `StepsForScripts.Calculation_Text`; corrected, with a schema-version bump that triggers an automatic rebuild on the next import
+- **Multi-solution packaging & tooling**
+  - **CLI tools ship with the release** — `tools/solution.sh` (list / use / create / export) and the one-time `tools/migrate-multisolution.sh`, referenced throughout the docs and console output, are now included in the published bundle
+  - **Workspace read-path created on first start** — the `db/fm_catalog.duckdb` symlink that projects the active solution for CLI readers is now materialized idempotently on every API start; an existing real file at that location is left untouched
+  - **Migration script fix** and **fm-spec build self-healing** — a stale dirty-flag no longer blocks the reference build
+- Assorted fixes from tester feedback and CLAUDE.md refinements
+
+---
+
 ## [0.9.0] — 2026-07-14
 
 Two headline steps: multiple FileMaker solutions in one workspace, each in its own self-contained bundle — and the first concrete delivery of reference-driven code generation, where a generated script is validated against the FileMaker spec and the actual object catalog before you ever paste it. Plus a memory-aware XML import, install auto-healing, and a refactored skill layer.
@@ -653,7 +688,8 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 <!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
      versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
      intentionally left unlinked and render as plain text. Add a line here per new tag. -->
-[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/marcel-more/fm-lab/compare/v0.9.0...v0.9.2
 [0.9.0]: https://github.com/marcel-more/fm-lab/compare/v0.8.11...v0.9.0
 [0.8.11]: https://github.com/marcel-more/fm-lab/compare/v0.8.10...v0.8.11
 [0.8.10]: https://github.com/marcel-more/fm-lab/compare/v0.8.9...v0.8.10

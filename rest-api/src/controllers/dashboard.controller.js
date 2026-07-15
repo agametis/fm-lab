@@ -69,23 +69,25 @@ async function listDashboards(req, res, next) {
 
 /**
  * Multi-Solution: die Hero-Kachel des Home-Dashboards (`project_summary`)
- * trägt statt des generischen „Projektüberblick" den Anzeigenamen der aktiven
- * Lösung. Die `default`-Lösung nutzt ihren `display_name` ebenfalls, sofern
- * gesetzt — nur ohne Display-Name behält sie den lokalisierten Bundle-Titel.
+ * trägt statt des generischen „Projektüberblick" den Anzeigenamen der
+ * KONTEXT-Lösung (Ausbaustufe M: die Lösung, die DIESER Aufrufer sieht —
+ * X-Solution-Header, sonst Server-Default). Die `default`-Lösung nutzt ihren
+ * `display_name` ebenfalls, sofern gesetzt — nur ohne Display-Name behält sie
+ * den lokalisierten Bundle-Titel.
  * Liefert bei Override ein GEKLONTES Layout (die i18n-Auflösung gibt gecachte/
  * geteilte Objekte zurück, die nie mutiert werden dürfen). Nie fatal.
  */
-function withActiveSolutionTitle(id, layout) {
+function withContextSolutionTitle(id, layout, ctx) {
   if (id !== 'home' || !layout || !Array.isArray(layout.root && layout.root.children)) {
     return layout;
   }
   try {
-    const active = solutionsConfig.getActiveSolutionId();
-    const manifest = solutionsConfig.readManifest(active);
+    const solution = (ctx && ctx.solution) || solutionsConfig.getActiveSolutionId();
+    const manifest = solutionsConfig.readManifest(solution);
     const displayName = manifest && manifest.display_name;
     // Default-Lösung ohne Display-Name → statischen Kachel-Titel behalten.
-    if (active === solutionsConfig.DEFAULT_ID && !displayName) return layout;
-    const name = displayName || active;
+    if (solution === solutionsConfig.DEFAULT_ID && !displayName) return layout;
+    const name = displayName || solution;
     const cloned = JSON.parse(JSON.stringify(layout));
     const card = cloned.root.children.find((c) => c && c.id === 'project_summary');
     if (!card || !card.props) return layout;
@@ -104,7 +106,7 @@ async function getDashboard(req, res, next) {
     const { manifest, layout } = await dashboardI18nService.resolveBundleForLanguage(bundle, lang);
     res.json({
       success: true,
-      data: { manifest, layout: withActiveSolutionTitle(id, layout) },
+      data: { manifest, layout: withContextSolutionTitle(id, layout, req.solutionContext) },
       meta: { lang },
     });
   } catch (err) {

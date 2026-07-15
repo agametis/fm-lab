@@ -38,5 +38,13 @@ SELECT key, label, value, severity, action, action_args FROM (
             WHERE f.AE_Calc_OverwriteExisting = 'True' AND (getvariable('file') IS NULL OR f.File_Name = getvariable('file'))
          ) t),
          'warn', 'openDashboard', 'id=autoenter_overwrites_existing'
+  UNION ALL
+  SELECT 5, 'field_auto_index', 'Fields with auto-index',
+         (SELECT COUNT(*) FROM (
+            SELECT 1 FROM FieldsForTables f
+            WHERE f.Storage_Index = 'None' AND f.Storage_AutoIndex = TRUE
+              AND (getvariable('file') IS NULL OR f.File_Name = getvariable('file'))
+         ) t),
+         'warn', 'openDashboard', 'id=field_auto_index'
 ) WHERE (getvariable('severity') IS NULL OR getvariable('severity') = '' OR severity = getvariable('severity'))
   ORDER BY ord;

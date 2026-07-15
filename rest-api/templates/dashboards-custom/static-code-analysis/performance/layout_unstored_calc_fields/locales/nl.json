@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Lay-outs met niet-opgeslagen berekeningen",
+    "description": "Prestatieregel — lay-outs gerangschikt op het aantal niet-opgeslagen berekeningsvelden dat ze tonen. Elke niet-opgeslagen berekening wordt opnieuw geëvalueerd voor elk zichtbaar record, dus lay-outs die veel records tonen met een hoog aantal zijn het duurst om weer te geven. De standaardweergave (formulier/lijst/tabel) kwalificeert de context — lijst is het meest kritiek."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Betrokken lay-outs",
+    "summary_kpi.props.items[1].label": "Formulier",
+    "summary_kpi.props.items[2].label": "Lijst",
+    "summary_kpi.props.items[3].label": "Tabel",
+    "summary_kpi.props.items[4].label": "Betrokken bestanden",
+    "summary_kpi.props.items[5].label": "Max. per lay-out",
+    "findings_card.props.title": "Lay-outs met niet-opgeslagen berekeningen",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, lay-out of context…",
+    "findings_table.props.empty.message": "Geen lay-outs met niet-opgeslagen berekeningen gevonden.",
+    "findings_table.props.columns[0].label": "Weergave",
+    "findings_table.props.columns[1].label": "Niet-opgesl. ber.",
+    "findings_table.props.columns[2].label": "Lay-out",
+    "findings_table.props.columns[3].label": "Context",
+    "findings_table.props.columns[4].label": "Bestand",
+    "findings_table.props.columns[5].label": "Plaatsingen"
+  }
+}

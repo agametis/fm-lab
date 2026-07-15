@@ -337,6 +337,29 @@
   color: var(--color-text-muted);
 }
 
+/* Container-Verortung (Layout eines ScriptTriggers/LayoutObjects, …). Steht direkt
+   hinter dem generischen Sub-Knoten-Namen und wächst in die freie Zeilenbreite;
+   der Name schrumpft dann auf seinen Inhalt. Lange Layout-Namen → Ellipsis. */
+.ref-container {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.reference-item:has(.ref-container) .ref-name {
+  flex: 0 1 auto;
+}
+.ref-container-sep {
+  margin: 0 0.35rem;
+  color: var(--color-text-muted);
+}
+.ref-container-file {
+  color: var(--color-text-muted);
+}
+
 .cross-file-badge {
   font-size: 0.75rem;
   background: var(--color-warning-border);

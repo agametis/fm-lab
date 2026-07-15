@@ -21,6 +21,7 @@
     "./client": "./generated/client.ts",
     "./constants": "./dist/src/constants.js",
     "./languages": "./dist/src/languages.js",
+    "./stepRoles": "./dist/src/stepRoles.js",
     "./schemas": "./dist/src/schemas/index.js",
     "./utils": "./dist/src/utils/index.js"
   },

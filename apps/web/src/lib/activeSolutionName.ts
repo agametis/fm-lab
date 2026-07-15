@@ -1,7 +1,11 @@
 /**
- * Reactive holder for the active solution's display name — used to label the
+ * Reactive holder for the CONTEXT solution's display name — used to label the
  * leading breadcrumb crumb (formerly the static "Start"/Home label) with the
- * active solution's name across every sub-page.
+ * solution's name across every sub-page.
+ *
+ * Stage M: the context is the per-tab selection (solutionStore) when set,
+ * else the server default (is_active) — the breadcrumb must show what THIS
+ * tab is looking at, never another user's server default.
  *
  * Loads once via GET /api/solutions (deduped) and notifies subscribers; a null
  * value means "no distinct name" → callers fall back to the localized Home label.
@@ -11,6 +15,7 @@
 
 import { useSyncExternalStore } from 'react';
 import { fetchSolutions } from '../api/solutionsApi';
+import { getSelectedSolution } from './solutionStore';
 
 const DEFAULT_SOLUTION_ID = 'default';
 
@@ -27,11 +32,13 @@ function load() {
   if (loaded || inflight) return;
   inflight = fetchSolutions()
     .then((list) => {
-      const active = list.find((s) => s.is_active);
-      if (active && active.display_name && active.display_name !== active.id) {
-        activeName = active.display_name; // custom display name → use it
-      } else if (active && active.id !== DEFAULT_SOLUTION_ID) {
-        activeName = active.id; // named non-default bundle without a display name
+      const selectedId = getSelectedSolution();
+      const context = (selectedId && list.find((s) => s.id === selectedId))
+        || list.find((s) => s.is_active);
+      if (context && context.display_name && context.display_name !== context.id) {
+        activeName = context.display_name; // custom display name → use it
+      } else if (context && context.id !== DEFAULT_SOLUTION_ID) {
+        activeName = context.id; // named non-default bundle without a display name
       } else {
         activeName = null; // default without display name → keep Home fallback
       }

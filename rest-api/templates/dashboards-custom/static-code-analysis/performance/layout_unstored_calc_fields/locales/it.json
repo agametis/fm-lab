@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Formati con calcoli non memorizzati",
+    "description": "Regola di prestazioni — formati ordinati in base al numero di campi di calcolo non memorizzati che mostrano. Ogni calcolo non memorizzato viene rivalutato per ogni record visibile, quindi i formati che mostrano molti record con un conteggio elevato sono i più costosi da visualizzare. La vista predefinita (modulo/elenco/tabella) qualifica il contesto — l'elenco è il più critico."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Formati interessati",
+    "summary_kpi.props.items[1].label": "Modulo",
+    "summary_kpi.props.items[2].label": "Elenco",
+    "summary_kpi.props.items[3].label": "Tabella",
+    "summary_kpi.props.items[4].label": "File interessati",
+    "summary_kpi.props.items[5].label": "Max per formato",
+    "findings_card.props.title": "Formati con calcoli non memorizzati",
+    "findings_table.props.searchPlaceholder": "Cerca file, formato o contesto…",
+    "findings_table.props.empty.message": "Nessun formato con calcoli non memorizzati trovato.",
+    "findings_table.props.columns[0].label": "Vista",
+    "findings_table.props.columns[1].label": "Calcoli non mem.",
+    "findings_table.props.columns[2].label": "Formato",
+    "findings_table.props.columns[3].label": "Contesto",
+    "findings_table.props.columns[4].label": "File",
+    "findings_table.props.columns[5].label": "Posizionamenti"
+  }
+}

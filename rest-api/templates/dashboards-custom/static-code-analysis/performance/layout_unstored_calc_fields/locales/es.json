@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Diseños con cálculos sin almacenar",
+    "description": "Regla de rendimiento — diseños ordenados por la cantidad de campos de cálculo sin almacenar que muestran. Cada cálculo sin almacenar se vuelve a evaluar por cada registro visible, por lo que los diseños que muestran muchos registros y tienen un recuento alto son los más costosos de representar. La vista predeterminada (formulario/lista/tabla) califica el contexto: la lista es la más crítica."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Diseños afectados",
+    "summary_kpi.props.items[1].label": "Formulario",
+    "summary_kpi.props.items[2].label": "Lista",
+    "summary_kpi.props.items[3].label": "Tabla",
+    "summary_kpi.props.items[4].label": "Archivos afectados",
+    "summary_kpi.props.items[5].label": "Máx. por diseño",
+    "findings_card.props.title": "Diseños con cálculos sin almacenar",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, diseño o contexto…",
+    "findings_table.props.empty.message": "No se encontraron diseños con cálculos sin almacenar.",
+    "findings_table.props.columns[0].label": "Vista",
+    "findings_table.props.columns[1].label": "Cálc. sin almacenar",
+    "findings_table.props.columns[2].label": "Diseño",
+    "findings_table.props.columns[3].label": "Contexto",
+    "findings_table.props.columns[4].label": "Archivo",
+    "findings_table.props.columns[5].label": "Ubicaciones"
+  }
+}

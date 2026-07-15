@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { FieldTokens } from '../script/calcTokens';
 import { HighlightRefContext } from '../script/highlightContext';
+import { buildObjectPath } from '../lib/navigation';
+import { fieldOptionLabel } from '../lib/fieldOptionLabels';
 import { CalcTokenList } from './CalcTokenSpan';
 import './CustomFunctionViewer.css';
 import './FieldViewer.css';
@@ -26,6 +29,7 @@ interface FieldViewerProps {
  */
 export const FieldViewer: React.FC<FieldViewerProps> = ({ data, highlightRefUuids, onLiveMatchCount }) => {
   const { t } = useTranslation(['detail']);
+  const navigate = useNavigate();
   const rootRef = useRef<HTMLDivElement>(null);
   const highlightSig = highlightRefUuids ? Array.from(highlightRefUuids).sort().join(',') : '';
   useEffect(() => {
@@ -55,9 +59,33 @@ export const FieldViewer: React.FC<FieldViewerProps> = ({ data, highlightRefUuid
 
   const field = data.field;
   const hasFormula = data.tokens && data.tokens.length > 0;
+  // Sind überhaupt Options-Sektionen zu zeigen? Steuert den Trenner zwischen
+  // Identität und Optionen (leere Felder bekommen keinen Doppelstrich).
+  const hasOptions = !!field && !!(
+    field.autoEnterType || field.prohibitModification ||
+    field.validation || field.storage || field.summary
+  );
   const formulaLabel = field?.autoEnterType === 'Calculated'
     ? t('detail:fieldViewer.autoEnterCalculation')
     : t('detail:fieldViewer.calculationFormula');
+
+  // Enum-Lokalisierung über den gemeinsamen Helfer (identisch zur Base-Table-Feldliste).
+  const enumLabel = (group: string, value: string | null | undefined): string =>
+    fieldOptionLabel(t, group, value);
+  const yes = t('detail:fieldViewer.yes', { defaultValue: 'Yes' }) as string;
+
+  const currentUuid = data.object.uuid;
+  const currentFile = data.object.file;
+  // Klickbarer Objekt-Link (Lookup-Quellfeld, Summary-Zielfeld); ohne UUID reiner Text.
+  // `file` ist die aufgelöste Zieldatei (Lookup ggf. datei-übergreifend), currentUuid = ref-Origin.
+  const objectLink = (uuid: string | null, file: string | null, label: string): React.ReactNode =>
+    uuid ? (
+      <button type="button" className="fm-field-link" onClick={() => navigate(buildObjectPath(uuid, currentUuid, file))}>
+        {label}
+      </button>
+    ) : (
+      label
+    );
 
   return (
     <HighlightRefContext.Provider value={highlightRefUuids ?? null}>
@@ -73,41 +101,249 @@ export const FieldViewer: React.FC<FieldViewerProps> = ({ data, highlightRefUuid
         </div>
 
         {field && (
-          <dl className="fm-field-props">
-            <dt>{t('detail:fieldViewer.fieldType')}</dt>
-            <dd>{field.fieldType ?? '-'}</dd>
-            <dt>{t('detail:fieldViewer.dataType')}</dt>
-            <dd>{field.dataType ?? '-'}</dd>
-            {field.isGlobal && (
-              <>
-                <dt>{t('detail:fieldViewer.global')}</dt>
-                <dd>{t('detail:fieldViewer.yes')}</dd>
-              </>
-            )}
-            {field.maxRepetitions > 1 && (
-              <>
-                <dt>{t('detail:fieldViewer.repetitions')}</dt>
-                <dd>{field.maxRepetitions}</dd>
-              </>
-            )}
-            {field.autoEnterType && (
-              <>
-                <dt>{t('detail:fieldViewer.autoEnter')}</dt>
-                <dd>
-                  {field.autoEnterType}
-                  {field.autoEnterType === 'ConstantData' && field.constantData != null && (
-                    <span className="fm-field-constant"> = <code>{field.constantData}</code></span>
+          <div className="fm-field-options">
+            {/* Identität */}
+            <dl className="fm-field-props">
+              <dt>{t('detail:fieldViewer.fieldType')}</dt>
+              <dd>{enumLabel('fieldType', field.fieldType)}</dd>
+              <dt>{t('detail:fieldViewer.dataType')}</dt>
+              <dd>{enumLabel('dataType', field.dataType)}</dd>
+              {field.isGlobal && (
+                <>
+                  <dt>{t('detail:fieldViewer.global')}</dt>
+                  <dd>{yes}</dd>
+                </>
+              )}
+              {field.maxRepetitions > 1 && (
+                <>
+                  <dt>{t('detail:fieldViewer.repetitions')}</dt>
+                  <dd>{field.maxRepetitions}</dd>
+                </>
+              )}
+              {field.comment && (
+                <>
+                  <dt>{t('detail:fieldViewer.comment')}</dt>
+                  <dd className="fm-field-comment">{field.comment}</dd>
+                </>
+              )}
+            </dl>
+
+            {hasOptions && (
+            <div className="fm-field-sections">
+            {/* Automatische Eingabe */}
+            {(field.autoEnterType || field.prohibitModification) && (
+              <section className="fm-field-section">
+                <h3 className="fm-field-section-title">{t('detail:fieldViewer.sectionAutoEnter', { defaultValue: 'Auto-enter' })}</h3>
+                <dl className="fm-field-props">
+                  {field.autoEnterType && (
+                    <>
+                      <dt>{t('detail:fieldViewer.type', { defaultValue: 'Type' })}</dt>
+                      <dd>
+                        {enumLabel('autoEnter', field.autoEnterType)}
+                        {field.autoEnterType === 'ConstantData' && field.constantData != null && (
+                          <span className="fm-field-constant"> = <code>{field.constantData}</code></span>
+                        )}
+                      </dd>
+                    </>
                   )}
-                </dd>
-              </>
+                  {field.serial && (
+                    <>
+                      <dt>{t('detail:fieldViewer.serialNext', { defaultValue: 'Next value' })}</dt>
+                      <dd>{field.serial.nextValue ?? '–'}</dd>
+                      <dt>{t('detail:fieldViewer.serialIncrement', { defaultValue: 'Increment' })}</dt>
+                      <dd>{field.serial.increment ?? '–'}</dd>
+                      <dt>{t('detail:fieldViewer.serialGenerate', { defaultValue: 'Generate' })}</dt>
+                      <dd>{enumLabel('serialGenerate', field.serial.generate)}</dd>
+                    </>
+                  )}
+                  {field.lookup && (
+                    <>
+                      <dt>{t('detail:fieldViewer.lookupSource', { defaultValue: 'Source field' })}</dt>
+                      <dd>
+                        {objectLink(field.lookup.fieldUuid, field.lookup.fieldFile, field.lookup.field ?? '–')}
+                        {field.lookup.fieldTable && (
+                          <span className="fm-field-origin"> ({field.lookup.fieldTable})</span>
+                        )}
+                      </dd>
+                      {field.lookup.to && (
+                        <>
+                          <dt>{t('detail:fieldViewer.lookupVia', { defaultValue: 'Via relationship' })}</dt>
+                          <dd>{field.lookup.to}</dd>
+                        </>
+                      )}
+                      {field.lookup.dontCopyIfEmpty && (
+                        <>
+                          <dt>{t('detail:fieldViewer.lookupDontCopy', { defaultValue: "Don't copy empty" })}</dt>
+                          <dd>{yes}</dd>
+                        </>
+                      )}
+                      {field.lookup.noMatch && (
+                        <>
+                          <dt>{t('detail:fieldViewer.lookupNoMatch', { defaultValue: 'If no match' })}</dt>
+                          <dd>{enumLabel('noMatch', field.lookup.noMatch)}</dd>
+                        </>
+                      )}
+                    </>
+                  )}
+                  {field.autoEnterCalc?.overwriteExisting && (
+                    <>
+                      <dt>{t('detail:fieldViewer.calcOverwrite', { defaultValue: 'Overwrite existing' })}</dt>
+                      <dd>{yes}</dd>
+                    </>
+                  )}
+                  {field.autoEnterCalc?.alwaysEvaluate && (
+                    <>
+                      <dt>{t('detail:fieldViewer.calcAlwaysEvaluate', { defaultValue: 'Always re-evaluate' })}</dt>
+                      <dd>{yes}</dd>
+                    </>
+                  )}
+                  {field.prohibitModification && (
+                    <>
+                      <dt>{t('detail:fieldViewer.prohibitModification', { defaultValue: 'Modification prohibited' })}</dt>
+                      <dd>{yes}</dd>
+                    </>
+                  )}
+                </dl>
+              </section>
             )}
-            {field.comment && (
-              <>
-                <dt>{t('detail:fieldViewer.comment')}</dt>
-                <dd className="fm-field-comment">{field.comment}</dd>
-              </>
+
+            {/* Überprüfung */}
+            {field.validation && (
+              <section className="fm-field-section">
+                <h3 className="fm-field-section-title">{t('detail:fieldViewer.sectionValidation', { defaultValue: 'Validation' })}</h3>
+                <dl className="fm-field-props">
+                  {field.validation.mode && (
+                    <>
+                      <dt>{t('detail:fieldViewer.validationMode', { defaultValue: 'When' })}</dt>
+                      <dd>{enumLabel('validationType', field.validation.mode)}</dd>
+                    </>
+                  )}
+                  {(field.validation.notEmpty || field.validation.unique || field.validation.existing) && (
+                    <>
+                      <dt>{t('detail:fieldViewer.constraints', { defaultValue: 'Requires' })}</dt>
+                      <dd className="fm-field-chips">
+                        {field.validation.notEmpty && <span className="fm-field-chip">{t('detail:fieldViewer.constraintNotEmpty', { defaultValue: 'Not empty' })}</span>}
+                        {field.validation.unique && <span className="fm-field-chip">{t('detail:fieldViewer.constraintUnique', { defaultValue: 'Unique' })}</span>}
+                        {field.validation.existing && <span className="fm-field-chip">{t('detail:fieldViewer.constraintExisting', { defaultValue: 'Existing' })}</span>}
+                      </dd>
+                    </>
+                  )}
+                  {field.validation.valueList && (
+                    <>
+                      <dt>{t('detail:fieldViewer.validationValueList', { defaultValue: 'From value list' })}</dt>
+                      <dd>{field.validation.valueList.name}</dd>
+                    </>
+                  )}
+                  {field.validation.strictType && (
+                    <>
+                      <dt>{t('detail:fieldViewer.validationStrict', { defaultValue: 'Strict data type' })}</dt>
+                      <dd>{enumLabel('strictType', field.validation.strictType)}</dd>
+                    </>
+                  )}
+                  {field.validation.maxChars != null && (
+                    <>
+                      <dt>{t('detail:fieldViewer.validationMaxChars', { defaultValue: 'Max. characters' })}</dt>
+                      <dd>{field.validation.maxChars}</dd>
+                    </>
+                  )}
+                  {(field.validation.rangeFrom || field.validation.rangeTo) && (
+                    <>
+                      <dt>{t('detail:fieldViewer.validationRange', { defaultValue: 'In range' })}</dt>
+                      <dd>{field.validation.rangeFrom ?? '…'} – {field.validation.rangeTo ?? '…'}</dd>
+                    </>
+                  )}
+                  {field.validation.calcText && (
+                    <>
+                      <dt>{t('detail:fieldViewer.validationByCalc', { defaultValue: 'Validated by calculation' })}</dt>
+                      <dd><code className="fm-field-inline-calc">{field.validation.calcText}</code></dd>
+                    </>
+                  )}
+                  {field.validation.message && (
+                    <>
+                      <dt>{t('detail:fieldViewer.validationMessage', { defaultValue: 'Custom message' })}</dt>
+                      <dd className="fm-field-comment">{field.validation.message}</dd>
+                    </>
+                  )}
+                  {field.validation.allowOverride && (
+                    <>
+                      <dt>{t('detail:fieldViewer.validationAllowOverride', { defaultValue: 'User may override' })}</dt>
+                      <dd>{yes}</dd>
+                    </>
+                  )}
+                </dl>
+              </section>
             )}
-          </dl>
+
+            {/* Speicher / Indizierung */}
+            {field.storage && (
+              <section className="fm-field-section">
+                <h3 className="fm-field-section-title">{t('detail:fieldViewer.sectionStorage', { defaultValue: 'Storage' })}</h3>
+                <dl className="fm-field-props">
+                  {field.storage.index && (
+                    <>
+                      <dt>{t('detail:fieldViewer.storageIndex', { defaultValue: 'Indexing' })}</dt>
+                      <dd>{enumLabel('index', field.storage.index)}</dd>
+                    </>
+                  )}
+                  {field.storage.autoIndex && (
+                    <>
+                      <dt>{t('detail:fieldViewer.storageAutoIndex', { defaultValue: 'Auto-create indexes' })}</dt>
+                      <dd>{yes}</dd>
+                    </>
+                  )}
+                  {field.storage.indexLanguage && (
+                    <>
+                      <dt>{t('detail:fieldViewer.storageIndexLanguage', { defaultValue: 'Index language' })}</dt>
+                      <dd>{field.storage.indexLanguage}</dd>
+                    </>
+                  )}
+                  {!field.storage.storeCalcResults && (
+                    <>
+                      <dt>{t('detail:fieldViewer.storageStoreCalc', { defaultValue: 'Calculation result stored' })}</dt>
+                      <dd>{t('detail:fieldViewer.no', { defaultValue: 'No' })}</dd>
+                    </>
+                  )}
+                  {field.storage.evaluatesWhenEmpty && (
+                    <>
+                      <dt>{t('detail:fieldViewer.calcEvaluatesWhenEmpty', { defaultValue: 'Evaluates even if fields empty' })}</dt>
+                      <dd>{yes}</dd>
+                    </>
+                  )}
+                </dl>
+              </section>
+            )}
+
+            {/* Statistik */}
+            {field.summary && (
+              <section className="fm-field-section">
+                <h3 className="fm-field-section-title">{t('detail:fieldViewer.sectionSummary', { defaultValue: 'Summary' })}</h3>
+                <dl className="fm-field-props">
+                  <dt>{t('detail:fieldViewer.summaryOperation', { defaultValue: 'Operation' })}</dt>
+                  <dd>{enumLabel('summaryOp', field.summary.operation)}</dd>
+                  {field.summary.field && (
+                    <>
+                      <dt>{t('detail:fieldViewer.summaryField', { defaultValue: 'Summarized field' })}</dt>
+                      <dd>{objectLink(field.summary.field.uuid, currentFile, field.summary.field.name)}</dd>
+                    </>
+                  )}
+                  {field.summary.restartEachGroup && (
+                    <>
+                      <dt>{t('detail:fieldViewer.summaryRestartGroup', { defaultValue: 'Restart for each group' })}</dt>
+                      <dd>{yes}</dd>
+                    </>
+                  )}
+                  {field.summary.repetitionMode && (
+                    <>
+                      <dt>{t('detail:fieldViewer.summaryRepMode', { defaultValue: 'Summarize repetitions' })}</dt>
+                      <dd>{enumLabel('repMode', field.summary.repetitionMode)}</dd>
+                    </>
+                  )}
+                </dl>
+              </section>
+            )}
+            </div>
+            )}
+          </div>
         )}
 
         {hasFormula && (

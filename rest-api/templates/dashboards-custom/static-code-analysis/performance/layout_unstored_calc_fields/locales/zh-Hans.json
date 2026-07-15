@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "含未存储计算的布局",
+    "description": "性能规则 — 按布局上放置的未存储计算字段数量排序。每个未存储计算都会为每条可见记录重新求值，因此显示大量记录且数量较多的布局渲染成本最高。默认视图（表单/列表/表格）用于限定上下文 — 列表最为关键。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "受影响布局",
+    "summary_kpi.props.items[1].label": "表单",
+    "summary_kpi.props.items[2].label": "列表",
+    "summary_kpi.props.items[3].label": "表格",
+    "summary_kpi.props.items[4].label": "受影响文件",
+    "summary_kpi.props.items[5].label": "每布局最多",
+    "findings_card.props.title": "含未存储计算的布局",
+    "findings_table.props.searchPlaceholder": "搜索文件、布局或上下文…",
+    "findings_table.props.empty.message": "未找到含未存储计算的布局。",
+    "findings_table.props.columns[0].label": "视图",
+    "findings_table.props.columns[1].label": "未存储计算",
+    "findings_table.props.columns[2].label": "布局",
+    "findings_table.props.columns[3].label": "上下文",
+    "findings_table.props.columns[4].label": "文件",
+    "findings_table.props.columns[5].label": "放置数"
+  }
+}

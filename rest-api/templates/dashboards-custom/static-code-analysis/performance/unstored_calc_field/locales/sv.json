@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Olagrat beräkningsfält",
+    "description": "Prestandaregel — beräkningsfält vars resultat inte lagras. Olagrade beräkningar räknas om vid behov; att placera många av dem på samma layout (särskilt i listvy) kan märkbart sakta ner renderingen, eftersom beräkningen körs en gång per visad post."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "summary_kpi.props.items[2].label": "Berörda tabeller",
+    "findings_card.props.title": "Olagrat beräkningsfält",
+    "findings_table.props.searchPlaceholder": "Sök fil, tabell eller fält…",
+    "findings_table.props.empty.message": "Inga olagrade beräkningsfält hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Tabell",
+    "findings_table.props.columns[2].label": "Fält",
+    "findings_table.props.columns[3].label": "Typ"
+  }
+}

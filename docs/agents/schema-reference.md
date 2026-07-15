@@ -42,7 +42,7 @@ The table names mirror the XML branches of the corresponding object types:
 - **FileOptionsCatalog** — File options from the Metadata branch: encryption status, minimum version, **auto-login account (security-relevant)**, sharing visibility, default/start layout (→ `default_layout` link)
 - **FileAccessAuthorizations** — Inter-file access authorizations
 - **LibraryReferences** — Library references (metadata only, blobs discarded)
-- **LinkRoleRegistry** — Machine-readable semantics per link role (`usage`/`containment`/`restriction`, `Counts_For_Where_Used`) — P6 warns when an ObjectLinks role lacks a registry entry
+- **LinkRoleRegistry** — Link-role classification per role: columns `Link_Role`, `Link_Kind` (`usage`/`containment`/`restriction`), `Counts_For_Where_Used` (boolean). No prose/`Description` column — the meaning of each role is the "Link roles" list below. P6 warns when an ObjectLinks role lacks a registry entry
 - **ScriptStepRoleMap** — Curated Step_ID → Link_Role mapping for Script→Field links (locale-independent; `Step/@name` is localized in SaXML exports). Canonical_Name documents the English reference name; IDs verified against the reference index `reference/fm_spec.duckdb` (`script_steps.step_id` ≙ SaXML `Step/@id`), which is deliberately NOT a runtime dependency of the converter
 - **FilesCatalog** — Metadata of all imported FileMaker files (multi-file support)
 - **ObjectCatalog** — Central object registry covering all 25+ object types across all files
@@ -90,6 +90,16 @@ Base columns: Table_ID/Name/UUID, Field_ID/Name/Type, Data_Type, Field_Comment, 
 - `Storage_AutoIndex`, `Storage_Index` (`None`/`All`/`Minimal`), `Storage_StoreCalcResults` — indexing/storage options
 - `Serial_Increment/_NextValue/_Generate` — serial-number details (only `AutoEnter_Type='SerialNumber'`)
 - `Summary_Operation`, `Summary_Field_Name/_UUID` — summary definition (only `fieldtype='Summary'`; → `summarizes_field` link)
+
+**Field-option coverage (schema 1.10.0):**
+- `Validation_AlwaysValidate` — `<Validation @alwaysValidate>`
+- `Validation_StrictType` — strict data type from `<Strict>` (`FourDigitYear`, numeric-only, time-of-day; raw token, no enum constraint)
+- `Validation_MaxChars` — `<MaximumSize>` (max characters)
+- `Validation_Range_From/_To` — `<Range @from/@to>`
+- `Validation_Calc_Text/_Calc_Hash` — validate-by-calculation (`<Validation><Calculated>`; hash → `DDR_Calculations`, feeds the `validates_by_calc` link)
+- `Validation_Message` — static custom error message (`<Message>`); `Validation_Message_Calc_Hash` — `<MessageCalc>` (message-by-calc)
+- `Storage_IndexLanguage/_IndexLanguage_ID` — default index language (`<Storage><LanguageReference @name/@id>`; a **child element**, not an attribute)
+- `Summary_RestartEachGroup`, `Summary_RepetitionMode` (`Together`/`Individually`) — `<SummaryInfo @restartEachGroup/@summarizeRepetition>`
 
 **Layouts metadata columns (schema 1.5.0):** `L_TO_UUID` (context TO by UUID), `L_Width`, `L_Theme_ID/_Name/_UUID` (→ `uses_theme` link).
 
@@ -239,7 +249,7 @@ GROUP BY cf.CF_Name;
 - `Link_Role` — specific role (e.g. calls_script, displays_field, parent_layout)
 - `Is_Cross_File`, `Source_File` / `Target_File` — multi-file analyses
 
-## Link roles (58 registered: 48 usage, 8 containment, 2 restriction)
+## Link roles (59 registered: 49 usage, 8 containment, 2 restriction)
 
 Authoritative list incl. semantics: **`LinkRoleRegistry` table** — query it when in doubt. Overview:
 
@@ -247,6 +257,7 @@ Authoritative list incl. semantics: **`LinkRoleRegistry` table** — query it wh
 - Field → Field (lookup_source) — Lookup target field references the source field
 - Field → TableOccurrence (lookup_relationship) — Lookup target field uses this relationship
 - Field → Variable (reads_variable) — Calculated/AutoEnter formula references the variable
+- Field → Field/CustomFunction (validates_by_calc) — a field-validation calc (`<Validation><Calculated>`) or its custom-message calc (`<MessageCalc>`) references the target; Link_Subrole `validation`. A real usage → counts for where-used. Closes the gap for objects referenced **only** by a field validation
 - TableOccurrence → BaseTable (base_table)
 - TableOccurrence → ExternalDataSource (data_source)
 - Relationship → TableOccurrence (left_table, right_table)

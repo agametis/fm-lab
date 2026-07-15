@@ -37,7 +37,7 @@ interface ExplorerInspectPanelProps {
 
 export function ExplorerInspectPanel(props: ExplorerInspectPanelProps) {
   const { width, node, neighbors, expanding, onClose, onOpenDetails, onSetFocus, onExpand, onCollapse, onSelectNeighbor } = props;
-  const { t } = useTranslation(['explorer', 'common']);
+  const { t } = useTranslation(['explorer', 'common', 'types']);
 
   return (
     <aside
@@ -54,7 +54,7 @@ export function ExplorerInspectPanel(props: ExplorerInspectPanelProps) {
       </div>
 
       <dl className="explorer-inspect-meta">
-        <div><dt>{t('inspect.type')}</dt><dd>{node.type}</dd></div>
+        <div><dt>{t('inspect.type')}</dt><dd>{t(`types:objectTypes.${node.type}`, { defaultValue: node.type })}</dd></div>
         {node.file && <div><dt>{t('inspect.file')}</dt><dd>{node.file}</dd></div>}
         <div><dt>{t('inspect.degree')}</dt><dd>{node.degree}</dd></div>
         <div><dt>{t('inspect.depth')}</dt><dd>{node.depth}</dd></div>

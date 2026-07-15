@@ -385,3 +385,16 @@
   border-radius: 4px;
   overflow: hidden;
 }
+
+/* Objektloses Layout: kompakter, gerahmter Hinweis statt des großen Canvas-Kastens. */
+.layout-detail-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+}

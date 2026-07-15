@@ -10,5 +10,11 @@
   "loadHeading": "Échec du chargement",
   "retryAria": "Réessayer",
   "retryLabel": "Réessayer",
-  "noConnection": "Aucune connexion à l'API REST. Vérifiez si le serveur est en cours d'exécution."
+  "noConnection": "Aucune connexion à l'API REST. Vérifiez si le serveur est en cours d'exécution.",
+  "schemaDrift": {
+    "heading": "Catalogue obsolète",
+    "body": "Cette solution a été importée avec une version de catalogue plus ancienne que celle attendue par l'application. Reconvertissez son export XML pour reconstruire le catalogue d'objets dans le schéma actuel.",
+    "versions": "Catalogue : {{dbVersion}} · l'app attend : {{appVersion}}",
+    "action": "Aller à la conversion XML"
+  }
 }

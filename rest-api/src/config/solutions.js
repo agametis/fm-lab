@@ -67,15 +67,26 @@ function serverDefaultContext() {
 }
 
 /**
- * Request-Kontext (Vorbereitung): Phase 1 löst IMMER auf den
- * Server-Default auf; der X-Solution-Header wird angenommen, aber nur als
- * `requested` mitgeführt (Ausbaustufe M wertet ihn aus).
+ * Request-Kontext (Ausbaustufe M, scharf): Ein mitgesendeter
+ * `X-Solution`-Header wählt die Lösung DIESES Requests — ungültige/unbekannte
+ * IDs sind ein harter 404 (niemals stiller Fallback: eine falsch adressierte
+ * Analyse gegen die falsche DB ist genau die Vermischungs-Fehlerklasse, die
+ * getrennte Bundles eliminieren). Ohne Header greift der Server-Default.
+ * Wirft mit err.code='SOLUTION_NOT_FOUND' (+ err.status=404) — die Middleware
+ * in index.js übersetzt das in die JSON-Fehlerantwort.
  */
 function getRequestContext(req) {
-  return {
-    solution: getActiveSolutionId(),
-    requested: (req && typeof req.get === 'function' && req.get('X-Solution')) || null,
-  };
+  const requested = (req && typeof req.get === 'function' && req.get('X-Solution')) || null;
+  if (requested) {
+    if (!isValidId(requested) || !fs.existsSync(solutionDir(requested))) {
+      const err = new Error(`Unknown solution: ${requested}`);
+      err.code = 'SOLUTION_NOT_FOUND';
+      err.status = 404;
+      throw err;
+    }
+    return { solution: requested, requested };
+  }
+  return { solution: getActiveSolutionId(), requested: null };
 }
 
 // ── Pfad-Helfer (alle absolut) ──────────────────────────────────────────────
@@ -87,37 +98,45 @@ function masterDbPath(id) { return path.join(SOLUTIONS_ROOT, id, 'db', 'fm_catal
 function apiCopyPath(id) { return path.join(API_COPIES_ROOT, id, 'fm_catalog.duckdb'); }
 
 /**
- * resolveDbPath():
- *   1. DUCKDB_PATH explizit gesetzt → unverändert (Override bleibt möglich)
- *   2. sonst: aktive Lösung → rest-api/db/solutions/<id>/fm_catalog.duckdb
- *   3. Fallback (Kopie existiert noch nicht, z. B. unmigrierter Workspace):
- *      ./db/fm_catalog.duckdb (heutiges Verhalten; nach der Migration ein
- *      Symlink auf die Default-Kopie)
+ * resolveDbPath([solutionId]):
+ *   1. DUCKDB_PATH explizit gesetzt → unverändert — aber NUR für den
+ *      Server-Default (der Override meint „die eine Dev-DB", nicht jede
+ *      Lösung des Pools)
+ *   2. sonst: Lösung → rest-api/db/solutions/<id>/fm_catalog.duckdb
+ *   3. Fallback (Kopie existiert noch nicht, z. B. unmigrierter Workspace,
+ *      nur für den Server-Default): ./db/fm_catalog.duckdb
+ * Ohne Argument (Startup, Stats): der Server-Default.
  */
-function resolveDbPath() {
-  if (process.env.DUCKDB_PATH) {
+function resolveDbPath(solutionId) {
+  const active = getActiveSolutionId();
+  const id = solutionId || active;
+  if (process.env.DUCKDB_PATH && id === active) {
     return path.resolve(REST_API_ROOT, process.env.DUCKDB_PATH);
   }
-  const id = getActiveSolutionId();
   const perSolution = apiCopyPath(id);
   if (fs.existsSync(perSolution)) return perSolution;
-  const legacy = path.resolve(REST_API_ROOT, './db/fm_catalog.duckdb');
-  if (fs.existsSync(legacy)) return legacy;
+  if (id === active) {
+    const legacy = path.resolve(REST_API_ROOT, './db/fm_catalog.duckdb');
+    if (fs.existsSync(legacy)) return legacy;
+  }
   // Neue/leere Lösung: der per-Solution-Pfad ist das Ziel — der Aufrufer
-  // (database.initialize) legt dort bei Bedarf eine Platzhalter-DB an.
+  // (database-Pool-Factory) legt dort bei Bedarf eine Platzhalter-DB an.
   return perSolution;
 }
 
 /**
  * Annotations-Sidecar ist PER LÖSUNG (Cluster-Namen/Sichtbarkeit dürfen nicht
  * zwischen Lösungen bluten) und lebt im Bundle (Master, RW — kein Kopie-Muster,
- * die API ist der einzige Laufzeit-Schreiber). ANNOTATIONS_DB_PATH überschreibt.
+ * die API ist der einzige Laufzeit-Schreiber). ANNOTATIONS_DB_PATH überschreibt
+ * — wie DUCKDB_PATH nur für den Server-Default, nicht für Pool-Fremdlösungen.
  */
-function resolveAnnotationsPath() {
-  if (process.env.ANNOTATIONS_DB_PATH) {
+function resolveAnnotationsPath(solutionId) {
+  const active = getActiveSolutionId();
+  const id = solutionId || active;
+  if (process.env.ANNOTATIONS_DB_PATH && id === active) {
     return path.resolve(REST_API_ROOT, process.env.ANNOTATIONS_DB_PATH);
   }
-  return path.join(SOLUTIONS_ROOT, getActiveSolutionId(), 'db', 'fm_annotations.duckdb');
+  return path.join(SOLUTIONS_ROOT, id, 'db', 'fm_annotations.duckdb');
 }
 
 /** State-Verzeichnis der aktiven Lösung (Lock, last_xml_run.json, cluster*.json, logs/). */
@@ -291,6 +310,40 @@ function repointSymlink(linkPath, target) {
 }
 
 /**
+ * Workspace-Symlinks (relativ, wie von der Migration angelegt) auf `id`
+ * projizieren — die drei Leseprojektionen für CLI-Leser (CLAUDE.md §2):
+ *   db/fm_catalog.duckdb        → ../solutions/<id>/db/fm_catalog.duckdb
+ *   db/fm_annotations.duckdb    → ../solutions/<id>/db/fm_annotations.duckdb
+ *   rest-api/db/fm_catalog.duckdb → solutions/<id>/fm_catalog.duckdb
+ *
+ * Idempotent und defensiv (repointSymlink lässt ein REALES File unberührt →
+ * ein unmigrierter Alt-Workspace wird nie überschrieben, nur mit einer
+ * WARN-Zeile markiert). Wird sowohl beim Umschalten (setActiveSolution) als
+ * auch bei jedem API-Start aufgerufen, damit der dokumentierte Lesepfad auch
+ * für Ein-Lösungs-Installationen entsteht, die nie umschalten. Best-effort:
+ * die Parent-Verzeichnisse werden bei Bedarf angelegt; ein Read-only-FS o. Ä.
+ * darf den Start nicht verhindern.
+ */
+function ensureWorkspaceSymlinks(id = getActiveSolutionId()) {
+  try {
+    fs.mkdirSync(path.join(REPO_ROOT, 'db'), { recursive: true });
+    fs.mkdirSync(path.join(REST_API_ROOT, 'db'), { recursive: true });
+  } catch { /* best-effort — repointSymlink meldet ein Scheitern selbst */ }
+  repointSymlink(
+    path.join(REPO_ROOT, 'db', 'fm_catalog.duckdb'),
+    `../solutions/${id}/db/fm_catalog.duckdb`
+  );
+  repointSymlink(
+    path.join(REPO_ROOT, 'db', 'fm_annotations.duckdb'),
+    `../solutions/${id}/db/fm_annotations.duckdb`
+  );
+  repointSymlink(
+    path.join(REST_API_ROOT, 'db', 'fm_catalog.duckdb'),
+    `solutions/${id}/fm_catalog.duckdb`
+  );
+}
+
+/**
  * Aktive Lösung setzen: Pointer-Datei schreiben (Quelle der Wahrheit)
  * + Workspace-Symlinks umhängen (Projektion für CLI-Leser). Der API-Reload
  * ist Sache des Aufrufers (admin.controller → performReload()).
@@ -308,19 +361,8 @@ function setActiveSolution(id) {
   fs.writeFileSync(tmp, `${JSON.stringify(pointer, null, 2)}\n`);
   fs.renameSync(tmp, POINTER_PATH);
 
-  // Workspace-Symlinks (relativ, wie von der Migration angelegt).
-  repointSymlink(
-    path.join(REPO_ROOT, 'db', 'fm_catalog.duckdb'),
-    `../solutions/${id}/db/fm_catalog.duckdb`
-  );
-  repointSymlink(
-    path.join(REPO_ROOT, 'db', 'fm_annotations.duckdb'),
-    `../solutions/${id}/db/fm_annotations.duckdb`
-  );
-  repointSymlink(
-    path.join(REST_API_ROOT, 'db', 'fm_catalog.duckdb'),
-    `solutions/${id}/fm_catalog.duckdb`
-  );
+  // Workspace-Symlinks auf die neue aktive Lösung projizieren.
+  ensureWorkspaceSymlinks(id);
   return pointer;
 }
 
@@ -535,6 +577,7 @@ module.exports = {
   listSolutions,
   solutionExists,
   ensureDefaultSolution,
+  ensureWorkspaceSymlinks,
   setActiveSolution,
   createSolution,
   updateSolutionMeta,

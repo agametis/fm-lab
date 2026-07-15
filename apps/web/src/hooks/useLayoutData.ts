@@ -37,12 +37,63 @@ export type LayoutPart = {
   file_name: string;
 };
 
+/**
+ * Single-row layout metadata from `display_layout_meta` (Schema 1.8.0 view columns
+ * + context TO / theme / menu set / width). Used by the layout detail properties
+ * panel next to the canvas. `null` when the template yields no row.
+ */
+export type LayoutMeta = {
+  layout_name: string;
+  layout_uuid: string;
+  file_name: string;
+  to_name: string | null;
+  to_uuid: string | null;
+  width: number | null;
+  theme_id: number | null;
+  theme_name: string | null;
+  theme_display: string | null;
+  theme_uuid: string | null;
+  theme_base: string | null;
+  menuset_name: string | null;
+  options_raw: number | null;
+  view_form_available: boolean | null;
+  view_list_available: boolean | null;
+  view_table_available: boolean | null;
+  default_view: 'Form' | 'List' | 'Table' | null;
+  // „Allgemein"-Optionen (aus dem <Options>-Bitfeld); null bei Ordnern/Trennern.
+  auto_save_changes: boolean | null;
+  show_field_frames: boolean | null;
+  frame_current_record_only: boolean | null;
+  show_current_record_list: boolean | null;
+  quick_find_enabled: boolean | null;
+  is_hidden: boolean | null;
+  modified_by: string | null;
+  modified_at: string | null;
+  modifications: number | null;
+};
+
+/**
+ * Ein Layout-Ebene Script-Trigger (Tab „Script-Trigger" der Layouteinstellung).
+ * `trigger_action` ist der kanonische (englische) Enum-Name; das Frontend lokalisiert.
+ */
+export type LayoutTrigger = {
+  trigger_id: number;
+  trigger_action: string;
+  browse_mode: boolean;
+  script_id: number | null;
+  script_name: string | null;
+  script_uuid: string | null;
+  file_name: string;
+};
+
 export type LayoutData = {
   objects: LayoutObject[];
   parts: LayoutPart[];
   layoutName: string;
   layoutToName: string | null;
   fileName: string;
+  meta: LayoutMeta | null;
+  triggers: LayoutTrigger[];
 };
 
 type Result = {
@@ -98,18 +149,24 @@ export function useLayoutData(uuid: string | undefined, file?: string | null): R
     Promise.all([
       fetchTemplateQuery('display_layout_objects_data', params),
       fetchTemplateQuery('display_layout_parts_data', params),
+      fetchTemplateQuery('display_layout_meta', params),
+      fetchTemplateQuery('display_layout_triggers', params),
     ])
-      .then(([objectsRes, partsRes]) => {
+      .then(([objectsRes, partsRes, metaRes, triggersRes]) => {
         if (cancelled) return;
         const objects = (objectsRes.data as unknown as LayoutObject[]) ?? [];
         const parts = (partsRes.data as unknown as LayoutPart[]) ?? [];
+        const meta = ((metaRes.data as unknown as LayoutMeta[]) ?? [])[0] ?? null;
+        const triggers = (triggersRes.data as unknown as LayoutTrigger[]) ?? [];
         const first = parts[0];
         const layoutData: LayoutData = {
           objects,
           parts,
-          layoutName: first?.layout_name ?? '',
-          layoutToName: first?.layout_to_name ?? null,
-          fileName: first?.file_name ?? '',
+          layoutName: first?.layout_name ?? meta?.layout_name ?? '',
+          layoutToName: first?.layout_to_name ?? meta?.to_name ?? null,
+          fileName: first?.file_name ?? meta?.file_name ?? '',
+          meta,
+          triggers,
         };
         cache.set(cacheKey, layoutData);
         setData(layoutData);

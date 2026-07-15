@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Layouts com cálculos não armazenados",
+    "description": "Regra de desempenho — layouts ordenados pela quantidade de campos de cálculo não armazenados que exibem. Cada cálculo não armazenado é reavaliado para cada registro visível, portanto layouts que mostram muitos registros com uma contagem alta são os mais custosos de renderizar. A visualização padrão (formulário/lista/tabela) qualifica o contexto — a lista é a mais crítica."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Layouts afetados",
+    "summary_kpi.props.items[1].label": "Formulário",
+    "summary_kpi.props.items[2].label": "Lista",
+    "summary_kpi.props.items[3].label": "Tabela",
+    "summary_kpi.props.items[4].label": "Arquivos afetados",
+    "summary_kpi.props.items[5].label": "Máx. por layout",
+    "findings_card.props.title": "Layouts com cálculos não armazenados",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, layout ou contexto…",
+    "findings_table.props.empty.message": "Nenhum layout com cálculos não armazenados encontrado.",
+    "findings_table.props.columns[0].label": "Visualização",
+    "findings_table.props.columns[1].label": "Cálc. não armaz.",
+    "findings_table.props.columns[2].label": "Layout",
+    "findings_table.props.columns[3].label": "Contexto",
+    "findings_table.props.columns[4].label": "Arquivo",
+    "findings_table.props.columns[5].label": "Posicionamentos"
+  }
+}

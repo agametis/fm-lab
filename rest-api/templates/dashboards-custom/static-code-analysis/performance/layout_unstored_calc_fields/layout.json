@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary_card",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpi",
+            "props": {
+              "items": [
+                {
+                  "label": "Affected layouts",
+                  "field": "affected_layouts",
+                  "format": "number",
+                  "onClick": { "action": "openDashboard", "args": { "id": "layout_unstored_calc_fields", "params": { "view": "", "file": "{{file}}" } } }
+                },
+                {
+                  "label": "Form",
+                  "field": "view_form",
+                  "format": "number",
+                  "onClick": { "action": "openDashboard", "args": { "id": "layout_unstored_calc_fields", "params": { "view": "Form", "file": "{{file}}" } } }
+                },
+                {
+                  "label": "List",
+                  "field": "view_list",
+                  "format": "number",
+                  "onClick": { "action": "openDashboard", "args": { "id": "layout_unstored_calc_fields", "params": { "view": "List", "file": "{{file}}" } } }
+                },
+                {
+                  "label": "Table",
+                  "field": "view_table",
+                  "format": "number",
+                  "onClick": { "action": "openDashboard", "args": { "id": "layout_unstored_calc_fields", "params": { "view": "Table", "file": "{{file}}" } } }
+                },
+                {
+                  "label": "Affected files",
+                  "field": "affected_files",
+                  "format": "number"
+                },
+                {
+                  "label": "Max per layout",
+                  "field": "max_per_layout",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings_card",
+        "props": {
+          "span": 12,
+          "title": "Layouts with unstored calculations"
+        },
+        "data": {
+          "dataset": "findings"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search file, layout or context…",
+              "columns": [
+                {
+                  "field": "default_view",
+                  "label": "View",
+                  "format": "badge"
+                },
+                {
+                  "field": "unstored_calc_fields",
+                  "label": "Unstored calcs",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "layout_name",
+                  "label": "Layout"
+                },
+                {
+                  "field": "base_to",
+                  "label": "Context"
+                },
+                {
+                  "field": "file_name",
+                  "label": "File"
+                },
+                {
+                  "field": "placements",
+                  "label": "Placements",
+                  "align": "right",
+                  "format": "number"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "Layout"
+                }
+              },
+              "empty": {
+                "message": "No layouts with unstored calculations found."
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

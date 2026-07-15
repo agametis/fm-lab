@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { fetchSolutions } from '../api/solutionsApi';
+import { getSelectedSolution } from '../lib/solutionStore';
 import { DashboardHost } from './DashboardHost';
 import { SubNav } from '../components/SubNav';
 import { StatusBar } from '../components/StatusBar';
+import { SolutionSettingsControls } from '../components/SolutionSettingsControls';
 import { TitleBox } from '../components/TitleBox';
 import { buildBreadcrumb, type BreadcrumbCtx } from '../lib/navigation';
 
@@ -26,6 +28,7 @@ function BundlePage({
   pageTitle,
   pageDescription,
   titleActions,
+  statusTrailing,
 }: {
   id: string;
   ctx: BreadcrumbCtx;
@@ -40,12 +43,14 @@ function BundlePage({
   pageDescription?: string;
   /** Optional right-aligned quick-jump buttons on the title row. */
   titleActions?: ReactNode;
+  /** Optional controls pinned far-right of the back/status row. */
+  statusTrailing?: ReactNode;
 }) {
   const { t } = useTranslation(['nav']);
   return (
     <div className="app">
       <SubNav breadcrumbs={buildBreadcrumb(ctx, t)} />
-      <StatusBar />
+      <StatusBar trailingActions={statusTrailing} />
       {pageTitle && <TitleBox title={pageTitle} subtitle={pageDescription} actions={titleActions} />}
       <DashboardHost id={id} params={params} />
     </div>
@@ -147,11 +152,19 @@ export function XmlImportPage() {
       try {
         const solutions = await fetchSolutions();
         if (cancelled) return;
+        // Ohne `?solution_id=`-Deep-Link folgt der Titel der Tab-Auswahl
+        // (SolutionPicker → X-Solution-Header), nicht dem Server-Default —
+        // sonst bliebe die Überschrift stehen, während die Seite darunter
+        // schon die gewählte Lösung zeigt. Fallback: Server-Default.
+        const selectedId = getSelectedSolution();
         const target = solutionId
           ? solutions.find((s) => s.id === solutionId)
-          : solutions.find((s) => s.is_active);
+          : (selectedId ? solutions.find((s) => s.id === selectedId) : undefined)
+              ?? solutions.find((s) => s.is_active);
         setSolutionName(target ? (target.display_name || target.id) : (solutionId ?? null));
-        setIsForeign(!!target && !target.is_active);
+        // „Fremd-Import"-Notiz (Analyse ändert sich erst nach Aktivieren) gilt
+        // nur im Deep-Link-Pfad; die Tab-Auswahl spiegelt die Seite ohnehin.
+        setIsForeign(!!solutionId && !!target && !target.is_active);
       } catch {
         /* Titel degradiert auf den generischen Namen */
       }
@@ -165,6 +178,7 @@ export function XmlImportPage() {
       id="xml_convert"
       ctx={{ kind: 'xmlImport' }}
       params={solutionId ? { solution_id: solutionId } : undefined}
+      statusTrailing={<SolutionSettingsControls />}
       pageTitle={solutionName ? `${baseTitle}: ${solutionName}` : baseTitle}
       pageDescription={
         isForeign

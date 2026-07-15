@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Ungespeicherte Formel-Felder",
+    "description": "Performance-Regel — Berechnungsfelder, deren Ergebnis nicht gespeichert wird. Ungespeicherte Formeln werden bei Bedarf neu berechnet; viele davon auf einem Layout (besonders in der Listenansicht) können die Darstellung spürbar verlangsamen, weil die Berechnung für jeden angezeigten Datensatz erneut ausgeführt wird."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "summary_kpi.props.items[2].label": "Betroffene Tabellen",
+    "findings_card.props.title": "Ungespeicherte Formel-Felder",
+    "findings_table.props.searchPlaceholder": "Datei, Tabelle oder Feld suchen…",
+    "findings_table.props.empty.message": "Keine ungespeicherten Formel-Felder gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Tabelle",
+    "findings_table.props.columns[2].label": "Feld",
+    "findings_table.props.columns[3].label": "Typ"
+  }
+}

@@ -1,69 +1,17 @@
-// Step-Name → Rolle Klassifizierung. Quelle: fm-lab-vscode stepRoles.json
+// Step-Rollen-Klassifizierung — gemeinsame Quelle @packages/shared/stepRoles
+// (stepId-basiert, entkoppelt von Namens-/Locale-/Emissions-Schreibweisen).
 // Wird clientseitig genutzt für View-Mode-Filterung und Step-Color-Klassen.
 
-export type StepRole =
-  | 'control-structure'
-  | 'subscript-call'
-  | 'variable-assignment'
-  | 'field-assignment'
-  | 'script-return'
-  | 'navigation'
-  | 'other';
+import { getStepRoleById, type StepRole } from '@packages/shared/stepRoles';
 
-const ROLE_MAP: Record<string, StepRole> = {};
+export type { StepRole };
 
-const DATA: Record<Exclude<StepRole, 'other'>, string[]> = {
-  'control-structure': [
-    'If',
-    'Else',
-    'Else If',
-    'End If',
-    'Loop',
-    'End Loop',
-    'Exit Loop If',
-    'Open Transaction',
-    'Commit Transaction',
-    'Revert Transaction',
-  ],
-  'subscript-call': [
-    'Perform Script',
-    'Perform Script on Server',
-  ],
-  'variable-assignment': [
-    'Set Variable',
-  ],
-  'field-assignment': [
-    'Set Field',
-    'Set Field By Name',
-    'Insert Calculated Result',
-    'Insert from Index',
-    'Insert from Last Visited',
-    'Replace Field Contents',
-  ],
-  'script-return': [
-    'Exit Script',
-    'Halt Script',
-  ],
-  navigation: [
-    'Go to Layout',
-    'Go to Related Record',
-    'Go to Record/Request/Page',
-    'Go to Field',
-    'Go to Object',
-    'Go to Portal Row',
-  ],
-};
-
-for (const [role, names] of Object.entries(DATA) as Array<[StepRole, string[]]>) {
-  for (const name of names) ROLE_MAP[name] = role;
-}
-
-export function getStepRole(stepName: string | undefined): StepRole {
-  if (!stepName) return 'other';
-  return ROLE_MAP[stepName] ?? 'other';
+export function getStepRole(stepId: number | null | undefined): StepRole {
+  return getStepRoleById(stepId);
 }
 
 // CSS-sicherer Klassen-Suffix für Step-Namen (z.B. "Set Variable" → "set-variable")
+// — bewusst weiterhin namensbasiert: reiner Styling-Hook, keine Klassifizierung.
 export function stepNameClass(stepName: string | undefined): string {
   if (!stepName) return 'unknown';
   return stepName

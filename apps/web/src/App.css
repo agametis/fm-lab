@@ -839,6 +839,44 @@ mark.search-hit {
   display: flex;
 }
 
+/* Trailing controls (solution switcher + settings gear) pinned far-right of the
+   back/status row — Home parity on standard pages (e.g. XML-Import). */
+.status-bar__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.status-bar__settings {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+/* Zahnrad-SVG explizit dimensionieren — sonst schrumpft es im Flex-Row. */
+.status-bar__settings svg {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.status-bar__settings:hover {
+  color: var(--color-accent);
+  background-color: var(--color-hover-bg);
+}
+
 /* --- Filterbar (Ebene 4/5): kompakte Filter-/Werkzeugleiste --- */
 .filterbar {
   display: flex;

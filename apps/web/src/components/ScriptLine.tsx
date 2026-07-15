@@ -24,7 +24,7 @@ export const ScriptLine: React.FC<ScriptLineProps> = React.memo(({
 }) => {
   const { t } = useTranslation(['detail']);
   const isFoldable = !!foldStarts && foldStarts.length > 0;
-  const role = getStepRole(line.stepName);
+  const role = getStepRole(line.stepId);
   const stepClass = line.stepName ? `fm-step--${stepNameClass(line.stepName)}` : '';
   // Cross-Reference-Highlight:
   // wenn das back_references-Match-Set diese Step-UUID enthält (z.B. weil

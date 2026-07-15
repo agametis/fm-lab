@@ -51,6 +51,65 @@ export interface CalculationTokens {
   plainText: string;
 }
 
+/** Fortlaufende Nummer (AutoEnter_Type='SerialNumber'). */
+export interface FieldSerial {
+  generate: string | null;   // OnCreation | OnCommit
+  nextValue: string | null;
+  increment: string | null;
+}
+
+/** Referenzwert / Lookup (AutoEnter_Type='Looked_up'). */
+export interface FieldLookup {
+  field: string | null;
+  /** UUID + aufgelöste Zieldatei des Quellfelds (klickbarer Link); null = nur Text. */
+  fieldUuid: string | null;
+  fieldFile: string | null;
+  /** Herkunfts-BaseTable des Quellfelds — disambiguiert gleichnamige Felder. */
+  fieldTable: string | null;
+  to: string | null;
+  dontCopyIfEmpty: boolean;
+  noMatch: string | null;    // DoNotCopy | ConstantData
+}
+
+/** Flags einer AutoEnter-Berechnung (AutoEnter_Type='Calculated'). */
+export interface FieldAutoEnterCalc {
+  overwriteExisting: boolean;
+  alwaysEvaluate: boolean;
+}
+
+/** Überprüfung / Validierung (nur wenn eine echte Regel gesetzt ist). */
+export interface FieldValidation {
+  mode: string | null;       // Always | OnlyDuringDataEntry
+  allowOverride: boolean;
+  notEmpty: boolean;
+  unique: boolean;
+  existing: boolean;
+  valueList: { name: string; uuid: string | null } | null;
+  strictType: string | null; // Numeric | FourDigitYear | TimeOfDay
+  maxChars: number | null;
+  rangeFrom: string | null;
+  rangeTo: string | null;
+  calcText: string | null;   // „Überprüfung durch Berechnung"
+  message: string | null;    // eigene Fehlermeldung
+}
+
+/** Speicher / Indizierung. */
+export interface FieldStorage {
+  index: string | null;      // None | Minimal | All
+  autoIndex: boolean;
+  storeCalcResults: boolean;
+  indexLanguage: string | null; // Standard-Indexsprache (nur bei indiziertem Feld)
+  evaluatesWhenEmpty: boolean;  // Calc-Feld Nicht-Default: rechnet auch bei leeren Ref-Feldern (= alwaysEvaluate)
+}
+
+/** Statistikfeld (Field_Type='Summary'). */
+export interface FieldSummary {
+  operation: string | null;
+  field: { name: string; uuid: string | null } | null;
+  restartEachGroup: boolean;
+  repetitionMode: string | null; // Together | Individually (null = Default Together)
+}
+
 export interface FieldMeta {
   table: string | null;
   fieldType: string | null;
@@ -61,6 +120,14 @@ export interface FieldMeta {
   autoEnterType: string | null;
   /** Fester Vorgabewert bei AutoEnter_Type = 'ConstantData' (sonst null). */
   constantData: string | null;
+  /** Änderung durch Benutzer gesperrt (AutoEnter_ProhibitMod). */
+  prohibitModification: boolean;
+  serial: FieldSerial | null;
+  lookup: FieldLookup | null;
+  autoEnterCalc: FieldAutoEnterCalc | null;
+  validation: FieldValidation | null;
+  storage: FieldStorage | null;
+  summary: FieldSummary | null;
 }
 
 export interface FieldTokens {

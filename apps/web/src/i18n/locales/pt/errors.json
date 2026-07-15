@@ -10,5 +10,11 @@
   "loadHeading": "Falha ao carregar",
   "retryAria": "Tentar novamente",
   "retryLabel": "Tentar novamente",
-  "noConnection": "Sem ligação à API REST. Verifique se o servidor está em execução."
+  "noConnection": "Sem ligação à API REST. Verifique se o servidor está em execução.",
+  "schemaDrift": {
+    "heading": "Catálogo desatualizado",
+    "body": "Esta solução foi importada com uma versão de catálogo mais antiga do que a aplicação espera. Reconverta a exportação XML para reconstruir o catálogo de objetos no esquema atual.",
+    "versions": "Catálogo: {{dbVersion}} · a app espera: {{appVersion}}",
+    "action": "Ir para a conversão XML"
+  }
 }

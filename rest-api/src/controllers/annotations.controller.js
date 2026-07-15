@@ -19,8 +19,8 @@ function isAuthorized(req) {
   return (req.get('X-Annotations-Token') || '') === expected;
 }
 
-function assertAvailable() {
-  if (!annoDb.isAvailable()) {
+async function assertAvailable(ctx) {
+  if (!(await annoDb.isAvailable(ctx))) {
     throw createError('INTERNAL_ERROR', 'Annotations sidecar not available (feature disabled or DB locked)');
   }
 }
@@ -29,7 +29,7 @@ function assertAvailable() {
 async function putCommunity(req, res, next) {
   try {
     if (!isAuthorized(req)) return unauthorized(res);
-    assertAvailable();
+    await assertAvailable(req.solutionContext);
     const { engine, community, user_name, user_notes } = req.body;
     const result = await annotationsService.setCommunityAnnotation(req.solutionContext, {
       engine,
@@ -48,7 +48,7 @@ async function putCommunity(req, res, next) {
 async function putNodeVisibility(req, res, next) {
   try {
     if (!isAuthorized(req)) return unauthorized(res);
-    assertAvailable();
+    await assertAvailable(req.solutionContext);
     const { uuid, file, visible } = req.body;
     const result = await annotationsService.setNodeVisibility(req.solutionContext, {
       uuid,

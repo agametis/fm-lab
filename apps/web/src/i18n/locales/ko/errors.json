@@ -10,5 +10,11 @@
   "loadHeading": "불러오기 실패",
   "retryAria": "다시 시도",
   "retryLabel": "다시 시도",
-  "noConnection": "REST API에 연결할 수 없습니다. 서버가 실행 중인지 확인하세요."
+  "noConnection": "REST API에 연결할 수 없습니다. 서버가 실행 중인지 확인하세요.",
+  "schemaDrift": {
+    "heading": "카탈로그가 오래되었습니다",
+    "body": "이 솔루션은 앱이 기대하는 것보다 오래된 카탈로그 버전으로 가져왔습니다. XML 내보내기를 다시 변환하여 현재 스키마로 객체 카탈로그를 다시 구성하세요.",
+    "versions": "카탈로그: {{dbVersion}} · 앱 기대값: {{appVersion}}",
+    "action": "XML 변환으로 이동"
+  }
 }

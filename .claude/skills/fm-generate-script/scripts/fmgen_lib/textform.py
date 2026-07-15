@@ -162,13 +162,21 @@ def _match_head(stripped: str, lookup: dict) -> tuple[str, int | None, str | Non
 
 def _extract_params(steps: list[RawStep]) -> None:
     for st in steps:
-        body = st.raw.strip()
-        if not st.enabled and body.startswith("// "):
-            body = body[3:].lstrip()
         if st.is_comment and st.head == "#":
+            # A comment body keeps trailing / whitespace-only content: FileMaker
+            # treats "# " (<Text> </Text>) as a state distinct from the empty
+            # trenner line (<Step .../>). Only leading indentation and the
+            # disabled prefix are structural — lstrip those, then drop exactly
+            # one delimiter space after the '#' and keep the rest verbatim.
+            body = st.raw.lstrip()
+            if not st.enabled and body.startswith("// "):
+                body = body[3:].lstrip()
             text = body[1:]
             st.params_raw = text[1:] if text.startswith(" ") else text
             continue
+        body = st.raw.strip()
+        if not st.enabled and body.startswith("// "):
+            body = body[3:].lstrip()
         idx = body.find("[")
         if idx < 0:
             st.params_raw = None
@@ -269,8 +277,11 @@ def parse_step(st: RawStep, ref: Reference) -> ParsedStep:
                     enabled=st.enabled, raw=st.raw.strip(), errors=list(st.errors))
 
     if st.step_id == 89:  # comment: single positional text
+        # Keep the payload verbatim — a whitespace-only body is an intentional
+        # FileMaker state, so it must not be stripped away here. An empty
+        # params_raw stays falsy and yields the empty trenner comment.
         if st.params_raw:
-            ps.options["text"] = st.params_raw.strip()
+            ps.options["text"] = st.params_raw
         ps.canonical_text = render_canonical(ps, ref)
         return ps
 
@@ -537,7 +548,9 @@ def render_canonical(ps: ParsedStep, ref: Reference | None = None) -> str:
     prefix = "" if ps.enabled else "// "
     if ps.step_id == 89:
         text = ps.options.get("text", "")
-        return f"{prefix}# {text}".rstrip()
+        # empty body -> bare '#'; any (whitespace-only) body -> '# ' + body, so
+        # the single delimiter space round-trips back to the same payload.
+        return f"{prefix}# {text}" if text else f"{prefix}#"
     if not ps.options:
         return prefix + ps.canonical_name
     meta = {}

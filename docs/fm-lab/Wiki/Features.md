@@ -18,6 +18,8 @@ The current public setup supports the following features:
 
 - **Dashboard System** — library of predefined analysis patterns, with support for custom queries and custom dashboards 📁
 
+- - **Multi-user & multi-session support** - concurrent users, each on their own solution 🙌
+
 - **Graph Explorer** — interactive navigation of the full object graph, with automatic community detection that reveals named clusters across the solution and turns thousands of objects and links into a navigable graph map 🕸️
 
 - **Claude Skills** — slash commands for agentic analysis workflows in Claude Code, supported by helpers for XML conversion and documentation setup, enabling deep, solution-aware inspection beyond scripted analysis 🤖
@@ -26,4 +28,4 @@ The current public setup supports the following features:
 
 - **Plugin System** — open architecture for adding new tools and integrations, starting with **[fmIDE](https://github.com/fmIDE/fmIDE)** as a first-class citizen to provide direct navigation into FileMaker's Script Workspace 🛠️
 
-- **Prepared for AI code generation** — architecture and data model designed to support AI-driven code generation, augmented by reliable context from the object catalog and the integrated documentation 🧠
+- **AI Code Generation** — architecture and data model built for AI-driven code generation: every generated artifact is grounded in reliable context from the object catalog and validated against the integrated machine-readable FileMaker syntax and grammar through a multi-step validation pipeline 🧠

@@ -637,15 +637,131 @@ function formatField(rows, { object }) {
     file: head.object_file || object.file,
   };
 
+  // DuckDB liefert Booleans teils als true/false, teils als 'True'/'False'-String.
+  const toBool = (v) => v === true || v === 'True' || v === 'true' || v === 1;
+  const nn = (v) => (v == null || v === '' ? null : v); // null-if-empty
+
+  const aeType = head.auto_enter_type ?? null;
+
+  // Serial (nur wenn AutoEnter_Type='SerialNumber')
+  const serial = aeType === 'SerialNumber'
+    ? {
+        generate:  nn(head.serial_generate),
+        nextValue: nn(head.serial_next_value),
+        increment: nn(head.serial_increment),
+      }
+    : null;
+
+  // Lookup / Referenzwert (nur wenn AutoEnter_Type='Looked_up')
+  const lookup = aeType === 'Looked_up' && nn(head.lookup_field_name)
+    ? {
+        field:          nn(head.lookup_field_name),
+        // UUID + aufgelöste Zieldatei für den klickbaren Objekt-Link; nur gesetzt,
+        // wenn das Quellfeld im Katalog auflösbar ist (sonst reiner Text im Frontend).
+        fieldUuid:      nn(head.lookup_field_uuid),
+        fieldFile:      nn(head.lookup_field_file),
+        // Herkunfts-BaseTable des Quellfelds — disambiguiert gleichnamige Felder.
+        fieldTable:     nn(head.lookup_field_table),
+        to:             nn(head.lookup_to_name),
+        dontCopyIfEmpty: toBool(head.lookup_dont_copy_if_empty),
+        noMatch:        nn(head.lookup_no_match_option),
+      }
+    : null;
+
+  // AutoEnter-Calc-Flags (nur wenn AutoEnter_Type='Calculated')
+  const autoEnterCalc = aeType === 'Calculated'
+    ? {
+        overwriteExisting: toBool(head.ae_calc_overwrite_existing),
+        alwaysEvaluate:    toBool(head.ae_calc_always_evaluate),
+      }
+    : null;
+
+  // Überprüfung — nur zeigen, wenn eine echte Regel gesetzt ist (nicht der Default).
+  const vNotEmpty = toBool(head.validation_not_empty);
+  const vUnique   = toBool(head.validation_unique);
+  const vExisting = toBool(head.validation_existing);
+  const vType     = nn(head.validation_type);
+  const vlName    = nn(head.validation_vl_name);
+  // Validierungs-Optionen aus Schema 1.10.0
+  const vStrict    = nn(head.validation_strict_type);
+  const vMaxChars  = head.validation_max_chars != null ? Number(head.validation_max_chars) : null;
+  const vRangeFrom = nn(head.validation_range_from);
+  const vRangeTo   = nn(head.validation_range_to);
+  const vCalcText  = nn(head.validation_calc_text);
+  const vMessage   = nn(head.validation_message);
+  const hasValidation = vNotEmpty || vUnique || vExisting || !!vlName || vType === 'Always'
+    || !!vStrict || vMaxChars != null || !!vRangeFrom || !!vRangeTo || !!vCalcText || !!vMessage;
+  const validation = hasValidation
+    ? {
+        mode:          vType,                              // Always | OnlyDuringDataEntry
+        allowOverride: toBool(head.validation_allow_override),
+        notEmpty:      vNotEmpty,
+        unique:        vUnique,
+        existing:      vExisting,
+        valueList:     vlName ? { name: vlName, uuid: nn(head.validation_vl_uuid) } : null,
+        strictType:    vStrict,                            // Numeric | FourDigitYear | TimeOfDay
+        maxChars:      vMaxChars,
+        rangeFrom:     vRangeFrom,
+        rangeTo:       vRangeTo,
+        calcText:      vCalcText,                          // „Überprüfung durch Berechnung" (Klartext)
+        message:       vMessage,                           // eigene Fehlermeldung (statisch)
+      }
+    : null;
+
+  // Speicher / Indizierung — nur zeigen, wenn Indexinfo oder Calc-nicht-gespeichert.
+  const storeCalc = head.storage_store_calc_results;
+  const indexMode = nn(head.storage_index);
+  // Berechnungsfeld-Option „Nicht berechnen, wenn verwendete Felder leer sind".
+  // Kontrolliert verifiziert (listenlayout/Felder): Checkbox AN ⇔ alwaysEvaluate=false;
+  // die GUI-Option ist also die INVERSE von alwaysEvaluate. AN ist der FileMaker-Default
+  // (~71% des Korpus) → wir zeigen nur den auffälligen Nicht-Default: alwaysEvaluate=true =
+  // „berechnet auch bei leeren Feldern". Nur echte Calc-Felder (bei Normal+AE-Calc heißt
+  // alwaysEvaluate „bei jeder Änderung neu" → eigener autoEnterCalc-Zweig).
+  const isCalcField = nn(head.field_type) === 'Calculated';
+  const aeAlways    = head.ae_calc_always_evaluate;   // true|false|'True'|'False'|null
+  const evaluatesWhenEmpty = (isCalcField && aeAlways != null) ? toBool(aeAlways) : false;
+  const hasStorage = indexMode != null || storeCalc === false || storeCalc === 'False' || evaluatesWhenEmpty;
+  const storage = hasStorage
+    ? {
+        index:            indexMode,                       // None | Minimal | All
+        autoIndex:        toBool(head.storage_auto_index),
+        storeCalcResults: !(storeCalc === false || storeCalc === 'False'),
+        // Indexsprache nur, wenn das Feld tatsächlich indiziert ist (sonst irrelevant).
+        indexLanguage:    (indexMode && indexMode !== 'None') ? nn(head.storage_index_language) : null,
+        evaluatesWhenEmpty,                                // Nicht-Default: Calc rechnet auch bei leeren Ref-Feldern
+      }
+    : null;
+
+  // Statistik (nur Field_Type='Summary')
+  const summaryRepMode = nn(head.summary_repetition_mode);
+  const summary = nn(head.summary_operation)
+    ? {
+        operation: nn(head.summary_operation),
+        field:     nn(head.summary_field_name)
+          ? { name: nn(head.summary_field_name), uuid: nn(head.summary_field_uuid) }
+          : null,
+        restartEachGroup: toBool(head.summary_restart_each_group),
+        // Wiederholungsmodus nur bei Nicht-Default ('Together' = Default → weglassen).
+        repetitionMode:   (summaryRepMode && summaryRepMode !== 'Together') ? summaryRepMode : null,
+      }
+    : null;
+
   const fieldMeta = {
     table:           head.table_name ?? null,
     fieldType:       head.field_type ?? null,
     dataType:        head.data_type ?? null,
-    isGlobal:        head.is_global === true || head.is_global === 'True',
+    isGlobal:        toBool(head.is_global),
     maxRepetitions:  head.max_repetitions != null ? Number(head.max_repetitions) : 1,
     comment:         head.field_comment ?? null,
-    autoEnterType:   head.auto_enter_type ?? null,
+    autoEnterType:   aeType,
     constantData:    head.ae_constant_data ?? null,
+    prohibitModification: toBool(head.auto_enter_prohibit_mod),
+    serial,
+    lookup,
+    autoEnterCalc,
+    validation,
+    storage,
+    summary,
   };
 
   const chunkRows = rows

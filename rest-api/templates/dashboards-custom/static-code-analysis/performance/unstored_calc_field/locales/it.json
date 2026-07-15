@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Campo di calcolo non memorizzato",
+    "description": "Regola di prestazioni — campi di calcolo il cui risultato non viene memorizzato. I calcoli non memorizzati vengono ricalcolati su richiesta; inserirne molti in un unico formato (soprattutto in vista elenco) può rallentare sensibilmente la visualizzazione, perché il calcolo viene eseguito una volta per ogni record mostrato."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Riscontri",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "summary_kpi.props.items[2].label": "Tabelle interessate",
+    "findings_card.props.title": "Campo di calcolo non memorizzato",
+    "findings_table.props.searchPlaceholder": "Cerca file, tabella o campo…",
+    "findings_table.props.empty.message": "Nessun campo di calcolo non memorizzato trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tabella",
+    "findings_table.props.columns[2].label": "Campo",
+    "findings_table.props.columns[3].label": "Tipo"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Layouts mit ungespeicherten Formel-Feldern",
+    "description": "Performance-Regel — Layouts, sortiert nach der Anzahl der darauf platzierten ungespeicherten Formel-Felder. Jede ungespeicherte Formel wird für jeden sichtbaren Datensatz neu berechnet; Layouts mit vielen Datensätzen und hoher Anzahl sind daher am teuersten in der Darstellung. Die Standardansicht (Formular/Liste/Tabelle) qualifiziert den Kontext — Liste ist am kritischsten."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Betroffene Layouts",
+    "summary_kpi.props.items[1].label": "Formular",
+    "summary_kpi.props.items[2].label": "Liste",
+    "summary_kpi.props.items[3].label": "Tabelle",
+    "summary_kpi.props.items[4].label": "Betroffene Dateien",
+    "summary_kpi.props.items[5].label": "Max. pro Layout",
+    "findings_card.props.title": "Layouts mit ungespeicherten Formel-Feldern",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Kontext suchen…",
+    "findings_table.props.empty.message": "Keine Layouts mit ungespeicherten Formel-Feldern gefunden.",
+    "findings_table.props.columns[0].label": "Ansicht",
+    "findings_table.props.columns[1].label": "Ungesp. Formeln",
+    "findings_table.props.columns[2].label": "Layout",
+    "findings_table.props.columns[3].label": "Kontext",
+    "findings_table.props.columns[4].label": "Datei",
+    "findings_table.props.columns[5].label": "Platzierungen"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Felder mit Auto-Index",
+    "description": "Best-Practice-Regel — Felder mit Indizierung 'Keine', bei denen zugleich 'Indizes automatisch erstellen' aktiviert ist. Die erste Suche oder Sortierung stößt unbemerkt einen nicht abbrechbaren, serverseitigen Indexaufbau an — eine latente Zeitbombe mit Folgewirkungen auf Speichervolumen, Backups und Importgeschwindigkeit."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "summary_kpi.props.items[2].label": "Betroffene Tabellen",
+    "findings_card.props.title": "Felder mit Auto-Index",
+    "findings_table.props.searchPlaceholder": "Datei, Tabelle oder Feld suchen…",
+    "findings_table.props.empty.message": "Keine Felder mit Auto-Index gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Tabelle",
+    "findings_table.props.columns[2].label": "Feld",
+    "findings_table.props.columns[3].label": "Typ"
+  }
+}

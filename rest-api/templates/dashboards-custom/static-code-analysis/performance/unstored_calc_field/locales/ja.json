@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "非保存の計算フィールド",
+    "description": "パフォーマンスルール — 計算結果を保存しない計算フィールド。非保存の計算は必要に応じて再計算されます。1 つのレイアウト（特にリスト表示）に多数配置すると、表示中のレコードごとに計算が実行されるため、描画が目に見えて遅くなることがあります。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル",
+    "summary_kpi.props.items[2].label": "対象テーブル",
+    "findings_card.props.title": "非保存の計算フィールド",
+    "findings_table.props.searchPlaceholder": "ファイル・テーブル・フィールドを検索…",
+    "findings_table.props.empty.message": "非保存の計算フィールドは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "テーブル",
+    "findings_table.props.columns[2].label": "フィールド",
+    "findings_table.props.columns[3].label": "タイプ"
+  }
+}

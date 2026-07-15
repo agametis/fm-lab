@@ -10,5 +10,11 @@
   "loadHeading": "読み込みに失敗しました",
   "retryAria": "再試行",
   "retryLabel": "再試行",
-  "noConnection": "REST APIに接続できません。サーバーが起動しているか確認してください。"
+  "noConnection": "REST APIに接続できません。サーバーが起動しているか確認してください。",
+  "schemaDrift": {
+    "heading": "カタログが古くなっています",
+    "body": "このソリューションは、アプリが想定するより古いカタログ・バージョンでインポートされました。XML エクスポートを再変換して、オブジェクト・カタログを現在のスキーマで再構築してください。",
+    "versions": "カタログ: {{dbVersion}} · アプリの想定: {{appVersion}}",
+    "action": "XML 変換へ移動"
+  }
 }

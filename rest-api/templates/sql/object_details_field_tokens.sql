@@ -24,9 +24,58 @@ WITH fld AS (
     f.Field_Comment,
     f.AutoEnter_Type,
     f.AE_ConstantData,
+    f.AutoEnter_ProhibitMod,
+    -- Serial (nur AutoEnter_Type='SerialNumber')
+    f.Serial_Generate,
+    f.Serial_NextValue,
+    f.Serial_Increment,
+    -- Lookup / Referenzwert (nur AutoEnter_Type='Looked_up')
+    f.Lookup_Field_Name,
+    f.Lookup_Field_UUID,
+    -- Zieldatei des Lookup-Quellfelds über ObjectCatalog auflösen: Lookups sind
+    -- häufig datei-übergreifend (Quellfeld liegt in einer anderen .fmp12), daher
+    -- NICHT die aktuelle Datei annehmen. NULL, wenn Quellobjekt nicht im Katalog.
+    lkoc.File_Name AS Lookup_Field_File,
+    -- Herkunfts-BaseTable des Quellfelds (disambiguiert gleichnamige Felder,
+    -- z.B. „Artikel Nr" existiert in vielen Tabellen → Anzeige „Artikel Nr (Artikel)").
+    lf.Table_Name AS Lookup_Field_Table,
+    f.Lookup_TO_Name,
+    f.Lookup_DontCopyIfEmpty,
+    f.Lookup_NoMatchOption,
+    -- AutoEnter-Calc-Flags (nur AutoEnter_Type='Calculated')
+    f.AE_Calc_OverwriteExisting,
+    f.AE_Calc_AlwaysEvaluate,
+    -- Überprüfung / Validierung
+    f.Validation_Type,
+    f.Validation_AllowOverride,
+    f.Validation_NotEmpty,
+    f.Validation_Unique,
+    f.Validation_Existing,
+    f.Validation_VL_Name,
+    f.Validation_VL_UUID,
+    -- Validierung (Schema 1.10.0)
+    f.Validation_StrictType,
+    f.Validation_MaxChars,
+    f.Validation_Range_From,
+    f.Validation_Range_To,
+    f.Validation_Calc_Text,
+    f.Validation_Message,
+    -- Speicher / Indizierung
+    f.Storage_Index,
+    f.Storage_AutoIndex,
+    f.Storage_StoreCalcResults,
+    f.Storage_IndexLanguage,
+    -- Statistik (nur Field_Type='Summary')
+    f.Summary_Operation,
+    f.Summary_Field_Name,
+    f.Summary_Field_UUID,
+    f.Summary_RestartEachGroup,
+    f.Summary_RepetitionMode,
     COALESCE(f.Calculation_Text, f.AE_Calc_Text) AS Effective_Text
   FROM FieldsForTables f
   JOIN ObjectCatalog oc ON f.Field_UUID = oc.Object_UUID AND f.File_Name = oc.File_Name
+  LEFT JOIN ObjectCatalog lkoc ON lkoc.Object_UUID = f.Lookup_Field_UUID AND lkoc.Object_Type = 'Field'
+  LEFT JOIN FieldsForTables lf ON lf.Field_UUID = f.Lookup_Field_UUID AND lf.File_Name = lkoc.File_Name
   WHERE oc.Object_UUID = getvariable('uuid')
     -- Klon-Disambiguierung: LIMIT 1 würde sonst einen beliebigen Klon liefern.
     AND (getvariable('file') IS NULL OR f.File_Name = getvariable('file'))
@@ -60,6 +109,41 @@ SELECT
   fld.Field_Comment      AS field_comment,
   fld.AutoEnter_Type     AS auto_enter_type,
   fld.AE_ConstantData    AS ae_constant_data,
+  fld.AutoEnter_ProhibitMod    AS auto_enter_prohibit_mod,
+  fld.Serial_Generate          AS serial_generate,
+  fld.Serial_NextValue         AS serial_next_value,
+  fld.Serial_Increment         AS serial_increment,
+  fld.Lookup_Field_Name        AS lookup_field_name,
+  fld.Lookup_Field_UUID        AS lookup_field_uuid,
+  fld.Lookup_Field_File        AS lookup_field_file,
+  fld.Lookup_Field_Table       AS lookup_field_table,
+  fld.Lookup_TO_Name           AS lookup_to_name,
+  fld.Lookup_DontCopyIfEmpty   AS lookup_dont_copy_if_empty,
+  fld.Lookup_NoMatchOption     AS lookup_no_match_option,
+  fld.AE_Calc_OverwriteExisting AS ae_calc_overwrite_existing,
+  fld.AE_Calc_AlwaysEvaluate   AS ae_calc_always_evaluate,
+  fld.Validation_Type          AS validation_type,
+  fld.Validation_AllowOverride AS validation_allow_override,
+  fld.Validation_NotEmpty      AS validation_not_empty,
+  fld.Validation_Unique        AS validation_unique,
+  fld.Validation_Existing      AS validation_existing,
+  fld.Validation_VL_Name       AS validation_vl_name,
+  fld.Validation_VL_UUID       AS validation_vl_uuid,
+  fld.Validation_StrictType    AS validation_strict_type,
+  fld.Validation_MaxChars      AS validation_max_chars,
+  fld.Validation_Range_From    AS validation_range_from,
+  fld.Validation_Range_To      AS validation_range_to,
+  fld.Validation_Calc_Text     AS validation_calc_text,
+  fld.Validation_Message       AS validation_message,
+  fld.Storage_Index            AS storage_index,
+  fld.Storage_AutoIndex        AS storage_auto_index,
+  fld.Storage_StoreCalcResults AS storage_store_calc_results,
+  fld.Storage_IndexLanguage    AS storage_index_language,
+  fld.Summary_Operation        AS summary_operation,
+  fld.Summary_Field_Name       AS summary_field_name,
+  fld.Summary_Field_UUID       AS summary_field_uuid,
+  fld.Summary_RestartEachGroup AS summary_restart_each_group,
+  fld.Summary_RepetitionMode   AS summary_repetition_mode,
   fld.Effective_Text     AS plain_text,
   d.Chunk_Index          AS chunk_index,
   d.Chunk_Type           AS chunk_type,

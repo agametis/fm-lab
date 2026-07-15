@@ -8,8 +8,11 @@ const adminController = require('../controllers/admin.controller');
  */
 
 // POST /api/admin/reload - Re-open DuckDB connection from disk
-// (optional body {"solution": "<id>"} — no-op when not the active solution)
+// (optional body {"solution": "<id>"} — targets exactly that pool entry)
 router.post('/admin/reload', adminController.reload);
+
+// GET /api/admin/pool - Connection-pool diagnostics (stage M tuning)
+router.get('/admin/pool', adminController.poolStatus);
 
 // POST /api/admin/solution/activate - Set the active solution (server default)
 router.post('/admin/solution/activate', adminController.activateSolution);

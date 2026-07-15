@@ -1,9 +1,11 @@
 import { API_BASE } from '../config/apiBase';
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { ScriptLineToken } from '../script/types';
 import { buildObjectPath } from '../lib/navigation';
+import { useHoverPopover } from './useHoverPopover';
+import { PopoverPortal } from './PopoverPortal';
 
 interface ScriptStepSpanProps {
   /** Stepname-Text wie er im Script-Text erscheint (z.B. "Adjust Window"). */
@@ -23,10 +25,13 @@ interface ScriptStepSpanProps {
  */
 export const ScriptStepSpan: React.FC<ScriptStepSpanProps> = ({ text, line }) => {
   const { t } = useTranslation(['detail']);
-  const [open, setOpen] = useState(false);
-  const hoverTimer = useRef<number | null>(null);
   const isEnriched = !!line.stepDisplayName;
   const { uuid: currentScriptUuid } = useParams<{ uuid: string }>();
+
+  // Portaliertes Hover-Popover (fixed, mit Flip/Clamp) — verhindert das
+  // Abschneiden am unteren Rand kurzer Script-Panels. Anker ist der äußere span.
+  const { anchorRef, open, pos, startHover, cancelHover, keepOpen, close } =
+    useHoverPopover<HTMLSpanElement>({ minWidth: 320, enabled: isEnriched });
 
   // Cross-Navigation: Klick auf den Step-Namen führt zur ScriptStepType-
   // Detail-Seite. Hover-Popover
@@ -34,24 +39,6 @@ export const ScriptStepSpan: React.FC<ScriptStepSpanProps> = ({ text, line }) =>
   const stepTypePath = line.stepTypeUuid
     ? buildObjectPath(line.stepTypeUuid, currentScriptUuid ?? null)
     : null;
-
-  const startHover = () => {
-    if (!isEnriched) return;
-    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-    hoverTimer.current = window.setTimeout(() => setOpen(true), 250);
-  };
-
-  const cancelHover = () => {
-    if (hoverTimer.current) {
-      window.clearTimeout(hoverTimer.current);
-      hoverTimer.current = null;
-    }
-    window.setTimeout(() => setOpen(false), 120);
-  };
-
-  useEffect(() => () => {
-    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-  }, []);
 
   const apiBase = (API_BASE).replace(/\/+$/, '');
   const helpHref = line.stepLocalHelpUrl
@@ -67,7 +54,7 @@ export const ScriptStepSpan: React.FC<ScriptStepSpanProps> = ({ text, line }) =>
         ? t('detail:scriptStepLink.navigateEnriched', { name: line.stepName ?? text })
         : t('detail:scriptStepLink.navigateFallback', { name: text })) as string}
       // Klick auf den Link soll das Popover sofort schließen.
-      onClick={() => setOpen(false)}
+      onClick={close}
     >
       {text}
     </Link>
@@ -77,6 +64,7 @@ export const ScriptStepSpan: React.FC<ScriptStepSpanProps> = ({ text, line }) =>
 
   return (
     <span
+      ref={anchorRef}
       className="fm-stepname"
       data-step-id={line.stepId}
       title={isEnriched || stepTypePath ? undefined : text}
@@ -84,13 +72,11 @@ export const ScriptStepSpan: React.FC<ScriptStepSpanProps> = ({ text, line }) =>
       onMouseLeave={cancelHover}
     >
       {inner}
-      {open && isEnriched && (
-        <span
-          className="fm-stepname-popover"
-          role="tooltip"
-          onMouseEnter={() => {
-            if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-          }}
+      {open && isEnriched && pos && (
+        <PopoverPortal
+          pos={pos}
+          className="fm-stepname-popover fm-stepname-popover--portal"
+          onMouseEnter={keepOpen}
           onMouseLeave={cancelHover}
         >
           <span className="fm-stepname-popover-header">
@@ -112,7 +98,7 @@ export const ScriptStepSpan: React.FC<ScriptStepSpanProps> = ({ text, line }) =>
               {line.stepLocalHelpUrl ? t('detail:helpLinks.openLocalClarisHelp') : t('detail:helpLinks.openOnlineClarisHelp')}
             </a>
           )}
-        </span>
+        </PopoverPortal>
       )}
     </span>
   );

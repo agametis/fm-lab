@@ -10,5 +10,11 @@
   "loadHeading": "Det gick inte att läsa in",
   "retryAria": "Försök igen",
   "retryLabel": "Försök igen",
-  "noConnection": "Ingen anslutning till REST-API:et. Kontrollera om servern körs."
+  "noConnection": "Ingen anslutning till REST-API:et. Kontrollera om servern körs.",
+  "schemaDrift": {
+    "heading": "Katalogen är inaktuell",
+    "body": "Den här lösningen importerades med en äldre katalogversion än vad appen förväntar sig. Konvertera dess XML-export på nytt för att bygga om objektkatalogen i det aktuella schemat.",
+    "versions": "Katalog: {{dbVersion}} · appen förväntar sig: {{appVersion}}",
+    "action": "Till XML-konvertering"
+  }
 }

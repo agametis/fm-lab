@@ -26,7 +26,7 @@ function keyOf(uuid, file) {
  * Kleine Tabelle (≤ Anzahl benannter Communities) → ein voller Scan genügt.
  */
 async function getCommunityAnnotationMap(ctx) {
-  if (!annoDb.isAvailable()) return new Map();
+  if (!(await annoDb.isAvailable(ctx))) return new Map();
   const rows = await annoDb.query(
     ctx,
     `SELECT Engine, Community, User_Name, User_Notes FROM CommunityAnnotation`
@@ -46,7 +46,7 @@ async function getCommunityAnnotationMap(ctx) {
  * Hidden-Einträge (sichtbar = Abwesenheit), bleibt also klein.
  */
 async function getHiddenKeySet(ctx) {
-  if (!annoDb.isAvailable()) return new Set();
+  if (!(await annoDb.isAvailable(ctx))) return new Set();
   const rows = await annoDb.query(
     ctx,
     `SELECT Object_UUID, File_Name FROM NodeVisibility WHERE Visible = FALSE`
@@ -147,7 +147,7 @@ async function setNodeVisibility(ctx, { uuid, file, visible }) {
  * `hide`-Modus). Verschneidet die Sidecar-Keys mit dem READ_ONLY-Katalog.
  */
 async function listHidden(ctx) {
-  if (!annoDb.isAvailable()) return [];
+  if (!(await annoDb.isAvailable(ctx))) return [];
   const hidden = await annoDb.query(
     ctx,
     `SELECT Object_UUID, File_Name, Updated_At FROM NodeVisibility
@@ -198,7 +198,7 @@ const TAU_PURITY = 0.6;
 const TAU_COVERAGE = 0.5;
 
 async function remapAfterReload(ctx) {
-  if (!annoDb.isAvailable()) return { skipped: 'no-sidecar' };
+  if (!(await annoDb.isAvailable(ctx))) return { skipped: 'no-sidecar' };
   const anns = await annoDb.query(
     ctx,
     `SELECT Engine, Community, User_Name, User_Notes FROM CommunityAnnotation`
@@ -310,7 +310,7 @@ const SEM_TAU_PURITY = 0.6;
 const SEM_TAU_COVERAGE = 0.5;
 
 async function restoreSemanticNamesAfterReload(ctx) {
-  if (!annoDb.isAvailable()) return { skipped: 'no-sidecar' };
+  if (!(await annoDb.isAvailable(ctx))) return { skipped: 'no-sidecar' };
 
   // Neue aktive Engine (wie remapAfterReload); ohne Cluster-Tabellen → no-op.
   let newEngine = '';
@@ -439,7 +439,7 @@ async function restoreSemanticNamesAfterReload(ctx) {
  * 3. Namensquelle gelesen (Priorität: User > Copy-Live > Restore > Heuristik).
  */
 async function getSemanticRestoreMap(ctx) {
-  if (!annoDb.isAvailable()) return new Map();
+  if (!(await annoDb.isAvailable(ctx))) return new Map();
   const rows = await annoDb.query(
     ctx,
     `SELECT Engine, Community, Semantic_Name, Semantic_Description FROM SemanticNameRestore`

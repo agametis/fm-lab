@@ -118,26 +118,27 @@
 .solutions-panel__badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.1rem 0.5rem;
   margin-right: 0.5rem;
-  border-radius: 999px;
-  background: var(--color-accent-soft-bg, rgba(74, 144, 226, 0.14));
-  color: var(--color-accent-soft-fg, #4a90e2);
-  font-size: 0.72rem;
-  font-weight: 600;
   vertical-align: middle;
 }
 
+/* Aktive Lösung: nur noch ein hellgrüner Punkt (kein Text) — etwas größer als
+ * der frühere Dot, mit dezentem Glow, damit er auf beiden Themes sichtbar ist. */
 .solutions-panel__badge-dot {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--color-accent, #4a90e2);
+  background: #4ade80;
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.25);
 }
 
 .solutions-panel__actions {
-  text-align: right;
+  /* Flex-Row statt Inline-Fluss: der kleine Aktiv-Punkt wird so echt mittig zur
+   * Zeilenhöhe ausgerichtet (Inline-`vertical-align` legte ihn an die
+   * Schriftlinie und damit optisch nach unten). */
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   white-space: nowrap;
 }
 

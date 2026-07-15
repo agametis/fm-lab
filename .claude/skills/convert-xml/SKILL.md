@@ -78,7 +78,9 @@ convert-xml --batch --force-rebuild
 convert-xml --batch --force-rebuild --jobs auto
 ```
 
-File paths are per solution (resolved from the active solution or `--solution`):
+File paths are per solution — the script resolves the shared context cascade
+(`--solution` flag → session pin `FMLAB_SOLUTION`/`FMLAB_CONTEXT` → active-solution
+pointer → `default`):
 
 - Input: `solutions/<id>/xml/`
 - Output: `solutions/<id>/db/fm_catalog.duckdb` (readable via the compat symlink `db/fm_catalog.duckdb`)

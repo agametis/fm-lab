@@ -15,6 +15,11 @@ interface StatusBarProps {
    * the `<Filterbar>` component for consistent styling.
    */
   children?: ReactNode;
+  /**
+   * Optional controls pinned to the far right of the back/status row (e.g. the
+   * solution switcher + settings gear on the XML-Import page).
+   */
+  trailingActions?: ReactNode;
 }
 
 /**
@@ -22,7 +27,7 @@ interface StatusBarProps {
  * status message and an optional filter/tool bar slot. Used by every standard
  * (non-Start) page.
  */
-export function StatusBar({ onBack, message, children }: StatusBarProps) {
+export function StatusBar({ onBack, message, children, trailingActions }: StatusBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation(['common']);
@@ -49,6 +54,7 @@ export function StatusBar({ onBack, message, children }: StatusBarProps) {
           ← {t('common:back')}
         </button>
         {message && <div className="status-bar__message">{message}</div>}
+        {trailingActions}
       </div>
       {children && <div className="status-bar__filter">{children}</div>}
     </div>

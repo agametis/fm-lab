@@ -187,18 +187,20 @@ function startRun({ changedOnly = true, solution } = {}) {
         broadcast(run, { event: 'aborted', reason: 'cancelled' });
       } else if (exit_code === 0) {
         // Im --quiet-Modus triggert das Skript den Reload NICHT selbst (überlässt
-        // ihn dem API-Caller). Reload NUR für die aktive Lösung — für eine
-        // nicht-aktive liegt die Kopie frisch bereit (No-op-Regel); die
-        // angezeigten Analysedaten ändern sich erst nach dem Switch.
-        if (targetSolution === solutions.getActiveSolutionId()) {
-          try {
-            const result = await performReload();
-            broadcast(run, { event: 'reload', ok: true, tables: result.tables });
-          } catch (err) {
-            broadcast(run, { event: 'reload', ok: false, error: err.message });
-          }
-        } else {
-          broadcast(run, { event: 'reload', ok: true, skipped: true, reason: 'solution not active' });
+        // ihn dem API-Caller). Stage M: gezielter Reload GENAU der Lauf-Lösung —
+        // invalidiert nur deren Pool-Eintrag; eine nie angefragte Lösung wird
+        // bloß invalidiert (status 'invalidated'), nicht geöffnet. Andere
+        // Lösungen/User bleiben ungestört.
+        try {
+          const result = await performReload(targetSolution);
+          broadcast(run, {
+            event: 'reload',
+            ok: true,
+            tables: result.tables,
+            ...(result.status === 'invalidated' ? { skipped: true, reason: 'pool entry invalidated' } : {}),
+          });
+        } catch (err) {
+          broadcast(run, { event: 'reload', ok: false, error: err.message });
         }
         broadcast(run, { event: 'done', ok: true, exit_code: 0 });
       } else {

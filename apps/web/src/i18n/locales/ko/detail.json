@@ -155,7 +155,44 @@
     "autoEnter": "자동 입력",
     "comment": "주석",
     "calculationFormula": "계산 수식",
-    "autoEnterCalculation": "자동 입력 계산식"
+    "autoEnterCalculation": "자동 입력 계산식",
+    "sectionAutoEnter": "자동 입력",
+    "sectionValidation": "유효성 검사",
+    "sectionStorage": "저장",
+    "sectionSummary": "요약",
+    "type": "유형",
+    "no": "아니오",
+    "serialNext": "다음 값",
+    "serialIncrement": "증가값",
+    "serialGenerate": "생성",
+    "lookupSource": "원본 필드",
+    "lookupVia": "관계를 통해",
+    "lookupDontCopy": "빈 값 복사 안 함",
+    "lookupNoMatch": "일치하지 않을 경우",
+    "calcOverwrite": "기존 값 대치",
+    "calcAlwaysEvaluate": "변경할 때마다 재계산",
+    "prohibitModification": "수정 금지",
+    "validationMode": "유효성 검사",
+    "constraints": "필수 조건",
+    "constraintNotEmpty": "비어 있지 않음",
+    "constraintUnique": "고유값",
+    "constraintExisting": "기존값",
+    "validationValueList": "값 목록의 구성원",
+    "validationAllowOverride": "사용자가 무시 가능",
+    "storageIndex": "인덱싱",
+    "storageAutoIndex": "인덱스 자동 생성",
+    "storageStoreCalc": "계산 결과 저장됨",
+    "summaryOperation": "연산",
+    "summaryField": "요약 필드",
+    "validationStrict": "엄격한 데이터 유형",
+    "validationMaxChars": "최대 문자 수",
+    "validationRange": "범위 내",
+    "validationByCalc": "계산으로 검증",
+    "validationMessage": "사용자 지정 메시지",
+    "storageIndexLanguage": "기본 언어",
+    "summaryRestartGroup": "그룹마다 다시 시작",
+    "summaryRepMode": "반복 집계",
+    "calcEvaluatesWhenEmpty": "참조 필드가 비어도 계산함"
   },
   "typeDetail": {
     "loading": "로딩 중…",
@@ -256,7 +293,7 @@
     },
     "solutions": {
       "heading": "솔루션",
-      "description": "이 워크스페이스의 FileMaker 솔루션을 관리합니다. 각 솔루션은 고유한 XML 수신함, 데이터베이스, 상태를 가집니다. 활성화하면 전체 워크벤치가 해당 솔루션으로 전환됩니다.",
+      "description": "이 워크스페이스의 FileMaker 솔루션을 관리합니다. 각 솔루션은 자체 XML 수신함, 데이터베이스, 상태를 가집니다. 내 보기는 헤더의 선택기를 따르며, 여기서 설정하는 서버 기본값은 자체 선택이 없는 요청에만 적용됩니다.",
       "colId": "ID",
       "colName": "솔루션",
       "colSize": "크기",
@@ -264,7 +301,7 @@
       "colLastImport": "마지막 가져오기",
       "colDuration": "소요 시간",
       "activeBadge": "활성",
-      "activate": "활성화",
+      "activate": "서버 기본값으로 설정",
       "activating": "전환 중…",
       "deleteButton": "삭제",
       "deleteConfirm1": "솔루션 “{{name}}”을(를) 삭제할까요? XML 원본 파일을 포함한 전체 번들이 제거됩니다.",
@@ -396,6 +433,116 @@
     "clearFilter": "재설정",
     "noMatches": "일치 항목 없음",
     "openField": "필드 세부 정보 열기",
-    "openTo": "테이블 어커런스 세부 정보 열기"
+    "openTo": "테이블 어커런스 세부 정보 열기",
+    "groupAutoEnter": "자동 입력",
+    "groupValidation": "입력값 확인",
+    "groupComment": "주석",
+    "filterByAutoEnter": "자동 입력으로 필터링",
+    "filterByValidation": "입력값 확인으로 필터링",
+    "filterByComment": "주석으로 필터링",
+    "aeSerial": "일련번호",
+    "aeLookup": "조회",
+    "aeCalc": "계산",
+    "aeConstant": "상수",
+    "aeCreation": "생성",
+    "aeModification": "수정",
+    "aeOther": "기타",
+    "validated": "확인 있음",
+    "notValidated": "확인 없음",
+    "commented": "주석 있음",
+    "uncommented": "주석 없음"
+  },
+  "fieldOptions": {
+    "fieldType": {
+      "Normal": "일반",
+      "Calculated": "계산",
+      "Summary": "요약"
+    },
+    "dataType": {
+      "Text": "텍스트",
+      "Number": "숫자",
+      "Date": "날짜",
+      "Time": "시간",
+      "Timestamp": "타임스탬프",
+      "Binary": "컨테이너"
+    },
+    "autoEnter": {
+      "SerialNumber": "일련 번호",
+      "Looked_up": "참조된 값",
+      "Calculated": "계산된 값",
+      "ConstantData": "데이터 (상수)",
+      "CreationDate": "생성 날짜",
+      "CreationTime": "생성 시간",
+      "CreationTimestamp": "생성 타임스탬프",
+      "CreationName": "생성 사용자 이름",
+      "CreationAccountName": "생성 계정 이름",
+      "ModificationDate": "수정 날짜",
+      "ModificationTime": "수정 시간",
+      "ModificationTimestamp": "수정 타임스탬프",
+      "ModificationName": "수정 사용자 이름",
+      "ModificationAccountName": "수정 계정 이름"
+    },
+    "serialGenerate": {
+      "OnCreation": "생성 시",
+      "OnCommit": "커밋 시"
+    },
+    "noMatch": {
+      "DoNotCopy": "복사 안 함",
+      "ConstantData": "상수 사용"
+    },
+    "validationType": {
+      "Always": "항상",
+      "OnlyDuringDataEntry": "데이터 입력 중에만"
+    },
+    "index": {
+      "None": "없음",
+      "Minimal": "최소",
+      "All": "모두"
+    },
+    "summaryOp": {
+      "Total": "합계",
+      "Average": "평균",
+      "Count": "개수",
+      "Minimum": "최소값",
+      "Maximum": "최대값",
+      "StandardDeviation": "표준 편차",
+      "FractionOfTotal": "전체 대비 비율",
+      "List": "목록",
+      "RunningTotal": "누계"
+    },
+    "strictType": {
+      "Numeric": "숫자만",
+      "FourDigitYear": "4자리 연도",
+      "TimeOfDay": "시각"
+    },
+    "repMode": {
+      "Together": "모두 함께",
+      "Individually": "개별적으로"
+    }
+  },
+  "layoutViewer": {
+    "propertiesHeading": "속성",
+    "contextTable": "컨텍스트 테이블",
+    "theme": "테마",
+    "menuSet": "메뉴 세트",
+    "menuSetDefault": "[파일 기본값]",
+    "width": "너비",
+    "availableViews": "사용 가능한 보기",
+    "defaultView": "기본 보기",
+    "viewForm": "양식 보기",
+    "viewList": "목록 보기",
+    "viewTable": "표 보기",
+    "baseTheme": "기본 테마",
+    "inLayoutMenus": "레이아웃 메뉴에 표시",
+    "lastModified": "마지막 수정",
+    "triggersHeading": "스크립트 트리거",
+    "noTriggers": "스크립트 트리거 없음",
+    "yes": "예",
+    "no": "아니요",
+    "optAutoSave": "변경 사항 자동 저장",
+    "optFieldFrames": "활성 레코드에서 필드 테두리 표시",
+    "optFrameCurrentOnly": "현재 레코드의 필드만 테두리 표시",
+    "optShowCurrentInList": "목록 보기에서 레코드 표시",
+    "optQuickFind": "빠른 찾기"
   }
 }

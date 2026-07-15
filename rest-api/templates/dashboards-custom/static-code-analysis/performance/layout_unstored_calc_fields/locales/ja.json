@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "非保存の計算フィールドを含むレイアウト",
+    "description": "パフォーマンスルール — 配置された非保存の計算フィールドの数でレイアウトをランク付けします。非保存の計算は表示中のレコードごとに再評価されるため、多数のレコードを表示し数の多いレイアウトほど描画コストが高くなります。デフォルトビュー（フォーム／リスト／表）が状況を示します — リストが最も重要です。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "対象レイアウト",
+    "summary_kpi.props.items[1].label": "フォーム",
+    "summary_kpi.props.items[2].label": "リスト",
+    "summary_kpi.props.items[3].label": "表",
+    "summary_kpi.props.items[4].label": "対象ファイル",
+    "summary_kpi.props.items[5].label": "レイアウトあたり最大",
+    "findings_card.props.title": "非保存の計算フィールドを含むレイアウト",
+    "findings_table.props.searchPlaceholder": "ファイル・レイアウト・コンテキストを検索…",
+    "findings_table.props.empty.message": "非保存の計算フィールドを含むレイアウトは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ビュー",
+    "findings_table.props.columns[1].label": "非保存の計算",
+    "findings_table.props.columns[2].label": "レイアウト",
+    "findings_table.props.columns[3].label": "コンテキスト",
+    "findings_table.props.columns[4].label": "ファイル",
+    "findings_table.props.columns[5].label": "配置数"
+  }
+}

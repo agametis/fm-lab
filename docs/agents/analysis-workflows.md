@@ -18,7 +18,7 @@ You support the developer in typical analysis steps on their FileMaker applicati
 
 | Question shape | Tool |
 |---|---|
-| "Describe script/field/layout X" (technical: structure, flow, dependencies) | **`fm-summarize`** (`--short` for 1–2 paragraphs) |
+| "Describe script/field/layout X" (technical: structure, flow, dependencies) — incl. which fields a script sets/reads, which scripts it calls, which layouts/variables it touches (grouped by Link_Role) | **`fm-summarize`** (`--short` for 1–2 paragraphs) |
 | "What is X *for*? What business logic is behind X?" (semantic: call chain, triggers, naming, comments of linked objects) | **`fm-analyze`** (`--short` available) |
 | "Which modules does this solution consist of?" / community & hub analysis | **`fm-graph-cluster`** |
 | "Show me X in FileMaker" | **`fm-open`** |
@@ -38,6 +38,8 @@ resolution (name → UUID across files) and dependency traversal correctly.
 
 ## Pitfalls that produce wrong conclusions
 
+- **Never regex a `*_XML` column for what `ObjectLinks` already resolves.** `Step_XML`, `Object_XML`, `Parameters_XML` etc. are raw-import payloads, not the query surface. Which fields a script sets/reads (`sets_field`/`reads_field`), which scripts it calls (`calls_script`), which layouts/TOs/variables it touches — all resolved into `ObjectLinks` edges at import. Query the edge (forward pattern in `query-cookbook.md`), or use `fm-summarize`. Raw-XML regex is the **last resort**, justified only for step-exact position or the concrete written value, and only when DDR-Info is absent — with DDR-Info, use the structured step columns (`StepsForScripts.Calculation_Text`, `DDR_ScriptSteps`) first. Rule of thumb: `ObjectLinks`/`LinkRoleRegistry` → `StepsForScripts`/`DDR_ScriptSteps` → `Step_XML` regex, in that order.
+- **`LinkRoleRegistry` has no prose column.** It carries `Link_Role`, `Link_Kind`, `Counts_For_Where_Used` — nothing else. `SELECT Link_Role, Description …` fails with a Binder Error. The human-readable meaning of each role is the "Link roles" list in `schema-reference.md`, not a table column.
 - **Restriction links are not usage.** `restricts_field`/`restricts_object` (privilege restrictions) must never make an object appear "used". Authoritative flag: `LinkRoleRegistry.Counts_For_Where_Used` — filter on it in dead-code/unused queries instead of hand-picking roles.
 - **`Link_Type='structural'` is containment, not usage.** Where-used questions almost always mean `Link_Type='operational'`.
 - **Step names are localized.** `StepsForScripts.Step_Name` / `Step/@name` is written in the exporting client's UI language. Match steps via `Step_ID` (`ScriptStepRoleMap`, `step_metadata`), never via name literals.

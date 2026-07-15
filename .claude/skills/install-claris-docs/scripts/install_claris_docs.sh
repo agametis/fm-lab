@@ -234,6 +234,11 @@ run_check_mode() {
     exit 0
 }
 
+# Refresh CDN-pinned firewall IPs before any network op — help.claris.com is
+# Akamai-fronted and rotates aggressively. No-op outside a firewalled container;
+# see tools/install_modes.sh::refresh_firewall_allowlist.
+refresh_firewall_allowlist
+
 if $CHECK_MODE; then
     run_check_mode
 fi

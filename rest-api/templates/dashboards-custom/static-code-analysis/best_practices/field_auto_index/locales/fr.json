@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Champ à index automatique",
+    "description": "Règle de bonnes pratiques — champs dont l'indexation est 'Aucune' alors que 'Créer les index automatiquement' reste activé. La première recherche ou le premier tri déclenche silencieusement une création d'index côté serveur impossible à interrompre — une bombe à retardement latente avec des répercussions sur le stockage, les sauvegardes et la vitesse d'import."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Occurrences",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "summary_kpi.props.items[2].label": "Tables concernées",
+    "findings_card.props.title": "Champ à index automatique",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, une table ou un champ…",
+    "findings_table.props.empty.message": "Aucun champ à index automatique trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Table",
+    "findings_table.props.columns[2].label": "Champ",
+    "findings_table.props.columns[3].label": "Type"
+  }
+}

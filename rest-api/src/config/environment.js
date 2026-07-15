@@ -22,6 +22,10 @@ const environment = {
     // Überschreitung spillt DuckDB auf DUCKDB_TEMP_DIR statt zu crashen.
     maxMemory: process.env.DUCKDB_MAX_MEMORY || '8GB',
     threads: parseInt(process.env.DUCKDB_THREADS) || 4,
+    // Ausbaustufe M: LRU-Connection-Pool (eine READ_ONLY-Instanz je Lösung).
+    // RAM ist die harte Grenze: poolMax × maxMemory (+ RW-Sidecars) muss in den
+    // Host-RAM passen — bei mehr gleichzeitigen Lösungen maxMemory senken.
+    poolMax: Math.max(1, parseInt(process.env.FMLAB_DB_POOL_MAX) || 3),
     // Thread-Deckel für Overview/Atlas-Queries (graph.service.js). Ihr Buffer-Peak
     // skaliert mit der Thread-Zahl; gedeckelt bleibt der Per-Query-Footprint klein,
     // sodass auch auf sehr großen Graphen ein Atlas-Klick den Buffer nicht allein

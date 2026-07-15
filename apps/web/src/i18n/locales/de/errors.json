@@ -10,5 +10,11 @@
   "loadHeading": "Fehler beim Laden",
   "retryAria": "Erneut versuchen",
   "retryLabel": "Erneut versuchen",
-  "noConnection": "Keine Verbindung zur REST-API. Bitte prüfe, ob der Server läuft."
+  "noConnection": "Keine Verbindung zur REST-API. Bitte prüfe, ob der Server läuft.",
+  "schemaDrift": {
+    "heading": "Katalog veraltet",
+    "body": "Diese Lösung wurde mit einer älteren Katalog-Version importiert, als die App erwartet. Konvertiere ihren XML-Export neu, um den Objekt-Katalog im aktuellen Schema neu aufzubauen.",
+    "versions": "Katalog: {{dbVersion}} · App erwartet: {{appVersion}}",
+    "action": "Zur XML-Konvertierung"
+  }
 }

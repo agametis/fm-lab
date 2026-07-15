@@ -160,7 +160,44 @@
     "autoEnter": "Auto-enter",
     "comment": "Comment",
     "calculationFormula": "Calculation formula",
-    "autoEnterCalculation": "Auto-enter calculation"
+    "autoEnterCalculation": "Auto-enter calculation",
+    "sectionAutoEnter": "Auto-enter",
+    "sectionValidation": "Validation",
+    "sectionStorage": "Storage",
+    "sectionSummary": "Summary",
+    "type": "Type",
+    "no": "No",
+    "serialNext": "Next value",
+    "serialIncrement": "Increment",
+    "serialGenerate": "Generate",
+    "lookupSource": "Source field",
+    "lookupVia": "Via relationship",
+    "lookupDontCopy": "Don't copy empty values",
+    "lookupNoMatch": "If no match",
+    "calcOverwrite": "Overwrite existing value",
+    "calcAlwaysEvaluate": "Re-evaluate on every change",
+    "prohibitModification": "Modification prohibited",
+    "validationMode": "Validate",
+    "constraints": "Requires",
+    "constraintNotEmpty": "Not empty",
+    "constraintUnique": "Unique",
+    "constraintExisting": "Existing",
+    "validationValueList": "Member of value list",
+    "validationAllowOverride": "User may override",
+    "storageIndex": "Indexing",
+    "storageAutoIndex": "Auto-create indexes",
+    "storageStoreCalc": "Calculation result stored",
+    "summaryOperation": "Operation",
+    "summaryField": "Summarized field",
+    "validationStrict": "Strict data type",
+    "validationMaxChars": "Max. characters",
+    "validationRange": "In range",
+    "validationByCalc": "Validated by calculation",
+    "validationMessage": "Custom message",
+    "storageIndexLanguage": "Index language",
+    "summaryRestartGroup": "Restart for each group",
+    "summaryRepMode": "Summarize repetitions",
+    "calcEvaluatesWhenEmpty": "Evaluates even if fields empty"
   },
   "typeDetail": {
     "loading": "Loading…",
@@ -283,7 +320,7 @@
     },
     "solutions": {
       "heading": "Solutions",
-      "description": "Manage the FileMaker solutions of this workspace. Each solution has its own XML inbox, its own database and its own state. Activating switches the whole workbench to that solution.",
+      "description": "Manage the FileMaker solutions of this workspace. Each solution has its own XML inbox, its own database and its own state. Your own view follows the picker in the header — the server default set here only applies to requests without an own selection.",
       "colId": "ID",
       "colName": "Solution",
       "colSize": "Size",
@@ -291,7 +328,7 @@
       "colLastImport": "Last import",
       "colDuration": "Duration",
       "activeBadge": "Active",
-      "activate": "Activate",
+      "activate": "Set as server default",
       "activating": "Activating…",
       "deleteButton": "Delete",
       "deleteConfirm1": "Delete solution “{{name}}”? This removes the ENTIRE bundle including the XML source files.",
@@ -439,6 +476,116 @@
     "clearFilter": "Reset",
     "noMatches": "No matches",
     "openField": "Open field detail",
-    "openTo": "Open table occurrence detail"
+    "openTo": "Open table occurrence detail",
+    "groupAutoEnter": "Auto-enter",
+    "groupValidation": "Validation",
+    "groupComment": "Comment",
+    "filterByAutoEnter": "Filter by auto-enter",
+    "filterByValidation": "Filter by validation",
+    "filterByComment": "Filter by comment",
+    "aeSerial": "Serial",
+    "aeLookup": "Lookup",
+    "aeCalc": "Calculation",
+    "aeConstant": "Constant",
+    "aeCreation": "Creation",
+    "aeModification": "Modification",
+    "aeOther": "Other",
+    "validated": "validated",
+    "notValidated": "not validated",
+    "commented": "documented",
+    "uncommented": "undocumented"
+  },
+  "fieldOptions": {
+    "fieldType": {
+      "Normal": "Normal",
+      "Calculated": "Calculated",
+      "Summary": "Summary"
+    },
+    "dataType": {
+      "Text": "Text",
+      "Number": "Number",
+      "Date": "Date",
+      "Time": "Time",
+      "Timestamp": "Timestamp",
+      "Binary": "Container"
+    },
+    "autoEnter": {
+      "SerialNumber": "Serial number",
+      "Looked_up": "Looked-up value",
+      "Calculated": "Calculated value",
+      "ConstantData": "Data (constant)",
+      "CreationDate": "Creation date",
+      "CreationTime": "Creation time",
+      "CreationTimestamp": "Creation timestamp",
+      "CreationName": "Creation user name",
+      "CreationAccountName": "Creation account name",
+      "ModificationDate": "Modification date",
+      "ModificationTime": "Modification time",
+      "ModificationTimestamp": "Modification timestamp",
+      "ModificationName": "Modification user name",
+      "ModificationAccountName": "Modification account name"
+    },
+    "serialGenerate": {
+      "OnCreation": "On creation",
+      "OnCommit": "On commit"
+    },
+    "noMatch": {
+      "DoNotCopy": "Do not copy",
+      "ConstantData": "Use constant"
+    },
+    "validationType": {
+      "Always": "Always",
+      "OnlyDuringDataEntry": "Only during data entry"
+    },
+    "index": {
+      "None": "None",
+      "Minimal": "Minimal",
+      "All": "All"
+    },
+    "summaryOp": {
+      "Total": "Total",
+      "Average": "Average",
+      "Count": "Count",
+      "Minimum": "Minimum",
+      "Maximum": "Maximum",
+      "StandardDeviation": "Standard deviation",
+      "FractionOfTotal": "Fraction of total",
+      "List": "List of",
+      "RunningTotal": "Running total"
+    },
+    "strictType": {
+      "Numeric": "Numeric only",
+      "FourDigitYear": "4-digit year",
+      "TimeOfDay": "Time of day"
+    },
+    "repMode": {
+      "Together": "All together",
+      "Individually": "Individually"
+    }
+  },
+  "layoutViewer": {
+    "propertiesHeading": "Properties",
+    "contextTable": "Context table",
+    "theme": "Theme",
+    "menuSet": "Menu set",
+    "menuSetDefault": "[File default]",
+    "width": "Width",
+    "availableViews": "Available views",
+    "defaultView": "Default view",
+    "viewForm": "Form view",
+    "viewList": "List view",
+    "viewTable": "Table view",
+    "baseTheme": "Base theme",
+    "inLayoutMenus": "In layout menus",
+    "lastModified": "Last modified",
+    "triggersHeading": "Script triggers",
+    "noTriggers": "No script triggers",
+    "yes": "Yes",
+    "no": "No",
+    "optAutoSave": "Auto-save changes",
+    "optFieldFrames": "Field frames when record active",
+    "optFrameCurrentOnly": "Frame fields in current record only",
+    "optShowCurrentInList": "Record indicator in list view",
+    "optQuickFind": "Quick find"
   }
 }

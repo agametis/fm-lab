@@ -634,10 +634,13 @@ FROM CustomMenuItemCatalog
 UNION ALL
 
 -- 21. ThemeCatalog (Themes)
+-- Object_Name = lokalisierter Anzeigename (Theme_Display, z.B. „Apex Blau"), wie in
+-- der FileMaker-UI; Fallback auf den internen name (com.filemaker.theme.*), falls
+-- kein Display-Attribut vorhanden. Wirkt katalogweit (Detail, Referenzen, Graph).
 SELECT
     Theme_UUID as Object_UUID,
     'Theme' as Object_Type,
-    Theme_Name as Object_Name,
+    COALESCE(NULLIF(Theme_Display, ''), Theme_Name) as Object_Name,
     File_Name,
     'ThemeCatalog' as Source_Table,
     Theme_ID as Object_ID
@@ -1991,7 +1994,10 @@ SELECT DISTINCT
     xcr.Ref_UUID as Target_UUID,
     'Field' as Target_Type,
     'operational' as Link_Type,
-    'reads_field' as Link_Role,
+    -- Feld-Refs aus einem Validierungs-Calc (Subrole='validation', A.2.7) tragen die
+    -- eigene Rolle validates_by_calc; alle übrigen Calc-Feld-Refs bleiben reads_field.
+    CASE WHEN xcr.Subrole = 'validation' AND xcr.Source_Type = 'Field'
+         THEN 'validates_by_calc' ELSE 'reads_field' END as Link_Role,
     xcr.Subrole as Link_Subrole,
     xcr.File_Name as Source_File,
     oc_target.File_Name as Target_File,
@@ -2017,7 +2023,9 @@ SELECT DISTINCT
     cf.CF_UUID as Target_UUID,
     'CustomFunction' as Target_Type,
     'operational' as Link_Type,
-    'calls_customfunction' as Link_Role,
+    -- CF-Refs aus einem Validierungs-Calc (A.2.8) → validates_by_calc; sonst calls_customfunction.
+    CASE WHEN xcr.Subrole = 'validation' AND xcr.Source_Type = 'Field'
+         THEN 'validates_by_calc' ELSE 'calls_customfunction' END as Link_Role,
     xcr.Subrole as Link_Subrole,
     xcr.File_Name as Source_File,
     cf.File_Name as Target_File,
@@ -2757,6 +2765,9 @@ INSERT INTO LinkRoleRegistry VALUES
     ('uses_menuset',         'usage',       TRUE),
     ('uses_theme',           'usage',       TRUE),
     ('uses_valuelist',       'usage',       TRUE),
+    -- Feld → Feld/CustomFunction über eine Feldvalidierung „Überprüfung durch
+    -- Berechnung" (<Validation><Calculated>); echte Verwendung → Where-used zählt.
+    ('validates_by_calc',    'usage',       TRUE),
     -- Containment (Struktur; parent_layout existiert operational [LayoutObject→
     -- Layout, bewusst sichtbar in Referenzlisten] UND structural [LayoutPart→
     -- Layout] — für Where-used zählt beides nicht als "Verwendung" des Layouts)

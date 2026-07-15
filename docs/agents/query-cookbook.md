@@ -76,6 +76,32 @@ ORDER BY ol.Source_Type, oc_source.Object_Name;
 authoritative flag: `LinkRoleRegistry.Counts_For_Where_Used` (e.g. `restricts_field`/
 `restricts_object` are restrictions, not usages). See `analysis-workflows.md`.
 
+**Which fields does a script set/read?** (forward direction — the reverse of where-used)
+```sql
+-- sets_field = written, reads_field = read. These are Script→Field edges,
+-- resolved at import — do NOT regex Step_XML for this.
+SELECT
+    oc_target.File_Name as File,
+    oc_target.Object_Name as Field,
+    ol.Link_Role,
+    count(*) as n
+FROM ObjectLinks ol
+JOIN ObjectCatalog oc_source ON ol.Source_UUID = oc_source.Object_UUID
+JOIN ObjectCatalog oc_target ON ol.Target_UUID = oc_target.Object_UUID
+WHERE oc_source.Object_Type = 'Script'
+  AND oc_source.Object_Name = 'MyScript'
+  AND ol.Link_Role IN ('sets_field', 'reads_field')
+GROUP BY ALL
+ORDER BY ol.Link_Role, oc_target.Object_Name;
+```
+
+⚠️ These `Script→Field` links are resolved at **script granularity**, carrying a count
+`n` — not the step number nor the concrete written value. For the exact step or value use
+the structured step columns (`StepsForScripts.Calculation_Text`, `DDR_ScriptSteps`) when
+DDR-Info is present; regex on `Step_XML` is the last resort for files without DDR-Info.
+The same forward pattern works for any resolved edge (`calls_script`, `navigates_to_layout`,
+`sets_variable`, …) — swap the role. `fm-summarize <script>` returns this grouped for free.
+
 **Cross-file dependencies:**
 ```sql
 SELECT

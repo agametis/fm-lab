@@ -10,5 +10,11 @@
   "loadHeading": "Failed to load",
   "retryAria": "Retry",
   "retryLabel": "Retry",
-  "noConnection": "No connection to the REST API. Please check whether the server is running."
+  "noConnection": "No connection to the REST API. Please check whether the server is running.",
+  "schemaDrift": {
+    "heading": "Catalog out of date",
+    "body": "This solution was imported with an older catalog version than the app expects. Re-convert its XML export to rebuild the object catalog in the current schema.",
+    "versions": "Catalog: {{dbVersion}} · app expects: {{appVersion}}",
+    "action": "Go to XML conversion"
+  }
 }

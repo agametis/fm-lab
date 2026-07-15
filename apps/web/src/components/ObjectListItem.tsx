@@ -66,7 +66,7 @@ function highlightMatch(text: string, term?: string): React.ReactNode {
  * "Datei ▸ Skript ▸ Step N" (1-basiert wie im FileMaker-Editor).
  */
 export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, onClick, onCategoryClick, searchTerm }) => {
-  const { t } = useTranslation(['detail', 'common']);
+  const { t } = useTranslation(['detail', 'common', 'types']);
   const navigate = useNavigate();
   const aggObject = object as FMObjectWithAggregates;
   const noName = t('detail:objectListItem.noName') as string;
@@ -174,7 +174,7 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
           {/* Typ-Pille → mit `object-name { flex:1 }` rechtsbündig, unabhängig von
               Category-Pille/Usage-Badge/Slot. */}
           <span className="object-type">
-            {object.Object_Type}
+            {t(`types:objectTypes.${object.Object_Type}`, { defaultValue: object.Object_Type })}
           </span>
           {/* TableOccurrence: Direkt-Sprung ins Beziehungsdiagramm der Datei, mit
               dieser TO vorselektiert (`?to=<UUID>`). stopPropagation, weil der

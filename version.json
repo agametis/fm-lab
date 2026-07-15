@@ -1,8 +1,8 @@
 {
   "manifest_schema": "1.0",
   "version": "0.9.0",
-  "generated_at": "2026-07-14T21:36:45.761Z",
-  "source_commit": "42917e2",
+  "generated_at": "2026-07-15T21:44:38.393Z",
+  "source_commit": "d30a31f",
   "components": {
     "rest_api": {
       "scheme": "A",
@@ -24,7 +24,7 @@
     },
     "schema": {
       "scheme": "B",
-      "version": "1.7.0",
+      "version": "1.13.0",
       "source": "sql/convert-xml/convert_xml_01_extract.sql",
       "on_change": "force_rebuild_db"
     },
@@ -36,7 +36,7 @@
     },
     "fm_spec": {
       "scheme": "B",
-      "version": "1.9.0",
+      "version": "1.10.0",
       "filemaker_coverage": "22",
       "source": "reference/fm_spec.meta.json",
       "on_change": "pull_reference_reload_api"
@@ -118,6 +118,10 @@
     {
       "name": "create-custom-dashboard",
       "version": "0.8.9"
+    },
+    {
+      "name": "select-solution",
+      "version": "0.9.0"
     },
     {
       "name": "skill-creator",

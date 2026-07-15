@@ -1025,30 +1025,15 @@ if [ -n "$RETRY_REASON" ]; then
 fi
 
 # ── Multi-solution resolution (production modes only) ──
-# Order: --solution flag → active-solution pointer (.fmlab/active_solution.json)
-# → 'default'. The pointer file is the machine-readable source of truth for the
-# active solution; the db/ symlinks are only its convenience projection.
-# Pure-sed JSON extraction — bash-3.2/macOS-safe, no python dependency.
-ACTIVE_SOLUTION_FILE="$PROJECT_ROOT/.fmlab/active_solution.json"
-SOLUTION_FROM_POINTER=false
-if [ -z "$SOLUTION" ] && [ -f "$ACTIVE_SOLUTION_FILE" ]; then
-    SOLUTION=$(sed -n 's/.*"active"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$ACTIVE_SOLUTION_FILE" | head -n1)
-    [ -n "$SOLUTION" ] && SOLUTION_FROM_POINTER=true
-fi
-[ -z "$SOLUTION" ] && SOLUTION="default"
-case "$SOLUTION" in
-    */*|.|..)
-        echo "ERROR: Invalid solution id '$SOLUTION' (must be a plain directory name, no '/')."
-        exit 1
-        ;;
-esac
-# Invariant I1: a pointer naming a deleted/missing solution
-# falls back to 'default' (explicit + WARN). An explicit --solution flag keeps
-# its target (the bundle is created below), only the pointer path heals.
-if $SOLUTION_FROM_POINTER && [ ! -d "$PROJECT_ROOT/solutions/$SOLUTION" ]; then
-    echo "WARNING: active-solution pointer names missing solution '$SOLUTION' — falling back to 'default'."
-    SOLUTION="default"
-fi
+# Shared cascade (tools/lib/resolve_solution.sh): --solution flag →
+# session (FMLAB_SOLUTION env / FMLAB_CONTEXT file) → active-solution pointer
+# → 'default'. A bad id at any level is a hard error; only a pointer naming a
+# missing solution heals to 'default' (invariant I1). An explicit --solution
+# flag keeps its target even if the bundle does not exist yet — it is created
+# below.
+. "$PROJECT_ROOT/tools/lib/resolve_solution.sh"
+fmlab_resolve_solution "$SOLUTION" || exit 1
+SOLUTION="$FMLAB_RESOLVED_SOLUTION"
 SOLUTION_DIR="$PROJECT_ROOT/solutions/$SOLUTION"
 # Invariant I1: 'default' always exists — restore skeleton + minimal manifest
 # silently (idempotent; API and tools/solution.sh do the same on their side).
@@ -1907,6 +1892,29 @@ delete_db_for_rebuild() {
 
     rm -f "$DB_FILE"
     echo "  ✓ DB deleted: $DB_FILE"
+
+    # Co-invalidate the PERSISTENT turbo manifest: once the master is gone, its
+    # per-catalog "already ingested" claims are false. Left behind, a subsequent
+    # --changed-only/turbo run judges the streamed catalog blocks (StepsForScripts,
+    # LayoutCatalog, Calculation/DDR …) "unchanged → skipped" and never loads them into
+    # the fresh master — the catalog comes up partially empty and Phase 2 aborts with
+    # "0 references". Applies to auto_heal_rebuild too (not just --force-rebuild, which
+    # already ignores the manifest at read time).
+    #
+    # We EMPTY the manifest tables rather than delete the file: init_turbo_dbs() has
+    # already opened the manifest AND chunkmap for this run (it runs earlier, right
+    # after the lock), so removing the files would orphan those handles and Phase S
+    # would fail with "Table with name chunkmap does not exist". The chunkmap is
+    # transient (CREATE OR REPLACE per run) and must NOT be touched here at all — only
+    # the persistent manifest carries stale cross-run state. No-op when the manifest
+    # doesn't exist yet (non-turbo runs); missing tables are tolerated.
+    if [ -n "${MANIFEST_DB:-}" ] && [ -f "$MANIFEST_DB" ]; then
+        "$DUCKDB_BIN" "$MANIFEST_DB" -c "
+            DELETE FROM manifest_catalog;
+            DELETE FROM manifest_file;
+            DELETE FROM pipeline_state;" >/dev/null 2>&1 \
+            && echo "  ✓ Turbo manifest invalidated (emptied): $MANIFEST_DB"
+    fi
 }
 
 # ============================================================================

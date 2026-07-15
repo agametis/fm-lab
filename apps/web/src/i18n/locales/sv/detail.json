@@ -155,7 +155,44 @@
     "autoEnter": "Auto-inmatning",
     "comment": "Kommentar",
     "calculationFormula": "Beräkningsformel",
-    "autoEnterCalculation": "Auto-inmatningsberäkning"
+    "autoEnterCalculation": "Auto-inmatningsberäkning",
+    "sectionAutoEnter": "Automatisk inmatning",
+    "sectionValidation": "Validering",
+    "sectionStorage": "Lagring",
+    "sectionSummary": "Summering",
+    "type": "Typ",
+    "no": "Nej",
+    "serialNext": "Nästa värde",
+    "serialIncrement": "Ökning",
+    "serialGenerate": "Generera",
+    "lookupSource": "Källfält",
+    "lookupVia": "Via relation",
+    "lookupDontCopy": "Kopiera inte tomma värden",
+    "lookupNoMatch": "Om ingen matchning",
+    "calcOverwrite": "Ersätt befintligt värde",
+    "calcAlwaysEvaluate": "Beräkna om vid varje ändring",
+    "prohibitModification": "Ändring förbjuden",
+    "validationMode": "Validera",
+    "constraints": "Kräver",
+    "constraintNotEmpty": "Inte tomt",
+    "constraintUnique": "Unikt",
+    "constraintExisting": "Befintligt",
+    "validationValueList": "Medlem i värdelista",
+    "validationAllowOverride": "Användaren kan åsidosätta",
+    "storageIndex": "Indexering",
+    "storageAutoIndex": "Skapa index automatiskt",
+    "storageStoreCalc": "Beräkningsresultat lagrat",
+    "summaryOperation": "Operation",
+    "summaryField": "Summeringsfält",
+    "validationStrict": "Strikt datatyp",
+    "validationMaxChars": "Max. antal tecken",
+    "validationRange": "Inom intervall",
+    "validationByCalc": "Validerad med beräkning",
+    "validationMessage": "Anpassat meddelande",
+    "storageIndexLanguage": "Standardspråk",
+    "summaryRestartGroup": "Börja om för varje grupp",
+    "summaryRepMode": "Beräkna upprepningar",
+    "calcEvaluatesWhenEmpty": "Beräknar även vid tomma fält"
   },
   "typeDetail": {
     "loading": "Laddar…",
@@ -256,7 +293,7 @@
     },
     "solutions": {
       "heading": "Lösningar",
-      "description": "Hantera FileMaker-lösningarna i denna arbetsyta. Varje lösning har sin egen XML-inkorg, sin egen databas och sitt eget tillstånd. Aktivering växlar hela arbetsbänken till den lösningen.",
+      "description": "Hanterar FileMaker-lösningarna i denna arbetsyta. Varje lösning har en egen XML-inkorg, egen databas och eget tillstånd. Din vy följer väljaren i sidhuvudet — serverstandarden som anges här gäller bara åtkomst utan eget val.",
       "colId": "ID",
       "colName": "Lösning",
       "colSize": "Storlek",
@@ -264,7 +301,7 @@
       "colLastImport": "Senaste import",
       "colDuration": "Varaktighet",
       "activeBadge": "Aktiv",
-      "activate": "Aktivera",
+      "activate": "Ange som serverstandard",
       "activating": "Aktiverar…",
       "deleteButton": "Ta bort",
       "deleteConfirm1": "Ta bort lösningen ”{{name}}”? Detta tar bort HELA paketet inklusive XML-källfilerna.",
@@ -396,6 +433,116 @@
     "clearFilter": "Återställ",
     "noMatches": "Inga träffar",
     "openField": "Öppna fältdetalj",
-    "openTo": "Öppna tabellförekomstdetalj"
+    "openTo": "Öppna tabellförekomstdetalj",
+    "groupAutoEnter": "Autoinmatning",
+    "groupValidation": "Validering",
+    "groupComment": "Kommentar",
+    "filterByAutoEnter": "Filtrera efter autoinmatning",
+    "filterByValidation": "Filtrera efter validering",
+    "filterByComment": "Filtrera efter kommentar",
+    "aeSerial": "Serie",
+    "aeLookup": "Sökning",
+    "aeCalc": "Beräkning",
+    "aeConstant": "Konstant",
+    "aeCreation": "Skapad",
+    "aeModification": "Ändring",
+    "aeOther": "Övrigt",
+    "validated": "validerad",
+    "notValidated": "ej validerad",
+    "commented": "dokumenterad",
+    "uncommented": "ej dokumenterad"
+  },
+  "fieldOptions": {
+    "fieldType": {
+      "Normal": "Normal",
+      "Calculated": "Beräkning",
+      "Summary": "Summering"
+    },
+    "dataType": {
+      "Text": "Text",
+      "Number": "Tal",
+      "Date": "Datum",
+      "Time": "Tid",
+      "Timestamp": "Tidsstämpel",
+      "Binary": "Behållare"
+    },
+    "autoEnter": {
+      "SerialNumber": "Serienummer",
+      "Looked_up": "Uppslaget värde",
+      "Calculated": "Beräknat värde",
+      "ConstantData": "Data (konstant)",
+      "CreationDate": "Skapandedatum",
+      "CreationTime": "Skapandetid",
+      "CreationTimestamp": "Tidsstämpel för skapande",
+      "CreationName": "Användarnamn vid skapande",
+      "CreationAccountName": "Kontonamn vid skapande",
+      "ModificationDate": "Ändringsdatum",
+      "ModificationTime": "Ändringstid",
+      "ModificationTimestamp": "Tidsstämpel för ändring",
+      "ModificationName": "Användarnamn vid ändring",
+      "ModificationAccountName": "Kontonamn vid ändring"
+    },
+    "serialGenerate": {
+      "OnCreation": "Vid skapande",
+      "OnCommit": "Vid verkställande"
+    },
+    "noMatch": {
+      "DoNotCopy": "Kopiera inte",
+      "ConstantData": "Använd konstant"
+    },
+    "validationType": {
+      "Always": "Alltid",
+      "OnlyDuringDataEntry": "Endast vid datainmatning"
+    },
+    "index": {
+      "None": "Ingen",
+      "Minimal": "Minimal",
+      "All": "Alla"
+    },
+    "summaryOp": {
+      "Total": "Summa",
+      "Average": "Medelvärde",
+      "Count": "Antal",
+      "Minimum": "Minimum",
+      "Maximum": "Maximum",
+      "StandardDeviation": "Standardavvikelse",
+      "FractionOfTotal": "Andel av totalsumma",
+      "List": "Lista med",
+      "RunningTotal": "Löpande summa"
+    },
+    "strictType": {
+      "Numeric": "Endast numeriskt",
+      "FourDigitYear": "4-siffrigt årtal",
+      "TimeOfDay": "Tid på dygnet"
+    },
+    "repMode": {
+      "Together": "Alla tillsammans",
+      "Individually": "Individuellt"
+    }
+  },
+  "layoutViewer": {
+    "propertiesHeading": "Egenskaper",
+    "contextTable": "Kontexttabell",
+    "theme": "Tema",
+    "menuSet": "Menyuppsättning",
+    "menuSetDefault": "[Filstandard]",
+    "width": "Bredd",
+    "availableViews": "Tillgängliga vyer",
+    "defaultView": "Standardvy",
+    "viewForm": "Formulärvy",
+    "viewList": "Listvy",
+    "viewTable": "Tabellvy",
+    "baseTheme": "Bastema",
+    "inLayoutMenus": "I layoutmenyer",
+    "lastModified": "Senast ändrad",
+    "triggersHeading": "Skriptutlösare",
+    "noTriggers": "Inga skriptutlösare",
+    "yes": "Ja",
+    "no": "Nej",
+    "optAutoSave": "Spara ändringar automatiskt",
+    "optFieldFrames": "Fältramar vid aktiv post",
+    "optFrameCurrentOnly": "Rama in fält endast i aktuell post",
+    "optShowCurrentInList": "Postindikator i listvy",
+    "optQuickFind": "Snabbsökning"
   }
 }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { FMObject } from '../types';
-import { parsePluginFunctionName } from '../lib/objectName';
+import { parsePluginFunctionName, formatObjectDisplayName } from '../lib/objectName';
 
 interface ObjectHeaderProps {
   object: FMObject;
@@ -30,15 +30,17 @@ function displayObjectType(objectType: string, sourceTable?: string | null): str
  * action is rendered next to the tab navigation (see DetailView), not here.
  */
 export const ObjectHeader: React.FC<ObjectHeaderProps> = ({ object }) => {
-  const { t } = useTranslation(['common', 'detail']);
+  const { t } = useTranslation(['common', 'detail', 'types']);
   const [copied, setCopied] = useState(false);
 
   // PluginFunctions tragen einen redundanten Katalognamen (`MBS:<Sub>::<Sub>`);
-  // für die Anzeige lösen wir ihn in Funktionsname + Komponente auf.
+  // für die Anzeige lösen wir ihn in Funktionsname + Komponente auf. Themes werden
+  // (falls die interne `com.filemaker.theme.*`-ID durchschlägt) auf den Klarnamen
+  // aufgelöst — alle anderen Typen bleiben unverändert (formatObjectDisplayName).
   const isPluginFn = object.Object_Type === 'PluginFunction';
   const pluginParts = isPluginFn ? parsePluginFunctionName(object.Object_Name) : null;
   const titleText = pluginParts ? pluginParts.name
-    : (object.Object_Name || t('detail:objectHeader.noName'));
+    : (formatObjectDisplayName(object.Object_Type, object.Object_Name) || t('detail:objectHeader.noName'));
 
   const handleCopyUUID = async () => {
     try {
@@ -74,7 +76,12 @@ export const ObjectHeader: React.FC<ObjectHeaderProps> = ({ object }) => {
               <span className="detail-title-plugin-component"> · {pluginParts.component}</span>
             )}
           </h1>
-          <span className="object-type">{displayObjectType(object.Object_Type, object.Source_Table)}</span>
+          <span className="object-type">
+            {(() => {
+              const typeKey = displayObjectType(object.Object_Type, object.Source_Table);
+              return t(`types:objectTypes.${typeKey}`, { defaultValue: typeKey });
+            })()}
+          </span>
           {object.Object_Type === 'TableOccurrence' && object.File_Name && (
             <Link
               to={`/relationship-graph/${encodeURIComponent(object.File_Name)}?to=${encodeURIComponent(object.Object_UUID)}`}

@@ -1083,6 +1083,97 @@ WHERE d.Chunk_Type = 'PluginFunctionRef'
   AND f.AE_Calc_Hash IS NOT NULL
   AND TRUE;
 
+-- A.2.7 FieldRef in Validierungs-Calc (Validation_Calc_Hash) — Subrole 'validation'
+-- markiert die Quelle, damit Block 30 (Catalog) die Kante als validates_by_calc
+-- statt reads_field emittiert. Schließt die Where-used-Lücke für Felder, die NUR
+-- in einer Feldvalidierung („Überprüfung durch Berechnung") referenziert werden.
+INSERT INTO XMLCalcReferences
+SELECT
+    f.Field_UUID, 'Field', NULL, 'validation',
+    d.Calc_Hash, 'field',
+    regexp_extract(d.Chunk_Content, 'FieldReference[^>]*UUID="([^"]+)"', 1),
+    regexp_extract(d.Chunk_Content, 'FieldReference[^>]*name="([^"]+)"', 1),
+    d.File_Name,
+    NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*name="([^"]+)"', 1), ''),
+    NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*UUID="([^"]+)"', 1), ''),
+    NULL, NULL,
+    NULL
+FROM FieldsForTables f
+JOIN _ddr_chunks_by_hash d ON f.Validation_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
+WHERE d.Chunk_Type = 'FieldRef'
+  AND f.Validation_Calc_Hash IS NOT NULL
+  AND TRUE;
+
+-- A.2.8 CustomFunctionRef in Validierungs-Calc (Validation_Calc_Hash) — Subrole 'validation'
+INSERT INTO XMLCalcReferences
+SELECT
+    f.Field_UUID, 'Field', NULL, 'validation',
+    d.Calc_Hash, 'customfunction',
+    NULL,
+    regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
+    d.File_Name,
+    NULL, NULL,
+    NULL, NULL,
+    NULL
+FROM FieldsForTables f
+JOIN _ddr_chunks_by_hash d ON f.Validation_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
+WHERE d.Chunk_Type = 'CustomFunctionRef'
+  AND f.Validation_Calc_Hash IS NOT NULL
+  AND TRUE;
+
+-- A.2.9 PluginFunctionRef in Validierungs-Calc → PluginFunctionUsages
+-- (Where-used-Vollständigkeit; die Plugin-Kante bleibt calls_pluginfunction).
+INSERT INTO PluginFunctionUsages
+SELECT
+    f.Field_UUID, 'Field', NULL, 'validation',
+    regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
+    d.Calc_Hash,
+    d.File_Name,
+    d.Calc_UUID,
+    d.Chunk_Index
+FROM FieldsForTables f
+JOIN _ddr_chunks_by_hash d ON f.Validation_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
+WHERE d.Chunk_Type = 'PluginFunctionRef'
+  AND f.Validation_Calc_Hash IS NOT NULL
+  AND TRUE;
+
+-- A.2.10 FieldRef in der eigenen Fehlermeldungs-Berechnung (Validation_Message_Calc_Hash).
+-- <MessageCalc> ist Teil der Validierungs-Konfiguration → gleiche Subrole 'validation'
+-- (validates_by_calc); ein nur dort referenziertes Feld wäre sonst Where-used-unsichtbar.
+INSERT INTO XMLCalcReferences
+SELECT
+    f.Field_UUID, 'Field', NULL, 'validation',
+    d.Calc_Hash, 'field',
+    regexp_extract(d.Chunk_Content, 'FieldReference[^>]*UUID="([^"]+)"', 1),
+    regexp_extract(d.Chunk_Content, 'FieldReference[^>]*name="([^"]+)"', 1),
+    d.File_Name,
+    NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*name="([^"]+)"', 1), ''),
+    NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*UUID="([^"]+)"', 1), ''),
+    NULL, NULL,
+    NULL
+FROM FieldsForTables f
+JOIN _ddr_chunks_by_hash d ON f.Validation_Message_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
+WHERE d.Chunk_Type = 'FieldRef'
+  AND f.Validation_Message_Calc_Hash IS NOT NULL
+  AND TRUE;
+
+-- A.2.11 CustomFunctionRef in der Fehlermeldungs-Berechnung (Validation_Message_Calc_Hash)
+INSERT INTO XMLCalcReferences
+SELECT
+    f.Field_UUID, 'Field', NULL, 'validation',
+    d.Calc_Hash, 'customfunction',
+    NULL,
+    regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
+    d.File_Name,
+    NULL, NULL,
+    NULL, NULL,
+    NULL
+FROM FieldsForTables f
+JOIN _ddr_chunks_by_hash d ON f.Validation_Message_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
+WHERE d.Chunk_Type = 'CustomFunctionRef'
+  AND f.Validation_Message_Calc_Hash IS NOT NULL
+  AND TRUE;
+
 -- ============================================
 -- A.3 — Refs aus CustomFunctions (direkter DDR_Hash-Match)
 -- ============================================

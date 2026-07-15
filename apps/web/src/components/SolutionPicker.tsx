@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { fetchSolutions, activateSolution, type SolutionInfo } from '../api/solutionsApi';
-import { setSelectedSolution } from '../lib/solutionStore';
+import { fetchSolutions, type SolutionInfo } from '../api/solutionsApi';
+import { getSelectedSolution, setSelectedSolution } from '../lib/solutionStore';
 import './SolutionPicker.css';
 
 /**
- * Header-level solution picker (multi-solution phase 1). Hidden entirely when
- * only ONE solution exists — single-solution users see no new UI. Switching
- * calls POST /api/admin/solution/activate (global server default) and then
- * reloads the page: the same clean-slate path as after an import reload —
- * every view refetches against the newly active solution.
+ * Header-level solution picker. Hidden entirely when only ONE solution exists
+ * — single-solution users see no new UI.
+ *
+ * Stage M (multiuser): switching changes ONLY this browser's per-tab context
+ * (localStorage/URL param → X-Solution header) — never the server default.
+ * Other users at the same API are unaffected. Setting the SERVER default is a
+ * deliberate admin action in Settings → Solutions. The page reload is the
+ * clean-slate cache invalidation: every view refetches against the selection.
  */
 export function SolutionPicker() {
   const { t } = useTranslation('common');
@@ -26,25 +29,25 @@ export function SolutionPicker() {
 
   if (solutions.length <= 1) return null;
 
-  const active = solutions.find((s) => s.is_active);
+  const serverDefault = solutions.find((s) => s.is_active);
+  const current = getSelectedSolution() ?? serverDefault?.id ?? '';
 
-  const onChange = async (id: string) => {
-    if (!id || id === active?.id || switching) return;
+  const onChange = (id: string) => {
+    if (!id || id === current || switching) return;
     setSwitching(true);
-    try {
-      await activateSolution(id);
-      setSelectedSolution(id);
-      // Zentrale Cache-Invalidierung: voller Reload = frischer App-State
-      // gegen die neue Lösung (Query-Caches, Tree-State, Dashboards).
-      window.location.reload();
-    } catch (err) {
-      setSwitching(false);
-      console.error('Solution switch failed:', err);
-      alert(t('solutionPicker.switchError', {
-        defaultValue: 'Switching the solution failed: {{message}}',
-        message: err instanceof Error ? err.message : String(err),
-      }));
-    }
+    // Nur der Tab-Kontext wechselt (kein Server-Aufruf): Auswahl persistieren,
+    // dann voller Reload = frischer App-State gegen die gewählte Lösung
+    // (Query-Caches, Tree-State, Dashboards).
+    setSelectedSolution(id);
+    // Lösungs-Deep-Link-Parameter beim Wechsel entfernen: ein stehen
+    // gebliebener `solution_id` (XML-Import-Seite) oder `solution`
+    // (Tab-Kontext) würde beim Reload die frische Auswahl wieder überstimmen,
+    // sodass die Seite weiter die alte Lösung zeigt. Ohne solche Parameter
+    // ist das identisch zu einem einfachen Reload derselben URL.
+    const url = new URL(window.location.href);
+    url.searchParams.delete('solution_id');
+    url.searchParams.delete('solution');
+    window.location.replace(url.toString());
   };
 
   return (
@@ -52,14 +55,15 @@ export function SolutionPicker() {
       <span className="visually-hidden">{t('solutionPicker.label')}</span>
       <select
         className="solution-picker__select"
-        value={active?.id ?? ''}
+        value={current}
         disabled={switching}
         onChange={(e) => onChange(e.target.value)}
         title={t('solutionPicker.label') as string}
       >
         {solutions.map((s) => (
           <option key={s.id} value={s.id}>
-            {s.display_name || s.id}
+            {/* „•" markiert den Server-Default (sprachneutral; Details in Settings) */}
+            {(s.display_name || s.id) + (s.is_active ? ' •' : '')}
           </option>
         ))}
       </select>

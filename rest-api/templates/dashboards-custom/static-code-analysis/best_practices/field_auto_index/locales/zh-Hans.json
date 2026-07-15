@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "自动索引字段",
+    "description": "最佳实践规则 — 索引设置为“无”但仍启用“按需自动创建索引”的字段。首次查找或排序会悄然触发无法中断的服务器端索引构建，是一颗潜在的定时炸弹，并会波及存储空间、备份和导入速度。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "问题项",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "summary_kpi.props.items[2].label": "受影响表",
+    "findings_card.props.title": "自动索引字段",
+    "findings_table.props.searchPlaceholder": "搜索文件、表或字段…",
+    "findings_table.props.empty.message": "未找到自动索引字段。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "表",
+    "findings_table.props.columns[2].label": "字段",
+    "findings_table.props.columns[3].label": "类型"
+  }
+}

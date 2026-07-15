@@ -1,0 +1,171 @@
+/* Eigenschaften-Panel der Layout-Detailansicht — ergänzt den LayoutCanvas.
+ * Grid/Property-Liste kommt aus FieldViewer.css (.fm-field-props). */
+
+/* Panel sitzt zwischen Header (Toggle) und Canvas → Abgrenzung nach unten.
+ * container-type: inline-size → die 2-Spalten-Umschaltung misst die PANEL-Breite
+ * (nicht den Viewport), was hier das korrekte Bezugsmaß ist. */
+.fm-layout-props {
+  padding: 0.35rem 0.5rem 0.6rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--color-border, rgba(127, 127, 127, 0.25));
+  border-radius: 4px;
+  background: var(--color-bg-elevated, transparent);
+  container-type: inline-size;
+}
+
+/* Aufklapp-Toggle „▸ Eigenschaften" — ersetzt den früheren Zwischentitel.
+ * Optisch an .type-detail-heading angelehnt, aber als Button (klickbar). */
+.layout-props-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.layout-props-toggle:hover:not(:disabled) {
+  color: var(--color-text-primary);
+}
+
+.layout-props-toggle:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.layout-props-caret {
+  display: inline-block;
+  width: 1.1em;
+  font-size: 1.15em;
+  line-height: 1;
+  color: var(--color-text-muted);
+}
+
+/* Ansichten-Chips: verfügbare Ansicht = gefüllt, nicht verfügbare = ausgegraut,
+ * Standardansicht = akzentuierter Rahmen. */
+.fm-layout-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.fm-layout-view-chip {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+
+.fm-layout-view-chip.is-available {
+  background: var(--color-accent-soft, rgba(56, 132, 255, 0.16));
+  color: var(--color-text-primary);
+}
+
+.fm-layout-view-chip.is-disabled {
+  background: var(--color-surface-sunken, rgba(127, 127, 127, 0.12));
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.fm-layout-view-chip.is-default {
+  border-color: var(--color-accent, #3884ff);
+  font-weight: 600;
+}
+
+/* 2-Spalten-Layout: links Optionen, rechts Trigger. Default (schmal) = untereinander;
+ * ab genug Panel-Breite (Platz für Etiketten+Werte LINKS plus Trigger RECHTS) neben-
+ * einander. Der frühere `auto-fit minmax(240px,…)` schaltete zu spät um → die
+ * max-content-Etiketten der linken Spalte liefen über die rechte Spalte (Overlap).
+ * Linke Spalte etwas breiter (1.4fr), da sie Etiketten trägt; `minmax(0,…)` verhindert
+ * jegliches Überlaufen. */
+.fm-layout-cols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem 1.4rem;
+  align-items: start;
+}
+@container (min-width: 34rem) {
+  .fm-layout-cols {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  }
+}
+
+.fm-layout-col-left {
+  min-width: 0;
+}
+
+.fm-layout-col-right {
+  min-width: 0;
+}
+
+/* Sicherheitsnetz gegen Overlap: die Options-Etiketten (dt) dürfen umbrechen, statt
+ * als `max-content` die Track-Breite zu sprengen und in die rechte Spalte zu laufen. */
+.fm-layout-props .fm-field-props {
+  grid-template-columns: minmax(0, max-content) 1fr;
+}
+
+.fm-layout-triggers-heading {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.fm-layout-no-triggers {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.fm-layout-triggers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.fm-layout-trigger {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  flex-wrap: wrap;
+}
+
+.fm-layout-trigger-event {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+/* Trigger, zu dem per ?ref=trig_… navigiert wurde — hervorgehoben: Akzent-Fläche
+   PLUS roter Rahmen, passend zum roten Selektions-/Match-Ring im LayoutCanvas
+   (layoutObjectTheme selectionRing: #dc2626 hell / #ff5a5a dunkel). */
+.fm-layout-trigger.is-highlighted {
+  background: var(--color-accent-soft, rgba(56, 132, 255, 0.16));
+  border: 1.5px solid #dc2626;
+  border-radius: 4px;
+  margin: 0 -0.3rem;
+  padding: 0.1rem 0.3rem;
+}
+@media (prefers-color-scheme: dark) {
+  .fm-layout-trigger.is-highlighted { border-color: #ff5a5a; }
+}
+:root[data-theme='light'] .fm-layout-trigger.is-highlighted { border-color: #dc2626; }
+:root[data-theme='dark'] .fm-layout-trigger.is-highlighted { border-color: #ff5a5a; }
+
+.fm-layout-trigger-arrow {
+  color: var(--color-text-muted);
+}
+
+.fm-layout-muted {
+  color: var(--color-text-muted);
+}

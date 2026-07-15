@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "自動インデックス作成フィールド",
+    "description": "ベストプラクティスルール — インデックス作成が「なし」でありながら「必要に応じてインデックスを自動作成」が有効なフィールド。最初の検索またはソートで、中断できないサーバー側のインデックス構築が知らないうちに開始される潜在的な時限爆弾であり、ストレージ・バックアップ・インポート速度に波及します。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル",
+    "summary_kpi.props.items[2].label": "対象テーブル",
+    "findings_card.props.title": "自動インデックス作成フィールド",
+    "findings_table.props.searchPlaceholder": "ファイル・テーブル・フィールドを検索…",
+    "findings_table.props.empty.message": "自動インデックス作成フィールドは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "テーブル",
+    "findings_table.props.columns[2].label": "フィールド",
+    "findings_table.props.columns[3].label": "タイプ"
+  }
+}

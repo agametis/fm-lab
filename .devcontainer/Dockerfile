@@ -194,10 +194,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Egress firewall script + a narrowly-scoped NOPASSWD sudoers entry (alongside the
 # init-node-modules entry inherited from base). The script is opt-in: it no-ops
 # gracefully when NET_ADMIN is absent, so it never blocks container start.
-COPY init-firewall.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/init-firewall.sh && \
+COPY init-firewall.sh refresh-doc-domains.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/init-firewall.sh /usr/local/bin/refresh-doc-domains.sh && \
   echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/node-firewall && \
-  chmod 0440 /etc/sudoers.d/node-firewall
+  echo "node ALL=(root) NOPASSWD: /usr/local/bin/refresh-doc-domains.sh" > /etc/sudoers.d/node-refresh-doc-domains && \
+  chmod 0440 /etc/sudoers.d/node-firewall /etc/sudoers.d/node-refresh-doc-domains
 
 # Auth preflight — logs the Claude Code credential state (env / saved login) + the exact
 # next command at container start, so the agent decision + auth are a guided step rather

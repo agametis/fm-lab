@@ -67,6 +67,34 @@ parse_install_modes() {
 }
 
 # ---------------------------------------------------------------------------
+# Firewall allowlist refresh (container egress firewall only)
+# ---------------------------------------------------------------------------
+#
+# The devcontainer egress firewall (.devcontainer/init-firewall.sh + the public
+# variant) pins the IPs of allowlisted domains into the `allowed-domains` ipset
+# at container start. CDN-fronted doc sources — help.claris.com (Akamai),
+# duckdb.org (Cloudflare) — rotate their IPs, so a doc install running much later
+# can be blocked even though the domain is allowlisted.
+#
+# Doc installers that fetch from a CDN-fronted host call this right before their
+# first network op. It shells out to the privileged helper
+# /usr/local/bin/refresh-doc-domains.sh (baked into both devcontainer images with
+# a narrow NOPASSWD sudoers entry), which re-resolves a HARDCODED doc-domain list
+# and adds the current IPs to the ipset.
+#
+# Strictly best-effort and fully self-guarding:
+#   * No helper installed (bare-metal macOS, or a container without the firewall)
+#     → silent no-op. Nothing to run, nothing to explain to the user.
+#   * The helper itself no-ops when the firewall isn't applied.
+#   * Never fails the caller — always returns 0.
+refresh_firewall_allowlist() {
+    local helper=/usr/local/bin/refresh-doc-domains.sh
+    [ -x "$helper" ] || return 0
+    sudo -n "$helper" >/dev/null 2>&1 || true
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # JSON-safe encoding (uses python3 — required by the wider toolchain anyway)
 # ---------------------------------------------------------------------------
 

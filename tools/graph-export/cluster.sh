@@ -28,13 +28,12 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # Multi-solution: writers operate on the REAL bundle path, never through the
-# db/ compat symlink. FMLAB_SOLUTION overrides; default = active solution from
-# the pointer file; unmigrated workspaces fall back to the flat db/ path.
-SOLUTION="${FMLAB_SOLUTION:-}"
-if [ -z "$SOLUTION" ] && [ -f "$PROJECT_ROOT/.fmlab/active_solution.json" ]; then
-  SOLUTION=$(sed -n 's/.*"active"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$PROJECT_ROOT/.fmlab/active_solution.json" | head -n1)
-fi
-[ -z "$SOLUTION" ] && SOLUTION="default"
+# db/ compat symlink. Shared cascade (tools/lib/resolve_solution.sh):
+# FMLAB_SOLUTION env / FMLAB_CONTEXT file → pointer → 'default';
+# unmigrated workspaces fall back to the flat db/ path.
+. "$PROJECT_ROOT/tools/lib/resolve_solution.sh"
+fmlab_resolve_solution || exit 1
+SOLUTION="$FMLAB_RESOLVED_SOLUTION"
 if [ -f "$PROJECT_ROOT/solutions/$SOLUTION/db/fm_catalog.duckdb" ]; then
   _DEFAULT_DB="$PROJECT_ROOT/solutions/$SOLUTION/db/fm_catalog.duckdb"
 else

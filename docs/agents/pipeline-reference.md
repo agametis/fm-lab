@@ -104,7 +104,13 @@ conflicts between `convert-xml`, the REST API and Claude Code analyses:
 
 `db/fm_catalog.duckdb` is a symlink onto the **active** solution's master
 (pointer file `.fmlab/active_solution.json`; switch via `tools/solution.sh use <id>`).
-Readers use the symlink; writers always resolve the real bundle path.
+Readers use the symlink; writers always resolve the real bundle path. All CLI
+tools (convert, cluster, quality test, `solution.sh`) share one context cascade
+(`tools/lib/resolve_solution.sh`): `--solution` flag → session pin
+(`FMLAB_SOLUTION` env / `FMLAB_CONTEXT` → `.fmlab/contexts/<name>.json`) →
+pointer → `default`. A session pin overlays the pointer for one shell/agent
+without touching it (`tools/solution.sh current` shows the resolved id + source);
+with a pin, readers must use the literal bundle path instead of the symlink.
 
 **Sync mechanism:** after each successful `convert-xml --batch` (or single-file import in
 production mode), the shell script copies the master DB atomically to

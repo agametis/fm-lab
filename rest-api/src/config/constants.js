@@ -144,6 +144,10 @@ const ERROR_CODES = {
   TEMPLATE_NOT_FOUND: { code: "TEMPLATE_NOT_FOUND", status: 404 },
   DATABASE_ERROR: { code: "DATABASE_ERROR", status: 500 },
   TEMPLATE_ERROR: { code: "TEMPLATE_ERROR", status: 500 },
+  // Lösung mit älterem Katalog-Schema importiert als die App erwartet — die
+  // Query referenziert Spalten/Tabellen, die es in dieser DB (noch) nicht gibt.
+  // 409 (Conflict): behebbarer Zustands-Mismatch, Aktion = XML neu konvertieren.
+  SCHEMA_DRIFT: { code: "SCHEMA_DRIFT", status: 409 },
   FILE_NOT_FOUND: { code: "FILE_NOT_FOUND", status: 404 },
   IMPORT_ERROR: { code: "IMPORT_ERROR", status: 500 },
   INTERNAL_ERROR: { code: "INTERNAL_ERROR", status: 500 },
@@ -250,6 +254,7 @@ const DETAIL_TEMPLATE_MAP = {
   PluginComponent: "object_details_plugincomponent",
   CustomMenu: "object_details_custommenu",
   CustomMenuItem: "object_details_custommenuitem",
+  Theme: "object_details_theme",
 };
 
 /**

@@ -32,7 +32,7 @@ export const RefOriginPill: React.FC<RefOriginPillProps> = ({
   onDismiss,
   liveMatchCount,
 }) => {
-  const { t } = useTranslation(['detail']);
+  const { t } = useTranslation(['detail', 'types']);
   if (state.status === 'idle') return null;
 
   if (state.status === 'loading') {
@@ -100,7 +100,7 @@ export const RefOriginPill: React.FC<RefOriginPillProps> = ({
   return (
     <div className="ref-pill ref-pill--resolved" role="status" aria-live="polite">
       <span className="ref-pill-label">
-        {t('detail:refPill.label')} <span className="ref-pill-type">{o.type}</span>
+        {t('detail:refPill.label')} <span className="ref-pill-type">{t(`types:objectTypes.${o.type}`, { defaultValue: o.type })}</span>
         <span className="ref-pill-sep"> · </span>
         <span className="ref-pill-name" title={o.name}>{formatObjectDisplayName(o.type, o.name)}</span>
         {o.file && (

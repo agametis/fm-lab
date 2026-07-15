@@ -4,9 +4,25 @@ const path = require('path');
 const environment = require('./environment');
 const solutions = require('./solutions');
 
-let instance   = null;
-let connection = null;
-let reloading  = false;
+/**
+ * Ausbaustufe M: LRU-Connection-Pool statt Singleton.
+ *
+ * Eine READ_ONLY-DuckDB-Instanz je Lösung, Schlüssel `ctx.solution`
+ * (Deckel FMLAB_DB_POOL_MAX, Default 3; LRU-Eviction schließt Instanz +
+ * Sidecar sauber). Die ctx-ersten Signaturen aus dem Phase-1.5-Sweep bleiben
+ * unverändert — nur das Innere dieses Moduls routet jetzt wirklich pro Lösung.
+ *
+ * RAM ist die harte Grenze: max_memory gilt PRO Instanz → poolMax × maxMemory
+ * (+ RW-Sidecars) muss in den Host-RAM passen.
+ *
+ * Pool-Slot: { solutionId, promise, entry, pending, lastUsed }.
+ * `promise` dedupliziert parallele Erst-Zugriffe (in-flight-Factory);
+ * `pending` schützt Slots mit laufenden Queries vor der Eviction.
+ */
+const pool = new Map(); // solutionId → slot
+let reloading = false;
+// Die Referenz-DB ist lösungsUNabhängig (ein Attach-Ergebnis für alle Slots):
+// entweder die Datei existiert oder nicht. Der letzte Attach-Versuch zählt.
 let referenceAttached = false;
 
 /**
@@ -22,24 +38,18 @@ async function ensurePlaceholderDb(dbPath) {
   tmp.closeSync();
 }
 
-async function initialize() {
-  if (connection) {
-    return connection;
-  }
-
-  // Pfadauflösung statt Festpfad — DUCKDB_PATH-Override → aktive Lösung
-  // (rest-api/db/solutions/<id>/) → Legacy-Fallback. Zentral in solutions.js.
-  const dbPath = solutions.resolveDbPath();
+/** Pool-Factory: eine READ_ONLY-Instanz für genau eine Lösung aufbauen. */
+async function createEntry(solutionId) {
+  const dbPath = solutions.resolveDbPath(solutionId);
   await ensurePlaceholderDb(dbPath);
-  console.log(`Connecting to DuckDB at: ${dbPath}`);
+  console.log(`Connecting to DuckDB at: ${dbPath} (solution: ${solutionId})`);
 
-  instance = await DuckDBInstance.create(dbPath, {
+  const instance = await DuckDBInstance.create(dbPath, {
     access_mode: 'READ_ONLY',
     max_memory: environment.duckdb.maxMemory,
     threads: String(environment.duckdb.threads),
   });
-
-  connection = await instance.connect();
+  const connection = await instance.connect();
 
   // Scan-heavy analytische Queries (z.B. /api/graph/subgraph: Recursive CTE über
   // ~800k ObjectLinks) sprengen sonst unter dem konservativen max_memory die
@@ -48,8 +58,7 @@ async function initialize() {
   // explizit via ORDER BY. Abschalten senkt den Speicher-Peak deutlich (genau die
   // vom DuckDB-OOM-Hinweis empfohlene Maßnahme). Gilt für die ganze Verbindung.
   try {
-    const pragma = await connection.prepare('SET preserve_insertion_order = false');
-    await pragma.run();
+    await (await connection.prepare('SET preserve_insertion_order = false')).run();
     console.log('  - preserve_insertion_order: false (memory tuning)');
   } catch (err) {
     console.warn(`  - preserve_insertion_order tuning skipped: ${err.message}`);
@@ -57,8 +66,8 @@ async function initialize() {
 
   // DuckDB-Spill auf das DEDIZIERTE Volume lenken statt neben die DB. DuckDB
   // liest DUCKDB_TEMP_DIR NICHT nativ → ohne dieses SET landet großer Spill in
-  // rest-api/db/fm_catalog.duckdb.tmp, also auf dem macOS-Bind-Mount: das flutet
-  // die File-Sharing-Schicht (Docker-„injecting event blocked"-Crash-Risiko) und
+  // rest-api/db/…tmp, also auf dem macOS-Bind-Mount: das flutet die
+  // File-Sharing-Schicht (Docker-„injecting event blocked"-Crash-Risiko) und
   // umgeht das eigens angelegte /duckdb_spill-Volume. Guarded: nur wenn die Env
   // gesetzt UND das Verzeichnis vorhanden ist (Nicht-Container → DuckDB-Default).
   const tempDir = process.env.DUCKDB_TEMP_DIR;
@@ -76,14 +85,83 @@ async function initialize() {
     }
   }
 
-  console.log('DuckDB connection established successfully (READ_ONLY)');
-  console.log(`  - Max Memory: ${environment.duckdb.maxMemory}`);
-  console.log(`  - Threads: ${environment.duckdb.threads}`);
+  console.log(`DuckDB connection established (READ_ONLY, solution: ${solutionId})`);
 
-  await ensureCoreStubs();
-  await attachReferenceDb();
+  const entry = { solutionId, dbPath, instance, connection };
+  await ensureCoreStubs(entry);
+  await attachReferenceDb(entry);
+  return entry;
+}
 
-  return connection;
+/**
+ * Slot beschaffen (lazy, in-flight-dedupliziert) und auf Bereitschaft warten.
+ * Nach dem Anlegen eines NEUEN Slots wird der LRU-Überhang evictet.
+ */
+async function acquireSlot(solutionId) {
+  let slot = pool.get(solutionId);
+  if (!slot) {
+    slot = { solutionId, promise: null, entry: null, pending: 0, lastUsed: Date.now() };
+    slot.promise = createEntry(solutionId)
+      .then((entry) => {
+        slot.entry = entry;
+        return entry;
+      })
+      .catch((err) => {
+        // Fehlgeschlagene Factory nicht im Pool lassen — nächster Zugriff
+        // versucht es frisch (z.B. nachdem die Kopie synchronisiert wurde).
+        if (pool.get(solutionId) === slot) pool.delete(solutionId);
+        throw err;
+      });
+    pool.set(solutionId, slot);
+    evictOverflow(solutionId);
+  }
+  slot.lastUsed = Date.now();
+  await slot.promise;
+  return slot;
+}
+
+/** Slot-Ressourcen schließen (best-effort; wartet eine laufende Factory ab). */
+async function closeSlot(slot) {
+  let entry = null;
+  try {
+    entry = await slot.promise;
+  } catch { /* Factory war schon gescheitert — nichts zu schließen */ }
+  if (!entry) return;
+  try { entry.connection.disconnectSync(); } catch { /* schon zu */ }
+  try { entry.instance.closeSync(); } catch { /* schon zu */ }
+  console.log(`Database connection closed (solution: ${slot.solutionId})`);
+}
+
+/**
+ * LRU-Eviction über den Deckel hinaus. Slots mit laufenden Queries
+ * (pending > 0) und der gerade angeforderte Slot sind tabu; sind alle tabu,
+ * bleibt der Pool vorübergehend über dem Deckel (nächster acquire räumt auf).
+ * Der Annotations-Sidecar der Lösung wird mitgeschlossen (gleiche Lebensdauer).
+ */
+function evictOverflow(keepId) {
+  while (pool.size > environment.duckdb.poolMax) {
+    let victimId = null;
+    let victim = null;
+    for (const [id, slot] of pool) {
+      if (id === keepId) continue;
+      if (slot.pending > 0) continue;
+      if (!victim || slot.lastUsed < victim.lastUsed) { victimId = id; victim = slot; }
+    }
+    if (!victim) {
+      console.warn(`[db] pool over capacity (${pool.size} > ${environment.duckdb.poolMax}) but all entries busy — eviction deferred`);
+      return;
+    }
+    pool.delete(victimId);
+    console.log(`[db] pool evict (LRU): ${victimId}`);
+    closeSlot(victim); // async, nicht awaited — Queries laufen dort keine mehr
+    require('./annotations-db').closeSolution(victimId);
+  }
+}
+
+/** Boot-Pfad: Server-Default-Lösung öffnen (wie bisher initialize()). */
+async function initialize() {
+  const slot = await acquireSlot(solutions.getActiveSolutionId());
+  return slot.entry.connection;
 }
 
 /**
@@ -109,7 +187,7 @@ async function initialize() {
  * Datei). Eine TEMP-Tabelle gleichen Namens wird von unqualifizierten Referenzen aufgelöst.
  * Die Stub-Spalten spiegeln das echte Schema, damit Queries, die einzelne Spalten
  * selektieren, nicht an einer fehlenden Spalte scheitern. Idempotent + reload-fest: läuft
- * nach jedem initialize() auf der frischen Verbindung; sobald die echte (konvertierte/
+ * in der Pool-Factory auf jeder frischen Verbindung; sobald die echte (konvertierte/
  * geclusterte) Tabelle existiert, entfällt der Stub.
  */
 const CORE_STUB_DDL = {
@@ -140,19 +218,23 @@ const CORE_STUB_DDL = {
    )`,
 };
 
-async function ensureCoreStubs() {
+// Läuft INNERHALB der Pool-Factory → direkt auf der Entry-Verbindung
+// (kein executeQuery: das würde acquireSlot re-entrant aufrufen).
+async function ensureCoreStubs(entry) {
   try {
     const names = Object.keys(CORE_STUB_DDL);
     const inList = names.map((n) => `'${n}'`).join(', ');
-    const result = await executeQuery(
-      solutions.serverDefaultContext(),
+    const stmt = await entry.connection.prepare(
       `SELECT table_name FROM information_schema.tables
         WHERE table_name IN (${inList})`
     );
-    const present = new Set(result.rows.map((r) => r.table_name));
+    const result = await stmt.run();
+    const rows = await result.getRowObjectsJS();
+    try { stmt.destroySync(); } catch { /* freigegeben */ }
+    const present = new Set(rows.map((r) => r.table_name));
     for (const [name, ddl] of Object.entries(CORE_STUB_DDL)) {
       if (present.has(name)) continue;
-      await (await connection.prepare(ddl)).run();
+      await (await entry.connection.prepare(ddl)).run();
       console.log(`  - core stub created (TEMP, empty): ${name} — not present yet`);
     }
   } catch (err) {
@@ -161,17 +243,17 @@ async function ensureCoreStubs() {
   }
 }
 
-async function attachReferenceDb() {
-  referenceAttached = false;
+async function attachReferenceDb(entry) {
   const refPath = path.resolve(__dirname, '../../', environment.reference.duckdbPath);
   if (!fs.existsSync(refPath)) {
+    referenceAttached = false;
     console.warn(`Reference-DB not found at ${refPath} — /api/reference endpoints will return 503.`);
     return false;
   }
   // ATTACH erlaubt READ_ONLY-Modus selbst auf einer READ_ONLY-Hauptverbindung
   // (getestet mit DuckDB 1.5.x).
   const escaped = refPath.replace(/'/g, "''");
-  const stmt = await connection.prepare(`ATTACH '${escaped}' AS ref (READ_ONLY)`);
+  const stmt = await entry.connection.prepare(`ATTACH '${escaped}' AS ref (READ_ONLY)`);
   await stmt.run();
   referenceAttached = true;
   console.log(`Reference-DB attached as 'ref' from: ${refPath}`);
@@ -182,23 +264,45 @@ function isReferenceAttached() {
   return referenceAttached;
 }
 
-async function reload() {
+/** Pool-Eintrag einer Lösung schließen und entfernen (No-op, wenn keiner existiert). */
+async function evictSolution(solutionId) {
+  const slot = pool.get(solutionId);
+  if (!slot) return false;
+  pool.delete(solutionId);
+  await closeSlot(slot);
+  return true;
+}
+
+/**
+ * Gezielter Reload: den Pool-Eintrag GENAU EINER Lösung invalidieren (Default:
+ * Server-Default) — andere Lösungen/User arbeiten ungestört weiter. Der
+ * Annotations-Sidecar der Lösung wird mitgeschlossen. Frisch geöffnet wird nur,
+ * wenn vorher ein Eintrag existierte oder es der Server-Default ist — für eine
+ * nie angefragte Lösung genügt die Invalidierung (Kopie liegt frisch bereit).
+ */
+async function reload(solutionId) {
   if (reloading) {
     throw new Error('Reload already in progress');
   }
   reloading = true;
   try {
-    await close();
-    await initialize();
+    const id = solutionId || solutions.getActiveSolutionId();
+    const hadEntry = pool.has(id);
+    await evictSolution(id);
+    await require('./annotations-db').closeSolution(id);
 
-    const result = await executeQuery(solutions.serverDefaultContext(), 'SELECT COUNT(*) AS c FROM duckdb_tables()');
+    if (!hadEntry && id !== solutions.getActiveSolutionId()) {
+      return { status: 'invalidated', solution: id, tables: null, path: solutions.resolveDbPath(id) };
+    }
+
+    const slot = await acquireSlot(id);
+    const result = await executeQuery({ solution: id, requested: null }, 'SELECT COUNT(*) AS c FROM duckdb_tables()');
     const tableCount = result.rows[0]?.c;
-    const dbPath = solutions.resolveDbPath();
-
     return {
       status: 'reloaded',
+      solution: id,
       tables: typeof tableCount === 'bigint' ? Number(tableCount) : tableCount,
-      path: dbPath,
+      path: slot.entry.dbPath,
     };
   } finally {
     reloading = false;
@@ -206,15 +310,10 @@ async function reload() {
 }
 
 // ── Request-Kontext-Kontrakt ────────────────────────────────────────────────
-// Phase 1.5: ctx wird funktional IGNORIERT (Singleton bleibt) — aber jede
-// Aufrufstelle deklariert ihn, damit Ausbaustufe M nur noch das Innere dieses
-// Moduls tauscht (Singleton → LRU-Pool, Schlüssel ctx.solution). Zwei Guards:
-//   1. Legacy-Form (sql-first / argloses getConnection) → einmalige WARN je
-//      Aufrufstelle, dann Weiterlauf mit Server-Default.
-//   2. Fremder Kontext (ctx.solution ≠ Server-Default) → WARN je Lösung —
-//      früher Drift-Detektor statt stiller Falschauflösung.
+// Ausbaustufe M: ctx.solution IST der Pool-Schlüssel. Die Legacy-Form
+// (sql-first / argloses getConnection) läuft mit Server-Default weiter,
+// warnt aber einmalig je Aufrufstelle.
 const warnedLegacySites = new Set();
-const warnedForeignSolutions = new Set();
 
 function callerSite() {
   const stack = String(new Error().stack || '').split('\n');
@@ -229,25 +328,27 @@ function warnLegacyOnce(fn) {
   console.warn(`[db] DEPRECATED contextless ${fn}() call — pass the request context (req.solutionContext / solutions.serverDefaultContext()). At: ${site}`);
 }
 
-function guardContext(ctx, fn) {
+function normalizeContext(ctx, fn) {
   if (!ctx || typeof ctx.solution !== 'string') {
     warnLegacyOnce(fn);
     return solutions.serverDefaultContext();
   }
-  const active = solutions.getActiveSolutionId();
-  if (ctx.solution !== active && !warnedForeignSolutions.has(ctx.solution)) {
-    warnedForeignSolutions.add(ctx.solution);
-    console.warn(`[db] context targets solution '${ctx.solution}' but this singleton serves '${active}' — per-solution routing needs the stage-M pool`);
-  }
   return ctx;
 }
 
+/**
+ * Synchroner Verbindungszugriff (Kompatibilität) — liefert die Verbindung der
+ * Kontext-Lösung, sofern ihr Pool-Eintrag bereit ist. Neuer Code nutzt
+ * executeQuery(); dieser Getter kann keinen Eintrag lazy öffnen.
+ */
 function getConnection(ctx) {
-  guardContext(ctx, 'getConnection');
-  if (!connection) {
-    throw new Error('Database not initialized. Call initialize() first.');
+  const { solution } = normalizeContext(ctx, 'getConnection');
+  const slot = pool.get(solution);
+  if (!slot || !slot.entry) {
+    throw new Error(`Database not initialized for solution '${solution}'. Call initialize() first.`);
   }
-  return connection;
+  slot.lastUsed = Date.now();
+  return slot.entry.connection;
 }
 
 async function executeQuery(ctx, sql, params = []) {
@@ -257,16 +358,15 @@ async function executeQuery(ctx, sql, params = []) {
     sql = ctx;
     ctx = null;
   }
-  guardContext(ctx, 'executeQuery');
-  if (!connection) {
-    await initialize();
-  }
+  const { solution } = normalizeContext(ctx, 'executeQuery');
+  const slot = await acquireSlot(solution);
 
   const startTime = Date.now();
+  slot.pending += 1;
 
   let stmt = null;
   try {
-    stmt = await connection.prepare(sql);
+    stmt = await slot.entry.connection.prepare(sql);
     if (params.length > 0) {
       stmt.bind(params);
     }
@@ -284,8 +384,15 @@ async function executeQuery(ctx, sql, params = []) {
     console.error('Query execution failed:', err.message);
     console.error('SQL:', sql);
     console.error('Params:', params);
-    throw err;
+    // Schema-Drift (Lösung mit älterem Katalog-Schema importiert als die App
+    // erwartet) zu einem sprechenden SCHEMA_DRIFT-Fehler veredeln — zentral hier,
+    // damit JEDES Template/Dashboard/Report profitiert. Nur bei nachgewiesenem
+    // Drift; echte Template-Bugs bleiben unverändert (siehe utils/schema-drift).
+    const drift = require('../utils/schema-drift').classifySchemaDrift({ solution }, err);
+    throw drift || err;
   } finally {
+    slot.pending -= 1;
+    slot.lastUsed = Date.now();
     // Prepared Statement explizit freigeben. @duckdb/node-api hält die native
     // DuckDB-Ressource sonst bis zum GC — unter dem konservativen max_memory
     // akkumulieren scan-schwere Queries (z.B. /api/graph/subgraph) sonst bis
@@ -297,33 +404,22 @@ async function executeQuery(ctx, sql, params = []) {
   }
 }
 
+/** Shutdown: alle Pool-Einträge schließen. */
 async function close() {
-  if (!instance) {
-    return;
+  const slots = [...pool.values()];
+  pool.clear();
+  for (const slot of slots) {
+    await closeSlot(slot);
   }
-
-  try {
-    if (connection) {
-      connection.disconnectSync();
-    }
-    instance.closeSync();
-    console.log('Database connection closed');
-  } catch (err) {
-    console.error('Error closing database:', err);
-    throw err;
-  } finally {
-    instance   = null;
-    connection = null;
-    referenceAttached = false;
-  }
+  referenceAttached = false;
 }
 
-async function getDatabaseStats() {
+async function getDatabaseStats(ctx) {
   const stats = {};
+  const { solution } = normalizeContext(ctx || solutions.serverDefaultContext(), 'getDatabaseStats');
 
   try {
-    const fs = require('fs');
-    const dbPath = solutions.resolveDbPath();
+    const dbPath = solutions.resolveDbPath(solution);
 
     if (fs.existsSync(dbPath)) {
       const fileStats = fs.statSync(dbPath);
@@ -332,15 +428,16 @@ async function getDatabaseStats() {
       stats.size_mb = 0;
     }
 
-    const tableResult = await executeQuery(solutions.serverDefaultContext(), `
+    const tableResult = await executeQuery({ solution, requested: null }, `
       SELECT COUNT(*) as table_count
       FROM duckdb_tables()
     `);
     const tableCount = tableResult.rows[0]?.table_count || 0;
     stats.table_count = typeof tableCount === 'bigint' ? Number(tableCount) : tableCount;
 
-    stats.database_path = solutions.resolveDbPath();
-    stats.connected = !!connection;
+    stats.solution = solution;
+    stats.database_path = dbPath;
+    stats.connected = !!(pool.get(solution) && pool.get(solution).entry);
     stats.max_memory = environment.duckdb.maxMemory;
     stats.threads = environment.duckdb.threads;
   } catch (error) {
@@ -359,11 +456,13 @@ async function getDatabaseStats() {
  * Achtung: das ist eine ECHTE Extra-Query auf derselben Verbindung — sparsam
  * einsetzen (nur vor/nach einer instrumentierten Query, nicht pro Zeile).
  */
-async function probeMemory() {
-  if (!connection) return { error: 'no-connection' };
+async function probeMemory(ctx) {
+  const { solution } = normalizeContext(ctx || solutions.serverDefaultContext(), 'probeMemory');
+  const slot = pool.get(solution);
+  if (!slot || !slot.entry) return { error: 'no-connection' };
   try {
     const { rows } = await executeQuery(
-      solutions.serverDefaultContext(),
+      { solution, requested: null },
       `SELECT tag, memory_usage_bytes AS bytes
          FROM duckdb_memory()
         WHERE memory_usage_bytes > 0
@@ -378,6 +477,21 @@ async function probeMemory() {
   }
 }
 
+/** Diagnose (M5): aktuelle Pool-Belegung — für /api/admin/pool und Logs. */
+function poolStatus() {
+  return {
+    max: environment.duckdb.poolMax,
+    size: pool.size,
+    entries: [...pool.values()].map((s) => ({
+      solution: s.solutionId,
+      ready: !!s.entry,
+      pending: s.pending,
+      last_used: new Date(s.lastUsed).toISOString(),
+      path: s.entry ? s.entry.dbPath : null,
+    })),
+  };
+}
+
 module.exports = {
   initialize,
   getConnection,
@@ -385,6 +499,8 @@ module.exports = {
   probeMemory,
   close,
   reload,
+  evictSolution,
+  poolStatus,
   getDatabaseStats,
   isReferenceAttached,
 };

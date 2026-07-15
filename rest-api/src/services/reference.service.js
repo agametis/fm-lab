@@ -33,6 +33,7 @@ function clearCaches() {
   metaCache.clear();
   stepMetaByLang.clear();
   refTableExistsCache.clear();
+  refColumnExistsCache.clear();
 }
 
 function isStepLang(lang) {
@@ -120,6 +121,53 @@ async function refTableExists(ctx, name) {
 }
 
 /**
+ * Prüft, ob eine Spalte im attachten `ref`-Katalog existiert — gleiche
+ * Absicherung wie refTableExists, für spaltenweise Schema-Erweiterungen
+ * (z. B. script_steps.xml_name seit Referenz 1.10.0).
+ */
+const refColumnExistsCache = new Map();
+async function refColumnExists(ctx, table, column) {
+  const key = `${table}.${column}`;
+  if (refColumnExistsCache.has(key)) return refColumnExistsCache.get(key);
+  const r = await db.executeQuery(ctx,
+    `SELECT 1 FROM information_schema.columns
+     WHERE table_catalog = 'ref' AND table_name = ? AND column_name = ? LIMIT 1`,
+    [String(table), String(column)]
+  );
+  const exists = r.rows.length > 0;
+  refColumnExistsCache.set(key, exists);
+  return exists;
+}
+
+/**
+ * Namensvertrag (Referenz ≥ 1.10.0): Aliase pro Step aus dem Reverse-Lookup —
+ * `xml_emission` (Namen, wie FileMaker sie im XML tatsächlich emittiert,
+ * inkl. beobachteter Sprachvarianten) und `legacy` (Alt-Namen von
+ * Rename-Fällen, z. B. Get Directory → 181). Sprachneutral, ein Query,
+ * gecacht; ältere Referenzen ohne diese match_sources liefern leere Listen.
+ * Lookup-Zeilen auf Legacy-IDs (außerhalb script_steps) bleiben im Map-Bau
+ * harmlos — kein Step der Liste trägt ihre step_id.
+ */
+async function getStepAliasMap(ctx) {
+  const cacheKey = 'steps-alias-map';
+  if (metaCache.has(cacheKey)) return metaCache.get(cacheKey);
+  const r = await db.executeQuery(ctx, `
+    SELECT step_id, lookup_name, match_source
+    FROM ref.script_step_name_lookup
+    WHERE match_source IN ('xml_emission', 'legacy')
+    ORDER BY match_source, lookup_name
+  `);
+  const map = new Map();
+  for (const row of r.rows) {
+    const id = Number(row.step_id);
+    if (!map.has(id)) map.set(id, []);
+    map.get(id).push({ name: row.lookup_name, source: row.match_source });
+  }
+  metaCache.set(cacheKey, map);
+  return map;
+}
+
+/**
  * ============================================================================
  * Kategorien
  * ============================================================================
@@ -193,16 +241,23 @@ async function listSteps(ctx, lang) {
     ? `EXISTS (SELECT 1 FROM ref.step_xml_map m WHERE m.step_id = s.step_id)`
     : `FALSE`;
 
+  // xmlName: EN-Emissions-Name (Referenz ≥ 1.10.0); NULL = keine Evidenz.
+  const xmlNameSelect = (await refColumnExists(ctx, 'script_steps', 'xml_name'))
+    ? `s.xml_name` : `NULL AS xml_name`;
+
   const r = await db.executeQuery(ctx, `
     SELECT s.step_id, s.url_slug, s.canonical_name, s.category_id,
            s.origin_version,
            ${grammarSelect} AS has_grammar,
+           ${xmlNameSelect},
            sl.display_name, sl.description, sl.url
     FROM ref.script_steps s
     LEFT JOIN ref.script_steps_lang sl
       ON sl.step_id = s.step_id AND sl.language = ?
     ORDER BY s.step_id
   `, [language]);
+
+  const aliasMap = await getStepAliasMap(ctx);
 
   const steps = r.rows.map((row) => ({
     stepId:      Number(row.step_id),
@@ -213,6 +268,8 @@ async function listSteps(ctx, lang) {
     categoryId:  Number(row.category_id),
     originVersion: row.origin_version || null,
     hasGrammar:  Boolean(row.has_grammar),
+    xmlName:     row.xml_name || null,
+    aliases:     aliasMap.get(Number(row.step_id)) || [],
     helpUrl:     row.url,
     localHelpUrl: buildLocalHelpUrl('steps', language, row.url_slug),
   }));
@@ -236,17 +293,19 @@ async function getStepMetaMap(ctx, lang) {
 
 async function findStepBySlugOrId(ctx, idOrSlug) {
   assertAttached();
+  const xmlNameSelect = (await refColumnExists(ctx, 'script_steps', 'xml_name'))
+    ? `xml_name` : `NULL AS xml_name`;
   const isNumeric = /^\d+$/.test(String(idOrSlug));
   let row;
   if (isNumeric) {
     const r = await db.executeQuery(ctx,
-      `SELECT step_id, url_slug, canonical_name, category_id, origin_version FROM ref.script_steps WHERE step_id = ?`,
+      `SELECT step_id, url_slug, canonical_name, category_id, origin_version, ${xmlNameSelect} FROM ref.script_steps WHERE step_id = ?`,
       [parseInt(idOrSlug, 10)]
     );
     row = r.rows[0];
   } else {
     const r = await db.executeQuery(ctx,
-      `SELECT step_id, url_slug, canonical_name, category_id, origin_version FROM ref.script_steps WHERE url_slug = ? OR canonical_name = ?`,
+      `SELECT step_id, url_slug, canonical_name, category_id, origin_version, ${xmlNameSelect} FROM ref.script_steps WHERE url_slug = ? OR canonical_name = ?`,
       [String(idOrSlug), String(idOrSlug)]
     );
     row = r.rows[0];
@@ -290,11 +349,15 @@ async function getStepDetail(ctx, idOrSlug, lang) {
     description: p.description,
   }));
 
+  const aliasMap = await getStepAliasMap(ctx);
+
   return {
     stepId:      base.step_id,
     name:        base.canonical_name,
     urlSlug:     base.url_slug,
     canonicalName: base.canonical_name,
+    xmlName:     base.xml_name || null,
+    aliases:     aliasMap.get(Number(base.step_id)) || [],
     displayName: lang_row.display_name || base.canonical_name,
     description: lang_row.description || null,
     parameterText: lang_row.parameter || null,

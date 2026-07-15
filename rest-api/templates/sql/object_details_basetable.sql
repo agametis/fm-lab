@@ -24,7 +24,25 @@ WITH table_match AS (
 field_list AS (
   SELECT
     f.Field_ID, f.Field_Name, f.Field_Type, f.Data_Type,
-    f.Is_Global, f.Field_Comment, f.Field_UUID, f.File_Name, f.Storage_Index
+    f.Is_Global, f.Field_Comment, f.Field_UUID, f.File_Name, f.Storage_Index,
+    -- Auto-Eingabe-Kategorie (grob) für den Chip-Filter; NULL = keine Auto-Eingabe.
+    CASE
+      WHEN f.AutoEnter_Type IS NULL             THEN NULL
+      WHEN f.AutoEnter_Type = 'SerialNumber'    THEN 'Serial'
+      WHEN f.AutoEnter_Type = 'Looked_up'       THEN 'Lookup'
+      WHEN f.AutoEnter_Type = 'Calculated'      THEN 'Calc'
+      WHEN f.AutoEnter_Type = 'ConstantData'    THEN 'Constant'
+      WHEN f.AutoEnter_Type LIKE 'Creation%'    THEN 'Creation'
+      WHEN f.AutoEnter_Type LIKE 'Modification%' THEN 'Modification'
+      ELSE 'Other'
+    END AS Auto_Enter_Category,
+    -- Hat das Feld irgendeine echte Validierungsregel? (Default OnlyDuringDataEntry ohne Regel zählt nicht)
+    (COALESCE(f.Validation_NotEmpty, FALSE) OR COALESCE(f.Validation_Unique, FALSE)
+      OR COALESCE(f.Validation_Existing, FALSE) OR f.Validation_VL_UUID IS NOT NULL
+      OR f.Validation_Type = 'Always' OR f.Validation_StrictType IS NOT NULL
+      OR f.Validation_MaxChars IS NOT NULL OR f.Validation_Range_From IS NOT NULL
+      OR f.Validation_Range_To IS NOT NULL OR f.Validation_Calc_Hash IS NOT NULL
+      OR f.Validation_Message IS NOT NULL) AS Is_Validated
   FROM FieldsForTables f
   JOIN table_match tm ON f.Table_Name = tm.BT_Name AND f.File_Name = tm.File_Name
 ),
@@ -84,7 +102,9 @@ SELECT * EXCLUDE (order_hint, seq) FROM (
     CAST(NULL AS VARCHAR) AS to_name,
     CAST(NULL AS VARCHAR) AS to_uuid,
     CAST(NULL AS VARCHAR) AS to_file,
-    CAST(NULL AS BOOLEAN) AS is_cross_file
+    CAST(NULL AS BOOLEAN) AS is_cross_file,
+    CAST(NULL AS VARCHAR) AS auto_enter,
+    CAST(NULL AS BOOLEAN) AS is_validated
   FROM table_match tm, field_stats fs, to_stats ts
 
   UNION ALL
@@ -96,7 +116,8 @@ SELECT * EXCLUDE (order_hint, seq) FROM (
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
     fl.Field_Name, fl.Field_Type, fl.Data_Type, fl.Field_Comment, fl.Field_UUID, fl.Is_Global, fl.File_Name,
     COALESCE(fl.Storage_Index, 'None'),
-    NULL, NULL, NULL, NULL
+    NULL, NULL, NULL, NULL,
+    fl.Auto_Enter_Category, fl.Is_Validated
   FROM field_list fl
 
   UNION ALL
@@ -107,7 +128,8 @@ SELECT * EXCLUDE (order_hint, seq) FROM (
     ROW_NUMBER() OVER (ORDER BY tl.is_cross_file, tl.to_name),
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    tl.to_name, tl.to_uuid, tl.to_file, tl.is_cross_file
+    tl.to_name, tl.to_uuid, tl.to_file, tl.is_cross_file,
+    NULL, NULL
   FROM to_list tl
 ) details
 ORDER BY order_hint, seq NULLS FIRST;

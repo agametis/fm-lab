@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "저장되지 않는 계산이 있는 레이아웃",
+    "description": "성능 규칙 — 표시하는 저장되지 않는 계산 필드 수로 레이아웃을 정렬합니다. 저장되지 않는 계산은 표시되는 레코드마다 다시 계산되므로, 많은 레코드를 표시하고 개수가 많은 레이아웃일수록 렌더링 비용이 가장 큽니다. 기본 보기(양식/목록/표)가 상황을 나타냅니다 — 목록이 가장 중요합니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "영향받는 레이아웃",
+    "summary_kpi.props.items[1].label": "양식",
+    "summary_kpi.props.items[2].label": "목록",
+    "summary_kpi.props.items[3].label": "표",
+    "summary_kpi.props.items[4].label": "영향받는 파일",
+    "summary_kpi.props.items[5].label": "레이아웃당 최대",
+    "findings_card.props.title": "저장되지 않는 계산이 있는 레이아웃",
+    "findings_table.props.searchPlaceholder": "파일, 레이아웃 또는 컨텍스트 검색…",
+    "findings_table.props.empty.message": "저장되지 않는 계산이 있는 레이아웃을 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "보기",
+    "findings_table.props.columns[1].label": "저장 안 된 계산",
+    "findings_table.props.columns[2].label": "레이아웃",
+    "findings_table.props.columns[3].label": "컨텍스트",
+    "findings_table.props.columns[4].label": "파일",
+    "findings_table.props.columns[5].label": "배치 수"
+  }
+}

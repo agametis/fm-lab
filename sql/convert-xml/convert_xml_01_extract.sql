@@ -24,8 +24,57 @@
 --   Drift-Indikator herangezogen wird. build_resolutions.sql bewusst NICHT
 --   enthalten, weil es nur abgeleitete Tabellen anlegt.
 
--- @SCHEMA_VERSION 1.7.0
--- @SCHEMA_VERSION_DATE 2026-07-08
+-- @SCHEMA_VERSION 1.13.0
+-- @SCHEMA_VERSION_DATE 2026-07-15
+-- @SCHEMA_CHANGELOG 1.13.0: StepsForScripts.Calculation_Text — Korrektur der Extraktion.
+--   Bisher griff '//Calculation/Text'[1] das erste <Calculation> in Dokument-Reihenfolge;
+--   bei einer BERECHNETEN Repetition der Ziel-Feldreferenz (<repetition><Calculation>…) ist
+--   das der Repetitions-Ausdruck statt der eigentlichen Berechnung. Neu:
+--   '//Calculation[not(ancestor::repetition)]/Text'[1] (step-typ-unabhängig; betraf
+--   Set Field, Replace Field Contents, Insert Calculated Result, Insert from URL u.a.).
+--   Reine Inhalts-Korrektur einer bestehenden Spalte → Version-Bump wg. Hash-/Rebuild.
+-- @SCHEMA_CHANGELOG 1.12.1: ObjectCatalog-Anzeigename für Themes = Theme_Display
+--   (COALESCE auf internen name), convert_xml_04_catalog.sql — der Theme-Detailtitel,
+--   Referenzen und Graph zeigen jetzt „Apex Blau" statt com.filemaker.theme.apex_blue.
+--   Reine Anzeige-Semantik (Links laufen über UUID) → Version-Bump wg. Hash-/Rebuild.
+-- @SCHEMA_CHANGELOG 1.12.0: ThemeCatalog +1 Spalte Theme_Display (aus <Theme @Display>)
+--   — der lokalisierte Anzeigename des Designs (z.B. „Apex Blau"), wie ihn die
+--   FileMaker-Oberfläche zeigt. Bisher nur der interne name (com.filemaker.theme.*).
+--   Additiv (nur Spalte) → Version-Bump (Master-Rebuild nötig).
+-- @SCHEMA_CHANGELOG 1.11.0: Layout „Allgemein"-Optionen aus dem <Options>-Bitfeld:
+--   Layouts +5 Boolean-Spalten (Auto_Save_Changes=Bit4-invertiert, Show_Field_Frames=
+--   Bit5, Frame_Current_Record_Only=Bit0, Show_Current_Record_List=Bit28-invertiert,
+--   Quick_Find_Enabled=Bit15-invertiert). Decoder an 6 Kalibrier-Layouts (je genau eine
+--   Option aktiv) + Default-Layout verifiziert (6/6). „In Layout-Menüs aufnehmen" ist
+--   separat das @hidden-Attribut (Is_Hidden, 1.9.0). Abgeleitet aus Options_Raw, nur
+--   echte Layouts → sonst NULL. Additiv (nur Spalten) → Version-Bump (Master-Rebuild).
+-- @SCHEMA_CHANGELOG 1.10.0: Feld-Optionen-Abdeckung: FieldsForTables +14 Spalten.
+--   Validierung: Validation_AlwaysValidate, _StrictType (<Strict>), _MaxChars
+--   (<MaximumSize>), _Range_From/_To (<Range @from/@to>), _Calc_Text/_Calc_Hash
+--   (<Calculated><Calculation>, Prüfung durch Berechnung), _Message (<Message>),
+--   _Message_Calc_Hash (<MessageCalc>). Speicher: Storage_IndexLanguage(_ID) aus
+--   <Storage><LanguageReference> (Standard-Indexsprache; Kind-Element, kein Attribut).
+--   Summary: Summary_RestartEachGroup + _RepetitionMode (<SummaryInfo
+--   @restartEachGroup/@summarizeRepetition>). Neue Link-Rolle validates_by_calc
+--   (Field→Field/CustomFunction via Validation_Calc_Hash → DDR-Chunks; schließt die
+--   Where-used-Lücke für nur in einer Feldvalidierung referenzierte Objekte).
+--   Additiv (Spalten + Rolle) → Version-Bump (Master-Rebuild nötig).
+-- @SCHEMA_CHANGELOG 1.9.0: Layout-Metadaten: Layouts +5 Spalten (Is_Hidden aus
+--   <Options @hidden> = „In Layout-Menüs aufnehmen" invertiert; L_Theme_Base aus
+--   LayoutThemeReference@Base; Modified_By/_At/Modifications aus <UUID @userName/
+--   @timestamp/@modifications> = Autoren-Metadaten). <Options @hidden> wird als
+--   BARE-Attribut gelesen (nicht "@hidden"). Layout-Ebene Script-Trigger existieren
+--   bereits in der Tabelle ScriptTriggers (Owner_Type='Layout') — keine neue Tabelle.
+--   Additiv (nur Spalten) → Version-Bump (Master-Rebuild nötig).
+-- @SCHEMA_CHANGELOG 1.8.0: Layout-Ansichten (Darstellungsform): Layouts +5 Spalten
+--   (Options_Raw + View_Form/List/Table_Available + Default_View). Die verfügbaren
+--   Ansichten (Formular/Liste/Tabelle) und die Standardansicht sind im bit-gepackten
+--   <Options>-Integer des Layout-Tails kodiert (kein explizites XML-Element). Decoder
+--   an 5 Kalibrier-Layouts verifiziert (5/5, Konfund Bit1↔Bit9 durch Mehrfach-Ansicht-
+--   Layout aufgelöst): Bit1/2/3 = Form/Liste/Tabelle NICHT verfügbar (invertiert),
+--   Bit9 = Standard≠Formular, Bit14 = Standard=Tabelle. Options_Raw roh mitgeführt für
+--   spätere Bit-Ableitungen ohne Reimport; View-Spalten nur für echte Layouts (Ordner/
+--   Trenner → NULL). Additiv (Spalten-Erweiterung) → Version-Bump (Master-Rebuild nötig).
 -- @SCHEMA_CHANGELOG 1.7.0: Button-eingebettete Script-Steps als Klartext im
 --   LayoutObject-Detail (wie Script-Detail). (a) DDR_ScriptSteps: UUID-lose
 --   StepText-Records (button-eingebettete Steps <_ hash="…">) fallen auf
@@ -1001,9 +1050,23 @@ CREATE TABLE IF NOT EXISTS FieldsForTables (
     Serial_Generate VARCHAR,            -- 'OnCreation' | 'OnCommit'
     -- Summary-Definition (nur fieldtype = 'Summary'; FieldReference-UUID ist
     -- kanonisch (BaseTable-Kontext, korpus-verifiziert) → direkte Where-used-Kante
-    Summary_Operation VARCHAR,          -- 'Total' | 'Average' | 'Count' | …
+    Summary_Operation VARCHAR,          -- 'Total' | 'Average' | 'Count' | 'List' | …
     Summary_Field_Name VARCHAR,
     Summary_Field_UUID VARCHAR,
+    -- Validierung, Speicher-Indexsprache und Summary-Modifikatoren (Schema 1.10.0)
+    Validation_AlwaysValidate BOOLEAN,   -- <Validation @alwaysValidate>
+    Validation_StrictType VARCHAR,       -- <Strict>: 'FourDigitYear' | numerisch | Zeit (Token roh, kein Enum-Zwang)
+    Validation_MaxChars INTEGER,         -- <MaximumSize> maximale Zeichenanzahl
+    Validation_Range_From VARCHAR,       -- <Range @from> (Datum/Zeit/Zahl → VARCHAR)
+    Validation_Range_To VARCHAR,         -- <Range @to>
+    Validation_Calc_Text VARCHAR,        -- <Calculated><Calculation><Text> Prüf-Calc (Klartext)
+    Validation_Calc_Hash VARCHAR,        -- <Calculated>…<DDRREF @hash> → validates_by_calc Graph-Kante
+    Validation_Message VARCHAR,          -- <Message> statische eigene Fehlermeldung
+    Validation_Message_Calc_Hash VARCHAR,-- <MessageCalc>…<DDRREF @hash> (Meldung per Berechnung)
+    Storage_IndexLanguage VARCHAR,       -- <Storage><LanguageReference @name> Standard-Indexsprache
+    Storage_IndexLanguage_ID BIGINT,     -- <Storage><LanguageReference @id>
+    Summary_RestartEachGroup BOOLEAN,    -- <SummaryInfo @restartEachGroup> Ergebnis je Gruppe neu
+    Summary_RepetitionMode VARCHAR,      -- <SummaryInfo @summarizeRepetition>: 'Together' | 'Individually'
     File_Name VARCHAR,
     PRIMARY KEY (Field_UUID, File_Name)
 );
@@ -1066,6 +1129,24 @@ SELECT
     NULLIF(f.SummaryInfo.operation, '') AS Summary_Operation,
     xml_unescape(f.SummaryInfo.SummaryField.FieldReference.name) AS Summary_Field_Name,
     f.SummaryInfo.SummaryField.FieldReference.UUID AS Summary_Field_UUID,
+    -- Validierung / Indexsprache / Summary-Modifikatoren (Schema 1.10.0)
+    f.Validation.alwaysValidate AS Validation_AlwaysValidate,
+    NULLIF(f.Validation.Strict, '') AS Validation_StrictType,
+    f.Validation.MaximumSize AS Validation_MaxChars,
+    NULLIF(f.Validation.Range."from", '') AS Validation_Range_From,
+    NULLIF(f.Validation.Range."to", '') AS Validation_Range_To,
+    -- Prüf-Calc: Text (ws_restore wie AE-Calc) + DDR-Hash für die Graph-Kante
+    ws_restore(f.Validation.Calculated.Calculation.Text) AS Validation_Calc_Text,
+    f.Validation.Calculated.Calculation.DDRREF.hash AS Validation_Calc_Hash,
+    -- Eigene Meldung: statischer Text (ws_restore, kann CR/Entities enthalten) + optionaler Calc-Hash
+    ws_restore(f.Validation.Message) AS Validation_Message,
+    f.Validation.MessageCalc.Calculation.DDRREF.hash AS Validation_Message_Calc_Hash,
+    -- Standard-Indexsprache (Kind-Element <LanguageReference> von <Storage>)
+    NULLIF(f.Storage.LanguageReference.name, '') AS Storage_IndexLanguage,
+    f.Storage.LanguageReference.id AS Storage_IndexLanguage_ID,
+    -- Summary-Modifikatoren
+    f.SummaryInfo.restartEachGroup AS Summary_RestartEachGroup,
+    NULLIF(f.SummaryInfo.summarizeRepetition, '') AS Summary_RepetitionMode,
     fn.File_Name as File_Name
 FROM read_xml(
     getvariable('fm_xml'),
@@ -1089,19 +1170,28 @@ FROM read_xml(
                     "maxRepetitions" INTEGER,
                     "autoIndex" BOOLEAN,
                     "index" VARCHAR,
-                    "storeCalculationResults" BOOLEAN
+                    "storeCalculationResults" BOOLEAN,
+                    "LanguageReference" STRUCT("name" VARCHAR, "id" BIGINT)
                 ),
                 "Validation" STRUCT(
                     "type" VARCHAR,
+                    "alwaysValidate" BOOLEAN,
                     "allowOverride" BOOLEAN,
                     "notEmpty" BOOLEAN,
                     "unique" BOOLEAN,
                     "existing" BOOLEAN,
+                    "Strict" VARCHAR,
+                    "MaximumSize" INTEGER,
+                    "Range" STRUCT("from" VARCHAR, "to" VARCHAR),
+                    "Message" VARCHAR,
+                    "Calculated" STRUCT("Calculation" STRUCT("DDRREF" STRUCT("hash" VARCHAR), "Text" VARCHAR)),
+                    "MessageCalc" STRUCT("Calculation" STRUCT("DDRREF" STRUCT("hash" VARCHAR))),
                     "ValueListReference" STRUCT("id" BIGINT, "name" VARCHAR, "UUID" VARCHAR)
                 ),
                 "SummaryInfo" STRUCT(
                     "operation" VARCHAR,
                     "restartEachGroup" BOOLEAN,
+                    "summarizeRepetition" VARCHAR,
                     "SummaryField" STRUCT(
                         "FieldReference" STRUCT("id" BIGINT, "name" VARCHAR, "UUID" VARCHAR)
                     )
@@ -1189,7 +1279,20 @@ ON CONFLICT (Field_UUID, File_Name) DO UPDATE SET
     Serial_Generate = EXCLUDED.Serial_Generate,
     Summary_Operation = EXCLUDED.Summary_Operation,
     Summary_Field_Name = EXCLUDED.Summary_Field_Name,
-    Summary_Field_UUID = EXCLUDED.Summary_Field_UUID;
+    Summary_Field_UUID = EXCLUDED.Summary_Field_UUID,
+    Validation_AlwaysValidate = EXCLUDED.Validation_AlwaysValidate,
+    Validation_StrictType = EXCLUDED.Validation_StrictType,
+    Validation_MaxChars = EXCLUDED.Validation_MaxChars,
+    Validation_Range_From = EXCLUDED.Validation_Range_From,
+    Validation_Range_To = EXCLUDED.Validation_Range_To,
+    Validation_Calc_Text = EXCLUDED.Validation_Calc_Text,
+    Validation_Calc_Hash = EXCLUDED.Validation_Calc_Hash,
+    Validation_Message = EXCLUDED.Validation_Message,
+    Validation_Message_Calc_Hash = EXCLUDED.Validation_Message_Calc_Hash,
+    Storage_IndexLanguage = EXCLUDED.Storage_IndexLanguage,
+    Storage_IndexLanguage_ID = EXCLUDED.Storage_IndexLanguage_ID,
+    Summary_RestartEachGroup = EXCLUDED.Summary_RestartEachGroup,
+    Summary_RepetitionMode = EXCLUDED.Summary_RepetitionMode;
 
 -- Zensus (Dup-Absorption): Quell-Rowset = ein Record je Feld (UNNEST je FieldCatalog)
 -- mit demselben id-Filter wie der Katalog-INSERT; minimaler Re-Read (nur Feld-id).
@@ -1824,7 +1927,14 @@ SELECT
     ws_restore(step_xml::VARCHAR) as Step_XML,
     xml_extract_text(step_xml, '//Parameter/@type')[1] as Parameter_Type,
     xml_extract_text(step_xml, '//Parameter[@type="Variable"]/Name/@value')[1] as Variable_Name,
-    ws_restore(xml_extract_text(step_xml, '//Calculation/Text')[1]) as Calculation_Text,
+    -- not(ancestor::repetition): die Ziel-Feldreferenz eines Steps kann eine
+    -- BERECHNETE Repetition tragen (<repetition><Calculation>…</Calculation></repetition>),
+    -- die in Dokument-Reihenfolge VOR der eigentlichen Berechnung steht. Ein blankes
+    -- '//Calculation/Text'[1] griffe dann den Repetitions-Ausdruck statt des zu setzenden
+    -- Werts (betrifft Set Field, Replace Field Contents, Insert Calculated Result,
+    -- Insert from URL u.a.). Der Prädikatsfilter schließt den Repetitions-Teilbaum aus und
+    -- ist step-typ-unabhängig (die echte Berechnung ist je Step unterschiedlich verschachtelt).
+    ws_restore(xml_extract_text(step_xml, '//Calculation[not(ancestor::repetition)]/Text')[1]) as Calculation_Text,
     xml_extract_text(step_xml, '//Boolean/@type')[1] as Boolean_Type,
     xml_extract_text(step_xml, '//Boolean/@value')[1] as Boolean_Value,
     fn.File_Name as File_Name
@@ -1894,6 +2004,30 @@ CREATE TABLE IF NOT EXISTS Layouts (
     L_MenuSet_ID BIGINT,
     L_MenuSet_Name VARCHAR,
     L_MenuSet_UUID VARCHAR,
+    -- Layout-Ansichten / Darstellungsform (Schema 1.8.0): bit-gepackt im <Options>-
+    -- Integer des Layout-Tails (kein explizites XML-Element). Options_Raw = Rohwert
+    -- (für spätere Bit-Ableitungen ohne Reimport). Decoder an 5 Layouts verifiziert:
+    --   Bit1/2/3 = Form/Liste/Tabelle NICHT verfügbar (daher invertiert),
+    --   Default_View = Bit14?'Table':Bit9?'List':'Form'.
+    -- Nur für echte Layouts befüllt; Ordner/Trenner → NULL.
+    Options_Raw BIGINT,
+    View_Form_Available BOOLEAN,
+    View_List_Available BOOLEAN,
+    View_Table_Available BOOLEAN,
+    Default_View VARCHAR,     -- 'Form' | 'List' | 'Table'
+    -- Layout „Allgemein"-Optionen aus dem <Options>-Bitfeld (Schema 1.11.0), an 6
+    -- Kalibrier-Layouts verifiziert. Nur echte Layouts; TRUE = Checkbox angehakt.
+    Auto_Save_Changes BOOLEAN,          -- Bit4 invertiert: Datensatzänderungen automatisch speichern
+    Show_Field_Frames BOOLEAN,          -- Bit5: Feldrahmen zeigen, wenn Datensatz aktiv ist
+    Frame_Current_Record_Only BOOLEAN,  -- Bit0: Felder nur im aktuellen Datensatz umreißen
+    Show_Current_Record_List BOOLEAN,   -- Bit28 invertiert: aktuelle Datensatzanzeige in der Listenansicht
+    Quick_Find_Enabled BOOLEAN,         -- Bit15 invertiert: Schnellsuche aktivieren
+    -- Layout-Metadaten (Schema 1.9.0):
+    Is_Hidden BOOLEAN,        -- <Options @hidden> — "In Layout-Menüs aufnehmen" INVERTIERT
+    L_Theme_Base VARCHAR,     -- LayoutThemeReference@Base (Basis-Theme des Custom-Themes)
+    Modified_By VARCHAR,      -- <UUID @userName> — zuletzt geändert von
+    Modified_At VARCHAR,      -- <UUID @timestamp> — ISO-Zeitstempel (roh als Text)
+    Modifications INTEGER,    -- <UUID @modifications> — Änderungszähler
     Folder_Type VARCHAR,
     Is_Separator BOOLEAN,
     Sequence_ID BIGINT,
@@ -1909,7 +2043,9 @@ layout_records AS (
     SELECT
         ROW_NUMBER() OVER () + getvariable('seq_offset')::BIGINT AS Sequence_ID,
         id, name, width, isFolder, isSeparatorItem, UUID, TableOccurrenceReference,
-        LayoutThemeReference, MenuSet
+        LayoutThemeReference, MenuSet,
+        TRY_CAST(Options."#text" AS BIGINT) AS Options_Raw,
+        Options.hidden AS Options_Hidden
     FROM read_xml(
         getvariable('fm_xml'),
         root_element='LayoutCatalog',
@@ -1922,10 +2058,14 @@ layout_records AS (
             'width': 'INTEGER',
             'isFolder': 'VARCHAR',
             'isSeparatorItem': 'BOOLEAN',
-            'UUID': 'STRUCT("#text" VARCHAR)',
+            -- UUID trägt Autoren-Metadaten als Attribute (bare names, kein "@"-Präfix)
+            'UUID': 'STRUCT("#text" VARCHAR, userName VARCHAR, timestamp VARCHAR, modifications INTEGER)',
             'TableOccurrenceReference': 'STRUCT(name VARCHAR, UUID VARCHAR)',
-            'LayoutThemeReference': 'STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)',
-            'MenuSet': 'STRUCT("CustomMenuSetReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR))'
+            'LayoutThemeReference': 'STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR, Base VARCHAR)',
+            'MenuSet': 'STRUCT("CustomMenuSetReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR))',
+            -- <Options hidden="…">INT</Options> im Layout-Tail: bit-gepackte Ansichten-Config
+            -- (#text) + @hidden (bare) = "In Layout-Menüs aufnehmen" invertiert.
+            'Options': 'STRUCT("#text" VARCHAR, hidden VARCHAR)'
         }
     )
     -- Folder-Records (isFolder='True'/'Marker') haben keine TableOccurrenceReference;
@@ -1950,6 +2090,37 @@ SELECT
          THEN xml_unescape(lr.MenuSet.CustomMenuSetReference.name) END AS L_MenuSet_Name,
     CASE WHEN lr.MenuSet.CustomMenuSetReference.id != 0
          THEN NULLIF(lr.MenuSet.CustomMenuSetReference.UUID, '') END AS L_MenuSet_UUID,
+    -- Ansichten / Darstellungsform aus dem <Options>-Bitfeld (Schema 1.8.0).
+    -- Rohwert immer, abgeleitete View-Spalten nur für echte Layouts (Ordner/Trenner
+    -- tragen ein bedeutungsloses Bitmuster → NULL). Bit1/2/3 = Ansicht NICHT verfügbar.
+    lr.Options_Raw AS Options_Raw,
+    CASE WHEN lr.isFolder IS NULL AND NOT COALESCE(lr.isSeparatorItem, False)
+         THEN ((lr.Options_Raw >> 1) & 1) = 0 END AS View_Form_Available,
+    CASE WHEN lr.isFolder IS NULL AND NOT COALESCE(lr.isSeparatorItem, False)
+         THEN ((lr.Options_Raw >> 2) & 1) = 0 END AS View_List_Available,
+    CASE WHEN lr.isFolder IS NULL AND NOT COALESCE(lr.isSeparatorItem, False)
+         THEN ((lr.Options_Raw >> 3) & 1) = 0 END AS View_Table_Available,
+    CASE WHEN lr.isFolder IS NULL AND NOT COALESCE(lr.isSeparatorItem, False)
+         THEN CASE WHEN ((lr.Options_Raw >> 14) & 1) = 1 THEN 'Table'
+                   WHEN ((lr.Options_Raw >>  9) & 1) = 1 THEN 'List'
+                   ELSE 'Form' END END AS Default_View,
+    -- „Allgemein"-Optionen (Schema 1.11.0), nur echte Layouts. TRUE = angehakt.
+    CASE WHEN lr.isFolder IS NULL AND NOT COALESCE(lr.isSeparatorItem, False)
+         THEN ((lr.Options_Raw >>  4) & 1) = 0 END AS Auto_Save_Changes,
+    CASE WHEN lr.isFolder IS NULL AND NOT COALESCE(lr.isSeparatorItem, False)
+         THEN ((lr.Options_Raw >>  5) & 1) = 1 END AS Show_Field_Frames,
+    CASE WHEN lr.isFolder IS NULL AND NOT COALESCE(lr.isSeparatorItem, False)
+         THEN ((lr.Options_Raw >>  0) & 1) = 1 END AS Frame_Current_Record_Only,
+    CASE WHEN lr.isFolder IS NULL AND NOT COALESCE(lr.isSeparatorItem, False)
+         THEN ((lr.Options_Raw >> 28) & 1) = 0 END AS Show_Current_Record_List,
+    CASE WHEN lr.isFolder IS NULL AND NOT COALESCE(lr.isSeparatorItem, False)
+         THEN ((lr.Options_Raw >> 15) & 1) = 0 END AS Quick_Find_Enabled,
+    -- Layout-Metadaten (Schema 1.9.0): @hidden ist "True"/"False" (Text) → Boolean.
+    (lr.Options_Hidden = 'True') AS Is_Hidden,
+    lr.LayoutThemeReference.Base AS L_Theme_Base,
+    xml_unescape(lr.UUID.userName) AS Modified_By,
+    lr.UUID.timestamp AS Modified_At,
+    lr.UUID.modifications AS Modifications,
     lr.isFolder AS Folder_Type,
     COALESCE(lr.isSeparatorItem, False) AS Is_Separator,
     lr.Sequence_ID,
@@ -1968,10 +2139,28 @@ ON CONFLICT (L_UUID, File_Name) DO UPDATE SET
     L_MenuSet_ID = EXCLUDED.L_MenuSet_ID,
     L_MenuSet_Name = EXCLUDED.L_MenuSet_Name,
     L_MenuSet_UUID = EXCLUDED.L_MenuSet_UUID,
+    Options_Raw = EXCLUDED.Options_Raw,
+    View_Form_Available = EXCLUDED.View_Form_Available,
+    View_List_Available = EXCLUDED.View_List_Available,
+    View_Table_Available = EXCLUDED.View_Table_Available,
+    Default_View = EXCLUDED.Default_View,
+    Auto_Save_Changes = EXCLUDED.Auto_Save_Changes,
+    Show_Field_Frames = EXCLUDED.Show_Field_Frames,
+    Frame_Current_Record_Only = EXCLUDED.Frame_Current_Record_Only,
+    Show_Current_Record_List = EXCLUDED.Show_Current_Record_List,
+    Quick_Find_Enabled = EXCLUDED.Quick_Find_Enabled,
+    Is_Hidden = EXCLUDED.Is_Hidden,
+    L_Theme_Base = EXCLUDED.L_Theme_Base,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_At = EXCLUDED.Modified_At,
+    Modifications = EXCLUDED.Modifications,
     Folder_Type = EXCLUDED.Folder_Type,
     Is_Separator = EXCLUDED.Is_Separator,
     Sequence_ID = EXCLUDED.Sequence_ID;
 
+-- Hinweis: Layout-Ebene Script-Trigger liegen bereits in der vorhandenen Tabelle
+-- ScriptTriggers (Owner_Type='Layout', Owner_UUID=L_UUID; multi-fed Merge via
+-- convert_turbo.sh). Keine eigene Layout-Trigger-Tabelle nötig.
 
 -- LayoutParts
 -- @END_P1_SECTION@
@@ -3723,6 +3912,7 @@ ON CONFLICT (Library_ID, File_Name) DO UPDATE SET
 CREATE TABLE IF NOT EXISTS ThemeCatalog (
     Theme_ID BIGINT,
     Theme_Name VARCHAR,
+    Theme_Display VARCHAR,   -- <Theme @Display>: lokalisierter Anzeigename (z.B. „Apex Blau")
     Theme_UUID VARCHAR,
     Theme_XML VARCHAR,
     File_Name VARCHAR,
@@ -3742,6 +3932,7 @@ INSERT INTO ThemeCatalog
 SELECT
     xml_extract_text(theme_xml, '/Theme/@id')[1]::BIGINT as Theme_ID,
     xml_unescape(xml_extract_text(theme_xml, '/Theme/@name')[1]) as Theme_Name,
+    xml_unescape(xml_extract_text(theme_xml, '/Theme/@Display')[1]) as Theme_Display,
     xml_extract_text(theme_xml, '/Theme/UUID/text()')[1] as Theme_UUID,
 
     -- Vollständige Theme-Struktur als JSON (enthält CSS-Regelsätze).
@@ -3756,6 +3947,7 @@ WHERE xml_extract_text(theme_xml, '/Theme/@id')[1] IS NOT NULL
 ON CONFLICT (Theme_UUID, File_Name) DO UPDATE SET
     Theme_ID = EXCLUDED.Theme_ID,
     Theme_Name = EXCLUDED.Theme_Name,
+    Theme_Display = EXCLUDED.Theme_Display,
     Theme_XML = EXCLUDED.Theme_XML;
 
 

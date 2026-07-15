@@ -9,6 +9,9 @@ export * from './constants.js';
 // Languages (i18n single source of truth)
 export * from './languages.js';
 
+// Script-step role classification (stepId-keyed, shared by web + VS Code extension)
+export * from './stepRoles.js';
+
 // Types (generated from OpenAPI)
 export type * from '../generated/types.js';
 

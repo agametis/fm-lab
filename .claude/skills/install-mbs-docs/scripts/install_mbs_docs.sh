@@ -102,6 +102,12 @@ run_check_mode() {
     exit 0
 }
 
+# Refresh CDN-pinned firewall IPs before any network op (no-op outside a
+# firewalled container). www.monkeybreadsoftware.com is a stable host, but the
+# refresh also covers the CDN-fronted sibling doc sources — see
+# tools/install_modes.sh::refresh_firewall_allowlist.
+refresh_firewall_allowlist
+
 if $CHECK_MODE; then
     run_check_mode
 fi

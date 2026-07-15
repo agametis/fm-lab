@@ -15,7 +15,8 @@ Standard loop for every question: *understand the question → pick the table(s)
 ## 2. General rules (always apply)
 
 - **Single source of truth:** after import, use ONLY the DuckDB tables — never re-read the XML. Master DB: `db/fm_catalog.duckdb` — a **symlink to the active solution** (`solutions/<id>/db/fm_catalog.duckdb`). A workspace manages 1..N solutions as bundles `solutions/<id>/{xml,db,state}`; `.fmlab/active_solution.json` names the active one, `tools/solution.sh use <id>` switches (list/create/export likewise). Read via the symlink; **writers** (convert, cluster) resolve the real bundle path themselves. Never read `rest-api/db/…` (API-internal read copies, may be briefly stale).
-- **DuckDB invocation:** one plain command — `duckdb db/fm_catalog.duckdb -c "…"`. No subshells `( … )`, no `&&`/`||` probing chains, no `$DB` path variables: the permission allow-list matches the command **prefix**, any indirection triggers approval prompts. Never install DuckDB yourself. Binary not on PATH? → `docs/agents/tooling.md`.
+- **Session context (pin):** if the env var `FMLAB_SOLUTION` or `FMLAB_CONTEXT` is set, THIS session is pinned to a solution independent of the symlink/pointer. Before the first DB access run `tools/solution.sh current` once (prints `id` + source), state the result, and — when the source is `env` or `context` — use the **literal bundle path** for every read: `duckdb solutions/<id>/db/fm_catalog.duckdb -c "…"` (the symlink projects only the workspace default and may point elsewhere). All fm-lab shell tools (convert, cluster, quality test) follow the same cascade automatically.
+- **DuckDB invocation:** one plain command — `duckdb db/fm_catalog.duckdb -c "…"` (or the literal bundle path per session pin, see above). No subshells `( … )`, no `&&`/`||` probing chains, no `$DB` path variables: the permission allow-list matches the command **prefix**, any indirection triggers approval prompts. Never install DuckDB yourself. Binary not on PATH? → `docs/agents/tooling.md`.
 - **Joins:** every table has `…_ID` / `…_Name` / `…_UUID` columns; join across tables via UUID. Script steps are ordered by `Step_Index`.
 - **Don't guess schema details.** When unsure about columns, link roles or XML structure, read the reference first (§4) instead of assuming.
 - **Working language:** `language: auto` ← project setting; edit this line to pin a language (e.g. `language: de`). On `auto`, detect the language from the user's prompts. The language a skill happens to be written in NEVER dictates the response language. Keep object names, SQL and code identifiers as-is; language conventions *inside generated FileMaker artifacts* follow the target solution, not the conversation (→ §6).
@@ -49,9 +50,9 @@ The DuckDB tables mirror the XML object catalogs. Most-used tables:
 | `VariableUsages` / `VariablesCatalog` | Every variable usage / aggregated per variable |
 | `DDR_Calculations` | Formula chunks for dependency analysis (needs DDR-Info) |
 | `AccountsCatalog` / `PrivilegeSetsCatalog` / `PrivilegeSet*Access` | Security model |
-| `LinkRoleRegistry` | Machine-readable semantics of every link role |
+| `LinkRoleRegistry` | Link-role classification & where-used flag (columns: `Link_Kind` = usage/containment/restriction, `Counts_For_Where_Used`) — the prose meaning of each role lives in `schema-reference.md`, not as a column |
 
-Full reference — all tables, column details (AutoEnter/Lookup, LayoutObjects, privilege access, variables, DDR-Info) and all 58 link roles: → `docs/agents/schema-reference.md`
+Full reference — all tables, column details (AutoEnter/Lookup, LayoutObjects, privilege access, variables, DDR-Info) and all 59 link roles: → `docs/agents/schema-reference.md`
 
 ## 5. Analytic workflows
 
@@ -102,7 +103,9 @@ Use these skills instead of answering from memory — the local mirrors are vers
 
 ## 8. Query examples
 
-Two canonical patterns inline; the full cookbook (layout composition, cross-file links, statistics, DuckDB idioms): → `docs/agents/query-cookbook.md`
+Three canonical patterns inline; the full cookbook (layout composition, cross-file links, statistics, DuckDB idioms): → `docs/agents/query-cookbook.md`
+
+**Never regex a `*_XML` column (`Step_XML`, `Object_XML`, …) for something `ObjectLinks` already resolves** (which fields a script sets/reads, which scripts it calls, which layouts/variables it touches, …). The relations are resolved at import — query the edge. Raw XML is the last resort, only for step-exact position or the concrete written value, and only when DDR-Info is absent (see §5 · `analysis-workflows.md`).
 
 ```sql
 -- Find an object (any type, any file)
@@ -111,7 +114,7 @@ FROM ObjectCatalog
 WHERE Object_Name LIKE '%Import%'
 ORDER BY Object_Type, File_Name;
 
--- Where is a field used? (works analogously for any object type)
+-- Where is a field used? (reverse direction — works analogously for any object type)
 SELECT ol.Source_Type, src.Object_Name AS Used_In, src.File_Name, ol.Link_Role
 FROM ObjectCatalog tgt
 JOIN ObjectLinks ol   ON tgt.Object_UUID = ol.Target_UUID
@@ -120,6 +123,18 @@ WHERE tgt.Object_Type = 'Field'
   AND tgt.Object_Name LIKE '%Email%'
   AND ol.Link_Type = 'operational'
 ORDER BY ol.Source_Type, src.Object_Name;
+
+-- Which fields does a script set/read? (forward direction — NO regex on Step_XML)
+-- sets_field = written, reads_field = read; links are Script→Field, resolved at import.
+SELECT tgt.File_Name, tgt.Object_Name AS Field, ol.Link_Role, count(*) AS n
+FROM ObjectLinks ol
+JOIN ObjectCatalog src ON ol.Source_UUID = src.Object_UUID
+JOIN ObjectCatalog tgt ON ol.Target_UUID = tgt.Object_UUID
+WHERE src.Object_Type = 'Script'
+  AND src.Object_Name = 'MyScript'
+  AND ol.Link_Role IN ('sets_field', 'reads_field')
+GROUP BY ALL
+ORDER BY ol.Link_Role, tgt.Object_Name;
 ```
 
 More prepared queries: `sql/sample_queries.sql`

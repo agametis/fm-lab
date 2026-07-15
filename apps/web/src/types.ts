@@ -28,6 +28,14 @@ export interface ReferenceItem {
   Is_Cross_File: boolean;
   Container_UUID?: string | null;
   Container_Type?: string | null;
+  /**
+   * Klartext-Name + Datei des Containers (Layout eines ScriptTriggers, Layout eines
+   * LayoutObjects, Script eines ScriptSteps). Verortet Sub-Knoten, deren eigener Name
+   * generisch ist (z.B. alle „OnLayoutKeystroke"-Trigger eines Scripts) — sie werden
+   * erst durch den Container-Namen unterscheidbar. Datei nur relevant, wenn abweichend.
+   */
+  Container_Name?: string | null;
+  Container_File?: string | null;
   navigable?: boolean;
   /**
    * Nur Pseudo-Aggregat-Typen (ScriptStepType): Anzahl der Schritte dieses Typs,

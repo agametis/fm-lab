@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useObjectDetails } from '../hooks/useObjectDetails';
 import { useLayoutData } from '../hooks/useLayoutData';
 import { useCurrentFile } from '../lib/currentFileContext';
 import { LayoutCanvas, type LayoutCanvasHandle } from './LayoutCanvas';
+import { LayoutViewer } from './LayoutViewer';
+import { usePersistentState } from '../hooks/usePersistentState';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
 import { ScriptDetail } from './ScriptDetail';
@@ -69,15 +71,50 @@ const EmbeddedLayoutView: React.FC<{
   const { t } = useTranslation(['common', 'detail']);
   const currentFile = useCurrentFile();
   const { data, loading, error } = useLayoutData(uuid, currentFile);
+  // Browser-lokaler, persistenter Aufklapp-Status des Eigenschaften-Panels.
+  // Bleibt beim Navigieren zwischen Layouts erhalten (localStorage), Default: offen.
+  const [propsOpen, setPropsOpen] = usePersistentState<'0' | '1'>(
+    'fmlab.layout.propsOpen', '1', ['0', '1'] as const,
+  );
+  // Navigation kam per `?ref=trig_<id>_…` von einem Script hierher → das
+  // Eigenschaften-Panel automatisch aufklappen, damit der hervorgehobene Trigger
+  // in der Liste sichtbar ist (LayoutViewer scrollt ihn zusätzlich in den View).
+  const hlSig = useMemo(
+    () => (highlightUuids ? Array.from(highlightUuids).sort().join(',') : ''),
+    [highlightUuids],
+  );
+  const hasTriggerRef = useMemo(
+    () => !!highlightUuids && Array.from(highlightUuids).some(u => u.startsWith('trig_')),
+    [highlightUuids],
+  );
+  // Einmal je Ref-Set aufklappen — danach bleibt manuelles Zuklappen erhalten.
+  const autoOpenedFor = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (hasTriggerRef && autoOpenedFor.current !== hlSig) {
+      autoOpenedFor.current = hlSig;
+      setPropsOpen('1');
+    }
+  }, [hasTriggerRef, hlSig, setPropsOpen]);
   if (loading) return <LoadingSpinner message={t('detail:layoutPreview.loading') as string} />;
   if (error) return <ErrorMessage message={error} />;
-  if (!data || data.objects.length === 0) {
-    return <div className="no-references">{t('detail:layoutPreview.empty')}</div>;
-  }
+  if (!data) return <div className="no-references">{t('detail:layoutPreview.empty')}</div>;
+  // Objektlose Layouts: kein Canvas-Inhalt → die Eigenschaften trotzdem (immer offen)
+  // zeigen, plus eine Leer-Meldung im Canvas-Bereich. Der Toggle wird dann fixiert.
+  const hasObjects = data.objects.length > 0;
+  const isOpen = propsOpen === '1' || !hasObjects;
   return (
     <div className="object-detail" aria-label={t('detail:layoutPreview.heading') as string}>
       <div className="layout-detail-header">
-        <h2 className="type-detail-heading">{t('detail:layoutPreview.heading')}</h2>
+        <button
+          type="button"
+          className="layout-props-toggle"
+          aria-expanded={isOpen}
+          onClick={() => setPropsOpen(isOpen ? '0' : '1')}
+          disabled={!data.meta || !hasObjects}
+        >
+          <span className="layout-props-caret" aria-hidden="true">{isOpen ? '▾' : '▸'}</span>
+          {t('detail:layoutViewer.propertiesHeading')}
+        </button>
         <Link
           to={`/layout/${uuid}`}
           className="layout-detail-fullscreen"
@@ -86,14 +123,21 @@ const EmbeddedLayoutView: React.FC<{
           {t('common:actions.fullscreen')}
         </Link>
       </div>
-      <div className="layout-detail-canvas">
-        <LayoutCanvas
-          ref={layoutCanvasRef}
-          data={data}
-          externalMatchUuids={highlightUuids}
-          onClearRef={onClearRef}
-        />
-      </div>
+      {isOpen && data.meta && (
+        <LayoutViewer meta={data.meta} triggers={data.triggers} originUuid={uuid} highlightUuids={highlightUuids} />
+      )}
+      {hasObjects ? (
+        <div className="layout-detail-canvas">
+          <LayoutCanvas
+            ref={layoutCanvasRef}
+            data={data}
+            externalMatchUuids={highlightUuids}
+            onClearRef={onClearRef}
+          />
+        </div>
+      ) : (
+        <div className="layout-detail-empty">{t('detail:layoutPreview.empty')}</div>
+      )}
     </div>
   );
 };

@@ -47,6 +47,7 @@ FM-Lab supports four complementary approaches to analyzing a FileMaker solution:
 - **REST API** — Express server providing HTTP access to the analysis database, enabling integration with external tools and services 🧩
 - **Web Client** — React/Vite frontend for interactive exploration of the solution structure and dependencies with rich visualizations 🔎
 - **Dashboard System** — library of predefined analysis patterns, with support for custom queries and custom dashboards 📁
+- **Multi-user & multi-session support** - concurrent users, each on their own solution 🙌
 - **Graph Explorer** — interactive navigation of the full object graph, with automatic community detection that reveals named clusters across the solution and turns thousands of objects and links into a navigable graph map 🕸️
 - **Claude Skills** — slash commands for agentic analysis workflows in Claude Code, supported by helpers for XML conversion and documentation setup, enabling deep, solution-aware inspection beyond scripted analysis 🤖
 - **Comprehensive Docs** — easy-to-install documentation for FileMaker Pro and MBS plugin functions 📚
@@ -241,6 +242,7 @@ The project has grown along a clear arc — from a solid foundation toward an in
 - **v0.8.7 – v0.8.8** · _Static code analysis_ - predefined inspection queries for standard checks, completion of the object catalog, and expanded reference coverage.
 - **v0.8.9 – v0.8.10** · _fm-spec sidecar + system prompt cleanup_ - groundwork for reliable agentic code generation.
 - **v0.9.0** · _Multi-solution support + agentic code generation_ - a generated script is validated against the FileMaker spec and the actual object catalog before being delivered.
+- **v0.9.2** · _Multi-user & multi-session support_ - concurrent users, each on their own solution.
 
 - More details in [`CHANGELOG.md`](CHANGELOG.md) — release history
 
@@ -258,12 +260,11 @@ The core architecture is in place and ready for real-world use. Many more featur
 - Pre-configured installer with granular framework update options (beta with v0.8.6)
 - Windows support (early alpha with v0.8.6)
 - Granular deployment options for separate ingestion, API, and frontend services
-- Multi-user mode
-- Multi-solution support (✅ with v0.9.0)
 - Snapshots for tracking changes over time
+- Automatic code analysis and test-sets
 - Deeper integration with developer tools and workflows, including VS Code, Raycast, Obsidian, and others
 - Support for additional AI agents and agent configuration formats
-- AI-assisted code generation, refactoring, and documentation based on the object catalog (✅ with v0.9.0)
+- AI-assisted code generation, refactoring, and documentation based on the object catalog (more object types & rule based orchestration)
 
 ## Vision
 

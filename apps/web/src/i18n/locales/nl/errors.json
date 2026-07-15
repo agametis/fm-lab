@@ -10,5 +10,11 @@
   "loadHeading": "Laden mislukt",
   "retryAria": "Opnieuw proberen",
   "retryLabel": "Opnieuw proberen",
-  "noConnection": "Geen verbinding met de REST-API. Controleer of de server actief is."
+  "noConnection": "Geen verbinding met de REST-API. Controleer of de server actief is.",
+  "schemaDrift": {
+    "heading": "Catalogus verouderd",
+    "body": "Deze oplossing is geïmporteerd met een oudere catalogusversie dan de app verwacht. Converteer de XML-export opnieuw om de objectcatalogus in het huidige schema opnieuw op te bouwen.",
+    "versions": "Catalogus: {{dbVersion}} · app verwacht: {{appVersion}}",
+    "action": "Naar XML-conversie"
+  }
 }

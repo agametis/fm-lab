@@ -34,8 +34,10 @@ Answer the user in the user's language; this document is English by convention.
 
 ## Prerequisites
 
-- Master DB `db/fm_catalog.duckdb` (object resolution). Missing → abort with a
-  pointer to the `convert-xml` skill.
+- Master DB `db/fm_catalog.duckdb` (object resolution; with an active session
+  pin — `FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2 — resolve against the
+  literal bundle path `solutions/<id>/db/fm_catalog.duckdb`). Missing → abort
+  with a pointer to the `convert-xml` skill.
 - FM-Lab REST API on `http://localhost:3003` (preferred path). Not running →
   see error table (offer `rest-api-start` or the degraded mode).
 - FileMaker Pro with the fmIDE script in the target file — verified via the API,

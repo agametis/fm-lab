@@ -24,7 +24,7 @@ The two skills are not mutually exclusive: fm-analyze internally uses many of th
 
 ## Ground rules
 
-- **Database**: read-only against the master catalog `db/fm_catalog.duckdb` via a plain `duckdb db/fm_catalog.duckdb -c "<SQL>"` (Bash). Invocation rules, DuckDB-binary resolution and the "never read the `rest-api/db` copy" caveat are in CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`) — don't restate them here, and never install DuckDB.
+- **Database**: read-only against the master catalog `db/fm_catalog.duckdb` via a plain `duckdb db/fm_catalog.duckdb -c "<SQL>"` (Bash). With an active session pin (`FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2) use the literal bundle path `duckdb solutions/<id>/db/fm_catalog.duckdb` instead (resolve once via `tools/solution.sh current`). Invocation rules, DuckDB-binary resolution and the "never read the `rest-api/db` copy" caveat are in CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`) — don't restate them here, and never install DuckDB.
 - **SQL identifiers**: English DDL names — never translate table/column names of the catalog
 - **Read-only**: Never UPDATE/INSERT/DELETE
 - **Before every analysis**: Uniquely identify the object (see Step 1)

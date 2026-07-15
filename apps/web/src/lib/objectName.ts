@@ -39,13 +39,37 @@ export function parsePluginFunctionName(rawName: string): PluginNameParts {
 }
 
 /**
+ * Hübscht den internen FileMaker-Theme-Namen auf:
+ * `com.filemaker.theme.apex_blue` → `Apex Blue`.
+ *
+ * Der Katalog normalisiert den Theme-Namen bereits beim Import auf den
+ * lokalisierten Anzeigenamen (z.B. „Apex Blau"); dieser trägt kein
+ * `com.filemaker.theme.`-Präfix und bleibt hier deshalb unverändert. Die
+ * Funktion greift also nur als Fallback, falls die interne ID irgendwo
+ * ungefiltert durchschlägt.
+ */
+export function prettyThemeName(rawName: string): string {
+  const base = rawName.replace(/^com\.filemaker\.theme\./, '');
+  if (base === rawName) return rawName;   // kein internes Präfix → schon Klarname
+  return base
+    .split(/[_.]/)
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ') || rawName;
+}
+
+/**
  * Liefert den anzuzeigenden Namen für ein Objekt. Für PluginFunctions wird der
- * redundante Katalogname auf den fachlichen Funktionsnamen reduziert; alle
- * anderen Objekttypen bleiben unverändert.
+ * redundante Katalogname auf den fachlichen Funktionsnamen reduziert; für Themes
+ * wird ein etwaiger interner `com.filemaker.theme.*`-Name in den Klarnamen
+ * aufgelöst; alle anderen Objekttypen bleiben unverändert.
  */
 export function formatObjectDisplayName(objectType: string, rawName: string): string {
   if (objectType === 'PluginFunction' && rawName) {
     return parsePluginFunctionName(rawName).name;
+  }
+  if (objectType === 'Theme' && rawName) {
+    return prettyThemeName(rawName);
   }
   return rawName;
 }

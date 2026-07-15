@@ -1044,13 +1044,44 @@ async function getReferences(ctx, refOptions) {
     // datei-gleich ausgerichtet werden. Sonst matcht eine geteilte Klon-UUID die
     // ObjectCatalog-/ObjectLinks-Zeilen ALLER Klon-Dateien → kartesisches Produkt
     // (z.B. parent_script eines geklonten Scripts explodierte auf ~10000 Zeilen).
+    // ScriptTrigger → besitzendes Layout: ein Layout-/Objekt-Trigger hängt via
+    // `trigger_owner` an einem Layout (Layout-Ebene) ODER einem LayoutObject
+    // (Objekt-Ebene) → dann einen Hop weiter über `parent_layout` zum Layout.
+    // Liefert je ScriptTrigger genau eine Zeile (1:1-Kanten, keine Fächerung).
+    const TRIGGER_LAYOUT_JOIN = `
+      LEFT JOIN (
+        SELECT
+          trg.Object_UUID AS st_uuid,
+          trg.File_Name   AS st_file,
+          CASE WHEN ownc.Object_Type = 'Layout' THEN ownc.Object_UUID ELSE il.Object_UUID END AS Layout_UUID,
+          CASE WHEN ownc.Object_Type = 'Layout' THEN ownc.Object_Name ELSE il.Object_Name END AS Layout_Name,
+          CASE WHEN ownc.Object_Type = 'Layout' THEN ownc.File_Name   ELSE il.File_Name   END AS Layout_File
+        FROM ObjectCatalog trg
+        JOIN ObjectLinks own ON own.Source_UUID = trg.Object_UUID AND own.Source_File = trg.File_Name
+                            AND own.Link_Role = 'trigger_owner'
+        JOIN ObjectCatalog ownc ON own.Target_UUID = ownc.Object_UUID AND own.Target_File = ownc.File_Name
+        LEFT JOIN ObjectLinks olp ON ownc.Object_Type = 'LayoutObject'
+                                 AND olp.Source_UUID = ownc.Object_UUID AND olp.Source_File = ownc.File_Name
+                                 AND olp.Link_Role = 'parent_layout'
+        LEFT JOIN ObjectCatalog il ON olp.Target_UUID = il.Object_UUID AND olp.Target_File = il.File_Name
+        WHERE trg.Object_Type = 'ScriptTrigger'
+      ) tl ON tl.st_uuid = oc.Object_UUID AND tl.st_file = oc.File_Name
+    `;
     const CONTAINER_JOIN = `
       LEFT JOIN ObjectLinks pl ON pl.Source_UUID = oc.Object_UUID
         AND pl.Source_File = oc.File_Name
         AND pl.Link_Role IN ('parent_layout', 'parent_script')
       LEFT JOIN ObjectCatalog pc ON pl.Target_UUID = pc.Object_UUID
         AND pl.Target_File = pc.File_Name
+      ${TRIGGER_LAYOUT_JOIN}
     `;
+    // Container-Spalten (UUID/Type/Name/File): parent_layout/parent_script-Container
+    // (LayoutObject/ScriptStep) ODER — für ScriptTrigger — das besitzende Layout.
+    const CONTAINER_SELECT = `
+          COALESCE(pl.Target_UUID, tl.Layout_UUID) as Container_UUID,
+          COALESCE(pc.Object_Type, CASE WHEN tl.Layout_UUID IS NOT NULL THEN 'Layout' END) as Container_Type,
+          COALESCE(pc.Object_Name, tl.Layout_Name) as Container_Name,
+          COALESCE(pc.File_Name, tl.Layout_File) as Container_File`;
 
     // ── Step-Ebenen-Referenzen (NUR Anzeige) ──────────────────────────────
     // XMLStepReferences behält die Step-Granularität, die ObjectLinks durch das
@@ -1113,7 +1144,7 @@ async function getReferences(ctx, refOptions) {
         COALESCE(oc.File_Name, xsr.File_Name) as File_Name,
         ${STEP_REF_ROLE} as Link_Role,
         (xsr.File_Name <> COALESCE(oc.File_Name, xsr.File_Name)) as Is_Cross_File,
-        NULL as Container_UUID, NULL as Container_Type,
+        NULL as Container_UUID, NULL as Container_Type, NULL as Container_Name, NULL as Container_File,
         (oc.Object_UUID IS NOT NULL) as navigable
       FROM XMLStepReferences xsr
       LEFT JOIN ObjectCatalog oc ON xsr.Ref_UUID = oc.Object_UUID
@@ -1128,7 +1159,7 @@ async function getReferences(ctx, refOptions) {
         COALESCE(oc.File_Name, xsr.File_Name) as Target_File,
         ${STEP_REF_ROLE} as Link_Role,
         (xsr.File_Name <> COALESCE(oc.File_Name, xsr.File_Name)) as Is_Cross_File,
-        NULL as Container_UUID, NULL as Container_Type,
+        NULL as Container_UUID, NULL as Container_Type, NULL as Container_Name, NULL as Container_File,
         (oc.Object_UUID IS NOT NULL) as navigable
       FROM XMLStepReferences xsr
       LEFT JOIN ObjectCatalog oc ON xsr.Ref_UUID = oc.Object_UUID
@@ -1145,8 +1176,7 @@ async function getReferences(ctx, refOptions) {
           oc.File_Name as Target_File,
           ol.Link_Role,
           ol.Is_Cross_File,
-          pl.Target_UUID as Container_UUID,
-          pc.Object_Type as Container_Type,
+${CONTAINER_SELECT},
           TRUE as navigable
         FROM ObjectLinks ol
         JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID AND ol.Target_File = oc.File_Name
@@ -1175,8 +1205,7 @@ async function getReferences(ctx, refOptions) {
           oc.File_Name as Source_File,
           ol.Link_Role,
           ol.Is_Cross_File,
-          pl.Target_UUID as Container_UUID,
-          pc.Object_Type as Container_Type
+${CONTAINER_SELECT}
         FROM ObjectLinks ol
         JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID AND ol.Source_File = oc.File_Name
         ${CONTAINER_JOIN}
@@ -1236,8 +1265,7 @@ async function getReferences(ctx, refOptions) {
           ol.Target_UUID as uuid,
           oc.Object_Type, oc.Object_Name, oc.File_Name,
           ol.Link_Role, ol.Is_Cross_File,
-          pl.Target_UUID as Container_UUID,
-          pc.Object_Type as Container_Type,
+${CONTAINER_SELECT},
           TRUE as navigable
         FROM ObjectLinks ol
         JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID AND ol.Target_File = oc.File_Name
@@ -1250,8 +1278,7 @@ async function getReferences(ctx, refOptions) {
           ol.Source_UUID as uuid,
           oc.Object_Type, oc.Object_Name, oc.File_Name,
           ol.Link_Role, ol.Is_Cross_File,
-          pl.Target_UUID as Container_UUID,
-          pc.Object_Type as Container_Type,
+${CONTAINER_SELECT},
           TRUE as navigable
         FROM ObjectLinks ol
         JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID AND ol.Source_File = oc.File_Name
@@ -1284,12 +1311,12 @@ async function getReferences(ctx, refOptions) {
       sql = `
         SELECT direction, uuid, Object_Type, Object_Name, File_Name, Link_Role,
                BOOL_OR(Is_Cross_File) AS Is_Cross_File,
-               Container_UUID, Container_Type,
+               Container_UUID, Container_Type, Container_Name, Container_File,
                BOOL_OR(navigable) AS navigable,
                COUNT(*) AS Call_Count
         FROM (${sql}) ref_union
         GROUP BY direction, uuid, Object_Type, Object_Name, File_Name, Link_Role,
-                 Container_UUID, Container_Type
+                 Container_UUID, Container_Type, Container_Name, Container_File
       `;
     }
 

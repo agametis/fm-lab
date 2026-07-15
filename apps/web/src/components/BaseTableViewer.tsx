@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { buildObjectPath } from '../lib/navigation';
+import { indexLabel as sharedIndexLabel } from '../lib/fieldOptionLabels';
 import './BaseTableViewer.css';
 
 /**
@@ -38,6 +39,9 @@ export interface BaseTableRow {
   to_uuid: string | null;
   to_file: string | null;
   is_cross_file: boolean | null;
+  // abgeleitete Feld-Facetten
+  auto_enter: string | null;   // Auto-Eingabe-Kategorie: Serial/Lookup/Calc/Constant/Creation/Modification/Other (NULL = keine)
+  is_validated: boolean | null; // hat eine echte Validierungsregel
 }
 
 interface BaseTableViewerProps {
@@ -51,6 +55,8 @@ type FacetEntry = [string, number];
 
 // Semantische Reihenfolge der Indizierung (keine → Minimal → Alle).
 const INDEX_ORDER = ['None', 'Minimal', 'All'];
+const AE_ORDER = ['Serial', 'Lookup', 'Calc', 'Constant', 'Creation', 'Modification', 'Other'];
+const BOOL_ORDER = ['yes', 'no'];
 
 // Facetten-Accessoren (rein, ohne t/State — modul-scoped, damit sie nicht als
 // useMemo-Dependency auftauchen).
@@ -58,6 +64,13 @@ const fieldTypeOf = (f: BaseTableRow) => f.field_type ?? '—';
 const dataTypeOf = (f: BaseTableRow) => f.data_type ?? '—';
 const storageOf = (f: BaseTableRow) => (f.is_global ? 'global' : 'none');
 const indexModeOf = (f: BaseTableRow) => f.index_mode ?? 'None';
+const autoEnterOf = (f: BaseTableRow) => f.auto_enter ?? 'none';
+const validatedOf = (f: BaseTableRow) => (f.is_validated ? 'yes' : 'no');
+const commentedOf = (f: BaseTableRow) => (f.field_comment && f.field_comment.trim() ? 'yes' : 'no');
+const AE_LABEL_KEY: Record<string, string> = {
+  Serial: 'aeSerial', Lookup: 'aeLookup', Calc: 'aeCalc', Constant: 'aeConstant',
+  Creation: 'aeCreation', Modification: 'aeModification', Other: 'aeOther',
+};
 
 /**
  * Strukturierter Detail-View einer Basistabelle.
@@ -88,10 +101,16 @@ export const BaseTableViewer: React.FC<BaseTableViewerProps> = ({ data }) => {
     v === 'global'
       ? t('detail:baseTable.storageGlobal', { defaultValue: 'global' })
       : t('detail:baseTable.storageNone', { defaultValue: '–' });
-  const indexLabel = (v: string) =>
-    v === 'All' ? t('detail:baseTable.indexAll', { defaultValue: 'Alle' })
-      : v === 'Minimal' ? t('detail:baseTable.indexMinimal', { defaultValue: 'Minimal' })
-        : t('detail:baseTable.indexNone', { defaultValue: 'keine' });
+  // Gemeinsame Index-Labels mit dem Feld-Detailview (detail:fieldOptions.index.*) —
+  // damit „Indizierung" an beiden Stellen identisch benannt ist.
+  const indexLabel = (v: string) => sharedIndexLabel(t, v);
+  const autoEnterLabel = (v: string) => t(`detail:baseTable.${AE_LABEL_KEY[v] ?? 'aeOther'}`, { defaultValue: v });
+  const validatedLabel = (v: string) =>
+    v === 'yes' ? t('detail:baseTable.validated', { defaultValue: 'validiert' })
+      : t('detail:baseTable.notValidated', { defaultValue: 'nicht validiert' });
+  const commentedLabel = (v: string) =>
+    v === 'yes' ? t('detail:baseTable.commented', { defaultValue: 'dokumentiert' })
+      : t('detail:baseTable.uncommented', { defaultValue: 'undokumentiert' });
 
   // ── Gemeinsamer Suchfilter (Felder + TOs) + vier Chip-Gruppen ──
   const [search, setSearch] = useState('');
@@ -99,9 +118,13 @@ export const BaseTableViewer: React.FC<BaseTableViewerProps> = ({ data }) => {
   const [activeTypes, setActiveTypes] = useState<Set<string>>(new Set());           // Datentyp (Text/Number/…)
   const [activeStorage, setActiveStorage] = useState<Set<string>>(new Set());       // Speicher (global/none)
   const [activeIndex, setActiveIndex] = useState<Set<string>>(new Set());           // Indizierung (None/Minimal/All)
+  const [activeAutoEnter, setActiveAutoEnter] = useState<Set<string>>(new Set());   // Auto-Eingabe-Kategorie
+  const [activeValidated, setActiveValidated] = useState<Set<string>>(new Set());   // Validierung (yes/no)
+  const [activeCommented, setActiveCommented] = useState<Set<string>>(new Set());   // Kommentar (yes/no)
   const searchLower = search.trim().toLowerCase();
   const anyChipActive =
-    activeFieldTypes.size > 0 || activeTypes.size > 0 || activeStorage.size > 0 || activeIndex.size > 0;
+    activeFieldTypes.size > 0 || activeTypes.size > 0 || activeStorage.size > 0 || activeIndex.size > 0
+    || activeAutoEnter.size > 0 || activeValidated.size > 0 || activeCommented.size > 0;
   const makeToggle = (setFn: React.Dispatch<React.SetStateAction<Set<string>>>) => (v: string) =>
     setFn((prev) => {
       const next = new Set(prev);
@@ -112,11 +135,17 @@ export const BaseTableViewer: React.FC<BaseTableViewerProps> = ({ data }) => {
   const toggleType = makeToggle(setActiveTypes);
   const toggleStorage = makeToggle(setActiveStorage);
   const toggleIndex = makeToggle(setActiveIndex);
+  const toggleAutoEnter = makeToggle(setActiveAutoEnter);
+  const toggleValidated = makeToggle(setActiveValidated);
+  const toggleCommented = makeToggle(setActiveCommented);
   const clearChipFilters = () => {
     setActiveFieldTypes(new Set());
     setActiveTypes(new Set());
     setActiveStorage(new Set());
     setActiveIndex(new Set());
+    setActiveAutoEnter(new Set());
+    setActiveValidated(new Set());
+    setActiveCommented(new Set());
   };
 
   // ── Sortierung Felder-Tabelle ──
@@ -155,6 +184,9 @@ export const BaseTableViewer: React.FC<BaseTableViewerProps> = ({ data }) => {
       { key: 'data_type', get: dataTypeOf, active: activeTypes, order: null },
       { key: 'storage', get: storageOf, active: activeStorage, order: ['global', 'none'] },
       { key: 'index', get: indexModeOf, active: activeIndex, order: INDEX_ORDER },
+      { key: 'auto_enter', get: autoEnterOf, active: activeAutoEnter, order: AE_ORDER },
+      { key: 'validated', get: validatedOf, active: activeValidated, order: BOOL_ORDER },
+      { key: 'commented', get: commentedOf, active: activeCommented, order: BOOL_ORDER },
     ];
     const matchExcept = (f: BaseTableRow, exceptKey: string) =>
       dims.every((d) => d.key === exceptKey || d.active.size === 0 || d.active.has(d.get(f)));
@@ -182,7 +214,7 @@ export const BaseTableViewer: React.FC<BaseTableViewerProps> = ({ data }) => {
     const filtered = fieldsSearched.filter((f) =>
       dims.every((d) => d.active.size === 0 || d.active.has(d.get(f))));
     return { fieldsFiltered: filtered, facets: facetMap };
-  }, [fieldsSearched, activeFieldTypes, activeTypes, activeStorage, activeIndex]);
+  }, [fieldsSearched, activeFieldTypes, activeTypes, activeStorage, activeIndex, activeAutoEnter, activeValidated, activeCommented]);
 
   const sortedFields = useMemo(() => {
     const dir = fSortDir === 'asc' ? 1 : -1;
@@ -362,6 +394,20 @@ export const BaseTableViewer: React.FC<BaseTableViewerProps> = ({ data }) => {
               t('detail:baseTable.colIndex', { defaultValue: 'Indizierung' }),
               t('detail:baseTable.filterByIndex', { defaultValue: 'Nach Indizierung filtern' }),
               facets.index, activeIndex, toggleIndex, (v) => indexLabel(v))}
+            {renderChipGroup(
+              t('detail:baseTable.groupAutoEnter', { defaultValue: 'Auto-Eingabe' }),
+              t('detail:baseTable.filterByAutoEnter', { defaultValue: 'Nach Auto-Eingabe filtern' }),
+              // „keine" (Mehrheit) ausblenden — der Filter bleibt korrekt, nur der Chip entfällt.
+              facets.auto_enter.filter((e) => e[0] !== 'none'), activeAutoEnter, toggleAutoEnter, (v) => autoEnterLabel(v))}
+            {/* Boolean-Facetten nur zeigen, wenn es tatsächlich beide Ausprägungen gibt. */}
+            {facets.validated.length > 1 && renderChipGroup(
+              t('detail:baseTable.groupValidation', { defaultValue: 'Validierung' }),
+              t('detail:baseTable.filterByValidation', { defaultValue: 'Nach Validierung filtern' }),
+              facets.validated, activeValidated, toggleValidated, (v) => validatedLabel(v))}
+            {facets.commented.length > 1 && renderChipGroup(
+              t('detail:baseTable.groupComment', { defaultValue: 'Kommentar' }),
+              t('detail:baseTable.filterByComment', { defaultValue: 'Nach Kommentar filtern' }),
+              facets.commented, activeCommented, toggleCommented, (v) => commentedLabel(v))}
             {anyChipActive && (
               <button
                 type="button"

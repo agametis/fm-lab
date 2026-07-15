@@ -18,7 +18,7 @@ already built. What this skill adds: **automatic resolution selection** and **se
 ## Ground rules
 
 - **DuckDB CLI**: invocation and binary resolution per CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`); never install DuckDB yourself.
-- **Database**: master `db/fm_catalog.duckdb` only. **Never** read from `rest-api/db/` (API-internal, may be stale).
+- **Database**: master `db/fm_catalog.duckdb` only. **Never** read from `rest-api/db/` (API-internal, may be stale). With an active session pin (`FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2) direct reads use the literal bundle path `solutions/<id>/db/fm_catalog.duckdb`; `cluster.sh` follows the same cascade automatically.
   - **read-only** for all measuring (Preflight, sweep, naming-hint reads, report data).
   - **read-write only** for: the final `cluster.sh` run (Phase E) and the naming `UPDATE`s (F/G).
 - **SQL identifiers stay English** (DuckDB DDL); never translate table/column names.

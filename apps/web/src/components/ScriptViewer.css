@@ -855,6 +855,18 @@ span.fm-ref--pluginFunction {
   text-decoration: none;
 }
 
+/* Portal-Variante: per createPortal an <body> gehängt und `fixed` positioniert
+   (Position/Flip kommen inline aus useHoverPopover), damit kein überlaufender
+   Script-/Detail-Container den Popover abschneidet, wenn die Viewbox auf wenige
+   Zeilen kollabiert. Die Absolut-Anker-Props werden zurückgesetzt; die genutzten
+   --color-*-Tokens sind global (:root) und außerhalb von .fm-script-root sichtbar,
+   daher — anders als bei .plugin-doc-popover--portal — kein Var-Re-Bind nötig. */
+.fm-stepname-popover--portal {
+  position: fixed;
+  top: auto;
+  left: auto;
+}
+
 .fm-stepname-popover-header {
   font-size: 0.95rem;
   display: flex;

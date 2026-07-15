@@ -155,7 +155,44 @@
     "autoEnter": "Auto-invoer",
     "comment": "Commentaar",
     "calculationFormula": "Berekeningsformule",
-    "autoEnterCalculation": "Auto-invoer-berekening"
+    "autoEnterCalculation": "Auto-invoer-berekening",
+    "sectionAutoEnter": "Automatisch invoeren",
+    "sectionValidation": "Validatie",
+    "sectionStorage": "Opslag",
+    "sectionSummary": "Overzicht",
+    "type": "Type",
+    "no": "Nee",
+    "serialNext": "Volgende waarde",
+    "serialIncrement": "Toename",
+    "serialGenerate": "Genereren",
+    "lookupSource": "Bronveld",
+    "lookupVia": "Via relatie",
+    "lookupDontCopy": "Lege waarden niet kopiëren",
+    "lookupNoMatch": "Als er geen overeenkomst is",
+    "calcOverwrite": "Bestaande waarde vervangen",
+    "calcAlwaysEvaluate": "Bij elke wijziging opnieuw berekenen",
+    "prohibitModification": "Wijziging niet toegestaan",
+    "validationMode": "Valideren",
+    "constraints": "Vereist",
+    "constraintNotEmpty": "Niet leeg",
+    "constraintUnique": "Uniek",
+    "constraintExisting": "Bestaand",
+    "validationValueList": "Lid van waardelijst",
+    "validationAllowOverride": "Gebruiker mag negeren",
+    "storageIndex": "Indexering",
+    "storageAutoIndex": "Indexen automatisch maken",
+    "storageStoreCalc": "Berekeningsresultaat opgeslagen",
+    "summaryOperation": "Bewerking",
+    "summaryField": "Overzichtsveld",
+    "validationStrict": "Strikt gegevenstype",
+    "validationMaxChars": "Max. aantal tekens",
+    "validationRange": "Binnen bereik",
+    "validationByCalc": "Gevalideerd door berekening",
+    "validationMessage": "Aangepast bericht",
+    "storageIndexLanguage": "Standaardtaal",
+    "summaryRestartGroup": "Opnieuw beginnen per groep",
+    "summaryRepMode": "Herhalingen berekenen",
+    "calcEvaluatesWhenEmpty": "Berekent ook bij lege velden"
   },
   "typeDetail": {
     "loading": "Laden…",
@@ -256,7 +293,7 @@
     },
     "solutions": {
       "heading": "Oplossingen",
-      "description": "Beheer de FileMaker-oplossingen van deze workspace. Elke oplossing heeft een eigen XML-invoer, een eigen database en een eigen status. Activeren schakelt de hele workbench om naar die oplossing.",
+      "description": "Beheert de FileMaker-oplossingen van deze workspace. Elke oplossing heeft een eigen XML-inbox, eigen database en eigen status. Je eigen weergave volgt de kiezer in de koptekst — de hier ingestelde serverstandaard geldt alleen voor toegang zonder eigen selectie.",
       "colId": "ID",
       "colName": "Oplossing",
       "colSize": "Grootte",
@@ -264,7 +301,7 @@
       "colLastImport": "Laatste import",
       "colDuration": "Duur",
       "activeBadge": "Actief",
-      "activate": "Activeren",
+      "activate": "Als serverstandaard instellen",
       "activating": "Activeren…",
       "deleteButton": "Verwijderen",
       "deleteConfirm1": "Oplossing “{{name}}” verwijderen? Dit verwijdert de VOLLEDIGE bundel inclusief de XML-bronbestanden.",
@@ -396,6 +433,116 @@
     "clearFilter": "Herstellen",
     "noMatches": "Geen resultaten",
     "openField": "Velddetail openen",
-    "openTo": "Tabelexemplaar-detail openen"
+    "openTo": "Tabelexemplaar-detail openen",
+    "groupAutoEnter": "Autom. invoer",
+    "groupValidation": "Validatie",
+    "groupComment": "Opmerking",
+    "filterByAutoEnter": "Filteren op autom. invoer",
+    "filterByValidation": "Filteren op validatie",
+    "filterByComment": "Filteren op opmerking",
+    "aeSerial": "Volgnummer",
+    "aeLookup": "Opzoeken",
+    "aeCalc": "Berekening",
+    "aeConstant": "Constante",
+    "aeCreation": "Aanmaak",
+    "aeModification": "Wijziging",
+    "aeOther": "Overig",
+    "validated": "gevalideerd",
+    "notValidated": "niet gevalideerd",
+    "commented": "gedocumenteerd",
+    "uncommented": "niet gedocumenteerd"
+  },
+  "fieldOptions": {
+    "fieldType": {
+      "Normal": "Normaal",
+      "Calculated": "Berekening",
+      "Summary": "Overzicht"
+    },
+    "dataType": {
+      "Text": "Tekst",
+      "Number": "Getal",
+      "Date": "Datum",
+      "Time": "Tijd",
+      "Timestamp": "Tijdstempel",
+      "Binary": "Container"
+    },
+    "autoEnter": {
+      "SerialNumber": "Volgnummer",
+      "Looked_up": "Opgezochte waarde",
+      "Calculated": "Berekende waarde",
+      "ConstantData": "Gegevens (constante)",
+      "CreationDate": "Aanmaakdatum",
+      "CreationTime": "Aanmaaktijd",
+      "CreationTimestamp": "Aanmaaktijdstempel",
+      "CreationName": "Gebruikersnaam bij aanmaken",
+      "CreationAccountName": "Accountnaam bij aanmaken",
+      "ModificationDate": "Wijzigingsdatum",
+      "ModificationTime": "Wijzigingstijd",
+      "ModificationTimestamp": "Wijzigingstijdstempel",
+      "ModificationName": "Gebruikersnaam bij wijziging",
+      "ModificationAccountName": "Accountnaam bij wijziging"
+    },
+    "serialGenerate": {
+      "OnCreation": "Bij aanmaken",
+      "OnCommit": "Bij vastleggen"
+    },
+    "noMatch": {
+      "DoNotCopy": "Niet kopiëren",
+      "ConstantData": "Constante gebruiken"
+    },
+    "validationType": {
+      "Always": "Altijd",
+      "OnlyDuringDataEntry": "Alleen tijdens gegevensinvoer"
+    },
+    "index": {
+      "None": "Geen",
+      "Minimal": "Minimaal",
+      "All": "Alle"
+    },
+    "summaryOp": {
+      "Total": "Totaal",
+      "Average": "Gemiddelde",
+      "Count": "Aantal",
+      "Minimum": "Minimum",
+      "Maximum": "Maximum",
+      "StandardDeviation": "Standaardafwijking",
+      "FractionOfTotal": "Fractie van totaal",
+      "List": "Lijst van",
+      "RunningTotal": "Doorlopend totaal"
+    },
+    "strictType": {
+      "Numeric": "Alleen numeriek",
+      "FourDigitYear": "Jaartal met 4 cijfers",
+      "TimeOfDay": "Tijd van de dag"
+    },
+    "repMode": {
+      "Together": "Alle samen",
+      "Individually": "Afzonderlijk"
+    }
+  },
+  "layoutViewer": {
+    "propertiesHeading": "Eigenschappen",
+    "contextTable": "Contexttabel",
+    "theme": "Thema",
+    "menuSet": "Menuset",
+    "menuSetDefault": "[Bestandsstandaard]",
+    "width": "Breedte",
+    "availableViews": "Beschikbare weergaven",
+    "defaultView": "Standaardweergave",
+    "viewForm": "Formulierweergave",
+    "viewList": "Lijstweergave",
+    "viewTable": "Tabelweergave",
+    "baseTheme": "Basisthema",
+    "inLayoutMenus": "In lay-outmenu's",
+    "lastModified": "Laatst gewijzigd",
+    "triggersHeading": "Scripttriggers",
+    "noTriggers": "Geen scripttriggers",
+    "yes": "Ja",
+    "no": "Nee",
+    "optAutoSave": "Wijzigingen automatisch opslaan",
+    "optFieldFrames": "Veldkaders bij actief record",
+    "optFrameCurrentOnly": "Velden alleen in huidige record omkaderen",
+    "optShowCurrentInList": "Record-indicator in lijstweergave",
+    "optQuickFind": "Snelzoeken"
   }
 }

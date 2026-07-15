@@ -37,13 +37,24 @@ app.use(express.urlencoded({ extended: true }));
 // dem Body-Parser, damit die Ingestion-Route den Body schon hat.
 app.use(debugSessionMiddleware);
 
-// Solution-Kontext (Multiuser-Vorbereitung): Phase 1 löst jeden Request
-// konstant auf den Server-Default auf; ein mitgesendeter X-Solution-Header wird
-// angenommen, aber (noch) nicht ausgewertet — Ausbaustufe M macht daraus die
-// Per-Tab-Auswahl, ohne dass Query-/Service-Pfade umgebaut werden müssen.
+// Solution-Kontext (Ausbaustufe M, scharf): der X-Solution-Header wählt die
+// Lösung dieses Requests (Per-Tab-Auswahl des Frontends); ohne Header greift
+// der Server-Default. Unbekannte/ungültige IDs → 404 VOR jeder Route — das
+// Frontend setzt seine Auswahl dann zurück (veralteter localStorage nach
+// Löschen/Umbenennen einer Lösung).
 app.use((req, res, next) => {
-  req.solutionContext = require('./config/solutions').getRequestContext(req);
-  next();
+  try {
+    req.solutionContext = require('./config/solutions').getRequestContext(req);
+    next();
+  } catch (err) {
+    if (err.code === 'SOLUTION_NOT_FOUND') {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'SOLUTION_NOT_FOUND', message: err.message },
+      });
+    }
+    next(err);
+  }
 });
 
 // API Routes
@@ -151,6 +162,12 @@ async function start() {
     // Invariante I1: 'default' existiert immer — Bundle-Skelett
     // + Minimal-Manifest still herstellen, bevor Pfade aufgelöst werden.
     require('./config/solutions').ensureDefaultSolution();
+
+    // Workspace-Symlinks (db/fm_catalog.duckdb → aktive Lösung) idempotent
+    // projizieren — so entsteht der in CLAUDE.md §2 dokumentierte CLI-Lesepfad
+    // ab dem ersten API-Start, auch für Ein-Lösungs-Installationen, die nie
+    // umschalten (ein REALES File am Linkort bleibt bewusst unberührt).
+    require('./config/solutions').ensureWorkspaceSymlinks();
 
     // Initialize database connection
     console.log('Initializing database connection...');

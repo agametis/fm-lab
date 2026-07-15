@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Champ de calcul non stocké",
+    "description": "Règle de performance — champs de calcul dont le résultat n'est pas stocké. Les calculs non stockés sont recalculés à la demande ; en placer beaucoup sur un même modèle (surtout en vue liste) peut ralentir sensiblement l'affichage, car le calcul s'exécute une fois par enregistrement affiché."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Occurrences",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "summary_kpi.props.items[2].label": "Tables concernées",
+    "findings_card.props.title": "Champ de calcul non stocké",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, une table ou un champ…",
+    "findings_table.props.empty.message": "Aucun champ de calcul non stocké trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Table",
+    "findings_table.props.columns[2].label": "Champ",
+    "findings_table.props.columns[3].label": "Type"
+  }
+}

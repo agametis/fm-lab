@@ -10,5 +10,11 @@
   "loadHeading": "加载失败",
   "retryAria": "重试",
   "retryLabel": "重试",
-  "noConnection": "无法连接到 REST API。请检查服务器是否正在运行。"
+  "noConnection": "无法连接到 REST API。请检查服务器是否正在运行。",
+  "schemaDrift": {
+    "heading": "目录已过时",
+    "body": "此解决方案导入时使用的目录版本早于应用所需的版本。请重新转换其 XML 导出，以按当前架构重建对象目录。",
+    "versions": "目录：{{dbVersion}} · 应用需要：{{appVersion}}",
+    "action": "前往 XML 转换"
+  }
 }

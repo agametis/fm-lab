@@ -155,7 +155,44 @@
     "autoEnter": "自動入力",
     "comment": "コメント",
     "calculationFormula": "計算式",
-    "autoEnterCalculation": "自動入力の計算式"
+    "autoEnterCalculation": "自動入力の計算式",
+    "sectionAutoEnter": "自動入力",
+    "sectionValidation": "入力値の制限",
+    "sectionStorage": "格納",
+    "sectionSummary": "集計",
+    "type": "タイプ",
+    "no": "いいえ",
+    "serialNext": "次の値",
+    "serialIncrement": "増分",
+    "serialGenerate": "生成",
+    "lookupSource": "参照元フィールド",
+    "lookupVia": "リレーションシップ経由",
+    "lookupDontCopy": "空の値をコピーしない",
+    "lookupNoMatch": "一致しない場合",
+    "calcOverwrite": "既存の値を置き換える",
+    "calcAlwaysEvaluate": "変更のたびに再計算する",
+    "prohibitModification": "変更を許可しない",
+    "validationMode": "検証",
+    "constraints": "必須条件",
+    "constraintNotEmpty": "空欄不可",
+    "constraintUnique": "ユニーク",
+    "constraintExisting": "既存値",
+    "validationValueList": "値一覧のメンバー",
+    "validationAllowOverride": "ユーザによる無視を許可",
+    "storageIndex": "インデックス",
+    "storageAutoIndex": "インデックスを自動作成",
+    "storageStoreCalc": "計算結果を格納",
+    "summaryOperation": "集計方法",
+    "summaryField": "集計対象フィールド",
+    "validationStrict": "厳密なデータタイプ",
+    "validationMaxChars": "最大文字数",
+    "validationRange": "範囲内",
+    "validationByCalc": "計算による検証",
+    "validationMessage": "カスタムメッセージ",
+    "storageIndexLanguage": "デフォルト言語",
+    "summaryRestartGroup": "グループごとに再開",
+    "summaryRepMode": "繰り返しを集計",
+    "calcEvaluatesWhenEmpty": "参照フィールドが空でも計算する"
   },
   "typeDetail": {
     "loading": "読み込み中…",
@@ -256,7 +293,7 @@
     },
     "solutions": {
       "heading": "ソリューション",
-      "description": "このワークスペースの FileMaker ソリューションを管理します。各ソリューションは独自の XML 受信フォルダー、データベース、状態を持ちます。アクティブにすると、ワークベンチ全体がそのソリューションに切り替わります。",
+      "description": "このワークスペースの FileMaker ソリューションを管理します。各ソリューションは独自の XML 受信箱、データベース、状態を持ちます。自分の表示はヘッダーのピッカーに従います。ここで設定するサーバー既定は、独自の選択がないアクセスにのみ適用されます。",
       "colId": "ID",
       "colName": "ソリューション",
       "colSize": "サイズ",
@@ -264,7 +301,7 @@
       "colLastImport": "最終インポート",
       "colDuration": "所要時間",
       "activeBadge": "アクティブ",
-      "activate": "アクティブにする",
+      "activate": "サーバー既定に設定",
       "activating": "切り替え中…",
       "deleteButton": "削除",
       "deleteConfirm1": "ソリューション「{{name}}」を削除しますか？ XML ソースファイルを含むバンドル全体が削除されます。",
@@ -396,6 +433,116 @@
     "clearFilter": "リセット",
     "noMatches": "一致なし",
     "openField": "フィールドの詳細を開く",
-    "openTo": "テーブルオカレンスの詳細を開く"
+    "openTo": "テーブルオカレンスの詳細を開く",
+    "groupAutoEnter": "自動入力",
+    "groupValidation": "入力値の制限",
+    "groupComment": "コメント",
+    "filterByAutoEnter": "自動入力で絞り込み",
+    "filterByValidation": "入力値の制限で絞り込み",
+    "filterByComment": "コメントで絞り込み",
+    "aeSerial": "連番",
+    "aeLookup": "ルックアップ",
+    "aeCalc": "計算",
+    "aeConstant": "定数",
+    "aeCreation": "作成",
+    "aeModification": "変更",
+    "aeOther": "その他",
+    "validated": "制限あり",
+    "notValidated": "制限なし",
+    "commented": "コメントあり",
+    "uncommented": "コメントなし"
+  },
+  "fieldOptions": {
+    "fieldType": {
+      "Normal": "通常",
+      "Calculated": "計算",
+      "Summary": "集計"
+    },
+    "dataType": {
+      "Text": "テキスト",
+      "Number": "数字",
+      "Date": "日付",
+      "Time": "時刻",
+      "Timestamp": "タイムスタンプ",
+      "Binary": "オブジェクト"
+    },
+    "autoEnter": {
+      "SerialNumber": "シリアル番号",
+      "Looked_up": "ルックアップ値",
+      "Calculated": "計算値",
+      "ConstantData": "データ (定数)",
+      "CreationDate": "作成日",
+      "CreationTime": "作成時刻",
+      "CreationTimestamp": "作成タイムスタンプ",
+      "CreationName": "作成者名",
+      "CreationAccountName": "作成アカウント名",
+      "ModificationDate": "修正日",
+      "ModificationTime": "修正時刻",
+      "ModificationTimestamp": "修正タイムスタンプ",
+      "ModificationName": "修正者名",
+      "ModificationAccountName": "修正アカウント名"
+    },
+    "serialGenerate": {
+      "OnCreation": "作成時",
+      "OnCommit": "コミット時"
+    },
+    "noMatch": {
+      "DoNotCopy": "コピーしない",
+      "ConstantData": "定数を使用"
+    },
+    "validationType": {
+      "Always": "常に",
+      "OnlyDuringDataEntry": "データ入力時のみ"
+    },
+    "index": {
+      "None": "なし",
+      "Minimal": "最小限",
+      "All": "すべて"
+    },
+    "summaryOp": {
+      "Total": "合計",
+      "Average": "平均",
+      "Count": "件数",
+      "Minimum": "最小値",
+      "Maximum": "最大値",
+      "StandardDeviation": "標準偏差",
+      "FractionOfTotal": "総計に対する割合",
+      "List": "リスト",
+      "RunningTotal": "累計"
+    },
+    "strictType": {
+      "Numeric": "数字のみ",
+      "FourDigitYear": "4 桁の年",
+      "TimeOfDay": "時刻"
+    },
+    "repMode": {
+      "Together": "すべてまとめて",
+      "Individually": "個別に"
+    }
+  },
+  "layoutViewer": {
+    "propertiesHeading": "プロパティ",
+    "contextTable": "コンテキストテーブル",
+    "theme": "テーマ",
+    "menuSet": "メニューセット",
+    "menuSetDefault": "[ファイル既定]",
+    "width": "幅",
+    "availableViews": "使用可能なビュー",
+    "defaultView": "既定のビュー",
+    "viewForm": "フォームビュー",
+    "viewList": "リストビュー",
+    "viewTable": "表ビュー",
+    "baseTheme": "ベーステーマ",
+    "inLayoutMenus": "レイアウトメニューに表示",
+    "lastModified": "最終更新",
+    "triggersHeading": "スクリプトトリガ",
+    "noTriggers": "スクリプトトリガなし",
+    "yes": "はい",
+    "no": "いいえ",
+    "optAutoSave": "変更を自動保存",
+    "optFieldFrames": "アクティブレコードでフィールド枠を表示",
+    "optFrameCurrentOnly": "現在のレコードのフィールドのみ枠表示",
+    "optShowCurrentInList": "リストビューでレコード表示",
+    "optQuickFind": "クイック検索"
   }
 }

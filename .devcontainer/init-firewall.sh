@@ -96,6 +96,14 @@ done < <(echo "$gh_ranges" | jq -r '(.web + .api + .git)[]' | aggregate -q)
 #   vscode.blob.core.windows.net   — VS Code extension assets
 #   update.code.visualstudio.com   — VS Code server/update
 #   community-extensions.duckdb.org / extensions.duckdb.org — webbed extension updates
+#   duckdb.org / blobs.duckdb.org  — DuckDB documentation mirror (install-duckdb-docs)
+#   help.claris.com                — Claris FileMaker help mirror (install-claris-docs)
+#   www.monkeybreadsoftware.com    — MBS plugin documentation (install-mbs-docs)
+# NOTE: help.claris.com (Akamai) and duckdb.org (Cloudflare) are CDN-fronted with
+# rotating IPs. This loop pins the IPs resolved at init time — if a doc install runs
+# much later and the CDN has rotated, the crawl may still be blocked. If that happens,
+# re-run this script (sudo /usr/local/bin/init-firewall.sh) shortly before the install
+# to refresh the pinned IPs. www.monkeybreadsoftware.com is a single stable host.
 for domain in \
     "registry.npmjs.org" \
     "api.anthropic.com" \
@@ -105,7 +113,11 @@ for domain in \
     "vscode.blob.core.windows.net" \
     "update.code.visualstudio.com" \
     "community-extensions.duckdb.org" \
-    "extensions.duckdb.org"; do
+    "extensions.duckdb.org" \
+    "duckdb.org" \
+    "blobs.duckdb.org" \
+    "help.claris.com" \
+    "www.monkeybreadsoftware.com"; do
     echo "Resolving $domain..."
     ips=$(dig +noall +answer A "$domain" | awk '$4 == "A" {print $5}')
     if [ -z "$ips" ]; then

@@ -66,7 +66,10 @@ exit 3 = environment problem (databases missing).
 Individual phases for debugging: `fmgen.py parse|resolve|emit|gate` (see
 `--help`). Databases resolve to `reference/fm_spec.duckdb` and
 `db/fm_catalog.duckdb` from the repo root; override with `--reference-db` /
-`--catalog-db` or `FMGEN_REFERENCE_DB` / `FMGEN_CATALOG_DB`.
+`--catalog-db` or `FMGEN_REFERENCE_DB` / `FMGEN_CATALOG_DB`. With an active
+session pin (`FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2) pass
+`--catalog-db solutions/<id>/db/fm_catalog.duckdb` so references resolve
+against the pinned solution.
 
 **When the emitter reports "not supported by the table-driven emitter"**
 (multi-instance structures beyond the covered set, exotic steps): author that

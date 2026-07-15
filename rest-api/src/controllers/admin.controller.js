@@ -21,13 +21,14 @@ function isAuthorized(req) {
 
 /**
  * POST /api/admin/reload
- * Closes the current DuckDB connection and re-opens it from disk. Called by
- * convert-xml after a fresh copy of the master DB has been synced into
- * rest-api/db/solutions/<id>/.
+ * Invalidates the DuckDB pool entry of ONE solution and re-opens it from disk.
+ * Called by convert-xml after a fresh copy of the master DB has been synced
+ * into rest-api/db/solutions/<id>/.
  *
- * Optional body `{"solution": "<id>"}`: names the solution whose copy
- * was just synced. If it is NOT the active solution, the reload is a no-op —
- * the copy on disk is already fresh and the sync hook may call blindly.
+ * Optional body `{"solution": "<id>"}`: names the solution whose copy was just
+ * synced. Stage M: the reload targets exactly that solution's pool entry —
+ * other solutions/users keep working undisturbed. A never-requested solution
+ * is merely invalidated (status 'invalidated'), not opened.
  */
 async function reload(req, res, next) {
   try {
@@ -42,28 +43,45 @@ async function reload(req, res, next) {
     }
 
     const requested = req.body && req.body.solution;
-    if (requested && requested !== solutions.getActiveSolutionId()) {
-      console.log(`Admin reload skipped: solution '${requested}' is not active`);
-      return res.json(buildSuccess({
-        status: 'skipped',
-        reason: `solution '${requested}' is not the active solution`,
-        active_solution: solutions.getActiveSolutionId(),
-        timestamp: new Date().toISOString(),
-      }));
+    if (requested && !solutions.solutionExists(requested)) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'SOLUTION_NOT_FOUND', message: `Unknown solution: ${requested}` },
+      });
     }
 
-    console.log('Admin reload requested - re-opening DuckDB connection');
-    const result = await performReload();
-    console.log(`Admin reload complete: ${result.tables} tables from ${result.path}`);
+    console.log(`Admin reload requested${requested ? ` (solution: ${requested})` : ''} - re-opening DuckDB connection`);
+    const result = await performReload(requested || undefined);
+    console.log(`Admin reload complete: ${result.status} (${result.solution})${result.tables != null ? ` — ${result.tables} tables from ${result.path}` : ''}`);
 
     res.json(buildSuccess({
       status: result.status,
+      solution: result.solution,
       tables: result.tables,
       path: result.path,
       timestamp: new Date().toISOString(),
     }));
   } catch (error) {
     console.error('Admin reload failed:', error);
+    next(error);
+  }
+}
+
+/**
+ * GET /api/admin/pool — Diagnose der Pool-Belegung (Ausbaustufe M): welche
+ * Lösungen sind offen, wie alt, wie viele Queries laufen. Token-geschützt.
+ */
+function poolStatus(req, res, next) {
+  try {
+    if (!isAuthorized(req)) {
+      return res.status(401).json({
+        success: false,
+        error: { code: 'UNAUTHORIZED', message: 'Invalid or missing X-Admin-Token header' },
+      });
+    }
+    const db = require('../config/database');
+    res.json(buildSuccess({ pool: db.poolStatus() }));
+  } catch (error) {
     next(error);
   }
 }
@@ -200,6 +218,13 @@ async function renameSolutionBundle(req, res, next) {
       });
     }
     const { from, to } = req.body || {};
+    // Pool-Eintrag + Sidecar der Quelle VOR dem Verschieben schließen — offene
+    // Handles auf Pfaden, die gleich umbenannt werden (Stage M: auch
+    // Fremdlösungen können einen Pool-Eintrag haben).
+    const db = require('../config/database');
+    const annoDb = require('../config/annotations-db');
+    await db.evictSolution(String(from || ''));
+    await annoDb.closeSolution(String(from || ''));
     const result = solutions.renameSolution(String(from || ''), String(to || ''));
     if (result.was_active) {
       await performReload();
@@ -225,7 +250,7 @@ async function renameSolutionBundle(req, res, next) {
  * sources (the UI shows a double confirmation + export offer before
  * calling this). The active solution cannot be deleted. Token-protected.
  */
-function deleteSolution(req, res, next) {
+async function deleteSolution(req, res, next) {
   try {
     if (!isAuthorized(req)) {
       return res.status(401).json({
@@ -233,6 +258,13 @@ function deleteSolution(req, res, next) {
         error: { code: 'UNAUTHORIZED', message: 'Invalid or missing X-Admin-Token header' },
       });
     }
+    // Pool-Eintrag + Sidecar schließen, BEVOR das Bundle gelöscht wird —
+    // ein anderer User könnte die Lösung gerade im Kontext haben (Stage M);
+    // seine nächsten Requests laufen dann in den sauberen 404.
+    const db = require('../config/database');
+    const annoDb = require('../config/annotations-db');
+    await db.evictSolution(req.params.id);
+    await annoDb.closeSolution(req.params.id);
     const result = solutions.deleteSolution(req.params.id);
     res.json(buildSuccess(result));
   } catch (error) {
@@ -248,6 +280,7 @@ function deleteSolution(req, res, next) {
 
 module.exports = {
   reload,
+  poolStatus,
   activateSolution,
   listSolutions,
   createSolution,

@@ -1,6 +1,5 @@
 import { API_BASE } from '../config/apiBase';
-import React, { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { ScriptRef } from '../script/types';
@@ -8,6 +7,8 @@ import { fetchPluginDoc, type PluginDoc } from '../script/pluginDocsApi';
 import { sanitizePluginHtml } from '../script/sanitize';
 import { useHighlightRefUuids, isUuidHighlighted, useScriptSearchPredicate } from '../script/highlightContext';
 import { buildObjectPath } from '../lib/navigation';
+import { useHoverPopover } from './useHoverPopover';
+import { PopoverPortal } from './PopoverPortal';
 
 interface RefSpanProps {
   reference: ScriptRef;
@@ -29,25 +30,12 @@ const FunctionRefSpan: React.FC<RefSpanProps & { className: string; navPath: str
 }) => {
   const { t } = useTranslation(['detail']);
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  const hoverTimer = useRef<number | null>(null);
   const isEnriched = typeof reference.functionId === 'number';
 
-  const startHover = () => {
-    if (!isEnriched) return;
-    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-    hoverTimer.current = window.setTimeout(() => setOpen(true), 250);
-  };
-  const cancelHover = () => {
-    if (hoverTimer.current) {
-      window.clearTimeout(hoverTimer.current);
-      hoverTimer.current = null;
-    }
-    window.setTimeout(() => setOpen(false), 120);
-  };
-  useEffect(() => () => {
-    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-  }, []);
+  // Portaliertes Hover-Popover (fixed, mit Flip/Clamp) — kein Abschneiden am
+  // unteren Rand kurzer Script-/Calc-Panels.
+  const { anchorRef, open, pos, startHover, cancelHover, keepOpen } =
+    useHoverPopover<HTMLSpanElement>({ minWidth: 320, enabled: isEnriched });
 
   const apiBase = (API_BASE).replace(/\/+$/, '');
   const helpHref = reference.functionLocalHelpUrl
@@ -61,6 +49,7 @@ const FunctionRefSpan: React.FC<RefSpanProps & { className: string; navPath: str
 
   return (
     <span
+      ref={anchorRef}
       className={className + (clickable ? ' fm-ref-link' : '')}
       data-ref-type="function"
       title={isEnriched ? undefined : (clickable ? `${reference.name} (Klick → Detail-Seite)` : reference.name)}
@@ -72,13 +61,11 @@ const FunctionRefSpan: React.FC<RefSpanProps & { className: string; navPath: str
       onKeyDown={clickable ? (e) => { if (e.key === 'Enter') handleClick(); } : undefined}
     >
       {text}
-      {open && isEnriched && (
-        <span
-          className="fm-stepname-popover"
-          role="tooltip"
-          onMouseEnter={() => {
-            if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-          }}
+      {open && isEnriched && pos && (
+        <PopoverPortal
+          pos={pos}
+          className="fm-stepname-popover fm-stepname-popover--portal"
+          onMouseEnter={keepOpen}
           onMouseLeave={cancelHover}
         >
           <span className="fm-stepname-popover-header">
@@ -114,7 +101,7 @@ const FunctionRefSpan: React.FC<RefSpanProps & { className: string; navPath: str
               {t('detail:helpLinks.canonical')} {reference.functionCanonical}
             </span>
           )}
-        </span>
+        </PopoverPortal>
       )}
     </span>
   );
@@ -182,84 +169,31 @@ export const PluginRefSpan: React.FC<RefSpanProps & { className: string; title: 
   const { t } = useTranslation(['detail']);
   const navigate = useNavigate();
   const { uuid: currentUuid } = useParams<{ uuid: string }>();
-  const [open, setOpen] = useState(false);
   const [doc, setDoc] = useState<PluginDoc | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const hoverTimer = useRef<number | null>(null);
-  const closeTimer = useRef<number | null>(null);
-  const containerRef = useRef<HTMLSpanElement>(null);
-  // Popover wird per Portal an <body> gerendert (fixed positioniert), damit es
-  // NICHT vom überlaufenden Script-/Detail-Container abgeschnitten wird, wenn die
-  // Viewbox auf 1 Zeile kollabiert. Position wird beim Öffnen aus dem Anker-Rect
-  // berechnet — mit Flip nach oben bei wenig Platz unten und horizontalem Clamp.
-  const [pos, setPos] = useState<{ left: number; top: number | 'auto'; bottom: number | 'auto' } | null>(null);
 
   const subFn = reference.subFunction;
   const source = 'mbs'; // aktuell nur MBS unterstützt
 
-  const computePos = () => {
-    const el = containerRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const POPOVER_MIN_W = 480;   // vgl. .plugin-doc-popover min-width
-    const MARGIN = 8;
-    const spaceBelow = vh - r.bottom;
-    const spaceAbove = r.top;
-    // Horizontal am Anker ausrichten, aber im Viewport halten.
-    const left = Math.max(MARGIN, Math.min(r.left, vw - POPOVER_MIN_W - MARGIN));
-    // Bevorzugt unterhalb; nur nach oben klappen, wenn unten wenig und oben mehr Platz.
-    if (spaceBelow < 240 && spaceAbove > spaceBelow) {
-      setPos({ left, top: 'auto', bottom: vh - r.top + 4 });
-    } else {
-      setPos({ left, top: r.bottom + 4, bottom: 'auto' });
-    }
+  // Doku beim Öffnen einmalig nachladen (guard gegen Mehrfach-Fetch). Die Fetch-
+  // Refs (doc/loading) liest die Closure zum Zeitpunkt des Open-Timers.
+  const loadDoc = () => {
+    if (!subFn || doc || loading) return;
+    setLoading(true);
+    fetchPluginDoc(source, subFn, 'short')
+      .then(d => {
+        setDoc(d);
+        setError(null);
+      })
+      .catch(err => setError(err instanceof Error ? err.message : 'Fehler'))
+      .finally(() => setLoading(false));
   };
 
-  const startHover = () => {
-    if (!subFn) return;
-    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-    hoverTimer.current = window.setTimeout(() => {
-      computePos();
-      setOpen(true);
-      if (!doc && !loading) {
-        setLoading(true);
-        fetchPluginDoc(source, subFn, 'short')
-          .then(d => {
-            setDoc(d);
-            setError(null);
-          })
-          .catch(err => setError(err instanceof Error ? err.message : 'Fehler'))
-          .finally(() => setLoading(false));
-      }
-    }, 250);
-  };
-
-  const cancelHover = () => {
-    if (hoverTimer.current) {
-      window.clearTimeout(hoverTimer.current);
-      hoverTimer.current = null;
-    }
-    // Schließen leicht verzögern, damit der Cursor über den (4px-)Spalt ins
-    // portalierte Popover wandern kann. Der Timer MUSS abbrechbar sein: da das
-    // Popover nun kein Kind des Ankers mehr ist, feuert dessen onMouseLeave beim
-    // Übergang — ohne cancelbaren Timer würde das Popover unter dem Cursor schließen.
-    if (closeTimer.current) window.clearTimeout(closeTimer.current);
-    closeTimer.current = window.setTimeout(() => setOpen(false), 120);
-  };
-
-  // Cursor ist ins Popover gewandert → geplantes Schließen abbrechen.
-  const keepOpen = () => {
-    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-    if (closeTimer.current) { window.clearTimeout(closeTimer.current); closeTimer.current = null; }
-  };
-
-  useEffect(() => () => {
-    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-    if (closeTimer.current) window.clearTimeout(closeTimer.current);
-  }, []);
+  // Portaliertes Hover-Popover (fixed, mit Flip/Clamp) — min-width vgl.
+  // .plugin-doc-popover (480px), damit rechts nichts abschneidet.
+  const { anchorRef, open, pos, startHover, cancelHover, keepOpen } =
+    useHoverPopover<HTMLSpanElement>({ minWidth: 480, enabled: !!subFn, onOpen: loadDoc });
 
   const clickable = !!navPath;
   const handleClick = () => {
@@ -268,7 +202,7 @@ export const PluginRefSpan: React.FC<RefSpanProps & { className: string; title: 
 
   return (
     <span
-      ref={containerRef}
+      ref={anchorRef}
       className={className + (clickable ? ' fm-ref-link' : '')}
       title={clickable ? `${title}  (Klick → Detail-Seite)` : title}
       onMouseEnter={startHover}
@@ -280,11 +214,10 @@ export const PluginRefSpan: React.FC<RefSpanProps & { className: string; title: 
       onKeyDown={clickable ? (e) => { if (e.key === 'Enter') handleClick(); } : undefined}
     >
       {text}
-      {open && subFn && pos && createPortal(
-        <span
+      {open && subFn && pos && (
+        <PopoverPortal
+          pos={pos}
           className="plugin-doc-popover plugin-doc-popover--portal"
-          role="tooltip"
-          style={{ position: 'fixed', left: pos.left, top: pos.top, bottom: pos.bottom, zIndex: 1000 }}
           onMouseEnter={keepOpen}
           onMouseLeave={cancelHover}
         >
@@ -344,8 +277,7 @@ export const PluginRefSpan: React.FC<RefSpanProps & { className: string; title: 
             </span>
           )}
           {doc && !doc.found && <span className="plugin-doc-error">{t('detail:helpLinks.noDocs')}</span>}
-        </span>,
-        document.body,
+        </PopoverPortal>
       )}
     </span>
   );

@@ -35,7 +35,10 @@ document is English by convention.
 
 ## Prerequisites
 
-- Master DB `db/fm_catalog.duckdb` (object resolution). Missing → abort with a
+- Master DB `db/fm_catalog.duckdb` (object resolution; with an active session
+  pin — `FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2 — resolve against the
+  literal bundle path `solutions/<id>/db/fm_catalog.duckdb` and note that the
+  web frontend may be showing a different solution). Missing → abort with a
   pointer to the `convert-xml` skill. No REST-API requirement — the frontend dev
   server alone is enough.
 - A reachable FM-Lab web frontend (dev server on :5173, or any base URL the user
@@ -130,18 +133,40 @@ otherwise the setup's usual start); on request build the URL against
 port and the `$BROWSER` helper opens the URL on the host. For remote hosts the
 user supplies `--base-url` / `FMLAB_WEB_URL`.
 
+### 2a — Resolve the session solution id (always stamp the link)
+
+The web frontend keeps its own per-tab solution context — it may be showing a
+**different** solution than this session resolves against (session pin vs.
+symlink; CLAUDE.md §2). So every deep link MUST carry the session's solution as
+a `solution=<id>` param; the frontend adopts it as the tab context (stamps the
+tab, drives the `X-Solution` header on every request). Never rely on the
+frontend already being in the right solution.
+
+```bash
+tools/solution.sh current        # prints: <id>\t<source> — take the first field
+```
+
+Use the first whitespace-delimited field as `<SOL_ID>`. If `solution.sh` is
+absent or errors (pre-multisolution setup), skip the param silently — the
+single-solution frontend has no context to switch.
+
 ### 3 — Build the deep link
 
 URL-encode every parameter value (in a script-safe way, e.g.
 `jq -rn --arg v "$VALUE" '$v|@uri'`).
 
+Append `&solution=<SOL_ID>` (from step 2a) to **every** pattern below — it is
+omitted from the table for brevity but is never optional when a solution id was
+resolved. It goes on the file-dashboard and graph URLs too (as `?solution=…`
+when it is the only query param).
+
 | Case | URL pattern |
 |---|---|
-| Detail (default) | `<base>/object/<uuid>?file=<File_Name>[&ref=<uuid>]` |
-| References (`--refs`) | `<base>/object/<uuid>?file=<File_Name>&tab=references[&types=<T,…>][&rdir=<in\|out>]` |
-| Graph (`--graph`) | `<base>/graph?focus=<uuid>&focus_file=<File_Name>&depth=<n>&dir=<both\|in\|out>` |
-| Object_Type = File | `<base>/file/<File_Name>` (file dashboard instead of object detail) |
-| Object_Type = Layout, detail case | normal detail URL; mention the full-screen canvas link `<base>/layout/<uuid>?file=<File_Name>[&ref=<uuid>]` in the success message |
+| Detail (default) | `<base>/object/<uuid>?file=<File_Name>[&ref=<uuid>]&solution=<SOL_ID>` |
+| References (`--refs`) | `<base>/object/<uuid>?file=<File_Name>&tab=references[&types=<T,…>][&rdir=<in\|out>]&solution=<SOL_ID>` |
+| Graph (`--graph`) | `<base>/graph?focus=<uuid>&focus_file=<File_Name>&depth=<n>&dir=<both\|in\|out>&solution=<SOL_ID>` |
+| Object_Type = File | `<base>/file/<File_Name>?solution=<SOL_ID>` (file dashboard instead of object detail) |
+| Object_Type = Layout, detail case | normal detail URL; mention the full-screen canvas link `<base>/layout/<uuid>?file=<File_Name>[&ref=<uuid>]&solution=<SOL_ID>` in the success message |
 
 `ref` (from step 1a) attaches to `/object/` and `/layout/` URLs — including the
 references tab, where it marks the origin's hits; on the layout canvas it

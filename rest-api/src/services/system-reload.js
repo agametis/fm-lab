@@ -16,12 +16,19 @@ const clarisAdapter = require('./plugin-docs/adapters/claris-duckdb');
  * Shared between POST /api/admin/reload (admin controller) und dem internen
  * Reload nach erfolgreichem `POST /api/docs/install/:id`
  * (Adapter-Refresh nach Installation).
+ *
+ * Ausbaustufe M: optional gezielt für EINE Lösung (`solutionId`) — invalidiert
+ * genau deren Pool-Eintrag (+ Sidecar); ohne Argument der Server-Default.
+ * Die In-Process-Caches werden weiterhin komplett geleert (sie sind per
+ * ctx.solution geschlüsselt — Komplett-Clear ist grob, aber korrekt).
  */
-async function performReload() {
-  // Reload läuft ohne Request — der Kontext ist explizit der Server-Default
-  // (einzige legitime Quelle kontextloser Kontexte).
-  const ctx = require('../config/solutions').serverDefaultContext();
-  const result = await db.reload();
+async function performReload(solutionId) {
+  // Reload läuft ohne Request — der Kontext ist explizit die Ziel-Lösung
+  // bzw. der Server-Default (einzige legitime Quelle kontextloser Kontexte).
+  const ctx = solutionId
+    ? { solution: solutionId, requested: null }
+    : require('../config/solutions').serverDefaultContext();
+  const result = await db.reload(solutionId);
   referenceService.clearCaches();
   helpService.clearCache();
   templateService.clearCache();
@@ -30,17 +37,21 @@ async function performReload() {
   // den Sidecar-Cache auf die neue Partition restaurieren (greift nach Force-
   // Rebuild), dann den Cache aus der Copy auffrischen (nur wenn die Copy Namen
   // hat). Best-effort: ein Fehler darf den Reload nie kippen.
-  try {
-    await annotationsService.restoreSemanticNamesAfterReload(ctx);
-  } catch (err) {
-    console.warn(`reload: semantic-name restore skipped: ${err.message}`);
-  }
-  // User-Community-Annotationen auf die (ggf. neue) Cluster-Partition re-mappen
-  // (Objekt-Mehrheitsvotum). Best-effort: ein Fehler darf den Reload nie kippen.
-  try {
-    await annotationsService.remapAfterReload(ctx);
-  } catch (err) {
-    console.warn(`reload: annotations remap skipped: ${err.message}`);
+  // NUR wenn der Pool-Eintrag wirklich (neu) geöffnet wurde — eine bloß
+  // invalidierte, nie angefragte Lösung nicht extra öffnen (status 'invalidated').
+  if (result.status === 'reloaded') {
+    try {
+      await annotationsService.restoreSemanticNamesAfterReload(ctx);
+    } catch (err) {
+      console.warn(`reload: semantic-name restore skipped: ${err.message}`);
+    }
+    // User-Community-Annotationen auf die (ggf. neue) Cluster-Partition re-mappen
+    // (Objekt-Mehrheitsvotum). Best-effort: ein Fehler darf den Reload nie kippen.
+    try {
+      await annotationsService.remapAfterReload(ctx);
+    } catch (err) {
+      console.warn(`reload: annotations remap skipped: ${err.message}`);
+    }
   }
   dashboardService.clearCache();
   dashboardI18nService.clearCache();
@@ -50,12 +61,18 @@ async function performReload() {
 
   // Recompute the fmIDE per-file script status against the freshly reloaded DB,
   // but only if a scan was ever run (don't scan for a never-activated plugin).
+  // fmIDE ist Workspace-Zustand (FileMaker auf DIESEM Rechner) → nur beim
+  // Server-Default-Reload auffrischen, nicht für Pool-Fremdlösungen.
   // Best-effort, lazily required so a missing plugin never breaks the reload.
-  try {
-    const fmide = require('../plugins/fmide/fmide.service');
-    if (fmide.hasScanData()) await fmide.refreshFileStatuses(ctx);
-  } catch (err) {
-    console.warn(`reload: fmIDE status refresh skipped: ${err.message}`);
+  const isServerDefault = !solutionId
+    || solutionId === require('../config/solutions').getActiveSolutionId();
+  if (result.status === 'reloaded' && isServerDefault) {
+    try {
+      const fmide = require('../plugins/fmide/fmide.service');
+      if (fmide.hasScanData()) await fmide.refreshFileStatuses(ctx);
+    } catch (err) {
+      console.warn(`reload: fmIDE status refresh skipped: ${err.message}`);
+    }
   }
 
   return result;
