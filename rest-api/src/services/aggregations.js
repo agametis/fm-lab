@@ -64,13 +64,22 @@ function buildUsageCTE(dbType, file) {
 
   switch (dbType) {
     case 'ScriptStepType':
-      // Autoritative Quelle: StepsForScripts.Step_Name (kein ObjectLinks-Spiegelung).
+      // Autoritative Quellen: Step_Name aus BEIDEN Step-Trägern (keine
+      // ObjectLinks-Spiegelung) — Script-Steps und button-eingebettete Steps.
+      // UNION ALL, weil hier Instanzen gezählt werden, nicht Typen.
+      // Der Alias `s` bleibt erhalten: ${fileClauseSteps} filtert damit beide
+      // Quellen mit EINEM positionalen Parameter (die Aufrufer pushen `file`
+      // genau einmal).
       return `
         usage_agg AS (
           SELECT
             md5('ScriptStepType::' || s.Step_Name) AS Object_UUID,
             COUNT(*) AS usage_count
-          FROM StepsForScripts s
+          FROM (
+            SELECT Step_Name, File_Name FROM StepsForScripts
+            UNION ALL
+            SELECT Step_Name, File_Name FROM LayoutObjectSteps
+          ) s
           WHERE s.Step_Name IS NOT NULL AND s.Step_Name != ''
             ${fileClauseSteps}
           GROUP BY s.Step_Name
@@ -276,10 +285,16 @@ function buildCategoryCTE(dbType, refAttached) {
 function buildFileFilterCTE(dbType) {
   switch (dbType) {
     case 'ScriptStepType':
+      // Beide Step-Träger, sonst fällt ein Step-Typ, den in dieser Datei nur ein
+      // Button verwendet, aus der gefilterten Liste heraus.
       return `
         file_filter AS (
           SELECT DISTINCT md5('ScriptStepType::' || s.Step_Name) AS Object_UUID
-          FROM StepsForScripts s
+          FROM (
+            SELECT Step_Name, File_Name FROM StepsForScripts
+            UNION ALL
+            SELECT Step_Name, File_Name FROM LayoutObjectSteps
+          ) s
           WHERE s.File_Name = ?
             AND s.Step_Name IS NOT NULL
             AND s.Step_Name != ''

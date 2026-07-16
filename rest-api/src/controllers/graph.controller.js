@@ -171,7 +171,12 @@ async function recluster(req, res, next) {
   }, 15000);
 
   try {
-    const { exit_code } = await reclusterService.runRecluster({ onEvent: send });
+    const { exit_code } = await reclusterService.runRecluster({
+      onEvent: send,
+      // Kontext-Lösung (X-Solution), nicht die aktive: sonst repartitioniert der
+      // Button die Lösung eines anderen Betrachters.
+      solution: req.solutionContext && req.solutionContext.solution,
+    });
     if (!aborted) send({ event: 'done', ok: exit_code === 0, exit_code });
   } catch (err) {
     send({ event: 'error', message: err.message });

@@ -309,7 +309,15 @@ if [ ! -f "$SETTINGS_FILE" ]; then
     "allow": [
       "Bash(npm:*)",
       "Bash(duckdb:*)",
-      "Bash(bash .claude/skills/*:*)"
+      "Bash(/usr/local/bin/duckdb:*)",
+      "Bash(/opt/homebrew/bin/duckdb:*)",
+      "Bash(.claude/skills/*)",
+      "Bash(bash .claude/skills/*)",
+      "Bash(node .claude/skills/*)",
+      "Bash(python3 .claude/skills/*)",
+      "Bash(bash tools/*)",
+      "Bash(tools/*)",
+      "Bash(./tools/*)"
     ]
   },
   "extraKnownMarketplaces": {
@@ -363,11 +371,18 @@ mkdir -p "$PROJECT_ROOT/logs"
 # ─── XML conversion ───────────────────────────────────────────
 
 header "FileMaker XML export"
+CURRENT_STEP="scanning XML inbox"
 
 # XML inbox of the default solution (multi-solution layout); a flat pre-migration
 # xml/ still counts — convert_fm_xml.sh reads it as the 'default' inbox.
+# Ensure the inbox exists (git doesn't track empty dirs, so a fresh clone lacks it)
+# and only search paths that actually exist: `find` exits non-zero on a missing path,
+# which under `set -euo pipefail` aborts init before the empty-state branch below.
 XML_INBOX="$PROJECT_ROOT/solutions/default/xml"
-XML_FILES=$(find "$XML_INBOX" "$PROJECT_ROOT/xml" -maxdepth 1 -name "*.xml" 2>/dev/null | wc -l | tr -d ' ')
+mkdir -p "$XML_INBOX"
+XML_SEARCH_PATHS=("$XML_INBOX")
+[ -d "$PROJECT_ROOT/xml" ] && XML_SEARCH_PATHS+=("$PROJECT_ROOT/xml")
+XML_FILES=$(find "${XML_SEARCH_PATHS[@]}" -maxdepth 1 -name "*.xml" 2>/dev/null | wc -l | tr -d ' ')
 
 print_summary() {
   local elapsed=$((SECONDS - INIT_START))

@@ -1732,7 +1732,15 @@ run_phase7_clustering() {
 
     local _p7_log _rc=0
     _p7_log=$(mktemp "${TMPDIR:-/tmp}/fmlab-p7.XXXXXX")
-    if FMLAB_CLUSTER_NO_SYNC=1 \
+    # FMLAB_SOLUTION reicht unseren AUFGELÖSTEN Scope an cluster.sh weiter. Das Kind
+    # ist ein eigener Prozess und durchläuft die Kaskade (tools/lib/resolve_solution.sh)
+    # von vorn; unser `--solution` ist ein K0, das nur in DIESER argv existiert. Ohne
+    # die Weitergabe fiele cluster.sh auf K2 (Pointer) zurück und würde die AKTIVE
+    # Lösung clustern statt der importierten — es überschriebe still den Cluster-Layer
+    # einer fremden Lösung. K1 (env) ist der Kanal, den das Kind versteht; die Zuweisung
+    # gilt nur für diesen einen Aufruf und leakt nicht in den restlichen Lauf.
+    if FMLAB_SOLUTION="$SOLUTION" \
+       FMLAB_CLUSTER_NO_SYNC=1 \
        FMLAB_CLUSTER_ENGINE="$_eng" \
        FMLAB_CLUSTER_RESOLUTION="$_res" \
        FMLAB_CLUSTER_SEED="$_seed" \

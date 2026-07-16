@@ -25,7 +25,7 @@ import re
 from dataclasses import dataclass, field
 
 from .db import Database, Reference, sql_quote
-from .textform import ParsedStep, render_ref, strip_strings
+from .textform import CALL_RE, ParsedStep, render_ref, strip_strings
 
 # option xml_path leaf -> ref_element_semantics.element
 _XMLPATH_ELEMENT = {
@@ -67,6 +67,7 @@ class Resolver:
         self.file = target_file
         self.report = Report(target_file=target_file)
         self.file_row = self._load_file()
+        self._calc_ctx: dict | None = None
 
     # ------------------------------------------------------------ file context
 
@@ -340,7 +341,39 @@ class Resolver:
     # ------------------------------------------------- calc content verification
 
     _MBS_RE = re.compile(r'MBS\s*\(\s*"([^"]+)"', re.I)
-    _IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_.]*")
+
+    def _calc_context(self) -> dict:
+        """Positive lists + suggestion pool for the function-call scan, resolved
+        once per target file (memoized). Every set is casefolded — FileMaker
+        matches function and custom-function names case-insensitively."""
+        if self._calc_ctx is not None:
+            return self._calc_ctx
+        flookup = self.ref.function_lookup()  # keys already casefolded
+        # 'Get' is stored decomposed as 'Get ( Keyword )' in the reference, so the
+        # bare token before '(' is not a lookup key. Recover the locale-specific
+        # prefixes (get / hole / obtenir / ...) from the parenthesized lookup names.
+        get_prefixes = {k.split("(", 1)[0].strip() for k in flookup if "(" in k}
+        cf_lower = {r["CF_Name"].casefold(): r["CF_Name"] for r in self.cat.query(
+            f"SELECT CF_Name FROM CustomFunctionsCatalog WHERE File_Name = {sql_quote(self.file)}")}
+        plugin_direct, plugin_umbrella = set(), set()
+        for r in self.cat.query(
+                "SELECT DISTINCT Object_Name FROM ObjectCatalog "
+                "WHERE Object_Type = 'PluginFunction'"):
+            name = r["Object_Name"]
+            if ":" in name:
+                # qualified 'Umbrella:Selector::Selector' (e.g. MBS): only the
+                # umbrella reaches a calc as a bare token; the selector is passed
+                # as a string and is verified by the MBS scan below.
+                plugin_umbrella.add(name.split(":", 1)[0].strip().casefold())
+            else:
+                plugin_direct.add(name.casefold())  # direct external function call
+        builtins = {v["canonical_name"] for v in self.ref.function_arity().values()}
+        self._calc_ctx = {
+            "flookup": flookup, "get_prefixes": get_prefixes, "cf_lower": cf_lower,
+            "plugin_direct": plugin_direct, "plugin_umbrella": plugin_umbrella,
+            "suggest_pool": sorted(set(cf_lower.values()) | builtins),
+        }
+        return self._calc_ctx
 
     def _scan_calc(self, ps: ParsedStep, calc: str) -> None:
         if self.file_row is None:
@@ -363,22 +396,40 @@ class Resolver:
                                  {"name": fn, "_form": "named"}, "warning",
                                  f"MBS function '{fn}' not seen anywhere in the catalog — "
                                  "verify the name via mbs-function-reference")
-        # custom functions: bare-name scan against the target file's CF catalog
-        cf_rows = self.cat.query(
-            f"SELECT CF_Name FROM CustomFunctionsCatalog WHERE File_Name = {sql_quote(self.file)}")
-        cf_names = {r["CF_Name"] for r in cf_rows}
-        if not cf_names:
-            return
-        flookup = self.ref.function_lookup()
+        # Function calls in the calc: an identifier immediately before '(' that is
+        # neither a built-in (incl. localized names and the Get-keyword), a custom
+        # function of the target file, nor a registered plugin function is an
+        # unknown reference — the counterpart to the positive CF scan, so a typo or
+        # a missing utility CF surfaces here instead of only at paste time.
+        ctx = self._calc_context()
+        flookup, get_prefixes = ctx["flookup"], ctx["get_prefixes"]
+        cf_lower, plugin_direct = ctx["cf_lower"], ctx["plugin_direct"]
+        plugin_umbrella = ctx["plugin_umbrella"]
         seen = set()
-        for m in self._IDENT_RE.finditer(strip_strings(calc)):
-            tok = m.group(0)
-            if tok in seen or tok.casefold() in flookup:
+        for m in CALL_RE.finditer(strip_strings(calc)):
+            tok = m.group(1).strip()
+            low = tok.casefold()
+            if low in seen:
                 continue
-            seen.add(tok)
-            if tok in cf_names:
+            seen.add(low)
+            if low in flookup or low in get_prefixes:
+                continue  # FileMaker built-in
+            if low in cf_lower:
                 self.report.resolved.append(
-                    {"type": "CustomFunction", "ref": tok, "line": ps.line, "file": self.file})
+                    {"type": "CustomFunction", "ref": cf_lower[low], "line": ps.line,
+                     "file": self.file})
+                continue
+            if low in plugin_direct:
+                self.report.resolved.append(
+                    {"type": "PluginFunction", "ref": tok, "line": ps.line})
+                continue
+            if low in plugin_umbrella:
+                continue  # e.g. MBS("…") — the selector is checked by the MBS scan
+            self._unresolved(
+                ps, "CustomFunction", {"name": tok, "_form": "named"}, "error",
+                f"'{tok}' is called as a function but is neither a FileMaker built-in "
+                f"nor a custom function of '{self.file}'",
+                self._suggest(tok, ctx["suggest_pool"]))
 
 
 def resolve(parsed: list[ParsedStep], catalog: Database, ref: Reference,

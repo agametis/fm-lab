@@ -12,6 +12,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.9.3] — 2026-07-16
+
+A documentation and bugfix release: the project documentation grows from a conceptual set into a usable manual — installation, quickstart, troubleshooting — and a round of fixes reported from the field.
+
+- **Documentation** — reorganized into a navigable structure (Background · Using FM-Lab · AI Agents · Integrations · Specs)
+  - **New pages** — `Installation`, `Quickstart`, and `Troubleshooting` for getting set up and unstuck; `4 Code Analysis Approaches`, explaining how interactive, static, graph, and agentic analysis interlock and when to reach for which; `fm-spec`, describing the FileMaker language reference; `Folder structure` as a repository tour
+  - **Reworked** — `Architecture`, `Components`, `How it works`, and `Workflow` brought up to the multi-solution and code-generation state
+  - **README** — clarifications and references to more detailed documents
+- **Setup & install fixes**
+  - **Docker build on the published bundle** — a file referenced by the Dockerfile was missing from the public release, so `docker build` failed for every fresh public clone of v0.9.2
+  - **Fresh-clone init** — `init.sh` aborted before reaching its empty-state branch when the default solution's XML inbox did not exist yet (git does not track empty directories); the inbox is now created up front and only existing paths are scanned
+  - **Fewer DuckDB permission prompts** — the shipped Claude Code settings seed now covers the documented DuckDB invocation, so catalog queries stop prompting for approval; also covered in the new troubleshooting page
+- **Code-generation fixes** (`fm-generate-script`)
+  - **Missing custom functions are caught** — a draft calling a custom function that does not exist in the target solution is now reported during resolution, instead of producing a snippet that fails silently on paste
+  - **`Open Data File` parameter** — the step's target parameter is emitted correctly, backed by a new target-slot kind in the fm-spec reference
+- **Publish-pipeline hardening** — a hard gate verifies that every file the Dockerfile copies actually lands in the published bundle; a missing whitelist entry now fails the publish instead of shipping a broken build context
+
+---
+
 ## [0.9.2] — 2026-07-15
 
 fm-lab becomes multi-user — several people can work against one instance at the same time, each on their own solution — and the object detail views for fields, layouts, and themes are completed down to every FileMaker option.
@@ -688,7 +707,8 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 <!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
      versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
      intentionally left unlinked and render as plain text. Add a line here per new tag. -->
-[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.2...HEAD
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.3...HEAD
+[0.9.3]: https://github.com/marcel-more/fm-lab/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/marcel-more/fm-lab/compare/v0.9.0...v0.9.2
 [0.9.0]: https://github.com/marcel-more/fm-lab/compare/v0.8.11...v0.9.0
 [0.8.11]: https://github.com/marcel-more/fm-lab/compare/v0.8.10...v0.8.11

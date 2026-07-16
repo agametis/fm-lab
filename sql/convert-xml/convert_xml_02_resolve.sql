@@ -493,15 +493,15 @@ SELECT
     File_Name
 FROM (
     -- Opt 3A: Portal/TableOccurrenceReference/@UUID nur EINMAL parsen (vorher SELECT+WHERE);
-    -- der @type='Portal'-Vorfilter bleibt im Subquery, object_xml durchgereicht für die
-    -- gefilterten Select-only-Extrakte (UUID + @name).
+    -- object_xml durchgereicht für die gefilterten Select-only-Extrakte (UUID + @name).
     SELECT Object_XML AS object_xml, File_Name,
            xml_extract_text(Object_XML, '/LayoutObject/Portal/TableOccurrenceReference/@UUID')[1] AS ref_uuid
     FROM LayoutObjects
-    -- Opt 3A: LIKE-Vorfilter spart den @type-DOM-Parse für Nicht-Portal-Objekte (Superset:
-    -- jedes type="Portal"-Objekt enthält den Substring; False Positives filtert @type weg).
-    WHERE Object_XML LIKE '%Portal%'
-      AND xml_extract_text(Object_XML, '/LayoutObject/@type')[1] = 'Portal'
+    -- Portal-Vorfilter über die von P1 kanonisierte Object_Type-Spalte, NICHT über den rohen
+    -- /LayoutObject/@type-String: der ist im SaXML-Export lokalisiert (dt. „Ausschnitt"), ein
+    -- Literalvergleich gegen 'Portal' verwirft dt. Portale still. Das <Portal>-Wrapper-Element
+    -- und damit der XPath oben bleiben locale-unabhängig.
+    WHERE Object_Type = 'Portal'
 )
 WHERE ref_uuid IS NOT NULL;
 

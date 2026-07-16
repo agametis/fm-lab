@@ -27,8 +27,15 @@
 --   Drift-Indikator herangezogen wird. build_resolutions.sql bewusst NICHT
 --   enthalten, weil es nur abgeleitete Tabellen anlegt.
 
--- @SCHEMA_VERSION 1.13.0
--- @SCHEMA_VERSION_DATE 2026-07-15
+-- @SCHEMA_VERSION 1.14.0
+-- @SCHEMA_VERSION_DATE 2026-07-16
+-- @SCHEMA_CHANGELOG 1.14.0: ObjectCatalog/ScriptStepType jetzt auch aus LayoutObjectSteps
+--   (convert_xml_04_catalog.sql, Block 27). Bisher nur aus StepsForScripts: ein Step-Typ,
+--   den ausschließlich ein Button verwendet (Button / Grouped Button), bekam keinen
+--   Katalogeintrag — der Step-Namen-Link der Button-Detailansicht (md5('ScriptStepType::'
+--   ||Step_Name)) lief damit ins "not found". Reine Zeilen-Ergänzung, keine Spalten;
+--   Version-Bump, weil nur er den Rebuild auslöst (Hash-Drift allein → nur „warn",
+--   ein inkrementeller Lauf zöge die fehlenden Katalogzeilen NICHT nach).
 -- @SCHEMA_CHANGELOG 1.13.0: StepsForScripts.Calculation_Text — Korrektur der Extraktion.
 --   Bisher griff '//Calculation/Text'[1] das erste <Calculation> in Dokument-Reihenfolge;
 --   bei einer BERECHNETEN Repetition der Ziel-Feldreferenz (<repetition><Calculation>…) ist

@@ -77,6 +77,14 @@ def strip_strings(text: str) -> str:
     return "".join(out)
 
 
+# Function-call anchor for calc scanning: an identifier (optionally a multi-word
+# name) immediately before an opening paren. Shared by the lint (arity/locale
+# checks) and the resolver (custom-function / unknown-function detection) so both
+# agree on what counts as "a function call". Always match on a string-stripped
+# copy so parentheses inside string literals never register as calls.
+CALL_RE = re.compile(r"([A-Za-z][A-Za-z0-9_.]*(?:\s[A-Za-z][A-Za-z0-9_.]*)*?)\s*\(")
+
+
 # ------------------------------------------------------------------- segmenter
 
 @dataclass

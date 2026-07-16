@@ -30,7 +30,7 @@ The first release focuses on this core: reliable **XML conversion**, a comprehen
 
 ## Analysis workflows
 
-FM-Lab supports four complementary approaches to analyzing a FileMaker solution:
+FM-Lab supports [four complementary approaches](/docs/fm-lab/Wiki/4 Code Analysis Approaches.md) to analyzing a FileMaker solution:
 
 - **Interactive exploration** - browse the solution through a web frontend with rich navigation, visualizations, and drill-down views
 - **Static code analysis** - detect known patterns, issues, and structural signals through targeted catalog queries
@@ -76,7 +76,7 @@ Learn how FM-Lab turns FileMaker XML exports into a structured Object Catalog an
 - **Solution Bundles** (`solutions/`) — One or multiple FileMaker solutions to explore. Each solution lives in its own bundle `solutions/<id>/` (XML inbox, database, state); `default` exists out of the box.
 - **XML (Input)** (`solutions/<id>/xml/`) — FileMaker XML exports (SaXML) prepared for conversion from your solution.
 - **Object Catalog (Output)** (`solutions/<id>/db/`) — The generated DuckDB database containing the extracted FileMaker objects and their relationships.
-- **fm-spec** (`reference/fm_spec.duckdb`) — Reference tables for FileMaker script steps and functions, providing queryable syntax and grammar definitions for linting.
+- **[fm-spec](docs/fm-lab/Wiki/fm-spec.md)** (`reference/fm_spec.duckdb`) — Reference tables for FileMaker script steps and functions, providing queryable syntax and grammar definitions for linting.
 - **Docs** (`docs/`) — Documentation files for FileMaker Pro and MBS plugin functions, installable via Web frontend or Skills.
 - **Tools** (`tools/`) — Utility scripts for various tasks.
 - **Claude Skills** (`.claude/skills/`) — Contains Claude Code skills and slash commands for installation, conversion, lookup, analysis and code generation.
@@ -144,7 +144,7 @@ bash tools/fmlab.sh up --native   # hands off to tools/init.sh
 
 `init.sh` checks the [prerequisites](#prerequisites), installs dependencies, seeds the environment, starts the servers, and converts any XML already in `solutions/default/xml/`.
 
-Native Windows is not supported — use way a) or b) via Docker Desktop + WSL2.
+**Windows:** Native Windows is not supported — use way a) or b) via **Docker Desktop** with the **WSL2** backend and keep the cloned repo **inside** the WSL2 distribution (e.g. `~/projects/…`), **not** on the Windows drive (`/mnt/c/…`) — a repo on `/mnt/c` suffers slow bind mounts and file-watcher (inotify) problems.
 
 ### The AI agent (Claude Code)
 
@@ -157,22 +157,9 @@ docker compose exec -it api claude  # sign in once; login then persists
 
 On first launch choose **“Claude account with subscription”** and complete the browser sign-in once — persisted in a named volume, so it survives restarts.
 
-> **The sign-in URL wraps across terminal lines — don’t select it by hand.** A truncated URL fails with _“Invalid response_type”_ . Copy it with **`c`** or paste it into an editor and remove every line break first. After visiting the Claude authentication page: paste the returned code at the `Paste code here` prompt.
+The agent stack also grants an **opt-in egress firewall** (restricted allowlist applied automatically in the Dev Container).
 
-**No browser at hand?** Put credentials in a `.env` next to the compose files instead — `ANTHROPIC_API_KEY=…` (API-key billing) or `CLAUDE_CODE_OAUTH_TOKEN=…` (from `claude setup-token`). No secret is ever stored in the image.
-
-The agent stack also grants an **opt-in egress firewall** (allowlist: npm, GitHub, the Anthropic API, the DuckDB extension host, the VS Code marketplace) — applied automatically in the Dev Container.
-
-### Configuration and platform notes
-
-**Tuning (optional):** copy `.env.example` to `.env` next to `docker-compose.yml` and uncomment what you need:
-
-```bash
-FMLAB_MEM_LIMIT=8g      # RAM cap (raise for large solutions)
-FMLAB_DUCKDB_THREADS=4  # thread cap (raise on hosts with more cores)
-```
-
-**Windows:** use **Docker Desktop with the WSL2 backend** and keep the cloned repo **inside** the WSL2 distribution (e.g. `~/projects/…`), **not** on the Windows drive (`/mnt/c/…`) — a repo on `/mnt/c` suffers slow bind mounts and file-watcher (inotify) problems.
+Refer to [Installation](/docs/fm-lab/Wiki/Installation.md) for a more detailed description.
 
 ## Prerequisites
 
@@ -250,16 +237,19 @@ The core architecture is in place and ready for real-world use. Many more featur
 
 ## Your role as a supporter
 
-- The pre-release stage involves extensive groundwork and architectural decision-making, requiring strong discipline from the maintainer.
+- Your feedback is always welcome. Please allow for a structured review process.
+- The project is currently in a pre-release stage, with extensive groundwork and architectural decisions requiring careful coordination by the maintainer.
 - Development takes place in a private repository. This public repository contains a subset that is synchronized for releases only.
 - Suggestions are welcome, but pull requests cannot be merged because of the static publishing pipeline.
-- To report an issue or request a feature, please use the **Issues** or **Discussions** section on GitHub, or contact the maintainer through another channel.
+- As a best practice, provide a Markdown file with a short description of your topic, the relevant details, and your preferred resolution. Let your AI agent summarize the issue and attach the resulting document.
+- To report a bug or request a feature, please use the **Issues** or **Discussions** section on GitHub, or contact the maintainer through another channel.
 
 ## Roadmap
 
-- Pre-configured installer with granular framework update options (beta with v0.8.6)
-- Windows support (early alpha with v0.8.6)
+- Pre-configured installer with granular framework update options
+- Windows support (via Docker setup or native)
 - Granular deployment options for separate ingestion, API, and frontend services
+- Auto-update of new XML imports
 - Snapshots for tracking changes over time
 - Automatic code analysis and test-sets
 - Deeper integration with developer tools and workflows, including VS Code, Raycast, Obsidian, and others

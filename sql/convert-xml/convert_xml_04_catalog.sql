@@ -746,18 +746,31 @@ WHERE pfu.Plugin_Function_Name IS NOT NULL
 UNION ALL
 
 -- 27. ScriptStepType (synthetisch, Token-Aggregat)
--- Ein Eintrag pro distinct Step_Name
--- aus StepsForScripts. ScriptStepTypes sind lösungs-unabhängig → File_Name = NULL.
--- Die Verwendungs-Anzahl wird im Detail-Template direkt aus StepsForScripts aggregiert
--- (keine zusätzlichen ObjectLinks).
-SELECT DISTINCT
+-- Ein Eintrag pro distinct Step_Name aus BEIDEN Step-Trägern:
+--   StepsForScripts    — Steps echter Scripts
+--   LayoutObjectSteps  — button-eingebettete Steps (Button / Grouped Button)
+-- Beide Seiten sind nötig: die Step-Tokens der Button-Detailansicht verlinken auf
+-- md5('ScriptStepType::'||Step_Name) aus LayoutObjectSteps. Fehlt diese Quelle hier,
+-- läuft jeder Step-Typ, den NUR ein Button verwendet, ins Leere ("not found") —
+-- in schlanken Lösungen ist das der Normalfall, nicht die Ausnahme.
+-- ScriptStepTypes sind lösungs-unabhängig → File_Name = NULL.
+-- Die Verwendungs-Anzahl wird im Detail-Template direkt aus den Trägertabellen
+-- aggregiert (keine zusätzlichen ObjectLinks).
+--
+-- UNION (nicht UNION ALL) über die beiden Quellen: ein Step-Typ, den Script UND
+-- Button verwenden, ergäbe sonst zwei Zeilen mit identischer Object_UUID → Dup-PK.
+SELECT
     md5('ScriptStepType::' || Step_Name) as Object_UUID,
     'ScriptStepType' as Object_Type,
     Step_Name as Object_Name,
     NULL as File_Name,
     'StepsForScripts' as Source_Table,
     NULL as Object_ID
-FROM StepsForScripts
+FROM (
+    SELECT Step_Name FROM StepsForScripts
+    UNION
+    SELECT Step_Name FROM LayoutObjectSteps
+)
 WHERE Step_Name IS NOT NULL
   AND Step_Name != ''
 

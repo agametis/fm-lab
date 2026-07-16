@@ -773,31 +773,70 @@ async function getPseudoTypeReferences(ctx, uuid, direction, link_type, limit, o
   }
 
   if (objType === 'ScriptStepType') {
-    // ── (A) Aufrufer (parent) = Scripts mit Step_Name = Object_Name ──────────
-    // `Origin_Hit` markiert das Script, aus dem der User auf den Token-Knoten
-    // gesprungen ist (?ref=<script>) — die Frontend-Liste hebt es hervor.
+    // ── (A) Aufrufer (parent) = Scripts UND Buttons mit Step_Name = Object_Name ──
+    // Zwei Träger, ein Step-Typ: Script-Steps (StepsForScripts) und
+    // button-eingebettete Steps (LayoutObjectSteps). Ohne den zweiten Zweig bliebe
+    // der Referenzen-Tab eines Button-only-Step-Typs leer.
+    // `Origin_Hit` markiert den Herkunfts-Knoten, aus dem der User auf den
+    // Token-Knoten gesprungen ist (?ref=<script|button>) — die Frontend-Liste hebt
+    // ihn hervor. Der Button-Zweig prüft dafür gegen die LayoutObject-UUID, weil
+    // ein Button-Step genau von dort verlinkt.
+    // Container = besitzendes Layout (parent_layout), analog zum
+    // PluginComponent-Zweig: "Button @ (17,4)" ist ohne sein Layout nicht lesbar.
     const scriptSql = `
-      SELECT
-        'parent' as direction,
-        s.Script_UUID as uuid,
-        'Script' as Object_Type,
-        s.Script_Name as Object_Name,
-        s.File_Name as File_Name,
-        'uses_step_type' as Link_Role,
-        FALSE as Is_Cross_File,
-        NULL as Container_UUID,
-        NULL as Container_Type,
-        TRUE as navigable,
-        COUNT(*) as Call_Count,
-        BOOL_OR(s.Script_UUID = ?) as Origin_Hit
-      FROM StepsForScripts s
-      JOIN ObjectCatalog oc ON oc.Object_UUID = ?
-      WHERE s.Step_Name = oc.Object_Name
-      GROUP BY s.Script_UUID, s.Script_Name, s.File_Name
-      ORDER BY Call_Count DESC, s.Script_Name ASC
+      SELECT * FROM (
+        SELECT
+          'parent' as direction,
+          s.Script_UUID as uuid,
+          'Script' as Object_Type,
+          s.Script_Name as Object_Name,
+          s.File_Name as File_Name,
+          'uses_step_type' as Link_Role,
+          FALSE as Is_Cross_File,
+          NULL as Container_UUID,
+          NULL as Container_Type,
+          TRUE as navigable,
+          COUNT(*) as Call_Count,
+          BOOL_OR(s.Script_UUID = ?) as Origin_Hit
+        FROM StepsForScripts s
+        JOIN ObjectCatalog oc ON oc.Object_UUID = ?
+        WHERE s.Step_Name = oc.Object_Name
+        GROUP BY s.Script_UUID, s.Script_Name, s.File_Name
+
+        UNION ALL
+
+        SELECT
+          'parent' as direction,
+          los.Object_UUID as uuid,
+          'LayoutObject' as Object_Type,
+          COALESCE(boc.Object_Name, 'Button') as Object_Name,
+          los.File_Name as File_Name,
+          'uses_step_type' as Link_Role,
+          FALSE as Is_Cross_File,
+          pl.Target_UUID as Container_UUID,
+          pc_container.Object_Type as Container_Type,
+          TRUE as navigable,
+          COUNT(*) as Call_Count,
+          BOOL_OR(los.Object_UUID = ?) as Origin_Hit
+        FROM LayoutObjectSteps los
+        JOIN ObjectCatalog oc ON oc.Object_UUID = ?
+        LEFT JOIN ObjectCatalog boc ON boc.Object_UUID = los.Object_UUID
+                                   AND boc.File_Name = los.File_Name
+        LEFT JOIN ObjectLinks pl ON pl.Source_UUID = los.Object_UUID
+                                AND pl.Source_File = los.File_Name
+                                AND pl.Link_Role = 'parent_layout'
+        LEFT JOIN ObjectCatalog pc_container ON pc_container.Object_UUID = pl.Target_UUID
+                                            AND pc_container.File_Name = pl.Target_File
+        WHERE los.Step_Name = oc.Object_Name
+        GROUP BY los.Object_UUID, boc.Object_Name, los.File_Name,
+                 pl.Target_UUID, pc_container.Object_Type
+      )
+      ORDER BY Call_Count DESC, Object_Name ASC
       ${limit > 0 ? 'LIMIT ?' : ''}
     `;
-    const scriptParams = limit > 0 ? [origin, uuid, limit] : [origin, uuid];
+    const scriptParams = limit > 0
+      ? [origin, uuid, origin, uuid, limit]
+      : [origin, uuid, origin, uuid];
 
     // ── (B) Ziel-/Downstream-Objekte (child) eines Step-Typs ─────────────────
     // ScriptStepTypes spiegeln keine ObjectLinks; die step-eigenen Bezüge leben

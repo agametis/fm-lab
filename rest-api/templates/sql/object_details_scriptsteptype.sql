@@ -1,12 +1,13 @@
 -- @template_type: content
--- @description: Detail view of an aggregated ScriptStep type — all callers across all scripts
+-- @description: Detail view of an aggregated ScriptStep type — all callers across scripts and buttons
 -- @params: uuid (required)
 -- @output_format: content
 -- @author: Marcel
--- @version: 1.0
+-- @version: 1.1
 -- @tags: scriptsteptype, details, aggregate
 -- @note: Synthetic ObjectCatalog entry — Object_Name = 'Set Variable', 'Go to Layout', etc.
---        Aggregates step instances from StepsForScripts (no ObjectLinks-Spiegelung, PRD §6.4).
+--        Aggregates step instances from StepsForScripts AND LayoutObjectSteps
+--        (button-embedded steps) — no ObjectLinks-Spiegelung.
 
 WITH self AS (
   SELECT Object_UUID, Object_Type, Object_Name, Source_Table
@@ -15,26 +16,42 @@ WITH self AS (
     AND Object_Type = 'ScriptStepType'
   LIMIT 1
 ),
+-- Aufrufer-Instanzen aus beiden Step-Trägern. Buttons haben keinen Step_Index
+-- (genau ein Step pro Objekt) → 0 als stabiler Sortier-Anker.
 instances AS (
   SELECT
-    s.Script_UUID,
-    s.Script_Name,
+    s.Script_UUID AS Caller_UUID,
+    s.Script_Name AS Caller_Name,
+    'Script'      AS Caller_Type,
     s.File_Name,
-    s.Step_Index,
-    s.Step_Name,
-    s.DDR_UUID
+    s.Step_Index
   FROM StepsForScripts s
   JOIN self t ON s.Step_Name = t.Object_Name
+
+  UNION ALL
+
+  SELECT
+    los.Object_UUID AS Caller_UUID,
+    COALESCE(oc.Object_Name, 'Button') AS Caller_Name,
+    'Button'        AS Caller_Type,
+    los.File_Name,
+    0               AS Step_Index
+  FROM LayoutObjectSteps los
+  JOIN self t ON los.Step_Name = t.Object_Name
+  LEFT JOIN ObjectCatalog oc
+    ON oc.Object_UUID = los.Object_UUID
+   AND oc.File_Name   = los.File_Name
 ),
 caller_summary AS (
   SELECT
-    Script_UUID,
-    Script_Name,
+    Caller_UUID AS Script_UUID,
+    Caller_Name AS Script_Name,
+    Caller_Type,
     File_Name,
     COUNT(*) as Step_Count,
     MIN(Step_Index) as First_Index
   FROM instances
-  GROUP BY Script_UUID, Script_Name, File_Name
+  GROUP BY Caller_UUID, Caller_Name, Caller_Type, File_Name
 ),
 total_count AS (
   SELECT COUNT(*) as total FROM instances
@@ -67,22 +84,24 @@ SELECT content FROM (
   UNION ALL
   SELECT 5, 1,
     '--- Usage Summary --- ('
-    || CAST((SELECT COUNT(*) FROM caller_summary) AS VARCHAR)
+    || CAST((SELECT COUNT(*) FROM caller_summary WHERE Caller_Type = 'Script') AS VARCHAR)
     || ' scripts, '
+    || CAST((SELECT COUNT(*) FROM caller_summary WHERE Caller_Type = 'Button') AS VARCHAR)
+    || ' buttons, '
     || CAST((SELECT total FROM total_count) AS VARCHAR)
     || ' total steps)'
   WHERE (SELECT COUNT(*) FROM caller_summary) > 0
 
   UNION ALL
 
-  -- Detailed script list
+  -- Detailed caller list (scripts and button-embedded steps)
   SELECT 8, 0, '' WHERE (SELECT COUNT(*) FROM caller_summary) > 0
   UNION ALL
-  SELECT 8, 1, '--- Scripts ---'
+  SELECT 8, 1, '--- Callers ---'
   WHERE (SELECT COUNT(*) FROM caller_summary) > 0
   UNION ALL
-  SELECT 9, ROW_NUMBER() OVER (ORDER BY Step_Count DESC, Script_Name),
-    '  <- Script: ' || Script_Name
+  SELECT 9, ROW_NUMBER() OVER (ORDER BY Caller_Type, Step_Count DESC, Script_Name),
+    '  <- ' || Caller_Type || ': ' || Script_Name
     || ' [' || File_Name || ']'
     || ' (' || CAST(Step_Count AS VARCHAR) || ' step'
     || CASE WHEN Step_Count > 1 THEN 's' ELSE '' END

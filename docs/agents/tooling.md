@@ -9,24 +9,23 @@ In the standard setup (the Docker container, or a native install with DuckDB on 
 just call DuckDB as a plain `duckdb …` command. `which duckdb` succeeds there, so no
 path probing is needed.
 
-**Keep every DuckDB call a single, plain command.** Do **not** wrap it in a subshell
-`( … )`, chain it with `&&`/`||` to probe for the binary, or assign the path to a variable
-and call `$DB …`. The project's permission allow-list matches the command **prefix**
-(`duckdb …` / `/usr/local/bin/duckdb …`), so any such indirection defeats the match and
-makes Claude Code prompt for approval on every single query.
+**Keep every DuckDB call a single, plain command — always the bare `duckdb …` form.** Do
+**not** prefix an absolute path, wrap it in a subshell `( … )`, chain it with `&&`/`||` to
+probe for the binary, or assign the path to a variable and call `$DB …`. The permission
+allow-list matches the **first command token**: only `duckdb`, `/usr/local/bin/duckdb` and
+`/opt/homebrew/bin/duckdb` are pre-approved. Any other prefix — a different absolute path, a
+`$(…)` substitution or a `$DB` variable — is a different (or unresolvable) token, defeats the
+match and makes Claude Code prompt for approval on every single query. Quoting inside
+`-c "…"` is fine: a `;` or `(` inside the SQL string is **not** a shell separator and does
+**not** cause a prompt — so the bare form covers arbitrary SQL.
 
-Only if `which duckdb` actually fails (some native setups do not inherit the user's shell
-PATH) resolve the path **once** by checking these well-known locations in order:
-
-```bash
-which duckdb                              # 1. PATH (the standard case)
-~/.duckdb/cli/latest/duckdb --version    # 2. Bash installer
-/opt/homebrew/bin/duckdb --version       # 3. Homebrew (Apple Silicon)
-/usr/local/bin/duckdb --version          # 4. Homebrew (Intel Mac)
-```
-
-Then call that absolute path **directly** as a plain command — still no subshell, no `$DB`
-variable — e.g. `~/.duckdb/cli/latest/duckdb db/fm_catalog.duckdb -c "..."`.
+If `which duckdb` fails (some native setups do not inherit the user's shell PATH), the fix is
+**PATH, not an absolute-path prefix**: `tools/init.sh` resolves the binary once and writes its
+directory into `.claude/settings.json → env.PATH`, so Claude Code always finds `duckdb` and the
+bare form keeps working. Re-run `init.sh` if the entry is missing. Only as a genuine last
+resort call an absolute path directly (still no subshell, no `$DB`), and then stick to the two
+pre-approved locations `/usr/local/bin/duckdb` or `/opt/homebrew/bin/duckdb` — a home-installer
+path like `~/.duckdb/cli/latest/duckdb …` is **not** allow-listed and will prompt.
 
 **Important:** never try to install DuckDB yourself. If it cannot be found in any of the
 locations above, point the user to the installation instructions.

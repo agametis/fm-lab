@@ -2,40 +2,32 @@
 
 The repository is organized into separate sections for the different components and tasks within the overall workflow.
 
-```
-fm-lab/
-├── .claude/                    Claude Code configuration (skills, settings)
-├── .devcontainer/              VS Code Dev Container configuration (optional)
-├── .fmlab/                     FM-Lab configuration (plugins, settings)
-├── .git/                       Git repository metadata
-├── apps/                       Frontend / application code
-├── db/                         DuckDB databases (symlinks to active solution)
-├── docs/                       Project documentation and optional references
-├── logs/                       Log files
-├── packages/                   Shared packages and modules
-├── reference/                  fm-spec database (syntax and grammar definitions)
-├── rest-api/                   REST API server with its own database copies
-├── scripts/                    Reserved for generation of new scripts (output)
-├── solutions/                  Solution bundles (FileMaker solution data)
-├── solutions/<id>/xml/         FileMaker XML exports (input data)
-├── solutions/<id>/db/          DuckDB object catalog (output data)
-├── solutions/<id>/state/       Solution metadata (status, logs)
-├── sql/                        SQL templates (convert-xml, samples, …)
-├── tools/                      XML Importer and CLI utilities
-│
-├── .gitignore                  Git ignore rules
-├── README.md                   Project overview
-├── CHANGELOG.md                Version history
-├── CLAUDE.md                   Project instructions for Claude
-├── LICENSE                     License
-└── package.json                Node.js workspace configuration
-```
+- [Ingestion pipeline](#ingestion-pipeline)
+- [FileMaker Reference](#filemaker-reference)
+- [REST API](#rest-api)
+- [Web Client](#web-client)
+- [Tools](#tools)
+- [Docs](#docs)
+- [Agent framework](#agent-framework)
+- [Settings](#settings)
+- [Local servers](#local-servers)
+
+Refer to [Folder structure](Folder%20structure.md) for a detailed map.
+
+---
+## Ingestion pipeline
+
+This part converts your solution's XML description into a generic object model inside a DuckDB database.
 
 ### XML (Input)
 
 `solutions/<id>/xml/` — FileMaker XML exports (SaXML) from your solution, prepared for conversion.
 
 The folder can contain multiple files belonging to the same solution.
+
+### Katana XML engine
+
+`tools/convert_fm_xml.sh` — Runs XML batch conversion and accepts CLI options.
 
 ### SQL Templates
 
@@ -49,11 +41,21 @@ This is the main ingestion logic and is executed by the DuckDB CLI, which must b
 
 A separate catalog is populated for each solution during XML conversion.
 
-### fm-spec FileMaker Reference
+---
+## FileMaker Reference
 
-`reference/fm_spec.duckdb` — DuckDB database containing reference information about FileMaker script steps and functions. It includes machine-readable syntax and grammar definitions for linting during code generation.
+Reference tables for FileMaker script steps and functions. They include machine-readable syntax and grammar definitions for linting during code generation, plus an additional mapping layer from script step names to distinct tokens and to emitter templates in multiple output formats. They also support up to 11 locales for translations into human language.
 
-### REST API
+### fm-spec
+
+`reference/fm_spec.duckdb` — DuckDB database containing reference information about FileMaker script steps and functions.
+
+The reference table also maps to optional [doc sets](#docs) with links to the official documentation of FileMaker and supported plugins.
+
+---
+## REST API
+
+Core module that allows external consumers to query structured information from the DuckDB object catalog. It also provides different service endpoints to the stack's base functions, and emits information aligned to the internal schema model in different pre-defined output formats.
 
 - `rest-api/` — Express server for HTTP access to the analysis database.
 - `rest-api/db/solutions/<id>/fm_catalog.duckdb` — DuckDB database copy for exclusive, read-only access by the REST API.
@@ -63,20 +65,26 @@ A separate catalog is populated for each solution during XML conversion.
 - `rest-api/templates/sql/` — SQL templates for standard queries exposed through API endpoints.
 - `rest-api/templates/sql-custom/` — Additional SQL templates for custom use cases.
 
-### Web Client
+---
+## Web Client
+
+Rich browser-based interface for application-level functions and for [Interactive exploration](4%20Code%20Analysis%20Approaches.md#1-interactive-exploration) of the solution's object catalog. Most of FM-Lab's features are fully supported in the web interface (except agentic workflows).
 
 `apps/web/` — React/Vite frontend
 
-### Tools
+---
+## Tools
 
 - `tools/` — Utility scripts for various tasks.
 - `tools/fmlab.sh` — Wrapper for starting FM-Lab through Docker or the native CLI.
 - `tools/init.sh` — Initializes the project on first run by installing npm packages and configuring paths and default settings. It includes a preflight check for dependencies and expected versions.
-- `tools/convert_fm_xml.sh` — Runs XML batch conversion and accepts CLI options.
 - `tools/start-servers.sh` — Starts the included HTTP servers.
 - `tools/stop-servers.sh` — Stops the included HTTP servers.
 
-### Docs
+---
+## Docs
+
+Central storage for internal and external documentation. Some doc sets are provided with the installation. Others can be downloaded on demand as a cached memory layer for fast lookups by agents and humans.
 
 - `docs/` — Documentation files for FileMaker Pro and MBS plugin functions, installable through the web frontend or Claude skills.
 - `docs/fm-lab/` — Location of this documentation.
@@ -89,6 +97,9 @@ A separate catalog is populated for each solution during XML conversion.
 Installing the basic documentation set is highly recommended. It provides inline help for the web client and grounded reference material for agentic workflows.
 
 Some documentation packages include their own databases for fast indexed queries. The Claris and MBS documentation also provides dynamic context by mapping documentation entries to scripts and calculations in your solutions. These references are available for drill-down navigation and cross-referencing through the web frontend.
+
+---
+## Agent framework
 
 ### Claude System Prompt
 
@@ -122,7 +133,9 @@ Some documentation packages include their own databases for fast indexed queries
 
 - `.claude/skills/fm-summarize` — Creates a concise technical briefing for a given object.
 - `.claude/skills/fm-analyze` — Runs an in-depth object analysis using semantic signals and recursive graph traversal up to five levels deep. It gathers context about dependencies, structure, logic, technical rules, and semantic meaning. This helps the agent explain functionality and business rules within the solution.
-- `.claude/skills/fm-graph-cluster` — Segments the FileMaker object graph into functional clusters (communities) using graph analytics algorithms. When run in `--deep-research` mode, the LLM recursively follows the graph structure of top-level clusters and builds a comprehensive architectural analysis based on technical structure and semantic signals. The output is genrated in Markdown format at `output/graph_cluster_report_<timestamp>.md`.
+- `.claude/skills/fm-graph-cluster` — Segments the FileMaker object graph into functional clusters (communities) using [Graph analysis](4%20Code%20Analysis%20Approaches.md#3-graph-analysis) algorithms. When run in `--deep-research` mode, the LLM recursively follows the graph structure of top-level clusters and builds a comprehensive architectural analysis based on technical structure and semantic signals. The output is genrated in Markdown format at `output/graph_cluster_report_<timestamp>.md`.
+
+- `.claude/skills/create-custom-dashboard` — Helps you build a new custom dashboard for [Static code analysis](4%20Code%20Analysis%20Approaches.md#2-static-code-analysis) by describing its goals in plain language.
 
 **Agentic code generation**
 
@@ -133,13 +146,16 @@ Some documentation packages include their own databases for fast indexed queries
 - `.claude/skills/filemaker-function-reference` — Looks up Claris FileMaker documentation through a fast and reliable local cache and database index.
 - `.claude/skills/mbs-function-reference` — Looks up MBS plugin documentation through a fast and reliable local cache and database index.
 
-### Plugin registry
-
-`.fmlab/` — Registry and preferences for FM-Lab plugins.
-
 ### Scripts (Output)
 
 `scripts/` — Reserved for generated FileMaker scripts produced by agentic coding workflows.
+
+---
+## Settings
+
+### Plugin registry
+
+`.fmlab/` — Registry and preferences for FM-Lab plugins.
 
 ---
 

@@ -26,13 +26,10 @@ db/*
 !reference/fm_spec.meta.json
 !reference/SOURCES.md
 
-# Data directory
-data/*
-!data/.gitkeep
-
-# XML files
-xml/*
-!xml/.gitkeep
+# XML inbox of the default solution (multi-solution layout). Ship the empty inbox
+# so a fresh clone has it before init ever runs; ignore any XML a user drops in.
+solutions/default/xml/*
+!solutions/default/xml/.gitkeep
 
 # Docs directory (loaded on demand via install skills)
 docs/*

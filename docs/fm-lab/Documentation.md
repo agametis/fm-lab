@@ -6,22 +6,25 @@
 - [How it works](Wiki/How%20it%20works.md)
 - [Architecture](Wiki/Architecture.md)
 - [Workflow](Wiki/Workflow.md)
+- [4 Code Analysis Approaches](Wiki/4%20Code%20Analysis%20Approaches.md)
 - [Features](Wiki/Features.md)
 - [Components](Wiki/Components.md)
 
 ## Using FM-Lab
-- Installation
-- Quickstart
+- [Installation](Wiki/Installation.md)
+- [Quickstart](Wiki/Quickstart.md)
 - Frontend
 - Working with an IDE
 - using the Terminal
 - using the skills
 - Preparing your FileMaker solution
 - XML conversion
+- [Troubleshooting](Wiki/Troubleshooting.md)
 
 ## AI Agents
 - Code analysis
 - Code generation
+- System prompt
 - Skills
 
 ## Integrations
@@ -29,11 +32,12 @@
 - fmIDE
 
 ## Specs
-- Folder structure
+- [Folder structure](Wiki/Folder%20structure.md)
 - XML
 - Schema
 - SQL Templates
 - REST API
+- [fm-spec](Wiki/fm-spec.md)
 - Docs
 - Dependencies
 

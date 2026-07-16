@@ -22,7 +22,7 @@ import re
 from dataclasses import dataclass, field
 
 from .db import Reference
-from .textform import ParsedStep, RawStep, strip_strings
+from .textform import CALL_RE, ParsedStep, RawStep, strip_strings
 
 IF_OPEN, IF_BRANCH, IF_CLOSE = {68}, {69, 125}, {70}
 LOOP_OPEN, LOOP_EXIT, LOOP_CLOSE = {71}, {72}, {73}
@@ -134,9 +134,6 @@ def _text_rules(parsed: list[ParsedStep], res: LintResult) -> None:
                     "bare '::Field' reference — always qualify with a table occurrence (T5)")
 
 
-_CALL_RE = re.compile(r"([A-Za-z][A-Za-z0-9_.]*(?:\s[A-Za-z][A-Za-z0-9_.]*)*?)\s*\(")
-
-
 def _calc_options(ps: ParsedStep, ref: Reference) -> list[str]:
     calcs = []
     for o in ref.options(ps.step_id) if ps.step_id else []:
@@ -195,7 +192,7 @@ def _calc_rules(parsed: list[ParsedStep], ref: Reference, res: LintResult) -> No
         for calc in _calc_options(ps, ref):
             code = calc  # keep original for arg extraction; match on string-stripped copy
             stripped = strip_strings(code)
-            for m in _CALL_RE.finditer(stripped):
+            for m in CALL_RE.finditer(stripped):
                 token = m.group(1).strip()
                 hit = flookup.get(token.casefold())
                 if hit is None:
