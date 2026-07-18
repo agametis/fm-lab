@@ -10,8 +10,8 @@ WITH checks AS (
   -- ── Security (all warn) ──────────────────────────────────────────────
   SELECT 'warn' AS sev, EXISTS(
     SELECT 1 FROM ObjectLinks ol
-    JOIN ObjectCatalog p ON p.Object_UUID = ol.Target_UUID AND p.Object_Name = '[Full Access]'
-    JOIN ObjectCatalog acc ON acc.Object_UUID = ol.Source_UUID AND acc.Object_Type = 'Account'
+    JOIN ObjectCatalog p ON p.Object_UUID = ol.Target_UUID AND p.File_Name IS NOT DISTINCT FROM ol.Target_File AND p.Object_Name = '[Full Access]'
+    JOIN ObjectCatalog acc ON acc.Object_UUID = ol.Source_UUID AND acc.File_Name = ol.Source_File AND acc.Object_Type = 'Account'
     WHERE ol.Link_Role = 'privilege_set'
       AND (getvariable('file') IS NULL OR acc.File_Name = getvariable('file'))) AS hit
   UNION ALL SELECT 'warn', EXISTS(
@@ -25,8 +25,8 @@ WITH checks AS (
       WHERE regexp_matches(LOWER(f.Field_Name), '(password|passwort|kennwort|\bpin\b)')
         AND f.Field_Type = 'Normal' AND COALESCE(f.Is_Global, '') <> 'True')
     SELECT 1 FROM ObjectLinks ol
-    JOIN pw ON pw.Field_UUID = ol.Target_UUID
-    JOIN LayoutObjects lo ON lo.Object_UUID = ol.Source_UUID
+    JOIN pw ON pw.Field_UUID = ol.Target_UUID AND pw.File_Name IS NOT DISTINCT FROM ol.Target_File
+    JOIN LayoutObjects lo ON lo.Object_UUID = ol.Source_UUID AND lo.File_Name = ol.Source_File
     JOIN Layouts l ON l.L_ID = lo.Layout_ID AND l.File_Name = lo.File_Name
     WHERE ol.Link_Role = 'displays_field' AND ol.Source_Type = 'LayoutObject'
       AND lo.Object_XML NOT LIKE '%<Display Style="7"%'
@@ -38,14 +38,14 @@ WITH checks AS (
       AND (getvariable('file') IS NULL OR list_contains(v.Files, getvariable('file'))))
   UNION ALL SELECT 'warn', EXISTS(
     SELECT 1 FROM StepsForScripts s
-    JOIN DDR_ScriptSteps d ON s.Step_UUID = d.Step_UUID
+    JOIN DDR_ScriptSteps d ON s.Step_UUID = d.Step_UUID AND d.File_Name = s.File_Name
     WHERE d.Step_Text IS NOT NULL
       AND regexp_matches(LOWER(d.Step_Text), '(password|passwort|pswd|kennwort|pwd|secret|apikey|api_key|api-key|credential|passphrase|token|bearer|mdp|senha|contrase|authorization|client_secret|clientsecret|access_token|accesstoken|refresh_token|refreshtoken|private_key|privatekey|basic_auth|hmac|signingkey|userpass|login_password|signature)')
       AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file')))
   -- ── Fields ───────────────────────────────────────────────────────────
   UNION ALL SELECT 'warn', EXISTS(
     SELECT 1 FROM ObjectCatalog oc WHERE oc.Object_Type = 'Field'
-      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID
+      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Target_File IS NOT DISTINCT FROM oc.File_Name
           AND ol.Link_Role IN ('lookup_source','finds_in_field','inputs_to_field','imports_to_field','right_field','sorts_by_field','sets_field','left_field','sort_field','reads_field','displays_field','exports_from_field','navigates_to_field'))
       AND (getvariable('file') IS NULL OR oc.File_Name = getvariable('file')))
   UNION ALL SELECT 'info', EXISTS(
@@ -64,12 +64,12 @@ WITH checks AS (
   -- ── Scripts ──────────────────────────────────────────────────────────
   UNION ALL SELECT 'warn', EXISTS(
     SELECT 1 FROM ObjectCatalog oc WHERE oc.Object_Type = 'Script'
-      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Link_Role IN ('calls_script','triggers_script','trigger_script'))
+      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Target_File IS NOT DISTINCT FROM oc.File_Name AND ol.Link_Role IN ('calls_script','triggers_script','trigger_script'))
       AND (getvariable('file') IS NULL OR oc.File_Name = getvariable('file')))
   UNION ALL SELECT 'info', EXISTS(
     SELECT 1 FROM ScriptCatalog sc
     WHERE (sc.Folder_Type IS NULL OR sc.Folder_Type = 'False') AND NOT sc.Is_Separator
-      AND NOT EXISTS (SELECT 1 FROM StepsForScripts s WHERE s.Script_UUID = sc.Script_UUID)
+      AND NOT EXISTS (SELECT 1 FROM StepsForScripts s WHERE s.Script_UUID = sc.Script_UUID AND s.File_Name = sc.File_Name)
       AND (getvariable('file') IS NULL OR sc.File_Name = getvariable('file')))
   UNION ALL SELECT 'info', EXISTS(
     WITH s AS (
@@ -83,7 +83,7 @@ WITH checks AS (
     WITH auto_exit AS (
       SELECT DISTINCT t.File_Name, t.Script_ID
       FROM v_script_block_tree t
-      JOIN StepsForScripts s ON s.Step_UUID = t.Step_UUID
+      JOIN StepsForScripts s ON s.Step_UUID = t.Step_UUID AND s.File_Name = t.File_Name
       WHERE t.Step_ID IN (16, 99) AND t.loop_depth_before >= 1
         AND regexp_matches(s.Step_XML, 'value="[34]">\s*<Boolean[^>]*value="True"')),
     loops AS (
@@ -112,20 +112,20 @@ WITH checks AS (
   -- ── Tables & occurrences ─────────────────────────────────────────────
   UNION ALL SELECT 'warn', EXISTS(
     SELECT 1 FROM ObjectCatalog oc WHERE oc.Object_Type = 'BaseTable'
-      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Link_Role IN ('base_table'))
+      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Target_File IS NOT DISTINCT FROM oc.File_Name AND ol.Link_Role IN ('base_table'))
       AND (getvariable('file') IS NULL OR oc.File_Name = getvariable('file')))
   UNION ALL SELECT 'warn', EXISTS(
     SELECT 1 FROM ObjectCatalog oc WHERE oc.Object_Type = 'TableOccurrence'
-      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Link_Role IN ('context_table','portal_context','navigates_to_to','left_table','right_table','lookup_relationship'))
+      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Target_File IS NOT DISTINCT FROM oc.File_Name AND ol.Link_Role IN ('context_table','portal_context','navigates_to_to','left_table','right_table','lookup_relationship'))
       AND (getvariable('file') IS NULL OR oc.File_Name = getvariable('file')))
   UNION ALL SELECT 'info', EXISTS(
     SELECT 1 FROM FieldsForTables f
     WHERE (getvariable('file') IS NULL OR f.File_Name = getvariable('file'))
-    GROUP BY f.Table_UUID HAVING COUNT(*) >= CAST(COALESCE(getvariable('min_fields'), '100') AS INTEGER))
+    GROUP BY f.File_Name, f.Table_UUID HAVING COUNT(*) >= CAST(COALESCE(getvariable('min_fields'), '100') AS INTEGER))
   -- ── Layouts ──────────────────────────────────────────────────────────
   UNION ALL SELECT 'warn', EXISTS(
     SELECT 1 FROM ObjectCatalog oc WHERE oc.Object_Type = 'Layout'
-      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Link_Role IN ('navigates_to_layout','default_layout'))
+      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Target_File IS NOT DISTINCT FROM oc.File_Name AND ol.Link_Role IN ('navigates_to_layout','default_layout'))
       AND (getvariable('file') IS NULL OR oc.File_Name = getvariable('file')))
   UNION ALL SELECT 'info', EXISTS(
     SELECT 1 FROM Layouts l
@@ -154,7 +154,7 @@ WITH checks AS (
   -- ── Value lists ──────────────────────────────────────────────────────
   UNION ALL SELECT 'info', EXISTS(
     SELECT 1 FROM ObjectCatalog oc WHERE oc.Object_Type = 'ValueList'
-      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Link_Role IN ('uses_valuelist','sorts_by_valuelist','source_valuelist'))
+      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Target_File IS NOT DISTINCT FROM oc.File_Name AND ol.Link_Role IN ('uses_valuelist','sorts_by_valuelist','source_valuelist'))
       AND (getvariable('file') IS NULL OR oc.File_Name = getvariable('file')))
   UNION ALL SELECT 'info', EXISTS(
     SELECT 1 FROM (SELECT DISTINCT File_Name, VL_UUID FROM OptionsForValueLists WHERE Source_Type = 'Custom') vl
@@ -162,7 +162,7 @@ WITH checks AS (
   -- ── Custom functions ─────────────────────────────────────────────────
   UNION ALL SELECT 'warn', EXISTS(
     SELECT 1 FROM ObjectCatalog oc WHERE oc.Object_Type = 'CustomFunction'
-      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Link_Role IN ('calls_customfunction'))
+      AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Target_File IS NOT DISTINCT FROM oc.File_Name AND ol.Link_Role IN ('calls_customfunction'))
       AND (getvariable('file') IS NULL OR oc.File_Name = getvariable('file')))
   UNION ALL SELECT 'info', EXISTS(
     WITH cf AS (

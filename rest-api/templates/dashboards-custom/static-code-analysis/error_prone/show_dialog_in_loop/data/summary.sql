@@ -4,7 +4,7 @@
 WITH f AS (
     SELECT t.File_Name, s.Is_Enabled
     FROM v_script_block_tree t
-    JOIN StepsForScripts s ON s.Step_UUID = t.Step_UUID
+    JOIN StepsForScripts s ON s.Step_UUID = t.Step_UUID AND s.File_Name = t.File_Name
     WHERE t.Step_ID = 87 AND t.loop_depth_before >= 1
       AND (getvariable('file') IS NULL OR t.File_Name = getvariable('file'))
 ),

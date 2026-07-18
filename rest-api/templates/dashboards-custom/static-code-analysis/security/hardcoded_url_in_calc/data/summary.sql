@@ -12,14 +12,14 @@ WITH hit AS (
       AND (getvariable('file') IS NULL OR d.File_Name = getvariable('file'))
 ),
 step_owner AS (
-    SELECT upper(Step_UUID) AS anchor, any_value(Step_UUID) AS step_uuid,
+    SELECT upper(Step_UUID) AS anchor, File_Name, any_value(Step_UUID) AS step_uuid,
         any_value(Script_UUID) AS owner_uuid, any_value(Script_Name) AS owner_name
-    FROM StepsForScripts GROUP BY upper(Step_UUID)
+    FROM StepsForScripts GROUP BY upper(Step_UUID), File_Name
 ),
 oc_owner AS (
-    SELECT upper(Object_UUID) AS anchor, any_value(Object_UUID) AS owner_uuid,
+    SELECT upper(Object_UUID) AS anchor, File_Name, any_value(Object_UUID) AS owner_uuid,
         any_value(Object_Type) AS owner_type, any_value(Object_Name) AS owner_name
-    FROM ObjectCatalog GROUP BY upper(Object_UUID)
+    FROM ObjectCatalog GROUP BY upper(Object_UUID), File_Name
 )
 SELECT 'hardcoded-url-in-calc' AS rule_id, 'warning' AS severity,
     h.File_Name AS file_name,
@@ -30,7 +30,7 @@ SELECT 'hardcoded-url-in-calc' AS rule_id, 'warning' AS severity,
     s.step_uuid AS step_uuid,
     row_number() OVER (ORDER BY h.File_Name) AS row_key
 FROM hit h
-LEFT JOIN step_owner s ON s.anchor = h.anchor_uuid
-LEFT JOIN oc_owner o ON o.anchor = h.anchor_uuid
+LEFT JOIN step_owner s ON s.anchor = h.anchor_uuid AND s.File_Name = h.File_Name
+LEFT JOIN oc_owner o ON o.anchor = h.anchor_uuid AND o.File_Name = h.File_Name
 ORDER BY h.File_Name
 ) _summary;

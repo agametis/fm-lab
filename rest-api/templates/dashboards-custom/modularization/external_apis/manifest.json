@@ -48,6 +48,7 @@
       "name": "file",
       "type": "string",
       "required": false,
+      "sticky": true,
       "description": "Optional file filter — derived from the app-level filter."
     },
     {
@@ -66,6 +67,7 @@
       "name": "comment",
       "type": "string",
       "required": false,
+      "sticky": true,
       "description": "Comment filter for the URL detail list: 'all', 'exclude' (default — only URLs in active code) or 'only' (URLs found inside /* */ or // comment blocks)."
     },
     {
@@ -78,6 +80,7 @@
       "name": "api_set",
       "type": "string",
       "required": false,
+      "sticky": true,
       "description": "Selects the API-family classification set ('generic' default, plus any installed sets under .fmlab/dashboards/api-sets/). Drives the url→family mapping across the family table, detail list and host roll-up."
     },
     {

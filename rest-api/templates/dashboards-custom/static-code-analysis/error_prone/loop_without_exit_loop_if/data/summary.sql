@@ -7,7 +7,7 @@ FROM (
 WITH auto_exit AS (
     SELECT DISTINCT t.File_Name, t.Script_ID
     FROM v_script_block_tree t
-    JOIN StepsForScripts s ON s.Step_UUID = t.Step_UUID
+    JOIN StepsForScripts s ON s.Step_UUID = t.Step_UUID AND s.File_Name = t.File_Name
     WHERE t.Step_ID IN (16, 99)
       AND t.loop_depth_before >= 1
       AND regexp_matches(s.Step_XML, 'value="[34]">\s*<Boolean[^>]*value="True"')

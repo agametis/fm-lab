@@ -13,8 +13,8 @@ mbs AS (
         'MBS ' || regexp_extract(tgt.Object_Name, '(?i)MBS:([A-Za-z]+)\.', 1) AS mechanism,
         'mbs' AS kind
     FROM ObjectLinks ol
-    JOIN ObjectCatalog tgt ON ol.Target_UUID = tgt.Object_UUID
-    JOIN ObjectCatalog src ON ol.Source_UUID = src.Object_UUID
+    JOIN ObjectCatalog tgt ON ol.Target_UUID = tgt.Object_UUID AND tgt.File_Name IS NOT DISTINCT FROM ol.Target_File
+    JOIN ObjectCatalog src ON ol.Source_UUID = src.Object_UUID AND src.File_Name = ol.Source_File
     WHERE ol.Link_Role = 'calls_pluginfunction'
       AND regexp_matches(tgt.Object_Name, '(?i)MBS:(Shell|RunTask|Process)\.')
 ),

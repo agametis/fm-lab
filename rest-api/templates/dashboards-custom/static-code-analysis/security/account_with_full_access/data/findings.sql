@@ -3,8 +3,8 @@ SELECT 'account-with-full-access' AS rule_id, 'warning' AS severity,
     'Account has the [Full Access] privilege set' AS message,
     row_number() OVER (ORDER BY acc.File_Name, acc.Object_Name) AS row_key
 FROM ObjectLinks ol
-JOIN ObjectCatalog p ON p.Object_UUID = ol.Target_UUID AND p.Object_Name = '[Full Access]'
-JOIN ObjectCatalog acc ON acc.Object_UUID = ol.Source_UUID AND acc.Object_Type = 'Account'
+JOIN ObjectCatalog p ON p.Object_UUID = ol.Target_UUID AND p.File_Name IS NOT DISTINCT FROM ol.Target_File AND p.Object_Name = '[Full Access]'
+JOIN ObjectCatalog acc ON acc.Object_UUID = ol.Source_UUID AND acc.File_Name = ol.Source_File AND acc.Object_Type = 'Account'
 WHERE ol.Link_Role = 'privilege_set'
   AND (getvariable('file') IS NULL OR acc.File_Name = getvariable('file'))
 ORDER BY acc.File_Name, acc.Object_Name

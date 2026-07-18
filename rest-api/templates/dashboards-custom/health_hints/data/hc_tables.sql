@@ -23,7 +23,7 @@ SELECT key, label, value, severity, action, action_args FROM (
          (SELECT COUNT(*) FROM (
             SELECT 1 FROM FieldsForTables f
             WHERE (getvariable('file') IS NULL OR f.File_Name = getvariable('file'))
-            GROUP BY f.Table_UUID HAVING COUNT(*) >= CAST(COALESCE(getvariable('min_fields'), '100') AS INTEGER)
+            GROUP BY f.File_Name, f.Table_UUID HAVING COUNT(*) >= CAST(COALESCE(getvariable('min_fields'), '100') AS INTEGER)
          ) t),
          'info', 'openDashboard', 'id=table_many_fields'
 ) WHERE (getvariable('severity') IS NULL OR getvariable('severity') = '' OR severity = getvariable('severity'))

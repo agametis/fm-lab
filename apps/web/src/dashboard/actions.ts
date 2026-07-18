@@ -84,9 +84,30 @@ export function resolveAction(
  * "Mode"-Params, die bei openDashboard-Selbstnavigation (Klick innerhalb
  * desselben Dashboards) erhalten bleiben — im Gegensatz zu Filter-Params
  * (api_family, host, ref_type, …), die klick-skopiert zurückgesetzt werden.
- * `api_set` = Klassifikations-Set, `file` = App-Dateifilter, `comment` = Kommentar-Linse.
+ *
+ * Zwei Quellen, vereinigt:
+ * - Legacy-Basis-Set für Bestands-Bundles ohne Deklaration:
+ *   `api_set` = Klassifikations-Set, `file` = App-Dateifilter, `comment` = Kommentar-Linse.
+ * - Manifest-deklarierte Params mit `sticky: true`, die der DashboardHost beim
+ *   Laden über `registerStickyDashboardParams` meldet.
  */
 const STICKY_DASHBOARD_PARAMS = ['api_set', 'file', 'comment'];
+
+let manifestSticky: { dashboardId: string; params: string[] } | null = null;
+
+/**
+ * Meldet die sticky-deklarierten Manifest-Params des aktuell gemounteten
+ * Dashboards. Wird bei jedem Manifest-Load überschrieben; ein Eintrag wirkt
+ * nur, wenn die Selbstnavigation dieselbe Dashboard-ID trifft.
+ */
+export function registerStickyDashboardParams(dashboardId: string, params: string[]): void {
+  manifestSticky = { dashboardId, params };
+}
+
+function stickyParamsFor(dashboardId: string): string[] {
+  const declared = manifestSticky?.dashboardId === dashboardId ? manifestSticky.params : [];
+  return [...STICKY_DASHBOARD_PARAMS, ...declared];
+}
 
 /**
  * Führt eine Action aus. Unbekannte Actions werden geloggt, aber ignoriert.
@@ -175,7 +196,7 @@ export function dispatchAction(
         );
         if (curId === id) {
           const cur = new URLSearchParams(window.location.search);
-          for (const key of STICKY_DASHBOARD_PARAMS) {
+          for (const key of stickyParamsFor(id)) {
             const value = cur.get(key);
             if (value != null && value !== '' && !(key in merged)) merged[key] = value;
           }

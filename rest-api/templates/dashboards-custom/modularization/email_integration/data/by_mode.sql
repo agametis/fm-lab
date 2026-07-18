@@ -11,7 +11,7 @@ WITH native AS (
         END AS mode,
         (COALESCE(ddr.Step_Text,'') LIKE '%Password:%') AS hardcoded_auth
     FROM StepsForScripts s
-    LEFT JOIN DDR_ScriptSteps ddr ON s.Step_UUID = ddr.Step_UUID
+    LEFT JOIN DDR_ScriptSteps ddr ON s.Step_UUID = ddr.Step_UUID AND ddr.File_Name = s.File_Name
     WHERE s.Step_ID = 63
 ),
 mbs AS (

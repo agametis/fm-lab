@@ -8,8 +8,8 @@ SELECT key, label, value, severity, action, action_args FROM (
          (SELECT COUNT(*) FROM (
             SELECT 1
             FROM ObjectLinks ol
-            JOIN ObjectCatalog p ON p.Object_UUID = ol.Target_UUID AND p.Object_Name = '[Full Access]'
-            JOIN ObjectCatalog acc ON acc.Object_UUID = ol.Source_UUID AND acc.Object_Type = 'Account'
+            JOIN ObjectCatalog p ON p.Object_UUID = ol.Target_UUID AND p.File_Name IS NOT DISTINCT FROM ol.Target_File AND p.Object_Name = '[Full Access]'
+            JOIN ObjectCatalog acc ON acc.Object_UUID = ol.Source_UUID AND acc.File_Name = ol.Source_File AND acc.Object_Type = 'Account'
             WHERE ol.Link_Role = 'privilege_set'
               AND (getvariable('file') IS NULL OR acc.File_Name = getvariable('file'))
          ) t) AS value,
@@ -35,8 +35,8 @@ SELECT key, label, value, severity, action, action_args FROM (
             )
             SELECT 1
             FROM ObjectLinks ol
-            JOIN pw ON pw.Field_UUID = ol.Target_UUID
-            JOIN LayoutObjects lo ON lo.Object_UUID = ol.Source_UUID
+            JOIN pw ON pw.Field_UUID = ol.Target_UUID AND pw.File_Name IS NOT DISTINCT FROM ol.Target_File
+            JOIN LayoutObjects lo ON lo.Object_UUID = ol.Source_UUID AND lo.File_Name = ol.Source_File
             JOIN Layouts l ON l.L_ID = lo.Layout_ID AND l.File_Name = lo.File_Name
             WHERE ol.Link_Role = 'displays_field' AND ol.Source_Type = 'LayoutObject'
               AND lo.Object_XML NOT LIKE '%<Display Style="7"%'
@@ -58,7 +58,7 @@ SELECT key, label, value, severity, action, action_args FROM (
          (SELECT COUNT(*) FROM (
             SELECT 1
             FROM StepsForScripts s
-            JOIN DDR_ScriptSteps d ON s.Step_UUID = d.Step_UUID
+            JOIN DDR_ScriptSteps d ON s.Step_UUID = d.Step_UUID AND d.File_Name = s.File_Name
             WHERE d.Step_Text IS NOT NULL
               AND regexp_matches(LOWER(d.Step_Text), '(password|passwort|pswd|kennwort|pwd|secret|apikey|api_key|api-key|credential|passphrase|token|bearer|mdp|senha|contrase|authorization|client_secret|clientsecret|access_token|accesstoken|refresh_token|refreshtoken|private_key|privatekey|basic_auth|hmac|signingkey|userpass|login_password|signature)')
               AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file'))

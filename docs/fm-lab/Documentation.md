@@ -18,7 +18,7 @@
 - using the Terminal
 - using the skills
 - Preparing your FileMaker solution
-- XML conversion
+- [XML conversion](Wiki/katana-engine.md)
 - [Troubleshooting](Wiki/Troubleshooting.md)
 
 ## AI Agents
@@ -49,3 +49,4 @@
 
 
 **Note:** This documentation is a work in progress and will evolve alongside future releases.
+(last edit: 2026-07-17)

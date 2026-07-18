@@ -7,7 +7,7 @@ SELECT key, label, value, severity, action, action_args FROM (
   SELECT 1 AS ord, 'unused_script' AS key, 'Unused scripts' AS label,
          (SELECT COUNT(*) FROM (
             SELECT 1 FROM ObjectCatalog oc WHERE oc.Object_Type = 'Script'
-              AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Link_Role IN ('calls_script','triggers_script','trigger_script'))
+              AND NOT EXISTS (SELECT 1 FROM ObjectLinks ol WHERE ol.Target_UUID = oc.Object_UUID AND ol.Target_File IS NOT DISTINCT FROM oc.File_Name AND ol.Link_Role IN ('calls_script','triggers_script','trigger_script'))
               AND (getvariable('file') IS NULL OR oc.File_Name = getvariable('file'))
          ) t) AS value,
          'warn' AS severity, 'openDashboard' AS action, 'id=unused_script' AS action_args
@@ -16,7 +16,7 @@ SELECT key, label, value, severity, action, action_args FROM (
          (SELECT COUNT(*) FROM (
             SELECT 1 FROM ScriptCatalog sc
             WHERE (sc.Folder_Type IS NULL OR sc.Folder_Type = 'False') AND NOT sc.Is_Separator
-              AND NOT EXISTS (SELECT 1 FROM StepsForScripts s WHERE s.Script_UUID = sc.Script_UUID)
+              AND NOT EXISTS (SELECT 1 FROM StepsForScripts s WHERE s.Script_UUID = sc.Script_UUID AND s.File_Name = sc.File_Name)
               AND (getvariable('file') IS NULL OR sc.File_Name = getvariable('file'))
          ) t),
          'info', 'openDashboard', 'id=empty_script'
@@ -39,7 +39,7 @@ SELECT key, label, value, severity, action, action_args FROM (
             WITH auto_exit AS (
                 SELECT DISTINCT t.File_Name, t.Script_ID
                 FROM v_script_block_tree t
-                JOIN StepsForScripts s ON s.Step_UUID = t.Step_UUID
+                JOIN StepsForScripts s ON s.Step_UUID = t.Step_UUID AND s.File_Name = t.File_Name
                 WHERE t.Step_ID IN (16, 99) AND t.loop_depth_before >= 1
                   AND regexp_matches(s.Step_XML, 'value="[34]">\s*<Boolean[^>]*value="True"')
             ),

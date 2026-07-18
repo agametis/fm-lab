@@ -10,7 +10,7 @@ WITH steps_with_depth AS (
         SUM(CASE WHEN Step_ID = 68 THEN 1
                  WHEN Step_ID = 70 THEN -1
                  ELSE 0 END)
-            OVER (PARTITION BY Script_UUID
+            OVER (PARTITION BY Script_UUID, File_Name
                   ORDER BY Step_Index
                   ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS depth_after
     FROM StepsForScripts
@@ -22,7 +22,7 @@ if_nodes AS (
 if_with_end AS (
     SELECT i.*,
         (SELECT MIN(e.Step_Index) FROM steps_with_depth e
-           WHERE e.Script_UUID = i.Script_UUID
+           WHERE e.Script_UUID = i.Script_UUID AND e.File_Name = i.File_Name
              AND e.Step_Index > i.if_idx
              AND e.Step_ID = 70
              AND e.depth_after = i.if_depth - 1) AS end_idx
@@ -31,7 +31,7 @@ if_with_end AS (
 matched AS (
     SELECT b.*,
         (SELECT MIN(s.Step_Index) FROM steps_with_depth s
-           WHERE s.Script_UUID = b.Script_UUID
+           WHERE s.Script_UUID = b.Script_UUID AND s.File_Name = b.File_Name
              AND s.Step_Index > b.if_idx
              AND s.Step_Index < b.end_idx
              AND s.Step_ID = 69
@@ -42,11 +42,11 @@ matched AS (
 sized AS (
     SELECT m.*,
         (SELECT COUNT(*) FROM StepsForScripts t
-           WHERE t.Script_UUID = m.Script_UUID
+           WHERE t.Script_UUID = m.Script_UUID AND t.File_Name = m.File_Name
              AND t.Step_Index > m.if_idx
              AND t.Step_Index < m.else_idx) AS if_len,
         (SELECT COUNT(*) FROM StepsForScripts t
-           WHERE t.Script_UUID = m.Script_UUID
+           WHERE t.Script_UUID = m.Script_UUID AND t.File_Name = m.File_Name
              AND t.Step_Index > m.else_idx
              AND t.Step_Index < m.end_idx) AS else_len
     FROM matched m WHERE m.else_idx IS NOT NULL

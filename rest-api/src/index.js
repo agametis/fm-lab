@@ -60,11 +60,30 @@ app.use((req, res, next) => {
 // API Routes
 app.use('/api', routes);
 
+// Lite web client (optional module): server-rendered HTML surface under /lite.
+// The liteweb/ directory may be absent in installations that ship only the
+// API — then /lite simply stays 404 and the server runs unchanged.
+let liteMounted = false;
+{
+  const fs = require('fs');
+  const path = require('path');
+  const litewebDir = path.join(__dirname, '..', 'liteweb');
+  if (fs.existsSync(litewebDir)) {
+    try {
+      app.use('/lite', require(path.join(litewebDir, 'routes'))());
+      liteMounted = true;
+    } catch (err) {
+      console.warn(`Lite web client not mounted: ${err.message}`);
+    }
+  }
+}
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
     message: 'FM-Lab REST API',
     version: require('../package.json').version,
+    ...(liteMounted ? { liteClient: '/lite' } : {}),
     endpoints: {
       version: '/api/version',
       versionManifest: '/api/version-manifest',

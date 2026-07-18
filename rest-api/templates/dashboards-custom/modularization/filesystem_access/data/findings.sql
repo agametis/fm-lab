@@ -80,7 +80,7 @@ mbs AS (
      AND s.Script_UUID = r.Source_UUID
      AND s.File_Name = r.file
      AND s.Step_Index = TRY_CAST(r.Source_Subkey AS INTEGER)
-    LEFT JOIN ObjectCatalog oc ON oc.Object_UUID = r.Source_UUID
+    LEFT JOIN ObjectCatalog oc ON oc.Object_UUID = r.Source_UUID AND oc.File_Name = r.file
 ),
 all_hits AS (
     SELECT file, api_group, operation, ref_type, carrier, detail, step_index, nav_uuid, nav_type, step_uuid FROM native

@@ -19,7 +19,7 @@ WITH native AS (
         'Script'                                             AS nav_type,
         s.Step_UUID                                          AS step_uuid
     FROM StepsForScripts s
-    LEFT JOIN DDR_ScriptSteps ddr ON s.Step_UUID = ddr.Step_UUID
+    LEFT JOIN DDR_ScriptSteps ddr ON s.Step_UUID = ddr.Step_UUID AND ddr.File_Name = s.File_Name
     WHERE s.Step_ID = 63
 ),
 mbs AS (
@@ -43,7 +43,7 @@ mbs AS (
      AND s.Script_UUID = p.Source_UUID
      AND s.File_Name = p.File_Name
      AND s.Step_Index = TRY_CAST(p.Source_Subkey AS INTEGER)
-    LEFT JOIN ObjectCatalog oc ON oc.Object_UUID = p.Source_UUID
+    LEFT JOIN ObjectCatalog oc ON oc.Object_UUID = p.Source_UUID AND oc.File_Name = p.File_Name
     WHERE regexp_matches(p.Plugin_Function_Name, '(?i)MBS:(SendMail|EmailParser)\.')
 ),
 all_hits AS (SELECT * FROM native UNION ALL SELECT * FROM mbs)

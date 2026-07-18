@@ -44,6 +44,8 @@ export interface DashboardManifest {
     required: boolean;
     default?: unknown;
     description?: string;
+    /** Survives openDashboard self-navigation (mode/lens params). */
+    sticky?: boolean;
   }>;
   permissions: { read_only: boolean; allow_navigation: boolean };
 }

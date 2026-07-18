@@ -10,7 +10,7 @@ SELECT 'show-dialog-in-loop' AS rule_id, 'warning' AS severity,
     'Show Custom Dialog inside loop (depth ' || t.loop_depth_before || ') at step ' || t.Step_Index AS message,
     row_number() OVER (ORDER BY t.File_Name, t.Script_Name, t.Step_Index) AS row_key
 FROM v_script_block_tree t
-JOIN StepsForScripts s ON s.Step_UUID = t.Step_UUID
+JOIN StepsForScripts s ON s.Step_UUID = t.Step_UUID AND s.File_Name = t.File_Name
 WHERE t.Step_ID = 87 AND t.loop_depth_before >= 1
   AND (getvariable('file') IS NULL OR t.File_Name = getvariable('file'))
   AND (COALESCE(getvariable('scope'), 'active') = 'all' OR s.Is_Enabled)

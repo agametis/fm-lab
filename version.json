@@ -1,8 +1,8 @@
 {
   "manifest_schema": "1.0",
-  "version": "0.9.3",
-  "generated_at": "2026-07-16T17:51:26.279Z",
-  "source_commit": "be7ef64",
+  "version": "0.9.4",
+  "generated_at": "2026-07-18T18:49:12.775Z",
+  "source_commit": "cb98811",
   "components": {
     "rest_api": {
       "scheme": "A",
@@ -15,6 +15,12 @@
       "version": "0.9.0",
       "source": "apps/web/package.json",
       "on_change": "rebuild_web"
+    },
+    "vscode": {
+      "scheme": "B",
+      "version": "0.8.0",
+      "source": "apps/vscode/package.json",
+      "on_change": "rebuild_vscode_extension"
     },
     "claude_md": {
       "scheme": "A",
@@ -84,6 +90,10 @@
       "version": "0.8.5"
     },
     {
+      "name": "install-duckdb-docs",
+      "version": "0.9.0"
+    },
+    {
       "name": "filemaker-function-reference",
       "version": "0.8.9"
     },
@@ -117,7 +127,7 @@
     },
     {
       "name": "create-custom-dashboard",
-      "version": "0.8.9"
+      "version": "0.9.0"
     },
     {
       "name": "select-solution",

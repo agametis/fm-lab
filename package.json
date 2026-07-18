@@ -1,6 +1,6 @@
 {
   "name": "fm-lab",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "FM-Lab - Open Source framework for agentic FileMaker development",
   "private": true,
   "workspaces": [
@@ -14,10 +14,6 @@
     "build:shared": "npm run build --workspace=packages/shared",
     "generate:types": "npm run generate --workspace=packages/shared",
     "install:all": "npm install && npm install --workspaces",
-    "version:manifest": "node tools/build-version-manifest.mjs",
-    "version:bump": "node tools/version-bump.mjs",
-    "container:versions": "node tools/build-container-env.mjs",
-    "check:env": "node tools/check-env-example.mjs",
     "clean": "npm run clean --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"

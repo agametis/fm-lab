@@ -23,7 +23,7 @@ import json
 import sys
 from pathlib import Path
 
-from fmgen_lib import actionscript, db, emit, gate, lint, resolve, textform
+from fmgen_lib import actionscript, db, decompile, emit, gate, lint, resolve, textform
 
 
 def _fail_env(msg: str) -> int:
@@ -141,6 +141,37 @@ def do_actionscript(args, ref) -> tuple[int, dict]:
     return (2 if result.has_errors else 0), payload
 
 
+def do_decompile(args, ref) -> tuple[int, dict | str]:
+    xml_text = Path(args.input).read_text(encoding="utf-8")
+    catalog = None
+    try:
+        catalog = db.catalog_db(args.catalog_db)
+    except db.DbError:
+        catalog = None  # optional: only enriches layout TO names
+    result = decompile.decompile(xml_text, ref, catalog, args.file)
+    if result.errors:
+        for e in result.errors:
+            print(f"fmgen decompile: ERROR {e}", file=sys.stderr)
+        return 2, {"errors": result.errors}
+    print(f"fmgen decompile: {len(result.steps)} step(s), "
+          f"{result.lossy_count} lossy", file=sys.stderr)
+    if args.json:
+        payload = {
+            "text": result.text,
+            "steps": [
+                {
+                    "index": s.index, "step_id": s.step_id,
+                    "canonical_name": s.canonical_name, "enabled": s.enabled,
+                    "text": s.text, "issues": s.issues, "notes": s.notes,
+                }
+                for s in result.steps
+            ],
+            "lossy": result.lossy_count,
+        }
+        return (2 if result.lossy_count else 0), payload
+    return (2 if result.lossy_count else 0), result.text
+
+
 def do_run(args, ref) -> int:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -197,6 +228,10 @@ def main() -> int:
     p.add_argument("input", nargs="?")
     p.add_argument("--wrap-snippet", help="fmxmlsnippet file for a clipboard-delivery script")
     p.add_argument("--script-name", help="target script for the delivery navigation")
+    p = sub.add_parser("decompile")
+    p.add_argument("input")
+    p.add_argument("--file", help="FM file context for layout TO enrichment")
+    p.add_argument("--json", action="store_true")
     p = sub.add_parser("run")
     p.add_argument("input"); p.add_argument("--file", required=True)
     p.add_argument("--out-dir", default="output/codegen")
@@ -214,7 +249,7 @@ def main() -> int:
         if args.cmd == "run":
             return do_run(args, ref)
         fn = {"parse": do_parse, "resolve": do_resolve, "emit": do_emit, "gate": do_gate,
-              "actionscript": do_actionscript}[args.cmd]
+              "actionscript": do_actionscript, "decompile": do_decompile}[args.cmd]
         code, payload = fn(args, ref)
         sys.stdout.write(payload if isinstance(payload, str) else _dumps(payload))
         return code

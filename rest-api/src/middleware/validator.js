@@ -254,6 +254,26 @@ const schemas = {
     debug: Joi.boolean().default(false),
   }),
 
+  // POST /api/codegen/lint — Script-Entwurf parsen + linten (Editor-Diagnostics).
+  // Body-Validierung; text = Script-Textform (fmgen-Notation).
+  codegenLint: Joi.object({
+    text: Joi.string().min(1).max(500000).required(),
+  }),
+
+  // POST /api/codegen/compile — volle fmgen-Pipeline (parse→resolve→emit→gate).
+  // file = FM-Zieldatei im Katalog (Referenz-Auflösung ist datei-skopiert).
+  codegenCompile: Joi.object({
+    text: Joi.string().min(1).max(500000).required(),
+    file: Joi.string().min(1).required(),
+  }),
+
+  // POST /api/codegen/decompile — fmxmlsnippet-XML → kanonische Textform.
+  // file optional (nur für die Layout→TO-Anreicherung aus dem Katalog).
+  codegenDecompile: Joi.object({
+    xml: Joi.string().min(1).max(2000000).required(),
+    file: Joi.string().min(1).optional(),
+  }),
+
   // PUT /api/annotations/community - Community-Name/Notiz (User-Annotation)
   // Body-Validierung. Leere Strings sind erlaubt (= Feld löschen); der Service
   // normalisiert sie zu NULL. engine+community identifizieren die Community in der

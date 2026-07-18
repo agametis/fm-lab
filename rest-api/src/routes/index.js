@@ -13,6 +13,7 @@ const xmlRoutes = require('./xml.routes');
 const relationshipGraphRoutes = require('./relationshipGraph.routes');
 const graphRoutes = require('./graph.routes');
 const annotationsRoutes = require('./annotations.routes');
+const codegenRoutes = require('./codegen.routes');
 const referenceRoutes = require('./reference.routes');
 const dashboardRoutes = require('./dashboard.routes');
 const debugRoutes = require('./debug.routes');
@@ -58,6 +59,9 @@ router.use('/', graphRoutes);
 
 // User-Annotationen (/api/annotations/*) — Noise-Filter & semantische Anreicherung
 router.use('/', annotationsRoutes);
+
+// Codegen (/api/codegen/lint, /api/codegen/compile) — fmgen-Pipeline, stateless
+router.use('/', codegenRoutes);
 
 // Reference-DB (Script Steps + Functions + Claris-Hilfe-Mirror)
 router.use('/', referenceRoutes);

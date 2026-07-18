@@ -11,8 +11,8 @@ WITH calls AS (
              ELSE 'Other' END                                     AS component,
         tc.Object_Name                                            AS fn
     FROM ObjectLinks ol
-    JOIN ObjectCatalog tc ON ol.Target_UUID = tc.Object_UUID
-    JOIN ObjectCatalog src ON ol.Source_UUID = src.Object_UUID
+    JOIN ObjectCatalog tc ON ol.Target_UUID = tc.Object_UUID AND tc.File_Name IS NOT DISTINCT FROM ol.Target_File
+    JOIN ObjectCatalog src ON ol.Source_UUID = src.Object_UUID AND src.File_Name = ol.Source_File
     WHERE ol.Link_Role = 'calls_pluginfunction'
       AND (getvariable('file') IS NULL OR src.File_Name = getvariable('file'))
 )

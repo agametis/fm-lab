@@ -196,6 +196,15 @@ class Reference:
         }
 
     @lru_cache(maxsize=1)
+    def get_parameter_lookup(self) -> dict[str, str]:
+        """localized Get-parameter token (casefolded) -> canonical EN name."""
+        rows = self.db.query(
+            "SELECT l.lookup_name, f.canonical_name FROM function_name_lookup l "
+            "JOIN functions f USING (function_id) WHERE l.chunk_role = 'getparameter'"
+        )
+        return {r["lookup_name"].casefold(): r["canonical_name"] for r in rows}
+
+    @lru_cache(maxsize=1)
     def function_arity(self) -> dict[int, dict]:
         """function_id -> {canonical_name, min_args, max_args (None = variadic)}."""
         rows = self.db.query(

@@ -25,7 +25,7 @@ The downside is the limited flexibility when it comes to new questions that are 
 
 ![FM-Lab-Workflow-2.jpg](../Assets/FM-Lab-Workflow-2.jpg)
 
-Agentic code analysis takes a very different approach. You ask your question in natural language (with or without relevant anchors to the solution at hand). The AI Agent will then find and collect all relevant information and tries to draw its own conclusion that it will provide to you as an answer. You can then continue the conversation with your agent to dig deeper and refine the answer.
+[Agentic code analysis](4%20Code%20Analysis%20Approaches.md#4-agentic-analysis-and-code-generation) takes a very different approach. You ask your question in natural language (with or without relevant anchors to the solution at hand). The AI Agent will then find and collect all relevant information and tries to draw its own conclusion that it will provide to you as an answer. You can then continue the conversation with your agent to dig deeper and refine the answer.
 
 The agent does not replace the underlying metadata. It changes the way you interact with it.
 
@@ -33,4 +33,4 @@ If the answer is good enough for the task at hand, you may not need to inspect t
 
 The better the agent is at understanding your solution, the quicker you get an answer to your question. Even high-level understanding and semantic answers about included business logic are now within reach. That can save a lot of time!
 
-Manual exploration inside the codebase becomes optional, but review and validation remain important.
+[Manual exploration](4%20Code%20Analysis%20Approaches.md#1-interactive-exploration) inside the codebase becomes optional, but review and validation remain important.

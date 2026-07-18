@@ -5,7 +5,7 @@ WITH per_group AS (
     SELECT COUNT(*) AS cnt, any_value(f.File_Name) AS file_name
     FROM FieldsForTables f
     WHERE (getvariable('file') IS NULL OR f.File_Name = getvariable('file'))
-    GROUP BY f.Table_UUID
+    GROUP BY f.File_Name, f.Table_UUID
 ),
 threshold AS (SELECT CAST(COALESCE(getvariable('min_fields'), '100') AS INTEGER) AS t)
 SELECT

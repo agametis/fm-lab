@@ -33,6 +33,10 @@ const manifestSchema = Joi.object({
         required: Joi.boolean().default(false),
         default: Joi.any().optional(),
         description: Joi.string().optional(),
+        // Sticky params survive openDashboard self-navigation in the frontend
+        // (mode/lens params like a classification set), unlike click-scoped
+        // filter params which each click replaces.
+        sticky: Joi.boolean().default(false),
       })
     )
     .default([]),

@@ -4,11 +4,11 @@ The current public setup supports the following features:
 
 - **XML Ingestion Pipeline** — converts FileMaker XML exports into a DuckDB database using a flexible SQL template system, designed for easy maintenance and updates as FileMaker evolves ♻️
 
-- **Katana-Engine** — XML chunking and streaming for processing massive catalogs with minimal memory usage and maximum parallelism 🔪
+- **Katana-Engine** — XML chunking and streaming for processing massive catalogs with minimal memory usage and maximum parallelism (see [details](katana-engine.md)) 🔪
 
 - **Detailed Object Catalog** — detailed tables for the relevant FileMaker object types, combined with a universal catalog that links objects and their dependencies for fast cross-reference queries 🔗
 
-- **Detailed Reference Catalog** — localized reference tables for documented FileMaker script steps and functions, enabling linting and inline help across up to 11 locales 📄
+- **Detailed Reference Catalog** — localized reference tables for documented FileMaker script steps and functions, enabling linting and inline help across up to 11 locales (see [details](fm-spec.md)) 📄
 
 - **DuckDB Backend** — in-process analytical database engine for fast and flexible queries without server setup, often delivering results in milliseconds, even for large solutions 🚀
 
@@ -18,7 +18,7 @@ The current public setup supports the following features:
 
 - **Dashboard System** — library of predefined analysis patterns, with support for custom queries and custom dashboards 📁
 
-- - **Multi-user & multi-session support** - concurrent users, each on their own solution 🙌
+- **Multi-user & multi-session support** - concurrent users, each on their own solution 🙌
 
 - **Graph Explorer** — interactive navigation of the full object graph, with automatic community detection that reveals named clusters across the solution and turns thousands of objects and links into a navigable graph map 🕸️
 

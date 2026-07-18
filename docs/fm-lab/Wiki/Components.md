@@ -17,7 +17,7 @@ Refer to [Folder structure](Folder%20structure.md) for a detailed map.
 ---
 ## Ingestion pipeline
 
-This part converts your solution's XML description into a generic object model inside a DuckDB database.
+This part converts your solution's XML description into a generic object model inside a DuckDB database. Refer to [katana-engine](katana-engine.md) for a more detailed breakdown of the ingestion process.
 
 ### XML (Input)
 

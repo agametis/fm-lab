@@ -13,8 +13,8 @@ SELECT
     COALESCE(tc.Object_Name, '—')           AS target_object,
     ol.Target_UUID                          AS target_uuid
 FROM ObjectLinks ol
-LEFT JOIN ObjectCatalog sc ON ol.Source_UUID = sc.Object_UUID
-LEFT JOIN ObjectCatalog tc ON ol.Target_UUID = tc.Object_UUID
+LEFT JOIN ObjectCatalog sc ON ol.Source_UUID = sc.Object_UUID AND sc.File_Name = ol.Source_File
+LEFT JOIN ObjectCatalog tc ON ol.Target_UUID = tc.Object_UUID AND tc.File_Name IS NOT DISTINCT FROM ol.Target_File
 WHERE ol.Is_Cross_File = TRUE
   AND ol.Source_File IS NOT NULL AND ol.Target_File IS NOT NULL
   AND ol.Source_File <> ol.Target_File

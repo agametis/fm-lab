@@ -6,7 +6,7 @@
 --   List is the most critical. Optional 'view' param filters by that view type.
 -- @params: file (optional), view (optional: Form|List|Table), limit (optional, default 500)
 WITH unstored AS (
-    SELECT Field_UUID
+    SELECT Field_UUID, File_Name
     FROM FieldsForTables
     WHERE Field_Type = 'Calculated' AND Storage_StoreCalcResults = FALSE
 )
@@ -16,16 +16,16 @@ SELECT 'layout-unstored-calc' AS rule_id, 'warn' AS severity,
     l.L_UUID       AS nav_uuid,
     l.L_Name       AS layout_name,
     l.L_TO_Name    AS base_to,
-    COUNT(DISTINCT ol.Target_UUID) AS unstored_calc_fields,
+    COUNT(DISTINCT ol.Target_UUID || '|' || COALESCE(ol.Target_File, '')) AS unstored_calc_fields,
     COUNT(*)                       AS placements,
-    row_number() OVER (ORDER BY COUNT(DISTINCT ol.Target_UUID) DESC, l.File_Name, l.L_Name) AS row_key
+    row_number() OVER (ORDER BY COUNT(DISTINCT ol.Target_UUID || '|' || COALESCE(ol.Target_File, '')) DESC, l.File_Name, l.L_Name) AS row_key
 FROM ObjectLinks ol
-JOIN unstored u ON u.Field_UUID = ol.Target_UUID
-JOIN Layouts l  ON l.L_UUID = ol.Source_UUID
+JOIN unstored u ON u.Field_UUID = ol.Target_UUID AND u.File_Name IS NOT DISTINCT FROM ol.Target_File
+JOIN Layouts l  ON l.L_UUID = ol.Source_UUID AND l.File_Name = ol.Source_File
 WHERE ol.Link_Role = 'displays_field'
   AND (getvariable('file') IS NULL OR l.File_Name = getvariable('file'))
   AND (getvariable('view') IS NULL OR getvariable('view') = '' OR l.Default_View = getvariable('view'))
 GROUP BY l.Default_View, l.File_Name, l.L_UUID, l.L_Name, l.L_TO_Name
-HAVING COUNT(DISTINCT ol.Target_UUID) > 0
+HAVING COUNT(DISTINCT ol.Target_UUID || '|' || COALESCE(ol.Target_File, '')) > 0
 ORDER BY unstored_calc_fields DESC, l.File_Name, l.L_Name
 LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);

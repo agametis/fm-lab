@@ -56,7 +56,7 @@ If you think of the given pieces of the puzzle, some implicit components are alr
 
 This represents the raw data that we get from **FileMaker's SaXML export**. All information about the structure and naming of the solution is contained in XML catalogs with a distinct structure on its own.
 
-The format of the XML data is not obvious to our use case but has its own semantic meaning within the context of Claris' internal rules of representing a FileMaker solution. So we need to understand what parts of it are valuable for us and how to read them.
+The format of the XML data is not obvious to our use case but has its own semantic meaning within the context of Claris' internal rules of representing a FileMaker solution. So we need to understand what parts of it are valuable for us and how to read them. This part is solved with our unique [Katana XML engine](katana-engine.md).
 
 ### Layer 2 – Metadata
 
@@ -110,14 +110,14 @@ It turns out that the refinement of the raw data into knowledge in combination w
 
 In early experiments with Claude Opus the agent was able to abstract and reason about the solution and the included business rules on a very high level with the ability to go really in-depth to understand all critical nuances when answering questions and respond to tasks.
 
-This ability is extremely valuable when it comes to understanding huge legacy solutions that were built with FileMaker for decades. Often documentation is not complete or missing at all, or the person who built the solution in the first place is no longer available to answer questions about it. In the best cases, using agentic analytics with FM-Lab feels less like searching through metadata and more like asking a senior developer who already understands the structure of the solution in every little detail! So finally we have a tool at hand, that is capable of helping us to understand and fix technical debt at scale and is just available to answer any question instantly without having us to spend significant time on research first.
+This ability is extremely valuable when it comes to understanding huge legacy solutions that were built with FileMaker for decades. Often documentation is not complete or missing at all, or the person who built the solution in the first place is no longer available to answer questions about it. In the best cases, using [agentic analytics](4%20Code%20Analysis%20Approaches.md#4-agentic-analysis-and-code-generation) with FM-Lab feels less like searching through metadata and more like asking a senior developer who already understands the structure of the solution in every little detail! So finally we have a tool at hand, that is capable of helping us to understand and fix technical debt at scale and is just available to answer any question instantly without having us to spend significant time on research first.
 
 ### Agentic coding
 
 It is even more valuable if we want the agent to write new code inside an existing FileMaker solution. Because coding FileMaker is not only about writing code in the right language style and proper format. A main part of it, is also to apply solid coding approaches on your existing solution without breaking existing conventions, standards, architecture or functionality.
 
 Now the agent already has a deep understanding of all critical aspects:
-- the technical foundation about FileMaker scripts and functions
+- the technical foundation about FileMaker scripts and functions (see [fm-spec](fm-spec.md))
 - the structure and information about all included technical objects
 - the semantic layer on what business case or solution patterns are solved inside your code
 - additional documentation about your application or your plans (as an extra layer to clarify intent)
@@ -152,7 +152,7 @@ At this early stage, the public repo is focused on agentic analysis. It contains
 
 A second stage for complete agentic coding is already used internally and will be published later with additional skills, documentation and a more controlled coding harness. In the meantime, you can build your own coding harness on top of FM-Lab or adapt the described strategies to your specific needs.
 
-All given skills and templates can be customized. The more specific your setup is, the better the results can become for your use case.
+All given [skills](Components.md#agent-frameworkclaude-skills) and templates can be customized. The more specific your setup is, the better the results can become for your use case.
 
 ### Limitations
 
@@ -170,13 +170,13 @@ As we have seen in the previous section, all elements from the different layers 
 
 Here is the mapping to the technical components of FM-Lab to give you a better understanding how and where every single step is processed.
 
-| Layer  | Description                                  | Tool                                                                                  | Source                                                                                                                                                          |
-| ------ | -------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1**  | XML sources                                  | **FileMaker** <br>SaXML export                                                        | `xml/`                                                                                                                                                          |
-| **2**  | Object catalog                               | **Batch script** (Shell)<br>**DuckDB**<br>SQL-Template                                | `tools/convert_fm_xml.sh`<br>`sql/convert_xml.sql`<br>`db/fm_catalog.duckdb`                                                                                    |
-| **3**  | Knowledge graph                              | **DuckDB**<br>SQL-Templates                                                           | `sql/create_universal_catalogs.sql`<br>`sql/create_variables_catalog.sql`                                                                                       |
-| **4**  | Templates + Docs                             | **Node.js REST API**<br>**DuckDB**<br>SQL-Templates<br>References (DB)<br>Docs (HTML) | `sql/sample_queries.sql`<br>`rest-api/templates/`<br>`rest-api/db/fm_catalog.duckdb`<br>`reference/fm_spec.duckdb`<br>`docs/claris-help/`<br>`docs/mbs/` |
-| **5**  | Skills + Workflow                            | **Claude Code**<br>System prompt<br>Skills                                            | `claude.md`<br>`.claude/skills/fm-analyze`<br>`.claude/skills/fm-summarize`                                                                                     |
-| Output | Generated scripts / analysis / documentation | **Claude Code**                                                                       | `output/`<br>`scripts/`                                                                                                                                         |
+| Layer  | Description                                  | Tool                                                            | Source                                                                                    |
+| ------ | -------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **1**  | XML sources                                  | **FileMaker** <br>SaXML export                                  | `solutions/<id>/xml/`                                                                     |
+| **2**  | XML ingestion into Object catalog            | **Batch script** (Shell)<br>SQL-Templates                       | `tools/convert_fm_xml.sh`<br>`sql/convert-xml/`                                           |
+| **3**  | Knowledge graph                              | **DuckDB**                                                      | `solutions/<id>/db/fm_catalog.duckdb`                                                     |
+| **4**  | Templates + Docs                             | **REST API**<br>SQL-Templates<br>References (DB)<br>Docs (HTML) | `rest-api/templates/`<br>`reference/fm_spec.duckdb`<br>`docs/claris-help/`<br>`docs/mbs/` |
+| **5**  | Skills + Workflow                            | **Claude Code**<br>System prompt<br>Skills                      | `claude.md`<br>`.claude/skills/`                                                          |
+| Output | Generated scripts / analysis / documentation | **Claude Code**                                                 | `output/`<br>`scripts/`                                                                   |
 
 > Refer to [Components](Components.md) for a more in-depth view of the repo structure.

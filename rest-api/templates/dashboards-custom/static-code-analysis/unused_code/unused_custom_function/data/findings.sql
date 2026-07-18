@@ -10,7 +10,7 @@ FROM ObjectCatalog oc
 WHERE oc.Object_Type = 'CustomFunction'
   AND NOT EXISTS (
         SELECT 1 FROM ObjectLinks ol
-        WHERE ol.Target_UUID = oc.Object_UUID
+        WHERE ol.Target_UUID = oc.Object_UUID AND ol.Target_File IS NOT DISTINCT FROM oc.File_Name
           AND ol.Link_Role IN ('calls_customfunction')
       )
   AND (getvariable('file') IS NULL OR oc.File_Name = getvariable('file'))

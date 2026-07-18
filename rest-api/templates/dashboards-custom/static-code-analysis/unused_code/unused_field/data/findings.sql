@@ -10,7 +10,7 @@ FROM ObjectCatalog oc
 WHERE oc.Object_Type = 'Field'
   AND NOT EXISTS (
         SELECT 1 FROM ObjectLinks ol
-        WHERE ol.Target_UUID = oc.Object_UUID
+        WHERE ol.Target_UUID = oc.Object_UUID AND ol.Target_File IS NOT DISTINCT FROM oc.File_Name
           AND ol.Link_Role IN ('lookup_source', 'finds_in_field', 'inputs_to_field', 'imports_to_field', 'right_field', 'sorts_by_field', 'sets_field', 'left_field', 'sort_field', 'reads_field', 'displays_field', 'exports_from_field', 'navigates_to_field')
       )
   AND (getvariable('file') IS NULL OR oc.File_Name = getvariable('file'))

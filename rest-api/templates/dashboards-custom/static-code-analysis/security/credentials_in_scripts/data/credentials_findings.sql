@@ -44,7 +44,7 @@ WITH hits AS (
           '"\1*****"', 'g')                                    AS txt_masked,
         regexp_extract(LOWER(d.Step_Text), '(password|passwort|pswd|kennwort|pwd|secret|apikey|api_key|api-key|credential|passphrase|token|bearer|mdp|senha|contrase|authorization|client_secret|clientsecret|access_token|accesstoken|refresh_token|refreshtoken|private_key|privatekey|basic_auth|hmac|signingkey|userpass|login_password|signature)') AS matched_keyword
     FROM StepsForScripts s
-    JOIN DDR_ScriptSteps d ON s.Step_UUID = d.Step_UUID
+    JOIN DDR_ScriptSteps d ON s.Step_UUID = d.Step_UUID AND d.File_Name = s.File_Name
     WHERE d.Step_Text IS NOT NULL
       AND regexp_matches(LOWER(d.Step_Text), '(password|passwort|pswd|kennwort|pwd|secret|apikey|api_key|api-key|credential|passphrase|token|bearer|mdp|senha|contrase|authorization|client_secret|clientsecret|access_token|accesstoken|refresh_token|refreshtoken|private_key|privatekey|basic_auth|hmac|signingkey|userpass|login_password|signature)')
       AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file'))

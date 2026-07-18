@@ -60,8 +60,10 @@ apps/*/build
 apps/*/.env.local
 apps/*/.env.production
 
-# Local Claude settings
-.claude/settings.json
+# Local Claude settings — .claude/settings.json is COMMITTED on purpose: it is the
+# bundle's default permission seed (kept in sync from publish-assets/.claude-settings.json
+# by the publisher; the devcontainer relies on it, its seed copy is fallback only).
+# Only user-local overrides stay ignored.
 .claude/settings.local.json
 .claude/worktrees/
 

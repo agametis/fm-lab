@@ -7,6 +7,7 @@ import type {
   DashboardDataResponse,
 } from '../api/dashboardApi';
 import { DashboardRenderer } from './DashboardRenderer';
+import { registerStickyDashboardParams } from './actions';
 import { TitleBox } from '../components/TitleBox';
 import { NoDataYet } from '../components/NoDataYet';
 import './dashboard.css';
@@ -88,6 +89,10 @@ export function DashboardHost({ id, params, showManifestTitle }: Props) {
           getDashboardData(id, params, lang),
         ]);
         if (cancelled) return;
+        registerStickyDashboardParams(
+          env.manifest.id,
+          (env.manifest.params ?? []).filter(p => p.sticky).map(p => p.name),
+        );
         setEnvelope(env);
         setDatasets(data);
       } catch (err) {

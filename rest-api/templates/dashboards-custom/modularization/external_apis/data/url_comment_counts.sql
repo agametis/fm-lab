@@ -19,7 +19,7 @@ script_url_steps AS (
         'Script (URL Step)'                                 AS source_type,
         ddr.Step_Text                                       AS calc_text
     FROM StepsForScripts s
-    JOIN DDR_ScriptSteps ddr ON s.Step_UUID = ddr.Step_UUID
+    JOIN DDR_ScriptSteps ddr ON s.Step_UUID = ddr.Step_UUID AND ddr.File_Name = s.File_Name
     WHERE s.Step_ID IN (111, 160)   -- Open URL / Insert from URL (Step_ID: locale-unabhängig)
       AND ddr.Step_Text LIKE '%http%'
       AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file'))
@@ -49,7 +49,7 @@ import_records_all AS (
         'Script (Import)'                                   AS source_type,
         ddr.Step_Text                                       AS calc_text
     FROM StepsForScripts s
-    JOIN DDR_ScriptSteps ddr ON s.Step_UUID = ddr.Step_UUID
+    JOIN DDR_ScriptSteps ddr ON s.Step_UUID = ddr.Step_UUID AND ddr.File_Name = s.File_Name
     WHERE s.Step_ID = 35            -- Import Records
       AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file'))
 ),

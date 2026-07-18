@@ -34,7 +34,7 @@ async function manifest(req, res, next) {
         error: {
           code: 'VERSION_MANIFEST_NOT_FOUND',
           message:
-            'version.json nicht gefunden. Generieren mit: node tools/build-version-manifest.mjs (oder npm run version:manifest).',
+            'version.json nicht gefunden. Die Datei gehört zum Lieferumfang — Checkout/Installation prüfen. (Maintainer-Setup: node tools/build-version-manifest.mjs regeneriert sie.)',
         },
       });
     }

@@ -13,7 +13,7 @@ WITH script_stats AS (
         COUNT(*) FILTER (WHERE st.Step_ID = 89
                            AND st.Parameters_XML LIKE '%<Comment/>%') AS whitespace_steps
     FROM ScriptCatalog s
-    LEFT JOIN StepsForScripts st ON st.Script_UUID = s.Script_UUID
+    LEFT JOIN StepsForScripts st ON st.Script_UUID = s.Script_UUID AND st.File_Name = s.File_Name
     WHERE (s.Folder_Type IS NULL OR s.Folder_Type = 'False')
       AND NOT s.Is_Separator
       AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file'))

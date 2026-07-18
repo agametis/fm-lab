@@ -156,6 +156,12 @@ const ERROR_CODES = {
   REF_FUNCTION_NOT_FOUND: { code: "REF_FUNCTION_NOT_FOUND", status: 404 },
   REF_LANG_INVALID: { code: "REF_LANG_INVALID", status: 400 },
   REF_HELP_NOT_FOUND: { code: "REF_HELP_NOT_FOUND", status: 404 },
+  // Codegen (fmgen-Pipeline als Compute-Endpoint, kein Katalog-Write):
+  // NOT_AVAILABLE = Skill/Referenz-DB fehlt in dieser Installation (degradierbar),
+  // TIMEOUT = Subprozess-Limit, ERROR = Umgebungs-/Ausführungsfehler.
+  CODEGEN_NOT_AVAILABLE: { code: "CODEGEN_NOT_AVAILABLE", status: 503 },
+  CODEGEN_TIMEOUT: { code: "CODEGEN_TIMEOUT", status: 504 },
+  CODEGEN_ERROR: { code: "CODEGEN_ERROR", status: 500 },
 };
 
 /**

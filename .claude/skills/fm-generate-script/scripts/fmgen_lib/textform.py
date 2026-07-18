@@ -362,6 +362,16 @@ def parse_step(st: RawStep, ref: Reference) -> ParsedStep:
             if pool:
                 return pool[0]
         if not free:
+            # single-free-option fallback: a bare (non-label-shaped) value maps
+            # unambiguously when exactly one inline option is still unfilled,
+            # even if that option carries a display label — e.g.
+            # `Exit Script [ $n ]` == `Exit Script [ Text Result: $n ]`.
+            # Label-shaped params stay strict so mistyped/localized labels
+            # fail loudly instead of being swallowed as calculation text.
+            if _LABEL_RE.match(param) is None:
+                free_inline = [o for o in inline_all if o["option_key"] not in ps.options]
+                if len(free_inline) == 1:
+                    return free_inline[0]
             return None
         pool = [o for o in free if (o["option_type"] in ("object_ref", "target")) == is_ref]
         return (pool or free)[0]
@@ -572,6 +582,14 @@ def render_canonical(ps: ParsedStep, ref: Reference | None = None) -> str:
         elif o.get("option_type") == "boolean":
             # true_/false_text map XML state -> display text directly (1.7.0 norm)
             state = val == "True"
+            if o.get("true_text") and not o.get("false_text"):
+                # Flag-style boolean (no off text): displayed as the bare flag
+                # keyword when set, absent when not — matches FileMaker's
+                # rendering and take_bare_boolean's parse direction.
+                if not state:
+                    continue
+                parts.append(o["true_text"])
+                continue
             rendered = (o.get("true_text") or "On") if state else (o.get("false_text") or "Off")
         elif o.get("option_type") == "enum":
             # enum states whose display text is another option's value (e.g.

@@ -5,20 +5,20 @@
 --   clickable Form/List/Table KPIs and ignore the 'view' filter so they always show totals.
 -- @params: file (optional)
 WITH unstored AS (
-    SELECT Field_UUID
+    SELECT Field_UUID, File_Name
     FROM FieldsForTables
     WHERE Field_Type = 'Calculated' AND Storage_StoreCalcResults = FALSE
 ),
 per_layout AS (
     SELECT l.File_Name AS file_name, l.L_UUID AS l_uuid, l.Default_View AS default_view,
-           COUNT(DISTINCT ol.Target_UUID) AS n
+           COUNT(DISTINCT ol.Target_UUID || '|' || COALESCE(ol.Target_File, '')) AS n
     FROM ObjectLinks ol
-    JOIN unstored u ON u.Field_UUID = ol.Target_UUID
-    JOIN Layouts l  ON l.L_UUID = ol.Source_UUID
+    JOIN unstored u ON u.Field_UUID = ol.Target_UUID AND u.File_Name IS NOT DISTINCT FROM ol.Target_File
+    JOIN Layouts l  ON l.L_UUID = ol.Source_UUID AND l.File_Name = ol.Source_File
     WHERE ol.Link_Role = 'displays_field'
       AND (getvariable('file') IS NULL OR l.File_Name = getvariable('file'))
     GROUP BY l.File_Name, l.L_UUID, l.Default_View
-    HAVING COUNT(DISTINCT ol.Target_UUID) > 0
+    HAVING COUNT(DISTINCT ol.Target_UUID || '|' || COALESCE(ol.Target_File, '')) > 0
 )
 SELECT
     COUNT(*)                                        AS affected_layouts,
