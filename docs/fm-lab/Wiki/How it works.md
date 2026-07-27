@@ -152,7 +152,7 @@ At this early stage, the public repo is focused on agentic analysis. It contains
 
 A second stage for complete agentic coding is already used internally and will be published later with additional skills, documentation and a more controlled coding harness. In the meantime, you can build your own coding harness on top of FM-Lab or adapt the described strategies to your specific needs.
 
-All given [skills](Components.md#agent-frameworkclaude-skills) and templates can be customized. The more specific your setup is, the better the results can become for your use case.
+All given [skills](Components.md#claude-skills) and templates can be customized. The more specific your setup is, the better the results can become for your use case.
 
 ### Limitations
 

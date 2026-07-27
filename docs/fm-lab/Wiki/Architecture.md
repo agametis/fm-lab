@@ -30,25 +30,25 @@ The core component is the **Object Catalog**. It is exposed through a **REST API
 Choosing DuckDB as the core engine is a major design decision in this architecture. It integrates cleanly into the FM-Lab tech stack and provides several major benefits:
 
 - XML parsing capabilities that combine XPath extraction with SQL-based transformation logic
-- powerful structured queries (like CTEs, window functions, nested structures, JSON, RegExp, Wildcards, flexible UNION statements)
+- powerful structured queries (like [CTEs](https://duckdb.org/docs/current/sql/query_syntax/with), [Window Functions](https://duckdb.org/docs/lts/sql/functions/window_functions), [nested structures](https://duckdb.org/docs/lts/sql/functions/nested), [JSON](https://duckdb.org/docs/lts/data/json/json_functions), [RegExp](https://duckdb.org/docs/lts/sql/functions/regular_expressions), [Wildcards](https://duckdb.org/docs/lts/sql/functions/pattern_matching), flexible [UNION](https://duckdb.org/docs/lts/sql/query_syntax/setops) statements)
 - analytical storage format
 - RAM-accelerated, in-process execution without client-server overhead
-- scalability far beyond other options (suitable for terabyte-sized analytical workloads)
-- very flexible deployment options
+- scalability far beyond other options (suitable for [terabyte-sized](https://duckdb.org/docs/lts/guides/performance/working_with_huge_databases) analytical workloads)
+- very flexible [deployment options](https://duckdb.org/docs/lts/clients/overview)
 
 As an open-source infrastructure component, DuckDB is one of the building blocks that makes FM-Lab practical, portable and extensible. To be honest – without DuckDB, this project would never have happened.
 
-Another advantage FM-Lab relies on is DuckDB's rich ecosystem of community extensions. The key enabler for XML parsing is the excellent [**webbed** extension](https://duckdb.org/community_extensions/extensions/webbed) that brings XPath-based data extraction to the SQL-engine.
+Another advantage FM-Lab relies on is DuckDB's rich ecosystem of [community extensions](https://duckdb.org/community_extensions/list_of_extensions). The key enabler for XML parsing is the excellent [**webbed** extension](https://duckdb.org/community_extensions/extensions/webbed) that brings XPath-based data extraction to the SQL-engine.
 
 
 ---
 
 ### Interface
 
-The REST API supports:
+The [REST API](../rest-api/REST%20API%20Overview.md) supports:
 - distinct endpoints for common tasks (based on a query library)
 - paged responses (with offset, limit and sorting)
-- different output formats (JSON, text, HTML, raw data)
+- different [output formats](../rest-api/REST%20API%20Output%20Formats.md) (JSON, text, HTML, raw data)
 - status and health checks
 - extensibility for plugins
 
@@ -83,4 +83,4 @@ You can use FM-Lab as a browser-based GUI tool for FileMaker analysis without co
 FM-Lab provides the Object Catalog together with prebuilt skills and references as a solid foundation for your agents. A first-class experience depends on strong frontier models such as Claude or Codex. A good setup includes an IDE such as VS Code, Codium, Cursor, Windsurf or Antigravity, together with an agent plugin. That makes it easier to navigate the prepared folder structure of the project and gives you access to more features. Pure terminal mode is also possible.
 
 #### Object Catalog server
-If you only want to use the unified Object Catalog to support your own tool or workflow, you can ignore the extra features. Start the API server with the generated DuckDB database and connect your tool through the REST API endpoints. Refer to the endpoint documentation and use Postman or your browser to explore possible URL patterns for your specific case.
+If you only want to use the unified Object Catalog to support your own tool or workflow, you can ignore the extra features. Start the API server with the generated DuckDB database and connect your tool through the REST API endpoints. Refer to the [endpoint documentation](../rest-api/REST%20API%20Overview.md) and use Postman or your browser to explore possible URL patterns for your specific case.

@@ -12,6 +12,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.9.5] — 2026-07-27
+
+A documentation release: the project docs grow from the getting-started manual into a full **reference** — the data model, the REST API, the SQL template library, and the SaXML source format are now documented end to end.
+
+- **Data-model reference** — the DuckDB catalog is documented table by table
+  - **Schema overview and version history** — the catalog schema explained as a whole, with a version history tracking how it evolved
+  - **Catalog tables** — all 35 catalog tables (`ObjectCatalog`, `ObjectLinks`, `ScriptCatalog`, `FieldsForTables`, …) with their columns, keys, and role in analysis
+  - **FileMaker object types** — a page per object type (30) describing what it represents and how it links into the graph, plus the object-catalog model itself
+  - **fm-spec reference tables** — the 24 tables of the bundled FileMaker language reference documented for direct querying
+- **SaXML source format** — the FileMaker `SaveAsXML` export explained, with a page for each of the 24 source catalogs, showing how the raw XML maps into the DuckDB tables
+- **REST API reference** — overview, conventions, and output formats, plus per-endpoint documentation for every group: Search, Objects, References, Graph, Query & Report, Solutions, System, Reference Database, XML Import, and Codegen
+- **SQL templates & pipeline** — the template library documented: built-in and custom query templates, dashboard datasets, detail-view templates, CLI analysis scripts, and the XML ingestion pipeline
+- **Doc sets** — an overview of every installable documentation set (Claris Help, MBS, DuckDB, fmIDE, agents, ooe-fm, …)
+
+---
+
+## [0.9.4] — 2026-07-18
+
+A bugfix and optimization release, focused on catalog correctness in the XML import, fewer permission prompts, and a refactored dashboard-authoring skill.
+
+- **XML import & catalog correctness** — three resolution fixes; they ship with a schema-version bump, so the next import rebuilds the affected catalog automatically
+  - **Portal → relationship references** — a portal on a layout now resolves to the relationship it is based on, closing a gap in where-used analysis
+  - **Button-embedded script steps** — a script step attached directly to a layout button contributes its object references correctly and renders with the right step-type detail
+  - **Multi-solution isolation** — the graph and re-clustering paths no longer resolve against the wrong solution when several are present; the active-solution scope is threaded through end to end
+- **Setup & permissions**
+  - **Fewer DuckDB permission prompts** — the shipped Claude Code settings seed now matches the documented DuckDB invocation, so catalog queries run without repeated approval prompts
+- **`create-custom-dashboard` skill** — refactored and hardened
+  - The monolithic skill instructions are split into focused reference docs (patterns, primitives, SQL rules, localization, validation), making dashboard authoring more reliable
+  - Dashboard runtime improvements (host, actions, schema) and updated health-check / static-analysis dashboard queries
+- **Project hardening** — a bug-and-blind-spot sweep across the object catalog, frontend mapping, publish/Docker path, skills, and test gates
+
+---
+
 ## [0.9.3] — 2026-07-16
 
 A documentation and bugfix release: the project documentation grows from a conceptual set into a usable manual — installation, quickstart, troubleshooting — and a round of fixes reported from the field.
@@ -707,7 +740,9 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 <!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
      versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
      intentionally left unlinked and render as plain text. Add a line here per new tag. -->
-[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.3...HEAD
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.5...HEAD
+[0.9.5]: https://github.com/marcel-more/fm-lab/compare/v0.9.4...v0.9.5
+[0.9.4]: https://github.com/marcel-more/fm-lab/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/marcel-more/fm-lab/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/marcel-more/fm-lab/compare/v0.9.0...v0.9.2
 [0.9.0]: https://github.com/marcel-more/fm-lab/compare/v0.8.11...v0.9.0

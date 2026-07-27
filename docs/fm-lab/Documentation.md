@@ -15,8 +15,8 @@
 - [Quickstart](Wiki/Quickstart.md)
 - Frontend
 - Working with an IDE
-- using the Terminal
-- using the skills
+- Using the Terminal
+- Using the Skills
 - Preparing your FileMaker solution
 - [XML conversion](Wiki/katana-engine.md)
 - [Troubleshooting](Wiki/Troubleshooting.md)
@@ -33,13 +33,14 @@
 
 ## Specs
 - [Folder structure](Wiki/Folder%20structure.md)
-- XML
-- Schema
-- SQL Templates
-- REST API
+- [XML](xml/XML.md)
+- [Schema](schema/Schema.md)
+- [SQL Templates](templates/SQL%20Templates.md)
+- [REST API](rest-api/REST%20API%20Overview.md)
+- [FileMaker Object Types](schema/object-types/FileMaker%20Object%20Types.md)
 - [fm-spec](Wiki/fm-spec.md)
-- Docs
-- Dependencies
+- [Doc Sets](docsets/Doc%20Sets.md)
+- [Dependencies](Wiki/Dependencies.md)
 
 ## References
 - DuckDB
@@ -49,4 +50,4 @@
 
 
 **Note:** This documentation is a work in progress and will evolve alongside future releases.
-(last edit: 2026-07-17)
+(last edit: 2026-07-27)

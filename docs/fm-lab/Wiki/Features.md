@@ -12,7 +12,7 @@ The current public setup supports the following features:
 
 - **DuckDB Backend** — in-process analytical database engine for fast and flexible queries without server setup, often delivering results in milliseconds, even for large solutions 🚀
 
-- **REST API** — Express server providing HTTP access to the analysis database, enabling integration with external tools and services 🧩
+- **REST API** — Express server providing HTTP access to the analysis database, enabling integration with external tools and services (see [details](../rest-api/REST%20API%20Overview.md)) 🧩
 
 - **Web Client** — React/Vite frontend for interactive exploration of the solution structure and dependencies with rich visualizations 🔎
 

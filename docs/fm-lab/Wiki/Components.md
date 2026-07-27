@@ -31,7 +31,7 @@ The folder can contain multiple files belonging to the same solution.
 
 ### SQL Templates
 
-`sql/convert-xml/` — Conversion and parser templates for universal catalogs.
+`sql/convert-xml/` — Conversion and [parser templates](../templates/Ingestion%20Pipeline%20%28XML%20Import%29.md) for universal catalogs.
 
 This is the main ingestion logic and is executed by the DuckDB CLI, which must be installed beforehand.
 
@@ -45,6 +45,7 @@ A separate catalog is populated for each solution during XML conversion.
 ## FileMaker Reference
 
 Reference tables for FileMaker script steps and functions. They include machine-readable syntax and grammar definitions for linting during code generation, plus an additional mapping layer from script step names to distinct tokens and to emitter templates in multiple output formats. They also support up to 11 locales for translations into human language.
+Refer to detailed description of [fm-spec](fm-spec.md) content and schema.
 
 ### fm-spec
 
@@ -55,15 +56,16 @@ The reference table also maps to optional [doc sets](#docs) with links to the of
 ---
 ## REST API
 
-Core module that allows external consumers to query structured information from the DuckDB object catalog. It also provides different service endpoints to the stack's base functions, and emits information aligned to the internal schema model in different pre-defined output formats.
+Core module that allows external consumers to query structured information from the DuckDB object catalog. It also provides different service endpoints to the stack's base functions, and emits information aligned to the internal schema model in different pre-defined [output formats](../rest-api/REST%20API%20Output%20Formats.md).
+Refer to detailed [REST API Overview](../rest-api/REST%20API%20Overview.md).
 
 - `rest-api/` — Express server for HTTP access to the analysis database.
 - `rest-api/db/solutions/<id>/fm_catalog.duckdb` — DuckDB database copy for exclusive, read-only access by the REST API.
 - `rest-api/templates/dashboards/` — Dashboard bundles for standard views exposed through API endpoints.
 - `rest-api/templates/dashboards-custom/` — Additional dashboard bundles for custom use cases. These can be generated using a Claude Code skill.
 - `rest-api/templates/dashboards-custom/static-code-analysis/` — Dashboard bundles for static code analysis, inspired by the PMD standard ruleset. They are accessible through the web frontend and provide quick access to different code metrics. All dashboards support drill-down filters and interactive navigation to code references within the object browser.
-- `rest-api/templates/sql/` — SQL templates for standard queries exposed through API endpoints.
-- `rest-api/templates/sql-custom/` — Additional SQL templates for custom use cases.
+- `rest-api/templates/sql/` — [SQL templates](../templates/Built-in%20Query%20Templates.md) for standard queries exposed through API endpoints.
+- `rest-api/templates/sql-custom/` — [Additional SQL templates](../templates/Custom%20Query%20Templates.md) for custom use cases.
 
 ---
 ## Web Client

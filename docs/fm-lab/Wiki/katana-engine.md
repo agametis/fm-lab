@@ -3,13 +3,13 @@
 - [What it does](#what-it-does)
 - [How it works](#how-it-works-in-one-sentence)
 - [Partitioning, chunking and the import manifest](#partitioning-chunking-and-the-import-manifest)
-- [Deep dive Phase 1 + 2](#deep-dive-phase-1-2)
+- [Deep dive: Phase 1 + 2](#deep-dive-phase-1-2)
 - [The seven processing phases](#the-seven-processing-phases)
 - [Why this architecture matters](#why-this-architecture-matters)
 
-The **Katana engine** 🔪 is the high-performance XML processing core of the FM-Lab [Ingestion Pipeline](How%20it%20works.md#how-it-worksingestion-pipeline). It sits between the raw FileMaker SaXML export and the DuckDB-powered [Object Catalog](Architecture.md#duckdb-powered-object-catalog) and solves one central problem: **FileMaker exports can be huge** — hundreds of megabytes up to gigabytes of XML per file — while a naive DOM parse inflates to roughly **60–73× the file size in RAM**. Katana cuts these documents into well-planned chunks, processes them in parallel and merges the results back together **bit-identically**, so even multi-gigabyte solutions convert quickly on ordinary developer machines.
+The **Katana engine** 🔪 is the high-performance XML processing core of the FM-Lab [Ingestion Pipeline](How%20it%20works.md#ingestion-pipeline). It sits between the raw FileMaker SaXML export and the DuckDB-powered [Object Catalog](Architecture.md#duckdb-powered-object-catalog) and solves one central problem: **FileMaker exports can be huge** — hundreds of megabytes up to gigabytes of XML per file — while a naive DOM parse inflates to roughly **60–73× the file size in RAM**. Katana cuts these documents into well-planned chunks, processes them in parallel and merges the results back together **bit-identically**, so even multi-gigabyte solutions convert quickly on ordinary developer machines.
 
-The engine lives in `tools/katana-xml/` and is driven by `tools/convert_fm_xml.sh` (see [Components](Components.md#componentskatana-xml-engine)).
+The engine lives in `tools/katana-xml/` and is driven by `tools/convert_fm_xml.sh` (see [Components](Components.md#katana-xml-engine)).
 
 ---
 

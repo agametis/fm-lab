@@ -10,40 +10,17 @@ Inside FM-Lab, fm-spec is what turns generated code from plausible into correct.
 
 ## Simplified schema
 
-The database is organized in four layers, all keyed by `step_id` (script steps) or `function_id` (functions).
+The database is organized in four layers, all keyed by `step_id` (script steps) or `function_id` (functions). This page is the conceptual map — every table below links to its detailed schema description, and the complete table set (24 tables, including the category, per-parameter locale and legacy-ID satellites) is documented in the [schema reference](../schema/Schema.md).
 
-**Canonical core** — the stable identity of every language element.
+**Canonical core** — the stable identity of every language element: [script_steps](../schema/fm-spec-tables/script_steps.md) (207 script steps with stable IDs, canonical names and XML element names) and [functions](../schema/fm-spec-tables/functions.md) (367 calculation functions), plus [step_options](../schema/fm-spec-tables/step_options.md) / [step_option_values](../schema/fm-spec-tables/step_option_values.md) (the full option grammar per step) and [function_parameters](../schema/fm-spec-tables/function_parameters.md) (parameter positions with optional/variadic flags).
 
-| Table | Content |
-|---|---|
-| `script_steps` | 207 script steps: `step_id`, `canonical_name`, `xml_name`, category, `origin_version` |
-| `functions` | 367 calculation functions: `function_id`, `canonical_name`, `return_type`, `opcode`, category |
-| `step_options` / `step_option_values` | Every option of every step: type, required flag, allowed XML values, label semantics |
-| `function_parameters` | Parameter positions, optional and variadic flags |
+**Language layer** — names and prose are a projection, never an identity: [script_steps_lang](../schema/fm-spec-tables/script_steps_lang.md) and [functions_lang](../schema/fm-spec-tables/functions_lang.md) carry the localized display names, descriptions and [official doc](../docsets/Doc%20Set%20claris-help.md) URLs (11 locales for steps, 10 for functions); [script_step_name_lookup](../schema/fm-spec-tables/script_step_name_lookup.md) and [function_name_lookup](../schema/fm-spec-tables/function_name_lookup.md) reverse any name in any locale back to the canonical ID.
 
-**Language layer** — names and prose are a projection, never an identity.
+**Emission layer** — how a step becomes XML: [step_xml_map](../schema/fm-spec-tables/step_xml_map.md) (snippet template, element order and a SaXML example per step), [step_constraints](../schema/fm-spec-tables/step_constraints.md) (structural rules a valid snippet must satisfy) and [step_compat](../schema/fm-spec-tables/step_compat.md) (where a step runs: Pro, Server, Go, WebDirect, Cloud, Data API, CWP).
 
-| Table | Content |
-|---|---|
-| `script_steps_lang` / `functions_lang` | Display name, description, signature and doc URL per language (11 locales for steps, 10 for functions) |
-| `script_step_name_lookup` / `function_name_lookup` | Reverse lookup: any name in any locale → the canonical ID |
+**Action layer** — the fmIDE ActionScript vocabulary: [action_catalog](../schema/fm-spec-tables/action_catalog.md) (actions, their classification, accepted literals and plugin requirements) and [step_action_map](../schema/fm-spec-tables/step_action_map.md) (action ↔ step mapping including parameter mapping).
 
-**Emission layer** — how a step becomes XML.
-
-| Table              | Content                                                                                             |
-| ------------------ | --------------------------------------------------------------------------------------------------- |
-| `step_xml_map`     | `snippet_template`, `element_order`, SaXML parameter types and a synthetic `saxml_example` per step |
-| `step_constraints` | Structural rules a valid snippet must satisfy                                                       |
-| `step_compat`      | Where a step runs: Pro, Server, Go, WebDirect, Cloud, Data API, CWP                                 |
-
-**Action layer** — the fmIDE ActionScript vocabulary.
-
-| Table | Content |
-|---|---|
-| `action_catalog` | Actions, their classification, accepted literals and plugin requirements |
-| `step_action_map` | Action ↔ step mapping including parameter mapping |
-
-`reference_meta` holds the build stamp: schema version, FileMaker coverage, source commit and the attribution pointer.
+[reference_meta](../schema/fm-spec-tables/reference_meta.md) holds the build stamp: schema version, FileMaker coverage, source commit and the attribution pointer.
 
 
 Schema content for every single script step together with its XML representations and parameter definitions is available in FM-Lab's web frontend as an interactive schema viewer, reachable from the fm-spec panel on the Settings page.
@@ -65,7 +42,7 @@ An update for the next FileMaker v26 release is on the roadmap.
 The current build is used for lookups and for script generation, but the schema carries more than either consumes today. A few directions worth noting:
 
 - **Round-trip editing.** With `xml_name`, `element_order` and the option grammar in one place, an agent can parse an existing snippet back into canonical text, modify it, and re-emit it — instead of generating from scratch every time.
-- **Deterministic linting.** `step_options` and `step_compat` already express enough to answer "is this option allowed here?" and "will this step run on Server?" without a model in the loop. That is a static check waiting to be wired into a rule set.
+- **Deterministic linting.** [step_options](../schema/fm-spec-tables/step_options.md) and [step_compat](../schema/fm-spec-tables/step_compat.md) already express enough to answer "is this option allowed here?" and "will this step run on Server?" without a model in the loop. That is a static check waiting to be wired into a rule set.
 - **Locale-independent authoring.** The name-lookup tables let a developer write in their own language while the emitted artifact stays canonical — and read a foreign-language solution in their own.
 - **Other output formats.** The emission layer is table-driven, so a new target format (fmJAML, SaXML for Claris patch tool, a diff-friendly text notation) is a new template column, not a new code path.
 - **Other language specifications.** There are other initiatives in the FileMaker community space to build language dictionaries for reference and for agentic coding. As soon as stable standards are established, they could be mapped to the internal structure as an alternative way of exchanging code artifacts.
