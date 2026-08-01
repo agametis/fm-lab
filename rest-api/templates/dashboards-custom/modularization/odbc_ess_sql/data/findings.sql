@@ -6,7 +6,7 @@ SELECT
     s.File_Name                                         AS file,
     s.Script_Name                                       AS carrier,
     s.Step_Name                                         AS detail,
-    s.Step_Index                                        AS step_index,
+    s.Step_Index + 1                                        AS step_index,
     left(COALESCE(NULLIF(s.Calculation_Text, ''), ''), 160) AS sql_preview,
     s.Script_UUID                                       AS nav_uuid,
     s.Step_UUID                                         AS step_uuid

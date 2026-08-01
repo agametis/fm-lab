@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Finestra aperta senza Close Window successivo",
+    "description": "Regola di propensione agli errori — un passo apre una nuova finestra (New Window o Go to Related Record con l'opzione nuova finestra) e nessun Close Window segue più avanti nello stesso script. Ogni esecuzione perde una finestra; nei loop la perdita si moltiplica e, su FileMaker Server, una finestra persa può sostituire silenziosamente il set trovato del contesto chiamante."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Finestra aperta senza Close Window successivo",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Ogni passo che apre una finestra è seguito da un Close Window nel suo script.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Passo",
+    "findings_table.props.columns[3].label": "Passo di apertura"
+  }
+}

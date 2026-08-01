@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Exit Script 이후의 데드 코드",
+    "description": "오류 유발 규칙 — 무조건적인 Exit Script 또는 Halt Script 바로 뒤에 같은 분기 안에서 실행 가능한 스텝이 이어집니다. 그 스텝은 절대 실행되지 않으며, 거기에 배치된 정리 작업(예: Close Window)은 조용히 수행되지 않습니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 항목",
+    "summary_kpi.props.items[1].label": "영향받은 파일",
+    "findings_card.props.title": "Exit Script 이후의 데드 코드",
+    "findings_table.props.searchPlaceholder": "파일 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "Exit Script / Halt Script 이후 도달 불가능한 스텝이 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "스크립트",
+    "findings_table.props.columns[2].label": "스텝",
+    "findings_table.props.columns[3].label": "도달 불가능한 스텝"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "이후 Close Window가 없는 창 열기",
+    "description": "오류 유발 규칙 — 스텝이 새 창을 열지만(New Window 또는 새 창 옵션이 있는 Go to Related Record) 같은 스크립트에서 이후에 Close Window가 없습니다. 실행할 때마다 창이 하나씩 누수되고, 루프에서는 누수가 배가되며, FileMaker Server에서는 누수된 창이 호출 컨텍스트의 대상 레코드를 조용히 대체할 수 있습니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 항목",
+    "summary_kpi.props.items[1].label": "영향받은 파일",
+    "findings_card.props.title": "이후 Close Window가 없는 창 열기",
+    "findings_table.props.searchPlaceholder": "파일 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "창을 여는 모든 스텝 뒤에 같은 스크립트에서 Close Window가 이어집니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "스크립트",
+    "findings_table.props.columns[2].label": "스텝",
+    "findings_table.props.columns[3].label": "여는 스텝"
+  }
+}

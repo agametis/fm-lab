@@ -4,7 +4,7 @@ SELECT
     File_Name     AS file_name,
     Script_UUID   AS nav_uuid,
     Script_Name   AS script_name,
-    Step_Index    AS step_index,
+    Step_Index + 1    AS step_index,
     Step_UUID     AS step_uuid,
     CAST(loop_depth_before AS INTEGER) AS loop_depth,
     row_number() OVER (ORDER BY File_Name, Script_Name, Step_Index) AS row_key

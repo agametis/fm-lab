@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Ventana abierta sin Close Window posterior",
+    "description": "Regla de propensión a errores — un paso abre una ventana nueva (New Window o Go to Related Record con la opción de ventana nueva) y ningún Close Window sigue después en el mismo script. Cada ejecución filtra una ventana; en bucles la fuga se multiplica y, en FileMaker Server, una ventana filtrada puede reemplazar silenciosamente el conjunto encontrado del contexto llamante."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Ventana abierta sin Close Window posterior",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o script…",
+    "findings_table.props.empty.message": "Cada paso que abre una ventana va seguido de un Close Window en su script.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Paso",
+    "findings_table.props.columns[3].label": "Paso de apertura"
+  }
+}

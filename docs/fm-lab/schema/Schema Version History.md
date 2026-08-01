@@ -8,6 +8,7 @@ Two scope notes: this history covers the **solution catalog** (`db/fm_catalog.du
 
 | Schema version | fm-lab version | Date |
 |---|---|---|
+| [1.15.0](#1150) | 0.9.5 | 2026-07-30 |
 | [1.14.0](#1140) | 0.9.3 | 2026-07-16 |
 | [1.13.0](#1130) | 0.9.0 | 2026-07-15 |
 | [1.12.1](#1121) | 0.9.0 | 2026-07-15 |
@@ -30,6 +31,12 @@ Two scope notes: this history covers the **solution catalog** (`db/fm_catalog.du
 | [1.0.0](#100) | — | 2026-05-13 |
 
 ## Changes by version
+
+### 1.15.0
+
+[CustomFunctionsCatalog](catalog-tables/CustomFunctionsCatalog.md) gains `Folder_Type` (the raw `isFolder` value, `True` or `Marker`), `Is_Separator` and `Sequence_ID` — the same three columns [ScriptCatalog](catalog-tables/ScriptCatalog.md) and [Layouts](catalog-tables/Layouts.md) already carried. FileMaker stores the folders and separators of the Manage Custom Functions dialog as ordinary `<CustomFunction>` entries, so until now they were indistinguishable from real custom functions: they counted in every custom-function metric, and because a folder row has no parameter list it looked exactly like a parameterless function to any signature check. `Sequence_ID` is the position in XML order, not `CF_ID` (which is creation order) — the folder tree is encoded as a flat opening/closing sequence, so reconstructing it requires document order. The `FolderHierarchy` view gained its third branch accordingly, and [ObjectCatalog](object-catalog/ObjectCatalog.md) now keeps folder and separator rows out of the `CustomFunction` block and promotes the folders to `Object_Type = 'Folder'` with `Source_Table = 'CustomFunctionsCatalog'`, which gives custom functions inside a folder a `parent_folder` link like scripts and layouts have. In the reference corpus this moves 6 of 14 rows out of the `CustomFunction` count: 8 real functions remain, 3 folders become Folder objects, 3 end-of-folder markers stay bookkeeping rows.
+
+The same bump curates 26 step types in the internal `ScriptStepRoleMap`, which assigns a [link role](object-catalog/Link%20Roles%20and%20Subroles.md) per step ID for script-to-field references: the Insert family, the data-file API, the AI steps and a handful of singles such as Cut, Check Selection and Install Plug-In File. Uncurated step types fall back to `references_field`, which preserves where-used but loses the differentiated role — a pipeline check reports the remainder, and it is now empty. Two things are worth knowing when reading that map. Five AI steps carry a source field *and* a target field in the same step (for example Insert Embedding in Found Set); the map holds one role per step ID and the reference extraction records field references without their originating option, so those five are deliberately mapped to `references_field` rather than to an invented dominant role. And the option type in the [fm-spec](../Wiki/fm-spec.md) reference describes the XML shape, not the data direction: Write to Data File carries its field as a `target` option although the field is *read* — its label is "Data source" — so its role is `reads_field`.
 
 ### 1.14.0
 

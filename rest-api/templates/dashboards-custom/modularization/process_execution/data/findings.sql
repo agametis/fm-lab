@@ -13,7 +13,7 @@ WITH native AS (
         'Native Step'                                   AS ref_type,
         s.Script_Name                                   AS carrier,
         s.Step_Name                                     AS detail,
-        s.Step_Index                                    AS step_index,
+        s.Step_Index + 1                                    AS step_index,
         s.Script_UUID                                   AS nav_uuid,
         'Script'                                        AS nav_type,
         s.Step_UUID                                     AS step_uuid
@@ -27,7 +27,7 @@ mbs AS (
         'MBS ' || p.Source_Type                         AS ref_type,
         COALESCE(s.Script_Name, oc.Object_Name)         AS carrier,
         regexp_extract(p.Plugin_Function_Name, '(?i)MBS:(.+)$', 1) AS detail,
-        s.Step_Index                                    AS step_index,
+        s.Step_Index + 1                                    AS step_index,
         p.Source_UUID                                   AS nav_uuid,
         p.Source_Type                                   AS nav_type,
         s.Step_UUID                                     AS step_uuid

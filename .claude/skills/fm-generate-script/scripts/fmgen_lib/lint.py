@@ -6,7 +6,8 @@ Rule catalog:
   L003 $$$ variables
   L004 bare ::Field reference without table occurrence
   L005 bracket group on a step that takes no options
-  L006 function arity in calculations (against function_parameters)
+  L006 function arity in calculations (against function_parameters; bracket
+       repetition groups are checked per group, see REPEAT_GROUPS)
   L007 localized function names in calculations (canonical EN policy)
   L008 flat-transaction constraint (Commit/Revert Transaction inside If)
 
@@ -22,7 +23,8 @@ import re
 from dataclasses import dataclass, field
 
 from .db import Reference
-from .textform import CALL_RE, ParsedStep, RawStep, strip_strings
+from .textform import (CALL_RE, ParsedStep, RawStep, call_name_candidates,
+                       matching_paren, split_args, strip_comments, strip_strings)
 
 IF_OPEN, IF_BRANCH, IF_CLOSE = {68}, {69, 125}, {70}
 LOOP_OPEN, LOOP_EXIT, LOOP_CLOSE = {71}, {72}, {73}
@@ -30,6 +32,18 @@ TRANSACTION_FLAT = {206, 207}  # Commit/Revert Transaction: save-invalid inside 
 
 _MERGED_HEADS = {"endif": "End If", "elseif": "Else If", "endloop": "End Loop",
                  "exitloopif": "Exit Loop If"}
+
+# Functions whose trailing parameters repeat as bracket groups:
+#   JSONSetElement ( json ; [ key ; value ; type ] ; [ … ] … )
+#   Substitute     ( text ; [ search ; replace ]  ; [ … ] … )
+# The value is the number of elements per group. This is deliberately a closed
+# list and deliberately NOT handled inside split_args(): `While`, `Let` and
+# `Evaluate` also take bracket groups, but there a group is ONE argument
+# (`While ( [ i = 0 ; n = 0 ] ; … )`) — expanding groups generically would turn
+# those into false alarms, and split_args() is shared with the resolver's
+# custom-function arity check. Verified complete against the Claris help for
+# the reference's FileMaker coverage (2025): no other built-in repeats.
+REPEAT_GROUPS = {"jsonsetelement": 3, "substitute": 2}
 
 
 @dataclass
@@ -144,57 +158,28 @@ def _calc_options(ps: ParsedStep, ref: Reference) -> list[str]:
     return calcs
 
 
-def _split_args(argstr: str) -> list[str]:
-    parts, buf, depth, in_str, i = [], [], 0, False, 0
-    while i < len(argstr):
-        ch = argstr[i]
-        if in_str and ch == "\\" and i + 1 < len(argstr):
-            buf.append(argstr[i:i + 2]); i += 2; continue
-        if ch == '"':
-            in_str = not in_str
-        elif not in_str:
-            if ch in "([{":
-                depth += 1
-            elif ch in ")]}":
-                depth -= 1
-            elif ch == ";" and depth == 0:
-                parts.append("".join(buf)); buf = []; i += 1; continue
-        buf.append(ch)
-        i += 1
-    if buf:
-        parts.append("".join(buf))
-    return [p for p in parts if p.strip()]
-
-
-def _matching_paren(text: str, open_idx: int) -> int:
-    depth, in_str, i = 0, False, open_idx
-    while i < len(text):
-        ch = text[i]
-        if in_str and ch == "\\" and i + 1 < len(text):
-            i += 2; continue
-        if ch == '"':
-            in_str = not in_str
-        elif not in_str:
-            if ch == "(":
-                depth += 1
-            elif ch == ")":
-                depth -= 1
-                if depth == 0:
-                    return i
-        i += 1
-    return -1
-
-
 def _calc_rules(parsed: list[ParsedStep], ref: Reference, res: LintResult) -> None:
     flookup = ref.function_lookup()
     arity = ref.function_arity()
     for ps in parsed:
         for calc in _calc_options(ps, ref):
-            code = calc  # keep original for arg extraction; match on string-stripped copy
-            stripped = strip_strings(code)
+            # Both passes are length-preserving, so offsets stay valid — and
+            # arguments are counted on the stripped copy too: a ';' inside a
+            # calc comment would otherwise be read as an argument separator,
+            # and a comment in front of a repetition group would hide the '['
+            # that identifies it (real code puts both there, see the corpus
+            # sweep in the bug report).
+            stripped = strip_strings(strip_comments(calc))
             for m in CALL_RE.finditer(stripped):
-                token = m.group(1).strip()
-                hit = flookup.get(token.casefold())
+                # a leading word operator is part of the match, not of the name
+                # ("1 or Left (") — without the split the arity/locale checks
+                # below would silently skip every such call
+                token, hit = None, None
+                for cand in call_name_candidates(m.group(1)):
+                    hit = flookup.get(cand.casefold())
+                    if hit is not None:
+                        token = cand
+                        break
                 if hit is None:
                     continue  # custom/plugin functions are the resolver's job
                 fn = arity.get(hit["function_id"])
@@ -206,13 +191,55 @@ def _calc_rules(parsed: list[ParsedStep], ref: Reference, res: LintResult) -> No
                             f"localized function name '{token}' — use canonical EN "
                             f"'{fn['canonical_name']}' in generated calcs "
                             "(registry convention: FM calc function-name locale)")
-                close = _matching_paren(stripped, m.end() - 1)
+                close = matching_paren(stripped, m.end() - 1)
                 if close < 0:
                     continue
-                args = _split_args(code[m.end():close])
+                args = split_args(stripped[m.end():close])
                 lo, hi = fn["min_args"], fn["max_args"]
+                if lo == 0 and hi == 0:
+                    # The reference declares no parameters at all for this
+                    # function — either it genuinely takes none (those are
+                    # written without parentheses and never reach here) or the
+                    # parameter data is missing. Nothing to compare against, so
+                    # the check stands down instead of reporting every call as
+                    # 'expects 0' (mirror of the resolver's cf_arity_usable).
+                    continue
+                if _repetition_arity(fn, args, ps, res):
+                    continue
                 if len(args) < lo or (hi is not None and len(args) > hi):
                     span = f"{lo}" if hi == lo else (f"{lo}+" if hi is None else f"{lo}-{hi}")
                     res.add("L006", "error", ps.line,
                             f"'{fn['canonical_name']}' expects {span} argument(s), "
                             f"got {len(args)}")
+
+
+def _repetition_arity(fn: dict, args: list[str], ps: ParsedStep, res: LintResult) -> bool:
+    """Check a call written in FileMaker's bracket-repetition syntax.
+
+    Returns True when the call uses that syntax (and was checked here), so the
+    caller skips the flat min/max comparison — the reference only carries the
+    base-form arity, which every repetition beyond the base form exceeds.
+
+    Checked instead: the leading arguments before the first group, and that
+    every group has exactly the group size. `n` groups stay unbounded, which is
+    what FileMaker allows.
+    """
+    size = REPEAT_GROUPS.get(fn["canonical_name"].casefold())
+    if not size:
+        return False
+    groups = [a.strip() for a in args if a.strip().startswith("[") and a.strip().endswith("]")]
+    if not groups:
+        return False  # base form — the ordinary min/max check applies
+    base = fn["min_args"] - size
+    plain = len(args) - len(groups)
+    if plain != base:
+        res.add("L006", "error", ps.line,
+                f"'{fn['canonical_name']}' expects {base} argument(s) before the "
+                f"first repetition group, got {plain}")
+    for i, g in enumerate(groups, start=1):
+        n = len(split_args(g[1:-1]))
+        if n != size:
+            res.add("L006", "error", ps.line,
+                    f"'{fn['canonical_name']}' repetition group {i} has {n} "
+                    f"element(s), expected {size}")
+    return True

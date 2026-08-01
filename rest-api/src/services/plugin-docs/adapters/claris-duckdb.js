@@ -176,7 +176,12 @@ async function loadSlugMap(ctx) {
 /**
  * Loads the Claris-help mirror HTML for a slug + extracts the optimized embed
  * body (already cross-link-rewritten by help.service to `/api/reference/help/
- * <lang>/<slug>` URLs). Returns `{ html, title }` or null if not found.
+ * <lang>/<slug>` URLs). Returns `{ html, title, lang }` or null if not found.
+ *
+ * `lang` is the language actually delivered: the mirror is not installed for
+ * every language, so `resolveHtml` silently falls back to the reference
+ * language and reports that in its `source` marker. Passing it on lets callers
+ * tell the user which language they are really reading.
  */
 function loadHelpEmbed(lang, slug) {
   const entry = helpService.resolveHtml(lang, slug);
@@ -187,7 +192,8 @@ function loadHelpEmbed(lang, slug) {
   let title = slug;
   const h1 = String(html || '').match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
   if (h1) title = h1[1].replace(/<[^>]+>/g, '').trim();
-  return { html, title };
+  const fallback = /^html-cache:fallback:(.+)$/.exec(String(entry.source || ''));
+  return { html, title, lang: fallback ? fallback[1] : lang };
 }
 
 /**
@@ -246,6 +252,9 @@ async function getEntry(ctx, { functionId, lang = 'en' } = {}) {
       id: functionId,
       title: embed.title,
       content_html: html,
+      // Language actually delivered — differs from `lang` when the mirror for
+      // the requested language is not installed (see loadHelpEmbed).
+      lang_effective: embed.lang,
       metadata: { source_slug: rest, kind: 'topic' },
       online_url: `https://help.claris.com/${lang}/pro-help/content/${rest}.html`,
       format: 'html',
@@ -304,6 +313,9 @@ async function getEntry(ctx, { functionId, lang = 'en' } = {}) {
     // null, wenn der Mirror nichts hatte — DocsEntryView fällt dann auf
     // content_url zurück (Legacy-Pfad).
     content_html,
+    // Language actually delivered — differs from `lang` when the mirror for
+    // the requested language is not installed (see loadHelpEmbed).
+    lang_effective: embed ? embed.lang : lang,
     content_url: content_html
       ? null
       : `/api/reference/help/${encodeURIComponent(lang)}/${encodeURIComponent(row.url_slug)}`,

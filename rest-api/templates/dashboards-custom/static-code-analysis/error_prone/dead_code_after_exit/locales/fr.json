@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Code mort après Exit Script",
+    "description": "Règle « sujet aux erreurs » — une étape exécutable suit directement un Exit Script ou Halt Script inconditionnel dans la même branche. Cette étape ne peut jamais s'exécuter ; le nettoyage placé là (p. ex. Close Window) n'a jamais lieu."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Code mort après Exit Script",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un script…",
+    "findings_table.props.empty.message": "Aucune étape inaccessible après Exit Script / Halt Script trouvée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Étape",
+    "findings_table.props.columns[3].label": "Étape inaccessible"
+  }
+}

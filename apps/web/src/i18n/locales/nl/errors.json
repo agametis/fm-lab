@@ -16,5 +16,11 @@
     "body": "Deze oplossing is geïmporteerd met een oudere catalogusversie dan de app verwacht. Converteer de XML-export opnieuw om de objectcatalogus in het huidige schema opnieuw op te bouwen.",
     "versions": "Catalogus: {{dbVersion}} · app verwacht: {{appVersion}}",
     "action": "Naar XML-conversie"
+  },
+  "solutionContext": {
+    "heading": "Aanvragen voor oplossing “{{solution}}” komen niet aan",
+    "body": "De API was niet bereikbaar met deze oplossingscontext. Als de app werkte voordat je van oplossing wisselde, zet de selectie dan terug op de serverstandaard.",
+    "action": "Selectie herstellen",
+    "dismiss": "Verbergen"
   }
 }

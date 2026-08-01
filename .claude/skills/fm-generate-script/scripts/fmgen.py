@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -78,9 +79,11 @@ def do_resolve(args, ref) -> tuple[int, dict]:
     data["steps"] = _ir_to_json(parsed, data.get("normalization", []), lint.LintResult())["steps"]
     data["resolution"] = report.as_dict()
     n_err = len([u for u in report.unresolved if u["severity"] == "error"])
+    f_err = len([f for f in report.findings if f["severity"] == "error"])
     print(f"fmgen resolve: {len(report.resolved)} resolved, "
           f"{len(report.unresolved)} unresolved ({n_err} error), "
-          f"{len(report.new_objects)} new", file=sys.stderr)
+          f"{len(report.new_objects)} new, "
+          f"{len(report.findings)} finding(s) ({f_err} error)", file=sys.stderr)
     return (2 if report.has_errors else 0), data
 
 
@@ -96,23 +99,35 @@ def do_emit(args, ref) -> tuple[int, dict | str]:
     return 0, result.xml  # type: ignore[return-value]
 
 
+def _flag(args, name: str, env: str) -> bool:
+    """CLI flag with an environment fallback — the env channel is what survives
+    into child processes (the agent reads the convention from the registry and
+    exports it once, see SKILL.md P0)."""
+    if getattr(args, name, False):
+        return True
+    return os.environ.get(env, "").strip().lower() in ("1", "true", "on", "yes")
+
+
 def do_gate(args, ref) -> tuple[int, dict]:
     xml_text = Path(args.input).read_text(encoding="utf-8")
-    resolution = None
+    resolution, ir_steps = None, None
     target_version = args.target_version
     if args.resolved:
         data = json.loads(Path(args.resolved).read_text(encoding="utf-8"))
         resolution = data.get("resolution")
+        ir_steps = data.get("steps")
         if not target_version and resolution:
             for a in resolution.get("assumptions", []):
                 if ", FM " in a:
                     target_version = a.rsplit(", FM ", 1)[1]
-    result = gate.run_gate(xml_text, ref, resolution, target_version)
+    result = gate.run_gate(xml_text, ref, resolution, target_version, ir_steps,
+                           _flag(args, "check_var_init", "FMGEN_CHECK_VAR_INIT"))
     n_fail = len([c for c in result.checks if c.status == "fail"])
+    n_warn = len([c for c in result.checks if c.status == "warning"])
     n_skip = len([c for c in result.checks if c.status == "skipped"])
     print(f"fmgen gate: {'PASS' if result.passed else 'FAIL'} "
-          f"({len(result.checks)} checks, {n_fail} failed, {n_skip} skipped)",
-          file=sys.stderr)
+          f"({len(result.checks)} checks, {n_fail} failed, {n_warn} warning, "
+          f"{n_skip} skipped)", file=sys.stderr)
     return (0 if result.passed else 2), result.as_dict()
 
 
@@ -224,6 +239,10 @@ def main() -> int:
     p = sub.add_parser("emit");   p.add_argument("input"); p.add_argument("--xml-decl", action="store_true")
     p = sub.add_parser("gate")
     p.add_argument("input"); p.add_argument("--resolved"); p.add_argument("--target-version")
+    p.add_argument("--check-var-init", action="store_true",
+                   help="check the convention that a variable used as a step target "
+                        "was initialised by a preceding Set Variable (G305); "
+                        "env fallback FMGEN_CHECK_VAR_INIT")
     p = sub.add_parser("actionscript")
     p.add_argument("input", nargs="?")
     p.add_argument("--wrap-snippet", help="fmxmlsnippet file for a clipboard-delivery script")
@@ -236,6 +255,8 @@ def main() -> int:
     p.add_argument("input"); p.add_argument("--file", required=True)
     p.add_argument("--out-dir", default="output/codegen")
     p.add_argument("--xml-decl", action="store_true")
+    p.add_argument("--check-var-init", action="store_true",
+                   help="see 'gate --check-var-init'")
     p.add_argument("--resolved", help=argparse.SUPPRESS)
     p.add_argument("--target-version", help=argparse.SUPPRESS)
 

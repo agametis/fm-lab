@@ -16,5 +16,11 @@
     "body": "Esta solução foi importada com uma versão de catálogo mais antiga do que a aplicação espera. Reconverta a exportação XML para reconstruir o catálogo de objetos no esquema atual.",
     "versions": "Catálogo: {{dbVersion}} · a app espera: {{appVersion}}",
     "action": "Ir para a conversão XML"
+  },
+  "solutionContext": {
+    "heading": "Os pedidos para a solução «{{solution}}» não estão a chegar",
+    "body": "Não foi possível aceder à API com este contexto de solução. Se a aplicação funcionava antes de mudar de solução, reponha a seleção para a predefinição do servidor.",
+    "action": "Repor seleção",
+    "dismiss": "Ocultar"
   }
 }

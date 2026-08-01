@@ -6,6 +6,9 @@ catalog has one) and recorded in a machine-readable resolution report:
   resolved     — real IDs found; emitted into the snippet
   unresolved   — name not in the catalog; severity 'error' stops the pipeline
   new_objects  — {{NEW:...}} placeholders; emitted name-only, to create before paste
+  findings     — the reference EXISTS but is used wrongly (e.g. a custom function
+                 called with the wrong number of arguments); severity 'error'
+                 stops the pipeline just like an unresolved reference
   assumptions  — target file, FM version, fallback modes
 
 Resolution modes come from fm_spec.ref_element_semantics:
@@ -25,7 +28,9 @@ import re
 from dataclasses import dataclass, field
 
 from .db import Database, Reference, sql_quote
-from .textform import CALL_RE, ParsedStep, render_ref, strip_strings
+from .textform import (CALL_RE, NEW_IN_CALC_RE, ParsedStep,
+                       call_name_candidates, matching_paren, render_canonical,
+                       render_ref, split_args, strip_comments, strip_strings)
 
 # option xml_path leaf -> ref_element_semantics.element
 _XMLPATH_ELEMENT = {
@@ -42,12 +47,14 @@ class Report:
     resolved: list[dict] = field(default_factory=list)
     unresolved: list[dict] = field(default_factory=list)
     new_objects: list[dict] = field(default_factory=list)
+    findings: list[dict] = field(default_factory=list)
     assumptions: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
     @property
     def has_errors(self) -> bool:
-        return any(u.get("severity") == "error" for u in self.unresolved)
+        return (any(u.get("severity") == "error" for u in self.unresolved)
+                or any(f.get("severity") == "error" for f in self.findings))
 
     def as_dict(self) -> dict:
         return {
@@ -55,6 +62,7 @@ class Report:
             "resolved": self.resolved,
             "unresolved": self.unresolved,
             "new_objects": self.new_objects,
+            "findings": self.findings,
             "assumptions": self.assumptions,
             "warnings": self.warnings,
         }
@@ -68,6 +76,9 @@ class Resolver:
         self.report = Report(target_file=target_file)
         self.file_row = self._load_file()
         self._calc_ctx: dict | None = None
+        # custom functions declared as {{NEW:CustomFunction:...}} in a calc —
+        # snippet-wide: declaring once exempts every use in the same draft
+        self._declared_new_cf: set[str] = set()
 
     # ------------------------------------------------------------ file context
 
@@ -91,6 +102,7 @@ class Resolver:
     # ------------------------------------------------------------ entry point
 
     def resolve(self, parsed: list[ParsedStep]) -> None:
+        self._collect_new_declarations(parsed)
         for ps in parsed:
             for opt in self.ref.options(ps.step_id):
                 key = opt["option_key"]
@@ -130,14 +142,70 @@ class Resolver:
                     ref_val["repetition"] = "0"
                 return
 
-    def _calcs(self, ps: ParsedStep) -> list[str]:
+    def _calc_items(self, ps: ParsedStep) -> list[tuple[str, str]]:
         out = []
         for o in self.ref.options(ps.step_id):
             if o["option_type"] in ("calculation", "repetition"):
                 v = ps.options.get(o["option_key"])
                 if isinstance(v, str):
-                    out.append(v)
+                    out.append((o["option_key"], v))
         return out
+
+    def _calcs(self, ps: ParsedStep) -> list[str]:
+        return [v for _, v in self._calc_items(ps)]
+
+    # ------------------------------------------------- {{NEW:...}} in a calc
+
+    def _collect_new_declarations(self, parsed: list[ParsedStep]) -> None:
+        """Pre-pass over every calculation: register {{NEW:CustomFunction:X}}
+        as an object to create before paste and strip the marker from the IR.
+
+        Stripping is not cosmetic — without it the marker would travel verbatim
+        through the emitter into the snippet and land in FileMaker as part of the
+        formula. It runs BEFORE the per-step scan so the bare name left behind is
+        already covered by the exemption list and is not reported as unknown.
+        """
+        for ps in parsed:
+            changed = False
+            for key, calc in self._calc_items(ps):
+                if "{{NEW:" not in calc:
+                    continue
+                stripped = NEW_IN_CALC_RE.sub(
+                    lambda m: self._new_declaration(ps, m), calc)
+                if stripped != calc:
+                    ps.options[key] = stripped
+                    changed = True
+            if changed:
+                # the draft-level marker is gone from the values, so the
+                # canonical text in the report must show what is delivered
+                ps.canonical_text = render_canonical(ps, self.ref)
+
+    def _new_declaration(self, ps: ParsedStep, m: re.Match) -> str:
+        """Replacement for one {{NEW:...}} inside a calculation."""
+        new_type, name = m.group(1), m.group(2).strip()
+        if new_type != "CustomFunction":
+            # Only custom functions have a meaning as a bare token inside a
+            # formula. Keep the marker so the value cannot ship silently, and
+            # say so — an unfilled marker in the XML is worse than a stop.
+            self._finding(
+                ps, "R002-new-marker", "error", m.group(0),
+                f"'{{{{NEW:{new_type}:...}}}}' is not supported inside a "
+                "calculation — only {{NEW:CustomFunction:Name}} is; use a real "
+                "object reference at the option level instead")
+            return m.group(0)
+        existing = self._calc_context()["cf_lower"].get(name.casefold()) \
+            if self.file_row is not None else None
+        if existing is not None:
+            self.report.warnings.append(
+                f"line {ps.line}: custom function '{name}' is declared as new but "
+                f"already exists in '{self.file}' — the declaration is redundant")
+        elif name.casefold() not in self._declared_new_cf:
+            self._declared_new_cf.add(name.casefold())
+            self.report.new_objects.append({
+                "type": "CustomFunction", "ref": name,
+                "action": "create before paste", "line": ps.line,
+            })
+        return name
 
     # ------------------------------------------------------ object references
 
@@ -353,8 +421,40 @@ class Resolver:
         # bare token before '(' is not a lookup key. Recover the locale-specific
         # prefixes (get / hole / obtenir / ...) from the parenthesized lookup names.
         get_prefixes = {k.split("(", 1)[0].strip() for k in flookup if "(" in k}
-        cf_lower = {r["CF_Name"].casefold(): r["CF_Name"] for r in self.cat.query(
-            f"SELECT CF_Name FROM CustomFunctionsCatalog WHERE File_Name = {sql_quote(self.file)}")}
+        # Folder_Type/Is_Separator exist from catalog schema 1.15.0 on; older
+        # catalogs carry folders and separators of the "Manage Custom Functions"
+        # dialog as ordinary rows. Probe the column instead of assuming it —
+        # the skill must keep working against a catalog that was built before.
+        has_folder_flag = bool(self.cat.query(
+            "SELECT 1 AS x FROM information_schema.columns "
+            "WHERE table_name = 'CustomFunctionsCatalog' "
+            "AND column_name = 'Folder_Type' LIMIT 1"))
+        folder_filter = (
+            " AND (Folder_Type IS NULL OR Folder_Type = 'False') "
+            "AND NOT COALESCE(Is_Separator, FALSE)" if has_folder_flag else "")
+        cf_rows = self.cat.query(
+            "SELECT CF_Name, Parameters FROM CustomFunctionsCatalog "
+            f"WHERE File_Name = {sql_quote(self.file)}{folder_filter}")
+        if not has_folder_flag:
+            self.report.assumptions.append(
+                "catalog predates schema 1.15.0 — custom-function folders are "
+                "indistinguishable from parameterless functions")
+        # A parameterless custom function is stored with Parameters = NULL, not
+        # with an empty list — so NULL means 'takes no arguments'. Only when the
+        # WHOLE file is NULL is that indistinguishable from an extraction gap;
+        # in that case the arity check stands down instead of reporting every
+        # call as 'expects 0'.
+        cf_arity_usable = any(r["Parameters"] for r in cf_rows)
+        cf_lower = {
+            r["CF_Name"].casefold(): {
+                "name": r["CF_Name"], "arity": len(r["Parameters"] or []),
+            }
+            for r in cf_rows
+        }
+        if cf_rows and not cf_arity_usable:
+            self.report.assumptions.append(
+                f"no custom-function parameter lists in the catalog for "
+                f"'{self.file}' — custom-function arity not checked")
         plugin_direct, plugin_umbrella = set(), set()
         for r in self.cat.query(
                 "SELECT DISTINCT Object_Name FROM ObjectCatalog "
@@ -370,8 +470,10 @@ class Resolver:
         builtins = {v["canonical_name"] for v in self.ref.function_arity().values()}
         self._calc_ctx = {
             "flookup": flookup, "get_prefixes": get_prefixes, "cf_lower": cf_lower,
+            "cf_arity_usable": cf_arity_usable,
+            "cf_folders_known": has_folder_flag,
             "plugin_direct": plugin_direct, "plugin_umbrella": plugin_umbrella,
-            "suggest_pool": sorted(set(cf_lower.values()) | builtins),
+            "suggest_pool": sorted({c["name"] for c in cf_lower.values()} | builtins),
         }
         return self._calc_ctx
 
@@ -405,31 +507,93 @@ class Resolver:
         flookup, get_prefixes = ctx["flookup"], ctx["get_prefixes"]
         cf_lower, plugin_direct = ctx["cf_lower"], ctx["plugin_direct"]
         plugin_umbrella = ctx["plugin_umbrella"]
+        scanned = strip_strings(strip_comments(calc))
         seen = set()
-        for m in CALL_RE.finditer(strip_strings(calc)):
-            tok = m.group(1).strip()
+        for m in CALL_RE.finditer(scanned):
+            # a word operator in front of the call is part of the match, not of
+            # the name — try the candidates longest-first and report the bare
+            # name (the last candidate) if none of them is known
+            cands = call_name_candidates(m.group(1))
+            if not cands:
+                continue  # operators only: '(' groups here, it does not call
+            tok = cands[-1]
             low = tok.casefold()
+            lows = [c.casefold() for c in cands]
+            if any(c in flookup or c in get_prefixes for c in lows):
+                continue  # FileMaker built-in (arity is the lint's job, L006)
+            hit = next((c for c in lows if c in cf_lower), None)
+            if hit is not None:
+                # arity is checked per CALL SITE, the existence report is
+                # deduplicated per name — two wrong calls of the same custom
+                # function are two findings, not one
+                if ctx["cf_arity_usable"]:
+                    self._cf_arity(ps, calc, scanned, m, cf_lower[hit])
+                if low not in seen:
+                    seen.add(low)
+                    self.report.resolved.append(
+                        {"type": "CustomFunction", "ref": cf_lower[hit]["name"],
+                         "line": ps.line, "file": self.file})
+                continue
+            if any(c in self._declared_new_cf for c in lows):
+                # declared as {{NEW:CustomFunction:...}} somewhere in this draft:
+                # exempt from the existence check by design, and from the arity
+                # check because the signature does not exist yet
+                continue
             if low in seen:
                 continue
             seen.add(low)
-            if low in flookup or low in get_prefixes:
-                continue  # FileMaker built-in
-            if low in cf_lower:
+            hit = next((i for i, c in enumerate(lows) if c in plugin_direct), None)
+            if hit is not None:
                 self.report.resolved.append(
-                    {"type": "CustomFunction", "ref": cf_lower[low], "line": ps.line,
-                     "file": self.file})
+                    {"type": "PluginFunction", "ref": cands[hit], "line": ps.line})
                 continue
-            if low in plugin_direct:
-                self.report.resolved.append(
-                    {"type": "PluginFunction", "ref": tok, "line": ps.line})
-                continue
-            if low in plugin_umbrella:
+            if any(c in plugin_umbrella for c in lows):
                 continue  # e.g. MBS("…") — the selector is checked by the MBS scan
             self._unresolved(
                 ps, "CustomFunction", {"name": tok, "_form": "named"}, "error",
                 f"'{tok}' is called as a function but is neither a FileMaker built-in "
                 f"nor a custom function of '{self.file}'",
                 self._suggest(tok, ctx["suggest_pool"]))
+
+    def _cf_arity(self, ps: ParsedStep, calc: str, scanned: str,
+                  m: re.Match, cf: dict) -> None:
+        """Argument count of one custom-function call site against the catalog.
+
+        FileMaker custom functions have a fixed signature — no optional and no
+        variadic parameters — so this is an exact comparison, unlike the built-in
+        min/max check in the lint (L006). Arguments are counted on the original
+        calc so a ';' inside a string literal cannot split an argument.
+        """
+        close = matching_paren(scanned, m.end() - 1)
+        if close < 0:
+            return  # unbalanced parens — the lint reports that on its own
+        got = len(split_args(calc[m.end():close]))
+        expected = cf["arity"]
+        if got == expected:
+            return
+        if expected == 0 and not self._calc_context()["cf_folders_known"]:
+            # Pre-1.15.0 catalog: a custom-function FOLDER carries Parameters
+            # NULL just like a parameterless function, so 'declares 0' may not
+            # be a signature at all. That ambiguity — not the arity itself — is
+            # why this stays a warning instead of stopping the pipeline.
+            self._finding(
+                ps, "R001-cf-arity", "warning", cf["name"],
+                f"custom function '{cf['name']}' declares no parameters but is "
+                f"called with {got} argument(s) — this catalog carries no folder "
+                "flag, so a custom-function folder looks the same as a "
+                "parameterless function; verify the signature in FileMaker")
+            return
+        self._finding(
+            ps, "R001-cf-arity", "error", cf["name"],
+            f"custom function '{cf['name']}' expects {expected} argument(s), "
+            f"got {got}")
+
+    def _finding(self, ps: ParsedStep, rule: str, severity: str, ref: str,
+                 message: str) -> None:
+        self.report.findings.append({
+            "rule": rule, "severity": severity, "line": ps.line,
+            "ref": ref, "message": message,
+        })
 
 
 def resolve(parsed: list[ParsedStep], catalog: Database, ref: Reference,

@@ -18,6 +18,7 @@ interface DocsEntryResponse {
   online_url?: string | null;
   format: 'html' | 'markdown';
   breadcrumb: DocsCrumb[];
+  lang_effective?: string;           // tatsächlich ausgelieferte Sprache (s.u.)
 }
 
 interface ApiEnvelope<T> {
@@ -38,9 +39,13 @@ interface ApiEnvelope<T> {
  *   ├─ Content (HTML — Markdown wird im Backend vorher konvertiert)
  *   └─ Footer (Quelle / Lizenz / Edit-Link bei Wiki-basierten Sets)
  *
- * Sprachfallback: URL ?lang= wird durchgereicht. Backend setzt
- * X-Docs-Lang-Fallback: <code>, wenn die angeforderte Sprache nicht verfügbar
- * ist; wir zeigen dann einen dezenten Hinweis.
+ * Sprachfallback: URL ?lang= wird durchgereicht. Das Backend liefert im Body
+ * `lang_effective` — die tatsächlich ausgelieferte Sprache. Weicht sie von der
+ * angeforderten ab (Mirror für diese Sprache nicht installiert), zeigen wir
+ * einen dezenten Hinweis. Bewusst im Body und NICHT als Response-Header:
+ * Response-Header sind cross-origin nur lesbar, wenn der Server sie zusätzlich
+ * über `Access-Control-Expose-Headers` freigibt — ein Vertrag, den man
+ * vergessen kann, ohne dass etwas sichtbar bricht.
  */
 
 /**
@@ -123,10 +128,10 @@ export const DocsEntryView: React.FC = () => {
     (async () => {
       try {
         const res = await fetch(url);
-        const fallback = res.headers.get('X-Docs-Lang-Fallback');
-        if (fallback && !cancelled) setLangFallback(fallback);
         const json = (await res.json()) as ApiEnvelope<DocsEntryResponse>;
         if (cancelled) return;
+        const effective = json.data?.lang_effective;
+        if (effective && effective !== lang) setLangFallback(effective);
         if (!res.ok || !json.success || !json.data) {
           setError(json.error?.message || `HTTP ${res.status}`);
           setEntry(null);

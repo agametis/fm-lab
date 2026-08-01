@@ -1,0 +1,58 @@
+{
+  "id": "dead_code_after_exit",
+  "version": "1.0.0",
+  "title": "Dead code after Exit Script",
+  "description": "Error-prone rule — an executable step directly follows an unconditional Exit Script or Halt Script in the same branch. That step can never run; cleanup placed there (e.g. Close Window) silently never happens.",
+  "author": "fm-lab rules",
+  "icon": "eye-off",
+  "category": "error_prone",
+  "tags": [
+    "rule",
+    "pmd",
+    "error_prone"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "error_prone",
+    "rationale": "A step after an unconditional script terminator is unreachable. This frequently hides broken cleanup: the author believed the step runs, but it never does.",
+    "remediation": "Move the step before the Exit Script / Halt Script, or remove it. If it belongs to another branch, fix the If/Else structure.",
+    "meta": {
+      "name": "Dead code after Exit Script",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Error-prone rule — an executable step directly follows an unconditional Exit Script or Halt Script in the same branch. That step can never run; cleanup placed there (e.g. Close Window) silently never happens.",
+      "created": "2026-07-31",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

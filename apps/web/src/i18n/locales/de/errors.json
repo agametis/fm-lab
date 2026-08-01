@@ -16,5 +16,11 @@
     "body": "Diese Lösung wurde mit einer älteren Katalog-Version importiert, als die App erwartet. Konvertiere ihren XML-Export neu, um den Objekt-Katalog im aktuellen Schema neu aufzubauen.",
     "versions": "Katalog: {{dbVersion}} · App erwartet: {{appVersion}}",
     "action": "Zur XML-Konvertierung"
+  },
+  "solutionContext": {
+    "heading": "Anfragen für die Lösung „{{solution}}“ kommen nicht durch",
+    "body": "Die API war mit diesem Lösungs-Kontext nicht erreichbar. Falls die App vor dem Lösungswechsel funktioniert hat, setze die Auswahl auf den Server-Default zurück.",
+    "action": "Auswahl zurücksetzen",
+    "dismiss": "Ausblenden"
   }
 }

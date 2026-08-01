@@ -16,5 +16,11 @@
     "body": "This solution was imported with an older catalog version than the app expects. Re-convert its XML export to rebuild the object catalog in the current schema.",
     "versions": "Catalog: {{dbVersion}} · app expects: {{appVersion}}",
     "action": "Go to XML conversion"
+  },
+  "solutionContext": {
+    "heading": "Requests for solution “{{solution}}” are not getting through",
+    "body": "The API could not be reached with this solution context. If the app worked before you switched solutions, reset the selection to the server default.",
+    "action": "Reset selection",
+    "dismiss": "Dismiss"
   }
 }

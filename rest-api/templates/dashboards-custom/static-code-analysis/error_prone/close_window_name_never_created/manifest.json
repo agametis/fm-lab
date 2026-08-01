@@ -1,0 +1,58 @@
+{
+  "id": "close_window_name_never_created",
+  "version": "1.0.0",
+  "title": "Close Window targets a never-created name",
+  "description": "Error-prone rule — a Close Window step targets a window name that no New Window, Go to Related Record or Set Window Title step ever produces anywhere in the imported solution. Such a close is a silent no-op: the window it was meant to clean up stays open on every execution path.",
+  "author": "fm-lab rules",
+  "icon": "app-window",
+  "category": "error_prone",
+  "tags": [
+    "rule",
+    "pmd",
+    "error_prone"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "error",
+    "category": "error_prone",
+    "rationale": "Close Window by name only works when some step actually creates or renames a window to that exact name. A close that references a name never produced is dead cleanup — typically a leftover after a rename, or a New Window whose name option was never filled in. The opened window then leaks and, on FileMaker Server, a leaked window can silently take over the found set of the calling loop.",
+    "remediation": "Give the window-opening step (New Window, or Go to Related Record with the New-window option) the exact name the Close Window step targets — or close by Current Window right where the window goes out of scope.",
+    "meta": {
+      "name": "Close Window targets a never-created name",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Error-prone rule — a Close Window step targets a window name that no window-name producer ever creates in the imported solution; the close is a silent no-op.",
+      "created": "2026-07-31",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (applies to the closing side; producers stay corpus-wide)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

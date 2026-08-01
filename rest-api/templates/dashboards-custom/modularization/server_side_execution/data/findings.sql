@@ -11,7 +11,7 @@ SELECT
     END                                                 AS mechanism,
     s.Script_Name                                       AS carrier,
     s.Step_Name                                         AS detail,
-    s.Step_Index                                        AS step_index,
+    s.Step_Index + 1                                        AS step_index,
     s.Script_UUID                                       AS nav_uuid,
     s.Step_UUID                                         AS step_uuid
 FROM StepsForScripts s

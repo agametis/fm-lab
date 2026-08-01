@@ -41,7 +41,8 @@ The DuckDB tables mirror the XML object catalogs. Most-used tables:
 |---|---|
 | `ObjectCatalog` / `ObjectLinks` | Central registry of all objects (25+ types, all files) and the links between them — start here for existence & where-used questions |
 | `FilesCatalog` | Imported FileMaker files (version, DDR-Info flag) |
-| `ScriptCatalog` / `StepsForScripts` | Scripts and their steps (+ `DDR_ScriptSteps` human-readable) |
+| `ScriptCatalog` / `StepsForScripts` | Scripts and their steps (+ `DDR_ScriptSteps` human-readable). `Step_Index` is 0-based — user-facing step numbers are `Step_Index + 1` |
+| `StepCalculations` / `v_script_block_tree` | All calculation slots of a step (window name vs. geometry, dialog title vs. message) / per-step Loop-&-If nesting depth — use for any branch-scope question instead of hand-reconstructing control flow |
 | `FieldsForTables` | Fields incl. type, AutoEnter, validation, storage |
 | `BaseTableCatalog` / `TableOccurrenceCatalog` / `RelationshipCatalog` | Data model & relationship graph |
 | `Layouts` / `LayoutObjects` / `LayoutParts` | Layouts, all 22 layout-object types, parts |
@@ -96,6 +97,7 @@ Full protocol, phase model, language policy (3 layers), fallback rules, dashboar
 | Question about … | Skill |
 |---|---|
 | Native FileMaker functions & script steps ("What does `PatternCount` do?") | `filemaker-function-reference` (local Claris-Help mirror, 11 languages, online fallback) |
+| Runtime compatibility of a script step (Server/WebDirect/Go/…) — "does this run on FileMaker Server?" | `reference/fm_spec.duckdb` → `step_compat` (join `script_steps_lang` on `step_id`, `language='en'`, read the `server`/`webdirect`/`go` flags; open **read-only**: `duckdb -readonly`). **NULL means "Claris states nothing", not "compatible"** — never answer platform questions from memory |
 | MBS plugin functions | `mbs-function-reference` |
 | DuckDB SQL syntax & functions | `duckdb-skills:duckdb-docs` |
 

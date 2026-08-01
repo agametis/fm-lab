@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Close Window su un nome mai creato",
+    "description": "Regola di propensione agli errori — un Close Window punta a un nome di finestra che nessun New Window, Go to Related Record o Set Window Title produce in tutta la soluzione importata. Quella chiusura è un no-op silenzioso: la finestra che doveva ripulire resta aperta su ogni percorso di esecuzione."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Pulizie morte (nome letterale)",
+    "summary_kpi.props.items[2].label": "File interessati",
+    "findings_card.props.title": "Close Window su un nome mai creato",
+    "findings_table.props.searchPlaceholder": "Cerca file, script o nome finestra…",
+    "findings_table.props.empty.message": "Ogni Close Window per nome corrisponde a un nome di finestra prodotto.",
+    "findings_table.props.columns[0].label": "Gravità",
+    "findings_table.props.columns[1].label": "File",
+    "findings_table.props.columns[2].label": "Script",
+    "findings_table.props.columns[3].label": "Passo",
+    "findings_table.props.columns[4].label": "Nome finestra"
+  }
+}

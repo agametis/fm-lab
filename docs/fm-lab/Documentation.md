@@ -13,6 +13,8 @@
 ## Using FM-Lab
 - [Installation](Wiki/Installation.md)
 - [Quickstart](Wiki/Quickstart.md)
+- First steps
+- What to do next
 - Frontend
 - Working with an IDE
 - Using the Terminal

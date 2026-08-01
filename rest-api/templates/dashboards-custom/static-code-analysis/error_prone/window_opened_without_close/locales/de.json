@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Fenster geöffnet ohne späteres Close Window",
+    "description": "Fehleranfälligkeits-Regel — ein Schritt öffnet ein neues Fenster (New Window oder Go to Related Record mit der Option „Neues Fenster“), und im selben Script folgt später kein Close Window. Jede Ausführung leakt ein Fenster; in Schleifen vervielfacht sich das Leck, und auf FileMaker Server kann ein geleaktes Fenster still die Fundmenge des aufrufenden Kontexts ersetzen."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Fenster geöffnet ohne späteres Close Window",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Auf jeden fensteröffnenden Schritt folgt ein Close Window im selben Script.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Schritt",
+    "findings_table.props.columns[3].label": "Öffnender Schritt"
+  }
+}

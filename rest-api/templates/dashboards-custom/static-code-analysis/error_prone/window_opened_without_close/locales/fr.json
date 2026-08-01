@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Fenêtre ouverte sans Close Window ultérieur",
+    "description": "Règle « sujet aux erreurs » — une étape ouvre une nouvelle fenêtre (New Window, ou Go to Related Record avec l'option nouvelle fenêtre) et aucun Close Window ne suit plus tard dans le même script. Chaque exécution fait fuir une fenêtre ; dans les boucles la fuite se multiplie et, sur FileMaker Server, une fenêtre fuitée peut remplacer silencieusement le jeu d'enregistrements trouvés du contexte appelant."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Fenêtre ouverte sans Close Window ultérieur",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un script…",
+    "findings_table.props.empty.message": "Chaque étape ouvrant une fenêtre est suivie d'un Close Window dans son script.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Étape",
+    "findings_table.props.columns[3].label": "Étape d'ouverture"
+  }
+}

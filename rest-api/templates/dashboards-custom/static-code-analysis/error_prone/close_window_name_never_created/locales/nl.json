@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Close Window naar een nooit gemaakte naam",
+    "description": "Foutgevoeligheidsregel — een Close Window richt zich op een vensternaam die geen enkele New Window, Go to Related Record of Set Window Title ergens in de geïmporteerde oplossing produceert. Zo'n close is een stille no-op: het venster dat moest worden opgeruimd blijft op elk uitvoeringspad open."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Dode opruimacties (letterlijke naam)",
+    "summary_kpi.props.items[2].label": "Getroffen bestanden",
+    "findings_card.props.title": "Close Window naar een nooit gemaakte naam",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, script of vensternaam…",
+    "findings_table.props.empty.message": "Elke Close Window op naam komt overeen met een geproduceerde vensternaam.",
+    "findings_table.props.columns[0].label": "Ernst",
+    "findings_table.props.columns[1].label": "Bestand",
+    "findings_table.props.columns[2].label": "Script",
+    "findings_table.props.columns[3].label": "Stap",
+    "findings_table.props.columns[4].label": "Vensternaam"
+  }
+}

@@ -29,6 +29,7 @@ The two skills are not mutually exclusive: fm-analyze internally uses many of th
 - **Read-only**: Never UPDATE/INSERT/DELETE
 - **Before every analysis**: Uniquely identify the object (see Step 1)
 - **Mark conclusions**: Clearly separate what is fact (from DB) and what is interpretation (from naming/context). Mark interpretations with hedging vocabulary (see Response language section for per-language equivalents).
+- **Step numbers are 1-based in prose**: `StepsForScripts.Step_Index` is 0-based — whenever a specific step is quoted to the user, render `Step_Index + 1` (matches FileMaker's Script Workspace and the fm-lab frontend; see `schema-reference.md` → Common columns).
 - **Response language**: follows the user's prompt language — see next section
 
 ## Response language

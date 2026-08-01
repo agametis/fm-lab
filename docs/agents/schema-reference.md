@@ -18,7 +18,8 @@ The table names mirror the XML branches of the corresponding object types:
 - **CustomFunctionsCatalog** — Custom functions
 - **CalcsForCustomFunctions** — Formulas of the custom functions
 - **ScriptCatalog** — All scripts, folders and separators
-- **StepsForScripts** — Script steps with parameters
+- **StepsForScripts** — Script steps with parameters. Note `Calculation_Text` = the step's **first** calculation in document order, excluding repetition/window-geometry (`Bounds`) slots — NULL when the step carries only such slots (e.g. a `New Window` without a name). For every calculation of a multi-calc step use **StepCalculations**. `Opens_Window` (derived, P3): TRUE/FALSE for the two window-capable steps only (`New Window` = always TRUE, `Go to Related Record` = TRUE iff its "New window" option is set), NULL for all other steps
+- **StepCalculations** — One row per positioned calculation of a step (derived in P3 from `Step_XML`): `Slot` (parent element of the calculation — `Name`, `height`, `URL`, `Title`, `value`, `repetition`, … or `Parameter:<type>` when directly under a `<Parameter>`), `Calc_Position` (the `@position` attribute — NOT step-unique, FileMaker restarts numbering in some parameter containers), `Slot_Seq` (1-based ordinal within one slot parent, e.g. JavaScript argument lists), `Calc_Text`. Covers what `Calculation_Text` cannot: window names vs. geometry, dialog title vs. message, URL vs. cURL options
 - **Layouts** — Layouts of the solution
 - **LayoutObjects** — All layout objects across all layouts (22 types, real container hierarchy via direct child axes; corpus reaches nesting depth 5)
 - **LayoutParts** — Layout sections (Header, Body, Footer, Sub-summaries; one row per part via `Part_Seq` — multiple sub-summaries of the same kind stay distinct; `Break_Field_*`/`Break_TO_*` = sub-summary break field)
@@ -50,6 +51,7 @@ The table names mirror the XML branches of the corresponding object types:
 - **VariableUsages** — Every individual variable usage with its context (script, field, layout)
 - **VariablesCatalog** — Aggregated overview per variable (set/read counts, scope, files)
 - **DuplicateAbsorptions** — Dup-absorption census (monitoring): parsed source-record counts per catalog × file × chunk, written in P1. The P6 view `v_check_absorbed_dups` compares against live row counts — a positive difference means the per-file upsert silently collapsed duplicate-UUID source objects (export defect class B-K3); reported as a warn finding in the import report
+- **v_script_block_tree** — MATERIALIZED per-step control-flow nesting (built with the analysis views): for every script step its Loop and If depth (`loop_depth_before/after`, `if_depth_before/after`, `block_depth_before`, raw `if_running_depth` for unbalanced-If detection). **Use this whenever branch scope matters** (is step X inside a Loop / which If level — e.g. dead-code or window-lifecycle reasoning); never reconstruct nesting by hand from sequential `Step_Index` reads. Partition key is `(File_Name, Script_ID)` — not `Script_UUID`, which is non-unique in merge-artifact cases
 
 ### Common columns
 
@@ -59,6 +61,11 @@ Every table contains:
 - A `UUID` column for unique referencing
 
 Use UUIDs for JOINs; the row order matches the FileMaker solution; script steps additionally carry `Step_Index`.
+
+**`Step_Index` is 0-based and gapless** (per script: `min = 0`, `max = n-1`). FileMaker's
+Script Workspace and every fm-lab user-facing surface count 1-based — **always render
+`Step_Index + 1` when quoting a step number to a user**, and subtract 1 when translating a
+user-quoted step number back into a `Step_Index` filter. Sort/join on the raw `Step_Index`.
 
 ## FieldsForTables — column details
 

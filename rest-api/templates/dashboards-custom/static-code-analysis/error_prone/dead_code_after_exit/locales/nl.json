@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Dode code na Exit Script",
+    "description": "Foutgevoeligheidsregel — een uitvoerbare stap volgt direct op een onvoorwaardelijke Exit Script of Halt Script in dezelfde vertakking. Die stap kan nooit draaien; daar geplaatste opruimlogica (bijv. Close Window) gebeurt stilzwijgend nooit."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Getroffen bestanden",
+    "findings_card.props.title": "Dode code na Exit Script",
+    "findings_table.props.searchPlaceholder": "Zoek bestand of script…",
+    "findings_table.props.empty.message": "Geen onbereikbare stap na Exit Script / Halt Script gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Stap",
+    "findings_table.props.columns[3].label": "Onbereikbare stap"
+  }
+}

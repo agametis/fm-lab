@@ -12,6 +12,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.9.6] — 2026-08-01
+
+A bugfix and refinement release: switching solutions in the web UI is fixed, script generation gets more precise, and the XML import sharpens its script-step and platform-compatibility data.
+
+- **Multi-solution switch in the web UI** — switching the active solution no longer breaks the app
+  - The API did not allow the request header that carries the per-request solution context, so browsers refused every call after a switch whenever the frontend talked to the API on a different origin
+  - Installations set up before v0.9.0 kept an absolute API URL in `apps/web/.env` and therefore ran cross-origin; setup now resets that legacy value to same-origin proxy mode, while a deliberately configured remote API host is left untouched
+  - The web UI now names the solution context when a request fails at transport level and offers a one-click reset to the server default, instead of only reporting a lost connection
+- **Documentation language fallback shown again** — when the help mirror is not installed for the selected language, the docs view again states which language it is actually showing
+- **Script generation** (`fm-generate-script`) — more precise and more robust
+  - **Fewer false positives** — an operator adjacent to a function name is no longer misread as a call, and bracket-group parsing of step parameters is hardened
+  - **Custom-function folders & link roles** — custom-function folders are captured in the catalog and additional link roles are resolved, closing where-used gaps
+- **XML import & static analysis** — sharper script and compatibility data
+  - **1-based script-step numbering** — step counts now match what FileMaker shows, multi-calculation steps are captured in full, and control-flow nesting depth is recorded
+  - **Window-logic and platform-compatibility** refinements feed the static-analysis dashboards more accurately
+
+---
+
 ## [0.9.5] — 2026-07-27
 
 A documentation release: the project docs grow from the getting-started manual into a full **reference** — the data model, the REST API, the SQL template library, and the SaXML source format are now documented end to end.
@@ -740,7 +758,8 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 <!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
      versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
      intentionally left unlinked and render as plain text. Add a line here per new tag. -->
-[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.5...HEAD
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.6...HEAD
+[0.9.6]: https://github.com/marcel-more/fm-lab/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/marcel-more/fm-lab/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/marcel-more/fm-lab/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/marcel-more/fm-lab/compare/v0.9.2...v0.9.3

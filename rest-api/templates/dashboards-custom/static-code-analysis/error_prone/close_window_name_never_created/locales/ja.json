@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "作成されない名前への Close Window",
+    "description": "エラー誘発ルール — Close Window が、インポートされたソリューション内のどの New Window、Go to Related Record、Set Window Title も生成しないウィンドウ名を対象にしています。このクローズは静かな no-op であり、片付けるはずだったウィンドウはすべての実行パスで開いたままになります。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "無効なクリーンアップ（リテラル名）",
+    "summary_kpi.props.items[2].label": "影響ファイル数",
+    "findings_card.props.title": "作成されない名前への Close Window",
+    "findings_table.props.searchPlaceholder": "ファイル、スクリプト、ウィンドウ名を検索…",
+    "findings_table.props.empty.message": "名前指定の Close Window はすべて生成されるウィンドウ名と一致します。",
+    "findings_table.props.columns[0].label": "重大度",
+    "findings_table.props.columns[1].label": "ファイル",
+    "findings_table.props.columns[2].label": "スクリプト",
+    "findings_table.props.columns[3].label": "ステップ",
+    "findings_table.props.columns[4].label": "ウィンドウ名"
+  }
+}

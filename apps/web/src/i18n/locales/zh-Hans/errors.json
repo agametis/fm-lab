@@ -16,5 +16,11 @@
     "body": "此解决方案导入时使用的目录版本早于应用所需的版本。请重新转换其 XML 导出，以按当前架构重建对象目录。",
     "versions": "目录：{{dbVersion}} · 应用需要：{{appVersion}}",
     "action": "前往 XML 转换"
+  },
+  "solutionContext": {
+    "heading": "针对解决方案“{{solution}}”的请求未能送达",
+    "body": "使用此解决方案上下文无法连接到 API。如果切换解决方案之前应用正常，请将选择重置为服务器默认值。",
+    "action": "重置选择",
+    "dismiss": "隐藏"
   }
 }

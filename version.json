@@ -1,8 +1,8 @@
 {
   "manifest_schema": "1.0",
-  "version": "0.9.5",
-  "generated_at": "2026-07-27T19:49:04.585Z",
-  "source_commit": "ceae6b4",
+  "version": "0.9.6",
+  "generated_at": "2026-08-01T22:22:50.089Z",
+  "source_commit": "6fe9a03",
   "components": {
     "rest_api": {
       "scheme": "A",
@@ -30,7 +30,7 @@
     },
     "schema": {
       "scheme": "B",
-      "version": "1.14.0",
+      "version": "1.16.0",
       "source": "sql/convert-xml/convert_xml_01_extract.sql",
       "on_change": "force_rebuild_db"
     },
@@ -42,7 +42,7 @@
     },
     "fm_spec": {
       "scheme": "B",
-      "version": "1.11.0",
+      "version": "1.11.1",
       "filemaker_coverage": "22",
       "source": "reference/fm_spec.meta.json",
       "on_change": "pull_reference_reload_api"

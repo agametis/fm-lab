@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "생성되지 않는 이름에 대한 Close Window",
+    "description": "오류 유발 규칙 — Close Window가 가져온 솔루션 어디에서도 New Window, Go to Related Record, Set Window Title이 생성하지 않는 창 이름을 대상으로 합니다. 이런 닫기는 조용한 no-op이며, 정리해야 할 창은 모든 실행 경로에서 열린 채 남습니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 항목",
+    "summary_kpi.props.items[1].label": "무효한 정리(리터럴 이름)",
+    "summary_kpi.props.items[2].label": "영향받은 파일",
+    "findings_card.props.title": "생성되지 않는 이름에 대한 Close Window",
+    "findings_table.props.searchPlaceholder": "파일, 스크립트 또는 창 이름 검색…",
+    "findings_table.props.empty.message": "이름으로 지정된 모든 Close Window가 생성되는 창 이름과 일치합니다.",
+    "findings_table.props.columns[0].label": "심각도",
+    "findings_table.props.columns[1].label": "파일",
+    "findings_table.props.columns[2].label": "스크립트",
+    "findings_table.props.columns[3].label": "스텝",
+    "findings_table.props.columns[4].label": "창 이름"
+  }
+}

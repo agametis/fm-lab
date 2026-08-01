@@ -37,7 +37,7 @@ Part of the [FM-Lab schema](../Schema.md) · Object catalog · enumeration of [O
 | Object_Type | Derived from | Description |
 |---|---|---|
 | `File` | [FilesCatalog](FilesCatalog.md) | The FileMaker file itself — owner anchor for file-level options and triggers (UUID = the export's root UUID) |
-| `Folder` | [ScriptCatalog](../catalog-tables/ScriptCatalog.md), [Layouts](../catalog-tables/Layouts.md) | Folder of the script or layout tree (entries flagged `isFolder`), target of `parent_folder` links |
+| `Folder` | [ScriptCatalog](../catalog-tables/ScriptCatalog.md), [Layouts](../catalog-tables/Layouts.md), [CustomFunctionsCatalog](../catalog-tables/CustomFunctionsCatalog.md) | Folder of the script, layout or custom-function tree (entries flagged `isFolder`), target of `parent_folder` links |
 | `Variable` | [VariablesCatalog](../catalog-tables/VariablesCatalog.md) | Script variable (`$`, `$$`, `$$$`); UUID derived from scope + anchor + name |
 | `BuiltinFunction` | [DDR_Calculations](../catalog-tables/DDR_Calculations.md) | Built-in FileMaker function referenced by a calculation, target of `calls_function` links |
 | `PluginFunction` | [PluginFunctionUsages](../catalog-tables/PluginFunctionUsages.md) | External plugin function (qualified as `MBS:<Component.Function>`), target of `calls_pluginfunction` |

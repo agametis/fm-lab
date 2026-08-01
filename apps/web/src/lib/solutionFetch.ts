@@ -15,12 +15,22 @@ import { getSelectedSolution, setSelectedSolution } from './solutionStore';
  *    Then the selection is cleared, a `solution` URL param is stripped and the
  *    app reloads once against the server default — instead of every view
  *    erroring out. A session flag prevents reload loops.
+ * 3. Transport-level failure while a solution IS selected: a rejected fetch
+ *    never yields a response, so (2) can never fire and every view degrades to
+ *    a bare "failed to fetch". The event emitted here lets the UI name the
+ *    solution context as a suspect and offer a way back to the server default.
  *
  * EventSource cannot carry headers — SSE endpoints take `?solution=` instead
  * (the XML import page already passes it explicitly).
  */
 
 const RESET_FLAG = 'fmlab.solution.resetAt';
+
+/**
+ * Fired on `window` when an API request with an explicit solution selection
+ * fails at transport level. `detail.solution` carries the selection in effect.
+ */
+export const SOLUTION_REQUEST_BLOCKED = 'fmlab:solution-request-blocked';
 
 function isApiUrl(url: string): boolean {
   return url.startsWith(`${API_BASE}/api`) || url.startsWith('/api');
@@ -68,6 +78,16 @@ export function handleStaleSolutionSelection(selected: string): void {
   stripSolutionParamAndReload();
 }
 
+/**
+ * Auswahl auf den Server-Default zurücksetzen und neu laden — die vom Benutzer
+ * ausgelöste Variante von `handleStaleSolutionSelection` (ohne Loop-Guard: ein
+ * Klick ist kein Automatismus, der sich aufschaukeln könnte).
+ */
+export function resetSolutionSelection(): void {
+  setSelectedSolution(null);
+  stripSolutionParamAndReload();
+}
+
 let installed = false;
 
 export function installSolutionFetch(): void {
@@ -88,7 +108,22 @@ export function installSolutionFetch(): void {
       request = new Request(request, { headers });
     }
 
-    const response = await original(request);
+    let response: Response;
+    try {
+      response = await original(request);
+    } catch (err) {
+      // Rejected fetch = the request never completed at HTTP level: server
+      // unreachable, network down — or the browser refused to send it at all
+      // (a cross-origin preflight that did not clear). There is no response to
+      // inspect, so the recovery below cannot help; announce the suspicion
+      // instead and let the caller's own error handling proceed unchanged.
+      if (selected) {
+        window.dispatchEvent(
+          new CustomEvent(SOLUTION_REQUEST_BLOCKED, { detail: { solution: selected } }),
+        );
+      }
+      throw err;
+    }
 
     // Stale-selection recovery — only when OUR selection is the rejected one
     // (admin calls may legitimately 404 for other ids).

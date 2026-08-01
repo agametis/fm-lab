@@ -66,7 +66,9 @@ SELECT
     -- not(ancestor::repetition): schließt eine BERECHNETE Repetition der Ziel-Feldreferenz
     -- aus, die sonst (in Dokument-Reihenfolge vorn) statt der eigentlichen Berechnung
     -- gegriffen würde. Muss mit der DOM-Fassung (convert_xml_01_extract.sql) identisch bleiben.
-    ws_restore(xml_extract_text(step_xml, '//Calculation[not(ancestor::repetition)]/Text')[1]) as Calculation_Text,
+    -- not(ancestor::Bounds): analog Basis-Block — ohne Namens-Berechnung rückte sonst
+    -- die erste Geometrie-Berechnung (<Bounds><height>…) als Calculation_Text nach.
+    ws_restore(xml_extract_text(step_xml, '//Calculation[not(ancestor::repetition)][not(ancestor::Bounds)]/Text')[1]) as Calculation_Text,
     xml_extract_text(step_xml, '//Boolean/@type')[1] as Boolean_Type,
     xml_extract_text(step_xml, '//Boolean/@value')[1] as Boolean_Value,
     fn.File_Name as File_Name

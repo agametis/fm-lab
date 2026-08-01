@@ -78,7 +78,9 @@ each statement as `duckdb db/fm_catalog.duckdb -c "…"`. Every template filters
 `File_Name` AND the type UUID, because names and numeric FM IDs are only unique per file.
 
 - **Script** [S1 header, S2 steps]: the step-by-step flow is the centrepiece of the
-  summary — number each step with `Step_Index`, mark disabled steps `(disabled)`, and
+  summary — number each step **1-based as `Step_Index + 1`** (the DB column is 0-based;
+  FileMaker's Script Workspace and the fm-lab frontend count from 1 — see
+  `schema-reference.md` → Common columns), mark disabled steps `(disabled)`, and
   prefer `DDR_ScriptSteps.Step_Text` when present. Then dependencies via Step 3.
 - **Field** [F1; D1 for DDR chunks if `DDR_Hash`/`AE_Calc_Hash` present]: evaluate
   `Field_Type` (Normal/Calculated/Summary), `Data_Type`, `Field_Comment`, `Is_Global`;
@@ -158,7 +160,7 @@ that the purpose was derived from the behaviour.>
 ### Flow  *(scripts only)*
 1. **<Step_Name>** — <DDR_Step_Text if present, otherwise Step_Name + Calculation_Text>
 2. ...
-   *(mark disabled steps with `(disabled)`)*
+   *(list numbers = `Step_Index + 1`, 1-based; mark disabled steps with `(disabled)`)*
 
 ### Uses
 <List of objects this object calls / references, grouped by Link_Role>

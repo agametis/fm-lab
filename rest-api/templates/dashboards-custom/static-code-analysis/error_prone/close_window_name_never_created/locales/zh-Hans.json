@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Close Window 指向从未创建的名称",
+    "description": "易错规则 — Close Window 指向的窗口名称在整个导入的解决方案中没有任何 New Window、Go to Related Record 或 Set Window Title 生成。这样的关闭是静默的 no-op：本应清理的窗口在所有执行路径上都保持打开。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "无效清理（字面名称）",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "findings_card.props.title": "Close Window 指向从未创建的名称",
+    "findings_table.props.searchPlaceholder": "搜索文件、脚本或窗口名称…",
+    "findings_table.props.empty.message": "每个按名称的 Close Window 都匹配一个已生成的窗口名称。",
+    "findings_table.props.columns[0].label": "严重程度",
+    "findings_table.props.columns[1].label": "文件",
+    "findings_table.props.columns[2].label": "脚本",
+    "findings_table.props.columns[3].label": "步骤",
+    "findings_table.props.columns[4].label": "窗口名称"
+  }
+}

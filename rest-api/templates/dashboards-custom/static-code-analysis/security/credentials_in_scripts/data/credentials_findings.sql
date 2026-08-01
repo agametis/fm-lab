@@ -59,7 +59,7 @@ SELECT
     Script_UUID                                        AS uuid,
     File_Name                                          AS file,
     Script_Name                                        AS script,
-    Step_Index                                         AS step_index,
+    Step_Index + 1                                         AS step_index,
     Step_Name                                          AS step_name,
     matched_keyword                                    AS keyword,
     CASE

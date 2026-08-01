@@ -1,0 +1,58 @@
+{
+  "id": "window_opened_without_close",
+  "version": "1.0.0",
+  "title": "Window opened without a later Close Window",
+  "description": "Error-prone rule — a step opens a new window (New Window, or Go to Related Record with the New-window option) and no Close Window follows anywhere later in the same script. Each execution leaks one window; in loops the leak multiplies, and on FileMaker Server a leaked window can silently replace the found set of the calling context.",
+  "author": "fm-lab rules",
+  "icon": "app-window",
+  "category": "error_prone",
+  "tags": [
+    "rule",
+    "pmd",
+    "error_prone"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "error_prone",
+    "rationale": "A window opened per call and never closed accumulates — especially when the script runs once per record in a loop. This check is a heuristic: a callee may close the window, and a Close Window somewhere in the script does not prove every exit path reaches it.",
+    "remediation": "Close the window in the same script where it goes out of scope — name the window at the opening step and close it by that name on every exit path (including error branches before Exit Script).",
+    "meta": {
+      "name": "Window opened without a later Close Window",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Error-prone rule — a window-opening step has no later Close Window in the same script; each execution leaks one window (heuristic, callee may close).",
+      "created": "2026-07-31",
+      "references": []
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

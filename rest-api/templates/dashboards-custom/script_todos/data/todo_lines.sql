@@ -62,7 +62,7 @@ SELECT
         '&lt;', '<'), '&gt;', '>'), '&quot;', '"'), '&#39;', '''')
         , '&amp;', '&')              AS comment,
     search_term                         AS search_term,
-    Step_Index                          AS step_index
+    Step_Index + 1                          AS step_index
 FROM classified
 WHERE pattern IS NOT NULL
   AND ( getvariable('pattern') IS NULL OR getvariable('pattern') = ''

@@ -27,7 +27,9 @@ A failure in lint/resolve/gate goes back to P1 with the findings — never
 1. Read the conventions block in `docs/agents/codegen-registry.md`
    (function-name locale, naming language). Fill gaps by inspecting the
    catalog (existing script names, comments) — never from the conversation
-   language.
+   language. If `variable_init_check` is `on` there, pass `--check-var-init`
+   to `fmgen.py` (or export `FMGEN_CHECK_VAR_INIT=1`) — it is a house
+   convention and is off by default.
 2. Identify the target file and every object the script will touch (layouts,
    fields, scripts, value lists) and verify them in `ObjectCatalog` **before**
    drafting. Ask the user which file is the target if ambiguous.
@@ -48,6 +50,14 @@ Rules (fm-spec `script-text-notation.md` v0.1, condensed):
 - References to objects the script itself creates or that must be created
   first: `{{NEW:Field:TO::Name}}` — they surface in the report as
   "create before paste".
+- The same declaration works **inside a calculation**, but only for custom
+  functions: `{{NEW:CustomFunction:CleanTags}} ( $x )` marks a function that
+  is not in the catalog yet. It is stripped before emission (the snippet
+  contains `CleanTags ( $x )`), listed as "create before paste", and exempt
+  from the existence and arity checks — snippet-wide, so declaring it once
+  covers every use in the draft. **Unmarked** calls stay fully checked; a typo
+  like `Substitue (` remains a hard error. Creating the function before the
+  paste is on you.
 - Dialog-only options use extension labels: `Button1: "OK"`,
   `Input1: TO::Field`, `Input1Label: "..."`.
 
@@ -91,9 +101,17 @@ Always include, in this order:
 2. The resolution report: resolved refs (real IDs), new objects to create
    before paste, assumptions.
 3. Gate protocol summary — each failed/skipped check by name; never claim
-   "validated" when a check was skipped. Report G109-doc-only warnings
-   explicitly: the flagged enum values are documented by Claris but not
-   roundtrip-verified — never present them as verified.
+   "validated" when a check was skipped. Report `warning` checks explicitly,
+   they are findings the user has to act on:
+   - `G109-doc-only` — enum values documented by Claris but not
+     roundtrip-verified; never present them as verified.
+   - `G304-calc-arity` — a custom function is called with the wrong number of
+     arguments. `warning` means the catalog declares no parameters for it (it
+     may be a custom-function folder, which the catalog cannot distinguish);
+     `fail` means a genuine count mismatch.
+   - `G305-var-init` — a variable is written as a step target without a
+     preceding `Set Variable`. Opt-in convention (P0); `skipped` when it is off
+     or when the gate ran without the IR.
 4. Redelivery warning: pasting twice duplicates the script. Snippet paste can
    only ADD scripts, not edit in place.
 5. Verification recommendation: paste, save, copy back to clipboard, diff

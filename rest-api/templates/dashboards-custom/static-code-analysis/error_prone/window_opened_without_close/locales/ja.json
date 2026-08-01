@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Close Window が後続しないウィンドウのオープン",
+    "description": "エラー誘発ルール — ステップが新しいウィンドウを開き（New Window、または「新規ウィンドウ」オプション付きの Go to Related Record）、同じスクリプト内でその後に Close Window が続きません。実行のたびにウィンドウが 1 つリークし、ループ内ではリークが倍増します。FileMaker Server では、リークしたウィンドウが呼び出し元コンテキストの対象レコードを静かに置き換えることがあります。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "影響ファイル数",
+    "findings_card.props.title": "Close Window が後続しないウィンドウのオープン",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "ウィンドウを開くすべてのステップに、同じスクリプト内で Close Window が続いています。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "ステップ",
+    "findings_table.props.columns[3].label": "オープンするステップ"
+  }
+}

@@ -366,6 +366,19 @@ def decompile_step(
         enabled=enabled, options=_display_order(ex.options, ref, step_id),
     )
     text = render_canonical(ps, ref)
+    # FileMaker keeps a multi-line comment in ONE step, but the text form has no
+    # continuation for comment payloads — a comment line ends at the end of its
+    # line (T1/T6), otherwise a stray bracket in the prose would swallow the
+    # following steps. One comment step per line is the only rendering parse()
+    # can read back; it changes the step count, so it is recorded as lossy
+    # rather than shipped as text that silently fails to round-trip.
+    if step_id == 89 and "\n" in str(ps.options.get("text", "")):
+        payload = str(ps.options["text"]).split("\n")
+        prefix = "" if enabled else "// "
+        text = "\n".join(f"{prefix}# {ln}" if ln else f"{prefix}#" for ln in payload)
+        ds.issues.append(
+            f"multi-line comment split into {len(payload)} comment steps "
+            "(the text form has no multi-line comment)")
     if extras:
         joined = " ; ".join(extras)
         if text.endswith(" ]"):
@@ -413,7 +426,12 @@ def decompile(
                 marker += f" ({ds.canonical_name})"
             lines.append(f"{indent}{marker}: {issue}")
         if ds.text is not None:
-            lines.append(indent + ds.text)
+            if ds.step_id == 89 and "\n" in ds.text:
+                # split multi-line comment: every line is its own step and gets
+                # its own block indentation
+                lines.extend(indent + t for t in ds.text.split("\n"))
+            else:
+                lines.append(indent + ds.text)
         if name in _BLOCK_OPEN or name in _BLOCK_MID:
             depth += 1
     res.text = "\n".join(lines) + "\n"

@@ -35,6 +35,15 @@ generation time.
 | Script/object naming language | `auto` | derive from ScriptCatalog naming |
 | Comment language in generated scripts | `auto` | derive from existing script comments |
 | MBS plugin in use | yes | PluginFunctionUsages non-empty |
+| `variable_init_check` | `off` | maintainer decision — see below |
+
+`variable_init_check` is a **house convention**, not FileMaker semantics: a step
+that writes into `$x` / `$$x` creates the variable by itself, so requiring a
+preceding `Set Variable` is a typo net some teams want and others do not. Set it
+to `on` only where the team actually follows the convention — otherwise the check
+warns on perfectly correct scripts. `fm-generate-script` reads this row in P0 and
+passes it on as `--check-var-init` / `FMGEN_CHECK_VAR_INIT`; left at `off` the
+gate reports `G305-var-init` as *skipped*, never as passed.
 
 ## Maintenance
 

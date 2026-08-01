@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Toter Code nach Exit Script",
+    "description": "Fehleranfälligkeits-Regel — ein ausführbarer Schritt folgt direkt auf ein unbedingtes Exit Script oder Halt Script im selben Zweig. Dieser Schritt kann nie laufen; dort platziertes Cleanup (z.B. Close Window) findet still nie statt."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Toter Code nach Exit Script",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Kein unerreichbarer Schritt nach Exit Script / Halt Script gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Schritt",
+    "findings_table.props.columns[3].label": "Unerreichbarer Schritt"
+  }
+}

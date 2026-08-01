@@ -52,6 +52,31 @@ if [ -f "$_env" ] && grep -qE '^[[:space:]]*REFERENCE_DUCKDB_PATH=.*fm_reference
   fi
 fi
 
+# 1b2 · auto-heal the legacy absolute API base in an EXISTING apps/web/.env ─────────
+# The web seed used to carry `VITE_API_URL=http://localhost:3003`, i.e. the browser
+# talked to the API cross-origin. It now defaults to EMPTY = same-origin proxy mode
+# (relative /api, forwarded server-side by the Vite dev server / a reverse proxy), which
+# is independent of how port 3003 happens to be forwarded. An old checkout keeps its
+# previously-seeded value — the `cp -n` above never overwrites it — and therefore stays
+# on the cross-origin path with its extra CORS surface and port assumptions.
+# Surgical: only the EXACT legacy value is rewritten, so a deliberately configured remote
+# API host survives untouched. Idempotent (a healed .env no longer matches).
+_webenv="apps/web/.env"
+if [ -f "$_webenv" ] && grep -qE '^[[:space:]]*VITE_API_URL=http://localhost:3003[[:space:]]*$' "$_webenv" 2>/dev/null; then
+  _tmp="$_webenv.heal.$$"
+  if awk '
+        /^[[:space:]]*VITE_API_URL=http:\/\/localhost:3003[[:space:]]*$/ {
+          print "VITE_API_URL="; next
+        }
+        { print }
+      ' "$_webenv" > "$_tmp" 2>/dev/null && mv "$_tmp" "$_webenv"; then
+    echo "Auto-healed legacy VITE_API_URL in apps/web/.env (→ empty = same-origin proxy mode)."
+  else
+    rm -f "$_tmp"
+    echo "⚠  Could not auto-heal apps/web/.env — set VITE_API_URL= (empty) manually." >&2
+  fi
+fi
+
 # 1c · remove orphaned OLD reference artifacts left by a pre-rename checkout ─────────
 # The reference DB used to live (double-deployed) as rest-api/db/fm_reference.duckdb +
 # docs/claris-help/fm_reference.duckdb with a rest-api/db/fm_reference.meta.json sidecar;

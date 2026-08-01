@@ -77,12 +77,145 @@ def strip_strings(text: str) -> str:
     return "".join(out)
 
 
+def strip_comments(text: str) -> str:
+    """Replace FileMaker calc comments ('//' to end of line, '/* … */') with
+    spaces, length- and line-preserving so match offsets stay valid.
+
+    Comment prose is not code: without this, the multi-word tolerance of CALL_RE
+    glues the words in front of a call onto its name ('// liefert die Anzahl'
+    followed by 'Get (' reads as the name 'liefert die Anzahl Get'). String
+    literals win — a '//' inside a string is text, not a comment — so this pass
+    tracks strings itself and must run before strip_strings()."""
+    out, i, n, in_str = [], 0, len(text), False
+    while i < n:
+        ch = text[i]
+        if in_str:
+            if ch == "\\" and i + 1 < n:
+                out.append(text[i:i + 2]); i += 2; continue
+            if ch == '"':
+                in_str = False
+            out.append(ch); i += 1; continue
+        if ch == '"':
+            in_str = True; out.append(ch); i += 1; continue
+        if ch == "/" and i + 1 < n and text[i + 1] == "/":
+            while i < n and text[i] != "\n":
+                out.append(" "); i += 1
+            continue
+        if ch == "/" and i + 1 < n and text[i + 1] == "*":
+            end = text.find("*/", i + 2)
+            end = n if end < 0 else end + 2
+            out.append("".join(" " if c != "\n" else "\n" for c in text[i:end]))
+            i = end
+            continue
+        out.append(ch); i += 1
+    return "".join(out)
+
+
 # Function-call anchor for calc scanning: an identifier (optionally a multi-word
 # name) immediately before an opening paren. Shared by the lint (arity/locale
 # checks) and the resolver (custom-function / unknown-function detection) so both
-# agree on what counts as "a function call". Always match on a string-stripped
-# copy so parentheses inside string literals never register as calls.
-CALL_RE = re.compile(r"([A-Za-z][A-Za-z0-9_.]*(?:\s[A-Za-z][A-Za-z0-9_.]*)*?)\s*\(")
+# agree on what counts as "a function call". Always match on a string- and
+# comment-stripped copy so parens inside literals or prose never register as
+# calls: strip_strings(strip_comments(calc)).
+# The name class must cover every character FileMaker allows in a custom-function
+# name, not just ASCII letters: a leading underscore ("_EncodeCR") or a non-ASCII
+# letter ("Größe") would otherwise not start a name, and the match would begin
+# mid-word ("e (") — a name that resolves against nothing. [^\W\d] is the
+# unicode-aware "letter or underscore".
+_NAME = r"[^\W\d][\w.]*"
+CALL_RE = re.compile(rf"({_NAME}(?:\s{_NAME})*?)\s*\(")
+
+# FileMaker's word operators are spelled with ordinary name characters, so the
+# multi-word tolerance of CALL_RE (required for custom functions with spaces,
+# e.g. "Check eMail") glues them — and the bare operand in front of them — onto
+# the function name: "1 or Get (" reads as the name "or Get", "Kunde::Name and
+# Get (" as "Name and Get", and "not ( … )" as the name "not" although the paren
+# only groups. call_name_candidates() undoes that gluing.
+# The German UI localizes them (Claris help, "Logische Operatoren"); every other
+# mirrored language keeps the EN spelling.
+WORD_OPERATORS = frozenset({"and", "or", "not", "xor",
+                            "und", "oder", "nicht", "xoder"})
+
+
+def call_name_candidates(token: str) -> list[str]:
+    """Function-name candidates for a CALL_RE match, longest first.
+
+    The full token comes first so a custom function whose own name starts with
+    an operator word still wins over the split form; each further candidate
+    drops everything up to and including one word operator. An empty list means
+    the paren groups an expression instead of calling something: nothing can be
+    called through an operator, so a token ending in one is not a name.
+
+        "Check eMail"    -> ["Check eMail"]
+        "or Get"         -> ["or Get", "Get"]
+        "Name and Get"   -> ["Name and Get", "Get"]
+        "not"            -> []
+        "Summe or"       -> []
+
+    Consumers try the candidates in order against their positive lists and fall
+    back to the last (shortest) one for reporting."""
+    words = token.split()
+    if not words or words[-1].casefold() in WORD_OPERATORS:
+        return []
+    out = [" ".join(words)]
+    for i, w in enumerate(words):
+        if w.casefold() in WORD_OPERATORS and i + 1 < len(words):
+            cand = " ".join(words[i + 1:])
+            if cand not in out:
+                out.append(cand)
+    return out
+
+
+def matching_paren(text: str, open_idx: int) -> int:
+    """Index of the ')' closing the '(' at open_idx, or -1 when unbalanced.
+
+    Quote-aware: a paren inside a string literal does not count. Together with
+    split_args() this turns a CALL_RE match into an argument count — used by the
+    lint for built-in arity (L006) and by the resolver for custom-function arity.
+    """
+    depth, in_str, i = 0, False, open_idx
+    while i < len(text):
+        ch = text[i]
+        if in_str and ch == "\\" and i + 1 < len(text):
+            i += 2; continue
+        if ch == '"':
+            in_str = not in_str
+        elif not in_str:
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth == 0:
+                    return i
+        i += 1
+    return -1
+
+
+def split_args(argstr: str) -> list[str]:
+    """Split an argument list on top-level ';' (quote-, paren- and bracket-aware).
+
+    Empty parts are dropped, so `f ( )` counts as zero arguments — which is what
+    both arity checks compare against.
+    """
+    parts, buf, depth, in_str, i = [], [], 0, False, 0
+    while i < len(argstr):
+        ch = argstr[i]
+        if in_str and ch == "\\" and i + 1 < len(argstr):
+            buf.append(argstr[i:i + 2]); i += 2; continue
+        if ch == '"':
+            in_str = not in_str
+        elif not in_str:
+            if ch in "([{":
+                depth += 1
+            elif ch in ")]}":
+                depth -= 1
+            elif ch == ";" and depth == 0:
+                parts.append("".join(buf)); buf = []; i += 1; continue
+        buf.append(ch)
+        i += 1
+    if buf:
+        parts.append("".join(buf))
+    return [p for p in parts if p.strip()]
 
 
 # ------------------------------------------------------------------- segmenter
@@ -98,35 +231,62 @@ class RawStep:
     params_raw: str | None = None   # inside of the bracket group, unsplit
     raw: str = ""                   # full (possibly multi-line) source text
     errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
-def _scan_state(text: str, depth: int, in_str: bool) -> tuple[int, bool]:
-    """Advance (bracket depth, inside-string) over text."""
+def _scan_state(text: str, depth: int, in_str: bool,
+                in_block: bool = False) -> tuple[int, bool, bool]:
+    """Advance (bracket depth, inside-string, inside block comment) over text.
+
+    The state decides what counts as a continuation line (T7), so anything that
+    is prose rather than code must not move it: a lone '(' or an odd number of
+    '"' inside a calc comment would otherwise glue the following line onto this
+    step — silently, because a phantom continuation produces no finding.
+
+    Callers pass the line WITHOUT a leading '// ' disable prefix (T6): that
+    prefix marks a disabled step, not a comment, and its continuation lines
+    carry it too.
+    """
     i = 0
     while i < len(text):
         ch = text[i]
-        if in_str and ch == "\\" and i + 1 < len(text):
-            i += 2; continue
+        if in_block:
+            if text.startswith("*/", i):
+                in_block = False; i += 2; continue
+            i += 1; continue
+        if in_str:
+            if ch == "\\" and i + 1 < len(text):
+                i += 2; continue
+            if ch == '"':
+                in_str = False
+            i += 1; continue
         if ch == '"':
-            in_str = not in_str
-        elif not in_str:
-            if ch in "[({":
-                depth += 1
-            elif ch in "])}":
-                depth -= 1
+            in_str = True; i += 1; continue
+        if text.startswith("//", i):
+            break  # rest of the line is a calc comment
+        if text.startswith("/*", i):
+            in_block = True; i += 2; continue
+        if ch in "[({":
+            depth += 1
+        elif ch in "])}":
+            depth -= 1
         i += 1
-    return max(depth, 0), in_str
+    return max(depth, 0), in_str, in_block
 
 
 def segment(text: str, ref: Reference) -> list[RawStep]:
     lookup = ref.step_name_lookup()
     steps: list[RawStep] = []
-    depth, in_str = 0, False
+    depth, in_str, in_block = 0, False, False
 
     for lineno, line in enumerate(text.split("\n"), start=1):
         stripped = line.strip()
+        # a continuation belongs to the step it continues — capture that step's
+        # disabled state before this line possibly appends a new one
+        continuing = depth > 0 or in_str or in_block
+        prev_disabled = bool(steps) and continuing and not steps[-1].enabled
         match = None
-        if stripped and depth == 0 and not in_str:
+        if stripped and not continuing:
             match = _match_head(stripped, lookup)
         if match is not None:
             head, step_id, source, is_comment = match
@@ -135,18 +295,42 @@ def segment(text: str, ref: Reference) -> list[RawStep]:
                 enabled=not stripped.startswith("// "), is_comment=is_comment,
                 raw=line,
             ))
-        elif steps and (depth > 0 or in_str):
+        elif steps and continuing:
             # genuine continuations (multi-line calcs) always sit inside an
-            # open bracket group or string (T7); at depth 0 an unmatched line
-            # is an unknown step, not a continuation
+            # open bracket group, string or block comment (T7); at depth 0 an
+            # unmatched line is an unknown step, not a continuation
             steps[-1].raw += "\n" + line
+            # Structural guard: a continuation that reads like a step name is
+            # almost always a swallowed step — the line above left a bracket or
+            # a comment open. Silent merges produce no other finding (the gate
+            # only ever sees the steps that survived), so say it here. Inside a
+            # string literal the same text is just text, so that case is quiet.
+            if not in_str and stripped and _match_head(stripped, lookup) is not None:
+                steps[-1].warnings.append(
+                    f"line {lineno}: '{_ellipsis(stripped, 40)}' reads like a step "
+                    f"but continues line {steps[-1].line} — check that line for an "
+                    "unclosed bracket, quote or comment")
         elif stripped:
             steps.append(RawStep(
                 line=lineno, head=stripped.split("[")[0].strip(), step_id=None,
                 match_source=None, raw=line,
                 errors=[f"line {lineno}: no known step name at line start"],
             ))
-        depth, in_str = _scan_state(line, depth, in_str)
+
+        # A comment step ends hard at the end of its line. Its payload is
+        # arbitrary prose: an unbalanced '(' would pull the next line into the
+        # comment, an unbalanced '[' the whole rest of the draft — in both
+        # cases silently, since a phantom continuation produces no finding.
+        if match is not None and match[3]:
+            continue
+        # The '//' of a disabled step (T6) is a prefix, not a comment — strip it
+        # so _scan_state does not read the rest of the line as commented out.
+        scan = line
+        if (match is not None and stripped.startswith("// ")) or \
+                (match is None and prev_disabled and stripped.startswith("//")):
+            cut = line.index("//")
+            scan = line[:cut] + line[cut + 2:]
+        depth, in_str, in_block = _scan_state(scan, depth, in_str, in_block)
 
     _extract_params(steps)
     return steps
@@ -229,6 +413,12 @@ _FIELD_REF_RE = re.compile(
 _QUOTED_TO_RE = re.compile(r'^"(.*)"\s*\(\s*([^)]+?)\s*\)$', re.S)
 _QUOTED_RE = re.compile(r'^"(.*)"$', re.S)
 _NEW_RE = re.compile(r"^\{\{NEW:(\w+):(.+)\}\}$", re.S)
+# The same declaration INSIDE a calculation, where it marks one token of a
+# larger expression instead of the whole parameter value — used for a custom
+# function that does not exist in the catalog yet ("create before paste").
+# Unanchored on purpose; the resolver strips every match before emission, so a
+# marker never reaches FileMaker.
+NEW_IN_CALC_RE = re.compile(r"\{\{NEW:(\w+):([^{}]+)\}\}")
 # A script-local variable ($x / $$x). Only ever accepted where a step writes
 # its result into a target (see _coerce) — never as an object reference.
 _VAR_RE = re.compile(r"^\$\$?[A-Za-z_][\w.]*$")
@@ -282,7 +472,8 @@ class ParsedStep:
 def parse_step(st: RawStep, ref: Reference) -> ParsedStep:
     canonical = ref.steps().get(st.step_id, {}).get("canonical_name", st.head)
     ps = ParsedStep(line=st.line, step_id=st.step_id, canonical_name=canonical,
-                    enabled=st.enabled, raw=st.raw.strip(), errors=list(st.errors))
+                    enabled=st.enabled, raw=st.raw.strip(), errors=list(st.errors),
+                    warnings=list(st.warnings))
 
     if st.step_id == 89:  # comment: single positional text
         # Keep the payload verbatim — a whitespace-only body is an intentional

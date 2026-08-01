@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Código muerto tras Exit Script",
+    "description": "Regla de propensión a errores — un paso ejecutable sigue directamente a un Exit Script o Halt Script incondicional en la misma rama. Ese paso nunca puede ejecutarse; la limpieza colocada allí (p. ej. Close Window) nunca sucede."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Código muerto tras Exit Script",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o script…",
+    "findings_table.props.empty.message": "No se encontró ningún paso inalcanzable tras Exit Script / Halt Script.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Paso",
+    "findings_table.props.columns[3].label": "Paso inalcanzable"
+  }
+}

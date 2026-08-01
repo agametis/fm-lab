@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Close Window auf nie erzeugten Namen",
+    "description": "Fehleranfälligkeits-Regel — ein Close Window zielt auf einen Fensternamen, den kein New Window, Go to Related Record oder Set Window Title irgendwo in der importierten Lösung erzeugt. Ein solcher Close ist ein stilles No-op: das Fenster, das er aufräumen sollte, bleibt auf jedem Ausführungspfad offen."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Totes Cleanup (Literal-Name)",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "findings_card.props.title": "Close Window auf nie erzeugten Namen",
+    "findings_table.props.searchPlaceholder": "Datei, Script oder Fenstername suchen…",
+    "findings_table.props.empty.message": "Jedes Close Window per Name trifft einen erzeugten Fensternamen.",
+    "findings_table.props.columns[0].label": "Schweregrad",
+    "findings_table.props.columns[1].label": "Datei",
+    "findings_table.props.columns[2].label": "Script",
+    "findings_table.props.columns[3].label": "Schritt",
+    "findings_table.props.columns[4].label": "Fenstername"
+  }
+}

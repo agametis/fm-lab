@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Janela aberta sem Close Window posterior",
+    "description": "Regra de propensão a erros — um passo abre uma nova janela (New Window ou Go to Related Record com a opção de nova janela) e nenhum Close Window segue depois no mesmo script. Cada execução vaza uma janela; em loops o vazamento se multiplica e, no FileMaker Server, uma janela vazada pode substituir silenciosamente o conjunto encontrado do contexto chamador."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Janela aberta sem Close Window posterior",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Cada passo que abre janela é seguido por um Close Window em seu script.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Passo",
+    "findings_table.props.columns[3].label": "Passo de abertura"
+  }
+}

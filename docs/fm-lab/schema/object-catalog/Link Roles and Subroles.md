@@ -54,7 +54,7 @@ The *Source → Target* column lists the documented carrier types; a role can ha
 | `privilege_set`        | Account → PrivilegeSet                                                        | The account is assigned this privilege set                      |
 | `reads_field`          | Script/Field/CustomFunction/ LayoutObject/PrivilegeSet → Field                | A step or calculation reads the field                           |
 | `reads_variable`       | Script/Field/CustomFunction/ LayoutObject/PrivilegeSet → Variable             | A step or calculation reads the variable                        |
-| `references_field`     | Script/LayoutObject → Field                                                   | Fallback role for field references of uncurated step types      |
+| `references_field`     | Script/LayoutObject → Field                                                   | Field reference whose direction is not differentiated (see below) |
 | `right_field`          | Relationship → Field                                                          | Join-predicate field of the right side                          |
 | `right_table`          | Relationship → TableOccurrence                                                | Right table occurrence of the relationship                      |
 | `sets_field`           | Script/LayoutObject → Field                                                   | Set-Field-class steps write the field                           |
@@ -72,6 +72,10 @@ The *Source → Target* column lists the documented carrier types; a role can ha
 | `uses_theme`           | Layout → Theme                                                                | The layout uses this theme                                      |
 | `uses_valuelist`       | LayoutObject/Field → ValueList                                                | Field control uses the list; field validation by list           |
 | `validates_by_calc`    | Field → Field/CustomFunction                                                  | A field-validation calculation references the target            |
+
+**On `references_field`.** A script step's field role comes from an internal map keyed by step ID. Two kinds of reference end up in the undifferentiated bucket. A step type that is not in the map at all falls back to it — where-used stays intact, only the role is coarse; a pipeline check reports such step types so they can be curated. And a handful of steps carry a source field *and* a target field at once (the AI steps around embeddings and model responses): one role per step ID cannot express both directions, and field references are extracted without the option they came from, so those steps are mapped to `references_field` deliberately rather than to a misleading `sets_field` or `reads_field`.
+
+Reading a role off a step's option type is unreliable in the other direction, too: in the [fm-spec](../../Wiki/fm-spec.md) reference, `target` describes the XML shape of an option, not the direction of the data. Write to Data File carries its field as a `target` option although the field is read from — hence its `reads_field` role.
 
 ### Containment roles (8)
 

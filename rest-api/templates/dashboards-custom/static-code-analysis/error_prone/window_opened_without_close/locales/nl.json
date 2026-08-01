@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Venster geopend zonder later Close Window",
+    "description": "Foutgevoeligheidsregel — een stap opent een nieuw venster (New Window, of Go to Related Record met de nieuw-vensteroptie) en later in hetzelfde script volgt geen Close Window. Elke uitvoering lekt één venster; in lussen vermenigvuldigt het lek zich en op FileMaker Server kan een gelekt venster stilzwijgend de gevonden set van de aanroepende context vervangen."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Getroffen bestanden",
+    "findings_card.props.title": "Venster geopend zonder later Close Window",
+    "findings_table.props.searchPlaceholder": "Zoek bestand of script…",
+    "findings_table.props.empty.message": "Elke venster-openende stap wordt gevolgd door een Close Window in zijn script.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Stap",
+    "findings_table.props.columns[3].label": "Openende stap"
+  }
+}

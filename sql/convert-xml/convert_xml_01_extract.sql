@@ -24,8 +24,30 @@
 --   Drift-Indikator herangezogen wird. build_resolutions.sql bewusst NICHT
 --   enthalten, weil es nur abgeleitete Tabellen anlegt.
 
--- @SCHEMA_VERSION 1.14.0
--- @SCHEMA_VERSION_DATE 2026-07-16
+-- @SCHEMA_VERSION 1.16.0
+-- @SCHEMA_VERSION_DATE 2026-07-31
+-- @SCHEMA_CHANGELOG 1.16.0: StepsForScripts.Calculation_Text — zweite Härtung der
+--   Extraktion: zusätzlich not(ancestor::Bounds). Bei Fensterschritten OHNE
+--   Namens-Berechnung (New Window / Go to Related Record mit "New window"-Option,
+--   leeres <Name/>) griff '[1]' bisher die erste Geometrie-Berechnung — die Spalte
+--   meldete eine Fensterhöhe als vermeintlichen Fensternamen. Die Spalten-Semantik
+--   ("erste Berechnung in Dokument-Reihenfolge, ohne Repetitions-/Geometrie-Slots")
+--   ist jetzt in schema-reference.md dokumentiert. NEU dazu (P3, additiv):
+--   StepCalculations — ALLE positionierten Berechnungen je Step mit Slot-Kontext
+--   (Elternelement: Name/height/URL/Parameter:<type>/…) + Calc_Position; sowie
+--   StepsForScripts.Opens_Window (abgeleitet, nur Step_ID 74/122 belegt: New Window
+--   immer TRUE, Go to Related Record TRUE bei <WindowReference>-Option, sonst FALSE).
+--   Inhalts-Korrektur + neue Tabelle → Version-Bump (Master-Rebuild nötig).
+-- @SCHEMA_CHANGELOG 1.15.0: CustomFunctionsCatalog um Folder_Type / Is_Separator /
+--   Sequence_ID erweitert (additiv, analog ScriptCatalog + Layouts). CF-Ordner und
+--   -Trenner (isFolder="True"/"Marker") waren bisher von echten Custom Functions
+--   ununterscheidbar und zählten in jeder CF-Kennzahl mit. Folge-Änderungen:
+--   FolderHierarchy bekommt den dritten UNION-Zweig, ObjectCatalog filtert Ordner
+--   aus dem CustomFunction-Block und führt sie über Block 24 als 'Folder'.
+--   Zusätzlich ScriptStepRoleMap um 26 Step-IDs nachkuratiert (P6-Wächter
+--   v_check_step_roles / Quality T3-08 auf 0). Version-Bump, weil ein
+--   inkrementeller Lauf weder die neuen Spalten füllt noch die Katalogzeilen
+--   umhängt.
 -- @SCHEMA_CHANGELOG 1.14.0: ObjectCatalog/ScriptStepType jetzt auch aus LayoutObjectSteps
 --   (convert_xml_04_catalog.sql, Block 27). Bisher nur aus StepsForScripts: ein Step-Typ,
 --   den ausschließlich ein Button verwendet (Button / Grouped Button), bekam keinen
@@ -1540,6 +1562,16 @@ ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLU
 
 -- CustomFunctionsCatalog
 -- @END_P1_SECTION@
+-- Folder_Type / Is_Separator / Sequence_ID analog zu ScriptCatalog und Layouts:
+-- der "Manage Custom Functions"-Dialog kennt Ordner und Trennlinien, und
+-- FileMaker schreibt sie als gewöhnliche <CustomFunction>-Records mit
+-- isFolder="True"/"Marker" (belegt ab FM 22 in den Test-Fixtures). Ohne diese
+-- Spalten sind Ordner und Trenner im Katalog von echten Custom Functions
+-- ununterscheidbar — sie zählen in jeder CF-Kennzahl mit und haben, wie eine
+-- parameterlose CF, Parameters = NULL.
+-- Sequence_ID = laufende Nummer in XML-Reihenfolge, NICHT CF_ID (das ist die
+-- Anlege-Reihenfolge): die Folder-Stack-Logik in FolderHierarchy rechnet in
+-- XML-Reihenfolge und stünde nach CF_ID sortiert falsch.
 CREATE TABLE IF NOT EXISTS CustomFunctionsCatalog (
     CF_ID BIGINT,
     CF_Name VARCHAR,
@@ -1547,9 +1579,17 @@ CREATE TABLE IF NOT EXISTS CustomFunctionsCatalog (
     CF_UUID VARCHAR,
     Parameters VARCHAR[],
     DDR_Hash VARCHAR,  -- DDR-Hash für Custom Functions (ab FM21+)
+    Folder_Type VARCHAR,
+    Is_Separator BOOLEAN,
+    Sequence_ID BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (CF_UUID, File_Name)
 );
+
+-- Additive Migration für Bestands-DBs (idempotent — neuer Bau setzt sie via CREATE).
+ALTER TABLE CustomFunctionsCatalog ADD COLUMN IF NOT EXISTS Folder_Type VARCHAR;
+ALTER TABLE CustomFunctionsCatalog ADD COLUMN IF NOT EXISTS Is_Separator BOOLEAN;
+ALTER TABLE CustomFunctionsCatalog ADD COLUMN IF NOT EXISTS Sequence_ID BIGINT;
 
 -- Ein einziger Parse des CustomFunctionsCatalog-Zweigs, einmal materialisiert und
 -- unten doppelt genutzt: für den Katalog UND (ab SaXML v2.3.0.0 / FM 26+) für die
@@ -1564,6 +1604,9 @@ SELECT
     Display AS CF_Display,
     UUID->>'#text' AS CF_UUID,
     [p.name for p in ObjectList.Parameter] AS Parameters,
+    isFolder AS Folder_Type,
+    COALESCE(isSeparatorItem, False) AS Is_Separator,
+    ROW_NUMBER() OVER () + COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Sequence_ID,
     Calculation,
     getvariable('fm_file') AS File_Name
 FROM read_xml(
@@ -1577,6 +1620,8 @@ FROM read_xml(
         'id': 'BIGINT',
         'name': 'VARCHAR',
         'Display': 'VARCHAR',
+        'isFolder': 'VARCHAR',
+        'isSeparatorItem': 'BOOLEAN',
         'UUID': 'STRUCT("#text" VARCHAR, "modifications" BIGINT, "userName" VARCHAR, "timestamp" VARCHAR)',
         'ObjectList': 'STRUCT(Parameter STRUCT(name VARCHAR)[])',
         'Calculation': 'STRUCT("Text" VARCHAR, "DDRREF" STRUCT("kind" VARCHAR, "hash" VARCHAR, "#text" VARCHAR))'
@@ -1591,6 +1636,9 @@ SELECT
     CF_UUID,
     Parameters,
     NULL AS DDR_Hash,  -- Wird später von CalcsForCustomFunctions aktualisiert
+    Folder_Type,
+    Is_Separator,
+    Sequence_ID,
     File_Name
 FROM _cf_catalog_raw
 ON CONFLICT (CF_UUID, File_Name) DO UPDATE SET
@@ -1598,7 +1646,10 @@ ON CONFLICT (CF_UUID, File_Name) DO UPDATE SET
     CF_Name = EXCLUDED.CF_Name,
     CF_Display = EXCLUDED.CF_Display,
     Parameters = EXCLUDED.Parameters,
-    DDR_Hash = EXCLUDED.DDR_Hash;
+    DDR_Hash = EXCLUDED.DDR_Hash,
+    Folder_Type = EXCLUDED.Folder_Type,
+    Is_Separator = EXCLUDED.Is_Separator,
+    Sequence_ID = EXCLUDED.Sequence_ID;
 
 -- Zensus (Dup-Absorption): liest aus der bereits materialisierten TEMP-Stufe
 -- _cf_catalog_raw (kein zweiter XML-Parse; der Katalog-INSERT hat keinen Filter).
@@ -1941,7 +1992,14 @@ SELECT
     -- Werts (betrifft Set Field, Replace Field Contents, Insert Calculated Result,
     -- Insert from URL u.a.). Der Prädikatsfilter schließt den Repetitions-Teilbaum aus und
     -- ist step-typ-unabhängig (die echte Berechnung ist je Step unterschiedlich verschachtelt).
-    ws_restore(xml_extract_text(step_xml, '//Calculation[not(ancestor::repetition)]/Text')[1]) as Calculation_Text,
+    -- not(ancestor::Bounds): gleicher Fehlermodus bei Fensterschritten (New Window,
+    -- Go to Related Record mit "New window"-Option, Move/Resize Window): trägt der Step
+    -- KEINE Namens-Berechnung (leeres <Name/>), rückte sonst die erste Geometrie-
+    -- Berechnung (<Bounds><height>…) nach — die Spalte meldete eine Fensterhöhe als
+    -- vermeintlichen Fensternamen. Semantik der Spalte bleibt "erste Berechnung des
+    -- Steps in Dokument-Reihenfolge, ohne Repetitions-/Geometrie-Slots"; ALLE
+    -- Berechnungs-Slots eines Steps inkl. Slot-Kontext liefert StepCalculations (P3).
+    ws_restore(xml_extract_text(step_xml, '//Calculation[not(ancestor::repetition)][not(ancestor::Bounds)]/Text')[1]) as Calculation_Text,
     xml_extract_text(step_xml, '//Boolean/@type')[1] as Boolean_Type,
     xml_extract_text(step_xml, '//Boolean/@value')[1] as Boolean_Value,
     fn.File_Name as File_Name

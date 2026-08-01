@@ -16,5 +16,11 @@
     "body": "Questa soluzione è stata importata con una versione del catalogo precedente a quella prevista dall'app. Riconverti la sua esportazione XML per ricostruire il catalogo degli oggetti nello schema attuale.",
     "versions": "Catalogo: {{dbVersion}} · l'app prevede: {{appVersion}}",
     "action": "Vai alla conversione XML"
+  },
+  "solutionContext": {
+    "heading": "Le richieste per la soluzione «{{solution}}» non arrivano",
+    "body": "Non è stato possibile raggiungere l’API con questo contesto di soluzione. Se l’app funzionava prima del cambio di soluzione, reimposta la selezione sul valore predefinito del server.",
+    "action": "Reimposta selezione",
+    "dismiss": "Nascondi"
   }
 }

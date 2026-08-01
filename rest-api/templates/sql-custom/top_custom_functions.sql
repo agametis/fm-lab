@@ -23,6 +23,11 @@ LEFT JOIN ObjectLinks ol
        ON ol.Target_UUID = cf.CF_UUID
       AND ol.Link_Type   = 'operational'
 WHERE (getvariable('file') IS NULL OR cf.File_Name = getvariable('file'))
+  -- Ordner und Trenner des "Manage Custom Functions"-Dialogs stehen als
+  -- CustomFunction-Records im Katalog; ohne diesen Filter erschienen sie hier
+  -- als Funktionen mit 0 Referenzen (Schema 1.15.0).
+  AND (cf.Folder_Type IS NULL OR cf.Folder_Type = 'False')
+  AND NOT COALESCE(cf.Is_Separator, FALSE)
 GROUP BY ALL
 ORDER BY reference_count DESC
 LIMIT CAST(COALESCE(getvariable('limit'), '100') AS INTEGER);

@@ -974,9 +974,9 @@ UNION ALL SELECT 'Davon let_local', COUNT(*)::VARCHAR FROM VariablesCatalog WHER
 --   isSeparatorItem='True' → Trennlinie (kein Folder, nur UI)
 --
 -- Subtypen werden über Source_Table unterschieden:
---   ScriptCatalog → Script-Folder
---   Layouts       → Layout-Folder
---   FM 2026+: CustomFunctionsCatalog → CustomFunction-Folder (UNION-Zweig ergänzen)
+--   ScriptCatalog          → Script-Folder
+--   Layouts                → Layout-Folder
+--   CustomFunctionsCatalog → CustomFunction-Folder (ab Schema 1.15.0)
 -- ############################################################
 
 CREATE OR REPLACE VIEW FolderHierarchy AS
@@ -1005,8 +1005,21 @@ WITH all_items AS (
         'Layouts' AS Source_Table
     FROM Layouts
 
-    -- FM 2026+: CustomFunctionsCatalog hier als dritter UNION-Zweig ergänzen,
-    -- sobald isFolder/isSeparatorItem dort verfügbar sind.
+    UNION ALL
+
+    -- Custom Functions: Sequence_ID = XML-Reihenfolge (analog zu Scripts). Der
+    -- "Manage Custom Functions"-Dialog kennt Ordner und Trennlinien; FileMaker
+    -- schreibt sie als <CustomFunction isFolder="True"/"Marker"> (ab FM 22 in den
+    -- Fixtures belegt), seit Schema 1.15.0 extrahiert.
+    SELECT
+        CF_UUID AS Source_UUID,
+        CF_Name AS Item_Name,
+        File_Name,
+        Sequence_ID,
+        Folder_Type,
+        COALESCE(Is_Separator, False) AS Is_Separator,
+        'CustomFunctionsCatalog' AS Source_Table
+    FROM CustomFunctionsCatalog
 ),
 numbered AS (
     SELECT *,
@@ -1132,3 +1145,77 @@ SET Comment_Text = COALESCE(
         NULLIF(xml_extract_text(Step_XML, '//Comment')[1], '')
     )
 WHERE Step_ID = 89;  -- '# (comment)'
+
+
+-- ============================================
+-- A.9: StepCalculations — alle Berechnungs-Slots eines Steps
+-- ============================================
+-- StepsForScripts.Calculation_Text trägt nur die ERSTE Berechnung eines Steps
+-- (Dokument-Reihenfolge, ohne Repetitions-/Geometrie-Slots — siehe P1). Viele
+-- Step-Typen führen aber MEHRERE positionierte Berechnungen (Set Variable:
+-- value+repetition; New Window: Name+height+width+top+left; Insert from URL:
+-- URL+cURL-Optionen; Show Custom Dialog: Title+Message+Inputs; …). Diese Tabelle
+-- löst JEDE <Calculation @position> in eine eigene Zeile auf, mit Slot-Kontext:
+--   Slot          — Name des Elternelements des Calculation-Wrappers (Name, height,
+--                   URL, Title, value, repetition, …); liegt der Wrapper direkt
+--                   unter <Parameter>, stattdessen 'Parameter:<type>'.
+--   Calc_Position — @position des Wrappers. NICHT step-eindeutig (FileMaker
+--                   startet die Nummerierung in manchen Parameter-Containern neu,
+--                   z.B. Data-File-Steps) — Eindeutigkeit nur zusammen mit Slot
+--                   und Slot_Seq.
+--   Slot_Seq      — 1-basierte Ordnungszahl INNERHALB eines Slot-Elternteils
+--                   (z.B. die Argumentliste von Perform JavaScript in Web Viewer:
+--                   mehrere Calculations unter EINEM <Parameter type="Parameter">).
+-- Phase-Wahl analog A.7/A.8: P3 läuft einmal auf der Master-DB, liest das in P1
+-- persistierte (bereits ws_restore-te) Step_XML → kein eigener SAX-Zweig nötig.
+-- DROP+CREATE (Muster VariableUsages): vollständiger Neuaufbau je P3-Lauf.
+
+DROP TABLE IF EXISTS StepCalculations;
+
+CREATE TABLE StepCalculations AS
+WITH slot_parents AS (
+    SELECT
+        s.Step_UUID, s.File_Name, s.Script_UUID, s.Script_Name, s.Script_ID,
+        s.Step_Index, s.Step_ID, s.Step_Name, s.Is_Enabled,
+        unnest(xml_extract_elements(s.Step_XML, '//*[Calculation[@position]]')) AS slot_xml
+    FROM StepsForScripts s
+    WHERE s.Step_XML LIKE '%<Calculation%'
+),
+slot_calcs AS (
+    SELECT
+        Step_UUID, File_Name, Script_UUID, Script_Name, Script_ID,
+        Step_Index, Step_ID, Step_Name, Is_Enabled,
+        CASE WHEN regexp_extract(slot_xml::VARCHAR, '^<([A-Za-z]+)', 1) = 'Parameter'
+             THEN 'Parameter:' || coalesce(xml_extract_text(slot_xml, '/Parameter/@type')[1], '')
+             ELSE regexp_extract(slot_xml::VARCHAR, '^<([A-Za-z]+)', 1) END AS Slot,
+        unnest(xml_extract_elements(slot_xml, '/*/Calculation[@position]')) AS calc_xml,
+        generate_subscripts(xml_extract_elements(slot_xml, '/*/Calculation[@position]'), 1) AS Slot_Seq
+    FROM slot_parents
+)
+SELECT
+    Step_UUID, File_Name, Script_UUID, Script_Name, Script_ID,
+    Step_Index, Step_ID, Step_Name, Is_Enabled,
+    Slot,
+    xml_extract_text(calc_xml, '/Calculation/@position')[1]::INTEGER AS Calc_Position,
+    Slot_Seq,
+    xml_extract_text(calc_xml, '/Calculation/Calculation/Text')[1] AS Calc_Text
+FROM slot_calcs;
+
+
+-- ============================================
+-- A.10: StepsForScripts.Opens_Window — fensteröffnende Steps markieren
+-- ============================================
+-- Ein neues Fenster öffnen zwei Step-Typen: New Window (Step_ID 122, immer) und
+-- Go to Related Record (Step_ID 74, NUR mit gesetzter "New window"-Option). Die
+-- GTRR-Option ist im Katalog ausschließlich strukturell erkennbar (<WindowReference>
+-- im Step_XML; Parameter_Type ist bei beiden GTRR-Varianten 'Related', der DDR-Text
+-- ist lokalisiert). Hier einmalig beim Import abgeleitet, damit Analyse-Queries und
+-- SCA-Regeln (Fenster-Lebenszyklus) nicht zur Laufzeit über Step_XML scannen müssen.
+-- Nur für die beiden fensterfähigen Step-IDs belegt (TRUE/FALSE), sonst NULL —
+-- bewusst KEIN Full-Table-UPDATE (StepsForScripts kann Millionen Zeilen haben).
+-- Additiv/idempotent analog Inserted_Text (A.7).
+
+ALTER TABLE StepsForScripts ADD COLUMN IF NOT EXISTS Opens_Window BOOLEAN;
+UPDATE StepsForScripts
+SET Opens_Window = (Step_ID = 122 OR Step_XML LIKE '%<WindowReference%')
+WHERE Step_ID IN (74, 122);  -- 74 = Go to Related Record, 122 = New Window

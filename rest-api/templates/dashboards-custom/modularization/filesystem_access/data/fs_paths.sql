@@ -7,7 +7,7 @@ WITH raw AS (
         s.File_Name                                             AS file,
         s.Script_Name                                           AS carrier,
         s.Step_Name                                             AS detail,
-        s.Step_Index                                            AS step_index,
+        s.Step_Index + 1                                            AS step_index,
         s.Script_UUID                                           AS nav_uuid,
         s.Step_UUID                                             AS step_uuid,
         -- Alternation statt (?:win|mac)?-Gruppe: der API-SQL-Präprozessor ersetzt

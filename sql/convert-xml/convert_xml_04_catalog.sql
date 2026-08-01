@@ -413,7 +413,11 @@ FROM ValueListCatalog
 
 UNION ALL
 
--- 6. CustomFunctionsCatalog (Custom Functions)
+-- 6. CustomFunctionsCatalog (Custom Functions - ohne Folders und Separators)
+-- Folder/Marker-Records werden als 'Folder' separat aufgenommen (siehe Block 24).
+-- Ohne diesen Filter zählten Ordnernamen und Trenner ('--') als Custom Function —
+-- und sind, weil sie wie eine parameterlose CF Parameters = NULL tragen, auch für
+-- Signatur-Prüfungen von einer echten CF ununterscheidbar.
 SELECT
     CF_UUID as Object_UUID,
     'CustomFunction' as Object_Type,
@@ -422,6 +426,8 @@ SELECT
     'CustomFunctionsCatalog' as Source_Table,
     CF_ID as Object_ID
 FROM CustomFunctionsCatalog
+WHERE (Folder_Type IS NULL OR Folder_Type = 'False')
+  AND NOT COALESCE(Is_Separator, FALSE)
 
 UNION ALL
 
@@ -880,9 +886,35 @@ INSERT INTO ScriptStepRoleMap VALUES
     (130, 'Set Selection',            'sets_field'),
     (116, 'Set Next Serial Value',    'sets_field'),
     (40,  'Relookup Field Contents',  'sets_field'),
+    (46,  'Cut',                      'sets_field'),
+    -- Insert-Familie: der Step schreibt in das Zielfeld (option_type 'target'
+    -- bzw. die Feld-Option der Referenz)
+    (11,  'Insert from Index',            'sets_field'),
+    (12,  'Insert from Last Visited',     'sets_field'),
+    (13,  'Insert Current Date',          'sets_field'),
+    (14,  'Insert Current Time',          'sets_field'),
+    (60,  'Insert Current User Name',     'sets_field'),
+    (161, 'Insert from Device',           'sets_field'),
+    -- Data-File-API + Konnektoren: Ergebnis landet im Zielfeld
+    (188, 'Get File Exists',              'sets_field'),
+    (189, 'Get File Size',                'sets_field'),
+    (191, 'Open Data File',               'sets_field'),
+    (193, 'Read from Data File',          'sets_field'),
+    (194, 'Get Data File Position',       'sets_field'),
+    (203, 'Execute FileMaker Data API',   'sets_field'),
+    (211, 'Trigger Claris Connect Flow',  'sets_field'),
+    -- KI-Steps mit genau EINER Feld-Option (Ergebnis-Ziel)
+    (214, 'Perform SQL Query by Natural Language', 'sets_field'),
+    (215, 'Insert Embedding',             'sets_field'),
     -- Step liest aus dem Feld
     (47,  'Copy',                     'reads_field'),
     (132, 'Export Field Contents',    'reads_field'),
+    (18,  'Check Selection',          'reads_field'),
+    (157, 'Install Plug-In File',     'reads_field'),
+    -- Write to Data File: die Feld-Option heisst 'data_source' ("Data source") —
+    -- option_type = 'target' beschreibt die XML-Form, NICHT die Datenrichtung.
+    -- Das Feld wird gelesen und in die Datei geschrieben.
+    (192, 'Write to Data File',       'reads_field'),
     -- Kalkulations-tragende Steps: Feld-Referenzen aus deren Formeln erscheinen
     -- als Step-Referenzen nur bei Dateien OHNE DDR-Info (mit DDR laufen sie über
     -- XMLCalcReferences) — Lese-Semantik, analog zum DDR-Pfad.
@@ -899,12 +931,27 @@ INSERT INTO ScriptStepRoleMap VALUES
     (126, 'Constrain Found Set',      'finds_in_field'),
     (127, 'Extend Found Set',         'finds_in_field'),
     (22,  'Enter Find Mode',          'finds_in_field'),
+    (155, 'Find Matching Records',    'finds_in_field'),
     -- Feld als Sortier-Kriterium
     (39,  'Sort Records',             'sorts_by_field'),
+    (154, 'Sort Records by Field',    'sorts_by_field'),
     -- Import-Ziel / Export-Quelle / Dialog-Eingabe
     (35,  'Import Records',           'imports_to_field'),
     (36,  'Export Records',           'exports_from_field'),
-    (87,  'Show Custom Dialog',       'inputs_to_field');
+    (87,  'Show Custom Dialog',       'inputs_to_field'),
+    -- Mehrere Feld-Optionen mit GEGENLÄUFIGER Semantik (Quelle UND Ziel im selben
+    -- Step, z. B. 216: source_field + target_field). Diese Tabelle vergibt EINE
+    -- Rolle je Step_ID, und XMLStepReferences extrahiert Feldreferenzen flach über
+    -- '//FieldReference' ohne Herkunftspfad — welche Option eine Referenz gespeist
+    -- hat, ist im Datenmodell derzeit nicht vorhanden. Deshalb bewusst der neutrale
+    -- Eimer statt einer erfundenen Hauptrolle: 'references_field' zählt für
+    -- Where-used und behauptet keine Richtung. Eine Verfeinerung braucht einen
+    -- P2-Umbau (Elternpfad je FieldReference) und ist ein eigener Vorgang.
+    (213, 'Fine-Tune Model',               'references_field'),
+    (216, 'Insert Embedding in Found Set', 'references_field'),
+    (218, 'Perform Semantic Find',         'references_field'),
+    (220, 'Generate Response from Model',  'references_field'),
+    (222, 'Configure Regression Model',    'references_field');
 
 -- ========================================
 -- ObjectLinks - Verknüpfungen zwischen Objekten
@@ -2049,6 +2096,11 @@ JOIN CustomFunctionsCatalog cf
  AND xcr.File_Name = cf.File_Name
 WHERE xcr.Ref_Type = 'customfunction'
   AND xcr.Ref_Name IS NOT NULL
+  -- Ordner/Trenner sind seit Schema 1.15.0 nicht mehr im ObjectCatalog (Block 6);
+  -- ein Namensgleichstand Ordner↔CF würde sonst einen Link auf ein nicht
+  -- katalogisiertes Ziel erzeugen (Orphan-Target, v_check_orphan_links).
+  AND (cf.Folder_Type IS NULL OR cf.Folder_Type = 'False')
+  AND NOT COALESCE(cf.Is_Separator, FALSE)
 
 UNION ALL
 

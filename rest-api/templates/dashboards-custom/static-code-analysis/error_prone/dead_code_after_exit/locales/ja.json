@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Exit Script 後のデッドコード",
+    "description": "エラー誘発ルール — 無条件の Exit Script または Halt Script の直後に、同じ分岐内で実行可能なステップが続いています。そのステップは決して実行されず、そこに置かれたクリーンアップ（例: Close Window）は静かにスキップされます。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "影響ファイル数",
+    "findings_card.props.title": "Exit Script 後のデッドコード",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "Exit Script / Halt Script 後の到達不能ステップは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "ステップ",
+    "findings_table.props.columns[3].label": "到達不能ステップ"
+  }
+}

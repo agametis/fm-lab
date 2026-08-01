@@ -7,10 +7,16 @@ Layer 1 (paste validity): real XML parse; Step ids exist in the reference
 Layer 2 (save validity): step_constraints catalog — save_invalid_bare,
   save_invalid_nesting (flat transactions), requires_pair balance on the XML.
 Layer 3 (runtime validity): resolution report free of errors; version gate
-  (origin_version of every step <= target file version, from step_compat data).
+  (origin_version of every step <= target file version, from step_compat data);
+  calc findings (a reference that exists but is used wrongly, e.g. a custom
+  function called with the wrong argument count); the opt-in variable-init
+  convention.
 
-Checks that cannot run (missing grammar tables, no resolution report, file not
-in catalog) are reported as 'skipped' with a reason — never as passed.
+Status values: 'pass' | 'fail' | 'skipped' | 'warning'. Only 'fail' makes the
+gate fail — a 'warning' is a finding the deliverer must report but that does not
+block the paste. Checks that cannot run (missing grammar tables, no resolution
+report, no IR, convention not enabled, file not in catalog) are reported as
+'skipped' with a reason — never as passed.
 """
 
 from __future__ import annotations
@@ -22,6 +28,7 @@ from dataclasses import dataclass, field
 from .db import Reference
 
 IF_OPEN, IF_CLOSE, LOOP_OPEN, LOOP_CLOSE = 68, 70, 71, 73
+SET_VARIABLE = 141
 
 
 @dataclass
@@ -60,7 +67,8 @@ def _version_num(v: str | None) -> float | None:
 
 
 def run_gate(xml_text: str, ref: Reference, resolution: dict | None = None,
-             target_version: str | None = None) -> GateResult:
+             target_version: str | None = None, ir_steps: list[dict] | None = None,
+             check_var_init: bool = False) -> GateResult:
     res = GateResult()
 
     # ---- Layer 1: paste validity -------------------------------------------
@@ -221,6 +229,26 @@ def run_gate(xml_text: str, ref: Reference, resolution: dict | None = None,
                     "create before paste: " + "; ".join(
                         n["ref"] for n in resolution["new_objects"]))
 
+    # G304: references that exist but are used wrongly (custom-function arity).
+    # Separate from G301 on purpose — 'resolved but misused' is a different
+    # failure than 'not in the catalog', and the two must stay distinguishable
+    # in the protocol.
+    if resolution is None:
+        res.add("G304-calc-arity", 3, "skipped", "no resolution report supplied")
+    else:
+        findings = resolution.get("findings", [])
+        errs = [f for f in findings if f.get("severity") == "error"]
+        warns = [f for f in findings if f.get("severity") == "warning"]
+        if errs:
+            res.add("G304-calc-arity", 3, "fail",
+                    "; ".join(f"line {f['line']}: {f['message']}" for f in errs))
+        elif warns:
+            res.add("G304-calc-arity", 3, "warning",
+                    "; ".join(f"line {f['line']}: {f['message']}" for f in warns))
+        else:
+            res.add("G304-calc-arity", 3, "pass",
+                    "calculation references used with a valid argument count")
+
     tv = _version_num(target_version)
     if tv is None:
         res.add("G303-version-gate", 3, "skipped",
@@ -236,7 +264,57 @@ def run_gate(xml_text: str, ref: Reference, resolution: dict | None = None,
         res.add("G303-version-gate", 3, "fail" if too_new else "pass",
                 "; ".join(too_new) or f"all steps available in FM {target_version}")
 
+    _var_init_check(res, ir_steps, check_var_init)
     return res
+
+
+def _var_init_check(res: GateResult, ir_steps: list[dict] | None,
+                    enabled: bool) -> None:
+    """G305: is a variable written as a step target initialised beforehand?
+
+    This is a house CONVENTION, not FileMaker semantics — a target step creates
+    the variable by itself, so the check is off unless a setup opts in (see the
+    conventions block in docs/agents/codegen-registry.md). It is a typo net: a
+    target that never appears in a preceding Set Variable is often a misspelt
+    name. Never a fail, always a warning.
+
+    It runs on the IR, not the XML: only there is a target variable
+    ({'_form': 'variable'}) reliably distinguishable from a variable merely READ
+    inside a calculation. 'Beforehand' is lexical order in the snippet — no flow
+    analysis, so a variable set in one If branch counts as initialised.
+    """
+    if not enabled:
+        res.add("G305-var-init", 3, "skipped",
+                "variable-initialisation convention not enabled "
+                "(--check-var-init / FMGEN_CHECK_VAR_INIT)")
+        return
+    if ir_steps is None:
+        res.add("G305-var-init", 3, "skipped",
+                "no IR supplied (gate run without --resolved) — variable "
+                "initialisation not checked")
+        return
+    initialised: set[str] = set()
+    missing: list[str] = []
+    for step in ir_steps:
+        if not step.get("enabled", True):
+            continue  # a disabled step neither initialises nor is checked
+        options = step.get("options") or {}
+        for val in options.values():
+            if not (isinstance(val, dict) and val.get("_form") == "variable"):
+                continue
+            name = (val.get("name") or "").strip()
+            if not name:
+                continue
+            if name.casefold() not in initialised:
+                missing.append(
+                    f"line {step.get('line')}: '{name}' is written as a target "
+                    "without a preceding Set Variable")
+            initialised.add(name.casefold())  # exists from here on
+        if step.get("step_id") == SET_VARIABLE and isinstance(options.get("name"), str):
+            initialised.add(options["name"].strip().casefold())
+    res.add("G305-var-init", 3, "warning" if missing else "pass",
+            "; ".join(missing) or
+            "every variable target is initialised by a preceding Set Variable")
 
 
 def _value_at_path(st: ET.Element, xml_path: str | None) -> str | None:

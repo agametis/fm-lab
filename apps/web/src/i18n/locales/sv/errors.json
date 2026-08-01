@@ -16,5 +16,11 @@
     "body": "Den här lösningen importerades med en äldre katalogversion än vad appen förväntar sig. Konvertera dess XML-export på nytt för att bygga om objektkatalogen i det aktuella schemat.",
     "versions": "Katalog: {{dbVersion}} · appen förväntar sig: {{appVersion}}",
     "action": "Till XML-konvertering"
+  },
+  "solutionContext": {
+    "heading": "Förfrågningar för lösningen ”{{solution}}” går inte fram",
+    "body": "API:et kunde inte nås med den här lösningskontexten. Om appen fungerade innan du bytte lösning kan du återställa valet till serverns standard.",
+    "action": "Återställ valet",
+    "dismiss": "Dölj"
   }
 }

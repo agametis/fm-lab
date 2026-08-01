@@ -14,7 +14,7 @@ WITH native AS (
         s.Script_Name                                        AS carrier,
         regexp_extract(COALESCE(ddr.Step_Text, ''), 'SMTP Server:\s*"([^"]+)"', 1) AS smtp_host,
         (COALESCE(ddr.Step_Text, '') LIKE '%Password:%')     AS hardcoded_auth,
-        s.Step_Index                                         AS step_index,
+        s.Step_Index + 1                                         AS step_index,
         s.Script_UUID                                        AS nav_uuid,
         'Script'                                             AS nav_type,
         s.Step_UUID                                          AS step_uuid
@@ -33,7 +33,7 @@ mbs AS (
         COALESCE(s.Script_Name, oc.Object_Name)              AS carrier,
         CAST(NULL AS VARCHAR)                                AS smtp_host,
         FALSE                                                AS hardcoded_auth,
-        s.Step_Index                                         AS step_index,
+        s.Step_Index + 1                                         AS step_index,
         p.Source_UUID                                        AS nav_uuid,
         p.Source_Type                                        AS nav_type,
         s.Step_UUID                                          AS step_uuid
