@@ -22,7 +22,8 @@
     "xmlImport": "XML-Import",
     "cluster": "Cluster",
     "settings": "Einstellungen",
-    "fmSpec": "fm-spec"
+    "fmSpec": "fm-spec",
+    "tests": "Tests"
   },
   "entryType": {
     "dashboard": "Dashboard"
@@ -30,9 +31,10 @@
   "leitDescription": {
     "dashboards": "Übersicht aller verfügbaren Dashboards.",
     "customQueries": "Wiederverwendbare SQL-Vorlagen — eine Kachel öffnet die Analyse.",
-    "docs": "In diesem Projekt installierte Dokumentationsquellen.",
+    "docs": "Installierte Dokumentationsquellen.",
     "xmlImport": "Importiert alle Dateien aus dem xml/-Verzeichnis in die DuckDB.",
-    "xmlImportContextNote": "Import einer nicht-aktiven Lösung — die angezeigten Analysedaten ändern sich erst nach dem Aktivieren."
+    "xmlImportContextNote": "Import einer nicht-aktiven Lösung — die angezeigten Analysedaten ändern sich erst nach dem Aktivieren.",
+    "tests": "Kuratierte Analysis Tests — gebündelte Prüfungen auf Lösung, Datei oder einzelnes Objekt ausführen."
   },
   "errors": {
     "noDashboardId": "Keine Dashboard-ID angegeben.",
@@ -89,7 +91,8 @@
       "references": "Referenzen",
       "graph": "Graph",
       "versions": "Versionen",
-      "notes": "Notizen"
+      "notes": "Notizen",
+      "tests": "Tests"
     }
   },
   "pseudoToolbar": {
@@ -137,5 +140,53 @@
     "title": "Noch keine Daten",
     "message": "Es wurde noch keine FileMaker-Lösung importiert. Importiere zuerst einen XML-Export, um diese Ansicht zu nutzen.",
     "backToStart": "Zurück zur Startseite"
+  },
+  "testsPanel": {
+    "loading": "Tests werden geladen…",
+    "empty": "Keine Tests für Objekttyp {{type}}.",
+    "openOverview": "Test-Übersicht öffnen",
+    "run": "Ausführen",
+    "running": "Läuft…",
+    "showFindings": "Findings anzeigen",
+    "memberError": "Fehler",
+    "openMember": "Dashboard/Query öffnen",
+    "truncated": "Weitere Findings gekürzt — Member für die vollständige Liste öffnen.",
+    "duration": "{{ms}} ms",
+    "searchPlaceholder": "Tests filtern…",
+    "runAll": "Alle ausführen ({{count}})",
+    "noMatch": "Keine Tests passen zum aktuellen Filter.",
+    "typeFilterAria": "Nach Test-Typ filtern",
+    "memberSkipped": "Übersprungen",
+    "findingsFiltered": "{{shown}} von {{total}} Findings passen zur Suche.",
+    "rerun": "Erneut ausführen",
+    "profileLabel": "Profil",
+    "profileAll": "Alle Prüfungen ({{count}})",
+    "memberCount": "{{count}} Prüfungen",
+    "resultsFrom": "Stand: {{time}}",
+    "catalogFrom": "Katalog: {{time}}",
+    "notRun": "{{count}} nicht ausgeführt",
+    "platformSection": "Plattform-Kompatibilität",
+    "otherSection": "Weitere Tests",
+    "platformRemove": "Zielumgebung entfernen",
+    "platformAdd": "+ Zielumgebung",
+    "platformNone": "Keine Zielumgebung gewählt — füge die Plattformen hinzu, auf denen diese Lösung läuft.",
+    "platformSpecificScripts": "{{count}} plattformspezifische Scripts",
+    "osBindingLabel": "OS-Bindung",
+    "osMatrixOs": "OS",
+    "osMatrixHint": "Scripts mit OS-spezifischen Bindungen je Betriebssystem und Evidenzquelle (ein desktop-only-Script zählt für macOS und Windows; Bindungen über mehr als zwei Systeme gelten nicht als OS-spezifisch).",
+    "matrixStep": "Step",
+    "disabledCount": "{{count}} deaktiviert —",
+    "showDisabled": "einblenden",
+    "hideDisabled": "ausblenden",
+    "disableTest": "Test ausblenden (lokal pro Lösung gespeichert)",
+    "enableTest": "Test wieder aktivieren",
+    "sortByResult": "Auffälligste zuerst",
+    "stateFilterAria": "Nach Ergebnis-Zustand filtern",
+    "state_error": "Fehler",
+    "state_warning": "Warnungen",
+    "state_neutral": "Neutrale Ergebnisse",
+    "state_ok": "Bestanden",
+    "state_skipped": "Übersprungen",
+    "state_failed": "Lauf fehlgeschlagen"
   }
 }

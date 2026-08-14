@@ -8,7 +8,11 @@
     "open": "도움말"
   },
   "search": {
-    "placeholder": "필터…"
+    "placeholder": "필터…",
+    "platformAll": "모든 플랫폼",
+    "platformLabel": "플랫폼",
+    "platformStepHint": "이 플랫폼에서 실행되는 스텝 표시(부분 지원 포함)",
+    "platformFnHint": "이 플랫폼용으로 만들어진 함수 표시(플랫폼 결합)"
   },
   "list": {
     "count": "{{shown}} / {{total}}"
@@ -58,7 +62,12 @@
       "variadic": "가변 인자",
       "signature": "시그니처",
       "purpose": "목적",
-      "example": "예시"
+      "example": "예시",
+      "affinity_dedicated": "여기서만 의미 있는 결과 — 어디서나 호출 가능",
+      "affinity_exclusive": "여기서만 작동",
+      "affinityWord_dedicated": "전용",
+      "affinityWord_exclusive": "독점",
+      "platformBinding": "플랫폼 결합"
     }
   },
   "params": {
@@ -120,6 +129,22 @@
       "hint": "SaXML과 fmxmlsnippet은 동일한 스텝의 서로 다른 두 표현입니다.",
       "none": "수집된 SaXML 매핑이 없습니다.",
       "sourceNote": "제공되는 데이터는 출처 중립적입니다. 출처 인용, 저작자 또는 회사 이름, 코퍼스 아티팩트를 포함하지 않습니다. 각 단계에 표시되는 예제 페이로드는 합성된 것입니다."
+    },
+    "compat": {
+      "label": "플랫폼 호환성",
+      "partial": "부분 지원",
+      "partialHint": "부분 지원 — 조건부 지원. 스텝의 Claris 도움말 페이지 참조"
     }
+  },
+  "osAffinity": {
+    "label": "OS 바인딩",
+    "word_exclusive": "전용",
+    "word_unsupported": "지원되지 않음",
+    "word_variant": "OS에 따라 다름",
+    "word_os_probe": "플랫폼 감지",
+    "hint_exclusive": "나열된 운영 체제에서만 작동합니다",
+    "hint_unsupported": "Claris는 이 OS를 명시적으로 지원되지 않는다고 밝힙니다(원문에 충실한 역방향 진술)",
+    "hint_variant": "어디서나 실행되지만 동작이나 결과는 OS에 따라 다릅니다",
+    "hint_os_probe": "런타임에 플랫폼/OS를 반환합니다 — 가드 이디엄이며 바인딩이 아닙니다"
   }
 }

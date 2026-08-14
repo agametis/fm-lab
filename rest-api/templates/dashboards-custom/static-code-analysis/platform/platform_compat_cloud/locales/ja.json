@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "プラットフォーム互換性: FileMaker Cloud",
+  "analysis.defaultResult.meaning": "FileMaker Cloud で未対応または部分的にのみ対応する対象範囲内のステップ"
+ }
+}

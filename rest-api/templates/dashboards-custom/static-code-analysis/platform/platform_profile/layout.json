@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "os_summary_card",
+        "props": {
+          "span": 12,
+          "variant": "hero",
+          "title": "OS bindings"
+        },
+        "data": {
+          "dataset": "os_summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "os_summary_kpi",
+            "props": {
+              "items": [
+                {
+                  "label": "OS-bound scripts",
+                  "field": "os_bound_scripts",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "platform_profile",
+                      "params": {
+                        "os": "",
+                        "file": "{{file}}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "macOS",
+                  "field": "os_macos_scripts",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "platform_profile",
+                      "params": {
+                        "os": "macos",
+                        "file": "{{file}}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Windows",
+                  "field": "os_windows_scripts",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "platform_profile",
+                      "params": {
+                        "os": "windows",
+                        "file": "{{file}}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Linux",
+                  "field": "os_linux_scripts",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "platform_profile",
+                      "params": {
+                        "os": "linux",
+                        "file": "{{file}}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "iOS",
+                  "field": "os_ios_scripts",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "platform_profile",
+                      "params": {
+                        "os": "ios",
+                        "file": "{{file}}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "os_findings_card",
+        "props": {
+          "span": 12,
+          "title": "OS-bound scripts"
+        },
+        "data": {
+          "dataset": "os_findings"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "os_findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search file, script or binding…",
+              "chipFilter": "os_profile",
+              "columns": [
+                {
+                  "field": "os_profile",
+                  "label": "OS profile"
+                },
+                {
+                  "field": "file",
+                  "label": "File"
+                },
+                {
+                  "field": "name",
+                  "label": "Script"
+                },
+                {
+                  "field": "macos",
+                  "label": "macOS",
+                  "format": "boolean"
+                },
+                {
+                  "field": "windows",
+                  "label": "Windows",
+                  "format": "boolean"
+                },
+                {
+                  "field": "linux",
+                  "label": "Linux",
+                  "format": "boolean"
+                },
+                {
+                  "field": "ios",
+                  "label": "iOS",
+                  "format": "boolean"
+                },
+                {
+                  "field": "sources",
+                  "label": "Evidence"
+                },
+                {
+                  "field": "bindings",
+                  "label": "Bindings"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "Script"
+                }
+              },
+              "empty": {
+                "message": "No OS-bound scripts in scope."
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

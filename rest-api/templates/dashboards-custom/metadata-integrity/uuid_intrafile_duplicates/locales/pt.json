@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "Duplicatas de UUID no mesmo arquivo",
+    "description": "Verificação de integridade de metadados — UUIDs atribuídos duas vezes dentro de um único arquivo (defeito de exportação, tipicamente causado por copiar/colar com versões antigas do FileMaker). A importação mantém deterministicamente um objeto por UUID; este painel lista o que foi absorvido, com contexto em texto claro para localizá-lo na solução.",
+    "analysis.defaultResult.meaning": "Número de ocorrências de UUID duplicados recenseadas (sanadas + original mantido + absorvidas) — o catálogo permanece completo desde o saneamento de UUID, mas cada ocorrência marca um defeito de origem"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Duplicatas absorvidas",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "summary_kpi.props.items[2].label": "Linhas com UUID exato",
+    "summary_kpi.props.items[3].label": "Absorções de merge",
+    "findings_card.props.title": "Objetos em colisão (UUID exato)",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Tipo",
+    "findings_table.props.columns[2].label": "Contêiner",
+    "findings_table.props.columns[3].label": "Posição",
+    "findings_table.props.columns[4].label": "Objeto (decodificado)",
+    "findings_table.props.columns[5].label": "Ocorr.",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, contêiner, texto ou UUID…",
+    "findings_table.props.empty.message": "Sem detalhes de duplicatas com UUID exato — o censo de importação não encontrou duplicatas dentro de um arquivo.",
+    "merge_card.props.title": "Absorções de merge (sobreposição de chunks ou arquivo clonado com nome interno idêntico)",
+    "merge_table.props.columns[0].label": "Tabela de catálogo",
+    "merge_table.props.columns[1].label": "Arquivo",
+    "merge_table.props.columns[2].label": "Absorvidos",
+    "merge_table.props.columns[3].label": "Execução do merge",
+    "merge_table.props.searchPlaceholder": "Pesquisar tabela ou arquivo…",
+    "merge_table.props.empty.message": "Nenhuma duplicata foi absorvida durante o merge.",
+    "stats_card.props.title": "Verificação cruzada do censo por catálogo e arquivo",
+    "stats_table.props.columns[0].label": "Catálogo",
+    "stats_table.props.columns[1].label": "Arquivo",
+    "stats_table.props.columns[2].label": "Registros de origem",
+    "stats_table.props.columns[3].label": "Linhas armazenadas",
+    "stats_table.props.columns[4].label": "Absorvidos",
+    "stats_table.props.columns[5].label": "Cobertura de detalhes",
+    "stats_table.props.searchPlaceholder": "Pesquisar catálogo ou arquivo…",
+    "stats_table.props.empty.message": "O censo de importação não relata duplicatas absorvidas.",
+    "notes_card.props.title": "Sobre esta verificação",
+    "notes_md.props.content": "Um UUID atribuído a **dois objetos dentro de um único arquivo** é um defeito de origem da exportação do FileMaker (tipicamente copiar/colar com versões antigas do FileMaker em arquivos mais novos). A importação do FM-Lab mantém exatamente um objeto por UUID (determinística, a última gravação vence) — os objetos absorvidos **não existem mais no catálogo**. As colunas *Contêiner*, *Posição* e *Objeto (decodificado)* são o único rastro deles; use-as para localizar ambos os objetos no FileMaker. Clicar na linha abre o objeto sobrevivente.\n\n**Absorções de merge** são uma classe à parte: duplicatas absorvidas ao mesclar os chunks de arquivo. A causa não é distinguível a posteriori — sobreposição interna do conversor (sem defeito da solução) ou arquivos clonados com o mesmo nome interno (colisão genuína).\n\n**Não existe correção automática.** O modo de reparo da Claris atribui UUIDs totalmente novos e quebra toda referência externa; a correção deve ocorrer no arquivo de origem. Duplicatas do mesmo UUID *entre* arquivos são cobertas pelo painel irmão **Colisões de UUID por clonagem**. A fonte de dados é o censo de importação — os números refletem o estado da última importação XML.",
+    "findings_table.props.columns[6].label": "UUID"
+  }
+}

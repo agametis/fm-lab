@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "プラグイン互換性: FileMaker WebDirect",
+  "analysis.defaultResult.meaning": "FileMaker WebDirect で実行されない対象範囲内のプラグイン関数呼び出し"
+ }
+}

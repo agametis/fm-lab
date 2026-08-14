@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Relacionamento com registros ordenados",
-    "description": "Regra de boas práticas — relacionamentos que ordenam seus registros relacionados. A ordenação roda a cada avaliação e pode deixar portais e lookups mais lentos."
+    "description": "Regra de boas práticas — sinaliza relacionamentos que ordenam seus registros relacionados. A ordenação roda a cada avaliação e pode deixar portais e lookups mais lentos."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Ocorrências",

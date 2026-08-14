@@ -1,6 +1,6 @@
 # Schema Version History
 
-The solution catalog carries an internal schema version, independent of the fm-lab release version. It is declared in the Phase-1 template of the conversion pipeline (`sql/convert-xml/convert_xml_01_extract.sql`, marker `@SCHEMA_VERSION`) and stamped into every built database via the `SchemaInfo` table. On each import the pipeline compares the template version against the version persisted in the database — a mismatch triggers the auto-heal mechanism: a forced full rebuild, so a catalog can never silently mix schema generations. An MD5 hash over the core SQL templates serves as a secondary drift indicator (hash drift alone warns; only a version bump forces the rebuild). That is why even pure content-semantic corrections get a version bump: the bump is what guarantees existing catalogs are rebuilt.
+The solution catalog carries an internal schema version, independent of the fm-lab release version. It is declared in the Phase-1 template of the conversion pipeline (`sql/convert-xml/convert_xml_01_extract.sql`, marker `@SCHEMA_VERSION`) and stamped into every built database via the `SchemaInfo` table. On each import the pipeline compares the template version against the version persisted in the database — a mismatch triggers an **automatic rebuild**: the catalog is discarded and fully rebuilt, so it can never silently mix schema generations. (Not to be confused with [UUID healing](UUID%20Healing%20and%20Duplicate%20Census.md), which repairs duplicate object UUIDs *inside* a build.) An MD5 hash over the core SQL templates serves as a secondary drift indicator (hash drift alone warns; only a version bump forces the rebuild). That is why even pure content-semantic corrections get a version bump: the bump is what guarantees existing catalogs are rebuilt.
 
 Two scope notes: this history covers the **solution catalog** (`db/fm_catalog.duckdb`) only — the [fm-spec](../Wiki/fm-spec.md) reference database has its own, independent `schema_version` in [reference_meta](fm-spec-tables/reference_meta.md). And versions up to 1.4.1 predate the fm-lab version manifest (introduced with v0.8.6), so no fm-lab release can be assigned to them; entries older than 1.4.0 are reconstructed from the git history.
 
@@ -8,6 +8,11 @@ Two scope notes: this history covers the **solution catalog** (`db/fm_catalog.du
 
 | Schema version | fm-lab version | Date |
 |---|---|---|
+| [1.20.0](#1200) | 0.9.7 | 2026-08-11 |
+| [1.19.0](#1190) | 0.9.6 | 2026-08-10 |
+| [1.18.0](#1180) | 0.9.6 | 2026-08-09 |
+| [1.17.0](#1170) | 0.9.6 | 2026-08-04 |
+| [1.16.0](#1160) | 0.9.5 | 2026-07-31 |
 | [1.15.0](#1150) | 0.9.5 | 2026-07-30 |
 | [1.14.0](#1140) | 0.9.3 | 2026-07-16 |
 | [1.13.0](#1130) | 0.9.0 | 2026-07-15 |
@@ -31,6 +36,28 @@ Two scope notes: this history covers the **solution catalog** (`db/fm_catalog.du
 | [1.0.0](#100) | — | 2026-05-13 |
 
 ## Changes by version
+
+### 1.20.0
+
+Perform Script on Server becomes visible on the graph edge: `calls_script` links created from a *Perform Script on Server* step now carry the [Link_Subrole](object-catalog/Link%20Roles%20and%20Subroles.md) `on_server` (step 164) or `on_server_callback` (step 210) — the callee runs server-side. Deliberately a **subrole, not a new role**: `calls_script` stays the one call role, so where-used queries, call chains and the graph are unaffected; the execution context is a qualifier, like the calc-slot subroles. Ordinary Perform Script calls keep `NULL`. "By name" callsites (the target script name is computed at runtime) have no static target and therefore no edge — their expression is available in `StepCalculations`. Content correction to [ObjectLinks](object-catalog/ObjectLinks.md) → version bump.
+
+### 1.19.0
+
+UUID healing: intra-file duplicate UUIDs — the same UUID on two different objects of one file, typically a copy-paste artifact — no longer collapse silently in the import upserts. Every duplicate twin survives with a **deterministic synthetic replacement UUID** (an md5 hash over the catalog, file, original UUID and the object's internal FileMaker ID); the twin with the smallest internal ID keeps the original UUID. The full mechanics, guarantees and limits are documented in [UUID Healing and Duplicate Census](UUID%20Healing%20and%20Duplicate%20Census.md).
+
+Schema surface of the bump: the P2 reference tables (`XMLStepReferences`, `XMLLayoutReferences`, `XMLCalcReferences`) additionally extract `Ref_ID` — the internal `@id` of each reference element (SaXML references are `id`+`name`+`UUID` triples) — plus `TO_Ref_ID` for field references, whose `@id` is only table-local. [DuplicateAbsorptionDetails](UUID%20Healing%20and%20Duplicate%20Census.md) gains `Healed_UUID`, `Heal_Status` and `Discriminator`, turning the census into the persistent original↔replacement mapping. Healing runs in the upsert CTEs of the main catalogs and (intra-chunk plus a merge-point follow-up pass) in the sub-chunked heavy catalogs; a new cascade template `convert_xml_01b_heal_cascade.sql` propagates healed parent UUIDs into dependent extracts, and a P4 rewrite stage distributes incoming references onto the correct twin via `Ref_ID`. Replacement UUIDs are chunking-invariant; FileMaker's double-serialization and chunk-overlap duplicates still collapse (correctly); on duplicate-free corpora the build stays run-to-run bit-identical. The escape hatch `FM_UUID_HEAL=0` restores the old absorb-and-census behavior.
+
+### 1.18.0
+
+Clone scoping via declared data sources: importing a file *together with its clone* (same internal file name pattern, e.g. `_dev` copies) could produce phantom edges — a reference fanning out to every file that carries the target UUID. A new P4 table `DataSourceFileMap` resolves each declared external data source `(File_Name, DS_UUID)` to the imported target file (by data-source name, else by walking the declared path list in FileMaker's search order); the [ObjectLinks](object-catalog/ObjectLinks.md) build scopes base-table targets to the declared source file, and a generic *prefer-declared-source* post-pass removes edges that fan out over several files when exactly one of them is the declared data source. A new P6 check view `v_check_phantom_links` guards the result. Content correction to [ObjectLinks](object-catalog/ObjectLinks.md) → version bump; clone-free corpora stay bit-identical.
+
+### 1.17.0
+
+Duplicate census completed: [DuplicateAbsorptionDetails](UUID%20Healing%20and%20Duplicate%20Census.md) gains context and plain-text columns (`Parent_Name`, `Position`, `Display_Text`, `Payload_XML`) — at this stage absorbed objects were still missing from the catalog, and these columns were the only trace by which a developer could find them in the solution. Detail capture is extended to [StepsForScripts](catalog-tables/StepsForScripts.md), [Layouts](catalog-tables/Layouts.md) and [LayoutObjects](catalog-tables/LayoutObjects.md), where the census now counts genuine copy-paste duplicates (same UUID, different internal object IDs) separately from FileMaker's benign double serialization of the same object. New table `MergeAbsorptions` persists what the chunk-merge deduplicates. This monitoring layer is what [1.19.0](#1190) later builds the healing on.
+
+### 1.16.0
+
+Second hardening of `StepsForScripts.Calculation_Text` extraction: additionally excludes calculations inside `<Bounds>` — for window steps without a name calculation (New Window, Go to Related Record with the "New window" option) the first-calculation XPath previously grabbed a window *geometry* expression, reporting a window height as the supposed window name. The column semantics ("first calculation in document order, excluding repetition and geometry slots") are now explicit. Additionally (P3, additive): new table `StepCalculations` — *all* positioned calculations per step with their slot context (parent element: name, height, URL, typed parameters, …) and `Calc_Position` — and the derived column `StepsForScripts.Opens_Window` (New Window always, Go to Related Record when a `<WindowReference>` option is present).
 
 ### 1.15.0
 
@@ -116,4 +143,4 @@ The conversion pipeline is split into six SQL phases (P1 Extract … P6 Validate
 
 ### 1.0.0
 
-Schema versioning itself (reconstructed from git): the `SchemaInfo` table, the `@SCHEMA_VERSION` marker in the Phase-1 template and the auto-heal mechanism — on version mismatch the pipeline discards and rebuilds the catalog (force-rebuild), so schema drift can never produce silently inconsistent databases.
+Schema versioning itself (reconstructed from git): the `SchemaInfo` table, the `@SCHEMA_VERSION` marker in the Phase-1 template and the automatic rebuild — on version mismatch the pipeline discards and rebuilds the catalog (force-rebuild), so schema drift can never produce silently inconsistent databases.

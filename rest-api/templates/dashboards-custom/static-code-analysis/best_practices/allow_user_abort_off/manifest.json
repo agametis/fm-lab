@@ -2,7 +2,7 @@
   "id": "allow_user_abort_off",
   "version": "1.0.0",
   "title": "Allow User Abort [Off]",
-  "description": "Best-practice rule — Allow User Abort [Off] steps. Disabling abort can trap the user in a long or looping script with no way out.",
+  "description": "Best-practice rule — flags Allow User Abort [Off] steps. Disabling abort can trap the user in a long or looping script with no way out.",
   "author": "fm-lab rules",
   "icon": "ban",
   "category": "best_practices",
@@ -22,9 +22,39 @@
       "author": "fm-lab rules",
       "source": "fm-lab",
       "url": null,
-      "description": "Best-practice rule — Allow User Abort [Off] steps. Disabling abort can trap the user in a long or looping script with no way out.",
+      "description": "Best-practice rule — flags Allow User Abort [Off] steps. Disabling abort can trap the user in a long or looping script with no way out.",
       "created": "2026-07-01",
       "references": []
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Allow User Abort [Off]"
     }
   },
   "datasets": [

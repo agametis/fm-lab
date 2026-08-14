@@ -169,6 +169,32 @@ SELECT rule, COUNT(*) AS violation_n FROM (
 )
 GROUP BY rule;
 
+-- Phantom-Signatur-Wächter (Klon-Korpora) — ALLE operationalen Rollen: eine Kante
+-- (Source, Rolle, Target_UUID), die über >1 Ziel-Dateien auffächert, ist ein
+-- Klon-Artefakt-Kandidat. Nach dem prefer-declared-source-Pass (P4) dürfen nur
+-- Gruppen übrig sein, deren Quelldatei KEINE (undeclared) oder MEHRERE
+-- (multi_declared) der Ziel-Dateien als Datenquelle deklariert — die ehrliche
+-- Modellgrenze. declared=1-Gruppen hier ⇒ der P4-Pass hat ein Leck.
+CREATE OR REPLACE VIEW v_check_phantom_links AS
+SELECT Link_Role,
+       COUNT(*) AS phantom_groups,
+       SUM(CASE WHEN declared_n = 1 THEN 1 ELSE 0 END) AS declared_one_groups,
+       SUM(CASE WHEN declared_n = 0 THEN 1 ELSE 0 END) AS undeclared_groups,
+       SUM(CASE WHEN declared_n > 1 THEN 1 ELSE 0 END) AS multi_declared_groups
+FROM (
+    SELECT ol.Source_UUID, ol.Source_File, ol.Link_Role, ol.Target_UUID,
+           COUNT(DISTINCT d.Resolved_File) AS declared_n
+    FROM ObjectLinks ol
+    LEFT JOIN (SELECT DISTINCT File_Name, Resolved_File FROM DataSourceFileMap) d
+           ON d.File_Name = ol.Source_File
+          AND d.Resolved_File = ol.Target_File
+    WHERE ol.Link_Type = 'operational'
+      AND ol.Target_File IS NOT NULL
+    GROUP BY ol.Source_UUID, ol.Source_File, ol.Link_Role, ol.Target_UUID
+    HAVING COUNT(DISTINCT ol.Target_File) > 1
+)
+GROUP BY Link_Role;
+
 -- XML-Zählung vs. Katalog-Zeilen — Sequence_ID ist ROW_NUMBER() in
 -- XML-Reihenfolge (+seq_offset, je Datei ab 1): MAX(Sequence_ID) = Zahl der im
 -- XML gesehenen Records. COUNT(*) < MAX ⇒ der UPSERT hat UUID-Dubletten still
@@ -281,6 +307,39 @@ WHERE cmi.Is_SubMenuItem
 CREATE OR REPLACE VIEW v_check_chunk_type_null AS
 SELECT COUNT(*) AS null_n FROM DDR_Calculations WHERE Chunk_Type IS NULL;
 
+-- Phase-S/P1-Integritäts-Check: Chunk-KLASSIFIKATION (XML-Attribut /Chunk/@type)
+-- gegen Chunk-INHALT — zwei unabhängige Artefakte desselben Ingests. Divergiert
+-- der Phase-S/D-Pfad oder verliert der Parse Inhalts-Elemente, bleiben typisierte
+-- Chunks mit totem Inhalt zurück: P2 scannt dann voll und findet 0 Referenzen —
+-- sichtbar erst am Gate, ohne Datei-/Chunk-Zuordnung. Dieser Check meldet den
+-- Mismatch direkt nach P1 pro Datei. Invarianten (korpus-validiert, 840k Chunks):
+--   FieldRef            → Inhalt trägt IMMER ein <FieldReference …>-Element mit
+--                         UUID-ATTRIBUT — exakt der Anker, über den P2 auflöst
+--                         (die TO-Referenz-UUID allein genügt NICHT, sonst bliebe
+--                         ein zerstörter Feld-Anker unerkannt). Geprüft wird die
+--                         Attribut-PRÄSENZ, nicht der Wert: UUID="" ist ein
+--                         bekannter QUELL-Defekt (Leerstring-Refs, Hygiene T4)
+--                         und kein Pipeline-Schaden
+--   benannte Ref-Typen  → Inhalt (Funktions-/Variablenname) ist nie leer
+-- Bewusst OHNE gsub-/Zähler-Logik (n>0 trotz No-op ist belegt) — reiner
+-- Output-Vergleich auf dem ingestierten Bestand.
+CREATE OR REPLACE VIEW v_check_chunk_refs AS
+SELECT File_Name,
+       SUM(CASE WHEN Chunk_Type = 'FieldRef'
+                 AND NOT regexp_matches(Chunk_Content, 'FieldReference[^>]*UUID="')
+                THEN 1 ELSE 0 END) AS fieldref_no_uuid,
+       SUM(CASE WHEN Chunk_Type IN ('CustomFunctionRef','PluginFunctionRef','FunctionRef','VariableReference')
+                 AND trim(regexp_replace(Chunk_Content, '^<Chunk[^>]*>|</Chunk>$', '', 'g')) = ''
+                THEN 1 ELSE 0 END) AS namedref_empty,
+       MIN(CASE WHEN (Chunk_Type = 'FieldRef'
+                       AND NOT regexp_matches(Chunk_Content, 'FieldReference[^>]*UUID="'))
+                  OR (Chunk_Type IN ('CustomFunctionRef','PluginFunctionRef','FunctionRef','VariableReference')
+                       AND trim(regexp_replace(Chunk_Content, '^<Chunk[^>]*>|</Chunk>$', '', 'g')) = '')
+                THEN Calc_UUID || '#' || Chunk_Index END) AS sample_chunk
+FROM DDR_Calculations
+GROUP BY File_Name
+HAVING fieldref_no_uuid > 0 OR namedref_empty > 0;
+
 -- Step-Rollen-Kuration (Step-ID-Mapping): field-Referenzen, deren Step-Typ
 -- nicht in ScriptStepRoleMap kuratiert ist, landen im references_field-Fallback —
 -- Where-used bleibt erhalten, aber ohne differenzierte Rolle (sets/reads/…).
@@ -351,6 +410,19 @@ SELECT 'calc', Ref_Type, COUNT(*),
 FROM XMLCalcReferences
 WHERE Ref_Type = 'field'
 GROUP BY Ref_Type;
+
+-- MBS-SubName-Auflösung (P2-Proximity + P3.5-Klartext-Recovery). Restbestand
+-- 'MBS' (unqualifiziert) sind legitim nur dynamische 1. Argumente
+-- (MBS($var; …)). Ein steigender Restbestand zeigt entweder eine neue
+-- DDR-Verlust-Konstellation, die der P3.5-Lexer nicht abdeckt, oder einen
+-- Drift in der Proximity-Paarung — Schwellwert-Bewertung im Quality-Report.
+CREATE OR REPLACE VIEW v_check_mbs_subname_resolution AS
+SELECT
+    COUNT(*) AS total,
+    COUNT(*) FILTER (Plugin_Function_Name = 'MBS') AS unresolved,
+    ROUND(100.0 * COUNT(*) FILTER (Plugin_Function_Name = 'MBS') / NULLIF(COUNT(*), 0), 1) AS unresolved_pct
+FROM PluginFunctionUsages
+WHERE Plugin_Function_Name = 'MBS' OR Plugin_Function_Name LIKE 'MBS:%';
 
 -- F-1b: Auflösungsquote der Relationship-Prädikat-Felder (left_field/right_field).
 -- Seit der strukturellen P1-Gültigkeitsprüfung tragen Prädikat-Felder auf externen

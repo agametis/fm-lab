@@ -12,6 +12,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.9.7] — 2026-08-12
+
+The analysis layer gains two major capabilities: **Analysis Tests** — curated, repeatable checks with a traffic-light overview — and a **platform compatibility** model that answers "Will this run on FileMaker Server / WebDirect / Go / this operating system?". On the ingestion side, the XML import preserves more of the original information: intra-file UUID healing and reliable MBS plugin-call resolution.
+
+- **Analysis Tests** — run curated checks over the catalog and see where a solution stands
+  - **New `fm-test` skill and Tests dashboard** in the web client — run declared collections of rules (curated static-analysis dashboards and custom queries) in solution, file, object, object-list, or cluster scope; each test returns a default result plus severity-sorted findings, and a discovery mode lists which tests apply to a given object
+  - **Test profiles, a traffic-light overview, and cached results** — group checks into profiles, get a red / amber / green summary across a solution with drill-down into findings and local selection filters, and re-open cached results without re-running
+  - New **analysis-pattern** documentation (call-chain, control-flow / reachability, window lifecycle, platform context) supports symptom-driven investigation ("hangs", "slow", "wrong results") and test-discovery for agents
+- **Platform compatibility & plug-in maintenance** — a new analysis dimension: does an object run on a given runtime and operating system, and is its plug-in usage still current?
+  - **Compatibility metadata** for steps, function, and plugins across FileMaker runtimes (Server / WebDirect / Go / …) and the four operating systems — curated in the bundled reference (`fm_spec`) and a new plugin reference (`plugin_spec.duckdb`, starting with MBS), preserving conditionally supported ("partial") cases rather than a naive yes/no
+  - **Platform-Profile dashboard** and an expanded fm-spec browser with per-step and per-function runtime/OS badges; incompatibilities are traced transitively through custom functions and new server-side-script call roles (on-server / on-server-callback), so a problem deep in a call chain still surfaces
+  - **Plug-in maintenance checks** — a Plug-in Maintenance test set flags calls to *deprecated* functions as warnings (naming the documented successor) and to *removed* functions as errors (naming the removal release); an MBS plugin-version dashboard determines the minimum plugin version a solution requires from the introduction versions of the functions in use — with the driver functions and per-file spread — and can validate against a chosen installed version
+- **XML import integrity** — the import keeps objects it used to lose (a full rebuild runs on the next import)
+  - **UUID healing for intra-file duplicates** (schema 1.19.0) — objects that shared a UUID inside a file were previously collapsed ("last write wins" behavior); every twin is now kept with a deterministic, re-import-stable replacement UUID, and incoming references are mapped to the correct twin via the internal id/name/UUID triple the SaXML already carries — so shared script UUIDs no longer merge unrelated steps or local variables, a silent analysis falsification until now. The UUID-duplicates dashboard shows healed, navigable objects instead of lost ones.
+  - **Reliable MBS plugin-call resolution** (converter 2.10.0) — a string- and comment-aware plain-text recovery pass restores plugin-function names that FileMaker's DDR export omits in certain constellations (a comment beside the call, nested calls), raising MBS resolution from 90.4 % to 99.3 %; genuinely dynamic calls (`MBS($var; …)`) render unlinked instead of as dead links, and a drift guard watches the rate
+- **Dashboards** — a consistent traffic-light status across all dashboards, a real folder hierarchy with per-hierarchy "run all" and consolidated, cached results, and a more compact presentation
+- **Robustness & fixes** — single-file import now runs the complete pipeline; assorted import-abort, repo-root, safe-directory, and path-with-spaces fixes
+- **Docs** - refined FM-Lab documentation with clearer navigation, expanded content, and the new **Core Design Principles** section
+
+---
+
 ## [0.9.6] — 2026-08-01
 
 A bugfix and refinement release: switching solutions in the web UI is fixed, script generation gets more precise, and the XML import sharpens its script-step and platform-compatibility data.
@@ -758,7 +779,8 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 <!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
      versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
      intentionally left unlinked and render as plain text. Add a line here per new tag. -->
-[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.6...HEAD
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.7...HEAD
+[0.9.7]: https://github.com/marcel-more/fm-lab/compare/v0.9.6...v0.9.7
 [0.9.6]: https://github.com/marcel-more/fm-lab/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/marcel-more/fm-lab/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/marcel-more/fm-lab/compare/v0.9.3...v0.9.4

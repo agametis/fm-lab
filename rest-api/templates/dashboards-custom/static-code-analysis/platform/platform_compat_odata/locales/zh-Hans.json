@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "平台兼容性：OData",
+  "analysis.defaultResult.meaning": "OData 就绪性发现项（借用 Server 基准 + 命名与提交规则）"
+ }
+}

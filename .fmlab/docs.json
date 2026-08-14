@@ -68,6 +68,7 @@
       "download_format": "html-archive",
       "content_dir": ".",
       "index_page": "Home.md",
+      "start_page": "Home",
       "visible": true,
       "references": false,
       "index": {
@@ -112,6 +113,7 @@
       "download_format": null,
       "content_dir": ".",
       "index_page": "Documentation.md",
+      "start_page": "Documentation",
       "visible": true,
       "references": false,
       "index": {
@@ -127,7 +129,7 @@
       "id": "fm-lab",
       "directory": "docs/fm-lab",
       "version": null,
-      "installed_at": "2026-08-01T22:22:52Z",
+      "installed_at": "2026-08-14T18:23:34Z",
       "languages": [
         "en"
       ],

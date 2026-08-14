@@ -1,4 +1,5 @@
--- Auto-generiert aus dem core der Rule (go_to_related_record_in_loop). Nicht von Hand editieren.
+-- Hand-maintained COUNT wrapper embedding the findings core of rule (go_to_related_record_in_loop).
+-- The core is a textual copy — keep filters (file filter + S-Block) in sync with data/findings.sql.
 SELECT
     COUNT(*)                     AS finding_count,
     'warning'          AS severity,
@@ -17,5 +18,7 @@ SELECT
 FROM v_script_block_tree
 WHERE Step_ID = 74 AND loop_depth_before >= 1
   AND (getvariable('file') IS NULL OR File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
 ORDER BY File_Name, Script_Name, Step_Index
 ) _summary;

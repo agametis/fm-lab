@@ -1,0 +1,170 @@
+{
+  "id": "script-error-checks",
+  "version": "1.0.0",
+  "title": "Script Error Checks",
+  "description": "Bundles all error-prone checks relevant for a single script: window lifecycle, dead code, empty and unbalanced branches, loop exits, dialog/GTRR misuse and self-recursion.",
+  "keywords": [
+    "error",
+    "robustness",
+    "script",
+    "window",
+    "loop",
+    "dead-code",
+    "hang"
+  ],
+  "testType": "error-check",
+  "objectTypes": [
+    "Script"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "exit_script_in_loop"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "close_window_name_never_created"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "window_opened_without_close"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "show_dialog_in_loop"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "dead_code_after_exit"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "empty_if_branch"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "empty_else_branch"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "unbalanced_if_block"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "loop_without_exit_loop_if"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "deep_if_nesting"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "replace_field_contents"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "self_recursive_script"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "quick",
+      "title": "Quick Check",
+      "description": "Only the sharpest hang/robustness rules: window lifecycle, loop exits, self-recursion.",
+      "members": [
+        "close_window_name_never_created",
+        "window_opened_without_close",
+        "loop_without_exit_loop_if",
+        "exit_script_in_loop",
+        "self_recursive_script"
+      ]
+    },
+    {
+      "id": "full",
+      "title": "Full Check"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Script-Fehlerprüfungen",
+      "description": "Bündelt alle fehleranfälligen Prüfungen, die für ein einzelnes Script relevant sind: Fenster-Lebenszyklus, toter Code, leere und unausgeglichene Verzweigungen, Schleifenausstiege, Fehlgebrauch von Dialogen/GTRR und Selbstrekursion.",
+      "profiles.quick.title": "Schnellprüfung",
+      "profiles.quick.description": "Nur die schärfsten Hänger-/Robustheitsregeln: Fenster-Lebenszyklus, Schleifenausstiege, Selbstrekursion.",
+      "profiles.full.title": "Vollprüfung"
+    },
+    "es": {
+      "title": "Comprobaciones de errores de scripts",
+      "description": "Agrupa todas las comprobaciones propensas a error relevantes para un único script: ciclo de vida de ventanas, código muerto, ramas vacías y desequilibradas, salidas de bucle, uso indebido de diálogos/GTRR y autorrecursión.",
+      "profiles.quick.title": "Comprobación rápida",
+      "profiles.quick.description": "Solo las reglas más incisivas sobre bloqueos y robustez: ciclo de vida de ventanas, salidas de bucle, autorrecursión.",
+      "profiles.full.title": "Comprobación completa"
+    },
+    "fr": {
+      "title": "Vérifications d'erreurs des scripts",
+      "description": "Regroupe toutes les vérifications sujettes aux erreurs pertinentes pour un script isolé : cycle de vie des fenêtres, code mort, branches vides et déséquilibrées, sorties de boucle, mauvais usage des boîtes de dialogue/GTRR et auto-récursion.",
+      "profiles.quick.title": "Vérification rapide",
+      "profiles.quick.description": "Uniquement les règles les plus tranchantes sur les blocages et la robustesse : cycle de vie des fenêtres, sorties de boucle, auto-récursion.",
+      "profiles.full.title": "Vérification complète"
+    },
+    "it": {
+      "title": "Controlli degli errori degli script",
+      "description": "Raggruppa tutti i controlli soggetti a errore rilevanti per un singolo script: ciclo di vita delle finestre, codice morto, rami vuoti e sbilanciati, uscite dai cicli, uso improprio di finestre di dialogo/GTRR e auto-ricorsione.",
+      "profiles.quick.title": "Controllo rapido",
+      "profiles.quick.description": "Solo le regole più incisive su blocchi e robustezza: ciclo di vita delle finestre, uscite dai cicli, auto-ricorsione.",
+      "profiles.full.title": "Controllo completo"
+    },
+    "ja": {
+      "title": "スクリプトのエラー検査",
+      "description": "単一スクリプトに関係するエラーを招きやすい検査をまとめたものです：ウィンドウのライフサイクル、デッドコード、空および不均衡な分岐、ループの脱出、ダイアログ／GTRR の誤用、自己再帰。",
+      "profiles.quick.title": "クイックチェック",
+      "profiles.quick.description": "ハングと堅牢性に関する最も鋭い規則のみ：ウィンドウのライフサイクル、ループの脱出、自己再帰。",
+      "profiles.full.title": "フルチェック"
+    },
+    "ko": {
+      "title": "스크립트 오류 검사",
+      "description": "단일 스크립트와 관련된 오류 유발 검사를 한데 묶습니다: 창 수명 주기, 죽은 코드, 비어 있거나 균형이 맞지 않는 분기, 루프 탈출, 대화상자/GTRR 오용, 자기 재귀.",
+      "profiles.quick.title": "빠른 검사",
+      "profiles.quick.description": "멈춤과 견고성에 관한 가장 날카로운 규칙만: 창 수명 주기, 루프 탈출, 자기 재귀.",
+      "profiles.full.title": "전체 검사"
+    },
+    "nl": {
+      "title": "Foutcontroles van scripts",
+      "description": "Bundelt alle foutgevoelige controles die relevant zijn voor één script: venster-levenscyclus, dode code, lege en niet-uitgebalanceerde vertakkingen, lusuitgangen, verkeerd gebruik van dialoogvensters/GTRR en zelfrecursie.",
+      "profiles.quick.title": "Snelle controle",
+      "profiles.quick.description": "Alleen de scherpste regels rond vastlopen en robuustheid: venster-levenscyclus, lusuitgangen, zelfrecursie.",
+      "profiles.full.title": "Volledige controle"
+    },
+    "pt": {
+      "title": "Verificações de erros dos scripts",
+      "description": "Reúne todas as verificações propensas a erro relevantes para um único script: ciclo de vida de janelas, código morto, ramificações vazias e desequilibradas, saídas de laço, uso indevido de diálogos/GTRR e autorrecursão.",
+      "profiles.quick.title": "Verificação rápida",
+      "profiles.quick.description": "Apenas as regras mais incisivas sobre travamentos e robustez: ciclo de vida de janelas, saídas de laço, autorrecursão.",
+      "profiles.full.title": "Verificação completa"
+    },
+    "sv": {
+      "title": "Felkontroller för skript",
+      "description": "Samlar alla felbenägna kontroller som är relevanta för ett enskilt skript: fönstrens livscykel, död kod, tomma och obalanserade grenar, looputgångar, felaktig användning av dialoger/GTRR och självrekursion.",
+      "profiles.quick.title": "Snabbkontroll",
+      "profiles.quick.description": "Endast de skarpaste reglerna om hängningar och robusthet: fönstrens livscykel, looputgångar, självrekursion.",
+      "profiles.full.title": "Fullständig kontroll"
+    },
+    "zh-Hans": {
+      "title": "脚本错误检查",
+      "description": "汇集与单个脚本相关的各项易错检查：窗口生命周期、死代码、空分支与不平衡分支、循环退出、对话框/GTRR 的误用以及自递归。",
+      "profiles.quick.title": "快速检查",
+      "profiles.quick.description": "仅保留关于卡死与健壮性的最关键规则：窗口生命周期、循环退出、自递归。",
+      "profiles.full.title": "完整检查"
+    }
+  }
+}

@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Layout sin contexto de tabla",
-    "description": "Regla de buenas prácticas: Layouts sin contexto de aparición de tabla. No pueden mostrar datos de registros y suelen ser Layouts huérfanos o auxiliares."
+    "description": "Regla de buenas prácticas: detecta Layouts sin contexto de aparición de tabla. No pueden mostrar datos de registros y suelen ser Layouts huérfanos o auxiliares."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Hallazgos",

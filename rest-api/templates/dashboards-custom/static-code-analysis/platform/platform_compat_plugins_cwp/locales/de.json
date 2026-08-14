@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plug-in-Kompatibilität: Custom Web Publishing",
+  "analysis.defaultResult.meaning": "Plug-in-Funktionsaufrufe im Prüfumfang, die auf Custom Web Publishing nicht laufen"
+ }
+}

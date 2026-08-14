@@ -83,7 +83,14 @@
     "Dependencies": "Dipendenze",
     "Fields": "Campi",
     "Scripts": "Script",
-    "Variables": "Variabili"
+    "Variables": "Variabili",
+    "dashboard": "Dashboard",
+    "query": "Query personalizzata",
+    "system": "Sistema",
+    "custom": "Personalizzato",
+    "ok": "OK",
+    "warnings": "Avvisi",
+    "errors": "Errori"
   },
   "semanticNames": {
     "structureLabel": "Struttura",
@@ -113,16 +120,15 @@
     "warnHead": "{{count}} duplicato/i UUID assorbito/i su {{combos}} combinazione/i catalogo/file",
     "colFile": "File",
     "colCatalog": "Catalogo",
-    "colAbsorbed": "Script persi",
-    "colSteps": "Passaggi persi",
+    "colAbsorbed": "Oggetti persi",
+    "colSub": "Sotto-oggetti persi",
     "colSource": "Origine",
     "colStored": "Memorizzati",
     "footnote": "Difetto di origine (UUID duplicati nell'esportazione FileMaker). Il convertitore deduplica in modo deterministico (last-write-wins); risolvibile solo correggendo/riesportando l'origine.",
-    "stepsHint": "Passaggi = singoli passaggi di script persi; lo script che li contiene resta intatto. «—» = nessuno script intero perso.",
-    "detailsHead": "Oggetti in collisione",
-    "detailsMore": "… e altri {{count}} oggetti in collisione",
-    "colObjects": "Oggetto/i",
-    "colOccurrences": "Occorrenze"
+    "subHint": "Oggetti = oggetti interi del catalogo (script o formati). Sotto-oggetti = passaggi di script oppure oggetti di formato persi; il contenitore resta intatto. «—» = nessuna perdita di questo tipo.",
+    "linksLabel": "Risultati completi:",
+    "linkIntrafile": "Duplicati di UUID nello stesso file",
+    "linkClones": "Collisioni di UUID da clonazione"
   },
   "xmlEmpty": {
     "hint": "Ancora nessun dato. Inserisci l'esportazione XML di FileMaker nella cartella “xml/” e avvia la conversione.",
@@ -136,5 +142,31 @@
     "hostPathHint": "Inserisci i file in questa cartella sull'host — è montata nel container.",
     "containerPathNote": "Percorso all'interno del container",
     "putFilesHint": "Inserisci i tuoi file XML di FileMaker nella cartella “xml/”."
+  },
+  "folderNav": {
+    "root": "Tutti i dashboard",
+    "notFound": "Cartella non trovata.",
+    "backToRoot": "Torna alla panoramica",
+    "breadcrumb": "Cartelle",
+    "runAll": "Esegui tutto",
+    "run": "Esegui",
+    "running": "in esecuzione…",
+    "findings": "risultati",
+    "coverageHint": "Copertura parziale — non tutti i risultati sono stati calcolati",
+    "filterLabel": "Stato",
+    "sortLabel": "Ordinamento",
+    "sortStandard": "Standard",
+    "sortValue": "Numero di risultati ↓",
+    "sortState": "Semaforo",
+    "state": {
+      "ok": "OK",
+      "warning": "Avviso",
+      "error": "Errore",
+      "neutral": "Neutro",
+      "pending": "In attesa",
+      "failed": "Non riuscito"
+    },
+    "noFilterMatches": "Nessuna voce con questo stato in questa sezione.",
+    "openFolder": "Apri cartella"
   }
 }

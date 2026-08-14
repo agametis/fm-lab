@@ -10,10 +10,13 @@ import {
   fetchFmSpecMeta,
   fetchFmSpecSteps,
   fetchFmSpecFunctions,
+  PLATFORM_LABELS,
+  STEP_COMPAT_PLATFORMS,
   type FmSpecMeta,
   type FmSpecStep,
   type FmSpecFunction,
   type RefCategory,
+  type StepCompatPlatform,
 } from '../api/fmSpecApi';
 import './FmSpecView.css';
 
@@ -50,6 +53,7 @@ export function FmSpecView() {
     serialize: (v) => (v === 'steps' ? null : v),
   });
   const [search, setSearch] = useUrlState('q', '');
+  const [platform, setPlatform] = useUrlState('platform', '');
 
   const [meta, setMeta] = useState<FmSpecMeta | null>(null);
   const [metaErr, setMetaErr] = useState<string | null>(null);
@@ -100,25 +104,49 @@ export function FmSpecView() {
 
   const q = search.trim().toLowerCase();
 
+  // Plattform-Filter-Optionen je Tab: Steps kennen alle 7 Spalten der
+  // Claris-Tabelle; Functions nur die Plattformen, für die kuratierte
+  // Bindungsdaten existieren (Referenz ≥ 1.12.0 — sonst kein Menü).
+  const fnPlatforms = useMemo(() => {
+    const present = new Set<string>();
+    for (const f of functions ?? []) {
+      for (const a of f.platformAffinity ?? []) present.add(a.platform);
+    }
+    return STEP_COMPAT_PLATFORMS.filter((p) => present.has(p));
+  }, [functions]);
+  const platformOptions: StepCompatPlatform[] =
+    tab === 'steps' ? STEP_COMPAT_PLATFORMS
+    : tab === 'functions' ? fnPlatforms
+    : [];
+  // Eine im aktuellen Tab nicht verfügbare Auswahl ist inaktiv (nicht löschend):
+  // Tab-Wechsel behält die URL-Auswahl, filtert aber nie ins Leere.
+  const activePlatform = platformOptions.includes(platform as StepCompatPlatform)
+    ? (platform as StepCompatPlatform) : null;
+
   const filteredSteps = useMemo(() => {
     if (!steps) return [];
-    if (!q) return steps;
     return steps.filter((s) => {
+      // Tri-State: true=Yes, null=Partial — beide zählen als "läuft";
+      // nur explizites false fällt heraus. Fehlende compat-Zeile = keine
+      // Claris-Aussage → bleibt sichtbar (nie als inkompatibel behandeln).
+      if (activePlatform && s.compat && s.compat[activePlatform] === false) return false;
+      if (!q) return true;
       const hay = [s.stepId, s.name, s.categoryId, catName(stepCats, s.categoryId), s.originVersion]
         .filter((v) => v != null).join(' ').toLowerCase();
       return hay.includes(q);
     });
-  }, [steps, stepCats, q]);
+  }, [steps, stepCats, q, activePlatform]);
 
   const filteredFns = useMemo(() => {
     if (!functions) return [];
-    if (!q) return functions;
     return functions.filter((f) => {
+      if (activePlatform && !(f.platformAffinity ?? []).some((a) => a.platform === activePlatform)) return false;
+      if (!q) return true;
       const hay = [f.functionId, f.name, catName(fnCats, f.categoryId), f.returnType, f.originVersion]
         .filter((v) => v != null).join(' ').toLowerCase();
       return hay.includes(q);
     });
-  }, [functions, fnCats, q]);
+  }, [functions, fnCats, q, activePlatform]);
 
   const filteredLocales = useMemo(() => {
     const locales = meta?.locales ?? [];
@@ -188,6 +216,20 @@ export function FmSpecView() {
             ))}
           </div>
           <span className="fmspec-count">{t('fmSpec:list.count', { shown: shownForTab, total: totalForTab })}</span>
+          {platformOptions.length > 0 && (
+            <select
+              className="fmspec-platform-filter"
+              value={activePlatform ?? ''}
+              onChange={(e) => setPlatform(e.target.value)}
+              aria-label={t('fmSpec:search.platformLabel') as string}
+              title={t(tab === 'functions' ? 'fmSpec:search.platformFnHint' : 'fmSpec:search.platformStepHint') as string}
+            >
+              <option value="">{t('fmSpec:search.platformAll')}</option>
+              {platformOptions.map((p) => (
+                <option key={p} value={p}>{PLATFORM_LABELS[p]}</option>
+              ))}
+            </select>
+          )}
           <input
             type="search"
             className="fmspec-search"

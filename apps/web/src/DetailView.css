@@ -133,6 +133,36 @@
   color: var(--color-success-fg);
 }
 
+/* Healed-UUID badge — marks a synthetic FM-Lab replacement identity
+   (duplicate healing). Click copies the synthetic UUID. */
+.uuid-healed-badge {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.uuid-healed-badge:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: transparent;
+}
+
+.uuid-healed-badge.copied {
+  color: var(--color-success-fg);
+  border-color: var(--color-success-fg);
+}
+
 /* References Filter Toolbar — spacing now comes from .detail-tab-content */
 .hierarchy-tree-wrapper {
   margin-top: 0;
@@ -641,6 +671,19 @@
   color: var(--color-text-primary);
   background-color: var(--color-hover-bg);
 }
+
+/* Tests tab badge: worst cached test result of the current object */
+.tab-badge {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+.tab-badge-error { background: var(--color-error-fg); }
+.tab-badge-warning { background: var(--color-warning-fg); }
 
 .tab-button.active {
   color: var(--color-accent);

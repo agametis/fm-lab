@@ -6,6 +6,7 @@ const graphService = require('./graph.service');
 const annotationsService = require('./annotations.service');
 const dashboardService = require('./dashboard.service');
 const dashboardI18nService = require('./dashboard-i18n.service');
+const testsService = require('./tests.service');
 const pluginI18nService = require('../plugins/plugin-i18n.service');
 const docsReferences = require('./docs-references');
 const clarisAdapter = require('./plugin-docs/adapters/claris-duckdb');
@@ -17,7 +18,7 @@ const clarisAdapter = require('./plugin-docs/adapters/claris-duckdb');
  * Reload nach erfolgreichem `POST /api/docs/install/:id`
  * (Adapter-Refresh nach Installation).
  *
- * Ausbaustufe M: optional gezielt für EINE Lösung (`solutionId`) — invalidiert
+ * Optional gezielt für EINE Lösung (`solutionId`) — invalidiert
  * genau deren Pool-Eintrag (+ Sidecar); ohne Argument der Server-Default.
  * Die In-Process-Caches werden weiterhin komplett geleert (sie sind per
  * ctx.solution geschlüsselt — Komplett-Clear ist grob, aber korrekt).
@@ -33,7 +34,7 @@ async function performReload(solutionId) {
   helpService.clearCache();
   templateService.clearCache();
   graphService.clearCache();
-  // R3 (vor dem User-Remap): Skill-Semantic-Names durabel halten — erst
+  // Vor dem User-Remap: Skill-Semantic-Names durabel halten — erst
   // den Sidecar-Cache auf die neue Partition restaurieren (greift nach Force-
   // Rebuild), dann den Cache aus der Copy auffrischen (nur wenn die Copy Namen
   // hat). Best-effort: ein Fehler darf den Reload nie kippen.
@@ -55,6 +56,7 @@ async function performReload(solutionId) {
   }
   dashboardService.clearCache();
   dashboardI18nService.clearCache();
+  testsService.clearCache();
   pluginI18nService.clearCache();
   docsReferences.clearCache();
   clarisAdapter.clearSlugMapCache();

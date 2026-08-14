@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "OSバインディング: 組み込み関数",
+  "analysis.defaultResult.meaning": "Claris 組み込み関数によって特定のオペレーティングシステムに結び付いた対象範囲内のスクリプト"
+ }
+}

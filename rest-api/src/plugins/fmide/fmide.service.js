@@ -255,6 +255,37 @@ async function buildUri(ctx, uuid, configOverrides, file) {
   const obj = objResult.rows[0];
   const objectType = obj.Object_Type;
 
+  // UUID-healing guard (schema 1.19.0): a 32-char no-dash md5 UUID is a synthetic
+  // FM-Lab identity (healed intra-file duplicate twin) — it does not exist in the
+  // FileMaker source, so an fmp:// jump is impossible. Surface the original UUID
+  // from the census so the client can offer the (explicitly ambiguous) fallback.
+  if (/^[0-9a-fA-F]{32}$/.test(obj.Object_UUID)) {
+    let original = null;
+    try {
+      const census = await db.executeQuery(
+        ctx,
+        'SELECT Object_UUID, Discriminator FROM DuplicateAbsorptionDetails WHERE Healed_UUID = ? AND File_Name = ? LIMIT 1',
+        [obj.Object_UUID, obj.File_Name]
+      );
+      if (census.rows.length > 0) original = census.rows[0];
+    } catch (_) {
+      // census table missing (pre-1.19.0 DB) → guard still applies, just without mapping
+    }
+    throw createError(
+      'SYNTHETIC_UUID',
+      `'${obj.Object_Name}' is a healed duplicate twin — its UUID is FM-Lab-internal and cannot be opened via fmp://. ` +
+        (original
+          ? `The original UUID ${original.Object_UUID} is ambiguous in the source file (assigned to ≥2 objects); an fmIDE jump via it opens one of the twins, not necessarily this one.`
+          : 'No census mapping found for the original UUID.'),
+      {
+        uuid: obj.Object_UUID,
+        file: obj.File_Name,
+        original_uuid: original ? original.Object_UUID : null,
+        discriminator: original ? original.Discriminator : null,
+      }
+    );
+  }
+
   if (!SUPPORTED_TYPES.has(objectType)) {
     return {
       object_uuid: obj.Object_UUID,

@@ -157,6 +157,83 @@ function applyOverrides(target, overrides) {
 }
 
 /**
+ * Applies manifest overrides. Keys are dotted paths into the manifest —
+ * a top-level field is simply a path of length one, so every locale file
+ * written against the former flat-key rule keeps working unchanged:
+ *
+ *   "title":                            "Commit Records in der Loop"
+ *   "analysis.defaultResult.meaning":   "Anzahl Befunde — …"
+ *
+ * The nested form is what makes the result model translatable at all: the
+ * one display string of the compact result (`meaning`) sits inside the
+ * `analysis` block, and a flat merge could only replace that whole block —
+ * duplicating scope declarations and dataset bindings into every language.
+ *
+ * NOT `applyOverrides`: that one resolves layout node ids first, which has no
+ * meaning in a manifest (whose top-level `id` is the bundle id, not a node).
+ * A path into a missing parent is skipped rather than written as a literal
+ * dotted key — with STRICT_I18N it fails loudly, same as for layouts.
+ */
+function applyManifestOverrides(manifest, overrides) {
+  if (!overrides || typeof overrides !== 'object') return;
+  for (const [key, value] of Object.entries(overrides)) {
+    const slot = resolvePath(manifest, key);
+    if (!slot) {
+      const msg = `[dashboard-i18n] unresolved manifest override key "${key}"`;
+      if (process.env.STRICT_I18N) throw new Error(msg);
+      console.warn(msg);
+      continue;
+    }
+    slot.container[slot.key] = value;
+  }
+}
+
+/**
+ * "Number of findings" per language. Standalone phrasings, deliberately NOT
+ * the frontend's `dashboard:folderNav.findings` — that one is a UNIT suffix
+ * ("12 Findings"), which in CJK is a bare counter (件 / 건 / 项) and cannot
+ * carry a sentence. The nouns match where both are standalone words; German
+ * keeps the loanword "Findings" because the German UI does.
+ */
+const FINDINGS_COUNT_PHRASE = {
+  de: 'Anzahl Findings',
+  es: 'Número de hallazgos',
+  fr: 'Nombre de résultats',
+  it: 'Numero di risultati',
+  ja: '検出件数',
+  ko: '발견 건수',
+  nl: 'Aantal bevindingen',
+  pt: 'Número de resultados',
+  sv: 'Antal träffar',
+  'zh-Hans': '发现数量',
+};
+
+// The canonical English shape of a rule's result description. 70 of the 98
+// declared `defaultResult.meaning` strings follow it verbatim.
+const FINDINGS_COUNT_PATTERN = /^Number of findings\s*[—–-]\s*.+$/;
+
+/**
+ * Localises a result description of the canonical form
+ * `"Number of findings — <rule title>"` by composing it from the translated
+ * phrase and the ALREADY LOCALISED rule title.
+ *
+ * Deriving beats translating here: the rule title is the only variable part
+ * and every bundle translates it anyway, so an explicit per-rule translation
+ * of `meaning` would restate it — and silently rot the day a rule is renamed
+ * in one file but not the other. Anything that does not match the canonical
+ * shape (28 hand-written descriptions) is returned untouched and needs a real
+ * `analysis.defaultResult.meaning` override in its locale file; a translation
+ * that already came from such an override no longer matches the English
+ * pattern, so it is never re-derived.
+ */
+function deriveFindingsMeaning(meaning, localizedTitle, lang) {
+  if (!lang || lang === 'en' || !meaning || !localizedTitle) return meaning;
+  const phrase = FINDINGS_COUNT_PHRASE[lang];
+  if (!phrase || !FINDINGS_COUNT_PATTERN.test(meaning)) return meaning;
+  return `${phrase} — ${localizedTitle}`;
+}
+
+/**
  * Deep-clones a JSON-safe value. JSON-shaped, so JSON.parse(JSON.stringify(x))
  * is sufficient (and faster than structuredClone for small dashboard payloads).
  */
@@ -200,13 +277,7 @@ async function resolveBundleForLanguage(bundle, lang) {
   const manifest = deepCloneJson(bundle.manifest);
   const layout = deepCloneJson(bundle.layout);
 
-  if (overrides.manifest && typeof overrides.manifest === 'object') {
-    // Manifest overrides are shallow object keys for ergonomics (most
-    // translatable fields live at the top level: title, description, …).
-    for (const [k, v] of Object.entries(overrides.manifest)) {
-      manifest[k] = v;
-    }
-  }
+  applyManifestOverrides(manifest, overrides.manifest);
   if (overrides.layout && typeof overrides.layout === 'object') {
     applyOverrides(layout, overrides.layout);
   }
@@ -220,10 +291,12 @@ async function resolveBundleForLanguage(bundle, lang) {
 
 module.exports = {
   resolveBundleForLanguage,
+  deriveFindingsMeaning,
   clearCache,
   // exposed for tests
   resolvePath,
   applyOverrides,
+  applyManifestOverrides,
   buildIdIndex,
   resolveOverrideKey,
 };

@@ -1,0 +1,505 @@
+/* Tests tab of the object detail view */
+
+.tests-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.tests-panel-empty {
+  padding: 1.5rem 0.5rem;
+  color: var(--color-text-secondary);
+}
+
+.tests-card {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg-surface);
+}
+
+.tests-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tests-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.tests-card-title h3 {
+  margin: 0;
+  font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tests-type-badge {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.tests-validation-badge {
+  cursor: help;
+}
+
+.tests-run-button {
+  flex-shrink: 0;
+  padding: 0.3rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  /* Explicit — the global button style inherits --color-text-inverse,
+     which renders white-on-white / black-on-black on a surface background. */
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.tests-run-button:hover:not(:disabled) {
+  background: var(--color-hover-bg);
+  border-color: var(--color-text-secondary);
+}
+
+.tests-run-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Toolbar: type chips + search + run-all */
+
+.tests-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.25rem 0 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tests-toolbar-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.tests-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tests-chip:hover {
+  border-color: var(--color-text-secondary);
+}
+
+.tests-chip.active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft-bg);
+}
+
+.tests-chip-bullet {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--color-text-secondary);
+}
+
+.tests-chip-bullet.tests-type-error-check { background: var(--color-error-fg); }
+.tests-chip-bullet.tests-type-performance { background: var(--color-warning-fg); }
+.tests-chip-bullet.tests-type-code-quality { background: var(--color-accent); }
+.tests-chip-bullet.tests-type-platform { background: #7d5ba6; }
+.tests-chip-bullet.tests-type-security { background: #b03060; }
+.tests-chip-bullet.tests-type-inventory { background: #3d8b6d; }
+.tests-chip-bullet.tests-type-exploration { background: #8a8a3a; }
+
+.tests-chip-count {
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+}
+
+.tests-toolbar-search {
+  flex-shrink: 0;
+  width: 12rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+}
+
+.tests-toolbar-search::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.tests-card-description {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.tests-card-results {
+  margin-top: 0.6rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.4rem;
+}
+
+.tests-member-row {
+  font-size: 0.85rem;
+}
+
+.tests-member-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.15rem 0;
+}
+
+.tests-member-expand {
+  width: 1.4rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+}
+
+.tests-member-expand:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.tests-member-ref {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono, monospace);
+}
+
+.tests-member-value {
+  font-weight: 600;
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+.tests-member-error {
+  color: var(--color-error-fg);
+  cursor: help;
+}
+
+.tests-member-open {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+}
+
+.tests-sev-ok { color: var(--color-text-secondary); font-weight: 400; }
+.tests-sev-error { color: var(--color-error-fg); }
+.tests-sev-warning { color: var(--color-warning-fg); }
+.tests-sev-info { color: var(--color-text-primary); }
+
+.tests-findings {
+  margin: 0.2rem 0 0.4rem 2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.tests-findings li {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.1rem 0;
+  font-size: 0.8rem;
+}
+
+.tests-finding-step {
+  font-family: var(--font-mono, monospace);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.tests-findings-truncated {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.tests-card-meta {
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+/* Summary bar: aggregated tokens + state-filter chips + timestamps */
+
+.tests-summary-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-surface);
+}
+
+.tests-summary-tokens {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.tests-summary-meta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+  flex-wrap: wrap;
+}
+
+.tests-token {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* State colors come from the shared result-state tokens (styles/theme.css) —
+   one color semantic with the dashboard chips (dash-state-*). */
+.tests-state-error { color: var(--result-state-error); }
+.tests-state-warning { color: var(--result-state-warning); }
+.tests-state-neutral { color: var(--result-state-neutral); }
+.tests-state-ok { color: var(--result-state-ok); }
+.tests-state-skipped { color: var(--result-state-skipped); font-weight: 400; }
+.tests-state-failed { color: var(--result-state-failed); opacity: 0.7; }
+
+.tests-state-chip .tests-token {
+  font-size: 0.78rem;
+}
+
+.tests-notrun {
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.tests-tokens {
+  display: inline-flex;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Sections */
+
+.tests-section {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-surface);
+  overflow: hidden;
+}
+
+.tests-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tests-section-toggle {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.1rem 0;
+  text-align: left;
+}
+
+.tests-section-summary {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.tests-section-body {
+  border-top: 1px solid var(--color-border);
+  padding: 0.25rem 0.75rem 0.5rem;
+}
+
+.tests-section-footer {
+  margin-top: 0.35rem;
+  border-top: 1px dashed var(--color-border);
+  padding-top: 0.3rem;
+}
+
+.tests-footer-toggle {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  padding: 0.1rem 0;
+}
+
+/* Test rows (replace the old always-open cards) */
+
+.tests-row {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent);
+}
+
+.tests-row:last-child {
+  border-bottom: none;
+}
+
+.tests-row-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  min-height: 2rem;
+}
+
+.tests-row-title {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 8rem;
+}
+
+.tests-row-result {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tests-row-membercount {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.tests-row-disabled {
+  opacity: 0.55;
+}
+
+.tests-row-body {
+  padding: 0 0 0.4rem 1.9rem;
+}
+
+.tests-disable-button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  padding: 0.1rem 0.25rem;
+}
+
+.tests-disable-button:hover {
+  color: var(--color-text-primary);
+}
+
+.tests-profile-select,
+.tests-platform-add {
+  font-size: 0.75rem;
+  padding: 0.12rem 0.3rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  max-width: 11rem;
+}
+
+.tests-member-skipped {
+  opacity: 0.6;
+}
+
+/* Platform section */
+
+.tests-platform-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.tests-platform-hint {
+  margin: 0.4rem 0;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.tests-matrix-wrap {
+  margin-top: 0.5rem;
+  overflow-x: auto;
+}
+
+.tests-os-binding {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.tests-os-binding-label {
+  color: var(--color-text-secondary);
+}
+
+.tests-matrix {
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  min-width: 50%;
+}
+
+.tests-matrix th,
+.tests-matrix td {
+  border: 1px solid var(--color-border);
+  padding: 0.2rem 0.5rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.tests-matrix td:not(:first-child) {
+  text-align: center;
+}
+
+/* Sort toggle (V6) */
+
+.tests-sort-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+}

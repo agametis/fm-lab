@@ -6,6 +6,7 @@
 -- @display: table
 -- @params: none
 -- @output_format: file_name, script_count, avg_steps, max_steps, total_steps
+-- @default_result: { "aggregate": "row_count", "type": "number", "name": "file_count", "meaning": "Files with script statistics (inventory — informational, not a defect count)" }
 -- @author: Marcel
 -- @version: 1.1
 -- @tags: scripts, statistics, complexity

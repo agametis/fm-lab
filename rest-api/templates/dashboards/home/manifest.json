@@ -17,6 +17,7 @@
     { "id": "nav_dashboards",        "source": "builtin:list_dashboards",
       "params": { "excludeTags": ["home", "nav", "internal", "system"] } },
     { "id": "nav_custom_queries",    "source": "builtin:list_custom_queries" },
+    { "id": "nav_tests",             "source": "builtin:list_tests" },
     { "id": "nav_docs",              "source": "builtin:list_docs" }
   ],
   "params": [

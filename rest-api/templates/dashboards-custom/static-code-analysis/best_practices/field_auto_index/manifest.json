@@ -2,7 +2,7 @@
   "id": "field_auto_index",
   "version": "1.0.0",
   "title": "Auto-index field",
-  "description": "Best-practice rule — fields set to indexing 'None' while 'Automatically create indexes as needed' stays enabled. The first find or sort silently triggers an uninterruptible server-side index build — a latent performance time bomb with knock-on effects on storage, backups and import speed.",
+  "description": "Best-practice rule — flags the risky combination of indexing set to 'None' and 'Automatically create indexes as needed' still enabled. No index exists yet, so the first find or sort silently triggers an uninterruptible on-demand index build — a latent performance time bomb with knock-on effects on storage, backups and import speed.",
   "author": "fm-lab rules",
   "icon": "zap",
   "category": "best_practices",
@@ -22,9 +22,31 @@
       "author": "fm-lab rules",
       "source": "fm-lab",
       "url": null,
-      "description": "Fields with indexing 'None' and 'Automatically create indexes as needed' enabled — a latent, uninterruptible on-demand index build.",
+      "description": "Flagged: fields with indexing 'None' while 'Automatically create indexes as needed' stays enabled — a risky combination, because no index exists yet and the first find or sort silently triggers an uninterruptible on-demand index build.",
       "created": "2026-07-15",
       "references": []
+    }
+  },
+  "analysis": {
+    "objectTypes": [],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Auto-index field"
     }
   },
   "datasets": [

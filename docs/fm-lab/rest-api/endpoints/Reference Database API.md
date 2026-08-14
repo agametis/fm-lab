@@ -61,7 +61,7 @@ Complete script-step list for one language, including categories, aliases and bu
 |---|---|---|---|
 | `lang` | string | `en` | Step display language |
 
-Response: `data.meta` (language, count, sourceVersion), `data.categories[]`, `data.steps[]` with `stepId`, `name` (canonical), `xmlName`, `displayName`, `description`, `hasGrammar`, `aliases[]`, `helpUrl`, `localHelpUrl`.
+Response: `data.meta` (language, count, sourceVersion), `data.categories[]`, `data.steps[]` with `stepId`, `name` (canonical), `xmlName`, `displayName`, `description`, `hasGrammar`, `aliases[]`, `compat`, `helpUrl`, `localHelpUrl`. `compat` carries the seven [step_compat](../../schema/fm-spec-tables/step_compat.md) platform flags as a tri-state object (`true` = yes, `false` = no, `null` = **Partial**, i.e. conditionally supported — never "undocumented"); the field is `null` on reference builds without the table.
 
 ## GET /api/reference/steps/:idOrSlug
 
@@ -72,13 +72,13 @@ Detail view of a single step. `idOrSlug` accepts the numeric `step_id`, the URL 
 | `lang` | string | `en` | Display language |
 | `content` | enum | `meta` | `meta` (DB only) · `summary` (adds help lookup) · `full` (adds `embedHtml` fragment) |
 
-Response includes localized name/description, `parameters[]` (`index`, `name`, `description`), category, and help URLs. `meta.source` reports where content came from (`db`, `html-cache:<lang>`, `html-cache:fallback:<lang>`, `db-only`).
+Response includes localized name/description, `parameters[]` (`index`, `name`, `description`), category, `compat` (same tri-state platform object as in the list route), `osAffinity[]` — the curated [step_os_affinity](../../schema/fm-spec-tables/step_os_affinity.md) entries (`os`, `affinity`, `provenance`, `note`; empty on reference builds older than fm-spec schema 1.13.0) — and help URLs. `meta.source` reports where content came from (`db`, `html-cache:<lang>`, `html-cache:fallback:<lang>`, `db-only`).
 
 Errors: `404 REF_STEP_NOT_FOUND` (with suggestions), `400 VALIDATION_ERROR` for an invalid `content` value.
 
 ## GET /api/reference/steps/:idOrSlug/langs
 
-All localized variants of one step across every available language, each with its localized parameter list. No `lang` parameter — always returns everything.
+All localized variants of one step across every available language, each with its localized parameter list, plus the language-neutral `compat` object and `osAffinity[]` (see the detail route). No `lang` parameter — always returns everything.
 
 ## GET /api/reference/steps/:idOrSlug/grammar
 
@@ -98,11 +98,11 @@ Complete function list for one language.
 |---|---|---|---|
 | `lang` | string | `en` | Function display language |
 
-Response: `data.functions[]` with `functionId`, `name` (canonical), `opcode`, `returnType`, `isGetFunction`, `displayName`, `signature`, `purpose`, category and help URLs.
+Response: `data.functions[]` with `functionId`, `name` (canonical), `opcode`, `returnType`, `isGetFunction`, `displayName`, `signature`, `purpose`, `platformAffinity[]`, category and help URLs. `platformAffinity` lists the curated [function_platform_affinity](../../schema/fm-spec-tables/function_platform_affinity.md) entries (`platform`, `affinity`) — platform *binding*, not compatibility; empty for most functions and on reference builds without the table.
 
 ## GET /api/reference/functions/:nameOrId
 
-Detail view of a single function. `nameOrId` accepts the numeric `function_id`, the canonical name, or the URL slug. Same `lang`/`content` semantics as the step detail route; response additionally includes `notes`, `example1`, and `parameters[]` with `optional`/`variadic` flags. Errors: `404 REF_FUNCTION_NOT_FOUND` (with suggestions).
+Detail view of a single function. `nameOrId` accepts the numeric `function_id`, the canonical name, or the URL slug. Same `lang`/`content` semantics as the step detail route; response additionally includes `notes`, `example1`, `parameters[]` with `optional`/`variadic` flags, `platformAffinity[]` (here with `provenance` and the evidence `note` per entry) and `osAffinity[]` — the curated [function_os_affinity](../../schema/fm-spec-tables/function_os_affinity.md) entries (`os`, `affinity`, `provenance`, `note`; `os` is `null` on `os_probe` rows). `osAffinity` is empty for most functions and on reference builds older than fm-spec schema 1.13.0. Errors: `404 REF_FUNCTION_NOT_FOUND` (with suggestions).
 
 ## GET /api/reference/functions/:nameOrId/embed
 

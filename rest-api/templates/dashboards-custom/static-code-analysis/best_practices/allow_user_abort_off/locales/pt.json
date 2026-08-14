@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Allow User Abort [Desativado]",
-    "description": "Regra de boas práticas — etapas Allow User Abort [Desativado]. Desativar o cancelamento pode prender o usuário em um script longo ou em loop."
+    "description": "Regra de boas práticas — sinaliza etapas Allow User Abort [Desativado]. Desativar o cancelamento pode prender o usuário em um script longo ou em loop."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Ocorrências",

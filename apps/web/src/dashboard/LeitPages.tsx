@@ -3,6 +3,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { fetchSolutions } from '../api/solutionsApi';
+import { getTest } from '../api/testsApi';
+import { getDashboardDataset } from '../api/dashboardApi';
+import { fetchDocsCatalog } from '../api/docsApi';
+import { useApiLang } from '../hooks/useApiLang';
 import { getSelectedSolution } from '../lib/solutionStore';
 import { DashboardHost } from './DashboardHost';
 import { SubNav } from '../components/SubNav';
@@ -91,13 +95,63 @@ export function FileDetailPage() {
   );
 }
 
-/** `/dashboard` → `dashboards` bundle. Breadcrumb `Home / Dashboards`. */
+/**
+ * Folder crumbs for a bundle page whose TileGrid runs in `folderNav` mode.
+ *
+ * The folder navigation (`?folder=`) rides on the ONE unified top breadcrumb
+ * (SubNav) — no second breadcrumb inside the panel. Localized segment labels
+ * come from the very `folders` dataset the grid itself reads, so labels can
+ * never drift between crumb and tile; while it loads (or for unknown paths)
+ * the humanized segment is the fallback.
+ *
+ * `basePath` is the page's own route — each crumb links back to it with the
+ * partial path, so a deep rubric stays navigable segment by segment.
+ */
+function useFolderCrumbs(bundleId: string, basePath: string) {
+  const lang = useApiLang();
+  const [searchParams] = useSearchParams();
+  const folder = searchParams.get('folder') ?? '';
+  const [folderLabels, setFolderLabels] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const ds = await getDashboardDataset(bundleId, 'folders', undefined, lang);
+        if (cancelled) return;
+        const map = new Map<string, string>();
+        for (const row of ds.data) {
+          map.set(String(row.path), String(row.label ?? row.path));
+        }
+        setFolderLabels(map);
+      } catch {
+        /* labels degrade to humanized segments */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [bundleId, lang]);
+
+  if (!folder) return undefined;
+  return folder.split('/').map((seg, i, segs) => {
+    const prefix = segs.slice(0, i + 1).join('/');
+    return {
+      label: folderLabels.get(prefix) ?? titleize(seg),
+      path: `${basePath}?folder=${encodeURIComponent(prefix)}`,
+    };
+  });
+}
+
+/**
+ * `/dashboard` → `dashboards` bundle. Breadcrumb `Home / Dashboards / <Rubrik>…`.
+ */
 export function DashboardsPage() {
   const { t } = useTranslation(['nav']);
+  const folderCrumbs = useFolderCrumbs('dashboards', '/dashboard');
+
   return (
     <BundlePage
       id="dashboards"
-      ctx={{ kind: 'dashboards' }}
+      ctx={{ kind: 'dashboards', folderCrumbs }}
       pageTitle={t('nav:crumbs.dashboards') as string}
       pageDescription={t('nav:leitDescription.dashboards') as string}
     />
@@ -113,6 +167,69 @@ export function CustomQueriesPage() {
       ctx={{ kind: 'customQueries' }}
       pageTitle={t('nav:crumbs.customQueries') as string}
       pageDescription={t('nav:leitDescription.customQueries') as string}
+    />
+  );
+}
+
+/**
+ * `/tests` → `tests_overview` bundle. Breadcrumb `Home / Tests / <Rubrik>…`.
+ *
+ * Same folder navigation as the dashboard overview — the grid reads the test
+ * category folders (`builtin:list_test_folders`), the crumbs read the same
+ * dataset.
+ */
+export function TestsOverviewPage() {
+  const { t } = useTranslation(['nav']);
+  const folderCrumbs = useFolderCrumbs('tests_overview', '/tests');
+
+  return (
+    <BundlePage
+      id="tests_overview"
+      ctx={{ kind: 'tests', folderCrumbs }}
+      pageTitle={t('nav:crumbs.tests') as string}
+      pageDescription={t('nav:leitDescription.tests') as string}
+    />
+  );
+}
+
+/**
+ * `/tests/:id` → `test_detail` bundle (per-test detail view). Breadcrumb
+ * `Home / Tests / {Titel}`. The bundle datasets take the id as their param;
+ * title and description come from the test definition itself — one light
+ * fetch, so breadcrumb and title box read the test's own words instead of
+ * its id. An unknown id keeps the id as the label; the bundle then renders
+ * its "not found" guard card.
+ */
+export function TestDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const testId = id ?? '';
+  const [title, setTitle] = useState<string | null>(null);
+  const [description, setDescription] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setTitle(null);
+    setDescription(null);
+    (async () => {
+      try {
+        const test = await getTest(testId);
+        if (cancelled) return;
+        setTitle(test.title);
+        setDescription(test.description);
+      } catch {
+        /* unknown/invalid id — the bundle's guard card explains it */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [testId]);
+
+  return (
+    <BundlePage
+      id="test_detail"
+      ctx={{ kind: 'testDetail', testLabel: title ?? testId }}
+      params={{ id: testId }}
+      pageTitle={title ?? testId}
+      pageDescription={description ?? undefined}
     />
   );
 }
@@ -191,13 +308,50 @@ export function XmlImportPage() {
   );
 }
 
-/** `/docs/:setId` → `docset_home` bundle. Breadcrumb `Home / Docs / {Set}`. */
+/**
+ * `/docs/:setId` → Bundle-Weiche. Breadcrumb `Home / Docs / {Set}`.
+ *
+ * Doc-Sets mit deklarierter `start_page` (Manifest `.fmlab/docs.json`) rendern
+ * das `docset_start`-Bundle (gerenderte Startseite + gruppierte Seitenliste);
+ * alle anderen das bisherige `docset_home` (Hero + Category-Liste). Bis die
+ * Catalog-Info da ist, rendern wir nichts unterhalb der Navigation — der
+ * Fetch ist lokal und gecacht, ein Bundle-Flackern wäre störender.
+ */
 export function DocsSetPage() {
+  const { t } = useTranslation(['nav']);
   const { set } = useParams<{ set: string }>();
+  const [hasStartPage, setHasStartPage] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setHasStartPage(null);
+    (async () => {
+      try {
+        const catalog = await fetchDocsCatalog();
+        if (cancelled) return;
+        const entry = catalog.find((c) => c.id === set);
+        setHasStartPage(!!entry?.start_page);
+      } catch {
+        // Catalog nicht erreichbar → Default-Verhalten (docset_home).
+        if (!cancelled) setHasStartPage(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [set]);
+
+  const ctx: BreadcrumbCtx = { kind: 'docsSet', setLabel: titleize(set ?? '') };
+  if (hasStartPage === null) {
+    return (
+      <div className="app">
+        <SubNav breadcrumbs={buildBreadcrumb(ctx, t)} />
+        <StatusBar />
+      </div>
+    );
+  }
   return (
     <BundlePage
-      id="docset_home"
-      ctx={{ kind: 'docsSet', setLabel: titleize(set ?? '') }}
+      id={hasStartPage ? 'docset_start' : 'docset_home'}
+      ctx={ctx}
       params={{ id: set }}
     />
   );

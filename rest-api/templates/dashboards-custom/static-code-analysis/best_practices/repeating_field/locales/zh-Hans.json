@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "重复字段",
-    "description": "最佳实践规则 — 具有多个重复次数的字段。重复字段难以查询和报表；通常关联表更合适。"
+    "description": "最佳实践规则 — 检出具有多个重复次数的字段。重复字段难以查询和报表；通常关联表更合适。"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "结果数",

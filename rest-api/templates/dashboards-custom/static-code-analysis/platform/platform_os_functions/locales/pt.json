@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Vinculação ao SO: funções integradas",
+  "analysis.defaultResult.meaning": "Scripts no escopo vinculados a sistemas operacionais específicos por meio de funções integradas da Claris"
+ }
+}

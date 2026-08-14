@@ -83,7 +83,14 @@
     "Dependencies": "依存関係",
     "Fields": "フィールド",
     "Scripts": "スクリプト",
-    "Variables": "変数"
+    "Variables": "変数",
+    "dashboard": "ダッシュボード",
+    "query": "カスタムクエリ",
+    "system": "システム",
+    "custom": "カスタム",
+    "ok": "問題なし",
+    "warnings": "警告あり",
+    "errors": "エラーあり"
   },
   "semanticNames": {
     "structureLabel": "構造",
@@ -113,16 +120,15 @@
     "warnHead": "{{combos}} 個のカタログ/ファイルの組み合わせで {{count}} 件の UUID 重複が吸収されました",
     "colFile": "ファイル",
     "colCatalog": "カタログ",
-    "colAbsorbed": "失われたスクリプト",
-    "colSteps": "失われたステップ",
+    "colAbsorbed": "失われたオブジェクト",
+    "colSub": "失われたサブオブジェクト",
     "colSource": "ソース",
     "colStored": "保存済み",
     "footnote": "ソース欠陥（FileMaker エクスポート内の重複 UUID）。コンバーターは決定論的に重複排除します（last-write-wins）。ソースの修正／再エクスポートでのみ解消できます。",
-    "stepsHint": "ステップ = 個々の失われたスクリプトステップ。含まれるスクリプト自体は無傷です。「—」= 完全なスクリプトの損失なし。",
-    "detailsHead": "衝突するオブジェクト",
-    "detailsMore": "… ほか {{count}} 件の衝突オブジェクト",
-    "colObjects": "オブジェクト",
-    "colOccurrences": "出現回数"
+    "subHint": "オブジェクト = カタログ全体のオブジェクト（スクリプトまたはレイアウト）。サブオブジェクト = 失われたスクリプトステップまたはレイアウトオブジェクト。含むコンテナ自体は無傷です。「—」= この種の損失なし。",
+    "linksLabel": "完全な検出結果:",
+    "linkIntrafile": "ファイル内UUID重複",
+    "linkClones": "UUIDクローン衝突"
   },
   "xmlEmpty": {
     "hint": "まだデータがありません。FileMaker の XML エクスポートを「xml/」フォルダに入れて、変換を開始してください。",
@@ -136,5 +142,31 @@
     "hostPathHint": "ホスト上のこのフォルダにファイルを置いてください。コンテナにマウントされています。",
     "containerPathNote": "コンテナ内のパス",
     "putFilesHint": "FileMaker の XML ファイルを「xml/」フォルダに置いてください。"
+  },
+  "folderNav": {
+    "root": "すべてのダッシュボード",
+    "notFound": "フォルダーが見つかりません。",
+    "backToRoot": "概要に戻る",
+    "breadcrumb": "フォルダー",
+    "runAll": "すべて実行",
+    "run": "実行",
+    "running": "実行中…",
+    "findings": "件",
+    "coverageHint": "部分的なカバレッジ — まだすべての結果が計算されていません",
+    "filterLabel": "状態",
+    "sortLabel": "並べ替え",
+    "sortStandard": "標準",
+    "sortValue": "結果数 ↓",
+    "sortState": "信号",
+    "state": {
+      "ok": "OK",
+      "warning": "警告",
+      "error": "エラー",
+      "neutral": "中立",
+      "pending": "保留",
+      "failed": "失敗"
+    },
+    "noFilterMatches": "このセクションには該当する状態の項目がありません。",
+    "openFolder": "フォルダーを開く"
   }
 }

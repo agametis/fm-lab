@@ -127,16 +127,21 @@ function tokenFromChunk(chunk, idx, allChunks) {
     tok.scope = content.startsWith('$$') ? 'global' : 'local';
   }
 
-  // Container-Plugin (MBS): den fachlichen Funktionsnamen aus dem Folge-NoRef-
-  // Chunk extrahieren. Achtung — die DDR-Chunk-Reihenfolge ist nicht streng
-  // linear (siehe Beobachtungen in convert_xml.sql / MBS_SubnameMap), deshalb
-  // versuchen wir zuerst den direkten Nachbarn (idx+1) und fallen auf den
-  // direkten Vorgänger (idx-1) zurück. Bei Multi-MBS-Calcs ist das nicht 100%
-  // robust — der zuverlässige Pfad läuft über `lines[].refs.subFunction`, das
-  // server-seitig per ROW_NUMBER-Mapping aufgelöst wird (siehe SQL-Pipeline).
-  if (apiType === 'pluginFunction' && isContainerPlugin(content) && Array.isArray(allChunks)) {
-    const sub = extractSubFunctionFromNeighbors(idx, allChunks);
-    if (sub) tok.subFunction = sub;
+  // Container-Plugin (MBS): fachlichen Funktionsnamen auflösen.
+  // Primärquelle ist `chunk.sub_function` — die Token-Templates liefern ihn
+  // positionsgenau aus MBS_SubnameMap (Calc_UUID + Chunk_Index), inklusive der
+  // P3.5-Klartext-Recovery; damit sind auch die DDR-Verlust-Fälle abgedeckt
+  // (Kommentar am Aufruf, verschachtelte Aufrufe), bei denen der Argument-Chunk
+  // in der ChunkList fehlt. Fallback bleibt die Nachbar-Chunk-Heuristik
+  // (idx+1, dann idx-1) für Aufrufer, die kein sub_function mitliefern —
+  // bei Multi-MBS-Calcs ist die Heuristik nicht 100% robust.
+  if (apiType === 'pluginFunction' && isContainerPlugin(content)) {
+    if (chunk.sub_function) {
+      tok.subFunction = chunk.sub_function;
+    } else if (Array.isArray(allChunks)) {
+      const sub = extractSubFunctionFromNeighbors(idx, allChunks);
+      if (sub) tok.subFunction = sub;
+    }
   }
 
   // Synthetische ObjectCatalog-UUIDs für Cross-Navigation.
@@ -149,14 +154,18 @@ function tokenFromChunk(chunk, idx, allChunks) {
   if (apiType === 'function' && !['and', 'or', 'not', 'xor'].includes(content)) {
     tok.uuid = md5(`BuiltinFunction::${content}`);
   }
-  if (apiType === 'pluginFunction') {
+  if (apiType === 'pluginFunction' && (tok.subFunction || !isContainerPlugin(content))) {
     // Der Katalog-UUID basiert auf dem vollen Plugin_Function_Name. Bei
     // Container-Plugins (MBS) ist das `<Plugin>:<SubName>` (EINFACHER Doppelpunkt),
     // NICHT nur der bloße Container-Name `MBS` — vgl. convert_xml_04_catalog.sql:
     // md5('PluginFunction::' || Plugin_Function_Name || '::' || SubName).
     // `content` trägt hier nur den Container-Namen; der SubName wird oben aus den
-    // Nachbar-Chunks aufgelöst. Ohne diese Rekonstruktion zeigt der Link auf eine
-    // nicht existierende UUID (Objekt-Detailseite: „not found").
+    // Nachbar-Chunks aufgelöst. Guard: Container-Aufrufe OHNE aufgelösten SubName
+    // (dynamisches 1. Argument, `MBS($var; …)`) haben konstruktionsbedingt keinen
+    // Katalog-Eintrag (P4-Block 26 filtert bare 'MBS') — die UUID wäre ein
+    // garantiert toter Link („not found") und bleibt deshalb weg (Token rendert
+    // unverlinkt). Non-Container-Plugins tragen den vollen Namen in `content`
+    // und brauchen keinen SubName.
     const pfName = tok.subFunction ? `${content}:${tok.subFunction}` : content;
     tok.uuid = md5(`PluginFunction::${pfName}::${tok.subFunction || ''}`);
   }
@@ -598,7 +607,7 @@ function formatCustomFunction(rows, { object }) {
 
   const chunkRows = rows
     .filter(r => r.chunk_index !== null && r.chunk_index !== undefined)
-    .map(r => ({ chunk_type: r.chunk_type, chunk_content: r.chunk_content, ref_uuid: r.chunk_ref_uuid }));
+    .map(r => ({ chunk_type: r.chunk_type, chunk_content: r.chunk_content, ref_uuid: r.chunk_ref_uuid, sub_function: r.sub_function }));
   const rawTokens = chunkRows.map((c, i, arr) => tokenFromChunk(c, i, arr));
 
   const tokens = head.plain_text != null
@@ -766,7 +775,7 @@ function formatField(rows, { object }) {
 
   const chunkRows = rows
     .filter(r => r.chunk_index !== null && r.chunk_index !== undefined)
-    .map(r => ({ chunk_type: r.chunk_type, chunk_content: r.chunk_content, ref_uuid: r.chunk_ref_uuid }));
+    .map(r => ({ chunk_type: r.chunk_type, chunk_content: r.chunk_content, ref_uuid: r.chunk_ref_uuid, sub_function: r.sub_function }));
   const rawTokens = chunkRows.map((c, i, arr) => tokenFromChunk(c, i, arr));
 
   const tokens = head.plain_text != null
@@ -824,6 +833,7 @@ function formatCustomMenu(rows, { object }) {
         chunk_type: r.chunk_type,
         chunk_content: r.chunk_content,
         ref_uuid: r.chunk_ref_uuid,
+        sub_function: r.sub_function,
       });
     }
   }
@@ -852,6 +862,7 @@ function formatCalculation(rows, { object }) {
   const chunkRows = (rows || []).map(r => ({
     chunk_type: r.chunk_type,
     chunk_content: r.chunk_content,
+    sub_function: r.sub_function,
   }));
   const tokens = chunkRows.map((c, i, arr) => tokenFromChunk(c, i, arr));
 

@@ -5,17 +5,62 @@
   "description": "Open work in comment steps across three notations (TO DO, FIX IT, TBD). Click a count to filter the result list.",
   "author": "fm-lab custom",
   "icon": "list-todo",
-  "tags": ["custom", "scripts", "quality"],
+  "tags": [
+    "custom",
+    "scripts",
+    "quality"
+  ],
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "todo_kpi",
+      "column": "total_lines",
+      "type": "number",
+      "name": "todo_marker_lines",
+      "meaning": "TODO/FIXIT/TBD marker lines in script comments"
+    }
+  },
   "entry": "layout.json",
   "datasets": [
-    { "id": "todo_kpi",   "source": "bundle:data/todo_kpi.sql" },
-    { "id": "todo_lines", "source": "bundle:data/todo_lines.sql" }
+    {
+      "id": "todo_kpi",
+      "source": "bundle:data/todo_kpi.sql"
+    },
+    {
+      "id": "todo_lines",
+      "source": "bundle:data/todo_lines.sql"
+    }
   ],
   "params": [
-    { "name": "file", "type": "string", "required": false,
-      "description": "Optional file filter — derived from the app-level filter." },
-    { "name": "pattern", "type": "string", "required": false,
-      "description": "Optional notation filter (todo | fixit | tbd) — set by clicking a hero value." }
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter — derived from the app-level filter."
+    },
+    {
+      "name": "pattern",
+      "type": "string",
+      "required": false,
+      "description": "Optional notation filter (todo | fixit | tbd) — set by clicking a hero value."
+    }
   ],
-  "permissions": { "read_only": true, "allow_navigation": true }
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
 }

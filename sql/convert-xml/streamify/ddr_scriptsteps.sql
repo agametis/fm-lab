@@ -30,7 +30,7 @@ SELECT
         NULLIF(
             regexp_extract(
                 step_elem::VARCHAR,
-                '<_([0-9A-Fa-f-]+)',   -- B-R9: Hex-Klasse case-tolerant wie die P2/P3-Anker ([0-9A-Fa-f-]{36})
+                '<_([0-9A-Fa-f-]+)',   -- Hex-Klasse case-tolerant wie die P2/P3-Anker ([0-9A-Fa-f-]{36})
                 1
             ),
             ''

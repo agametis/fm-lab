@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "插件兼容性：FileMaker Go (iOS)",
+  "analysis.defaultResult.meaning": "范围内无法在 FileMaker Go (iOS) 上运行的插件函数调用"
+ }
+}

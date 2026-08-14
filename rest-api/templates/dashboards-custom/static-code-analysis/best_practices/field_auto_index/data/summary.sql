@@ -4,7 +4,7 @@
 -- @params: file (optional)
 SELECT
     COUNT(*)                    AS finding_count,
-    'warn'                      AS severity,
+    'warning'                      AS severity,
     COUNT(DISTINCT file_name)   AS affected_files,
     COUNT(DISTINCT table_uuid)  AS affected_tables
 FROM (

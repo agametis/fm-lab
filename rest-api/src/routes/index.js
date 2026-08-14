@@ -15,7 +15,10 @@ const graphRoutes = require('./graph.routes');
 const annotationsRoutes = require('./annotations.routes');
 const codegenRoutes = require('./codegen.routes');
 const referenceRoutes = require('./reference.routes');
+const pluginSpecRoutes = require('./plugin-spec.routes');
 const dashboardRoutes = require('./dashboard.routes');
+const testsRoutes = require('./tests.routes');
+const resultsRoutes = require('./results.routes');
 const debugRoutes = require('./debug.routes');
 const { loadPlugins } = require('../plugins/loader');
 
@@ -66,8 +69,17 @@ router.use('/', codegenRoutes);
 // Reference-DB (Script Steps + Functions + Claris-Hilfe-Mirror)
 router.use('/', referenceRoutes);
 
+// Plugin-Spec-DB (Plattform-Map für Plugin-Funktionen, plugref)
+router.use('/', pluginSpecRoutes);
+
 // Dashboards (deklarative Bundles aus templates/dashboards/)
 router.use('/', dashboardRoutes);
+
+// Analysis Tests (deklarierte Sammlungen aus templates/tests{,-custom}/)
+router.use('/', testsRoutes);
+
+// Results-Layer (/api/results/*) — Envelope-Summary, Aggregat, Trigger
+router.use('/', resultsRoutes);
 
 // Debug-Session (Frontend-Interaktions-Ingestion + Logging-Status)
 router.use('/', debugRoutes);

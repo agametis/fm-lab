@@ -42,9 +42,13 @@ When invoked, the skill performs these steps:
 5. **Extract** - Unzip and validate the docset structure
 6. **Install** - Copy documentation files to `docs/mbs/` directory
 7. **Parse Components** - Analyze MBS functions and create exceptions table
-8. **Version Marker** - Store version information for future comparisons
-9. **Cleanup** - Remove all temporary files automatically
-10. **Report** - Provide clear success or error message
+8. **Derive Plugin Platform Map** - Regenerate `reference/plugin_spec.duckdb`
+   from the fresh mirror (`tools/plugin-spec/derive_mbs.py`) — feeds the
+   plug-in platform test members and the PluginFunction platform badge;
+   non-fatal if unavailable (members then report `skipped`)
+9. **Version Marker** - Store version information for future comparisons
+10. **Cleanup** - Remove all temporary files automatically
+11. **Report** - Provide clear success or error message
 
 ## Available Tools
 
@@ -58,6 +62,11 @@ This skill uses bundled scripts that handle all operations:
   - Extracts exceptions where function prefix ≠ component
   - Creates `reference/mbs_component_exceptions.csv`
   - Called automatically by installation script
+- **Plugin-Spec Deriver**: `tools/plugin-spec/derive_mbs.py` (project tool)
+  - Parses the per-function platform tables, old names and deprecation
+    markers into `reference/plugin_spec.duckdb` (ATTACH alias `plugref`)
+  - Called automatically by the installation script after each install/update;
+    can be re-run manually at any time
 
 ## Working Process
 

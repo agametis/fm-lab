@@ -70,6 +70,51 @@ export interface RefCategory {
   url: string | null;
 }
 
+/**
+ * Tri-State-Kompatibilität aus der Claris-Tabelle (step_compat):
+ * true = Yes, false = No, null = Partial (bedingt unterstützt) —
+ * nie "undokumentiert". Feld fehlt/null bei Referenzen ohne step_compat.
+ */
+export type StepCompat = Record<StepCompatPlatform, boolean | null>;
+export type StepCompatPlatform = 'pro' | 'server' | 'go' | 'webdirect' | 'cloud' | 'dataapi' | 'cwp';
+
+/** Anzeige-Reihenfolge der Plattformen (Spaltenreihenfolge der Claris-Tabelle). */
+export const STEP_COMPAT_PLATFORMS: StepCompatPlatform[] = [
+  'pro', 'server', 'go', 'webdirect', 'cloud', 'dataapi', 'cwp',
+];
+
+/** Produktnamen sind nicht lokalisiert — festes Mapping des Plattform-Vokabulars. */
+export const PLATFORM_LABELS: Record<string, string> = {
+  pro: 'FileMaker Pro',
+  server: 'FileMaker Server',
+  go: 'FileMaker Go (iOS)',
+  webdirect: 'FileMaker WebDirect',
+  cloud: 'FileMaker Cloud',
+  dataapi: 'FileMaker Data API',
+  cwp: 'Custom Web Publishing',
+};
+
+/**
+ * OS-Affinität (Referenz ≥ 1.13.0): kuratierte, spärliche OS-Aussagen aus der
+ * Claris-Hilfe-Prosa. `os` ist das Betriebssystem ('ios' hostet FileMaker Go
+ * UND iOS-SDK-Apps — nie ein Runtime-Begriff); null nur bei `os_probe`
+ * (Detektions-Funktion, Guard-Idiom — keine Bindung).
+ */
+export interface OsAffinityEntry {
+  os: 'macos' | 'windows' | 'linux' | 'ios' | null;
+  affinity: 'exclusive' | 'unsupported' | 'variant' | 'os_probe';
+  provenance: string;
+  note: string | null;
+}
+
+/** OS-Namen sind Eigennamen — nicht lokalisiert. */
+export const OS_LABELS: Record<string, string> = {
+  macos: 'macOS',
+  windows: 'Windows',
+  linux: 'Linux',
+  ios: 'iOS',
+};
+
 export interface FmSpecStep {
   stepId: number;
   name: string;
@@ -79,6 +124,8 @@ export interface FmSpecStep {
   categoryId: number;
   originVersion: string | null;
   hasGrammar: boolean;
+  /** null bei Referenzen ohne step_compat. */
+  compat?: StepCompat | null;
   helpUrl: string | null;
   localHelpUrl: string | null;
 }
@@ -108,6 +155,8 @@ export interface FmSpecFunction {
   signature: string | null;
   purpose: string | null;
   categoryId: number;
+  /** Plattform-Bindung (Referenz ≥ 1.12.0) — Affinität, nie Kompatibilität. */
+  platformAffinity?: { platform: string; affinity: 'exclusive' | 'dedicated' }[];
   helpUrl: string | null;
   localHelpUrl: string | null;
 }
@@ -147,6 +196,10 @@ export interface StepAllLangs {
   urlSlug: string;
   categoryId: number;
   originVersion: string | null;
+  /** null bei Referenzen ohne step_compat. */
+  compat?: StepCompat | null;
+  /** Leer bei Referenzen < 1.13.0. */
+  osAffinity?: OsAffinityEntry[];
   langs: StepLangEntry[];
 }
 
@@ -225,6 +278,14 @@ export interface FunctionParameter {
   variadic: boolean;
 }
 
+/** Curated platform binding (reference ≥ 1.12.0): affinity, not compatibility. */
+export interface FunctionPlatformAffinity {
+  platform: string;   // step_compat vocabulary: pro|server|go|webdirect|cloud|dataapi|cwp
+  affinity: 'exclusive' | 'dedicated';
+  provenance: string; // claris-category|claris-prose|curated
+  note: string | null;
+}
+
 export interface FunctionDetail {
   functionId: number;
   name: string;
@@ -241,6 +302,10 @@ export interface FunctionDetail {
   categoryId: number;
   category: { id: number; slug: string; nameEn: string; name: string } | null;
   parameters: FunctionParameter[];
+  /** Missing/empty on references older than 1.12.0. */
+  platformAffinity?: FunctionPlatformAffinity[];
+  /** Leer bei Referenzen < 1.13.0. */
+  osAffinity?: OsAffinityEntry[];
   helpUrl: string | null;
   localHelpUrl: string | null;
 }

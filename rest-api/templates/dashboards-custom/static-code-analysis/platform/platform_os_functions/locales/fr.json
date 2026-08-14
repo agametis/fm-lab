@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Liaison à l'OS : fonctions intégrées",
+  "analysis.defaultResult.meaning": "Scripts du périmètre liés à des systèmes d'exploitation précis via les fonctions intégrées Claris"
+ }
+}

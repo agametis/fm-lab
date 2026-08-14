@@ -16,6 +16,8 @@ export interface DashboardListItem {
   category: string | null;
   /** Relative folder path (without the bundle id), null = root. Drives the grouped navigation. */
   folder: string | null;
+  /** Localized display path of `folder` (folder.json locales layer), null = root. */
+  folder_label: string | null;
   author: string | null;
   version: string | null;
 }

@@ -1,7 +1,8 @@
 {
   "manifest": {
     "title": "TO-DO negli script",
-    "description": "Lavoro in sospeso nei passi di commento con tre notazioni (TO DO, FIX IT, TBD). Clicca su un conteggio per filtrare l'elenco dei risultati."
+    "description": "Lavoro in sospeso nei passi di commento con tre notazioni (TO DO, FIX IT, TBD). Clicca su un conteggio per filtrare l'elenco dei risultati.",
+    "analysis.defaultResult.meaning": "Righe con marcatori TODO/FIXIT/TBD nei commenti degli script"
   },
   "layout": {
     "todo_kpi_kpistrip.props.items[0].label": "Righe totali",

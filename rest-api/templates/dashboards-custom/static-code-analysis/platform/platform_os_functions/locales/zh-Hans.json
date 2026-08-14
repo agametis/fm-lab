@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "操作系统绑定：内置函数",
+  "analysis.defaultResult.meaning": "范围内通过 Claris 内置函数绑定到特定操作系统的脚本"
+ }
+}

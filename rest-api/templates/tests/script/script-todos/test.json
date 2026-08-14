@@ -1,0 +1,73 @@
+{
+  "id": "script-todos",
+  "version": "1.0.0",
+  "title": "Script TODO Markers",
+  "description": "Scans script comments for TODO / FIX IT / TBD marker lines.",
+  "keywords": [
+    "todo",
+    "fixme",
+    "tbd",
+    "comments",
+    "script"
+  ],
+  "testType": "inventory",
+  "objectTypes": [
+    "Script"
+  ],
+  "scopes": [
+    "solution",
+    "file"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "script_todos"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "TODO-Marker in Scripts",
+      "description": "Durchsucht Script-Kommentare nach Markerzeilen mit TODO / FIX IT / TBD."
+    },
+    "es": {
+      "title": "Marcadores TODO en scripts",
+      "description": "Examina los comentarios de script en busca de líneas con marcadores TODO / FIX IT / TBD."
+    },
+    "fr": {
+      "title": "Marqueurs TODO dans les scripts",
+      "description": "Parcourt les commentaires de script à la recherche de lignes marquées TODO / FIX IT / TBD."
+    },
+    "it": {
+      "title": "Marcatori TODO negli script",
+      "description": "Esamina i commenti degli script alla ricerca di righe con marcatori TODO / FIX IT / TBD."
+    },
+    "ja": {
+      "title": "スクリプト内の TODO マーカー",
+      "description": "スクリプトのコメントから TODO / FIX IT / TBD のマーカー行を探します。"
+    },
+    "ko": {
+      "title": "스크립트의 TODO 표시",
+      "description": "스크립트 주석에서 TODO / FIX IT / TBD 표시 줄을 찾습니다."
+    },
+    "nl": {
+      "title": "TODO-markeringen in scripts",
+      "description": "Doorzoekt scriptcommentaar op regels met TODO / FIX IT / TBD."
+    },
+    "pt": {
+      "title": "Marcadores TODO em scripts",
+      "description": "Examina os comentários de script em busca de linhas com marcadores TODO / FIX IT / TBD."
+    },
+    "sv": {
+      "title": "TODO-markörer i skript",
+      "description": "Söker igenom skriptkommentarer efter rader märkta TODO / FIX IT / TBD."
+    },
+    "zh-Hans": {
+      "title": "脚本中的 TODO 标记",
+      "description": "在脚本注释中查找带有 TODO / FIX IT / TBD 的标记行。"
+    }
+  }
+}

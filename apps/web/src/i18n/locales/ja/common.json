@@ -18,6 +18,7 @@
   "yes": "はい",
   "no": "いいえ",
   "loadError": "読み込みに失敗しました: {{message}}",
+  "plugSpecMissing": "プラグインリファレンスがインストールされていません — プラグイン関数のプラットフォーム情報および非推奨情報は利用できません。fm-lab のリリースに同梱されています。install-mbs-docs スキルで reference/plugin_spec.duckdb を再生成できます。",
   "language": {
     "label": "言語",
     "selectorAriaLabel": "インターフェースの言語を選択"

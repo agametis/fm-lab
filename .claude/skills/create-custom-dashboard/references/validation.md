@@ -122,6 +122,11 @@ Before the closing message, verify against the generated `layout.json`:
 - [ ] every node has an `id`; locale files use ID-form keys
 - [ ] no `:word` sequence anywhere in the SQL files
       (`grep -nE ':[A-Za-z0-9_]' data/*.sql` — hits need the split-literal fix)
+- [ ] if the manifest declares `analysis.scope.supported` with `object`/
+      `object-list`/`cluster`: every native dataset carries the S-Block, the
+      count of `getvariable('scope_uuids')` equals the count of
+      `getvariable('file')` per file (M5a), and the S-Block anchor column
+      matches `analysis.scope.anchor` (M5b) — see `sql-rules.md` §3.
 
 Each conscious waiver gets a one-line justification in the closing message.
 

@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "더 이상 사용되지 않는 플러그인 함수 호출",
+  "analysis.defaultResult.meaning": "공급업체 문서에서 사용 중단으로 표시된 함수를 호출하는 범위 내 플러그인 함수 호출"
+ }
+}

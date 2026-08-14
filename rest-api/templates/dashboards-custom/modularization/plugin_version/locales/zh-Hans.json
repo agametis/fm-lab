@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "MBS 插件版本",
+    "description": "版本要求清单:此解决方案所需的最低插件版本,由所有已使用插件函数的文档化引入版本(since_version)的最大值导出 — 比较始终使用数值,绝不使用字典序。按文件的分布与驱动函数使导出结果可验证。目录不知道已安装的版本:只有在页眉中选择后才会启用检查(中性条目 = 不检查)。",
+    "analysis.defaultResult.meaning": "此范围所需的最低插件版本 —— 所用插件函数中已记载引入版本的最大值"
+  },
+  "layout": {
+    "installed_version_select.props.label": "已安装的插件版本",
+    "summary_kpi.props.items[0].label": "所需版本",
+    "summary_kpi.props.items[1].label": "函数",
+    "summary_kpi.props.items[2].label": "调用位置",
+    "summary_kpi.props.items[3].label": "文件",
+    "summary_kpi.props.items[4].label": "未解析",
+    "findings_card.props.title": "版本检查",
+    "findings_table.props.columns[0].label": "严重程度",
+    "findings_table.props.columns[1].label": "文件",
+    "findings_table.props.columns[2].label": "对象",
+    "findings_table.props.columns[3].label": "插件函数",
+    "findings_table.props.columns[4].label": "需要",
+    "findings_table.props.columns[5].label": "已安装",
+    "findings_table.props.columns[6].label": "经由自定义函数",
+    "findings_table.props.columns[7].label": "消息",
+    "findings_table.props.empty.message": "没有激活的检查 — 在页眉中选择已安装的插件版本以验证要求(中性条目 = 仅清单)。",
+    "by_file_card.props.title": "按文件的要求",
+    "by_file_table.props.columns[0].label": "文件",
+    "by_file_table.props.columns[1].label": "所需版本",
+    "by_file_table.props.columns[2].label": "主要驱动",
+    "by_file_table.props.columns[3].label": "函数",
+    "by_file_table.props.columns[4].label": "调用位置",
+    "by_file_table.props.columns[5].label": "未解析",
+    "drivers_card.props.title": "驱动函数",
+    "drivers_table.props.columns[0].label": "插件函数",
+    "drivers_table.props.columns[1].label": "组件",
+    "drivers_table.props.columns[2].label": "引入于",
+    "drivers_table.props.columns[3].label": "状态",
+    "drivers_table.props.columns[4].label": "超出已安装版本",
+    "drivers_table.props.columns[5].label": "调用位置",
+    "drivers_table.props.columns[6].label": "文件",
+    "markdown.props.content": "## 说明\n\n**所需版本**是一个导出值:实际调用的插件函数的文档化引入版本(`since_version`)的最大值 — *驱动函数*表使其可验证。版本比较使用数值键,绝不使用字符串。\n\n- **版本检查**:目录不知道已安装的插件版本。只有在页眉中选择后,才会标记对更晚引入的函数的每次调用;中性条目不会触发检查。\n- **按文件的要求**:按文件的分布显示哪些模块承载该要求。\n- **导航**:驱动行打开插件函数详情(where-used);检查结果行打开调用对象。\n- **维护轴**:deprecated/removed 调用是*静态代码分析*下的独立规则。"
+  }
+}

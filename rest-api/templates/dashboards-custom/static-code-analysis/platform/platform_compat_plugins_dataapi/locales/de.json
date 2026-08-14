@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plug-in-Kompatibilität: FileMaker Data API",
+  "analysis.defaultResult.meaning": "Plug-in-Funktionsaufrufe im Prüfumfang, die auf FileMaker Data API nicht laufen"
+ }
+}

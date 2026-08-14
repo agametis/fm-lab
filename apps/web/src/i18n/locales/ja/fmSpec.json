@@ -8,7 +8,11 @@
     "open": "ヘルプ"
   },
   "search": {
-    "placeholder": "フィルタ…"
+    "placeholder": "フィルタ…",
+    "platformAll": "すべてのプラットフォーム",
+    "platformLabel": "プラットフォーム",
+    "platformStepHint": "このプラットフォームで実行できるステップを表示（一部対応を含む）",
+    "platformFnHint": "このプラットフォーム向けに作られた関数を表示（プラットフォーム結合）"
   },
   "list": {
     "count": "{{shown}} / {{total}}"
@@ -58,7 +62,12 @@
       "variadic": "可変長",
       "signature": "シグネチャ",
       "purpose": "目的",
-      "example": "例"
+      "example": "例",
+      "affinity_dedicated": "ここでのみ意味のある結果 — どこでも呼び出し可能",
+      "affinity_exclusive": "ここでのみ動作",
+      "affinityWord_dedicated": "専用",
+      "affinityWord_exclusive": "専有",
+      "platformBinding": "プラットフォーム結合"
     }
   },
   "params": {
@@ -120,6 +129,22 @@
       "hint": "SaXMLとfmxmlsnippetは同じステップの2つの異なる表現です。",
       "none": "SaXML マッピングは取得されていません。",
       "sourceNote": "配布されるデータはソース中立です。出典の引用、著者名や会社名、コーパスの痕跡を含みません。各ステップに表示される例のペイロードは合成されたものです。"
+    },
+    "compat": {
+      "label": "プラットフォーム互換性",
+      "partial": "一部対応",
+      "partialHint": "一部対応 — 条件付きでサポート。ステップのClarisヘルプページを参照"
     }
+  },
+  "osAffinity": {
+    "label": "OSバインディング",
+    "word_exclusive": "専用",
+    "word_unsupported": "非対応",
+    "word_variant": "OSにより異なる",
+    "word_os_probe": "プラットフォーム検出",
+    "hint_exclusive": "記載されたOSでのみ動作します",
+    "hint_unsupported": "Clarisはこのosを明示的に非対応としています（ソースに忠実な逆方向の記述）",
+    "hint_variant": "どこでも動作しますが、動作や結果はOSに依存します",
+    "hint_os_probe": "実行時にプラットフォーム/OSを返します — ガードイディオムであり、バインディングではありません"
   }
 }

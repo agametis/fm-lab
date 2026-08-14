@@ -1,0 +1,88 @@
+{
+  "id": "platform_specific_server",
+  "version": "1.2.0",
+  "title": "Platform-specific usage: FileMaker Server",
+  "description": "Scripts in scope that demonstrably run server-side: targets of Perform Script on Server callsites (steps 164/210), resolved via the calls_script edges with Link_Subrole on_server/on_server_callback (schema 1.20.0 — declared cross-file targets resolve through the P4 resolution ladder). Derivation: 'built for Server' = 'is called via PSoS' — context evidence, stated per finding; Claris publishes no server-exclusive steps or functions. Targets outside the imported catalog appear as explicit unresolved rows; by-name callsites (target computed at runtime) as explicit dynamic rows. Inventory, not defects — findings are neutral properties, never errors. The dashboard view is the server usage profile of the solution: binding KPIs (targets by resolution kind), the caller-to-target callsite drill-down, and the plug-in functions whose server support is conditional on the server operating system (available on the server, but not for every server OS - relevant for Linux-based deployments; needs the plug-in platform map).",
+  "author": "fm-lab rules",
+  "icon": "server",
+  "category": "platform",
+  "tags": [
+    "rule",
+    "platform"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "platform",
+    "rationale": "A script called via Perform Script on Server executes server-side — execution context is the only binding signal that exists for FileMaker Server (there are no server-exclusive steps or functions). The finding says 'built for Server', not 'uses server features'.",
+    "remediation": "Nothing to fix. Use the inventory to identify the server-batch layer of the solution; run the FileMaker Server compatibility aspect to check the same scripts for steps that fail server-side."
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native",
+        "callsites": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "script_count",
+      "type": "number",
+      "name": "platform_specific_scripts",
+      "unit": "scripts",
+      "meaning": "Scripts in scope that are targets of Perform Script on Server calls (built for server-side execution)"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    },
+    {
+      "id": "callsites",
+      "source": "bundle:data/callsites.sql"
+    },
+    {
+      "id": "os_conditions",
+      "source": "bundle:data/os_conditions.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

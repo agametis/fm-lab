@@ -61,7 +61,12 @@ function clean_line(   before) {
     # ueberlebt den C0-Strip (0x0D nicht im Set) und wird vom Parser zu LF normalisiert;
     # die SQL ws_restore wird dann zum No-op. Default (kein -v) = 1 (Sentinel ON).
     if (ws_sentinel != 0) pre_cr += gsub(/\r/, "\177", line)
-    gsub(/[\000\001-\010\013\014\016-\037]/, "", line)  # (c) XML-1.0-invalide C0-Bytes
+    # (c) XML-1.0-invalide C0-Bytes. \000 MUSS das LETZTE Klassen-Element sein: steht
+    # es vorn, degeneriert die Bracket-Expression im BWK awk (macOS /usr/bin/awk) zum
+    # Leerstring-Match an jeder Position — gsub meldet dann Treffer (n>0), entfernt
+    # aber kein einziges Byte, und der C0-Strip wird still zum No-op. mawk/gawk sind
+    # mit beiden Reihenfolgen korrekt (cmp-identisch zur tr-Referenz in preprocess_file).
+    gsub(/[\001-\010\013\014\016-\037\000]/, "", line)
     in_size  += before
     out_size += length(line)
 }
@@ -93,5 +98,5 @@ END {
         printf "%d\t%d\t%d\t%d\t%d\n", in_size, out_size, pre_cr, pre_del, (in_size - out_size) > counts
         close(counts)
     }
-    eof_check("turbo_phaseS_fuse.awk")   # A-K5: abgeschnittene Eingabe diagnostizierbar machen
+    eof_check("turbo_phaseS_fuse.awk")   # abgeschnittene Eingabe diagnostizierbar machen
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { PrimitiveProps } from '../types';
@@ -76,6 +76,11 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
   const rowTemplate = (node.props?.rowTemplate as RowTemplate) ?? { primary: '{{name}}' };
   const badgeOpts = rowTemplate.badgeOptions ?? {};
   const empty = node.props?.empty as { message?: string } | undefined;
+  // Optionale Gruppierung: Section-Header immer dann, wenn sich der Wert des
+  // groupBy-Felds gegenüber der Vorzeile ändert. Erwartet server-sortierte
+  // Rows (Gruppen zusammenhängend); ein leerer Gruppenwert rendert ohne
+  // Header (Konvention: Root-Gruppe zuerst).
+  const groupBy = node.props?.groupBy as string | undefined;
   const rows = dataset?.data ?? [];
 
   // Pre-compute badge text per row once, so the filter and the render pass
@@ -155,7 +160,7 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
       <ul className="dash-list">
         {search.filtered.map((row, i) => {
           const InlineCtrl = getInlineControl(rowTemplate.inlineControl);
-          return (
+          const item = (
             <ListItem
               key={i}
               row={row}
@@ -167,6 +172,20 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
               tx={tx}
             />
           );
+          if (!groupBy) return item;
+          const group = String(row[groupBy] ?? '');
+          const prevGroup = i > 0 ? String(search.filtered[i - 1][groupBy] ?? '') : null;
+          if (group && group !== prevGroup) {
+            return (
+              <Fragment key={`grp-${i}`}>
+                <li className="dash-list__group-header" role="presentation">
+                  {tx(group)}
+                </li>
+                {item}
+              </Fragment>
+            );
+          }
+          return item;
         })}
       </ul>
       {(hasQuery || usedOnly) && search.filtered.length === 0 && (

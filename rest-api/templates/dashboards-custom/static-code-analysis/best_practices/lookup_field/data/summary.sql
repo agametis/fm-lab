@@ -1,4 +1,5 @@
--- Auto-generiert aus dem core der Rule (lookup_field). Nicht von Hand editieren.
+-- Hand-maintained COUNT wrapper embedding the findings core of rule (lookup_field).
+-- The core is a textual copy — keep filters (file filter + S-Block) in sync with data/findings.sql.
 SELECT
     COUNT(*)                     AS finding_count,
     'info'          AS severity,

@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Veld met automatische index",
-    "description": "Best practice-regel — velden met indexering 'Geen' terwijl 'Indexen automatisch aanmaken' aan blijft staan. De eerste zoekopdracht of sortering start ongemerkt een niet-afbreekbare index-opbouw op de server — een sluimerende tijdbom met gevolgen voor opslag, back-ups en importsnelheid."
+    "description": "Best-practice-regel — signaleert de riskante combinatie van indexering 'Geen' met 'Indexen automatisch aanmaken' nog ingeschakeld. Er bestaat nog geen index, dus de eerste zoekopdracht of sortering start ongemerkt een niet-afbreekbare index-opbouw on demand — een sluimerende tijdbom met gevolgen voor opslag, back-ups en importsnelheid."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Bevindingen",

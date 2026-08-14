@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Relation avec enregistrements triés",
-    "description": "Règle de bonne pratique : relations qui trient leurs enregistrements liés. Le tri s’exécute à chaque évaluation et peut ralentir portails et lookups."
+    "description": "Règle de bonne pratique : signale les relations qui trient leurs enregistrements liés. Le tri s’exécute à chaque évaluation et peut ralentir portails et lookups."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Résultats",

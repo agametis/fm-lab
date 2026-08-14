@@ -83,7 +83,14 @@
     "Dependencies": "Beroenden",
     "Fields": "Fält",
     "Scripts": "Skript",
-    "Variables": "Variabler"
+    "Variables": "Variabler",
+    "dashboard": "Instrumentpanel",
+    "query": "Anpassad fråga",
+    "system": "System",
+    "custom": "Egen",
+    "ok": "OK",
+    "warnings": "Varningar",
+    "errors": "Fel"
   },
   "semanticNames": {
     "structureLabel": "Struktur",
@@ -113,16 +120,15 @@
     "warnHead": "{{count}} absorberad(e) UUID-dubblett(er) över {{combos}} katalog/fil-kombination(er)",
     "colFile": "Fil",
     "colCatalog": "Katalog",
-    "colAbsorbed": "Förlorade skript",
-    "colSteps": "Förlorade steg",
+    "colAbsorbed": "Förlorade objekt",
+    "colSub": "Förlorade delobjekt",
     "colSource": "Källa",
     "colStored": "Lagrade",
     "footnote": "Källdefekt (dubbletter av UUID i FileMaker-exporten). Konverteraren deduplicerar deterministiskt (last-write-wins); åtgärdas endast genom att korrigera/exportera om källan.",
-    "stepsHint": "Steg = enskilda förlorade skriptsteg; själva skriptet är intakt. ”—” = inget helt skript förlorat.",
-    "detailsHead": "Kolliderande objekt",
-    "detailsMore": "… och {{count}} till kolliderande objekt",
-    "colObjects": "Objekt",
-    "colOccurrences": "Förekomster"
+    "subHint": "Objekt = hela objekt i katalogen (skript eller layouter). Delobjekt = förlorade skriptsteg eller layoutobjekt; den omgivande behållaren är intakt. ”—” = ingen förlust av denna typ.",
+    "linksLabel": "Fullständiga fynd:",
+    "linkIntrafile": "UUID-dubbletter inom en fil",
+    "linkClones": "UUID-klonkollisioner"
   },
   "xmlEmpty": {
     "hint": "Inga data ännu. Lägg din FileMaker XML-export i mappen “xml/” och starta konverteringen.",
@@ -136,5 +142,31 @@
     "hostPathHint": "Lägg filerna i den här mappen på värden — den är monterad i containern.",
     "containerPathNote": "Sökväg inuti containern",
     "putFilesHint": "Lägg dina FileMaker XML-filer i mappen “xml/”."
+  },
+  "folderNav": {
+    "root": "Alla dashboards",
+    "notFound": "Mappen hittades inte.",
+    "backToRoot": "Till översikten",
+    "breadcrumb": "Mappar",
+    "runAll": "Kör alla",
+    "run": "Kör",
+    "running": "körs…",
+    "findings": "träffar",
+    "coverageHint": "Delvis täckning — alla resultat är inte beräknade ännu",
+    "filterLabel": "Status",
+    "sortLabel": "Sortering",
+    "sortStandard": "Standard",
+    "sortValue": "Antal resultat ↓",
+    "sortState": "Trafikljus",
+    "state": {
+      "ok": "OK",
+      "warning": "Varning",
+      "error": "Fel",
+      "neutral": "Neutral",
+      "pending": "Väntar",
+      "failed": "Misslyckades"
+    },
+    "noFilterMatches": "Inga poster med den här statusen i det här avsnittet.",
+    "openFolder": "Öppna mapp"
   }
 }

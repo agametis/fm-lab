@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "MBS 플러그인 버전",
+    "description": "버전 요구 사항 인벤토리: 이 솔루션에 필요한 최소 플러그인 버전으로, 사용 중인 모든 플러그인 함수의 문서화된 도입 버전(since_version)의 최댓값으로 도출됩니다 — 비교는 항상 숫자로 하며 사전순은 사용하지 않습니다. 파일별 분포와 드라이버 함수로 도출을 검증할 수 있습니다. 카탈로그는 설치된 버전을 알지 못합니다: 헤더에서 선택해야 검사가 활성화됩니다(중립 항목 = 검사 없음).",
+    "analysis.defaultResult.meaning": "이 범위가 요구하는 최소 플러그인 버전 — 사용 중인 플러그인 함수 중 문서화된 도입 버전의 최댓값"
+  },
+  "layout": {
+    "installed_version_select.props.label": "설치된 플러그인 버전",
+    "summary_kpi.props.items[0].label": "필요 버전",
+    "summary_kpi.props.items[1].label": "함수",
+    "summary_kpi.props.items[2].label": "호출 지점",
+    "summary_kpi.props.items[3].label": "파일",
+    "summary_kpi.props.items[4].label": "미해결",
+    "findings_card.props.title": "버전 검사",
+    "findings_table.props.columns[0].label": "심각도",
+    "findings_table.props.columns[1].label": "파일",
+    "findings_table.props.columns[2].label": "객체",
+    "findings_table.props.columns[3].label": "플러그인 함수",
+    "findings_table.props.columns[4].label": "필요",
+    "findings_table.props.columns[5].label": "설치됨",
+    "findings_table.props.columns[6].label": "커스텀 함수 경유",
+    "findings_table.props.columns[7].label": "메시지",
+    "findings_table.props.empty.message": "활성화된 검사가 없습니다 — 헤더에서 설치된 플러그인 버전을 선택하면 요구 사항을 검증할 수 있습니다(중립 항목 = 인벤토리만).",
+    "by_file_card.props.title": "파일별 요구 사항",
+    "by_file_table.props.columns[0].label": "파일",
+    "by_file_table.props.columns[1].label": "필요 버전",
+    "by_file_table.props.columns[2].label": "주요 드라이버",
+    "by_file_table.props.columns[3].label": "함수",
+    "by_file_table.props.columns[4].label": "호출 지점",
+    "by_file_table.props.columns[5].label": "미해결",
+    "drivers_card.props.title": "드라이버 함수",
+    "drivers_table.props.columns[0].label": "플러그인 함수",
+    "drivers_table.props.columns[1].label": "구성 요소",
+    "drivers_table.props.columns[2].label": "도입",
+    "drivers_table.props.columns[3].label": "상태",
+    "drivers_table.props.columns[4].label": "설치 버전 초과",
+    "drivers_table.props.columns[5].label": "호출 지점",
+    "drivers_table.props.columns[6].label": "파일",
+    "markdown.props.content": "## 참고\n\n**필요 버전**은 도출값입니다: 실제로 호출되는 플러그인 함수의 문서화된 도입 버전(`since_version`)의 최댓값 — *드라이버 함수* 테이블로 검증할 수 있습니다. 버전 비교는 숫자 키로 하며 문자열로는 하지 않습니다.\n\n- **버전 검사**: 카탈로그는 설치된 플러그인 버전을 알지 못합니다. 헤더에서 선택해야 이후에 도입된 함수 호출이 표시됩니다. 중립 항목은 검사를 시작하지 않습니다.\n- **파일별 요구 사항**: 파일별 분포는 어떤 모듈이 요구 사항을 지니는지 보여 줍니다.\n- **탐색**: 드라이버 행은 플러그인 함수 상세(where-used)를 열고, 검사 결과 행은 호출 객체를 엽니다.\n- **유지 관리 축**: deprecated/removed 호출은 *정적 코드 분석*의 별도 규칙입니다."
+  }
+}

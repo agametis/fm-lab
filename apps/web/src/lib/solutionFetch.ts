@@ -114,15 +114,38 @@ export function installSolutionFetch(): void {
     } catch (err) {
       // Rejected fetch = the request never completed at HTTP level: server
       // unreachable, network down — or the browser refused to send it at all
-      // (a cross-origin preflight that did not clear). There is no response to
-      // inspect, so the recovery below cannot help; announce the suspicion
-      // instead and let the caller's own error handling proceed unchanged.
-      if (selected) {
-        window.dispatchEvent(
-          new CustomEvent(SOLUTION_REQUEST_BLOCKED, { detail: { solution: selected } }),
-        );
+      // (a cross-origin preflight that did not clear).
+      //
+      // For a bodyless, idempotent method that is safe to repeat exactly once:
+      // the typical cause is a pooled socket the server closed in the same
+      // instant (keep-alive race), and the retry gets a fresh connection.
+      // Anything else — server down, network gone — fails again immediately
+      // and falls through to the announcement below unchanged. The retry
+      // result flows on through the normal path, so the stale-selection
+      // recovery still applies to it.
+      const retriable = request.method === 'GET' || request.method === 'HEAD';
+      let retried: Response | null = null;
+      if (retriable) {
+        try {
+          retried = await original(request);
+        } catch {
+          /* second attempt failed too — report as before */
+        }
       }
-      throw err;
+
+      if (!retried) {
+        // There is no response to inspect, so the recovery below cannot help;
+        // announce the suspicion instead and let the caller's own error
+        // handling proceed unchanged.
+        if (selected) {
+          window.dispatchEvent(
+            new CustomEvent(SOLUTION_REQUEST_BLOCKED, { detail: { solution: selected } }),
+          );
+        }
+        throw err;
+      }
+
+      response = retried;
     }
 
     // Stale-selection recovery — only when OUR selection is the rejected one

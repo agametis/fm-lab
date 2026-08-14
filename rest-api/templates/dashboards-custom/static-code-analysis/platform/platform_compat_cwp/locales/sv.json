@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plattformskompatibilitet: Custom Web Publishing",
+  "analysis.defaultResult.meaning": "Steg inom omfånget som inte eller endast delvis stöds på Custom Web Publishing"
+ }
+}

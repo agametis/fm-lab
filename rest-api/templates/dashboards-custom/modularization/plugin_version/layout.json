@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary_card",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "Select",
+            "id": "installed_version_select",
+            "props": {
+              "param": "installed_version",
+              "default": "",
+              "valueField": "value",
+              "labelField": "label",
+              "label": "Installed plugin version"
+            },
+            "data": {
+              "dataset": "versions"
+            }
+          },
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpi",
+            "props": {
+              "items": [
+                {
+                  "label": "Required version",
+                  "field": "required_version"
+                },
+                {
+                  "label": "Functions",
+                  "field": "functions",
+                  "format": "number"
+                },
+                {
+                  "label": "Call sites",
+                  "field": "callsites",
+                  "format": "number"
+                },
+                {
+                  "label": "Files",
+                  "field": "affected_files",
+                  "format": "number"
+                },
+                {
+                  "label": "Unresolved",
+                  "field": "unresolved",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings_card",
+        "props": {
+          "span": 12,
+          "title": "Version check"
+        },
+        "data": {
+          "dataset": "findings"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search file, object or function…",
+              "columns": [
+                {
+                  "field": "severity",
+                  "label": "Severity"
+                },
+                {
+                  "field": "file_name",
+                  "label": "File"
+                },
+                {
+                  "field": "script_name",
+                  "label": "Object"
+                },
+                {
+                  "field": "function_name",
+                  "label": "Plug-in function"
+                },
+                {
+                  "field": "since_version",
+                  "label": "Needs"
+                },
+                {
+                  "field": "installed_version",
+                  "label": "Installed"
+                },
+                {
+                  "field": "via_custom_function",
+                  "label": "Via custom function"
+                },
+                {
+                  "field": "message",
+                  "label": "Message"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "{{object_type}}"
+                }
+              },
+              "empty": {
+                "message": "No check active — pick an installed plugin version in the header to validate the requirement (neutral entry = inventory only)."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "by_file_card",
+        "props": {
+          "span": 12,
+          "title": "Requirement per file"
+        },
+        "data": {
+          "dataset": "by_file"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "by_file_table",
+            "props": {
+              "rowKey": "file_name",
+              "density": "compact",
+              "sortable": true,
+              "columns": [
+                {
+                  "field": "file_name",
+                  "label": "File"
+                },
+                {
+                  "field": "required_version",
+                  "label": "Required version"
+                },
+                {
+                  "field": "top_driver",
+                  "label": "Top driver"
+                },
+                {
+                  "field": "functions",
+                  "label": "Functions",
+                  "align": "right"
+                },
+                {
+                  "field": "callsites",
+                  "label": "Call sites",
+                  "align": "right"
+                },
+                {
+                  "field": "unresolved",
+                  "label": "Unresolved",
+                  "align": "right"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "drivers_card",
+        "props": {
+          "span": 12,
+          "title": "Driver functions"
+        },
+        "data": {
+          "dataset": "drivers"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "drivers_table",
+            "props": {
+              "rowKey": "function_name",
+              "density": "compact",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search function or component…",
+              "columns": [
+                {
+                  "field": "function_name",
+                  "label": "Plug-in function"
+                },
+                {
+                  "field": "component",
+                  "label": "Component",
+                  "format": "badge"
+                },
+                {
+                  "field": "since_version",
+                  "label": "Since"
+                },
+                {
+                  "field": "status",
+                  "label": "Status"
+                },
+                {
+                  "field": "exceeds_installed",
+                  "label": "Exceeds installed"
+                },
+                {
+                  "field": "callsites",
+                  "label": "Call sites",
+                  "align": "right"
+                },
+                {
+                  "field": "files",
+                  "label": "Files",
+                  "align": "right"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "PluginFunction"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "notes_card",
+        "props": {
+          "span": 12
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "markdown",
+            "props": {
+              "content": "## Notes\n\nThe **required version** is a derivation: the maximum documented introduction version (`since_version`) over the plug-in functions this scope actually calls — the *driver functions* table makes it verifiable. Version comparisons run on a numeric key, never on the version string.\n\n- **Version check**: the catalog knows no installed plugin version. Pick one in the header select to flag every call to a function introduced later; the neutral entry runs no check. Installed fleets are often heterogeneous — validate divergent workstation versions one by one.\n- **Requirement per file**: the per-file spread shows which modules carry the requirement.\n- **Navigation**: driver rows open the plug-in function detail (where-used); finding rows open the calling object.\n- **Maintenance axis**: deprecated/removed calls are separate rules under *Static Code Analysis*."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

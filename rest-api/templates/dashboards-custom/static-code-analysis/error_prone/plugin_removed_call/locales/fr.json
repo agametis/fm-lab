@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Appel de fonction de plug-in supprimée",
+  "analysis.defaultResult.meaning": "Appels de fonctions de plug-in du périmètre dont la fonction est marquée supprimée dans la documentation de l'éditeur — ces appels échouent avec un plug-in actuel"
+ }
+}

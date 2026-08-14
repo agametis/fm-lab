@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Vinculación al SO: pasos de script",
+  "analysis.defaultResult.meaning": "Scripts en el alcance vinculados a sistemas operativos concretos mediante pasos de script de Claris"
+ }
+}

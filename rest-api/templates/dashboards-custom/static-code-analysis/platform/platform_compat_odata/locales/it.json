@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Compatibilità di piattaforma: OData",
+  "analysis.defaultResult.meaning": "Riscontri di preparazione OData (base Server presa in prestito + regole di denominazione e di commit)"
+ }
+}

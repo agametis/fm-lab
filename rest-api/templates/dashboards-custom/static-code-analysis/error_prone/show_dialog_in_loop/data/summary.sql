@@ -7,6 +7,8 @@ WITH f AS (
     JOIN StepsForScripts s ON s.Step_UUID = t.Step_UUID AND s.File_Name = t.File_Name
     WHERE t.Step_ID = 87 AND t.loop_depth_before >= 1
       AND (getvariable('file') IS NULL OR t.File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR t.Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
 ),
 sel AS (SELECT COALESCE(getvariable('scope'), 'active') = 'all' AS want_all)
 SELECT

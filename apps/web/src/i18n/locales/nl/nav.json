@@ -22,14 +22,16 @@
     "xmlImport": "XML-import",
     "cluster": "Clusters",
     "settings": "Instellingen",
-    "fmSpec": "fm-spec"
+    "fmSpec": "fm-spec",
+    "tests": "Tests"
   },
   "leitDescription": {
     "dashboards": "Overzicht van alle beschikbare dashboards.",
     "customQueries": "Herbruikbare SQL-sjablonen — klik op een tegel om een analyse te openen.",
-    "docs": "In dit project geïnstalleerde documentatiebronnen.",
+    "docs": "Geïnstalleerde documentatiebronnen.",
     "xmlImport": "Importeert alle bestanden uit de map xml/ in DuckDB.",
-    "xmlImportContextNote": "Import van een niet-actieve oplossing — de getoonde analysegegevens veranderen pas na het activeren."
+    "xmlImportContextNote": "Import van een niet-actieve oplossing — de getoonde analysegegevens veranderen pas na het activeren.",
+    "tests": "Samengestelde analysistests — voer gebundelde controles uit op de oplossing, een bestand of een object."
   },
   "errors": {
     "noDashboardId": "Geen dashboard-id opgegeven.",
@@ -86,7 +88,8 @@
       "references": "Referenties",
       "graph": "Grafiek",
       "versions": "Versies",
-      "notes": "Notities"
+      "notes": "Notities",
+      "tests": "Tests"
     }
   },
   "pseudoToolbar": {
@@ -123,5 +126,53 @@
     "title": "Nog geen gegevens",
     "message": "Er is nog geen FileMaker-oplossing geïmporteerd. Importeer eerst een XML-export om deze weergave te gebruiken.",
     "backToStart": "Terug naar startpagina"
+  },
+  "testsPanel": {
+    "loading": "Tests laden…",
+    "empty": "Geen tests voor objecttype {{type}}.",
+    "openOverview": "Testoverzicht openen",
+    "run": "Uitvoeren",
+    "running": "Bezig…",
+    "showFindings": "Bevindingen tonen",
+    "memberError": "Fout",
+    "openMember": "Dashboard/query openen",
+    "truncated": "Meer bevindingen afgekapt — open het lid voor de volledige lijst.",
+    "duration": "{{ms}} ms",
+    "searchPlaceholder": "Tests filteren…",
+    "runAll": "Alles uitvoeren ({{count}})",
+    "noMatch": "Geen tests komen overeen met het huidige filter.",
+    "typeFilterAria": "Filteren op testtype",
+    "memberSkipped": "Overgeslagen",
+    "findingsFiltered": "{{shown}} van {{total}} bevindingen komen overeen met de zoekopdracht.",
+    "rerun": "Opnieuw uitvoeren",
+    "profileLabel": "Profiel",
+    "profileAll": "Alle controles ({{count}})",
+    "memberCount": "{{count}} controles",
+    "resultsFrom": "Resultaten van {{time}}",
+    "catalogFrom": "Catalogus: {{time}}",
+    "notRun": "{{count}} niet uitgevoerd",
+    "platformSection": "Platformcompatibiliteit",
+    "otherSection": "Overige tests",
+    "platformRemove": "Doelomgeving verwijderen",
+    "platformAdd": "+ Doelomgeving",
+    "platformNone": "Geen doelomgeving gekozen — voeg de platforms toe waarop deze oplossing draait.",
+    "platformSpecificScripts": "{{count}} platformspecifieke scripts",
+    "osBindingLabel": "OS-binding",
+    "osMatrixOs": "OS",
+    "osMatrixHint": "Scripts met OS-specifieke bindingen per besturingssysteem en bewijsbron (een desktop-only script telt voor macOS en Windows; bindingen die meer dan twee systemen beslaan gelden niet als OS-specifiek).",
+    "matrixStep": "Stap",
+    "disabledCount": "{{count}} uitgeschakeld —",
+    "showDisabled": "tonen",
+    "hideDisabled": "verbergen",
+    "disableTest": "Deze test verbergen (lokaal per oplossing opgeslagen)",
+    "enableTest": "Deze test weer inschakelen",
+    "sortByResult": "Meest opvallende eerst",
+    "stateFilterAria": "Filteren op resultaatstatus",
+    "state_error": "Fouten",
+    "state_warning": "Waarschuwingen",
+    "state_neutral": "Neutrale resultaten",
+    "state_ok": "Geslaagd",
+    "state_skipped": "Overgeslagen",
+    "state_failed": "Uitvoering mislukt"
   }
 }

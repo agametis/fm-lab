@@ -8,7 +8,11 @@
     "open": "帮助"
   },
   "search": {
-    "placeholder": "筛选…"
+    "placeholder": "筛选…",
+    "platformAll": "所有平台",
+    "platformLabel": "平台",
+    "platformStepHint": "显示可在此平台运行的步骤（含部分支持）",
+    "platformFnHint": "显示为此平台构建的函数（平台绑定）"
   },
   "list": {
     "count": "{{shown}} / {{total}}"
@@ -58,7 +62,12 @@
       "variadic": "可变参数",
       "signature": "签名",
       "purpose": "用途",
-      "example": "示例"
+      "example": "示例",
+      "affinity_dedicated": "仅在此处返回有意义的结果 — 可在任何环境调用",
+      "affinity_exclusive": "仅在此处可用",
+      "affinityWord_dedicated": "专用",
+      "affinityWord_exclusive": "独占",
+      "platformBinding": "平台绑定"
     }
   },
   "params": {
@@ -120,6 +129,22 @@
       "hint": "SaXML 与 fmxmlsnippet 是同一步骤的两种不同表示形式。",
       "none": "未采集到 SaXML 映射。",
       "sourceNote": "随附的数据是来源中立的：不含任何来源引用、作者或公司名称，也没有语料库痕迹。每个步骤中显示的示例载荷均为合成内容。"
+    },
+    "compat": {
+      "label": "平台兼容性",
+      "partial": "部分支持",
+      "partialHint": "部分支持 — 有条件支持，请参阅该步骤的 Claris 帮助页面"
     }
+  },
+  "osAffinity": {
+    "label": "操作系统绑定",
+    "word_exclusive": "专用",
+    "word_unsupported": "不支持",
+    "word_variant": "因操作系统而异",
+    "word_os_probe": "平台探测",
+    "hint_exclusive": "仅在列出的操作系统上工作",
+    "hint_unsupported": "Claris 明确指出此操作系统不受支持（忠于原文的反向陈述）",
+    "hint_variant": "到处都能运行 — 行为或结果取决于操作系统",
+    "hint_os_probe": "在运行时返回平台/操作系统 — 守卫惯用法，不是绑定"
   }
 }

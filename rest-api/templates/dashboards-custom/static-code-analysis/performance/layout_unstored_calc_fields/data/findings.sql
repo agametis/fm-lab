@@ -10,7 +10,7 @@ WITH unstored AS (
     FROM FieldsForTables
     WHERE Field_Type = 'Calculated' AND Storage_StoreCalcResults = FALSE
 )
-SELECT 'layout-unstored-calc' AS rule_id, 'warn' AS severity,
+SELECT 'layout-unstored-calc' AS rule_id, 'warning' AS severity,
     l.Default_View AS default_view,
     l.File_Name    AS file_name,
     l.L_UUID       AS nav_uuid,

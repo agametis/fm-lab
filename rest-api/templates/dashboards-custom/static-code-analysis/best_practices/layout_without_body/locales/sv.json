@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Layout utan bröddel",
-    "description": "Bästa praxis-regel — Layouter utan brödroll. Utan brödtext visas inte poster i formulär-/listvy; oftast en vilsen eller felbyggd Layout."
+    "description": "Bästa praxis-regel — flaggar Layouter utan brödroll. Utan brödtext visas inte poster i formulär-/listvy; oftast en vilsen eller felbyggd Layout."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Träffar",

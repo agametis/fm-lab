@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "OS-Bindung: integrierte Funktionen",
+  "analysis.defaultResult.meaning": "Scripts im Prüfumfang, die über integrierte Claris-Funktionen an bestimmte Betriebssysteme gebunden sind"
+ }
+}

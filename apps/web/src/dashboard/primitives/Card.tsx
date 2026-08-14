@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { isPlugSpecMissingError } from '../../lib/errors';
 import type { PrimitiveProps } from '../types';
 
 /**
@@ -42,7 +43,12 @@ export function Card({ node, dataset, renderChildren }: PrimitiveProps) {
         </header>
       )}
       <div className="dash-card__body">
-        {datasetError && (
+        {datasetError && isPlugSpecMissingError(datasetError) && (
+          // Fehlende Plugin-Referenz-DB ist ein Installationszustand, kein
+          // Fehler der Karte — ruhige Notiz statt rotem Raw-Error.
+          <div className="dash-card__empty">{t('plugSpecMissing')}</div>
+        )}
+        {datasetError && !isPlugSpecMissingError(datasetError) && (
           <div className="dash-card__error">{t('loadError', { message: datasetError })}</div>
         )}
         {!datasetError && datasetIsEmpty && (

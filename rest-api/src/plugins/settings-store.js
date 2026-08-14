@@ -18,20 +18,40 @@ const { execSync } = require('child_process');
 
 let cachedRoot = null;
 
+// Ein Verzeichnis gilt nur dann als fm-lab-Root, wenn es rest-api/package.json
+// enthält. Ohne diesen Check würde bei einem genesteten Checkout (fm-lab ohne
+// eigenes .git innerhalb eines größeren Repos) das ÄUSSERE git-Toplevel
+// akzeptiert — alle abgeleiteten Pfade (.fmlab/, tools/, version.json) zeigten
+// dann ins falsche Repo.
+function isRepoRoot(dir) {
+  return fs.existsSync(path.join(dir, 'rest-api', 'package.json'));
+}
+
 function resolveRepoRoot() {
   if (cachedRoot) return cachedRoot;
+  // 1. Expliziter Override — für Setups, in denen weder ein eigenes .git noch
+  //    der Verzeichnis-Fallback greift (z. B. verschobene Server-Starts).
+  if (process.env.FMLAB_REPO_ROOT) {
+    const envRoot = path.resolve(process.env.FMLAB_REPO_ROOT);
+    if (isRepoRoot(envRoot)) {
+      cachedRoot = envRoot;
+      return envRoot;
+    }
+    console.warn(`settings-store: FMLAB_REPO_ROOT ignoriert — ${envRoot} enthält kein rest-api/package.json`);
+  }
+  // 2. Git-Probe — nur akzeptieren, wenn das Toplevel wirklich fm-lab ist.
   try {
     const out = execSync('git rev-parse --show-toplevel', {
       stdio: ['ignore', 'pipe', 'ignore'],
     }).toString().trim();
-    if (out) {
+    if (out && isRepoRoot(out)) {
       cachedRoot = out;
       return out;
     }
   } catch {
     // not a git checkout — fall through
   }
-  // Fallback: rest-api/src/plugins/ → ../../.. = rest-api/, repo-root = rest-api/../
+  // 3. Fallback: __dirname = <repo>/rest-api/src/plugins → drei Ebenen hoch = Repo-Root.
   cachedRoot = path.resolve(__dirname, '..', '..', '..');
   return cachedRoot;
 }

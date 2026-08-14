@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "OS-binding: plug-infuncties",
+  "analysis.defaultResult.meaning": "Scripts binnen het bereik die via plug-infunctieaanroepen aan specifieke besturingssystemen zijn gebonden"
+ }
+}

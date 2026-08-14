@@ -1,0 +1,10 @@
+{
+  "manifest": {
+    "title": "Doku-Set Start",
+    "description": "Startseite einer Dokumentationsquelle mit deklarierter Einstiegsseite: gerenderte Startseite plus gruppierte Seitenliste."
+  },
+  "layout": {
+    "pages.props.title": "Rubriken",
+    "pages_list.props.empty.message": "Keine Seiten für dieses Doku-Set verfügbar."
+  }
+}

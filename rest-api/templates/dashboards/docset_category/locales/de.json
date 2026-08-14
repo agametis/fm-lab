@@ -1,11 +1,11 @@
 {
   "manifest": {
     "title": "Doku-Rubrik",
-    "description": "Funktions-/Schritt-Liste innerhalb einer Doku-Rubrik."
+    "description": "Einträge innerhalb einer Doku-Rubrik."
   },
   "layout": {
-    "info_kpistrip.props.items[0].label": "Funktionen",
-    "functions.props.title": "Funktionen",
-    "functions_list.props.empty.message": "Keine Funktionen für diese Rubrik verfügbar."
+    "info_kpistrip.props.items[0].label": "Einträge",
+    "functions.props.title": "Einträge",
+    "functions_list.props.empty.message": "Keine Einträge für diese Rubrik verfügbar."
   }
 }

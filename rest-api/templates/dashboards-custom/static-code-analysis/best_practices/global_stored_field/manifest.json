@@ -2,7 +2,7 @@
   "id": "global_stored_field",
   "version": "1.0.0",
   "title": "Global storage field",
-  "description": "Best-practice rule — fields with global storage. Globals are shared per session and per user; overusing them makes state hard to reason about.",
+  "description": "Best-practice rule — flags fields with global storage. Globals are shared per session and per user; overusing them makes state hard to reason about.",
   "author": "fm-lab rules",
   "icon": "globe",
   "category": "best_practices",
@@ -22,9 +22,31 @@
       "author": "fm-lab rules",
       "source": "fm-lab",
       "url": null,
-      "description": "Best-practice rule — fields with global storage. Globals are shared per session and per user; overusing them makes state hard to reason about.",
+      "description": "Best-practice rule — flags fields with global storage. Globals are shared per session and per user; overusing them makes state hard to reason about.",
       "created": "2026-07-01",
       "references": []
+    }
+  },
+  "analysis": {
+    "objectTypes": [],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Global storage field"
     }
   },
   "datasets": [

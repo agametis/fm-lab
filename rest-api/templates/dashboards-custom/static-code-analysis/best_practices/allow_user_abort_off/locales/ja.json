@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Allow User Abort [オフ]",
-    "description": "ベストプラクティスルール — Allow User Abort [オフ] ステップ。中止を無効にすると、長いスクリプトやループ中にユーザーを閉じ込める恐れがあります。"
+    "description": "ベストプラクティスルール — Allow User Abort [オフ] ステップを検出します。中止を無効にすると、長いスクリプトやループ中にユーザーを閉じ込める恐れがあります。"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "検出数",

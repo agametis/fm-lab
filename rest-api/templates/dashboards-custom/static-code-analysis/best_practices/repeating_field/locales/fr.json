@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Champ à répétitions",
-    "description": "Règle de bonne pratique : champs avec plus d’une répétition. Les champs à répétitions sont difficiles à interroger et à exploiter ; une table liée est généralement préférable."
+    "description": "Règle de bonne pratique : signale les champs avec plus d’une répétition. Les champs à répétitions sont difficiles à interroger et à exploiter ; une table liée est généralement préférable."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Résultats",

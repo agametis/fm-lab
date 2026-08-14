@@ -10,5 +10,7 @@ SELECT 'empty-if-branch' AS rule_id, 'warning' AS severity,
     row_number() OVER (ORDER BY File_Name, Script_Name, Step_Index) AS row_key
 FROM seq
 WHERE Step_ID = 68 AND next_step IN (69, 70, 125) AND (getvariable('file') IS NULL OR File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
 ORDER BY File_Name, Script_Name, Step_Index
 LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);

@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Perform Find sin Set Error Capture",
-    "description": "Regla de buenas prácticas: scripts con Perform Find pero sin Set Error Capture [Activado]. Un diálogo de «sin registros» puede interrumpir al usuario a mitad del script."
+    "description": "Regla de buenas prácticas: detecta scripts con Perform Find pero sin Set Error Capture [Activado]. Un diálogo de «sin registros» puede interrumpir al usuario a mitad del script."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Hallazgos",

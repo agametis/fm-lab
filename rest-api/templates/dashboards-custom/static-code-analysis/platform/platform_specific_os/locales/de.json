@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "OS-Bindung: Plug-in-Funktionen",
+  "analysis.defaultResult.meaning": "Scripts im Prüfumfang, die über Plug-in-Funktionsaufrufe an bestimmte Betriebssysteme gebunden sind"
+ }
+}

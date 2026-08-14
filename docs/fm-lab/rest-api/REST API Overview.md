@@ -31,6 +31,8 @@ curl "http://localhost:3003/api/references?uuid=<Object_UUID>"
 | Lists & search | `/list`, `/list/categories`, `/list-with-folders`, `/count`, `/search`, `/search/count` | [Search API](endpoints/Search%20API.md) |
 | References | `/references`, `/back-references` | [References API](endpoints/References%20API.md) |
 | Query & report | `/query`, `/report`, `/query/list`, `/report/list` | [Query and Report API](endpoints/Query%20and%20Report%20API.md) |
+| Analysis tests | `/tests`, `/tests/context`, `/tests/:id`, `/tests/:id/run` | [Tests API](endpoints/Tests%20API.md) |
+| Results | `/results/summary`, `/results/aggregate`, `/results/registry`, `/results/run` | [Results API](endpoints/Results%20API.md) |
 | Graph | `/graph/*`, `/relationship-graph/:fileName` | [Graph API](endpoints/Graph%20API.md) |
 
 ### Reference & code generation

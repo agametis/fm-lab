@@ -27,8 +27,57 @@
 --   Drift-Indikator herangezogen wird. build_resolutions.sql bewusst NICHT
 --   enthalten, weil es nur abgeleitete Tabellen anlegt.
 
--- @SCHEMA_VERSION 1.16.0
--- @SCHEMA_VERSION_DATE 2026-07-31
+-- @SCHEMA_VERSION 1.20.0
+-- @SCHEMA_VERSION_DATE 2026-08-11
+-- @SCHEMA_CHANGELOG 1.20.0: PSoS-Ausführungskontext als Link_Subrole (P4 Block 15):
+--   calls_script-Kanten aus Perform Script on Server tragen Subrole 'on_server'
+--   (Step 164) bzw. 'on_server_callback' (Step 210); gewöhnliche Aufrufe (Step 1)
+--   bleiben Subrole NULL. Bewusst KEINE neue Link-Rolle — calls_script bleibt die
+--   eine Aufruf-Rolle (where-used/Call-Chain/Graph unverändert), der Kontext ist
+--   ein Qualifier nach dem Muster Condition_1/Hide/left/right. Dedup-Pässe
+--   (prefer-local, prefer-declared-source) sind bereits Subrole-bewusst
+--   (IS NOT DISTINCT FROM). Konsument: platform_specific_server-Bundle löst
+--   Server-Bindungsziele über die Kante statt per Step_XML-Regex auf.
+--   Inhalts-Korrektur an ObjectLinks → Version-Bump (Master-Rebuild nötig).
+-- @SCHEMA_CHANGELOG 1.19.0: UUID-Healing Fundament (H0): P2-Referenztabellen
+--   (XMLStepReferences, XMLLayoutReferences, XMLCalcReferences) extrahieren zusätzlich
+--   Ref_ID (= FileMaker-interne @id des Referenz-Elements; SaXML-Tripel id+name+UUID)
+--   und TO_Ref_ID (Kontext-TO-@id bei Feld-Referenzen — FieldReference/@id ist
+--   tabellen-lokal, Feld-Schlüssel zweistufig); DuplicateAbsorptionDetails erhält
+--   Healed_UUID/Heal_Status/Discriminator (Mapping Original↔Ersatz-UUID); neue
+--   Prelude-Makros fm_heal_uuid/fm_heal_pick/fm_heal_enabled (md5-Ersatz-UUIDs über
+--   interne FM-IDs, Survivor = kleinste interne ID, Schalter FM_UUID_HEAL).
+--   H1 umgesetzt: Heilung in den Upsert-CTEs der 9 main-Kataloge (ScriptCatalog,
+--   ExternalDS, BaseTable, TO, Fields, ValueList, OptionsForValueLists [VL-Namespace],
+--   CustomFunctions [_cf_catalog_raw], Accounts) + Zensus-Detail-Mapping je Katalog;
+--   Kaskade der Fremd-UUID-Spalten post-P1 (convert_xml_01b_heal_cascade.sql);
+--   P4-Rewrite-Stufe (1) verteilt eingehende Referenzen per Ref_ID auf die Zwillinge.
+--   H2 umgesetzt: Heilung der sub-gechunkten Kataloge (StepsForScripts
+--   [script_id·step_index], LayoutObjects [layout_id·object_id, _dedup_rn-Partition
+--   um Object_ID erweitert — Copy-Paste-Zwillinge überleben bis zur Heilung],
+--   Layouts [layout_id]) intra-chunk in Basis + streamify-Overrides; chunk-
+--   übergreifende Paare heilt der catmerge-Nachschlag (convert_turbo.sh: Pflicht-
+--   Dup-Count fail-hard, Heal-INSERT mit globalem min-Identitäts-Survivor,
+--   Zensus-Vervollständigung Chunk_Seq=-1; Part-Pfad-Fallback zensiert nur).
+--   P2 attribuiert Layout-Objekt-Quellen über die Katalogspalte statt Roh-XML
+--   (geheilte Zwillinge trügen sonst die Original-UUID). Ersatz-UUIDs sind
+--   chunking-invariant (M=1 ≡ M=25 verifiziert). 3A/Doppel-Serialisierung
+--   kollabiert weiterhin. Auf duplikatfreien Korpora Lauf-zu-Lauf bit-identisch.
+-- @SCHEMA_CHANGELOG 1.18.0: Klon-Scoping über deklarierte Datenquellen (P4): neue
+--   Tabelle DataSourceFileMap ((File_Name, DS_UUID) → importierte Zieldatei, via
+--   DS_Name-Match bzw. Pfadlisten-Auflösung — schließt die _dev-Suffix-Lücke);
+--   ObjectLinks-Block 6 (base_table) scopet das Ziel auf die deklarierte Quelldatei;
+--   neuer prefer-declared-source-Post-Pass entfernt Phantom-Kanten in Klon-Korpora
+--   (Kante fächert über mehrere Dateien, genau eine ist deklarierte Datenquelle);
+--   neue P6-View v_check_phantom_links. Klonfreie Korpora bleiben bit-identisch;
+--   Inhalts-Korrektur an ObjectLinks → Version-Bump (Master-Rebuild nötig).
+-- @SCHEMA_CHANGELOG 1.17.0: Dup-Zensus vervollständigt (Metadata-Integrity Stufe 0):
+--   DuplicateAbsorptionDetails + Kontext-/Klartext-Spalten (Parent_Name, Position,
+--   Display_Text, Payload_XML); Detail-Erfassung zusätzlich für StepsForScripts,
+--   Layouts und LayoutObjects; LayoutObjects-Zensus zählt Copy-Paste-Dups
+--   (gleiche UUID, verschiedene Object_IDs) getrennt von FileMakers
+--   Doppel-Serialisierung; neue Tabelle MergeAbsorptions (Persistenz des
+--   katmerge-a2-Reports, befüllt von convert_turbo.sh).
 -- @SCHEMA_CHANGELOG 1.16.0: StepsForScripts.Calculation_Text — zweite Härtung der
 --   Extraktion: zusätzlich not(ancestor::Bounds). Bei Fensterschritten OHNE
 --   Namens-Berechnung (New Window / Go to Related Record mit "New window"-Option,
@@ -48,7 +97,7 @@
 --   FolderHierarchy bekommt den dritten UNION-Zweig, ObjectCatalog filtert Ordner
 --   aus dem CustomFunction-Block und führt sie über Block 24 als 'Folder'.
 --   Zusätzlich ScriptStepRoleMap um 26 Step-IDs nachkuratiert (P6-Wächter
---   v_check_step_roles / Quality T3-08 auf 0). Version-Bump, weil ein
+--   v_check_step_roles / Quality-Check auf 0). Version-Bump, weil ein
 --   inkrementeller Lauf weder die neuen Spalten füllt noch die Katalogzeilen
 --   umhängt.
 -- @SCHEMA_CHANGELOG 1.14.0: ObjectCatalog/ScriptStepType jetzt auch aus LayoutObjectSteps
@@ -137,9 +186,9 @@
 -- @SCHEMA_CHANGELOG 1.5.1: Layout-MenuSet + Sub-Summary-Umbruchfeld: Layouts
 --   +3 Spalten (L_MenuSet_ID/_Name/_UUID aus CustomMenuSetReference, Built-in-
 --   Default id=0 → NULL), LayoutParts +6 Spalten (Part_Seq, Break_Field_ID/
---   _Name/_UUID, Break_TO_Name/_UUID) + PK-Erweiterung um Part_Seq (B-K5:
---   mehrere Parts gleicher Art kollabierten). LayoutPart-Composite-UUID neu:
---   'part_'-Präfix + Part_Seq (B-C4-Teilaspekt). Neue Link-Rollen:
+--   _Name/_UUID, Break_TO_Name/_UUID) + PK-Erweiterung um Part_Seq (mehrere
+--   Parts gleicher Art kollabierten). LayoutPart-Composite-UUID neu:
+--   'part_'-Präfix + Part_Seq. Neue Link-Rollen:
 --   uses_menuset (Layout→CustomMenuSet), breaks_on_field (LayoutPart→Field;
 --   Platzhalter-FieldReference id=0 → NULL, Kante nur für Sub-Summary-Parts —
 --   Grand-Summary-Leftovers sind kein Usage-Signal).
@@ -159,7 +208,7 @@
 -- @SCHEMA_CHANGELOG 1.4.0: neue Tabellen FileAccessAuthorizations,
 --   CustomMenuSetCatalog, LibraryReferences (additiv; bestehende 41 Tabellen unverändert).
 --   + CustomMenuSet im ObjectCatalog + CustomMenuSet→CustomMenu (contains_menu) in ObjectLinks.
--- @SCHEMA_HASH_FILES sql/convert-xml/convert_xml_01_extract.sql sql/convert-xml/convert_xml_02_resolve.sql sql/convert-xml/convert_xml_03_details.sql sql/convert-xml/convert_xml_04_catalog.sql sql/convert-xml/convert_xml_01_extract.streamify.sql tools/katana-xml/streamify_fm_xml.awk tools/katana-xml/katana_common.awk
+-- @SCHEMA_HASH_FILES sql/convert-xml/convert_xml_01_extract.sql sql/convert-xml/convert_xml_01b_heal_cascade.sql sql/convert-xml/convert_xml_02_resolve.sql sql/convert-xml/convert_xml_03_details.sql sql/convert-xml/convert_xml_04_catalog.sql sql/convert-xml/convert_xml_01_extract.streamify.sql tools/katana-xml/streamify_fm_xml.awk tools/katana-xml/katana_common.awk
 */
 
 
@@ -172,7 +221,7 @@
 LOAD webbed;
 
 -- xml_unescape(): dekodiert die gängigen XML-Entities in TEXT, der aus ATTRIBUTwerten
--- gelesen wird (These 1b / Entity-Residual). Hintergrund: webbeds SAX-Pfad dekodiert
+-- gelesen wird (Entity-Residual). Hintergrund: webbeds SAX-Pfad dekodiert
 -- numerische/benannte Entities in Attributen NICHT (DOM schon) → derselbe Name kommt
 -- je nach Chunk-Größe (SAX bei großem Chunk vs DOM bei kleinem) als 'Copy &#38; Paste'
 -- ODER 'Copy & Paste' → chunk-abhängig (bricht --split/--subchunk-Bit-Identität).
@@ -274,6 +323,41 @@ CREATE OR REPLACE MACRO fm_canon_layout_type(raw_type, kind, oxml) AS (
     END
 );
 
+-- ============================================
+-- UUID-Healing (Schema 1.19.0) — deterministische Ersatz-UUIDs für Intra-File-Duplikate
+-- ============================================
+-- Intra-File-UUID-Duplikate (Klasse B: Copy-Paste-Zwillinge — gleiche UUID, verschiedene
+-- interne FM-IDs) kollabierten bisher im ON-CONFLICT-Upsert (Objekt-Verlust, nur zensiert).
+-- Die Heilung gibt jedem Nicht-Survivor-Zwilling eine deterministische Ersatz-UUID:
+--
+--   md5('DupHeal::' || Catalog || '::' || File_Name || '::' || Original_UUID || '::' || Diskriminator)
+--
+-- Eigenschaften (verbindliche Design-Regeln):
+--   * Diskriminator = INTERNE FileMaker-ID (Script_ID, L_ID, Table_ID+Field_ID, …) —
+--     NIE Occurrence_Seq/Chunk_Seq/XML-Reihenfolge (chunking-/glob-abhängig) und NIE
+--     die Roh-XML-Serialisierung (DOM/SAX-Divergenz; Muster der md5-NULL-PK-Guards).
+--   * Reine Zeilenfunktion → parallel-sicher ohne Chunk-Koordination (Katana-Auflage).
+--   * md5-Hex (32 Zeichen, ohne Bindestriche) matcht die native UUID-Form 8-4-4-4-12
+--     bewusst NICHT → „native UUID"-Filter (Klon-Dashboards) schließen Synthetik aus.
+--   * Survivor-Regel: der Zwilling mit der KLEINSTEN internen ID behält die Original-
+--     UUID (deterministisch, unabhängig von Chunk-/Merge-Reihenfolge; das älteste
+--     Objekt ist mit hoher Wahrscheinlichkeit das „Original").
+--   * Rückfall-Schalter FM_UUID_HEAL=0 → Verhalten wie vor der Heilung (absorbieren +
+--     zensieren), für Vergleichs-Importe und Fehler-Reproduktion.
+CREATE OR REPLACE MACRO fm_heal_enabled() AS
+    COALESCE(NULLIF(getenv('FM_UUID_HEAL'), ''), '1') <> '0';
+
+CREATE OR REPLACE MACRO fm_heal_uuid(catalog_name, file_name, orig_uuid, discriminator) AS
+    md5('DupHeal::' || COALESCE(catalog_name, '') || '::' || COALESCE(file_name, '') || '::' ||
+        COALESCE(orig_uuid, '') || '::' || COALESCE(discriminator::VARCHAR, ''));
+
+-- Auswahl-Helfer für die Upsert-CTEs: Survivor behält die Original-UUID, alle anderen
+-- Zwillinge werden geheilt — sofern der Schalter an ist (sonst Original-UUID → der
+-- ON-CONFLICT-Kollaps greift exakt wie heute).
+CREATE OR REPLACE MACRO fm_heal_pick(is_survivor, catalog_name, file_name, orig_uuid, discriminator) AS
+    CASE WHEN is_survivor OR NOT fm_heal_enabled() THEN orig_uuid
+         ELSE fm_heal_uuid(catalog_name, file_name, orig_uuid, discriminator) END;
+
 -- json_escape() Macro entfernt: xml_to_json() wird nicht mehr verwendet.
 -- Stattdessen speichern wir rohes XML (Object_XML, Parameters_XML, Menu_XML, Theme_XML)
 -- und extrahieren Werte direkt per xml_extract_text().
@@ -292,7 +376,7 @@ SET VARIABLE schema_version = '1.1.0';   -- Wird durch Skill-Script ersetzt
 SET VARIABLE schema_hash = 'pending';    -- Wird durch Skill-Script ersetzt
 SET VARIABLE schema_notes = 'convert_xml.sql import';
 
--- Sub-Chunk-Offset für Sequence_ID (These 1b).
+-- Sub-Chunk-Offset für Sequence_ID.
 -- Default 0 = unsplit/coarse unverändert. Beim Sub-Chunking eines Sequence_ID-Katalogs
 -- (LayoutCatalog/ScriptCatalog) injiziert das Skript pro Sub-Chunk den globalen
 -- Record-Offset (= Σ Records vorheriger Sub-Chunks), damit ROW_NUMBER() pro Chunk +
@@ -445,7 +529,7 @@ SELECT
     getvariable('fm_xml') as XML_Path
 FROM _root_attrs
 ON CONFLICT (File_Name) DO UPDATE SET
-    -- B-K4-Audit: File_FullName/File_UUID fehlten (stale nach Re-Export mit
+    -- Audit: File_FullName/File_UUID fehlten (stale nach Re-Export mit
     -- geänderter UUID). Jede Nicht-PK-Spalte gehört in SET.
     File_FullName = EXCLUDED.File_FullName,
     File_UUID = EXCLUDED.File_UUID,
@@ -459,7 +543,7 @@ ON CONFLICT (File_Name) DO UPDATE SET
 -- @END_P1_SECTION@
 -- DuplicateAbsorptions — Dup-Absorption-Zensus (Monitoring, additiv).
 -- Der Per-File-Upsert (ON CONFLICT auf UUID-PK) kollabiert Quellobjekte mit
--- identischer UUID still zu einer Zeile (Quelldefekt-Klasse B-K3: FileMaker-Export
+-- identischer UUID still zu einer Zeile (Quelldefekt: FileMaker-Export
 -- mit doppelten UUIDs, deterministisch last-write-wins). Dieser Zensus schreibt je
 -- (Katalog, Datei) die Zahl der GEPARSTEN Quell-Records (VOR dem Upsert-Dedup);
 -- der P6-Check v_check_absorbed_dups vergleicht live gegen die gespeicherten
@@ -496,7 +580,46 @@ CREATE TABLE IF NOT EXISTS DuplicateAbsorptionDetails (
     Object_Type VARCHAR,               -- Objekttyp (Script/Folder/Separator, ScriptStep …)
     Occurrence_Seq BIGINT NOT NULL,    -- 1,2,… je Vorkommen der UUID (XML-Reihenfolge)
     Chunk_Seq BIGINT NOT NULL DEFAULT 0,
+    -- Kontext-/Klartext-Spalten (Schema 1.17.0): die absorbierten Objekte fehlen nach
+    -- dem Import im Katalog — diese Spalten sind die einzige Spur, über die der
+    -- Entwickler das Objekt in seiner Lösung wiederfindet.
+    Parent_Name VARCHAR,               -- Container-Kontext (Script bei Steps, Layout bei LayoutObjects)
+    Position VARCHAR,                  -- Fundstelle im Container (z. B. 'Step 12', Listen-Position)
+    Display_Text VARCHAR,              -- Klartext-Identifikation (gedeckelt, s. Befüller)
+    Payload_XML VARCHAR,               -- Roh-XML-Ausschnitt (hart gedeckelt; nur wo das Fragment vorliegt)
+    -- UUID-Healing (Schema 1.19.0): Mapping Original-UUID ↔ Ersatz-UUID je Vorkommen.
+    -- Der Zensus ist damit der Abstraktions-Layer der Heilung — beide Richtungen
+    -- (Original→Ersatz für „unter welcher Katalog-UUID erreichbar", Ersatz→Original
+    -- für externe Tools/XML-Textsuche) sind eine Zensus-Abfrage.
+    Healed_UUID VARCHAR,               -- vergebene Ersatz-UUID (NULL = Original behalten bzw. absorbiert)
+    Heal_Status VARCHAR,               -- 'kept-original' | 'healed' | 'absorbed' (3A/nicht heilbar/Schalter aus)
+    Discriminator VARCHAR,             -- verwendeter Identitätswert (z. B. 'script_id=421') — macht die
+                                       -- Stabilitätsgrundlage der Ersatz-UUID auditierbar
     PRIMARY KEY (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq)
+);
+
+-- Kontext-Spalten für inkrementelle DBs ohne Force-Rebuild (Muster Step_XML).
+ALTER TABLE DuplicateAbsorptionDetails ADD COLUMN IF NOT EXISTS Parent_Name VARCHAR;
+ALTER TABLE DuplicateAbsorptionDetails ADD COLUMN IF NOT EXISTS Position VARCHAR;
+ALTER TABLE DuplicateAbsorptionDetails ADD COLUMN IF NOT EXISTS Display_Text VARCHAR;
+ALTER TABLE DuplicateAbsorptionDetails ADD COLUMN IF NOT EXISTS Payload_XML VARCHAR;
+ALTER TABLE DuplicateAbsorptionDetails ADD COLUMN IF NOT EXISTS Healed_UUID VARCHAR;
+ALTER TABLE DuplicateAbsorptionDetails ADD COLUMN IF NOT EXISTS Heal_Status VARCHAR;
+ALTER TABLE DuplicateAbsorptionDetails ADD COLUMN IF NOT EXISTS Discriminator VARCHAR;
+
+-- MergeAbsorptions — Persistenz des katmerge-a2-Dup-Reports (Schema 1.17.0).
+-- Befüllt NICHT hier, sondern von tools/katana-xml/lib/convert_turbo.sh nach dem
+-- Chunk-Merge (best-effort, analog zur a2-Warnzeile). Die DDL liegt in P1, damit
+-- JEDE DB die Tabelle trägt (meist leer) und Dashboard-SQL nie auf einen
+-- Binder-Error läuft. Ursachen am Merge-Punkt nicht sicher unterscheidbar:
+-- Chunk-Overlap (Converter-Artefakt, kein Lösungs-Defekt) ODER Klon-Datei mit
+-- identischem internem File_Name (echte UUID-Kollision, Klasse-A-Variante).
+CREATE TABLE IF NOT EXISTS MergeAbsorptions (
+    Table_Name VARCHAR NOT NULL,       -- Katalogtabelle, deren Merge Dubletten absorbierte
+    File_Name VARCHAR,                 -- betroffene Datei (NULL, wenn nicht attribuierbar)
+    Absorbed_Count BIGINT,             -- absorbierte PK-Dubletten
+    Merge_Path VARCHAR,                -- 'catmerge' (Part-Pfad meldet nicht separat)
+    Run_Timestamp TIMESTAMP            -- Zeitpunkt des Merge-Laufs (UTC)
 );
 
 -- ExternalDataSourceCatalog
@@ -514,30 +637,47 @@ CREATE TABLE IF NOT EXISTS ExternalDataSourceCatalog (
 -- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
+),
+ds_records AS (
+    SELECT id, name, type, File, UUID
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='ExternalDataSourceCatalog',
+        record_element='ExternalDataSource',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'id': 'BIGINT',
+            'name': 'VARCHAR',
+            'type': 'VARCHAR',
+            'File': 'STRUCT(UniversalPathList VARCHAR)',
+            'UUID': 'STRUCT("#text" VARCHAR, "accountName" VARCHAR, "modifications" BIGINT, "timestamp" VARCHAR, "userName" VARCHAR)'
+        }
+    )
+),
+ds_healed AS (
+    -- UUID-Healing (H1): Survivor = kleinste DS_ID je UUID behält die Original-UUID,
+    -- weitere Zwillinge erhalten im INSERT unten die deterministische Ersatz-UUID
+    -- (fm_heal_pick, Prelude). Doppel-Serialisierung (gleiche UUID UND gleiche ID)
+    -- kollabiert weiterhin korrekt: Zeilen mit identischem Diskriminator erhalten
+    -- identische UUIDs → ON CONFLICT greift wie bisher.
+    -- Zweiter Hash-Partition-Pass auf dem bereits gelesenen Rowset — kein XML-Re-Scan.
+    SELECT dr.*,
+           (dr.UUID->>'#text' IS NULL OR dr.id IS NULL  -- NULL-id: kein Diskriminator → nie heilen
+            OR dr.id = MIN(dr.id) OVER (PARTITION BY dr.UUID->>'#text')) AS is_survivor
+    FROM ds_records dr
 )
 INSERT INTO ExternalDataSourceCatalog
 SELECT
-    id AS DS_ID,
-    name AS DS_Name,
-    type AS DS_Type,
-    File.UniversalPathList AS Path,
-    UUID->>'#text' AS DS_UUID,
+    dr.id AS DS_ID,
+    dr.name AS DS_Name,
+    dr.type AS DS_Type,
+    dr.File.UniversalPathList AS Path,
+    fm_heal_pick(dr.is_survivor, 'ExternalDataSourceCatalog', fn.File_Name,
+                 dr.UUID->>'#text', 'ds_id=' || dr.id::VARCHAR) AS DS_UUID,
     fn.File_Name as File_Name
-FROM read_xml(
-    getvariable('fm_xml'),
-    root_element='ExternalDataSourceCatalog',
-    record_element='ExternalDataSource',
-    max_depth=10,
-    maximum_file_size=getvariable('dom_threshold'),
-    streaming=getvariable('use_streaming'),
-    columns={
-        'id': 'BIGINT',
-        'name': 'VARCHAR',
-        'type': 'VARCHAR',
-        'File': 'STRUCT(UniversalPathList VARCHAR)',
-        'UUID': 'STRUCT("#text" VARCHAR, "accountName" VARCHAR, "modifications" BIGINT, "timestamp" VARCHAR, "userName" VARCHAR)'
-    }
-)
+FROM ds_healed dr
 CROSS JOIN filename_normalized fn
 ON CONFLICT (DS_UUID, File_Name) DO UPDATE SET
     DS_ID = EXCLUDED.DS_ID,
@@ -559,6 +699,82 @@ FROM read_xml(
 )
 ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
 
+-- Dup-Absorption-DETAILS (ExternalDataSourceCatalog): Name der kollidierenden
+-- Datenquellen je doppelt vergebener UUID. Liest denselben Quell-Rowset wie der
+-- Katalog-INSERT oben (kein Zeilenfilter). DELETE-vor-INSERT hält den Detail-Satz
+-- je (Katalog, Datei) beim Re-Import frisch (analog zum per-Datei-Overwrite des
+-- Zensus). Bit-identisch zum Katalog-INSERT (rein additiv, eigene Tabelle).
+DELETE FROM DuplicateAbsorptionDetails
+WHERE Catalog = 'ExternalDataSourceCatalog'
+  AND File_Name = getvariable('fm_file')
+  AND Chunk_Seq = COALESCE(getvariable('seq_offset'), 0)::BIGINT;
+
+INSERT INTO DuplicateAbsorptionDetails
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq,
+     Parent_Name, Position, Display_Text, Payload_XML, Healed_UUID, Heal_Status, Discriminator)
+WITH src AS (
+    SELECT
+        id,
+        UUID->>'#text' AS Object_UUID,
+        name AS Object_Name,
+        'ExternalDataSource' AS Object_Type,
+        ROW_NUMBER() OVER () AS xml_ord
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='ExternalDataSourceCatalog',
+        record_element='ExternalDataSource',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'id': 'BIGINT',
+            'name': 'VARCHAR',
+            'UUID': 'STRUCT("#text" VARCHAR)'
+        }
+    )
+),
+dups AS (
+    SELECT Object_UUID FROM src
+    WHERE Object_UUID IS NOT NULL
+    GROUP BY Object_UUID HAVING COUNT(*) > 1
+),
+-- UUID-Healing (H1): Survivor-/Heal-Markierung, identische Logik wie im Katalog-INSERT
+-- oben (Survivor = kleinste ID; Doppel-Serialisierung — gleiche UUID+ID — bleibt
+-- 'absorbed', nur das jeweils erste Vorkommen einer (UUID, ID)-Identität trägt den
+-- Katalog-Status). Der Zensus ist damit das persistierte Mapping Original↔Ersatz.
+marked AS (
+    SELECT s.*,
+           (s.id IS NULL  -- NULL-id: kein Diskriminator → wie Survivor behandeln (nie 'healed')
+            OR s.id = MIN(s.id) OVER (PARTITION BY s.Object_UUID)) AS is_min_id,
+           ROW_NUMBER() OVER (PARTITION BY s.Object_UUID, s.id ORDER BY s.xml_ord) AS occ_within_id
+    FROM src s
+    JOIN dups d USING (Object_UUID)
+)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    'ExternalDataSourceCatalog' AS Catalog,
+    s.Object_UUID,
+    s.Object_Name,
+    s.Object_Type,
+    ROW_NUMBER() OVER (PARTITION BY s.Object_UUID ORDER BY s.xml_ord) AS Occurrence_Seq,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    -- Kontext: Datenquellen sind Top-Level → kein Container; Position = Stelle
+    -- in der "Externe Datenquellen verwalten"-Liste (XML-Reihenfolge, 1-basiert).
+    NULL AS Parent_Name,
+    'List position ' || s.xml_ord::VARCHAR AS Position,
+    left(s.Object_Name, 500) AS Display_Text,
+    NULL AS Payload_XML,
+    CASE WHEN fm_heal_enabled() AND NOT s.is_min_id AND s.occ_within_id = 1
+         THEN fm_heal_uuid('ExternalDataSourceCatalog', getvariable('fm_file'), s.Object_UUID,
+                           'ds_id=' || s.id::VARCHAR) END AS Healed_UUID,
+    CASE WHEN NOT fm_heal_enabled() THEN 'absorbed'
+         WHEN s.occ_within_id > 1   THEN 'absorbed'
+         WHEN s.is_min_id           THEN 'kept-original'
+         ELSE 'healed' END AS Heal_Status,
+    'ds_id=' || s.id::VARCHAR AS Discriminator
+FROM marked s
+ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
+
 
 -- BaseTableCatalog
 -- @END_P1_SECTION@
@@ -573,25 +789,42 @@ CREATE TABLE IF NOT EXISTS BaseTableCatalog (
 -- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
+),
+bt_records AS (
+    SELECT id, name, UUID
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='BaseTableCatalog',
+        record_element='BaseTable',
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'id': 'BIGINT',
+            'name': 'VARCHAR',
+            'UUID': 'STRUCT("#text" VARCHAR, "modifications" BIGINT, "userName" VARCHAR, "accountName" VARCHAR, "timestamp" VARCHAR)'
+        }
+    )
+),
+bt_healed AS (
+    -- UUID-Healing (H1): Survivor = kleinste BT_ID je UUID behält die Original-UUID,
+    -- weitere Zwillinge erhalten im INSERT unten die deterministische Ersatz-UUID
+    -- (fm_heal_pick, Prelude). Doppel-Serialisierung (gleiche UUID UND gleiche ID)
+    -- kollabiert weiterhin korrekt: Zeilen mit identischem Diskriminator erhalten
+    -- identische UUIDs → ON CONFLICT greift wie bisher.
+    -- Zweiter Hash-Partition-Pass auf dem bereits gelesenen Rowset — kein XML-Re-Scan.
+    SELECT br.*,
+           (br.UUID->>'#text' IS NULL OR br.id IS NULL  -- NULL-id: kein Diskriminator → nie heilen
+            OR br.id = MIN(br.id) OVER (PARTITION BY br.UUID->>'#text')) AS is_survivor
+    FROM bt_records br
 )
 INSERT INTO BaseTableCatalog
 SELECT
-    id AS BT_ID,
-    xml_unescape(name) AS BT_Name,
-    UUID->>'#text' AS BT_UUID,
+    br.id AS BT_ID,
+    xml_unescape(br.name) AS BT_Name,
+    fm_heal_pick(br.is_survivor, 'BaseTableCatalog', fn.File_Name,
+                 br.UUID->>'#text', 'table_id=' || br.id::VARCHAR) AS BT_UUID,
     fn.File_Name as File_Name
-FROM read_xml(
-    getvariable('fm_xml'),
-    root_element='BaseTableCatalog',
-    record_element='BaseTable',
-    maximum_file_size=getvariable('dom_threshold'),
-    streaming=getvariable('use_streaming'),
-    columns={
-        'id': 'BIGINT',
-        'name': 'VARCHAR',
-        'UUID': 'STRUCT("#text" VARCHAR, "modifications" BIGINT, "userName" VARCHAR, "accountName" VARCHAR, "timestamp" VARCHAR)'
-    }
-)
+FROM bt_healed br
 CROSS JOIN filename_normalized fn
 ON CONFLICT (BT_UUID, File_Name) DO UPDATE SET
     BT_ID = EXCLUDED.BT_ID,
@@ -610,6 +843,81 @@ FROM read_xml(
     columns={'id': 'BIGINT'}
 )
 ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
+-- Dup-Absorption-DETAILS (BaseTableCatalog): Name der kollidierenden Tabellen je
+-- doppelt vergebener UUID. Liest denselben Quell-Rowset wie der Katalog-INSERT
+-- oben (kein Zeilenfilter). DELETE-vor-INSERT hält den Detail-Satz je (Katalog,
+-- Datei) beim Re-Import frisch (analog zum per-Datei-Overwrite des Zensus).
+-- Bit-identisch zum Katalog-INSERT (rein additiv, eigene Tabelle).
+DELETE FROM DuplicateAbsorptionDetails
+WHERE Catalog = 'BaseTableCatalog'
+  AND File_Name = getvariable('fm_file')
+  AND Chunk_Seq = COALESCE(getvariable('seq_offset'), 0)::BIGINT;
+
+INSERT INTO DuplicateAbsorptionDetails
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq,
+     Parent_Name, Position, Display_Text, Payload_XML, Healed_UUID, Heal_Status, Discriminator)
+WITH src AS (
+    SELECT
+        id,
+        UUID->>'#text' AS Object_UUID,
+        xml_unescape(name) AS Object_Name,
+        'BaseTable' AS Object_Type,
+        ROW_NUMBER() OVER () AS xml_ord
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='BaseTableCatalog',
+        record_element='BaseTable',
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'id': 'BIGINT',
+            'name': 'VARCHAR',
+            'UUID': 'STRUCT("#text" VARCHAR)'
+        }
+    )
+),
+dups AS (
+    SELECT Object_UUID FROM src
+    WHERE Object_UUID IS NOT NULL
+    GROUP BY Object_UUID HAVING COUNT(*) > 1
+),
+-- UUID-Healing (H1): Survivor-/Heal-Markierung, identische Logik wie im Katalog-INSERT
+-- oben (Survivor = kleinste ID; Doppel-Serialisierung — gleiche UUID+ID — bleibt
+-- 'absorbed', nur das jeweils erste Vorkommen einer (UUID, ID)-Identität trägt den
+-- Katalog-Status). Der Zensus ist damit das persistierte Mapping Original↔Ersatz.
+marked AS (
+    SELECT s.*,
+           (s.id IS NULL  -- NULL-id: kein Diskriminator → wie Survivor behandeln (nie 'healed')
+            OR s.id = MIN(s.id) OVER (PARTITION BY s.Object_UUID)) AS is_min_id,
+           ROW_NUMBER() OVER (PARTITION BY s.Object_UUID, s.id ORDER BY s.xml_ord) AS occ_within_id
+    FROM src s
+    JOIN dups d USING (Object_UUID)
+)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    'BaseTableCatalog' AS Catalog,
+    s.Object_UUID,
+    s.Object_Name,
+    s.Object_Type,
+    ROW_NUMBER() OVER (PARTITION BY s.Object_UUID ORDER BY s.xml_ord) AS Occurrence_Seq,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    -- Kontext: Basistabellen sind Top-Level → kein Container; Position = Stelle
+    -- in der "Datenbank verwalten"-Tabellenliste (XML-Reihenfolge, 1-basiert).
+    NULL AS Parent_Name,
+    'List position ' || s.xml_ord::VARCHAR AS Position,
+    left(s.Object_Name, 500) AS Display_Text,
+    NULL AS Payload_XML,
+    CASE WHEN fm_heal_enabled() AND NOT s.is_min_id AND s.occ_within_id = 1
+         THEN fm_heal_uuid('BaseTableCatalog', getvariable('fm_file'), s.Object_UUID,
+                           'table_id=' || s.id::VARCHAR) END AS Healed_UUID,
+    CASE WHEN NOT fm_heal_enabled() THEN 'absorbed'
+         WHEN s.occ_within_id > 1   THEN 'absorbed'
+         WHEN s.is_min_id           THEN 'kept-original'
+         ELSE 'healed' END AS Heal_Status,
+    'table_id=' || s.id::VARCHAR AS Discriminator
+FROM marked s
+ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
 
 
 -- TableOccurrenceCatalog
@@ -642,6 +950,53 @@ CREATE TABLE IF NOT EXISTS TableOccurrenceCatalog (
 -- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
+),
+to_records AS (
+    SELECT *
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='TableOccurrenceCatalog',
+        record_element='TableOccurrence',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'id': 'BIGINT',
+            'name': 'VARCHAR',
+            'type': 'VARCHAR',
+            'View': 'VARCHAR',
+            'height': 'INTEGER',
+            'UUID': 'STRUCT("#text" VARCHAR, "accountName" VARCHAR, "modifications" BIGINT, "timestamp" VARCHAR, "userName" VARCHAR)',
+            'BaseTableSourceReference': 'STRUCT(
+                "DataSourceReference" STRUCT(
+                    "id" BIGINT,
+                    "name" VARCHAR,
+                    "UUID" VARCHAR
+                ),
+                "BaseTableReference" STRUCT(
+                    "id" BIGINT,
+                    "name" VARCHAR,
+                    "UUID" VARCHAR
+                )
+            )',
+            'CoordRect': 'STRUCT("top" INTEGER, "left" INTEGER, "bottom" INTEGER, "right" INTEGER)',
+            'Color': 'STRUCT("red" INTEGER, "green" INTEGER, "blue" INTEGER, "alpha" DOUBLE)'
+        }
+    )
+),
+to_healed AS (
+    -- UUID-Healing (H1): Survivor = kleinste TO_ID je UUID behält die Original-UUID,
+    -- weitere Zwillinge erhalten im INSERT unten die deterministische Ersatz-UUID
+    -- (fm_heal_pick, Prelude). Geheilt wird NUR die eigene TO_UUID (PK) — die
+    -- Fremd-UUIDs DS_UUID/BT_UUID bleiben roh (Kaskade auf Referenzen ist ein
+    -- separater Schritt). Doppel-Serialisierung (gleiche UUID UND gleiche ID)
+    -- kollabiert weiterhin korrekt: Zeilen mit identischem Diskriminator erhalten
+    -- identische UUIDs → ON CONFLICT greift wie bisher.
+    -- Zweiter Hash-Partition-Pass auf dem bereits gelesenen Rowset — kein XML-Re-Scan.
+    SELECT tr.*,
+           (tr.UUID->>'#text' IS NULL OR tr.id IS NULL  -- NULL-id: kein Diskriminator → nie heilen
+            OR tr.id = MIN(tr.id) OVER (PARTITION BY tr.UUID->>'#text')) AS is_survivor
+    FROM to_records tr
 )
 INSERT INTO TableOccurrenceCatalog (
     TO_ID, TO_Name, TO_Type, TO_UUID,
@@ -653,57 +1008,29 @@ INSERT INTO TableOccurrenceCatalog (
     File_Name
 )
 SELECT
-    id AS TO_ID,
-    xml_unescape(name) AS TO_Name,
-    type AS TO_Type,
-    UUID->>'#text' AS TO_UUID,
-    BaseTableSourceReference.DataSourceReference.id AS DS_ID,
-    BaseTableSourceReference.DataSourceReference.name AS DS_Name,
-    BaseTableSourceReference.DataSourceReference.UUID AS DS_UUID,
-    BaseTableSourceReference.BaseTableReference.id AS BT_ID,
-    xml_unescape(BaseTableSourceReference.BaseTableReference.name) AS BT_Name,
-    BaseTableSourceReference.BaseTableReference.UUID AS BT_UUID,
-    View AS View_State,
-    height AS Box_Height,
-    CoordRect.top AS Coord_Top,
-    CoordRect."left" AS Coord_Left,
-    CoordRect.bottom AS Coord_Bottom,
-    CoordRect."right" AS Coord_Right,
-    Color.red AS Color_R,
-    Color.green AS Color_G,
-    Color.blue AS Color_B,
-    Color.alpha AS Color_Alpha,
+    tr.id AS TO_ID,
+    xml_unescape(tr.name) AS TO_Name,
+    tr.type AS TO_Type,
+    fm_heal_pick(tr.is_survivor, 'TableOccurrenceCatalog', fn.File_Name,
+                 tr.UUID->>'#text', 'to_id=' || tr.id::VARCHAR) AS TO_UUID,
+    tr.BaseTableSourceReference.DataSourceReference.id AS DS_ID,
+    tr.BaseTableSourceReference.DataSourceReference.name AS DS_Name,
+    tr.BaseTableSourceReference.DataSourceReference.UUID AS DS_UUID,
+    tr.BaseTableSourceReference.BaseTableReference.id AS BT_ID,
+    xml_unescape(tr.BaseTableSourceReference.BaseTableReference.name) AS BT_Name,
+    tr.BaseTableSourceReference.BaseTableReference.UUID AS BT_UUID,
+    tr.View AS View_State,
+    tr.height AS Box_Height,
+    tr.CoordRect.top AS Coord_Top,
+    tr.CoordRect."left" AS Coord_Left,
+    tr.CoordRect.bottom AS Coord_Bottom,
+    tr.CoordRect."right" AS Coord_Right,
+    tr.Color.red AS Color_R,
+    tr.Color.green AS Color_G,
+    tr.Color.blue AS Color_B,
+    tr.Color.alpha AS Color_Alpha,
     fn.File_Name as File_Name
-FROM read_xml(
-    getvariable('fm_xml'),
-    root_element='TableOccurrenceCatalog',
-    record_element='TableOccurrence',
-    max_depth=10,
-    maximum_file_size=getvariable('dom_threshold'),
-    streaming=getvariable('use_streaming'),
-    columns={
-        'id': 'BIGINT',
-        'name': 'VARCHAR',
-        'type': 'VARCHAR',
-        'View': 'VARCHAR',
-        'height': 'INTEGER',
-        'UUID': 'STRUCT("#text" VARCHAR, "accountName" VARCHAR, "modifications" BIGINT, "timestamp" VARCHAR, "userName" VARCHAR)',
-        'BaseTableSourceReference': 'STRUCT(
-            "DataSourceReference" STRUCT(
-                "id" BIGINT,
-                "name" VARCHAR,
-                "UUID" VARCHAR
-            ),
-            "BaseTableReference" STRUCT(
-                "id" BIGINT,
-                "name" VARCHAR,
-                "UUID" VARCHAR
-            )
-        )',
-        'CoordRect': 'STRUCT("top" INTEGER, "left" INTEGER, "bottom" INTEGER, "right" INTEGER)',
-        'Color': 'STRUCT("red" INTEGER, "green" INTEGER, "blue" INTEGER, "alpha" DOUBLE)'
-    }
-)
+FROM to_healed tr
 CROSS JOIN filename_normalized fn
 ON CONFLICT (TO_UUID, File_Name) DO UPDATE SET
     TO_ID = EXCLUDED.TO_ID,
@@ -739,6 +1066,84 @@ FROM read_xml(
     columns={'id': 'BIGINT'}
 )
 ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
+-- Dup-Absorption-DETAILS (TableOccurrenceCatalog): Name der kollidierenden
+-- Tabellenauftreten je doppelt vergebener UUID. Liest denselben Quell-Rowset wie
+-- der Katalog-INSERT oben (kein Zeilenfilter). DELETE-vor-INSERT hält den Detail-
+-- Satz je (Katalog, Datei) beim Re-Import frisch (analog zum per-Datei-Overwrite
+-- des Zensus). Bit-identisch zum Katalog-INSERT (rein additiv, eigene Tabelle).
+DELETE FROM DuplicateAbsorptionDetails
+WHERE Catalog = 'TableOccurrenceCatalog'
+  AND File_Name = getvariable('fm_file')
+  AND Chunk_Seq = COALESCE(getvariable('seq_offset'), 0)::BIGINT;
+
+INSERT INTO DuplicateAbsorptionDetails
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq,
+     Parent_Name, Position, Display_Text, Payload_XML, Healed_UUID, Heal_Status, Discriminator)
+WITH src AS (
+    SELECT
+        id,
+        UUID->>'#text' AS Object_UUID,
+        xml_unescape(name) AS Object_Name,
+        'TableOccurrence' AS Object_Type,
+        xml_unescape(BaseTableSourceReference.BaseTableReference.name) AS Parent_Name,
+        ROW_NUMBER() OVER () AS xml_ord
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='TableOccurrenceCatalog',
+        record_element='TableOccurrence',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'id': 'BIGINT',
+            'name': 'VARCHAR',
+            'UUID': 'STRUCT("#text" VARCHAR)',
+            'BaseTableSourceReference': 'STRUCT("BaseTableReference" STRUCT("name" VARCHAR))'
+        }
+    )
+),
+dups AS (
+    SELECT Object_UUID FROM src
+    WHERE Object_UUID IS NOT NULL
+    GROUP BY Object_UUID HAVING COUNT(*) > 1
+),
+-- UUID-Healing (H1): Survivor-/Heal-Markierung, identische Logik wie im Katalog-INSERT
+-- oben (Survivor = kleinste ID; Doppel-Serialisierung — gleiche UUID+ID — bleibt
+-- 'absorbed', nur das jeweils erste Vorkommen einer (UUID, ID)-Identität trägt den
+-- Katalog-Status). Der Zensus ist damit das persistierte Mapping Original↔Ersatz.
+marked AS (
+    SELECT s.*,
+           (s.id IS NULL  -- NULL-id: kein Diskriminator → wie Survivor behandeln (nie 'healed')
+            OR s.id = MIN(s.id) OVER (PARTITION BY s.Object_UUID)) AS is_min_id,
+           ROW_NUMBER() OVER (PARTITION BY s.Object_UUID, s.id ORDER BY s.xml_ord) AS occ_within_id
+    FROM src s
+    JOIN dups d USING (Object_UUID)
+)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    'TableOccurrenceCatalog' AS Catalog,
+    s.Object_UUID,
+    s.Object_Name,
+    s.Object_Type,
+    ROW_NUMBER() OVER (PARTITION BY s.Object_UUID ORDER BY s.xml_ord) AS Occurrence_Seq,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    -- Kontext: Parent = referenzierte Basistabelle (Quelle des Auftretens);
+    -- Position = Stelle in der TableOccurrence-Liste (XML-Reihenfolge, 1-basiert).
+    s.Parent_Name,
+    'List position ' || s.xml_ord::VARCHAR AS Position,
+    left(s.Object_Name, 500) AS Display_Text,
+    NULL AS Payload_XML,
+    CASE WHEN fm_heal_enabled() AND NOT s.is_min_id AND s.occ_within_id = 1
+         THEN fm_heal_uuid('TableOccurrenceCatalog', getvariable('fm_file'), s.Object_UUID,
+                           'to_id=' || s.id::VARCHAR) END AS Healed_UUID,
+    CASE WHEN NOT fm_heal_enabled() THEN 'absorbed'
+         WHEN s.occ_within_id > 1   THEN 'absorbed'
+         WHEN s.is_min_id           THEN 'kept-original'
+         ELSE 'healed' END AS Heal_Status,
+    'to_id=' || s.id::VARCHAR AS Discriminator
+FROM marked s
+ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
 
 
 -- RelationshipCatalog
@@ -976,7 +1381,7 @@ ON CONFLICT (Rel_ID, File_Name, Predicate_Index) DO UPDATE SET
     Operator = EXCLUDED.Operator,
     Left_Field_Name = EXCLUDED.Left_Field_Name,
     Left_Field_ID = EXCLUDED.Left_Field_ID,
-    -- B-K4 (UPSERT-Drift, real eingetreten): Left/Right_Field_UUID fehlten in der
+    -- UPSERT-Drift (real eingetreten): Left/Right_Field_UUID fehlten in der
     -- SET-Liste → inkonsistente Zeile nach inkrementellem Re-Import, falsche
     -- left_field/right_field-Links. Regel: JEDE Nicht-PK-Spalte gehört in SET.
     Left_Field_UUID = EXCLUDED.Left_Field_UUID,
@@ -1106,6 +1511,116 @@ CREATE TABLE IF NOT EXISTS FieldsForTables (
 -- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
+),
+field_records AS (
+    -- Rowset NACH UNNEST + Zeilenfiltern — identischer Zeilen-Scope wie der bisherige
+    -- Katalog-INSERT (das Survivor-Window unten MUSS auf dem entfalteten, gefilterten
+    -- Rowset laufen, nicht auf den FieldCatalog-Records).
+    SELECT BaseTableReference, f
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='FieldsForTables',
+        record_element='FieldCatalog',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'BaseTableReference': 'STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)',
+            'ObjectList': 'STRUCT(
+                "Field" STRUCT(
+                    "id" BIGINT,
+                    "name" VARCHAR,
+                    "fieldtype" VARCHAR,
+                    "datatype" VARCHAR,
+                    "comment" VARCHAR,
+                    "UUID" STRUCT("#text" VARCHAR),
+                    "Storage" STRUCT(
+                        "global" BOOLEAN,
+                        "maxRepetitions" INTEGER,
+                        "autoIndex" BOOLEAN,
+                        "index" VARCHAR,
+                        "storeCalculationResults" BOOLEAN,
+                        "LanguageReference" STRUCT("name" VARCHAR, "id" BIGINT)
+                    ),
+                    "Validation" STRUCT(
+                        "type" VARCHAR,
+                        "alwaysValidate" BOOLEAN,
+                        "allowOverride" BOOLEAN,
+                        "notEmpty" BOOLEAN,
+                        "unique" BOOLEAN,
+                        "existing" BOOLEAN,
+                        "Strict" VARCHAR,
+                        "MaximumSize" INTEGER,
+                        "Range" STRUCT("from" VARCHAR, "to" VARCHAR),
+                        "Message" VARCHAR,
+                        "Calculated" STRUCT("Calculation" STRUCT("DDRREF" STRUCT("hash" VARCHAR), "Text" VARCHAR)),
+                        "MessageCalc" STRUCT("Calculation" STRUCT("DDRREF" STRUCT("hash" VARCHAR))),
+                        "ValueListReference" STRUCT("id" BIGINT, "name" VARCHAR, "UUID" VARCHAR)
+                    ),
+                    "SummaryInfo" STRUCT(
+                        "operation" VARCHAR,
+                        "restartEachGroup" BOOLEAN,
+                        "summarizeRepetition" VARCHAR,
+                        "SummaryField" STRUCT(
+                            "FieldReference" STRUCT("id" BIGINT, "name" VARCHAR, "UUID" VARCHAR)
+                        )
+                    ),
+                    "Calculation" STRUCT("DDRREF" STRUCT("hash" VARCHAR), "Text" VARCHAR),
+                    "AutoEnter" STRUCT(
+                        "type" VARCHAR,
+                        "prohibitModification" BOOLEAN,
+                        "overwriteExisting" BOOLEAN,
+                        "alwaysEvaluate" BOOLEAN,
+                        "ConstantData" VARCHAR,
+                        "SerialNumber" STRUCT(
+                            "increment" VARCHAR,
+                            "nextvalue" VARCHAR,
+                            "generate" VARCHAR
+                        ),
+                        "Looked_up" STRUCT(
+                            "dontCopyIfEmpty" BOOLEAN,
+                            "noMatchCopyOption" VARCHAR,
+                            "FieldReference" STRUCT(
+                                "id" BIGINT,
+                                "name" VARCHAR,
+                                "UUID" VARCHAR,
+                                "TableOccurrenceReference" STRUCT(
+                                    "id" BIGINT,
+                                    "name" VARCHAR,
+                                    "UUID" VARCHAR
+                                )
+                            )
+                        ),
+                        "Calculated" STRUCT(
+                            "Calculation" STRUCT(
+                                "DDRREF" STRUCT("hash" VARCHAR),
+                                "Text" VARCHAR
+                            )
+                        )
+                    )
+                )[]
+            )'
+        }
+    )
+    CROSS JOIN UNNEST(ObjectList.Field) AS t(f)
+    WHERE f.id IS NOT NULL
+      AND f.UUID."#text" IS NOT NULL
+),
+field_healed AS (
+    -- UUID-Healing (H1): Survivor je UUID behält die Original-UUID, weitere Zwillinge
+    -- erhalten im INSERT unten die deterministische Ersatz-UUID (fm_heal_pick, Prelude).
+    -- Schlüssel ist ZUSAMMENGESETZT (Field/@id ist tabellen-lokal!): Tupel-MIN über
+    -- (Table_ID, Field_ID) — DuckDB vergleicht Structs lexikographisch, der Survivor
+    -- ist damit deterministisch (kleinste Tabelle, darin kleinstes Feld). Doppel-
+    -- Serialisierung (gleiche UUID UND gleicher Schlüssel) kollabiert weiterhin
+    -- korrekt: Zeilen mit identischem Diskriminator erhalten identische UUIDs →
+    -- ON CONFLICT greift wie bisher.
+    -- Zweiter Hash-Partition-Pass auf dem bereits gelesenen Rowset — kein XML-Re-Scan.
+    SELECT fr.*,
+           (fr.f.UUID."#text" IS NULL OR fr.BaseTableReference.id IS NULL  -- NULL-Table-ID: kein Diskriminator → nie heilen
+            OR (fr.BaseTableReference.id, fr.f.id) =
+               MIN((fr.BaseTableReference.id, fr.f.id)) OVER (PARTITION BY fr.f.UUID."#text")) AS is_survivor
+    FROM field_records fr
 )
 INSERT INTO FieldsForTables
 SELECT
@@ -1117,7 +1632,8 @@ SELECT
     f.fieldtype AS Field_Type,
     f.datatype AS Data_Type,
     ws_restore(f.comment) AS Field_Comment,
-    f.UUID."#text" AS Field_UUID,
+    fm_heal_pick(is_survivor, 'FieldsForTables', fn.File_Name, f.UUID."#text",
+                 'table_id=' || BaseTableReference.id::VARCHAR || '·field_id=' || f.id::VARCHAR) AS Field_UUID,
     f.Storage.global AS Is_Global,
     f.Storage.maxRepetitions AS Max_Repetitions,
     f.Calculation.DDRREF.hash AS DDR_Hash,  -- DDR-Hash für Calculated Fields (ab FM21+)
@@ -1138,7 +1654,7 @@ SELECT
     f.AutoEnter.Calculated.Calculation.DDRREF.hash AS AE_Calc_Hash,
     f.AutoEnter.overwriteExisting AS AE_Calc_OverwriteExisting,
     f.AutoEnter.alwaysEvaluate AS AE_Calc_AlwaysEvaluate,
-    -- ConstantData. ws_restore (B-K6): fester Standardwert kann CR enthalten.
+    -- ConstantData. ws_restore: fester Standardwert kann CR enthalten.
     ws_restore(f.AutoEnter.ConstantData) AS AE_ConstantData,
     -- Validierung
     NULLIF(f.Validation.type, '') AS Validation_Type,
@@ -1180,95 +1696,8 @@ SELECT
     f.SummaryInfo.restartEachGroup AS Summary_RestartEachGroup,
     NULLIF(f.SummaryInfo.summarizeRepetition, '') AS Summary_RepetitionMode,
     fn.File_Name as File_Name
-FROM read_xml(
-    getvariable('fm_xml'),
-    root_element='FieldsForTables',
-    record_element='FieldCatalog',
-    max_depth=10,
-    maximum_file_size=getvariable('dom_threshold'),
-    streaming=getvariable('use_streaming'),
-    columns={
-        'BaseTableReference': 'STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)',
-        'ObjectList': 'STRUCT(
-            "Field" STRUCT(
-                "id" BIGINT,
-                "name" VARCHAR,
-                "fieldtype" VARCHAR,
-                "datatype" VARCHAR,
-                "comment" VARCHAR,
-                "UUID" STRUCT("#text" VARCHAR),
-                "Storage" STRUCT(
-                    "global" BOOLEAN,
-                    "maxRepetitions" INTEGER,
-                    "autoIndex" BOOLEAN,
-                    "index" VARCHAR,
-                    "storeCalculationResults" BOOLEAN,
-                    "LanguageReference" STRUCT("name" VARCHAR, "id" BIGINT)
-                ),
-                "Validation" STRUCT(
-                    "type" VARCHAR,
-                    "alwaysValidate" BOOLEAN,
-                    "allowOverride" BOOLEAN,
-                    "notEmpty" BOOLEAN,
-                    "unique" BOOLEAN,
-                    "existing" BOOLEAN,
-                    "Strict" VARCHAR,
-                    "MaximumSize" INTEGER,
-                    "Range" STRUCT("from" VARCHAR, "to" VARCHAR),
-                    "Message" VARCHAR,
-                    "Calculated" STRUCT("Calculation" STRUCT("DDRREF" STRUCT("hash" VARCHAR), "Text" VARCHAR)),
-                    "MessageCalc" STRUCT("Calculation" STRUCT("DDRREF" STRUCT("hash" VARCHAR))),
-                    "ValueListReference" STRUCT("id" BIGINT, "name" VARCHAR, "UUID" VARCHAR)
-                ),
-                "SummaryInfo" STRUCT(
-                    "operation" VARCHAR,
-                    "restartEachGroup" BOOLEAN,
-                    "summarizeRepetition" VARCHAR,
-                    "SummaryField" STRUCT(
-                        "FieldReference" STRUCT("id" BIGINT, "name" VARCHAR, "UUID" VARCHAR)
-                    )
-                ),
-                "Calculation" STRUCT("DDRREF" STRUCT("hash" VARCHAR), "Text" VARCHAR),
-                "AutoEnter" STRUCT(
-                    "type" VARCHAR,
-                    "prohibitModification" BOOLEAN,
-                    "overwriteExisting" BOOLEAN,
-                    "alwaysEvaluate" BOOLEAN,
-                    "ConstantData" VARCHAR,
-                    "SerialNumber" STRUCT(
-                        "increment" VARCHAR,
-                        "nextvalue" VARCHAR,
-                        "generate" VARCHAR
-                    ),
-                    "Looked_up" STRUCT(
-                        "dontCopyIfEmpty" BOOLEAN,
-                        "noMatchCopyOption" VARCHAR,
-                        "FieldReference" STRUCT(
-                            "id" BIGINT,
-                            "name" VARCHAR,
-                            "UUID" VARCHAR,
-                            "TableOccurrenceReference" STRUCT(
-                                "id" BIGINT,
-                                "name" VARCHAR,
-                                "UUID" VARCHAR
-                            )
-                        )
-                    ),
-                    "Calculated" STRUCT(
-                        "Calculation" STRUCT(
-                            "DDRREF" STRUCT("hash" VARCHAR),
-                            "Text" VARCHAR
-                        )
-                    )
-                )
-            )[]
-        )'
-    }
-)
-CROSS JOIN UNNEST(ObjectList.Field) AS t(f)
+FROM field_healed
 CROSS JOIN filename_normalized fn
-WHERE f.id IS NOT NULL
-  AND f.UUID."#text" IS NOT NULL
 ON CONFLICT (Field_UUID, File_Name) DO UPDATE SET
     Table_ID = EXCLUDED.Table_ID,
     Table_Name = EXCLUDED.Table_Name,
@@ -1344,6 +1773,88 @@ CROSS JOIN UNNEST(ObjectList.Field) AS t(f)
 WHERE f.id IS NOT NULL
 ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
 
+-- Dup-Absorption-DETAILS (FieldsForTables): Name + Tabellen-Kontext der kollidierenden
+-- Felder je doppelt vergebener UUID. Liest denselben Quell-Rowset wie der Katalog-
+-- INSERT oben (UNNEST + identische Zeilenfilter, inkl. UUID-Guard). DELETE-vor-INSERT
+-- hält den Detail-Satz je (Katalog, Datei) beim Re-Import frisch (analog zum
+-- per-Datei-Overwrite des Zensus). Bit-identisch zum Katalog-INSERT (rein additiv).
+DELETE FROM DuplicateAbsorptionDetails
+WHERE Catalog = 'FieldsForTables'
+  AND File_Name = getvariable('fm_file')
+  AND Chunk_Seq = COALESCE(getvariable('seq_offset'), 0)::BIGINT;
+
+INSERT INTO DuplicateAbsorptionDetails
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq,
+     Parent_Name, Position, Display_Text, Payload_XML, Healed_UUID, Heal_Status, Discriminator)
+WITH src AS (
+    SELECT
+        BaseTableReference.id AS Table_ID,
+        xml_unescape(BaseTableReference.name) AS Parent_Name,
+        f.id AS Field_ID,
+        f.UUID."#text" AS Object_UUID,
+        xml_unescape(f.name) AS Object_Name,
+        'Field' AS Object_Type,
+        ROW_NUMBER() OVER () AS xml_ord
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='FieldsForTables',
+        record_element='FieldCatalog',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'BaseTableReference': 'STRUCT(id BIGINT, name VARCHAR)',
+            'ObjectList': 'STRUCT("Field" STRUCT("id" BIGINT, "name" VARCHAR, "UUID" STRUCT("#text" VARCHAR))[])'
+        }
+    )
+    CROSS JOIN UNNEST(ObjectList.Field) AS t(f)
+    WHERE f.id IS NOT NULL
+      AND f.UUID."#text" IS NOT NULL
+),
+dups AS (
+    SELECT Object_UUID FROM src
+    WHERE Object_UUID IS NOT NULL
+    GROUP BY Object_UUID HAVING COUNT(*) > 1
+),
+-- UUID-Healing (H1): Survivor-/Heal-Markierung, identische Logik wie im Katalog-INSERT
+-- oben (Survivor = kleinstes (Table_ID, Field_ID)-Tupel; Doppel-Serialisierung —
+-- gleiche UUID+Schlüssel — bleibt 'absorbed', nur das jeweils erste Vorkommen einer
+-- (UUID, Schlüssel)-Identität trägt den Katalog-Status). Der Zensus ist damit das
+-- persistierte Mapping Original↔Ersatz.
+marked AS (
+    SELECT s.*,
+           ((s.Table_ID, s.Field_ID) =
+            MIN((s.Table_ID, s.Field_ID)) OVER (PARTITION BY s.Object_UUID)
+            OR s.Table_ID IS NULL) AS is_min_id,
+           ROW_NUMBER() OVER (PARTITION BY s.Object_UUID, s.Table_ID, s.Field_ID ORDER BY s.xml_ord) AS occ_within_id
+    FROM src s
+    JOIN dups d USING (Object_UUID)
+)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    'FieldsForTables' AS Catalog,
+    s.Object_UUID,
+    s.Object_Name,
+    s.Object_Type,
+    ROW_NUMBER() OVER (PARTITION BY s.Object_UUID ORDER BY s.xml_ord) AS Occurrence_Seq,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    -- Kontext: Parent = Basistabelle des Felds; Position = Stelle im entfalteten
+    -- Feld-Rowset der Datei (XML-Reihenfolge, 1-basiert).
+    s.Parent_Name,
+    'List position ' || s.xml_ord::VARCHAR AS Position,
+    left(s.Object_Name, 500) AS Display_Text,
+    NULL AS Payload_XML,
+    CASE WHEN fm_heal_enabled() AND NOT s.is_min_id AND s.occ_within_id = 1
+         THEN fm_heal_uuid('FieldsForTables', getvariable('fm_file'), s.Object_UUID,
+                           'table_id=' || s.Table_ID::VARCHAR || '·field_id=' || s.Field_ID::VARCHAR) END AS Healed_UUID,
+    CASE WHEN NOT fm_heal_enabled() THEN 'absorbed'
+         WHEN s.occ_within_id > 1   THEN 'absorbed'
+         WHEN s.is_min_id           THEN 'kept-original'
+         ELSE 'healed' END AS Heal_Status,
+    'table_id=' || s.Table_ID::VARCHAR || '·field_id=' || s.Field_ID::VARCHAR AS Discriminator
+FROM marked s
+ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
+
 
 -- ValueListCatalog
 -- @END_P1_SECTION@
@@ -1359,30 +1870,50 @@ CREATE TABLE IF NOT EXISTS ValueListCatalog (
 -- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
+),
+vl_records AS (
+    SELECT id, name, Source, UUID
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='ValueListCatalog',
+        record_element='ValueList',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'id': 'BIGINT',
+            'name': 'VARCHAR',
+            'UUID': 'STRUCT("#text" VARCHAR, "modifications" BIGINT, "userName" VARCHAR, "accountName" VARCHAR, "timestamp" VARCHAR)',
+            'Source': 'STRUCT(value VARCHAR)'
+        }
+    )
+    WHERE id IS NOT NULL
+),
+vl_healed AS (
+    -- UUID-Healing (H1): Survivor = kleinste VL_ID je UUID behält die Original-UUID,
+    -- weitere Zwillinge erhalten im INSERT unten die deterministische Ersatz-UUID
+    -- (fm_heal_pick, Prelude). Doppel-Serialisierung (gleiche UUID UND gleiche ID)
+    -- kollabiert weiterhin korrekt: Zeilen mit identischem Diskriminator erhalten
+    -- identische UUIDs → ON CONFLICT greift wie bisher. Namespace/Diskriminator sind
+    -- mit OptionsForValueLists (unten) abgestimmt — beide Tabellen heilen mit
+    -- identischem md5-Input, damit Katalog- und Options-Zeile eines Zwillings
+    -- dieselbe Ersatz-UUID tragen.
+    -- Zweiter Hash-Partition-Pass auf dem bereits gelesenen Rowset — kein XML-Re-Scan.
+    SELECT vr.*,
+           (vr.UUID."#text" IS NULL
+            OR vr.id = MIN(vr.id) OVER (PARTITION BY vr.UUID."#text")) AS is_survivor
+    FROM vl_records vr
 )
 INSERT INTO ValueListCatalog
 SELECT
-    id AS VL_ID,
-    xml_unescape(name) AS VL_Name,
-    Source.value AS Source_Type,
-    UUID."#text" AS VL_UUID,
+    vr.id AS VL_ID,
+    xml_unescape(vr.name) AS VL_Name,
+    vr.Source.value AS Source_Type,
+    fm_heal_pick(vr.is_survivor, 'ValueListCatalog', fn.File_Name,
+                 vr.UUID."#text", 'vl_id=' || vr.id::VARCHAR) AS VL_UUID,
     fn.File_Name as File_Name
-FROM read_xml(
-    getvariable('fm_xml'),
-    root_element='ValueListCatalog',
-    record_element='ValueList',
-    max_depth=10,
-    maximum_file_size=getvariable('dom_threshold'),
-    streaming=getvariable('use_streaming'),
-    columns={
-        'id': 'BIGINT',
-        'name': 'VARCHAR',
-        'UUID': 'STRUCT("#text" VARCHAR, "modifications" BIGINT, "userName" VARCHAR, "accountName" VARCHAR, "timestamp" VARCHAR)',
-        'Source': 'STRUCT(value VARCHAR)'
-    }
-)
+FROM vl_healed vr
 CROSS JOIN filename_normalized fn
-WHERE id IS NOT NULL
 ON CONFLICT (VL_UUID, File_Name) DO UPDATE SET
     VL_ID = EXCLUDED.VL_ID,
     VL_Name = EXCLUDED.VL_Name,
@@ -1403,6 +1934,84 @@ FROM read_xml(
 )
 WHERE id IS NOT NULL
 ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
+-- Dup-Absorption-DETAILS (ValueListCatalog): Name der kollidierenden Wertelisten je
+-- doppelt vergebener UUID. Liest denselben Quell-Rowset wie der Katalog-INSERT oben
+-- (identischer id-Filter). DELETE-vor-INSERT hält den Detail-Satz je (Katalog, Datei)
+-- beim Re-Import frisch (analog zum per-Datei-Overwrite des Zensus). Bit-identisch
+-- zum Katalog-INSERT (rein additiv, eigene Tabelle). Das Mapping gilt zugleich für
+-- OptionsForValueLists (heilt mit identischem Namespace/Diskriminator, s. u.).
+DELETE FROM DuplicateAbsorptionDetails
+WHERE Catalog = 'ValueListCatalog'
+  AND File_Name = getvariable('fm_file')
+  AND Chunk_Seq = COALESCE(getvariable('seq_offset'), 0)::BIGINT;
+
+INSERT INTO DuplicateAbsorptionDetails
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq,
+     Parent_Name, Position, Display_Text, Payload_XML, Healed_UUID, Heal_Status, Discriminator)
+WITH src AS (
+    SELECT
+        id,
+        UUID."#text" AS Object_UUID,
+        xml_unescape(name) AS Object_Name,
+        'ValueList' AS Object_Type,
+        ROW_NUMBER() OVER () AS xml_ord
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='ValueListCatalog',
+        record_element='ValueList',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'id': 'BIGINT',
+            'name': 'VARCHAR',
+            'UUID': 'STRUCT("#text" VARCHAR)'
+        }
+    )
+    WHERE id IS NOT NULL
+),
+dups AS (
+    SELECT Object_UUID FROM src
+    WHERE Object_UUID IS NOT NULL
+    GROUP BY Object_UUID HAVING COUNT(*) > 1
+),
+-- UUID-Healing (H1): Survivor-/Heal-Markierung, identische Logik wie im Katalog-INSERT
+-- oben (Survivor = kleinste ID; Doppel-Serialisierung — gleiche UUID+ID — bleibt
+-- 'absorbed', nur das jeweils erste Vorkommen einer (UUID, ID)-Identität trägt den
+-- Katalog-Status). Der Zensus ist damit das persistierte Mapping Original↔Ersatz.
+marked AS (
+    SELECT s.*,
+           (s.id IS NULL  -- NULL-id: kein Diskriminator → wie Survivor behandeln (nie 'healed')
+            OR s.id = MIN(s.id) OVER (PARTITION BY s.Object_UUID)) AS is_min_id,
+           ROW_NUMBER() OVER (PARTITION BY s.Object_UUID, s.id ORDER BY s.xml_ord) AS occ_within_id
+    FROM src s
+    JOIN dups d USING (Object_UUID)
+)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    'ValueListCatalog' AS Catalog,
+    s.Object_UUID,
+    s.Object_Name,
+    s.Object_Type,
+    ROW_NUMBER() OVER (PARTITION BY s.Object_UUID ORDER BY s.xml_ord) AS Occurrence_Seq,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    -- Kontext: Wertelisten sind Top-Level → kein Container; Position = Stelle
+    -- in der "Wertelisten verwalten"-Liste (XML-Reihenfolge, 1-basiert).
+    NULL AS Parent_Name,
+    'List position ' || s.xml_ord::VARCHAR AS Position,
+    left(s.Object_Name, 500) AS Display_Text,
+    NULL AS Payload_XML,
+    CASE WHEN fm_heal_enabled() AND NOT s.is_min_id AND s.occ_within_id = 1
+         THEN fm_heal_uuid('ValueListCatalog', getvariable('fm_file'), s.Object_UUID,
+                           'vl_id=' || s.id::VARCHAR) END AS Healed_UUID,
+    CASE WHEN NOT fm_heal_enabled() THEN 'absorbed'
+         WHEN s.occ_within_id > 1   THEN 'absorbed'
+         WHEN s.is_min_id           THEN 'kept-original'
+         ELSE 'healed' END AS Heal_Status,
+    'vl_id=' || s.id::VARCHAR AS Discriminator
+FROM marked s
+ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
 
 
 -- OptionsForValueLists (Details und Werte)
@@ -1447,12 +2056,77 @@ CREATE TABLE IF NOT EXISTS OptionsForValueLists (
 -- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
+),
+ovl_records AS (
+    -- Source-Wächter: record_element='ValueList' matcht NICHT nur die Einträge unter
+    -- <OptionsForValueLists>, sondern auch die <ValueList>-Knoten des PrivilegeSet-
+    -- access-Baums (Custom ValueList Privileges) — die tragen eine GÜLTIGE
+    -- ValueListReference (gleiche VL-UUID!) und würden per last-write-wins die echten
+    -- Options-Zeilen überschreiben (Source_Type=NULL). Echte Options-Einträge tragen
+    -- IMMER ein <Source>-Element (FromField/Custom/External; Korpus: 0 Ausnahmen),
+    -- die Privilege-Knoten nie → der Filter grenzt exakt ab. Vom Dup-Absorption-
+    -- Zensus aufgedeckt (Test-Set: 4 Privilege-Zeilen kollabierten still).
+    SELECT *
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='OptionsForValueLists',
+        record_element='ValueList',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'ValueListReference': 'STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)',
+            'Source': 'STRUCT(value VARCHAR)',
+            'Field': 'STRUCT(
+                "PrimaryField" STRUCT(
+                    "show" BOOLEAN, "sort" BOOLEAN,
+                    "FieldReference" STRUCT(
+                        id BIGINT, name VARCHAR, UUID VARCHAR,
+                        "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
+                    )
+                ),
+                "SecondaryField" STRUCT(
+                    "show" BOOLEAN, "sort" BOOLEAN,
+                    "FieldReference" STRUCT(
+                        id BIGINT, name VARCHAR, UUID VARCHAR,
+                        "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
+                    )
+                )
+            )',
+            'CustomValues': 'STRUCT("Text" STRUCT("#text" VARCHAR)[])',
+            'External': 'STRUCT(
+                "DataSourceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR),
+                "ValueListReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
+            )'
+        }
+    )
+    WHERE ValueListReference.id IS NOT NULL
+      AND Source.value IS NOT NULL
+),
+ovl_healed AS (
+    -- UUID-Healing (H1) — SONDERFALL: der PK VL_UUID ist hier zugleich Fremdschlüssel
+    -- auf ValueListCatalog (1:1-Detailtabelle derselben Werteliste). Damit die
+    -- Options-Zeile eines geheilten VL-Zwillings DIESELBE Ersatz-UUID trägt wie der
+    -- Katalog-Eintrag, wird bewusst mit Namespace 'ValueListCatalog' (NICHT
+    -- 'OptionsForValueLists'!) und dem identischen Diskriminator 'vl_id=<id>'
+    -- geheilt — identischer md5-Input wie beim VL selbst → identische Ersatz-UUID,
+    -- der Join ValueListCatalog↔OptionsForValueLists bleibt intakt. Survivor-Regel
+    -- identisch (kleinste VL-ID je UUID). KEIN eigener Detail-Block: das
+    -- Original↔Ersatz-Mapping steht bereits beim ValueListCatalog-Zensus.
+    -- Zweiter Hash-Partition-Pass auf dem bereits gelesenen Rowset — kein XML-Re-Scan.
+    SELECT vr.*,
+           (vr.ValueListReference.UUID IS NULL
+            OR vr.ValueListReference.id =
+               MIN(vr.ValueListReference.id) OVER (PARTITION BY vr.ValueListReference.UUID)) AS is_survivor
+    FROM ovl_records vr
 )
 INSERT INTO OptionsForValueLists
 SELECT
     ValueListReference.id AS VL_ID,
     xml_unescape(ValueListReference.name) AS VL_Name,
-    ValueListReference.UUID AS VL_UUID,
+    -- Heilung im ValueListCatalog-Namespace (s. Kommentar in ovl_healed oben).
+    fm_heal_pick(is_survivor, 'ValueListCatalog', fn.File_Name,
+                 ValueListReference.UUID, 'vl_id=' || ValueListReference.id::VARCHAR) AS VL_UUID,
     Source.value AS Source_Type,
     [v."#text" for v in CustomValues.Text] AS Custom_Values,
     Field.PrimaryField.FieldReference.id AS Field_ID,
@@ -1475,50 +2149,8 @@ SELECT
     External.ValueListReference.id AS External_VL_ID,
     xml_unescape(External.ValueListReference.name) AS External_VL_Name,
     fn.File_Name as File_Name
-FROM read_xml(
-    getvariable('fm_xml'),
-    root_element='OptionsForValueLists',
-    record_element='ValueList',
-    max_depth=10,
-    maximum_file_size=getvariable('dom_threshold'),
-    streaming=getvariable('use_streaming'),
-    columns={
-        'ValueListReference': 'STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)',
-        'Source': 'STRUCT(value VARCHAR)',
-        'Field': 'STRUCT(
-            "PrimaryField" STRUCT(
-                "show" BOOLEAN, "sort" BOOLEAN,
-                "FieldReference" STRUCT(
-                    id BIGINT, name VARCHAR, UUID VARCHAR,
-                    "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
-                )
-            ),
-            "SecondaryField" STRUCT(
-                "show" BOOLEAN, "sort" BOOLEAN,
-                "FieldReference" STRUCT(
-                    id BIGINT, name VARCHAR, UUID VARCHAR,
-                    "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
-                )
-            )
-        )',
-        'CustomValues': 'STRUCT("Text" STRUCT("#text" VARCHAR)[])',
-        'External': 'STRUCT(
-            "DataSourceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR),
-            "ValueListReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
-        )'
-    }
-)
+FROM ovl_healed
 CROSS JOIN filename_normalized fn
--- Source-Wächter: record_element='ValueList' matcht NICHT nur die Einträge unter
--- <OptionsForValueLists>, sondern auch die <ValueList>-Knoten des PrivilegeSet-
--- access-Baums (Custom ValueList Privileges) — die tragen eine GÜLTIGE
--- ValueListReference (gleiche VL-UUID!) und würden per last-write-wins die echten
--- Options-Zeilen überschreiben (Source_Type=NULL). Echte Options-Einträge tragen
--- IMMER ein <Source>-Element (FromField/Custom/External; Korpus: 0 Ausnahmen),
--- die Privilege-Knoten nie → der Filter grenzt exakt ab. Vom Dup-Absorption-
--- Zensus aufgedeckt (Test-Set: 4 Privilege-Zeilen kollabierten still).
-WHERE ValueListReference.id IS NOT NULL
-  AND Source.value IS NOT NULL
 ON CONFLICT (VL_UUID, File_Name) DO UPDATE SET
     VL_ID = EXCLUDED.VL_ID,
     VL_Name = EXCLUDED.VL_Name,
@@ -1599,37 +2231,59 @@ ALTER TABLE CustomFunctionsCatalog ADD COLUMN IF NOT EXISTS Sequence_ID BIGINT;
 -- eingebetteten Formelkörper. So kostet der Embedded-Pfad keinen zusätzlichen XML-Parse.
 -- Die Spalte `Calculation` ist NULL für SaXML ≤ v2.2.x (FM ≤ 22) — dort liegen die
 -- Formeln in einer separaten Top-Level-Sektion <CalcsForCustomFunctions> (weiter unten).
+-- UUID-Healing (H1): die Heilung sitzt EINMAL hier in der TEMP-Stufe — Katalog-INSERT
+-- (unten) UND der Embedded-Calc-Feed (CalcsForCustomFunctions, FM 26+) lesen beide
+-- CF_UUID aus _cf_catalog_raw und bleiben damit automatisch konsistent (identische
+-- Ersatz-UUID in beiden Tabellen). CF_UUID_Orig (roh) + CF_Is_Survivor bleiben für
+-- den Detail-Zensus unten erhalten; Konsumenten nutzen ausschließlich CF_UUID.
 -- @P1_SECTION:main@
 CREATE OR REPLACE TEMP TABLE _cf_catalog_raw AS
-SELECT
-    id AS CF_ID,
-    xml_unescape(name) AS CF_Name,
-    Display AS CF_Display,
-    UUID->>'#text' AS CF_UUID,
-    [p.name for p in ObjectList.Parameter] AS Parameters,
-    isFolder AS Folder_Type,
-    COALESCE(isSeparatorItem, False) AS Is_Separator,
-    ROW_NUMBER() OVER () + COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Sequence_ID,
-    Calculation,
-    getvariable('fm_file') AS File_Name
-FROM read_xml(
-    getvariable('fm_xml'),
-    root_element='CustomFunctionsCatalog',
-    record_element='CustomFunction',
-    max_depth=10,
-    maximum_file_size=getvariable('dom_threshold'),
-    streaming=getvariable('use_streaming'),
-    columns={
-        'id': 'BIGINT',
-        'name': 'VARCHAR',
-        'Display': 'VARCHAR',
-        'isFolder': 'VARCHAR',
-        'isSeparatorItem': 'BOOLEAN',
-        'UUID': 'STRUCT("#text" VARCHAR, "modifications" BIGINT, "userName" VARCHAR, "timestamp" VARCHAR)',
-        'ObjectList': 'STRUCT(Parameter STRUCT(name VARCHAR)[])',
-        'Calculation': 'STRUCT("Text" VARCHAR, "DDRREF" STRUCT("kind" VARCHAR, "hash" VARCHAR, "#text" VARCHAR))'
-    }
-);
+WITH cf_records AS (
+    SELECT
+        id AS CF_ID,
+        xml_unescape(name) AS CF_Name,
+        Display AS CF_Display,
+        UUID->>'#text' AS CF_UUID_Orig,
+        [p.name for p in ObjectList.Parameter] AS Parameters,
+        isFolder AS Folder_Type,
+        COALESCE(isSeparatorItem, False) AS Is_Separator,
+        ROW_NUMBER() OVER () + COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Sequence_ID,
+        Calculation,
+        getvariable('fm_file') AS File_Name
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='CustomFunctionsCatalog',
+        record_element='CustomFunction',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'id': 'BIGINT',
+            'name': 'VARCHAR',
+            'Display': 'VARCHAR',
+            'isFolder': 'VARCHAR',
+            'isSeparatorItem': 'BOOLEAN',
+            'UUID': 'STRUCT("#text" VARCHAR, "modifications" BIGINT, "userName" VARCHAR, "timestamp" VARCHAR)',
+            'ObjectList': 'STRUCT(Parameter STRUCT(name VARCHAR)[])',
+            'Calculation': 'STRUCT("Text" VARCHAR, "DDRREF" STRUCT("kind" VARCHAR, "hash" VARCHAR, "#text" VARCHAR))'
+        }
+    )
+),
+cf_healed AS (
+    -- Survivor = kleinste CF_ID je UUID behält die Original-UUID, weitere Zwillinge
+    -- erhalten die deterministische Ersatz-UUID (fm_heal_pick, Prelude). Doppel-
+    -- Serialisierung (gleiche UUID UND gleiche ID) kollabiert weiterhin korrekt:
+    -- Zeilen mit identischem Diskriminator erhalten identische UUIDs → ON CONFLICT
+    -- greift wie bisher. Zweiter Hash-Partition-Pass, kein XML-Re-Scan.
+    SELECT cr.*,
+           (cr.CF_UUID_Orig IS NULL OR cr.CF_ID IS NULL  -- NULL-id: kein Diskriminator → nie heilen
+            OR cr.CF_ID = MIN(cr.CF_ID) OVER (PARTITION BY cr.CF_UUID_Orig)) AS CF_Is_Survivor
+    FROM cf_records cr
+)
+SELECT ch.*,
+       fm_heal_pick(ch.CF_Is_Survivor, 'CustomFunctionsCatalog', ch.File_Name,
+                    ch.CF_UUID_Orig, 'cf_id=' || ch.CF_ID::VARCHAR) AS CF_UUID
+FROM cf_healed ch;
 
 INSERT INTO CustomFunctionsCatalog
 SELECT
@@ -1661,6 +2315,73 @@ SELECT getvariable('fm_file'), 'CustomFunctionsCatalog', 'CF_UUID,File_Name',
        COALESCE(getvariable('seq_offset'), 0)::BIGINT, COUNT(*)
 FROM _cf_catalog_raw
 ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
+-- Dup-Absorption-DETAILS (CustomFunctionsCatalog): Typ + Name der kollidierenden
+-- Custom Functions je doppelt vergebener UUID. Liest die bereits materialisierte
+-- TEMP-Stufe _cf_catalog_raw (kein zweiter XML-Parse) — dort liegen ROH-UUID
+-- (CF_UUID_Orig) und geheilte UUID nebeneinander. DELETE-vor-INSERT hält den
+-- Detail-Satz je (Katalog, Datei) beim Re-Import frisch (analog zum per-Datei-
+-- Overwrite des Zensus). Bit-identisch zum Katalog-INSERT (rein additiv).
+DELETE FROM DuplicateAbsorptionDetails
+WHERE Catalog = 'CustomFunctionsCatalog'
+  AND File_Name = getvariable('fm_file')
+  AND Chunk_Seq = COALESCE(getvariable('seq_offset'), 0)::BIGINT;
+
+INSERT INTO DuplicateAbsorptionDetails
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq,
+     Parent_Name, Position, Display_Text, Payload_XML, Healed_UUID, Heal_Status, Discriminator)
+WITH src AS (
+    SELECT
+        CF_ID AS id,
+        CF_UUID_Orig AS Object_UUID,
+        CF_Name AS Object_Name,
+        CASE WHEN Folder_Type = 'True' THEN 'Folder'
+             WHEN Is_Separator THEN 'Separator'
+             ELSE 'CustomFunction' END AS Object_Type,
+        ROW_NUMBER() OVER (ORDER BY Sequence_ID) AS xml_ord
+    FROM _cf_catalog_raw
+),
+dups AS (
+    SELECT Object_UUID FROM src
+    WHERE Object_UUID IS NOT NULL
+    GROUP BY Object_UUID HAVING COUNT(*) > 1
+),
+-- UUID-Healing (H1): Survivor-/Heal-Markierung, identische Logik wie in _cf_catalog_raw
+-- oben (Survivor = kleinste ID; Doppel-Serialisierung — gleiche UUID+ID — bleibt
+-- 'absorbed', nur das jeweils erste Vorkommen einer (UUID, ID)-Identität trägt den
+-- Katalog-Status). Der Zensus ist damit das persistierte Mapping Original↔Ersatz.
+marked AS (
+    SELECT s.*,
+           (s.id IS NULL  -- NULL-id: kein Diskriminator → wie Survivor behandeln (nie 'healed')
+            OR s.id = MIN(s.id) OVER (PARTITION BY s.Object_UUID)) AS is_min_id,
+           ROW_NUMBER() OVER (PARTITION BY s.Object_UUID, s.id ORDER BY s.xml_ord) AS occ_within_id
+    FROM src s
+    JOIN dups d USING (Object_UUID)
+)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    'CustomFunctionsCatalog' AS Catalog,
+    s.Object_UUID,
+    s.Object_Name,
+    s.Object_Type,
+    ROW_NUMBER() OVER (PARTITION BY s.Object_UUID ORDER BY s.xml_ord) AS Occurrence_Seq,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    -- Kontext: Custom Functions sind Top-Level → kein Container; Position = Stelle
+    -- in der "Eigene Funktionen verwalten"-Liste (XML-Reihenfolge, 1-basiert).
+    NULL AS Parent_Name,
+    'List position ' || s.xml_ord::VARCHAR AS Position,
+    left(s.Object_Name, 500) AS Display_Text,
+    NULL AS Payload_XML,
+    CASE WHEN fm_heal_enabled() AND NOT s.is_min_id AND s.occ_within_id = 1
+         THEN fm_heal_uuid('CustomFunctionsCatalog', getvariable('fm_file'), s.Object_UUID,
+                           'cf_id=' || s.id::VARCHAR) END AS Healed_UUID,
+    CASE WHEN NOT fm_heal_enabled() THEN 'absorbed'
+         WHEN s.occ_within_id > 1   THEN 'absorbed'
+         WHEN s.is_min_id           THEN 'kept-original'
+         ELSE 'healed' END AS Heal_Status,
+    'cf_id=' || s.id::VARCHAR AS Discriminator
+FROM marked s
+ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
 
 
 -- CalcsForCustomFunctions
@@ -1731,7 +2452,7 @@ ON CONFLICT (CF_UUID, File_Name) DO UPDATE SET
 -- <CustomFunction> eingebettet; die separate <CalcsForCustomFunctions>-Sektion entfällt.
 -- Quelle ist das oben bereits geparste _cf_catalog_raw → KEIN zusätzlicher XML-Parse.
 -- Code_Chunks = NULL: das eingebettete <Calculation> trägt keine <ChunkList> (verifiziert
--- an tools/tests/fixtures/xml/v26/Ooe.xml) — die Chunks bleiben über DDR_Hash → DDR_Calculations erreichbar.
+-- an der v26-Test-XML unter tools/tests/fixtures/xml/) — die Chunks bleiben über DDR_Hash → DDR_Calculations erreichbar.
 -- ON CONFLICT DO NOTHING: trägt eine Datei je beide Formen, gewinnt der Legacy-Pfad oben
 -- (kein Datenverlust). Bei FM ≤ 22 ist Calculation NULL → 0 Zeilen, also ein No-Op.
 INSERT INTO CalcsForCustomFunctions
@@ -1807,6 +2528,18 @@ script_records AS (
         }
     )
     WHERE id IS NOT NULL
+),
+script_healed AS (
+    -- UUID-Healing (H1): Survivor = kleinste Script_ID je UUID behält die Original-UUID,
+    -- weitere Zwillinge erhalten im INSERT unten die deterministische Ersatz-UUID
+    -- (fm_heal_pick, Prelude). Doppel-Serialisierung (gleiche UUID UND gleiche ID)
+    -- kollabiert weiterhin korrekt: Zeilen mit identischem Diskriminator erhalten
+    -- identische UUIDs → ON CONFLICT greift wie bisher (3A-Weiche automatisch).
+    -- Zweiter Hash-Partition-Pass auf dem bereits gelesenen Rowset — kein XML-Re-Scan.
+    SELECT sr.*,
+           (sr.UUID."#text" IS NULL
+            OR sr.id = MIN(sr.id) OVER (PARTITION BY sr.UUID."#text")) AS is_survivor
+    FROM script_records sr
 )
 INSERT INTO ScriptCatalog
 SELECT
@@ -1814,7 +2547,8 @@ SELECT
     xml_unescape(sr.name) AS Script_Name,
     sr.isFolder AS Folder_Type,
     COALESCE(sr.isSeparatorItem, False) AS Is_Separator,
-    sr.UUID."#text" AS Script_UUID,
+    fm_heal_pick(sr.is_survivor, 'ScriptCatalog', fn.File_Name,
+                 sr.UUID."#text", 'script_id=' || sr.id::VARCHAR) AS Script_UUID,
     sr.UUID.modifications AS Modifications,
     sr.UUID.userName AS Last_Modified_By,
     sr.UUID.timestamp AS Last_Modified_At,
@@ -1823,7 +2557,7 @@ SELECT
     sr.Options.runwithfullaccess AS Full_Access,
     sr.Sequence_ID,
     fn.File_Name as File_Name
-FROM script_records sr
+FROM script_healed sr
 CROSS JOIN filename_normalized fn
 ON CONFLICT (Script_UUID, File_Name) DO UPDATE SET
     Script_ID = EXCLUDED.Script_ID,
@@ -1850,9 +2584,11 @@ WHERE Catalog = 'ScriptCatalog'
   AND Chunk_Seq = COALESCE(getvariable('seq_offset'), 0)::BIGINT;
 
 INSERT INTO DuplicateAbsorptionDetails
-    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq)
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq,
+     Parent_Name, Position, Display_Text, Payload_XML, Healed_UUID, Heal_Status, Discriminator)
 WITH src AS (
     SELECT
+        id,
         UUID->>'#text' AS Object_UUID,
         xml_unescape(name) AS Object_Name,
         CASE WHEN isFolder = 'True' THEN 'Folder'
@@ -1880,6 +2616,18 @@ dups AS (
     SELECT Object_UUID FROM src
     WHERE Object_UUID IS NOT NULL
     GROUP BY Object_UUID HAVING COUNT(*) > 1
+),
+-- UUID-Healing (H1): Survivor-/Heal-Markierung, identische Logik wie im Katalog-INSERT
+-- oben (Survivor = kleinste ID; Doppel-Serialisierung — gleiche UUID+ID — bleibt
+-- 'absorbed', nur das jeweils erste Vorkommen einer (UUID, ID)-Identität trägt den
+-- Katalog-Status). Der Zensus ist damit das persistierte Mapping Original↔Ersatz.
+marked AS (
+    SELECT s.*,
+           (s.id IS NULL  -- NULL-id: kein Diskriminator → wie Survivor behandeln (nie 'healed')
+            OR s.id = MIN(s.id) OVER (PARTITION BY s.Object_UUID)) AS is_min_id,
+           ROW_NUMBER() OVER (PARTITION BY s.Object_UUID, s.id ORDER BY s.xml_ord) AS occ_within_id
+    FROM src s
+    JOIN dups d USING (Object_UUID)
 )
 SELECT
     getvariable('fm_file') AS File_Name,
@@ -1888,9 +2636,22 @@ SELECT
     s.Object_Name,
     s.Object_Type,
     ROW_NUMBER() OVER (PARTITION BY s.Object_UUID ORDER BY s.xml_ord) AS Occurrence_Seq,
-    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq
-FROM src s
-JOIN dups d USING (Object_UUID)
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    -- Kontext (1.17.0): Scripts sind Top-Level → kein Container; Position = Stelle
+    -- in der "Skripts verwalten"-Liste (XML-Reihenfolge, 1-basiert wie Sequence_ID).
+    NULL AS Parent_Name,
+    'List position ' || s.xml_ord::VARCHAR AS Position,
+    left(s.Object_Name, 500) AS Display_Text,
+    NULL AS Payload_XML,
+    CASE WHEN fm_heal_enabled() AND NOT s.is_min_id AND s.occ_within_id = 1
+         THEN fm_heal_uuid('ScriptCatalog', getvariable('fm_file'), s.Object_UUID,
+                           'script_id=' || s.id::VARCHAR) END AS Healed_UUID,
+    CASE WHEN NOT fm_heal_enabled() THEN 'absorbed'
+         WHEN s.occ_within_id > 1   THEN 'absorbed'
+         WHEN s.is_min_id           THEN 'kept-original'
+         ELSE 'healed' END AS Heal_Status,
+    'script_id=' || s.id::VARCHAR AS Discriminator
+FROM marked s
 ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
 
 
@@ -1962,6 +2723,31 @@ script_steps AS (
         Script_UUID,
         unnest(xml_extract_elements(steps_wrapped, '/ObjectList/Step')) as step_xml
     FROM scripts_resolved
+),
+-- UUID-Healing (H2): Step_UUID + Identitätsfelder EINMAL extrahieren (der finale
+-- SELECT liest sie als Spalten — kein Doppel-Parse), dann Survivor-Window.
+-- Steps haben im SaXML KEINE Instanz-ID (/Step/@id ist die Step-TYP-ID!) —
+-- Identität ist (Script_ID, Step_Index); nur positions-stabil (dokumentierte
+-- Einschränkung). Doppel-Serialisierung (gleiche UUID UND gleiche
+-- Identität) kollabiert weiterhin: identischer Diskriminator → identische
+-- Ersatz-UUID → ON CONFLICT greift wie bisher (3A-Weiche automatisch).
+-- Intra-Chunk-Sicht: chunk-übergreifende Paare heilt der catmerge-Nachschlag.
+-- Die XPaths auf step_xml sind identisch zur DOM-Basis (gleiches Step-Fragment;
+-- nur die CTE-Quellen davor sind SAX-spezifisch).
+steps_extracted AS (
+    SELECT
+        Script_ID, Script_Name, Script_UUID, step_xml,
+        xml_extract_text(step_xml, '/Step/@index')[1]::INTEGER as Step_Index,
+        xml_extract_text(step_xml, '/Step/@id')[1]::INTEGER as Step_ID,
+        xml_extract_text(step_xml, '/Step/UUID')[1] as Step_UUID
+    FROM script_steps
+),
+steps_healed AS (
+    SELECT s.*,
+           (s.Step_UUID IS NULL OR s.Script_ID IS NULL OR s.Step_Index IS NULL  -- kein Diskriminator → nie heilen
+            OR (s.Script_ID, s.Step_Index) =
+               MIN((s.Script_ID, s.Step_Index)) OVER (PARTITION BY s.Step_UUID)) AS is_survivor
+    FROM steps_extracted s
 )
 -- Explizite Spaltenliste (18 P1-Spalten): P3 verbreitert die Tabelle um die
 -- abgeleitete Spalte Inserted_Text (ALTER TABLE, details:~1037). Ein spaltenloser
@@ -1977,11 +2763,12 @@ SELECT
     Script_ID,
     Script_Name,
     Script_UUID,
-    xml_extract_text(step_xml, '/Step/@index')[1]::INTEGER as Step_Index,
-    xml_extract_text(step_xml, '/Step/@id')[1]::INTEGER as Step_ID,
+    Step_Index,
+    Step_ID,
     xml_extract_text(step_xml, '/Step/@name')[1] as Step_Name,
     xml_extract_text(step_xml, '/Step/@enable')[1] = 'True' as Is_Enabled,
-    xml_extract_text(step_xml, '/Step/UUID')[1] as Step_UUID,
+    fm_heal_pick(is_survivor, 'StepsForScripts', fn.File_Name, Step_UUID,
+                 'script_id=' || Script_ID::VARCHAR || '·step_index=' || Step_Index::VARCHAR) as Step_UUID,
     xml_extract_text(step_xml, '/Step/DDRREF[@kind="StepText"]/@hash')[1] as DDR_Hash,
     regexp_replace(
         xml_extract_text(step_xml, '/Step/DDRREF[@kind="StepText"]')[1],
@@ -2001,7 +2788,7 @@ SELECT
     xml_extract_text(step_xml, '//Boolean/@type')[1] as Boolean_Type,
     xml_extract_text(step_xml, '//Boolean/@value')[1] as Boolean_Value,
     fn.File_Name as File_Name
-FROM script_steps
+FROM steps_healed
 CROSS JOIN filename_normalized fn
 ON CONFLICT (Step_UUID, File_Name) DO UPDATE SET
     Script_ID = EXCLUDED.Script_ID,
@@ -2038,6 +2825,98 @@ FROM read_xml(
 )
 WHERE ObjectList IS NOT NULL
 ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
+-- Dup-Absorption-DETAILS (StepsForScripts, 1.17.0) — SAX-Fassung, quellgleich zum
+-- Detail-Block der DOM-Basis (dort begründet): dups zuerst (nur UUID-Extrakt pro
+-- Step), die teuren Extrakte laufen NUR auf den Dup-Zeilen. Script_Name kommt hier
+-- direkt aus dem ScriptReference-Struct (kein Re-Parse nötig).
+DELETE FROM DuplicateAbsorptionDetails
+WHERE Catalog = 'StepsForScripts'
+  AND File_Name = getvariable('fm_file')
+  AND Chunk_Seq = COALESCE(getvariable('seq_offset'), 0)::BIGINT;
+
+INSERT INTO DuplicateAbsorptionDetails
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq,
+     Parent_Name, Position, Display_Text, Payload_XML, Healed_UUID, Heal_Status, Discriminator)
+WITH det_steps AS (
+    SELECT
+        Script_ID,
+        Script_Name,
+        unnest(xml_extract_elements('<ObjectList>' || ObjectList || '</ObjectList>', '/ObjectList/Step')) as step_xml
+    FROM (
+        SELECT
+            ScriptReference.id::BIGINT as Script_ID,
+            ScriptReference.name as Script_Name,
+            ObjectList
+        FROM read_xml(
+            getvariable('fm_xml'),
+            record_element='SFS_Script',
+            maximum_file_size=getvariable('dom_threshold'),
+            streaming=getvariable('use_streaming'),
+            columns={
+                'ScriptReference': 'STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)',
+                'ObjectList': 'VARCHAR'
+            }
+        )
+        WHERE ObjectList IS NOT NULL
+    )
+),
+src AS (
+    SELECT
+        Script_ID,
+        Script_Name,
+        step_xml,
+        xml_extract_text(step_xml, '/Step/UUID')[1] AS Object_UUID,
+        xml_extract_text(step_xml, '/Step/@index')[1]::INTEGER AS Step_Index,
+        ROW_NUMBER() OVER () AS xml_ord
+    FROM det_steps
+),
+dups AS (
+    SELECT Object_UUID FROM src
+    WHERE Object_UUID IS NOT NULL
+    GROUP BY Object_UUID HAVING COUNT(*) > 1
+),
+-- UUID-Healing (H2): Survivor-/Heal-Markierung, identische Logik wie im Katalog-
+-- INSERT oben (Identität = (Script_ID, Step_Index); Doppel-Serialisierung —
+-- gleiche UUID+Identität — bleibt 'absorbed'). Chunk-lokale Sicht: chunk-
+-- übergreifende Paare erfasst der catmerge-Nachschlag (Chunk_Seq = -1).
+marked AS (
+    SELECT s.*,
+           (s.Script_ID IS NULL OR s.Step_Index IS NULL
+            OR (s.Script_ID, s.Step_Index) =
+               MIN((s.Script_ID, s.Step_Index)) OVER (PARTITION BY s.Object_UUID)) AS is_min_id,
+           ROW_NUMBER() OVER (PARTITION BY s.Object_UUID, s.Script_ID, s.Step_Index
+                              ORDER BY s.xml_ord) AS occ_within_id
+    FROM src s
+    JOIN dups d USING (Object_UUID)
+)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    'StepsForScripts' AS Catalog,
+    s.Object_UUID,
+    xml_extract_text(s.step_xml, '/Step/@name')[1] AS Object_Name,
+    'ScriptStep' AS Object_Type,
+    ROW_NUMBER() OVER (PARTITION BY s.Object_UUID ORDER BY s.xml_ord) AS Occurrence_Seq,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    xml_unescape(s.Script_Name) AS Parent_Name,
+    -- @index ist 0-basiert; user-facing Step-Nummer = index + 1 (Konvention Step_Index).
+    'Step ' || (s.Step_Index + 1)::VARCHAR AS Position,
+    left(
+        xml_extract_text(s.step_xml, '/Step/@name')[1]
+        || COALESCE(' — ' || ws_restore(xml_extract_text(s.step_xml,
+               '//Calculation[not(ancestor::repetition)][not(ancestor::Bounds)]/Text')[1]), ''),
+        500) AS Display_Text,
+    left(ws_restore(s.step_xml::VARCHAR), 4000) AS Payload_XML,
+    CASE WHEN fm_heal_enabled() AND NOT s.is_min_id AND s.occ_within_id = 1
+         THEN fm_heal_uuid('StepsForScripts', getvariable('fm_file'), s.Object_UUID,
+                           'script_id=' || s.Script_ID::VARCHAR || '·step_index=' || s.Step_Index::VARCHAR) END AS Healed_UUID,
+    CASE WHEN NOT fm_heal_enabled() THEN 'absorbed'
+         WHEN s.occ_within_id > 1   THEN 'absorbed'
+         WHEN s.is_min_id           THEN 'kept-original'
+         ELSE 'healed' END AS Heal_Status,
+    'script_id=' || s.Script_ID::VARCHAR || '·step_index=' || s.Step_Index::VARCHAR AS Discriminator
+FROM marked s
+ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
 
 
 
@@ -2132,12 +3011,24 @@ layout_records AS (
     -- Folder-Records (isFolder='True'/'Marker') haben keine TableOccurrenceReference;
     -- daher nur auf id filtern, sonst werden Ordner und Trennlinien ausgeschlossen.
     WHERE id IS NOT NULL
+),
+-- UUID-Healing (H2): Survivor = kleinste L_ID je UUID behält die Original-UUID.
+-- Layouts ist SUB-GECHUNKT (SUBCHUNK_RECMAP LayoutCatalog:Layout) — das Window sieht
+-- nur den eigenen Chunk; chunk-übergreifende Paare heilt der catmerge-Nachschlag
+-- mit identischer Formel (deterministisch gleiche Ersatz-UUID). Doppel-Serialisierung
+-- (gleiche UUID UND gleiche L_ID) kollabiert weiterhin (3A-Weiche automatisch).
+layouts_healed AS (
+    SELECT lr.*,
+           (lr.UUID."#text" IS NULL OR lr.id IS NULL  -- kein Diskriminator → nie heilen
+            OR lr.id = MIN(lr.id) OVER (PARTITION BY lr.UUID."#text")) AS is_survivor
+    FROM layout_records lr
 )
 INSERT INTO Layouts
 SELECT
     lr.id AS L_ID,
     xml_unescape(lr.name) AS L_Name,
-    lr.UUID."#text" AS L_UUID,
+    fm_heal_pick(lr.is_survivor, 'Layouts', fn.File_Name,
+                 lr.UUID."#text", 'layout_id=' || lr.id::VARCHAR) AS L_UUID,
     xml_unescape(lr.TableOccurrenceReference.name) AS L_TO_Name,
     lr.TableOccurrenceReference.UUID AS L_TO_UUID,
     lr.width AS L_Width,
@@ -2186,7 +3077,7 @@ SELECT
     COALESCE(lr.isSeparatorItem, False) AS Is_Separator,
     lr.Sequence_ID,
     fn.File_Name as File_Name
-FROM layout_records lr
+FROM layouts_healed lr
 CROSS JOIN filename_normalized fn
 ON CONFLICT (L_UUID, File_Name) DO UPDATE SET
     L_ID = EXCLUDED.L_ID,
@@ -2219,13 +3110,90 @@ ON CONFLICT (L_UUID, File_Name) DO UPDATE SET
     Is_Separator = EXCLUDED.Is_Separator,
     Sequence_ID = EXCLUDED.Sequence_ID;
 
+-- Dup-Absorption-DETAILS (Layouts, 1.17.0): UUID-genaue Zeilen je doppelt vergebener
+-- Layout-UUID (Muster ScriptCatalog-Details; Zweit-Read minimal: id/name/Flags/UUID/TO).
+-- Läuft in der LayoutCatalog-Section, Chunk-fähig via Chunk_Seq/seq_offset.
+DELETE FROM DuplicateAbsorptionDetails
+WHERE Catalog = 'Layouts'
+  AND File_Name = getvariable('fm_file')
+  AND Chunk_Seq = COALESCE(getvariable('seq_offset'), 0)::BIGINT;
+
+INSERT INTO DuplicateAbsorptionDetails
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq,
+     Parent_Name, Position, Display_Text, Payload_XML, Healed_UUID, Heal_Status, Discriminator)
+WITH src AS (
+    SELECT
+        id,
+        UUID."#text" AS Object_UUID,
+        xml_unescape(name) AS Object_Name,
+        CASE WHEN isFolder = 'True' THEN 'Layout Folder'
+             WHEN isFolder = 'Marker' OR COALESCE(isSeparatorItem, False) THEN 'Layout Separator'
+             ELSE 'Layout' END AS Object_Type,
+        xml_unescape(TableOccurrenceReference.name) AS TO_Name,
+        ROW_NUMBER() OVER () + COALESCE(getvariable('seq_offset'), 0)::BIGINT AS xml_ord
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='LayoutCatalog',
+        record_element='LC_Layout',
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'id': 'BIGINT',
+            'name': 'VARCHAR',
+            'isFolder': 'VARCHAR',
+            'isSeparatorItem': 'BOOLEAN',
+            'UUID': 'STRUCT("#text" VARCHAR, userName VARCHAR, timestamp VARCHAR, modifications INTEGER)',
+            'TableOccurrenceReference': 'STRUCT(name VARCHAR, UUID VARCHAR)'
+        }
+    )
+    WHERE id IS NOT NULL
+),
+dups AS (
+    SELECT Object_UUID FROM src
+    WHERE Object_UUID IS NOT NULL
+    GROUP BY Object_UUID HAVING COUNT(*) > 1
+),
+-- UUID-Healing (H2): Survivor-/Heal-Markierung analog Katalog-INSERT (Survivor =
+-- kleinste L_ID; chunk-lokale Sicht — chunk-übergreifende Paare erfasst der
+-- catmerge-Nachschlag mit Chunk_Seq = -1).
+marked AS (
+    SELECT s.*,
+           (s.id IS NULL
+            OR s.id = MIN(s.id) OVER (PARTITION BY s.Object_UUID)) AS is_min_id,
+           ROW_NUMBER() OVER (PARTITION BY s.Object_UUID, s.id ORDER BY s.xml_ord) AS occ_within_id
+    FROM src s
+    JOIN dups d USING (Object_UUID)
+)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    'Layouts' AS Catalog,
+    s.Object_UUID,
+    s.Object_Name,
+    s.Object_Type,
+    ROW_NUMBER() OVER (PARTITION BY s.Object_UUID ORDER BY s.xml_ord) AS Occurrence_Seq,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    NULL AS Parent_Name,
+    'List position ' || s.xml_ord::VARCHAR AS Position,
+    left(s.Object_Name || COALESCE(' — context TO: ' || s.TO_Name, ''), 500) AS Display_Text,
+    NULL AS Payload_XML,
+    CASE WHEN fm_heal_enabled() AND NOT s.is_min_id AND s.occ_within_id = 1
+         THEN fm_heal_uuid('Layouts', getvariable('fm_file'), s.Object_UUID,
+                           'layout_id=' || s.id::VARCHAR) END AS Healed_UUID,
+    CASE WHEN NOT fm_heal_enabled() THEN 'absorbed'
+         WHEN s.occ_within_id > 1   THEN 'absorbed'
+         WHEN s.is_min_id           THEN 'kept-original'
+         ELSE 'healed' END AS Heal_Status,
+    'layout_id=' || s.id::VARCHAR AS Discriminator
+FROM marked s
+ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
+
 -- Hinweis: Layout-Ebene Script-Trigger liegen bereits in der vorhandenen Tabelle
 -- ScriptTriggers (Owner_Type='Layout', Owner_UUID=L_UUID; multi-fed Merge via
 -- convert_turbo.sh). Keine eigene Layout-Trigger-Tabelle nötig.
 
 -- LayoutParts
 -- @END_P1_SECTION@
--- Part_Seq (Schema 1.5.1, B-K5): laufende Part-Nummer je Layout (XML-Reihenfolge,
+-- Part_Seq (Schema 1.5.1): laufende Part-Nummer je Layout (XML-Reihenfolge,
 -- 1-basiert). Der alte PK (Layout_ID, Part_Kind, File_Name) kollabierte mehrere
 -- Parts gleicher Art (z.B. 3× Leading Sub-summary, kind=3) auf eine Zeile.
 -- Break_*-Spalten: Umbruchfeld einer Sub-Summary aus Part/Definition/FieldReference
@@ -2284,7 +3252,7 @@ layout_parts_list AS (
 ),
 layout_parts AS (
     -- Zip-Unnest: unnest() und generate_subscripts() laufen positionsgleich →
-    -- Part_Seq = Listenposition (XML-Reihenfolge, 1-basiert; B-K5).
+    -- Part_Seq = Listenposition (XML-Reihenfolge, 1-basiert).
     SELECT
         Layout_ID,
         Layout_Name,
@@ -2515,7 +3483,7 @@ nested_objects AS (
         child_xml as object_xml
     FROM nested_objects parent
     CROSS JOIN LATERAL unnest(
-        -- DIREKTE Kind-Achsen (B-K1) — identisch zur DOM-Basis (Begründung dort).
+        -- DIREKTE Kind-Achsen — identisch zur DOM-Basis (Begründung dort).
         CASE
             WHEN parent.Object_Type = 'Popover Button'
                 THEN xml_extract_elements(parent.object_xml, '/LayoutObject/PopoverButton/LayoutObject')
@@ -2538,16 +3506,24 @@ SELECT
     Object_Name,
     Object_Kind,
     Object_Hash,
-    -- NULL-PK-Guard (B-K2) — identisch zur DOM-Basis (Begründung dort).
-    COALESCE(Object_UUID, md5(
-        'LayoutObjectNoUUID|' ||
-        COALESCE(Layout_ID::VARCHAR, '') || '|' ||
-        COALESCE(Object_ID::VARCHAR, '') || '|' ||
-        COALESCE(Object_Type, '') || '|' ||
-        COALESCE(Part_Type, '') || '|' ||
-        COALESCE(Nesting_Level::VARCHAR, '') || '|' ||
-        COALESCE(Z_Order::VARCHAR, '')
-    )) as Object_UUID,
+    -- NULL-PK-Guard — identisch zur DOM-Basis (Begründung dort).
+    -- UUID-Healing (H2): fm_heal_pick um den Guard herum — identisch zur DOM-Basis:
+    -- bei NULL-UUID ist _is_survivor TRUE (Guard-md5 ist bereits zeilen-eindeutig
+    -- und wird NIE geheilt); Copy-Paste-Zwillinge (gleiche UUID, verschiedene
+    -- (Layout_ID, Object_ID)) erhalten die deterministische Ersatz-UUID.
+    -- Identität = (Layout_ID, Object_ID) — die S0-3-Zähl-Identität des Zensus.
+    fm_heal_pick(_is_survivor, 'LayoutObjects', fn.File_Name,
+        COALESCE(Object_UUID, md5(
+            'LayoutObjectNoUUID|' ||
+            COALESCE(Layout_ID::VARCHAR, '') || '|' ||
+            COALESCE(Object_ID::VARCHAR, '') || '|' ||
+            COALESCE(Object_Type, '') || '|' ||
+            COALESCE(Part_Type, '') || '|' ||
+            COALESCE(Nesting_Level::VARCHAR, '') || '|' ||
+            COALESCE(Z_Order::VARCHAR, '')
+        )),
+        'layout_id=' || COALESCE(Layout_ID::VARCHAR, '') ||
+        '·object_id=' || COALESCE(Object_ID::VARCHAR, '')) as Object_UUID,
     Bounds_Top,
     Bounds_Left,
     Bounds_Bottom,
@@ -2562,14 +3538,23 @@ SELECT
     ws_restore(Text_Content) as Text_Content,
     ws_restore(object_xml::VARCHAR) as Object_XML,
     fn.File_Name as File_Name
--- DETERMINISTISCHES DEDUP (Chunk-Invarianz, These 1b) — identisch zur DOM-Basis:
--- mit den direkten Kind-Achsen (B-K1) bleibt nur die bekannte Doppel-Serialisierung
--- (Part-Root + GroupedButton-ObjectList, 12 Korpus-Fälle); pro (Layout_ID, Object_UUID)
+-- DETERMINISTISCHES DEDUP (Chunk-Invarianz) — identisch zur DOM-Basis:
+-- mit den direkten Kind-Achsen bleibt nur die bekannte Doppel-Serialisierung
+-- (Part-Root + GroupedButton-ObjectList, 12 Korpus-Fälle); pro Identität
 -- gewinnt die flachste Emission (min Nesting_Level). NULL-UUID-Objekte bleiben erhalten.
+-- UUID-Healing (H2): Partition um Object_ID ERWEITERT — (Layout_ID, Object_UUID,
+-- Object_ID) ist exakt der Doppel-Serialisierungs-Schlüssel (S0-3): die 12 Korpus-
+-- Fälle (gleiche Object_ID) kollabieren weiterhin, echte Copy-Paste-Zwillinge
+-- (gleiche UUID, VERSCHIEDENE Object_ID) überleben jetzt bis zur Heilung statt
+-- vor dem Upsert verworfen zu werden. _is_survivor über die Roh-Emissionen ist
+-- äquivalent zur Sicht nach dem Dedup (identische Identität → identisches MIN).
 FROM (
     SELECT *,
-        ROW_NUMBER() OVER (PARTITION BY Layout_ID, Object_UUID
-                           ORDER BY Nesting_Level ASC, Parent_Object_ID NULLS FIRST, Z_Order DESC) AS _dedup_rn
+        ROW_NUMBER() OVER (PARTITION BY Layout_ID, Object_UUID, Object_ID
+                           ORDER BY Nesting_Level ASC, Parent_Object_ID NULLS FIRST, Z_Order DESC) AS _dedup_rn,
+        (Object_UUID IS NULL OR Layout_ID IS NULL OR Object_ID IS NULL  -- kein Diskriminator → nie heilen
+         OR (Layout_ID, Object_ID) =
+            MIN((Layout_ID, Object_ID)) OVER (PARTITION BY Object_UUID)) AS _is_survivor
     FROM nested_objects
 ) nested_objects
 CROSS JOIN filename_normalized fn
@@ -2596,25 +3581,29 @@ ON CONFLICT (Object_UUID, File_Name) DO UPDATE SET
     Text_Content = EXCLUDED.Text_Content,
     Object_XML = EXCLUDED.Object_XML;
 
--- Zensus (Dup-Absorption): deduplizierte Emissionsmenge des LayoutObjects-INSERTs —
--- SAX-Fassung, quellgleich zum Zensus im DOM-Block der Basis (dort begründet).
+-- Zensus (Dup-Absorption): Emissionsmenge des LayoutObjects-INSERTs — SAX-Fassung,
+-- quellgleich zur TEMP-Stage im DOM-Block der Basis (dort begründet, inkl.
+-- S0-3-Zähl-Semantik je (Layout_ID, Object_UUID, Object_ID) und Detail-Erfassung).
 -- Schlanke Zweit-Rekursion über den LC_Layout-Stream (gleiche Kind-Achsen/Container-
--- Typen wie oben), nur Typ/UUID fürs Zählen; je (Layout_ID, Object_UUID) EINE
--- Emission, NULL-UUID-Objekte einzeln (md5-Fallback-PK).
+-- Typen wie oben), nur Layout/ID/Typ/Name/UUID; NULL-UUID-Objekte einzeln
+-- (md5-Fallback-PK).
+CREATE OR REPLACE TEMP TABLE _lo_census AS
 WITH RECURSIVE census_parts AS (
     SELECT
         Layout_ID,
+        Layout_Name,
         unnest(xml_extract_elements(parts_wrapped, '/PartsList/Part')) as part_xml
     FROM (
         SELECT
             "id"::BIGINT as Layout_ID,
+            xml_unescape("name") as Layout_Name,
             '<PartsList>' || PartsList || '</PartsList>' as parts_wrapped
         FROM read_xml(
             getvariable('fm_xml'),
             record_element='LC_Layout',
             maximum_file_size=getvariable('dom_threshold'),
             streaming=getvariable('use_streaming'),
-            columns={'id':'BIGINT','PartsList':'VARCHAR'}
+            columns={'id':'BIGINT','name':'VARCHAR','PartsList':'VARCHAR'}
         )
         WHERE PartsList IS NOT NULL
     )
@@ -2622,10 +3611,13 @@ WITH RECURSIVE census_parts AS (
 census_objects AS (
     SELECT
         Layout_ID,
+        Layout_Name,
+        xml_extract_text(object_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
         fm_canon_layout_type(
             xml_extract_text(object_xml, '/LayoutObject/@type')[1],
             xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::INTEGER,
             object_xml) as Object_Type,
+        xml_unescape(xml_extract_text(object_xml, '/LayoutObject/@name')[1]) as Object_Name,
         xml_extract_text(object_xml, '/LayoutObject/UUID')[1] as Object_UUID,
         object_xml
     FROM census_parts
@@ -2637,10 +3629,13 @@ census_objects AS (
 
     SELECT
         parent.Layout_ID,
+        parent.Layout_Name,
+        xml_extract_text(child_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
         fm_canon_layout_type(
             xml_extract_text(child_xml, '/LayoutObject/@type')[1],
             xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::INTEGER,
             child_xml) as Object_Type,
+        xml_unescape(xml_extract_text(child_xml, '/LayoutObject/@name')[1]) as Object_Name,
         xml_extract_text(child_xml, '/LayoutObject/UUID')[1] as Object_UUID,
         child_xml as object_xml
     FROM census_objects parent
@@ -2666,13 +3661,81 @@ census_objects AS (
         'Popover Button'
     )
 )
+SELECT Layout_ID, Layout_Name, Object_ID, Object_Type, Object_Name, Object_UUID
+FROM census_objects;
+
 INSERT INTO DuplicateAbsorptions
 SELECT getvariable('fm_file'), 'LayoutObjects', 'Object_UUID,File_Name',
        COALESCE(getvariable('seq_offset'), 0)::BIGINT,
        COUNT(*) FILTER (WHERE Object_UUID IS NULL)
-         + COUNT(DISTINCT (Layout_ID, Object_UUID)) FILTER (WHERE Object_UUID IS NOT NULL)
-FROM census_objects
+         + COUNT(DISTINCT (Layout_ID, Object_UUID, Object_ID)) FILTER (WHERE Object_UUID IS NOT NULL)
+FROM _lo_census
 ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
+-- Dup-Absorption-DETAILS (LayoutObjects, 1.17.0) — identisch zur DOM-Basis:
+-- Gruppierung auf (Layout_ID, Object_ID) kollabiert FileMakers Doppel-
+-- Serialisierung; >1 verbleibende Vorkommen je UUID = echte Kollision.
+DELETE FROM DuplicateAbsorptionDetails
+WHERE Catalog = 'LayoutObjects'
+  AND File_Name = getvariable('fm_file')
+  AND Chunk_Seq = COALESCE(getvariable('seq_offset'), 0)::BIGINT;
+
+INSERT INTO DuplicateAbsorptionDetails
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq,
+     Parent_Name, Position, Display_Text, Payload_XML, Healed_UUID, Heal_Status, Discriminator)
+WITH occ AS (
+    SELECT
+        Object_UUID,
+        Layout_ID,
+        any_value(Layout_Name) AS Layout_Name,
+        Object_ID,
+        any_value(Object_Type) AS Object_Type,
+        any_value(Object_Name) AS Object_Name
+    FROM _lo_census
+    WHERE Object_UUID IS NOT NULL
+    GROUP BY Object_UUID, Layout_ID, Object_ID
+),
+dups AS (
+    SELECT Object_UUID FROM occ
+    GROUP BY Object_UUID HAVING COUNT(*) > 1
+),
+-- UUID-Healing (H2): Survivor-/Heal-Markierung analog Katalog-INSERT (Identität =
+-- (Layout_ID, Object_ID) — occ ist bereits je Identität dedupliziert, daher kein
+-- occ_within_id nötig; Doppel-Serialisierung ist hier schon kollabiert). Chunk-
+-- lokale Sicht: chunk-übergreifende Paare erfasst der catmerge-Nachschlag.
+marked AS (
+    SELECT o.*,
+           (o.Layout_ID IS NULL OR o.Object_ID IS NULL
+            OR (o.Layout_ID, o.Object_ID) =
+               MIN((o.Layout_ID, o.Object_ID)) OVER (PARTITION BY o.Object_UUID)) AS is_min_id
+    FROM occ o
+    JOIN dups d USING (Object_UUID)
+)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    'LayoutObjects' AS Catalog,
+    o.Object_UUID,
+    o.Object_Name,
+    o.Object_Type,
+    ROW_NUMBER() OVER (PARTITION BY o.Object_UUID ORDER BY o.Layout_ID, o.Object_ID) AS Occurrence_Seq,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    o.Layout_Name AS Parent_Name,
+    'Layout ' || COALESCE(o.Layout_ID::VARCHAR, '?') || ' · object id ' || COALESCE(o.Object_ID::VARCHAR, '?') AS Position,
+    left(o.Object_Type || COALESCE(' "' || NULLIF(o.Object_Name, '') || '"', ''), 500) AS Display_Text,
+    NULL AS Payload_XML,
+    CASE WHEN fm_heal_enabled() AND NOT o.is_min_id
+         THEN fm_heal_uuid('LayoutObjects', getvariable('fm_file'), o.Object_UUID,
+                           'layout_id=' || COALESCE(o.Layout_ID::VARCHAR, '') ||
+                           '·object_id=' || COALESCE(o.Object_ID::VARCHAR, '')) END AS Healed_UUID,
+    CASE WHEN NOT fm_heal_enabled() THEN 'absorbed'
+         WHEN o.is_min_id           THEN 'kept-original'
+         ELSE 'healed' END AS Heal_Status,
+    'layout_id=' || COALESCE(o.Layout_ID::VARCHAR, '') ||
+    '·object_id=' || COALESCE(o.Object_ID::VARCHAR, '') AS Discriminator
+FROM marked o
+ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
+
+DROP TABLE IF EXISTS _lo_census;
 
 
 
@@ -2697,6 +3760,52 @@ CREATE TABLE IF NOT EXISTS AccountsCatalog (
 -- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
+),
+account_records AS (
+    -- Rowset NACH UNNEST + Zeilenfilter — identischer Zeilen-Scope wie der bisherige
+    -- Katalog-INSERT (das Survivor-Window unten MUSS auf dem entfalteten, gefilterten
+    -- Rowset laufen, nicht auf den ObjectList-Records).
+    SELECT a
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='AccountsCatalog',
+        record_element='ObjectList',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'Account': 'STRUCT(
+                id BIGINT,
+                kind INTEGER,
+                type VARCHAR,
+                enable BOOLEAN,
+                "UUID" STRUCT("#text" VARCHAR, modifications BIGINT, userName VARCHAR, accountName VARCHAR, timestamp VARCHAR),
+                "Description" VARCHAR,
+                "Authentication" STRUCT(
+                    "AccountName" VARCHAR,
+                    "PasswordEncrypted" VARCHAR
+                ),
+                "PrivilegeSetReference" STRUCT(
+                    id BIGINT,
+                    name VARCHAR
+                )
+            )[]'
+        }
+    )
+    CROSS JOIN UNNEST(Account) AS t(a)
+    WHERE a.id IS NOT NULL
+),
+account_healed AS (
+    -- UUID-Healing (H1): Survivor = kleinste Account_ID je UUID behält die Original-
+    -- UUID, weitere Zwillinge erhalten im INSERT unten die deterministische Ersatz-
+    -- UUID (fm_heal_pick, Prelude). Doppel-Serialisierung (gleiche UUID UND gleiche
+    -- ID) kollabiert weiterhin korrekt: Zeilen mit identischem Diskriminator erhalten
+    -- identische UUIDs → ON CONFLICT greift wie bisher.
+    -- Zweiter Hash-Partition-Pass auf dem bereits gelesenen Rowset — kein XML-Re-Scan.
+    SELECT ar.*,
+           (ar.a.UUID."#text" IS NULL
+            OR ar.a.id = MIN(ar.a.id) OVER (PARTITION BY ar.a.UUID."#text")) AS is_survivor
+    FROM account_records ar
 )
 INSERT INTO AccountsCatalog
 SELECT
@@ -2704,42 +3813,16 @@ SELECT
     a.kind AS Account_Kind,
     a.type AS Account_Type,
     a.enable AS Is_Enabled,
-    a.UUID."#text" AS Account_UUID,
+    fm_heal_pick(is_survivor, 'AccountsCatalog', fn.File_Name,
+                 a.UUID."#text", 'account_id=' || a.id::VARCHAR) AS Account_UUID,
     ws_restore(a.Description) AS Description,
     xml_unescape(a.Authentication.AccountName) AS Account_Name,
     a.Authentication.PasswordEncrypted AS Password_Encrypted,
     a.PrivilegeSetReference.id AS PrivilegeSet_ID,
     a.PrivilegeSetReference.name AS PrivilegeSet_Name,
     fn.File_Name as File_Name
-FROM read_xml(
-    getvariable('fm_xml'),
-    root_element='AccountsCatalog',
-    record_element='ObjectList',
-    max_depth=10,
-    maximum_file_size=getvariable('dom_threshold'),
-    streaming=getvariable('use_streaming'),
-    columns={
-        'Account': 'STRUCT(
-            id BIGINT,
-            kind INTEGER,
-            type VARCHAR,
-            enable BOOLEAN,
-            "UUID" STRUCT("#text" VARCHAR, modifications BIGINT, userName VARCHAR, accountName VARCHAR, timestamp VARCHAR),
-            "Description" VARCHAR,
-            "Authentication" STRUCT(
-                "AccountName" VARCHAR,
-                "PasswordEncrypted" VARCHAR
-            ),
-            "PrivilegeSetReference" STRUCT(
-                id BIGINT,
-                name VARCHAR
-            )
-        )[]'
-    }
-)
-CROSS JOIN UNNEST(Account) AS t(a)
+FROM account_healed
 CROSS JOIN filename_normalized fn
-WHERE a.id IS NOT NULL
 ON CONFLICT (Account_UUID, File_Name) DO UPDATE SET
     Account_ID = EXCLUDED.Account_ID,
     Account_Kind = EXCLUDED.Account_Kind,
@@ -2768,6 +3851,86 @@ FROM read_xml(
 CROSS JOIN UNNEST(Account) AS t(a)
 WHERE a.id IS NOT NULL
 ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
+-- Dup-Absorption-DETAILS (AccountsCatalog): Name der kollidierenden Konten je
+-- doppelt vergebener UUID. Liest denselben Quell-Rowset wie der Katalog-INSERT
+-- oben (UNNEST + identischer id-Filter). DELETE-vor-INSERT hält den Detail-Satz
+-- je (Katalog, Datei) beim Re-Import frisch (analog zum per-Datei-Overwrite des
+-- Zensus). Bit-identisch zum Katalog-INSERT (rein additiv, eigene Tabelle).
+DELETE FROM DuplicateAbsorptionDetails
+WHERE Catalog = 'AccountsCatalog'
+  AND File_Name = getvariable('fm_file')
+  AND Chunk_Seq = COALESCE(getvariable('seq_offset'), 0)::BIGINT;
+
+INSERT INTO DuplicateAbsorptionDetails
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq,
+     Parent_Name, Position, Display_Text, Payload_XML, Healed_UUID, Heal_Status, Discriminator)
+WITH src AS (
+    SELECT
+        a.id AS id,
+        a.UUID."#text" AS Object_UUID,
+        xml_unescape(a.Authentication.AccountName) AS Object_Name,
+        'Account' AS Object_Type,
+        ROW_NUMBER() OVER () AS xml_ord
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='AccountsCatalog',
+        record_element='ObjectList',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'Account': 'STRUCT(
+                id BIGINT,
+                "UUID" STRUCT("#text" VARCHAR),
+                "Authentication" STRUCT("AccountName" VARCHAR)
+            )[]'
+        }
+    )
+    CROSS JOIN UNNEST(Account) AS t(a)
+    WHERE a.id IS NOT NULL
+),
+dups AS (
+    SELECT Object_UUID FROM src
+    WHERE Object_UUID IS NOT NULL
+    GROUP BY Object_UUID HAVING COUNT(*) > 1
+),
+-- UUID-Healing (H1): Survivor-/Heal-Markierung, identische Logik wie im Katalog-INSERT
+-- oben (Survivor = kleinste ID; Doppel-Serialisierung — gleiche UUID+ID — bleibt
+-- 'absorbed', nur das jeweils erste Vorkommen einer (UUID, ID)-Identität trägt den
+-- Katalog-Status). Der Zensus ist damit das persistierte Mapping Original↔Ersatz.
+marked AS (
+    SELECT s.*,
+           (s.id IS NULL  -- NULL-id: kein Diskriminator → wie Survivor behandeln (nie 'healed')
+            OR s.id = MIN(s.id) OVER (PARTITION BY s.Object_UUID)) AS is_min_id,
+           ROW_NUMBER() OVER (PARTITION BY s.Object_UUID, s.id ORDER BY s.xml_ord) AS occ_within_id
+    FROM src s
+    JOIN dups d USING (Object_UUID)
+)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    'AccountsCatalog' AS Catalog,
+    s.Object_UUID,
+    s.Object_Name,
+    s.Object_Type,
+    ROW_NUMBER() OVER (PARTITION BY s.Object_UUID ORDER BY s.xml_ord) AS Occurrence_Seq,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    -- Kontext: Konten sind Top-Level → kein Container; Position = Stelle in der
+    -- "Sicherheit verwalten"-Kontenliste (XML-Reihenfolge, 1-basiert).
+    NULL AS Parent_Name,
+    'List position ' || s.xml_ord::VARCHAR AS Position,
+    left(s.Object_Name, 500) AS Display_Text,
+    NULL AS Payload_XML,
+    CASE WHEN fm_heal_enabled() AND NOT s.is_min_id AND s.occ_within_id = 1
+         THEN fm_heal_uuid('AccountsCatalog', getvariable('fm_file'), s.Object_UUID,
+                           'account_id=' || s.id::VARCHAR) END AS Healed_UUID,
+    CASE WHEN NOT fm_heal_enabled() THEN 'absorbed'
+         WHEN s.occ_within_id > 1   THEN 'absorbed'
+         WHEN s.is_min_id           THEN 'kept-original'
+         ELSE 'healed' END AS Heal_Status,
+    'account_id=' || s.id::VARCHAR AS Discriminator
+FROM marked s
+ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
 
 
 -- PrivilegeSetsCatalog
@@ -3300,7 +4463,7 @@ SELECT
         NULLIF(
             regexp_extract(
                 step_elem::VARCHAR,
-                '<_([0-9A-Fa-f-]+)',   -- B-R9: Hex-Klasse case-tolerant wie die P2/P3-Anker ([0-9A-Fa-f-]{36})
+                '<_([0-9A-Fa-f-]+)',   -- Hex-Klasse case-tolerant wie die P2/P3-Anker ([0-9A-Fa-f-]{36})
                 1
             ),
             ''
@@ -3380,7 +4543,7 @@ SELECT
     Calc_Hash,
     chunk_index as Chunk_Index,
     xml_extract_text(chunk_xml, '/Chunk/@type')[1] as Chunk_Type,
-    -- ws_restore (B-K6) — identisch zur DOM-Basis (Begründung dort).
+    -- ws_restore — identisch zur DOM-Basis (Begründung dort).
     ws_restore(COALESCE(
         xml_extract_text(chunk_xml, 'text()')[1],
         chunk_xml::VARCHAR
@@ -3674,7 +4837,7 @@ raw_privileges AS (
 INSERT INTO ExtendedPrivilegesCatalog
 SELECT
     xml_extract_text(priv_xml, '/ExtendedPrivilege/@id')[1]::BIGINT as EP_ID,
-    -- xml_unescape/ws_restore (B-K7/B-K6) — identisch zur DOM-Basis (Begründung dort).
+    -- xml_unescape/ws_restore — identisch zur DOM-Basis (Begründung dort).
     xml_unescape(xml_extract_text(priv_xml, '/ExtendedPrivilege/@name')[1]) as EP_Name,
     ws_restore(xml_extract_text(priv_xml, '/ExtendedPrivilege/Description/text()')[1]) as EP_Description,
     xml_extract_text(priv_xml, '/ExtendedPrivilege/UUID/text()')[1] as EP_UUID,
@@ -3730,7 +4893,7 @@ SELECT
     xml_extract_text(menu_xml, '/CustomMenu/UUID/text()')[1] as Menu_UUID,
 
     -- Vollständige Menü-Struktur als XML (enthält verschachtelte Items).
-    -- ws_restore (B-K6): Menu_XML ist Calc-Anker der Menü-Kanten (CustomMenuItem-
+    -- ws_restore: Menu_XML ist Calc-Anker der Menü-Kanten (CustomMenuItem-
     -- Extraktion + Install-/Title-Formeln) — Sentinel darf nicht persistieren.
     -- Item_XML (CustomMenuItemCatalog) liest aus DIESER Spalte → transitiv restauriert.
     ws_restore(menu_xml::VARCHAR) as Menu_XML,
@@ -3944,7 +5107,7 @@ CREATE TABLE IF NOT EXISTS LibraryReferences (
     File_Name VARCHAR,
     -- PK = (Library_ID, File_Name): eine Zeile je LibraryReference (@id eindeutig je Datei).
     -- NICHT nach Library_Key dedupen — dasselbe Bild (key) darf in mehreren Library-Slots
-    -- liegen (Ooe: key 8985…DB60 unter id 10/15/16). Der key ist der Where-used-Join-Schlüssel
+    -- liegen (Test-Set: key 8985…DB60 unter id 10/15/16). Der key ist der Where-used-Join-Schlüssel
     -- (Layout/Theme → key), nicht der Identitäts-Schlüssel.
     PRIMARY KEY (Library_ID, File_Name)
 );
@@ -4004,7 +5167,7 @@ SELECT
     xml_extract_text(theme_xml, '/Theme/UUID/text()')[1] as Theme_UUID,
 
     -- Vollständige Theme-Struktur als JSON (enthält CSS-Regelsätze).
-    -- ws_restore (B-K6): Sentinel darf nicht in gespeichertem Roh-XML persistieren.
+    -- ws_restore: Sentinel darf nicht in gespeichertem Roh-XML persistieren.
     ws_restore(theme_xml::VARCHAR) as Theme_XML,
 
     fn.File_Name as File_Name

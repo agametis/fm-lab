@@ -1,0 +1,95 @@
+{
+  "id": "script-code-quality",
+  "version": "1.0.0",
+  "title": "Script Code Quality",
+  "description": "Best-practice and style checks for scripts: user abort handling, error capture around finds, script length, Set Field By Name usage, disabled steps and empty scripts.",
+  "keywords": [
+    "quality",
+    "style",
+    "best-practice",
+    "script"
+  ],
+  "testType": "code-quality",
+  "objectTypes": [
+    "Script"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "allow_user_abort_off"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "find_without_error_capture"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "long_script"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "set_field_by_name"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "disabled_script_steps"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "empty_script"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Script-Codequalität",
+      "description": "Best-Practice- und Stilprüfungen für Scripts: Behandlung des Benutzerabbruchs, Fehlerabfang rund um Suchläufe, Scriptlänge, Verwendung von Set Field By Name, deaktivierte Schritte und leere Scripts."
+    },
+    "es": {
+      "title": "Calidad de código de scripts",
+      "description": "Comprobaciones de buenas prácticas y estilo para scripts: gestión de la cancelación por el usuario, captura de errores en torno a las búsquedas, longitud del script, uso de Set Field By Name, pasos desactivados y scripts vacíos."
+    },
+    "fr": {
+      "title": "Qualité du code des scripts",
+      "description": "Vérifications de bonnes pratiques et de style pour les scripts : gestion de l'annulation par l'utilisateur, capture d'erreur autour des recherches, longueur du script, usage de Set Field By Name, actions désactivées et scripts vides."
+    },
+    "it": {
+      "title": "Qualità del codice degli script",
+      "description": "Controlli di best practice e di stile per gli script: gestione dell'annullamento da parte dell'utente, cattura degli errori attorno alle ricerche, lunghezza dello script, uso di Set Field By Name, passi disattivati e script vuoti."
+    },
+    "ja": {
+      "title": "スクリプトのコード品質",
+      "description": "スクリプトのベストプラクティスとスタイルの検査：ユーザーによる中断の扱い、検索まわりのエラー捕捉、スクリプトの長さ、Set Field By Name の使用、無効化されたステップ、空のスクリプト。"
+    },
+    "ko": {
+      "title": "스크립트 코드 품질",
+      "description": "스크립트의 모범 사례 및 스타일 검사: 사용자 중단 처리, 찾기 전후의 오류 포착, 스크립트 길이, Set Field By Name 사용, 비활성화된 단계, 빈 스크립트."
+    },
+    "nl": {
+      "title": "Codekwaliteit van scripts",
+      "description": "Best practice- en stijlcontroles voor scripts: afhandeling van gebruikersafbreking, foutafvang rond zoekopdrachten, scriptlengte, gebruik van Set Field By Name, uitgeschakelde stappen en lege scripts."
+    },
+    "pt": {
+      "title": "Qualidade de código dos scripts",
+      "description": "Verificações de boas práticas e de estilo para scripts: tratamento do cancelamento pelo usuário, captura de erros em torno das buscas, tamanho do script, uso de Set Field By Name, passos desativados e scripts vazios."
+    },
+    "sv": {
+      "title": "Kodkvalitet i skript",
+      "description": "Kontroller av god praxis och stil för skript: hantering av användaravbrott, felfångst kring sökningar, skriptlängd, användning av Set Field By Name, avaktiverade steg och tomma skript."
+    },
+    "zh-Hans": {
+      "title": "脚本代码质量",
+      "description": "脚本的最佳实践与风格检查：用户中止的处理、查找前后的错误捕获、脚本长度、Set Field By Name 的使用、已停用的步骤以及空脚本。"
+    }
+  }
+}

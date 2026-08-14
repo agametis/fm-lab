@@ -1,4 +1,5 @@
--- Auto-generiert aus dem core der Rule (layout_without_body). Nicht von Hand editieren.
+-- Hand-maintained COUNT wrapper embedding the findings core of rule (layout_without_body).
+-- The core is a textual copy — keep filters (file filter + S-Block) in sync with data/findings.sql.
 SELECT
     COUNT(*)                     AS finding_count,
     'info'          AS severity,

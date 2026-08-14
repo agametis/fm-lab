@@ -354,7 +354,11 @@
     "noName": "(ohne Namen)",
     "source": "Quelle:",
     "relationshipGraphLink": "↗ Beziehungsdiagramm",
-    "copyUuidAria": "UUID in Zwischenablage kopieren"
+    "copyUuidAria": "UUID in Zwischenablage kopieren",
+    "copyOriginalUuidAria": "Original-UUID in Zwischenablage kopieren (im Quell-File mehrdeutig)",
+    "copySyntheticUuidAria": "Synthetische FM-Lab-UUID in Zwischenablage kopieren",
+    "syntheticBadge": "FM-Lab",
+    "syntheticTooltip": "FM-Lab-interne Ersatz-Identität: die Original-UUID dieses Objekts war im Quell-File doppelt vergeben und wurde beim Import geheilt. Klick kopiert die synthetische UUID (Katalog-Identität)."
   },
   "scriptLine": {
     "expand": "Aufklappen",
@@ -587,5 +591,17 @@
     "optFrameCurrentOnly": "Felder nur im aktuellen Datensatz umreißen",
     "optShowCurrentInList": "Datensatzanzeige in Listenansicht",
     "optQuickFind": "Schnellsuche"
+  },
+  "pluginSpec": {
+    "tooltip": "Plattform-Unterstützung laut {{plugin}}-Dokumentation",
+    "since": "seit {{version}}",
+    "deprecated": "Veraltet",
+    "replacementHint": "stattdessen {{replacement}} verwenden",
+    "removed": "Entfernt",
+    "oldNameHint": "Alter Name — heute {{name}}"
+  },
+  "osBinding": {
+    "label": "OS-Bindung:",
+    "tooltip": "Betriebssysteme, an die dieses Script gebunden ist (aus dem platform-os-binding-Testlauf - neutrales Inventar, kein Defekt)."
   }
 }

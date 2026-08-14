@@ -4,7 +4,7 @@
 --   find or sort silently triggers an uninterruptible server-side index build — a
 --   latent performance time bomb (storage, backups, import speed).
 -- @params: file (optional), limit (optional, default 500)
-SELECT 'auto-index-field' AS rule_id, 'warn' AS severity,
+SELECT 'auto-index-field' AS rule_id, 'warning' AS severity,
     f.File_Name  AS file_name, f.Field_UUID AS nav_uuid,
     f.Table_Name AS table_name, f.Field_Name AS field_name,
     f.Data_Type  AS data_type,

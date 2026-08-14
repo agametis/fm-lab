@@ -1,4 +1,5 @@
--- Auto-generiert aus dem core der Rule (unused_external_data_source). Nicht von Hand editieren.
+-- Hand-maintained COUNT wrapper embedding the findings core of rule (unused_external_data_source).
+-- The core is a textual copy — keep filters (file filter + S-Block) in sync with data/findings.sql.
 SELECT
     COUNT(*)                     AS finding_count,
     'info'          AS severity,

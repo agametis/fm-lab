@@ -96,6 +96,48 @@ async function resolveByUUID(ctx, uuid, file, columns = '*') {
 }
 
 /**
+ * Synthetic replacement UUIDs from duplicate healing (schema 1.19.0) are
+ * md5 hex — 32 chars WITHOUT dashes — and thus formally distinguishable
+ * from native 8-4-4-4-12 UUIDs.
+ */
+const SYNTHETIC_UUID_RE = /^[0-9a-fA-F]{32}$/;
+
+/**
+ * Resolve healing metadata for a synthetic (healed) UUID.
+ *
+ * Looks up the original UUID in DuplicateAbsorptionDetails (the twin with the
+ * smallest internal ID kept the original; further twins got a synthetic
+ * replacement). Older catalogs may not have the table — then the object is
+ * still flagged as synthetic, but without a resolvable original.
+ *
+ * @param {Object} ctx - Request-Kontext (Solution-Scope)
+ * @param {string} uuid - synthetic Object_UUID (Healed_UUID in the mapping)
+ * @param {string} fileName - File_Name of the object
+ * @returns {Promise<Object>} healing info { is_synthetic, original_uuid, discriminator }
+ */
+async function getHealingInfo(ctx, uuid, fileName) {
+  try {
+    const result = await db.executeQuery(
+      ctx,
+      `SELECT Object_UUID, Discriminator
+       FROM DuplicateAbsorptionDetails
+       WHERE Healed_UUID = ? AND File_Name = ?
+       LIMIT 1`,
+      [uuid, fileName]
+    );
+    const row = result.rows[0];
+    return {
+      is_synthetic: true,
+      original_uuid: row ? row.Object_UUID : null,
+      discriminator: row ? row.Discriminator : null,
+    };
+  } catch {
+    // Pre-1.19.0 catalogs have no DuplicateAbsorptionDetails table.
+    return { is_synthetic: true, original_uuid: null, discriminator: null };
+  }
+}
+
+/**
  * Get object by UUID (clone-aware, see resolveByUUID).
  * @param {Object} ctx - Request-Kontext (Solution-Scope)
  * @param {string} uuid - Object UUID
@@ -105,9 +147,17 @@ async function resolveByUUID(ctx, uuid, file, columns = '*') {
 async function getByUUID(ctx, uuid, file) {
   try {
     const result = await resolveByUUID(ctx, uuid, file);
+    const data = convertBigInts(result.rows[0]);
+
+    // Duplicate healing: synthetic replacement UUIDs get a `healing` field
+    // pointing back to the (ambiguous) original UUID. Native UUIDs stay
+    // untouched — no extra field, no extra query.
+    if (SYNTHETIC_UUID_RE.test(data.Object_UUID)) {
+      data.healing = await getHealingInfo(ctx, data.Object_UUID, data.File_Name);
+    }
 
     return {
-      data: convertBigInts(result.rows[0]),
+      data,
       meta: result.meta,
     };
   } catch (error) {

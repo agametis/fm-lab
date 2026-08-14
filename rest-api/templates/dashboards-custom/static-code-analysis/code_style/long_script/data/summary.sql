@@ -5,6 +5,8 @@ WITH per_group AS (
     SELECT COUNT(*) AS cnt, File_Name AS file_name
     FROM StepsForScripts
     WHERE (getvariable('file') IS NULL OR File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
     GROUP BY File_Name, Script_ID
 ),
 threshold AS (SELECT CAST(COALESCE(getvariable('min_steps'), '150') AS INTEGER) AS t)

@@ -46,7 +46,7 @@ SELECT
     Calc_Hash,
     chunk_index as Chunk_Index,
     xml_extract_text(chunk_xml, '/Chunk/@type')[1] as Chunk_Type,
-    -- ws_restore (B-K6) — identisch zur DOM-Basis (Begründung dort).
+    -- ws_restore — identisch zur DOM-Basis (Begründung dort).
     ws_restore(COALESCE(
         xml_extract_text(chunk_xml, 'text()')[1],
         chunk_xml::VARCHAR

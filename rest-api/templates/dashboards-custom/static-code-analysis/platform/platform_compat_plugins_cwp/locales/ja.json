@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "プラグイン互換性: Custom Web Publishing",
+  "analysis.defaultResult.meaning": "Custom Web Publishing で実行されない対象範囲内のプラグイン関数呼び出し"
+ }
+}

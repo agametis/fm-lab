@@ -544,5 +544,17 @@
     "optFrameCurrentOnly": "현재 레코드의 필드만 테두리 표시",
     "optShowCurrentInList": "목록 보기에서 레코드 표시",
     "optQuickFind": "빠른 찾기"
+  },
+  "pluginSpec": {
+    "tooltip": "{{plugin}} 문서 기준 플랫폼 지원",
+    "since": "{{version}} 이후",
+    "deprecated": "사용 중단됨",
+    "replacementHint": "대신 {{replacement}} 사용",
+    "removed": "제거됨",
+    "oldNameHint": "이전 이름 — 현재 {{name}}"
+  },
+  "osBinding": {
+    "label": "OS 바인딩:",
+    "tooltip": "이 스크립트가 바인딩된 운영 체제(platform-os-binding 테스트 실행 결과 - 중립적 인벤토리이며 결함이 아님)."
   }
 }

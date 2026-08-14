@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "Versão do plugin MBS",
+    "description": "Inventário de requisitos de versão: a versão mínima do plugin de que esta solução precisa, derivada como o máximo das versões de introdução documentadas (since_version) de todas as funções de plugin utilizadas — comparação sempre numérica, nunca lexicográfica. A dispersão por arquivo e as funções determinantes tornam a derivação verificável. O catálogo não conhece a versão instalada: a verificação só é ativada ao escolhê-la no cabeçalho (entrada neutra = sem verificação).",
+    "analysis.defaultResult.meaning": "Versão mínima do plug-in exigida por este escopo — maior versão de introdução documentada entre as funções de plug-in em uso"
+  },
+  "layout": {
+    "installed_version_select.props.label": "Versão do plugin instalada",
+    "summary_kpi.props.items[0].label": "Versão exigida",
+    "summary_kpi.props.items[1].label": "Funções",
+    "summary_kpi.props.items[2].label": "Pontos de chamada",
+    "summary_kpi.props.items[3].label": "Arquivos",
+    "summary_kpi.props.items[4].label": "Não resolvidas",
+    "findings_card.props.title": "Verificação de versão",
+    "findings_table.props.columns[0].label": "Severidade",
+    "findings_table.props.columns[1].label": "Arquivo",
+    "findings_table.props.columns[2].label": "Objeto",
+    "findings_table.props.columns[3].label": "Função do plugin",
+    "findings_table.props.columns[4].label": "Exige",
+    "findings_table.props.columns[5].label": "Instalada",
+    "findings_table.props.columns[6].label": "Via função personalizada",
+    "findings_table.props.columns[7].label": "Mensagem",
+    "findings_table.props.empty.message": "Nenhuma verificação ativa — escolha uma versão instalada no cabeçalho para validar o requisito (entrada neutra = apenas inventário).",
+    "by_file_card.props.title": "Requisito por arquivo",
+    "by_file_table.props.columns[0].label": "Arquivo",
+    "by_file_table.props.columns[1].label": "Versão exigida",
+    "by_file_table.props.columns[2].label": "Determinante principal",
+    "by_file_table.props.columns[3].label": "Funções",
+    "by_file_table.props.columns[4].label": "Pontos de chamada",
+    "by_file_table.props.columns[5].label": "Não resolvidas",
+    "drivers_card.props.title": "Funções determinantes",
+    "drivers_table.props.columns[0].label": "Função do plugin",
+    "drivers_table.props.columns[1].label": "Componente",
+    "drivers_table.props.columns[2].label": "Desde",
+    "drivers_table.props.columns[3].label": "Estado",
+    "drivers_table.props.columns[4].label": "Excede a instalada",
+    "drivers_table.props.columns[5].label": "Pontos de chamada",
+    "drivers_table.props.columns[6].label": "Arquivos",
+    "markdown.props.content": "## Notas\n\nA **versão exigida** é uma derivação: o máximo das versões de introdução documentadas (`since_version`) das funções de plugin realmente chamadas — a tabela de *funções determinantes* torna-a verificável. As comparações de versão usam uma chave numérica, nunca a string.\n\n- **Verificação de versão**: o catálogo não conhece a versão instalada. Só a seleção no cabeçalho marca cada chamada a uma função introduzida mais tarde; a entrada neutra não ativa nenhuma verificação.\n- **Requisito por arquivo**: a dispersão por arquivo mostra quais módulos carregam o requisito.\n- **Navegação**: as linhas determinantes abrem o detalhe da função (where-used); os achados abrem o objeto chamador.\n- **Eixo de manutenção**: chamadas deprecated/removed são regras separadas em *Análise estática de código*."
+  }
+}

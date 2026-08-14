@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "操作系统绑定：脚本步骤",
+  "analysis.defaultResult.meaning": "范围内通过 Claris 脚本步骤绑定到特定操作系统的脚本"
+ }
+}

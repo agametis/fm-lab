@@ -106,6 +106,7 @@
 #     P1 Extract  (sql/convert-xml/convert_xml_01_extract.sql)  — the ONLY phase that reads XML; raw catalogs + raw-XML columns
 #     P2 Resolve  (sql/convert-xml/convert_xml_02_resolve.sql)  — tables only; reference/resolution tables
 #     P3 Details  (sql/convert-xml/convert_xml_03_details.sql)  — tables only; variable analysis (VariableUsages, VariablesCatalog)
+#     P3.5 Recovery (sql/convert-xml/convert_xml_03b_plugin_subname_recovery.sql) — MBS subnames from calc plain text (DDR chunk loss)
 #     P4 Catalog  (sql/convert-xml/convert_xml_04_catalog.sql)  — tables only; ObjectCatalog + ObjectLinks
 #     P5 Homes    (sql/convert-xml/convert_xml_05_homes.sql)    — tables only; cross-file resolution (ObjectHomes, TableOccurrenceResolution)
 #     P6 Validate (sql/convert-xml/convert_xml_06_validate.sql) — tables only; plausibility/consistency check views, queried by the post-processor
@@ -190,7 +191,41 @@ export LC_NUMERIC=C
 # on the next --changed-only run, a full re-conversion is triggered. Bump it as soon
 # as the CONVERSION RESULT can change (new columns, changed
 # extraction/normalization) — independent of the header or @SCHEMA_VERSION.
-CONVERTER_VERSION="2.5.2"
+#   2.10.0 — MBS subname recovery from calc plain text (new phase 3.5,
+#           convert_xml_03b_plugin_subname_recovery.sql): FileMaker's DDR export
+#           drops NoRef chunks carrying the first string argument of container
+#           plugin calls (comment adjacency, nested calls) — those SubNames are
+#           now recovered by lexing the CDATA plain text and pairing the k-th
+#           MBS ref chunk with the k-th lexed MBS call. Fills MBS_SubnameMap
+#           NULLs, requalifies PluginFunctionUsages ('MBS' → 'MBS:<Sub>') and
+#           rebuilds the affected XMLCalcReferences MBS rows; P4 then registers
+#           granular PluginFunction objects instead of dead 'MBS::' UUIDs.
+#   2.9.0 — PSoS execution context as Link_Subrole on calls_script edges
+#           ('on_server'/'on_server_callback', P4 block 15; schema 1.20.0).
+#   2.8.0 — UUID-healing foundation (H0): the P2 reference tables gain Ref_ID
+#           (FileMaker-internal @id of the referenced element; SaXML triple
+#           id+name+UUID) and TO_Ref_ID (context-TO @id for field references);
+#           DuplicateAbsorptionDetails gains Healed_UUID/Heal_Status/Discriminator;
+#           new prelude macros fm_heal_uuid/fm_heal_pick/fm_heal_enabled compute
+#           deterministic md5 replacement UUIDs from internal FM ids (survivor =
+#           smallest internal id, kill switch FM_UUID_HEAL=0). Healing itself
+#           lands in later stages; duplicate-free corpora stay run-to-run
+#           bit-identical.
+#   2.7.0 — clone scoping via declared data sources (P4): new DataSourceFileMap
+#           table resolves (File_Name, DS_UUID) → imported target file (DS_Name
+#           match or path-list resolution, closing the _dev-suffix gap); the
+#           base_table link block scopes its target to the declared source file
+#           and a new prefer-declared-source post-pass removes phantom edges in
+#           clone corpora (edge fans over multiple files, exactly one of which
+#           is a declared data source). Clone-free corpora stay bit-identical.
+#   2.6.0 — duplicate-UUID census completed (metadata-integrity stage 0):
+#           DuplicateAbsorptionDetails gains context/plaintext columns (Parent_Name,
+#           Position, Display_Text, Payload_XML) and now also covers StepsForScripts,
+#           Layouts and LayoutObjects; the LayoutObjects census counts copy-paste
+#           duplicates (same UUID, distinct object ids) separately from FileMaker's
+#           double serialization; the catmerge a2 dup report is persisted into the
+#           new MergeAbsorptions table (best-effort, s. convert_turbo.sh).
+CONVERTER_VERSION="2.10.0"
 PROJECT_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel 2>/dev/null || (cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd))"
 # Six-phase pipeline. Phase 1 (extraction, the only XML-reading phase) and Phase 2
 # (reference resolution) live in separate files; the skill script runs them per
@@ -995,6 +1030,50 @@ fi
 if [ "${FM_DRYRUN_MODES:-}" = "1" ]; then
     echo "RESOLVED MODE_EXPLICIT=$MODE_EXPLICIT TURBO=$TURBO_MODE SPLIT=$SPLIT_MODE AUTO=$AUTO_MODE STREAMIFY=$STREAMIFY_MODE CHANGED_ONLY=$CHANGED_ONLY streaming=$_streaming_mode jobs=$JOBS subchunk=$SUBCHUNK eff_floor=${_eff_floor:-?} mem_base=$_mem_base avail=$_avail_mb"
     exit 0
+fi
+
+# ── AWK byte-clean self-probe (turbo only) ────────────────────────────────────
+# The turbo Phase-S pass reimplements the tr byte clean in AWK (clean_line in the
+# fuse awk). awk flavors differ in control-byte regex handling — a degenerated
+# bracket class can turn the C0 strip into a silent no-op while gsub still
+# reports matches (empty-string match), so a substitution-COUNT check cannot
+# detect it. This probe pushes reference bytes through the REAL fuse pass and
+# byte-compares (od) against the tr reference chain from preprocess_file.
+# Divergence = hard abort with remediation; escape hatch FM_SKIP_AWK_PROBE=1.
+# NUL input is probed separately as a WARNING only: input-NUL record handling of
+# some awks is unverified terrain, and no real-world failure is on record — a
+# hard abort there could ground platforms whose files never contain NUL.
+if $TURBO_MODE && [ "${FM_SKIP_AWK_PROBE:-}" != "1" ]; then
+    _probe_dir=$(mktemp -d)
+    _probe_fuse() {  # $1 = printf format → od hex of the real fuse-pass output
+        printf "$1" > "$_probe_dir/in"
+        rm -f "$_probe_dir/chunk_000_main.xml"
+        LC_ALL=C "$AWK_BIN" -v outdir="$_probe_dir" -v chunkmap="" -v counts="" -v rules="" \
+            -f "$KATANA_COMMON_AWK" -f "$TURBO_FUSE_AWK" < "$_probe_dir/in" >/dev/null 2>&1
+        od -An -tx1 "$_probe_dir/chunk_000_main.xml" 2>/dev/null | tr -d ' \n'
+    }
+    _probe_ref() {  # $1 = printf format → od hex of the tr reference chain
+        printf "$1" | LC_ALL=C tr -d '\177' | tr '\r' '\177' | tr -d '\000-\010\013\014\016-\037' \
+            | od -An -tx1 | tr -d ' \n'
+    }
+    # C0 mid-line + TAB (kept) + CR (sentinel) + DEL (guard) + multibyte UTF-8 (kept).
+    _probe_in='P\001\003\010\013\014\016\037Q\tR\rS\177T\302\265U\n'
+    if [ "$(_probe_fuse "$_probe_in")" != "$(_probe_ref "$_probe_in")" ]; then
+        rm -rf "$_probe_dir"
+        echo "ERROR: AWK self-probe failed — '$AWK_BIN' does not reproduce the byte clean"
+        echo "       (control bytes survive or bytes get mangled; turbo output would silently"
+        echo "       diverge from the tr reference). Remediation: install mawk or gawk (the"
+        echo "       AWK cascade prefers them), or point FM_AWK_BIN at a capable awk."
+        echo "       Override at your own risk: FM_SKIP_AWK_PROBE=1."
+        exit 1
+    fi
+    _probe_nul='V\000W\003X\n'
+    if [ "$(_probe_fuse "$_probe_nul")" != "$(_probe_ref "$_probe_nul")" ]; then
+        echo "WARNING: AWK self-probe — '$AWK_BIN' diverges from the tr reference on NUL input"
+        echo "         (files containing 0x00 may lose bytes on the turbo path). Please report"
+        echo "         this platform/awk combination. mawk/gawk handle NUL input correctly."
+    fi
+    rm -rf "$_probe_dir"
 fi
 
 # --jobs + --split are ORTHOGONAL and combinable: --jobs parallelizes ACROSS files
@@ -2156,9 +2235,26 @@ run_phase2_partitioned() {
 # run_pipeline_step semantics (return 0=ok/continue, 2=fail-fast stop).
 run_phase2() {
     local label="$1"
+    # UUID-Healing-Kaskade (H1): zieht Fremd-UUID-Spalten (StepsForScripts.Script_UUID,
+    # ScriptTriggers.Script_UUID, TO/BT/Field/VL-Träger) über den Zensus nach. Muss auf
+    # der fertig gemergten Master-DB laufen (multi-fed Tabellen!) und VOR jedem
+    # P2-Statement (P2 leitet XMLStepReferences aus StepsForScripts ab). run_phase2 ist
+    # der eine gemeinsame Punkt aller Modi (Batch/Turbo/partitioniert/Single-File).
+    # Zensus-getrieben: ohne 'healed'-Zeilen ein No-Op. Fehler sind HART (stille
+    # Link-Verfälschung wäre schlimmer als ein Abbruch).
+    run_pipeline_step "Heal Cascade (UUID-Healing)" "$PROJECT_ROOT/sql/convert-xml/convert_xml_01b_heal_cascade.sql"
+    if ! $PIPELINE_STEP_OK; then
+        P2_FAILED=true
+        echo "✗ WARNING: Heal Cascade failed — aborting before Phase 2 (links would resolve against stale UUIDs)"
+        return 1
+    fi
     local K; K=$(_p2_effective_jobs)
     if [ "${K:-1}" -lt 2 ]; then
-        run_pipeline_step "$label" "$P2_TEMPLATE"; return $?
+        run_pipeline_step "$label" "$P2_TEMPLATE"; local rc=$?
+        # Mirror the partitioned path: surface a non-fatal SQL failure via P2_FAILED
+        # so the post-P2 gate (batch) and the single-mode chain tracking see it.
+        $PIPELINE_STEP_OK || P2_FAILED=true
+        return $rc
     fi
     # Per-slice thread budget ≈ ⌊cores/K⌋ (mirrors TURBO_WORKER_THREADS for Phase D):
     # the K slice workers run concurrently, so each must cap its DuckDB threads or
@@ -2770,7 +2866,7 @@ postprocess_db() {
     null_tgt=$(pp_num "SELECT null_target_links FROM v_check_orphan_sources")
     null_xf=$(pp_num "SELECT null_crossfile_links FROM v_check_orphan_sources")
     if [ "$orph_src" -gt 0 ] || [ "$null_tgt" -gt 0 ]; then
-        add_finding consistency warn "ObjectLinks hygiene: $orph_src orphaned link SOURCE(s), $null_tgt link(s) with a NULL target" "Check the source filter of the P4 link blocks (B-C1 class) or the LEFT-JOIN NULL pass-through (B-C3)"
+        add_finding consistency warn "ObjectLinks hygiene: $orph_src orphaned link SOURCE(s), $null_tgt link(s) with a NULL target" "Check the source filter of the P4 link blocks or the LEFT-JOIN NULL pass-through"
     elif [ "$null_xf" -gt 0 ]; then
         add_finding consistency info "$null_xf link(s) with Is_Cross_File=NULL (consumers must be NULL-safe)" "Unify the Is_Cross_File semantics of the P4 blocks (COALESCE to FALSE)"
     fi
@@ -2785,6 +2881,20 @@ postprocess_db() {
         local lowres_detail
         lowres_detail=$(pp_query "SELECT string_agg(source || '/' || ref_type || '=' || quote_pct || '%', ', ') FROM v_check_resolution WHERE total >= 50 AND quote_pct < 90")
         add_finding resolution warn "Resolution rate below 90%: ${lowres_detail:-?}" "Check the resolver joins in convert_xml_02_resolve.sql for drift (scoping/name join)"
+    fi
+
+    # MBS subname resolution (guard): after the P3.5 plain-text recovery only
+    # genuinely dynamic first arguments (MBS($var; …)) may remain unqualified.
+    # A rising remainder means a new DDR loss constellation the lexer does not
+    # cover (or proximity-pairing drift). Threshold 3 % with ≥ 50 MBS calls.
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local mbs_total mbs_unres
+    mbs_total=$(pp_num "SELECT total FROM v_check_mbs_subname_resolution")
+    mbs_unres=$(pp_num "SELECT unresolved FROM v_check_mbs_subname_resolution")
+    if [ "$mbs_total" -ge 50 ] && [ $((mbs_unres * 100)) -gt $((mbs_total * 3)) ]; then
+        local mbs_pct
+        mbs_pct=$(pp_query "SELECT unresolved_pct FROM v_check_mbs_subname_resolution")
+        add_finding resolution warn "MBS subname resolution: $mbs_unres of $mbs_total calls unqualified (${mbs_pct:-?}%)" "Check convert_xml_03b_plugin_subname_recovery.sql (lexer/pairing) and the MBS_SubnameMap proximity pairing in convert_xml_02_resolve.sql"
     fi
 
     # Resolution rate of the relationship predicate fields (informational). External
@@ -2808,7 +2918,7 @@ postprocess_db() {
     fi
 
     # (Object_UUID, File_Name) duplicates in ObjectCatalog (composite-UUID
-    # collision class B-C4) — 0 today, hence a cheap, hard guard.
+    # collision) — 0 today, hence a cheap, hard guard.
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local cat_dups
     cat_dups=$(pp_num "SELECT dup_n FROM v_check_catalog_dups")
@@ -2828,20 +2938,42 @@ postprocess_db() {
         add_finding consistency warn "Cardinality violation(s): ${card_detail:-?}" "Check the UUID scoping of the affected P4 link blocks (clone-fan-out class)"
     fi
 
+    # phantom links (clone fan-out, all operational roles) — an edge fanning over
+    # >1 target files whose source file declares exactly ONE of them should have
+    # been resolved by the prefer-declared-source pass in P4; leftovers with
+    # declared=1 mean that pass leaks. undeclared/multi-declared groups are the
+    # honest model boundary (reported as info by design, not an error).
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local phantom_leak
+    phantom_leak=$(pp_num "SELECT COALESCE(SUM(declared_one_groups),0) FROM v_check_phantom_links")
+    if [ "$phantom_leak" -gt 0 ]; then
+        local phantom_detail
+        phantom_detail=$(pp_query "SELECT string_agg(Link_Role || '=' || declared_one_groups, ', ') FROM v_check_phantom_links WHERE declared_one_groups > 0")
+        add_finding consistency warn "Phantom link group(s) with a unique declared source left unresolved: ${phantom_detail:-?}" "The prefer-declared-source pass in convert_xml_04_catalog.sql did not catch these — check DataSourceFileMap resolution for the affected files"
+    else
+        local phantom_rest
+        phantom_rest=$(pp_num "SELECT COALESCE(SUM(undeclared_groups + multi_declared_groups),0) FROM v_check_phantom_links")
+        if [ "$phantom_rest" -gt 0 ]; then
+            local phantom_rest_detail
+            phantom_rest_detail=$(pp_query "SELECT string_agg(Link_Role || '=' || (undeclared_groups + multi_declared_groups), ', ') FROM v_check_phantom_links WHERE undeclared_groups + multi_declared_groups > 0")
+            add_finding consistency info "Ambiguous clone link group(s) without a unique declared source (model boundary): ${phantom_rest_detail:-?}" "Clone targets not disambiguable via data-source declarations — see the resolution doctrine in convert_xml_04_catalog.sql"
+        fi
+    fi
+
     # XML record count vs. catalog rows (Sequence_ID continuity) —
-    # COUNT < MAX(Sequence_ID) ⇒ the UPSERT silently collapsed UUID duplicates (B-K3).
+    # COUNT < MAX(Sequence_ID) ⇒ the UPSERT silently collapsed UUID duplicates.
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local seq_bad
     seq_bad=$(pp_num "SELECT COUNT(*) FROM v_check_xml_counts")
     if [ "$seq_bad" -gt 0 ]; then
         local seq_detail
         seq_detail=$(pp_query "SELECT string_agg(catalog || '/' || File_Name || ' (' || rows_n || '≠' || max_seq || ')', ', ') FROM v_check_xml_counts")
-        add_finding consistency warn "Sequence gap(s) — XML records vs. catalog rows: ${seq_detail:-?}" "UUID duplicates in the source file (merge-artifact class B-K3) — check the export or the dedup stage"
+        add_finding consistency warn "Sequence gap(s) — XML records vs. catalog rows: ${seq_detail:-?}" "UUID duplicates in the source file (merge artifact) — check the export or the dedup stage"
     fi
 
     # generic dup-absorption census (all censused UUID-PK catalogs).
     # Source_Records (P1 census) vs. live-counted catalog rows — Absorbed > 0
-    # ⇒ silent row loss from UUID duplicates in the export (B-K3), now visible across
+    # ⇒ silent row loss from UUID duplicates in the export, now visible across
     # all censused catalogs (previously only ScriptCatalog/Layouts).
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local abs_bad
@@ -2852,7 +2984,7 @@ postprocess_db() {
         abs_detail=$(pp_query "SELECT string_agg(Catalog || '/' || File_Name || ' (−' || Absorbed || ')', ', ' ORDER BY Absorbed DESC) FROM v_check_absorbed_dups")
         add_finding consistency warn \
           "$abs_total absorbed UUID duplicate(s) across ${abs_bad} catalog/file combination(s): ${abs_detail:-?}" \
-          "Source defect (duplicate UUIDs in the FileMaker export, class B-K3) — check the export. The converter deduplicates deterministically (last-write-wins); the fix is only a source correction"
+          "Source defect (duplicate UUIDs in the FileMaker export) — check the export. The converter deduplicates deterministically (last-write-wins); the fix is only a source correction"
     fi
 
     # Chunk_Type NULL in DDR_Calculations — P1-path drift detector.
@@ -2861,6 +2993,19 @@ postprocess_db() {
     ct_null=$(pp_num "SELECT null_n FROM v_check_chunk_type_null")
     if [ "$ct_null" -gt 0 ]; then
         add_finding consistency warn "$ct_null DDR chunk(s) with Chunk_Type=NULL" "The P1 DDR extraction (Chunk_Type derivation) has changed — the P2 chunk logic otherwise works blind"
+    fi
+
+    # Phase-S/P1 chunk integrity — chunk classification vs. chunk content
+    # (independent artifacts). Typed reference chunks with dead content are the
+    # silent-P2=0 signature: P2 would scan fully and resolve nothing. Warn here,
+    # per file with counts and a sample chunk, instead of at the P2 gate.
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local chunkref_bad
+    chunkref_bad=$(pp_num "SELECT COUNT(*) FROM v_check_chunk_refs")
+    if [ "$chunkref_bad" -gt 0 ]; then
+        local chunkref_detail
+        chunkref_detail=$(pp_query "SELECT string_agg(File_Name || ' (FieldRef w/o UUID ' || fieldref_no_uuid || ', empty named refs ' || namedref_empty || ', e.g. ' || COALESCE(sample_chunk,'?') || ')', '; ') FROM v_check_chunk_refs")
+        add_finding consistency warn "Reference chunk(s) with dead content after P1 ingest: ${chunkref_detail:-?}" "Phase-S/D content divergence or parse loss — P2 would silently resolve 0 references for these files. Check the fused chunk output (self-probe) and re-run the affected files"
     fi
 
     # Step-role curation (step-ID mapping): field references of uncurated
@@ -3027,13 +3172,17 @@ finalize_run() {
 # run_pipeline_step <label> <sql-file...> — runs a table-only SQL pass
 # (cd PROJECT_ROOT for relative CSV paths, memory_limit_prefix prepended).
 # Returns: 0 = ok/continue (even on a non-fatal error), 2 = fail-fast stop.
+# PIPELINE_STEP_OK (global) carries the REAL outcome of the last call — for callers
+# that must gate on success (single-mode manifest write) despite the tolerant rc.
 run_pipeline_step() {
     local label="$1"; shift
     local templog; templog=$(mktemp)
     local rc=0
+    PIPELINE_STEP_OK=true
     if (cd "$PROJECT_ROOT" && { memory_limit_prefix; cat "$@"; } | "$DUCKDB_BIN" "$DB_FILE") > "$templog" 2>&1; then
         echo "✓ $label"
     else
+        PIPELINE_STEP_OK=false
         echo "✗ WARNING: $label failed"
         {
             echo "================================================================================"
@@ -3047,6 +3196,20 @@ run_pipeline_step() {
     fi
     rm -f "$templog"
     return $rc
+}
+
+# Safeguard the MBS component CSV before Phase 4 (batch and single mode):
+# reference/mbs_component_exceptions.csv is produced by the install-mbs-docs skill
+# from the MBS docset and is optional. If it is missing (docset not installed),
+# create a header-only stub so the read_csv in P4 does not hard-fail — the component
+# resolution then falls back via COALESCE to the name heuristic (documented intent in
+# convert_xml_04_catalog.sql). NEVER overwrites an existing real CSV (only on non-existence).
+ensure_mbs_component_csv() {
+    if [ ! -f "$PROJECT_ROOT/reference/mbs_component_exceptions.csv" ]; then
+        mkdir -p "$PROJECT_ROOT/reference"
+        printf 'Funktionsname,Component\n' > "$PROJECT_ROOT/reference/mbs_component_exceptions.csv"
+        $QUIET_MODE || echo "Note: MBS component CSV missing (MBS docset not installed) → header stub created; P4 uses the name heuristic. For an exact component mapping: run install-mbs-docs."
+    fi
 }
 
 # fail_fast_stop <stage> — shared fail-fast abort (write logs + banner).
@@ -3144,6 +3307,11 @@ abort_insufficient_memory() {
     _maybe_auto_retry_oom "$stage"   # exec's on retry (never returns); else falls through
     finalize_logs
     local avail_h; avail_h="$(_avail_mb_human)"
+    printf '%s\n' \
+        "Stage: $stage" \
+        "Available RAM: $avail_h" \
+        "The DuckDB process was killed by the operating system (OOM) or hit its memory limit." \
+        | log_error_section "Import aborted — not enough memory (stage: $stage)"
     if $QUIET_MODE; then
         _emit_json aborted reason "oom" stage "$stage" avail_mb "int=${_avail_mb:-0}"
     else
@@ -3161,7 +3329,7 @@ abort_insufficient_memory() {
         echo "       convert-xml --batch --auto --memory_limit 4GB" >&2
         echo "" >&2
         echo "No catalogs were written from this run; the previously served database is unchanged." >&2
-        echo "Error log:  $ERROR_LOG_FILE" >&2
+        [ -f "$ERROR_LOG_FILE" ] && echo "Error log:  $ERROR_LOG_FILE" >&2
         echo "" >&2
     fi
     emit_done false "Aborted (insufficient memory) during: $stage"
@@ -3173,8 +3341,16 @@ abort_insufficient_memory() {
 # non-memory reason and the downstream catalogs cannot be built. Avoids the
 # "table does not exist" cascade from running the dependent phases anyway.
 abort_pipeline_incomplete() {
-    local stage="${1:-a pipeline stage}"
+    local stage="${1:-a pipeline stage}" detail="${2:-}"
     finalize_logs
+    # Write the abort reason into the error log before pointing at it — on this
+    # path the phase's SQL may have succeeded (just produced nothing), so no
+    # runner has written the file yet.
+    printf '%s\n' \
+        "Stage: $stage" \
+        "${detail:-The phase did not produce the tables/rows the downstream phases need.}" \
+        "The pipeline stopped here instead of producing follow-up errors." \
+        | log_error_section "Import aborted — build incomplete (stage: $stage)"
     if $QUIET_MODE; then
         _emit_json aborted reason "incomplete" stage "$stage"
     else
@@ -3183,11 +3359,12 @@ abort_pipeline_incomplete() {
         echo "✗ IMPORT ABORTED — build incomplete" >&2
         echo "=========================================" >&2
         echo "Stage:      $stage" >&2
+        [ -n "$detail" ] && echo "Detail:     $detail" >&2
         echo "The reference resolution did not complete, so the object catalog cannot be" >&2
         echo "built. The pipeline stops here instead of producing follow-up errors." >&2
         echo "" >&2
         echo "No catalogs were written from this run; the previously served database is unchanged." >&2
-        echo "Error log:  $ERROR_LOG_FILE" >&2
+        [ -f "$ERROR_LOG_FILE" ] && echo "Error log:  $ERROR_LOG_FILE" >&2
         echo "" >&2
     fi
     emit_done false "Aborted (build incomplete) during: $stage"
@@ -3637,17 +3814,27 @@ if [[ "$MODE" == "batch" ]]; then
     phase_begin P2 Resolve
     run_phase2 "Phase 2 Reference Resolution"; rc=$?
     P2_REF=$(count_table_sum XMLCalcReferences XMLStepReferences XMLLayoutReferences PluginFunctionUsages MBS_SubnameMap GetSubparameterMap)
-    phase_finish "$(group_de "$P2_REF") references" "{\"references_resolved\":$P2_REF}"
-    [ "$rc" = 2 ] && fail_fast_stop "Phase 2 Reference Resolution"
     # Integrity gate: Phase 2 builds the reference tables that Phase 4 (universal
     # catalogs) reads. If it failed — or produced nothing while Phase 1 did load
     # objects — stop cleanly here. Running P3–P7 on the missing tables would only spill
     # "table does not exist" cascades and leave the run without a usable catalog.
-    if $P2_FAILED || { [ "${P1_OBJ:-0}" -gt 0 ] && [ "${P2_REF:-0}" -eq 0 ]; }; then
+    P2_GATE=false
+    if $P2_FAILED || { [ "${P1_OBJ:-0}" -gt 0 ] && [ "${P2_REF:-0}" -eq 0 ]; }; then P2_GATE=true; fi
+    if $P2_GATE && ! $P2_FAILED; then
+        # The runner already printed its ✓ for the SQL pass before the row count
+        # was known — correct the record before the abort banner appears.
+        echo "✗ Phase 2 resolved 0 references while Phase 1 loaded $(group_de "${P1_OBJ:-0}") objects — stopping (integrity gate)"
+    fi
+    phase_finish "$(group_de "$P2_REF") references" "{\"references_resolved\":$P2_REF}"
+    [ "$rc" = 2 ] && fail_fast_stop "Phase 2 Reference Resolution"
+    if $P2_GATE; then
         if $P2_OOM; then
             abort_insufficient_memory "Reference resolution (Phase 2)"
-        else
+        elif $P2_FAILED; then
             abort_pipeline_incomplete "Phase 2 Reference Resolution"
+        else
+            abort_pipeline_incomplete "Phase 2 Reference Resolution" \
+                "Phase 2 completed without error but resolved 0 references while Phase 1 loaded ${P1_OBJ:-0} objects."
         fi
     fi
     echo ""
@@ -3668,6 +3855,19 @@ if [[ "$MODE" == "batch" ]]; then
     phase_finish "$(group_de "$P3_USAGES") usages · $(group_de "$P3_VARS") vars" \
         "{\"variable_usages\":$P3_USAGES,\"variables_distinct\":$P3_VARS}"
     [ "$rc" = 2 ] && fail_fast_stop "Phase 3 Details"
+
+    # Phase 3.5 (Plugin Subname Recovery) — completes MBS_SubnameMap from the
+    # calc plain text (FileMaker's DDR chunker drops NoRef argument chunks in
+    # some constellations; see convert_xml_03b_plugin_subname_recovery.sql).
+    # Order is mandatory: after P3 (needs StepCalculations), before P4 (catalog
+    # block 26 / link block 34 read the map).
+    MBS_UNRES_PRE=$(pp_num "SELECT COUNT(*) FROM PluginFunctionUsages WHERE Plugin_Function_Name = 'MBS'")
+    run_pipeline_step "Phase 3.5 Plugin Subname Recovery" "$PROJECT_ROOT/sql/convert-xml/convert_xml_03b_plugin_subname_recovery.sql"; rc=$?
+    MBS_UNRES_POST=$(pp_num "SELECT COUNT(*) FROM PluginFunctionUsages WHERE Plugin_Function_Name = 'MBS'")
+    if ! $QUIET_MODE; then
+        echo "  Plugin subnames recovered: $((MBS_UNRES_PRE - MBS_UNRES_POST)) · unresolved remaining: $MBS_UNRES_POST"
+    fi
+    [ "$rc" = 2 ] && fail_fast_stop "Phase 3.5 Plugin Subname Recovery"
     echo ""
 
     # Phase 4 (Catalog) — ObjectCatalog + ObjectLinks.
@@ -3678,17 +3878,7 @@ if [[ "$MODE" == "batch" ]]; then
         echo "========================================="
     fi
     phase_begin P4 Catalog
-    # Safeguard the MBS component CSV: reference/mbs_component_exceptions.csv is produced by
-    # the install-mbs-docs skill from the MBS docset and is optional. If it is missing
-    # (docset not installed), create a header-only stub so the read_csv in
-    # P4 does not hard-fail — the component resolution then falls back via COALESCE to the
-    # name heuristic (documented intent in convert_xml_04_catalog.sql).
-    # NEVER overwrites an existing real CSV (only on non-existence).
-    if [ ! -f "$PROJECT_ROOT/reference/mbs_component_exceptions.csv" ]; then
-        mkdir -p "$PROJECT_ROOT/reference"
-        printf 'Funktionsname,Component\n' > "$PROJECT_ROOT/reference/mbs_component_exceptions.csv"
-        $QUIET_MODE || echo "Note: MBS component CSV missing (MBS docset not installed) → header stub created; P4 uses the name heuristic. For an exact component mapping: run install-mbs-docs."
-    fi
+    ensure_mbs_component_csv
     run_pipeline_step "Phase 4 Catalog (Objects+Links)" "$PROJECT_ROOT/sql/convert-xml/convert_xml_04_catalog.sql"; rc=$?
     P4_OBJ=$(pp_num "SELECT COUNT(*) FROM ObjectCatalog")
     P4_LINKS=$(pp_num "SELECT COUNT(*) FROM ObjectLinks")
@@ -3872,9 +4062,12 @@ elif [[ "$MODE" == "single" ]]; then
     # ========================================================================
     # SINGLE FILE MODE: Process one XML file
     # ========================================================================
+    # Runs the COMPLETE table-only chain after P1 (P2→P3→P4→P5→P6 + SCA views) —
+    # a single-file import leaves the same catalog state as a batch run — and, when
+    # the whole chain succeeded, writes the file's manifest row so a subsequent
+    # --batch --changed-only skips it instead of re-parsing.
     # Conversion log v2: the single-file run also writes a text log + JSON sidecar
-    # (files[] of length 1, only the phases actually executed — P3/P4 are batch-wide
-    # and do not run here).
+    # (files[] of length 1).
     mkdir -p "$LOG_DIR"
     collect_environment
     collect_duckdb_settings
@@ -3937,24 +4130,72 @@ elif [[ "$MODE" == "single" ]]; then
         "{\"objects_extracted\":$P1_OBJ,\"ddr_calc_chunks\":$P1_DDR}"
 
     if [ "$SINGLE_RC" -eq 0 ]; then
+        # Track the table-only chain: manifest row + catalogs_built marker may only be
+        # written when every phase the batch path guarantees also succeeded here.
+        SINGLE_CHAIN_OK=true
+        # Master changed (P1 done) → invalidate the marker until the chain completed,
+        # so an abort mid-chain cannot let a later --changed-only run short-circuit on
+        # a half-built catalog. (Classic path: manifest tables may not exist yet.)
+        init_manifest_db
+        _catalogs_state_set building
+
         # Phase 2 (Resolve) — table-only, rebuilds all File_Names (no read_xml).
         echo ""
         echo "Resolving references (Phase 2)..."
         phase_begin P2 Resolve
-        run_phase2 "Phase 2 Reference Resolution" >/dev/null 2>&1 \
-            && echo "✓ Phase 2 references resolved" || echo "✗ WARNING: Phase 2 reference resolution failed"
+        run_phase2 "Phase 2 Reference Resolution" >/dev/null 2>&1
+        if $P2_FAILED; then
+            SINGLE_CHAIN_OK=false; echo "✗ WARNING: Phase 2 reference resolution failed"
+        else
+            echo "✓ Phase 2 references resolved"
+        fi
         P2_REF=$(count_table_sum XMLCalcReferences XMLStepReferences XMLLayoutReferences PluginFunctionUsages MBS_SubnameMap GetSubparameterMap)
+        # Integrity gate (batch parity): objects loaded but 0 references resolved →
+        # do not trust the chain (P4 would build an empty/hollow catalog).
+        [ "${P1_OBJ:-0}" -gt 0 ] && [ "${P2_REF:-0}" -eq 0 ] && SINGLE_CHAIN_OK=false
         phase_finish "$(group_de "$P2_REF") references" "{\"references_resolved\":$P2_REF}"
 
-        # Phase 5 (Homes) — rebuild resolutions in single mode too.
-        # Depends on ObjectCatalog; in single mode ObjectCatalog is NOT updated —
-        # for a full data state use --batch
-        # (note: P3/P4 do not run here).
+        # Phase 3 (Details) — variable parser; table-only and catalog-wide like in
+        # batch (03→04 order mandatory).
+        echo ""
+        echo "Building variable analysis (Phase 3)..."
+        phase_begin P3 Details
+        run_pipeline_step "Phase 3 Details (Variables)" "$PROJECT_ROOT/sql/convert-xml/convert_xml_03_details.sql" >/dev/null 2>&1
+        if $PIPELINE_STEP_OK; then echo "✓ Variable analysis built"
+        else SINGLE_CHAIN_OK=false; echo "✗ WARNING: Variable analysis failed"; fi
+        P3_USAGES=$(pp_num "SELECT COUNT(*) FROM VariableUsages")
+        P3_VARS=$(pp_num "SELECT COUNT(*) FROM VariablesCatalog")
+        phase_finish "$(group_de "$P3_USAGES") usages · $(group_de "$P3_VARS") vars" \
+            "{\"variable_usages\":$P3_USAGES,\"variables_distinct\":$P3_VARS}"
+
+        # Phase 3.5 (Plugin Subname Recovery) — same step and ordering as in
+        # batch mode (after P3, before P4); catalog-wide like P3/P4.
+        echo ""
+        echo "Recovering plugin subnames (Phase 3.5)..."
+        run_pipeline_step "Phase 3.5 Plugin Subname Recovery" "$PROJECT_ROOT/sql/convert-xml/convert_xml_03b_plugin_subname_recovery.sql" >/dev/null 2>&1
+        if $PIPELINE_STEP_OK; then echo "✓ Plugin subnames recovered"
+        else SINGLE_CHAIN_OK=false; echo "✗ WARNING: Plugin subname recovery failed"; fi
+
+        # Phase 4 (Catalog) — ObjectCatalog + ObjectLinks (basis of the analysis skills).
+        echo ""
+        echo "Building universal catalogs (Phase 4)..."
+        phase_begin P4 Catalog
+        ensure_mbs_component_csv
+        run_pipeline_step "Phase 4 Catalog (Objects+Links)" "$PROJECT_ROOT/sql/convert-xml/convert_xml_04_catalog.sql" >/dev/null 2>&1
+        if $PIPELINE_STEP_OK; then echo "✓ Universal catalogs built"
+        else SINGLE_CHAIN_OK=false; echo "✗ WARNING: Universal catalogs failed"; fi
+        P4_OBJ=$(pp_num "SELECT COUNT(*) FROM ObjectCatalog")
+        P4_LINKS=$(pp_num "SELECT COUNT(*) FROM ObjectLinks")
+        phase_finish "$(group_de "$P4_OBJ") objects · $(group_de "$P4_LINKS") links" \
+            "{\"objects_registered\":$P4_OBJ,\"links\":$P4_LINKS}"
+
+        # Phase 5 (Homes) — rebuild resolutions on the fresh ObjectCatalog.
         echo ""
         echo "Building resolution tables (Phase 5)..."
         phase_begin P5 Homes
-        run_pipeline_step "Phase 5 Homes" "$PROJECT_ROOT/sql/convert-xml/convert_xml_05_homes.sql" >/dev/null 2>&1 \
-            && echo "✓ Resolution tables built" || echo "✗ WARNING: Resolution tables failed (run --batch first?)"
+        run_pipeline_step "Phase 5 Homes" "$PROJECT_ROOT/sql/convert-xml/convert_xml_05_homes.sql" >/dev/null 2>&1
+        if $PIPELINE_STEP_OK; then echo "✓ Resolution tables built"
+        else SINGLE_CHAIN_OK=false; echo "✗ WARNING: Resolution tables failed"; fi
         P5_HOMES=$(pp_num "SELECT COUNT(*) FROM ObjectHomes")
         P5_TO=$(pp_num "SELECT COUNT(*) FROM TableOccurrenceResolution")
         phase_finish "$(group_de "$P5_HOMES") homes · $(group_de "$P5_TO") TO" \
@@ -3971,9 +4212,23 @@ elif [[ "$MODE" == "single" ]]; then
         if [ -f "$ANALYSIS_VIEWS_TEMPLATE" ]; then
             echo ""
             echo "Building analysis views (static code analysis)..."
-            run_pipeline_step "Analysis Views (SCA)" "$ANALYSIS_VIEWS_TEMPLATE" >/dev/null 2>&1 \
-                && echo "✓ Analysis views built" || echo "✗ WARNING: Analysis views failed (run --batch first?)"
+            run_pipeline_step "Analysis Views (SCA)" "$ANALYSIS_VIEWS_TEMPLATE" >/dev/null 2>&1
+            if $PIPELINE_STEP_OK; then echo "✓ Analysis views built"
+            else echo "✗ WARNING: Analysis views failed"; fi
             postcheck_calc_anchors
+        fi
+
+        # Manifest row + catalogs_built marker — only when the full chain (P1–P5)
+        # succeeded: the manifest promises "master holds this file's state, catalogs
+        # current", which is exactly what a later --batch --changed-only skip relies
+        # on. P6/SCA stay non-gating (batch parity: checks, not build steps).
+        echo ""
+        if $SINGLE_CHAIN_OK; then
+            _manifest_write_single "$XML_DIR/$FILENAME"
+            _catalogs_state_set ok
+            echo "✓ Manifest updated ($FILENAME) — a later --batch --changed-only skips this state"
+        else
+            echo "Note: chain incomplete → no manifest row written; the next --batch --changed-only re-parses $FILENAME"
         fi
 
         # Sync hook also in single-file mode (production mode).

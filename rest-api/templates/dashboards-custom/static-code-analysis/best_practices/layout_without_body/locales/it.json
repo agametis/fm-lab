@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Layout senza corpo",
-    "description": "Regola di buone pratiche: Layout senza parte corpo. Senza corpo i record non vengono mostrati in vista modulo/elenco; di solito un Layout smarrito o mal costruito."
+    "description": "Regola di buone pratiche: segnala i Layout senza parte corpo. Senza corpo i record non vengono mostrati in vista modulo/elenco; di solito un Layout smarrito o mal costruito."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Risultati",

@@ -44,10 +44,12 @@ export type BreadcrumbCtx =
   | { kind: 'graphSegment'; segment: string }
   | { kind: 'relationships'; file: string }
   | { kind: 'file'; fileLabel: string }
-  | { kind: 'dashboards' }
+  | { kind: 'dashboards'; folderCrumbs?: BreadcrumbItem[] }
   | { kind: 'dashboard'; title: string }
   | { kind: 'customQueries' }
   | { kind: 'query'; name: string }
+  | { kind: 'tests'; folderCrumbs?: BreadcrumbItem[] }
+  | { kind: 'testDetail'; testLabel: string }
   | { kind: 'docs' }
   | { kind: 'docsSet'; setLabel: string }
   | { kind: 'docsCategory'; setId: string; setLabel: string; categoryLabel: string }
@@ -104,13 +106,27 @@ export function buildBreadcrumb(ctx: BreadcrumbCtx, t: TranslateFn): BreadcrumbI
     case 'file':
       return finalize([home, { label: ctx.fileLabel, path: null }]);
     case 'dashboards':
-      return finalize([home, dashboards]);
+      // Folder navigation of the dashboard overview rides on the ONE unified
+      // breadcrumb: Home / Dashboards / <Rubrik> / <Unterrubrik>. Each folder
+      // crumb links to `/dashboard?folder=<teilpfad>`; finalize() makes the
+      // last one the active page.
+      return finalize([home, dashboards, ...(ctx.folderCrumbs ?? [])]);
     case 'dashboard':
       return finalize([home, dashboards, { label: ctx.title, path: null }]);
     case 'customQueries':
       return finalize([home, customQueries]);
     case 'query':
       return finalize([home, customQueries, { label: ctx.name, path: null }]);
+    case 'tests':
+      // Folder navigation of the tests overview rides on the same unified
+      // breadcrumb as the dashboard one: Home / Tests / <Rubrik> / …
+      return finalize([
+        home,
+        { label: t('nav:crumbs.tests'), path: '/tests' },
+        ...(ctx.folderCrumbs ?? []),
+      ]);
+    case 'testDetail':
+      return finalize([home, { label: t('nav:crumbs.tests'), path: '/tests' }, { label: ctx.testLabel, path: null }]);
     case 'docs':
       return finalize([home, docs]);
     case 'docsSet':

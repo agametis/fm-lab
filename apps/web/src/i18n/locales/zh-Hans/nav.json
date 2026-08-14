@@ -22,14 +22,16 @@
     "xmlImport": "XML 导入",
     "cluster": "聚类",
     "settings": "设置",
-    "fmSpec": "fm-spec"
+    "fmSpec": "fm-spec",
+    "tests": "测试"
   },
   "leitDescription": {
     "dashboards": "所有可用仪表板的概览。",
     "customQueries": "可重用的 SQL 模板——点击卡片即可打开分析。",
-    "docs": "此项目中安装的文档来源。",
+    "docs": "已安装的文档来源。",
     "xmlImport": "将 xml/ 目录中的所有文件导入 DuckDB。",
-    "xmlImportContextNote": "导入的是非活动解决方案——显示的分析数据只有在激活后才会变化。"
+    "xmlImportContextNote": "导入的是非活动解决方案——显示的分析数据只有在激活后才会变化。",
+    "tests": "精选分析测试 — 对解决方案、文件或单个对象运行捆绑检查。"
   },
   "errors": {
     "noDashboardId": "未提供仪表板 ID。",
@@ -86,7 +88,8 @@
       "references": "引用",
       "graph": "图表",
       "versions": "版本",
-      "notes": "备注"
+      "notes": "备注",
+      "tests": "测试"
     }
   },
   "pseudoToolbar": {
@@ -123,5 +126,53 @@
     "title": "暂无数据",
     "message": "尚未导入任何 FileMaker 解决方案。请先导入 XML 导出文件以使用此视图。",
     "backToStart": "返回首页"
+  },
+  "testsPanel": {
+    "loading": "正在加载测试…",
+    "empty": "对象类型 {{type}} 没有可用测试。",
+    "openOverview": "打开测试概览",
+    "run": "运行",
+    "running": "运行中…",
+    "showFindings": "显示发现项",
+    "memberError": "错误",
+    "openMember": "打开仪表板/查询",
+    "truncated": "更多发现项已截断 — 打开成员查看完整列表。",
+    "duration": "{{ms}} ms",
+    "searchPlaceholder": "筛选测试…",
+    "runAll": "全部运行（{{count}}）",
+    "noMatch": "没有符合当前筛选条件的测试。",
+    "typeFilterAria": "按测试类型筛选",
+    "memberSkipped": "已跳过",
+    "findingsFiltered": "{{total}} 条发现中有 {{shown}} 条与搜索匹配。",
+    "rerun": "重新运行",
+    "profileLabel": "配置",
+    "profileAll": "全部检查（{{count}}）",
+    "memberCount": "{{count}} 项检查",
+    "resultsFrom": "结果时间:{{time}}",
+    "catalogFrom": "目录:{{time}}",
+    "notRun": "{{count}} 项未运行",
+    "platformSection": "平台兼容性",
+    "otherSection": "其他测试",
+    "platformRemove": "移除目标环境",
+    "platformAdd": "+ 目标环境",
+    "platformNone": "尚未选择目标环境——请添加此解决方案运行的平台。",
+    "platformSpecificScripts": "{{count}} 个平台特定脚本",
+    "osBindingLabel": "操作系统绑定",
+    "osMatrixOs": "操作系统",
+    "osMatrixHint": "按操作系统和证据来源统计的具有操作系统专属绑定的脚本数（desktop-only 脚本同时计入 macOS 和 Windows；跨越两个以上系统的绑定不算作操作系统专属）。",
+    "matrixStep": "步骤",
+    "disabledCount": "{{count}} 项已停用 —",
+    "showDisabled": "显示",
+    "hideDisabled": "隐藏",
+    "disableTest": "隐藏此测试(按解决方案本地保存)",
+    "enableTest": "重新启用此测试",
+    "sortByResult": "最值得注意的优先",
+    "stateFilterAria": "按结果状态筛选",
+    "state_error": "错误",
+    "state_warning": "警告",
+    "state_neutral": "中性结果",
+    "state_ok": "通过",
+    "state_skipped": "已跳过",
+    "state_failed": "运行失败"
   }
 }

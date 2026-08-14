@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plattformskompatibilitet: FileMaker WebDirect",
+  "analysis.defaultResult.meaning": "Steg inom omfånget som inte eller endast delvis stöds på FileMaker WebDirect"
+ }
+}

@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "缺少 Set Error Capture 的 Perform Find",
-    "description": "最佳实践规则 — 含 Perform Find 但没有 Set Error Capture [开启] 的脚本。\"无记录\"对话框可能在脚本执行中途打断用户。"
+    "description": "最佳实践规则 — 检出含 Perform Find 但没有 Set Error Capture [开启] 的脚本。\"无记录\"对话框可能在脚本执行中途打断用户。"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "结果数",

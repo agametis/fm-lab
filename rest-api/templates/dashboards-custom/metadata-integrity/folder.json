@@ -1,0 +1,18 @@
+{
+  "title": "Metadata Integrity",
+  "icon": "fingerprint",
+  "description": "Checks on the invisible metadata structures of the FileMaker file format — duplicate UUIDs and export artifacts that never affect runtime behavior but disturb developer tooling (DDR tools, fmIDE, FM-Lab itself, diff/merge tools). FM-Lab detects and lists these defects; it does not repair them (Claris' repair mode assigns entirely new UUIDs and breaks external references).",
+  "order": 3,
+  "locales": {
+    "de": "Metadaten-Integrität",
+    "es": "Integridad de metadatos",
+    "fr": "Intégrité des métadonnées",
+    "it": "Integrità dei metadati",
+    "ja": "メタデータ整合性",
+    "ko": "메타데이터 무결성",
+    "nl": "Metadata-integriteit",
+    "pt": "Integridade de metadados",
+    "sv": "Metadataintegritet",
+    "zh-Hans": "元数据完整性"
+  }
+}

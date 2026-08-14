@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "UUID-duplicaten binnen een bestand",
+    "description": "Metadata-integriteitscontrole — UUID's die binnen één bestand dubbel zijn toegewezen (exportdefect, typisch door kopiëren/plakken met oude FileMaker-versies). De import behoudt deterministisch één object per UUID; dit dashboard toont wat werd geabsorbeerd, met leesbare context om het in de oplossing terug te vinden.",
+    "analysis.defaultResult.meaning": "Aantal geïnventariseerde dubbele-UUID-voorkomens (hersteld + origineel behouden + geabsorbeerd) — de catalogus blijft sinds het UUID-herstel volledig, maar elk voorkomen markeert een bronfout"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Geabsorbeerde duplicaten",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "summary_kpi.props.items[2].label": "UUID-precieze rijen",
+    "summary_kpi.props.items[3].label": "Merge-absorpties",
+    "findings_card.props.title": "Botsende objecten (UUID-precies)",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Type",
+    "findings_table.props.columns[2].label": "Container",
+    "findings_table.props.columns[3].label": "Positie",
+    "findings_table.props.columns[4].label": "Object (gedecodeerd)",
+    "findings_table.props.columns[5].label": "Voork.",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, container, tekst of UUID…",
+    "findings_table.props.empty.message": "Geen UUID-precieze duplicaatdetails — de importcensus vond geen duplicaten binnen een bestand.",
+    "merge_card.props.title": "Merge-absorpties (chunk-overlap of gekloond bestand met identieke interne naam)",
+    "merge_table.props.columns[0].label": "Catalogustabel",
+    "merge_table.props.columns[1].label": "Bestand",
+    "merge_table.props.columns[2].label": "Geabsorbeerd",
+    "merge_table.props.columns[3].label": "Merge-run",
+    "merge_table.props.searchPlaceholder": "Zoek tabel of bestand…",
+    "merge_table.props.empty.message": "Bij de merge zijn geen duplicaten geabsorbeerd.",
+    "stats_card.props.title": "Census-kruiscontrole per catalogus en bestand",
+    "stats_table.props.columns[0].label": "Catalogus",
+    "stats_table.props.columns[1].label": "Bestand",
+    "stats_table.props.columns[2].label": "Bronrecords",
+    "stats_table.props.columns[3].label": "Opgeslagen rijen",
+    "stats_table.props.columns[4].label": "Geabsorbeerd",
+    "stats_table.props.columns[5].label": "Detaildekking",
+    "stats_table.props.searchPlaceholder": "Zoek catalogus of bestand…",
+    "stats_table.props.empty.message": "De importcensus meldt geen geabsorbeerde duplicaten.",
+    "notes_card.props.title": "Over deze controle",
+    "notes_md.props.content": "Een UUID die aan **twee objecten binnen één bestand** is toegewezen, is een brondefect van de FileMaker-export (typisch kopiëren/plakken met oude FileMaker-versies in nieuwere bestanden). De FM-Lab-import behoudt precies één object per UUID (deterministisch, laatste schrijfactie wint) — de geabsorbeerde objecten **bestaan niet meer in de catalogus**. De kolommen *Container*, *Positie* en *Object (gedecodeerd)* zijn hun enige spoor; gebruik ze om beide objecten in FileMaker te vinden. Een klik op de rij opent het overgebleven object.\n\n**Merge-absorpties** zijn een aparte klasse: duplicaten die bij het samenvoegen van bestands-chunks werden geabsorbeerd. De oorzaak is achteraf niet te onderscheiden — converter-interne chunk-overlap (geen oplossingsdefect) of gekloonde bestanden met dezelfde interne bestandsnaam (echte botsing).\n\n**Er is geen automatische fix.** De reparatiemodus van Claris kent volledig nieuwe UUID's toe en breekt elke externe UUID-referentie; de correctie moet in het bronbestand gebeuren. Duplicaten van dezelfde UUID *tussen* bestanden behandelt het zusterdashboard **UUID-kloonbotsingen**. De databron is de importcensus — de cijfers weerspiegelen de laatste XML-import.",
+    "findings_table.props.columns[6].label": "UUID"
+  }
+}

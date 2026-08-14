@@ -33,6 +33,28 @@
       ]
     }
   },
+  "analysis": {
+    "objectTypes": [],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Custom Function with many parameters"
+    }
+  },
   "datasets": [
     {
       "id": "summary",

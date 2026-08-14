@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plattform-Kompatibilität: FileMaker Server",
+  "analysis.defaultResult.meaning": "Schritte im Prüfumfang, die auf FileMaker Server nicht oder nur teilweise unterstützt werden"
+ }
+}

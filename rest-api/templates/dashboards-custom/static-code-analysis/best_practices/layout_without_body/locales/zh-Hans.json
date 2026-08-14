@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "没有主体部分的 Layout",
-    "description": "最佳实践规则 — 没有主体部分的 Layout。没有主体，记录在表单/列表视图中不会显示；通常是遗留或构建错误的 Layout。"
+    "description": "最佳实践规则 — 检出没有主体部分的 Layout。没有主体，记录在表单/列表视图中不会显示；通常是遗留或构建错误的 Layout。"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "结果数",

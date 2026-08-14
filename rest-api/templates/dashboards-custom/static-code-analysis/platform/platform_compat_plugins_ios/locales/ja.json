@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "プラグイン互換性: FileMaker Go (iOS)",
+  "analysis.defaultResult.meaning": "FileMaker Go (iOS) で実行されない対象範囲内のプラグイン関数呼び出し"
+ }
+}

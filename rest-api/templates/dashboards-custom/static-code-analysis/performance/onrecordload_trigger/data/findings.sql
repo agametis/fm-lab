@@ -8,5 +8,7 @@ SELECT 'onrecordload-trigger' AS rule_id, 'info' AS severity,
 FROM ScriptTriggers t
 LEFT JOIN Layouts l ON l.L_UUID = t.Owner_UUID AND l.File_Name = t.File_Name
 WHERE t.Trigger_Action = 'OnRecordLoad' AND (getvariable('file') IS NULL OR t.File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR t.Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
 ORDER BY t.File_Name, t.Script_Name
 LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);

@@ -1,0 +1,21 @@
+{
+  "id": "docset_start",
+  "version": "1.0.0",
+  "title": "Docset Start",
+  "description": "Start page for a documentation source with a declared start page: rendered entry plus grouped page list.",
+  "author": "fm-lab core",
+  "icon": "book",
+  "tags": ["nav", "internal"],
+  "entry": "layout.json",
+  "datasets": [
+    { "id": "start", "source": "builtin:docset_start_entry" },
+    { "id": "pages", "source": "builtin:docset_categories_with_counts" }
+  ],
+  "params": [
+    { "name": "id",   "type": "string", "required": true,
+      "description": "Docset identifier with a declared start_page (e.g. fm-lab, fmide)." },
+    { "name": "lang", "type": "string", "required": false,
+      "description": "Language code (default 'en')." }
+  ],
+  "permissions": { "read_only": true, "allow_navigation": true }
+}

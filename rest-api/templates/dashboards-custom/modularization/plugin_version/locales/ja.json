@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "MBSプラグインのバージョン",
+    "description": "バージョン要件インベントリ:このソリューションが必要とする最小プラグインバージョン。使用中の全プラグイン関数の文書化された導入バージョン(since_version)の最大値として導出されます — 比較は常に数値で、辞書順は使いません。ファイルごとの分布とドライバー関数により導出を検証できます。カタログはインストール済みバージョンを知りません:ヘッダーで選択して初めてチェックが有効になります(ニュートラル項目=チェックなし)。",
+    "analysis.defaultResult.meaning": "この対象範囲が必要とするプラグインの最低バージョン — 使用中のプラグイン関数のうち、文書化された導入バージョンの最大値"
+  },
+  "layout": {
+    "installed_version_select.props.label": "インストール済みプラグインバージョン",
+    "summary_kpi.props.items[0].label": "必要バージョン",
+    "summary_kpi.props.items[1].label": "関数",
+    "summary_kpi.props.items[2].label": "呼び出し箇所",
+    "summary_kpi.props.items[3].label": "ファイル",
+    "summary_kpi.props.items[4].label": "未解決",
+    "findings_card.props.title": "バージョンチェック",
+    "findings_table.props.columns[0].label": "重大度",
+    "findings_table.props.columns[1].label": "ファイル",
+    "findings_table.props.columns[2].label": "オブジェクト",
+    "findings_table.props.columns[3].label": "プラグイン関数",
+    "findings_table.props.columns[4].label": "必要",
+    "findings_table.props.columns[5].label": "インストール済み",
+    "findings_table.props.columns[6].label": "カスタム関数経由",
+    "findings_table.props.columns[7].label": "メッセージ",
+    "findings_table.props.empty.message": "チェックは無効です — ヘッダーでインストール済みバージョンを選択すると要件を検証できます(ニュートラル項目=インベントリのみ)。",
+    "by_file_card.props.title": "ファイルごとの要件",
+    "by_file_table.props.columns[0].label": "ファイル",
+    "by_file_table.props.columns[1].label": "必要バージョン",
+    "by_file_table.props.columns[2].label": "主要ドライバー",
+    "by_file_table.props.columns[3].label": "関数",
+    "by_file_table.props.columns[4].label": "呼び出し箇所",
+    "by_file_table.props.columns[5].label": "未解決",
+    "drivers_card.props.title": "ドライバー関数",
+    "drivers_table.props.columns[0].label": "プラグイン関数",
+    "drivers_table.props.columns[1].label": "コンポーネント",
+    "drivers_table.props.columns[2].label": "導入",
+    "drivers_table.props.columns[3].label": "ステータス",
+    "drivers_table.props.columns[4].label": "インストール版超過",
+    "drivers_table.props.columns[5].label": "呼び出し箇所",
+    "drivers_table.props.columns[6].label": "ファイル",
+    "markdown.props.content": "## 注記\n\n**必要バージョン**は導出値です:実際に呼び出されるプラグイン関数の文書化された導入バージョン(`since_version`)の最大値 — *ドライバー関数*テーブルで検証できます。バージョン比較は数値キーで行い、文字列では行いません。\n\n- **バージョンチェック**:カタログはインストール済みバージョンを知りません。ヘッダーでの選択によって、後から導入された関数の呼び出しがマークされます。ニュートラル項目はチェックを起動しません。\n- **ファイルごとの要件**:ファイルごとの分布により、どのモジュールが要件を担うかが分かります。\n- **ナビゲーション**:ドライバー行はプラグイン関数の詳細(where-used)を開き、検出行は呼び出し元オブジェクトを開きます。\n- **保守軸**:deprecated/removed呼び出しは*静的コード解析*内の独立したルールです。"
+  }
+}

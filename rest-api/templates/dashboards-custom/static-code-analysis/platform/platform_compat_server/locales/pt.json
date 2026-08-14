@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Compatibilidade de plataforma: FileMaker Server",
+  "analysis.defaultResult.meaning": "Passos no escopo sem suporte ou com suporte apenas parcial em FileMaker Server"
+ }
+}

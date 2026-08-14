@@ -15,9 +15,11 @@ is unchanged*: XML is touched once in P1, everything downstream is pure DuckDB.
 
 | Phase | File | Reads | Produces |
 |---|---|---|---|
-| **P1 Extract** | `sql/convert-xml/convert_xml_01_extract.sql` | XML (`read_xml`) | Raw catalogs + raw-XML columns (`Step_XML`, `Object_XML`, `Parameters_XML`, …) |
+| **P1 Extract** | `sql/convert-xml/convert_xml_01_extract.sql` | XML (`read_xml`) | Raw catalogs + raw-XML columns (`Step_XML`, `Object_XML`, `Parameters_XML`, …); UUID healing of intra-file duplicates (deterministic replacement UUIDs, census mapping) |
+| **P1b Heal cascade** | `sql/convert-xml/convert_xml_01b_heal_cascade.sql` | tables only | Census-driven propagation of healed UUIDs into dependent foreign-UUID columns (`StepsForScripts.Script_UUID`, `ScriptTriggers.Script_UUID`, TO/BT/Field/VL carriers). Runs at the start of `run_phase2()` — after every P1 merge (multi-fed tables need the full picture), before any P2 statement; fail-hard; no-op without healed census rows |
 | **P2 Resolve** | `sql/convert-xml/convert_xml_02_resolve.sql` | tables only | Reference tables (XMLStep/Layout/Calc-Refs, MBS/GetSub, PluginUsages) |
 | **P3 Details** | `sql/convert-xml/convert_xml_03_details.sql` | tables only | Variable analysis (VariableUsages, VariablesCatalog) |
+| **P3.5 Plugin Subname Recovery** | `sql/convert-xml/convert_xml_03b_plugin_subname_recovery.sql` | tables only | Completes `MBS_SubnameMap` from the calc **plain text**: FileMaker's DDR export drops NoRef chunks carrying the first string argument of container-plugin calls in some constellations (comment adjacent to the call, nested `MBS(…, MBS(…))`), so chunk-proximity pairing alone cannot resolve them. A string/comment-aware SQL lexer pairs the k-th `MBS` ref chunk with the k-th lexed `MBS` call (guard: chunk count must equal lexed count, otherwise NULL — never mispaired). Requalifies `PluginFunctionUsages` (`'MBS'` → `'MBS:<Sub>'`) and rebuilds affected `XMLCalcReferences` MBS rows. Runs after P3 (needs `StepCalculations`), before P4 (catalog reads the map). Remaining `'MBS'` rows = genuinely dynamic first arguments (`MBS($var; …)`) |
 | **P4 Catalog** | `sql/convert-xml/convert_xml_04_catalog.sql` | tables only | ObjectCatalog + ObjectLinks |
 | **P5 Homes** | `sql/convert-xml/convert_xml_05_homes.sql` | tables only | Cross-file resolution (ObjectHomes, TableOccurrenceResolution) + graph views (`LogicalLinks`, `ClusterEdges`) |
 | **P6 Validate** | `sql/convert-xml/convert_xml_06_validate.sql` | tables only | Plausibility/consistency check views (`v_check_*`), queried by the post-processor |
@@ -25,6 +27,14 @@ is unchanged*: XML is touched once in P1, everything downstream is pure DuckDB.
 P1 runs once per file; P2–P6 run once after all files are imported (batch-wide). The full
 runtime order is then **P1…P6 → Analysis Views → P7 Clustering → DB sync** (see the two
 post-phase sections below); P7 is skipped on incremental / single-file runs.
+
+**Single-file runs execute the same chain:** `convert_fm_xml.sh <file>.xml` runs P1 for
+that file, then the complete table-only chain P2→P3→P3.5→P4→P5→P6 + analysis views — the
+catalog state afterwards equals a batch run over the same corpus. When the whole chain
+succeeds, the run also writes the file's manifest row (and refreshes the
+`catalogs_built` marker), so a subsequent `--batch --changed-only` skips the file
+instead of re-parsing it. On a chain failure no manifest row is written — the next
+incremental batch then re-parses the file (loud, never a silent skip).
 
 **Constraint:** P2 runs partitioned with read-only VIEWs over the master DB — no
 ALTER/UPDATE on source tables in P2 (breaks all slices); derived columns belong in P3.

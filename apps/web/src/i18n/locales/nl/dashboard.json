@@ -83,7 +83,14 @@
     "Dependencies": "Afhankelijkheden",
     "Fields": "Velden",
     "Scripts": "Scripts",
-    "Variables": "Variabelen"
+    "Variables": "Variabelen",
+    "dashboard": "Dashboard",
+    "query": "Custom query",
+    "system": "Systeem",
+    "custom": "Eigen",
+    "ok": "OK",
+    "warnings": "Waarschuwingen",
+    "errors": "Fouten"
   },
   "semanticNames": {
     "structureLabel": "Structuur",
@@ -113,16 +120,15 @@
     "warnHead": "{{count}} geabsorbeerde UUID-duplica(a)t(en) over {{combos}} catalogus/bestand-combinatie(s)",
     "colFile": "Bestand",
     "colCatalog": "Catalogus",
-    "colAbsorbed": "Verloren scripts",
-    "colSteps": "Verloren stappen",
+    "colAbsorbed": "Verloren objecten",
+    "colSub": "Verloren deelobjecten",
     "colSource": "Bron",
     "colStored": "Opgeslagen",
     "footnote": "Brondefect (dubbele UUID's in de FileMaker-export). De converter dedupliceert deterministisch (last-write-wins); alleen op te lossen door de bron te corrigeren/opnieuw te exporteren.",
-    "stepsHint": "Stappen = afzonderlijke verloren scriptstappen; het omliggende script blijft intact. “—” = geen volledig script verloren.",
-    "detailsHead": "Botsende objecten",
-    "detailsMore": "… en nog {{count}} botsende objecten",
-    "colObjects": "Object(en)",
-    "colOccurrences": "Voorkomens"
+    "subHint": "Objecten = volledige objecten van de catalogus (scripts of lay-outs). Deelobjecten = verloren scriptstappen of lay-outobjecten; de omliggende container blijft intact. “—” = geen verlies van dit type.",
+    "linksLabel": "Volledige bevindingen:",
+    "linkIntrafile": "UUID-duplicaten binnen een bestand",
+    "linkClones": "UUID-kloonbotsingen"
   },
   "xmlEmpty": {
     "hint": "Nog geen gegevens. Plaats je FileMaker XML-export in de map “xml/” en start de conversie.",
@@ -136,5 +142,31 @@
     "hostPathHint": "Plaats de bestanden in deze map op de host — deze is gekoppeld aan de container.",
     "containerPathNote": "Pad in de container",
     "putFilesHint": "Plaats je FileMaker XML-bestanden in de map “xml/”."
+  },
+  "folderNav": {
+    "root": "Alle dashboards",
+    "notFound": "Map niet gevonden.",
+    "backToRoot": "Terug naar overzicht",
+    "breadcrumb": "Mappen",
+    "runAll": "Alles uitvoeren",
+    "run": "Uitvoeren",
+    "running": "bezig…",
+    "findings": "bevindingen",
+    "coverageHint": "Gedeeltelijke dekking — nog niet alle resultaten berekend",
+    "filterLabel": "Status",
+    "sortLabel": "Sorteren",
+    "sortStandard": "Standaard",
+    "sortValue": "Aantal resultaten ↓",
+    "sortState": "Stoplicht",
+    "state": {
+      "ok": "OK",
+      "warning": "Waarschuwing",
+      "error": "Fout",
+      "neutral": "Neutraal",
+      "pending": "In afwachting",
+      "failed": "Mislukt"
+    },
+    "noFilterMatches": "Geen items met deze status in deze rubriek.",
+    "openFolder": "Map openen"
   }
 }

@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "平台兼容性：FileMaker Go (iOS)",
+  "analysis.defaultResult.meaning": "范围内在 FileMaker Go (iOS) 上不受支持或仅部分支持的步骤"
+ }
+}

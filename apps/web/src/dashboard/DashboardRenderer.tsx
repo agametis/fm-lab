@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { LayoutNode, DashboardLayout, DashboardDataResponse, DatasetResult } from '../api/dashboardApi';
 import { getPrimitive } from './primitives/registry';
+import { SelectionProvider } from './selectionContext';
 
 interface Props {
   layout: DashboardLayout;
@@ -82,7 +83,9 @@ export function DashboardRenderer({ layout, datasets }: Props) {
     [datasets, navigate]
   );
 
-  return <>{renderNode(layout.root)}</>;
+  // Selection channel spans the whole rendered dashboard (lens table ⇄ list
+  // table) and resets when the renderer unmounts.
+  return <SelectionProvider>{renderNode(layout.root)}</SelectionProvider>;
 }
 
 interface RenderNodeProps {

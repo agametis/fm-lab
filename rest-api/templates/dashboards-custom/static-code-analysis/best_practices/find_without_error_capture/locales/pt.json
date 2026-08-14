@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Perform Find sem Set Error Capture",
-    "description": "Regra de boas práticas — scripts com Perform Find mas sem Set Error Capture [Ativado]. Uma caixa de diálogo \"nenhum registro\" pode interromper o usuário no meio do script."
+    "description": "Regra de boas práticas — sinaliza scripts com Perform Find mas sem Set Error Capture [Ativado]. Uma caixa de diálogo \"nenhum registro\" pode interromper o usuário no meio do script."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Ocorrências",

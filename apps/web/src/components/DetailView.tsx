@@ -1,14 +1,17 @@
-import React, { useMemo, useRef, useCallback, useState, useEffect } from 'react';
+import React, { useMemo, useRef, useCallback, useState, useEffect, useSyncExternalStore } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useObjectDetail } from '../hooks/useObjectDetail';
 import { useRefOrigin } from '../hooks/useRefOrigin';
 import { ObjectHeader } from './ObjectHeader';
+import { PluginPlatformBadge } from './PluginPlatformBadge';
+import { ScriptOsBadge } from './ScriptOsBadge';
 import { HierarchyTree, type HierarchyTreeHandle } from './HierarchyTree';
 import { TypeDetail } from './TypeDetail';
 import { ObjectGraphPanel, type ObjectGraphPanelHandle } from './ObjectGraphPanel';
 import type { LayoutCanvasHandle } from './LayoutCanvas';
 import { SubNav } from './SubNav';
+import { TestsPanel } from './TestsPanel';
 import { StatusBar } from './StatusBar';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
@@ -19,6 +22,7 @@ import { useEscapeStack } from '../hooks/useEscapeStack';
 import { useUrlState } from '../hooks/useUrlState';
 import { buildBreadcrumb, buildObjectPath } from '../lib/navigation';
 import { CurrentFileContext } from '../lib/currentFileContext';
+import { getObjectBadge, subscribeTestsStore } from '../lib/testsStore';
 import type { DetailViewTab } from '../types';
 import { DETAIL_TABS } from '../types';
 import '../DetailView.css';
@@ -86,6 +90,13 @@ export const DetailView: React.FC = () => {
   // hervorgehobener Token-Vorkommen. Reset beim Wechsel von uuid oder ref-Param.
   const [liveMatchCount, setLiveMatchCount] = useState<number | undefined>(undefined);
   useEffect(() => { setLiveMatchCount(undefined); }, [uuid, refParam]);
+
+  // Tests-Tab badge: worst cached test result for this object — shows
+  // a dot on the tab before it is even opened. Fed by the tests result store.
+  const testsBadge = useSyncExternalStore(
+    subscribeTestsStore,
+    () => (uuid ? getObjectBadge(uuid) : null),
+  );
 
   const handleBack = () => {
     // Falls die DetailView per Direkt-Link/Bookmark geöffnet wurde, gibt es
@@ -215,6 +226,14 @@ export const DetailView: React.FC = () => {
         return <HierarchyTree ref={hierarchyRef} references={references} />;
       case 'graph':
         return <ObjectGraphPanel ref={graphPanelRef} object={object} />;
+      case 'tests':
+        return (
+          <TestsPanel
+            objectUuid={object.Object_UUID}
+            objectType={object.Object_Type}
+            fileName={object.File_Name ?? null}
+          />
+        );
       default:
         return null;
     }
@@ -244,6 +263,17 @@ export const DetailView: React.FC = () => {
       {/* Object header */}
       <ObjectHeader object={object} />
 
+      {/* Plug-in platform map badge (plugref) — PluginFunction only */}
+      {object.Object_Type === 'PluginFunction' && object.Object_Name && (
+        <PluginPlatformBadge objectName={object.Object_Name} />
+      )}
+
+      {/* OS-binding badge (v7) — Script only, fed by cached
+          platform-os-binding test runs (neutral inventory, no defect). */}
+      {object.Object_Type === 'Script' && object.Object_UUID && (
+        <ScriptOsBadge objectUuid={object.Object_UUID} />
+      )}
+
       {/* Sub-navigation tabs (left) + object actions like "Open in FileMaker" (right) */}
       <div className="detail-tab-bar">
         <nav className="detail-tab-nav" role="tablist" aria-label={t('nav:detailView.tabsAria') as string}>
@@ -258,6 +288,9 @@ export const DetailView: React.FC = () => {
               tabIndex={tab.enabled ? 0 : -1}
             >
               {t(`nav:${tab.label}`)}
+              {tab.id === 'tests' && testsBadge && (
+                <span className={`tab-badge tab-badge-${testsBadge}`} aria-hidden="true" />
+              )}
             </button>
           ))}
         </nav>

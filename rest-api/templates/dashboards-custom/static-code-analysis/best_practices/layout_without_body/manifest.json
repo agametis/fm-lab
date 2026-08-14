@@ -3,7 +3,7 @@
   "id": "layout_without_body",
   "version": "1.0.0",
   "title": "Layout without Body part",
-  "description": "Best-practice rule — layouts that have no Body part. Without a Body, records do not render in Form/List view; usually a stray or mis-built layout.",
+  "description": "Best-practice rule — flags layouts that have no Body part. Without a Body, records do not render in Form/List view; usually a stray or mis-built layout.",
   "author": "fm-lab rules",
   "icon": "layout-panel-top",
   "category": "best_practices",
@@ -23,9 +23,31 @@
       "author": "fm-lab rules",
       "source": "fm-lab",
       "url": null,
-      "description": "Best-practice rule — layouts that have no Body part. Without a Body, records do not render in Form/List view; usually a stray or mis-built layout.",
+      "description": "Best-practice rule — flags layouts that have no Body part. Without a Body, records do not render in Form/List view; usually a stray or mis-built layout.",
       "created": "2026-07-01",
       "references": []
+    }
+  },
+  "analysis": {
+    "objectTypes": [],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Layout without Body part"
     }
   },
   "datasets": [

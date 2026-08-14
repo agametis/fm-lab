@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary_card",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpi",
+            "props": {
+              "items": [
+                {
+                  "label": "Duplicated UUIDs",
+                  "field": "finding_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Affected objects",
+                  "field": "affected_objects",
+                  "format": "number"
+                },
+                {
+                  "label": "Affected files",
+                  "field": "affected_files",
+                  "format": "number"
+                },
+                {
+                  "label": "Type conflicts",
+                  "field": "type_conflicts",
+                  "format": "count"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "pairs_card",
+        "props": {
+          "span": 12,
+          "title": "File pairs sharing UUIDs"
+        },
+        "data": {
+          "dataset": "file_pairs"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "pairs_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "compact",
+              "sortable": true,
+              "searchable": "auto",
+              "searchAutoThreshold": 3,
+              "searchPlaceholder": "Search file…",
+              "columns": [
+                {
+                  "field": "file_a",
+                  "label": "File A"
+                },
+                {
+                  "field": "file_b",
+                  "label": "File B"
+                },
+                {
+                  "field": "shared_uuids",
+                  "label": "Shared UUIDs",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "pct_of_a",
+                  "label": "% of A",
+                  "align": "right"
+                },
+                {
+                  "field": "pct_of_b",
+                  "label": "% of B",
+                  "align": "right"
+                }
+              ],
+              "empty": {
+                "message": "No file pair shares a native UUID."
+              },
+              "alwaysShowCount": true
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings_card",
+        "props": {
+          "span": 12,
+          "title": "Colliding objects"
+        },
+        "data": {
+          "dataset": "findings"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": "auto",
+              "searchAutoThreshold": 3,
+              "searchPlaceholder": "Search name, file or UUID…",
+              "columns": [
+                {
+                  "field": "nav_uuid",
+                  "label": "UUID",
+                  "align": "center",
+                  "format": "copy"
+                },
+                {
+                  "field": "type",
+                  "label": "Type",
+                  "format": "badge"
+                },
+                {
+                  "field": "name",
+                  "label": "Object"
+                },
+                {
+                  "field": "file",
+                  "label": "File"
+                },
+                {
+                  "field": "file_count",
+                  "label": "Files",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "type_conflict",
+                  "label": "Type conflict",
+                  "format": "badge"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "{{type}}",
+                  "file": "{{file}}"
+                }
+              },
+              "empty": {
+                "message": "No UUID exists in more than one file — no clone collisions."
+              },
+              "alwaysShowCount": true
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "notes_card",
+        "props": {
+          "span": 12,
+          "title": "About this check"
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "notes_md",
+            "props": {
+              "content": "Cloned FileMaker files carry the clone's UUIDs, so the same UUID identifies **different objects in different files**. The solution itself runs fine — but developer tooling that assumes UUID uniqueness (DDR tools, fmIDE, diff/merge, UUID-keyed integrations) can pick the wrong object.\n\n**There is no automatic fix.** Claris' repair mode assigns entirely new UUIDs and thereby breaks every external UUID reference. Treat the pair *(UUID, file)* as the object identity in your tooling. Rows marked **type conflict** are the most dangerous collisions — the same UUID names objects of *different types*.\n\nOnly native FileMaker UUIDs are checked; FM-Lab's synthetic identities are excluded by design. Duplicates *within* a single file are covered by the companion dashboard **UUID Intra-File Duplicates**."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

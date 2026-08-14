@@ -8,7 +8,11 @@
     "open": "Aiuto"
   },
   "search": {
-    "placeholder": "Filtra…"
+    "placeholder": "Filtra…",
+    "platformAll": "Tutte le piattaforme",
+    "platformLabel": "Piattaforma",
+    "platformStepHint": "Mostra i passaggi eseguibili su questa piattaforma (incl. supporto parziale)",
+    "platformFnHint": "Mostra le funzioni create per questa piattaforma (vincolo di piattaforma)"
   },
   "list": {
     "count": "{{shown}} / {{total}}"
@@ -58,7 +62,12 @@
       "variadic": "variadico",
       "signature": "Firma",
       "purpose": "Scopo",
-      "example": "Esempio"
+      "example": "Esempio",
+      "affinity_dedicated": "Risultati significativi solo qui — richiamabile ovunque",
+      "affinity_exclusive": "Funziona solo qui",
+      "affinityWord_dedicated": "dedicata",
+      "affinityWord_exclusive": "esclusiva",
+      "platformBinding": "Vincolo di piattaforma"
     }
   },
   "params": {
@@ -120,6 +129,22 @@
       "hint": "SaXML e fmxmlsnippet sono due rappresentazioni distinte dello stesso passo.",
       "none": "Nessuna mappatura SaXML acquisita.",
       "sourceNote": "I dati forniti sono neutrali rispetto alle fonti: non contengono citazioni di fonti, nomi di autori o aziende, né artefatti di corpus. I payload di esempio mostrati per ogni step sono sintetici."
+    },
+    "compat": {
+      "label": "Compatibilità piattaforma",
+      "partial": "parziale",
+      "partialHint": "Parziale — supportato con condizioni; vedere la pagina di aiuto Claris del passaggio"
     }
+  },
+  "osAffinity": {
+    "label": "Vincolo al sistema operativo",
+    "word_exclusive": "esclusivo",
+    "word_unsupported": "non supportato",
+    "word_variant": "varia in base all'OS",
+    "word_os_probe": "sonda di piattaforma",
+    "hint_exclusive": "Funziona solo sui sistemi operativi elencati",
+    "hint_unsupported": "Claris indica esplicitamente questo OS come non supportato (dichiarazione inversa fedele alla fonte)",
+    "hint_variant": "Funziona ovunque — il comportamento o il risultato dipende dall'OS",
+    "hint_os_probe": "Restituisce la piattaforma/l'OS a runtime — idioma di guardia, non un vincolo"
   }
 }

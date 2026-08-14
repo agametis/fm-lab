@@ -1,0 +1,75 @@
+{
+  "id": "platform-odata",
+  "version": "1.0.1",
+  "title": "Platform: OData",
+  "description": "OData readiness: borrowed Server step base (OData runs scripts server-side - stated per finding) plus catalog-derivable OData rules (script naming, Commit Records/Requests at the end of data-changing scripts). Compatibility aspect only: no platform-binding signal source exists for OData (Claris publishes no exclusive steps and no dedicated functions, and there is no catalog-derivable execution context), so no binding member is invented.",
+  "keywords": [
+    "platform",
+    "compatibility",
+    "odata",
+    "odata"
+  ],
+  "testType": "platform",
+  "objectTypes": [
+    "Script"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "platform_compat_odata"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Plattform: OData",
+      "description": "OData-Bereitschaft: geliehene Server-Schritt-Basis (OData führt Scripts serverseitig aus — je Finding ausgewiesen) plus aus dem Katalog ableitbare OData-Regeln (Script-Benennung, Commit Records/Requests am Ende datenverändernder Scripts). Nur der Kompatibilitäts-Aspekt: Für OData existiert keine Signalquelle für Plattform-Bindung (Claris veröffentlicht weder exklusive Schritte noch dedizierte Funktionen, und es gibt keinen aus dem Katalog ableitbaren Ausführungskontext) — es wird also kein Bindungs-Member erfunden."
+    },
+    "es": {
+      "title": "Plataforma: OData",
+      "description": "Preparación para OData: base de pasos de Server prestada (OData ejecuta los scripts en el servidor, indicado en cada hallazgo) más las reglas de OData derivables del catálogo (nomenclatura de scripts, Commit Records/Requests al final de los scripts que modifican datos). Solo el aspecto de compatibilidad: para OData no existe ninguna fuente de señal de vinculación de plataforma (Claris no publica pasos exclusivos ni funciones dedicadas, y no hay contexto de ejecución derivable del catálogo), por lo que no se inventa ningún miembro de vinculación."
+    },
+    "fr": {
+      "title": "Plateforme : OData",
+      "description": "Préparation OData : base d'actions Server empruntée (OData exécute les scripts côté serveur — indiqué pour chaque constat) plus les règles OData déductibles du catalogue (nommage des scripts, Commit Records/Requests en fin de script modifiant des données). Aspect compatibilité uniquement : pour OData, il n'existe aucune source de signal de liaison de plateforme (Claris ne publie ni actions exclusives ni fonctions dédiées, et aucun contexte d'exécution n'est déductible du catalogue) — aucun membre de liaison n'est donc inventé."
+    },
+    "it": {
+      "title": "Piattaforma: OData",
+      "description": "Preparazione a OData: base di passi Server presa in prestito (OData esegue gli script lato server — indicato per ogni riscontro) più le regole OData ricavabili dal catalogo (denominazione degli script, Commit Records/Requests al termine degli script che modificano dati). Solo l'aspetto di compatibilità: per OData non esiste alcuna fonte di segnale per il vincolo di piattaforma (Claris non pubblica né passi esclusivi né funzioni dedicate e non esiste un contesto di esecuzione ricavabile dal catalogo), quindi non viene inventato alcun membro di vincolo."
+    },
+    "ja": {
+      "title": "プラットフォーム: OData",
+      "description": "OData 対応状況：Server のステップ基準を借用し（OData はスクリプトをサーバーサイドで実行します — 検出結果ごとに明示）、カタログから導出できる OData 規則（スクリプトの命名、データを変更するスクリプト末尾の Commit Records/Requests）を加えます。互換性の側面のみです。OData にはプラットフォーム結合を示すシグナル源が存在しないため（Claris は専用ステップも専用関数も公表しておらず、カタログから導出できる実行コンテキストもありません）、結合メンバーを作り出すことはしません。"
+    },
+    "ko": {
+      "title": "플랫폼: OData",
+      "description": "OData 준비 상태: Server 단계 기준을 차용하고(OData는 스크립트를 서버 측에서 실행하며, 발견 항목마다 표시됩니다) 카탈로그에서 도출할 수 있는 OData 규칙(스크립트 명명, 데이터를 변경하는 스크립트 끝의 Commit Records/Requests)을 더합니다. 호환성 측면만 다룹니다. OData에는 플랫폼 결합을 나타내는 신호원이 없으므로(Claris가 전용 단계나 전용 함수를 공개하지 않고, 카탈로그에서 도출할 수 있는 실행 컨텍스트도 없습니다) 결합 멤버를 만들어 내지 않습니다."
+    },
+    "nl": {
+      "title": "Platform: OData",
+      "description": "OData-gereedheid: geleende Server-stappenbasis (OData voert scripts aan serverzijde uit — per bevinding vermeld) plus de uit de catalogus af te leiden OData-regels (scriptnaamgeving, Commit Records/Requests aan het eind van gegevenswijzigende scripts). Alleen het compatibiliteitsaspect: voor OData bestaat geen signaalbron voor platformbinding (Claris publiceert geen exclusieve stappen en geen speciale functies, en er is geen uit de catalogus af te leiden uitvoeringscontext) — er wordt dus geen bindingslid verzonnen."
+    },
+    "pt": {
+      "title": "Plataforma: OData",
+      "description": "Prontidão para OData: base de passos do Server emprestada (o OData executa os scripts no servidor — indicado em cada resultado) mais as regras de OData deriváveis do catálogo (nomenclatura de scripts, Commit Records/Requests no fim de scripts que alteram dados). Apenas o aspecto de compatibilidade: para OData não existe fonte de sinal de vinculação de plataforma (a Claris não publica passos exclusivos nem funções dedicadas, e não há contexto de execução derivável do catálogo), portanto nenhum membro de vinculação é inventado."
+    },
+    "sv": {
+      "title": "Plattform: OData",
+      "description": "OData-beredskap: lånad stegbas från Server (OData kör skript på serversidan — anges per träff) plus de OData-regler som går att härleda ur katalogen (skriptnamngivning, Commit Records/Requests i slutet av skript som ändrar data). Endast kompatibilitetsaspekten: för OData finns ingen signalkälla för plattformsbindning (Claris publicerar varken exklusiva steg eller dedikerade funktioner, och det finns ingen körkontext som går att härleda ur katalogen) — därför uppfinns ingen bindningsmedlem."
+    },
+    "zh-Hans": {
+      "title": "平台：OData",
+      "description": "OData 就绪性：借用 Server 的步骤基准（OData 在服务器端执行脚本 —— 逐条发现项标明），并加上可从目录推导的 OData 规则（脚本命名、在修改数据的脚本末尾执行 Commit Records/Requests）。仅涵盖兼容性方面：OData 没有任何平台绑定的信号来源（Claris 既未公布专属步骤也未公布专用函数，也不存在可从目录推导的执行上下文），因此不会臆造绑定成员。"
+    }
+  }
+}

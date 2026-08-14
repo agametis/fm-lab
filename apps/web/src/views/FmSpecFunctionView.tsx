@@ -5,7 +5,7 @@ import { SubNav } from '../components/SubNav';
 import { StatusBar } from '../components/StatusBar';
 import { buildBreadcrumb } from '../lib/navigation';
 import { useApiLang } from '../hooks/useApiLang';
-import { fetchFunctionDetail, resolveHelpHref, type FunctionDetail } from '../api/fmSpecApi';
+import { fetchFunctionDetail, resolveHelpHref, PLATFORM_LABELS, OS_LABELS, type FunctionDetail } from '../api/fmSpecApi';
 import './FmSpecView.css';
 
 // Functions-Domäne kennt kein zh-Hans → auf Englisch zurückfallen (wie Liste).
@@ -57,6 +57,43 @@ export function FmSpecFunctionView() {
               {t('fmSpec:functions.col.category')}: {data.category?.name ?? String(data.categoryId)}
               {' · '}{t('fmSpec:functions.detail.returnType')}: {data.returnTypeDisplay || data.returnType || dash}
               {' · '}{t('fmSpec:functions.col.originVersion')}: {data.originVersion ?? dash}
+            </p>
+          )}
+          {/* Plattform-Bindung (Referenz ≥ 1.12.0) — Affinität, nie
+              Kompatibilität: „liefert nur hier sinnvolle Ergebnisse". */}
+          {data && (data.platformAffinity?.length ?? 0) > 0 && (
+            <p className="fmspec-subtitle fmspec-platform-line">
+              {t('fmSpec:functions.detail.platformBinding')}:{' '}
+              {data.platformAffinity!.map((a) => (
+                <span
+                  key={a.platform}
+                  className="fmspec-tag fmspec-tag--platform"
+                  title={`${t(`fmSpec:functions.detail.affinity_${a.affinity}`)}${a.note ? ` — ${a.note}` : ''}`}
+                >
+                  {PLATFORM_LABELS[a.platform] ?? a.platform}
+                  {' · '}
+                  {t(`fmSpec:functions.detail.affinityWord_${a.affinity}`)}
+                </span>
+              ))}
+            </p>
+          )}
+          {/* OS-Bindung (Referenz ≥ 1.13.0, function_os_affinity): exclusive /
+              unsupported / variant je OS; os_probe = Detektions-Funktion
+              (Guard-Idiom, os=null) als eigenes Badge. */}
+          {data && (data.osAffinity?.length ?? 0) > 0 && (
+            <p className="fmspec-subtitle fmspec-platform-line">
+              {t('fmSpec:osAffinity.label')}:{' '}
+              {data.osAffinity!.map((a) => (
+                <span
+                  key={`${a.affinity}-${a.os}`}
+                  className={`fmspec-tag fmspec-tag--platform fmspec-tag--os-${a.affinity}`}
+                  title={`${t(`fmSpec:osAffinity.hint_${a.affinity}`)}${a.note ? ` — ${a.note}` : ''}`}
+                >
+                  {a.os ? OS_LABELS[a.os] ?? a.os : ''}
+                  {a.os ? ' · ' : ''}
+                  {t(`fmSpec:osAffinity.word_${a.affinity}`)}
+                </span>
+              ))}
             </p>
           )}
         </header>

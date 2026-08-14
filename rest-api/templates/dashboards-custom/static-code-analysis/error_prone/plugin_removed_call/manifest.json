@@ -1,0 +1,92 @@
+{
+  "id": "plugin_removed_call",
+  "version": "1.0.0",
+  "title": "Removed plug-in function call",
+  "description": "Error-prone rule — plug-in function calls whose documentation marks the function as removed (verbatim status from the MBS docs mirror via reference/plugin_spec.duckdb, with the removal release in 'removed_in'). Unlike deprecated functions, these calls fail with any current plugin version: the function no longer exists. Includes one-level custom-function wrappers (via_custom_function) and layout/field calculation usages (evidence_kind='layout'). Unresolved functions of a known plugin are surfaced by the deprecated sibling rule (plugin_deprecated_call), not here — this rule stays strictly removed-only so an error finding always means a real runtime defect. This is the maintenance axis, not the platform axis.",
+  "author": "fm-lab rules",
+  "icon": "circle-x",
+  "category": "error_prone",
+  "tags": [
+    "rule",
+    "error_prone",
+    "plugin",
+    "maintenance"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "error",
+    "category": "error_prone",
+    "rationale": "A removed plug-in function no longer exists in current plugin releases — the call fails at runtime. The status and removal release are verbatim vendor statements from the documentation mirror.",
+    "remediation": "Migrate the call to a current function (see the vendor's removal note per row), or pin the deployment to a plugin release older than the removal version — pinning trades one defect for growing maintenance debt.",
+    "meta": {
+      "name": "Removed plug-in function call",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Plug-in function calls whose vendor documentation marks the function as removed; the call fails with any current plugin version.",
+      "created": "2026-08-12",
+      "references": []
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "requires": [
+      "plugin-spec"
+    ],
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Plug-in function calls in scope whose function is marked removed by the vendor documentation — these calls fail with a current plugin"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

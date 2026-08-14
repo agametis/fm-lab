@@ -3,7 +3,7 @@
   "id": "layout_without_context",
   "version": "1.0.0",
   "title": "Layout without table context",
-  "description": "Best-practice rule — layouts with no table occurrence context. They cannot show record data and are often stray or utility layouts.",
+  "description": "Best-practice rule — flags layouts with no table occurrence context. They cannot show record data and are often stray or utility layouts.",
   "author": "fm-lab rules",
   "icon": "layout-template",
   "category": "best_practices",
@@ -23,9 +23,31 @@
       "author": "fm-lab rules",
       "source": "fm-lab",
       "url": null,
-      "description": "Best-practice rule — layouts with no table occurrence context. They cannot show record data and are often stray or utility layouts.",
+      "description": "Best-practice rule — flags layouts with no table occurrence context. They cannot show record data and are often stray or utility layouts.",
       "created": "2026-07-01",
       "references": []
+    }
+  },
+  "analysis": {
+    "objectTypes": [],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Layout without table context"
     }
   },
   "datasets": [

@@ -8,7 +8,11 @@
     "open": "Aide"
   },
   "search": {
-    "placeholder": "Filtrer…"
+    "placeholder": "Filtrer…",
+    "platformAll": "Toutes les plateformes",
+    "platformLabel": "Plateforme",
+    "platformStepHint": "Afficher les actions exécutables sur cette plateforme (support partiel inclus)",
+    "platformFnHint": "Afficher les fonctions conçues pour cette plateforme (liaison de plateforme)"
   },
   "list": {
     "count": "{{shown}} / {{total}}"
@@ -58,7 +62,12 @@
       "variadic": "variadique",
       "signature": "Signature",
       "purpose": "Objectif",
-      "example": "Exemple"
+      "example": "Exemple",
+      "affinity_dedicated": "Résultats pertinents uniquement ici — appelable partout",
+      "affinity_exclusive": "Fonctionne uniquement ici",
+      "affinityWord_dedicated": "dédiée",
+      "affinityWord_exclusive": "exclusive",
+      "platformBinding": "Liaison de plateforme"
     }
   },
   "params": {
@@ -120,6 +129,22 @@
       "hint": "SaXML et fmxmlsnippet sont deux représentations distinctes du même pas de script.",
       "none": "Aucun mappage SaXML capturé.",
       "sourceNote": "Les données livrées sont neutres quant à leurs sources : elles ne contiennent aucune citation de source, aucun nom d’auteur ou d’entreprise, ni artefact de corpus. Les exemples de contenu affichés par étape sont synthétiques."
+    },
+    "compat": {
+      "label": "Compatibilité de plateforme",
+      "partial": "partiel",
+      "partialHint": "Partiel — pris en charge sous conditions ; voir la page d'aide Claris de l'action"
     }
+  },
+  "osAffinity": {
+    "label": "Liaison au système",
+    "word_exclusive": "exclusif",
+    "word_unsupported": "non pris en charge",
+    "word_variant": "varie selon l'OS",
+    "word_os_probe": "sonde de plateforme",
+    "hint_exclusive": "Fonctionne uniquement sur les systèmes d'exploitation listés",
+    "hint_unsupported": "Claris nomme explicitement cet OS comme non pris en charge (déclaration inverse fidèle à la source)",
+    "hint_variant": "Fonctionne partout — le comportement ou le résultat dépend de l'OS",
+    "hint_os_probe": "Renvoie la plateforme/l'OS à l'exécution — idiome de garde, pas une liaison"
   }
 }

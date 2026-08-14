@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "OS-binding: ingebouwde functies",
+  "analysis.defaultResult.meaning": "Scripts binnen het bereik die via ingebouwde Claris-functies aan specifieke besturingssystemen zijn gebonden"
+ }
+}

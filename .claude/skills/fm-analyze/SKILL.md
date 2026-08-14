@@ -360,6 +360,7 @@ Output the report in the chat. Do not write to files.
 - **Hedging is mandatory**: This skill delivers interpretations. Mark as interpretation what is interpretation. False certainty is worse than honest uncertainty.
 - **Generic fallback**: For Object_Types without a specific workflow (Theme, CustomMenu, Account, etc.), the ObjectLinks hop-out and the evaluation of callers/users is often sufficient to classify the purpose.
 - **Skill composition**: If the user wants ONLY to see the steps instead of an analysis — use fm-summarize, not both.
+- **Analysis Tests & patterns**: When the entry is a *symptom* ("hangs", "slow", "wrong results", "escalating calls") or a "is something wrong with X?" question, check for matching Analysis Tests (`fm-test` skill, `GET /api/tests?objectType=…`) and analysis patterns (`docs/agents/analysis-patterns.md`) and offer them alongside the free-form analysis — tests deliver reproducible, curated findings that this skill can then interpret.
 
 ## Examples
 

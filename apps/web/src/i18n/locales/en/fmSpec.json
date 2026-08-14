@@ -8,7 +8,11 @@
     "open": "Help"
   },
   "search": {
-    "placeholder": "Filter…"
+    "placeholder": "Filter…",
+    "platformAll": "All platforms",
+    "platformLabel": "Platform",
+    "platformStepHint": "Show steps that run on this platform (incl. partial support)",
+    "platformFnHint": "Show functions built for this platform (platform binding)"
   },
   "list": {
     "count": "{{shown}} / {{total}}"
@@ -58,7 +62,12 @@
       "variadic": "variadic",
       "signature": "Signature",
       "purpose": "Purpose",
-      "example": "Example"
+      "example": "Example",
+      "affinity_dedicated": "Only meaningful results here — callable everywhere, degrades elsewhere",
+      "affinity_exclusive": "Works only here",
+      "affinityWord_dedicated": "dedicated",
+      "affinityWord_exclusive": "exclusive",
+      "platformBinding": "Platform binding"
     }
   },
   "params": {
@@ -120,6 +129,22 @@
       "hint": "SaXML and fmxmlsnippet are two distinct representations of the same step.",
       "none": "No SaXML mapping captured.",
       "sourceNote": "The shipped data is source-neutral: it carries no source citations, author or company names, or corpus artifacts. Example payloads shown per step are synthetic."
+    },
+    "compat": {
+      "label": "Platform compatibility",
+      "partial": "partial",
+      "partialHint": "Partial — conditionally supported; see the step's Claris help page"
     }
+  },
+  "osAffinity": {
+    "label": "OS binding",
+    "word_exclusive": "exclusive",
+    "word_unsupported": "not supported",
+    "word_variant": "varies by OS",
+    "word_os_probe": "platform probe",
+    "hint_exclusive": "Works only on the listed operating systems",
+    "hint_unsupported": "Claris explicitly names this OS as not supported (source-true inverse statement)",
+    "hint_variant": "Runs everywhere — behavior or result depends on the OS",
+    "hint_os_probe": "Returns the platform/OS at runtime — guard idiom, not a binding"
   }
 }

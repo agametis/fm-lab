@@ -70,11 +70,12 @@ function onlineLinkMd(url, lang) {
 // ---------------------------------------------------------------------------
 
 function buildCategoryAction(setId, cat) {
-  // markdown-fs-Doc-Sets (fmide, fm-lab) haben keine echte Funktion-Ebene —
-  // die Category IST die Page. Klick öffnet direkt die DocsEntryView mit
-  // Slug == Category-ID. Für indizierte Sets (claris-help, mbs, duckdb)
-  // bleibt es bei der dazwischenliegenden Functions-Liste.
-  if (setId === 'fmide' || setId === 'fm-lab') {
+  // markdown-fs-Root-Seiten (kind 'page') haben keine Zwischenebene — die
+  // Category IST die Page, Klick öffnet direkt die DocsEntryView mit
+  // Slug == Category-ID. Alles andere (markdown-fs-Ordner, indizierte
+  // Categories von claris-help/mbs) navigiert zur Category-Seite mit der
+  // enthaltenen Einträge-Liste.
+  if (cat.kind === 'page') {
     return {
       action: 'openDocsEntry',
       action_args: `set=${encodeURIComponent(setId)}&category=${encodeURIComponent(cat.id)}&fn=${encodeURIComponent(cat.id)}`,
@@ -152,6 +153,7 @@ async function getDocsetInfo(id, lang = 'en') {
     skill: catalog.skill,
     visible: catalog.visible,
     references: catalog.references,
+    start_page: catalog.start_page || null,
     directory: installed?.directory || null,
     installed: !!installed,
     languages: installed?.languages || catalog.languages || [],

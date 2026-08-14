@@ -15,14 +15,14 @@ const environment = {
 
   // Database Configuration (paths relative to rest-api/)
   // Default: lokale READ_ONLY-Kopie der Master-DB, die von convert-xml
-  // synchronisiert wird. Siehe project/plan-db-architektur.md.
+  // synchronisiert wird.
   duckdb: {
     path: process.env.DUCKDB_PATH || './db/fm_catalog.duckdb',
     // Default großzügig (Graph-Analyse lohnt v.a. auf großen Lösungen). Bei
     // Überschreitung spillt DuckDB auf DUCKDB_TEMP_DIR statt zu crashen.
     maxMemory: process.env.DUCKDB_MAX_MEMORY || '8GB',
     threads: parseInt(process.env.DUCKDB_THREADS) || 4,
-    // Ausbaustufe M: LRU-Connection-Pool (eine READ_ONLY-Instanz je Lösung).
+    // LRU-Connection-Pool (eine READ_ONLY-Instanz je Lösung).
     // RAM ist die harte Grenze: poolMax × maxMemory (+ RW-Sidecars) muss in den
     // Host-RAM passen — bei mehr gleichzeitigen Lösungen maxMemory senken.
     poolMax: Math.max(1, parseInt(process.env.FMLAB_DB_POOL_MAX) || 3),
@@ -59,7 +59,7 @@ const environment = {
     writeToken: process.env.ANNOTATIONS_WRITE_TOKEN || '',
   },
 
-  // R4 — zwei orthogonale Drift-Schwellenpaare für den semantic_names-Block
+  // Zwei orthogonale Drift-Schwellenpaare für den semantic_names-Block
   // ① Struktur strenger (95/80): schon wenige nicht-geclusterte
   // Objekte rechtfertigen einen billigen Button-Klick. ② Benennung lockerer
   // (90/75): ein Skill-Lauf (LLM) ist teurer. Werte landen via
@@ -89,8 +89,13 @@ const environment = {
     // ID-Kollisionen (Override-Pattern für lokale Erweiterungen).
     dashboardsDir: process.env.DASHBOARDS_DIR || path.resolve(__dirname, '../../templates/dashboards'),
     dashboardsCustomDir: process.env.DASHBOARDS_CUSTOM_DIR || path.resolve(__dirname, '../../templates/dashboards-custom'),
-    // Exportierte Library-Pakete (.zip) aus dem Ordner-Export (Feature C/D, E1).
+    // Exportierte Library-Pakete (.zip) aus dem Ordner-Export.
     dashboardsPackagesDir: process.env.DASHBOARDS_PACKAGES_DIR || path.resolve(__dirname, '../../templates/dashboards-packages'),
+    // Analysis Tests: System-Tier (ausgeliefert, API-read-only) und Custom-Tier
+    // (Nutzer-Tests; Editor/Import schreiben NUR hierhin). Custom gewinnt bei
+    // ID-Kollision (Override-Pattern wie bei den Dashboards).
+    testsDir: process.env.TESTS_DIR || path.resolve(__dirname, '../../templates/tests'),
+    testsCustomDir: process.env.TESTS_CUSTOM_DIR || path.resolve(__dirname, '../../templates/tests-custom'),
     cacheEnabled: process.env.TEMPLATE_CACHE_ENABLED !== 'false',
     cacheTTL: parseInt(process.env.TEMPLATE_CACHE_TTL) || 3600000, // 1 hour
   },
@@ -147,11 +152,21 @@ const environment = {
     defaultLang:   process.env.REFERENCE_DEFAULT_LANG || 'en',
   },
 
+  // Plugin-Spec-DB (Plattform-Map für Plugin-Funktionen, aus dem MBS-Doku-Mirror
+  // abgeleitet via tools/plugin-spec/derive_mbs.py). ATTACH-Alias 'plugref'.
+  pluginSpec: {
+    duckdbPath: process.env.PLUGIN_SPEC_DUCKDB_PATH || '../reference/plugin_spec.duckdb',
+  },
+
   // API Configuration
   api: {
     defaultLimit: parseInt(process.env.DEFAULT_LIMIT) || 100,
     maxLimit: parseInt(process.env.MAX_LIMIT) || 10000,
-    requestTimeout: parseInt(process.env.REQUEST_TIMEOUT_MS) || 30000,
+    // Idle window for pooled keep-alive connections. Must exceed the idle time
+    // of every client that reuses sockets (browsers, the Vite dev-proxy) —
+    // Node's 5 s default is far below that and produces transport-level
+    // failures on connection reuse.
+    keepAliveTimeout: parseInt(process.env.KEEP_ALIVE_TIMEOUT_MS) || 65000,
   },
 
   // Logging Configuration

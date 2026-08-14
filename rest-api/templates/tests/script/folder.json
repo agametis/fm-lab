@@ -1,0 +1,18 @@
+{
+  "title": "Script Tests",
+  "icon": "file-code",
+  "description": "Curated checks for single scripts, script lists and script-heavy clusters.",
+  "order": 1,
+  "locales": {
+    "de": "Script-Tests",
+    "es": "Pruebas de scripts",
+    "fr": "Tests de scripts",
+    "it": "Test degli script",
+    "ja": "スクリプトテスト",
+    "ko": "스크립트 테스트",
+    "nl": "Scripttests",
+    "pt": "Testes de scripts",
+    "sv": "Skripttester",
+    "zh-Hans": "脚本测试"
+  }
+}

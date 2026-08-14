@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "UUID 클론 충돌",
+    "description": "메타데이터 무결성 검사 — 솔루션의 여러 파일에 존재하는 네이티브 FileMaker UUID(클론 파일, 클론 간 복사/붙여넣기). FileMaker에서는 보이지 않지만 UUID 고유성을 전제로 하는 개발 도구에 지장을 줍니다.",
+    "analysis.defaultResult.meaning": "솔루션의 두 개 이상 파일에 존재하는 네이티브 UUID 수"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "중복 UUID",
+    "summary_kpi.props.items[1].label": "영향받은 객체",
+    "summary_kpi.props.items[2].label": "영향받은 파일",
+    "summary_kpi.props.items[3].label": "타입 충돌",
+    "pairs_card.props.title": "UUID를 공유하는 파일 쌍",
+    "pairs_table.props.columns[0].label": "파일 A",
+    "pairs_table.props.columns[1].label": "파일 B",
+    "pairs_table.props.columns[2].label": "공유 UUID",
+    "pairs_table.props.columns[3].label": "A 대비 %",
+    "pairs_table.props.columns[4].label": "B 대비 %",
+    "pairs_table.props.searchPlaceholder": "파일 검색…",
+    "pairs_table.props.empty.message": "네이티브 UUID를 공유하는 파일 쌍이 없습니다.",
+    "findings_card.props.title": "충돌 객체",
+    "findings_table.props.columns[0].label": "UUID",
+    "findings_table.props.columns[1].label": "타입",
+    "findings_table.props.columns[2].label": "객체",
+    "findings_table.props.columns[3].label": "파일",
+    "findings_table.props.columns[4].label": "파일 수",
+    "findings_table.props.columns[5].label": "타입 충돌",
+    "findings_table.props.searchPlaceholder": "이름, 파일 또는 UUID 검색…",
+    "findings_table.props.empty.message": "여러 파일에 존재하는 UUID가 없습니다 — 클론 충돌 없음.",
+    "notes_card.props.title": "이 검사에 대하여",
+    "notes_md.props.content": "클론된 FileMaker 파일은 클론의 UUID를 그대로 가지므로 동일한 UUID가 **서로 다른 파일의 서로 다른 객체**를 가리킵니다. 솔루션 자체는 정상 동작하지만 UUID 고유성을 전제로 하는 도구(DDR 도구, fmIDE, diff/merge, UUID 기반 통합)는 잘못된 객체를 선택할 수 있습니다.\n\n**자동 수정은 없습니다.** Claris의 복구 모드는 완전히 새로운 UUID를 부여하여 모든 외부 UUID 참조를 깨뜨립니다. 도구에서는 *(UUID, 파일)* 쌍을 객체 식별자로 취급하세요. **타입 충돌**로 표시된 행은 가장 위험한 충돌입니다 — 동일한 UUID가 *다른 타입*의 객체를 가리킵니다.\n\n네이티브 FileMaker UUID만 검사하며 FM-Lab의 합성 ID는 의도적으로 제외됩니다. 한 파일 *내부*의 중복은 자매 대시보드 **파일 내 UUID 중복**이 다룹니다."
+  }
+}

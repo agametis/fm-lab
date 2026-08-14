@@ -1,0 +1,78 @@
+{
+  "id": "platform_compat_cwp",
+  "version": "1.1.0",
+  "title": "Platform compatibility: Custom Web Publishing",
+  "description": "Script steps in scope that do not run, run only partially, or have no published compatibility statement on Custom Web Publishing. Source: Claris step-compatibility table (fm_spec step_compat, tri-state: Yes/No/Partial).",
+  "author": "fm-lab rules",
+  "icon": "server",
+  "category": "platform",
+  "tags": [
+    "rule",
+    "platform"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "platform",
+    "rationale": "Steps that Claris marks 'No' fail on Custom Web Publishing; steps marked 'Partial' are conditionally supported and need the step notes checked.",
+    "remediation": "Replace or guard unsupported steps for this runtime; for 'Partial' steps read the linked Claris help page notes."
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Steps in scope that are not or only partially supported on Custom Web Publishing"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

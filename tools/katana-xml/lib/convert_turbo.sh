@@ -32,6 +32,15 @@ init_turbo_dbs() {
             status        VARCHAR,       -- pending | done | …
             attempt       INTEGER        -- backoff counter
         );" >/dev/null 2>&1 || { echo "ERROR: Chunk-map DB ($CHUNKMAP_DB) could not be initialized."; exit 3; }
+    init_manifest_db
+}
+
+# Persistent manifest tables (manifest_file/manifest_catalog/pipeline_state).
+# Split out of init_turbo_dbs: the classic single-file path (TURBO_MODE=false)
+# also writes a manifest row after a complete P1–P6 chain and needs the tables
+# without the transient chunkmap. Idempotent (CREATE IF NOT EXISTS).
+init_manifest_db() {
+    mkdir -p "$STREAMING_DIR"
     # Manifest (PERSISTENT): one row per source XML (key = XML base name).
     # internal_file_name = the internal FileMaker File_Name (multiple XML exports of the
     # same FileMaker file share it → Phase R must treat them as a group; collision case).
@@ -168,22 +177,193 @@ _turbo_seed_missing_tables() {
 # duplicate primary keys (= 3A cross-chunk overlap or 3B clone collision actually fired).
 # Reads PK columns from $1 (seed DB schema), scans the parquet dir $2 for the tables in $3.
 # Never fails the build (all errors swallowed); logs one warning line per offending table.
+# S0-2 (schema 1.17.0): the report is additionally PERSISTED into MergeAbsorptions in the
+# master DB ($DB_FILE) so dashboards can surface it — same best-effort contract as the
+# warning line (a failed persist never fails the build). Per merged table the persisted
+# rows are refreshed (DELETE even when clean → a formerly-dup table goes back to 0 rows).
+# The two root causes (3A chunk overlap = converter artifact vs. 3B clone file with the
+# same internal File_Name = genuine UUID collision) are NOT distinguishable at the merge
+# point; the table records the event, the dashboard labels it accordingly.
 _turbo_catmerge_dup_report() {
-    local _seed="$1" _pqdir="$2" _tables="$3" _map _t _cols _q n
+    local _seed="$1" _pqdir="$2" _tables="$3" _map _t _cols _dcols _q n
     _map=$("$DUCKDB_BIN" -readonly "$_seed" -noheader -list -c \
         "SELECT table_name || chr(9) || '\"' || array_to_string(constraint_column_names, '\",\"') || '\"' \
          FROM duckdb_constraints() WHERE constraint_type = 'PRIMARY KEY';" 2>/dev/null) || return 0
+    # DDL guard: P1 creates the table since 1.17.0; older incremental masters get it here.
+    [ -n "${DB_FILE:-}" ] && "$DUCKDB_BIN" "$DB_FILE" -c \
+        "CREATE TABLE IF NOT EXISTS MergeAbsorptions (Table_Name VARCHAR NOT NULL, File_Name VARCHAR, Absorbed_Count BIGINT, Merge_Path VARCHAR, Run_Timestamp TIMESTAMP);" \
+        >/dev/null 2>&1
     while IFS=$'\t' read -r _t _cols; do
         [ -z "$_t" ] && continue
         case "$_tables" in *"$_t"*) ;; *) continue ;; esac
         ls "$_pqdir/$_t"/*.parquet >/dev/null 2>&1 || continue
+        [ -n "${DB_FILE:-}" ] && "$DUCKDB_BIN" "$DB_FILE" -c \
+            "DELETE FROM MergeAbsorptions WHERE Table_Name = '$_t' AND Merge_Path = 'catmerge';" >/dev/null 2>&1
+        # H2: for heal tables with active healing, PK duplicates with DISTINCT
+        # identity were REDISTRIBUTED (replacement UUIDs), not absorbed — count
+        # only identity-identical collapses (3A chunk overlap / double
+        # serialization) as absorbed, so MergeAbsorptions stays truthful.
+        _dcols="$_cols"
+        if [ "${FM_UUID_HEAL:-1}" != "0" ] && _turbo_heal_ident "$_t"; then
+            _dcols="$_cols, $_hi_ident"
+        fi
         _q="SELECT (SELECT COUNT(*) FROM read_parquet('$_pqdir/$_t/*.parquet')) \
-             - (SELECT COUNT(*) FROM (SELECT DISTINCT $_cols FROM read_parquet('$_pqdir/$_t/*.parquet')));"
+             - (SELECT COUNT(*) FROM (SELECT DISTINCT $_dcols FROM read_parquet('$_pqdir/$_t/*.parquet')));"
         n=$("$DUCKDB_BIN" ":memory:" -noheader -list -c "$_q" 2>/dev/null)
-        [ -n "$n" ] && [ "$n" -gt 0 ] 2>/dev/null && \
+        if [ -n "$n" ] && [ "$n" -gt 0 ] 2>/dev/null; then
             emit_warn "katmerge: $n duplicate PK in '$_t' absorbed (chunk overlap/clone, a1) — data consistent, but worth checking."
+            if [ -n "${DB_FILE:-}" ]; then
+                # Per-file attribution when the PK carries File_Name (all catalog tables do);
+                # falls back to one unattributed row with the total.
+                "$DUCKDB_BIN" "$DB_FILE" -c \
+                    "INSERT INTO MergeAbsorptions \
+                     SELECT '$_t', File_Name, COUNT(*) - COUNT(DISTINCT ($_dcols)), 'catmerge', (now() AT TIME ZONE 'UTC') \
+                     FROM read_parquet('$_pqdir/$_t/*.parquet') \
+                     GROUP BY File_Name HAVING COUNT(*) - COUNT(DISTINCT ($_dcols)) > 0;" \
+                    >/dev/null 2>&1 \
+                || "$DUCKDB_BIN" "$DB_FILE" -c \
+                    "INSERT INTO MergeAbsorptions VALUES ('$_t', NULL, $n, 'catmerge', (now() AT TIME ZONE 'UTC'));" \
+                    >/dev/null 2>&1
+            fi
+        fi
     done <<< "$_map"
     return 0
+}
+
+# ============================================================================
+# UUID healing (H2) — cross-chunk heal merge for the sub-chunked catalogs
+# (StepsForScripts, LayoutObjects, Layouts). Intra-chunk twins are healed in P1;
+# a duplicate pair split across sub-chunk windows arrives here with the ORIGINAL
+# UUID in both rows (each chunk saw one occurrence → thought it was survivor).
+# The heal merge re-derives GLOBAL survivorship over the parquet union with the
+# SAME formula/namespace/discriminator as P1 — deterministic: the same twin gets
+# the same replacement UUID regardless of chunking (re-import stability). Rows
+# with identical identity (3A chunk overlap / double serialization) yield
+# identical UUIDs → the a1 ON CONFLICT guard collapses them exactly as before.
+# The gate is a MANDATORY duplicate count (fail-hard) — unlike the best-effort
+# a2 report: a silently failed count would skip healing while duplicates exist.
+# Part-path fallback (_turbo_build_part/merge_part_dbs) intentionally does NOT
+# heal cross-chunk pairs (stage-1 restriction): it keeps today's absorb+census
+# behavior; v_check_absorbed_dups then shows the honest remainder.
+# _turbo_heal_ident: per-table identity metadata; returns 1 for non-heal tables.
+_turbo_heal_ident() {
+    case "$1" in
+    StepsForScripts)
+        _hi_uuid='Step_UUID'
+        _hi_ident='Script_ID, Step_Index'
+        _hi_idnull='Script_ID IS NULL OR Step_Index IS NULL'
+        _hi_disc="'script_id=' || Script_ID::VARCHAR || '·step_index=' || Step_Index::VARCHAR"
+        ;;
+    LayoutObjects)
+        _hi_uuid='Object_UUID'
+        _hi_ident='Layout_ID, Object_ID'
+        _hi_idnull='Layout_ID IS NULL OR Object_ID IS NULL'
+        _hi_disc="'layout_id=' || COALESCE(Layout_ID::VARCHAR, '') || '·object_id=' || COALESCE(Object_ID::VARCHAR, '')"
+        ;;
+    Layouts)
+        _hi_uuid='L_UUID'
+        _hi_ident='L_ID'
+        _hi_idnull='L_ID IS NULL'
+        _hi_disc="'layout_id=' || L_ID::VARCHAR"
+        ;;
+    *) return 1 ;;
+    esac
+    return 0
+}
+
+# Healing variant of the merge INSERT (replaces the plain a1 INSERT for heal
+# tables when the gate saw duplicates). Runs against $DB_FILE → the P1 prelude
+# macros (fm_heal_pick/fm_heal_uuid) are available there (master is a copy of a
+# chunk DB; incremental masters are ≥ schema 1.19.0 after the version bump).
+_turbo_emit_heal_merge() {  # $1 = table, $2 = pqdir → SQL on stdout
+    _turbo_heal_ident "$1" || return 1
+    cat <<EOF
+INSERT INTO "$1" BY NAME
+SELECT * EXCLUDE (_hm_surv)
+       REPLACE (fm_heal_pick(_hm_surv, '$1', File_Name, $_hi_uuid, $_hi_disc) AS $_hi_uuid)
+FROM (
+    SELECT *,
+        ($_hi_uuid IS NULL OR $_hi_idnull
+         OR ($_hi_ident) = MIN(($_hi_ident)) OVER (PARTITION BY File_Name, $_hi_uuid)) AS _hm_surv
+    FROM read_parquet('$2/$1/*.parquet')
+)
+ON CONFLICT DO NOTHING;
+EOF
+}
+
+# Census completion for cross-chunk pairs: the chunk-local detail blocks only
+# fire for UUIDs with >1 occurrence WITHIN a chunk — a chunk-split pair has no
+# detail rows at all, and in mixed cases (2 twins in chunk A + 1 in chunk B) the
+# chunk-local survivor label can differ from the global one. This emits, per
+# heal table: (1) INSERT of missing identities (Chunk_Seq = -1 marks
+# merge-derived rows), (2) UPDATE of chunk-local rows whose global status
+# differs. Discriminator equality is the exact identity join (same format as P1).
+_turbo_emit_heal_census() {  # $1 = table, $2 = pqdir → SQL on stdout
+    _turbo_heal_ident "$1" || return 1
+    local _nm _ty _pa _po
+    case "$1" in
+    StepsForScripts)
+        _nm='any_value(Step_Name)'; _ty="'ScriptStep'"
+        _pa='xml_unescape(any_value(Script_Name))'
+        _po="'Step ' || (any_value(Step_Index) + 1)::VARCHAR" ;;
+    LayoutObjects)
+        _nm='any_value(Object_Name)'; _ty='any_value(Object_Type)'
+        _pa='NULL'
+        _po="'Layout ' || COALESCE(Layout_ID::VARCHAR, '?') || ' · object id ' || COALESCE(Object_ID::VARCHAR, '?')" ;;
+    Layouts)
+        _nm='xml_unescape(any_value(L_Name))'; _ty="'Layout'"
+        _pa='NULL'
+        _po="'layout id ' || L_ID::VARCHAR" ;;
+    *) return 1 ;;
+    esac
+    cat <<EOF
+CREATE OR REPLACE TEMP TABLE _hm_census AS
+WITH occ AS (
+    SELECT File_Name, $_hi_uuid AS Object_UUID, $_hi_ident,
+           $_nm AS _cn_name, $_ty AS _cn_type, $_pa AS _cn_parent, $_po AS _cn_pos
+    FROM read_parquet('$2/$1/*.parquet')
+    WHERE $_hi_uuid IS NOT NULL
+    GROUP BY File_Name, $_hi_uuid, $_hi_ident
+),
+dups AS (
+    SELECT File_Name, Object_UUID FROM occ
+    GROUP BY File_Name, Object_UUID HAVING COUNT(*) > 1
+)
+SELECT o.*,
+       (($_hi_ident) = MIN(($_hi_ident)) OVER (PARTITION BY o.File_Name, o.Object_UUID)) AS is_min,
+       $_hi_disc AS disc
+FROM occ o
+JOIN dups d USING (File_Name, Object_UUID);
+
+INSERT INTO DuplicateAbsorptionDetails
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq,
+     Parent_Name, Position, Display_Text, Payload_XML, Healed_UUID, Heal_Status, Discriminator)
+SELECT m.File_Name, '$1', m.Object_UUID, m._cn_name, m._cn_type,
+       ROW_NUMBER() OVER (PARTITION BY m.File_Name, m.Object_UUID ORDER BY ($_hi_ident)) AS Occurrence_Seq,
+       -1 AS Chunk_Seq,
+       m._cn_parent, m._cn_pos, left(COALESCE(m._cn_name, ''), 500), NULL,
+       CASE WHEN NOT m.is_min THEN fm_heal_uuid('$1', m.File_Name, m.Object_UUID, m.disc) END,
+       CASE WHEN m.is_min THEN 'kept-original' ELSE 'healed' END,
+       m.disc
+FROM _hm_census m
+WHERE NOT EXISTS (
+    SELECT 1 FROM DuplicateAbsorptionDetails d
+    WHERE d.Catalog = '$1' AND d.File_Name = m.File_Name
+      AND d.Object_UUID = m.Object_UUID AND d.Discriminator = m.disc)
+ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
+
+UPDATE DuplicateAbsorptionDetails d
+SET Heal_Status = CASE WHEN m.is_min THEN 'kept-original' ELSE 'healed' END,
+    Healed_UUID = CASE WHEN m.is_min THEN NULL
+                       ELSE fm_heal_uuid('$1', m.File_Name, m.Object_UUID, m.disc) END
+FROM _hm_census m
+WHERE d.Catalog = '$1' AND d.File_Name = m.File_Name
+  AND d.Object_UUID = m.Object_UUID AND d.Discriminator = m.disc
+  AND d.Heal_Status IN ('kept-original', 'healed')
+  AND d.Heal_Status IS DISTINCT FROM (CASE WHEN m.is_min THEN 'kept-original' ELSE 'healed' END);
+
+DROP TABLE _hm_census;
+EOF
 }
 
 # ============================================================================
@@ -472,11 +652,17 @@ _turbo_catalog_owned() {
 # heavy chunks (StepsForScripts, LayoutCatalog→LayoutObjects census). Record-disjoint
 # via PK (Catalog, File_Name, Chunk_Seq) — the Catalog column separates the feeders,
 # Chunk_Seq (= seq_offset) separates sub-chunks of the same heavy branch.
+# DuplicateAbsorptionDetails (1.17.0): fed by main (ScriptCatalog details) AND the two
+# heavy chunks (StepsForScripts, LayoutCatalog→Layouts/LayoutObjects details). Same
+# provenance model as DuplicateAbsorptions (Catalog column + Chunk_Seq in the PK) —
+# without this registration the single-owner catmerge silently dropped every detail
+# row written outside the main chunk.
 _turbo_table_multifed() {
     case "$1" in
-        ScriptTriggers)        return 0 ;;
-        DuplicateAbsorptions)  return 0 ;;
-        *)                     return 1 ;;
+        ScriptTriggers)              return 0 ;;
+        DuplicateAbsorptions)        return 0 ;;
+        DuplicateAbsorptionDetails)  return 0 ;;
+        *)                           return 1 ;;
     esac
 }
 
@@ -514,6 +700,11 @@ _turbo_multifed_delete_types() {
             case "$seen" in *" StepsForScripts "*) types="$types${types:+,}'StepsForScripts'" ;; esac
             case "$seen" in *" LayoutCatalog "*)  types="$types${types:+,}'LayoutObjects'" ;; esac
             ;;
+        DuplicateAbsorptionDetails)
+            case "$seen" in *" main "*)            types="$types${types:+,}'ScriptCatalog'" ;; esac
+            case "$seen" in *" StepsForScripts "*) types="$types${types:+,}'StepsForScripts'" ;; esac
+            case "$seen" in *" LayoutCatalog "*)   types="$types${types:+,}'Layouts','LayoutObjects'" ;; esac
+            ;;
     esac
     printf '%s' "$types"
 }
@@ -521,8 +712,9 @@ _turbo_multifed_delete_types() {
 # Provenance column of a multi-fed table (used by the provenance-scoped DELETE).
 _turbo_multifed_prov_col() {
     case "$1" in
-        DuplicateAbsorptions) printf 'Catalog' ;;
-        *)                    printf 'Owner_Type' ;;
+        DuplicateAbsorptions)       printf 'Catalog' ;;
+        DuplicateAbsorptionDetails) printf 'Catalog' ;;
+        *)                          printf 'Owner_Type' ;;
     esac
 }
 
@@ -665,6 +857,29 @@ _turbo_merge_catalog() {
     rm -f "$esql"
     [ "$MERGE_RC" -ne 0 ] && return $MERGE_RC
 
+    # UUID-healing gate (H2): MANDATORY duplicate count over the heal tables'
+    # parquet unions. Fail-hard by design — the best-effort a2 contract would
+    # silently skip healing on a failed count; here a failed/garbled count aborts
+    # the merge (the part-path fallback then applies, which only censuses).
+    # 0 duplicates → the plain a1 INSERT path below runs unchanged (zero overhead).
+    local heal_dups=0
+    if [ "${FM_UUID_HEAL:-1}" != "0" ]; then
+        local _hq="" _ht
+        for _ht in StepsForScripts LayoutObjects Layouts; do
+            ls "$pqdir/$_ht"/*.parquet >/dev/null 2>&1 || continue
+            _turbo_heal_ident "$_ht" || continue
+            [ -n "$_hq" ] && _hq="$_hq + "
+            _hq="${_hq}(SELECT COUNT(*) - COUNT(DISTINCT ($_hi_uuid, File_Name)) FROM read_parquet('$pqdir/$_ht/*.parquet'))"
+        done
+        if [ -n "$_hq" ]; then
+            heal_dups=$("$DUCKDB_BIN" ":memory:" -noheader -list -c "SELECT $_hq;" 2>>"$PARTDB_DIR/catmerge.log")
+            case "$heal_dups" in ''|*[!0-9]*)
+                emit_warn "katmerge: mandatory heal dup-count failed — aborting catalog merge (heal gate is fail-hard)."
+                MERGE_RC=1; return 1 ;;
+            esac
+        fi
+    fi
+
     # Merge: per table with Parquet files: DELETE-by-File (no-op on an empty master, but
     # collision-/incremental-safe) + wildcard INSERT. Atomic per (file×catalog) via owner partition.
     # a1: tables that may carry `ON CONFLICT DO NOTHING` (PK/UNIQUE present). Computed once.
@@ -689,8 +904,24 @@ _turbo_merge_catalog() {
         elif printf '%s\n' "$fn_tables" | grep -qxF "$t"; then
             echo "DELETE FROM \"$t\" WHERE \"File_Name\" IN (SELECT DISTINCT \"File_Name\" FROM read_parquet('$pqdir/$t/*.parquet'));" >> "$msql"
         fi
-        echo "INSERT INTO \"$t\" BY NAME SELECT * FROM read_parquet('$pqdir/$t/*.parquet')$(_oc_clause "$t" "$pk_tables");" >> "$msql"
+        # H2: heal tables get the healing INSERT variant when the gate saw
+        # duplicates — global min-identity survivorship instead of glob-order
+        # last-write-wins; identical identities still collapse via the a1 guard.
+        if [ "${heal_dups:-0}" -gt 0 ] && _turbo_heal_ident "$t"; then
+            _turbo_emit_heal_merge "$t" "$pqdir" >> "$msql"
+        else
+            echo "INSERT INTO \"$t\" BY NAME SELECT * FROM read_parquet('$pqdir/$t/*.parquet')$(_oc_clause "$t" "$pk_tables");" >> "$msql"
+        fi
     done <<< "$tables"
+    # H2: census completion for cross-chunk pairs (after all table merges — the
+    # statements only touch DuplicateAbsorptionDetails + the parquet union).
+    if [ "${heal_dups:-0}" -gt 0 ]; then
+        local _hc
+        for _hc in StepsForScripts LayoutObjects Layouts; do
+            ls "$pqdir/$_hc"/*.parquet >/dev/null 2>&1 || continue
+            _turbo_emit_heal_census "$_hc" "$pqdir" >> "$msql"
+        done
+    fi
     [ -s "$msql" ] && { "$DUCKDB_BIN" "$DB_FILE" < "$msql" >> "$PARTDB_DIR/catmerge.log" 2>&1 || MERGE_RC=$?; }
     rm -f "$msql"
     # a2: surface any PK duplicates the a1 guard absorbed (best-effort, only on success).
@@ -976,7 +1207,7 @@ _turbo_resplit_chunk() {
         if [ "${e%%:*}" = "$cat" ]; then recelem="${e#*:}"; recelem="${recelem%%:*}"; break; fi
     done
     [ -z "$recelem" ] && return 1                   # main/DDR_INFO etc. → not sub-chunkable
-    # A-K3: the chunk on disk was already streamify-renamed at the initial split
+    # The chunk on disk was already streamify-renamed at the initial split
     # (Layout→LC_Layout, Script→SFS_Script, …). Translate the record anchor through
     # STREAMIFY_RULES so the splitter matches the RENAMED element — otherwise it finds no
     # anchor, emits no branch row, and the OOM backoff ESCALATES instead of refining.
@@ -992,7 +1223,7 @@ _turbo_resplit_chunk() {
     local rdir; rdir="$(dirname "$cpath")/resplit_${cid}"
     rm -rf "$rdir"; mkdir -p "$rdir"
     local sc="$rdir/chunkmap.tsv"
-    # A-K3: LC_ALL=C "$AWK_BIN" (mirror of the initial split) — byte transparency + the
+    # LC_ALL=C "$AWK_BIN" (mirror of the initial split) — byte transparency + the
     # configured awk (mawk/gawk), not the shell default awk.
     LC_ALL=C "$AWK_BIN" -v outdir="$rdir" -v subchunk="$mp" -v recmap="${cat}:${recelem}:${mp}" -v chunkmap="$sc" \
         -f "$KATANA_COMMON_AWK" -f "$SPLITTER_AWK" < "$cpath" >"$rdir/split.log" 2>&1 || return 1
@@ -1426,6 +1657,43 @@ _turbo_write_manifest() {
                last_ingest_ts=excluded.last_ingest_ts;
             DETACH cm;" >/dev/null 2>&1
     done
+}
+
+# ── Manifest row for a completed SINGLE-FILE run ───────────────────────
+# _manifest_write_single <xml-abs-path> — called from single mode after a fully
+# successful P1–P6 chain (both engines: classic and turbo-single). Writes the same
+# manifest_file signature as _turbo_write_manifest so a later --batch --changed-only
+# skips the file instead of re-parsing it. Differences to the batch writer:
+#   - internal_file_name/fm_version/has_ddr_info come from the master's FilesCatalog
+#     (newest Import_Timestamp = the row this run just wrote); there is no part DB.
+#   - manifest_catalog rows for the file are DELETED, not written: single runs have no
+#     per-chunk content hashes, and stale hashes from an older batch could let the
+#     catalog gate skip a catalog whose master rows this run has since replaced.
+#     Missing rows only cost the catalog-granular skip (whole-file re-parse on change).
+_manifest_write_single() {
+    local xml="$1"
+    local fn mt sz h internal fmver ddr
+    fn="$(basename "$xml")"; fn="${fn%.xml}"
+    mt=$(stat -c%Y "$xml" 2>/dev/null || stat -f%m "$xml" 2>/dev/null)
+    sz=$(stat -c%s "$xml" 2>/dev/null || stat -f%z "$xml" 2>/dev/null)
+    h=$(_turbo_file_hash "$xml")
+    IFS=$'\t' read -r internal fmver ddr < <("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c \
+        "SELECT File_Name || chr(9) || COALESCE(FileMaker_Version,'') || chr(9) || COALESCE(Has_DDR_INFO::VARCHAR,'')
+         FROM FilesCatalog ORDER BY Import_Timestamp DESC LIMIT 1;" 2>/dev/null)
+    esc() { printf '%s' "$1" | sed "s/'/''/g"; }
+    "$DUCKDB_BIN" "$MANIFEST_DB" -c "
+        INSERT INTO manifest_file
+          (file_name, internal_file_name, file_mtime, file_size, file_hash,
+           fm_version, has_ddr_info, converter_version, schema_version, last_ingest_ts)
+        VALUES ('$(esc "$fn")', '$(esc "$internal")', ${mt:-0}, ${sz:-0}, '$(esc "$h")',
+           '$(esc "$fmver")', '$(esc "$ddr")', '$(esc "$CONVERTER_VERSION")', '$(esc "$SCHEMA_VERSION_EXPECTED")', (now() AT TIME ZONE 'UTC'))
+        ON CONFLICT (file_name) DO UPDATE SET
+           internal_file_name=excluded.internal_file_name, file_mtime=excluded.file_mtime,
+           file_size=excluded.file_size, file_hash=excluded.file_hash,
+           fm_version=excluded.fm_version, has_ddr_info=excluded.has_ddr_info,
+           converter_version=excluded.converter_version, schema_version=excluded.schema_version,
+           last_ingest_ts=excluded.last_ingest_ts;
+        DELETE FROM manifest_catalog WHERE file_name='$(esc "$fn")';" >/dev/null 2>&1
 }
 
 # Read/write the catalogs_built marker (pipeline_state in the manifest DB).

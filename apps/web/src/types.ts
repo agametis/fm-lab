@@ -1,7 +1,24 @@
 import type { components } from '@packages/shared/types';
 
+/**
+ * Healing metadata delivered by the object-detail API for objects whose UUID
+ * was replaced during duplicate healing (intra-file UUID duplicates): the twin
+ * with the smallest internal ID keeps the original UUID, further twins get a
+ * synthetic replacement (md5 hex, 32 chars WITHOUT dashes — formally
+ * distinguishable from native 8-4-4-4-12 UUIDs). Absent for native UUIDs.
+ */
+export interface ObjectHealing {
+  is_synthetic: boolean;
+  /** Original UUID from the source file — ambiguous there (assigned twice). */
+  original_uuid: string | null;
+  discriminator?: string | null;
+}
+
 // Re-export commonly used types
-export type FMObject = components['schemas']['FMObject'];
+export type FMObject = components['schemas']['FMObject'] & {
+  /** Only present for synthetic (healed) UUIDs — see ObjectHealing. */
+  healing?: ObjectHealing;
+};
 export type ObjectType = components['schemas']['ObjectType'];
 
 /**
@@ -93,7 +110,7 @@ export interface ListItemWrapper {
 export type VirtualListRow = GroupHeader | ListItemWrapper;
 
 // Detail View types (Phase 3b)
-export type DetailViewTab = 'detail' | 'references' | 'graph' | 'versions' | 'notes';
+export type DetailViewTab = 'detail' | 'references' | 'graph' | 'tests' | 'versions' | 'notes';
 
 export interface TabDefinition {
   id: DetailViewTab;
@@ -114,6 +131,7 @@ export const DETAIL_TABS: readonly TabDefinition[] = [
   { id: 'detail',     label: 'detailView.tabs.detail',     enabled: true },
   { id: 'references', label: 'detailView.tabs.references', enabled: true },
   { id: 'graph',      label: 'detailView.tabs.graph',      enabled: true },
+  { id: 'tests',      label: 'detailView.tabs.tests',      enabled: true },
   { id: 'versions',   label: 'detailView.tabs.versions',   enabled: false },
   { id: 'notes',      label: 'detailView.tabs.notes',      enabled: false },
 ];

@@ -36,5 +36,6 @@ Every script step of every script, one row per step, ordered by `Step_Index`. `S
 - Extracted parameter columns: `Variable_Name` (Set Variable), `Calculation_Text` (the step's main calc expression), `Inserted_Text`, `Comment_Text`, `Boolean_Type`/`Boolean_Value` (on/off style options).
 - `Step_XML`/`Parameters_XML` hold the raw fragment; object references inside them are already resolved into [ObjectLinks](../object-catalog/ObjectLinks.md) — query the edge, not the XML.
 - `DDR_UUID` joins to [DDR_ScriptSteps](DDR_ScriptSteps.md) for the human-readable step text.
+- Script steps carry no per-instance ID in the export, so a healed duplicate step's replacement UUID is keyed by `(script identity, Step_Index)` — stable across re-imports only as long as the script is not restructured. See [UUID Healing and Duplicate Census](../UUID%20Healing%20and%20Duplicate%20Census.md).
 
 **See also:** [ScriptCatalog](ScriptCatalog.md) · [DDR_ScriptSteps](DDR_ScriptSteps.md) · [ObjectLinks](../object-catalog/ObjectLinks.md)

@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Fält med automatiskt index",
-    "description": "Best practice-regel — fält med indexering 'Ingen' men där 'Skapa index automatiskt' är aktiverat. Den första sökningen eller sorteringen startar i tysthet en icke avbrytbar indexuppbyggnad på servern — en latent tidsinställd bomb med följdeffekter på lagring, säkerhetskopior och importhastighet."
+    "description": "Bästa praxis-regel — flaggar den riskabla kombinationen av indexering 'Ingen' med 'Skapa index automatiskt' fortfarande aktiverat. Något index finns ännu inte, så den första sökningen eller sorteringen startar i tysthet en icke avbrytbar indexuppbyggnad vid behov — en latent tidsinställd bomb med följdeffekter på lagring, säkerhetskopior och importhastighet."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Träffar",

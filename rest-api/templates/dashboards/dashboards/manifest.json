@@ -1,6 +1,6 @@
 {
   "id": "dashboards",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "Dashboards",
   "description": "Overview of every available dashboard.",
   "author": "fm-lab core",
@@ -9,6 +9,8 @@
   "entry": "layout.json",
   "datasets": [
     { "id": "dashboards", "source": "builtin:list_dashboards",
+      "params": { "excludeTags": ["home", "nav", "internal", "system"] } },
+    { "id": "folders", "source": "builtin:list_dashboard_folders",
       "params": { "excludeTags": ["home", "nav", "internal", "system"] } }
   ],
   "permissions": { "read_only": true, "allow_navigation": true }

@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Perform Find ohne Set Error Capture",
-    "description": "Best-Practice-Regel — Scripts mit Perform Find, aber ohne Set Error Capture [Ein]. Ein „Keine Datensätze\"-Dialog kann den Nutzer mitten im Script unterbrechen."
+    "description": "Best-Practice-Regel — findet Scripts mit Perform Find, aber ohne Set Error Capture [Ein]. Ein „Keine Datensätze\"-Dialog kann den Nutzer mitten im Script unterbrechen."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Treffer",

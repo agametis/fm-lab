@@ -1,7 +1,8 @@
 {
   "manifest": {
     "title": "스크립트의 TO-DO",
-    "description": "주석 스텝의 미완료 작업을 세 가지 표기법(TO DO, FIX IT, TBD)으로 표시합니다. 개수를 클릭하면 결과 목록을 필터링합니다."
+    "description": "주석 스텝의 미완료 작업을 세 가지 표기법(TO DO, FIX IT, TBD)으로 표시합니다. 개수를 클릭하면 결과 목록을 필터링합니다.",
+    "analysis.defaultResult.meaning": "스크립트 주석의 TODO/FIXIT/TBD 표시 줄"
   },
   "layout": {
     "todo_kpi_kpistrip.props.items[0].label": "전체 라인",

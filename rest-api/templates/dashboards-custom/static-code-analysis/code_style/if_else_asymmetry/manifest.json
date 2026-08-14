@@ -7,7 +7,13 @@
   "author": "fm-lab rules",
   "icon": "git-fork",
   "category": "code_style",
-  "tags": ["rule", "pmd", "code_style", "scripts", "refactoring"],
+  "tags": [
+    "rule",
+    "pmd",
+    "code_style",
+    "scripts",
+    "refactoring"
+  ],
   "entry": "layout.json",
   "rule": {
     "severity": "info",
@@ -30,19 +36,67 @@
       ]
     }
   },
+  "analysis": {
+    "objectTypes": [],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "if_else_kpi",
+      "column": "asymmetric_blocks",
+      "type": "number",
+      "name": "asymmetric_blocks",
+      "unit": "findings",
+      "meaning": "If/Else blocks with a long If branch and a near-empty Else branch"
+    }
+  },
   "datasets": [
-    { "id": "if_else_kpi",    "source": "bundle:data/if_else_kpi.sql" },
-    { "id": "if_else_blocks", "source": "bundle:data/if_else_blocks.sql" }
+    {
+      "id": "if_else_kpi",
+      "source": "bundle:data/if_else_kpi.sql"
+    },
+    {
+      "id": "if_else_blocks",
+      "source": "bundle:data/if_else_blocks.sql"
+    }
   ],
   "params": [
-    { "name": "file",         "type": "string",  "required": false,
-      "description": "Optional file filter — derived from the app-level filter." },
-    { "name": "min_if_len",   "type": "number", "required": false,
-      "description": "Minimum number of steps inside the If branch (default 10)." },
-    { "name": "max_else_len", "type": "number", "required": false,
-      "description": "Maximum number of steps inside the Else branch (default 2)." },
-    { "name": "limit",        "type": "number", "required": false,
-      "description": "Maximum number of rows returned (default 50)." }
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter — derived from the app-level filter."
+    },
+    {
+      "name": "min_if_len",
+      "type": "number",
+      "required": false,
+      "description": "Minimum number of steps inside the If branch (default 10)."
+    },
+    {
+      "name": "max_else_len",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of steps inside the Else branch (default 2)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of rows returned (default 50)."
+    }
   ],
-  "permissions": { "read_only": true, "allow_navigation": true }
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
 }

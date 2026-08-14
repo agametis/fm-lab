@@ -1,0 +1,18 @@
+{
+  "title": "Platform Context Tests",
+  "icon": "server",
+  "description": "Two aspects per target environment: compatibility of scripts with the environment (Claris step-compatibility table; NULL = Partial) and - where a signal source exists (iOS, Server) - platform binding: a neutral inventory of scripts built FOR the environment.",
+  "order": 3,
+  "locales": {
+    "de": "Plattform-Kontext-Tests",
+    "es": "Pruebas de contexto de plataforma",
+    "fr": "Tests de contexte de plateforme",
+    "it": "Test del contesto di piattaforma",
+    "ja": "プラットフォームコンテキストテスト",
+    "ko": "플랫폼 컨텍스트 테스트",
+    "nl": "Platformcontexttests",
+    "pt": "Testes de contexto de plataforma",
+    "sv": "Plattformskontexttester",
+    "zh-Hans": "平台上下文测试"
+  }
+}

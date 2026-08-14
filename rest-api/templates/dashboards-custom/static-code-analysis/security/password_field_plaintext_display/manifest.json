@@ -7,7 +7,11 @@
   "author": "fm-lab rules",
   "icon": "eye",
   "category": "security",
-  "tags": ["rule", "security", "layout"],
+  "tags": [
+    "rule",
+    "security",
+    "layout"
+  ],
   "entry": "layout.json",
   "rule": {
     "severity": "warning",
@@ -24,15 +28,54 @@
       "references": []
     }
   },
+  "analysis": {
+    "objectTypes": [],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Password field displayed as plain text"
+    }
+  },
   "datasets": [
-    { "id": "summary",  "source": "bundle:data/summary.sql" },
-    { "id": "findings", "source": "bundle:data/findings.sql" }
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
   ],
   "params": [
-    { "name": "file", "type": "string", "required": false,
-      "description": "Optional file filter (from the app-level filter)." },
-    { "name": "limit", "type": "number", "required": false,
-      "description": "Maximum number of findings returned (default 500)." }
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
   ],
-  "permissions": { "read_only": true, "allow_navigation": true }
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
 }

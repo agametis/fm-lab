@@ -141,6 +141,11 @@ const ERROR_CODES = {
   // (geklonte/modulare FileMaker-Dateien teilen interne UUIDs).
   // Bare UUID ist dann nicht eindeutig → Client muss ?file=<File_Name> nachreichen.
   AMBIGUOUS_UUID: { code: "AMBIGUOUS_UUID", status: 409 },
+  // Synthetic replacement UUID from UUID healing (schema 1.19.0): the object is a
+  // healed intra-file duplicate twin; its UUID exists only in FM-Lab, never in the
+  // FileMaker source → fmp:// deep links are impossible by design (422, not 404 —
+  // the object DOES exist in the catalog).
+  SYNTHETIC_UUID: { code: "SYNTHETIC_UUID", status: 422 },
   TEMPLATE_NOT_FOUND: { code: "TEMPLATE_NOT_FOUND", status: 404 },
   DATABASE_ERROR: { code: "DATABASE_ERROR", status: 500 },
   TEMPLATE_ERROR: { code: "TEMPLATE_ERROR", status: 500 },

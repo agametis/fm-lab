@@ -61,7 +61,7 @@ Early versions preprocessed each file in up to eight separate passes (encoding, 
 
 ### Parallelization
 
-Chunks are converted by **independent worker processes**, each writing into its own small DuckDB part database. Because every chunk is a self-contained document and FileMaker records carry UUIDs, the part results merge back into the master conflict-free — order does not matter. After Phase 1, the part databases are consolidated (via Parquet slices) into the master catalog.
+Chunks are converted by **independent worker processes**, each writing into its own small DuckDB part database. Because every chunk is a self-contained document and FileMaker records carry UUIDs, the part results merge back into the master conflict-free — order does not matter. After Phase 1, the part databases are consolidated (via Parquet slices) into the master catalog. One class of UUID conflicts is real rather than an artifact of chunking — the same UUID on two *different* objects in the source file — and is not collapsed but healed with deterministic replacement UUIDs (see [UUID auto-healing](#uuid-auto-healing-for-duplicate-objects)).
 
 ### Worker processes vs. native DuckDB threads
 
@@ -85,6 +85,14 @@ Every worker is accompanied by a lightweight sampler that tracks its peak RSS an
 ### Manifest matching at catalog granularity
 
 Skipping works on two levels. First, whole files: a fast mtime + size prefilter, then the authoritative content hash — unchanged files never enter the pipeline (exports of the same internal FileMaker file are treated as a group, so a change in one always re-imports all). Second, and more finely: for a file that *did* change, Katana compares the **per-catalog hash** against the manifest. A changed script section does not force re-parsing the (usually much heavier) layout catalog of the same file. If a run ends with zero pending chunks and the catalogs were fully built for the current manifest state, the whole rebuild of phases 2–6 is short-circuited — the master is already byte-identical.
+
+### UUID auto-healing for duplicate objects
+
+Real exports occasionally carry the **same UUID on two different objects within one file** — a copy-paste artifact inside FileMaker. Since the catalogs key rows by `(UUID, File_Name)`, the second twin used to be silently absorbed by the import upsert. The engine heals these collisions instead: the twin with the smallest internal FileMaker ID keeps the original UUID, every other twin gets a **deterministic synthetic replacement UUID** — an md5 hash over the catalog, file, original UUID and the object's internal FileMaker ID.
+
+Because the replacement UUID is a pure row function (no counters, no positions), parallel chunk workers need no coordination, the result is invariant under chunking, and re-imports of the same export produce the same replacement UUIDs. Duplicates that main-catalog chunks see locally are healed right in the Phase-1 upserts; pairs split across sub-chunks of the heavy catalogs are healed by a follow-up pass at the merge point, guarded by a fail-hard duplicate count. References follow along: Phase 2 extracts the internal reference IDs (SaXML references are `id`+`name`+`UUID` triples), and Phase 4 distributes incoming links onto the correct twin — healed objects are full graph citizens, not islands.
+
+The whole path is **census-gated**: it only activates for UUIDs the duplicate census flags anyway, so duplicate-free imports pay effectively nothing, and every healed pair is recorded in the census as an auditable original↔replacement mapping. Mechanics, guarantees, limits (the unhealable clone-file case, the positional step discriminator) and the census tables: [UUID Healing and Duplicate Census](../schema/UUID%20Healing%20and%20Duplicate%20Census.md). The escape hatch `FM_UUID_HEAL=0` restores the old absorb-and-census behavior.
 
 ### Auto mode: self-tuning by heuristics
 
@@ -110,6 +118,7 @@ Every decision is printed as a note, and every heuristic has an explicit overrid
 | OOM auto-backoff via chunk map | tight machines finish instead of failing |
 | Manifest skips (file + catalog level) | re-imports touch only what changed |
 | No-change short-circuit | an unchanged corpus re-imports in seconds |
+| Census-gated UUID healing | duplicate-UUID objects survive with deterministic replacement UUIDs, ≈0 cost on clean imports |
 
 ---
 
@@ -119,17 +128,17 @@ Around the Katana chunk machinery, the conversion itself runs as seven SQL phase
 
 ![Katana-2.png](../Assets/Katana-2.png)
 
-**P1 — Extract.** Reads the (chunked) XML via webbed's `read_xml` and lands every FileMaker catalog as raw tables: scripts and steps, layouts and layout objects, fields, value lists, custom functions, accounts and more, including the raw-XML columns for later fine-grained analysis. Runs once per chunk, in parallel; the part results merge into the master.
+**P1 — Extract.** Reads the (chunked) XML via webbed's `read_xml` and lands every FileMaker catalog as raw tables: scripts and steps, layouts and layout objects, fields, value lists, custom functions, accounts and more, including the raw-XML columns for later fine-grained analysis. Runs once per chunk, in parallel; the part results merge into the master. Duplicate object UUIDs are healed right in the upsert step (see [UUID auto-healing](#uuid-auto-healing-for-duplicate-objects)); a small cascade template afterwards propagates healed parent UUIDs into dependent extracts.
 
-**P2 — Resolve.** Extracts references out of the raw XML columns: which script step points to which field, layout, script or custom function. This is the second compute-heavy phase and runs weight-partitioned across worker slices (see the [deep dive](#deep-dive-phase-1-2)).
+**P2 — Resolve.** Extracts references out of the raw XML columns: which script step points to which field, layout, script or custom function. Besides the UUID, each reference's internal FileMaker `@id` is extracted — the key that later disambiguates references onto healed duplicate twins. This is the second compute-heavy phase and runs weight-partitioned across worker slices (see the [deep dive](#deep-dive-phase-1-2)).
 
 **P3 — Details.** Derives detail structures from the resolved data — most prominently the variable analysis: every variable usage across all scripts and calculations, aggregated into a per-variable catalog.
 
-**P4 — Catalog.** Builds the two universal tables at the heart of FM-Lab: the **ObjectCatalog** (every object of every type across all files, uniformly addressable) and **ObjectLinks** (every relationship between them). This is the [knowledge graph](How%20it%20works.md#layer-3-links) the analysis workflows run on.
+**P4 — Catalog.** Builds the two universal tables at the heart of FM-Lab: the **ObjectCatalog** (every object of every type across all files, uniformly addressable) and **ObjectLinks** (every relationship between them). Before the edge list is built, a rewrite stage distributes incoming references onto healed duplicate twins via their internal reference IDs. This is the [knowledge graph](How%20it%20works.md#layer-3-links) the analysis workflows run on.
 
 **P5 — Homes.** Resolves cross-file references — external table occurrences, scripts called across files — and builds the graph views that feed the Graph Explorer and clustering.
 
-**P6 — Validate.** Runs plausibility and consistency checks over the finished catalogs and exposes them as check views, so import problems surface immediately instead of during a later analysis.
+**P6 — Validate.** Runs plausibility and consistency checks over the finished catalogs — including the duplicate-census and phantom-link guards — and exposes them as check views, so import problems surface immediately instead of during a later analysis.
 
 **P7 — Clustering.** Segments the object graph into modules/communities (community detection) so that freshly imported solutions immediately show a meaningful module structure. It runs only on full rebuilds and is non-fatal — a clustering hiccup never invalidates the import.
 

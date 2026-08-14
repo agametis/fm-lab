@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Campo ripetuto",
-    "description": "Regola di buone pratiche: campi con più di una ripetizione. I campi ripetuti sono difficili da interrogare e da elaborare; di solito è meglio una tabella correlata."
+    "description": "Regola di buone pratiche: segnala i campi con più di una ripetizione. I campi ripetuti sono difficili da interrogare e da elaborare; di solito è meglio una tabella correlata."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Risultati",

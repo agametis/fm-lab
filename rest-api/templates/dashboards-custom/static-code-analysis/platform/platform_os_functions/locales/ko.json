@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "OS 바인딩: 기본 제공 함수",
+  "analysis.defaultResult.meaning": "Claris 기본 제공 함수 기반으로 특정 운영 체제에 결합된 범위 내 스크립트"
+ }
+}

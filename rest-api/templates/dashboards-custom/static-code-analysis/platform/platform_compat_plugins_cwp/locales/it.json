@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Compatibilità dei plug-in: Custom Web Publishing",
+  "analysis.defaultResult.meaning": "Chiamate a funzioni plug-in nell'ambito che non vengono eseguite su Custom Web Publishing"
+ }
+}

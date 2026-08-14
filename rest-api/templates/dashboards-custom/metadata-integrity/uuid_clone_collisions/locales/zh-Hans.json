@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "UUID 克隆冲突",
+    "description": "元数据完整性检查 — 在解决方案的多个文件中出现的原生 FileMaker UUID(克隆文件、克隆之间的复制/粘贴)。在 FileMaker 中不可见,但会干扰以 UUID 唯一性为前提的开发工具。",
+    "analysis.defaultResult.meaning": "在解决方案的多个文件中同时存在的原生 UUID 数量"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "重复 UUID",
+    "summary_kpi.props.items[1].label": "受影响对象",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "summary_kpi.props.items[3].label": "类型冲突",
+    "pairs_card.props.title": "共享 UUID 的文件对",
+    "pairs_table.props.columns[0].label": "文件 A",
+    "pairs_table.props.columns[1].label": "文件 B",
+    "pairs_table.props.columns[2].label": "共享 UUID",
+    "pairs_table.props.columns[3].label": "占 A 的 %",
+    "pairs_table.props.columns[4].label": "占 B 的 %",
+    "pairs_table.props.searchPlaceholder": "搜索文件…",
+    "pairs_table.props.empty.message": "没有文件对共享原生 UUID。",
+    "findings_card.props.title": "冲突对象",
+    "findings_table.props.columns[0].label": "UUID",
+    "findings_table.props.columns[1].label": "类型",
+    "findings_table.props.columns[2].label": "对象",
+    "findings_table.props.columns[3].label": "文件",
+    "findings_table.props.columns[4].label": "文件数",
+    "findings_table.props.columns[5].label": "类型冲突",
+    "findings_table.props.searchPlaceholder": "搜索名称、文件或 UUID…",
+    "findings_table.props.empty.message": "没有 UUID 存在于多个文件中 — 无克隆冲突。",
+    "notes_card.props.title": "关于此检查",
+    "notes_md.props.content": "克隆的 FileMaker 文件携带克隆源的 UUID:同一个 UUID 在**不同文件中标识不同的对象**。解决方案本身运行正常,但以 UUID 唯一性为前提的工具(DDR 工具、fmIDE、diff/merge、基于 UUID 的集成)可能选中错误的对象。\n\n**不存在自动修复。** Claris 的修复模式会分配全新的 UUID,从而破坏所有外部 UUID 引用。请在工具中将 *(UUID, 文件)* 这一组合视为对象标识。标记为**类型冲突**的行是最危险的冲突 — 同一个 UUID 指向*不同类型*的对象。\n\n仅检查原生 FileMaker UUID;FM-Lab 的合成标识被有意排除。单个文件*内部*的重复由姊妹仪表板**文件内 UUID 重复**处理。"
+  }
+}

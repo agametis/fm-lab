@@ -1,7 +1,8 @@
 {
   "manifest": {
     "title": "TO-DOs em scripts",
-    "description": "Trabalho pendente em passos de comentário em três notações (TO DO, FIX IT, TBD). Clique num número para filtrar a lista de resultados."
+    "description": "Trabalho pendente em passos de comentário em três notações (TO DO, FIX IT, TBD). Clique num número para filtrar a lista de resultados.",
+    "analysis.defaultResult.meaning": "Linhas com marcadores TODO/FIXIT/TBD nos comentários de script"
   },
   "layout": {
     "todo_kpi_kpistrip.props.items[0].label": "Linhas totais",

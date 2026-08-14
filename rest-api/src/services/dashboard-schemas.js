@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const { schemas: testsSchemas } = require('./tests-schemas');
 
 /**
  * Joi-Schemas für Dashboard-Bundles.
@@ -67,6 +68,10 @@ const manifestSchema = Joi.object({
       })).default([]),
     }).unknown(true).optional(),
   }).unknown(true).optional(),
+  // Analysis-Tests-Metadaten (optional, additiv): macht das Bundle als Member
+  // eines Analysis Tests referenzierbar (objectTypes, outputTypes, scope,
+  // defaultResult). Schema lebt in tests-schemas.js (Single Source).
+  analysis: testsSchemas.analysis.optional(),
 }).unknown(true);
 
 // Declarative visibility guard on a node: reads the first row of a dataset and
@@ -100,11 +105,14 @@ const layoutSchema = Joi.object({
 
 // folder.json — optionale Metadaten eines Kategorie-Ordners (Navigation/Library).
 // Alle Felder optional; ein Ordner ohne folder.json bleibt voll funktionsfähig.
+// `locales` ist die Anzeige-Datenschicht (lang → lokalisierter Titel) — explizit
+// deklariert wie im Tests-Schema, nicht nur via .unknown(true) toleriert.
 const folderManifestSchema = Joi.object({
   title: Joi.string().min(1).optional(),
   icon: Joi.string().optional(),
   description: Joi.string().allow('').optional(),
   order: Joi.number().integer().optional(),
+  locales: Joi.object().pattern(Joi.string(), Joi.string()).optional(),
 }).unknown(true);
 
 module.exports = {

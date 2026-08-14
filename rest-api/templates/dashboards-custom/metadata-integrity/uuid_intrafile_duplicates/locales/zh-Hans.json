@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "文件内 UUID 重复",
+    "description": "元数据完整性检查 — 在单个文件内被重复分配的 UUID(导出缺陷,通常由旧版 FileMaker 的复制/粘贴导致)。导入过程按确定性规则每个 UUID 只保留一个对象;此仪表板列出被吸收的对象,并提供明文上下文以便在解决方案中定位。",
+    "analysis.defaultResult.meaning": "普查到的重复 UUID 出现次数（已修复 + 保留原始 + 已吸收）—— 自 UUID 修复以来目录保持完整，但每次出现都标示源端缺陷"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "被吸收的重复",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "summary_kpi.props.items[2].label": "UUID 精确行",
+    "summary_kpi.props.items[3].label": "合并吸收",
+    "findings_card.props.title": "冲突对象(UUID 精确)",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "类型",
+    "findings_table.props.columns[2].label": "容器",
+    "findings_table.props.columns[3].label": "位置",
+    "findings_table.props.columns[4].label": "对象(已解码)",
+    "findings_table.props.columns[5].label": "出现",
+    "findings_table.props.searchPlaceholder": "搜索文件、容器、文本或 UUID…",
+    "findings_table.props.empty.message": "没有 UUID 精确的重复明细 — 导入普查未发现文件内重复。",
+    "merge_card.props.title": "合并吸收(块重叠或内部名称相同的克隆文件)",
+    "merge_table.props.columns[0].label": "目录表",
+    "merge_table.props.columns[1].label": "文件",
+    "merge_table.props.columns[2].label": "吸收数",
+    "merge_table.props.columns[3].label": "合并运行",
+    "merge_table.props.searchPlaceholder": "搜索表或文件…",
+    "merge_table.props.empty.message": "合并时没有吸收任何重复。",
+    "stats_card.props.title": "按目录和文件的普查交叉核对",
+    "stats_table.props.columns[0].label": "目录",
+    "stats_table.props.columns[1].label": "文件",
+    "stats_table.props.columns[2].label": "源记录",
+    "stats_table.props.columns[3].label": "已存储行",
+    "stats_table.props.columns[4].label": "吸收数",
+    "stats_table.props.columns[5].label": "明细覆盖",
+    "stats_table.props.searchPlaceholder": "搜索目录或文件…",
+    "stats_table.props.empty.message": "导入普查未报告任何被吸收的重复。",
+    "notes_card.props.title": "关于此检查",
+    "notes_md.props.content": "被分配给**同一文件内两个对象**的 UUID 是 FileMaker 导出的源缺陷(通常是用旧版 FileMaker 对较新文件进行复制/粘贴所致)。FM-Lab 的导入按 UUID 精确保留一个对象(确定性,后写优先)— 被吸收的对象**已不存在于目录中**。*容器*、*位置* 和 *对象(已解码)* 列是它们仅存的痕迹;请借助这些信息在 FileMaker 中定位两个对象。点击行可打开幸存的对象。\n\n**合并吸收**是独立的一类:在合并文件块时被吸收的重复,其原因事后无法区分 — 转换器内部的块重叠(非解决方案缺陷)或内部文件名相同的克隆文件(真正的冲突)。\n\n**不存在自动修复。** Claris 的修复模式会分配全新的 UUID,破坏所有外部 UUID 引用;修正必须在源文件中进行。同一 UUID 在*不同文件之间*的重复由姊妹仪表板 **UUID 克隆冲突** 处理。数据来源是导入普查 — 数字反映最近一次 XML 导入的状态。",
+    "findings_table.props.columns[6].label": "UUID"
+  }
+}

@@ -107,6 +107,40 @@ detail view's search (`sq` param), etc. See `references/primitives.md` §Actions
 - Defaults live **in the SQL** (and optionally `datasets[].params`), never in the
   frontend.
 
+### Scope block (file filter + S-Block) — mandatory pattern for analysis datasets
+
+Datasets that report per-object findings (rules, checks, anything with a
+`nav_uuid` column) MUST use the combined scope building block — one unit, both
+lines, placed together:
+
+```sql
+AND (getvariable('file') IS NULL OR t.File_Name = getvariable('file'))
+AND (getvariable('scope_uuids') IS NULL
+     OR t.Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
+```
+
+- The second line is the **S-Block**: `scope_uuids` is a CSV of `Object_UUID`s
+  supplied by the Analysis-Tests run boundary (object / object-list / cluster
+  scope). Both predicates collapse to `TRUE` when the params are absent —
+  solution scope stays bit-identical.
+- **Anchor column** = the same column the dataset exposes as `nav_uuid`
+  (`Script_UUID`, `Field_UUID`, generic `Object_UUID`, …). Use
+  `IN (SELECT unnest(...))` — DuckDB plans a hash semi-join; never
+  `list_contains` (O(n) per row).
+- **Placement**: wherever the file filter sits (main WHERE for row rules,
+  inside the aggregation CTE, consumer side of asymmetric rules). If a summary
+  embeds the findings core textually, the S-Block goes into **both** copies.
+- **Aggregating dataset?** Take the anchor column into the projection —
+  as a grouping key or via `any_value()` — otherwise the dashboard is not
+  scope-capable. After a GROUP BY the anchor must be functionally determined by
+  the grouping key (one group = one object; never group by a value attribute
+  like a window name and then filter on the anchor).
+- Declare the capability in the manifest `analysis.scope` block
+  (`supported`/`anchor`/`mode`), and check before delivery: the number of
+  `getvariable('scope_uuids')` occurrences must equal the number of
+  `getvariable('file')` occurrences per file (M5a), and the S-Block anchor must
+  match `analysis.scope.anchor` (M5b).
+
 ### ⚠️ The `:word` preprocessor trap
 
 Before the `getvariable` pass, the API replaces **every** `:word` token in the SQL

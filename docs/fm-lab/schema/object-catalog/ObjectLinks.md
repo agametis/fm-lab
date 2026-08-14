@@ -25,5 +25,6 @@ The edge list of the object graph: every resolved reference between two objects,
 - `Link_Subrole` carries a role-specific qualifier, e.g. the trigger type for `trigger_owner`, `left`/`right` for relationship sort fields, or the access mode for `restricts_*` links.
 - `Is_Cross_File` together with `Source_File`/`Target_File` enables multi-file dependency analysis.
 - The full role vocabulary and its classification live in [LinkRoleRegistry](LinkRoleRegistry.md). Note that `restricts_*` roles are restrictions, not usages — they never make an object count as "used".
+- References onto duplicate-UUID twins are disambiguated at import via FileMaker's internal reference IDs, so each healed twin carries its own incoming edges (within the same file; cross-file references resolve to the twin that kept the original UUID). A healed twin with zero incoming links is therefore a real finding, not an import artifact — see [UUID Healing and Duplicate Census](../UUID%20Healing%20and%20Duplicate%20Census.md).
 
 **See also:** [ObjectCatalog](ObjectCatalog.md) · [LinkRoleRegistry](LinkRoleRegistry.md) · [Link Roles and Subroles](Link%20Roles%20and%20Subroles.md) (all roles and subroles enumerated)

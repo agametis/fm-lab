@@ -6,7 +6,7 @@ SELECT
 FROM (
 SELECT File_Name AS file_name
 FROM (
-    SELECT File_Name, Step_Index, Step_ID,
+    SELECT File_Name, Script_UUID, Step_Index, Step_ID,
            lead(Step_ID) OVER w AS dead_id
     FROM v_script_block_tree
     WHERE Is_Enabled AND Step_ID <> 89
@@ -16,4 +16,6 @@ WHERE Step_ID IN (103, 90)
   AND dead_id IS NOT NULL
   AND dead_id NOT IN (69, 70, 73, 125)
   AND (getvariable('file') IS NULL OR File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
 ) _summary;

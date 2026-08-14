@@ -29,7 +29,7 @@ The *Source → Target* column lists the documented carrier types; a role can ha
 | `calls_customfunction` | Script/Field/LayoutObject/ CustomFunction/ PrivilegeSet → CustomFunction      | A calculation calls the custom function                         |
 | `calls_function`       | Script/Field/LayoutObject/ CustomFunction/ CustomMenuItem/… → BuiltinFunction | A calculation calls a built-in FileMaker function               |
 | `calls_pluginfunction` | Script/Field/LayoutObject/ CustomFunction/ PrivilegeSet → PluginFunction      | A calculation calls an external plugin function (e.g. MBS)      |
-| `calls_script`         | Script → Script                                                               | Perform Script (incl. Perform Script on Server) target          |
+| `calls_script`         | Script → Script                                                               | Perform Script target — incl. Perform Script on Server, marked by the [subrole](#link_subrole) `on_server`/`on_server_callback` (since schema 1.20.0) |
 | `context_table`        | Layout → TableOccurrence                                                      | The layout's context table occurrence                           |
 | `data_source`          | TableOccurrence/ValueList → ExternalDataSource                                | Object sources its data from this external data source          |
 | `default_layout`       | File → Layout                                                                 | Start layout from the file options                              |
@@ -107,6 +107,7 @@ Access limitations from Custom Privileges (`Access_Mode <> 'ReadWrite'` only). A
 
 | Role(s) | Subrole values | Meaning |
 |---|---|---|
+| `calls_script` | `on_server`, `on_server_callback` (since schema 1.20.0) · `MBS:FM.RunScript` | The call's execution context: the target of a *Perform Script on Server* step (164) / *… with Callback* (210) runs **server-side** — this is the platform-binding evidence for FileMaker Server. `MBS:FM.RunScript` marks plugin-mediated calls; `NULL` = ordinary Perform Script. "By name" callsites (runtime-computed target) have no static target and no edge |
 | `trigger_owner` | `OnFirstWindowOpen`, `OnRecordLoad`, `OnLayoutEnter`, `OnObjectSave`, … | The trigger event type |
 | `parent_layout` (LayoutPart) | `Body`, `Header`, `Footer`, `Title Header`, `Leading Sub-summary`, `Trailing Grand Summary`, `Top Navigation`, … | The part type |
 | `breaks_on_field` | part type (e.g. `Leading Sub-summary`) | Which part breaks on the field |

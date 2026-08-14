@@ -354,7 +354,11 @@
     "noName": "(no name)",
     "source": "Source:",
     "relationshipGraphLink": "↗ Relationship graph",
-    "copyUuidAria": "Copy UUID to clipboard"
+    "copyUuidAria": "Copy UUID to clipboard",
+    "copyOriginalUuidAria": "Copy original UUID to clipboard (ambiguous in the source file)",
+    "copySyntheticUuidAria": "Copy synthetic FM-Lab UUID to clipboard",
+    "syntheticBadge": "FM-Lab",
+    "syntheticTooltip": "FM-Lab-internal replacement identity: the original UUID of this object was a duplicate in the source file and has been healed. Click to copy the synthetic UUID (catalog identity)."
   },
   "scriptLine": {
     "expand": "Expand",
@@ -587,5 +591,17 @@
     "optFrameCurrentOnly": "Frame fields in current record only",
     "optShowCurrentInList": "Record indicator in list view",
     "optQuickFind": "Quick find"
+  },
+  "pluginSpec": {
+    "tooltip": "Platform support per {{plugin}} documentation",
+    "since": "since {{version}}",
+    "deprecated": "Deprecated",
+    "replacementHint": "use {{replacement}} instead",
+    "removed": "Removed",
+    "oldNameHint": "Old name — now {{name}}"
+  },
+  "osBinding": {
+    "label": "OS binding:",
+    "tooltip": "Operating systems this script is bound to (from the platform-os-binding test run - neutral inventory, not a defect)."
   }
 }

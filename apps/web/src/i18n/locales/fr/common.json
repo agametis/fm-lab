@@ -18,6 +18,7 @@
   "yes": "Oui",
   "no": "Non",
   "loadError": "Échec du chargement : {{message}}",
+  "plugSpecMissing": "Référence des plugins non installée — les données de plateforme et d'obsolescence des fonctions de plugin sont indisponibles. Elle est livrée avec les versions de fm-lab ; le skill install-mbs-docs peut régénérer reference/plugin_spec.duckdb.",
   "language": {
     "label": "Langue",
     "selectorAriaLabel": "Choisir la langue de l’interface"

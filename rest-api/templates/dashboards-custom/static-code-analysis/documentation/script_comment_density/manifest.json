@@ -7,7 +7,13 @@
   "author": "fm-lab rules",
   "icon": "code",
   "category": "documentation",
-  "tags": ["rule", "pmd", "documentation", "scripts", "comments"],
+  "tags": [
+    "rule",
+    "pmd",
+    "documentation",
+    "scripts",
+    "comments"
+  ],
   "entry": "layout.json",
   "rule": {
     "severity": "info",
@@ -30,14 +36,61 @@
       ]
     }
   },
+  "analysis": {
+    "objectTypes": [],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "script_comment_density_kpi",
+      "column": "scripts_without_comment",
+      "type": "number",
+      "name": "scripts_without_comment",
+      "unit": "findings",
+      "meaning": "Substantial scripts without a single comment step"
+    }
+  },
   "datasets": [
-    { "id": "script_comment_density_kpi", "source": "bundle:data/script_comment_density_kpi.sql" },
-    { "id": "script_comment_density",     "source": "bundle:data/script_comment_density.sql" }
+    {
+      "id": "script_comment_density_kpi",
+      "source": "bundle:data/script_comment_density_kpi.sql"
+    },
+    {
+      "id": "script_comment_density",
+      "source": "bundle:data/script_comment_density.sql"
+    }
   ],
   "params": [
-    { "name": "file",      "type": "string",  "required": false, "description": "Optional FileMaker file filter (exact File_Name match)." },
-    { "name": "min_steps", "type": "number", "required": false, "description": "Minimum total step count for a script to be included (default 10)." },
-    { "name": "limit",     "type": "number", "required": false, "description": "Maximum number of rows in the detail table (default 200)." }
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional FileMaker file filter (exact File_Name match)."
+    },
+    {
+      "name": "min_steps",
+      "type": "number",
+      "required": false,
+      "description": "Minimum total step count for a script to be included (default 10)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of rows in the detail table (default 200)."
+    }
   ],
-  "permissions": { "read_only": true, "allow_navigation": true }
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
 }

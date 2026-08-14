@@ -1,0 +1,75 @@
+{
+  "id": "platform-cloud",
+  "version": "1.0.1",
+  "title": "Platform: FileMaker Cloud",
+  "description": "Checks the scripts in scope against the FileMaker Cloud runtime: steps Claris marks 'No' (error), 'Partial' (warning - conditionally supported) or without a published statement (info). Compatibility aspect only: no platform-binding signal source exists for FileMaker Cloud (Claris publishes no exclusive steps and no dedicated functions, and there is no catalog-derivable execution context), so no binding member is invented.",
+  "keywords": [
+    "platform",
+    "compatibility",
+    "filemaker",
+    "cloud"
+  ],
+  "testType": "platform",
+  "objectTypes": [
+    "Script"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "platform_compat_cloud"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Plattform: FileMaker Cloud",
+      "description": "Prüft die Scripts im Prüfumfang gegen die Laufzeitumgebung FileMaker Cloud: Schritte, die Claris mit 'Nein' (Fehler), 'Teilweise' (Warnung — bedingt unterstützt) oder ohne veröffentlichte Aussage (Info) führt. Nur der Kompatibilitäts-Aspekt: Für FileMaker Cloud existiert keine Signalquelle für Plattform-Bindung (Claris veröffentlicht weder exklusive Schritte noch dedizierte Funktionen, und es gibt keinen aus dem Katalog ableitbaren Ausführungskontext) — es wird also kein Bindungs-Member erfunden."
+    },
+    "es": {
+      "title": "Plataforma: FileMaker Cloud",
+      "description": "Comprueba los scripts en el alcance frente al entorno de ejecución FileMaker Cloud: pasos que Claris marca como 'No' (error), 'Parcial' (advertencia: compatible con condiciones) o sin declaración publicada (info). Solo el aspecto de compatibilidad: para FileMaker Cloud no existe ninguna fuente de señal de vinculación de plataforma (Claris no publica pasos exclusivos ni funciones dedicadas, y no hay contexto de ejecución derivable del catálogo), por lo que no se inventa ningún miembro de vinculación."
+    },
+    "fr": {
+      "title": "Plateforme : FileMaker Cloud",
+      "description": "Vérifie les scripts du périmètre par rapport à l'environnement d'exécution FileMaker Cloud : actions que Claris indique comme « Non » (erreur), « Partiel » (avertissement — prise en charge conditionnelle) ou sans déclaration publiée (info). Aspect compatibilité uniquement : pour FileMaker Cloud, il n'existe aucune source de signal de liaison de plateforme (Claris ne publie ni actions exclusives ni fonctions dédiées, et aucun contexte d'exécution n'est déductible du catalogue) — aucun membre de liaison n'est donc inventé."
+    },
+    "it": {
+      "title": "Piattaforma: FileMaker Cloud",
+      "description": "Verifica gli script nell'ambito rispetto all'ambiente di esecuzione FileMaker Cloud: passi che Claris indica come 'No' (errore), 'Parziale' (avviso — supportato con riserva) o senza dichiarazione pubblicata (info). Solo l'aspetto di compatibilità: per FileMaker Cloud non esiste alcuna fonte di segnale per il vincolo di piattaforma (Claris non pubblica né passi esclusivi né funzioni dedicate e non esiste un contesto di esecuzione ricavabile dal catalogo), quindi non viene inventato alcun membro di vincolo."
+    },
+    "ja": {
+      "title": "プラットフォーム: FileMaker Cloud",
+      "description": "対象範囲内のスクリプトを FileMaker Cloud の実行環境に照らして検査します。Claris が「いいえ」とする（エラー）、「一部」とする（警告 — 条件付きで対応）、または公表された記載がない（情報）ステップが対象です。 互換性の側面のみです。FileMaker Cloud にはプラットフォーム結合を示すシグナル源が存在しないため（Claris は専用ステップも専用関数も公表しておらず、カタログから導出できる実行コンテキストもありません）、結合メンバーを作り出すことはしません。"
+    },
+    "ko": {
+      "title": "플랫폼: FileMaker Cloud",
+      "description": "범위 내 스크립트를 FileMaker Cloud 런타임 환경에 대해 검사합니다. Claris가 '아니요'로 표시한 단계(오류), '부분'으로 표시한 단계(경고 — 조건부 지원), 공개된 언급이 없는 단계(정보)가 대상입니다. 호환성 측면만 다룹니다. FileMaker Cloud에는 플랫폼 결합을 나타내는 신호원이 없으므로(Claris가 전용 단계나 전용 함수를 공개하지 않고, 카탈로그에서 도출할 수 있는 실행 컨텍스트도 없습니다) 결합 멤버를 만들어 내지 않습니다."
+    },
+    "nl": {
+      "title": "Platform: FileMaker Cloud",
+      "description": "Controleert de scripts binnen het bereik tegen de runtime-omgeving FileMaker Cloud: stappen die Claris markeert als 'Nee' (fout), 'Gedeeltelijk' (waarschuwing — voorwaardelijk ondersteund) of zonder gepubliceerde uitspraak (info). Alleen het compatibiliteitsaspect: voor FileMaker Cloud bestaat geen signaalbron voor platformbinding (Claris publiceert geen exclusieve stappen en geen speciale functies, en er is geen uit de catalogus af te leiden uitvoeringscontext) — er wordt dus geen bindingslid verzonnen."
+    },
+    "pt": {
+      "title": "Plataforma: FileMaker Cloud",
+      "description": "Verifica os scripts no escopo em relação ao ambiente de execução FileMaker Cloud: passos que a Claris marca como 'Não' (erro), 'Parcial' (aviso — com suporte condicional) ou sem declaração publicada (info). Apenas o aspecto de compatibilidade: para FileMaker Cloud não existe fonte de sinal de vinculação de plataforma (a Claris não publica passos exclusivos nem funções dedicadas, e não há contexto de execução derivável do catálogo), portanto nenhum membro de vinculação é inventado."
+    },
+    "sv": {
+      "title": "Plattform: FileMaker Cloud",
+      "description": "Kontrollerar skripten inom omfånget mot körmiljön FileMaker Cloud: steg som Claris anger som 'Nej' (fel), 'Delvis' (varning — stöds villkorligt) eller utan publicerat besked (info). Endast kompatibilitetsaspekten: för FileMaker Cloud finns ingen signalkälla för plattformsbindning (Claris publicerar varken exklusiva steg eller dedikerade funktioner, och det finns ingen körkontext som går att härleda ur katalogen) — därför uppfinns ingen bindningsmedlem."
+    },
+    "zh-Hans": {
+      "title": "平台：FileMaker Cloud",
+      "description": "将范围内的脚本对照 FileMaker Cloud 运行环境进行检查：Claris 标记为“否”的步骤（错误）、标记为“部分”的步骤（警告 —— 有条件支持），以及没有公开说明的步骤（信息）。 仅涵盖兼容性方面：FileMaker Cloud 没有任何平台绑定的信号来源（Claris 既未公布专属步骤也未公布专用函数，也不存在可从目录推导的执行上下文），因此不会臆造绑定成员。"
+    }
+  }
+}

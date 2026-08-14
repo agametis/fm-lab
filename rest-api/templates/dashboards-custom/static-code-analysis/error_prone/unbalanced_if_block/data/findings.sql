@@ -11,5 +11,7 @@ SELECT 'unbalanced-if-block' AS rule_id, 'error' AS severity,
     row_number() OVER (ORDER BY File_Name, Script_Name) AS row_key
 FROM bal
 WHERE (net_if_balance <> 0 OR worst_running_depth < 0) AND (getvariable('file') IS NULL OR File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
 ORDER BY File_Name, Script_Name
 LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);

@@ -67,7 +67,7 @@
         "children": [
           {
             "type": "XmlImportIntegrity",
-            "props": { "detailsDataset": "xml_import_integrity_details" }
+            "props": {}
           }
         ]
       },

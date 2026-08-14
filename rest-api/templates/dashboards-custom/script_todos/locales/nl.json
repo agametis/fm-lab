@@ -1,7 +1,8 @@
 {
   "manifest": {
     "title": "TO-DO’s in scripts",
-    "description": "Openstaand werk in commentaarstappen via drie notaties (TO DO, FIX IT, TBD). Klik op een aantal om de resultatenlijst te filteren."
+    "description": "Openstaand werk in commentaarstappen via drie notaties (TO DO, FIX IT, TBD). Klik op een aantal om de resultatenlijst te filteren.",
+    "analysis.defaultResult.meaning": "Regels met TODO/FIXIT/TBD-markeringen in scriptcommentaar"
   },
   "layout": {
     "todo_kpi_kpistrip.props.items[0].label": "Totaal regels",

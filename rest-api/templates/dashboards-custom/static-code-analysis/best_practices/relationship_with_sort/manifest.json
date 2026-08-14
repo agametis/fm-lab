@@ -3,7 +3,7 @@
   "id": "relationship_with_sort",
   "version": "1.0.0",
   "title": "Relationship with sorted records",
-  "description": "Best-practice rule — relationships that sort their related records. The sort runs whenever the relation is evaluated and can slow portals and lookups.",
+  "description": "Best-practice rule — flags relationships that sort their related records. The sort runs whenever the relation is evaluated and can slow portals and lookups.",
   "author": "fm-lab rules",
   "icon": "arrow-down-up",
   "category": "best_practices",
@@ -23,9 +23,31 @@
       "author": "fm-lab rules",
       "source": "fm-lab",
       "url": null,
-      "description": "Best-practice rule — relationships that sort their related records. The sort runs whenever the relation is evaluated and can slow portals and lookups.",
+      "description": "Best-practice rule — flags relationships that sort their related records. The sort runs whenever the relation is evaluated and can slow portals and lookups.",
       "created": "2026-07-01",
       "references": []
+    }
+  },
+  "analysis": {
+    "objectTypes": [],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Relationship with sorted records"
     }
   },
   "datasets": [

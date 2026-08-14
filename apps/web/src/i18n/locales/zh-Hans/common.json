@@ -18,6 +18,7 @@
   "yes": "是",
   "no": "否",
   "loadError": "加载失败:{{message}}",
+  "plugSpecMissing": "未安装插件参考库 — 插件函数的平台与弃用数据不可用。它随 fm-lab 发行版一同提供；install-mbs-docs 技能可重新生成 reference/plugin_spec.duckdb。",
   "language": {
     "label": "语言",
     "selectorAriaLabel": "选择界面语言"

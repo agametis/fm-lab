@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "Doublons d'UUID intra-fichier",
+    "description": "Contrôle d'intégrité des métadonnées — UUID attribués deux fois au sein d'un même fichier (défaut d'export, typiquement copier/coller avec d'anciennes versions de FileMaker). L'import conserve de façon déterministe un objet par UUID ; ce tableau de bord liste ce qui a été absorbé, avec un contexte en clair pour le retrouver dans la solution.",
+    "analysis.defaultResult.meaning": "Nombre d'occurrences d'UUID en double recensées (corrigées + original conservé + absorbées) — le catalogue reste complet depuis la correction des UUID, mais chaque occurrence signale un défaut à la source"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Doublons absorbés",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "summary_kpi.props.items[2].label": "Lignes UUID précises",
+    "summary_kpi.props.items[3].label": "Absorptions de fusion",
+    "findings_card.props.title": "Objets en collision (UUID précis)",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Type",
+    "findings_table.props.columns[2].label": "Conteneur",
+    "findings_table.props.columns[3].label": "Position",
+    "findings_table.props.columns[4].label": "Objet (décodé)",
+    "findings_table.props.columns[5].label": "Occ.",
+    "findings_table.props.searchPlaceholder": "Rechercher fichier, conteneur, texte ou UUID…",
+    "findings_table.props.empty.message": "Aucun détail de doublon UUID précis — le recensement d'import n'a trouvé aucun doublon intra-fichier.",
+    "merge_card.props.title": "Absorptions de fusion (chevauchement de chunks ou fichier cloné au nom interne identique)",
+    "merge_table.props.columns[0].label": "Table de catalogue",
+    "merge_table.props.columns[1].label": "Fichier",
+    "merge_table.props.columns[2].label": "Absorbés",
+    "merge_table.props.columns[3].label": "Exécution de fusion",
+    "merge_table.props.searchPlaceholder": "Rechercher table ou fichier…",
+    "merge_table.props.empty.message": "Aucun doublon n'a été absorbé lors de la fusion.",
+    "stats_card.props.title": "Contre-vérification du recensement par catalogue et fichier",
+    "stats_table.props.columns[0].label": "Catalogue",
+    "stats_table.props.columns[1].label": "Fichier",
+    "stats_table.props.columns[2].label": "Enregistrements source",
+    "stats_table.props.columns[3].label": "Lignes stockées",
+    "stats_table.props.columns[4].label": "Absorbés",
+    "stats_table.props.columns[5].label": "Couverture détail",
+    "stats_table.props.searchPlaceholder": "Rechercher catalogue ou fichier…",
+    "stats_table.props.empty.message": "Le recensement d'import ne signale aucun doublon absorbé.",
+    "notes_card.props.title": "À propos de ce contrôle",
+    "notes_md.props.content": "Un UUID attribué à **deux objets au sein d'un même fichier** est un défaut source de l'export FileMaker (typiquement copier/coller avec d'anciennes versions de FileMaker dans des fichiers plus récents). L'import FM-Lab conserve exactement un objet par UUID (déterministe, la dernière écriture gagne) — les objets absorbés **n'existent plus dans le catalogue**. Les colonnes *Conteneur*, *Position* et *Objet (décodé)* sont leur seule trace ; utilisez-les pour localiser les deux objets dans FileMaker. Un clic sur la ligne ouvre l'objet survivant.\n\nLes **absorptions de fusion** forment une classe à part : des doublons absorbés lors de la fusion des chunks de fichier. Leur cause n'est pas distinguable a posteriori — chevauchement interne au convertisseur (aucun défaut de la solution) ou fichiers clonés partageant le même nom interne (collision réelle).\n\n**Il n'existe pas de correctif automatique.** Le mode de réparation de Claris attribue des UUID entièrement nouveaux et casse toute référence externe ; la correction doit se faire dans le fichier source. Les doublons du même UUID *entre* fichiers sont couverts par le tableau de bord jumeau **Collisions d'UUID par clonage**. La source de données est le recensement d'import — les chiffres reflètent l'état du dernier import XML.",
+    "findings_table.props.columns[6].label": "UUID"
+  }
+}

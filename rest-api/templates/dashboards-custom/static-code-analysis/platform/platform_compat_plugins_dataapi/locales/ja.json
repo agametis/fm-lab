@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "プラグイン互換性: FileMaker Data API",
+  "analysis.defaultResult.meaning": "FileMaker Data API で実行されない対象範囲内のプラグイン関数呼び出し"
+ }
+}

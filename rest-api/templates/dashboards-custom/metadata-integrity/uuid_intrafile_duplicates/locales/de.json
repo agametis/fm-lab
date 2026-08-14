@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "UUID-Duplikate innerhalb einer Datei",
+    "description": "Metadaten-Integritätsprüfung — innerhalb einer Datei doppelt vergebene UUIDs (Export-Defekt, typisch durch Copy/Paste mit alten FileMaker-Versionen). Der Import behält deterministisch ein Objekt pro UUID; dieses Dashboard listet, was absorbiert wurde — mit Klartext-Kontext zum Wiederfinden in der Lösung.",
+    "analysis.defaultResult.meaning": "Anzahl der zensierten Doppel-UUID-Vorkommen (geheilt + Original behalten + absorbiert) — der Katalog bleibt seit der UUID-Heilung vollständig, jedes Vorkommen markiert aber einen Quelldefekt"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Absorbierte Duplikate",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "summary_kpi.props.items[2].label": "UUID-genaue Zeilen",
+    "summary_kpi.props.items[3].label": "Merge-Absorptionen",
+    "findings_card.props.title": "Kollidierende Objekte (UUID-genau)",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Typ",
+    "findings_table.props.columns[2].label": "Container",
+    "findings_table.props.columns[3].label": "Position",
+    "findings_table.props.columns[4].label": "Objekt (dekodiert)",
+    "findings_table.props.columns[5].label": "Vork.",
+    "findings_table.props.searchPlaceholder": "Datei, Container, Text oder UUID suchen…",
+    "findings_table.props.empty.message": "Keine UUID-genauen Duplikat-Details erfasst — der Import-Zensus fand keine Duplikate innerhalb einer Datei.",
+    "merge_card.props.title": "Merge-Absorptionen (Chunk-Overlap oder Klon-Datei mit identischem internem Namen)",
+    "merge_table.props.columns[0].label": "Katalogtabelle",
+    "merge_table.props.columns[1].label": "Datei",
+    "merge_table.props.columns[2].label": "Absorbiert",
+    "merge_table.props.columns[3].label": "Merge-Lauf",
+    "merge_table.props.searchPlaceholder": "Tabelle oder Datei suchen…",
+    "merge_table.props.empty.message": "Beim Merge wurden keine Duplikate absorbiert.",
+    "stats_card.props.title": "Zensus-Querprüfung je Katalog und Datei",
+    "stats_table.props.columns[0].label": "Katalog",
+    "stats_table.props.columns[1].label": "Datei",
+    "stats_table.props.columns[2].label": "Quell-Records",
+    "stats_table.props.columns[3].label": "Gespeicherte Zeilen",
+    "stats_table.props.columns[4].label": "Absorbiert",
+    "stats_table.props.columns[5].label": "Detail-Abdeckung",
+    "stats_table.props.searchPlaceholder": "Katalog oder Datei suchen…",
+    "stats_table.props.empty.message": "Der Import-Zensus meldet keine absorbierten Duplikate.",
+    "notes_card.props.title": "Über diese Prüfung",
+    "notes_md.props.content": "Eine UUID, die **zwei Objekten innerhalb einer Datei** zugewiesen ist, ist ein Quell-Defekt des FileMaker-Exports (typisch: Copy/Paste mit alten FileMaker-Versionen in neueren Dateien). Der FM-Lab-Import behält genau ein Objekt pro UUID (deterministisch, last write wins) — die absorbierten Objekte **existieren im Katalog nicht mehr**. Die Spalten *Container*, *Position* und *Objekt (dekodiert)* sind ihre einzige Spur; nutze sie, um beide Objekte in FileMaker zu lokalisieren. Ein Klick auf die Zeile öffnet das überlebende Objekt.\n\n**Merge-Absorptionen** sind eine eigene Klasse: Duplikate, die beim Zusammenführen der Datei-Chunks absorbiert wurden. Ihre Ursache ist nachträglich nicht unterscheidbar — Converter-internes Chunk-Overlap (kein Lösungs-Defekt) oder Klon-Dateien mit identischem internem Dateinamen (echte Kollision).\n\n**Es gibt keinen automatischen Fix.** Der Claris-Reparaturmodus vergibt komplett neue UUIDs und bricht jede externe UUID-Referenz; die Korrektur muss in der Quelldatei erfolgen. Duplikate derselben UUID *über* Dateien hinweg behandelt das Schwester-Dashboard **UUID-Klon-Kollisionen**. Datenquelle ist der Import-Zensus — die Zahlen spiegeln den Stand des letzten XML-Imports.",
+    "findings_table.props.columns[6].label": "UUID"
+  }
+}

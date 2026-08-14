@@ -29,7 +29,7 @@ layout_parts_list AS (
 ),
 layout_parts AS (
     -- Zip-Unnest: unnest() und generate_subscripts() laufen positionsgleich →
-    -- Part_Seq = Listenposition (XML-Reihenfolge, 1-basiert; B-K5).
+    -- Part_Seq = Listenposition (XML-Reihenfolge, 1-basiert).
     SELECT
         Layout_ID,
         Layout_Name,

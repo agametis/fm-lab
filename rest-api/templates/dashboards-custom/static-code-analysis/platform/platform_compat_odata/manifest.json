@@ -1,0 +1,78 @@
+{
+  "id": "platform_compat_odata",
+  "version": "1.1.0",
+  "title": "Platform compatibility: OData",
+  "description": "OData readiness of scripts in scope. Claris publishes no per-step OData data - the step base is borrowed from the Server column (OData runs scripts server-side; stated per finding), plus catalog-derivable OData rules: script naming and Commit Records/Requests at the end of data-changing scripts.",
+  "author": "fm-lab rules",
+  "icon": "server",
+  "category": "platform",
+  "tags": [
+    "rule",
+    "platform"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "platform",
+    "rationale": "OData executes scripts as server-side scripts with additional naming and commit conventions; there is no per-step OData compatibility source, so the Server base is borrowed and marked as such.",
+    "remediation": "Fix server-incompatible steps, rename scripts to OData-safe names, and end data-changing scripts with Commit Records/Requests."
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "OData readiness findings (borrowed Server base + naming + commit rules)"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

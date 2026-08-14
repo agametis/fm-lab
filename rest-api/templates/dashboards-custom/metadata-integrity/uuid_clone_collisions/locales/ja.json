@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "UUIDクローン衝突",
+    "description": "メタデータ整合性チェック — ソリューション内の複数ファイルに存在するネイティブFileMaker UUID(クローンファイル、クローン間のコピー&ペースト)。FileMaker内では見えませんが、UUIDの一意性を前提とする開発ツールに支障をきたします。",
+    "analysis.defaultResult.meaning": "ソリューション内の複数のファイルに存在するネイティブ UUID の数"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "重複UUID",
+    "summary_kpi.props.items[1].label": "影響オブジェクト",
+    "summary_kpi.props.items[2].label": "影響ファイル",
+    "summary_kpi.props.items[3].label": "タイプ競合",
+    "pairs_card.props.title": "UUIDを共有するファイルペア",
+    "pairs_table.props.columns[0].label": "ファイルA",
+    "pairs_table.props.columns[1].label": "ファイルB",
+    "pairs_table.props.columns[2].label": "共有UUID",
+    "pairs_table.props.columns[3].label": "Aに対する%",
+    "pairs_table.props.columns[4].label": "Bに対する%",
+    "pairs_table.props.searchPlaceholder": "ファイルを検索…",
+    "pairs_table.props.empty.message": "ネイティブUUIDを共有するファイルペアはありません。",
+    "findings_card.props.title": "衝突しているオブジェクト",
+    "findings_table.props.columns[0].label": "UUID",
+    "findings_table.props.columns[1].label": "タイプ",
+    "findings_table.props.columns[2].label": "オブジェクト",
+    "findings_table.props.columns[3].label": "ファイル",
+    "findings_table.props.columns[4].label": "ファイル数",
+    "findings_table.props.columns[5].label": "タイプ競合",
+    "findings_table.props.searchPlaceholder": "名前・ファイル・UUIDを検索…",
+    "findings_table.props.empty.message": "複数ファイルに存在するUUIDはありません — クローン衝突なし。",
+    "notes_card.props.title": "このチェックについて",
+    "notes_md.props.content": "クローンされたFileMakerファイルはクローン元のUUIDを引き継ぐため、同じUUIDが**異なるファイルの異なるオブジェクト**を指します。ソリューション自体は正常に動作しますが、UUIDの一意性を前提とするツール(DDRツール、fmIDE、diff/merge、UUIDベースの連携)は誤ったオブジェクトを選ぶ可能性があります。\n\n**自動修復は存在しません。** Clarisの修復モードは完全に新しいUUIDを割り当て、外部のUUID参照をすべて壊します。ツーリングではペア *(UUID, ファイル)* をオブジェクトの識別子として扱ってください。**タイプ競合**の行は最も危険な衝突です — 同じUUIDが*異なるタイプ*のオブジェクトを指しています。\n\nチェック対象はネイティブFileMaker UUIDのみで、FM-Labの合成IDは対象外です。同一ファイル*内*の重複は姉妹ダッシュボード**ファイル内UUID重複**が扱います。"
+  }
+}

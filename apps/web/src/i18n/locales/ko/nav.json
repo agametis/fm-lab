@@ -22,14 +22,16 @@
     "xmlImport": "XML 가져오기",
     "cluster": "클러스터",
     "settings": "설정",
-    "fmSpec": "fm-spec"
+    "fmSpec": "fm-spec",
+    "tests": "테스트"
   },
   "leitDescription": {
     "dashboards": "사용 가능한 모든 대시보드 개요.",
     "customQueries": "재사용 가능한 SQL 템플릿 — 타일을 클릭하면 분석이 열립니다.",
-    "docs": "이 프로젝트에 설치된 문서 소스.",
+    "docs": "설치된 문서 소스.",
     "xmlImport": "xml/ 디렉터리의 모든 파일을 DuckDB로 가져옵니다.",
-    "xmlImportContextNote": "활성 상태가 아닌 솔루션을 가져옵니다 — 표시되는 분석 데이터는 활성화한 후에야 바뀝니다."
+    "xmlImportContextNote": "활성 상태가 아닌 솔루션을 가져옵니다 — 표시되는 분석 데이터는 활성화한 후에야 바뀝니다.",
+    "tests": "선별된 분석 테스트 — 솔루션, 파일 또는 단일 객체에 대해 묶음 검사를 실행합니다."
   },
   "errors": {
     "noDashboardId": "대시보드 ID가 지정되지 않았습니다.",
@@ -86,7 +88,8 @@
       "references": "참조",
       "graph": "그래프",
       "versions": "버전",
-      "notes": "메모"
+      "notes": "메모",
+      "tests": "테스트"
     }
   },
   "pseudoToolbar": {
@@ -123,5 +126,53 @@
     "title": "아직 데이터가 없습니다",
     "message": "아직 FileMaker 솔루션을 가져오지 않았습니다. 이 보기를 사용하려면 먼저 XML 내보내기를 가져오세요.",
     "backToStart": "시작 화면으로 돌아가기"
+  },
+  "testsPanel": {
+    "loading": "테스트 불러오는 중…",
+    "empty": "객체 유형 {{type}}에 대한 테스트가 없습니다.",
+    "openOverview": "테스트 개요 열기",
+    "run": "실행",
+    "running": "실행 중…",
+    "showFindings": "발견 항목 표시",
+    "memberError": "오류",
+    "openMember": "대시보드/쿼리 열기",
+    "truncated": "추가 발견 항목이 생략되었습니다 — 전체 목록은 멤버를 여세요.",
+    "duration": "{{ms}} ms",
+    "searchPlaceholder": "테스트 필터링…",
+    "runAll": "모두 실행 ({{count}})",
+    "noMatch": "현재 필터와 일치하는 테스트가 없습니다.",
+    "typeFilterAria": "테스트 유형으로 필터링",
+    "memberSkipped": "건너뜀",
+    "findingsFiltered": "{{total}}개 중 {{shown}}개의 발견 항목이 검색과 일치합니다.",
+    "rerun": "다시 실행",
+    "profileLabel": "프로필",
+    "profileAll": "모든 검사({{count}})",
+    "memberCount": "검사 {{count}}개",
+    "resultsFrom": "결과: {{time}}",
+    "catalogFrom": "카탈로그: {{time}}",
+    "notRun": "{{count}}개 미실행",
+    "platformSection": "플랫폼 호환성",
+    "otherSection": "기타 테스트",
+    "platformRemove": "대상 환경 제거",
+    "platformAdd": "+ 대상 환경",
+    "platformNone": "선택된 대상 환경이 없습니다 — 이 솔루션이 실행되는 플랫폼을 추가하세요.",
+    "platformSpecificScripts": "플랫폼 특화 스크립트 {{count}}개",
+    "osBindingLabel": "OS 바인딩",
+    "osMatrixOs": "OS",
+    "osMatrixHint": "운영 체제 및 증거 소스별 OS 고유 바인딩이 있는 스크립트 수(desktop-only 스크립트는 macOS와 Windows 모두에 계산됩니다. 셋 이상의 시스템에 걸친 바인딩은 OS 고유로 간주되지 않습니다).",
+    "matrixStep": "스텝",
+    "disabledCount": "{{count}}개 비활성화 —",
+    "showDisabled": "표시",
+    "hideDisabled": "숨기기",
+    "disableTest": "이 테스트 숨기기(솔루션별 로컬 저장)",
+    "enableTest": "이 테스트 다시 활성화",
+    "sortByResult": "주목할 항목 우선",
+    "stateFilterAria": "결과 상태로 필터링",
+    "state_error": "오류",
+    "state_warning": "경고",
+    "state_neutral": "중립 결과",
+    "state_ok": "통과",
+    "state_skipped": "건너뜀",
+    "state_failed": "실행 실패"
   }
 }

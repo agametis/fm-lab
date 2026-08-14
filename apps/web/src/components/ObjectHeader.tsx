@@ -9,6 +9,13 @@ interface ObjectHeaderProps {
 }
 
 /**
+ * Synthetic replacement UUIDs from duplicate healing are md5 hex — 32 chars
+ * WITHOUT dashes — and thus formally distinguishable from native
+ * 8-4-4-4-12 UUIDs (see ObjectHealing in ../types).
+ */
+const SYNTHETIC_UUID_RE = /^[0-9a-fA-F]{32}$/;
+
+/**
  * Folder ist im Datenmodell ein einziger Object_Type; im UI zeigen wir den Pseudo-Typ
  * (ScriptFolder/LayoutFolder/CustomFunctionFolder), abgeleitet aus Source_Table.
  */
@@ -32,6 +39,14 @@ function displayObjectType(objectType: string, sourceTable?: string | null): str
 export const ObjectHeader: React.FC<ObjectHeaderProps> = ({ object }) => {
   const { t } = useTranslation(['common', 'detail', 'types']);
   const [copied, setCopied] = useState(false);
+  const [badgeCopied, setBadgeCopied] = useState(false);
+
+  // Duplicate healing: synthetic catalog identity (badge + copy redirection).
+  // The healing field only arrives via the detail API; the UUID pattern also
+  // covers list payloads without it.
+  const isSynthetic =
+    object.healing?.is_synthetic === true || SYNTHETIC_UUID_RE.test(object.Object_UUID);
+  const originalUuid = (isSynthetic && object.healing?.original_uuid) || null;
 
   // PluginFunctions tragen einen redundanten Katalognamen (`MBS:<Sub>::<Sub>`);
   // für die Anzeige lösen wir ihn in Funktionsname + Komponente auf. Themes werden
@@ -44,9 +59,23 @@ export const ObjectHeader: React.FC<ObjectHeaderProps> = ({ object }) => {
 
   const handleCopyUUID = async () => {
     try {
-      await navigator.clipboard.writeText(object.Object_UUID);
+      // For healed objects the copy button yields the ORIGINAL UUID (the one
+      // the source file knows — ambiguous there); without a resolvable
+      // original it falls back to the synthetic UUID. Native UUIDs unchanged.
+      await navigator.clipboard.writeText(originalUuid ?? object.Object_UUID);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback: silently fail on older browsers
+    }
+  };
+
+  // Badge click copies the synthetic UUID (the catalog identity).
+  const handleCopySyntheticUUID = async () => {
+    try {
+      await navigator.clipboard.writeText(object.Object_UUID);
+      setBadgeCopied(true);
+      setTimeout(() => setBadgeCopied(false), 2000);
     } catch {
       // Fallback: silently fail on older browsers
     }
@@ -93,14 +122,30 @@ export const ObjectHeader: React.FC<ObjectHeaderProps> = ({ object }) => {
           )}
         </div>
         <div className="detail-uuid-row">
+          {isSynthetic && (
+            <button
+              onClick={handleCopySyntheticUUID}
+              className={`uuid-healed-badge${badgeCopied ? ' copied' : ''}`}
+              title={t('detail:objectHeader.syntheticTooltip') as string}
+              aria-label={t('detail:objectHeader.copySyntheticUuidAria') as string}
+            >
+              {t('detail:objectHeader.syntheticBadge')}
+            </button>
+          )}
           <code className="object-uuid">
             {object.Object_UUID}
           </code>
           <button
             onClick={handleCopyUUID}
             className={`copy-button${copied ? ' copied' : ''}`}
-            aria-label={t('detail:objectHeader.copyUuidAria') as string}
-            title={t('common:actions.copyUuid') as string}
+            aria-label={t(
+              originalUuid
+                ? 'detail:objectHeader.copyOriginalUuidAria'
+                : 'detail:objectHeader.copyUuidAria'
+            ) as string}
+            title={t(
+              originalUuid ? 'common:actions.copyOriginalUuid' : 'common:actions.copyUuid'
+            ) as string}
           >
             {copied ? (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

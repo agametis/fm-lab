@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plattform-Kompatibilität: FileMaker Cloud",
+  "analysis.defaultResult.meaning": "Schritte im Prüfumfang, die auf FileMaker Cloud nicht oder nur teilweise unterstützt werden"
+ }
+}

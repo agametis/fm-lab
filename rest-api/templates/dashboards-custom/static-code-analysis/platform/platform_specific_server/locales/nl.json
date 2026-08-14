@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Platformspecifiek gebruik: FileMaker Server",
+  "analysis.defaultResult.meaning": "Scripts binnen het bereik die doel zijn van Perform Script on Server-aanroepen (gebouwd voor uitvoering op de server)"
+ }
+}

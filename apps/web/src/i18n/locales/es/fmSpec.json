@@ -8,7 +8,11 @@
     "open": "Ayuda"
   },
   "search": {
-    "placeholder": "Filtrar…"
+    "placeholder": "Filtrar…",
+    "platformAll": "Todas las plataformas",
+    "platformLabel": "Plataforma",
+    "platformStepHint": "Mostrar pasos que se ejecutan en esta plataforma (incl. soporte parcial)",
+    "platformFnHint": "Mostrar funciones creadas para esta plataforma (vinculación de plataforma)"
   },
   "list": {
     "count": "{{shown}} / {{total}}"
@@ -58,7 +62,12 @@
       "variadic": "variádico",
       "signature": "Firma",
       "purpose": "Propósito",
-      "example": "Ejemplo"
+      "example": "Ejemplo",
+      "affinity_dedicated": "Solo aquí devuelve resultados con sentido — invocable en todas partes",
+      "affinity_exclusive": "Solo funciona aquí",
+      "affinityWord_dedicated": "dedicada",
+      "affinityWord_exclusive": "exclusiva",
+      "platformBinding": "Vinculación de plataforma"
     }
   },
   "params": {
@@ -120,6 +129,22 @@
       "hint": "SaXML y fmxmlsnippet son dos representaciones distintas del mismo paso.",
       "none": "No se capturó ninguna asignación SaXML.",
       "sourceNote": "Los datos entregados son neutrales en cuanto a fuentes: no contienen citas de fuentes, nombres de autores o empresas, ni artefactos de corpus. Las cargas de ejemplo mostradas por paso son sintéticas."
+    },
+    "compat": {
+      "label": "Compatibilidad de plataforma",
+      "partial": "parcial",
+      "partialHint": "Parcial — compatible con condiciones; consulte la página de ayuda de Claris del paso"
     }
+  },
+  "osAffinity": {
+    "label": "Vinculación al SO",
+    "word_exclusive": "exclusivo",
+    "word_unsupported": "no compatible",
+    "word_variant": "varía según el SO",
+    "word_os_probe": "sonda de plataforma",
+    "hint_exclusive": "Funciona solo en los sistemas operativos listados",
+    "hint_unsupported": "Claris nombra explícitamente este SO como no compatible (declaración inversa fiel a la fuente)",
+    "hint_variant": "Funciona en todas partes — el comportamiento o resultado depende del SO",
+    "hint_os_probe": "Devuelve la plataforma/el SO en tiempo de ejecución — idioma de guardia, no una vinculación"
   }
 }

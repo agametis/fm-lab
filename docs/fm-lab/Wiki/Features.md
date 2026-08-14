@@ -18,6 +18,8 @@ The current public setup supports the following features:
 
 - **Dashboard System** — library of predefined analysis patterns, with support for custom queries and custom dashboards 📁
 
+- **Analysis Tests** — curated, declared checks with a compact result model: static-code-analysis rules, error checks and two-axis platform tests (compatibility and platform binding, including the OS sub-axis macOS / Windows / Linux / iOS and plug-in platform evidence), runnable per solution, file, object or cluster (see [details](Analysis%20Tests.md)) ✅
+
 - **Multi-user & multi-session support** - concurrent users, each on their own solution 🙌
 
 - **Graph Explorer** — interactive navigation of the full object graph, with automatic community detection that reveals named clusters across the solution and turns thousands of objects and links into a navigable graph map 🕸️

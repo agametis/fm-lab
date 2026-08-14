@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Allow User Abort [关闭]",
-    "description": "最佳实践规则 — Allow User Abort [关闭] 步骤。禁用中止可能会把用户困在一个漫长或循环的脚本中。"
+    "description": "最佳实践规则 — 检出 Allow User Abort [关闭] 步骤。禁用中止可能会把用户困在一个漫长或循环的脚本中。"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "结果数",

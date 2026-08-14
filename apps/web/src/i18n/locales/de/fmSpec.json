@@ -8,7 +8,11 @@
     "open": "Hilfe"
   },
   "search": {
-    "placeholder": "Filtern…"
+    "placeholder": "Filtern…",
+    "platformAll": "Alle Plattformen",
+    "platformLabel": "Plattform",
+    "platformStepHint": "Steps zeigen, die auf dieser Plattform laufen (inkl. teilweise Unterstützung)",
+    "platformFnHint": "Funktionen zeigen, die für diese Plattform gebaut sind (Plattform-Bindung)"
   },
   "list": {
     "count": "{{shown}} / {{total}}"
@@ -58,7 +62,12 @@
       "variadic": "variadisch",
       "signature": "Signatur",
       "purpose": "Zweck",
-      "example": "Beispiel"
+      "example": "Beispiel",
+      "affinity_dedicated": "Nur hier sinnvolle Ergebnisse — überall aufrufbar, degradiert außerhalb",
+      "affinity_exclusive": "Funktioniert nur hier",
+      "affinityWord_dedicated": "dediziert",
+      "affinityWord_exclusive": "exklusiv",
+      "platformBinding": "Plattform-Bindung"
     }
   },
   "params": {
@@ -120,6 +129,22 @@
       "hint": "SaXML und fmxmlsnippet sind zwei verschiedene Repräsentationen desselben Steps.",
       "none": "Kein SaXML-Mapping erfasst.",
       "sourceNote": "Die ausgelieferten Daten sind quellen-neutral: sie enthalten keine Quellen-Zitate, Autoren- oder Firmennamen und keine Korpus-Artefakte. Die pro Step gezeigten Beispiel-Payloads sind synthetisch."
+    },
+    "compat": {
+      "label": "Plattform-Kompatibilität",
+      "partial": "teilweise",
+      "partialHint": "Partial — bedingt unterstützt; siehe Claris-Hilfeseite des Steps"
     }
+  },
+  "osAffinity": {
+    "label": "OS-Bindung",
+    "word_exclusive": "exklusiv",
+    "word_unsupported": "nicht unterstützt",
+    "word_variant": "OS-abhängig",
+    "word_os_probe": "Plattform-Sonde",
+    "hint_exclusive": "Funktioniert nur auf den gelisteten Betriebssystemen",
+    "hint_unsupported": "Claris nennt dieses OS explizit als nicht unterstützt (quellentreu inverse Aussage)",
+    "hint_variant": "Läuft überall — Verhalten/Ergebnis ist OS-abhängig",
+    "hint_os_probe": "Liefert die Plattform/das OS zur Laufzeit — Guard-Idiom, keine Bindung"
   }
 }

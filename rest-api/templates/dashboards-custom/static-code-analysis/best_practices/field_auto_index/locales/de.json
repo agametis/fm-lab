@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Felder mit Auto-Index",
-    "description": "Best-Practice-Regel — Felder mit Indizierung 'Keine', bei denen zugleich 'Indizes automatisch erstellen' aktiviert ist. Die erste Suche oder Sortierung stößt unbemerkt einen nicht abbrechbaren, serverseitigen Indexaufbau an — eine latente Zeitbombe mit Folgewirkungen auf Speichervolumen, Backups und Importgeschwindigkeit."
+    "description": "Best-Practice-Regel — findet die riskante Kombination aus Indizierung 'Keine' und weiterhin aktiviertem 'Indizes automatisch erstellen'. Es existiert noch kein Index, deshalb stößt die erste Suche oder Sortierung unbemerkt einen nicht abbrechbaren Indexaufbau an — eine latente Zeitbombe mit Folgewirkungen auf Speichervolumen, Backups und Importgeschwindigkeit."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Treffer",

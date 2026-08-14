@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "插件兼容性：FileMaker WebDirect",
+  "analysis.defaultResult.meaning": "范围内无法在 FileMaker WebDirect 上运行的插件函数调用"
+ }
+}

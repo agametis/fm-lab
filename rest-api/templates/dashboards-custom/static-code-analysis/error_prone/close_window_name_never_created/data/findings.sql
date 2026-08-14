@@ -31,5 +31,7 @@ FROM closes c
 LEFT JOIN producers p ON p.Calc_Text = c.Calc_Text
 WHERE p.Calc_Text IS NULL
   AND (getvariable('file') IS NULL OR c.File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR c.Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
 ORDER BY severity, file_name, script_name, step_no
 LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);

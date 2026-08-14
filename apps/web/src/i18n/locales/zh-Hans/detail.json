@@ -544,5 +544,17 @@
     "optFrameCurrentOnly": "仅在当前记录中显示字段框",
     "optShowCurrentInList": "列表视图中显示当前记录",
     "optQuickFind": "快速查找"
+  },
+  "pluginSpec": {
+    "tooltip": "根据 {{plugin}} 文档的平台支持情况",
+    "since": "自 {{version}} 起",
+    "deprecated": "已弃用",
+    "replacementHint": "请改用 {{replacement}}",
+    "removed": "已移除",
+    "oldNameHint": "旧名称 — 现为 {{name}}"
+  },
+  "osBinding": {
+    "label": "操作系统绑定：",
+    "tooltip": "此脚本绑定的操作系统（来自 platform-os-binding 测试运行 — 中性清单，不是缺陷）。"
   }
 }

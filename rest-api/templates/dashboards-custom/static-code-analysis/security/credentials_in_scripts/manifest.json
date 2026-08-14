@@ -7,7 +7,11 @@
   "author": "fm-lab rules",
   "icon": "shield-alert",
   "category": "security",
-  "tags": ["rule", "security", "scripts"],
+  "tags": [
+    "rule",
+    "security",
+    "scripts"
+  ],
   "entry": "layout.json",
   "rule": {
     "severity": "critical",
@@ -30,13 +34,49 @@
       ]
     }
   },
+  "analysis": {
+    "objectTypes": [],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "credentials_kpi",
+      "column": "hit_count",
+      "type": "number",
+      "name": "hit_count",
+      "unit": "findings",
+      "meaning": "Potential credential literals in script steps"
+    }
+  },
   "datasets": [
-    { "id": "credentials_kpi",      "source": "bundle:data/credentials_kpi.sql" },
-    { "id": "credentials_findings", "source": "bundle:data/credentials_findings.sql" }
+    {
+      "id": "credentials_kpi",
+      "source": "bundle:data/credentials_kpi.sql"
+    },
+    {
+      "id": "credentials_findings",
+      "source": "bundle:data/credentials_findings.sql"
+    }
   ],
   "params": [
-    { "name": "file", "type": "string", "required": false,
-      "description": "Optional file filter — derived from the app-level filter." }
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter — derived from the app-level filter."
+    }
   ],
-  "permissions": { "read_only": true, "allow_navigation": true }
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
 }

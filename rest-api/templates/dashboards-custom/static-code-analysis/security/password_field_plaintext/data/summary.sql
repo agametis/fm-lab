@@ -1,4 +1,5 @@
--- Auto-generiert aus dem core der Rule (password_field_plaintext). Nicht von Hand editieren.
+-- Hand-maintained COUNT wrapper embedding the findings core of rule (password_field_plaintext).
+-- The core is a textual copy — keep filters (file filter + S-Block) in sync with data/findings.sql.
 SELECT
     COUNT(*)                     AS finding_count,
     'warning'          AS severity,

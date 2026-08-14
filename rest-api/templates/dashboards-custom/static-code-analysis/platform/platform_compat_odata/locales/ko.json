@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "플랫폼 호환성: OData",
+  "analysis.defaultResult.meaning": "OData 준비 상태 발견 항목(Server 기준 차용 + 명명 및 커밋 규칙)"
+ }
+}

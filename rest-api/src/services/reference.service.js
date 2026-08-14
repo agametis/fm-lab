@@ -34,6 +34,8 @@ function clearCaches() {
   stepMetaByLang.clear();
   refTableExistsCache.clear();
   refColumnExistsCache.clear();
+  stepCompatMapCache = null;
+  functionAffinityMapCache = null;
 }
 
 function isStepLang(lang) {
@@ -227,6 +229,83 @@ async function getFunctionCategories(ctx, lang) {
  * ============================================================================
  */
 
+/**
+ * Step-Kompatibilitätsmap (stepId → 7 tri-state Flags) aus `step_compat`.
+ * Tri-State-Semantik der Claris-Quelle: true = Yes, false = No,
+ * **NULL = Partial (bedingt unterstützt)** — nie "undokumentiert". Sprach-
+ * neutral, ein Query, prozessweit gecacht; ältere Referenzen ohne Tabelle
+ * liefern eine leere Map (Konsumenten degradieren auf "keine Angabe").
+ */
+const STEP_COMPAT_PLATFORMS = ['pro', 'server', 'go', 'webdirect', 'cloud', 'dataapi', 'cwp'];
+let stepCompatMapCache = null;
+async function getStepCompatMap(ctx) {
+  if (stepCompatMapCache) return stepCompatMapCache;
+  const map = new Map();
+  if (await refTableExists(ctx, 'step_compat')) {
+    const r = await db.executeQuery(ctx, `
+      SELECT step_id, pro, server, go, webdirect, cloud, dataapi, cwp
+      FROM ref.step_compat
+    `);
+    for (const row of r.rows) {
+      const compat = {};
+      for (const p of STEP_COMPAT_PLATFORMS) {
+        compat[p] = row[p] === null || row[p] === undefined ? null : Boolean(row[p]);
+      }
+      map.set(Number(row.step_id), compat);
+    }
+  }
+  stepCompatMapCache = map;
+  return map;
+}
+
+/**
+ * OS-Affinität (Referenz ≥ 1.13.0): kuratierte, spärliche OS-Aussagen aus der
+ * Claris-Hilfe-Prosa — Vokabular strikt macos|windows|linux|ios ('ios' = das
+ * Betriebssystem, hostet Go UND iOS-SDK; nie ein Runtime-Begriff). Klassen:
+ * exclusive / unsupported (quellentreu invers) / variant / os_probe (nur
+ * Funktionen; Guard-Idiom, os=null). Leere Liste bei älteren Referenzen.
+ */
+async function getOsAffinity(ctx, table, idColumn, id) {
+  if (!(await refTableExists(ctx, table))) return [];
+  const r = await db.executeQuery(ctx, `
+    SELECT os, affinity, provenance, note
+    FROM ref.${table}
+    WHERE ${idColumn} = ?
+    ORDER BY affinity, os NULLS LAST
+  `, [id]);
+  return r.rows.map((a) => ({
+    os:         a.os || null,
+    affinity:   a.affinity,
+    provenance: a.provenance,
+    note:       a.note || null,
+  }));
+}
+
+/**
+ * Funktions-Affinitätsmap (functionId → [{platform, affinity}]) aus
+ * `function_platform_affinity` (Referenz ≥ 1.12.0) — Bindung, nie
+ * Kompatibilität. Leere Map bei älteren Referenzen.
+ */
+let functionAffinityMapCache = null;
+async function getFunctionAffinityMap(ctx) {
+  if (functionAffinityMapCache) return functionAffinityMapCache;
+  const map = new Map();
+  if (await refTableExists(ctx, 'function_platform_affinity')) {
+    const r = await db.executeQuery(ctx, `
+      SELECT function_id, platform, affinity
+      FROM ref.function_platform_affinity
+      ORDER BY function_id, platform
+    `);
+    for (const row of r.rows) {
+      const id = Number(row.function_id);
+      if (!map.has(id)) map.set(id, []);
+      map.get(id).push({ platform: row.platform, affinity: row.affinity });
+    }
+  }
+  functionAffinityMapCache = map;
+  return map;
+}
+
 async function listSteps(ctx, lang) {
   assertAttached();
   const language = resolveStepLang(lang);
@@ -258,6 +337,7 @@ async function listSteps(ctx, lang) {
   `, [language]);
 
   const aliasMap = await getStepAliasMap(ctx);
+  const compatMap = await getStepCompatMap(ctx);
 
   const steps = r.rows.map((row) => ({
     stepId:      Number(row.step_id),
@@ -270,6 +350,7 @@ async function listSteps(ctx, lang) {
     hasGrammar:  Boolean(row.has_grammar),
     xmlName:     row.xml_name || null,
     aliases:     aliasMap.get(Number(row.step_id)) || [],
+    compat:      compatMap.get(Number(row.step_id)) || null,
     helpUrl:     row.url,
     localHelpUrl: buildLocalHelpUrl('steps', language, row.url_slug),
   }));
@@ -350,6 +431,8 @@ async function getStepDetail(ctx, idOrSlug, lang) {
   }));
 
   const aliasMap = await getStepAliasMap(ctx);
+  const compatMap = await getStepCompatMap(ctx);
+  const osAffinity = await getOsAffinity(ctx, 'step_os_affinity', 'step_id', base.step_id);
 
   return {
     stepId:      base.step_id,
@@ -358,6 +441,8 @@ async function getStepDetail(ctx, idOrSlug, lang) {
     canonicalName: base.canonical_name,
     xmlName:     base.xml_name || null,
     aliases:     aliasMap.get(Number(base.step_id)) || [],
+    compat:      compatMap.get(Number(base.step_id)) || null,
+    osAffinity,
     displayName: lang_row.display_name || base.canonical_name,
     description: lang_row.description || null,
     parameterText: lang_row.parameter || null,
@@ -396,6 +481,8 @@ async function listFunctions(ctx, lang) {
     ORDER BY f.function_id
   `, [language]);
 
+  const affinityMap = await getFunctionAffinityMap(ctx);
+
   const fns = r.rows.map((row) => ({
     functionId:    Number(row.function_id),
     name:          row.canonical_name,
@@ -408,6 +495,7 @@ async function listFunctions(ctx, lang) {
     signature:     row.signature,
     purpose:       row.purpose,
     categoryId:    Number(row.category_id),
+    platformAffinity: affinityMap.get(Number(row.function_id)) || [],
     helpUrl:       row.url,
     localHelpUrl:  buildLocalHelpUrl('functions', language, row.url_slug),
   }));
@@ -479,6 +567,26 @@ async function getFunctionDetail(ctx, nameOrId, lang) {
     variadic:    Number(p.is_variadic) === 1,
   }));
 
+  // Curated platform binding (reference ≥ 1.12.0) — AFFINITY, not
+  // compatibility: "meaningful results only on X", never "does not run on X"
+  // (Claris publishes no function compatibility table). Older references
+  // yield an empty list.
+  let platformAffinity = [];
+  if (await refTableExists(ctx, 'function_platform_affinity')) {
+    const affRes = await db.executeQuery(ctx, `
+      SELECT platform, affinity, provenance, note
+      FROM ref.function_platform_affinity
+      WHERE function_id = ?
+      ORDER BY platform
+    `, [base.function_id]);
+    platformAffinity = affRes.rows.map((a) => ({
+      platform:   a.platform,
+      affinity:   a.affinity,
+      provenance: a.provenance,
+      note:       a.note || null,
+    }));
+  }
+
   return {
     functionId:    base.function_id,
     name:          base.canonical_name,
@@ -503,6 +611,8 @@ async function getFunctionDetail(ctx, nameOrId, lang) {
       name:   catRow.lang_name || catRow.category_name,
     } : null,
     parameters,
+    platformAffinity,
+    osAffinity: await getOsAffinity(ctx, 'function_os_affinity', 'function_id', base.function_id),
     helpUrl:      lang_row.url || null,
     localHelpUrl: buildLocalHelpUrl('functions', language, base.url_slug),
   };
@@ -983,12 +1093,16 @@ async function getStepAllLangs(ctx, idOrSlug) {
     parameters:   paramsByLang.get(row.language) || [],
   }));
 
+  const compatMap = await getStepCompatMap(ctx);
+
   return {
     stepId:        base.step_id,
     canonicalName: base.canonical_name,
     urlSlug:       base.url_slug,
     categoryId:    base.category_id,
     originVersion: base.origin_version || null,
+    compat:        compatMap.get(Number(base.step_id)) || null,
+    osAffinity:    await getOsAffinity(ctx, 'step_os_affinity', 'step_id', base.step_id),
     langs,
   };
 }

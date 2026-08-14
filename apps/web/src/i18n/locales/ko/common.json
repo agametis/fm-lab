@@ -18,6 +18,7 @@
   "yes": "예",
   "no": "아니요",
   "loadError": "불러오기 실패: {{message}}",
+  "plugSpecMissing": "플러그인 레퍼런스가 설치되어 있지 않습니다 — 플러그인 함수의 플랫폼 및 지원 중단 데이터를 사용할 수 없습니다. fm-lab 릴리스에 포함되어 배포되며, install-mbs-docs 스킬로 reference/plugin_spec.duckdb를 다시 생성할 수 있습니다.",
   "language": {
     "label": "언어",
     "selectorAriaLabel": "인터페이스 언어 선택"

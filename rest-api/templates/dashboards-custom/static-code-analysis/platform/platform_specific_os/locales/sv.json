@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "OS-bindning: plug-in-funktioner",
+  "analysis.defaultResult.meaning": "Skript inom omfånget som är bundna till specifika operativsystem via plug-in-funktionsanrop"
+ }
+}

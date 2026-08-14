@@ -1,7 +1,8 @@
 {
   "manifest": {
     "title": "スクリプト内の TO-DO",
-    "description": "コメントステップ内の未完了作業を3つの記法(TO DO、FIX IT、TBD)で表示。件数をクリックすると結果リストを絞り込みます。"
+    "description": "コメントステップ内の未完了作業を3つの記法(TO DO、FIX IT、TBD)で表示。件数をクリックすると結果リストを絞り込みます。",
+    "analysis.defaultResult.meaning": "スクリプトコメント内の TODO/FIXIT/TBD マーカー行"
   },
   "layout": {
     "todo_kpi_kpistrip.props.items[0].label": "合計行数",

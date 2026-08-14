@@ -8,7 +8,11 @@
     "open": "Help"
   },
   "search": {
-    "placeholder": "Filteren…"
+    "placeholder": "Filteren…",
+    "platformAll": "Alle platformen",
+    "platformLabel": "Platform",
+    "platformStepHint": "Toon stappen die op dit platform draaien (incl. gedeeltelijke ondersteuning)",
+    "platformFnHint": "Toon functies die voor dit platform zijn gebouwd (platformbinding)"
   },
   "list": {
     "count": "{{shown}} / {{total}}"
@@ -58,7 +62,12 @@
       "variadic": "variadisch",
       "signature": "Signatuur",
       "purpose": "Doel",
-      "example": "Voorbeeld"
+      "example": "Voorbeeld",
+      "affinity_dedicated": "Alleen hier zinvolle resultaten — overal aanroepbaar",
+      "affinity_exclusive": "Werkt alleen hier",
+      "affinityWord_dedicated": "toegewijd",
+      "affinityWord_exclusive": "exclusief",
+      "platformBinding": "Platformbinding"
     }
   },
   "params": {
@@ -120,6 +129,22 @@
       "hint": "SaXML en fmxmlsnippet zijn twee verschillende representaties van dezelfde stap.",
       "none": "Geen SaXML-toewijzing vastgelegd.",
       "sourceNote": "De geleverde gegevens zijn bronneutraal: ze bevatten geen broncitaten, auteurs- of bedrijfsnamen, en geen corpusartefacten. De per stap getoonde voorbeeldpayloads zijn synthetisch."
+    },
+    "compat": {
+      "label": "Platformcompatibiliteit",
+      "partial": "gedeeltelijk",
+      "partialHint": "Gedeeltelijk — voorwaardelijk ondersteund; zie de Claris-helppagina van de stap"
     }
+  },
+  "osAffinity": {
+    "label": "OS-binding",
+    "word_exclusive": "exclusief",
+    "word_unsupported": "niet ondersteund",
+    "word_variant": "varieert per OS",
+    "word_os_probe": "platformsonde",
+    "hint_exclusive": "Werkt alleen op de vermelde besturingssystemen",
+    "hint_unsupported": "Claris noemt dit OS expliciet als niet ondersteund (brongetrouwe inverse uitspraak)",
+    "hint_variant": "Werkt overal — gedrag of resultaat hangt af van het OS",
+    "hint_os_probe": "Geeft het platform/OS terug tijdens runtime — guard-idioom, geen binding"
   }
 }

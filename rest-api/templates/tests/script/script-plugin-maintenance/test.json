@@ -1,0 +1,148 @@
+{
+  "id": "script-plugin-maintenance",
+  "version": "1.0.0",
+  "title": "Plug-in Maintenance",
+  "description": "Maintenance axis of plug-in usage, in one story: what is old (deprecated calls with the documented successor per row), what is broken (removed calls - these fail with any current plugin), and what does the usage demand (minimum plugin version, derived as the maximum documented introduction version over the functions in use; validated against an installed version only when one is provided via the installed_version parameter - the catalog knows no installed plugin version). All three members resolve calls the same way (direct + one-level custom-function wrappers + layout/field usages, alias-aware) against reference/plugin_spec.duckdb; without that reference every member skips (missing-plugin-spec), never fails. Strictly separate from the platform axis: none of these findings says anything about runtime environments.",
+  "keywords": [
+    "plugin",
+    "mbs",
+    "deprecated",
+    "removed",
+    "version",
+    "maintenance",
+    "wartung",
+    "modernization",
+    "script"
+  ],
+  "testType": "code-quality",
+  "objectTypes": [
+    "Script"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "text",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "plugin_deprecated_call"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "plugin_removed_call"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "plugin_version"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "checks",
+      "title": "Maintenance checks",
+      "description": "The judging members only: deprecated calls (warning, with the documented successor) and removed calls (error, the call fails with a current plugin).",
+      "members": [
+        "plugin_deprecated_call",
+        "plugin_removed_call"
+      ]
+    },
+    {
+      "id": "inventory",
+      "title": "Version requirement",
+      "description": "The neutral inventory member only: the minimum plugin version the scope requires, with per-file spread and driver functions. Pass installed_version (major.minor) to turn the inventory into a check.",
+      "members": [
+        "plugin_version"
+      ]
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Plug-in-Wartung",
+      "description": "Die Wartungsachse der Plug-in-Nutzung, als eine Geschichte erzählt: Was ist alt (veraltete Aufrufe, mit dem dokumentierten Nachfolger je Zeile), was ist kaputt (entfernte Aufrufe — die scheitern mit jedem aktuellen Plugin), und was verlangt die Nutzung (Mindest-Plugin-Version, abgeleitet als höchste dokumentierte Einführungsversion über die verwendeten Funktionen; gegen eine installierte Version geprüft nur dann, wenn eine über den Parameter installed_version übergeben wird — der Katalog kennt keine installierte Plugin-Version). Alle drei Member lösen Aufrufe gleich auf (direkt + einstufige Custom-Function-Wrapper + Layout-/Feldnutzungen, alias-bewusst) gegen reference/plugin_spec.duckdb; fehlt diese Referenz, überspringt jeder Member (missing-plugin-spec) statt zu scheitern. Strikt getrennt von der Plattform-Achse: Keines dieser Findings sagt etwas über Laufzeitumgebungen aus.",
+      "profiles.checks.title": "Wartungsprüfungen",
+      "profiles.checks.description": "Nur die bewertenden Member: veraltete Aufrufe (Warnung, mit dem dokumentierten Nachfolger) und entfernte Aufrufe (Fehler, der Aufruf scheitert mit einem aktuellen Plugin).",
+      "profiles.inventory.title": "Versionsanforderung",
+      "profiles.inventory.description": "Nur der neutrale Inventar-Member: die Mindest-Plugin-Version, die dieser Prüfumfang verlangt, mit Streuung je Datei und den treibenden Funktionen. Übergib installed_version (major.minor), um aus dem Inventar eine Prüfung zu machen."
+    },
+    "es": {
+      "title": "Mantenimiento de plug-ins",
+      "description": "El eje de mantenimiento del uso de plug-ins, contado como una sola historia: qué está anticuado (llamadas obsoletas, con el sucesor documentado en cada fila), qué está roto (llamadas eliminadas: fallan con cualquier plug-in actual) y qué exige el uso (versión mínima del plug-in, derivada como la mayor versión de introducción documentada entre las funciones empleadas; se contrasta con una versión instalada solo si se indica una mediante el parámetro installed_version, ya que el catálogo no conoce ninguna versión instalada). Los tres miembros resuelven las llamadas del mismo modo (directas + envoltorios de funciones personalizadas de un nivel + usos en presentaciones/campos, con reconocimiento de alias) frente a reference/plugin_spec.duckdb; sin esa referencia cada miembro se omite (missing-plugin-spec) en lugar de fallar. Estrictamente separado del eje de plataforma: ninguno de estos hallazgos dice nada sobre entornos de ejecución.",
+      "profiles.checks.title": "Comprobaciones de mantenimiento",
+      "profiles.checks.description": "Solo los miembros que emiten juicio: llamadas obsoletas (advertencia, con el sucesor documentado) y llamadas eliminadas (error, la llamada falla con un plug-in actual).",
+      "profiles.inventory.title": "Requisito de versión",
+      "profiles.inventory.description": "Solo el miembro de inventario neutral: la versión mínima del plug-in que exige este alcance, con la dispersión por archivo y las funciones determinantes. Pasa installed_version (major.minor) para convertir el inventario en una comprobación."
+    },
+    "fr": {
+      "title": "Maintenance des plug-ins",
+      "description": "L'axe maintenance de l'usage des plug-ins, raconté d'un seul tenant : ce qui est ancien (appels obsolètes, avec le successeur documenté par ligne), ce qui est cassé (appels supprimés — ils échouent avec tout plug-in actuel) et ce que l'usage exige (version minimale du plug-in, déduite comme la plus haute version d'introduction documentée parmi les fonctions utilisées ; confrontée à une version installée uniquement si le paramètre installed_version en fournit une — le catalogue ne connaît aucune version installée). Les trois membres résolvent les appels de la même manière (directs + enveloppes de fonctions personnalisées à un niveau + usages dans les modèles/rubriques, avec gestion des alias) face à reference/plugin_spec.duckdb ; sans cette référence, chaque membre est ignoré (missing-plugin-spec) au lieu d'échouer. Strictement séparé de l'axe plateforme : aucun de ces constats ne dit quoi que ce soit sur les environnements d'exécution.",
+      "profiles.checks.title": "Vérifications de maintenance",
+      "profiles.checks.description": "Uniquement les membres qui portent un jugement : appels obsolètes (avertissement, avec le successeur documenté) et appels supprimés (erreur, l'appel échoue avec un plug-in actuel).",
+      "profiles.inventory.title": "Exigence de version",
+      "profiles.inventory.description": "Uniquement le membre d'inventaire neutre : la version minimale du plug-in exigée par ce périmètre, avec la dispersion par fichier et les fonctions déterminantes. Fournissez installed_version (major.minor) pour transformer l'inventaire en vérification."
+    },
+    "it": {
+      "title": "Manutenzione dei plug-in",
+      "description": "L'asse della manutenzione dell'uso dei plug-in, raccontato come un'unica storia: che cosa è vecchio (chiamate deprecate, con il successore documentato riga per riga), che cosa è rotto (chiamate rimosse — falliscono con qualsiasi plug-in attuale) e che cosa richiede l'uso (versione minima del plug-in, ricavata come la più alta versione di introduzione documentata tra le funzioni impiegate; confrontata con una versione installata solo se ne viene fornita una tramite il parametro installed_version — il catalogo non conosce alcuna versione installata). Tutti e tre i membri risolvono le chiamate allo stesso modo (dirette + wrapper di funzioni personalizzate a un livello + usi in formati/campi, con riconoscimento degli alias) rispetto a reference/plugin_spec.duckdb; senza quel riferimento ogni membro viene saltato (missing-plugin-spec) invece di fallire. Nettamente separato dall'asse piattaforma: nessuno di questi riscontri dice alcunché sugli ambienti di esecuzione.",
+      "profiles.checks.title": "Controlli di manutenzione",
+      "profiles.checks.description": "Solo i membri che esprimono un giudizio: chiamate deprecate (avviso, con il successore documentato) e chiamate rimosse (errore, la chiamata fallisce con un plug-in attuale).",
+      "profiles.inventory.title": "Requisito di versione",
+      "profiles.inventory.description": "Solo il membro di inventario neutro: la versione minima del plug-in richiesta da questo ambito, con la dispersione per file e le funzioni determinanti. Passa installed_version (major.minor) per trasformare l'inventario in un controllo."
+    },
+    "ja": {
+      "title": "プラグインの保守",
+      "description": "プラグイン利用の保守という軸を、一つの筋書きとして扱います：何が古いか（非推奨の呼び出し。行ごとに文書化された後継を併記）、何が壊れているか（削除された呼び出し。現行のプラグインでは必ず失敗します）、そして利用が何を要求するか（プラグインの最低バージョン。使用中の関数について文書化された導入バージョンの最大値として導出し、installed_version パラメータでインストール済みバージョンが渡されたときにのみ突き合わせます — カタログはインストール済みバージョンを知りません）。三つのメンバーはいずれも同じ方法で呼び出しを解決します（直接呼び出し + 一段のカスタム関数ラッパー + レイアウトやフィールドでの利用、別名に対応）。参照先は reference/plugin_spec.duckdb で、この参照がない場合は失敗せずに各メンバーがスキップされます（missing-plugin-spec）。プラットフォーム軸とは厳密に別物です：ここでの検出結果は実行環境について何も述べません。",
+      "profiles.checks.title": "保守チェック",
+      "profiles.checks.description": "判定を行うメンバーのみ：非推奨の呼び出し（警告、文書化された後継を併記）と削除された呼び出し（エラー、現行のプラグインでは失敗します）。",
+      "profiles.inventory.title": "バージョン要件",
+      "profiles.inventory.description": "中立的なインベントリのメンバーのみ：この対象範囲が要求するプラグインの最低バージョンを、ファイルごとのばらつきと決定要因となる関数とともに示します。installed_version（major.minor）を渡すと、インベントリが検査になります。"
+    },
+    "ko": {
+      "title": "플러그인 유지 관리",
+      "description": "플러그인 사용의 유지 관리 축을 하나의 이야기로 다룹니다: 무엇이 오래되었는지(사용 중단된 호출, 행마다 문서화된 후속 함수 표시), 무엇이 망가졌는지(제거된 호출 — 현재 플러그인에서는 반드시 실패합니다), 그리고 사용이 무엇을 요구하는지(최소 플러그인 버전. 사용 중인 함수들의 문서화된 도입 버전 최댓값으로 도출하며, installed_version 매개변수로 설치된 버전이 전달된 경우에만 대조합니다 — 카탈로그는 설치된 플러그인 버전을 알지 못합니다). 세 멤버 모두 같은 방식으로 호출을 해석합니다(직접 호출 + 1단계 사용자 정의 함수 래퍼 + 레이아웃/필드 사용, 별칭 인식). 기준은 reference/plugin_spec.duckdb이며, 이 참조가 없으면 각 멤버는 실패하지 않고 건너뜁니다(missing-plugin-spec). 플랫폼 축과는 엄격히 분리됩니다: 이 발견 항목들은 런타임 환경에 대해 아무것도 말하지 않습니다.",
+      "profiles.checks.title": "유지 관리 검사",
+      "profiles.checks.description": "판정을 내리는 멤버만: 사용 중단된 호출(경고, 문서화된 후속 함수 포함)과 제거된 호출(오류, 현재 플러그인에서는 실패).",
+      "profiles.inventory.title": "버전 요구 사항",
+      "profiles.inventory.description": "중립적 목록 멤버만: 이 범위가 요구하는 최소 플러그인 버전을 파일별 분포와 결정 요인 함수와 함께 보여 줍니다. installed_version(major.minor)을 전달하면 목록이 검사로 바뀝니다."
+    },
+    "nl": {
+      "title": "Plug-inonderhoud",
+      "description": "De onderhoudsas van plug-ingebruik, als één verhaal verteld: wat is oud (verouderde aanroepen, met de gedocumenteerde opvolger per regel), wat is stuk (verwijderde aanroepen — die mislukken met elke actuele plug-in) en wat vraagt het gebruik (minimale plug-inversie, afgeleid als de hoogste gedocumenteerde introductieversie over de gebruikte functies; alleen getoetst aan een geïnstalleerde versie als die via de parameter installed_version wordt meegegeven — de catalogus kent geen geïnstalleerde plug-inversie). Alle drie de leden herleiden aanroepen op dezelfde manier (direct + custom-function-wrappers van één niveau + gebruik in lay-outs/velden, aliasbewust) tegen reference/plugin_spec.duckdb; ontbreekt die referentie, dan slaat elk lid over (missing-plugin-spec) in plaats van te mislukken. Strikt gescheiden van de platformas: geen van deze bevindingen zegt iets over runtime-omgevingen.",
+      "profiles.checks.title": "Onderhoudscontroles",
+      "profiles.checks.description": "Alleen de oordelende leden: verouderde aanroepen (waarschuwing, met de gedocumenteerde opvolger) en verwijderde aanroepen (fout, de aanroep mislukt met een actuele plug-in).",
+      "profiles.inventory.title": "Versievereiste",
+      "profiles.inventory.description": "Alleen het neutrale inventarislid: de minimale plug-inversie die dit bereik vereist, met de spreiding per bestand en de bepalende functies. Geef installed_version (major.minor) mee om van de inventarisatie een controle te maken."
+    },
+    "pt": {
+      "title": "Manutenção de plug-ins",
+      "description": "O eixo de manutenção do uso de plug-ins, contado como uma só história: o que está antigo (chamadas obsoletas, com o sucessor documentado em cada linha), o que está quebrado (chamadas removidas — falham com qualquer plug-in atual) e o que o uso exige (versão mínima do plug-in, derivada como a maior versão de introdução documentada entre as funções em uso; confrontada com uma versão instalada apenas quando uma é fornecida pelo parâmetro installed_version — o catálogo não conhece nenhuma versão instalada). Os três membros resolvem as chamadas do mesmo modo (diretas + wrappers de funções personalizadas de um nível + usos em layouts/campos, cientes de aliases) contra reference/plugin_spec.duckdb; sem essa referência cada membro é ignorado (missing-plugin-spec) em vez de falhar. Estritamente separado do eixo de plataforma: nenhum destes resultados diz algo sobre ambientes de execução.",
+      "profiles.checks.title": "Verificações de manutenção",
+      "profiles.checks.description": "Apenas os membros que emitem julgamento: chamadas obsoletas (aviso, com o sucessor documentado) e chamadas removidas (erro, a chamada falha com um plug-in atual).",
+      "profiles.inventory.title": "Requisito de versão",
+      "profiles.inventory.description": "Apenas o membro de inventário neutro: a versão mínima do plug-in que este escopo exige, com a dispersão por arquivo e as funções determinantes. Passe installed_version (major.minor) para transformar o inventário em uma verificação."
+    },
+    "sv": {
+      "title": "Plug-in-underhåll",
+      "description": "Underhållsaxeln för plug-in-användning, berättad som en enda historia: vad som är gammalt (föråldrade anrop, med den dokumenterade efterföljaren per rad), vad som är trasigt (borttagna anrop — de misslyckas med varje aktuell plug-in) och vad användningen kräver (lägsta plug-in-version, härledd som den högsta dokumenterade introduktionsversionen bland de funktioner som används; jämförd med en installerad version endast när en sådan anges via parametern installed_version — katalogen känner inte till någon installerad plug-in-version). Alla tre medlemmar löser upp anrop på samma sätt (direkta + custom function-omslag i ett led + användning i layouter/fält, aliasmedvetet) mot reference/plugin_spec.duckdb; saknas den referensen hoppar varje medlem över (missing-plugin-spec) i stället för att misslyckas. Strikt åtskild från plattformsaxeln: ingen av dessa träffar säger något om körmiljöer.",
+      "profiles.checks.title": "Underhållskontroller",
+      "profiles.checks.description": "Endast de bedömande medlemmarna: föråldrade anrop (varning, med den dokumenterade efterföljaren) och borttagna anrop (fel, anropet misslyckas med en aktuell plug-in).",
+      "profiles.inventory.title": "Versionskrav",
+      "profiles.inventory.description": "Endast den neutrala inventeringsmedlemmen: den lägsta plug-in-version som detta omfång kräver, med spridningen per fil och de drivande funktionerna. Skicka med installed_version (major.minor) för att göra inventeringen till en kontroll."
+    },
+    "zh-Hans": {
+      "title": "插件维护",
+      "description": "把插件使用的维护维度讲成一个完整的故事：哪些已经老旧（已弃用的调用，逐行给出文档记载的替代函数）、哪些已经损坏（已移除的调用 —— 在任何当前插件下都会失败），以及使用本身提出了什么要求（最低插件版本，取所用函数中已记载引入版本的最大值；仅当通过 installed_version 参数提供了已安装版本时才进行比对 —— 目录并不知道已安装的插件版本）。三个成员以相同方式解析调用（直接调用 + 一层自定义函数包装 + 布局/字段中的使用，可识别别名），依据为 reference/plugin_spec.duckdb；缺少该参考时各成员会跳过（missing-plugin-spec）而非失败。与平台维度严格分开：这些发现项不对运行环境作任何论断。",
+      "profiles.checks.title": "维护检查",
+      "profiles.checks.description": "仅包含作出判定的成员：已弃用的调用（警告，附文档记载的替代函数）与已移除的调用（错误，该调用在当前插件下会失败）。",
+      "profiles.inventory.title": "版本要求",
+      "profiles.inventory.description": "仅包含中性清单成员：此范围所需的最低插件版本，并给出按文件的分布与起决定作用的函数。传入 installed_version（major.minor）即可把清单变成一项检查。"
+    }
+  }
+}

@@ -1,0 +1,236 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary_card",
+        "props": {
+          "span": 12,
+          "variant": "hero",
+          "title": "Server usage"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpi",
+            "props": {
+              "items": [
+                {
+                  "label": "Server-bound scripts",
+                  "field": "script_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Resolved targets",
+                  "field": "resolved_targets",
+                  "format": "number"
+                },
+                {
+                  "label": "External targets",
+                  "field": "external_targets",
+                  "format": "number"
+                },
+                {
+                  "label": "Dynamic targets",
+                  "field": "dynamic_targets",
+                  "format": "number"
+                },
+                {
+                  "label": "PSoS callsites",
+                  "field": "evidence_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Affected files",
+                  "field": "affected_files",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings_card",
+        "props": {
+          "span": 12,
+          "title": "Server-bound scripts (PSoS targets)"
+        },
+        "data": {
+          "dataset": "findings"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search file or script…",
+              "columns": [
+                {
+                  "field": "file_name",
+                  "label": "File"
+                },
+                {
+                  "field": "script_name",
+                  "label": "Script"
+                },
+                {
+                  "field": "feature",
+                  "label": "Evidence"
+                },
+                {
+                  "field": "usage_count",
+                  "label": "Callsites",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "message",
+                  "label": "Message"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "Script"
+                }
+              },
+              "empty": {
+                "message": "No Perform Script on Server targets in scope."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "callsites_card",
+        "props": {
+          "span": 12,
+          "title": "PSoS callsites (caller → target)"
+        },
+        "data": {
+          "dataset": "callsites"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "callsites_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "compact",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search caller or target…",
+              "columns": [
+                {
+                  "field": "file_name",
+                  "label": "File"
+                },
+                {
+                  "field": "caller_name",
+                  "label": "Caller"
+                },
+                {
+                  "field": "step_no",
+                  "label": "Step",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "target_name",
+                  "label": "Target script"
+                },
+                {
+                  "field": "target_kind",
+                  "label": "Resolution"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{caller_uuid}}",
+                  "type": "Script",
+                  "step": "{{step_uuid}}"
+                }
+              },
+              "empty": {
+                "message": "No Perform Script on Server callsites in scope."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "os_conditions_card",
+        "props": {
+          "span": 12,
+          "title": "Conditional on server OS (plug-in functions)"
+        },
+        "data": {
+          "dataset": "os_conditions"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "os_conditions_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "columns": [
+                {
+                  "field": "function_name",
+                  "label": "Plug-in function"
+                },
+                {
+                  "field": "component",
+                  "label": "Component"
+                },
+                {
+                  "field": "os_condition",
+                  "label": "Runs on"
+                },
+                {
+                  "field": "os_missing",
+                  "label": "Fails on"
+                },
+                {
+                  "field": "script_count",
+                  "label": "Scripts",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "affected_files",
+                  "label": "Files",
+                  "align": "right",
+                  "format": "number"
+                }
+              ],
+              "empty": {
+                "message": "No plug-in function in scope is conditionally server-compatible - server usage is OS-independent."
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "테이블 컨텍스트가 없는 Layout",
-    "description": "모범 사례 규칙 — 테이블 어커런스 컨텍스트가 없는 Layout. 레코드 데이터를 표시할 수 없으며 대개 고아이거나 보조 Layout입니다."
+    "description": "모범 사례 규칙 — 테이블 어커런스 컨텍스트가 없는 Layout을 찾습니다. 레코드 데이터를 표시할 수 없으며 대개 고아이거나 보조 Layout입니다."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "발견 수",

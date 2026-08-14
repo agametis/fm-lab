@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plug-in-kompatibilitet: Custom Web Publishing",
+  "analysis.defaultResult.meaning": "Plug-in-funktionsanrop inom omfånget som inte körs på Custom Web Publishing"
+ }
+}

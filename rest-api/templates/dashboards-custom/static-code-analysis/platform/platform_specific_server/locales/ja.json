@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "プラットフォーム固有の利用: FileMaker Server",
+  "analysis.defaultResult.meaning": "Perform Script on Server 呼び出しの対象となる対象範囲内のスクリプト（サーバーサイド実行のために作られたもの）"
+ }
+}

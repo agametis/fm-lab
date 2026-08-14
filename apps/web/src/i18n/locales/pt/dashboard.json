@@ -83,7 +83,14 @@
     "Dependencies": "Dependências",
     "Fields": "Campos",
     "Scripts": "Scripts",
-    "Variables": "Variáveis"
+    "Variables": "Variáveis",
+    "dashboard": "Painel",
+    "query": "Consulta personalizada",
+    "system": "Sistema",
+    "custom": "Personalizado",
+    "ok": "OK",
+    "warnings": "Avisos",
+    "errors": "Erros"
   },
   "semanticNames": {
     "structureLabel": "Estrutura",
@@ -113,16 +120,15 @@
     "warnHead": "{{count}} duplicado(s) de UUID absorvido(s) em {{combos}} combinação(ões) de catálogo/arquivo",
     "colFile": "Arquivo",
     "colCatalog": "Catálogo",
-    "colAbsorbed": "Scripts perdidos",
-    "colSteps": "Etapas perdidas",
+    "colAbsorbed": "Objetos perdidos",
+    "colSub": "Subobjetos perdidos",
     "colSource": "Origem",
     "colStored": "Armazenados",
     "footnote": "Defeito de origem (UUIDs duplicados na exportação do FileMaker). O conversor deduplica de forma determinística (last-write-wins); corrigível apenas corrigindo/reexportando a origem.",
-    "stepsHint": "Etapas = etapas de script perdidas individualmente; o script que as contém permanece intacto. “—” = nenhum script inteiro perdido.",
-    "detailsHead": "Objetos em colisão",
-    "detailsMore": "… e mais {{count}} objetos em colisão",
-    "colObjects": "Objeto(s)",
-    "colOccurrences": "Ocorrências"
+    "subHint": "Objetos = objetos inteiros do catálogo (scripts ou layouts). Subobjetos = etapas de script ou objetos de layout perdidos; o contêiner permanece intacto. “—” = nenhuma perda deste tipo.",
+    "linksLabel": "Resultados completos:",
+    "linkIntrafile": "Duplicatas de UUID no mesmo arquivo",
+    "linkClones": "Colisões de UUID por clonagem"
   },
   "xmlEmpty": {
     "hint": "Ainda sem dados. Coloque a sua exportação XML do FileMaker na pasta “xml/” e inicie a conversão.",
@@ -136,5 +142,31 @@
     "hostPathHint": "Coloque os ficheiros nesta pasta no host — está montada no contentor.",
     "containerPathNote": "Caminho dentro do contentor",
     "putFilesHint": "Coloque os seus ficheiros XML do FileMaker na pasta “xml/”."
+  },
+  "folderNav": {
+    "root": "Todos os dashboards",
+    "notFound": "Pasta não encontrada.",
+    "backToRoot": "Voltar à visão geral",
+    "breadcrumb": "Pastas",
+    "runAll": "Executar tudo",
+    "run": "Executar",
+    "running": "em execução…",
+    "findings": "resultados",
+    "coverageHint": "Cobertura parcial — nem todos os resultados foram calculados",
+    "filterLabel": "Estado",
+    "sortLabel": "Ordenar",
+    "sortStandard": "Padrão",
+    "sortValue": "Número de resultados ↓",
+    "sortState": "Semáforo",
+    "state": {
+      "ok": "OK",
+      "warning": "Aviso",
+      "error": "Erro",
+      "neutral": "Neutro",
+      "pending": "Pendente",
+      "failed": "Falhou"
+    },
+    "noFilterMatches": "Nenhuma entrada com este estado nesta seção.",
+    "openFolder": "Abrir pasta"
   }
 }

@@ -29,7 +29,7 @@
             "props": {
               "items": [
                 {
-                  "label": "Functions",
+                  "label": "Entries",
                   "field": "function_count",
                   "format": "number"
                 }
@@ -43,7 +43,7 @@
         "id": "functions",
         "props": {
           "span": 12,
-          "title": "Functions"
+          "title": "Entries"
         },
         "data": {
           "dataset": "functions"
@@ -72,7 +72,7 @@
                 }
               },
               "empty": {
-                "message": "No functions available for this category."
+                "message": "No entries available for this category."
               }
             }
           }

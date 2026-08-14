@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plattform-Kompatibilität: OData",
+  "analysis.defaultResult.meaning": "OData-Bereitschafts-Findings (geliehene Server-Basis + Namens- und Commit-Regeln)"
+ }
+}

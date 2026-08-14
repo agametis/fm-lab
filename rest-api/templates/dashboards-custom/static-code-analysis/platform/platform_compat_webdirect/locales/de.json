@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plattform-Kompatibilität: FileMaker WebDirect",
+  "analysis.defaultResult.meaning": "Schritte im Prüfumfang, die auf FileMaker WebDirect nicht oder nur teilweise unterstützt werden"
+ }
+}

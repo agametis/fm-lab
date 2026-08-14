@@ -16,5 +16,7 @@ WHERE o.Opens_Window AND o.Is_Enabled
       WHERE c.File_Name = o.File_Name AND c.Script_ID = o.Script_ID
         AND c.Step_ID = 121 AND c.Is_Enabled AND c.Step_Index > o.Step_Index)
   AND (getvariable('file') IS NULL OR o.File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR o.Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
 ORDER BY file_name, script_name, step_no
 LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);

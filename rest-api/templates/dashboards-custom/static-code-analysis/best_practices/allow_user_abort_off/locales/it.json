@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Allow User Abort [Disattivato]",
-    "description": "Regola di buone pratiche: passi Allow User Abort [Disattivato]. Disattivare l’annullamento può intrappolare l’utente in uno script lungo o con cicli."
+    "description": "Regola di buone pratiche: segnala i passi Allow User Abort [Disattivato]. Disattivare l’annullamento può intrappolare l’utente in uno script lungo o con cicli."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Risultati",

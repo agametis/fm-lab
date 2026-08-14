@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plattformskompatibilitet: OData",
+  "analysis.defaultResult.meaning": "Träffar för OData-beredskap (lånad Server-bas + namn- och commit-regler)"
+ }
+}

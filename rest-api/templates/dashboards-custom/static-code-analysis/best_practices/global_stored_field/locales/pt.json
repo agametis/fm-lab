@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Campo com armazenamento global",
-    "description": "Regra de boas práticas — campos com armazenamento global. As globais valem por sessão e por usuário; o excesso torna o estado difícil de acompanhar."
+    "description": "Regra de boas práticas — sinaliza campos com armazenamento global. As globais valem por sessão e por usuário; o excesso torna o estado difícil de acompanhar."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Ocorrências",

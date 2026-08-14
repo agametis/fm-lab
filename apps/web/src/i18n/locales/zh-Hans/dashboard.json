@@ -83,7 +83,14 @@
     "Dependencies": "依赖项",
     "Fields": "字段",
     "Scripts": "脚本",
-    "Variables": "变量"
+    "Variables": "变量",
+    "dashboard": "仪表板",
+    "query": "自定义查询",
+    "system": "系统",
+    "custom": "自定义",
+    "ok": "正常",
+    "warnings": "警告",
+    "errors": "错误"
   },
   "semanticNames": {
     "structureLabel": "结构",
@@ -113,16 +120,15 @@
     "warnHead": "在 {{combos}} 个目录/文件组合中吸收了 {{count}} 个 UUID 重复项",
     "colFile": "文件",
     "colCatalog": "目录",
-    "colAbsorbed": "丢失的脚本",
-    "colSteps": "丢失的步骤",
+    "colAbsorbed": "丢失的对象",
+    "colSub": "丢失的子对象",
     "colSource": "来源",
     "colStored": "已存储",
     "footnote": "源缺陷（FileMaker 导出中的重复 UUID）。转换器以确定性方式去重（后写覆盖）；只能通过修正/重新导出源来解决。",
-    "stepsHint": "步骤 = 单个丢失的脚本步骤；所在脚本本身完好。“—” = 未丢失整个脚本。",
-    "detailsHead": "冲突对象",
-    "detailsMore": "… 以及另外 {{count}} 个冲突对象",
-    "colObjects": "对象",
-    "colOccurrences": "出现次数"
+    "subHint": "对象 = 目录中的完整对象（脚本或布局）。子对象 = 丢失的脚本步骤或布局对象；所在容器本身完好。“—” = 无此类丢失。",
+    "linksLabel": "完整结果:",
+    "linkIntrafile": "文件内 UUID 重复",
+    "linkClones": "UUID 克隆冲突"
   },
   "xmlEmpty": {
     "hint": "暂无数据。将你的 FileMaker XML 导出文件放入 “xml/” 文件夹并开始转换。",
@@ -136,5 +142,31 @@
     "hostPathHint": "将文件放入主机上的此文件夹 — 它已挂载到容器中。",
     "containerPathNote": "容器内的路径",
     "putFilesHint": "将你的 FileMaker XML 文件放入 “xml/” 文件夹。"
+  },
+  "folderNav": {
+    "root": "所有仪表板",
+    "notFound": "未找到文件夹。",
+    "backToRoot": "返回概览",
+    "breadcrumb": "文件夹",
+    "runAll": "全部运行",
+    "run": "运行",
+    "running": "运行中…",
+    "findings": "项",
+    "coverageHint": "部分覆盖 — 尚未计算所有结果",
+    "filterLabel": "状态",
+    "sortLabel": "排序",
+    "sortStandard": "标准",
+    "sortValue": "结果数量 ↓",
+    "sortState": "信号灯",
+    "state": {
+      "ok": "OK",
+      "warning": "警告",
+      "error": "错误",
+      "neutral": "中性",
+      "pending": "待定",
+      "failed": "失败"
+    },
+    "noFilterMatches": "此分区中没有该状态的条目。",
+    "openFolder": "打开文件夹"
   }
 }

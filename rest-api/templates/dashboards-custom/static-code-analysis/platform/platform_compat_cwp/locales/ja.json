@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "プラットフォーム互換性: Custom Web Publishing",
+  "analysis.defaultResult.meaning": "Custom Web Publishing で未対応または部分的にのみ対応する対象範囲内のステップ"
+ }
+}

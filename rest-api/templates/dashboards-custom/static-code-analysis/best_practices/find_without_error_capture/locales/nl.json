@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Perform Find zonder Set Error Capture",
-    "description": "Best-practice-regel — scripts met Perform Find maar zonder Set Error Capture [Aan]. Een \"geen records\"-dialoog kan de gebruiker midden in het script onderbreken."
+    "description": "Best-practice-regel — signaleert scripts met Perform Find maar zonder Set Error Capture [Aan]. Een \"geen records\"-dialoog kan de gebruiker midden in het script onderbreken."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Bevindingen",

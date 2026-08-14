@@ -1,0 +1,147 @@
+{
+  "id": "platform-server",
+  "version": "1.2.0",
+  "title": "Platform: FileMaker Server",
+  "description": "Two aspects of the FileMaker Server runtime. Compatibility: steps Claris marks 'No' (error), 'Partial' (warning - conditionally supported) or without a published statement (info). Platform binding: neutral inventory of scripts built FOR the server - targets of Perform Script on Server callsites ('built for Server' = 'is called via PSoS', stated per finding); findings are properties, not defects. Use the profiles to run one aspect alone. The compatibility aspect additionally covers plug-in function calls (MBS platform map: functions with Server=No fail under the server-side script engine; unresolved functions surface as info rows).",
+  "keywords": [
+    "platform",
+    "compatibility",
+    "filemaker",
+    "server",
+    "platform-specific",
+    "binding",
+    "psos",
+    "plugin",
+    "mbs"
+  ],
+  "testType": "platform",
+  "objectTypes": [
+    "Script"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "platform_compat_server"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "platform_specific_server"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "platform_compat_plugins_server"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "compat",
+      "title": "Compatibility",
+      "description": "Aspect a only: steps checked against the Claris step-compatibility table for FileMaker Server. Plus plug-in calls checked against the MBS platform map (Server=No -> error).",
+      "members": [
+        "platform_compat_server",
+        "platform_compat_plugins_server"
+      ]
+    },
+    {
+      "id": "specific",
+      "title": "Platform binding",
+      "description": "Aspect b only: scripts demonstrably executed server-side (Perform Script on Server targets) - neutral inventory.",
+      "members": [
+        "platform_specific_server"
+      ]
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Plattform: FileMaker Server",
+      "description": "Zwei Aspekte der Laufzeitumgebung FileMaker Server. Kompatibilität: Schritte, die Claris mit 'Nein' (Fehler), 'Teilweise' (Warnung — bedingt unterstützt) oder ohne veröffentlichte Aussage (Info) führt. Plattform-Bindung: neutrales Inventar der Scripts, die FÜR den Server gebaut sind — Ziele von Perform Script on Server-Callsites ('für Server gebaut' = 'wird per PSoS aufgerufen', je Finding ausgewiesen); Findings sind Eigenschaften, keine Defekte. Über die Profile lässt sich je ein Aspekt allein ausführen. Der Kompatibilitäts-Aspekt deckt zusätzlich Plug-in-Funktionsaufrufe ab (MBS-Plattform-Map: Funktionen mit Server=Nein scheitern unter der serverseitigen Script-Engine; nicht auflösbare Funktionen erscheinen als Info-Zeilen).",
+      "profiles.compat.title": "Kompatibilität",
+      "profiles.compat.description": "Nur Aspekt a: Schritte, geprüft gegen die Claris-Schritt-Kompatibilitätstabelle für FileMaker Server. Dazu Plug-in-Aufrufe, geprüft gegen die MBS-Plattform-Map (Server=Nein -> Fehler).",
+      "profiles.specific.title": "Plattform-Bindung",
+      "profiles.specific.description": "Nur Aspekt b: Scripts, die nachweislich serverseitig ausgeführt werden (Ziele von Perform Script on Server) — neutrales Inventar."
+    },
+    "es": {
+      "title": "Plataforma: FileMaker Server",
+      "description": "Dos aspectos del entorno de ejecución FileMaker Server. Compatibilidad: pasos que Claris marca como 'No' (error), 'Parcial' (advertencia: compatible con condiciones) o sin declaración publicada (info). Vinculación de plataforma: inventario neutral de los scripts creados PARA el servidor — destinos de llamadas Perform Script on Server ('creado para Server' = 'se invoca vía PSoS', indicado en cada hallazgo); los hallazgos son propiedades, no defectos. Los perfiles permiten ejecutar un solo aspecto. El aspecto de compatibilidad cubre además las llamadas a funciones de plug-in (mapa de plataformas de MBS: las funciones con Server=No fallan bajo el motor de scripts del servidor; las funciones no resueltas aparecen como filas de info).",
+      "profiles.compat.title": "Compatibilidad",
+      "profiles.compat.description": "Solo el aspecto a: pasos comprobados frente a la tabla de compatibilidad de pasos de Claris para FileMaker Server. Además, llamadas a plug-ins comprobadas frente al mapa de plataformas de MBS (Server=No -> error).",
+      "profiles.specific.title": "Vinculación de plataforma",
+      "profiles.specific.description": "Solo el aspecto b: scripts que se ejecutan demostrablemente en el servidor (destinos de Perform Script on Server) — inventario neutral."
+    },
+    "fr": {
+      "title": "Plateforme : FileMaker Server",
+      "description": "Deux aspects de l'environnement d'exécution FileMaker Server. Compatibilité : actions que Claris indique comme « Non » (erreur), « Partiel » (avertissement — prise en charge conditionnelle) ou sans déclaration publiée (info). Liaison de plateforme : inventaire neutre des scripts conçus POUR le serveur — cibles d'appels Perform Script on Server (« conçu pour Server » = « appelé via PSoS », indiqué pour chaque constat) ; les constats sont des propriétés, pas des défauts. Les profils permettent d'exécuter un seul aspect. L'aspect compatibilité couvre en outre les appels de fonctions de plug-in (carte des plateformes MBS : les fonctions avec Server=Non échouent sous le moteur de script côté serveur ; les fonctions non résolues apparaissent en lignes d'info).",
+      "profiles.compat.title": "Compatibilité",
+      "profiles.compat.description": "Aspect a uniquement : actions vérifiées d'après la table de compatibilité des actions de Claris pour FileMaker Server. Plus les appels de plug-in vérifiés d'après la carte des plateformes MBS (Server=Non -> erreur).",
+      "profiles.specific.title": "Liaison de plateforme",
+      "profiles.specific.description": "Aspect b uniquement : scripts dont l'exécution côté serveur est attestée (cibles de Perform Script on Server) — inventaire neutre."
+    },
+    "it": {
+      "title": "Piattaforma: FileMaker Server",
+      "description": "Due aspetti dell'ambiente di esecuzione FileMaker Server. Compatibilità: passi che Claris indica come 'No' (errore), 'Parziale' (avviso — supportato con riserva) o senza dichiarazione pubblicata (info). Vincolo di piattaforma: inventario neutro degli script creati PER il server — destinazioni di chiamate Perform Script on Server ('creato per Server' = 'viene chiamato via PSoS', indicato per ogni riscontro); i riscontri sono proprietà, non difetti. I profili consentono di eseguire un solo aspetto. L'aspetto di compatibilità copre inoltre le chiamate a funzioni plug-in (mappa delle piattaforme MBS: le funzioni con Server=No falliscono sotto il motore di script lato server; le funzioni non risolte compaiono come righe info).",
+      "profiles.compat.title": "Compatibilità",
+      "profiles.compat.description": "Solo aspetto a: passi verificati rispetto alla tabella di compatibilità dei passi di Claris per FileMaker Server. In più le chiamate a plug-in verificate rispetto alla mappa delle piattaforme MBS (Server=No -> errore).",
+      "profiles.specific.title": "Vincolo di piattaforma",
+      "profiles.specific.description": "Solo aspetto b: script eseguiti in modo dimostrabile lato server (destinazioni di Perform Script on Server) — inventario neutro."
+    },
+    "ja": {
+      "title": "プラットフォーム: FileMaker Server",
+      "description": "FileMaker Server 実行環境の二つの側面を扱います。互換性：Claris が「いいえ」とする（エラー）、「一部」とする（警告 — 条件付きで対応）、または公表された記載がない（情報）ステップ。プラットフォーム結合：サーバーのために作られたスクリプトの中立的なインベントリ — Perform Script on Server 呼び出し箇所の対象（「Server のために作られた」＝「PSoS 経由で呼ばれる」、検出結果ごとに明示）。検出結果は欠陥ではなく特性です。プロファイルを使えば片方の側面だけを実行できます。互換性の側面はプラグイン関数呼び出しも対象とします（MBS のプラットフォーム対応表：Server=いいえ の関数はサーバーサイドのスクリプトエンジンで失敗します。解決できない関数は情報行として表示されます）。",
+      "profiles.compat.title": "互換性",
+      "profiles.compat.description": "側面 a のみ：FileMaker Server 向けの Claris ステップ互換性表に照らして検査したステップ。加えて MBS のプラットフォーム対応表に照らして検査したプラグイン呼び出し（Server=いいえ -> エラー）。",
+      "profiles.specific.title": "プラットフォーム結合",
+      "profiles.specific.description": "側面 b のみ：サーバーサイドで実行されることが確認できるスクリプト（Perform Script on Server の対象）— 中立的なインベントリ。"
+    },
+    "ko": {
+      "title": "플랫폼: FileMaker Server",
+      "description": "FileMaker Server 런타임 환경의 두 가지 측면을 다룹니다. 호환성: Claris가 '아니요'(오류), '부분'(경고 — 조건부 지원)으로 표시하거나 공개된 언급이 없는(정보) 단계. 플랫폼 결합: 서버를 위해 만들어진 스크립트의 중립적 목록 — Perform Script on Server 호출 지점의 대상('Server를 위해 만들어짐' = 'PSoS로 호출됨', 발견 항목마다 표시)이며, 발견 항목은 결함이 아니라 속성입니다. 프로필을 사용하면 한 측면만 실행할 수 있습니다. 호환성 측면은 플러그인 함수 호출도 함께 다룹니다(MBS 플랫폼 맵: Server=아니요 인 함수는 서버 측 스크립트 엔진에서 실패하며, 해석되지 않은 함수는 정보 행으로 표시됩니다).",
+      "profiles.compat.title": "호환성",
+      "profiles.compat.description": "측면 a만: FileMaker Server에 대한 Claris 단계 호환성 표를 기준으로 검사한 단계. 여기에 MBS 플랫폼 맵을 기준으로 검사한 플러그인 호출(Server=아니요 -> 오류).",
+      "profiles.specific.title": "플랫폼 결합",
+      "profiles.specific.description": "측면 b만: 서버 측에서 실행됨이 확인되는 스크립트(Perform Script on Server의 대상) — 중립적 목록."
+    },
+    "nl": {
+      "title": "Platform: FileMaker Server",
+      "description": "Twee aspecten van de runtime-omgeving FileMaker Server. Compatibiliteit: stappen die Claris markeert als 'Nee' (fout), 'Gedeeltelijk' (waarschuwing — voorwaardelijk ondersteund) of zonder gepubliceerde uitspraak (info). Platformbinding: neutrale inventarisatie van scripts die VOOR de server zijn gebouwd — doelen van Perform Script on Server-aanroepen ('voor Server gebouwd' = 'wordt via PSoS aangeroepen', per bevinding vermeld); bevindingen zijn eigenschappen, geen gebreken. Met de profielen voer je één aspect afzonderlijk uit. Het compatibiliteitsaspect dekt daarnaast plug-infunctieaanroepen (MBS-platformkaart: functies met Server=Nee mislukken onder de scriptengine aan serverzijde; niet-herleidbare functies verschijnen als info-regels).",
+      "profiles.compat.title": "Compatibiliteit",
+      "profiles.compat.description": "Alleen aspect a: stappen getoetst aan de Claris-stapcompatibiliteitstabel voor FileMaker Server. Plus plug-inaanroepen getoetst aan de MBS-platformkaart (Server=Nee -> fout).",
+      "profiles.specific.title": "Platformbinding",
+      "profiles.specific.description": "Alleen aspect b: scripts die aantoonbaar aan serverzijde worden uitgevoerd (doelen van Perform Script on Server) — neutrale inventarisatie."
+    },
+    "pt": {
+      "title": "Plataforma: FileMaker Server",
+      "description": "Dois aspectos do ambiente de execução FileMaker Server. Compatibilidade: passos que a Claris marca como 'Não' (erro), 'Parcial' (aviso — com suporte condicional) ou sem declaração publicada (info). Vinculação de plataforma: inventário neutro dos scripts feitos PARA o servidor — destinos de chamadas Perform Script on Server ('feito para o Server' = 'é chamado via PSoS', indicado em cada resultado); os resultados são propriedades, não defeitos. Os perfis permitem executar apenas um dos aspectos. O aspecto de compatibilidade abrange ainda as chamadas de funções de plug-in (mapa de plataformas do MBS: funções com Server=Não falham no motor de scripts do servidor; funções não resolvidas aparecem como linhas de info).",
+      "profiles.compat.title": "Compatibilidade",
+      "profiles.compat.description": "Apenas o aspecto a: passos verificados na tabela de compatibilidade de passos da Claris para FileMaker Server. Mais as chamadas de plug-in verificadas no mapa de plataformas do MBS (Server=Não -> erro).",
+      "profiles.specific.title": "Vinculação de plataforma",
+      "profiles.specific.description": "Apenas o aspecto b: scripts comprovadamente executados no servidor (destinos de Perform Script on Server) — inventário neutro."
+    },
+    "sv": {
+      "title": "Plattform: FileMaker Server",
+      "description": "Två aspekter av körmiljön FileMaker Server. Kompatibilitet: steg som Claris anger som 'Nej' (fel), 'Delvis' (varning — stöds villkorligt) eller utan publicerat besked (info). Plattformsbindning: neutral inventering av skript byggda FÖR servern — mål för Perform Script on Server-anrop ('byggt för Server' = 'anropas via PSoS', anges per träff); träffarna är egenskaper, inte defekter. Med profilerna kör du en aspekt i taget. Kompatibilitetsaspekten omfattar dessutom plug-in-funktionsanrop (MBS plattformskarta: funktioner med Server=Nej misslyckas under skriptmotorn på serversidan; ej upplösta funktioner visas som info-rader).",
+      "profiles.compat.title": "Kompatibilitet",
+      "profiles.compat.description": "Endast aspekt a: steg kontrollerade mot Claris stegkompatibilitetstabell för FileMaker Server. Plus plug-in-anrop kontrollerade mot MBS plattformskarta (Server=Nej -> fel).",
+      "profiles.specific.title": "Plattformsbindning",
+      "profiles.specific.description": "Endast aspekt b: skript som bevisligen körs på serversidan (mål för Perform Script on Server) — neutral inventering."
+    },
+    "zh-Hans": {
+      "title": "平台：FileMaker Server",
+      "description": "涵盖 FileMaker Server 运行环境的两个方面。兼容性：Claris 标记为“否”的步骤（错误）、标记为“部分”的步骤（警告 —— 有条件支持），以及没有公开说明的步骤（信息）。平台绑定：为服务器而构建的脚本的中性清单 —— Perform Script on Server 调用点的目标（“为 Server 构建”＝“通过 PSoS 被调用”，逐条发现项标明）；发现项是特征而非缺陷。通过配置可单独运行其中一个方面。兼容性方面还涵盖插件函数调用（MBS 平台对照表：Server=否 的函数在服务器端脚本引擎下会失败；无法解析的函数以信息行显示）。",
+      "profiles.compat.title": "兼容性",
+      "profiles.compat.description": "仅方面 a：对照 Claris 针对 FileMaker Server 的步骤兼容性表检查的步骤。另含对照 MBS 平台对照表检查的插件调用（Server=否 -> 错误）。",
+      "profiles.specific.title": "平台绑定",
+      "profiles.specific.description": "仅方面 b：可证实在服务器端执行的脚本（Perform Script on Server 的目标）—— 中性清单。"
+    }
+  }
+}

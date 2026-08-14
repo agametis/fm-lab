@@ -18,6 +18,7 @@
   "yes": "Ja",
   "no": "Nej",
   "loadError": "Det gick inte att läsa in: {{message}}",
+  "plugSpecMissing": "Plugin-referensen är inte installerad — plattforms- och utfasningsdata för plugin-funktioner är inte tillgängliga. Den levereras med fm-lab-releaser; skillen install-mbs-docs kan återskapa reference/plugin_spec.duckdb.",
   "language": {
     "label": "Språk",
     "selectorAriaLabel": "Välj gränssnittsspråk"

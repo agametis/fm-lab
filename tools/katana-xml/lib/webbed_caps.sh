@@ -9,7 +9,7 @@
 
 # webbed capability registry (data-driven). RUNTIME source of the version check:
 # tools/katana-xml/version_check.json — the single mechanism source. The planning
-# docs project/webbed_version_check.md / webbed_project.md are internal ONLY and are
+# docs project/konzept/xml-import/webbed/webbed_version_check.md / webbed_project.md are internal ONLY and are
 # NOT read here. _vc_probe_sql <cap-id> returns the probe_sql stored in the manifest
 # (@FIXTURE@ -> probe_fixture resolved); empty when manifest/jq/entry
 # are missing → the caller falls back to the hardcoded fallback (robust, no

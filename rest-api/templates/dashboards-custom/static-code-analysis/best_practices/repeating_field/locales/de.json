@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Wiederholfeld",
-    "description": "Best-Practice-Regel — Felder mit mehr als einer Wiederholung. Wiederholfelder sind schwer abzufragen und auszuwerten; eine verknüpfte Tabelle ist meist besser."
+    "description": "Best-Practice-Regel — findet Felder mit mehr als einer Wiederholung. Wiederholfelder sind schwer abzufragen und auszuwerten; eine verknüpfte Tabelle ist meist besser."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Treffer",

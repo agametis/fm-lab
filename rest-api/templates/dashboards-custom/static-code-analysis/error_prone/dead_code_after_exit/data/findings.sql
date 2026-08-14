@@ -22,5 +22,7 @@ WHERE Step_ID IN (103, 90)
   AND dead_id IS NOT NULL
   AND dead_id NOT IN (69, 70, 73, 125)
   AND (getvariable('file') IS NULL OR File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
 ORDER BY file_name, script_name, step_no
 LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);

@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Vincolo al SO: passi script",
+  "analysis.defaultResult.meaning": "Script nell'ambito vincolati a sistemi operativi specifici tramite passi script Claris"
+ }
+}

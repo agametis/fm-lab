@@ -53,6 +53,7 @@ function publicCatalogShape(cat) {
     output_format: cat.output_format,
     download_format: cat.download_format,
     index_page: cat.index_page,
+    start_page: cat.start_page ?? null,
     index: cat.index,
   };
 }

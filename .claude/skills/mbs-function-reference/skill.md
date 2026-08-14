@@ -141,6 +141,23 @@ sqlite3 "docs/mbs/docSet.dsidx" "SELECT name, path FROM searchIndex WHERE type='
 sqlite3 "docs/mbs/docSet.dsidx" "SELECT name FROM searchIndex WHERE type='Function' AND name LIKE '%Clipboard%' ORDER BY name LIMIT 20;"
 ```
 
+### Platform questions: use the structured map, not HTML grep
+
+For platform-support questions ("does this function run on Server/macOS/…?")
+query `reference/plugin_spec.duckdb` (ATTACH read-only as `plugref`) instead of
+grepping the HTML — tables `plugin_functions` (component, since_version,
+status; since 1.2.0 also `since_version_num` — the numeric comparison key
+major\*1000+minor, version comparisons NEVER run on the string ("9.5" >
+"11.5" lexically) — plus `replacement`, the documented successor from the
+deprecation note (may name a component like "Shell functions"), and
+`removed_in`, the release that removed the function),
+`plugin_function_platforms` (verbatim binary flags per axis: macos,
+windows, linux, server, ios_sdk — the `ios_sdk` axis means Claris iOS SDK
+apps, NOT FileMaker Go; Go supports no plug-ins at all) and
+`plugin_function_aliases` (old names). The HTML mirror stays authoritative for
+prose, parameters and examples. If `plugin_spec.duckdb` is missing, run
+`install-mbs-docs` (it derives the map automatically).
+
 ### Understanding the HTML structure
 
 The HTML files contain:

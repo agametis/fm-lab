@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Layout ohne Tabellenkontext",
-    "description": "Best-Practice-Regel — Layouts ohne Tabellenauftreten-Kontext. Sie können keine Datensatzdaten zeigen und sind oft verwaiste oder Hilfs-Layouts."
+    "description": "Best-Practice-Regel — findet Layouts ohne Tabellenauftreten-Kontext. Sie können keine Datensatzdaten zeigen und sind oft verwaiste oder Hilfs-Layouts."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Treffer",

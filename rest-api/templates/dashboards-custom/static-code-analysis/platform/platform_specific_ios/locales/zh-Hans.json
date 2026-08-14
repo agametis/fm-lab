@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "平台特定用法：FileMaker Go (iOS)",
+  "analysis.defaultResult.meaning": "范围内使用 FileMaker Go (iOS) 特有功能（专属步骤或专用函数）的脚本"
+ }
+}

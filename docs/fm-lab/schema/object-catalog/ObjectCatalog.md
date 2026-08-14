@@ -21,5 +21,6 @@ The central object registry of the solution catalog. Every object of every impor
 - `Object_UUID` is the primary key and the only globally unique identifier. Numeric `Object_ID` values are only unique per file (and per type) — always join them together with `File_Name`.
 - `Source_Table` names the type-specific table that holds the object's details (e.g. `FieldsForTables` for a `Field`).
 - Synthetic object types without an XML catalog of their own (e.g. `Variable`, `PluginFunction`, `File`) are registered here as well, so the link graph can reference them uniformly.
+- If the export carries the same UUID on two objects of one file (copy-paste duplicates), both are kept: the twin with the smallest internal FileMaker ID keeps the original UUID, every other twin gets a deterministic synthetic replacement UUID (md5 hex, 32 characters without dashes — formally distinguishable from a native UUID). The original↔replacement mapping lives in the [duplicate census](../UUID%20Healing%20and%20Duplicate%20Census.md).
 
 **See also:** [ObjectLinks](ObjectLinks.md) · [FilesCatalog](FilesCatalog.md) · [Object Types](Object%20Types.md) (all object types enumerated)

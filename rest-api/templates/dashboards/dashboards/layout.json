@@ -22,7 +22,10 @@
             "props": {
               "viewToggle": true,
               "minTileWidth": 260,
-              "groupBy": "folder",
+              "folderNav": true,
+              "folderParam": "folder",
+              "foldersDataset": "folders",
+              "resultChips": true,
               "tile": {
                 "title": "{{title}}",
                 "subtitle": "{{description}}",

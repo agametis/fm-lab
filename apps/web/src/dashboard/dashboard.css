@@ -2,6 +2,9 @@
 
 .dash-host {
   width: 100%;
+  /* Untere Luft für jede Dashboard-Seite: rahmenlose Schlusszeilen (z.B. die
+     Textlink-Reihe der Test-Detailansicht) klebten sonst am Fensterrand. */
+  padding-bottom: 24px;
 }
 .dash-host--loading,
 .dash-host--error {
@@ -155,12 +158,16 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  max-width: 560px;
+  max-width: 720px;
 }
+/* Two left-aligned columns instead of label-left / value-right: with values of
+   very different lengths (a version number next to a keyword list) the
+   right-aligned column starts at a different x per row and the block reads as
+   noise. The label column is fixed-width, so both columns line up. */
 .dash-deflist__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 180px) minmax(0, 1fr);
+  align-items: baseline;
   gap: 16px;
   padding: 6px 0;
   border-bottom: 1px solid var(--color-border);
@@ -176,10 +183,13 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--color-text-primary);
-  text-align: right;
+  text-align: left;
 }
 .dash-deflist__value.dash-badge {
   font-weight: 500;
+  /* Badge only wraps its own text — as a grid cell it would otherwise stretch
+     across the whole value column. */
+  justify-self: start;
   padding: 2px 8px;
   border-radius: 999px;
   background: var(--color-info-bg);
@@ -199,6 +209,20 @@
   display: flex;
   flex-direction: column;
   border-radius: 4px;
+}
+/* Section-Header bei List groupBy (z.B. Doc-Set-Ordner) */
+.dash-list__group-header {
+  margin-top: 12px;
+  padding: 4px 10px 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-divider);
+}
+.dash-list__group-header:first-child {
+  margin-top: 0;
 }
 .dash-list__item-row {
   display: flex;
@@ -294,6 +318,30 @@
 .dash-table__td--center { text-align: center; }
 .dash-table--compact td,
 .dash-table--compact th { padding: 3px 6px; }
+/* 'copy'-format cell — subtle clipboard button; the tooltip (title attr)
+ * reveals the raw value (long identifiers such as UUIDs). Mirrors the
+ * detail-view .copy-button look, scoped to dashboard tables. */
+.dash-table__copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-secondary, #888);
+  cursor: pointer;
+  line-height: 0;
+  transition: color 0.12s, background 0.12s;
+}
+.dash-table__copy:hover {
+  color: var(--color-text, #333);
+  background: var(--color-hover-bg);
+}
+.dash-table__copy--copied,
+.dash-table__copy--copied:hover {
+  color: var(--color-success, #2e9e5b);
+}
 .dash-table__row--clickable {
   cursor: pointer;
   transition: background 0.12s;
@@ -315,6 +363,22 @@
 [data-theme="dark"] .dash-table__row--active:hover > td {
   background: rgba(255, 175, 80, 0.24);
 }
+/* Selection-Row — Lens-Auswahl (selectionContext): die angeklickte Quellzeile
+ * UND alle zugehörigen Zeilen der Zieltabelle. Bewusst die Akzent-Familie
+ * (blau), damit sie nicht mit der orangen Aktiv-Filter-Zeile verwechselbar ist. */
+.dash-table__row--selected > td {
+  background: rgba(80, 100, 255, 0.10);
+}
+.dash-table__row--selected:hover > td {
+  background: rgba(80, 100, 255, 0.16);
+}
+[data-theme="dark"] .dash-table__row--selected > td {
+  background: rgba(130, 145, 255, 0.14);
+}
+[data-theme="dark"] .dash-table__row--selected:hover > td {
+  background: rgba(130, 145, 255, 0.20);
+}
+
 /* Processing-Row — die gerade laufende XML-Konvertierungs-Datei. Kräftigeres
  * Signal-Orange als die Active-Filter-Row, plus dezenter Puls, damit klar ist,
  * dass an dieser Zeile gerade gearbeitet wird. */
@@ -708,6 +772,212 @@
   font-style: italic;
 }
 
+/* --- Shared result-state semantics (dash-state-*) ---------------------------
+   ONE color language for result states across the product: dashboard chips,
+   folder aggregates AND the tests panel (TestsPanel.css consumes the same
+   variables). The --result-state-* tokens live in styles/theme.css. Keep in
+   sync with deriveResultState()'s vocabulary. */
+.dash-state-error { color: var(--result-state-error); }
+.dash-state-warning { color: var(--result-state-warning); }
+.dash-state-neutral { color: var(--result-state-neutral); }
+.dash-state-ok { color: var(--result-state-ok); }
+.dash-state-failed { color: var(--result-state-failed); opacity: 0.75; }
+.dash-state-pending { color: var(--result-state-pending); }
+
+/* Chip row on dashboard/folder tiles (replaces the description line). */
+.dash-tile__chips,
+.dash-tile__chips-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-height: 20px;
+}
+.dash-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-surface);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+}
+.dash-chip--kpi {
+  color: var(--color-text-primary);
+}
+.dash-chip--state {
+  font-size: 0.78rem;
+}
+.dash-chip--pending {
+  border-style: dashed;
+  opacity: 0.7;
+}
+.dash-chip--coverage {
+  border-style: dashed;
+  color: var(--color-text-muted);
+}
+/* Skeleton pulse while a unit is being (re)computed — no layout shift. */
+.dash-chip--skeleton {
+  width: 56px;
+  height: 16px;
+  border: none;
+  background: var(--color-hover-bg);
+  animation: dash-chip-pulse 1.1s ease-in-out infinite;
+}
+@keyframes dash-chip-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.9; }
+}
+
+/* Worst-state accent on the tile edge. */
+.dash-tile--state-error { border-left: 3px solid var(--result-state-error); }
+.dash-tile--state-warning { border-left: 3px solid var(--result-state-warning); }
+.dash-tile--state-ok { border-left: 3px solid var(--result-state-ok); }
+.dash-tile--state-neutral { border-left: 3px solid var(--color-border); }
+.dash-tile--state-failed { border-left: 3px dashed var(--result-state-failed); }
+.dash-tile--state-pending { border-left: 3px dashed var(--color-border); }
+
+/* Folder tiles + inline run trigger. */
+.dash-tile--folder {
+  position: relative;
+  background: var(--color-bg-subtle, var(--color-bg-surface));
+}
+.dash-tile__foldericon {
+  margin-right: 6px;
+  color: var(--color-accent);
+}
+.dash-tile__run {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.7rem;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: var(--color-text-muted);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.dash-tile--folder:hover .dash-tile__run,
+.dash-tile__run--busy {
+  opacity: 1;
+}
+.dash-tile__run:hover {
+  background: var(--color-hover-bg);
+  color: var(--color-text-primary);
+}
+.dash-tile__rubric,
+.dash-navlist__rubric {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+/* Folder-nav actions. The folder BREADCRUMB itself lives in the unified
+   top SubNav (LeitPages builds the crumbs) — no second breadcrumb in the
+   panel; these classes style the inline links + the run-all trigger. */
+.dash-folderbar__link {
+  border: none;
+  background: none;
+  padding: 2px 4px;
+  font: inherit;
+  color: var(--color-accent);
+  cursor: pointer;
+  border-radius: 4px;
+}
+.dash-folderbar__link:hover {
+  background: var(--color-hover-bg);
+}
+.dash-folderbar__runall {
+  margin-left: auto;
+  font-size: 0.78rem;
+  padding: 3px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+.dash-folderbar__runall:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  background: var(--color-hover-bg);
+}
+.dash-folderbar__runall:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* State filter chips + sort select in the view toolbar. */
+.dash-viewbar__filters {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.dash-chip--filter {
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+.dash-chip--filter:hover {
+  opacity: 1;
+}
+.dash-chip--active {
+  opacity: 1;
+  border-color: currentColor;
+  background: var(--color-accent-soft-bg);
+}
+.dash-viewbar__sort {
+  font-size: 0.78rem;
+  padding: 3px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+
+/* Collapsible subfolder sections of the filtered hierarchy view. */
+.dash-tilegroup--collapsible .dash-tilegroup__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dash-tilegroup__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  padding: 2px 4px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  border-radius: 4px;
+}
+.dash-tilegroup__toggle:hover {
+  background: var(--color-hover-bg);
+}
+.dash-tilegroup__open {
+  margin-left: auto;
+  font-size: 0.8rem;
+}
+
+/* Inline results-run control (ResultsRunControl primitive). */
+.dash-results-run {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dash-results-run__meta {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* --- View toolbar (tiles⇄list toggle + entry-count meta) --- */
 .dash-viewbar {
   display: flex;
@@ -884,6 +1154,38 @@
 .dash-navbutton__subtitle {
   font-size: 0.85rem;
   color: var(--color-text-muted);
+}
+
+/* Link-Variante: kein Kachel-Rahmen, keine Fläche — ein Textlink mit Pfeil,
+   der sich in eine Zeile mit seinesgleichen stellt (Fuß-/Querverweise). */
+.dash-navbutton--link {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: baseline;
+  width: auto;
+  height: auto;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+.dash-navbutton--link:hover {
+  background: none;
+  border: none;
+}
+.dash-navbutton--link:hover .dash-navbutton__label {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+.dash-navbutton--link .dash-navbutton__label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  gap: 6px;
+}
+.dash-navbutton--link .dash-navbutton__label::after {
+  content: '→';
+  font-size: 0.9em;
 }
 
 /* --- Markdown --- */
@@ -1680,7 +1982,7 @@
 }
 
 /* Import-Integrität (Dup-Absorption-Zensus, xml_convert). ①-OK-Zustand: ruhige
- * grüne Statuszeile; ②-Warn-Zustand: Warn-Kopf + Detailtabelle + B-K3-Fußtext. */
+ * grüne Statuszeile; ②-Warn-Zustand: Warn-Kopf + Detailtabelle + Fußtext. */
 .xml-integrity--ok {
   padding: 6px 4px;
   color: var(--color-success-fg);
@@ -1716,17 +2018,18 @@
   line-height: 1.4;
   color: var(--color-text-secondary);
 }
-.xml-integrity__details {
-  margin-top: 14px;
-}
-.xml-integrity__more {
-  margin: 6px 0 0;
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
-}
-.xml-integrity__details-head {
-  margin-bottom: 6px;
+/* Links to the metadata-integrity dashboards (replace the former capped
+ * "colliding objects" list — the dashboards carry the full, searchable
+ * findings incl. plaintext context). */
+.xml-integrity__links {
+  margin: 10px 0 0;
   font-size: 0.85rem;
-  font-weight: 600;
   color: var(--color-text-secondary);
+}
+.xml-integrity__link {
+  color: var(--color-accent, #3b82f6);
+  text-decoration: none;
+}
+.xml-integrity__link:hover {
+  text-decoration: underline;
 }

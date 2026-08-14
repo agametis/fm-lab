@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Layout zonder tabelcontext",
-    "description": "Best-practice-regel — Layouts zonder tabelinstantie-context. Ze kunnen geen recordgegevens tonen en zijn vaak verweesde of hulp-Layouts."
+    "description": "Best-practice-regel — signaleert Layouts zonder tabelinstantie-context. Ze kunnen geen recordgegevens tonen en zijn vaak verweesde of hulp-Layouts."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Bevindingen",

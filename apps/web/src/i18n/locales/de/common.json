@@ -19,6 +19,7 @@
   "yes": "Ja",
   "no": "Nein",
   "loadError": "Fehler beim Laden: {{message}}",
+  "plugSpecMissing": "Plugin-Referenz nicht installiert — Plattform- und Deprecation-Daten für Plugin-Funktionen sind nicht verfügbar. Sie wird mit fm-lab-Releases ausgeliefert; der Skill install-mbs-docs kann reference/plugin_spec.duckdb neu erzeugen.",
   "language": {
     "label": "Sprache",
     "selectorAriaLabel": "Sprache der Oberfläche wählen"
@@ -30,6 +31,7 @@
   "actions": {
     "openInFileMaker": "In FileMaker öffnen",
     "copyUuid": "UUID kopieren",
+    "copyOriginalUuid": "Original-UUID kopieren — Achtung: diese UUID ist im Quell-File mehrfach vergeben",
     "expandAll": "Alle aufklappen",
     "collapseAll": "Alle zuklappen",
     "collapseMultilineCalcs": "Mehrzeilige Calcs zuklappen",

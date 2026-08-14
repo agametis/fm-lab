@@ -1,6 +1,6 @@
 -- Hand-maintained wrapper around the rule core (close_window_name_never_created).
 WITH closes AS (
-    SELECT File_Name, Step_Index, Calc_Text,
+    SELECT File_Name, Script_UUID, Step_Index, Calc_Text,
            regexp_full_match(Calc_Text, '"[^"]*"') AS is_literal
     FROM StepCalculations
     WHERE Step_ID = 121 AND Slot = 'Name' AND Is_Enabled
@@ -18,4 +18,6 @@ SELECT
 FROM closes c
 LEFT JOIN producers p ON p.Calc_Text = c.Calc_Text
 WHERE p.Calc_Text IS NULL
-  AND (getvariable('file') IS NULL OR c.File_Name = getvariable('file'));
+  AND (getvariable('file') IS NULL OR c.File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR c.Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))));

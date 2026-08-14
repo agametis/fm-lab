@@ -16,6 +16,7 @@ A few rules hold across the whole solution catalog:
 - **Order is preserved.** Row order matches the FileMaker solution; script steps additionally carry an explicit `Step_Index`.
 - **References are pre-resolved.** Which fields a script sets, which scripts a button calls, which value list a field uses — all of that is resolved at import time into [ObjectLinks](object-catalog/ObjectLinks.md). Raw `*_XML` columns exist as a last resort, not as the primary query surface.
 - **Names are localized, IDs are not.** SaXML exports write object and step names in the UI language of the exporting client. Robust analyses key on numeric IDs (e.g. `Step_ID`) and UUIDs, never on name literals.
+- **Duplicate UUIDs are healed.** FileMaker exports occasionally carry the same UUID on two different objects of one file (a copy-paste artifact). The import keeps both objects: one keeps the original UUID, every further twin gets a deterministic synthetic replacement UUID — an md5 hex string, 32 characters without dashes, formally distinguishable from a native UUID. The original↔replacement mapping is preserved in the census; see [UUID Healing and Duplicate Census](UUID%20Healing%20and%20Duplicate%20Census.md).
 - **The schema itself is versioned.** Every built catalog carries its schema version in the `SchemaInfo` table; a version mismatch triggers an automatic full rebuild. All versions and their changes: [Schema Version History](Schema%20Version%20History.md).
 
 
@@ -125,14 +126,14 @@ The [XML export](../xml/XML.md) represents each object type as its own dictionar
 
 ### Internal & auxiliary tables
 
-Beyond the documented surface, the catalog contains working tables the pipeline and the tooling use internally: raw reference extractions before resolution (`XMLStepReferences`, `XMLLayoutReferences`, `XMLCalcReferences`, `LayoutObjectSteps`), resolver helpers (`TableOccurrenceResolution`, `ObjectHomes`, `ScriptStepRoleMap`, `GetSubparameterMap`, `MBS_SubnameMap`, `step_metadata`, `sql_name_wrappers`), import monitoring (`DuplicateAbsorptions`, `DuplicateAbsorptionDetails`, `PasteIndexList`, `SchemaInfo`) and the graph-clustering layer (`ObjectClusters`, `CommunityNames`, `ClusterNodeUniverse`, `ClusterEdgesBaseMat`). A set of `v_check_*` views implements the import quality gate, and analysis views (`v_calc_anchors`, `v_script_block_tree`, `v_cross_file_dependencies`, `LogicalLinks`, `FolderHierarchy`, …) provide prepared perspectives for common queries. They are stable enough to query, but their shape follows the pipeline's needs and may change between releases — treat the tables above as the documented contract.
+Beyond the documented surface, the catalog contains working tables the pipeline and the tooling use internally: raw reference extractions before resolution (`XMLStepReferences`, `XMLLayoutReferences`, `XMLCalcReferences`, `LayoutObjectSteps`), resolver helpers (`TableOccurrenceResolution`, `ObjectHomes`, `ScriptStepRoleMap`, `GetSubparameterMap`, `MBS_SubnameMap`, `step_metadata`, `sql_name_wrappers`), import monitoring and the [duplicate census](UUID%20Healing%20and%20Duplicate%20Census.md) (`DuplicateAbsorptions`, `DuplicateAbsorptionDetails`, `MergeAbsorptions` — since schema 1.19.0 also the UUID-healing mapping), bookkeeping (`PasteIndexList`, `SchemaInfo`) and the graph-clustering layer (`ObjectClusters`, `CommunityNames`, `ClusterNodeUniverse`, `ClusterEdgesBaseMat`). A set of `v_check_*` views implements the import quality gate, and analysis views (`v_calc_anchors`, `v_script_block_tree`, `v_cross_file_dependencies`, `LogicalLinks`, `FolderHierarchy`, …) provide prepared perspectives for common queries. They are stable enough to query, but their shape follows the pipeline's needs and may change between releases — treat the tables above as the documented contract.
 
 
 ---
 
 ## 3 · fm-spec — the language reference
 
-Where the object catalog describes your solution, [fm-spec](../Wiki/fm-spec.md) describes FileMaker itself. `reference/fm_spec.duckdb` is a solution-independent, machine-readable reference of the FileMaker language: all 207 script steps and 367 calculation functions with stable IDs, official documentation links in up to 11 locales, structured parameter definitions, and — the part no documentation site offers — a machine-readable emission layer: per-step XML templates, option grammars with allowed values, structural constraints and platform compatibility. Names are treated strictly as a localized display layer over stable IDs, which is why FM-Lab's analyses and generated artifacts work regardless of the language a developer's FileMaker runs in.
+Where the object catalog describes your solution, [fm-spec](../Wiki/fm-spec.md) describes FileMaker itself. `reference/fm_spec.duckdb` is a solution-independent, machine-readable reference of the FileMaker language: all 207 script steps and 367 calculation functions with stable IDs, official documentation links in up to 11 locales, structured parameter definitions, and — the part no documentation site offers — a machine-readable emission layer: per-step XML templates, option grammars with allowed values, structural constraints, per-step platform compatibility and curated per-function platform affinity. Names are treated strictly as a localized display layer over stable IDs, which is why FM-Lab's analyses and generated artifacts work regardless of the language a developer's FileMaker runs in.
 
 The database is organized in four layers plus a build stamp:
 
@@ -169,7 +170,11 @@ The database is organized in four layers plus a build stamp:
 |---|---|
 | [step_xml_map](fm-spec-tables/step_xml_map.md) | XML snippet template, element order and SaXML example per step |
 | [step_constraints](fm-spec-tables/step_constraints.md) | Structural rules a valid snippet must satisfy |
-| [step_compat](fm-spec-tables/step_compat.md) | Platform matrix: Pro, Server, Go, WebDirect, Cloud, Data API, CWP |
+| [step_compat](fm-spec-tables/step_compat.md) | Platform matrix per step: Pro, Server, Go, WebDirect, Cloud, Data API, CWP (tri-state: Yes / No / Partial) |
+| [function_platform_affinity](fm-spec-tables/function_platform_affinity.md) | Curated platform *affinity* per function ("meaningful results only there") — Claris publishes no function compatibility table |
+| [step_os_affinity](fm-spec-tables/step_os_affinity.md) | Curated OS affinity per step (macOS / Windows / Linux / iOS): exclusive, source-true inverse *unsupported*, behavioral variants — distilled from Claris help prose, quote per row |
+| [function_os_affinity](fm-spec-tables/function_os_affinity.md) | Curated OS affinity per function, plus the `os_probe` class (Get(SystemPlatform) & co — the guard idiom, not a binding) |
+| [runtime_os_matrix](fm-spec-tables/runtime_os_matrix.md) | Host matrix runtime × OS — the only sanctioned translator between the runtime and OS axes |
 | [ref_element_semantics](fm-spec-tables/ref_element_semantics.md) | How reference elements resolve against the solution catalog |
 
 ### Action layer
@@ -184,3 +189,7 @@ The database is organized in four layers plus a build stamp:
 | Table | Content |
 |---|---|
 | [reference_meta](fm-spec-tables/reference_meta.md) | Build stamp: schema version, FileMaker coverage, attribution pointer |
+
+## 4 · plugin-spec — the plug-in platform map
+
+A second, smaller reference database sits next to fm-spec: `reference/plugin_spec.duckdb` describes the platform surface of **plug-in functions** (MBS first, plugin-agnostic schema) — verbatim vendor flags per OS/Server/iOS-SDK axis plus a curated interpretation layer that translates them into FM-Lab's runtime and OS vocabulary. It is derived locally from the installed MBS documentation mirror, not shipped. See [plugin-spec](plugin-spec.md) for the schema and the two-layer design.

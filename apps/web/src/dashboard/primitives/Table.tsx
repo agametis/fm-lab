@@ -7,6 +7,7 @@ import { translateCellValue } from './_cellTranslate';
 import { useRowSearch } from './_useRowSearch';
 import { dispatchAction } from '../actions';
 import { isActionActive } from '../actionState';
+import { useSelection } from '../selectionContext';
 import type { ActionSpec } from '../actions';
 import { useXmlConvertFileStates, type XmlConvertFileState } from './useXmlConvertFileStates';
 
@@ -27,6 +28,10 @@ interface ColumnSpec {
   field: string;
   label: string;
   align?: 'left' | 'right' | 'center';
+  // Formats: everything _format.ts knows (number, count, badge, filesize,
+  // date:*) plus 'copy' — renders the cell as a subtle copy-to-clipboard
+  // button whose tooltip reveals the raw value (for long identifiers like
+  // UUIDs that would waste column width as plain text).
   format?: string;
 }
 
@@ -63,6 +68,16 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
   const density = (props.density as string) ?? 'comfortable';
   const onRowClick = props.onRowClick as ActionSpec | undefined;
   const empty = props.empty as { message?: string } | undefined;
+  // Selection lens (see selectionContext): `selectField` makes this table the
+  // SOURCE — a row click toggles its value on the named channel; `highlightField`
+  // makes it a TARGET — rows whose (comma-separated) field contains the selected
+  // value get tinted. A table may be both. Costs no column width, unlike a
+  // per-lens column on an already wide list.
+  const selectionKey = props.selectionKey as string | undefined;
+  const selectField = props.selectField as string | undefined;
+  const highlightField = props.highlightField as string | undefined;
+  const { selection, toggle } = useSelection();
+  const selectedValue = selectionKey ? (selection[selectionKey] ?? null) : null;
   // Sortierung ist Opt-in. Default false, damit Bestands-Dashboards mit
   // bewusster Reihenfolge (z.B. die führende "Alle"-Zeile in api_families)
   // ihre Sortierung nicht verlieren, sobald sie einen Sort-State bekämen.
@@ -149,6 +164,9 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
 
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  // 'copy'-format cells: id of the cell whose value was just copied (brief
+  // checkmark feedback, auto-reset).
+  const [copiedCell, setCopiedCell] = useState<string | null>(null);
 
   const sortedRows = useMemo(() => {
     if (!sortField) return search.filtered;
@@ -178,8 +196,24 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
     return <div className="dash-table__empty">{empty?.message ?? t('common:noEntries')}</div>;
   }
 
-  const clickable = !!onRowClick;
+  const selectable = !!(selectionKey && selectField);
+  const clickable = !!onRowClick || selectable;
   const hasQuery = search.query.trim() !== '';
+
+  const handleRowClick = (row: Record<string, unknown>) => {
+    if (selectable) toggle(selectionKey as string, String(row[selectField as string] ?? ''));
+    if (onRowClick) dispatchAction(onRowClick, row, { navigate });
+  };
+
+  /** Selected source row, or a target row belonging to the selected value. */
+  const isSelected = (row: Record<string, unknown>): boolean => {
+    if (!selectionKey || !selectedValue) return false;
+    if (selectField && String(row[selectField] ?? '') === selectedValue) return true;
+    if (!highlightField) return false;
+    const raw = row[highlightField];
+    if (raw == null) return false;
+    return String(raw).split(',').map(s => s.trim()).filter(Boolean).includes(selectedValue);
+  };
 
   const handleHeaderClick = (field: string) => {
     if (!sortable) return;
@@ -295,6 +329,7 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
             const rowClass = [
               clickable ? 'dash-table__row--clickable' : '',
               isActive ? 'dash-table__row--active' : '',
+              isSelected(row) ? 'dash-table__row--selected' : '',
               isFilling ? 'dash-table__row--filling' : '',
               (!isFilling && (liveState === 'chunking' || liveState === 'importing')) ? 'dash-table__row--processing' : '',
               liveState === 'imported' ? 'dash-table__row--done' : '',
@@ -316,8 +351,9 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
                 key={key}
                 className={rowClass}
                 style={rowStyle}
-                onClick={clickable ? () => dispatchAction(onRowClick, row, { navigate }) : undefined}
+                onClick={clickable ? () => handleRowClick(row) : undefined}
                 aria-current={isActive ? 'true' : undefined}
+                aria-selected={selectable ? isSelected(row) : undefined}
               >
                 {columns.map(c => {
                   let rawValue = row[c.field];
@@ -332,6 +368,52 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
                   // Categorical cells (badges) frequently carry canonical
                   // English keys emitted from SQL — translate them so the UI
                   // matches the active language. Unknown values pass through.
+                  // 'copy' format: no text — a subtle clipboard button whose
+                  // tooltip shows the raw value; the click must not bubble into
+                  // the row's onRowClick navigation.
+                  if (c.format === 'copy') {
+                    const copyValue = rawValue == null ? '' : String(rawValue);
+                    const cellId = `${key}:${c.field}`;
+                    const isCopied = copiedCell === cellId;
+                    return (
+                      <td
+                        key={c.field}
+                        className={c.align ? `dash-table__td--${c.align}` : undefined}
+                      >
+                        {copyValue !== '' && (
+                          <button
+                            type="button"
+                            className={`dash-table__copy${isCopied ? ' dash-table__copy--copied' : ''}`}
+                            title={copyValue}
+                            aria-label={copyValue}
+                            onClick={e => {
+                              e.stopPropagation();
+                              navigator.clipboard?.writeText(copyValue)
+                                .then(() => {
+                                  setCopiedCell(cellId);
+                                  setTimeout(
+                                    () => setCopiedCell(cur => (cur === cellId ? null : cur)),
+                                    1500,
+                                  );
+                                })
+                                .catch(() => { /* clipboard blocked */ });
+                            }}
+                          >
+                            {isCopied ? (
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            ) : (
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                              </svg>
+                            )}
+                          </button>
+                        )}
+                      </td>
+                    );
+                  }
                   const isBadge = c.format === 'badge';
                   const value = isBadge ? translateCellValue(rawValue, t) : rawValue;
                   const formatted = formatTableCell(value, c.format, lang);

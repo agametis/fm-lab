@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "Collisioni di UUID da clonazione",
+    "description": "Controllo di integrità dei metadati — UUID FileMaker nativi presenti in più di un file della soluzione (file clonati, copia/incolla tra cloni). Invisibili in FileMaker, ma disturbano gli strumenti di sviluppo che presuppongono l'unicità degli UUID.",
+    "analysis.defaultResult.meaning": "Numero di UUID nativi presenti in più di un file della soluzione"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "UUID duplicati",
+    "summary_kpi.props.items[1].label": "Oggetti interessati",
+    "summary_kpi.props.items[2].label": "File interessati",
+    "summary_kpi.props.items[3].label": "Conflitti di tipo",
+    "pairs_card.props.title": "Coppie di file con UUID condivisi",
+    "pairs_table.props.columns[0].label": "File A",
+    "pairs_table.props.columns[1].label": "File B",
+    "pairs_table.props.columns[2].label": "UUID condivisi",
+    "pairs_table.props.columns[3].label": "% di A",
+    "pairs_table.props.columns[4].label": "% di B",
+    "pairs_table.props.searchPlaceholder": "Cerca file…",
+    "pairs_table.props.empty.message": "Nessuna coppia di file condivide un UUID nativo.",
+    "findings_card.props.title": "Oggetti in collisione",
+    "findings_table.props.columns[0].label": "UUID",
+    "findings_table.props.columns[1].label": "Tipo",
+    "findings_table.props.columns[2].label": "Oggetto",
+    "findings_table.props.columns[3].label": "File",
+    "findings_table.props.columns[4].label": "File",
+    "findings_table.props.columns[5].label": "Conflitto di tipo",
+    "findings_table.props.searchPlaceholder": "Cerca nome, file o UUID…",
+    "findings_table.props.empty.message": "Nessun UUID esiste in più di un file — nessuna collisione da clonazione.",
+    "notes_card.props.title": "Informazioni su questo controllo",
+    "notes_md.props.content": "I file FileMaker clonati conservano gli UUID del clone: lo stesso UUID identifica **oggetti diversi in file diversi**. La soluzione funziona senza problemi, ma gli strumenti che presuppongono l'unicità degli UUID (strumenti DDR, fmIDE, diff/merge, integrazioni basate su UUID) possono scegliere l'oggetto sbagliato.\n\n**Non esiste una correzione automatica.** La modalità di riparazione di Claris assegna UUID completamente nuovi e rompe ogni riferimento esterno. Tratta la coppia *(UUID, file)* come identità dell'oggetto. Le righe contrassegnate **conflitto di tipo** sono le collisioni più pericolose: lo stesso UUID nomina oggetti di *tipi diversi*.\n\nVengono controllati solo gli UUID FileMaker nativi; le identità sintetiche di FM-Lab sono escluse per progettazione. I duplicati *all'interno* di un singolo file sono coperti dalla dashboard gemella **Duplicati di UUID nello stesso file**."
+  }
+}

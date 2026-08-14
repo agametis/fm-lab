@@ -46,7 +46,15 @@ CREATE TABLE IF NOT EXISTS XMLStepReferences (
     Data_Source_Name VARCHAR,    -- nur Ref_Type='script' Cross-File (Perform Script from file)
     Data_Source_UUID VARCHAR,    -- analog
     Variable_Scope VARCHAR,      -- nur Ref_Type='variable': 'local'|'global'|'superglobal'|'let_local'
-    Usage_Type VARCHAR           -- nur Ref_Type='variable': 'set' (Set-Variable-Step-Definition)
+    Usage_Type VARCHAR,          -- nur Ref_Type='variable': 'set' (Set-Variable-Step-Definition)
+    -- UUID-Healing (Schema 1.19.0): FileMaker-interne @id des Referenz-Elements
+    -- (ScriptReference/LayoutReference/FieldReference/…). Das SaXML referenziert als
+    -- Tripel id+name+UUID; die @id disambiguiert Intra-File-UUID-Duplikate in der
+    -- P4-Rewrite-Stufe. NULL bei Ref_Type='variable' (kein Referenz-Element).
+    Ref_ID BIGINT,
+    -- Kontext-TO-@id (nur Ref_Type='field'): FieldReference/@id ist TABELLEN-lokal —
+    -- der Feld-Schlüssel ist zweistufig über TableOccurrenceReference/@id → BaseTable.
+    TO_Ref_ID BIGINT
 );
 
 -- Additive Migration für Bestands-DBs (idempotent — neuer Bau setzt sie via CREATE).
@@ -56,6 +64,8 @@ ALTER TABLE XMLStepReferences ADD COLUMN IF NOT EXISTS Data_Source_Name VARCHAR;
 ALTER TABLE XMLStepReferences ADD COLUMN IF NOT EXISTS Data_Source_UUID VARCHAR;
 ALTER TABLE XMLStepReferences ADD COLUMN IF NOT EXISTS Variable_Scope VARCHAR;
 ALTER TABLE XMLStepReferences ADD COLUMN IF NOT EXISTS Usage_Type VARCHAR;
+ALTER TABLE XMLStepReferences ADD COLUMN IF NOT EXISTS Ref_ID BIGINT;
+ALTER TABLE XMLStepReferences ADD COLUMN IF NOT EXISTS TO_Ref_ID BIGINT;
 
 -- Bestehende Einträge entfernen (Idempotenz; batch-weiter DELETE — P2 läuft
 -- einmal für alle Dateien bzw. je Slice in eine frische Part-DB)
@@ -84,7 +94,9 @@ SELECT
     -- NULLIF, weil xml_extract_text leere Strings für nicht-existente Elemente liefert.
     NULLIF(xml_extract_text(Step_XML, '//DataSourceReference/@name')[1], '') AS Data_Source_Name,
     NULLIF(xml_extract_text(Step_XML, '//DataSourceReference/@UUID')[1], '') AS Data_Source_UUID,
-    NULL AS Variable_Scope, NULL AS Usage_Type
+    NULL AS Variable_Scope, NULL AS Usage_Type,
+    TRY_CAST(NULLIF(xml_extract_text(Step_XML, '//ScriptReference/@id')[1], '') AS BIGINT) AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM (
     -- Opt 3A (Resolve-Query-Dedup): //ScriptReference/@UUID nur EINMAL parsen statt in
     -- SELECT *und* WHERE; der LIKE-Vorfilter hält den Parse auf Perform-Script-Steps
@@ -118,7 +130,9 @@ SELECT
     NULLIF(xml_extract_text(field_ref_xml, '/FieldReference/TableOccurrenceReference/@name')[1], '') AS TO_Name,
     NULLIF(xml_extract_text(field_ref_xml, '/FieldReference/TableOccurrenceReference/@UUID')[1], '') AS TO_UUID,
     NULL AS Data_Source_Name, NULL AS Data_Source_UUID,
-    NULL AS Variable_Scope, NULL AS Usage_Type
+    NULL AS Variable_Scope, NULL AS Usage_Type,
+    TRY_CAST(NULLIF(xml_extract_text(field_ref_xml, '/FieldReference/@id')[1], '') AS BIGINT) AS Ref_ID,
+    TRY_CAST(NULLIF(xml_extract_text(field_ref_xml, '/FieldReference/TableOccurrenceReference/@id')[1], '') AS BIGINT) AS TO_Ref_ID
 FROM (
     -- Opt 3A: /FieldReference/@UUID + @name je EINMAL parsen (vorher SELECT+WHERE doppelt);
     -- field_ref_xml bleibt durchgereicht für die gefilterten Select-only-Extrakte.
@@ -162,7 +176,9 @@ SELECT
     -- Field-Refs gefüllt, wo es das *Kontext*-TO eines Felds beschreibt).
     NULL AS TO_Name, NULL AS TO_UUID,
     NULL AS Data_Source_Name, NULL AS Data_Source_UUID,
-    NULL AS Variable_Scope, NULL AS Usage_Type
+    NULL AS Variable_Scope, NULL AS Usage_Type,
+    TRY_CAST(NULLIF(xml_extract_text(Step_XML, '//TableOccurrenceReference/@id')[1], '') AS BIGINT) AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM (
     -- Opt 3A: //TableOccurrenceReference/@UUID nur EINMAL parsen (vorher SELECT+WHERE).
     SELECT Script_UUID, Step_UUID, Step_Name, Step_Index, File_Name, Step_XML,
@@ -188,7 +204,9 @@ SELECT
     File_Name,
     NULL AS TO_Name, NULL AS TO_UUID,
     NULL AS Data_Source_Name, NULL AS Data_Source_UUID,
-    NULL AS Variable_Scope, NULL AS Usage_Type
+    NULL AS Variable_Scope, NULL AS Usage_Type,
+    TRY_CAST(NULLIF(xml_extract_text(Step_XML, '//LayoutReference/@id')[1], '') AS BIGINT) AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM (
     -- Opt 3A: //LayoutReference/@UUID nur EINMAL parsen (vorher SELECT+WHERE).
     SELECT Script_UUID, Step_UUID, Step_Name, Step_Index, File_Name, Step_XML,
@@ -211,7 +229,9 @@ SELECT
     File_Name,
     NULL AS TO_Name, NULL AS TO_UUID,
     NULL AS Data_Source_Name, NULL AS Data_Source_UUID,
-    NULL AS Variable_Scope, NULL AS Usage_Type
+    NULL AS Variable_Scope, NULL AS Usage_Type,
+    TRY_CAST(NULLIF(xml_extract_text(Step_XML, '//LayoutReference/@id')[1], '') AS BIGINT) AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM (
     -- Opt 3A: //LayoutReference/@UUID nur EINMAL parsen (vorher SELECT+WHERE).
     SELECT Script_UUID, Step_UUID, Step_Name, Step_Index, File_Name, Step_XML,
@@ -241,7 +261,9 @@ SELECT
     File_Name,
     NULL AS TO_Name, NULL AS TO_UUID,
     NULL AS Data_Source_Name, NULL AS Data_Source_UUID,
-    NULL AS Variable_Scope, NULL AS Usage_Type
+    NULL AS Variable_Scope, NULL AS Usage_Type,
+    TRY_CAST(NULLIF(xml_extract_text(Step_XML, '//LayoutReference/@id')[1], '') AS BIGINT) AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM (
     SELECT Script_UUID, Step_UUID, Step_Name, Step_Index, File_Name, Step_XML,
            NULLIF(xml_extract_text(Step_XML, '//LayoutReference/@UUID')[1], '') AS ref_uuid  -- B-R4: ''→NULL
@@ -268,7 +290,9 @@ SELECT
     File_Name,
     NULL AS TO_Name, NULL AS TO_UUID,
     NULL AS Data_Source_Name, NULL AS Data_Source_UUID,
-    NULL AS Variable_Scope, NULL AS Usage_Type
+    NULL AS Variable_Scope, NULL AS Usage_Type,
+    TRY_CAST(NULLIF(xml_extract_text(Step_XML, '//CustomMenuSetReference/@id')[1], '') AS BIGINT) AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM (
     SELECT Script_UUID, Step_UUID, Step_Name, Step_Index, File_Name, Step_XML,
            NULLIF(xml_extract_text(Step_XML, '//CustomMenuSetReference/@UUID')[1], '') AS ref_uuid  -- B-R4: ''→NULL
@@ -297,13 +321,16 @@ SELECT
     File_Name,
     NULL AS TO_Name, NULL AS TO_UUID,
     NULL AS Data_Source_Name, NULL AS Data_Source_UUID,
-    NULL AS Variable_Scope, NULL AS Usage_Type
+    NULL AS Variable_Scope, NULL AS Usage_Type,
+    ref_id AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM (
     -- @UUID + @name je Element EINMAL parsen; vl_ref_xml ist das einzelne
     -- <ValueListReference>-Fragment (unnest liefert eine Zeile pro Vorkommen).
     SELECT Script_UUID, Step_UUID, Step_Name, Step_Index, File_Name,
            xml_extract_text(vl_ref_xml, '/ValueListReference/@UUID')[1] AS ref_uuid,
-           xml_extract_text(vl_ref_xml, '/ValueListReference/@name')[1] AS ref_name
+           xml_extract_text(vl_ref_xml, '/ValueListReference/@name')[1] AS ref_name,
+           TRY_CAST(NULLIF(xml_extract_text(vl_ref_xml, '/ValueListReference/@id')[1], '') AS BIGINT) AS ref_id
     FROM (
         SELECT
             Script_UUID, Step_UUID, Step_Name, Step_Index, File_Name,
@@ -343,7 +370,9 @@ SELECT
         WHEN name_value LIKE '$$%'  THEN 'global'
         ELSE 'local'
     END AS Variable_Scope,
-    'set' AS Usage_Type
+    'set' AS Usage_Type,
+    NULL AS Ref_ID,      -- Variablen tragen kein Referenz-Element (keine FM-@id)
+    NULL AS TO_Ref_ID
 FROM (
     -- Opt 3A: //Name/@value nur EINMAL parsen (vorher 5× pro Zeile: SELECT + CASE×2 + WHERE×2).
     SELECT Script_UUID, Step_UUID, Step_Name, Step_Index, File_Name,
@@ -376,18 +405,26 @@ CREATE TABLE IF NOT EXISTS XMLLayoutReferences (
     -- sonst NULL). Trägt die locale-unabhängige Rollen-Zuordnung in P4 (ScriptStepRoleMap),
     -- analog zum Script→Field-Block. Additive Spalte (Schema-Bump unkritisch, P2-Tabelle
     -- ist volatil und wird je Lauf neu befüllt).
-    Step_ID INTEGER
+    Step_ID INTEGER,
+    -- UUID-Healing (Schema 1.19.0): FileMaker-interne @id des Referenz-Elements
+    -- (Tripel id+name+UUID im SaXML) — disambiguiert Intra-File-UUID-Duplikate in der
+    -- P4-Rewrite-Stufe. TO_Ref_ID = Kontext-TO-@id (nur Feld-Referenzen: FieldReference/@id
+    -- ist TABELLEN-lokal, der Feld-Schlüssel läuft zweistufig über die TO).
+    Ref_ID BIGINT,
+    TO_Ref_ID BIGINT
 );
 
 -- Additive Migration für Bestands-DBs (idempotent — neuer Bau setzt sie via CREATE).
 ALTER TABLE XMLLayoutReferences ADD COLUMN IF NOT EXISTS Step_ID INTEGER;
+ALTER TABLE XMLLayoutReferences ADD COLUMN IF NOT EXISTS Ref_ID BIGINT;
+ALTER TABLE XMLLayoutReferences ADD COLUMN IF NOT EXISTS TO_Ref_ID BIGINT;
 
 -- Bestehende Einträge entfernen (Idempotenz; batch-weiter DELETE — P2 läuft
 -- einmal für alle Dateien bzw. je Slice in eine frische Part-DB)
 DELETE FROM XMLLayoutReferences WHERE TRUE;
 
 -- Feld-Referenzen: LayoutObject/Field/FieldReference/@UUID
-INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name)
+INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name, Ref_ID, TO_Ref_ID)
 SELECT
     object_uuid as Object_UUID,
     'field' as Ref_Type,
@@ -397,12 +434,14 @@ SELECT
     -- bleibt. Ohne NULLIF joint P4 displays_field auf '' → Orphan-Link statt sauberer NULL.
     NULLIF(ref_uuid, '') as Ref_UUID,
     NULLIF(xml_extract_text(object_xml, '/LayoutObject/Field/FieldReference/@name')[1], '') as Ref_Name,
-    File_Name
+    File_Name,
+    TRY_CAST(NULLIF(xml_extract_text(object_xml, '/LayoutObject/Field/FieldReference/@id')[1], '') AS BIGINT) AS Ref_ID,
+    TRY_CAST(NULLIF(xml_extract_text(object_xml, '/LayoutObject/Field/FieldReference/TableOccurrenceReference/@id')[1], '') AS BIGINT) AS TO_Ref_ID
 FROM (
     -- Opt 3A: UUID + FieldReference/@UUID je EINMAL parsen (vorher SELECT+WHERE doppelt);
     -- object_xml bleibt durchgereicht für den gefilterten Select-only-@name-Extrakt.
     SELECT Object_XML AS object_xml, File_Name,
-           xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS object_uuid,
+           Object_UUID AS object_uuid,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
            xml_extract_text(Object_XML, '/LayoutObject/Field/FieldReference/@UUID')[1] AS ref_uuid
     FROM LayoutObjects
     -- Opt 3A: LIKE-Vorfilter überspringt Objekte ohne FieldReference (Superset; kein Treffer fällt weg).
@@ -419,15 +458,26 @@ WHERE object_uuid IS NOT NULL
 -- Merge-Felder zusätzlich dem Container zuschreiben. Mehrere Merge-Felder pro
 -- Objekt → parallele @UUID/@name-Listen, positionsweise gezippt (Muster/Nachweis
 -- wie ScriptReference-Block unten; Korpus: 298 Text-Objekte → 414 Refs, 0 Mismatch).
-INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name)
+INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name, Ref_ID, TO_Ref_ID)
 -- K4: leere Merge-Feld-UUID → NULL (analog zum Field-Block oben); Guard unten hält reale + ''.
-SELECT Object_UUID, 'field' AS Ref_Type, NULLIF(Ref_UUID, '') AS Ref_UUID, NULLIF(Ref_Name, '') AS Ref_Name, File_Name
+SELECT Object_UUID, 'field' AS Ref_Type, NULLIF(Ref_UUID, '') AS Ref_UUID, NULLIF(Ref_Name, '') AS Ref_Name, File_Name,
+       TRY_CAST(NULLIF(Ref_ID_raw, '') AS BIGINT) AS Ref_ID,
+       TRY_CAST(NULLIF(TO_Ref_ID_raw, '') AS BIGINT) AS TO_Ref_ID
 FROM (
-    SELECT ou AS Object_UUID, unnest(uuids) AS Ref_UUID, unnest(names) AS Ref_Name, File_Name
+    -- Ausrichtungs-Guard für die Zusatz-Listen: nur zippen, wenn die Liste exakt so lang
+    -- ist wie die @UUID-Liste (jede FieldReference hat ≤1 TO-Kind → Längengleichheit
+    -- impliziert Positionstreue). Bei Mismatch degradiert die GANZE Liste zu NULL
+    -- (paralleles unnest padded mit NULL) statt falsch zuzuordnen.
+    SELECT ou AS Object_UUID, unnest(uuids) AS Ref_UUID, unnest(names) AS Ref_Name,
+           unnest(CASE WHEN len(ids)    = len(uuids) THEN ids    ELSE NULL END) AS Ref_ID_raw,
+           unnest(CASE WHEN len(to_ids) = len(uuids) THEN to_ids ELSE NULL END) AS TO_Ref_ID_raw,
+           File_Name
     FROM (
-        SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+        SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
                xml_extract_text(Object_XML, '/LayoutObject/FieldList/FieldReference/@UUID') AS uuids,
                xml_extract_text(Object_XML, '/LayoutObject/FieldList/FieldReference/@name') AS names,
+               xml_extract_text(Object_XML, '/LayoutObject/FieldList/FieldReference/@id') AS ids,
+               xml_extract_text(Object_XML, '/LayoutObject/FieldList/FieldReference/TableOccurrenceReference/@id') AS to_ids,
                File_Name
         FROM LayoutObjects
         WHERE Object_XML LIKE '%<FieldList>%'
@@ -446,14 +496,20 @@ WHERE Ref_UUID IS NOT NULL;
 -- treu. Footprint 2298→495 MB, voll spillbar, korpus-bit-identisch (38326 Zeilen,
 -- EXCEPT ALL beidseitig 0). LIKE-Vorfilter überspringt Objekte ohne ScriptReference
 -- (ein XPath-Match impliziert den Substring → kein Treffer fällt weg).
-INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name)
-SELECT Object_UUID, 'script' AS Ref_Type, Ref_UUID, Ref_Name, File_Name
+INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name, Ref_ID)
+SELECT Object_UUID, 'script' AS Ref_Type, Ref_UUID, Ref_Name, File_Name,
+       TRY_CAST(NULLIF(Ref_ID_raw, '') AS BIGINT) AS Ref_ID
 FROM (
-    SELECT ou AS Object_UUID, unnest(uuids) AS Ref_UUID, unnest(names) AS Ref_Name, File_Name
+    -- Dritte parallele String-Liste (@id) für UUID-Healing; gleicher Footprint-Ansatz
+    -- (Strings statt DOM-Fragmente), Ausrichtungs-Guard wie im Merge-Feld-Block.
+    SELECT ou AS Object_UUID, unnest(uuids) AS Ref_UUID, unnest(names) AS Ref_Name,
+           unnest(CASE WHEN len(ids) = len(uuids) THEN ids ELSE NULL END) AS Ref_ID_raw,
+           File_Name
     FROM (
-        SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+        SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
                xml_extract_text(Object_XML, '//ScriptReference/@UUID') AS uuids,
                xml_extract_text(Object_XML, '//ScriptReference/@name') AS names,
+               xml_extract_text(Object_XML, '//ScriptReference/@id') AS ids,
                File_Name
         FROM LayoutObjects
         WHERE Object_XML LIKE '%ScriptReference%'
@@ -463,18 +519,19 @@ FROM (
 WHERE Ref_UUID IS NOT NULL;
 
 -- ValueList-Referenzen: LayoutObject/Field/Display/ValueListReference/@UUID (NEU)
-INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name)
+INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name, Ref_ID)
 SELECT
     object_uuid as Object_UUID,
     'valuelist' as Ref_Type,
     ref_uuid as Ref_UUID,
     xml_extract_text(object_xml, '/LayoutObject/Field/Display/ValueListReference/@name')[1] as Ref_Name,
-    File_Name
+    File_Name,
+    TRY_CAST(NULLIF(xml_extract_text(object_xml, '/LayoutObject/Field/Display/ValueListReference/@id')[1], '') AS BIGINT) AS Ref_ID
 FROM (
     -- Opt 3A: UUID + ValueListReference/@UUID je EINMAL parsen (vorher SELECT+WHERE doppelt);
     -- object_xml bleibt durchgereicht für den gefilterten Select-only-@name-Extrakt.
     SELECT Object_XML AS object_xml, File_Name,
-           xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS object_uuid,
+           Object_UUID AS object_uuid,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
            xml_extract_text(Object_XML, '/LayoutObject/Field/Display/ValueListReference/@UUID')[1] AS ref_uuid
     FROM LayoutObjects
     -- Opt 3A: LIKE-Vorfilter überspringt Objekte ohne ValueListReference (Superset; kein Treffer fällt weg).
@@ -484,17 +541,20 @@ WHERE object_uuid IS NOT NULL
   AND ref_uuid IS NOT NULL;
 
 -- Portal → TableOccurrence: /LayoutObject/Portal/TableOccurrenceReference/@UUID (NEU)
-INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name)
+INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name, Ref_ID)
 SELECT
-    xml_extract_text(object_xml, '/LayoutObject/UUID')[1] as Object_UUID,
+    object_uuid as Object_UUID,
     'table_occurrence' as Ref_Type,
     ref_uuid as Ref_UUID,
     xml_extract_text(object_xml, '/LayoutObject/Portal/TableOccurrenceReference/@name')[1] as Ref_Name,
-    File_Name
+    File_Name,
+    TRY_CAST(NULLIF(xml_extract_text(object_xml, '/LayoutObject/Portal/TableOccurrenceReference/@id')[1], '') AS BIGINT) AS Ref_ID
 FROM (
     -- Opt 3A: Portal/TableOccurrenceReference/@UUID nur EINMAL parsen (vorher SELECT+WHERE);
     -- object_xml durchgereicht für die gefilterten Select-only-Extrakte (UUID + @name).
+    -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2).
     SELECT Object_XML AS object_xml, File_Name,
+           Object_UUID AS object_uuid,
            xml_extract_text(Object_XML, '/LayoutObject/Portal/TableOccurrenceReference/@UUID')[1] AS ref_uuid
     FROM LayoutObjects
     -- Portal-Vorfilter über die von P1 kanonisierte Object_Type-Spalte, NICHT über den rohen
@@ -522,33 +582,40 @@ WHERE ref_uuid IS NOT NULL;
 -- P4 erzeugt daraus LayoutObject → ValueList (sorts_by_valuelist, Subrole portal/button);
 -- vorher erschien eine NUR als Portal-/Button-Sortier-Referenz genutzte Werteliste
 -- in Where-used/Dead-Code als ungenutzt.
-INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name)
-SELECT Object_UUID, 'valuelist_sort' AS Ref_Type, Ref_UUID, Ref_Name, File_Name
+INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name, Ref_ID)
+SELECT Object_UUID, 'valuelist_sort' AS Ref_Type, Ref_UUID, Ref_Name, File_Name,
+       TRY_CAST(NULLIF(Ref_ID_raw, '') AS BIGINT) AS Ref_ID
 FROM (
-    SELECT ou AS Object_UUID, unnest(uuids) AS Ref_UUID, unnest(names) AS Ref_Name, File_Name
+    SELECT ou AS Object_UUID, unnest(uuids) AS Ref_UUID, unnest(names) AS Ref_Name,
+           -- Ausrichtungs-Guard wie im Merge-Feld-Block (Mismatch → ganze Liste NULL)
+           unnest(CASE WHEN len(ids) = len(uuids) THEN ids ELSE NULL END) AS Ref_ID_raw,
+           File_Name
     FROM (
         -- (a) Portal-eigene Sortierung
-        SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+        SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
                xml_extract_text(Object_XML, '/LayoutObject/Portal/SortSpecification/SortList/Sort/ValueListReference/@UUID') AS uuids,
                xml_extract_text(Object_XML, '/LayoutObject/Portal/SortSpecification/SortList/Sort/ValueListReference/@name') AS names,
+               xml_extract_text(Object_XML, '/LayoutObject/Portal/SortSpecification/SortList/Sort/ValueListReference/@id') AS ids,
                File_Name
         FROM LayoutObjects
         WHERE Object_Type = 'Portal'
           AND Object_XML LIKE '%ValueListReference%'
         UNION ALL
         -- (b1) Grouped Button mit eingebettetem Sort-Records-Step
-        SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+        SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
                xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/ParameterValues/Parameter/SortSpecification/SortList/Sort/ValueListReference/@UUID') AS uuids,
                xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/ParameterValues/Parameter/SortSpecification/SortList/Sort/ValueListReference/@name') AS names,
+               xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/ParameterValues/Parameter/SortSpecification/SortList/Sort/ValueListReference/@id') AS ids,
                File_Name
         FROM LayoutObjects
         WHERE Object_Type = 'Grouped Button'
           AND Object_XML LIKE '%ValueListReference%'
         UNION ALL
         -- (b2) Plain Button (Ein-Step-Aktion) — im Korpus 0 Treffer, defensiv abgedeckt
-        SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+        SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
                xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/ParameterValues/Parameter/SortSpecification/SortList/Sort/ValueListReference/@UUID') AS uuids,
                xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/ParameterValues/Parameter/SortSpecification/SortList/Sort/ValueListReference/@name') AS names,
+               xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/ParameterValues/Parameter/SortSpecification/SortList/Sort/ValueListReference/@id') AS ids,
                File_Name
         FROM LayoutObjects
         WHERE Object_Type = 'Button'
@@ -582,19 +649,21 @@ WHERE Ref_UUID IS NOT NULL AND Ref_UUID <> '';
 -- skalar [1] ohne Gate genügt und ist duplikatfrei.
 
 -- (1) Layout-Referenz (Go to Layout / GTRR-Ziel-Layout) → Ref_Type='layout_step'
-INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name)
-SELECT ou AS Object_UUID, 'layout_step' AS Ref_Type, ref_uuid AS Ref_UUID, ref_name AS Ref_Name, File_Name
+INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name, Ref_ID)
+SELECT ou AS Object_UUID, 'layout_step' AS Ref_Type, ref_uuid AS Ref_UUID, ref_name AS Ref_Name, File_Name, ref_id AS Ref_ID
 FROM (
-    SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+    SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
            NULLIF(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step//LayoutReference/@UUID')[1], '') AS ref_uuid,
            xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step//LayoutReference/@name')[1] AS ref_name,
+           TRY_CAST(NULLIF(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step//LayoutReference/@id')[1], '') AS BIGINT) AS ref_id,
            File_Name
     FROM LayoutObjects
     WHERE Object_Type = 'Grouped Button' AND Object_XML LIKE '%<action>%'
     UNION ALL
-    SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+    SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
            NULLIF(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step//LayoutReference/@UUID')[1], '') AS ref_uuid,
            xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step//LayoutReference/@name')[1] AS ref_name,
+           TRY_CAST(NULLIF(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step//LayoutReference/@id')[1], '') AS BIGINT) AS ref_id,
            File_Name
     FROM LayoutObjects
     WHERE Object_Type = 'Button' AND Object_XML LIKE '%<action>%'
@@ -602,21 +671,23 @@ FROM (
 WHERE ou IS NOT NULL AND ref_uuid IS NOT NULL;
 
 -- (2) TableOccurrence-Referenz (NUR GTRR-Ziel-TO, Step_ID=74) → Ref_Type='table_occurrence_step'
-INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name)
-SELECT ou AS Object_UUID, 'table_occurrence_step' AS Ref_Type, ref_uuid AS Ref_UUID, ref_name AS Ref_Name, File_Name
+INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name, Ref_ID)
+SELECT ou AS Object_UUID, 'table_occurrence_step' AS Ref_Type, ref_uuid AS Ref_UUID, ref_name AS Ref_Name, File_Name, ref_id AS Ref_ID
 FROM (
-    SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+    SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
            TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@id')[1] AS INTEGER) AS sid,
            NULLIF(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step//TableOccurrenceReference/@UUID')[1], '') AS ref_uuid,
            xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step//TableOccurrenceReference/@name')[1] AS ref_name,
+           TRY_CAST(NULLIF(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step//TableOccurrenceReference/@id')[1], '') AS BIGINT) AS ref_id,
            File_Name
     FROM LayoutObjects
     WHERE Object_Type = 'Grouped Button' AND Object_XML LIKE '%<action>%'
     UNION ALL
-    SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+    SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
            TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@id')[1] AS INTEGER) AS sid,
            NULLIF(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step//TableOccurrenceReference/@UUID')[1], '') AS ref_uuid,
            xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step//TableOccurrenceReference/@name')[1] AS ref_name,
+           TRY_CAST(NULLIF(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step//TableOccurrenceReference/@id')[1], '') AS BIGINT) AS ref_id,
            File_Name
     FROM LayoutObjects
     WHERE Object_Type = 'Button' AND Object_XML LIKE '%<action>%'
@@ -627,23 +698,33 @@ WHERE ou IS NOT NULL AND sid = 74 AND ref_uuid IS NOT NULL;
 -- Verankert auf ParameterValues, damit NUR die Step-Parameter-Felder zählen (nicht
 -- die FieldReference eines Layout-Controls). Step/@id wird mitgeführt → P4 mappt die
 -- Link-Rolle über ScriptStepRoleMap (locale-unabhängig; Fallback references_field).
-INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name, Step_ID)
-SELECT Object_UUID, 'field_step' AS Ref_Type, Ref_UUID, Ref_Name, File_Name, Step_ID
+INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name, Step_ID, Ref_ID, TO_Ref_ID)
+SELECT Object_UUID, 'field_step' AS Ref_Type, Ref_UUID, Ref_Name, File_Name, Step_ID,
+       TRY_CAST(NULLIF(Ref_ID_raw, '') AS BIGINT) AS Ref_ID,
+       TRY_CAST(NULLIF(TO_Ref_ID_raw, '') AS BIGINT) AS TO_Ref_ID
 FROM (
-    SELECT ou AS Object_UUID, unnest(uuids) AS Ref_UUID, unnest(names) AS Ref_Name, File_Name, sid AS Step_ID
+    SELECT ou AS Object_UUID, unnest(uuids) AS Ref_UUID, unnest(names) AS Ref_Name,
+           -- Ausrichtungs-Guard wie im Merge-Feld-Block (Mismatch → ganze Liste NULL)
+           unnest(CASE WHEN len(ids)    = len(uuids) THEN ids    ELSE NULL END) AS Ref_ID_raw,
+           unnest(CASE WHEN len(to_ids) = len(uuids) THEN to_ids ELSE NULL END) AS TO_Ref_ID_raw,
+           File_Name, sid AS Step_ID
     FROM (
-        SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+        SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
                TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@id')[1] AS INTEGER) AS sid,
                xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/ParameterValues//FieldReference/@UUID') AS uuids,
                xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/ParameterValues//FieldReference/@name') AS names,
+               xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/ParameterValues//FieldReference/@id') AS ids,
+               xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/ParameterValues//FieldReference/TableOccurrenceReference/@id') AS to_ids,
                File_Name
         FROM LayoutObjects
         WHERE Object_Type = 'Grouped Button' AND Object_XML LIKE '%<action>%'
         UNION ALL
-        SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+        SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
                TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@id')[1] AS INTEGER) AS sid,
                xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/ParameterValues//FieldReference/@UUID') AS uuids,
                xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/ParameterValues//FieldReference/@name') AS names,
+               xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/ParameterValues//FieldReference/@id') AS ids,
+               xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/ParameterValues//FieldReference/TableOccurrenceReference/@id') AS to_ids,
                File_Name
         FROM LayoutObjects
         WHERE Object_Type = 'Button' AND Object_XML LIKE '%<action>%'
@@ -680,7 +761,7 @@ SELECT ou, File_Name, sid, sname,
        CASE WHEN lower(COALESCE(senable, 'true')) = 'false' THEN FALSE ELSE TRUE END AS Step_Enabled,
        shash
 FROM (
-    SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+    SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
            TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@id')[1] AS INTEGER) AS sid,
            xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@name')[1] AS sname,
            xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@enable')[1] AS senable,
@@ -689,7 +770,7 @@ FROM (
     FROM LayoutObjects
     WHERE Object_Type = 'Grouped Button' AND Object_XML LIKE '%<action>%<Step %'
     UNION ALL
-    SELECT xml_extract_text(Object_XML, '/LayoutObject/UUID')[1] AS ou,
+    SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
            TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@id')[1] AS INTEGER) AS sid,
            xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@name')[1] AS sname,
            xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@enable')[1] AS senable,
@@ -876,9 +957,16 @@ CREATE TABLE IF NOT EXISTS XMLCalcReferences (
     Variable_Scope VARCHAR,      -- nur Ref_Type='variable': 'local'|'global'|'superglobal'|'let_local'
     Usage_Type VARCHAR,          -- nur Ref_Type='variable': 'read' (Calc-Chunk-Refs sind immer Lesungen)
     -- v2.1 Erweiterung:
-    Ref_SubName VARCHAR          -- nur Ref_Type='pluginfunction' bei Container-Plugins
+    Ref_SubName VARCHAR,         -- nur Ref_Type='pluginfunction' bei Container-Plugins
                                  -- (heute: MBS) — fachlicher Funktionsname aus dem
                                  -- ersten quoted String des Folge-NoRef-Chunks.
+    -- UUID-Healing (Schema 1.19.0): FileMaker-interne @id des Referenz-Elements aus dem
+    -- FieldRef-Chunk (Tripel id+name+UUID) — disambiguiert Intra-File-UUID-Duplikate in
+    -- der P4-Rewrite-Stufe. Nur bei Ref_Type='field' befüllbar (andere Chunk-Typen tragen
+    -- nur den Namen als Text). TO_Ref_ID = @id der eingebetteten TableOccurrenceReference
+    -- (FieldReference/@id ist TABELLEN-lokal, Feld-Schlüssel zweistufig über die TO).
+    Ref_ID BIGINT,
+    TO_Ref_ID BIGINT
 );
 
 -- Additive Migration: Spalten für Bestands-DBs nachziehen. ADD COLUMN IF NOT EXISTS
@@ -889,6 +977,8 @@ ALTER TABLE XMLCalcReferences ADD COLUMN IF NOT EXISTS TO_UUID VARCHAR;
 ALTER TABLE XMLCalcReferences ADD COLUMN IF NOT EXISTS Variable_Scope VARCHAR;
 ALTER TABLE XMLCalcReferences ADD COLUMN IF NOT EXISTS Usage_Type VARCHAR;
 ALTER TABLE XMLCalcReferences ADD COLUMN IF NOT EXISTS Ref_SubName VARCHAR;
+ALTER TABLE XMLCalcReferences ADD COLUMN IF NOT EXISTS Ref_ID BIGINT;
+ALTER TABLE XMLCalcReferences ADD COLUMN IF NOT EXISTS TO_Ref_ID BIGINT;
 
 CREATE TABLE IF NOT EXISTS PluginFunctionUsages (
     Source_UUID VARCHAR,
@@ -994,7 +1084,9 @@ SELECT
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*name="([^"]+)"', 1), ''),
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*UUID="([^"]+)"', 1), ''),
     NULL, NULL,  -- Variable_Scope, Usage_Type (nur für Ref_Type='variable')
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'FieldReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS Ref_ID,
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.DDR_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'FieldRef'
@@ -1011,7 +1103,9 @@ SELECT
     d.File_Name,
     NULL, NULL,
     NULL, NULL,  -- Variable_Scope, Usage_Type
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.DDR_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'CustomFunctionRef'
@@ -1044,7 +1138,9 @@ SELECT
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*name="([^"]+)"', 1), ''),
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*UUID="([^"]+)"', 1), ''),
     NULL, NULL,  -- Variable_Scope, Usage_Type (nur für Ref_Type='variable')
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'FieldReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS Ref_ID,
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.AE_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'FieldRef'
@@ -1061,7 +1157,9 @@ SELECT
     d.File_Name,
     NULL, NULL,
     NULL, NULL,  -- Variable_Scope, Usage_Type
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.AE_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'CustomFunctionRef'
@@ -1097,7 +1195,9 @@ SELECT
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*name="([^"]+)"', 1), ''),
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*UUID="([^"]+)"', 1), ''),
     NULL, NULL,
-    NULL
+    NULL,
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'FieldReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS Ref_ID,
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.Validation_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'FieldRef'
@@ -1114,7 +1214,9 @@ SELECT
     d.File_Name,
     NULL, NULL,
     NULL, NULL,
-    NULL
+    NULL,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.Validation_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'CustomFunctionRef'
@@ -1150,7 +1252,9 @@ SELECT
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*name="([^"]+)"', 1), ''),
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*UUID="([^"]+)"', 1), ''),
     NULL, NULL,
-    NULL
+    NULL,
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'FieldReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS Ref_ID,
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.Validation_Message_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'FieldRef'
@@ -1167,7 +1271,9 @@ SELECT
     d.File_Name,
     NULL, NULL,
     NULL, NULL,
-    NULL
+    NULL,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.Validation_Message_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'CustomFunctionRef'
@@ -1189,7 +1295,9 @@ SELECT
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*name="([^"]+)"', 1), ''),
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*UUID="([^"]+)"', 1), ''),
     NULL, NULL,  -- Variable_Scope, Usage_Type (nur für Ref_Type='variable')
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'FieldReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS Ref_ID,
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS TO_Ref_ID
 FROM CustomFunctionsCatalog cf
 JOIN _ddr_chunks_by_hash d ON cf.DDR_Hash = d.Calc_Hash AND cf.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'FieldRef'
@@ -1206,7 +1314,9 @@ SELECT
     d.File_Name,
     NULL, NULL,
     NULL, NULL,  -- Variable_Scope, Usage_Type
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM CustomFunctionsCatalog cf
 JOIN _ddr_chunks_by_hash d ON cf.DDR_Hash = d.Calc_Hash AND cf.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'CustomFunctionRef'
@@ -1247,7 +1357,9 @@ SELECT
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*name="([^"]+)"', 1), ''),
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*UUID="([^"]+)"', 1), ''),
     NULL, NULL,  -- Variable_Scope, Usage_Type (nur für Ref_Type='variable')
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'FieldReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS Ref_ID,
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS TO_Ref_ID
 FROM _step_hashes sh
 JOIN _ddr_chunks_by_hash d
   ON sh.Calc_Hash = d.Calc_Hash
@@ -1265,7 +1377,9 @@ SELECT
     sh.File_Name,
     NULL, NULL,
     NULL, NULL,  -- Variable_Scope, Usage_Type
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM _step_hashes sh
 JOIN _ddr_chunks_by_hash d
   ON sh.Calc_Hash = d.Calc_Hash
@@ -1306,7 +1420,9 @@ SELECT
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*name="([^"]+)"', 1), ''),
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*UUID="([^"]+)"', 1), ''),
     NULL, NULL,  -- Variable_Scope, Usage_Type (nur für Ref_Type='variable')
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'FieldReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS Ref_ID,
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS TO_Ref_ID
 FROM _layout_obj_hashes loh
 JOIN _ddr_chunks_by_hash d
   ON loh.Calc_Hash = d.Calc_Hash
@@ -1324,7 +1440,9 @@ SELECT
     loh.File_Name,
     NULL, NULL,
     NULL, NULL,  -- Variable_Scope, Usage_Type
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM _layout_obj_hashes loh
 JOIN _ddr_chunks_by_hash d
   ON loh.Calc_Hash = d.Calc_Hash
@@ -1368,7 +1486,9 @@ SELECT
     d.File_Name,
     NULL, NULL,
     NULL, NULL,
-    m.SubName  -- Ref_SubName
+    m.SubName,  -- Ref_SubName
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.DDR_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 LEFT JOIN MBS_SubnameMap m
@@ -1394,7 +1514,9 @@ SELECT
         ELSE 'local'
     END,
     'read',
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.DDR_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'VariableReference'
@@ -1412,7 +1534,9 @@ SELECT
     d.File_Name,
     NULL, NULL,
     NULL, NULL,
-    m.SubName  -- Ref_SubName
+    m.SubName,  -- Ref_SubName
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.AE_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 LEFT JOIN MBS_SubnameMap m
@@ -1438,7 +1562,9 @@ SELECT
         ELSE 'local'
     END,
     'read',
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.AE_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'VariableReference'
@@ -1456,7 +1582,9 @@ SELECT
     d.File_Name,
     NULL, NULL,
     NULL, NULL,
-    m.SubName  -- Ref_SubName
+    m.SubName,  -- Ref_SubName
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM CustomFunctionsCatalog cf
 JOIN _ddr_chunks_by_hash d ON cf.DDR_Hash = d.Calc_Hash AND cf.File_Name = d.File_Name
 LEFT JOIN MBS_SubnameMap m
@@ -1482,7 +1610,9 @@ SELECT
         ELSE 'local'
     END,
     'read',
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM CustomFunctionsCatalog cf
 JOIN _ddr_chunks_by_hash d ON cf.DDR_Hash = d.Calc_Hash AND cf.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'VariableReference'
@@ -1501,7 +1631,9 @@ SELECT
     sh.File_Name,
     NULL, NULL,
     NULL, NULL,
-    m.SubName  -- Ref_SubName
+    m.SubName,  -- Ref_SubName
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM _step_hashes sh
 JOIN _ddr_chunks_by_hash d
   ON sh.Calc_Hash = d.Calc_Hash
@@ -1528,7 +1660,9 @@ SELECT
         ELSE 'local'
     END,
     'read',
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM _step_hashes sh
 JOIN _ddr_chunks_by_hash d
   ON sh.Calc_Hash = d.Calc_Hash
@@ -1547,7 +1681,9 @@ SELECT
     loh.File_Name,
     NULL, NULL,
     NULL, NULL,
-    m.SubName  -- Ref_SubName
+    m.SubName,  -- Ref_SubName
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM _layout_obj_hashes loh
 JOIN _ddr_chunks_by_hash d
   ON loh.Calc_Hash = d.Calc_Hash
@@ -1574,7 +1710,9 @@ SELECT
         ELSE 'local'
     END,
     'read',
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM _layout_obj_hashes loh
 JOIN _ddr_chunks_by_hash d
   ON loh.Calc_Hash = d.Calc_Hash
@@ -1604,7 +1742,9 @@ SELECT
     NULL, NULL,
     NULL, NULL,
     CASE WHEN regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1) = 'Get'
-         THEN g.SubParameter ELSE NULL END
+         THEN g.SubParameter ELSE NULL END,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.DDR_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 LEFT JOIN GetSubparameterMap g
@@ -1626,7 +1766,9 @@ SELECT
     NULL, NULL,
     NULL, NULL,
     CASE WHEN regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1) = 'Get'
-         THEN g.SubParameter ELSE NULL END
+         THEN g.SubParameter ELSE NULL END,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM FieldsForTables f
 JOIN _ddr_chunks_by_hash d ON f.AE_Calc_Hash = d.Calc_Hash AND f.File_Name = d.File_Name
 LEFT JOIN GetSubparameterMap g
@@ -1648,7 +1790,9 @@ SELECT
     NULL, NULL,
     NULL, NULL,
     CASE WHEN regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1) = 'Get'
-         THEN g.SubParameter ELSE NULL END
+         THEN g.SubParameter ELSE NULL END,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM CustomFunctionsCatalog cf
 JOIN _ddr_chunks_by_hash d ON cf.DDR_Hash = d.Calc_Hash AND cf.File_Name = d.File_Name
 LEFT JOIN GetSubparameterMap g
@@ -1671,7 +1815,9 @@ SELECT
     NULL, NULL,
     NULL, NULL,
     CASE WHEN regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1) = 'Get'
-         THEN g.SubParameter ELSE NULL END
+         THEN g.SubParameter ELSE NULL END,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM _step_hashes sh
 JOIN _ddr_chunks_by_hash d
   ON sh.Calc_Hash = d.Calc_Hash
@@ -1694,7 +1840,9 @@ SELECT
     NULL, NULL,
     NULL, NULL,
     CASE WHEN regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1) = 'Get'
-         THEN g.SubParameter ELSE NULL END
+         THEN g.SubParameter ELSE NULL END,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM _layout_obj_hashes loh
 JOIN _ddr_chunks_by_hash d
   ON loh.Calc_Hash = d.Calc_Hash
@@ -1742,7 +1890,9 @@ SELECT
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*name="([^"]+)"', 1), ''),
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*UUID="([^"]+)"', 1), ''),
     NULL, NULL,  -- Variable_Scope, Usage_Type (nur für Ref_Type='variable')
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'FieldReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS Ref_ID,
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS TO_Ref_ID
 FROM PrivilegeSetRecordAccess ra
 JOIN _ddr_chunks_by_hash d ON ra.DDR_Hash = d.Calc_Hash AND ra.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'FieldRef'
@@ -1768,7 +1918,9 @@ SELECT
         ELSE 'local'
     END,
     'read',
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM PrivilegeSetRecordAccess ra
 JOIN _ddr_chunks_by_hash d ON ra.DDR_Hash = d.Calc_Hash AND ra.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'VariableReference'
@@ -1789,7 +1941,9 @@ SELECT
     d.File_Name,
     NULL, NULL,
     NULL, NULL,  -- Variable_Scope, Usage_Type
-    NULL  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM PrivilegeSetRecordAccess ra
 JOIN _ddr_chunks_by_hash d ON ra.DDR_Hash = d.Calc_Hash AND ra.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'CustomFunctionRef'
@@ -1831,7 +1985,9 @@ SELECT
     d.File_Name,
     NULL, NULL,
     NULL, NULL,  -- Variable_Scope, Usage_Type
-    m.SubName  -- Ref_SubName
+    m.SubName,  -- Ref_SubName
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM PrivilegeSetRecordAccess ra
 JOIN _ddr_chunks_by_hash d ON ra.DDR_Hash = d.Calc_Hash AND ra.File_Name = d.File_Name
 LEFT JOIN MBS_SubnameMap m
@@ -1879,7 +2035,9 @@ SELECT
     d.File_Name,
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*name="([^"]+)"', 1), ''),
     NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*UUID="([^"]+)"', 1), ''),
-    NULL, NULL, NULL
+    NULL, NULL, NULL,
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'FieldReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS Ref_ID,
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS TO_Ref_ID
 FROM DDR_Calculations d
 JOIN _menu_anchors o ON o.Anchor_UUID = upper(regexp_extract(d.Calc_UUID, '_([0-9A-Fa-f-]{36})', 1))
    AND o.File_Name = d.File_Name
@@ -1901,7 +2059,9 @@ SELECT
         ELSE 'local'
     END,
     'read',
-    NULL
+    NULL,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM DDR_Calculations d
 JOIN _menu_anchors o ON o.Anchor_UUID = upper(regexp_extract(d.Calc_UUID, '_([0-9A-Fa-f-]{36})', 1))
    AND o.File_Name = d.File_Name
@@ -1917,7 +2077,9 @@ SELECT
     regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
     d.File_Name,
     NULL, NULL,
-    NULL, NULL, NULL
+    NULL, NULL, NULL,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM DDR_Calculations d
 JOIN _menu_anchors o ON o.Anchor_UUID = upper(regexp_extract(d.Calc_UUID, '_([0-9A-Fa-f-]{36})', 1))
    AND o.File_Name = d.File_Name
@@ -1949,7 +2111,9 @@ SELECT
     d.File_Name,
     NULL, NULL,
     NULL, NULL,
-    m.SubName
+    m.SubName,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM DDR_Calculations d
 JOIN _menu_anchors o ON o.Anchor_UUID = upper(regexp_extract(d.Calc_UUID, '_([0-9A-Fa-f-]{36})', 1))
    AND o.File_Name = d.File_Name
@@ -1974,7 +2138,9 @@ SELECT
     NULL, NULL,
     NULL, NULL,
     CASE WHEN regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1) = 'Get'
-         THEN g.SubParameter ELSE NULL END
+         THEN g.SubParameter ELSE NULL END,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
 FROM DDR_Calculations d
 JOIN _menu_anchors o ON o.Anchor_UUID = upper(regexp_extract(d.Calc_UUID, '_([0-9A-Fa-f-]{36})', 1))
    AND o.File_Name = d.File_Name

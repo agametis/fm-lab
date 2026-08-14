@@ -136,6 +136,22 @@
   color: var(--color-text-primary);
 }
 
+/* Plattform-Filter neben der Suche — gleiche Optik wie das Suchfeld.
+   `margin-left: auto` schiebt Filter+Suche gemeinsam nach rechts. */
+.fmspec-platform-filter {
+  margin-left: auto;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+}
+.fmspec-platform-filter + .fmspec-search {
+  margin-left: 0;
+}
+
 /* ── Tabellen ── */
 .fmspec-table-wrap {
   overflow-x: auto;
@@ -216,6 +232,45 @@
   border-radius: 4px;
   background: var(--color-accent-soft-bg, var(--color-bg-surface-2));
   color: var(--color-accent-soft-fg, var(--color-text-secondary));
+}
+
+/* Plattform-Zeile in den Detail-Köpfen: Step-Kompatibilität (step_compat)
+   und Funktions-Bindung (function_platform_affinity, Referenz ≥ 1.12.0) */
+.fmspec-platform-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+}
+.fmspec-tag--platform {
+  margin-left: 0;
+  font-size: 0.74rem;
+  padding: 1px 8px;
+  border: 1px solid var(--color-border, transparent);
+}
+.fmspec-tag--platform[title] {
+  cursor: help;
+}
+/* Partial (NULL in der Claris-Tabelle): bedingt unterstützt — gedämpft,
+   nie als inkompatibel oder undokumentiert darstellen. */
+.fmspec-tag--partial {
+  border-style: dashed;
+  opacity: 0.75;
+}
+
+/* OS-Bindung (step_os_affinity / function_os_affinity, Referenz ≥ 1.13.0):
+   neutrale Inventar-Badges — unsupported gestrichelt (quellentreu inverse
+   Aussage), variant gedämpft (Doku-Wissen, keine Bindung), os_probe als
+   Sonden-Badge (Guard-Idiom). */
+.fmspec-tag--os-unsupported {
+  border-style: dashed;
+  text-decoration: line-through;
+}
+.fmspec-tag--os-variant {
+  opacity: 0.75;
+}
+.fmspec-tag--os-os_probe {
+  font-style: italic;
 }
 
 /* ── Function-Inline-Detail ── */

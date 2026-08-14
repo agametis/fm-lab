@@ -19,6 +19,7 @@
   "yes": "Yes",
   "no": "No",
   "loadError": "Failed to load: {{message}}",
+  "plugSpecMissing": "Plugin reference not installed — plugin platform and deprecation data is unavailable. It ships with fm-lab releases; the install-mbs-docs skill can regenerate reference/plugin_spec.duckdb.",
   "language": {
     "label": "Language",
     "selectorAriaLabel": "Choose interface language"
@@ -30,6 +31,7 @@
   "actions": {
     "openInFileMaker": "Open in FileMaker",
     "copyUuid": "Copy UUID",
+    "copyOriginalUuid": "Copy original UUID — caution: this UUID is assigned more than once in the source file",
     "expandAll": "Expand all",
     "collapseAll": "Collapse all",
     "collapseMultilineCalcs": "Collapse multi-line calculations",

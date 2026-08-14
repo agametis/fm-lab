@@ -8,7 +8,11 @@
     "open": "Hjälp"
   },
   "search": {
-    "placeholder": "Filtrera…"
+    "placeholder": "Filtrera…",
+    "platformAll": "Alla plattformar",
+    "platformLabel": "Plattform",
+    "platformStepHint": "Visa steg som körs på denna plattform (inkl. delvis stöd)",
+    "platformFnHint": "Visa funktioner byggda för denna plattform (plattformsbindning)"
   },
   "list": {
     "count": "{{shown}} / {{total}}"
@@ -58,7 +62,12 @@
       "variadic": "variadisk",
       "signature": "Signatur",
       "purpose": "Syfte",
-      "example": "Exempel"
+      "example": "Exempel",
+      "affinity_dedicated": "Meningsfulla resultat endast här — anropbar överallt",
+      "affinity_exclusive": "Fungerar endast här",
+      "affinityWord_dedicated": "dedikerad",
+      "affinityWord_exclusive": "exklusiv",
+      "platformBinding": "Plattformsbindning"
     }
   },
   "params": {
@@ -120,6 +129,22 @@
       "hint": "SaXML och fmxmlsnippet är två olika representationer av samma steg.",
       "none": "Ingen SaXML-mappning fångad.",
       "sourceNote": "De levererade uppgifterna är källneutrala: de innehåller inga källhänvisningar, författar- eller företagsnamn eller korpusartefakter. Exempelpayloads som visas per steg är syntetiska."
+    },
+    "compat": {
+      "label": "Plattformskompatibilitet",
+      "partial": "delvis",
+      "partialHint": "Delvis — stöds villkorligt; se stegets Claris-hjälpsida"
     }
+  },
+  "osAffinity": {
+    "label": "OS-bindning",
+    "word_exclusive": "exklusiv",
+    "word_unsupported": "stöds inte",
+    "word_variant": "varierar per OS",
+    "word_os_probe": "plattformssond",
+    "hint_exclusive": "Fungerar endast på de listade operativsystemen",
+    "hint_unsupported": "Claris anger uttryckligen detta OS som ej stött (källtrogen invers utsaga)",
+    "hint_variant": "Fungerar överallt — beteende eller resultat beror på OS",
+    "hint_os_probe": "Returnerar plattformen/OS vid körning — guard-idiom, ingen bindning"
   }
 }

@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Llamada a función de plug-in obsoleta",
+  "analysis.defaultResult.meaning": "Llamadas a funciones de plug-in en el alcance cuya función está marcada como obsoleta en la documentación del fabricante"
+ }
+}

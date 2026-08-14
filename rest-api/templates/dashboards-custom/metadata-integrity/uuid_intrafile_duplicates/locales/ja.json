@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "ファイル内UUID重複",
+    "description": "メタデータ整合性チェック — 1つのファイル内で二重に割り当てられたUUID(エクスポート欠陥。旧バージョンのFileMakerでのコピー&ペーストが典型的な原因)。インポートはUUIDごとに1オブジェクトを決定論的に保持します。このダッシュボードは吸収されたものを、ソリューション内で特定するための平文コンテキスト付きで一覧します。",
+    "analysis.defaultResult.meaning": "調査された UUID 重複の発生数（修復済み + 原本保持 + 吸収）— UUID 修復以降カタログは完全なままですが、各発生は元データの欠陥を示します"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "吸収された重複",
+    "summary_kpi.props.items[1].label": "影響ファイル",
+    "summary_kpi.props.items[2].label": "UUID精密行",
+    "summary_kpi.props.items[3].label": "マージ吸収",
+    "findings_card.props.title": "衝突オブジェクト(UUID精密)",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "タイプ",
+    "findings_table.props.columns[2].label": "コンテナ",
+    "findings_table.props.columns[3].label": "位置",
+    "findings_table.props.columns[4].label": "オブジェクト(デコード済み)",
+    "findings_table.props.columns[5].label": "出現",
+    "findings_table.props.searchPlaceholder": "ファイル・コンテナ・テキスト・UUIDを検索…",
+    "findings_table.props.empty.message": "UUID精密の重複詳細はありません — インポート・センサスはファイル内重複を検出しませんでした。",
+    "merge_card.props.title": "マージ吸収(チャンク重複、または同一内部名のクローンファイル)",
+    "merge_table.props.columns[0].label": "カタログテーブル",
+    "merge_table.props.columns[1].label": "ファイル",
+    "merge_table.props.columns[2].label": "吸収数",
+    "merge_table.props.columns[3].label": "マージ実行",
+    "merge_table.props.searchPlaceholder": "テーブルまたはファイルを検索…",
+    "merge_table.props.empty.message": "マージ時に吸収された重複はありません。",
+    "stats_card.props.title": "カタログ×ファイル別センサス照合",
+    "stats_table.props.columns[0].label": "カタログ",
+    "stats_table.props.columns[1].label": "ファイル",
+    "stats_table.props.columns[2].label": "ソースレコード",
+    "stats_table.props.columns[3].label": "保存行",
+    "stats_table.props.columns[4].label": "吸収数",
+    "stats_table.props.columns[5].label": "詳細カバレッジ",
+    "stats_table.props.searchPlaceholder": "カタログまたはファイルを検索…",
+    "stats_table.props.empty.message": "インポート・センサスは吸収された重複を報告していません。",
+    "notes_card.props.title": "このチェックについて",
+    "notes_md.props.content": "**1つのファイル内の2つのオブジェクト**に割り当てられたUUIDは、FileMakerエクスポートのソース欠陥です(典型的には、新しいファイルに対する旧バージョンFileMakerでのコピー&ペースト)。FM-LabのインポートはUUIDごとに正確に1オブジェクトを保持します(決定論的、後書き優先)— 吸収されたオブジェクトは**カタログにもう存在しません**。*コンテナ*、*位置*、*オブジェクト(デコード済み)* の列が唯一の痕跡です。これらを使ってFileMaker内で両方のオブジェクトを特定してください。行をクリックすると生き残ったオブジェクトが開きます。\n\n**マージ吸収**は別クラスです:ファイルチャンクの結合時に吸収された重複で、原因は事後には区別できません — コンバータ内部のチャンク重複(ソリューション欠陥ではない)か、同一内部ファイル名のクローンファイル(真の衝突)です。\n\n**自動修復は存在しません。** Clarisの修復モードは完全に新しいUUIDを割り当て、すべての外部UUID参照を壊します。修正はソースファイル側で行う必要があります。ファイル*間*の同一UUID重複は姉妹ダッシュボード**UUIDクローン衝突**が扱います。データソースはインポート・センサスで、数値は最後のXMLインポート時点の状態です。",
+    "findings_table.props.columns[6].label": "UUID"
+  }
+}

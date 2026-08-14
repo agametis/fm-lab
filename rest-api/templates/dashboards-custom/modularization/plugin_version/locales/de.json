@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "MBS Plugin-Version",
+    "description": "Versionspflicht-Inventar: die Mindest-Plugin-Version dieser Lösung, abgeleitet als Maximum der dokumentierten Einführungsversionen (since_version) über alle genutzten Plugin-Funktionen — Vergleich immer numerisch, nie lexikographisch. Datei-Spreizung und Treiber-Funktionen machen die Ableitung nachprüfbar. Der Katalog kennt keine installierte Plugin-Version: erst die Auswahl im Kopfbereich aktiviert die Prüfung (neutraler Eintrag = keine Prüfung); abweichende Arbeitsplatz-Versionen lassen sich einzeln validieren.",
+    "analysis.defaultResult.meaning": "Mindest-Plugin-Version, die dieser Prüfumfang erfordert — höchste dokumentierte Einführungsversion über die verwendeten Plug-in-Funktionen"
+  },
+  "layout": {
+    "installed_version_select.props.label": "Installierte Plugin-Version",
+    "summary_kpi.props.items[0].label": "Benötigte Version",
+    "summary_kpi.props.items[1].label": "Funktionen",
+    "summary_kpi.props.items[2].label": "Call-Sites",
+    "summary_kpi.props.items[3].label": "Dateien",
+    "summary_kpi.props.items[4].label": "Unaufgelöst",
+    "findings_card.props.title": "Versions-Prüfung",
+    "findings_table.props.columns[0].label": "Severity",
+    "findings_table.props.columns[1].label": "Datei",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Plugin-Funktion",
+    "findings_table.props.columns[4].label": "Benötigt",
+    "findings_table.props.columns[5].label": "Installiert",
+    "findings_table.props.columns[6].label": "Via Custom Function",
+    "findings_table.props.columns[7].label": "Meldung",
+    "findings_table.props.empty.message": "Keine Prüfung aktiv — im Kopfbereich eine installierte Plugin-Version wählen, um die Pflicht zu validieren (neutraler Eintrag = nur Inventar).",
+    "by_file_card.props.title": "Pflicht je Datei",
+    "by_file_table.props.columns[0].label": "Datei",
+    "by_file_table.props.columns[1].label": "Benötigte Version",
+    "by_file_table.props.columns[2].label": "Top-Treiber",
+    "by_file_table.props.columns[3].label": "Funktionen",
+    "by_file_table.props.columns[4].label": "Call-Sites",
+    "by_file_table.props.columns[5].label": "Unaufgelöst",
+    "drivers_card.props.title": "Treiber-Funktionen",
+    "drivers_table.props.columns[0].label": "Plugin-Funktion",
+    "drivers_table.props.columns[1].label": "Komponente",
+    "drivers_table.props.columns[2].label": "Seit",
+    "drivers_table.props.columns[3].label": "Status",
+    "drivers_table.props.columns[4].label": "Über installierter Version",
+    "drivers_table.props.columns[5].label": "Call-Sites",
+    "drivers_table.props.columns[6].label": "Dateien",
+    "markdown.props.content": "## Hinweise\n\nDie **benötigte Version** ist eine Ableitung: das Maximum der dokumentierten Einführungsversionen (`since_version`) über die tatsächlich aufgerufenen Plugin-Funktionen — die *Treiber-Funktionen*-Tabelle macht sie nachprüfbar. Versionsvergleiche laufen über einen numerischen Schlüssel, nie über den Versions-String.\n\n- **Versions-Prüfung**: der Katalog kennt keine installierte Plugin-Version. Erst die Auswahl im Kopfbereich markiert jeden Aufruf einer später eingeführten Funktion; der neutrale Eintrag löst keine Prüfung aus. Installationsstände sind oft heterogen — abweichende Arbeitsplatz-Versionen einzeln validieren.\n- **Pflicht je Datei**: die Datei-Spreizung zeigt, welche Module die Pflicht tragen.\n- **Navigation**: Treiber-Zeilen öffnen das Plugin-Funktions-Detail (Where-used); Findings öffnen das aufrufende Objekt.\n- **Wartungsachse**: Deprecated-/Removed-Aufrufe sind eigene Regeln unter *Statische Code-Analyse*."
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "id": "script-performance-checks",
+  "version": "1.0.0",
+  "title": "Script Performance Checks",
+  "description": "Performance-critical step patterns inside loops (commit, find, sort, GTRR, layout switches, URL/insert calls), deep loop nesting and OnRecordLoad triggers.",
+  "keywords": [
+    "performance",
+    "slow",
+    "loop",
+    "script",
+    "trigger"
+  ],
+  "testType": "performance",
+  "objectTypes": [
+    "Script"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "perform_find_in_loop"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "commit_records_in_loop"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "sort_records_in_loop"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "go_to_related_record_in_loop"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "go_to_layout_in_loop"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "open_url_in_loop"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "insert_from_url_in_loop"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "export_records_in_loop"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "deeply_nested_loop"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "onrecordload_trigger"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Script-Performance-Prüfungen",
+      "description": "Performance-kritische Schrittmuster innerhalb von Schleifen (Commit, Suche, Sortierung, GTRR, Layoutwechsel, URL-/Insert-Aufrufe), tiefe Schleifenverschachtelung und OnRecordLoad-Trigger."
+    },
+    "es": {
+      "title": "Comprobaciones de rendimiento de scripts",
+      "description": "Patrones de pasos críticos para el rendimiento dentro de bucles (commit, búsqueda, ordenación, GTRR, cambios de presentación, llamadas URL/insert), anidamiento profundo de bucles y activadores OnRecordLoad."
+    },
+    "fr": {
+      "title": "Vérifications de performance des scripts",
+      "description": "Motifs d'actions critiques pour la performance à l'intérieur des boucles (commit, recherche, tri, GTRR, changements de modèle, appels URL/insert), imbrication profonde de boucles et déclencheurs OnRecordLoad."
+    },
+    "it": {
+      "title": "Controlli di prestazione degli script",
+      "description": "Schemi di passi critici per le prestazioni all'interno dei cicli (commit, ricerca, ordinamento, GTRR, cambi di formato, chiamate URL/insert), annidamento profondo dei cicli e trigger OnRecordLoad."
+    },
+    "ja": {
+      "title": "スクリプトのパフォーマンス検査",
+      "description": "ループ内でパフォーマンスを損なうステップのパターン（コミット、検索、ソート、GTRR、レイアウト切り替え、URL／挿入呼び出し）、深いループのネスト、OnRecordLoad トリガ。"
+    },
+    "ko": {
+      "title": "스크립트 성능 검사",
+      "description": "루프 안에서 성능에 치명적인 단계 패턴(커밋, 찾기, 정렬, GTRR, 레이아웃 전환, URL/삽입 호출), 깊은 루프 중첩, OnRecordLoad 트리거."
+    },
+    "nl": {
+      "title": "Prestatiecontroles van scripts",
+      "description": "Prestatiekritische staproutines binnen lussen (commit, zoeken, sorteren, GTRR, lay-outwissels, URL-/insert-aanroepen), diepe lusnesting en OnRecordLoad-triggers."
+    },
+    "pt": {
+      "title": "Verificações de desempenho dos scripts",
+      "description": "Padrões de passos críticos para o desempenho dentro de laços (commit, busca, classificação, GTRR, trocas de layout, chamadas de URL/insert), aninhamento profundo de laços e acionadores OnRecordLoad."
+    },
+    "sv": {
+      "title": "Prestandakontroller för skript",
+      "description": "Prestandakritiska stegmönster inuti loopar (commit, sökning, sortering, GTRR, layoutbyten, URL-/insert-anrop), djup loopnästling och OnRecordLoad-utlösare."
+    },
+    "zh-Hans": {
+      "title": "脚本性能检查",
+      "description": "循环内影响性能的步骤模式（提交、查找、排序、GTRR、布局切换、URL/插入调用）、深层循环嵌套以及 OnRecordLoad 触发器。"
+    }
+  }
+}

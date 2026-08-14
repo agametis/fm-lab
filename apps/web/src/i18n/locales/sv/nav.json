@@ -22,14 +22,16 @@
     "xmlImport": "XML-import",
     "cluster": "Kluster",
     "settings": "Inställningar",
-    "fmSpec": "fm-spec"
+    "fmSpec": "fm-spec",
+    "tests": "Tester"
   },
   "leitDescription": {
     "dashboards": "Översikt över alla tillgängliga instrumentpaneler.",
     "customQueries": "Återanvändbara SQL-mallar — klicka på en ruta för att öppna en analys.",
-    "docs": "Dokumentationskällor installerade i detta projekt.",
+    "docs": "Installerade dokumentationskällor.",
     "xmlImport": "Importerar alla filer från katalogen xml/ till DuckDB.",
-    "xmlImportContextNote": "Import av en icke-aktiv lösning — analysdata som visas ändras först efter aktivering."
+    "xmlImportContextNote": "Import av en icke-aktiv lösning — analysdata som visas ändras först efter aktivering.",
+    "tests": "Utvalda analystester — kör paketerade kontroller på lösningen, en fil eller ett objekt."
   },
   "errors": {
     "noDashboardId": "Inget dashboard-id angivet.",
@@ -86,7 +88,8 @@
       "references": "Referenser",
       "graph": "Diagram",
       "versions": "Versioner",
-      "notes": "Anteckningar"
+      "notes": "Anteckningar",
+      "tests": "Tester"
     }
   },
   "pseudoToolbar": {
@@ -123,5 +126,53 @@
     "title": "Inga data ännu",
     "message": "Ingen FileMaker-lösning har importerats ännu. Importera först en XML-export för att använda den här vyn.",
     "backToStart": "Tillbaka till startsidan"
+  },
+  "testsPanel": {
+    "loading": "Läser in tester…",
+    "empty": "Inga tester för objekttypen {{type}}.",
+    "openOverview": "Öppna testöversikt",
+    "run": "Kör",
+    "running": "Kör…",
+    "showFindings": "Visa fynd",
+    "memberError": "Fel",
+    "openMember": "Öppna dashboard/fråga",
+    "truncated": "Fler fynd avkortade — öppna medlemmen för hela listan.",
+    "duration": "{{ms}} ms",
+    "searchPlaceholder": "Filtrera tester…",
+    "runAll": "Kör alla ({{count}})",
+    "noMatch": "Inga tester matchar det aktuella filtret.",
+    "typeFilterAria": "Filtrera efter testtyp",
+    "memberSkipped": "Överhoppad",
+    "findingsFiltered": "{{shown}} av {{total}} fynd matchar sökningen.",
+    "rerun": "Kör igen",
+    "profileLabel": "Profil",
+    "profileAll": "Alla kontroller ({{count}})",
+    "memberCount": "{{count}} kontroller",
+    "resultsFrom": "Resultat från {{time}}",
+    "catalogFrom": "Katalog: {{time}}",
+    "notRun": "{{count}} ej körda",
+    "platformSection": "Plattformskompatibilitet",
+    "otherSection": "Övriga tester",
+    "platformRemove": "Ta bort målmiljö",
+    "platformAdd": "+ Målmiljö",
+    "platformNone": "Ingen målmiljö vald — lägg till plattformarna som lösningen körs på.",
+    "platformSpecificScripts": "{{count}} plattformsspecifika skript",
+    "osBindingLabel": "OS-bindning",
+    "osMatrixOs": "OS",
+    "osMatrixHint": "Skript med OS-specifika bindningar per operativsystem och evidenskälla (ett desktop-only-skript räknas för macOS och Windows; bindningar som spänner över fler än två system räknas inte som OS-specifika).",
+    "matrixStep": "Steg",
+    "disabledCount": "{{count}} inaktiverade —",
+    "showDisabled": "visa",
+    "hideDisabled": "dölj",
+    "disableTest": "Dölj detta test (sparas lokalt per lösning)",
+    "enableTest": "Aktivera testet igen",
+    "sortByResult": "Mest anmärkningsvärda först",
+    "stateFilterAria": "Filtrera efter resultatstatus",
+    "state_error": "Fel",
+    "state_warning": "Varningar",
+    "state_neutral": "Neutrala resultat",
+    "state_ok": "Godkända",
+    "state_skipped": "Överhoppade",
+    "state_failed": "Körning misslyckades"
   }
 }

@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "플랫폼 호환성: FileMaker Cloud",
+  "analysis.defaultResult.meaning": "FileMaker Cloud에서 지원되지 않거나 부분적으로만 지원되는 범위 내 단계"
+ }
+}

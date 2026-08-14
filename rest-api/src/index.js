@@ -6,7 +6,7 @@ const routes = require('./routes');
 const { errorHandler } = require('./middleware/error-handler');
 const logger = require('./middleware/logger');
 const corsMiddleware = require('./middleware/cors');
-const normalizeQueryKeys = require('./middleware/query-normalizer');
+const createQueryParser = require('./middleware/query-normalizer');
 const debugSessionMiddleware = require('./middleware/debug-session');
 
 /**
@@ -16,15 +16,9 @@ const debugSessionMiddleware = require('./middleware/debug-session');
 
 const app = express();
 
-// Custom query parser that normalizes keys to lowercase
-app.set('query parser', (queryString) => {
-  const parsed = require('querystring').parse(queryString);
-  const normalized = {};
-  for (const [key, value] of Object.entries(parsed)) {
-    normalized[key.toLowerCase()] = value;
-  }
-  return normalized;
-});
+// Query parser: parameter names are case-insensitive in BOTH directions —
+// lowercase own keys, case-insensitive reads on top (→ query-normalizer.js).
+app.set('query parser', createQueryParser());
 
 // Middleware
 app.use(corsMiddleware);
@@ -245,6 +239,18 @@ async function start() {
       console.log('========================================');
       console.log('');
     });
+
+    // Keep-alive window. Node closes idle pooled connections after 5 s by
+    // default, while clients that reuse sockets — browsers and the Vite dev
+    // proxy (http.globalAgent has keepAlive:true since Node 19) — consider
+    // them usable much longer. A request written onto a socket the server is
+    // closing in the same instant fails at transport level: no status code, no
+    // access-log entry, just a rejected fetch in the browser. Widening the
+    // window past any client's idle time removes the race.
+    // headersTimeout MUST stay above keepAliveTimeout, otherwise the header
+    // deadline fires while the connection is still legitimately idle.
+    server.keepAliveTimeout = environment.api.keepAliveTimeout;
+    server.headersTimeout = environment.api.keepAliveTimeout + 1000;
 
     // Fail-fast on a bad bind. Without this handler an EADDRINUSE surfaces as an
     // unhandled 'error' event; worse, a background start could look like it "succeeded"

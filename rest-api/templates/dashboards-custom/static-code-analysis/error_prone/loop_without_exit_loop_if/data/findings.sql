@@ -11,13 +11,18 @@ loops AS (
         any_value(Script_UUID) AS nav_uuid,
         any_value(Script_Name) AS script_name,
         COUNT(*) FILTER (WHERE Step_ID = 71) AS loop_count,
-        COUNT(*) FILTER (WHERE Step_ID = 72) AS exit_if_count
+        COUNT(*) FILTER (WHERE Step_ID = 72) AS exit_if_count,
+        MIN(Step_Index) FILTER (WHERE Step_ID = 71) + 1 AS step_no,
+        arg_min(Step_UUID, Step_Index) FILTER (WHERE Step_ID = 71) AS step_uuid
     FROM v_script_block_tree
     WHERE (getvariable('file') IS NULL OR File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
     GROUP BY File_Name, Script_ID
 )
 SELECT 'loop-without-exit-loop-if' AS rule_id, 'info' AS severity,
     l.File_Name AS file_name, l.nav_uuid, l.script_name,
+    l.step_no, l.step_uuid,
     l.loop_count,
     'Loop(s) with no Exit Loop If and no auto-exit Go to Record/Portal Row' AS message,
     row_number() OVER (ORDER BY l.File_Name, l.script_name) AS row_key

@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Relación con registros ordenados",
-    "description": "Regla de buenas prácticas: relaciones que ordenan sus registros relacionados. La ordenación se ejecuta en cada evaluación y puede ralentizar portales y lookups."
+    "description": "Regla de buenas prácticas: detecta relaciones que ordenan sus registros relacionados. La ordenación se ejecuta en cada evaluación y puede ralentizar portales y lookups."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Hallazgos",

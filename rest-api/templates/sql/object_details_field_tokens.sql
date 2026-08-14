@@ -148,12 +148,19 @@ SELECT
   d.Chunk_Index          AS chunk_index,
   d.Chunk_Type           AS chunk_type,
   d.Chunk_Content        AS chunk_content,
-  cfh.Object_UUID        AS chunk_ref_uuid
+  cfh.Object_UUID        AS chunk_ref_uuid,
+  -- Fachlicher MBS-Funktionsname, positionsgenau aus MBS_SubnameMap (inkl.
+  -- P3.5-Klartext-Recovery) — autoritativ gegenüber der Nachbar-Chunk-Heuristik.
+  msn.SubName            AS sub_function
 FROM fld
 LEFT JOIN calc_uuid ON TRUE
 LEFT JOIN DDR_Calculations d
   ON d.Calc_UUID = calc_uuid.Calc_UUID
  AND d.File_Name = calc_uuid.File_Name
+LEFT JOIN MBS_SubnameMap msn
+  ON msn.Calc_UUID = d.Calc_UUID
+ AND msn.File_Name = d.File_Name
+ AND msn.Plugin_Chunk_Index = d.Chunk_Index
 -- CustomFunctionRef-Chunks tragen anders als FieldRef nur den CF-Namen, keine
 -- UUID. Für Cross-Navigation (klickbarer Link) UND Cross-Reference-Highlight
 -- lösen wir den Namen file-lokal über ObjectHomes auf (CF-Namen sind je Datei

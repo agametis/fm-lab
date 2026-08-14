@@ -383,6 +383,49 @@ parse_components() {
     fi
 }
 
+# Function: Derive the plugin platform map (reference/plugin_spec.duckdb)
+# from the freshly installed mirror. Non-fatal like parse_components - the
+# docs install succeeds even when the derivation is unavailable.
+derive_plugin_spec() {
+    echo ""
+    echo "Deriving plugin platform map (reference/plugin_spec.duckdb)..."
+
+    DERIVER_SCRIPT="$PROJECT_ROOT/tools/plugin-spec/derive_mbs.py"
+
+    if [ ! -f "$DERIVER_SCRIPT" ]; then
+        # Public installs ship reference/plugin_spec.duckdb with the release
+        # and intentionally do not include the deriver tooling - the bundled
+        # plugin spec simply stays at its release state. Not a warning.
+        if [ -f "$PROJECT_ROOT/reference/plugin_spec.duckdb" ]; then
+            echo "Deriver tooling not present (tools/plugin-spec/) - keeping the bundled"
+            echo "reference/plugin_spec.duckdb from the fm-lab release."
+        else
+            echo "WARNING: Deriver script not found at $DERIVER_SCRIPT"
+            echo "and no bundled reference/plugin_spec.duckdb exists - plugin platform"
+            echo "and deprecation data will be unavailable until fm-lab is updated."
+        fi
+        echo "Skipping plugin-spec derivation."
+        return 1
+    fi
+
+    if ! command -v python3 &> /dev/null; then
+        echo "WARNING: python3 not found in PATH"
+        echo "Skipping plugin-spec derivation."
+        return 1
+    fi
+
+    export PROJECT_ROOT
+    python3 "$DERIVER_SCRIPT" 2>&1
+
+    if [ $? -eq 0 ]; then
+        echo "Plugin-spec derivation completed successfully"
+        return 0
+    else
+        echo "WARNING: Plugin-spec derivation failed (platform test members will be skipped)"
+        return 1
+    fi
+}
+
 # Main workflow
 main() {
     # Step 1: Check version and prompt user if needed
@@ -401,6 +444,11 @@ main() {
     phase_progress parse 0 "Parsing MBS components..."
     parse_components
     phase_progress parse 100 ""
+
+    # Step 5b: Derive the plugin platform map (docs update => re-derive)
+    phase_progress derive 0 "Deriving plugin platform map..."
+    derive_plugin_spec
+    phase_progress derive 100 ""
 
     # Step 6: Register in .fmlab/docs.json (for web home dashboard)
     phase_progress register 0 "Updating .fmlab/docs.json..."

@@ -24,6 +24,11 @@ let reloading = false;
 // Die Referenz-DB ist lösungsUNabhängig (ein Attach-Ergebnis für alle Slots):
 // entweder die Datei existiert oder nicht. Der letzte Attach-Versuch zählt.
 let referenceAttached = false;
+// fm_spec >= 1.13.0 ships the OS-affinity tables (step_os_affinity /
+// function_os_affinity / runtime_os_matrix); older reference DBs stay valid —
+// OS members degrade to 'skipped' instead of erroring (checked at attach time).
+let referenceHasOsAffinity = false;
+let pluginSpecAttached = false;
 
 /**
  * Aktivieren einer Lösung ohne konvertierte DB: leere Platzhalter-DB anlegen,
@@ -90,6 +95,7 @@ async function createEntry(solutionId) {
   const entry = { solutionId, dbPath, instance, connection };
   await ensureCoreStubs(entry);
   await attachReferenceDb(entry);
+  await attachPluginSpecDb(entry);
   return entry;
 }
 
@@ -257,11 +263,72 @@ async function attachReferenceDb(entry) {
   await stmt.run();
   referenceAttached = true;
   console.log(`Reference-DB attached as 'ref' from: ${refPath}`);
+  try {
+    const probe = await entry.connection.prepare(
+      `SELECT COUNT(*) AS n FROM information_schema.tables
+        WHERE table_catalog = 'ref'
+          AND table_name IN ('step_os_affinity', 'function_os_affinity', 'runtime_os_matrix')`
+    );
+    const res = await probe.run();
+    const rows = await res.getRowObjectsJS();
+    try { probe.destroySync(); } catch { /* freigegeben */ }
+    referenceHasOsAffinity = Number(rows[0]?.n || 0) === 3;
+    if (!referenceHasOsAffinity) {
+      console.warn('Reference-DB predates schema 1.13.0 — OS-affinity members will be skipped (re-run pull-reference.sh).');
+    }
+  } catch {
+    referenceHasOsAffinity = false;
+  }
   return true;
 }
 
 function isReferenceAttached() {
   return referenceAttached;
+}
+
+function hasOsAffinityTables() {
+  return referenceAttached && referenceHasOsAffinity;
+}
+
+async function attachPluginSpecDb(entry) {
+  const specPath = path.resolve(__dirname, '../../', environment.pluginSpec.duckdbPath);
+  if (!fs.existsSync(specPath)) {
+    pluginSpecAttached = false;
+    console.warn(`Plugin-Spec-DB not found at ${specPath} — plugin platform members will be skipped (install-mbs-docs regenerates it).`);
+    return false;
+  }
+  const escaped = specPath.replace(/'/g, "''");
+  const stmt = await entry.connection.prepare(`ATTACH '${escaped}' AS plugref (READ_ONLY)`);
+  await stmt.run();
+  pluginSpecAttached = true;
+  console.log(`Plugin-Spec-DB attached as 'plugref' from: ${specPath}`);
+  return true;
+}
+
+function isPluginSpecAttached() {
+  return pluginSpecAttached;
+}
+
+/**
+ * Fehlende Plugin-Spec-DB zu einem sprechenden Fehler veredeln: Queries, die
+ * `plugref.*` referenzieren (SCA-Dashboards), scheitern ohne ATTACH mit einem
+ * rohen Catalog-Error („… does not exist"). Der stabile englische
+ * `PLUGSPEC_MISSING:`-Präfix (analog SCHEMA_DRIFT) lässt das Frontend eine
+ * ruhige, handlungsfähige Notiz rendern. MUSS vor der Schema-Drift-
+ * Klassifikation laufen — deren MISSING_TABLE-Muster matcht sonst zuerst und
+ * empfähle fälschlich einen Re-Import.
+ */
+function classifyPluginSpecMissing(err) {
+  if (pluginSpecAttached) return null;
+  const message = (err && err.message) || '';
+  if (!/\bplugref\b/.test(message) || !/does not exist/i.test(message)) return null;
+  const e = new Error(
+    'PLUGSPEC_MISSING: the plugin reference database (reference/plugin_spec.duckdb) is not installed — ' +
+    'plugin platform and deprecation data is unavailable. It ships with fm-lab releases; ' +
+    'restore the file or regenerate it via the install-mbs-docs skill.'
+  );
+  e.code = 'PLUGSPEC_NOT_ATTACHED';
+  return e;
 }
 
 /** Pool-Eintrag einer Lösung schließen und entfernen (No-op, wenn keiner existiert). */
@@ -384,6 +451,10 @@ async function executeQuery(ctx, sql, params = []) {
     console.error('Query execution failed:', err.message);
     console.error('SQL:', sql);
     console.error('Params:', params);
+    // Fehlende Plugin-Spec-DB VOR der Drift-Prüfung erkennen — der plugref-
+    // Catalog-Error matcht sonst das Drift-Muster und riete zum Re-Import.
+    const plugMissing = classifyPluginSpecMissing(err);
+    if (plugMissing) throw plugMissing;
     // Schema-Drift (Lösung mit älterem Katalog-Schema importiert als die App
     // erwartet) zu einem sprechenden SCHEMA_DRIFT-Fehler veredeln — zentral hier,
     // damit JEDES Template/Dashboard/Report profitiert. Nur bei nachgewiesenem
@@ -412,6 +483,8 @@ async function close() {
     await closeSlot(slot);
   }
   referenceAttached = false;
+  referenceHasOsAffinity = false;
+  pluginSpecAttached = false;
 }
 
 async function getDatabaseStats(ctx) {
@@ -503,4 +576,7 @@ module.exports = {
   poolStatus,
   getDatabaseStats,
   isReferenceAttached,
+  hasOsAffinityTables,
+  isPluginSpecAttached,
+  classifyPluginSpecMissing, // exportiert für Unit-Tests
 };

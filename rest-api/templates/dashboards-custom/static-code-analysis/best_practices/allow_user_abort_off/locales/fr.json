@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Allow User Abort [Désactivé]",
-    "description": "Règle de bonne pratique : étapes Allow User Abort [Désactivé]. Désactiver l’annulation peut piéger l’utilisateur dans un script long ou en boucle."
+    "description": "Règle de bonne pratique : signale les étapes Allow User Abort [Désactivé]. Désactiver l’annulation peut piéger l’utilisateur dans un script long ou en boucle."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Résultats",

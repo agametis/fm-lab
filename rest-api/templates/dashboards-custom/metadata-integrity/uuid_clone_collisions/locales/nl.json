@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "UUID-kloonbotsingen",
+    "description": "Metadata-integriteitscontrole — native FileMaker-UUID's die in meer dan één bestand van de oplossing voorkomen (gekloonde bestanden, kopiëren/plakken tussen klonen). Onzichtbaar in FileMaker, maar verstoren ontwikkeltools die uitgaan van UUID-uniciteit.",
+    "analysis.defaultResult.meaning": "Aantal native UUID's die in meer dan één bestand van de oplossing voorkomen"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Dubbele UUID's",
+    "summary_kpi.props.items[1].label": "Betrokken objecten",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "summary_kpi.props.items[3].label": "Typeconflicten",
+    "pairs_card.props.title": "Bestandsparen met gedeelde UUID's",
+    "pairs_table.props.columns[0].label": "Bestand A",
+    "pairs_table.props.columns[1].label": "Bestand B",
+    "pairs_table.props.columns[2].label": "Gedeelde UUID's",
+    "pairs_table.props.columns[3].label": "% van A",
+    "pairs_table.props.columns[4].label": "% van B",
+    "pairs_table.props.searchPlaceholder": "Bestand zoeken…",
+    "pairs_table.props.empty.message": "Geen bestandspaar deelt een native UUID.",
+    "findings_card.props.title": "Botsende objecten",
+    "findings_table.props.columns[0].label": "UUID",
+    "findings_table.props.columns[1].label": "Type",
+    "findings_table.props.columns[2].label": "Object",
+    "findings_table.props.columns[3].label": "Bestand",
+    "findings_table.props.columns[4].label": "Bestanden",
+    "findings_table.props.columns[5].label": "Typeconflict",
+    "findings_table.props.searchPlaceholder": "Zoek naam, bestand of UUID…",
+    "findings_table.props.empty.message": "Geen UUID komt in meer dan één bestand voor — geen kloonbotsingen.",
+    "notes_card.props.title": "Over deze controle",
+    "notes_md.props.content": "Gekloonde FileMaker-bestanden dragen de UUID's van de kloon: dezelfde UUID identificeert **verschillende objecten in verschillende bestanden**. De oplossing draait probleemloos, maar tools die uitgaan van UUID-uniciteit (DDR-tools, fmIDE, diff/merge, UUID-gebaseerde integraties) kunnen het verkeerde object kiezen.\n\n**Er is geen automatische fix.** De reparatiemodus van Claris kent volledig nieuwe UUID's toe en breekt daarmee elke externe UUID-referentie. Behandel het paar *(UUID, bestand)* als objectidentiteit. Rijen gemarkeerd als **typeconflict** zijn de gevaarlijkste botsingen — dezelfde UUID benoemt objecten van *verschillende typen*.\n\nAlleen native FileMaker-UUID's worden gecontroleerd; de synthetische identiteiten van FM-Lab zijn bewust uitgesloten. Duplicaten *binnen* één bestand behandelt het zusterdashboard **UUID-duplicaten binnen een bestand**."
+  }
+}

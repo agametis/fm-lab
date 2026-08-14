@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "UUID-klonkollisioner",
+    "description": "Metadataintegritetskontroll — nativa FileMaker-UUID:n som förekommer i mer än en fil i lösningen (klonade filer, kopiera/klistra in mellan kloner). Osynliga i FileMaker, men de stör utvecklarverktyg som förutsätter UUID-unikhet.",
+    "analysis.defaultResult.meaning": "Antal inbyggda UUID:n som finns i mer än en fil i lösningen"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Duplicerade UUID:n",
+    "summary_kpi.props.items[1].label": "Berörda objekt",
+    "summary_kpi.props.items[2].label": "Berörda filer",
+    "summary_kpi.props.items[3].label": "Typkonflikter",
+    "pairs_card.props.title": "Filpar med delade UUID:n",
+    "pairs_table.props.columns[0].label": "Fil A",
+    "pairs_table.props.columns[1].label": "Fil B",
+    "pairs_table.props.columns[2].label": "Delade UUID:n",
+    "pairs_table.props.columns[3].label": "% av A",
+    "pairs_table.props.columns[4].label": "% av B",
+    "pairs_table.props.searchPlaceholder": "Sök fil…",
+    "pairs_table.props.empty.message": "Inget filpar delar ett nativt UUID.",
+    "findings_card.props.title": "Kolliderande objekt",
+    "findings_table.props.columns[0].label": "UUID",
+    "findings_table.props.columns[1].label": "Typ",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Fil",
+    "findings_table.props.columns[4].label": "Filer",
+    "findings_table.props.columns[5].label": "Typkonflikt",
+    "findings_table.props.searchPlaceholder": "Sök namn, fil eller UUID…",
+    "findings_table.props.empty.message": "Inget UUID finns i mer än en fil — inga klonkollisioner.",
+    "notes_card.props.title": "Om denna kontroll",
+    "notes_md.props.content": "Klonade FileMaker-filer bär klonens UUID:n: samma UUID identifierar **olika objekt i olika filer**. Lösningen fungerar utan problem, men verktyg som förutsätter UUID-unikhet (DDR-verktyg, fmIDE, diff/merge, UUID-baserade integrationer) kan välja fel objekt.\n\n**Det finns ingen automatisk åtgärd.** Claris reparationsläge tilldelar helt nya UUID:n och bryter därmed varje extern UUID-referens. Behandla paret *(UUID, fil)* som objektets identitet. Rader markerade **typkonflikt** är de farligaste kollisionerna — samma UUID namnger objekt av *olika typer*.\n\nEndast nativa FileMaker-UUID:n kontrolleras; FM-Labs syntetiska identiteter är uteslutna. Dubbletter *inom* en och samma fil täcks av systerpanelen **UUID-dubbletter inom en fil**."
+  }
+}

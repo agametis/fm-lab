@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Chiamata a funzione plug-in rimossa",
+  "analysis.defaultResult.meaning": "Chiamate a funzioni plug-in nell'ambito la cui funzione è contrassegnata come rimossa nella documentazione del produttore — queste chiamate falliscono con un plug-in attuale"
+ }
+}

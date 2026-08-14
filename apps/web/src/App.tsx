@@ -20,6 +20,8 @@ import { QueryView } from './dashboard/QueryView';
 import {
   DashboardsPage,
   CustomQueriesPage,
+  TestsOverviewPage,
+  TestDetailPage,
   DocsOverviewPage,
   XmlImportPage,
   DocsSetPage,
@@ -644,6 +646,8 @@ function App() {
       <Route path="/dashboard" element={<DashboardsPage />} />
       <Route path="/dashboard/:id" element={<DashboardView />} />
       <Route path="/query" element={<CustomQueriesPage />} />
+      <Route path="/tests" element={<TestsOverviewPage />} />
+      <Route path="/tests/:id" element={<TestDetailPage />} />
       <Route path="/query/:queryName" element={<QueryView />} />
       <Route path="/xml-import" element={<XmlImportPage />} />
       <Route path="/docs" element={<DocsOverviewPage />} />

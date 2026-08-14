@@ -167,8 +167,8 @@ def _calc_rules(parsed: list[ParsedStep], ref: Reference, res: LintResult) -> No
             # arguments are counted on the stripped copy too: a ';' inside a
             # calc comment would otherwise be read as an argument separator,
             # and a comment in front of a repetition group would hide the '['
-            # that identifies it (real code puts both there, see the corpus
-            # sweep in the bug report).
+            # that identifies it (real code puts both there, confirmed by a
+            # corpus sweep).
             stripped = strip_strings(strip_comments(calc))
             for m in CALL_RE.finditer(stripped):
                 # a leading word operator is part of the match, not of the name

@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Perform Find sans Set Error Capture",
-    "description": "Règle de bonne pratique : scripts avec Perform Find mais sans Set Error Capture [Activé]. Une boîte de dialogue « aucun enregistrement » peut interrompre l’utilisateur en plein script."
+    "description": "Règle de bonne pratique : signale les scripts avec Perform Find mais sans Set Error Capture [Activé]. Une boîte de dialogue « aucun enregistrement » peut interrompre l’utilisateur en plein script."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Résultats",

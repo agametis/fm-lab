@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Campo repetido",
-    "description": "Regra de boas práticas — campos com mais de uma repetição. Campos repetidos são difíceis de consultar e reportar; uma tabela relacionada costuma ser melhor."
+    "description": "Regra de boas práticas — sinaliza campos com mais de uma repetição. Campos repetidos são difíceis de consultar e reportar; uma tabela relacionada costuma ser melhor."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Ocorrências",

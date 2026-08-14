@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Compatibilidade de plataforma: OData",
+  "analysis.defaultResult.meaning": "Resultados de prontidão para OData (base do Server emprestada + regras de nomenclatura e de commit)"
+ }
+}

@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Relation med sorterade poster",
-    "description": "Bästa praxis-regel — relationer som sorterar sina relaterade poster. Sorteringen körs vid varje utvärdering och kan göra portaler och lookups långsammare."
+    "description": "Bästa praxis-regel — flaggar relationer som sorterar sina relaterade poster. Sorteringen körs vid varje utvärdering och kan göra portaler och lookups långsammare."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Träffar",

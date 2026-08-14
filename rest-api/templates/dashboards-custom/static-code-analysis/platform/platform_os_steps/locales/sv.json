@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "OS-bindning: skriptsteg",
+  "analysis.defaultResult.meaning": "Skript inom omfånget som är bundna till specifika operativsystem via Claris-skriptsteg"
+ }
+}

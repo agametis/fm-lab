@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Liaison à l'OS : actions de script",
+  "analysis.defaultResult.meaning": "Scripts du périmètre liés à des systèmes d'exploitation précis via les actions de script Claris"
+ }
+}

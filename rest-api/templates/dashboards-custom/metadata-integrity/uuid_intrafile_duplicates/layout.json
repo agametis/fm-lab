@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary_card",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpi",
+            "props": {
+              "items": [
+                {
+                  "label": "Duplicate occurrences",
+                  "field": "finding_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Affected files",
+                  "field": "affected_files",
+                  "format": "number"
+                },
+                {
+                  "label": "Healed",
+                  "field": "healed_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Kept original",
+                  "field": "kept_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Still absorbed",
+                  "field": "absorbed_remaining",
+                  "format": "number"
+                },
+                {
+                  "label": "Merge absorptions",
+                  "field": "merge_absorbed",
+                  "format": "count"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings_card",
+        "props": {
+          "span": 12,
+          "title": "Colliding objects (UUID-precise)"
+        },
+        "data": {
+          "dataset": "findings"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": "auto",
+              "searchAutoThreshold": 3,
+              "searchPlaceholder": "Search file, container, text or UUID…",
+              "columns": [
+                {
+                  "field": "file",
+                  "label": "File"
+                },
+                {
+                  "field": "type",
+                  "label": "Type",
+                  "format": "badge"
+                },
+                {
+                  "field": "parent",
+                  "label": "Container"
+                },
+                {
+                  "field": "position",
+                  "label": "Position"
+                },
+                {
+                  "field": "display",
+                  "label": "Object (decoded)"
+                },
+                {
+                  "field": "occ",
+                  "label": "Occ.",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "heal_status",
+                  "label": "Heal status",
+                  "format": "badge"
+                },
+                {
+                  "field": "dup_uuid",
+                  "label": "UUID",
+                  "align": "center",
+                  "format": "copy"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "{{nav_type}}",
+                  "file": "{{file}}",
+                  "step": "{{step_uuid}}"
+                }
+              },
+              "empty": {
+                "message": "No UUID-precise duplicate details captured — the import census found no intra-file duplicates."
+              },
+              "alwaysShowCount": true
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "merge_card",
+        "props": {
+          "span": 12,
+          "title": "Merge absorptions (chunk overlap or clone file with identical internal name)"
+        },
+        "data": {
+          "dataset": "merge_absorptions"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "merge_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "compact",
+              "sortable": true,
+              "searchable": "auto",
+              "searchAutoThreshold": 3,
+              "searchPlaceholder": "Search table or file…",
+              "columns": [
+                {
+                  "field": "table_name",
+                  "label": "Catalog table"
+                },
+                {
+                  "field": "file",
+                  "label": "File"
+                },
+                {
+                  "field": "absorbed",
+                  "label": "Absorbed",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "run_at",
+                  "label": "Merge run",
+                  "format": "date:relative"
+                }
+              ],
+              "empty": {
+                "message": "No duplicates were absorbed at merge time."
+              },
+              "alwaysShowCount": true
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "stats_card",
+        "props": {
+          "span": 12,
+          "title": "Census cross-check per catalog and file"
+        },
+        "data": {
+          "dataset": "absorption_stats"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "stats_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "compact",
+              "sortable": true,
+              "searchable": "auto",
+              "searchAutoThreshold": 3,
+              "searchPlaceholder": "Search catalog or file…",
+              "columns": [
+                {
+                  "field": "catalog",
+                  "label": "Catalog"
+                },
+                {
+                  "field": "file",
+                  "label": "File"
+                },
+                {
+                  "field": "source_records",
+                  "label": "Source records",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "stored_rows",
+                  "label": "Stored rows",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "absorbed",
+                  "label": "Absorbed",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "coverage",
+                  "label": "Detail coverage",
+                  "format": "badge"
+                }
+              ],
+              "empty": {
+                "message": "The import census reports no absorbed duplicates."
+              },
+              "alwaysShowCount": true
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "notes_card",
+        "props": {
+          "span": 12,
+          "title": "About this check"
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "notes_md",
+            "props": {
+              "content": "A UUID assigned to **two objects inside one file** is a source defect of the FileMaker export (typically copy/paste with old FileMaker versions against newer files). FM-Lab's import keeps exactly one object per UUID (deterministic, last write wins) — the absorbed objects therefore **no longer exist in the catalog**. The columns *Container*, *Position* and *Object (decoded)* are their only remaining trace; use them to locate both objects in FileMaker. Clicking a row opens the surviving object.\n\n**Merge absorptions** are a separate class: duplicates absorbed when the converter merges file chunks. Their root cause is not distinguishable after the fact — either converter-internal chunk overlap (no solution defect) or clone files sharing the same internal file name (a genuine collision).\n\n**There is no automatic fix.** Claris' repair mode assigns entirely new UUIDs and breaks every external UUID reference; the correction must happen in the source file. Duplicates of the same UUID *across* files are covered by the companion dashboard **UUID Clone Collisions**. Data source is the import census — the numbers reflect the state of the last XML import."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

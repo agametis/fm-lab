@@ -544,5 +544,17 @@
     "optFrameCurrentOnly": "Rama in fält endast i aktuell post",
     "optShowCurrentInList": "Postindikator i listvy",
     "optQuickFind": "Snabbsökning"
+  },
+  "pluginSpec": {
+    "tooltip": "Plattformsstöd enligt {{plugin}}-dokumentationen",
+    "since": "sedan {{version}}",
+    "deprecated": "Utfasad",
+    "replacementHint": "använd {{replacement}} i stället",
+    "removed": "Borttagen",
+    "oldNameHint": "Gammalt namn — nu {{name}}"
+  },
+  "osBinding": {
+    "label": "OS-bindning:",
+    "tooltip": "Operativsystem som detta skript är bundet till (från platform-os-binding-testkörningen - neutral inventering, ingen defekt)."
   }
 }

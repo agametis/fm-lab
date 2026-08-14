@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary_card",
+        "props": {
+          "span": 12,
+          "variant": "hero",
+          "title": "iOS usage"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpi",
+            "props": {
+              "items": [
+                {
+                  "label": "iOS-bound scripts",
+                  "field": "script_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Exclusive",
+                  "field": "exclusive_scripts",
+                  "format": "number"
+                },
+                {
+                  "label": "Dedicated",
+                  "field": "dedicated_scripts",
+                  "format": "number"
+                },
+                {
+                  "label": "Evidence",
+                  "field": "evidence_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Affected files",
+                  "field": "affected_files",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "features_card",
+        "props": {
+          "span": 12,
+          "title": "iOS features in use"
+        },
+        "data": {
+          "dataset": "features"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "features_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "chipFilter": "signal",
+              "columns": [
+                {
+                  "field": "feature",
+                  "label": "Feature"
+                },
+                {
+                  "field": "evidence_kind",
+                  "label": "Kind"
+                },
+                {
+                  "field": "signal",
+                  "label": "Binding"
+                },
+                {
+                  "field": "script_count",
+                  "label": "Scripts",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "usage_count",
+                  "label": "Uses",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "affected_files",
+                  "label": "Files",
+                  "align": "right",
+                  "format": "number"
+                }
+              ],
+              "empty": {
+                "message": "No iOS-specific features in use."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings_card",
+        "props": {
+          "span": 12,
+          "title": "iOS-bound scripts"
+        },
+        "data": {
+          "dataset": "findings"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search file, script or feature…",
+              "chipFilter": "signal",
+              "columns": [
+                {
+                  "field": "binding",
+                  "label": "Binding"
+                },
+                {
+                  "field": "file_name",
+                  "label": "File"
+                },
+                {
+                  "field": "script_name",
+                  "label": "Script"
+                },
+                {
+                  "field": "feature",
+                  "label": "Feature"
+                },
+                {
+                  "field": "step_no",
+                  "label": "Step",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "usage_count",
+                  "label": "Uses",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "message",
+                  "label": "Message"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "Script",
+                  "step": "{{step_uuid}}"
+                }
+              },
+              "empty": {
+                "message": "No FileMaker Go (iOS)-specific feature usage in scope."
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

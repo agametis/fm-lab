@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Vinculación al SO: funciones de plug-in",
+  "analysis.defaultResult.meaning": "Scripts en el alcance vinculados a sistemas operativos concretos mediante llamadas a funciones de plug-in"
+ }
+}

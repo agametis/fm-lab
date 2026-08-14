@@ -11,6 +11,7 @@ The table names mirror the XML branches of the corresponding object types:
 
 - **XMLMetadata** — Root attributes of the XML file (version, DDR-Info status)
 - **ExternalDataSourceCatalog** — External data sources
+- **DataSourceFileMap** — Derived (P4): per `(File_Name, DS_UUID)` the **imported** file a FileMaker data source resolves to (`Resolved_File`) — direct `DS_Name` match first, then the `Path` list in FileMaker search order (protocol prefixes and directories stripped, case-insensitive; closes the `_dev`-suffix gap where the declared name and the imported file name differ). Data sources without an imported match have no row (partial corpus). Used by the P4 clone scoping (base_table block, prefer-declared-source pass) and the P6 view `v_check_phantom_links`
 - **BaseTableCatalog** — Base tables of the FileMaker solution
 - **TableOccurrenceCatalog** — Table occurrences in the relationship graph
 - **RelationshipCatalog** — Relationships between table occurrences (per predicate, column `Predicate_Index`)
@@ -50,7 +51,9 @@ The table names mirror the XML branches of the corresponding object types:
 - **ObjectLinks** — Links between objects (operational & structural, including cross-file links)
 - **VariableUsages** — Every individual variable usage with its context (script, field, layout)
 - **VariablesCatalog** — Aggregated overview per variable (set/read counts, scope, files)
-- **DuplicateAbsorptions** — Dup-absorption census (monitoring): parsed source-record counts per catalog × file × chunk, written in P1. The P6 view `v_check_absorbed_dups` compares against live row counts — a positive difference means the per-file upsert silently collapsed duplicate-UUID source objects (export defect class B-K3); reported as a warn finding in the import report
+- **DuplicateAbsorptions** — Dup-absorption census (monitoring): parsed source-record counts per catalog × file × chunk, written in P1. The P6 view `v_check_absorbed_dups` compares against live row counts — a positive difference means the per-file upsert silently collapsed duplicate-UUID source objects (export defect); reported as a warn finding in the import report
+- **DuplicateAbsorptionDetails** — per-occurrence details of colliding intra-file duplicate UUIDs (type, name, container context, plaintext, payload). Schema 1.19.0 adds the UUID-healing mapping: `Healed_UUID` (deterministic md5 replacement UUID a twin received in the catalog, NULL = kept original / absorbed), `Heal_Status` (`kept-original` | `healed` | `absorbed`) and `Discriminator` (the internal FM id the replacement UUID is derived from) — the census is the bidirectional original↔replacement lookup layer. Discriminator formats per catalog: `script_id=N` (ScriptCatalog), `layout_id=N` (Layouts), `to_id=N`, `vl_id=N`, `cf_id=N`, `account_id=N`, `ds_id=N`, `table_id=N` (BaseTable), `table_id=N·field_id=M` (Fields), `script_id=N·step_index=M` (script steps — position-stable only), `layout_id=N·object_id=M` (layout objects). Rows with `Chunk_Seq = -1` were derived at the turbo merge point (duplicate pair split across sub-chunk windows — no chunk-local census exists for those). Replacement UUIDs are 32-char md5 hex WITHOUT dashes → distinguishable from native 8-4-4-4-12 UUIDs by format; `Heal_Status = 'absorbed'` remains only for double serialization (same UUID and same internal id), `FM_UUID_HEAL=0` runs and pre-1.19.0 databases
+- **XMLStepReferences / XMLLayoutReferences / XMLCalcReferences** — P2 reference extracts (volatile, rebuilt every run). Schema 1.19.0 adds `Ref_ID` (FileMaker-internal `@id` of the referenced element — the SaXML reference triple is `id`+`name`+`UUID`) and `TO_Ref_ID` (context-TO `@id`, field references only: `FieldReference/@id` is table-local, the field key is two-stage via the TO). Used by the P4 rewrite stage to disambiguate intra-file duplicate UUIDs; NULL where the source carries no reference element (variables, name-only chunk types)
 - **v_script_block_tree** — MATERIALIZED per-step control-flow nesting (built with the analysis views): for every script step its Loop and If depth (`loop_depth_before/after`, `if_depth_before/after`, `block_depth_before`, raw `if_running_depth` for unbalanced-If detection). **Use this whenever branch scope matters** (is step X inside a Loop / which If level — e.g. dead-code or window-lifecycle reasoning); never reconstruct nesting by hand from sequential `Step_Index` reads. Partition key is `(File_Name, Script_ID)` — not `Script_UUID`, which is non-unique in merge-artifact cases
 
 ### Common columns
@@ -280,7 +283,7 @@ Authoritative list incl. semantics: **`LinkRoleRegistry` table** — query it wh
 - LayoutObject → Variable (displays_variable, reads_variable) — merge variable, trigger parameter, DDR formulas (Conditional, Hide, Tooltip, etc.)
 - LayoutObject → Layout/TableOccurrence/Field (navigates_to_layout, navigates_to_to, navigates_to_field/sorts_by_field/… via `ScriptStepRoleMap`) — **button-embedded single step** (`GroupedButton/Button/action/Step`): a button can execute a single script step instead of calling a script. Its references produce the same **reused** roles as the script side (`Source_Type='LayoutObject'` distinguishes the carrier; no new registry roles). Extracted in P2 from `Object_XML` with paths anchored at the button (`Ref_Type='layout_step'`/`table_occurrence_step'`/`field_step'`; step `@id` in additive column `XMLLayoutReferences.Step_ID` carries the locale-independent field role). Semantic gating like the script side: `navigates_to_to` only for GTRR (`Step_ID=74`) — the context TO of a Go-to-Field/Sort step is not a navigation target. Closes the largest remaining where-used gap class (layouts reachable only via button appeared as false positives in `unused_layout`)
 - ScriptStep → Script (parent_script, structural)
-- Script → Script (calls_script)
+- Script → Script (calls_script) — `Link_Subrole` qualifies the call context (since schema 1.20.0): `on_server` (Perform Script on Server, step 164) / `on_server_callback` (step 210) mark the callee as **server-side executed** (the platform-binding evidence for FileMaker Server); `MBS:FM.RunScript` marks plugin-mediated calls; NULL = ordinary Perform Script. One role for all consumers — where-used and call chains never need to enumerate subroles. Note: "By name" PSoS callsites (target computed at runtime) have no static target and therefore no edge — their expression lives in `StepCalculations` (Slot `List`)
 - Script → Field (sets_field, navigates_to_field; plus reads_field/finds_in_field/sorts_by_field/imports_to_field/exports_from_field/inputs_to_field per step-type group, and references_field as the fallback for uncurated step types). Role assignment is locale-independent via the step ID (`ScriptStepRoleMap` table): SaXML writes `Step/@name` in the exporting client's UI language, so name matching broke for localized (German) exports. Uncurated step IDs land in references_field and are reported by the P6 check `v_check_step_roles`
 - Script → Layout (navigates_to_layout) — Go to Layout steps (and the target layout of "Go to Related Record")
 - Script → TableOccurrence (navigates_to_to) — target TO of "Go to Related Record" (`Ref_Type='tableOccurrence'`). Closes the where-used gap for TOs serving only as GTRR targets
@@ -312,4 +315,38 @@ Authoritative list incl. semantics: **`LinkRoleRegistry` table** — query it wh
 - Field → Field (summarizes_field) — summary field → summarized field; Link_Subrole = operation (Total/Average/…)
 - File → Layout (default_layout) — start layout from the file options
 - File → Account (auto_login_account) — auto-login account from the file options (security-relevant; unresolved when the referenced account does not exist)
-- PluginFunction naming: qualified as `MBS:<Sub>::<Sub>` (e.g. `MBS:List.Sort::List.Sort`); PluginComponents aggregate as `MBS::<Component>` via `groups_into`
+- PluginFunction naming: qualified as `MBS:<Sub>::<Sub>` (e.g. `MBS:List.Sort::List.Sort`); PluginComponents aggregate as `MBS::<Component>` via `groups_into`. SubNames resolve in **two stages**: chunk-proximity pairing in P2 (`MBS_SubnameMap`) plus a plain-text recovery pass in P3.5 (FileMaker's DDR export drops the argument NoRef chunk when a comment sits next to the call or calls nest — the lexer recovers those from the calc CDATA). A `PluginFunctionUsages.Plugin_Function_Name` still reading bare `'MBS'` therefore means a **genuinely dynamic first argument** (`MBS($var; …)`) — such calls have no catalog object and stay unlinked by design
+
+## Reference attachments (`ref` / `plugref`) — platform & OS tables
+
+Not part of the solution catalog: two solution-independent reference DBs the
+REST-API attaches read-only (`ref` = `reference/fm_spec.duckdb`, `plugref` =
+`reference/plugin_spec.duckdb`; the fm-test direct path attaches them itself).
+Full schema: fm-spec repo `db/schema.md` (fm_spec) and
+`tools/plugin-spec/derive_mbs.py` (plugin_spec). The platform/OS layer in
+brief:
+
+- **`ref.step_compat`** — Claris runtime tri-state per step (NULL = Partial,
+  see CLAUDE.md §7).
+- **`ref.function_platform_affinity`** (≥ 1.12.0) — curated runtime affinity
+  of functions (`go`/`dedicated` rows; affinity, never compatibility).
+- **`ref.step_os_affinity` / `ref.function_os_affinity`** (≥ 1.13.0) — the
+  curated OS sub-axis from the Claris help prose. **OS vocabulary strictly
+  `macos|windows|linux|ios`** — `ios` is the operating system (hosts
+  FileMaker Go AND Claris iOS SDK apps); runtime terms never appear in an OS
+  column. Affinity classes: `exclusive` (only on the listed OS) /
+  `unsupported` (source-true inverse — resolve against the host-OS set of the
+  object's runtimes, never against all 4) / `variant` (runs everywhere,
+  OS-dependent behavior; no findings consumption) / `os_probe`
+  (functions only, `os IS NULL`: Get(SystemPlatform) & co — guard idiom,
+  not a binding). Absence of a row = "Claris states nothing", never
+  "runs everywhere".
+- **`ref.runtime_os_matrix`** (≥ 1.13.0) — host matrix runtime × OS
+  (`fm_env` = step_compat vocabulary + `odata` + `ios_sdk`); the ONLY
+  sanctioned translator between the runtime and OS axes. `cloud` has no rows
+  until its host OS is documented with a Claris source.
+- **`plugref.plugin_function_platforms`** — verbatim vendor flags (MBS:
+  binary per macos/windows/linux/server/ios_sdk axis).
+- **`plugref.plugin_os_map`** (≥ 1.1.0) — curated fold of the vendor platform
+  axes into the OS vocabulary (macos/windows/linux 1:1; `ios_sdk` → `ios`
+  with qualifier `sdk-only`; `server` is a runtime statement — no OS row).

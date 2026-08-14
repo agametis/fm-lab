@@ -297,7 +297,7 @@
       {
         "type": "Card",
         "props": {
-          "span": 4,
+          "span": 3,
           "variant": "navtile"
         },
         "data": {
@@ -325,7 +325,7 @@
       {
         "type": "Card",
         "props": {
-          "span": 4,
+          "span": 3,
           "variant": "navtile"
         },
         "data": {
@@ -353,7 +353,35 @@
       {
         "type": "Card",
         "props": {
-          "span": 4,
+          "span": 3,
+          "variant": "navtile"
+        },
+        "data": {
+          "dataset": "nav_tests"
+        },
+        "children": [
+          {
+            "type": "NavButton",
+            "id": "tests",
+            "props": {
+              "label": "Tests",
+              "subtitle": "Curated analysis tests",
+              "icon": "check-square",
+              "showCount": true,
+              "onClick": {
+                "action": "navigate",
+                "args": {
+                  "path": "/tests"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "props": {
+          "span": 3,
           "variant": "navtile"
         },
         "data": {

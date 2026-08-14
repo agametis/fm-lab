@@ -32,6 +32,18 @@ export function isSchemaDriftError(error: string | null | undefined): boolean {
 }
 
 /**
+ * True when the backend flagged a query as failing only because the plugin
+ * reference database (reference/plugin_spec.duckdb, ATTACHed as 'plugref') is
+ * not installed. The backend emits a stable, English, `PLUGSPEC_MISSING:`-
+ * prefixed message regardless of UI locale (same contract as SCHEMA_DRIFT);
+ * matched non-anchored because dataset errors may arrive wrapped.
+ */
+export function isPlugSpecMissingError(error: string | null | undefined): boolean {
+  if (!error) return false;
+  return /PLUGSPEC_MISSING:/.test(error);
+}
+
+/**
  * Pulls the two catalog versions out of a SCHEMA_DRIFT message for display
  * ("imported with 1.11.0, app expects 1.12.1"). Either side may be null when the
  * backend could not determine it. Returns null when the message is not a drift

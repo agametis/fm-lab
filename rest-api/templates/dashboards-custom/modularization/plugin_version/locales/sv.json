@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "MBS-pluginversion",
+    "description": "Inventering av versionskrav: den lägsta pluginversion som lösningen behöver, härledd som maximum av de dokumenterade introduktionsversionerna (since_version) för alla använda pluginfunktioner — jämförelsen är alltid numerisk, aldrig lexikografisk. Spridningen per fil och de drivande funktionerna gör härledningen verifierbar. Katalogen känner ingen installerad version: kontrollen aktiveras först genom ett val i sidhuvudet (neutralt val = ingen kontroll).",
+    "analysis.defaultResult.meaning": "Lägsta plug-in-version som detta omfång kräver — högsta dokumenterade introduktionsversion bland de plug-in-funktioner som används"
+  },
+  "layout": {
+    "installed_version_select.props.label": "Installerad pluginversion",
+    "summary_kpi.props.items[0].label": "Krävd version",
+    "summary_kpi.props.items[1].label": "Funktioner",
+    "summary_kpi.props.items[2].label": "Anropsställen",
+    "summary_kpi.props.items[3].label": "Filer",
+    "summary_kpi.props.items[4].label": "Olösta",
+    "findings_card.props.title": "Versionskontroll",
+    "findings_table.props.columns[0].label": "Allvarlighetsgrad",
+    "findings_table.props.columns[1].label": "Fil",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Pluginfunktion",
+    "findings_table.props.columns[4].label": "Kräver",
+    "findings_table.props.columns[5].label": "Installerad",
+    "findings_table.props.columns[6].label": "Via custom function",
+    "findings_table.props.columns[7].label": "Meddelande",
+    "findings_table.props.empty.message": "Ingen kontroll aktiv — välj en installerad pluginversion i sidhuvudet för att validera kravet (neutralt val = endast inventering).",
+    "by_file_card.props.title": "Krav per fil",
+    "by_file_table.props.columns[0].label": "Fil",
+    "by_file_table.props.columns[1].label": "Krävd version",
+    "by_file_table.props.columns[2].label": "Främsta drivare",
+    "by_file_table.props.columns[3].label": "Funktioner",
+    "by_file_table.props.columns[4].label": "Anropsställen",
+    "by_file_table.props.columns[5].label": "Olösta",
+    "drivers_card.props.title": "Drivande funktioner",
+    "drivers_table.props.columns[0].label": "Pluginfunktion",
+    "drivers_table.props.columns[1].label": "Komponent",
+    "drivers_table.props.columns[2].label": "Sedan",
+    "drivers_table.props.columns[3].label": "Status",
+    "drivers_table.props.columns[4].label": "Över installerad",
+    "drivers_table.props.columns[5].label": "Anropsställen",
+    "drivers_table.props.columns[6].label": "Filer",
+    "markdown.props.content": "## Anmärkningar\n\nDen **krävda versionen** är en härledning: maximum av de dokumenterade introduktionsversionerna (`since_version`) för de pluginfunktioner som faktiskt anropas — tabellen *drivande funktioner* gör den verifierbar. Versionsjämförelser använder en numerisk nyckel, aldrig strängen.\n\n- **Versionskontroll**: katalogen känner ingen installerad pluginversion. Först valet i sidhuvudet markerar varje anrop av en senare introducerad funktion; det neutrala valet utlöser ingen kontroll.\n- **Krav per fil**: spridningen per fil visar vilka moduler som bär kravet.\n- **Navigering**: drivar-rader öppnar funktionsdetaljen (where-used); fynd öppnar det anropande objektet.\n- **Underhållsaxel**: deprecated/removed-anrop är egna regler under *Statisk kodanalys*."
+  }
+}

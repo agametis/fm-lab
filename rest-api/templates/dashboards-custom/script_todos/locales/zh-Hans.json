@@ -1,7 +1,8 @@
 {
   "manifest": {
     "title": "脚本中的 TO-DO",
-    "description": "注释步骤中以三种记法(TO DO、FIX IT、TBD)表示的待办工作。点击数字即可筛选结果列表。"
+    "description": "注释步骤中以三种记法(TO DO、FIX IT、TBD)表示的待办工作。点击数字即可筛选结果列表。",
+    "analysis.defaultResult.meaning": "脚本注释中的 TODO/FIXIT/TBD 标记行"
   },
   "layout": {
     "todo_kpi_kpistrip.props.items[0].label": "总行数",

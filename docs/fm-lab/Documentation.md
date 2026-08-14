@@ -7,6 +7,7 @@
 - [Architecture](Wiki/Architecture.md)
 - [Workflow](Wiki/Workflow.md)
 - [4 Code Analysis Approaches](Wiki/4%20Code%20Analysis%20Approaches.md)
+- [Core Design Principles](Wiki/Core%20Design%20Principles.md)
 - [Features](Wiki/Features.md)
 - [Components](Wiki/Components.md)
 

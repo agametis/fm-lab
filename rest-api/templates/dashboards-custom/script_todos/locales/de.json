@@ -1,7 +1,8 @@
 {
   "manifest": {
     "title": "TO-DOs in Scripts",
-    "description": "Offene Arbeiten in Kommentar-Schritten über drei Notationen (TO DO, FIX IT, TBD). Klick auf Anzahl filtert die Ergebnisliste."
+    "description": "Offene Arbeiten in Kommentar-Schritten über drei Notationen (TO DO, FIX IT, TBD). Klick auf Anzahl filtert die Ergebnisliste.",
+    "analysis.defaultResult.meaning": "TODO-/FIXIT-/TBD-Markerzeilen in Script-Kommentaren"
   },
   "layout": {
     "todo_kpi_kpistrip.props.items[0].label": "Zeilen Gesamt",

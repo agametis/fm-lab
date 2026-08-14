@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Fält med global lagring",
-    "description": "Bästa praxis-regel — fält med global lagring. Globala värden gäller per session och per användare; överanvändning gör tillståndet svårt att följa."
+    "description": "Bästa praxis-regel — flaggar fält med global lagring. Globala värden gäller per session och per användare; överanvändning gör tillståndet svårt att följa."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Träffar",

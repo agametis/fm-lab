@@ -2,7 +2,7 @@
   "id": "find_without_error_capture",
   "version": "1.0.0",
   "title": "Perform Find without Set Error Capture",
-  "description": "Best-practice rule — scripts that Perform Find but never Set Error Capture [On]. A \"no records\" dialog can interrupt the user mid-script.",
+  "description": "Best-practice rule — flags scripts that Perform Find but never Set Error Capture [On]. A \"no records\" dialog can interrupt the user mid-script.",
   "author": "fm-lab rules",
   "icon": "shield-question",
   "category": "best_practices",
@@ -22,9 +22,39 @@
       "author": "fm-lab rules",
       "source": "fm-lab",
       "url": null,
-      "description": "Best-practice rule — scripts that Perform Find but never Set Error Capture [On]. A \"no records\" dialog can interrupt the user mid-script.",
+      "description": "Best-practice rule — flags scripts that Perform Find but never Set Error Capture [On]. A \"no records\" dialog can interrupt the user mid-script.",
       "created": "2026-07-01",
       "references": []
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Perform Find without Set Error Capture"
     }
   },
   "datasets": [

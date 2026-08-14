@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plattform-Kompatibilität: FileMaker Data API",
+  "analysis.defaultResult.meaning": "Schritte im Prüfumfang, die auf FileMaker Data API nicht oder nur teilweise unterstützt werden"
+ }
+}

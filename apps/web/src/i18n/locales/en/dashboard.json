@@ -60,7 +60,14 @@
     "Dependencies": "Dependencies",
     "Fields": "Fields",
     "Scripts": "Scripts",
-    "Variables": "Variables"
+    "Variables": "Variables",
+    "dashboard": "Dashboard",
+    "query": "Custom query",
+    "system": "System",
+    "custom": "Custom",
+    "ok": "OK",
+    "warnings": "Warnings",
+    "errors": "Errors"
   },
   "list": {
     "badgeFilter": "used",
@@ -132,20 +139,12 @@
     "openClusterHint": "Go to the cluster overview"
   },
   "importIntegrity": {
-    "ok": "No absorbed UUID duplicates in the last import.",
-    "warnHead": "{{count}} absorbed UUID duplicate(s) across {{combos}} catalog/file combination(s)",
-    "colFile": "File",
-    "colCatalog": "Catalog",
-    "colAbsorbed": "Lost scripts",
-    "colSteps": "Lost steps",
-    "colSource": "Source",
-    "colStored": "Stored",
-    "footnote": "Source defect (duplicate UUIDs in the FileMaker export). The converter deduplicates deterministically (last-write-wins); fixable only by correcting/re-exporting the source.",
-    "stepsHint": "Steps = individual lost script steps; the containing script itself is intact. “—” = no whole script lost.",
-    "detailsHead": "Colliding objects",
-    "detailsMore": "… and {{count}} more colliding objects",
-    "colObjects": "Object(s)",
-    "colOccurrences": "Occurrences"
+    "ok": "No duplicate UUIDs in the last import.",
+    "healedHead": "{{occ}} duplicate-UUID occurrence(s) found in the source export ({{files}} file(s)) — {{healed}} object(s) auto-healed, the catalog is complete.",
+    "lostHead": "{{occ}} duplicate UUID(s) in the source export — {{lost}} object(s) missing from the catalog (not healed).",
+    "linksLabel": "Full findings:",
+    "linkIntrafile": "Duplicate UUIDs within one file",
+    "linkClones": "UUID clone collisions"
   },
   "xmlEmpty": {
     "hint": "No data yet. Drop your FileMaker XML export into the “xml/” folder and start the conversion.",
@@ -159,5 +158,31 @@
     "hostPathHint": "Put the files into this folder on the host — it is mounted into the container.",
     "containerPathNote": "Path inside the container",
     "putFilesHint": "Put your FileMaker XML files into the “xml/” folder."
+  },
+  "folderNav": {
+    "root": "All dashboards",
+    "notFound": "Folder not found.",
+    "backToRoot": "Back to overview",
+    "breadcrumb": "Folders",
+    "runAll": "Run all",
+    "run": "Run",
+    "running": "running…",
+    "findings": "findings",
+    "coverageHint": "Partial coverage — not all results computed yet",
+    "filterLabel": "Status",
+    "sortLabel": "Sort",
+    "sortStandard": "Standard",
+    "sortValue": "Result count ↓",
+    "sortState": "Status",
+    "state": {
+      "ok": "OK",
+      "warning": "Warning",
+      "error": "Error",
+      "neutral": "Neutral",
+      "pending": "Pending",
+      "failed": "Failed"
+    },
+    "noFilterMatches": "No entries with this status in this section.",
+    "openFolder": "Open folder"
   }
 }

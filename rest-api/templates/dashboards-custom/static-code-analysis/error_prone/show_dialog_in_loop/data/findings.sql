@@ -13,6 +13,8 @@ FROM v_script_block_tree t
 JOIN StepsForScripts s ON s.Step_UUID = t.Step_UUID AND s.File_Name = t.File_Name
 WHERE t.Step_ID = 87 AND t.loop_depth_before >= 1
   AND (getvariable('file') IS NULL OR t.File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR t.Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
   AND (COALESCE(getvariable('scope'), 'active') = 'all' OR s.Is_Enabled)
 ORDER BY t.File_Name, t.Script_Name, t.Step_Index
 LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);

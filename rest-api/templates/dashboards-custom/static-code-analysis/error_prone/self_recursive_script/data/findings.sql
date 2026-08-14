@@ -5,6 +5,8 @@ SELECT 'self-recursive-script' AS rule_id, 'info' AS severity,
 FROM ObjectLinks ol
 JOIN ObjectCatalog oc ON oc.Object_UUID = ol.Source_UUID AND oc.File_Name = ol.Source_File AND oc.Object_Type = 'Script'
 WHERE ol.Link_Role = 'calls_script' AND ol.Source_UUID = ol.Target_UUID AND ol.Source_File IS NOT DISTINCT FROM ol.Target_File AND (getvariable('file') IS NULL OR oc.File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR oc.Object_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
 GROUP BY oc.File_Name, oc.Object_UUID, oc.Object_Name
 ORDER BY oc.File_Name, oc.Object_Name
 LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);

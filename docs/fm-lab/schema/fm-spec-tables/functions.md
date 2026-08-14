@@ -20,4 +20,4 @@ The canonical identity of all 367 calculation functions: stable `function_id`, i
 | `source_version` | `VARCHAR` |
 | `fetched_at` | `DATE` |
 
-**See also:** [functions_lang](functions_lang.md) · [function_parameters](function_parameters.md) · [function_categories](function_categories.md)
+**See also:** [functions_lang](functions_lang.md) · [function_parameters](function_parameters.md) · [function_categories](function_categories.md) · [function_platform_affinity](function_platform_affinity.md)

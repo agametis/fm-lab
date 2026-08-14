@@ -6,59 +6,141 @@
     "children": [
       {
         "type": "Card",
-        "id": "hc_kpi_card",
-        "props": { "span": 12, "variant": "hero" },
-        "data": { "dataset": "hc_kpi" },
+        "id": "results_kpi_card",
+        "props": {
+          "span": 12,
+          "variant": "hero",
+          "subtitle": "Rule results from the shared results layer — computed on demand, cached per catalog fingerprint. Pending rules have not been run against the current catalog yet; use Run all rules."
+        },
+        "data": { "dataset": "results_overview" },
         "children": [
           {
             "type": "KPIStrip",
-            "id": "hc_kpi_strip",
+            "id": "results_kpi_strip",
             "props": {
               "items": [
                 {
-                  "label": "All checks",
+                  "label": "Rules",
                   "field": "total",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "severity": "", "file": "{{file}}" } } }
+                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "" } } }
                 },
                 {
                   "label": "Errors",
                   "field": "error",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "severity": "error", "file": "{{file}}" } } }
+                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "error" } } }
                 },
                 {
                   "label": "Warnings",
-                  "field": "warn",
+                  "field": "warning",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "severity": "warn", "file": "{{file}}" } } }
+                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "warning" } } }
                 },
                 {
-                  "label": "Info",
-                  "field": "info",
+                  "label": "OK",
+                  "field": "ok",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "severity": "info", "file": "{{file}}" } } }
+                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "ok" } } }
+                },
+                {
+                  "label": "Neutral",
+                  "field": "neutral",
+                  "format": "number",
+                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "neutral" } } }
+                },
+                {
+                  "label": "Pending",
+                  "field": "pending",
+                  "format": "number",
+                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "pending" } } }
+                },
+                {
+                  "label": "Failed",
+                  "field": "failed",
+                  "format": "number",
+                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "failed" } } }
+                },
+                {
+                  "label": "Findings",
+                  "field": "findings_sum",
+                  "format": "number"
+                },
+                {
+                  "label": "Executed",
+                  "field": "coverage"
                 }
               ]
             }
+          },
+          {
+            "type": "ResultsRunControl",
+            "id": "results_run",
+            "props": {
+              "roots": "static-code-analysis,metadata-integrity",
+              "mode": "missing",
+              "label": "Run all rules"
+            }
           }
         ]
       },
       {
         "type": "Card",
-        "id": "hc_security_card",
+        "id": "rp_performance_card",
+        "props": { "span": 4, "title": "Performance" },
+        "data": { "dataset": "results_performance" },
+        "children": [
+          {
+            "type": "List",
+            "id": "rp_performance_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{title}}",
+                "secondary": "{{value}}",
+                "badge": "{{state}}",
+                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
+              },
+              "empty": { "message": "Nothing to report." }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "rp_error_prone_card",
+        "props": { "span": 4, "title": "Error-prone" },
+        "data": { "dataset": "results_error_prone" },
+        "children": [
+          {
+            "type": "List",
+            "id": "rp_error_prone_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{title}}",
+                "secondary": "{{value}}",
+                "badge": "{{state}}",
+                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
+              },
+              "empty": { "message": "Nothing to report." }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "rp_security_card",
         "props": { "span": 4, "title": "Security" },
-        "data": { "dataset": "hc_security" },
+        "data": { "dataset": "results_security" },
         "children": [
           {
             "type": "List",
-            "id": "hc_security_list",
+            "id": "rp_security_list",
             "props": {
               "rowTemplate": {
-                "primary": "{{label}}",
+                "primary": "{{title}}",
                 "secondary": "{{value}}",
-                "badge": "{{severity}}",
-                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+                "badge": "{{state}}",
+                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
               },
               "empty": { "message": "Nothing to report." }
             }
@@ -67,19 +149,19 @@
       },
       {
         "type": "Card",
-        "id": "hc_fields_card",
-        "props": { "span": 4, "title": "Fields" },
-        "data": { "dataset": "hc_fields" },
+        "id": "rp_unused_code_card",
+        "props": { "span": 4, "title": "Unused code" },
+        "data": { "dataset": "results_unused_code" },
         "children": [
           {
             "type": "List",
-            "id": "hc_fields_list",
+            "id": "rp_unused_code_list",
             "props": {
               "rowTemplate": {
-                "primary": "{{label}}",
+                "primary": "{{title}}",
                 "secondary": "{{value}}",
-                "badge": "{{severity}}",
-                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+                "badge": "{{state}}",
+                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
               },
               "empty": { "message": "Nothing to report." }
             }
@@ -88,19 +170,19 @@
       },
       {
         "type": "Card",
-        "id": "hc_scripts_card",
-        "props": { "span": 4, "title": "Scripts" },
-        "data": { "dataset": "hc_scripts" },
+        "id": "rp_code_style_card",
+        "props": { "span": 4, "title": "Code style" },
+        "data": { "dataset": "results_code_style" },
         "children": [
           {
             "type": "List",
-            "id": "hc_scripts_list",
+            "id": "rp_code_style_list",
             "props": {
               "rowTemplate": {
-                "primary": "{{label}}",
+                "primary": "{{title}}",
                 "secondary": "{{value}}",
-                "badge": "{{severity}}",
-                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+                "badge": "{{state}}",
+                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
               },
               "empty": { "message": "Nothing to report." }
             }
@@ -109,19 +191,19 @@
       },
       {
         "type": "Card",
-        "id": "hc_relationships_card",
-        "props": { "span": 4, "title": "Relationships" },
-        "data": { "dataset": "hc_relationships" },
+        "id": "rp_documentation_card",
+        "props": { "span": 4, "title": "Documentation" },
+        "data": { "dataset": "results_documentation" },
         "children": [
           {
             "type": "List",
-            "id": "hc_relationships_list",
+            "id": "rp_documentation_list",
             "props": {
               "rowTemplate": {
-                "primary": "{{label}}",
+                "primary": "{{title}}",
                 "secondary": "{{value}}",
-                "badge": "{{severity}}",
-                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+                "badge": "{{state}}",
+                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
               },
               "empty": { "message": "Nothing to report." }
             }
@@ -130,19 +212,19 @@
       },
       {
         "type": "Card",
-        "id": "hc_tables_card",
-        "props": { "span": 4, "title": "Tables & occurrences" },
-        "data": { "dataset": "hc_tables" },
+        "id": "rp_best_practices_card",
+        "props": { "span": 4, "title": "Best practices" },
+        "data": { "dataset": "results_best_practices" },
         "children": [
           {
             "type": "List",
-            "id": "hc_tables_list",
+            "id": "rp_best_practices_list",
             "props": {
               "rowTemplate": {
-                "primary": "{{label}}",
+                "primary": "{{title}}",
                 "secondary": "{{value}}",
-                "badge": "{{severity}}",
-                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+                "badge": "{{state}}",
+                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
               },
               "empty": { "message": "Nothing to report." }
             }
@@ -151,19 +233,19 @@
       },
       {
         "type": "Card",
-        "id": "hc_layouts_card",
-        "props": { "span": 4, "title": "Layouts" },
-        "data": { "dataset": "hc_layouts" },
+        "id": "rp_platform_card",
+        "props": { "span": 4, "title": "Platform compatibility" },
+        "data": { "dataset": "results_platform" },
         "children": [
           {
             "type": "List",
-            "id": "hc_layouts_list",
+            "id": "rp_platform_list",
             "props": {
               "rowTemplate": {
-                "primary": "{{label}}",
+                "primary": "{{title}}",
                 "secondary": "{{value}}",
-                "badge": "{{severity}}",
-                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+                "badge": "{{state}}",
+                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
               },
               "empty": { "message": "Nothing to report." }
             }
@@ -172,61 +254,19 @@
       },
       {
         "type": "Card",
-        "id": "hc_variables_card",
-        "props": { "span": 4, "title": "Variables" },
-        "data": { "dataset": "hc_variables" },
+        "id": "rp_metadata_integrity_card",
+        "props": { "span": 4, "title": "Metadata integrity" },
+        "data": { "dataset": "results_metadata_integrity" },
         "children": [
           {
             "type": "List",
-            "id": "hc_variables_list",
+            "id": "rp_metadata_integrity_list",
             "props": {
               "rowTemplate": {
-                "primary": "{{label}}",
+                "primary": "{{title}}",
                 "secondary": "{{value}}",
-                "badge": "{{severity}}",
-                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
-              },
-              "empty": { "message": "Nothing to report." }
-            }
-          }
-        ]
-      },
-      {
-        "type": "Card",
-        "id": "hc_valuelists_card",
-        "props": { "span": 4, "title": "Value lists" },
-        "data": { "dataset": "hc_valuelists" },
-        "children": [
-          {
-            "type": "List",
-            "id": "hc_valuelists_list",
-            "props": {
-              "rowTemplate": {
-                "primary": "{{label}}",
-                "secondary": "{{value}}",
-                "badge": "{{severity}}",
-                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
-              },
-              "empty": { "message": "Nothing to report." }
-            }
-          }
-        ]
-      },
-      {
-        "type": "Card",
-        "id": "hc_customfunctions_card",
-        "props": { "span": 4, "title": "Custom functions" },
-        "data": { "dataset": "hc_customfunctions" },
-        "children": [
-          {
-            "type": "List",
-            "id": "hc_customfunctions_list",
-            "props": {
-              "rowTemplate": {
-                "primary": "{{label}}",
-                "secondary": "{{value}}",
-                "badge": "{{severity}}",
-                "onClick": { "action": "{{action}}", "argsString": "{{action_args}}" }
+                "badge": "{{state}}",
+                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
               },
               "empty": { "message": "Nothing to report." }
             }

@@ -1,4 +1,5 @@
--- Auto-generiert aus dem core der Rule (loop_without_exit_loop_if). Nicht von Hand editieren.
+-- Hand-maintained COUNT wrapper embedding the findings core of rule (loop_without_exit_loop_if).
+-- The core is a textual copy — keep filters (file filter + S-Block) in sync with data/findings.sql.
 SELECT
     COUNT(*)                     AS finding_count,
     'info'          AS severity,
@@ -20,6 +21,8 @@ loops AS (
         COUNT(*) FILTER (WHERE Step_ID = 72) AS exit_if_count
     FROM v_script_block_tree
     WHERE (getvariable('file') IS NULL OR File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
     GROUP BY File_Name, Script_ID
 )
 SELECT 'loop-without-exit-loop-if' AS rule_id, 'info' AS severity,

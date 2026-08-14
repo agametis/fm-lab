@@ -83,7 +83,14 @@
     "Dependencies": "의존성",
     "Fields": "필드",
     "Scripts": "스크립트",
-    "Variables": "변수"
+    "Variables": "변수",
+    "dashboard": "대시보드",
+    "query": "사용자 지정 쿼리",
+    "system": "시스템",
+    "custom": "사용자 지정",
+    "ok": "정상",
+    "warnings": "경고",
+    "errors": "오류"
   },
   "semanticNames": {
     "structureLabel": "구조",
@@ -113,16 +120,15 @@
     "warnHead": "{{combos}}개 카탈로그/파일 조합에서 {{count}}개의 UUID 중복이 흡수됨",
     "colFile": "파일",
     "colCatalog": "카탈로그",
-    "colAbsorbed": "손실된 스크립트",
-    "colSteps": "손실된 단계",
+    "colAbsorbed": "손실된 개체",
+    "colSub": "손실된 하위 개체",
     "colSource": "원본",
     "colStored": "저장됨",
     "footnote": "원본 결함(FileMaker 내보내기의 중복 UUID). 변환기는 결정적으로 중복을 제거합니다(last-write-wins). 원본 수정/재내보내기로만 해결할 수 있습니다.",
-    "stepsHint": "단계 = 개별적으로 손실된 스크립트 단계이며, 포함하는 스크립트 자체는 온전합니다. ‘—’ = 손실된 전체 스크립트 없음.",
-    "detailsHead": "충돌하는 객체",
-    "detailsMore": "… 외 {{count}}개의 충돌 객체",
-    "colObjects": "객체",
-    "colOccurrences": "발생 횟수"
+    "subHint": "개체 = 카탈로그의 전체 개체(스크립트 또는 레이아웃). 하위 개체 = 손실된 스크립트 단계 또는 레이아웃 개체이며, 포함하는 컨테이너는 온전합니다. ‘—’ = 이러한 유형의 손실 없음.",
+    "linksLabel": "전체 발견 항목:",
+    "linkIntrafile": "파일 내 UUID 중복",
+    "linkClones": "UUID 클론 충돌"
   },
   "xmlEmpty": {
     "hint": "아직 데이터가 없습니다. FileMaker XML 내보내기 파일을 “xml/” 폴더에 넣고 변환을 시작하세요.",
@@ -136,5 +142,31 @@
     "hostPathHint": "호스트의 이 폴더에 파일을 넣으세요 — 컨테이너에 마운트되어 있습니다.",
     "containerPathNote": "컨테이너 내부 경로",
     "putFilesHint": "FileMaker XML 파일을 “xml/” 폴더에 넣으세요."
+  },
+  "folderNav": {
+    "root": "모든 대시보드",
+    "notFound": "폴더를 찾을 수 없습니다.",
+    "backToRoot": "개요로 돌아가기",
+    "breadcrumb": "폴더",
+    "runAll": "모두 실행",
+    "run": "실행",
+    "running": "실행 중…",
+    "findings": "건",
+    "coverageHint": "부분 커버리지 — 아직 모든 결과가 계산되지 않았습니다",
+    "filterLabel": "상태",
+    "sortLabel": "정렬",
+    "sortStandard": "표준",
+    "sortValue": "결과 수 ↓",
+    "sortState": "신호등",
+    "state": {
+      "ok": "OK",
+      "warning": "경고",
+      "error": "오류",
+      "neutral": "중립",
+      "pending": "대기 중",
+      "failed": "실패"
+    },
+    "noFilterMatches": "이 섹션에는 해당 상태의 항목이 없습니다.",
+    "openFolder": "폴더 열기"
   }
 }

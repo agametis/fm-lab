@@ -2,7 +2,7 @@
   "id": "docset_category",
   "version": "1.0.0",
   "title": "Docset category",
-  "description": "Function listing within a docset category.",
+  "description": "Entry listing within a docset category.",
   "author": "fm-lab core",
   "icon": "list",
   "tags": ["nav", "internal"],

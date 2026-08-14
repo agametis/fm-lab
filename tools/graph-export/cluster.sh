@@ -146,7 +146,7 @@ if [ "$CACHE_DISABLE" != "1" ]; then
     echo "→ cache-save: snapshotting $SEM_COUNT named communities (object-level) …"
     "$DUCKDB" "$DB_FILE" <<SQL || echo "  WARN: cache-save failed (continuing)" >&2
 SET VARIABLE resolution = $RESOLUTION;
-.read $CACHE_SAVE_SQL
+.read "$CACHE_SAVE_SQL"
 SQL
   fi
 fi
@@ -155,7 +155,7 @@ fi
 echo "→ loading ObjectClusters + CommunityNames …"
 "$DUCKDB" "$DB_FILE" <<SQL || { echo "ERROR: cluster load failed." >&2; exit 9; }
 SET VARIABLE engine = '$ENGINE';
-.read $LOAD_SQL
+.read "$LOAD_SQL"
 SQL
 
 # ── 3c) Cache-Apply: Semantic_Name per Mehrheitsvotum restaurieren ──────────
@@ -173,7 +173,7 @@ if [ "$CACHE_DISABLE" != "1" ]; then
     "$DUCKDB" "$DB_FILE" <<SQL || echo "  WARN: cache-apply failed (continuing)" >&2
 SET VARIABLE tau_purity = $CACHE_TAU_PURITY;
 SET VARIABLE tau_coverage = $CACHE_TAU_COVERAGE;
-.read $CACHE_APPLY_SQL
+.read "$CACHE_APPLY_SQL"
 SQL
     REUSE=$("$DUCKDB" "$DB_FILE" -readonly -noheader -list -c \
       "SELECT ROUND(COALESCE(SUM(Member_Count) FILTER (WHERE Semantic_Name IS NOT NULL),0)::DOUBLE / SUM(Member_Count), 4) FROM CommunityNames;" 2>/dev/null || echo 0)

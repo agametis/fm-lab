@@ -20,6 +20,8 @@ WITH step_changes AS (
     s.Step_Index,
     s.Step_Name,
     s.Step_UUID,
+    s.DDR_Hash,
+    s.File_Name,
     -- Calculate depth change for the NEXT step
     CASE
       WHEN s.Step_Name IN ('If', 'Loop') THEN 1
@@ -40,6 +42,8 @@ step_depths AS (
     Step_Index,
     Step_Name,
     Step_UUID,
+    DDR_Hash,
+    File_Name,
     -- Calculate the indentation depth for subsequent steps
     GREATEST(0,
       COALESCE(SUM(depth_change_after) OVER (
@@ -49,17 +53,28 @@ step_depths AS (
     ) AS base_depth,
     depth_change_self
   FROM step_changes
+),
+-- UUID-Healing-Fallback (Schema 1.19.0): geheilte Step-Zwillinge tragen eine
+-- synthetische Step_UUID ohne DDR_ScriptSteps-Zeile (der DDR-Block ist nur über die
+-- Quell-UUID gekeyt). Inhaltsgleiche Zwillinge lösen ihren Klartext stattdessen über
+-- den Inhalts-Hash auf (StepsForScripts.DDR_Hash = DDR_ScriptSteps.Step_Hash);
+-- any_value dedupliziert hash-gleiche Zeilen (identischer Text).
+ddr_by_hash AS (
+  SELECT Step_Hash, File_Name, any_value(Step_Text) AS Step_Text
+  FROM DDR_ScriptSteps
+  GROUP BY Step_Hash, File_Name
 )
 SELECT
   printf('%2d. %s%s',
     Step_Index + 1,
     repeat('  ', CAST(GREATEST(0, base_depth + depth_change_self) AS BIGINT)),
     CASE
-      WHEN (SELECT Has_DDR_INFO FROM XMLMetadata) = 'True'
-      THEN COALESCE(d.Step_Text, sd.Step_Name)
+      WHEN (SELECT Has_DDR_INFO FROM XMLMetadata LIMIT 1) = 'True'
+      THEN COALESCE(d.Step_Text, dh.Step_Text, sd.Step_Name)
       ELSE sd.Step_Name
     END
   ) AS Step
 FROM step_depths sd
 LEFT JOIN DDR_ScriptSteps d ON sd.Step_UUID = d.Step_UUID
+LEFT JOIN ddr_by_hash dh ON sd.DDR_Hash = dh.Step_Hash AND sd.File_Name = dh.File_Name
 ORDER BY Step_Index;

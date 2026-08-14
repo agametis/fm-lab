@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Champ à index automatique",
-    "description": "Règle de bonnes pratiques — champs dont l'indexation est 'Aucune' alors que 'Créer les index automatiquement' reste activé. La première recherche ou le premier tri déclenche silencieusement une création d'index côté serveur impossible à interrompre — une bombe à retardement latente avec des répercussions sur le stockage, les sauvegardes et la vitesse d'import."
+    "description": "Règle de bonne pratique : signale la combinaison risquée d'une indexation 'Aucune' avec 'Créer les index automatiquement' toujours activé. Aucun index n'existe encore ; la première recherche ou le premier tri déclenche donc silencieusement une création d'index à la demande impossible à interrompre — une bombe à retardement latente avec des répercussions sur le stockage, les sauvegardes et la vitesse d'import."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Occurrences",

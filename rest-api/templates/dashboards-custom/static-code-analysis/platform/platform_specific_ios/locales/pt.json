@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Uso específico da plataforma: FileMaker Go (iOS)",
+  "analysis.defaultResult.meaning": "Scripts no escopo que usam recursos específicos do FileMaker Go (iOS) (passos exclusivos ou funções dedicadas)"
+ }
+}

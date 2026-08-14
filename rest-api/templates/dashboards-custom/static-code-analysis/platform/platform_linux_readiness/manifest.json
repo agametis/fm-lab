@@ -1,0 +1,49 @@
+{
+  "id": "platform_linux_readiness",
+  "version": "1.1.0",
+  "title": "Linux server readiness",
+  "description": "Can this solution move to a Linux-based FileMaker Server? Linux has practically no exclusive features - the Linux question is the INVERSE of a binding inventory: this view consolidates everything in scope that works on macOS/Windows FileMaker Server but not (or not reliably) on Linux. Three signal sources: plug-in functions available under the server script engine but without a Linux build (verbatim vendor flags folded through the curated OS map, resolved against the reference host matrix; includes custom-function wrappers), Claris calculation functions documented as unsupported on Linux hosts (source-true inverse statements, CF-transitive), and Claris script steps with a Linux-unsupported statement (currently none documented - the branch follows future curation automatically). Steps and functions that fail on EVERY server OS are deliberately absent: they belong to the server compatibility test, not to the Linux delta. Needs the plug-in platform map for the plug-in source; all statements come from the curated FileMaker reference schema, never guessed from names.",
+  "author": "fm-lab rules",
+  "icon": "server",
+  "category": "platform",
+  "tags": ["platform", "inventory", "linux", "deployment"],
+  "analysis": {
+    "objectTypes": ["Script"],
+    "outputTypes": ["count", "findings-table"],
+    "scope": {
+      "supported": ["solution", "file"],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "script_count",
+      "type": "number",
+      "name": "script_count",
+      "meaning": "Scripts using features that block or degrade on a Linux-based FileMaker Server (inventory — no severity judgement, counts scripts, not findings)"
+    }
+  },
+  "entry": "layout.json",
+  "datasets": [
+    { "id": "summary", "source": "bundle:data/summary.sql" },
+    { "id": "findings", "source": "bundle:data/findings.sql" }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

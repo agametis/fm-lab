@@ -544,5 +544,17 @@
     "optFrameCurrentOnly": "Velden alleen in huidige record omkaderen",
     "optShowCurrentInList": "Record-indicator in lijstweergave",
     "optQuickFind": "Snelzoeken"
+  },
+  "pluginSpec": {
+    "tooltip": "Platformondersteuning volgens de {{plugin}}-documentatie",
+    "since": "sinds {{version}}",
+    "deprecated": "Verouderd",
+    "replacementHint": "gebruik in plaats daarvan {{replacement}}",
+    "removed": "Verwijderd",
+    "oldNameHint": "Oude naam — nu {{name}}"
+  },
+  "osBinding": {
+    "label": "OS-binding:",
+    "tooltip": "Besturingssystemen waaraan dit script gebonden is (uit de platform-os-binding-testrun - neutrale inventaris, geen defect)."
   }
 }

@@ -544,5 +544,17 @@
     "optFrameCurrentOnly": "Encadrer les champs de l'enregistrement actuel uniquement",
     "optShowCurrentInList": "Indicateur d'enregistrement en vue liste",
     "optQuickFind": "Recherche rapide"
+  },
+  "pluginSpec": {
+    "tooltip": "Prise en charge des plateformes selon la documentation {{plugin}}",
+    "since": "depuis {{version}}",
+    "deprecated": "Obsolète",
+    "replacementHint": "utiliser {{replacement}} à la place",
+    "removed": "Supprimée",
+    "oldNameHint": "Ancien nom — désormais {{name}}"
+  },
+  "osBinding": {
+    "label": "Liaison au système :",
+    "tooltip": "Systèmes d'exploitation auxquels ce script est lié (issu du test platform-os-binding - inventaire neutre, pas un défaut)."
   }
 }

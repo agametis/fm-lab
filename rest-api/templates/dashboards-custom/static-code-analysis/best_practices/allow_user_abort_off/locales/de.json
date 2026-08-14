@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Allow User Abort [Aus]",
-    "description": "Best-Practice-Regel — Allow-User-Abort-[Aus]-Schritte. Das Deaktivieren des Abbruchs kann den Nutzer in einem langen oder schleifenden Script gefangen halten."
+    "description": "Best-Practice-Regel — findet Allow-User-Abort-[Aus]-Schritte. Das Deaktivieren des Abbruchs kann den Nutzer in einem langen oder schleifenden Script gefangen halten."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Treffer",

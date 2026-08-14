@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "플랫폼 특화 사용: FileMaker Server",
+  "analysis.defaultResult.meaning": "Perform Script on Server 호출의 대상이 되는 범위 내 스크립트(서버 측 실행을 위해 만들어짐)"
+ }
+}

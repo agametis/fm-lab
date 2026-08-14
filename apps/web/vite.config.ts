@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin, type ViteDevServer } from 'vite';
 import react from '@vitejs/plugin-react';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -12,8 +12,29 @@ const pkg = JSON.parse(
   readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf-8'),
 );
 
+/**
+ * Raises the dev server's HTTP keep-alive window past the browser's socket
+ * reuse time. Node's 5 s default closes pooled connections while the browser
+ * still holds them as usable — an SPA navigation firing several requests onto
+ * that pool then fails at transport level ("Load failed" / "Failed to fetch"),
+ * while a full page reload always works because it opens fresh sockets.
+ * Mirrors the same setting on the REST API (rest-api/src/index.js).
+ * headersTimeout must stay above keepAliveTimeout.
+ */
+const keepAlivePlugin = (): Plugin => ({
+  name: 'fmlab-keep-alive',
+  configureServer(server: ViteDevServer) {
+    // No own HTTP server in middleware mode; the `in` check also narrows the
+    // http.Server | Http2SecureServer union (HTTP/2 has no such knobs).
+    const http = server.httpServer;
+    if (!http || !('keepAliveTimeout' in http)) return;
+    http.keepAliveTimeout = 65000;
+    http.headersTimeout = 66000;
+  },
+});
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), keepAlivePlugin()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },

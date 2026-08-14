@@ -177,20 +177,17 @@ UNION ALL
 -- (4) PluginFunction-Refs (extern, kein Heimat-File, kein crossFile)
 -- sub_function: bei MBS-Container-Plugin der fachliche Funktionsname.
 -- uuid: synthetische ObjectCatalog-UUID für Cross-Navigation
--- (deterministisch via md5).
+-- (deterministisch via md5), KATALOG-VALIDIERT: der md5-Kandidat wird gegen
+-- das ObjectCatalog geprüft und nur ausgeliefert, wenn das Objekt existiert.
+-- Container-Aufrufe ohne aufgelösten SubName (dynamisches 1. Argument,
+-- `MBS($var; …)`) haben konstruktionsbedingt keinen Katalog-Eintrag — sie
+-- blieben sonst als garantiert toter Link („not found") in der Ansicht.
 SELECT
   CAST(xcr.Source_Subkey AS INTEGER) AS line_index,
   3 AS source_priority,
   'pluginFunction' AS type,
   xcr.Ref_Name AS name,
-  -- Container-Plugins (MBS): der Katalog-Plugin_Function_Name ist `<Plugin>:<SubName>`
-  -- (einfacher Doppelpunkt), nicht der bloße Ref_Name `MBS`. Ohne Rekonstruktion zeigt
-  -- der Link auf eine nicht existierende UUID. Vgl. convert_xml_04_catalog.sql.
-  md5('PluginFunction::' ||
-      CASE WHEN xcr.Ref_SubName IS NOT NULL AND xcr.Ref_SubName <> ''
-           THEN xcr.Ref_Name || ':' || xcr.Ref_SubName
-           ELSE xcr.Ref_Name END
-      || '::' || COALESCE(xcr.Ref_SubName, '')) AS uuid,
+  pf.Object_UUID AS uuid,
   CAST(NULL AS VARCHAR) AS field_file,
   CAST(NULL AS VARCHAR) AS field_basetable,
   CAST(NULL AS VARCHAR) AS to_name,
@@ -200,6 +197,16 @@ SELECT
   CAST(NULL AS VARCHAR) AS variable_usage,
   xcr.Ref_SubName AS sub_function
 FROM XMLCalcReferences xcr
+-- Container-Plugins (MBS): der Katalog-Plugin_Function_Name ist `<Plugin>:<SubName>`
+-- (einfacher Doppelpunkt), nicht der bloße Ref_Name `MBS`. Ohne Rekonstruktion zeigte
+-- der Link auf eine nicht existierende UUID. Vgl. convert_xml_04_catalog.sql.
+LEFT JOIN ObjectCatalog pf
+       ON pf.Object_Type = 'PluginFunction'
+      AND pf.Object_UUID = md5('PluginFunction::' ||
+          CASE WHEN xcr.Ref_SubName IS NOT NULL AND xcr.Ref_SubName <> ''
+               THEN xcr.Ref_Name || ':' || xcr.Ref_SubName
+               ELSE xcr.Ref_Name END
+          || '::' || COALESCE(xcr.Ref_SubName, ''))
 WHERE xcr.Source_UUID  = getvariable('uuid')
   AND (getvariable('file') IS NULL OR xcr.File_Name = getvariable('file'))
   AND xcr.Source_Type  = 'Script'

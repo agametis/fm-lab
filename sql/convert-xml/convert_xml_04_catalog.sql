@@ -94,7 +94,7 @@ WHERE x.Step_UUID = r.Step_UUID
 UPDATE XMLStepReferences x
 SET Ref_UUID = r.field_uuid
 FROM (
-    -- B-C2: File-Scope wie die Calc-Variante unten — ohne toc.File_Name im Join
+    -- File-Scope wie die Calc-Variante unten — ohne toc.File_Name im Join
     -- band ein Klon-Korpus (geteilte TO_UUIDs über Dateien) nichtdeterministisch
     -- eine potenziell datei-fremde Feld-UUID.
     SELECT toc.TO_UUID, toc.File_Name, f.Field_Name, f.Field_UUID AS field_uuid
@@ -167,7 +167,7 @@ FROM (
           AND Object_UUID IN (
               SELECT Object_UUID FROM XMLLayoutReferences
               WHERE Ref_Type = 'field'
-                AND (Ref_UUID IS NULL   -- K4: leere UUID jetzt NULL (statt ''); Kandidat für TO+Feld-id-Auflösung bleiben
+                AND (Ref_UUID IS NULL   -- Leere UUID jetzt NULL (statt ''); Kandidat für TO+Feld-id-Auflösung bleiben
                      OR Ref_UUID NOT IN (SELECT Field_UUID FROM FieldsForTables WHERE Field_UUID IS NOT NULL))
           )
     ) lo
@@ -179,17 +179,17 @@ FROM (
 ) r
 WHERE x.Ref_Type = 'field'
   AND x.Object_UUID = r.lo_uuid
-  AND (x.Ref_UUID IS NULL   -- K4: leere UUID jetzt NULL (statt '') → weiterhin auflösbar
+  AND (x.Ref_UUID IS NULL   -- Leere UUID jetzt NULL (statt '') → weiterhin auflösbar
        OR x.Ref_UUID NOT IN (SELECT Field_UUID FROM FieldsForTables WHERE Field_UUID IS NOT NULL));
 
--- K4 Empty-String-Hygiene: unaufgelöste Referenzen müssen NULL sein, nie ''. Externe-TO-
+-- Empty-String-Hygiene: unaufgelöste Referenzen müssen NULL sein, nie ''. Externe-TO-
 -- Feldrefs mit UUID="" (DDR-Calc-Chunks: regexp_extract liefert '' bei leerem Attribut;
 -- Step-Refs: xml_extract auf leerem @UUID) überleben die Resolver oben, wenn TO+Feld-id
 -- nicht auflösbar ist (z. B. Feld liegt in einer nicht-importierten Datei). NACH den
 -- Resolvern normalisieren (davor bräuchten diese die ''-Werte zum Matchen). Der Feldname
 -- (Ref_Name) bleibt für spätere Name-/ID-Auflösung erhalten. Downstream reads_field joint
 -- per INNER JOIN auf ObjectCatalog (+ Ref_UUID IS NOT NULL) → NULL erzeugt keinen Link,
--- '' erzeugte auch keinen (kein Feld hat UUID '') — nur die Empty-String-Invariante K4.
+-- '' erzeugte auch keinen (kein Feld hat UUID '') — nur die Empty-String-Invariante.
 -- XMLLayoutReferences ist bereits an der P2-Quelle genullt (NULLIF); hier belt-and-suspenders.
 UPDATE XMLCalcReferences   SET Ref_UUID = NULL WHERE Ref_UUID = '';
 UPDATE XMLCalcReferences   SET Ref_Name = NULL WHERE Ref_Name = '';
@@ -197,6 +197,107 @@ UPDATE XMLStepReferences   SET Ref_UUID = NULL WHERE Ref_UUID = '';
 UPDATE XMLStepReferences   SET Ref_Name = NULL WHERE Ref_Name = '';
 UPDATE XMLLayoutReferences SET Ref_UUID = NULL WHERE Ref_UUID = '';
 UPDATE XMLLayoutReferences SET Ref_Name = NULL WHERE Ref_Name = '';
+
+-- ============================================
+-- UUID-Healing — Stufe (1) der kanonischen Ziel-Auflösungs-Reihenfolge:
+-- Ref_ID-Rewrite intra-file (Schema 1.19.0)
+-- ============================================
+-- Intra-File-UUID-Duplikate wurden in P1 geheilt (Zwillinge tragen deterministische
+-- Ersatz-UUIDs, Mapping im Zensus DuplicateAbsorptionDetails). Die XML-Referenzen
+-- tragen aber weiterhin die ORIGINAL-UUID — ohne Rewrite liefen alle eingehenden
+-- Kanten auf den Survivor (Graph-Insel-Problem). Das SaXML referenziert als Tripel
+-- id+name+UUID; die in P2 mitextrahierte Ref_ID disambiguiert den richtigen Zwilling.
+--
+-- Realisierung VOR dem ObjectLinks-CTAS an den P2-Referenztabellen selbst (statt
+-- nachträglich an ObjectLinks): so greifen CTAS UND alle Folge-INSERTs uniform,
+-- kein Resolver muss angefasst werden, und die Doktrin-Reihenfolge bleibt gewahrt —
+-- Stufe (1) läuft physisch vor Block-6-Scoping (2), prefer-local (3), keep (4).
+--
+-- Schlüssel je Referenz-Rolle: flache Referenzen (Script/Layout/TO/ValueList) über
+-- (File_Name, Ref_ID); Feld-Referenzen ZWEISTUFIG (FieldReference/@id ist tabellen-
+-- lokal): TO_Ref_ID → TableOccurrenceCatalog.TO_ID → BT_ID → (table_id, field_id).
+-- Der Discriminator-Join ist exakt (String-Gleichheit gegen das P1-Format), kein
+-- Regex-Parsing. Scope bleibt intra-file: hm.File_Name = Quelldatei der Referenz.
+-- Refs ohne Ref_ID oder auf den Survivor (kept-original) bleiben unverändert —
+-- kein Rückschritt. Duplikatfreie Korpora: _heal_map leer → alle UPDATEs No-Op.
+CREATE OR REPLACE TEMP TABLE _heal_map AS
+SELECT File_Name, Catalog, Object_UUID AS Orig_UUID, Healed_UUID, Discriminator
+FROM DuplicateAbsorptionDetails
+WHERE Heal_Status = 'healed' AND Healed_UUID IS NOT NULL;
+
+-- Kontext-TO der Feld-Referenzen (TO selbst geheilt): TO_UUID nachziehen, damit die
+-- TO-basierten Feld-Resolver (Phase A oben ist bereits gelaufen; Kontext-Nutzung
+-- unten) den richtigen Zwilling treffen.
+UPDATE XMLStepReferences r
+SET TO_UUID = hm.Healed_UUID
+FROM _heal_map hm
+WHERE r.TO_Ref_ID IS NOT NULL AND r.TO_UUID IS NOT NULL
+  AND hm.Catalog = 'TableOccurrenceCatalog' AND hm.File_Name = r.File_Name
+  AND hm.Orig_UUID = r.TO_UUID
+  AND hm.Discriminator = 'to_id=' || r.TO_Ref_ID::VARCHAR;
+
+UPDATE XMLCalcReferences r
+SET TO_UUID = hm.Healed_UUID
+FROM _heal_map hm
+WHERE r.TO_Ref_ID IS NOT NULL AND r.TO_UUID IS NOT NULL
+  AND hm.Catalog = 'TableOccurrenceCatalog' AND hm.File_Name = r.File_Name
+  AND hm.Orig_UUID = r.TO_UUID
+  AND hm.Discriminator = 'to_id=' || r.TO_Ref_ID::VARCHAR;
+
+-- Flache Referenzen: XMLStepReferences (script/layout/tableOccurrence/valuelist)
+UPDATE XMLStepReferences r
+SET Ref_UUID = hm.Healed_UUID
+FROM _heal_map hm
+WHERE r.Ref_ID IS NOT NULL AND r.Ref_UUID IS NOT NULL
+  AND hm.File_Name = r.File_Name AND hm.Orig_UUID = r.Ref_UUID
+  AND ((r.Ref_Type = 'script'          AND hm.Catalog = 'ScriptCatalog'          AND hm.Discriminator = 'script_id=' || r.Ref_ID::VARCHAR
+        AND r.Data_Source_Name IS NULL)  -- Cross-File-Aufrufe bleiben beim Survivor (Doktrin: Scope intra-file)
+    OR (r.Ref_Type = 'layout'          AND hm.Catalog = 'Layouts'                AND hm.Discriminator = 'layout_id=' || r.Ref_ID::VARCHAR)
+    OR (r.Ref_Type = 'tableOccurrence' AND hm.Catalog = 'TableOccurrenceCatalog' AND hm.Discriminator = 'to_id='     || r.Ref_ID::VARCHAR)
+    OR (r.Ref_Type = 'valuelist'       AND hm.Catalog = 'ValueListCatalog'       AND hm.Discriminator = 'vl_id='     || r.Ref_ID::VARCHAR));
+
+-- Flache Referenzen: XMLLayoutReferences (script/layout_step/table_occurrence[_step]/valuelist[_sort])
+UPDATE XMLLayoutReferences r
+SET Ref_UUID = hm.Healed_UUID
+FROM _heal_map hm
+WHERE r.Ref_ID IS NOT NULL AND r.Ref_UUID IS NOT NULL
+  AND hm.File_Name = r.File_Name AND hm.Orig_UUID = r.Ref_UUID
+  AND ((r.Ref_Type = 'script'                                        AND hm.Catalog = 'ScriptCatalog'          AND hm.Discriminator = 'script_id=' || r.Ref_ID::VARCHAR)
+    OR (r.Ref_Type = 'layout_step'                                   AND hm.Catalog = 'Layouts'                AND hm.Discriminator = 'layout_id=' || r.Ref_ID::VARCHAR)
+    OR (r.Ref_Type IN ('table_occurrence', 'table_occurrence_step')  AND hm.Catalog = 'TableOccurrenceCatalog' AND hm.Discriminator = 'to_id='     || r.Ref_ID::VARCHAR)
+    OR (r.Ref_Type IN ('valuelist', 'valuelist_sort')                AND hm.Catalog = 'ValueListCatalog'       AND hm.Discriminator = 'vl_id='     || r.Ref_ID::VARCHAR));
+
+-- Feld-Referenzen (zweistufig über den TO-Kontext) — alle drei P2-Quellen uniform.
+-- TO_Ref_ID ist die interne TO-@id (heilungs-immun); TOs sind stets datei-lokal,
+-- externe Basistabellen matchen mangels lokaler table_id im Zensus nicht (No-Op).
+UPDATE XMLStepReferences r
+SET Ref_UUID = hm.Healed_UUID
+FROM TableOccurrenceCatalog t, _heal_map hm
+WHERE r.Ref_Type = 'field' AND r.Ref_ID IS NOT NULL AND r.TO_Ref_ID IS NOT NULL AND r.Ref_UUID IS NOT NULL
+  AND t.File_Name = r.File_Name AND t.TO_ID = r.TO_Ref_ID
+  AND hm.Catalog = 'FieldsForTables' AND hm.File_Name = r.File_Name
+  AND hm.Orig_UUID = r.Ref_UUID
+  AND hm.Discriminator = 'table_id=' || t.BT_ID::VARCHAR || '·field_id=' || r.Ref_ID::VARCHAR;
+
+UPDATE XMLLayoutReferences r
+SET Ref_UUID = hm.Healed_UUID
+FROM TableOccurrenceCatalog t, _heal_map hm
+WHERE r.Ref_Type IN ('field', 'field_step') AND r.Ref_ID IS NOT NULL AND r.TO_Ref_ID IS NOT NULL AND r.Ref_UUID IS NOT NULL
+  AND t.File_Name = r.File_Name AND t.TO_ID = r.TO_Ref_ID
+  AND hm.Catalog = 'FieldsForTables' AND hm.File_Name = r.File_Name
+  AND hm.Orig_UUID = r.Ref_UUID
+  AND hm.Discriminator = 'table_id=' || t.BT_ID::VARCHAR || '·field_id=' || r.Ref_ID::VARCHAR;
+
+UPDATE XMLCalcReferences r
+SET Ref_UUID = hm.Healed_UUID
+FROM TableOccurrenceCatalog t, _heal_map hm
+WHERE r.Ref_Type = 'field' AND r.Ref_ID IS NOT NULL AND r.TO_Ref_ID IS NOT NULL AND r.Ref_UUID IS NOT NULL
+  AND t.File_Name = r.File_Name AND t.TO_ID = r.TO_Ref_ID
+  AND hm.Catalog = 'FieldsForTables' AND hm.File_Name = r.File_Name
+  AND hm.Orig_UUID = r.Ref_UUID
+  AND hm.Discriminator = 'table_id=' || t.BT_ID::VARCHAR || '·field_id=' || r.Ref_ID::VARCHAR;
+
+DROP TABLE _heal_map;
 
 -- LayoutObjects.Object_Type-Locale-Normalisierung. `Object_Type` kommt aus dem
 -- LOKALISIERTEN `/LayoutObject/@type`-String (dt. Exporte wie Shopschnittstelle/Bilder
@@ -379,7 +480,7 @@ UNION ALL
 -- DISTINCT, weil RelationshipCatalog seit Schema 1.2.0 eine Zeile pro Join-Prädikat führt
 -- (Mehrfeld-Joins) — als Objekt zählt die Relation aber genau einmal.
 SELECT DISTINCT
-    'rel_' || Rel_ID::VARCHAR || '_' || File_Name as Object_UUID,  -- B-C4: Namespace-Präfix
+    'rel_' || Rel_ID::VARCHAR || '_' || File_Name as Object_UUID,  -- Namespace-Präfix
     'Relationship' as Object_Type,
     Left_TO_Name || ' → ' || Right_TO_Name as Object_Name,
     File_Name,
@@ -474,8 +575,8 @@ UNION ALL
 
 -- 10. LayoutParts (Layout Parts)
 -- HINWEIS: LayoutParts haben keine UUID — Composite-UUID mit 'part_'-Präfix
--- (B-C4, kollisionsfrei zu anderen Composite-Schemata) aus Layout_ID + Part_Kind +
--- Part_Seq + File_Name. Part_Seq (Schema 1.5.1, B-K5) hält mehrere Parts gleicher
+-- (kollisionsfrei zu anderen Composite-Schemata) aus Layout_ID + Part_Kind +
+-- Part_Seq + File_Name. Part_Seq (Schema 1.5.1) hält mehrere Parts gleicher
 -- Art (z.B. 3× Leading Sub-summary) auseinander. Formel identisch in der
 -- parent_layout- und breaks_on_field-Kante unten.
 SELECT
@@ -574,7 +675,7 @@ UNION ALL
 
 -- 18. ScriptTriggers (Script Triggers)
 SELECT
-    'trig_' || Trigger_ID::VARCHAR || '_' || Owner_UUID || '_' || File_Name as Object_UUID,  -- B-C4: Namespace-Präfix
+    'trig_' || Trigger_ID::VARCHAR || '_' || Owner_UUID || '_' || File_Name as Object_UUID,  -- Namespace-Präfix
     'ScriptTrigger' as Object_Type,
     -- COALESCE-Guard: echte Orphan-Trigger (Trigger-Slot ohne zugewiesenes
     -- Ziel-Skript) haben Script_Name=NULL. Ohne Guard wird der String-Konkat
@@ -954,6 +1055,48 @@ INSERT INTO ScriptStepRoleMap VALUES
     (222, 'Configure Regression Model',    'references_field');
 
 -- ========================================
+-- DataSourceFileMap — deklarierte Datenquelle → importierte Datei
+-- ========================================
+-- Löst je (File_Name, DS_UUID) auf, WELCHE importierte Datei eine externe
+-- FileMaker-Datenquelle meint. Auflösungs-Reihenfolge wie FileMaker selbst:
+--   Prio 0: direkter DS_Name-Match gegen FilesCatalog (`.fmp12` gestrippt)
+--   Prio n: Pfadliste (Path, newline-separiert) in Deklarations-Reihenfolge —
+--           die ERSTE importierte Datei gewinnt. Protokoll-Präfixe
+--           (file:/filemac:/filewin:/filelinux:) und Verzeichnisanteile werden
+--           gestrippt, verglichen wird der Dateiname (case-insensitiv, wie FM).
+-- Schließt die _dev-Suffix-Lücke: `DS_Name='GDB_Mod_RZ'` mit
+-- `Path='file:GDB_Mod_RZ\nfile:GDB_Mod_RZ_dev'` → importierte Datei
+-- `GDB_Mod_RZ_dev`, die der reine DS_Name-Match nie fände.
+-- Nicht importierte Datenquellen (Partial-Korpus) haben KEINE Zeile —
+-- Konsumenten (Block 6, prefer-declared-source-Pass, P6-Views) fallen dann
+-- konservativ auf das bisherige Verhalten zurück.
+CREATE OR REPLACE TABLE DataSourceFileMap AS
+WITH ds AS (
+    SELECT File_Name, DS_UUID,
+           string_split(COALESCE(Path, ''), chr(10)) AS path_list
+    FROM ExternalDataSourceCatalog
+),
+candidates AS (
+    SELECT File_Name, DS_UUID, 0 AS prio,
+           regexp_replace(DS_Name, '\.fmp12$', '') AS cand
+    FROM ExternalDataSourceCatalog
+    UNION ALL
+    SELECT File_Name, DS_UUID, ord,
+           regexp_replace(regexp_replace(regexp_replace(entry,
+               '^file(mac|win|linux)?:', ''), '.*/', ''), '\.fmp12$', '')
+    FROM (SELECT File_Name, DS_UUID,
+                 UNNEST(path_list) AS entry,
+                 UNNEST(range(1, len(path_list) + 1)) AS ord
+          FROM ds)
+)
+SELECT c.File_Name, c.DS_UUID,
+       arg_min(fc.File_Name, c.prio) AS Resolved_File
+FROM candidates c
+JOIN FilesCatalog fc ON lower(fc.File_Name) = lower(c.cand)
+GROUP BY c.File_Name, c.DS_UUID;
+
+
+-- ========================================
 -- ObjectLinks - Verknüpfungen zwischen Objekten
 -- ========================================
 -- Extrahiert alle operationalen Links aus den Basis-Tabellen
@@ -1137,9 +1280,15 @@ UNION ALL
 -- toc.BT_UUID ist bei EXTERNEN Datenquellen die LOKALE Referenz-UUID (≠ kanonische
 -- BaseTable-UUID der Heimatdatei) → der Direkt-Join auf ObjectCatalog verlöre die Kante
 -- (base_table erschien in der Where-used der Basistabelle nicht). Deshalb erst über
--- BT_Name + Heimatdatei (DS_Name → Datei) auf die kanonische BaseTableCatalog.BT_UUID
--- auflösen; Fallback = toc.BT_UUID (lokale TOs, dort bereits kanonisch). toc.BT_UUID bleibt
+-- BT_Name + Heimatdatei auf die kanonische BaseTableCatalog.BT_UUID auflösen;
+-- Fallback = toc.BT_UUID (lokale TOs, dort bereits kanonisch). toc.BT_UUID bleibt
 -- unangetastet — P5 (TableOccurrenceResolution.Local_BT_UUID) braucht die lokale UUID.
+-- Die Heimatdatei kommt aus DataSourceFileMap (deklarierte Datenquelle des TOs,
+-- schließt die _dev-Suffix-Lücke); zusätzlich wird oc_target auf die aufgelöste
+-- Zieldatei GESCOPED — sonst fächert die Kante bei Klon-Korpora in jede Datei auf,
+-- die die Ziel-UUID zufällig auch enthält (Phantom-Links, to_base_table>1).
+-- Konservativ: ohne S1-Auflösung (lokale TOs, nicht importierte Quellen) bleibt
+-- exakt das bisherige Verhalten (Fallback-Ausdruck + ungescoptes oc_target).
 SELECT
     toc.TO_UUID as Source_UUID,
     'TableOccurrence' as Source_Type,
@@ -1152,10 +1301,15 @@ SELECT
     oc_target.File_Name as Target_File,
     (toc.File_Name != oc_target.File_Name) as Is_Cross_File
 FROM TableOccurrenceCatalog toc
+LEFT JOIN DataSourceFileMap dsm
+       ON dsm.File_Name = toc.File_Name
+      AND dsm.DS_UUID = toc.DS_UUID
 LEFT JOIN BaseTableCatalog bt_canon
        ON bt_canon.BT_Name = toc.BT_Name
-      AND bt_canon.File_Name = regexp_replace(COALESCE(NULLIF(toc.DS_Name, ''), toc.File_Name), '\.fmp12$', '')
+      AND bt_canon.File_Name = COALESCE(dsm.Resolved_File,
+              regexp_replace(COALESCE(NULLIF(toc.DS_Name, ''), toc.File_Name), '\.fmp12$', ''))
 LEFT JOIN ObjectCatalog oc_target ON COALESCE(bt_canon.BT_UUID, toc.BT_UUID) = oc_target.Object_UUID AND oc_target.Object_Type = 'BaseTable'
+      AND (dsm.Resolved_File IS NULL OR oc_target.File_Name = dsm.Resolved_File)
 
 UNION ALL
 
@@ -1191,7 +1345,7 @@ SELECT
     (l.File_Name != oc_target.File_Name) as Is_Cross_File
 FROM Layouts l
 LEFT JOIN ObjectCatalog oc_target ON (SELECT TO_UUID FROM TableOccurrenceCatalog WHERE TO_Name = l.L_TO_Name AND File_Name = l.File_Name LIMIT 1) = oc_target.Object_UUID AND oc_target.Object_Type = 'TableOccurrence'
--- Folder-/Separator-Filter (B-C1): exakt der Filter des Catalog-Blocks 9 — dieser
+-- Folder-/Separator-Filter: exakt der Filter des Catalog-Blocks 9 — dieser
 -- Link-Block hatte keinen → Folder-/Separator-Layouts wurden zu verwaisten
 -- Link-QUELLEN (158 Orphan-Sources + Großteil der NULL-Targets, DB-verifiziert).
 WHERE (l.Folder_Type IS NULL OR l.Folder_Type = 'False')
@@ -1409,7 +1563,14 @@ UNION ALL
 -- HINWEIS: Keine direkte Verknüpfung in diesem Schema, könnte über DDR_Calculations analysiert werden
 
 -- 15. Script → Script (Perform Script Steps)
--- Extrahiert aus XMLStepReferences (Python XML-Extraktor, umgeht webbed JSON-Bugs)
+-- Extrahiert aus XMLStepReferences (Python XML-Extraktor, umgeht webbed JSON-Bugs).
+-- Link_Subrole trägt den PSoS-Ausführungskontext (Schema 1.20.0): 'on_server'
+-- (Step 164) / 'on_server_callback' (Step 210) — das Ziel läuft server-seitig.
+-- Bewusst Subrole statt eigener Rolle: calls_script bleibt die eine Aufruf-
+-- Rolle für alle Konsumenten (where-used, Call-Chains, Graph), der Kontext ist
+-- ein Qualifier wie Condition_1/Hide. Step-ID via Step-Join, weil
+-- XMLStepReferences keine Step_ID trägt (Muster wie Block 16). Kein Step-Match
+-- (theoretisch) → Subrole NULL = gewöhnlicher Aufruf, nie falsch-positiv.
 SELECT
     xsr.Script_UUID as Source_UUID,
     'Script' as Source_Type,
@@ -1417,11 +1578,19 @@ SELECT
     'Script' as Target_Type,
     'operational' as Link_Type,
     'calls_script' as Link_Role,
-    NULL as Link_Subrole,
+    CASE sfs.Step_ID
+        WHEN 164 THEN 'on_server'
+        WHEN 210 THEN 'on_server_callback'
+    END as Link_Subrole,
     xsr.File_Name as Source_File,
     oc_target.File_Name as Target_File,
     (xsr.File_Name != oc_target.File_Name) as Is_Cross_File
 FROM XMLStepReferences xsr
+LEFT JOIN (SELECT DISTINCT Step_UUID, Script_UUID, File_Name, Step_ID
+           FROM StepsForScripts) sfs
+       ON sfs.Step_UUID = xsr.Step_UUID
+      AND sfs.Script_UUID = xsr.Script_UUID
+      AND sfs.File_Name = xsr.File_Name
 LEFT JOIN ObjectCatalog oc_target ON xsr.Ref_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Script'
 WHERE xsr.Ref_Type = 'script'
 
@@ -1545,7 +1714,7 @@ SELECT
     (xlr.File_Name != oc_target.File_Name) as Is_Cross_File
 FROM XMLLayoutReferences xlr
 LEFT JOIN ObjectCatalog oc_target ON xlr.Ref_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Field'
--- K4: kein displays_field aus NULL-UUID (unaufgelöste externe-TO-Feldref) — sonst Orphan-Link
+-- Kein displays_field aus NULL-UUID (unaufgelöste externe-TO-Feldref) — sonst Orphan-Link
 WHERE xlr.Ref_Type = 'field' AND xlr.Ref_UUID IS NOT NULL
 
 UNION ALL
@@ -2134,7 +2303,7 @@ JOIN LayoutObjects lo
 JOIN Layouts l
     ON lo.Layout_ID = l.L_ID
    AND lo.File_Name = l.File_Name
-   -- Folder-/Separator-Filter (B-C1): defensive Parität zum Catalog-Block 9 — Folder
+   -- Folder-/Separator-Filter: defensive Parität zum Catalog-Block 9 — Folder
    -- tragen keine LayoutObjects, aber eine ID-Kollision dürfte hier keinen Link erzeugen.
    AND (l.Folder_Type IS NULL OR l.Folder_Type = 'False')
    AND NOT COALESCE(l.Is_Separator, FALSE)
@@ -2427,7 +2596,7 @@ INSERT INTO ObjectLinks (Source_UUID, Source_Type, Target_UUID, Target_Type,
                           Link_Type, Link_Role, Link_Subrole,
                           Source_File, Target_File, Is_Cross_File)
 WITH ps_raw AS (
-    -- B-C5: Extraktion PRO //Sort-Element statt drei parallel ge-UNNEST-eter
+    -- Extraktion PRO //Sort-Element statt drei parallel ge-UNNEST-eter
     -- XPath-Listen — eine fehlende TableOccurrenceReference verschob das Zipping
     -- und konnte (entgegen dem alten Kommentar) auf ein FALSCHES existierendes
     -- Feld auflösen, nicht nur droppen.
@@ -2734,7 +2903,7 @@ JOIN AccountsCatalog ac
 WHERE fo.Login_AccountName IS NOT NULL;
 
 -- ========================================
--- Link-Hygiene (B-C3): NULL-Ziele entfernen, Is_Cross_File normalisieren
+-- Link-Hygiene: NULL-Ziele entfernen, Is_Cross_File normalisieren
 -- ========================================
 -- Diverse LEFT-JOIN-Blöcke reichen NULL-Targets bzw. NULL-Is_Cross_File durch
 -- (Blöcke 22–25 coalescen auf FALSE, Blöcke 1–9 nicht). NULL-Ziel-Zeilen tragen
@@ -2881,6 +3050,21 @@ CREATE INDEX idx_objectlinks_crossfile ON ObjectLinks(Is_Cross_File);
 -- PluginFunction/calls_function: Target_File IS NULL) haben nie ein lokales Sibling
 -- (NULL = Source_File ist nie wahr) → ebenfalls unberührt. Auf klon-freien Lösungen
 -- existiert keine geteilte UUID → der DELETE trifft nichts (No-Op, bit-identisch).
+--
+-- KANONISCHE ZIEL-AUFLÖSUNGS-REIHENFOLGE (verbindlich für alle Stufen an diesem
+-- Hotspot — hier UND in künftigen Erweiterungen):
+--   (1) Ref_ID-Rewrite intra-file        → korrekte Ziel-UUID bei Intra-File-
+--       Duplikaten (UUID-Healing, Schema 1.19.0 — UMGESETZT als Rewrite der
+--       P2-Referenztabellen VOR dem ObjectLinks-CTAS, s. Block „UUID-Healing —
+--       Stufe (1)" nach der Empty-String-Hygiene; wirkt dadurch uniform auf
+--       CTAS und alle Folge-INSERTs, ohne einzelne Resolver anzufassen)
+--   (2) declared-source-Scoping cross-file → korrekte Ziel-DATEI über die
+--       deklarierte Datenquelle (DataSourceFileMap): Block 6 scopet base_table
+--       bereits beim CTAS (per-TO-Deklaration, präziser als jede Datei-Heuristik);
+--       der prefer-declared-source-Pass unten deckt die übrigen Rollen ab
+--   (3) prefer-local (dieser DELETE)      → lokales Ziel schlägt Cross-File-Klone
+--   (4) keep-cross-file                   → keine/mehrdeutige Auflösung bleibt
+--       ehrlich mehrdeutig stehen (Modellgrenze)
 DELETE FROM ObjectLinks ol
 WHERE ol.Link_Type = 'operational'
   AND ol.Target_File IS DISTINCT FROM ol.Source_File
@@ -2894,6 +3078,53 @@ WHERE ol.Link_Type = 'operational'
           AND loc.Target_UUID  = ol.Target_UUID
           AND loc.Target_File  = loc.Source_File
       );
+
+-- Stufe (2) generisch: prefer-declared-source (Phantom-Links über Klon-Dateien).
+-- Fächert eine operationale Kante (gleiche Source, Rolle, Subrole, Target_UUID)
+-- über MEHRERE Ziel-Dateien auf und ist GENAU EINE davon eine deklarierte
+-- Datenquelle der Quelldatei (DataSourceFileMap), gewinnt diese — die übrigen
+-- Zeilen sind Klon-Artefakte („in irgendeine Datei, die die UUID zufällig auch
+-- enthält") und werden entfernt. Deckt reads_field/displays_field/calls_script/
+-- sets_field/left_field/source_field … uniform ab, ohne jeden Resolver anzufassen.
+--
+-- Konservativ in drei Richtungen: (a) Gruppen mit lokalem Ziel bleiben dem
+-- prefer-local-DELETE überlassen (NOT bool_or(is_local) — macht den Pass
+-- reihenfolge-unabhängig zu Stufe 3); (b) keine oder MEHRERE deklarierte
+-- Zieldateien in der Gruppe → unverändert keep-cross-file (z. B. Hub-Datei, die
+-- zwei Klon-Module gleichzeitig als Quelle deklariert — ehrliche Modellgrenze);
+-- (c) klonfreie Korpora haben keine mehrdatei-Fächer → No-Op, bit-identisch.
+CREATE TEMP TABLE PreferDeclaredWinners AS
+SELECT Source_UUID, Source_File, Link_Role, Link_Subrole, Target_UUID,
+       any_value(declared_file) AS Winner_File
+FROM (
+    SELECT ol.Source_UUID, ol.Source_File, ol.Link_Role, ol.Link_Subrole,
+           ol.Target_UUID, ol.Target_File,
+           CASE WHEN d.File_Name IS NOT NULL THEN ol.Target_File END AS declared_file,
+           (ol.Target_File = ol.Source_File) AS is_local
+    FROM ObjectLinks ol
+    LEFT JOIN (SELECT DISTINCT File_Name, Resolved_File FROM DataSourceFileMap) d
+           ON d.File_Name = ol.Source_File
+          AND d.Resolved_File = ol.Target_File
+    WHERE ol.Link_Type = 'operational'
+      AND ol.Target_File IS NOT NULL
+)
+GROUP BY Source_UUID, Source_File, Link_Role, Link_Subrole, Target_UUID
+HAVING COUNT(DISTINCT Target_File) > 1
+   AND COUNT(DISTINCT declared_file) = 1
+   AND NOT bool_or(is_local);
+
+DELETE FROM ObjectLinks ol
+USING PreferDeclaredWinners w
+WHERE ol.Link_Type = 'operational'
+  AND ol.Source_UUID  = w.Source_UUID
+  AND ol.Source_File  = w.Source_File
+  AND ol.Link_Role    = w.Link_Role
+  AND ol.Link_Subrole IS NOT DISTINCT FROM w.Link_Subrole
+  AND ol.Target_UUID  = w.Target_UUID
+  AND ol.Target_File IS NOT NULL
+  AND ol.Target_File <> w.Winner_File;
+
+DROP TABLE PreferDeclaredWinners;
 
 
 -- ========================================

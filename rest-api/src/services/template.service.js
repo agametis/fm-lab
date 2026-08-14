@@ -38,6 +38,12 @@ function parseTemplateMetadata(templateContent) {
     author: null,
     version: null,
     tags: [],
+    // Analysis-Tests member metadata: all optional, absent = query is not
+    // test-capable. `default_result` is a one-line JSON object.
+    object_types: [],
+    output_types: [],
+    scope: [],
+    default_result: null,
   };
 
   // Generischer Frontmatter-Parser: "-- @key: value"
@@ -95,6 +101,25 @@ function parseTemplateMetadata(templateContent) {
         break;
       case 'tags':
         metadata.tags = value.split(',').map(t => t.trim()).filter(Boolean);
+        break;
+      case 'object_types':
+        metadata.object_types = value.split(',').map(t => t.trim()).filter(Boolean);
+        break;
+      case 'output_types':
+        metadata.output_types = value.split(',').map(t => t.trim()).filter(Boolean);
+        break;
+      case 'scope':
+        metadata.scope = value.split(',').map(t => t.trim()).filter(Boolean);
+        break;
+      case 'default_result':
+        // One-line JSON: { type, name, meaning, aggregate }. Invalid JSON is
+        // treated as "not declared" (warn) — never breaks template loading.
+        try {
+          metadata.default_result = JSON.parse(value);
+        } catch (err) {
+          console.warn(`template metadata: invalid @default_result JSON (${err.message})`);
+          metadata.default_result = null;
+        }
         break;
       default:
         // unbekannte Keys ignorieren — zukünftige Erweiterungen
@@ -452,6 +477,10 @@ async function listTemplates(source = 'query') {
             click_args: template.metadata.click_args,
             params: template.metadata.params,
             tags: template.metadata.tags,
+            object_types: template.metadata.object_types,
+            output_types: template.metadata.output_types,
+            scope: template.metadata.scope,
+            default_result: template.metadata.default_result,
           };
         } catch (error) {
           // Skip templates that fail to load
@@ -513,6 +542,43 @@ async function getTemplateMeta(templateName, source = 'query') {
 }
 
 /**
+ * Wie getTemplateMeta, liefert aber zusätzlich den ROHEN SQL-Inhalt — für die
+ * textuellen Scope-Prüfungen der Analysis Tests (M5/M5a/M5b in tests.service:
+ * S-Block-Präsenz, 1:1-Kopplung scope_uuids↔file, Anker-Konsistenz).
+ * Gibt null zurück, wenn das Template nirgends auflösbar ist.
+ */
+async function getTemplateSource(templateName, source = 'query') {
+  const templateDir =
+    source === 'report'
+      ? environment.templates.dir
+      : environment.templates.customDir;
+  let template;
+  try {
+    template = await loadTemplate(templateName, templateDir);
+  } catch (err) {
+    if (err.code !== 'TEMPLATE_NOT_FOUND' || source !== 'query') return null;
+    let foundDir = null;
+    if (environment.templates.detailsDir) {
+      foundDir = await findTemplateDirRecursive(environment.templates.detailsDir, templateName);
+    }
+    if (!foundDir) {
+      const bundleRoots = [
+        environment.templates.dashboardsCustomDir,
+        environment.templates.dashboardsDir,
+      ].filter(Boolean);
+      foundDir = await findInBundleQueries(bundleRoots, templateName);
+    }
+    if (!foundDir) return null;
+    try {
+      template = await loadTemplate(templateName, foundDir);
+    } catch {
+      return null;
+    }
+  }
+  return { name: templateName, content: template.content, metadata: template.metadata };
+}
+
+/**
  * Clear template cache (useful for development/testing)
  */
 function clearCache() {
@@ -523,6 +589,7 @@ module.exports = {
   executeTemplate,
   listTemplates,
   getTemplateMeta,
+  getTemplateSource,
   clearCache,
   // Export for testing
   parseTemplateMetadata,

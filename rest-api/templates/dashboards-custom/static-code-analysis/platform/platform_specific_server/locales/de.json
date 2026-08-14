@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plattformspezifische Nutzung: FileMaker Server",
+  "analysis.defaultResult.meaning": "Scripts im Prüfumfang, die Ziel von Perform Script on Server-Aufrufen sind (für serverseitige Ausführung gebaut)"
+ }
+}

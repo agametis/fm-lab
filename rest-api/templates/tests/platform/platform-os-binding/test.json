@@ -1,0 +1,155 @@
+{
+  "id": "platform-os-binding",
+  "version": "1.1.0",
+  "title": "Platform: OS binding",
+  "description": "OS sub-axis of the platform binding aspect: scripts bound to specific operating systems (macos / windows / linux / ios) through three evidence sources - Claris script steps (curated OS affinity, fm_spec >= 1.13.0: Perform AppleScript -> macOS, Send DDE Execute -> Windows, source-true inverse 'not supported in macOS' statements resolved against the host OS of each runtime, and the Send Event dual-variant), Claris builtin functions (Core ML trio -> macOS+iOS, touch functions -> Windows+iOS, incl. transitive custom-function wrappers), and plug-in functions (verbatim MBS flags folded through the curated plugin_os_map). All three members share one os_profile vocabulary (macos-only, windows-only, linux-only, ios-only, desktop-only, apple-only, mixed), so the set consolidates into a single OS matrix per solution. Neutral inventory - findings are properties, not defects. 'ios' always means the OPERATING SYSTEM (hosting FileMaker Go AND Claris iOS SDK apps); runtime terms (go, ios_sdk) never appear on the OS axis, and an OS binding never replaces the runtime compatibility sets (the pro environment tests no client OS).",
+  "keywords": [
+    "platform",
+    "os",
+    "binding",
+    "platform-specific",
+    "steps",
+    "functions",
+    "plugin",
+    "mbs",
+    "macos",
+    "windows",
+    "linux",
+    "ios",
+    "applescript",
+    "dde",
+    "core-ml"
+  ],
+  "testType": "platform",
+  "objectTypes": [
+    "Script"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "platform_os_steps"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "platform_os_functions"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "platform_specific_os"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "specific",
+      "title": "Platform binding",
+      "description": "The full set - this test carries only the binding aspect (there is no OS compatibility table; the runtime compatibility aspects live in the per-environment platform sets). Three members, one OS matrix: Claris steps, builtin functions, plug-in functions.",
+      "members": [
+        "platform_os_steps",
+        "platform_os_functions",
+        "platform_specific_os"
+      ]
+    },
+    {
+      "id": "claris",
+      "title": "Claris evidence only",
+      "description": "Steps and builtin functions (fm_spec OS affinity) without the plug-in member - for solutions without plug-ins or without the MBS docs mirror.",
+      "members": [
+        "platform_os_steps",
+        "platform_os_functions"
+      ]
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Plattform: OS-Bindung",
+      "description": "OS-Unterachse des Aspekts Plattform-Bindung: Scripts, die über drei Evidenzquellen an bestimmte Betriebssysteme (macos / windows / linux / ios) gebunden sind — Claris-Scriptschritte (kuratierte OS-Affinität, fm_spec >= 1.13.0: Perform AppleScript -> macOS, Send DDE Execute -> Windows, quelltreu invertierte 'unter macOS nicht unterstützt'-Aussagen, aufgelöst gegen das Host-OS der jeweiligen Laufzeitumgebung, sowie die Doppel-Variante von Send Event), integrierte Claris-Funktionen (Core-ML-Trio -> macOS+iOS, Touch-Funktionen -> Windows+iOS, inkl. transitiver Custom-Function-Wrapper) und Plug-in-Funktionen (wörtliche MBS-Flags, gefaltet über die kuratierte plugin_os_map). Alle drei Member teilen ein os_profile-Vokabular (macos-only, windows-only, linux-only, ios-only, desktop-only, apple-only, mixed), sodass sich das Set je Lösung zu EINER OS-Matrix konsolidiert. Neutrales Inventar — Findings sind Eigenschaften, keine Defekte. 'ios' meint immer das BETRIEBSSYSTEM (Träger von FileMaker Go UND Claris-iOS-SDK-Apps); Laufzeitbegriffe (go, ios_sdk) tauchen auf der OS-Achse nie auf, und eine OS-Bindung ersetzt nie die Laufzeit-Kompatibilitäts-Sets (die pro-Umgebung prüft kein Client-OS).",
+      "profiles.specific.title": "Plattform-Bindung",
+      "profiles.specific.description": "Das vollständige Set — dieser Test trägt nur den Bindungs-Aspekt (es gibt keine OS-Kompatibilitätstabelle; die Laufzeit-Kompatibilität liegt in den Plattform-Sets je Umgebung). Drei Member, eine OS-Matrix: Claris-Schritte, integrierte Funktionen, Plug-in-Funktionen.",
+      "profiles.claris.title": "Nur Claris-Evidenz",
+      "profiles.claris.description": "Schritte und integrierte Funktionen (fm_spec-OS-Affinität) ohne den Plug-in-Member — für Lösungen ohne Plug-ins oder ohne MBS-Doku-Spiegel."
+    },
+    "es": {
+      "title": "Plataforma: vinculación al SO",
+      "description": "Subeje de SO del aspecto de vinculación de plataforma: scripts vinculados a sistemas operativos concretos (macos / windows / linux / ios) a través de tres fuentes de evidencia — pasos de script de Claris (afinidad de SO curada, fm_spec >= 1.13.0: Perform AppleScript -> macOS, Send DDE Execute -> Windows, declaraciones inversas fieles a la fuente del tipo 'no compatible con macOS' resueltas contra el SO anfitrión de cada entorno de ejecución, y la variante doble de Send Event), funciones integradas de Claris (trío de Core ML -> macOS+iOS, funciones táctiles -> Windows+iOS, incl. envoltorios transitivos de funciones personalizadas) y funciones de plug-in (indicadores literales de MBS plegados mediante el plugin_os_map curado). Los tres miembros comparten un vocabulario os_profile (macos-only, windows-only, linux-only, ios-only, desktop-only, apple-only, mixed), de modo que el conjunto se consolida en UNA matriz de SO por solución. Inventario neutral: los hallazgos son propiedades, no defectos. 'ios' siempre designa el SISTEMA OPERATIVO (soporte de FileMaker Go Y de las apps del SDK de iOS de Claris); los términos de entorno de ejecución (go, ios_sdk) nunca aparecen en el eje de SO, y una vinculación de SO nunca sustituye a los conjuntos de compatibilidad de entorno (el entorno pro no comprueba ningún SO cliente).",
+      "profiles.specific.title": "Vinculación de plataforma",
+      "profiles.specific.description": "El conjunto completo: esta prueba solo lleva el aspecto de vinculación (no existe tabla de compatibilidad de SO; la compatibilidad de entorno vive en los conjuntos de plataforma por entorno). Tres miembros, una matriz de SO: pasos de Claris, funciones integradas, funciones de plug-in.",
+      "profiles.claris.title": "Solo evidencia de Claris",
+      "profiles.claris.description": "Pasos y funciones integradas (afinidad de SO de fm_spec) sin el miembro de plug-in: para soluciones sin plug-ins o sin la copia local de la documentación de MBS."
+    },
+    "fr": {
+      "title": "Plateforme : liaison à l'OS",
+      "description": "Sous-axe OS de l'aspect liaison de plateforme : scripts liés à des systèmes d'exploitation précis (macos / windows / linux / ios) via trois sources de preuve — actions de script Claris (affinité OS organisée, fm_spec >= 1.13.0 : Perform AppleScript -> macOS, Send DDE Execute -> Windows, énoncés inverses fidèles à la source « non pris en charge sous macOS » résolus contre l'OS hôte de chaque environnement d'exécution, ainsi que la double variante de Send Event), fonctions intégrées Claris (trio Core ML -> macOS+iOS, fonctions tactiles -> Windows+iOS, y compris les enveloppes transitives de fonctions personnalisées) et fonctions de plug-in (indicateurs MBS littéraux repliés via la plugin_os_map organisée). Les trois membres partagent un vocabulaire os_profile (macos-only, windows-only, linux-only, ios-only, desktop-only, apple-only, mixed), si bien que l'ensemble se consolide en UNE matrice OS par solution. Inventaire neutre — les constats sont des propriétés, pas des défauts. « ios » désigne toujours le SYSTÈME D'EXPLOITATION (hôte de FileMaker Go ET des apps du SDK iOS de Claris) ; les termes d'environnement (go, ios_sdk) n'apparaissent jamais sur l'axe OS, et une liaison OS ne remplace jamais les ensembles de compatibilité d'environnement (l'environnement pro ne teste aucun OS client).",
+      "profiles.specific.title": "Liaison de plateforme",
+      "profiles.specific.description": "L'ensemble complet — ce test ne porte que l'aspect liaison (il n'existe pas de table de compatibilité OS ; la compatibilité d'environnement réside dans les ensembles de plateforme par environnement). Trois membres, une matrice OS : actions Claris, fonctions intégrées, fonctions de plug-in.",
+      "profiles.claris.title": "Preuves Claris uniquement",
+      "profiles.claris.description": "Actions et fonctions intégrées (affinité OS de fm_spec) sans le membre plug-in — pour les solutions sans plug-in ou sans miroir de la documentation MBS."
+    },
+    "it": {
+      "title": "Piattaforma: vincolo al SO",
+      "description": "Sotto-asse SO dell'aspetto vincolo di piattaforma: script vincolati a sistemi operativi specifici (macos / windows / linux / ios) tramite tre fonti di evidenza — passi script Claris (affinità SO curata, fm_spec >= 1.13.0: Perform AppleScript -> macOS, Send DDE Execute -> Windows, affermazioni inverse fedeli alla fonte del tipo 'non supportato su macOS' risolte rispetto al SO host di ciascun ambiente di esecuzione, e la doppia variante di Send Event), funzioni integrate Claris (trio Core ML -> macOS+iOS, funzioni touch -> Windows+iOS, inclusi i wrapper transitivi di funzioni personalizzate) e funzioni plug-in (flag MBS letterali ripiegati tramite la plugin_os_map curata). Tutti e tre i membri condividono un vocabolario os_profile (macos-only, windows-only, linux-only, ios-only, desktop-only, apple-only, mixed), così il set si consolida in UNA matrice SO per soluzione. Inventario neutro — i riscontri sono proprietà, non difetti. 'ios' indica sempre il SISTEMA OPERATIVO (che ospita FileMaker Go E le app dell'SDK iOS di Claris); i termini di ambiente (go, ios_sdk) non compaiono mai sull'asse SO e un vincolo SO non sostituisce mai i set di compatibilità di ambiente (l'ambiente pro non verifica alcun SO client).",
+      "profiles.specific.title": "Vincolo di piattaforma",
+      "profiles.specific.description": "Il set completo — questo test porta solo l'aspetto di vincolo (non esiste una tabella di compatibilità SO; la compatibilità di ambiente vive nei set di piattaforma per ambiente). Tre membri, una matrice SO: passi Claris, funzioni integrate, funzioni plug-in.",
+      "profiles.claris.title": "Solo evidenza Claris",
+      "profiles.claris.description": "Passi e funzioni integrate (affinità SO di fm_spec) senza il membro plug-in — per soluzioni senza plug-in o senza il mirror della documentazione MBS."
+    },
+    "ja": {
+      "title": "プラットフォーム: OSバインディング",
+      "description": "プラットフォーム結合の側面における OS サブ軸です。三つの根拠ソースによって特定のオペレーティングシステム（macos / windows / linux / ios）に結び付いたスクリプトを扱います — Claris スクリプトステップ（キュレーションされた OS 親和性、fm_spec >= 1.13.0：Perform AppleScript -> macOS、Send DDE Execute -> Windows、「macOS では未対応」という原典に忠実な否定形の記述を各実行環境のホスト OS に照らして解決したもの、および Send Event の二重バリアント）、Claris 組み込み関数（Core ML の三関数 -> macOS+iOS、タッチ関連関数 -> Windows+iOS、推移的なカスタム関数ラッパーを含む）、プラグイン関数（MBS のフラグをそのまま、キュレーションされた plugin_os_map で畳み込んだもの）。三つのメンバーは共通の os_profile 語彙（macos-only, windows-only, linux-only, ios-only, desktop-only, apple-only, mixed）を用いるため、このセットはソリューションごとに一つの OS マトリクスへ統合されます。中立的なインベントリであり、検出結果は欠陥ではなく特性です。「ios」は常にオペレーティングシステムを指します（FileMaker Go と Claris iOS SDK アプリの両方を載せる基盤）。ランタイム用語（go、ios_sdk）が OS 軸に現れることはなく、OS 結合がランタイム互換性セットの代わりになることもありません（pro 環境はクライアント OS を検査しません）。",
+      "profiles.specific.title": "プラットフォーム結合",
+      "profiles.specific.description": "完全なセットです — このテストは結合の側面のみを担います（OS 互換性表は存在せず、ランタイム互換性は環境ごとのプラットフォームセットにあります）。三つのメンバー、一つの OS マトリクス：Claris ステップ、組み込み関数、プラグイン関数。",
+      "profiles.claris.title": "Claris の根拠のみ",
+      "profiles.claris.description": "ステップと組み込み関数（fm_spec の OS 親和性）のみで、プラグインのメンバーを含みません — プラグインを使わないソリューションや MBS ドキュメントのミラーがない環境向けです。"
+    },
+    "ko": {
+      "title": "플랫폼: OS 바인딩",
+      "description": "플랫폼 결합 측면의 OS 하위 축입니다. 세 가지 증거 원천을 통해 특정 운영 체제(macos / windows / linux / ios)에 결합된 스크립트를 다룹니다 — Claris 스크립트 단계(선별된 OS 친화성, fm_spec >= 1.13.0: Perform AppleScript -> macOS, Send DDE Execute -> Windows, 'macOS에서 지원되지 않음'과 같은 원문 그대로의 역방향 진술을 각 런타임의 호스트 OS에 대해 해석한 것, 그리고 Send Event의 이중 변형), Claris 기본 제공 함수(Core ML 3종 -> macOS+iOS, 터치 관련 함수 -> Windows+iOS, 전이적 사용자 정의 함수 래퍼 포함), 플러그인 함수(MBS 플래그를 그대로, 선별된 plugin_os_map으로 접은 것). 세 멤버는 공통 os_profile 어휘(macos-only, windows-only, linux-only, ios-only, desktop-only, apple-only, mixed)를 사용하므로 이 세트는 솔루션마다 하나의 OS 매트릭스로 통합됩니다. 중립적 목록이며 발견 항목은 결함이 아니라 속성입니다. 'ios'는 항상 운영 체제를 뜻합니다(FileMaker Go와 Claris iOS SDK 앱을 모두 올리는 기반). 런타임 용어(go, ios_sdk)는 OS 축에 결코 등장하지 않으며, OS 결합이 런타임 호환성 세트를 대신하지도 않습니다(pro 환경은 클라이언트 OS를 검사하지 않습니다).",
+      "profiles.specific.title": "플랫폼 결합",
+      "profiles.specific.description": "전체 세트입니다 — 이 테스트는 결합 측면만 담습니다(OS 호환성 표는 존재하지 않으며, 런타임 호환성은 환경별 플랫폼 세트에 있습니다). 세 멤버, 하나의 OS 매트릭스: Claris 단계, 기본 제공 함수, 플러그인 함수.",
+      "profiles.claris.title": "Claris 근거만",
+      "profiles.claris.description": "단계와 기본 제공 함수(fm_spec의 OS 친화성)만 포함하고 플러그인 멤버는 제외합니다 — 플러그인을 쓰지 않는 솔루션이나 MBS 문서 미러가 없는 환경용입니다."
+    },
+    "nl": {
+      "title": "Platform: OS-binding",
+      "description": "OS-subas van het aspect platformbinding: scripts die via drie bewijsbronnen aan specifieke besturingssystemen (macos / windows / linux / ios) gebonden zijn — Claris-scriptstappen (gecureerde OS-affiniteit, fm_spec >= 1.13.0: Perform AppleScript -> macOS, Send DDE Execute -> Windows, brongetrouw omgekeerde uitspraken van het type 'niet ondersteund op macOS', opgelost tegen het host-OS van elke runtime, plus de dubbele variant van Send Event), ingebouwde Claris-functies (Core ML-trio -> macOS+iOS, touch-functies -> Windows+iOS, incl. transitieve custom-function-wrappers) en plug-infuncties (letterlijke MBS-vlaggen, gevouwen via de gecureerde plugin_os_map). Alle drie de leden delen één os_profile-vocabulaire (macos-only, windows-only, linux-only, ios-only, desktop-only, apple-only, mixed), zodat de set per oplossing samenvalt tot ÉÉN OS-matrix. Neutrale inventarisatie — bevindingen zijn eigenschappen, geen gebreken. 'ios' betekent altijd het BESTURINGSSYSTEEM (drager van FileMaker Go ÉN Claris iOS SDK-apps); runtime-termen (go, ios_sdk) komen nooit voor op de OS-as, en een OS-binding vervangt nooit de runtime-compatibiliteitssets (de pro-omgeving test geen client-OS).",
+      "profiles.specific.title": "Platformbinding",
+      "profiles.specific.description": "De volledige set — deze test draagt alleen het bindingsaspect (er bestaat geen OS-compatibiliteitstabel; de runtime-compatibiliteit zit in de platformsets per omgeving). Drie leden, één OS-matrix: Claris-stappen, ingebouwde functies, plug-infuncties.",
+      "profiles.claris.title": "Alleen Claris-bewijs",
+      "profiles.claris.description": "Stappen en ingebouwde functies (OS-affiniteit uit fm_spec) zonder het plug-inlid — voor oplossingen zonder plug-ins of zonder de MBS-documentatiespiegel."
+    },
+    "pt": {
+      "title": "Plataforma: vinculação ao SO",
+      "description": "Subeixo de SO do aspecto de vinculação de plataforma: scripts vinculados a sistemas operacionais específicos (macos / windows / linux / ios) por três fontes de evidência — passos de script da Claris (afinidade de SO curada, fm_spec >= 1.13.0: Perform AppleScript -> macOS, Send DDE Execute -> Windows, afirmações inversas fiéis à fonte do tipo 'sem suporte no macOS' resolvidas contra o SO anfitrião de cada ambiente de execução, e a variante dupla de Send Event), funções integradas da Claris (trio do Core ML -> macOS+iOS, funções de toque -> Windows+iOS, incl. wrappers transitivos de funções personalizadas) e funções de plug-in (sinalizadores literais do MBS, dobrados pelo plugin_os_map curado). Os três membros compartilham um vocabulário os_profile (macos-only, windows-only, linux-only, ios-only, desktop-only, apple-only, mixed), de modo que o conjunto se consolida em UMA matriz de SO por solução. Inventário neutro — os resultados são propriedades, não defeitos. 'ios' significa sempre o SISTEMA OPERACIONAL (que hospeda o FileMaker Go E os apps do SDK iOS da Claris); termos de ambiente de execução (go, ios_sdk) nunca aparecem no eixo de SO, e uma vinculação de SO nunca substitui os conjuntos de compatibilidade de ambiente (o ambiente pro não testa nenhum SO cliente).",
+      "profiles.specific.title": "Vinculação de plataforma",
+      "profiles.specific.description": "O conjunto completo — este teste carrega apenas o aspecto de vinculação (não existe tabela de compatibilidade de SO; a compatibilidade de ambiente vive nos conjuntos de plataforma por ambiente). Três membros, uma matriz de SO: passos da Claris, funções integradas, funções de plug-in.",
+      "profiles.claris.title": "Apenas evidência da Claris",
+      "profiles.claris.description": "Passos e funções integradas (afinidade de SO do fm_spec) sem o membro de plug-in — para soluções sem plug-ins ou sem o espelho da documentação do MBS."
+    },
+    "sv": {
+      "title": "Plattform: OS-bindning",
+      "description": "OS-underaxel av aspekten plattformsbindning: skript som via tre beviskällor är bundna till specifika operativsystem (macos / windows / linux / ios) — Claris-skriptsteg (kurerad OS-affinitet, fm_spec >= 1.13.0: Perform AppleScript -> macOS, Send DDE Execute -> Windows, källtrogna omvända utsagor av typen 'stöds inte i macOS' upplösta mot värd-OS för respektive körmiljö, samt dubbelvarianten av Send Event), inbyggda Claris-funktioner (Core ML-trion -> macOS+iOS, touch-funktioner -> Windows+iOS, inkl. transitiva custom function-omslag) och plug-in-funktioner (ordagranna MBS-flaggor, vikta genom den kurerade plugin_os_map). Alla tre medlemmar delar ett os_profile-vokabulär (macos-only, windows-only, linux-only, ios-only, desktop-only, apple-only, mixed), så att uppsättningen konsolideras till EN OS-matris per lösning. Neutral inventering — träffarna är egenskaper, inte defekter. 'ios' betyder alltid OPERATIVSYSTEMET (bärare av både FileMaker Go och Claris iOS SDK-appar); körmiljötermer (go, ios_sdk) förekommer aldrig på OS-axeln, och en OS-bindning ersätter aldrig körmiljöernas kompatibilitetsuppsättningar (pro-miljön testar inget klient-OS).",
+      "profiles.specific.title": "Plattformsbindning",
+      "profiles.specific.description": "Hela uppsättningen — detta test bär enbart bindningsaspekten (det finns ingen OS-kompatibilitetstabell; körmiljökompatibiliteten ligger i plattformsuppsättningarna per miljö). Tre medlemmar, en OS-matris: Claris-steg, inbyggda funktioner, plug-in-funktioner.",
+      "profiles.claris.title": "Endast Claris-belägg",
+      "profiles.claris.description": "Steg och inbyggda funktioner (OS-affinitet från fm_spec) utan plug-in-medlemmen — för lösningar utan plug-ins eller utan spegeln av MBS-dokumentationen."
+    },
+    "zh-Hans": {
+      "title": "平台：操作系统绑定",
+      "description": "平台绑定方面的操作系统子轴：通过三类证据来源绑定到特定操作系统（macos / windows / linux / ios）的脚本 —— Claris 脚本步骤（经整理的 OS 亲和性，fm_spec >= 1.13.0：Perform AppleScript -> macOS、Send DDE Execute -> Windows、忠于原文的“在 macOS 上不受支持”这类反向表述并对照各运行环境的宿主 OS 解析，以及 Send Event 的双变体）、Claris 内置函数（Core ML 三函数 -> macOS+iOS、触控类函数 -> Windows+iOS，含传递性自定义函数包装）、以及插件函数（照录的 MBS 标志，经整理的 plugin_os_map 折叠而成）。三个成员共用一套 os_profile 词汇（macos-only、windows-only、linux-only、ios-only、desktop-only、apple-only、mixed），因此该测试集在每个解决方案中会汇总为一张 OS 矩阵。中性清单 —— 发现项是特征而非缺陷。“ios”始终指操作系统（同时承载 FileMaker Go 与 Claris iOS SDK 应用）；运行环境术语（go、ios_sdk）绝不出现在 OS 轴上，OS 绑定也绝不替代运行环境兼容性测试集（pro 环境不检查任何客户端 OS）。",
+      "profiles.specific.title": "平台绑定",
+      "profiles.specific.description": "完整测试集 —— 本测试只承载绑定方面（不存在 OS 兼容性表；运行环境兼容性位于各环境的平台测试集中）。三个成员，一张 OS 矩阵：Claris 步骤、内置函数、插件函数。",
+      "profiles.claris.title": "仅 Claris 证据",
+      "profiles.claris.description": "仅步骤与内置函数（fm_spec 的 OS 亲和性），不含插件成员 —— 适用于不使用插件或没有 MBS 文档镜像的解决方案。"
+    }
+  }
+}

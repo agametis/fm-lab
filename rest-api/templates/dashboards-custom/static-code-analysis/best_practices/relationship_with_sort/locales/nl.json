@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Relatie met gesorteerde records",
-    "description": "Best-practice-regel — relaties die hun gerelateerde records sorteren. De sortering draait bij elke evaluatie en kan portalen en lookups vertragen."
+    "description": "Best-practice-regel — signaleert relaties die hun gerelateerde records sorteren. De sortering draait bij elke evaluatie en kan portalen en lookups vertragen."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Bevindingen",

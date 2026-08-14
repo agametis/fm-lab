@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Allow User Abort [Av]",
-    "description": "Bästa praxis-regel — Allow User Abort [Av]-steg. Att inaktivera avbrott kan låsa fast användaren i ett långt eller loopande skript."
+    "description": "Bästa praxis-regel — flaggar Allow User Abort [Av]-steg. Att inaktivera avbrott kan låsa fast användaren i ett långt eller loopande skript."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Träffar",

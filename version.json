@@ -1,8 +1,8 @@
 {
   "manifest_schema": "1.0",
-  "version": "0.9.6",
-  "generated_at": "2026-08-01T22:22:50.089Z",
-  "source_commit": "6fe9a03",
+  "version": "0.9.7",
+  "generated_at": "2026-08-14T18:23:32.075Z",
+  "source_commit": "087f1d9",
   "components": {
     "rest_api": {
       "scheme": "A",
@@ -30,7 +30,7 @@
     },
     "schema": {
       "scheme": "B",
-      "version": "1.16.0",
+      "version": "1.20.0",
       "source": "sql/convert-xml/convert_xml_01_extract.sql",
       "on_change": "force_rebuild_db"
     },
@@ -42,10 +42,16 @@
     },
     "fm_spec": {
       "scheme": "B",
-      "version": "1.11.1",
+      "version": "1.13.0",
       "filemaker_coverage": "22",
       "source": "reference/fm_spec.meta.json",
       "on_change": "pull_reference_reload_api"
+    },
+    "plugin_spec": {
+      "scheme": "B",
+      "version": "1.2.0",
+      "source": "reference/plugin_spec.duckdb#reference_meta",
+      "on_change": "copy_file_reload_api"
     }
   },
   "plugins": [
@@ -124,6 +130,10 @@
     {
       "name": "fm-generate-script",
       "version": "0.9.0"
+    },
+    {
+      "name": "fm-test",
+      "version": "0.1.0"
     },
     {
       "name": "create-custom-dashboard",

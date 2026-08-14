@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "OSバインディング: スクリプトステップ",
+  "analysis.defaultResult.meaning": "Claris スクリプトステップによって特定のオペレーティングシステムに結び付いた対象範囲内のスクリプト"
+ }
+}

@@ -2,7 +2,7 @@
   "id": "repeating_field",
   "version": "1.0.0",
   "title": "Repeating field",
-  "description": "Best-practice rule — fields with more than one repetition. Repeating fields are hard to query and report on; a related table is usually better.",
+  "description": "Best-practice rule — flags fields with more than one repetition. Repeating fields are hard to query and report on; a related table is usually better.",
   "author": "fm-lab rules",
   "icon": "rows",
   "category": "best_practices",
@@ -22,9 +22,31 @@
       "author": "fm-lab rules",
       "source": "fm-lab",
       "url": null,
-      "description": "Best-practice rule — fields with more than one repetition. Repeating fields are hard to query and report on; a related table is usually better.",
+      "description": "Best-practice rule — flags fields with more than one repetition. Repeating fields are hard to query and report on; a related table is usually better.",
       "created": "2026-07-01",
       "references": []
+    }
+  },
+  "analysis": {
+    "objectTypes": [],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Repeating field"
     }
   },
   "datasets": [

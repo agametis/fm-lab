@@ -1,0 +1,84 @@
+{
+  "id": "platform_os_functions",
+  "version": "1.0.0",
+  "title": "OS binding: builtin functions",
+  "description": "Scripts in scope bound to specific operating systems through Claris builtin functions: curated OS affinity from the official documentation (there is no structured Claris OS table; absence of a statement means 'Claris states nothing', never 'runs everywhere'). Covers 'exclusive' functions (ComputeModel / GetModelAttributes / GetLiveText -> macOS+iOS Core ML, Get(TouchKeyboardState) / Get(TriggerGestureInfo) -> Windows+iOS) and source-true inverse 'unsupported' statements. Behavior variants (path formats, window geometry, ...) are documentation knowledge -> schema-viewer badges only; the platform-detection functions (Get(SystemPlatform), Get(Device), ...) are the guard idiom -> context evidence, never a binding. Includes transitive custom-function wrappers (via CF, cycle-guarded closure); the core metric counts scripts only. 'ios' is the OPERATING SYSTEM (FileMaker Go and iOS SDK apps), never the Go runtime chip. Inventory, not defects - findings are neutral properties, never errors.",
+  "author": "fm-lab rules",
+  "icon": "layers",
+  "category": "platform",
+  "tags": [
+    "rule",
+    "platform",
+    "os-binding",
+    "functions"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "platform",
+    "rationale": "An OS-bound builtin function binds every calling script (directly or through custom functions) to the operating systems Claris names in the help prose - the runtime compatibility model cannot see this (functions have no compatibility table at all).",
+    "remediation": "Nothing to fix. Use the inventory to know which scripts assume which OS; guard OS-bound calls with Get(SystemPlatform) checks where a script must run cross-platform."
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "requires": [
+      "fm-spec-os"
+    ],
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "script_count",
+      "type": "number",
+      "name": "platform_os_bound_scripts_functions",
+      "unit": "scripts",
+      "meaning": "Scripts in scope bound to specific operating systems via Claris builtin functions"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

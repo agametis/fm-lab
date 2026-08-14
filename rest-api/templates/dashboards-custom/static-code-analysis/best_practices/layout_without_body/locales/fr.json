@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Layout sans corps",
-    "description": "Règle de bonne pratique : Layouts sans partie corps. Sans corps, les enregistrements ne s’affichent pas en vue formulaire/liste ; souvent un Layout égaré ou mal construit."
+    "description": "Règle de bonne pratique : signale les Layouts sans partie corps. Sans corps, les enregistrements ne s’affichent pas en vue formulaire/liste ; souvent un Layout égaré ou mal construit."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Résultats",

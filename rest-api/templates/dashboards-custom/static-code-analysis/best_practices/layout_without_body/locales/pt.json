@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Layout sem corpo",
-    "description": "Regra de boas práticas — Layouts sem parte de corpo. Sem corpo, os registros não são exibidos na visualização de formulário/lista; geralmente um Layout perdido ou mal construído."
+    "description": "Regra de boas práticas — sinaliza Layouts sem parte de corpo. Sem corpo, os registros não são exibidos na visualização de formulário/lista; geralmente um Layout perdido ou mal construído."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Ocorrências",

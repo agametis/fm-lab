@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "파일 내 UUID 중복",
+    "description": "메타데이터 무결성 검사 — 단일 파일 내에서 두 번 할당된 UUID(내보내기 결함, 일반적으로 구버전 FileMaker에서의 복사/붙여넣기가 원인). 가져오기는 UUID당 하나의 객체를 결정론적으로 유지합니다. 이 대시보드는 흡수된 항목을 솔루션에서 찾을 수 있는 일반 텍스트 컨텍스트와 함께 나열합니다.",
+    "analysis.defaultResult.meaning": "집계된 UUID 중복 발생 수(치유됨 + 원본 유지 + 흡수됨) — UUID 치유 이후 카탈로그는 완전하게 유지되지만, 각 발생은 원본 결함을 나타냅니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "흡수된 중복",
+    "summary_kpi.props.items[1].label": "영향받은 파일",
+    "summary_kpi.props.items[2].label": "UUID 정밀 행",
+    "summary_kpi.props.items[3].label": "병합 흡수",
+    "findings_card.props.title": "충돌 객체(UUID 정밀)",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "타입",
+    "findings_table.props.columns[2].label": "컨테이너",
+    "findings_table.props.columns[3].label": "위치",
+    "findings_table.props.columns[4].label": "객체(디코딩됨)",
+    "findings_table.props.columns[5].label": "출현",
+    "findings_table.props.searchPlaceholder": "파일, 컨테이너, 텍스트 또는 UUID 검색…",
+    "findings_table.props.empty.message": "UUID 정밀 중복 세부 정보 없음 — 가져오기 센서스가 파일 내 중복을 찾지 못했습니다.",
+    "merge_card.props.title": "병합 흡수(청크 겹침 또는 동일한 내부 이름의 클론 파일)",
+    "merge_table.props.columns[0].label": "카탈로그 테이블",
+    "merge_table.props.columns[1].label": "파일",
+    "merge_table.props.columns[2].label": "흡수됨",
+    "merge_table.props.columns[3].label": "병합 실행",
+    "merge_table.props.searchPlaceholder": "테이블 또는 파일 검색…",
+    "merge_table.props.empty.message": "병합 시 흡수된 중복이 없습니다.",
+    "stats_card.props.title": "카탈로그·파일별 센서스 교차 검증",
+    "stats_table.props.columns[0].label": "카탈로그",
+    "stats_table.props.columns[1].label": "파일",
+    "stats_table.props.columns[2].label": "원본 레코드",
+    "stats_table.props.columns[3].label": "저장된 행",
+    "stats_table.props.columns[4].label": "흡수됨",
+    "stats_table.props.columns[5].label": "세부 범위",
+    "stats_table.props.searchPlaceholder": "카탈로그 또는 파일 검색…",
+    "stats_table.props.empty.message": "가져오기 센서스에 흡수된 중복이 보고되지 않았습니다.",
+    "notes_card.props.title": "이 검사에 대하여",
+    "notes_md.props.content": "**단일 파일 내의 두 객체**에 할당된 UUID는 FileMaker 내보내기의 원본 결함입니다(일반적으로 최신 파일에 대해 구버전 FileMaker로 복사/붙여넣기한 경우). FM-Lab 가져오기는 UUID당 정확히 하나의 객체를 유지합니다(결정론적, 마지막 쓰기 우선) — 흡수된 객체는 **카탈로그에 더 이상 존재하지 않습니다**. *컨테이너*, *위치*, *객체(디코딩됨)* 열이 유일한 흔적이며, 이를 사용해 FileMaker에서 두 객체를 찾으세요. 행을 클릭하면 살아남은 객체가 열립니다.\n\n**병합 흡수**는 별도의 클래스입니다: 파일 청크 병합 시 흡수된 중복으로, 원인은 사후에 구별할 수 없습니다 — 변환기 내부 청크 겹침(솔루션 결함 아님) 또는 동일한 내부 파일 이름을 공유하는 클론 파일(진짜 충돌).\n\n**자동 수정은 없습니다.** Claris의 복구 모드는 완전히 새로운 UUID를 부여하여 모든 외부 UUID 참조를 깨뜨립니다. 수정은 원본 파일에서 해야 합니다. 파일 *간* 동일 UUID 중복은 자매 대시보드 **UUID 클론 충돌**이 다룹니다. 데이터 소스는 가져오기 센서스이며 수치는 마지막 XML 가져오기 시점의 상태입니다.",
+    "findings_table.props.columns[6].label": "UUID"
+  }
+}

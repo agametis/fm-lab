@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "Versione del plugin MBS",
+    "description": "Inventario dei requisiti di versione: la versione minima del plugin necessaria a questa soluzione, derivata come massimo delle versioni di introduzione documentate (since_version) di tutte le funzioni di plugin utilizzate — confronto sempre numerico, mai lessicografico. La dispersione per file e le funzioni trainanti rendono verificabile la derivazione. Il catalogo non conosce la versione installata: il controllo si attiva solo scegliendola nell'intestazione (voce neutra = nessun controllo).",
+    "analysis.defaultResult.meaning": "Versione minima del plug-in richiesta da questo ambito — la più alta versione di introduzione documentata tra le funzioni plug-in in uso"
+  },
+  "layout": {
+    "installed_version_select.props.label": "Versione del plugin installata",
+    "summary_kpi.props.items[0].label": "Versione richiesta",
+    "summary_kpi.props.items[1].label": "Funzioni",
+    "summary_kpi.props.items[2].label": "Punti di chiamata",
+    "summary_kpi.props.items[3].label": "File",
+    "summary_kpi.props.items[4].label": "Non risolte",
+    "findings_card.props.title": "Controllo di versione",
+    "findings_table.props.columns[0].label": "Severità",
+    "findings_table.props.columns[1].label": "File",
+    "findings_table.props.columns[2].label": "Oggetto",
+    "findings_table.props.columns[3].label": "Funzione del plugin",
+    "findings_table.props.columns[4].label": "Richiede",
+    "findings_table.props.columns[5].label": "Installata",
+    "findings_table.props.columns[6].label": "Via funzione personalizzata",
+    "findings_table.props.columns[7].label": "Messaggio",
+    "findings_table.props.empty.message": "Nessun controllo attivo — scegliere una versione installata nell'intestazione per validare il requisito (voce neutra = solo inventario).",
+    "by_file_card.props.title": "Requisito per file",
+    "by_file_table.props.columns[0].label": "File",
+    "by_file_table.props.columns[1].label": "Versione richiesta",
+    "by_file_table.props.columns[2].label": "Trainante principale",
+    "by_file_table.props.columns[3].label": "Funzioni",
+    "by_file_table.props.columns[4].label": "Punti di chiamata",
+    "by_file_table.props.columns[5].label": "Non risolte",
+    "drivers_card.props.title": "Funzioni trainanti",
+    "drivers_table.props.columns[0].label": "Funzione del plugin",
+    "drivers_table.props.columns[1].label": "Componente",
+    "drivers_table.props.columns[2].label": "Da",
+    "drivers_table.props.columns[3].label": "Stato",
+    "drivers_table.props.columns[4].label": "Supera l'installata",
+    "drivers_table.props.columns[5].label": "Punti di chiamata",
+    "drivers_table.props.columns[6].label": "File",
+    "markdown.props.content": "## Note\n\nLa **versione richiesta** è una derivazione: il massimo delle versioni di introduzione documentate (`since_version`) delle funzioni di plugin effettivamente chiamate — la tabella delle *funzioni trainanti* la rende verificabile. I confronti di versione usano una chiave numerica, mai la stringa.\n\n- **Controllo di versione**: il catalogo non conosce la versione installata. Solo la selezione nell'intestazione marca ogni chiamata a una funzione introdotta più tardi; la voce neutra non attiva alcun controllo.\n- **Requisito per file**: la dispersione per file mostra quali moduli portano il requisito.\n- **Navigazione**: le righe trainanti aprono il dettaglio della funzione (where-used); i risultati aprono l'oggetto chiamante.\n- **Asse di manutenzione**: le chiamate deprecated/removed sono regole separate in *Analisi statica del codice*."
+  }
+}

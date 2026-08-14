@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "带排序记录的关系",
-    "description": "最佳实践规则 — 会对其关联记录排序的关系。排序在每次求值时运行，可能拖慢门户和 Lookup。"
+    "description": "最佳实践规则 — 检出会对其关联记录排序的关系。排序在每次求值时运行，可能拖慢门户和 Lookup。"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "结果数",

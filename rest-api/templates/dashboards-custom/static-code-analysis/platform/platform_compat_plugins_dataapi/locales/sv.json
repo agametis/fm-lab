@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plug-in-kompatibilitet: FileMaker Data API",
+  "analysis.defaultResult.meaning": "Plug-in-funktionsanrop inom omfånget som inte körs på FileMaker Data API"
+ }
+}

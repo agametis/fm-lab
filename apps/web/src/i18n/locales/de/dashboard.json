@@ -60,7 +60,14 @@
     "Dependencies": "Abhängigkeiten",
     "Fields": "Felder",
     "Scripts": "Scripts",
-    "Variables": "Variablen"
+    "Variables": "Variablen",
+    "dashboard": "Dashboard",
+    "query": "Custom Query",
+    "system": "System",
+    "custom": "Eigen",
+    "ok": "OK",
+    "warnings": "Warnungen",
+    "errors": "Fehler"
   },
   "list": {
     "badgeFilter": "verwendet",
@@ -132,20 +139,12 @@
     "openClusterHint": "Zur Cluster-Übersicht"
   },
   "importIntegrity": {
-    "ok": "Keine absorbierten UUID-Dubletten im letzten Import.",
-    "warnHead": "{{count}} absorbierte UUID-Dublette(n) über {{combos}} Katalog/Datei-Kombination(en)",
-    "colFile": "Datei",
-    "colCatalog": "Katalog",
-    "colAbsorbed": "Verlorene Scripts",
-    "colSteps": "Verlorene Steps",
-    "colSource": "Quelle",
-    "colStored": "Gespeichert",
-    "footnote": "Quelldefekt (doppelte UUIDs im FileMaker-Export). Der Konverter dedupliziert deterministisch (last-write-wins); behebbar nur durch Quellkorrektur/Re-Export.",
-    "stepsHint": "Steps = einzelne verlorene Script-Steps; das umgebende Script bleibt erhalten. „—“ = kein ganzes Script verloren.",
-    "detailsHead": "Kollidierende Objekte",
-    "detailsMore": "… und {{count}} weitere kollidierende Objekte",
-    "colObjects": "Objekt(e)",
-    "colOccurrences": "Vorkommen"
+    "ok": "Keine UUID-Dubletten im letzten Import.",
+    "healedHead": "{{occ}} UUID-Dubletten-Vorkommen im Quell-Export gefunden ({{files}} Datei(en)) — {{healed}} Objekt(e) automatisch geheilt, der Katalog ist vollständig.",
+    "lostHead": "{{occ}} UUID-Dublette(n) im Quell-Export — {{lost}} Objekt(e) nicht im Katalog (nicht geheilt).",
+    "linksLabel": "Vollständige Befunde:",
+    "linkIntrafile": "UUID-Duplikate innerhalb einer Datei",
+    "linkClones": "UUID-Klon-Kollisionen"
   },
   "xmlEmpty": {
     "hint": "Noch keine Daten. Lege die XML-Dateien deines FileMaker-Exports in den Ordner „xml/“ und starte die Konvertierung.",
@@ -159,5 +158,31 @@
     "hostPathHint": "Lege die Dateien auf dem Host in diesen Ordner — er ist in den Container gemountet.",
     "containerPathNote": "Pfad im Container",
     "putFilesHint": "Lege deine FileMaker-XML-Dateien in den Ordner „xml/“."
+  },
+  "folderNav": {
+    "root": "Alle Dashboards",
+    "notFound": "Ordner nicht gefunden.",
+    "backToRoot": "Zur Übersicht",
+    "breadcrumb": "Ordner",
+    "runAll": "Alle ausführen",
+    "run": "Ausführen",
+    "running": "läuft…",
+    "findings": "Findings",
+    "coverageHint": "Teilabdeckung — noch nicht alle Ergebnisse berechnet",
+    "filterLabel": "Status",
+    "sortLabel": "Sortierung",
+    "sortStandard": "Standard",
+    "sortValue": "Ergebnis-Anzahl ↓",
+    "sortState": "Ampel",
+    "state": {
+      "ok": "OK",
+      "warning": "Warnung",
+      "error": "Fehler",
+      "neutral": "Neutral",
+      "pending": "Ausstehend",
+      "failed": "Fehlgeschlagen"
+    },
+    "noFilterMatches": "Keine Einträge mit diesem Status in dieser Rubrik.",
+    "openFolder": "Ordner öffnen"
   }
 }

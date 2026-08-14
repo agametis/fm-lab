@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Beziehung mit sortierten Datensätzen",
-    "description": "Best-Practice-Regel — Beziehungen, die ihre verknüpften Datensätze sortieren. Die Sortierung läuft bei jeder Auswertung und kann Portale und Lookups verlangsamen."
+    "description": "Best-Practice-Regel — findet Beziehungen, die ihre verknüpften Datensätze sortieren. Die Sortierung läuft bei jeder Auswertung und kann Portale und Lookups verlangsamen."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Treffer",

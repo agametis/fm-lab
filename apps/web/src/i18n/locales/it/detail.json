@@ -544,5 +544,17 @@
     "optFrameCurrentOnly": "Delimita i campi solo nel record corrente",
     "optShowCurrentInList": "Indicatore record in vista elenco",
     "optQuickFind": "Ricerca rapida"
+  },
+  "pluginSpec": {
+    "tooltip": "Supporto delle piattaforme secondo la documentazione {{plugin}}",
+    "since": "da {{version}}",
+    "deprecated": "Deprecata",
+    "replacementHint": "usare {{replacement}} al suo posto",
+    "removed": "Rimossa",
+    "oldNameHint": "Nome precedente — ora {{name}}"
+  },
+  "osBinding": {
+    "label": "Vincolo al SO:",
+    "tooltip": "Sistemi operativi a cui questo script è vincolato (dal test platform-os-binding - inventario neutrale, non un difetto)."
   }
 }

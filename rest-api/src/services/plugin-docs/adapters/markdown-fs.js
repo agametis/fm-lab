@@ -80,23 +80,87 @@ function humanizeNested(slug) {
   return humanizeSlug(base);
 }
 
-async function listCategories(ctx, { catalogEntry, installedEntry } = {}) {
+/**
+ * Ungefilterte Rohliste aller Seiten (inkl. einer evtl. deklarierten
+ * Startseite) — Basis für listCategories UND search, damit die Startseite
+ * zwar aus dem Navigations-Listing fällt, aber suchbar bleibt.
+ * `folder` = Top-Level-Ordner des Slugs ('' für Root-Dateien); tiefere
+ * Verschachtelung wird auf den obersten Ordner gruppiert.
+ */
+async function allCategories({ catalogEntry, installedEntry } = {}) {
   const files = await listMarkdownFiles({ catalogEntry, installedEntry });
   return files.map(f => {
     const slug = slugifyTitle(f);  // strips .md
+    const folder = slug.includes('/') ? slug.slice(0, slug.indexOf('/')) : '';
     return {
       id: slug,                    // z.B. "Wiki/Architecture"
       name: humanizeNested(slug),
       slug,
+      folder,
       kind: 'page',
       function_count: null,        // markdown-fs hat keine Funktionsebene
     };
   });
 }
 
-async function listFunctions(/* ctx, { categoryId, ... } */) {
-  // markdown-fs hat keine Funktionsebene
-  return [];
+/**
+ * Top-Level-Navigationsmodell (analog zu den indizierten Sets):
+ *   - jeder Top-Level-Ordner ist eine "Category" (kind: 'folder',
+ *     function_count = Anzahl enthaltener Seiten, rekursiv)
+ *   - Root-Seiten bleiben direkte "Categories" (kind: 'page') — flache
+ *     Doc-Sets (z.B. fmide) verhalten sich damit wie bisher
+ *   - die als start_page deklarierte Seite ist der Einstieg des Doc-Sets
+ *     und erscheint nicht zusätzlich als Listeneintrag
+ * Ordnung: Ordner alphabetisch (case-insensitiv), dann Root-Seiten.
+ * Die Seiten EINES Ordners liefert listFunctions(categoryId=<Ordner>).
+ */
+async function listCategories(ctx, { catalogEntry, installedEntry } = {}) {
+  const pages = await allCategories({ catalogEntry, installedEntry });
+  const startPage = catalogEntry?.start_page || null;
+  const visible = startPage ? pages.filter(c => c.id !== startPage) : pages;
+
+  const folderCounts = new Map();
+  const rootPages = [];
+  for (const p of visible) {
+    if (p.folder) folderCounts.set(p.folder, (folderCounts.get(p.folder) || 0) + 1);
+    else rootPages.push(p);
+  }
+
+  const folderRows = [...folderCounts.entries()]
+    .map(([name, count]) => ({
+      id: name,
+      name,
+      slug: name,
+      folder: '',
+      kind: 'folder',
+      function_count: count,
+    }))
+    .sort((a, b) =>
+      a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })
+        || a.name.localeCompare(b.name, 'en'));
+
+  rootPages.sort((a, b) => a.name.localeCompare(b.name, 'en'));
+  return [...folderRows, ...rootPages];
+}
+
+/**
+ * Seiten eines Top-Level-Ordners (categoryId = Ordnername), analog zur
+ * Functions-Ebene der indizierten Sets. Tiefer verschachtelte Seiten zählen
+ * zu ihrem Top-Level-Ordner. Für Root-Seiten-Categories (kind 'page') und
+ * unbekannte Ordner: leere Liste.
+ */
+async function listFunctions(ctx, { catalogEntry, installedEntry, categoryId } = {}) {
+  if (!categoryId) return [];
+  const pages = await allCategories({ catalogEntry, installedEntry });
+  return pages
+    .filter(p => p.folder === categoryId)
+    .sort((a, b) => a.name.localeCompare(b.name, 'en'))
+    .map(p => ({
+      id: p.id,                      // voller Slug, z.B. "Wiki/Architecture"
+      name: p.name,
+      canonical: null,
+      signature: null,
+    }));
 }
 
 async function getEntry(ctx, { catalogEntry, installedEntry, functionId, categoryId } = {}) {
@@ -134,7 +198,8 @@ async function getEntry(ctx, { catalogEntry, installedEntry, functionId, categor
 async function search(ctx, { catalogEntry, installedEntry, q } = {}) {
   const term = String(q || '').trim().toLowerCase();
   if (!term) return { categories: [], functions: [] };
-  const cats = await listCategories(ctx, { catalogEntry, installedEntry });
+  // Rohliste statt listCategories: die Startseite bleibt per Suche erreichbar.
+  const cats = await allCategories({ catalogEntry, installedEntry });
   const matched = cats.filter(c =>
     c.name.toLowerCase().includes(term) || c.slug.toLowerCase().includes(term)
   );

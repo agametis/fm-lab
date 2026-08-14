@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "UUID-dubbletter inom en fil",
+    "description": "Metadataintegritetskontroll — UUID:n som tilldelats två gånger inom en och samma fil (exportdefekt, typiskt orsakad av kopiera/klistra in med gamla FileMaker-versioner). Importen behåller deterministiskt ett objekt per UUID; denna panel listar vad som absorberades, med klartextkontext för att hitta objekten i lösningen.",
+    "analysis.defaultResult.meaning": "Antal inventerade förekomster av dubbletta UUID:n (läkta + original behållet + absorberade) — katalogen är fullständig sedan UUID-läkningen, men varje förekomst markerar ett fel i källan"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Absorberade dubbletter",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "summary_kpi.props.items[2].label": "UUID-precisa rader",
+    "summary_kpi.props.items[3].label": "Merge-absorptioner",
+    "findings_card.props.title": "Kolliderande objekt (UUID-precist)",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Typ",
+    "findings_table.props.columns[2].label": "Behållare",
+    "findings_table.props.columns[3].label": "Position",
+    "findings_table.props.columns[4].label": "Objekt (avkodat)",
+    "findings_table.props.columns[5].label": "Förek.",
+    "findings_table.props.searchPlaceholder": "Sök fil, behållare, text eller UUID…",
+    "findings_table.props.empty.message": "Inga UUID-precisa dubblettdetaljer — importcensusen hittade inga dubbletter inom en fil.",
+    "merge_card.props.title": "Merge-absorptioner (chunk-överlapp eller klonfil med identiskt internt namn)",
+    "merge_table.props.columns[0].label": "Katalogtabell",
+    "merge_table.props.columns[1].label": "Fil",
+    "merge_table.props.columns[2].label": "Absorberade",
+    "merge_table.props.columns[3].label": "Merge-körning",
+    "merge_table.props.searchPlaceholder": "Sök tabell eller fil…",
+    "merge_table.props.empty.message": "Inga dubbletter absorberades vid merge.",
+    "stats_card.props.title": "Census-korskontroll per katalog och fil",
+    "stats_table.props.columns[0].label": "Katalog",
+    "stats_table.props.columns[1].label": "Fil",
+    "stats_table.props.columns[2].label": "Källposter",
+    "stats_table.props.columns[3].label": "Lagrade rader",
+    "stats_table.props.columns[4].label": "Absorberade",
+    "stats_table.props.columns[5].label": "Detaljtäckning",
+    "stats_table.props.searchPlaceholder": "Sök katalog eller fil…",
+    "stats_table.props.empty.message": "Importcensusen rapporterar inga absorberade dubbletter.",
+    "notes_card.props.title": "Om denna kontroll",
+    "notes_md.props.content": "Ett UUID som tilldelats **två objekt inom en och samma fil** är en källdefekt i FileMaker-exporten (typiskt kopiera/klistra in med gamla FileMaker-versioner i nyare filer). FM-Labs import behåller exakt ett objekt per UUID (deterministiskt, sista skrivningen vinner) — de absorberade objekten **finns inte längre i katalogen**. Kolumnerna *Behållare*, *Position* och *Objekt (avkodat)* är deras enda spår; använd dem för att hitta båda objekten i FileMaker. Ett klick på raden öppnar det överlevande objektet.\n\n**Merge-absorptioner** är en egen klass: dubbletter som absorberades när filens chunkar slogs samman. Orsaken går inte att skilja i efterhand — konverterintern chunk-överlappning (ingen lösningsdefekt) eller klonfiler med samma interna filnamn (verklig kollision).\n\n**Det finns ingen automatisk åtgärd.** Claris reparationsläge tilldelar helt nya UUID:n och bryter varje extern UUID-referens; rättningen måste ske i källfilen. Dubbletter av samma UUID *mellan* filer täcks av systerpanelen **UUID-klonkollisioner**. Datakällan är importcensusen — siffrorna speglar den senaste XML-importen.",
+    "findings_table.props.columns[6].label": "UUID"
+  }
+}

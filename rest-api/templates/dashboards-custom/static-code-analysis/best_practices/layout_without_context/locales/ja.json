@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "テーブルコンテキストのない Layout",
-    "description": "ベストプラクティスルール — テーブルオカレンスのコンテキストがない Layout。レコードデータを表示できず、多くは孤立した補助的な Layout です。"
+    "description": "ベストプラクティスルール — テーブルオカレンスのコンテキストがない Layout を検出します。レコードデータを表示できず、多くは孤立した補助的な Layout です。"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "検出数",

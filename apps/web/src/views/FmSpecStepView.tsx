@@ -9,6 +9,9 @@ import {
   fetchStepLangs,
   fetchStepGrammar,
   resolveHelpHref,
+  PLATFORM_LABELS,
+  OS_LABELS,
+  STEP_COMPAT_PLATFORMS,
   type StepAllLangs,
   type StepGrammar,
 } from '../api/fmSpecApi';
@@ -80,6 +83,43 @@ export function FmSpecStepView() {
               {t('fmSpec:step.slug')}: <span className="mono">{data.urlSlug}</span>
               {' · '}{t('fmSpec:steps.col.categoryId')}: {data.categoryId}
               {' · '}{t('fmSpec:steps.col.originVersion')}: {data.originVersion ?? dash}
+            </p>
+          )}
+          {/* Plattform-Kompatibilität (Claris-Tabelle step_compat, tri-state):
+              gelistet werden Yes + Partial; Partial ist markiert und NIE als
+              „undokumentiert" zu lesen. false-Plattformen werden weggelassen. */}
+          {data?.compat && (
+            <p className="fmspec-subtitle fmspec-platform-line">
+              {t('fmSpec:step.compat.label')}:{' '}
+              {STEP_COMPAT_PLATFORMS.filter((p) => data.compat![p] !== false).map((p) => (
+                <span
+                  key={p}
+                  className={`fmspec-tag fmspec-tag--platform${data.compat![p] === null ? ' fmspec-tag--partial' : ''}`}
+                  title={data.compat![p] === null ? (t('fmSpec:step.compat.partialHint') as string) : undefined}
+                >
+                  {PLATFORM_LABELS[p]}
+                  {data.compat![p] === null && <> · {t('fmSpec:step.compat.partial')}</>}
+                </span>
+              ))}
+            </p>
+          )}
+          {/* OS-Bindung (Referenz ≥ 1.13.0, step_os_affinity): kuratierte
+              OS-Aussagen aus der Claris-Prosa — exclusive / unsupported
+              (quellentreu invers) / variant. OS-Namen sind Eigennamen. */}
+          {data && (data.osAffinity?.length ?? 0) > 0 && (
+            <p className="fmspec-subtitle fmspec-platform-line">
+              {t('fmSpec:osAffinity.label')}:{' '}
+              {data.osAffinity!.map((a) => (
+                <span
+                  key={`${a.affinity}-${a.os}`}
+                  className={`fmspec-tag fmspec-tag--platform fmspec-tag--os-${a.affinity}`}
+                  title={`${t(`fmSpec:osAffinity.hint_${a.affinity}`)}${a.note ? ` — ${a.note}` : ''}`}
+                >
+                  {a.os ? OS_LABELS[a.os] ?? a.os : ''}
+                  {a.os ? ' · ' : ''}
+                  {t(`fmSpec:osAffinity.word_${a.affinity}`)}
+                </span>
+              ))}
             </p>
           )}
         </header>

@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plug-incompatibiliteit: FileMaker Server",
+  "analysis.defaultResult.meaning": "Plug-infunctieaanroepen binnen het bereik die niet werken op FileMaker Server"
+ }
+}

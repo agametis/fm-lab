@@ -117,7 +117,7 @@ INSERT INTO VariableUsages
 SELECT
     vr.Variable_Name,
     CASE
-        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -142,7 +142,7 @@ INSERT INTO VariableUsages
 SELECT
     vr.Variable_Name,
     CASE
-        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -168,7 +168,7 @@ INSERT INTO VariableUsages
 SELECT
     vr.Variable_Name,
     CASE
-        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -204,7 +204,7 @@ WITH step_hashes AS (
 SELECT
     vr.Variable_Name,
     CASE
-        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -248,7 +248,7 @@ INSERT INTO VariableUsages
 SELECT
     vr.Variable_Name,
     CASE
-        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -304,7 +304,7 @@ WITH lo_hashes AS (
 SELECT
     vr.Variable_Name,
     CASE
-        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -344,7 +344,7 @@ INSERT INTO VariableUsages
 SELECT
     vr.Variable_Name,
     CASE
-        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -380,7 +380,7 @@ INSERT INTO VariableUsages
 SELECT
     vr.Variable_Name,
     CASE
-        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- B-R7: wie P2, sonst Identitäts-Split
+        WHEN vr.Variable_Name LIKE '$$$%' THEN 'superglobal'  -- wie P2, sonst Identitäts-Split
         WHEN vr.Variable_Name LIKE '$$%' THEN 'global'
         WHEN vr.Variable_Name LIKE '$%' THEN 'local'
         ELSE 'let_local'
@@ -495,7 +495,7 @@ SELECT
     'mbs_variable_call' as Source,
     File_Name
 FROM StepsForScripts
--- B-R2: OR-Zweige geklammert — vorher band AND stärker, der Guard galt nur
+-- OR-Zweige geklammert — vorher band AND stärker, der Guard galt nur
 -- für den zweiten LIKE-Zweig (latent, 0 Treffer im Korpus).
 WHERE (Calculation_Text LIKE '%Variable.Set%' OR Calculation_Text LIKE '%FM.VariableSet%')
   AND NULLIF(regexp_extract(Calculation_Text,
@@ -572,7 +572,7 @@ SELECT
     'mbs_variable_call' as Source,
     File_Name
 FROM StepsForScripts
--- B-R9: kein NOT-LIKE-ClearAll-Ausschluss mehr — er verwarf MISCH-Steps
+-- Kein NOT-LIKE-ClearAll-Ausschluss mehr — er verwarf MISCH-Steps
 -- (Clear("x") + ClearAll im selben Step). Die Regex matcht ClearAll ohnehin
 -- nicht (nach 'Variable.Clear' folgt dort 'A', kein '"').
 WHERE Calculation_Text LIKE '%Variable.Clear%'
@@ -735,7 +735,7 @@ SELECT
 FROM LayoutObjects lo
 JOIN Layouts l ON lo.Layout_ID = l.L_ID AND lo.File_Name = l.File_Name
 CROSS JOIN LATERAL unnest(
-    -- B-R9: ohne Space in der Klasse (war greedy über Wortgrenzen) + B-R7 Unicode
+    -- Ohne Space in der Klasse (war greedy über Wortgrenzen) + Unicode
     regexp_extract_all(lo.ScriptTrigger_Parameter_Text,
         '\$\$?\$?[\p{L}_][\p{L}\p{N}_]*')
 ) as t(var_name)

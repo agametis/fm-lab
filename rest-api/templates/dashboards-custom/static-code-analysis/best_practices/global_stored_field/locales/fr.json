@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Champ à stockage global",
-    "description": "Règle de bonne pratique : champs à stockage global. Les globales s’appliquent par session et par utilisateur ; en abuser rend l’état difficile à suivre."
+    "description": "Règle de bonne pratique : signale les champs à stockage global. Les globales s’appliquent par session et par utilisateur ; en abuser rend l’état difficile à suivre."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Résultats",

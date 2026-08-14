@@ -479,6 +479,10 @@ async function builtinQueryMeta(params = {}) {
     click_action: t.click_action || null,
     click_args: t.click_args || null,
     chip_filter: t.chip_filter || null,
+    object_types: t.object_types || [],
+    output_types: t.output_types || [],
+    scope: t.scope || [],
+    default_result: t.default_result || null,
   }];
 }
 
@@ -488,7 +492,9 @@ function humanizeFolderSegment(seg) {
 }
 
 // Lädt folder.json eines Ordners (relativer Pfad ohne Bundle-ID) aus einem der
-// DASHBOARDS_DIRS, mtime-gecacht. Liefert { title, locales } oder null.
+// DASHBOARDS_DIRS, mtime-gecacht. Liefert { title, icon, description, order,
+// locales } oder null. Joi-validiert (folderManifest) — defekte Dateien
+// degradieren zu leeren Metadaten statt die Discovery zu kippen.
 async function loadFolderMeta(folderPath) {
   for (const base of DASHBOARDS_DIRS) {
     const fp = path.join(base, folderPath, 'folder.json');
@@ -498,7 +504,15 @@ async function loadFolderMeta(folderPath) {
     if (cached && cached.mtime === mtime) return cached;
     let raw = null;
     try { raw = await readJsonFile(fp); } catch { raw = null; }
-    const meta = { mtime, title: raw?.title || null, locales: raw?.locales || null };
+    const { value } = dashboardSchemas.folderManifest.validate(raw || {}, { convert: true });
+    const meta = {
+      mtime,
+      title: value?.title || null,
+      icon: value?.icon || null,
+      description: value?.description || null,
+      order: Number.isFinite(value?.order) ? value.order : null,
+      locales: value?.locales || null,
+    };
     folderMetaCache.set(folderPath, meta);
     return meta;
   }
@@ -561,6 +575,80 @@ async function builtinListDashboards(params = {}) {
 
   const collator = lang && lang !== 'en' ? lang : 'en';
   rows.sort((a, b) => a.title.localeCompare(b.title, collator));
+  return rows;
+}
+
+/**
+ * builtin:list_dashboard_folders — die Ordner-Hierarchie der Dashboard-Bundles
+ * für die Ordner-Navigation der Übersicht. Eine Zeile je Ordner (auch
+ * Zwischenebenen), mit lokalisiertem Label des EIGENEN Segments, Icon,
+ * Description, order (folder.json) und Zählern:
+ *   direct_count = Bundles direkt im Ordner, total_count = inkl. Teilbaum.
+ * Respektiert denselben excludeTags-Filter wie list_dashboards, damit die
+ * Zähler exakt das spiegeln, was die Übersicht anzeigt.
+ */
+async function builtinListDashboardFolders(params = {}) {
+  const bundles = await listBundles();
+  const lang = params._lang || params.lang || 'en';
+
+  let excludeTags = [];
+  if (params.excludeTags) {
+    excludeTags = Array.isArray(params.excludeTags)
+      ? params.excludeTags
+      : String(params.excludeTags).split(',').map(s => s.trim()).filter(Boolean);
+  }
+  const visible = bundles.filter(b => {
+    if (!excludeTags.length) return true;
+    const tags = b.manifest.tags || [];
+    return !tags.some(t => excludeTags.includes(t));
+  });
+
+  // Alle Ordner-Pfade (inkl. Zwischenebenen) + Zähler aufsammeln.
+  const folders = new Map(); // path → { direct, total }
+  const ensure = p => {
+    if (!folders.has(p)) folders.set(p, { direct: 0, total: 0 });
+    return folders.get(p);
+  };
+  for (const b of visible) {
+    if (!b.folder) continue;
+    const segs = String(b.folder).split('/');
+    let prefix = '';
+    for (let i = 0; i < segs.length; i++) {
+      prefix = prefix ? `${prefix}/${segs[i]}` : segs[i];
+      const node = ensure(prefix);
+      node.total += 1;
+      if (i === segs.length - 1) node.direct += 1;
+    }
+  }
+
+  const rows = await Promise.all([...folders.entries()].map(async ([folderPath, counts]) => {
+    const meta = await loadFolderMeta(folderPath);
+    const seg = folderPath.split('/').pop();
+    const label = (meta?.locales && meta.locales[lang]) || meta?.title || humanizeFolderSegment(seg);
+    const parent = folderPath.includes('/') ? folderPath.slice(0, folderPath.lastIndexOf('/')) : null;
+    return {
+      path: folderPath,
+      parent,
+      label,
+      // Voll lokalisierter Pfad (für flache Treffer-/Filteransichten).
+      path_label: await resolveFolderLabel(folderPath, lang),
+      icon: meta?.icon || null,
+      description: meta?.description || null,
+      order: meta?.order ?? null,
+      direct_count: counts.direct,
+      total_count: counts.total,
+    };
+  }));
+
+  // Sortierung je Ebene: order (fehlend = hinten), dann Label.
+  rows.sort((a, b) => {
+    const depth = a.path.split('/').length - b.path.split('/').length;
+    if (depth !== 0) return depth;
+    const ao = a.order ?? Number.MAX_SAFE_INTEGER;
+    const bo = b.order ?? Number.MAX_SAFE_INTEGER;
+    if (ao !== bo) return ao - bo;
+    return String(a.label).localeCompare(String(b.label), lang);
+  });
   return rows;
 }
 
@@ -680,9 +768,35 @@ async function builtinDocsetInfo(params = {}) {
     online_link_md: info.online_link_md || '',
     categories: typeof info.categories === 'number' ? info.categories : null,
     functions: typeof info.functions === 'number' ? info.functions : null,
+    start_page: info.start_page || null,
     languages: langs,
     languages_count: langs.length,
     languages_display: langs.map(l => String(l).toUpperCase()).join(' · '),
+  }];
+}
+
+/**
+ * builtin:docset_start_entry — die im Manifest deklarierte Startseite eines
+ * Doc-Sets als gerenderter Volltext (content_html, sanitized + Link-Rewrite
+ * über die getDocsetEntry-Pipeline). Leeres Dataset, wenn das Set keine
+ * start_page deklariert oder die Seite fehlt — das Bundle rendert dann leer.
+ * Params: id (required), lang (optional).
+ */
+async function builtinDocsetStartEntry(ctx, params = {}) {
+  const docsSource = require('./docs-source');
+  const id = params.id;
+  if (!id) throw createError('VALIDATION_ERROR', 'builtin:docset_start_entry requires param "id"');
+  const lang = params._lang || params.lang || 'en';
+  const info = await docsSource.getDocsetInfo(id, lang);
+  if (!info || !info.start_page) return [];
+  // markdown-fs-Konvention: category == fn == Page-Slug (vgl. docs-content.js).
+  const entry = await docsSource.getDocsetEntry(ctx, id, info.start_page, info.start_page, lang);
+  if (!entry) return [];
+  return [{
+    id: entry.id,
+    title: entry.title || info.start_page,
+    content_html: entry.content_html || '',
+    format: entry.format || 'markdown',
   }];
 }
 
@@ -867,60 +981,73 @@ async function builtinClusterCount(ctx) {
 /**
  * builtin:xml_import_integrity — der Dup-Absorption-Zensus des letzten Imports
  * für die „Import-Integrität"-Card im xml_convert-Dashboard. Liest die P6-View
- * `v_check_absorbed_dups` und gibt sie SCRIPT-ZENTRISCH aggregiert zurück:
+ * `v_check_absorbed_dups` und aggregiert sie CONTAINER-ZENTRISCH — Teilobjekt-
+ * Verluste werden in die Zeile ihres Container-Katalogs gehoistet:
  *
- *   - Normalfall: eine Zeile je Datei. StepsForScripts-Verluste (rohe Step-UUID-
- *     Dubletten, für den Entwickler wenig aussagekräftig) werden auf die Datei
- *     GEHOISTET und als Step-Summe (`Steps`) an die ScriptCatalog-Zeile gehängt.
- *     `Absorbed` = verlorene GANZE Scripts (ScriptCatalog), `Steps` = verlorene
- *     Steps innerhalb von Scripts. Beispiel: „Artikel Bilder | 1 | (47 Steps)".
- *   - Sonderfall: Kollisionen in Katalogen, die NICHT in die Script-Hierarchie
- *     kollabieren (weder ScriptCatalog noch StepsForScripts, z. B. LayoutObjects/
- *     Button-Steps) → eigene Zeile mit `is_other=true` und exakter Anzahl.
+ *   - Script-Hierarchie: eine `ScriptCatalog`-Zeile je Datei. `Absorbed` =
+ *     verlorene GANZE Scripts, `Sub_Absorbed` = verlorene Steps innerhalb
+ *     erhaltener Scripts (StepsForScripts). Beispiel: „Artikel Bilder | 1 | 47".
+ *   - Layout-Hierarchie (analog): eine `Layouts`-Zeile je Datei. `Absorbed` =
+ *     verlorene GANZE Layouts, `Sub_Absorbed` = verlorene Layout-Objekte
+ *     innerhalb erhaltener Layouts (LayoutObjects).
+ *   - Sonderfall: Kollisionen in Katalogen außerhalb beider Hierarchien →
+ *     eigene Zeile mit `is_other=true`, exakter Anzahl und `Sub_Absorbed=NULL`.
  *
  * Alle 219k StepsForScripts-Zeilen tragen ein Script (verifiziert) → der reine
- * Step-Verlust ist immer einem Script-Kontext zuordenbar; deshalb genügt die
- * hoisted Summe (keine Roh-Step-Detailerfassung nötig).
+ * Step-Verlust ist immer einem Script-Kontext zuordenbar; dasselbe gilt für
+ * LayoutObjects (Rekursion läuft je Layout). Deshalb genügt die hoisted Summe
+ * (keine Roh-Detailerfassung nötig).
  *
  * NULL-sicher / Alt-DB-fest: fehlt die View (Alt-DB ohne Zensus), `[]`
  * zurückgeben statt zu crashen. HUGEINT → BIGINT casten (int128-Serialisierung).
  */
 async function builtinXmlImportIntegrity(ctx, params = {}) {
-  // Kontext ≠ aktive Lösung: die P6-View lebt in der aktiven Copy — für eine
+  // Kontext ≠ aktive Lösung: Zensus/View leben in der aktiven Copy — für eine
   // nicht-aktive Lösung ehrlich leer liefern statt fremder Zahlen (Pool → M).
   const target = contextSolutionParam(params);
   if (target && target !== require('../config/solutions').getActiveSolutionId()) return [];
+  // Seit dem UUID-Healing (Schema 1.19.0) ist v_check_absorbed_dups auf geheilten
+  // Beständen konstruktionsbedingt LEER — die Karte speist sich deshalb primär aus
+  // dem Zensus (DuplicateAbsorptionDetails: gefundene Dubletten + Heilungs-Status)
+  // und liefert EINE kompakte Summary-Zeile; die View bleibt als „echter Restverlust"
+  // (Alt-DBs, FM_UUID_HEAL=0) zusätzlich enthalten. Details → Metadata-Dashboards.
   const present = await db.executeQuery(
     ctx,
-    `SELECT COUNT(*) AS cnt FROM information_schema.tables
-      WHERE table_name = 'v_check_absorbed_dups'`,
+    `SELECT
+       (SELECT COUNT(*) FROM information_schema.tables
+         WHERE table_name = 'DuplicateAbsorptionDetails') AS has_census,
+       (SELECT COUNT(*) FROM information_schema.tables
+         WHERE table_name = 'v_check_absorbed_dups') AS has_view,
+       (SELECT COUNT(*) FROM information_schema.columns
+         WHERE table_name = 'DuplicateAbsorptionDetails'
+           AND column_name = 'Heal_Status') AS has_heal`,
   );
-  const row = present.rows[0];
-  const cnt = typeof row.cnt === 'bigint' ? Number(row.cnt) : row.cnt;
-  if (cnt < 1) return [];
+  const flags = present.rows[0] || {};
+  const toNum = (v) => (typeof v === 'bigint' ? Number(v) : Number(v) || 0);
+  const hasCensus = toNum(flags.has_census) > 0;
+  const hasView = toNum(flags.has_view) > 0;
+  const hasHeal = toNum(flags.has_heal) > 0;
+  if (!hasCensus && !hasView) return [];
+
+  const occExpr = hasCensus
+    ? '(SELECT COUNT(*) FROM DuplicateAbsorptionDetails)'
+    : '0';
+  const healedExpr = hasHeal
+    ? `(SELECT COUNT(*) FROM DuplicateAbsorptionDetails WHERE Heal_Status = 'healed')`
+    : '0';
+  const filesExpr = hasCensus
+    ? '(SELECT COUNT(DISTINCT File_Name) FROM DuplicateAbsorptionDetails)'
+    : '0';
+  const lostExpr = hasView
+    ? '(SELECT COALESCE(SUM(Absorbed), 0) FROM v_check_absorbed_dups)'
+    : '0';
   const result = await db.executeQuery(
     ctx,
-    `WITH scriptcentric AS (
-       SELECT File_Name,
-              'ScriptCatalog' AS Catalog,
-              SUM(CASE WHEN Catalog = 'ScriptCatalog'   THEN Absorbed ELSE 0 END)::BIGINT AS Absorbed,
-              SUM(CASE WHEN Catalog = 'StepsForScripts' THEN Absorbed ELSE 0 END)::BIGINT AS Steps,
-              FALSE AS is_other
-         FROM v_check_absorbed_dups
-        WHERE Catalog IN ('ScriptCatalog', 'StepsForScripts')
-        GROUP BY File_Name
-     ),
-     other AS (
-       SELECT File_Name, Catalog, Absorbed::BIGINT AS Absorbed, NULL::BIGINT AS Steps, TRUE AS is_other
-         FROM v_check_absorbed_dups
-        WHERE Catalog NOT IN ('ScriptCatalog', 'StepsForScripts')
-     )
-     SELECT * FROM (
-       SELECT * FROM scriptcentric
-       UNION ALL
-       SELECT * FROM other
-     ) t
-     ORDER BY (Absorbed + COALESCE(Steps, 0)) DESC, File_Name`,
+    `SELECT
+       ${occExpr}::BIGINT AS Dup_Occurrences,
+       ${healedExpr}::BIGINT AS Healed,
+       ${filesExpr}::BIGINT AS Affected_Files,
+       ${lostExpr}::BIGINT AS Absorbed_Remaining`,
   );
   return result.rows;
 }
@@ -974,6 +1101,395 @@ async function builtinDocsetFunctionsWithCounts(ctx, params = {}) {
   return docsReferences.annotateFunctionsWithCounts(ctx, docset, fns);
 }
 
+/**
+ * builtin:list_tests — Analysis Tests für die /tests-Leitseite. Liefert die
+ * List-Antwort inkl. folder/tier/testType/keywords + Validierungsstatus.
+ * Lazy require: tests.service importiert diesen Service (kein Top-Level-Zyklus).
+ */
+async function builtinListTests(params = {}) {
+  const testsService = require('./tests.service');
+  const lang = params._lang || params.lang || 'en';
+  // Localise before filtering: `q` must search the displayed texts.
+  const all = (await testsService.listTests()).map(t => testsService.localizeTest(t, lang));
+  const filtered = testsService.filterTests(all, {
+    objectType: params.objectType,
+    testType: params.testType,
+    scope: params.scope,
+    keyword: params.keyword,
+    q: params.q,
+    folder: params.folder,
+  });
+  const rows = await Promise.all(filtered.map(async t => ({
+    id: t.id,
+    title: t.definition.title,
+    description: t.definition.description || null,
+    test_type: t.definition.testType,
+    keywords: (t.definition.keywords || []).join(', '),
+    object_types: (t.definition.objectTypes || []).join(', '),
+    scopes: (t.definition.scopes || []).join(', '),
+    member_count: (t.definition.members || []).length,
+    folder: t.folder || null,
+    folder_label: await testsService.resolveFolderLabel(t.folder, lang),
+    tier: t.tier,
+    overrides_system: t.overridesSystem === true,
+    validation_status: t.validation.status,
+    validation_warnings: t.validation.warnings.length,
+    validation_errors: t.validation.errors.length,
+  })));
+  rows.sort((a, b) => String(a.title).localeCompare(String(b.title), lang));
+  return rows;
+}
+
+/**
+ * builtin:list_test_folders — die Kategorie-Ordner der Tests-Tiers für die
+ * Ordner-Navigation der Übersichtsseite. Gleiche Zeilenform wie
+ * `list_dashboard_folders` (das ist der Vertrag, den die TileGrid-Ordner-
+ * Navigation liest): eine Zeile je Ordner inkl. Zwischenebenen, mit
+ * lokalisiertem Label des EIGENEN Segments, Icon, Description, order
+ * (folder.json) und den Zählern
+ *   direct_count = Tests direkt im Ordner, total_count = inkl. Teilbaum.
+ *
+ * Gezählt wird über beide Tiers hinweg (`templates/tests` + `tests-custom`) —
+ * der Ordnerpfad ist der Schlüssel, ein in beiden Tiers vorhandener Pfad ist
+ * EINE Rubrik. Die Anzeigedaten kommen aus `loadFolderMeta`, das seinerseits
+ * schon tierübergreifend auflöst.
+ */
+async function builtinListTestFolders(params = {}) {
+  const testsService = require('./tests.service');
+  const lang = params._lang || params.lang || 'en';
+  const all = await testsService.listTests();
+
+  // Alle Ordner-Pfade (inkl. Zwischenebenen) + Zähler aufsammeln.
+  const folders = new Map(); // path → { direct, total }
+  const ensure = p => {
+    if (!folders.has(p)) folders.set(p, { direct: 0, total: 0 });
+    return folders.get(p);
+  };
+  for (const t of all) {
+    if (!t.folder) continue;
+    const segs = String(t.folder).split('/');
+    let prefix = '';
+    for (let i = 0; i < segs.length; i++) {
+      prefix = prefix ? `${prefix}/${segs[i]}` : segs[i];
+      const node = ensure(prefix);
+      node.total += 1;
+      if (i === segs.length - 1) node.direct += 1;
+    }
+  }
+
+  const rows = await Promise.all([...folders.entries()].map(async ([folderPath, counts]) => {
+    const meta = await testsService.loadFolderMeta(folderPath);
+    const seg = folderPath.split('/').pop();
+    const label = (meta?.locales && meta.locales[lang]) || meta?.title || humanizeFolderSegment(seg);
+    const parent = folderPath.includes('/') ? folderPath.slice(0, folderPath.lastIndexOf('/')) : null;
+    return {
+      path: folderPath,
+      parent,
+      label,
+      // Voll lokalisierter Pfad (für die flache Trefferansicht der Suche).
+      path_label: await testsService.resolveFolderLabel(folderPath, lang),
+      icon: meta?.icon || null,
+      description: meta?.description || null,
+      order: Number.isFinite(meta?.order) ? meta.order : null,
+      direct_count: counts.direct,
+      total_count: counts.total,
+    };
+  }));
+
+  // Sortierung je Ebene: order (fehlend = hinten), dann Label.
+  rows.sort((a, b) => {
+    const depth = a.path.split('/').length - b.path.split('/').length;
+    if (depth !== 0) return depth;
+    const ao = a.order ?? Number.MAX_SAFE_INTEGER;
+    const bo = b.order ?? Number.MAX_SAFE_INTEGER;
+    if (ao !== bo) return ao - bo;
+    return String(a.label).localeCompare(String(b.label), lang);
+  });
+  return rows;
+}
+
+// ---------------------------------------------------------------------------
+// Test-Detailansicht (`/tests/:id` → Bundle `test_detail`)
+//
+// Drei Projektionen derselben Quelle wie `GET /api/tests/:id`: Kopfdaten,
+// Member-Liste und Profile. Die Member-Auflösung kommt aus
+// `tests.service.resolveMemberSummary` — es gibt keinen zweiten Auflösungsweg.
+// Bewusst KEINE eigenen SQL-Dateien: der `:param`-Präprozessor der API würde
+// jedes `:wort` nullen, Builtin-Resolver bekommen die Params direkt.
+// ---------------------------------------------------------------------------
+
+/**
+ * Lädt einen Test, ohne zu werfen — eine unbekannte ID darf nicht den ganzen
+ * Bundle-Load kippen, sondern muss als Guard-Zeile (`not_found`) ankommen.
+ */
+async function loadTestForDetail(id) {
+  if (!id) return null;
+  const testsService = require('./tests.service');
+  try {
+    return await testsService.getTest(String(id));
+  } catch {
+    return null;
+  }
+}
+
+/** Der Original-Eintrag eines Members: Regel-Dashboard bzw. Custom Query. */
+function memberTargetPath(member) {
+  if (!member.resolved) return '';
+  return member.kind === 'dashboard'
+    ? `/dashboard/${encodeURIComponent(member.ref)}`
+    : `/query/${encodeURIComponent(member.ref)}`;
+}
+
+/**
+ * builtin:test_detail — genau EINE Zeile mit den Kopfdaten eines Tests; bei
+ * unbekannter ID eine Guard-Zeile mit `not_found: true`.
+ */
+async function builtinTestDetail(params = {}) {
+  const testsService = require('./tests.service');
+  const lang = params._lang || params.lang || 'en';
+  const id = params.id;
+  const test = testsService.localizeTest(await loadTestForDetail(id), lang);
+  if (!test) {
+    return [{ not_found: true, id: id ? String(id) : null, title: null }];
+  }
+  const def = test.definition;
+  const members = await Promise.all(def.members.map(m => testsService.resolveMemberSummary(m, lang)));
+  return [{
+    not_found: false,
+    id: test.id,
+    title: def.title,
+    description: def.description || null,
+    test_type: def.testType,
+    keywords: (def.keywords || []).join(', '),
+    object_types: (def.objectTypes || []).join(', '),
+    scopes: (def.scopes || []).join(' · '),
+    outputs: (def.outputs || []).join(' · '),
+    member_count: def.members.length,
+    profile_count: (def.profiles || []).length,
+    unresolved_count: members.filter(m => !m.resolved).length,
+    folder: test.folder || null,
+    folder_label: await testsService.resolveFolderLabel(test.folder, lang),
+    tier: test.tier,
+    overrides_system: test.overridesSystem === true,
+    version: def.version || null,
+    validation_status: test.validation.status,
+    validation_errors: test.validation.errors.length,
+    validation_warnings: test.validation.warnings.length,
+    // Kopiervorlage für den Skill-Aufruf — der häufigste Grund, diese Seite
+    // per Deep-Link zu öffnen.
+    skill_call: `/fm-test ${test.id}`,
+  }];
+}
+
+/**
+ * builtin:test_members — eine Zeile je Member, in Ausführungsreihenfolge.
+ * `target_path` ist der fertige App-Pfad des Original-Eintrags (leer bei nicht
+ * auflösbarem Member → Zeilenklick läuft ins Leere statt ins Nichts).
+ */
+async function builtinTestMembers(params = {}) {
+  const testsService = require('./tests.service');
+  const lang = params._lang || params.lang || 'en';
+  const test = testsService.localizeTest(await loadTestForDetail(params.id), lang);
+  if (!test) return [];
+  const def = test.definition;
+  const members = await Promise.all(def.members.map(m => testsService.resolveMemberSummary(m, lang)));
+  // Welche Profile enthalten diesen Member? Profile ohne `members`-Feld sind
+  // die Vollprüfung und enthalten damit jeden Member.
+  const profilesByRef = new Map();
+  for (const p of def.profiles || []) {
+    const refs = p.members || def.members.map(m => m.ref);
+    for (const ref of refs) {
+      if (!profilesByRef.has(ref)) profilesByRef.set(ref, []);
+      profilesByRef.get(ref).push(p.id);
+    }
+  }
+  return Promise.all(members.map(async (m, i) => ({
+    index: i + 1,
+    kind: m.kind,
+    ref: m.ref,
+    title: m.resolved ? (m.title || m.ref) : m.ref,
+    icon: m.icon || null,
+    severity: m.severity || null,
+    // Rubrik = der Ort, an dem der Eintrag in seiner eigenen Übersicht steht:
+    // Ordnerpfad des Dashboards bzw. Kategorie der Custom Query.
+    rubric: m.resolved
+      ? (m.kind === 'dashboard'
+        ? await resolveFolderLabel(m.folder, lang)
+        : (m.category || null))
+      : null,
+    resolved: m.resolved === true,
+    default_result_meaning: (m.analysis && m.analysis.defaultResult
+      && m.analysis.defaultResult.meaning) || null,
+    profiles: (profilesByRef.get(m.ref) || []).join(', '),
+    target_path: memberTargetPath(m),
+  })));
+}
+
+/**
+ * builtin:test_profiles — eine Zeile je deklariertem Profil. Ohne
+ * `members`-Feld ist das Profil die Vollprüfung (`is_full`).
+ */
+async function builtinTestProfiles(params = {}) {
+  const testsService = require('./tests.service');
+  const lang = params._lang || params.lang || 'en';
+  const test = testsService.localizeTest(await loadTestForDetail(params.id), lang);
+  if (!test) return [];
+  const def = test.definition;
+  if (!(def.profiles || []).length) return [];
+  const members = await Promise.all(def.members.map(m => testsService.resolveMemberSummary(m, lang)));
+  const titleByRef = new Map(members.map(m => [m.ref, m.resolved ? (m.title || m.ref) : m.ref]));
+  return (def.profiles || []).map(p => {
+    const refs = p.members || def.members.map(m => m.ref);
+    return {
+      profile_id: p.id,
+      title: p.title,
+      description: p.description || null,
+      member_count: refs.length,
+      total_member_count: def.members.length,
+      scope_label: `${refs.length}/${def.members.length}`,
+      is_full: !p.members,
+      member_refs: refs.join(', '),
+      member_titles: refs.map(r => titleByRef.get(r) || r).join(' · '),
+    };
+  });
+}
+
+/**
+ * builtin:test_issues — eine Zeile je Validierungsbefund (M1–M7). Speist die
+ * Warn-Karte der Detailansicht; leer = Test ist sauber.
+ */
+async function builtinTestIssues(params = {}) {
+  const test = await loadTestForDetail(params.id);
+  if (!test) return [];
+  return [
+    ...test.validation.errors.map(e => ({ level: 'error', rule: e.rule, message: e.message })),
+    ...test.validation.warnings.map(w => ({ level: 'warning', rule: w.rule, message: w.message })),
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Results-Layer-Builtins (Result Envelope v1) — machen konsolidierte
+// Ergebnisse Bundle-fähig (Healthchecks/Root-Dashboards). Alle drei lesen
+// AUSSCHLIESSLICH den Server-Ergebnis-Cache — sie führen beim Bundle-Load
+// nie SQL-Läufe aus; nicht Gelaufenes erscheint als `pending`, der Lauf wird
+// explizit getriggert (POST /api/results/run).
+// Lazy require: results.service nutzt diesen Service (kein Top-Level-Zyklus).
+// ---------------------------------------------------------------------------
+
+/**
+ * builtin:results_registry — eine Zeile je ergebnisfähiger Einheit
+ * (ref_kind, ref_id, rubric, title, severity, unit, source). Werkzeug für
+ * Coverage-Dashboards und den künftigen Test-Editor.
+ */
+async function builtinResultsRegistry(ctx, params = {}) {
+  const resultsService = require('./results.service');
+  const kinds = params.kinds
+    ? String(params.kinds).split(',').map(s => s.trim()).filter(Boolean)
+    : undefined;
+  const rows = await resultsService.listRegistry({ kinds });
+  return rows.map(r => ({
+    ref_kind: r.ref.kind,
+    ref_id: r.ref.id,
+    rubric: r.rubric,
+    title: r.title,
+    icon: r.icon,
+    severity: r.severity,
+    unit: r.unit,
+    name: r.name,
+    meaning: r.meaning,
+    source: r.source,
+    has_declaration: true,
+  }));
+}
+
+/**
+ * builtin:results_aggregate — Konsolidierungs-Knoten über die Ordner-
+ * Hierarchie (Param `root`, leer = gesamt; alternativ `roots` als Komma-
+ * Liste mehrerer Teilbäume — dann ist der ''-Knoten das kombinierte
+ * Seiten-Aggregat). counts je Zustand + worst + unit-reine Summen +
+ * covered/declared/total (Teilabdeckung sichtbar).
+ */
+async function builtinResultsAggregate(ctx, params = {}) {
+  const resultsService = require('./results.service');
+  const kinds = params.kinds
+    ? String(params.kinds).split(',').map(s => s.trim()).filter(Boolean)
+    : undefined;
+  const { nodes } = await resultsService.aggregate(ctx, {
+    root: params.root ? String(params.root) : '',
+    roots: params.roots ? String(params.roots) : undefined,
+    kinds,
+  });
+  return nodes.map(n => ({
+    path: n.path,
+    worst: n.worst,
+    ok: n.counts.ok,
+    warning: n.counts.warning,
+    error: n.counts.error,
+    neutral: n.counts.neutral,
+    failed: n.counts.failed,
+    pending: n.counts.pending,
+    findings_sum: n.sums.findings ?? null,
+    covered: n.covered,
+    declared: n.declared,
+    total: n.total,
+    // Display convenience for KPI strips ("run: 3/96") — counts stay numeric.
+    coverage: `${n.covered}/${n.total}`,
+  }));
+}
+
+/**
+ * builtin:results_list — flache Envelope-Liste eines Teilbaums
+ * (Params `root` bzw. `roots` als Komma-Liste, `state`, `kinds`, `limit`).
+ * Mit `open_target` für openDashboard/runQuery-Links; `pending`-Einheiten
+ * erscheinen sichtbar mit.
+ */
+async function builtinResultsList(ctx, params = {}) {
+  const resultsService = require('./results.service');
+  const kinds = params.kinds
+    ? String(params.kinds).split(',').map(s => s.trim()).filter(Boolean)
+    : undefined;
+  const { results } = await resultsService.getSummary(ctx, { kinds });
+  const root = params.root ? String(params.root) : '';
+  // `roots` (comma-separated) filters over several subtrees; wins over `root`.
+  const rootList = params.roots
+    ? String(params.roots).split(',').map(s => s.trim()).filter(Boolean)
+    : (root ? [root] : []);
+  const states = params.state
+    ? new Set(String(params.state).split(',').map(s => s.trim()).filter(Boolean))
+    : null;
+  const out = [];
+  for (const envelope of Object.values(results)) {
+    const rubric = envelope.rubric || '';
+    if (rootList.length && !rootList.some(r => rubric === r || rubric.startsWith(`${r}/`))) continue;
+    const state = envelope.runStatus === 'ran' ? envelope.resultState
+      : envelope.runStatus === 'failed' ? 'failed' : 'pending';
+    if (states && !states.has(state)) continue;
+    out.push({
+      ref_kind: envelope.ref.kind,
+      ref_id: envelope.ref.id,
+      rubric: envelope.rubric,
+      title: envelope.title,
+      state,
+      run_status: envelope.runStatus,
+      result_state: envelope.resultState,
+      value: envelope.value,
+      unit: envelope.unit,
+      meaning: envelope.meaning,
+      severity: envelope.severity,
+      source: envelope.source,
+      open_target: envelope.ref.kind === 'dashboard' ? `/dashboard/${envelope.ref.id}`
+        : envelope.ref.kind === 'query' ? `/query/${envelope.ref.id}`
+          : `/tests/${envelope.ref.id}`,
+    });
+  }
+  const rank = { error: 0, warning: 1, failed: 2, neutral: 3, ok: 4, pending: 5 };
+  out.sort((a, b) => (rank[a.state] ?? 9) - (rank[b.state] ?? 9)
+    || (Number(b.value) || 0) - (Number(a.value) || 0)
+    || String(a.title).localeCompare(String(b.title)));
+  const limit = Number(params.limit);
+  return Number.isFinite(limit) && limit > 0 ? out.slice(0, limit) : out;
+}
+
 // builtin:api_sets_list — verfügbare API-Filter-Sets (Install-Verzeichnis +
 // Bundle `api-sets/`), Labels je Sprache lokalisiert. Speist das Set-Dropdown.
 async function builtinApiSetsList(params = {}) {
@@ -1006,12 +1522,23 @@ const BUILTIN_RESOLVERS = {
   api_sets_list: (_ctx, params) => builtinApiSetsList(params),
   list_custom_queries: (_ctx, params) => builtinListCustomQueries(params),
   list_dashboards: (_ctx, params) => builtinListDashboards(params),
+  list_dashboard_folders: (_ctx, params) => builtinListDashboardFolders(params),
+  results_registry: builtinResultsRegistry,
+  results_aggregate: builtinResultsAggregate,
+  results_list: builtinResultsList,
+  list_tests: (_ctx, params) => builtinListTests(params),
+  list_test_folders: (_ctx, params) => builtinListTestFolders(params),
+  test_detail: (_ctx, params) => builtinTestDetail(params),
+  test_members: (_ctx, params) => builtinTestMembers(params),
+  test_profiles: (_ctx, params) => builtinTestProfiles(params),
+  test_issues: (_ctx, params) => builtinTestIssues(params),
   list_docs: (_ctx, params) => builtinListDocs(params),
   docs_overview_installed: (_ctx, params) => builtinDocsOverviewInstalled(params),
   docs_overview_available: (_ctx, params) => builtinDocsOverviewAvailable(params),
   files: builtinFiles,
   query_meta: (_ctx, params) => builtinQueryMeta(params),
   docset_info: (_ctx, params) => builtinDocsetInfo(params),
+  docset_start_entry: builtinDocsetStartEntry,
   docset_categories: builtinDocsetCategories,
   docset_categories_with_counts: builtinDocsetCategoriesWithCounts,
   docset_category_info: builtinDocsetCategoryInfo,

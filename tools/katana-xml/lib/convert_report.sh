@@ -218,6 +218,16 @@ collect_environment() {
     # Display without the build hash, e.g. "v1.5.3 (Variegata)".
     ENV_DUCKDB_DISPLAY=$(echo "$dv" | sed -E 's/[[:space:]]+[0-9a-f]{8,}$//')
     [ -z "$ENV_DUCKDB_DISPLAY" ] && ENV_DUCKDB_DISPLAY="unknown"
+
+    # awk binary + flavor — resolved path plus a one-line flavor tag, so every
+    # report answers the "which awk ran Phase S?" question by itself (the awk
+    # cascade lands on different flavors per host: mawk/gawk/BWK awk on stock
+    # macOS). --version covers gawk/BWK, -W version covers mawk; both quiet
+    # failures fall through to "unknown".
+    ENV_AWK_BIN="${AWK_BIN:-$(command -v awk 2>/dev/null || echo awk)}"
+    ENV_AWK_FLAVOR=$("$ENV_AWK_BIN" --version 2>/dev/null | head -1)
+    [ -z "$ENV_AWK_FLAVOR" ] && ENV_AWK_FLAVOR=$("$ENV_AWK_BIN" -W version 2>&1 | head -1 | grep -iE 'awk|version')
+    [ -z "$ENV_AWK_FLAVOR" ] && ENV_AWK_FLAVOR="unknown"
 }
 
 # Determine the effective DuckDB settings WITH memory_limit_prefix active.
@@ -304,6 +314,7 @@ write_text_log() {
         printf '  CPU cores:       %s\n' "$ENV_CPU_CORES"
         printf '  RAM limit:       %s  (swap %s)\n' "$(fmt_gib "$ENV_RAM_BYTES")" "$(fmt_gib "$ENV_SWAP_BYTES")"
         printf '  DuckDB:          %s\n' "$ENV_DUCKDB_DISPLAY"
+        printf '  AWK:             %s  (%s)\n' "$ENV_AWK_BIN" "$ENV_AWK_FLAVOR"
         printf '  DuckDB threads:  %s\n' "$ENV_DUCKDB_THREADS"
         printf '  DuckDB memory:   %s (effective)\n' "$ENV_DUCKDB_MEM"
         printf '  Spill dir:       %s  (%s, max %s)\n' "$ENV_SPILL_DIR" "$ENV_SPILL_DEDICATED_TXT" "$ENV_SPILL_MAX"
@@ -432,6 +443,7 @@ write_json_sidecar() {
        J_DUCKDB_THREADS="$ENV_DUCKDB_THREADS" J_DUCKDB_MEM="$ENV_DUCKDB_MEM" \
        J_PRESERVE_ORDER="$ENV_PRESERVE_ORDER" \
        J_SPILL_DIR="$ENV_SPILL_DIR" J_SPILL_MAX="$ENV_SPILL_MAX" J_SPILL_DEDICATED="$ENV_SPILL_DEDICATED" \
+       J_AWK_BIN="$ENV_AWK_BIN" J_AWK_FLAVOR="$ENV_AWK_FLAVOR" \
        "$DUCKDB_BIN" <<SQL >/dev/null 2>&1
 $ph_create
 $fl_create
@@ -480,7 +492,8 @@ COPY (
         'memory_limit': getenv('J_DUCKDB_MEM'),
         'preserve_insertion_order': getenv('J_PRESERVE_ORDER')='true'
       },
-      'spill': {'dir': getenv('J_SPILL_DIR'), 'max': getenv('J_SPILL_MAX'), 'dedicated_volume': getenv('J_SPILL_DEDICATED')='true'}
+      'spill': {'dir': getenv('J_SPILL_DIR'), 'max': getenv('J_SPILL_MAX'), 'dedicated_volume': getenv('J_SPILL_DEDICATED')='true'},
+      'awk': {'bin': getenv('J_AWK_BIN'), 'flavor': nullif(getenv('J_AWK_FLAVOR'),'unknown')}
     } AS environment,
     COALESCE((SELECT to_json(list(json_object(
         'id', id, 'name', name,

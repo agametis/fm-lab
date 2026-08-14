@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "MBS-pluginversie",
+    "description": "Inventaris van versievereisten: de minimale pluginversie die deze oplossing nodig heeft, afgeleid als maximum van de gedocumenteerde introductieversies (since_version) van alle gebruikte pluginfuncties — vergelijking altijd numeriek, nooit lexicografisch. De spreiding per bestand en de bepalende functies maken de afleiding verifieerbaar. De catalogus kent geen geïnstalleerde versie: de controle wordt pas actief door een keuze in de koptekst (neutrale optie = geen controle).",
+    "analysis.defaultResult.meaning": "Minimale plug-inversie die dit bereik vereist — hoogste gedocumenteerde introductieversie over de gebruikte plug-infuncties"
+  },
+  "layout": {
+    "installed_version_select.props.label": "Geïnstalleerde pluginversie",
+    "summary_kpi.props.items[0].label": "Vereiste versie",
+    "summary_kpi.props.items[1].label": "Functies",
+    "summary_kpi.props.items[2].label": "Aanroeplocaties",
+    "summary_kpi.props.items[3].label": "Bestanden",
+    "summary_kpi.props.items[4].label": "Onopgelost",
+    "findings_card.props.title": "Versiecontrole",
+    "findings_table.props.columns[0].label": "Ernst",
+    "findings_table.props.columns[1].label": "Bestand",
+    "findings_table.props.columns[2].label": "Object",
+    "findings_table.props.columns[3].label": "Pluginfunctie",
+    "findings_table.props.columns[4].label": "Vereist",
+    "findings_table.props.columns[5].label": "Geïnstalleerd",
+    "findings_table.props.columns[6].label": "Via custom function",
+    "findings_table.props.columns[7].label": "Melding",
+    "findings_table.props.empty.message": "Geen controle actief — kies in de koptekst een geïnstalleerde pluginversie om de vereiste te valideren (neutrale optie = alleen inventaris).",
+    "by_file_card.props.title": "Vereiste per bestand",
+    "by_file_table.props.columns[0].label": "Bestand",
+    "by_file_table.props.columns[1].label": "Vereiste versie",
+    "by_file_table.props.columns[2].label": "Belangrijkste bepaler",
+    "by_file_table.props.columns[3].label": "Functies",
+    "by_file_table.props.columns[4].label": "Aanroeplocaties",
+    "by_file_table.props.columns[5].label": "Onopgelost",
+    "drivers_card.props.title": "Bepalende functies",
+    "drivers_table.props.columns[0].label": "Pluginfunctie",
+    "drivers_table.props.columns[1].label": "Component",
+    "drivers_table.props.columns[2].label": "Sinds",
+    "drivers_table.props.columns[3].label": "Status",
+    "drivers_table.props.columns[4].label": "Boven geïnstalleerde",
+    "drivers_table.props.columns[5].label": "Aanroeplocaties",
+    "drivers_table.props.columns[6].label": "Bestanden",
+    "markdown.props.content": "## Opmerkingen\n\nDe **vereiste versie** is een afleiding: het maximum van de gedocumenteerde introductieversies (`since_version`) van de daadwerkelijk aangeroepen pluginfuncties — de tabel *bepalende functies* maakt dit verifieerbaar. Versievergelijkingen gebruiken een numerieke sleutel, nooit de string.\n\n- **Versiecontrole**: de catalogus kent geen geïnstalleerde pluginversie. Pas de selectie in de koptekst markeert elke aanroep van een later geïntroduceerde functie; de neutrale optie activeert geen controle.\n- **Vereiste per bestand**: de spreiding per bestand toont welke modules de vereiste dragen.\n- **Navigatie**: bepaler-rijen openen het functiedetail (where-used); bevindingen openen het aanroepende object.\n- **Onderhoudsas**: deprecated/removed-aanroepen zijn aparte regels onder *Statische code-analyse*."
+  }
+}

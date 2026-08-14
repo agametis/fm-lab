@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": { "columns": 12, "gap": 16 },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary_card",
+        "props": { "span": 12, "variant": "hero" },
+        "data": { "dataset": "summary" },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpi",
+            "props": {
+              "items": [
+                { "label": "OS-bound scripts", "field": "script_count", "format": "number" },
+                { "label": "Findings", "field": "finding_count", "format": "number" },
+                { "label": "Functions", "field": "distinct_functions", "format": "number" },
+                { "label": "macOS-only", "field": "macos_only", "format": "number" },
+                { "label": "Desktop-only", "field": "desktop_only", "format": "number" },
+                { "label": "Affected files", "field": "affected_files", "format": "number" }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings_card",
+        "props": { "span": 12, "title": "OS binding via plug-in calls" },
+        "data": { "dataset": "findings" },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search file, object or function…",
+              "chipFilter": "os_profile",
+              "columns": [
+                { "field": "os_profile", "label": "OS profile" },
+                { "field": "file_name", "label": "File" },
+                { "field": "script_name", "label": "Object" },
+                { "field": "function_name", "label": "Plug-in function" },
+                { "field": "component", "label": "Component" },
+                { "field": "macos", "label": "macOS", "format": "boolean" },
+                { "field": "windows", "label": "Windows", "format": "boolean" },
+                { "field": "linux", "label": "Linux", "format": "boolean" },
+                { "field": "ios", "label": "iOS (SDK)", "format": "boolean" },
+                { "field": "via_custom_function", "label": "Via custom function" }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": { "uuid": "{{nav_uuid}}", "type": "{{object_type}}" }
+              },
+              "empty": { "message": "No OS-bound plug-in usage in scope." }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

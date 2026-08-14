@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "OS-binding: scriptstappen",
+  "analysis.defaultResult.meaning": "Scripts binnen het bereik die via Claris-scriptstappen aan specifieke besturingssystemen zijn gebonden"
+ }
+}

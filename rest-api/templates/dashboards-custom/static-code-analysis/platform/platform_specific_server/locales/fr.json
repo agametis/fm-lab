@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Utilisation spécifique à la plateforme : FileMaker Server",
+  "analysis.defaultResult.meaning": "Scripts du périmètre ciblés par des appels Perform Script on Server (conçus pour une exécution côté serveur)"
+ }
+}

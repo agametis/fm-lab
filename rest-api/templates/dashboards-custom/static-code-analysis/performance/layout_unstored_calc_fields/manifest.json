@@ -26,6 +26,29 @@
       "references": []
     }
   },
+  "analysis": {
+    "objectTypes": [],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "affected_layouts",
+      "type": "number",
+      "name": "affected_layouts",
+      "unit": "findings",
+      "meaning": "Layouts carrying at least one unstored calculation field"
+    }
+  },
   "datasets": [
     {
       "id": "summary",

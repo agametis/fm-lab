@@ -1,7 +1,8 @@
 {
   "manifest": {
     "title": "TO-DO:n i skript",
-    "description": "Öppet arbete i kommentarsteg via tre notationer (TO DO, FIX IT, TBD). Klicka på ett antal för att filtrera resultatlistan."
+    "description": "Öppet arbete i kommentarsteg via tre notationer (TO DO, FIX IT, TBD). Klicka på ett antal för att filtrera resultatlistan.",
+    "analysis.defaultResult.meaning": "Rader med TODO/FIXIT/TBD-markörer i skriptkommentarer"
   },
   "layout": {
     "todo_kpi_kpistrip.props.items[0].label": "Totalt rader",

@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Plattformsspecifik användning: FileMaker Go (iOS)",
+  "analysis.defaultResult.meaning": "Skript inom omfånget som använder FileMaker Go (iOS)-specifika funktioner (exklusiva steg eller dedikerade funktioner)"
+ }
+}

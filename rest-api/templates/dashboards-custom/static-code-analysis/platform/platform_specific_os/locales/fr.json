@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Liaison à l'OS : fonctions de plug-in",
+  "analysis.defaultResult.meaning": "Scripts du périmètre liés à des systèmes d'exploitation précis via des appels de fonctions de plug-in"
+ }
+}

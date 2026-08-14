@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "Duplicados de UUID dentro del archivo",
+    "description": "Comprobación de integridad de metadatos: UUID asignados dos veces dentro de un mismo archivo (defecto de exportación, típico de copiar/pegar con versiones antiguas de FileMaker). La importación conserva de forma determinista un objeto por UUID; este panel lista lo absorbido, con contexto en texto claro para localizarlo en la solución.",
+    "analysis.defaultResult.meaning": "Número de apariciones de UUID duplicados censadas (sanadas + original conservado + absorbidas): el catálogo permanece completo desde el saneamiento de UUID, pero cada aparición marca un defecto de origen"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Duplicados absorbidos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "summary_kpi.props.items[2].label": "Filas con UUID exacto",
+    "summary_kpi.props.items[3].label": "Absorciones de fusión",
+    "findings_card.props.title": "Objetos en colisión (UUID exacto)",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Tipo",
+    "findings_table.props.columns[2].label": "Contenedor",
+    "findings_table.props.columns[3].label": "Posición",
+    "findings_table.props.columns[4].label": "Objeto (decodificado)",
+    "findings_table.props.columns[5].label": "Ocurr.",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, contenedor, texto o UUID…",
+    "findings_table.props.empty.message": "Sin detalles de duplicados con UUID exacto: el censo de importación no encontró duplicados dentro de un archivo.",
+    "merge_card.props.title": "Absorciones de fusión (solapamiento de chunks o archivo clonado con nombre interno idéntico)",
+    "merge_table.props.columns[0].label": "Tabla de catálogo",
+    "merge_table.props.columns[1].label": "Archivo",
+    "merge_table.props.columns[2].label": "Absorbidos",
+    "merge_table.props.columns[3].label": "Ejecución de fusión",
+    "merge_table.props.searchPlaceholder": "Buscar tabla o archivo…",
+    "merge_table.props.empty.message": "No se absorbieron duplicados durante la fusión.",
+    "stats_card.props.title": "Verificación cruzada del censo por catálogo y archivo",
+    "stats_table.props.columns[0].label": "Catálogo",
+    "stats_table.props.columns[1].label": "Archivo",
+    "stats_table.props.columns[2].label": "Registros de origen",
+    "stats_table.props.columns[3].label": "Filas almacenadas",
+    "stats_table.props.columns[4].label": "Absorbidos",
+    "stats_table.props.columns[5].label": "Cobertura de detalle",
+    "stats_table.props.searchPlaceholder": "Buscar catálogo o archivo…",
+    "stats_table.props.empty.message": "El censo de importación no informa duplicados absorbidos.",
+    "notes_card.props.title": "Acerca de esta comprobación",
+    "notes_md.props.content": "Un UUID asignado a **dos objetos dentro de un mismo archivo** es un defecto de origen de la exportación de FileMaker (típicamente copiar/pegar con versiones antiguas de FileMaker en archivos más nuevos). La importación de FM-Lab conserva exactamente un objeto por UUID (determinista, gana la última escritura): los objetos absorbidos **ya no existen en el catálogo**. Las columnas *Contenedor*, *Posición* y *Objeto (decodificado)* son su única traza; úsalas para localizar ambos objetos en FileMaker. Al hacer clic en la fila se abre el objeto superviviente.\n\nLas **absorciones de fusión** son una clase aparte: duplicados absorbidos al fusionar los chunks de archivo. Su causa no puede distinguirse a posteriori: solapamiento interno del conversor (sin defecto de la solución) o archivos clonados con el mismo nombre interno (colisión genuina).\n\n**No existe corrección automática.** El modo de reparación de Claris asigna UUID totalmente nuevos y rompe toda referencia externa; la corrección debe hacerse en el archivo de origen. Los duplicados del mismo UUID *entre* archivos los cubre el panel hermano **Colisiones de UUID por clonación**. La fuente de datos es el censo de importación: las cifras reflejan el estado de la última importación XML.",
+    "findings_table.props.columns[6].label": "UUID"
+  }
+}

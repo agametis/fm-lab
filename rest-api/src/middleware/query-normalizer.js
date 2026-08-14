@@ -1,32 +1,50 @@
-/**
- * Query Parameter Key Normalizer Middleware
- * Converts all query parameter keys to lowercase for case-insensitive parameter handling
- * Must run BEFORE validation middleware
- */
+const querystring = require('querystring');
 
 /**
- * Normalize query parameter keys to lowercase
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
+ * Query Parameter Name Normalizer
+ *
+ * Installed as the Express `query parser` (see src/index.js), NOT as a
+ * middleware — in Express 5 `req.query` is a read-only getter, so the parser is
+ * the only place where the shape can still be influenced.
+ *
+ * Parameter NAMES are case-insensitive on both sides:
+ *
+ *   - The own keys are lowercased. That is the canonical spelling: everything
+ *     that spreads or enumerates `req.query` (validators, the request logger,
+ *     the query controller) keeps seeing exactly one spelling per parameter.
+ *   - A Proxy resolves reads in ANY casing on top. `req.query.objectType` and
+ *     `req.query.objecttype` return the same value, whichever spelling the
+ *     client sent.
+ *
+ * The Proxy is what makes the contract two-sided. With lowercasing alone a
+ * camelCase read yields `undefined` — silently, because an absent optional
+ * query parameter is legitimate. A filter built on it then degrades into a
+ * no-op instead of raising: that is how the `objectType`/`testType` filters of
+ * `GET /api/tests` came to return every test for every object type.
+ *
+ * Parameter VALUES are untouched — only names are case-folded.
  */
-function normalizeQueryKeys(req, res, next) {
-  console.log('[Query Normalizer] Before - Keys:', Object.keys(req.query));
-  if (req.query && Object.keys(req.query).length > 0) {
-    // Create new object with lowercase keys
-    const normalized = Object.create(null);
-    for (const [key, value] of Object.entries(req.query)) {
-      const lowerKey = key.toLowerCase();
-      console.log(`  Converting: "${key}" => "${lowerKey}"`);
-      normalized[lowerKey] = value;
+function createQueryParser() {
+  return (queryString) => {
+    const normalized = {};
+    for (const [key, value] of Object.entries(querystring.parse(queryString))) {
+      normalized[key.toLowerCase()] = value;
     }
-    console.log('  Normalized object keys:', Object.keys(normalized));
-    // Replace req.query with normalized object
-    req.query = normalized;
-    console.log('  req.query keys after assignment:', Object.keys(req.query));
-  }
-  console.log('[Query Normalizer] After - Keys:', Object.keys(req.query));
-  next();
+    return new Proxy(normalized, {
+      get(target, prop, receiver) {
+        // Symbols and anything already resolvable (own keys, plus inherited
+        // members like toString that consumers may legitimately touch) behave
+        // normally; only an unknown string key retries lowercased.
+        if (typeof prop !== 'string' || prop in target) return Reflect.get(target, prop, receiver);
+        return target[prop.toLowerCase()];
+      },
+      has(target, prop) {
+        if (typeof prop !== 'string') return Reflect.has(target, prop);
+        return prop in target || prop.toLowerCase() in target;
+      },
+    });
+  };
 }
 
-module.exports = normalizeQueryKeys;
+module.exports = createQueryParser;
+module.exports.createQueryParser = createQueryParser;

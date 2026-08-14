@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "Chiamata a funzione plug-in deprecata",
+  "analysis.defaultResult.meaning": "Chiamate a funzioni plug-in nell'ambito la cui funzione è contrassegnata come deprecata nella documentazione del produttore"
+ }
+}

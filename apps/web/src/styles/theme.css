@@ -181,3 +181,18 @@
   --color-graph-tile-text:       #14141a;
   --color-graph-tile-stroke:     #1c1c22;
 }
+
+/* --- Shared result-state tokens (Result Envelope v1) ------------------------
+   ONE color semantic for result states across the product: dashboard tiles
+   (dash-state-*), folder aggregates and the tests panel (tests-state-*).
+   Aliases resolve against the active theme's base tokens at usage time, so a
+   single :root block covers both themes. */
+:root {
+  --result-state-error: var(--color-error-fg);
+  --result-state-warning: var(--color-warning-fg);
+  --result-state-neutral: var(--color-accent);
+  --result-state-ok: var(--color-success-fg, #2e8b57);
+  --result-state-skipped: var(--color-text-secondary);
+  --result-state-failed: var(--color-error-fg);
+  --result-state-pending: var(--color-text-muted);
+}

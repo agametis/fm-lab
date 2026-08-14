@@ -1,4 +1,5 @@
--- Auto-generiert aus dem core der Rule (account_disabled). Nicht von Hand editieren.
+-- Hand-maintained COUNT wrapper embedding the findings core of rule (account_disabled).
+-- The core is a textual copy — keep filters (file filter + S-Block) in sync with data/findings.sql.
 SELECT
     COUNT(*)                     AS finding_count,
     'info'          AS severity,

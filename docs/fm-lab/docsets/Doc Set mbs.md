@@ -42,6 +42,8 @@ The CSV is consumed wherever functions are grouped into components:
 
 If the CSV is absent (MBS docs not installed), the pipeline falls back to the plain prefix heuristic — imports still work, only the exception mappings are missed. Installing the MBS docs therefore improves catalog quality even if you never read a page.
 
+The installer also derives the **plug-in platform map** from the mirror: `reference/plugin_spec.duckdb` records for every MBS function on which operating systems and under which runtimes it is available (verbatim vendor flags plus a curated interpretation layer — see [plugin-spec](../schema/plugin-spec.md)). This map powers the plug-in members of the [platform tests](../Wiki/Analysis%20Tests.md#platform-tests) and the platform badge on PluginFunction detail views; without the mirror those members simply report *skipped*.
+
 ## Installation
 
 - **Skill** — `install-mbs-docs`; prompts before replacing an existing installation.

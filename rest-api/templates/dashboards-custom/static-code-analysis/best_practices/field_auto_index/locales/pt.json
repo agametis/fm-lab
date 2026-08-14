@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Campo com índice automático",
-    "description": "Regra de boas práticas — campos com indexação 'Nenhuma' mas com 'Criar índices automaticamente' ativado. A primeira pesquisa ou ordenação dispara silenciosamente uma criação de índice no servidor que não pode ser cancelada — uma bomba-relógio latente com efeitos no armazenamento, nos backups e na velocidade de importação."
+    "description": "Regra de boas práticas — sinaliza a combinação arriscada de indexação 'Nenhuma' com 'Criar índices automaticamente' ainda ativado. Ainda não existe índice algum, portanto a primeira pesquisa ou ordenação dispara silenciosamente uma criação de índice sob demanda que não pode ser cancelada — uma bomba-relógio latente com efeitos no armazenamento, nos backups e na velocidade de importação."
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Ocorrências",

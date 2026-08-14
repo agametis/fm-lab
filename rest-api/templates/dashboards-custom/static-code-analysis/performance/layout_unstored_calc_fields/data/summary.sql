@@ -22,7 +22,7 @@ per_layout AS (
 )
 SELECT
     COUNT(*)                                        AS affected_layouts,
-    'warn'                                          AS severity,
+    'warning'                                          AS severity,
     COUNT(*) FILTER (WHERE default_view = 'Form')   AS view_form,
     COUNT(*) FILTER (WHERE default_view = 'List')   AS view_list,
     COUNT(*) FILTER (WHERE default_view = 'Table')  AS view_table,

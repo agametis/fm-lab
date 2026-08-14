@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "start_card",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "start"
+        },
+        "children": [
+          {
+            "type": "HtmlContent",
+            "id": "start_html",
+            "props": {
+              "field": "content_html"
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "pages",
+        "props": {
+          "span": 12,
+          "title": "Categories"
+        },
+        "data": {
+          "dataset": "pages"
+        },
+        "children": [
+          {
+            "type": "List",
+            "id": "pages_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{name}}",
+                "badge": "{{function_count}}",
+                "badgeOptions": {
+                  "hideZero": true
+                },
+                "onClick": {
+                  "action": "{{action}}",
+                  "argsString": "{{action_args}}"
+                }
+              },
+              "empty": {
+                "message": "No pages available for this docset."
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

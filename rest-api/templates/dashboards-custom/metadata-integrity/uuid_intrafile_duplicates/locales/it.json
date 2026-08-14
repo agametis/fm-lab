@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "title": "Duplicati di UUID nello stesso file",
+    "description": "Controllo di integrità dei metadati — UUID assegnati due volte all'interno di un singolo file (difetto di esportazione, tipicamente copia/incolla con vecchie versioni di FileMaker). L'importazione conserva in modo deterministico un oggetto per UUID; questa dashboard elenca ciò che è stato assorbito, con contesto in chiaro per ritrovarlo nella soluzione.",
+    "analysis.defaultResult.meaning": "Numero di occorrenze di UUID duplicati censite (sanate + originale mantenuto + assorbite) — dalla sanatoria degli UUID il catalogo resta completo, ma ogni occorrenza segnala un difetto all'origine"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Duplicati assorbiti",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "summary_kpi.props.items[2].label": "Righe UUID precise",
+    "summary_kpi.props.items[3].label": "Assorbimenti di merge",
+    "findings_card.props.title": "Oggetti in collisione (UUID preciso)",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tipo",
+    "findings_table.props.columns[2].label": "Contenitore",
+    "findings_table.props.columns[3].label": "Posizione",
+    "findings_table.props.columns[4].label": "Oggetto (decodificato)",
+    "findings_table.props.columns[5].label": "Occ.",
+    "findings_table.props.searchPlaceholder": "Cerca file, contenitore, testo o UUID…",
+    "findings_table.props.empty.message": "Nessun dettaglio di duplicato UUID preciso — il censimento di importazione non ha trovato duplicati nello stesso file.",
+    "merge_card.props.title": "Assorbimenti di merge (sovrapposizione di chunk o file clonato con nome interno identico)",
+    "merge_table.props.columns[0].label": "Tabella di catalogo",
+    "merge_table.props.columns[1].label": "File",
+    "merge_table.props.columns[2].label": "Assorbiti",
+    "merge_table.props.columns[3].label": "Esecuzione merge",
+    "merge_table.props.searchPlaceholder": "Cerca tabella o file…",
+    "merge_table.props.empty.message": "Nessun duplicato assorbito durante il merge.",
+    "stats_card.props.title": "Verifica incrociata del censimento per catalogo e file",
+    "stats_table.props.columns[0].label": "Catalogo",
+    "stats_table.props.columns[1].label": "File",
+    "stats_table.props.columns[2].label": "Record di origine",
+    "stats_table.props.columns[3].label": "Righe memorizzate",
+    "stats_table.props.columns[4].label": "Assorbiti",
+    "stats_table.props.columns[5].label": "Copertura dettagli",
+    "stats_table.props.searchPlaceholder": "Cerca catalogo o file…",
+    "stats_table.props.empty.message": "Il censimento di importazione non segnala duplicati assorbiti.",
+    "notes_card.props.title": "Informazioni su questo controllo",
+    "notes_md.props.content": "Un UUID assegnato a **due oggetti all'interno di un singolo file** è un difetto d'origine dell'esportazione FileMaker (tipicamente copia/incolla con vecchie versioni di FileMaker in file più recenti). L'importazione di FM-Lab conserva esattamente un oggetto per UUID (deterministico, vince l'ultima scrittura): gli oggetti assorbiti **non esistono più nel catalogo**. Le colonne *Contenitore*, *Posizione* e *Oggetto (decodificato)* sono la loro unica traccia; usale per localizzare entrambi gli oggetti in FileMaker. Un clic sulla riga apre l'oggetto superstite.\n\nGli **assorbimenti di merge** sono una classe a parte: duplicati assorbiti durante l'unione dei chunk. La causa non è distinguibile a posteriori — sovrapposizione interna del convertitore (nessun difetto della soluzione) o file clonati con lo stesso nome interno (collisione reale).\n\n**Non esiste una correzione automatica.** La modalità di riparazione di Claris assegna UUID completamente nuovi e rompe ogni riferimento esterno; la correzione va fatta nel file di origine. I duplicati dello stesso UUID *tra* file sono coperti dalla dashboard gemella **Collisioni di UUID da clonazione**. La fonte dati è il censimento di importazione — i numeri riflettono lo stato dell'ultima importazione XML.",
+    "findings_table.props.columns[6].label": "UUID"
+  }
+}

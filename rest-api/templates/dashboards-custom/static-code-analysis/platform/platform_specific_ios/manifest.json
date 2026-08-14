@@ -1,0 +1,83 @@
+{
+  "id": "platform_specific_ios",
+  "version": "1.2.0",
+  "title": "Platform-specific usage: FileMaker Go (iOS)",
+  "description": "Scripts in scope that are built FOR FileMaker Go (iOS): steps that run exclusively on iOS (derived from the Claris step-compatibility table) plus curated iOS-dedicated functions — called directly or reached through custom functions (callable everywhere, meaningful results only on iOS; fm_spec function_platform_affinity, reference 1.12.0+). Inventory, not defects — findings are neutral properties, never errors. The dashboard view is the iOS usage profile of the solution: binding KPIs, a feature breakdown (which iOS features - sensors, location, beacons, media - bind how many scripts) and the script list.",
+  "author": "fm-lab rules",
+  "icon": "server",
+  "category": "platform",
+  "tags": [
+    "rule",
+    "platform"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "platform",
+    "rationale": "Platform binding is an inventory statement: these scripts use features that only work (exclusive steps) or only make sense (dedicated functions) on FileMaker Go (iOS). That is a property of the script, not a defect — it makes the iOS share of a solution visible.",
+    "remediation": "Nothing to fix. Use the inventory to identify the iOS layer of the solution; to see where these scripts would fail elsewhere, run the compatibility aspect of the other target environments."
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "script_count",
+      "type": "number",
+      "name": "platform_specific_scripts",
+      "unit": "scripts",
+      "meaning": "Scripts in scope that use FileMaker Go (iOS)-specific features (exclusive steps or dedicated functions)"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    },
+    {
+      "id": "features",
+      "source": "bundle:data/features.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

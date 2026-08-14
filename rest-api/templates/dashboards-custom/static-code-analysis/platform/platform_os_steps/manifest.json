@@ -1,0 +1,84 @@
+{
+  "id": "platform_os_steps",
+  "version": "1.0.0",
+  "title": "OS binding: script steps",
+  "description": "Scripts in scope bound to specific operating systems through Claris script steps: curated OS affinity from the official documentation (there is no structured Claris OS table; absence of a statement means 'Claris states nothing', never 'runs everywhere'). Covers 'exclusive' steps (Perform AppleScript -> macOS, Send DDE Execute -> Windows), source-true inverse 'unsupported' statements resolved against the host OS of the step's runtimes (Dial Phone 'not supported in macOS' => Windows + iOS, never Linux), and the Send Event dual-variant (one step id, two OS-exclusive option sets; the only behavior-variant with a findings row - the other variants stay schema-viewer knowledge). The os_profile uses the set-wide vocabulary (macos-only, windows-only, desktop-only, apple-only, ios-only, desktop-variant, mixed). 'ios' is the OPERATING SYSTEM (FileMaker Go and iOS SDK apps), never the Go runtime chip. Inventory, not defects - findings are neutral properties, never errors.",
+  "author": "fm-lab rules",
+  "icon": "layers",
+  "category": "platform",
+  "tags": [
+    "rule",
+    "platform",
+    "os-binding",
+    "steps"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "platform",
+    "rationale": "An OS-bound script step binds every calling script to that OS: Perform AppleScript is silently ignored on Windows, Send DDE Execute on macOS - the runtime compatibility table cannot see this (it lists both steps as plain 'Pro'). The curated OS affinity makes the invisible OS story explicit.",
+    "remediation": "Nothing to fix. Use the inventory to know which scripts assume which OS; guard OS-bound steps with Get(SystemPlatform) checks where a script must run cross-platform."
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "requires": [
+      "fm-spec-os"
+    ],
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "script_count",
+      "type": "number",
+      "name": "platform_os_bound_scripts_steps",
+      "unit": "scripts",
+      "meaning": "Scripts in scope bound to specific operating systems via Claris script steps"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

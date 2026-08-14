@@ -544,5 +544,17 @@
     "optFrameCurrentOnly": "現在のレコードのフィールドのみ枠表示",
     "optShowCurrentInList": "リストビューでレコード表示",
     "optQuickFind": "クイック検索"
+  },
+  "pluginSpec": {
+    "tooltip": "{{plugin}}ドキュメントに基づくプラットフォーム対応",
+    "since": "バージョン{{version}}以降",
+    "deprecated": "非推奨",
+    "replacementHint": "代わりに {{replacement}} を使用",
+    "removed": "削除済み",
+    "oldNameHint": "旧名称 — 現在は{{name}}"
+  },
+  "osBinding": {
+    "label": "OSバインディング:",
+    "tooltip": "このスクリプトがバインドされているOS（platform-os-bindingテスト実行より — 中立的なインベントリであり、欠陥ではありません）。"
   }
 }

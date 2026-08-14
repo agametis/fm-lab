@@ -49,7 +49,7 @@ Answer the user in the user's language; this document is English by convention.
 |---|---|---|
 | _(none)_ | Object from conversation context | — |
 | `<name>` | Object name (exact match, then fuzzy) | — |
-| `<uuid>` | UUID directly (8-4-4-4-12 hex) | — |
+| `<uuid>` | UUID directly (8-4-4-4-12 hex; 32-char no-dash md5 = synthetic healed twin → guard 1b) | — |
 | `--file <File>` | Clone disambiguation (UUID shared across files) | from context/selection |
 | `--list` | Show context objects as a table, open nothing | off |
 | `--dry-run` | Display the fmp:// URL, do not open | off |
@@ -67,6 +67,25 @@ Follow `.claude/skills/_shared/resolve-object.md` (read it now if not loaded).
 Result: `Object_UUID`, `Object_Type`, `Object_Name`, `File_Name` — all four
 required. `--list` mode: render the context objects as the shared selection-list
 table, add an fmIDE column (✓/✗ per the type support the API reports), then stop.
+
+### 1b — Synthetic-UUID guard (UUID healing, schema 1.19.0)
+
+A resolved `Object_UUID` **without dashes** (32-char md5 hex instead of
+8-4-4-4-12) is a synthetic FM-Lab identity: the object is a healed intra-file
+duplicate twin — the UUID does **not exist in the FileMaker source**, so an
+`fmp://` jump cannot work. Never build a URL for it. Instead fetch the original
+UUID from the census:
+
+```bash
+duckdb db/fm_catalog.duckdb -readonly -c "SELECT Object_UUID AS original_uuid, Discriminator, Heal_Status FROM DuplicateAbsorptionDetails WHERE Healed_UUID = '<uuid>' AND File_Name = '<File_Name>';"
+```
+
+Explain to the user: this object is a healed duplicate twin; in the source file
+its ORIGINAL UUID is assigned to ≥2 objects, so an fmIDE jump via the original
+UUID opens *one* of them (typically the survivor), not necessarily this one.
+Offer: (a) open via the original UUID anyway (say the ambiguity out loud),
+(b) `/fm-show` to inspect the twin in FM-Lab instead. Stop here unless the user
+picks (a).
 
 ### 2 — API preflight
 

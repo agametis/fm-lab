@@ -155,6 +155,14 @@ RUN chmod +x /usr/local/bin/init-node-modules.sh && \
   echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-node-modules.sh" > /etc/sudoers.d/node-nodemodules && \
   chmod 0440 /etc/sudoers.d/node-nodemodules
 
+# The repo arrives as a host bind mount owned by the HOST uid. When that uid differs
+# from the container's node user (uid 1000), git refuses to operate in the workspace
+# ("dubious ownership", CVE-2022-24765) — which also leaves VS Code's Git view dead.
+# The mount target is fixed by docker-compose.yml, so whitelist exactly that path
+# system-wide (/etc/gitconfig: user-independent, baked into the image, effective in
+# every container/exec session). Ownership itself is deliberately left untouched.
+RUN git config --system --add safe.directory /workspaces/fm-lab
+
 # Default shell + editor (set before dropping to node — ENV is user-independent).
 ENV SHELL=/bin/zsh
 ENV EDITOR=nano

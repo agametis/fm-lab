@@ -1,0 +1,6 @@
+{
+ "manifest": {
+  "title": "OS-Bindung: Scriptschritte",
+  "analysis.defaultResult.meaning": "Scripts im Prüfumfang, die über Claris-Scriptschritte an bestimmte Betriebssysteme gebunden sind"
+ }
+}
