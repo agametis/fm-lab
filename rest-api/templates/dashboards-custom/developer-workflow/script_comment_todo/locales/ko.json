@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "스크립트 주석의 TODO 마커",
+    "description": "「미완료 작업」 규칙군 — 스크립트의 주석 단계에 TODO 마커(TODO, TO DO, TO-DO, TBD, to be done, to be defined)가 있습니다. TODO는 결함이 아니라 계획된 작업이므로 심각도는 info입니다. 자체 수치로 집계되지만 신호등을 노란색으로 바꾸지 않습니다. 대소문자를 구분하지 않고 구분 기호도 허용하므로 개발자의 표기 방식과 무관합니다.",
+    "messages.comment": "스크립트 주석의 TODO 마커"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "검출 수",
+    "summary_kpi.props.items[1].label": "해당 스크립트",
+    "summary_kpi.props.items[2].label": "해당 파일",
+    "findings_card.props.title": "스크립트 주석의 TODO 마커",
+    "findings_table.props.searchPlaceholder": "파일·스크립트·주석 검색…",
+    "findings_table.props.empty.message": "스크립트 주석에 TODO 마커가 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "스크립트",
+    "findings_table.props.columns[2].label": "단계",
+    "findings_table.props.columns[3].label": "마커",
+    "findings_table.props.columns[4].label": "주석"
+  }
+}

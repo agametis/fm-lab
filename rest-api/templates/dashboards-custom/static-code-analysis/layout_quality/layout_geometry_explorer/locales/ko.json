@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "Layout 지오메트리 탐색기",
+    "description": "인벤토리 대시보드 — 모든 Layout 오브젝트를 개별 정렬 가능한 지오메트리 열(X, Y, 너비, 높이, Z 순서)과 함께 표시합니다. Layout 파트(머리글, 본문, 바닥글 등), 오브젝트 유형, 최대 너비/높이, 그리고 특정 영역을 조사하기 위한 Layout 절대 좌표 윈도우(X/Y 시작/끝)로 필터링할 수 있습니다. 중첩된 오브젝트의 좌표는 부모 컨테이너에 상대적입니다. 좌표 윈도우는 최상위 오브젝트에는 정확히 일치하며, 중첩된 오브젝트는 최상위 컨테이너를 통해 포함됩니다. URL 매개변수 w_min/h_min은 슬라이더를 보완합니다. 행을 클릭하면 해당 오브젝트가 강조 표시된 상태로 Layout이 열립니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "오브젝트",
+    "summary_kpi.props.items[1].label": "Layout",
+    "summary_kpi.props.items[2].label": "파일",
+    "objects_card.props.title": "Layout 오브젝트",
+    "part_select.props.label": "Layout 파트",
+    "part_select.props.emptyOptionLabel": "모든 파트",
+    "object_type_select.props.label": "오브젝트 유형",
+    "object_type_select.props.emptyOptionLabel": "모든 오브젝트 유형",
+    "w_max_slider.props.label": "최대 너비",
+    "h_max_slider.props.label": "최대 높이",
+    "x_min_slider.props.label": "윈도우 X 시작",
+    "x_max_slider.props.label": "윈도우 X 끝",
+    "y_min_slider.props.label": "윈도우 Y 시작",
+    "y_max_slider.props.label": "윈도우 Y 끝",
+    "objects_table.props.searchPlaceholder": "파일, Layout 또는 오브젝트 검색…",
+    "objects_table.props.empty.message": "현재 필터와 일치하는 Layout 오브젝트가 없습니다.",
+    "objects_table.props.columns[0].label": "파일",
+    "objects_table.props.columns[1].label": "Layout",
+    "objects_table.props.columns[2].label": "파트",
+    "objects_table.props.columns[3].label": "오브젝트 유형",
+    "objects_table.props.columns[4].label": "오브젝트",
+    "objects_table.props.columns[5].label": "단계",
+    "objects_table.props.columns[8].label": "너비",
+    "objects_table.props.columns[9].label": "높이"
+  }
+}

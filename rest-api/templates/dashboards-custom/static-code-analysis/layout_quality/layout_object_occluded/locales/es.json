@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Objeto oculto detrás de un contenedor",
+    "description": "Regla de calidad de Layout — un objeto queda completamente dentro del área de un portal, control de pestañas o control deslizante situado delante de él en el orden de apilamiento. El objeto queda cubierto en modo Visualizar y no se puede pulsar — normalmente un descuido de apilamiento.\n\nBasado en la comprobación de fmCheckMate «Hidden Object (Behind Container)» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.occluded": "El objeto queda completamente detrás de un {container} situado delante — cubierto e inaccesible en modo Visualizar"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Layouts afectados",
+    "summary_kpi.props.items[2].label": "Archivos afectados",
+    "findings_card.props.title": "Objeto oculto detrás de un contenedor",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, Layout u objeto…",
+    "findings_table.props.empty.message": "No se encontraron objetos ocultos detrás de contenedores.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Contenedor",
+    "findings_table.props.columns[7].label": "Ancho",
+    "findings_table.props.columns[8].label": "Alto"
+  }
+}

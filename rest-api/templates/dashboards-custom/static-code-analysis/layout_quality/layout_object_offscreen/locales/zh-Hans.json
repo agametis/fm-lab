@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "布局之外的对象",
+    "description": "Layout 质量规则 — 顶层对象超出了布局边界：超过布局宽度、位于最后一个部分之下，或处于负坐标。仅检查顶层对象，因为只有它们使用绝对布局坐标；嵌套对象相对于其容器定位，由“丢失对象”规则覆盖。轻微超出通常是取整误差，可用容差滑块过滤。",
+    "messages.complete": "对象完全位于布局之外（{direction}）",
+    "messages.partial": "对象超出了布局范围（{direction}）"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "完全超出",
+    "summary_kpi.props.items[2].label": "部分超出",
+    "findings_card.props.title": "布局之外的对象",
+    "findings_table.props.searchPlaceholder": "搜索文件、Layout 或对象…",
+    "findings_table.props.empty.message": "未发现位于布局边界之外的对象。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "对象类型",
+    "findings_table.props.columns[3].label": "对象",
+    "findings_table.props.columns[4].label": "方向",
+    "findings_table.props.columns[5].label": "程度",
+    "findings_table.props.columns[8].label": "宽度",
+    "findings_table.props.columns[9].label": "高度",
+    "tolerance_slider.props.label": "容差"
+  }
+}

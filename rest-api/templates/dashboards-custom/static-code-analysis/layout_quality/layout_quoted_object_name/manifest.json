@@ -1,0 +1,97 @@
+{
+  "id": "layout_quoted_object_name",
+  "version": "1.0.0",
+  "title": "Object name wrapped in quotes",
+  "description": "Layout-quality rule — a layout object name starts and ends with a double quote. Almost always a paste accident; quoted names break name-based references such as GetLayoutObjectAttribute or Go to Object.\n\nBased on the fmCheckMate check \"Quoted Object Name\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "text-quote",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "layout_quality",
+    "rationale": "Object names are the anchor for GetLayoutObjectAttribute, Go to Object and script triggers. A name that includes literal quotes almost never matches what scripts look up.",
+    "remediation": "Rename the object without the surrounding quotes and update any references that relied on the quoted name.",
+    "meta": {
+      "name": "Object name wrapped in quotes",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Layout-quality rule — a layout object name starts and ends with a double quote. Almost always a paste accident; quoted names break name-based references such as GetLayoutObjectAttribute or Go to Object.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportQuotedObjectNames)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Object name wrapped in quotes"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "quoted-name": "Object name is wrapped in literal quotes — probably pasted by accident"
+  }
+}

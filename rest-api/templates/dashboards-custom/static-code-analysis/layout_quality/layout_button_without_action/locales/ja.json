@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "アクションのないボタン",
+    "description": "Layout 品質ルール — ボタンにスクリプト呼び出しも単一ステップアクションも設定されていません。検出はオブジェクトのシリアライズされたアクションを読み取ります。スクリプトアクションはスクリプト参照として、単一ステップアクションはステップ要素として現れ、どちらも持たないボタンはクリックしても何も起こりません。大規模ソリューションではボタンの約 40 % が該当しうるため、対応前にコンテキストで確認してください。装飾アイコンや非アクティブなボタンバーセグメントは正当であり、コンテキストフィルタで絞り込めます。\n\nfmCheckMate チェック「Button Action <Missing>」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.no-action": "ボタンにスクリプト呼び出しも単一ステップアクションもありません"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象 Layout 数",
+    "summary_kpi.props.items[2].label": "対象のボタン数",
+    "findings_card.props.title": "アクションのないボタン",
+    "findings_table.props.searchPlaceholder": "ファイル、Layout、オブジェクトを検索…",
+    "findings_table.props.empty.message": "アクションのないボタンは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "オブジェクト",
+    "findings_table.props.columns[3].label": "コンテキスト",
+    "findings_table.props.columns[6].label": "幅",
+    "findings_table.props.columns[7].label": "高さ",
+    "context_select.props.label": "コンテキスト",
+    "context_select.props.emptyOptionLabel": "すべてのコンテキスト"
+  }
+}

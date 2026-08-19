@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "호스트 왕복이 있는 비저장 계산",
+    "description": "성능 규칙 — 비저장 계산 필드가 Get(CurrentHostTimestamp)를 호출하고 레이아웃에 배치되어 있습니다. Claris 문서에 따르면 이런 필드는 표시할 때마다 호스트로의 추가 네트워크 액세스가 발생합니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "레이아웃 배치 수",
+    "summary_kpi.props.items[2].label": "영향받는 파일",
+    "findings_card.props.title": "호스트 왕복이 있는 비저장 계산",
+    "findings_table.props.searchPlaceholder": "파일, 테이블 또는 필드 검색…",
+    "findings_table.props.empty.message": "Get(CurrentHostTimestamp)를 호출하는 표시된 비저장 계산이 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "테이블",
+    "findings_table.props.columns[2].label": "필드",
+    "findings_table.props.columns[3].label": "레이아웃 수",
+    "findings_table.props.columns[4].label": "배치 수",
+    "findings_table.props.columns[5].label": "목록 레이아웃 위"
+  }
+}

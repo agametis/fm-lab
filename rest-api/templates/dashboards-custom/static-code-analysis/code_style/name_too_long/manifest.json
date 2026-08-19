@@ -1,0 +1,127 @@
+{
+  "id": "name_too_long",
+  "version": "1.0.0",
+  "title": "Overlong object name",
+  "description": "Code-style rule — an object name is longer than the readability threshold (max_len, default 80 characters), or it sits exactly on FileMaker's 100-character ceiling, where what the developer typed was silently truncated. Names at the ceiling are reported as a warning, the rest as information.\n\nBased on the fmCheckMate check \"ListNamesWhichAreTooLong\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "ruler",
+  "category": "code_style",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "code_style"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "code_style",
+    "rationale": "Long names are cut off in every picker, dialog and reference list, so the part that distinguishes two objects is often the part nobody sees. At exactly 100 characters the name is additionally suspect: that is where FileMaker stopped accepting input.",
+    "remediation": "Shorten the name to what distinguishes the object and move the rest into the comment field. Check names at the 100-character ceiling for a truncated ending.",
+    "meta": {
+      "name": "Overlong object name",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Code-style rule — an object name is longer than the readability threshold (max_len, default 80 characters), or it sits exactly on FileMaker's 100-character ceiling, where what the developer typed was silently truncated. Names at the ceiling are reported as a warning, the rest as information.",
+      "created": "2026-08-16",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XMAA_Text.Tab_ListNamesWhichAreTooLong.xsl",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ],
+      "calibration": "Recalibrated against the source, whose fixed limit does not detect anything here: FileMaker enforces the 100-character ceiling itself, so no name can exceed it (measured on a large solution: longest name exactly 100). The rule therefore reports a configurable readability threshold plus the names sitting on the ceiling."
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script",
+      "Field",
+      "Layout",
+      "CustomFunction",
+      "TableOccurrence",
+      "BaseTable",
+      "ValueList"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Overlong object name"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    },
+    {
+      "id": "object_types",
+      "source": "bundle:data/object_types.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    },
+    {
+      "name": "max_len",
+      "type": "number",
+      "required": false,
+      "description": "Length threshold in characters (header slider; default 80)."
+    },
+    {
+      "name": "defect",
+      "type": "string",
+      "required": false,
+      "description": "Defect-class filter chip (too-long, at-limit); unset = all."
+    },
+    {
+      "name": "object_type",
+      "type": "string",
+      "required": false,
+      "description": "Object-type filter select; unset = all."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "too-long": "Name is longer than the configured threshold",
+    "at-limit": "Name is at FileMaker's 100-character ceiling and may have been truncated"
+  }
+}

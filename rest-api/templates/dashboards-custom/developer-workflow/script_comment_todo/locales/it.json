@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Marcatore TODO in un commento di script",
+    "description": "Regola della famiglia «Lavoro incompiuto»: un passo di commento di uno script contiene un marcatore TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined). Un TODO descrive lavoro pianificato, non un difetto: severità info, il semaforo resta neutro. La ricerca ignora maiuscole/minuscole e tollera un separatore: la notazione dello sviluppatore non conta.",
+    "messages.comment": "Marcatore TODO in un commento di script"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Script interessati",
+    "summary_kpi.props.items[2].label": "File interessati",
+    "findings_card.props.title": "Marcatore TODO in un commento di script",
+    "findings_table.props.searchPlaceholder": "Cerca file, script o commento…",
+    "findings_table.props.empty.message": "Nessun marcatore TODO nei commenti degli script.",
+    "findings_table.props.columns[2].label": "Passo",
+    "findings_table.props.columns[3].label": "Marcatore",
+    "findings_table.props.columns[4].label": "Commento"
+  }
+}

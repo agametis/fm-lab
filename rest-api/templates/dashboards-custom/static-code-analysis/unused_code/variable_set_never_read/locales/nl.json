@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Variabele ingesteld, nooit gelezen",
+    "description": "Regel voor ongebruikte code — een variabele wordt geschreven maar nergens in de catalogus gelezen. In het beste geval ballast, in het slechtste de zichtbare helft van een half doorgevoerde hernoeming. Bekende valse positieven: waarden die als scriptparameter worden doorgegeven, variabelenamen die tijdens runtime worden samengesteld en leesacties buiten de geëxporteerde bestanden — daarom is de regel informatief.\n\nGebaseerd op de fmCheckMate-controle “ListVarsDefinedButUnused” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.set-never-read": "Variabele wordt geschreven maar nooit gelezen"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Lokaal",
+    "summary_kpi.props.items[2].label": "Globaal",
+    "summary_kpi.props.items[3].label": "Betrokken scripts",
+    "summary_kpi.props.items[4].label": "Betrokken bestanden",
+    "findings_card.props.title": "Variabele ingesteld, nooit gelezen",
+    "variable_scope_filter.props.options[0].label": "alle bereiken",
+    "variable_scope_filter.props.options[1].label": "Lokaal",
+    "variable_scope_filter.props.options[2].label": "Globaal",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Variabele",
+    "findings_table.props.columns[2].label": "Bereik",
+    "findings_table.props.columns[3].label": "Eerst gezien in",
+    "findings_table.props.columns[4].label": "Schrijfacties",
+    "findings_table.props.columns[5].label": "Bewijs",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, variabele of script…",
+    "findings_table.props.empty.message": "Geen variabelen gevonden die worden geschreven zonder ooit gelezen te worden."
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "损坏的字段引用",
+    "description": "Layout 质量规则 — 布局对象引用了已不存在的字段或表关联。解析基于数字 ID（目标表中的字段 ID、文件内的表关联 ID），绝不使用 UUID：跨文件引用常常携带过期 UUID 而字段本身完好，FileMaker 在运行时按 ID 解析。目标文件不在目录中的对象将作为无法验证而跳过；容器对象因其 XML 内嵌子对象标记而被排除。\n\n基于 fmCheckMate 检查“Broken Field” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-field": "该字段在目标表中已不存在",
+    "messages.missing-to": "该表关联在此文件中已不存在"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响的 Layout",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "findings_card.props.title": "损坏的字段引用",
+    "findings_table.props.searchPlaceholder": "搜索文件、Layout 或对象…",
+    "findings_table.props.empty.message": "未发现损坏的字段引用。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "对象类型",
+    "findings_table.props.columns[3].label": "对象",
+    "findings_table.props.columns[4].label": "字段",
+    "findings_table.props.columns[5].label": "表关联",
+    "findings_table.props.columns[8].label": "宽度",
+    "findings_table.props.columns[9].label": "高度"
+  }
+}

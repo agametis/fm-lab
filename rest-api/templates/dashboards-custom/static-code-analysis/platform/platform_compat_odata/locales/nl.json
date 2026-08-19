@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Platformcompatibiliteit: OData",
-  "analysis.defaultResult.meaning": "Bevindingen OData-gereedheid (geleende Server-basis + naamgevings- en commitregels)"
- }
+  "manifest": {
+    "title": "Platformcompatibiliteit: OData",
+    "analysis.defaultResult.meaning": "Bevindingen OData-gereedheid (geleende Server-basis + naamgevings- en commitregels)"
+  },
+  "layout": {}
 }

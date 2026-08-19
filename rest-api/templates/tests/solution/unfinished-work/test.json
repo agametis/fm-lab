@@ -1,0 +1,146 @@
+{
+  "id": "unfinished-work",
+  "version": "1.0.0",
+  "title": "Unfinished Work",
+  "description": "The whole \"unfinished work\" family in one run: markers that live in the code instead of the tracker, across all three places they occur — script comments, layout object texts and calculation comments. Two classes with one detector each: FIXME (FIXME, FIX ME, FIX IT, FIXIT) reports a known defect that shipped and counts as a warning; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) records planned work and stays neutral. The class decides the severity, the location only decides which objects are affected. Use the profile \"Defects only\" for the three FIXME rules — the closable part of the finding set.",
+  "keywords": [
+    "todo",
+    "fixme",
+    "tbd",
+    "comments",
+    "unfinished-work",
+    "developer-workflow"
+  ],
+  "testType": "code-quality",
+  "objectTypes": [
+    "Script",
+    "Layout",
+    "CustomFunction",
+    "Field"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "script_comment_fixme"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "script_comment_todo"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_text_fixme"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_text_todo"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "calc_comment_fixme"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "calc_comment_todo"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "fixme-only",
+      "title": "Defects only",
+      "description": "Only the three FIXME rules — known defects that shipped, in scripts, layouts and calculations.",
+      "members": [
+        "script_comment_fixme",
+        "layout_text_fixme",
+        "calc_comment_fixme"
+      ]
+    },
+    {
+      "id": "full",
+      "title": "Full Check"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Unfertige Arbeit",
+      "description": "Die ganze Familie „unfertige Arbeit“ in einem Lauf: Marker, die im Code stehen statt im Tracker — an allen drei Fundorten: Script-Kommentare, Layout-Objekttexte und Berechnungs-Kommentare. Zwei Klassen mit je einem Detektor: FIXME (FIXME, FIX ME, FIX IT, FIXIT) benennt einen ausgelieferten, bekannten Defekt und zählt als Warnung; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) hält geplante Arbeit fest und bleibt neutral. Die Klasse bestimmt die Schwere, der Fundort nur, welche Objekte betroffen sind. Das Profil „Nur Defekte“ führt die drei FIXME-Regeln aus — den abarbeitbaren Teil der Fundmenge.",
+      "profiles.fixme-only.title": "Nur Defekte",
+      "profiles.fixme-only.description": "Nur die drei FIXME-Regeln — bekannte Defekte in Scripts, Layouts und Berechnungen.",
+      "profiles.full.title": "Vollprüfung"
+    },
+    "es": {
+      "title": "Trabajo pendiente",
+      "description": "Toda la familia «trabajo pendiente» en una sola ejecución: marcas que viven en el código en lugar del gestor de tareas, en los tres lugares donde aparecen: comentarios de script, textos de objetos de layout y comentarios de cálculos. Dos clases con un detector cada una: FIXME (FIXME, FIX ME, FIX IT, FIXIT) señala un defecto conocido ya entregado y cuenta como advertencia; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) registra trabajo planificado y permanece neutral. La clase determina la gravedad; el lugar solo determina qué objetos se ven afectados. El perfil «Solo defectos» ejecuta las tres reglas FIXME.",
+      "profiles.fixme-only.title": "Solo defectos",
+      "profiles.fixme-only.description": "Solo las tres reglas FIXME: defectos conocidos en scripts, layouts y cálculos.",
+      "profiles.full.title": "Comprobación completa"
+    },
+    "fr": {
+      "title": "Travail inachevé",
+      "description": "Toute la famille « travail inachevé » en une exécution : des marqueurs qui vivent dans le code plutôt que dans l'outil de suivi, aux trois endroits où ils apparaissent — commentaires de script, textes d'objets de modèle et commentaires de calculs. Deux classes, un détecteur chacune : FIXME (FIXME, FIX ME, FIX IT, FIXIT) signale un défaut connu livré et compte comme avertissement ; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) consigne un travail planifié et reste neutre. La classe détermine la sévérité, l'emplacement seulement les objets concernés. Le profil « Défauts uniquement » exécute les trois règles FIXME.",
+      "profiles.fixme-only.title": "Défauts uniquement",
+      "profiles.fixme-only.description": "Seulement les trois règles FIXME : défauts connus dans les scripts, les modèles et les calculs.",
+      "profiles.full.title": "Vérification complète"
+    },
+    "it": {
+      "title": "Lavoro incompiuto",
+      "description": "Tutta la famiglia «lavoro incompiuto» in una sola esecuzione: marcatori che vivono nel codice invece che nel tracker, in tutti e tre i punti in cui compaiono — commenti degli script, testi degli oggetti di formato e commenti dei calcoli. Due classi con un rilevatore ciascuna: FIXME (FIXME, FIX ME, FIX IT, FIXIT) segnala un difetto noto già rilasciato e conta come avviso; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) registra lavoro pianificato e resta neutro. La classe determina la gravità, il punto solo quali oggetti sono interessati. Il profilo «Solo difetti» esegue le tre regole FIXME.",
+      "profiles.fixme-only.title": "Solo difetti",
+      "profiles.fixme-only.description": "Solo le tre regole FIXME: difetti noti in script, formati e calcoli.",
+      "profiles.full.title": "Controllo completo"
+    },
+    "ja": {
+      "title": "未完了作業",
+      "description": "「未完了作業」ファミリーを 1 回の実行でまとめて確認します。トラッカーではなくコードに残されたマーカーを、現れる 3 か所すべて（スクリプトのコメント、レイアウトオブジェクトのテキスト、計算式のコメント）で探します。クラスは 2 つ、検出器はそれぞれ 1 つです。FIXME（FIXME, FIX ME, FIX IT, FIXIT）は出荷済みの既知の不具合を示し警告として数えます。TODO（TODO, TO DO, TO-DO, TBD, to be done, to be defined）は予定された作業の記録で中立のままです。重大度を決めるのはクラスであり、場所は対象オブジェクトを決めるだけです。プロファイル「不具合のみ」は 3 つの FIXME ルールを実行します。",
+      "profiles.fixme-only.title": "不具合のみ",
+      "profiles.fixme-only.description": "3 つの FIXME ルールのみ — スクリプト・レイアウト・計算式の既知の不具合。",
+      "profiles.full.title": "フルチェック"
+    },
+    "ko": {
+      "title": "미완료 작업",
+      "description": "「미완료 작업」 규칙군을 한 번에 실행합니다. 트래커가 아니라 코드에 남은 마커를 등장하는 세 곳(스크립트 주석, 레이아웃 개체 텍스트, 계산식 주석) 모두에서 찾습니다. 클래스는 둘, 검출기는 각각 하나입니다. FIXME(FIXME, FIX ME, FIX IT, FIXIT)는 이미 출시된 알려진 결함을 뜻하며 경고로 집계됩니다. TODO(TODO, TO DO, TO-DO, TBD, to be done, to be defined)는 계획된 작업의 기록이며 중립으로 남습니다. 심각도는 클래스가 정하고, 위치는 어떤 개체가 해당되는지만 정합니다. 프로필 「결함만」은 세 개의 FIXME 규칙을 실행합니다.",
+      "profiles.fixme-only.title": "결함만",
+      "profiles.fixme-only.description": "FIXME 규칙 세 개만 — 스크립트·레이아웃·계산식의 알려진 결함.",
+      "profiles.full.title": "전체 검사"
+    },
+    "nl": {
+      "title": "Onafgemaakt werk",
+      "description": "De hele familie “onafgemaakt werk” in één run: markeringen die in de code staan in plaats van in de tracker, op alle drie de plaatsen waar ze voorkomen — scriptopmerkingen, teksten van lay-outobjecten en formuleopmerkingen. Twee klassen met elk één detector: FIXME (FIXME, FIX ME, FIX IT, FIXIT) benoemt een bekend defect dat is uitgeleverd en telt als waarschuwing; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) legt gepland werk vast en blijft neutraal. De klasse bepaalt de ernst, de plaats alleen welke objecten betrokken zijn. Het profiel “Alleen defecten” voert de drie FIXME-regels uit.",
+      "profiles.fixme-only.title": "Alleen defecten",
+      "profiles.fixme-only.description": "Alleen de drie FIXME-regels: bekende defecten in scripts, lay-outs en formules.",
+      "profiles.full.title": "Volledige controle"
+    },
+    "pt": {
+      "title": "Trabalho inacabado",
+      "description": "Toda a família “trabalho inacabado” numa única execução: marcadores que vivem no código em vez do gestor de tarefas, nos três locais onde ocorrem — comentários de script, textos de objetos de layout e comentários de cálculos. Duas classes com um detetor cada: FIXME (FIXME, FIX ME, FIX IT, FIXIT) indica um defeito conhecido já entregue e conta como aviso; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) regista trabalho planeado e permanece neutro. A classe determina a gravidade; o local apenas quais objetos são afetados. O perfil “Apenas defeitos” executa as três regras FIXME.",
+      "profiles.fixme-only.title": "Apenas defeitos",
+      "profiles.fixme-only.description": "Apenas as três regras FIXME: defeitos conhecidos em scripts, layouts e cálculos.",
+      "profiles.full.title": "Verificação completa"
+    },
+    "sv": {
+      "title": "Ofärdigt arbete",
+      "description": "Hela familjen ”ofärdigt arbete” i en körning: markörer som lever i koden i stället för i ärendehanteraren, på alla tre platser där de förekommer — skriptkommentarer, texter i layoutobjekt och formelkommentarer. Två klasser med var sin detektor: FIXME (FIXME, FIX ME, FIX IT, FIXIT) anger ett känt fel som levererats och räknas som varning; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) noterar planerat arbete och förblir neutralt. Klassen avgör allvarlighetsgraden, platsen bara vilka objekt som berörs. Profilen ”Endast fel” kör de tre FIXME-reglerna.",
+      "profiles.fixme-only.title": "Endast fel",
+      "profiles.fixme-only.description": "Endast de tre FIXME-reglerna — kända fel i skript, layouter och formler.",
+      "profiles.full.title": "Fullständig kontroll"
+    },
+    "zh-Hans": {
+      "title": "未完成工作",
+      "description": "一次运行覆盖整个“未完成工作”规则族：那些留在代码里而非任务系统里的标记，涵盖它们出现的全部三处 —— 脚本注释、布局对象文本和计算式注释。两个类别各有一个检测器：FIXME（FIXME、FIX ME、FIX IT、FIXIT）表示已随版本发布的已知缺陷，计为警告；TODO（TODO、TO DO、TO-DO、TBD、to be done、to be defined）记录计划中的工作，保持中立。严重度由类别决定，位置只决定涉及哪些对象。配置“仅缺陷”只运行三条 FIXME 规则。",
+      "profiles.fixme-only.title": "仅缺陷",
+      "profiles.fixme-only.description": "仅三条 FIXME 规则 —— 脚本、布局与计算式中的已知缺陷。",
+      "profiles.full.title": "完整检查"
+    }
+  }
+}

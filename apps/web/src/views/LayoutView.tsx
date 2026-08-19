@@ -29,21 +29,40 @@ export function LayoutView() {
   // (useRefOrigin degradiert bei No-Match still auf ein leeres Set).
   const [refParam, setRefParam] = useUrlState<string>('ref', '');
   const refOrigin = useRefOrigin(uuid, refParam || null, fileParam || null);
-  const dismissRefOrigin = useCallback(() => setRefParam(''), [setRefParam]);
 
-  // Echte Trefferzahl auf dem Canvas (matchUuids ∩ Layout-Objekte) für die
+  // `?marks=` — literale Objekt-UUIDs ohne Back-References-Auflösung, vereinigt
+  // mit dem ref-Match-Set (Mehrfach-Hervorhebung, gleiche Semantik wie DetailView).
+  const [marksParam, setMarksParam] = useUrlState<string>('marks', '');
+  const externalMatchUuids = useMemo(() => {
+    if (!marksParam) return refOrigin.matchUuids;
+    const merged = new Set(refOrigin.matchUuids);
+    for (const part of marksParam.split(',')) {
+      const v = part.trim();
+      if (v) merged.add(v);
+    }
+    return merged;
+  }, [refOrigin.matchUuids, marksParam]);
+
+  // Beide Setter nutzen die funktionale setSearchParams-Form — sequenzielle
+  // Aufrufe komponieren, keine Overwrite-Race.
+  const dismissRefOrigin = useCallback(() => {
+    setRefParam('');
+    setMarksParam('');
+  }, [setRefParam, setMarksParam]);
+
+  // Echte Trefferzahl auf dem Canvas (Highlight-Set ∩ Layout-Objekte) für die
   // RefOriginPill: der Server zählt nur Container-Matches OHNE die Origin-UUID —
   // ist das ref-Objekt selbst ein LayoutObject dieses Layouts (Normalfall der
   // Deep-Links), wäre der Server-Count 0 und die Pill bliebe trotz sichtbarem
   // Highlight unsichtbar.
   const liveMatchCount = useMemo(() => {
-    if (!data || refOrigin.matchUuids.size === 0) return undefined;
+    if (!data || externalMatchUuids.size === 0) return undefined;
     let n = 0;
     for (const o of data.objects) {
-      if (refOrigin.matchUuids.has(o.object_uuid)) n++;
+      if (externalMatchUuids.has(o.object_uuid)) n++;
     }
     return n;
-  }, [data, refOrigin.matchUuids]);
+  }, [data, externalMatchUuids]);
 
   // Zurück: bevorzugt vorigen Eintrag, sonst Startseite (analog RelationshipGraphView).
   const handleBack = () => {
@@ -80,7 +99,7 @@ export function LayoutView() {
       return false;
     },
     () => {
-      if (refParam) {
+      if (refParam || marksParam) {
         dismissRefOrigin();
         return true;
       }
@@ -137,7 +156,7 @@ export function LayoutView() {
           <LayoutCanvas
             ref={canvasRef}
             data={data}
-            externalMatchUuids={refOrigin.matchUuids}
+            externalMatchUuids={externalMatchUuids}
             onClearRef={dismissRefOrigin}
           />
         )}

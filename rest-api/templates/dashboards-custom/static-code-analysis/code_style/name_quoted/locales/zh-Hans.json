@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "带引号的对象名",
+    "description": "代码风格规则 — 对象名以双引号开头并以双引号结尾，几乎总是因为直接从计算式里粘贴了名称。引号成为名称的一部分，所有按名称的访问都必须原样带上引号。\n\n基于 fmCheckMate 检查“Quoted Object Name” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.quoted-name": "名称被引号包裹"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "对象类型",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "findings_card.props.title": "带引号的对象名",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "对象类型",
+    "findings_table.props.columns[2].label": "对象",
+    "findings_table.props.searchPlaceholder": "搜索文件、对象类型或名称…",
+    "findings_table.props.empty.message": "未发现带引号的对象名。"
+  }
+}

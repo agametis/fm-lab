@@ -184,5 +184,9 @@
     },
     "noFilterMatches": "Keine Einträge mit diesem Status in dieser Rubrik.",
     "openFolder": "Ordner öffnen"
+  },
+  "featured": {
+    "ruleCount_one": "{{count}} Regel",
+    "ruleCount_other": "{{count}} Regeln"
   }
 }

@@ -14,6 +14,7 @@ WITH layout_match AS (
     L_ID, L_Name, L_UUID, File_Name,
     L_TO_Name, L_TO_UUID, L_Width,
     L_Theme_ID, L_Theme_Name, L_Theme_UUID, L_Theme_Base,
+    Folder_Type, Is_Separator,
     L_MenuSet_ID, L_MenuSet_Name,
     Options_Raw,
     View_Form_Available, View_List_Available, View_Table_Available,
@@ -45,7 +46,19 @@ SELECT
   L_TO_UUID             AS to_uuid,
   L_Width               AS width,
   L_Theme_ID            AS theme_id,
-  L_Theme_Name          AS theme_name,
+  -- EFFEKTIVES Theme, nicht die Rohspalte: SaXML kodiert das Classic-Theme als
+  -- leeres <LayoutThemeReference/> ohne id/name/UUID/Base — L_Theme_Name ist dort
+  -- NULL, und das Panel zeigte für jedes Classic-Layout ein leeres Thema.
+  -- Bewusst aus den ROHSPALTEN abgeleitet (nicht aus L_Theme_Resolved_Name,
+  -- Schema 1.21.0): so bleibt die Detailansicht auch auf älter importierten
+  -- Katalogen lauffähig statt am Binder zu scheitern.
+  -- theme_id/_uuid/_base bleiben roh (NULL bei Classic) — sie sagen aus, was
+  -- tatsächlich im Export stand.
+  CASE WHEN lm.L_Theme_ID IS NULL
+            AND (lm.Folder_Type IS NULL OR lm.Folder_Type = 'False')
+            AND NOT COALESCE(lm.Is_Separator, FALSE)
+       THEN 'com.filemaker.theme.classic'
+       ELSE lm.L_Theme_Name END AS theme_name,
   -- Lokalisierter Anzeigename aus ThemeCatalog (z.B. „Apex Blau"); Fallback im Frontend.
   tc.Theme_Display      AS theme_display,
   L_Theme_UUID          AS theme_uuid,
@@ -67,5 +80,14 @@ SELECT
   Modified_At           AS modified_at,
   Modifications         AS modifications
 FROM layout_match lm
+-- Join primär über die Referenz-UUID; bei Classic (leere Referenz → UUID NULL)
+-- über den Theme-NAMEN, damit auch dort der lokalisierte Anzeigename („Klassisch")
+-- ankommt. Theme_ID = 1 taugt NICHT als Classic-Erkennung (datei-lokal vergeben).
 LEFT JOIN ThemeCatalog tc
-  ON tc.Theme_UUID = lm.L_Theme_UUID AND tc.File_Name = lm.File_Name;
+  ON tc.File_Name = lm.File_Name
+ AND (tc.Theme_UUID = lm.L_Theme_UUID
+      OR (lm.L_Theme_UUID IS NULL
+          AND lm.L_Theme_ID IS NULL
+          AND (lm.Folder_Type IS NULL OR lm.Folder_Type = 'False')
+          AND NOT COALESCE(lm.Is_Separator, FALSE)
+          AND tc.Theme_Name = 'com.filemaker.theme.classic'));

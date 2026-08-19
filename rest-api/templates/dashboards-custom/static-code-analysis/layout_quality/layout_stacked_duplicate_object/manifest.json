@@ -1,0 +1,96 @@
+{
+  "id": "layout_stacked_duplicate_object",
+  "version": "1.0.0",
+  "title": "Stacked duplicate objects",
+  "description": "Layout-quality rule — two sibling objects of the same type share exactly the same bounds. The upper one fully covers the other, typically a double paste. Tab and popover panels are excluded (congruent by design).",
+  "author": "fm-lab rules",
+  "icon": "layers",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "layout_quality",
+    "rationale": "Two congruent objects of the same type almost always mean a double paste. The upper object swallows clicks meant for the lower one, and edits hit whichever is selected by accident.",
+    "remediation": "Delete one of the two objects, or offset them deliberately if both are needed.",
+    "meta": {
+      "name": "Stacked duplicate objects",
+      "author": "fm-lab rules",
+      "source": "fm-lab feature request",
+      "url": null,
+      "description": "Layout-quality rule — two sibling objects of the same type share exactly the same bounds. The upper one fully covers the other, typically a double paste. Tab and popover panels are excluded (congruent by design).",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fm-lab",
+          "rule": "User feature request — layout object quality",
+          "url": null
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Stacked duplicate objects"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "pair": "Two {type} objects share identical bounds — the upper one fully covers the lower one"
+  }
+}

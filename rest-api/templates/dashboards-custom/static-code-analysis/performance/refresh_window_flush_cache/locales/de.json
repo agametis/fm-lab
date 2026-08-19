@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Refresh Window mit Join-Cache-Flush",
+    "description": "Performance-Regel — Refresh Window mit „Zwischengespeicherte Verknüpfungsergebnisse löschen“ (oder „Externe Daten löschen“) verwirft Beziehungs-Caches und zwingt FileMaker, Bezugsdatensätze erneut vom Server zu holen. Claris warnt ausdrücklich vor den Netzwerkkosten."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Join-Ergebnisse gelöscht",
+    "summary_kpi.props.items[2].label": "Externe Daten gelöscht",
+    "summary_kpi.props.items[3].label": "Einfache Refreshes (nicht gemeldet)",
+    "summary_kpi.props.items[4].label": "Betroffene Dateien",
+    "flush_kind_filter.props.options[0].label": "Alle Flushes",
+    "flush_kind_filter.props.options[1].label": "Join-Ergebnisse",
+    "flush_kind_filter.props.options[2].label": "Externe Daten",
+    "findings_card.props.title": "Refresh Window mit Join-Cache-Flush",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Kein Refresh Window mit Flush-Option gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Schritt",
+    "findings_table.props.columns[3].label": "Löscht",
+    "findings_table.props.columns[4].label": "Loop-Tiefe"
+  }
+}

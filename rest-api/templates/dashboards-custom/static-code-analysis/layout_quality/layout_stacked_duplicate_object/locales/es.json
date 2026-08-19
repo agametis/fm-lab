@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Objetos duplicados superpuestos",
+    "description": "Regla de calidad de Layout — dos objetos hermanos del mismo tipo comparten exactamente los mismos límites. El de encima cubre por completo al otro — típicamente un pegado doble. Los paneles de pestañas y popover están excluidos (congruentes por diseño).",
+    "messages.pair": "Dos objetos {type} comparten límites idénticos — el de encima cubre por completo al de abajo"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Layouts afectados",
+    "summary_kpi.props.items[2].label": "Archivos afectados",
+    "findings_card.props.title": "Objetos duplicados superpuestos",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, Layout u objeto…",
+    "findings_table.props.empty.message": "No se encontraron duplicados superpuestos.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Objeto asociado",
+    "findings_table.props.columns[9].label": "Orden Z",
+    "findings_table.props.columns[7].label": "Ancho",
+    "findings_table.props.columns[8].label": "Alto"
+  }
+}

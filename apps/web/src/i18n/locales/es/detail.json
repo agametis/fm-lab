@@ -5,6 +5,7 @@
   "autoTable": {
     "rowCount_one": "{{count}} entrada",
     "rowCount_other": "{{count}} entradas",
+    "rowCountTruncated": "{{shown}} de {{total}} entradas",
     "filteredFrom": "filtrado de {{count}}",
     "newCount": "{{count}} nuevos",
     "totalSize": "Tamaño total {{size}}",
@@ -362,7 +363,8 @@
     "highlightsCount_one": "{{count}} coincidencia resaltada",
     "highlightsCount_other": "{{count}} coincidencias resaltadas",
     "dismissAria": "Quitar resaltado de la referencia",
-    "dismissTitle": "Quitar resaltado de la referencia (Esc)"
+    "dismissTitle": "Quitar resaltado de la referencia (Esc)",
+    "sourceLabel": "Fuente:"
   },
   "tableDetails": "Detalles de la tabla",
   "scriptDetails": "Detalles del script",

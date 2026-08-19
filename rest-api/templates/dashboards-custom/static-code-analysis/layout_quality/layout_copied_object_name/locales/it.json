@@ -1,0 +1,31 @@
+{
+  "manifest": {
+    "title": "Nome oggetto copiato",
+    "description": "Regola di qualità del Layout — un oggetto con nome porta un suffisso di copia (' Copy', ' Kopie'), un suffisso numerico di incollaggio o condivide il nome con un altro oggetto dello stesso Layout. Gli oggetti con nome sono referenziati da script e calcoli; i residui di copia colpiscono l'oggetto sbagliato o nessuno. I suffissi numerici possono anche essere intenzionali — verificare prima di rinominare.\n\nBasato sul controllo fmCheckMate «Copied Object Name» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy-suffix": "Il nome dell'oggetto porta un suffisso di copia — probabilmente un residuo di incollaggio",
+    "messages.duplicate-name": "Il nome dell'oggetto compare più volte in questo Layout",
+    "messages.numeric-suffix": "Il nome dell'oggetto termina con un suffisso numerico — forse un residuo di incollaggio, forse una denominazione intenzionale"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Suffisso di copia",
+    "summary_kpi.props.items[2].label": "Suffisso numerico",
+    "summary_kpi.props.items[3].label": "Nomi duplicati",
+    "findings_card.props.title": "Nome oggetto copiato",
+    "findings_table.props.searchPlaceholder": "Cerca file, Layout o oggetto…",
+    "findings_table.props.empty.message": "Nessun nome copiato o duplicato trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo di oggetto",
+    "findings_table.props.columns[3].label": "Oggetto",
+    "findings_table.props.columns[4].label": "Motivo",
+    "reason_filter.props.options[0].label": "tutti i motivi",
+    "reason_filter.props.options[1].label": "suffisso di copia",
+    "reason_filter.props.options[2].label": "suffisso numerico",
+    "reason_filter.props.options[3].label": "nomi duplicati",
+    "object_type_select.props.label": "Tipo di oggetto",
+    "object_type_select.props.emptyOptionLabel": "tutti i tipi di oggetto",
+    "findings_table.props.columns[7].label": "Larghezza",
+    "findings_table.props.columns[8].label": "Altezza"
+  }
+}

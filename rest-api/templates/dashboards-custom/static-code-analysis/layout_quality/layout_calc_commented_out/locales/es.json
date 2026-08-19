@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Cálculo de Layout comentado",
+    "description": "Regla de calidad de Layout — un cálculo de ocultar, información (tooltip) o etiqueta de un objeto de Layout consiste íntegramente en un comentario. La fórmula nunca se evalúa; el comportamiento previsto queda desactivado en silencio.\n\nBasado en la comprobación de fmCheckMate «Broken Calculation /*Commented Out*/» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.hide": "El cálculo de ocultar está completamente comentado",
+    "messages.tooltip": "El cálculo del tooltip está completamente comentado",
+    "messages.label": "El cálculo de la etiqueta está completamente comentado"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Layouts afectados",
+    "summary_kpi.props.items[2].label": "Archivos afectados",
+    "findings_card.props.title": "Cálculo de Layout comentado",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, Layout u objeto…",
+    "findings_table.props.empty.message": "No se encontraron cálculos comentados.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Slot",
+    "calc_slot_filter.props.options[0].label": "todos los cálculos",
+    "calc_slot_filter.props.options[1].label": "ocultar",
+    "calc_slot_filter.props.options[2].label": "tooltip",
+    "calc_slot_filter.props.options[3].label": "etiqueta",
+    "object_type_select.props.label": "Tipo de objeto",
+    "object_type_select.props.emptyOptionLabel": "todos los tipos de objeto",
+    "findings_table.props.columns[7].label": "Ancho",
+    "findings_table.props.columns[8].label": "Alto"
+  }
+}

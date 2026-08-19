@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Navigations-Script ohne Freeze Window",
+    "description": "Performance-Regel — Scripts mit mehreren Layoutwechseln oder Go-to-Related-Record-Schritten ohne Freeze Window zeichnen den Bildschirm bei jedem Sprung neu. Freeze Window unterdrückt die Zwischen-Renderings; am Scriptende aktualisiert FileMaker automatisch."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Max. Navigationsschritte",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "min_nav_slider.props.label": "Navigationsschritte",
+    "findings_card.props.title": "Navigations-Script ohne Freeze Window",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Kein navigationslastiges Script ohne Freeze Window gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Navigationsschritte",
+    "findings_table.props.columns[3].label": "Aufruf via PSoS"
+  }
+}

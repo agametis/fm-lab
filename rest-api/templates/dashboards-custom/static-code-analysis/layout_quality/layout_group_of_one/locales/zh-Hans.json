@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "只有一个对象的组",
+    "description": "Layout 质量规则 — 一个组只包含一个对象。分组带来了选择和嵌套开销却没有组合任何内容——通常是删除其他成员后的残留。序列化为单子组的按钮不会被标记。\n\n基于 fmCheckMate 检查“Group of one” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.single": "组中只有一个 {child} 对象——只有分组开销而没有实际分组"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响的 Layout",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "findings_card.props.title": "只有一个对象的组",
+    "findings_table.props.searchPlaceholder": "搜索文件、Layout 或对象…",
+    "findings_table.props.empty.message": "未找到只有一个对象的组。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "对象",
+    "findings_table.props.columns[3].label": "子对象类型",
+    "findings_table.props.columns[4].label": "子对象名称",
+    "findings_table.props.columns[7].label": "宽度",
+    "findings_table.props.columns[8].label": "高度"
+  }
+}

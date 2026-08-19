@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "長すぎるオブジェクト名",
+    "description": "コードスタイルルール — オブジェクト名が可読性のしきい値（max_len、既定 80 文字）を超えているか、FileMaker の 100 文字上限ちょうどにあり、入力が黙って切り詰められています。上限にある名前は警告、それ以外は情報として報告します。\n\nfmCheckMate チェック「ListNamesWhichAreTooLong」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.too-long": "名前が設定したしきい値を超えています",
+    "messages.at-limit": "名前が FileMaker の 100 文字上限にあり、切り詰められた可能性があります"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "しきい値超過",
+    "summary_kpi.props.items[2].label": "上限ちょうど",
+    "summary_kpi.props.items[3].label": "対象ファイル",
+    "findings_card.props.title": "長すぎるオブジェクト名",
+    "defect_filter.props.options[0].label": "すべて",
+    "defect_filter.props.options[1].label": "しきい値超過",
+    "defect_filter.props.options[2].label": "上限ちょうど",
+    "max_len_slider.props.label": "名前の長さ",
+    "object_type_select.props.label": "オブジェクトタイプ",
+    "object_type_select.props.emptyOptionLabel": "すべてのオブジェクトタイプ",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "オブジェクトタイプ",
+    "findings_table.props.columns[2].label": "オブジェクト",
+    "findings_table.props.columns[3].label": "文字数",
+    "findings_table.props.columns[4].label": "不具合",
+    "findings_table.props.searchPlaceholder": "ファイル・オブジェクトタイプ・名前を検索…",
+    "findings_table.props.empty.message": "しきい値を超える名前はありません。"
+  }
+}

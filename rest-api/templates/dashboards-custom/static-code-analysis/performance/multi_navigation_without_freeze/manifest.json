@@ -1,0 +1,106 @@
+{
+  "id": "multi_navigation_without_freeze",
+  "version": "1.0.0",
+  "title": "Navigation script without Freeze Window",
+  "description": "Performance rule — scripts with several layout switches or Go to Related Record steps and no Freeze Window repaint the screen on every hop. Freeze Window suppresses the intermediate renders; FileMaker refreshes automatically when the script ends.",
+  "author": "fm-lab rules",
+  "icon": "gauge",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "performance",
+    "wan",
+    "community-patterns"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "performance",
+    "rationale": "Every layout switch without a frozen window triggers a full render of the intermediate context — visible flicker at best, layout-triggered evaluations and record loads at worst. A single Freeze Window before the navigation sequence suppresses all of it.",
+    "remediation": "Add Freeze Window before the first navigation step. Scripts that run server-side (see the PSoS column) have no window to freeze — treat those rows as context, not defects. Other legitimate exceptions: scripts whose intermediate layouts are meant to be seen.",
+    "meta": {
+      "name": "Navigation script without Freeze Window",
+      "author": "fm-lab rules",
+      "source": "FileMaker community / Claris",
+      "url": "https://help.claris.com/en/pro-help/content/freeze-window.html",
+      "description": "Counts enabled Go to Layout (6) and Go to Related Record (74) steps per script; scripts at or above the threshold without any enabled Freeze Window (79) are reported. The threshold is a heuristic — hence severity info. The called-via-PSoS column marks scripts referenced by a Perform Script on Server step (context, not an exclusion: a script can be called both ways).",
+      "created": "2026-08-17",
+      "references": [
+        {
+          "project": "Claris Help",
+          "rule": "Freeze Window",
+          "url": "https://help.claris.com/en/pro-help/content/freeze-window.html"
+        },
+        {
+          "project": "DB Services",
+          "rule": "Claris FileMaker Performance Optimization Guide",
+          "url": "https://dbservices.com/blog/claris-filemaker-performance-optimization"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Navigation script without Freeze Window"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "min_nav",
+      "type": "number",
+      "required": false,
+      "description": "Minimum number of navigation steps for a finding (default 3)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

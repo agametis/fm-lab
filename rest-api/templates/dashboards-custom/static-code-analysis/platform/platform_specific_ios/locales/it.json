@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Uso specifico della piattaforma: FileMaker Go (iOS)",
-  "analysis.defaultResult.meaning": "Script nell'ambito che usano funzionalità specifiche di FileMaker Go (iOS) (passi esclusivi o funzioni dedicate)"
- }
+  "manifest": {
+    "title": "Uso specifico della piattaforma: FileMaker Go (iOS)",
+    "analysis.defaultResult.meaning": "Script nell'ambito che usano funzionalità specifiche di FileMaker Go (iOS) (passi esclusivi o funzioni dedicate)"
+  },
+  "layout": {}
 }

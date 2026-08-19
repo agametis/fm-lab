@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import type { PrimitiveProps } from '../types';
-import { formatTableCell } from './_format';
+import { formatKpiValue, formatTableCell } from './_format';
 import { dispatchAction } from '../actions';
 import type { ActionSpec } from '../actions';
 
@@ -28,6 +29,17 @@ import type { ActionSpec } from '../actions';
  *   maxHeight        CSS-Wert für scrollbaren Bereich (Default "70vh"). Nur
  *                    wirksam wenn paginate=false.
  *   density          'compact' | 'comfortable' (Default).
+ *   chipFilter       Spaltenname für die Chip-Leiste. Fallback, wenn das
+ *                    Meta-Dataset kein `chip_filter` liefert.
+ *   chipParam        URL-Parameter, den ein Chip-Klick setzt. Fallback zu
+ *                    `chip_param` aus dem Meta-Dataset.
+ *
+ * Ergebnis-Konventionsspalten (optional, von der Query selbst berechnet):
+ *   `_chip_facets`   JSON `{wert: anzahl}` — echte Facettenverteilung der
+ *                    Grundgesamtheit VOR dem LIMIT. Ohne diese Spalte werden
+ *                    die Chips wie bisher über die geladenen Zeilen gezählt.
+ *   `_row_total`     Zeilenzahl des Ergebnisses vor dem LIMIT. Liegt sie über
+ *                    den geladenen Zeilen, benennt der Kopf den Ausschnitt.
  */
 export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps) {
   const { t, i18n } = useTranslation(['common', 'detail']);
@@ -51,15 +63,25 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
   const rows = dataset?.data ?? [];
   const meta = metaDatasetId ? datasets[metaDatasetId]?.data?.[0] : undefined;
 
-  // Optionale, client-seitige Chip-Leiste über einer Ergebnis-Spalte. Der
-  // Feldname kommt aus dem Meta-Dataset (`chip_filter`, aus dem SQL-Frontmatter
-  // `-- @chip_filter: <spalte>`) oder direkt aus den Props. Counts werden über
-  // die geladenen Zeilen gezählt — kein zweiter Query, kein Server-Param. Die
+  // Optionale Chip-Leiste über einer Ergebnis-Spalte. Der Feldname kommt aus
+  // dem Meta-Dataset (`chip_filter`, aus dem SQL-Frontmatter
+  // `-- @chip_filter: <spalte>`) oder direkt aus den Props. Die
   // Facetten-Buckets werden bewusst in der SQL geformt (ein Chip pro Wert), was
   // die Grammatik hier auf einen einzelnen Feldnamen reduziert.
   const chipFilterField =
     (meta?.chip_filter as string | null | undefined) ??
     (props.chipFilter as string | undefined) ??
+    null;
+
+  // Opt-in auf Server-Schaltung: mit `chip_param` schreibt ein Klick den
+  // gleichnamigen URL-Parameter, der Dashboard-Host re-quert und das SQL
+  // filtert über die GANZE Grundgesamtheit. Ohne das Feld bleibt es beim
+  // bisherigen Verhalten — Klick partitioniert nur die geladenen Zeilen.
+  // Beides ist gewollt: Ranking-Queries (Top-N) wollen ausdrücklich die
+  // Verteilung *in der geladenen Spitzengruppe* zeigen.
+  const chipParam =
+    (meta?.chip_param as string | null | undefined) ??
+    (props.chipParam as string | undefined) ??
     null;
 
   const clickAction =
@@ -89,28 +111,70 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(0);
-  const [chipValue, setChipValue] = useState<string | null>(null);
+  const [localChipValue, setLocalChipValue] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Chip-Optionen: ein Chip je Feld-Wert mit Live-Count über die geladenen
-  // Zeilen, nach Häufigkeit (desc) sortiert. Greift VOR der Volltextsuche.
+  // Echte Facetten und Gesamtzahl aus den Konventionsspalten der ersten Zeile.
+  // Beide stehen redundant in jeder Zeile — Preis dafür, im Ein-Statement-SQL
+  // zu bleiben. Fehlen sie, greift überall die alte Rückfallebene.
+  const facets = useMemo(() => parseFacets(rows[0]?._chip_facets), [rows]);
+  const rowTotal = useMemo(() => toFiniteNumber(rows[0]?._row_total), [rows]);
+
+  // Der aktive Chip kommt bei Server-Schaltung aus der URL, nicht aus lokalem
+  // State — sonst divergieren Anzeige und tatsächlicher Server-Filter nach
+  // einem Reload oder über einen Deep-Link.
+  const chipValue = chipParam ? searchParams.get(chipParam) : localChipValue;
+
+  // Chip-Optionen: ein Chip je Feld-Wert, nach Häufigkeit (desc) sortiert.
+  // Counts aus `_chip_facets` (Grundgesamtheit) — sonst wie bisher über die
+  // geladenen Zeilen gezählt. Greift VOR der Volltextsuche.
   const chipOptions = useMemo(() => {
     if (!chipFilterField) return [] as { value: string; count: number }[];
     const counts = new Map<string, number>();
-    for (const row of rows) {
-      const v = row[chipFilterField];
-      if (v == null) continue;
-      const key = String(v);
-      counts.set(key, (counts.get(key) ?? 0) + 1);
+    if (facets) {
+      for (const [value, count] of Object.entries(facets)) counts.set(value, count);
+    } else {
+      for (const row of rows) {
+        const v = row[chipFilterField];
+        if (v == null) continue;
+        const key = String(v);
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
     }
     return Array.from(counts.entries())
       .map(([value, count]) => ({ value, count }))
       .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value, lang));
-  }, [rows, chipFilterField, lang]);
+  }, [rows, facets, chipFilterField, lang]);
+
+  // Zahl auf dem „Alle"-Chip: die Summe der Facetten ist auch dann die
+  // Grundgesamtheit, wenn serverseitig gerade ein Chip aktiv ist (`_row_total`
+  // zählt dann nur noch dessen Treffer).
+  const chipAllCount = useMemo(() => {
+    if (facets) return Object.values(facets).reduce((a, b) => a + b, 0);
+    return rowTotal ?? rows.length;
+  }, [facets, rowTotal, rows]);
 
   const chipFiltered = useMemo(() => {
-    if (!chipFilterField || chipValue === null) return rows;
+    // Bei Server-Schaltung hat das SQL bereits gefiltert — nochmal client-seitig
+    // zu filtern würde nur den Facettenwert gegen den Parameterwert prüfen.
+    if (chipParam || !chipFilterField || chipValue === null) return rows;
     return rows.filter(row => String(row[chipFilterField] ?? '') === chipValue);
-  }, [rows, chipFilterField, chipValue]);
+  }, [rows, chipParam, chipFilterField, chipValue]);
+
+  function selectChip(value: string | null) {
+    if (chipParam) {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        // URL kanonisch halten: „Alle" löscht den Parameter.
+        if (value === null) next.delete(chipParam);
+        else next.set(chipParam, value);
+        return next;
+      }, { replace: true });
+    } else {
+      setLocalChipValue(value);
+    }
+    setPage(0);
+  }
 
   // Filter
   const filtered = useMemo(() => {
@@ -133,6 +197,8 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
   }, [filtered, sortField, sortDir, lang]);
 
   const total = sorted.length;
+  // Der Kopf benennt den Ausschnitt nur, wenn das LIMIT wirklich gegriffen hat.
+  const truncated = rowTotal !== null && rowTotal > rows.length;
   const pageCount = paginate ? Math.max(1, Math.ceil(total / pageSize)) : 1;
   const safePage = Math.min(page, pageCount - 1);
   const visible = paginate
@@ -171,27 +237,38 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
           <button
             type="button"
             className={`dash-chip${chipValue === null ? ' dash-chip--active' : ''}`}
-            onClick={() => { setChipValue(null); setPage(0); }}
+            onClick={() => selectChip(null)}
+            aria-pressed={chipValue === null}
           >
             {t('common:all') as string}
-            <span className="dash-chip__count">{rows.length}</span>
+            <span className="dash-chip__count">
+              {formatKpiValue(chipAllCount, 'number', lang)}
+            </span>
           </button>
           {chipOptions.map(opt => (
             <button
               key={opt.value}
               type="button"
               className={`dash-chip${chipValue === opt.value ? ' dash-chip--active' : ''}`}
-              onClick={() => { setChipValue(opt.value); setPage(0); }}
+              onClick={() => selectChip(opt.value)}
+              aria-pressed={chipValue === opt.value}
             >
               {opt.value}
-              <span className="dash-chip__count">{opt.count}</span>
+              <span className="dash-chip__count">
+                {formatKpiValue(opt.count, 'number', lang)}
+              </span>
             </button>
           ))}
         </div>
       )}
       <div className="dash-autotable__head">
         <span className="dash-autotable__count">
-          {t('detail:autoTable.rowCount', { count: total })}
+          {truncated
+            ? t('detail:autoTable.rowCountTruncated', {
+                shown: formatKpiValue(total, 'number', lang),
+                total: formatKpiValue(rowTotal, 'number', lang),
+              })
+            : t('detail:autoTable.rowCount', { count: total })}
           {search.trim() && total !== chipFiltered.length && (
             <> · {t('detail:autoTable.filteredFrom', { count: chipFiltered.length })}</>
           )}
@@ -278,6 +355,40 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
       )}
     </div>
   );
+}
+
+/**
+ * Liest die Konventionsspalte `_chip_facets` (`{wert: anzahl}` über die
+ * Grundgesamtheit). Je nach Treiber kommt eine JSON-Spalte als String ODER als
+ * bereits geparstes Objekt an — beides wird vertragen. Alles Unbrauchbare
+ * (Parse-Fehler, leeres Objekt, nicht-numerische Werte) liefert `null` und
+ * fällt damit auf die Zählung über die geladenen Zeilen zurück.
+ */
+function parseFacets(raw: unknown): Record<string, number> | null {
+  if (raw == null) return null;
+  let obj: unknown = raw;
+  if (typeof raw === 'string') {
+    if (!raw.trim()) return null;
+    try {
+      obj = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) return null;
+  const out: Record<string, number> = {};
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    const n = toFiniteNumber(value);
+    if (n !== null) out[key] = n;
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
+/** Zahl aus DuckDB — je nach Transport number, BigInt oder String. */
+function toFiniteNumber(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }
 
 function humanize(key: string): string {

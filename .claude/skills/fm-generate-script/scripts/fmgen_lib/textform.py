@@ -452,6 +452,33 @@ def parse_ref(value: str) -> dict | None:
     return None
 
 
+def parse_target(value: str) -> dict | None:
+    """Parse a TARGET slot: a field reference OR a script-local variable.
+
+    Targets are the one slot kind FileMaker lets you point at a variable
+    instead of a field (Set Variable, Show Custom Dialog input fields, ...).
+    Shared by _coerce and the step hints so both agree on the rule.
+    """
+    value = value.strip()
+    if _VAR_RE.match(value):
+        return {"name": value, "_form": "variable"}
+    return parse_ref(value)
+
+
+def _option_section(xml_path: str) -> str:
+    """The container element an option lives in, derived from its xml_path.
+
+    Some steps nest a whole second option group and reuse the outer display
+    labels inside it — Perform Script On Server with Callback carries
+    'from file:' and 'Parameter' once at the top level and once inside
+    <CallbackScript>. The path prefix is the only thing that tells them apart.
+    A trailing @attribute does not open a section (CallbackScriptState/@value
+    is a top-level element, not a group).
+    """
+    parts = [p for p in (xml_path or "").split("/") if p and not p.startswith("@")]
+    return parts[0] if len(parts) > 1 else ""
+
+
 def _norm_label(s: str) -> str:
     return re.sub(r"[^0-9a-zA-Z]+", "", s).casefold()
 
@@ -516,9 +543,11 @@ def parse_step(st: RawStep, ref: Reference) -> ParsedStep:
         params = hint(ps, params, ref)
 
     by_label = {}
+    label_candidates: dict[str, list[dict]] = {}
     for o in opts:
         if o["display_label_en"]:
             by_label[_norm_label(o["display_label_en"])] = o
+            label_candidates.setdefault(_norm_label(o["display_label_en"]), []).append(o)
         by_label.setdefault(_norm_label(o["option_key"]), o)
     positional = [o for o in opts
                   if o["display_location"] == "inline" and not o["display_label_en"]]
@@ -567,12 +596,25 @@ def parse_step(st: RawStep, ref: Reference) -> ParsedStep:
         pool = [o for o in free if (o["option_type"] in ("object_ref", "target")) == is_ref]
         return (pool or free)[0]
 
+    # Options are read left to right; an option belonging to a nested group
+    # opens that section, and a label that exists both inside and outside it
+    # binds to the section currently open. A top-level option closes it again,
+    # which mirrors how FileMaker renders the step.
+    section = ""
     for param in params:
         opt = None
         value = param
         m = _LABEL_RE.match(param)
         if m and _norm_label(m.group(1)) in by_label:
-            opt = by_label[_norm_label(m.group(1))]
+            label = _norm_label(m.group(1))
+            cands = label_candidates.get(label, [])
+            if len(cands) > 1:
+                scoped = [o for o in cands if _option_section(o["xml_path"]) == section]
+                # only an unambiguous hit inside the open section wins; anything
+                # else keeps the previous flat behaviour untouched
+                opt = scoped[0] if len(scoped) == 1 else by_label[label]
+            else:
+                opt = by_label[label]
             value = m.group(2).strip()
         else:
             opt = take_bare_boolean(param) or take_positional(param)
@@ -584,6 +626,7 @@ def parse_step(st: RawStep, ref: Reference) -> ParsedStep:
         if opt["option_key"] in ps.options:
             ps.errors.append(f"line {st.line}: option '{opt['option_key']}' given twice")
             continue
+        section = _option_section(opt["xml_path"])
         coerced = _coerce(ps, opt, value, ref)
         if coerced is not None:
             ps.options[opt["option_key"]] = coerced
@@ -634,9 +677,7 @@ def _coerce(ps: ParsedStep, opt: dict, value: str, ref: Reference):
     if kind in ("object_ref", "target"):
         # A target may be a field OR a script-local variable ($x/$$x); an
         # object_ref always names a catalog object and never takes a variable.
-        if kind == "target" and _VAR_RE.match(value.strip()):
-            return {"name": value.strip(), "_form": "variable"}
-        r = parse_ref(value)
+        r = parse_target(value) if kind == "target" else parse_ref(value)
         if r is None:
             ps.errors.append(
                 f"line {ps.line}: '{_ellipsis(value)}' is not a valid object reference for '{key}'")
@@ -712,7 +753,17 @@ def _hint_custom_dialog(ps: ParsedStep, params: list[str], ref: Reference) -> li
                        "label": f"input{im.group(1)}_label",
                        "password": f"input{im.group(1)}_use_password"}[kind]
                 val = m.group(2).strip()
-                ps.options[key] = parse_ref(val) if kind == "field" else val
+                if kind == "field":
+                    # input slots are target-typed: field or variable
+                    parsed = parse_target(val)
+                    if parsed is None:
+                        ps.errors.append(
+                            f"line {ps.line}: '{_ellipsis(val)}' is not a valid "
+                            f"field or variable for '{key}'")
+                        continue
+                    ps.options[key] = parsed
+                else:
+                    ps.options[key] = val
                 continue
         rest.append(p)
     # a dialog always carries at least one button; FileMaker's default is "OK"

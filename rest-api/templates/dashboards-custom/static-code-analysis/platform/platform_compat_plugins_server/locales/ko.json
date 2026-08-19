@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "플러그인 호환성: FileMaker Server",
-  "analysis.defaultResult.meaning": "FileMaker Server에서 실행되지 않는 범위 내 플러그인 함수 호출"
- }
+  "manifest": {
+    "title": "플러그인 호환성: FileMaker Server",
+    "analysis.defaultResult.meaning": "FileMaker Server에서 실행되지 않는 범위 내 플러그인 함수 호출"
+  },
+  "layout": {}
 }

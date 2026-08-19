@@ -1,0 +1,31 @@
+{
+  "manifest": {
+    "title": "Kopierter Objektname",
+    "description": "Layout-Qualitätsregel — ein benanntes Layoutobjekt trägt ein Kopier-Suffix (» Copy«, » Kopie«), ein numerisches Einfüge-Suffix oder teilt seinen Namen mit einem anderen Objekt desselben Layouts. Benannte Objekte werden von Scripts und Formeln referenziert — Kopier-Reste treffen das falsche oder gar kein Objekt. Numerische Suffixe können auch bewusste Benennung sein, vor dem Umbenennen prüfen.\n\nAngelehnt an die fmCheckMate-Prüfung „Copied Object Name“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy-suffix": "Der Objektname trägt ein Kopier-Suffix — vermutlich ein Einfüge-Rest",
+    "messages.duplicate-name": "Der Objektname kommt auf diesem Layout mehrfach vor",
+    "messages.numeric-suffix": "Der Objektname endet auf ein Ziffern-Suffix — möglicherweise Einfüge-Rest, möglicherweise bewusste Benennung"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Kopier-Suffix",
+    "summary_kpi.props.items[2].label": "Ziffern-Suffix",
+    "summary_kpi.props.items[3].label": "Doppelte Namen",
+    "findings_card.props.title": "Kopierter Objektname",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine kopierten oder doppelten Objektnamen gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Grund",
+    "reason_filter.props.options[0].label": "alle Gründe",
+    "reason_filter.props.options[1].label": "Kopier-Suffix",
+    "reason_filter.props.options[2].label": "Ziffern-Suffix",
+    "reason_filter.props.options[3].label": "doppelte Namen",
+    "object_type_select.props.label": "Objekttyp",
+    "object_type_select.props.emptyOptionLabel": "alle Objekttypen",
+    "findings_table.props.columns[7].label": "Breite",
+    "findings_table.props.columns[8].label": "Höhe"
+  }
+}

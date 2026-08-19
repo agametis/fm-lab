@@ -26,7 +26,7 @@ The two shipped system bundles are **home** (`dashboards/home/data/` — project
 summary, object counts, files overview) and **file** (`dashboards/file/data/` —
 per-file info, triggers, start layout, accounts). Custom and plugin dashboards
 live under `dashboards-custom/<id>/data/` (e.g. static-code-analysis,
-modularization, script_todos).
+modularization, developer-workflow).
 
 ## The manifest wires datasets to tiles
 

@@ -18,6 +18,7 @@
     "findings_table.props.columns[2].label": "布局",
     "findings_table.props.columns[3].label": "上下文",
     "findings_table.props.columns[4].label": "文件",
-    "findings_table.props.columns[5].label": "放置数"
+    "findings_table.props.columns[5].label": "放置数",
+    "findings_table.props.columns[6].label": "位于入口内"
   }
 }

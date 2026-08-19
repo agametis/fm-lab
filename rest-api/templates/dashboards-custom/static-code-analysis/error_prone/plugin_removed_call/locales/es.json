@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Llamada a función de plug-in eliminada",
-  "analysis.defaultResult.meaning": "Llamadas a funciones de plug-in en el alcance cuya función está marcada como eliminada en la documentación del fabricante: estas llamadas fallan con un plug-in actual"
- }
+  "manifest": {
+    "title": "Llamada a función de plug-in eliminada",
+    "analysis.defaultResult.meaning": "Llamadas a funciones de plug-in en el alcance cuya función está marcada como eliminada en la documentación del fabricante: estas llamadas fallan con un plug-in actual"
+  },
+  "layout": {}
 }

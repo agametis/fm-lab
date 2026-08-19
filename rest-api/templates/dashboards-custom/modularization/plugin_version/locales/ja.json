@@ -19,7 +19,6 @@
     "findings_table.props.columns[4].label": "必要",
     "findings_table.props.columns[5].label": "インストール済み",
     "findings_table.props.columns[6].label": "カスタム関数経由",
-    "findings_table.props.columns[7].label": "メッセージ",
     "findings_table.props.empty.message": "チェックは無効です — ヘッダーでインストール済みバージョンを選択すると要件を検証できます(ニュートラル項目=インベントリのみ)。",
     "by_file_card.props.title": "ファイルごとの要件",
     "by_file_table.props.columns[0].label": "ファイル",

@@ -168,5 +168,9 @@
     },
     "noFilterMatches": "此分区中没有该状态的条目。",
     "openFolder": "打开文件夹"
+  },
+  "featured": {
+    "ruleCount_one": "{{count}} 条规则",
+    "ruleCount_other": "{{count}} 条规则"
   }
 }

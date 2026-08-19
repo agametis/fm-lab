@@ -12,6 +12,7 @@ import {
   putCachedRun, saveSectionState, saveTestsSettings, subscribeTestsStore,
   type CachedRun, type TestsSettings,
 } from '../lib/testsStore';
+import { dispatchAction, resolveAction } from '../dashboard/actions';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
 import './TestsPanel.css';
@@ -70,8 +71,17 @@ function worstRank(s: TestRunSummary | undefined): number {
   return STATE_ORDER.length;
 }
 
+/**
+ * Text einer Finding-Zeile. Dashboards liefern `message`; Query-Templates
+ * benennen die Spalte `_message`, weil die generische Query-Tabelle Spalten mit
+ * `_`-Präfix ausblendet — die Zeile bleibt hier trotzdem lesbar.
+ */
+function findingMessage(f: TestRunFinding): string {
+  return String(f.message ?? f._message ?? '');
+}
+
 function findingMatches(f: TestRunFinding, q: string): boolean {
-  return String(f.message ?? '').toLowerCase().includes(q)
+  return findingMessage(f).toLowerCase().includes(q)
     || String(f.script_name ?? '').toLowerCase().includes(q);
 }
 
@@ -116,7 +126,15 @@ const SummaryTokens: React.FC<{ summary?: TestRunSummary; showValueFor?: number 
   );
 };
 
-const MemberRow: React.FC<{ member: TestRunMemberResult; query: string }> = ({ member, query }) => {
+/**
+ * One member (rule) row. Two operating modes:
+ * - hierarchy (default): the line click jumps to the member's findings target
+ *   (`memberJump`), expanding is the ▸ button's job.
+ * - flat (`flatContext` set): the row stands alone in the flat result list, so
+ *   the line click toggles the findings instead and the title carries the
+ *   origin path (section › bundle) — navigation happens on the finding rows.
+ */
+const MemberRow: React.FC<{ member: TestRunMemberResult; query: string; flatContext?: string }> = ({ member, query, flatContext }) => {
   const { t } = useTranslation(['nav']);
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
@@ -126,9 +144,79 @@ const MemberRow: React.FC<{ member: TestRunMemberResult; query: string }> = ({ m
   const rows = q ? allRows.filter(f => findingMatches(f, q)) : allRows;
   const hasFindings = allRows.length > 0;
   const state = (member.runStatus === 'failed' ? 'failed' : member.resultState) as StateKey | undefined;
+  // A finding row is a direct deep link when the bundle's declarative row
+  // action resolves against it — the same jump the dashboard row click makes.
+  // Rows whose target column is empty (e.g. aggregate findings) stay plain.
+  const findingClickable = useCallback((f: TestRunFinding): boolean => {
+    const resolved = resolveAction(member.rowAction, f);
+    if (!resolved) return false;
+    return resolved.action !== 'openObject' || Boolean(resolved.args.uuid);
+  }, [member.rowAction]);
+  const openFinding = useCallback((f: TestRunFinding) => {
+    dispatchAction(member.rowAction, f, { navigate });
+  }, [member.rowAction, navigate]);
+  // Click on the WHOLE collapsed member line: open the layout with ALL findings
+  // of this rule marked at once (`?marks=` — literal UUID list, no origin
+  // resolution). Layout targets only — multi-step marking in the script viewer
+  // is a different mechanism (`?step=` is a single scroll anchor). With exactly
+  // one finding this degrades to the single-finding jump so the origin pill
+  // resolution applies. Per-row message context (ref_msgid / ref_arg_*) is
+  // dropped in the multi jump — one row's message would mislabel the set.
+  const memberJump = useMemo(() => {
+    const spec = member.rowAction;
+    const rows = member.findings?.rows || [];
+    if (!spec || spec.action !== 'openObject' || rows.length === 0) return null;
+    if (String(spec.args?.type ?? '') !== 'Layout') return null;
+    const resolved = rows
+      .map(f => ({ f, r: resolveAction(spec, f) }))
+      .filter((x): x is { f: TestRunFinding; r: NonNullable<ReturnType<typeof resolveAction>> } =>
+        x.r !== null && Boolean(x.r.args.uuid));
+    if (resolved.length === 0) return null;
+    // Object scope guarantees one shared nav_uuid — guard against mixed targets anyway.
+    const navUuid = String(resolved[0].r.args.uuid);
+    if (resolved.some(x => String(x.r.args.uuid) !== navUuid)) return null;
+    const marks = [...new Set(resolved.map(x => String(x.r.args.ref ?? '')).filter(Boolean))];
+    if (resolved.length === 1 || marks.length < 2) {
+      return { kind: 'single' as const, row: resolved[0].f };
+    }
+    const args: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(resolved[0].r.args)) {
+      if (k === 'ref' || k === 'ref_msgid' || k.startsWith('ref_arg_')) continue;
+      args[k] = v;
+    }
+    args.marks = marks.join(',');
+    return { kind: 'multi' as const, args };
+  }, [member.rowAction, member.findings]);
+  const jumpAllFindings = useCallback(() => {
+    if (!memberJump) return;
+    if (memberJump.kind === 'single') {
+      dispatchAction(member.rowAction, memberJump.row, { navigate });
+    } else {
+      // Args are fully resolved literals — dispatch without a substitution row.
+      dispatchAction({ action: 'openObject', args: memberJump.args }, undefined, { navigate });
+    }
+  }, [memberJump, member.rowAction, navigate]);
+  const flat = flatContext !== undefined;
+  const lineInteractive = flat ? hasFindings : memberJump !== null;
+  const activateLine = flat ? () => setExpanded(e => !e) : jumpAllFindings;
   return (
     <div className={`tests-member-row${member.runStatus === 'skipped' ? ' tests-member-skipped' : ''}`}>
-      <div className="tests-member-line">
+      <div
+        className={`tests-member-line${lineInteractive ? ' tests-member-line-link' : ''}`}
+        // Buttons/selects inside the line keep their own handlers — the line
+        // click only fires on the non-interactive remainder of the row.
+        onClick={lineInteractive ? e => {
+          if ((e.target as HTMLElement).closest('button, select, a')) return;
+          activateLine();
+        } : undefined}
+        onKeyDown={lineInteractive ? e => {
+          if (e.key === 'Enter' && e.target === e.currentTarget) activateLine();
+        } : undefined}
+        role={lineInteractive ? (flat ? 'button' : 'link') : undefined}
+        tabIndex={lineInteractive ? 0 : undefined}
+        aria-expanded={flat && hasFindings ? expanded : undefined}
+        title={flat ? flatContext : memberJump ? (t('nav:testsPanel.openMemberFindings') as string) : undefined}
+      >
         <button
           className="tests-member-expand"
           onClick={() => setExpanded(e => !e)}
@@ -166,12 +254,23 @@ const MemberRow: React.FC<{ member: TestRunMemberResult; query: string }> = ({ m
       </div>
       {expanded && hasFindings && (
         <ul className="tests-findings">
-          {rows.map((f, i) => (
-            <li key={i} className={severityClass(f.severity as string)}>
-              {f.step_no != null && <span className="tests-finding-step">#{String(f.step_no)}</span>}
-              <span>{String(f.message ?? '')}</span>
-            </li>
-          ))}
+          {rows.map((f, i) => {
+            const clickable = findingClickable(f);
+            return (
+              <li
+                key={i}
+                className={`${severityClass(f.severity as string)}${clickable ? ' tests-finding-link' : ''}`}
+                onClick={clickable ? () => openFinding(f) : undefined}
+                onKeyDown={clickable ? e => { if (e.key === 'Enter') openFinding(f); } : undefined}
+                role={clickable ? 'link' : undefined}
+                tabIndex={clickable ? 0 : undefined}
+                title={clickable ? (t('nav:testsPanel.openFinding') as string) : undefined}
+              >
+                {f.step_no != null && <span className="tests-finding-step">#{String(f.step_no)}</span>}
+                <span>{findingMessage(f)}</span>
+              </li>
+            );
+          })}
           {q && rows.length < allRows.length && (
             <li className="tests-findings-truncated">
               {t('nav:testsPanel.findingsFiltered', { shown: rows.length, total: allRows.length })}
@@ -353,7 +452,7 @@ function buildMatrix(tests: TestListItem[], runFor: (t: TestListItem) => CachedR
     for (const m of compatResults(test, run)) {
       if (m.findings?.truncated) truncated = true;
       for (const f of m.findings?.rows || []) {
-        const key = String(f.step_uuid || `${f.script_name ?? ''}#${f.step_no ?? ''}#${f.message ?? ''}`);
+        const key = String(f.step_uuid || `${f.script_name ?? ''}#${f.step_no ?? ''}#${findingMessage(f)}`);
         const label = `${f.script_name ?? ''}${f.step_no != null ? ` · #${f.step_no}` : ''}`;
         const row = rows.get(key) || { key, label, cells: {} };
         const sev = (String(f.severity || '').toLowerCase() === 'error' ? 'error'
@@ -632,7 +731,10 @@ export const TestsPanel: React.FC<TestsPanelProps> = ({ objectUuid, objectType, 
     return true;
   }, [settings]);
 
-  const matchesFilters = useCallback((test: TestListItem): boolean => {
+  // Type + text predicate, kept separate from the state predicate: it is also
+  // the stable base for the chip counts and run-all — an active state chip
+  // must not shrink the other chips' counts.
+  const matchesMeta = useCallback((test: TestListItem): boolean => {
     if (typeFilter.size > 0 && !typeFilter.has(test.testType)) return false;
     const q = query.trim().toLowerCase();
     if (q) {
@@ -641,13 +743,20 @@ export const TestsPanel: React.FC<TestsPanelProps> = ({ objectUuid, objectType, 
         || test.keywords.some(k => k.toLowerCase().includes(q));
       if (!inMeta && !runMatchesQuery(runFor(test), q)) return false;
     }
-    if (stateFilter.size > 0) {
-      const summary = runFor(test)?.result.summary;
-      if (!summary) return false;
-      if (![...stateFilter].some(k => summary[k] > 0)) return false;
-    }
     return true;
-  }, [typeFilter, query, stateFilter, runFor]);
+  }, [typeFilter, query, runFor]);
+
+  const matchesState = useCallback((test: TestListItem): boolean => {
+    if (stateFilter.size === 0) return true;
+    const summary = runFor(test)?.result.summary;
+    if (!summary) return false;
+    return [...stateFilter].some(k => summary[k] > 0);
+  }, [stateFilter, runFor]);
+
+  const matchesFilters = useCallback(
+    (test: TestListItem): boolean => matchesMeta(test) && matchesState(test),
+    [matchesMeta, matchesState],
+  );
 
   const visibleActiveTests = useMemo(() => {
     const out: TestListItem[] = [];
@@ -659,25 +768,80 @@ export const TestsPanel: React.FC<TestsPanelProps> = ({ objectUuid, objectType, 
     return out;
   }, [sections, isActive, matchesFilters]);
 
-  // Aggregated summary bar: runs of currently visible active tests.
+  // Active tests after type + text filter but BEFORE the state filter —
+  // basis for the summary chips, the "not run" count and run-all.
+  const metaActiveTests = useMemo(() => {
+    const out: TestListItem[] = [];
+    for (const section of sections) {
+      for (const test of section.tests) {
+        if (isActive(test, section) && matchesMeta(test)) out.push(test);
+      }
+    }
+    return out;
+  }, [sections, isActive, matchesMeta]);
+
+  // Any active result/type chip switches the panel into the flat result list.
+  const flatMode = stateFilter.size > 0 || typeFilter.size > 0;
+
+  // Flat result list: the matching member rows (level 3 — one row per rule
+  // result, chip counts and row count add up), sorted worst-first, hierarchy
+  // order as tiebreaker. Members exist only for cached runs — tests without a
+  // run stay in the "not run" count instead.
+  const flatMembers = useMemo<{ key: string; member: TestRunMemberResult; context: string }[]>(() => {
+    if (!flatMode) return [];
+    const q = query.trim().toLowerCase();
+    const out: { key: string; member: TestRunMemberResult; context: string; rank: number; pos: number }[] = [];
+    let pos = 0;
+    for (const section of sections) {
+      for (const test of section.tests) {
+        if (!isActive(test, section)) continue;
+        if (typeFilter.size > 0 && !typeFilter.has(test.testType)) continue;
+        const run = runFor(test);
+        if (!run) continue;
+        run.result.results.forEach((member, i) => {
+          pos += 1;
+          const state = (member.runStatus === 'failed' ? 'failed'
+            : member.runStatus === 'skipped' ? 'skipped' : member.resultState) as StateKey | undefined;
+          if (stateFilter.size > 0 && (!state || !stateFilter.has(state))) return;
+          if (q && !(member.title || member.ref).toLowerCase().includes(q)
+            && !(member.findings?.rows || []).some(f => findingMatches(f, q))) return;
+          out.push({
+            key: `${test.id}|${member.ref}|${i}`,
+            member,
+            context: `${section.label} › ${test.title}`,
+            rank: state ? STATE_ORDER.indexOf(state) : STATE_ORDER.length,
+            pos,
+          });
+        });
+      }
+    }
+    return out.sort((a, b) => (a.rank - b.rank) || (a.pos - b.pos));
+  }, [flatMode, sections, isActive, typeFilter, stateFilter, query, runFor]);
+
+  const flatHasRuns = useMemo(
+    () => metaActiveTests.some(test => runFor(test) !== undefined),
+    [metaActiveTests, runFor],
+  );
+
+  // Aggregated summary bar: runs of the meta-filtered active tests.
   const totals = useMemo(() => {
     const sum = emptySummary();
     let ran = 0;
-    for (const test of visibleActiveTests) {
+    for (const test of metaActiveTests) {
       const run = runFor(test);
       if (run) { addSummary(sum, run.result.summary); ran += 1; }
     }
-    return { sum, ran, notRun: visibleActiveTests.length - ran };
-  }, [visibleActiveTests, runFor]);
+    return { sum, ran, notRun: metaActiveTests.length - ran };
+  }, [metaActiveTests, runFor]);
 
   const newestRunAt = useMemo(() => {
     let newest = 0;
-    for (const test of visibleActiveTests) {
+    for (const test of metaActiveTests) {
       const run = runFor(test);
       if (run && run.at > newest) newest = run.at;
     }
     return newest || null;
-  }, [visibleActiveTests, runFor]);
+  }, [metaActiveTests, runFor]);
 
   const typeCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -707,17 +871,19 @@ export const TestsPanel: React.FC<TestsPanelProps> = ({ objectUuid, objectType, 
   }, []);
 
   // Sequential run keeps server load bounded; results appear progressively.
+  // Runs over the state-independent set — with a state chip active, run-all
+  // would otherwise iterate an empty (or misleadingly small) selection.
   const handleRunAll = useCallback(async () => {
     setRunningAll(true);
     try {
-      for (const test of visibleActiveTests) {
+      for (const test of metaActiveTests) {
         // eslint-disable-next-line no-await-in-loop
         await handleRun(test);
       }
     } finally {
       setRunningAll(false);
     }
-  }, [visibleActiveTests, handleRun]);
+  }, [metaActiveTests, handleRun]);
 
   if (listError) return <ErrorMessage message={listError} />;
   if (tests === null) return <LoadingSpinner message={t('nav:testsPanel.loading') as string} />;
@@ -941,6 +1107,16 @@ export const TestsPanel: React.FC<TestsPanelProps> = ({ objectUuid, objectType, 
               <span className="tests-chip-count">{totals.sum[key]}</span>
             </button>
           ))}
+          {flatMode && (
+            <button
+              className="tests-chip tests-filter-reset"
+              onClick={() => { setStateFilter(new Set()); setTypeFilter(new Set()); }}
+              title={t('nav:testsPanel.filterReset') as string}
+              aria-label={t('nav:testsPanel.filterReset') as string}
+            >
+              ×
+            </button>
+          )}
           {totals.notRun > 0 && (
             <span className="tests-notrun">{t('nav:testsPanel.notRun', { count: totals.notRun })}</span>
           )}
@@ -969,14 +1145,16 @@ export const TestsPanel: React.FC<TestsPanelProps> = ({ objectUuid, objectType, 
             </button>
           ))}
         </div>
-        <label className="tests-sort-toggle">
-          <input
-            type="checkbox"
-            checked={sortByResult}
-            onChange={e => setSortByResult(e.target.checked)}
-          />
-          {t('nav:testsPanel.sortByResult')}
-        </label>
+        {!flatMode && (
+          <label className="tests-sort-toggle">
+            <input
+              type="checkbox"
+              checked={sortByResult}
+              onChange={e => setSortByResult(e.target.checked)}
+            />
+            {t('nav:testsPanel.sortByResult')}
+          </label>
+        )}
         <input
           type="search"
           className="tests-toolbar-search"
@@ -988,19 +1166,35 @@ export const TestsPanel: React.FC<TestsPanelProps> = ({ objectUuid, objectType, 
         <button
           className="tests-run-button tests-run-all"
           onClick={handleRunAll}
-          disabled={busy || visibleActiveTests.length === 0}
+          disabled={busy || metaActiveTests.length === 0}
         >
           {runningAll
             ? t('nav:testsPanel.running')
-            : t('nav:testsPanel.runAll', { count: visibleActiveTests.length })}
+            : t('nav:testsPanel.runAll', { count: metaActiveTests.length })}
         </button>
       </div>
-      {visibleActiveTests.length === 0 && (
-        <div className="tests-panel-empty">
-          <p>{t('nav:testsPanel.noMatch')}</p>
-        </div>
+      {flatMode ? (
+        flatMembers.length > 0 ? (
+          <div className="tests-flat-list">
+            {flatMembers.map(fm => (
+              <MemberRow key={fm.key} member={fm.member} query={query} flatContext={fm.context} />
+            ))}
+          </div>
+        ) : (
+          <div className="tests-panel-empty">
+            <p>{t(flatHasRuns ? 'nav:testsPanel.noMatch' : 'nav:testsPanel.noResultsYet')}</p>
+          </div>
+        )
+      ) : (
+        <>
+          {visibleActiveTests.length === 0 && (
+            <div className="tests-panel-empty">
+              <p>{t('nav:testsPanel.noMatch')}</p>
+            </div>
+          )}
+          {sections.map(renderSection)}
+        </>
       )}
-      {sections.map(renderSection)}
     </div>
   );
 };

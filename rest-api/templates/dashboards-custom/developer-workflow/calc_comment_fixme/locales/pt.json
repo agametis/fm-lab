@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Marcador FIXME em um comentário de cálculo",
+    "description": "Regra da família “Trabalho inacabado”: um cálculo do FileMaker contém um marcador FIXME (FIXME, FIX ME, FIX IT, FIXIT) em um de seus comentários. São verificados cinco locais: funções personalizadas, cálculos de campo, cálculos de entrada automática e de validação, e cálculos de etapas de script. Um FIXME indica um defeito conhecido que foi entregue — daí a severidade warning. O marcador só conta dentro de um comentário (// até o fim da linha ou /* … */): um literal de texto “TODO” não é uma ocorrência.",
+    "messages.custom_function": "Marcador FIXME no comentário de uma função personalizada",
+    "messages.field_calc": "Marcador FIXME no comentário de um cálculo de campo",
+    "messages.field_autoenter": "Marcador FIXME no comentário de um cálculo de entrada automática",
+    "messages.field_validation": "Marcador FIXME no comentário de um cálculo de validação",
+    "messages.script_step": "Marcador FIXME no comentário de um cálculo de etapa de script"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Funções personalizadas",
+    "summary_kpi.props.items[2].label": "Campos",
+    "summary_kpi.props.items[3].label": "Etapas de script",
+    "summary_kpi.props.items[4].label": "Arquivos afetados",
+    "findings_card.props.title": "Marcador FIXME em um comentário de cálculo",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, objeto ou comentário…",
+    "findings_table.props.empty.message": "Nenhum marcador FIXME em comentários de cálculos.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Local",
+    "findings_table.props.columns[2].label": "Objeto",
+    "findings_table.props.columns[3].label": "Etapa",
+    "findings_table.props.columns[4].label": "Marcador",
+    "findings_table.props.columns[5].label": "Comentário"
+  }
+}

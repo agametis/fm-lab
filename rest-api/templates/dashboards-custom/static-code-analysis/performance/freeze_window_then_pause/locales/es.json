@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Freeze Window terminado por una pausa",
+    "description": "Regla de rendimiento — un script congela la ventana y luego hace una pausa. Pause/Resume Script termina el estado congelado: la ventana se renderiza a mitad del script y la congelación pierde su efecto a partir de ahí."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "findings_card.props.title": "Freeze Window terminado por una pausa",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o script…",
+    "findings_table.props.empty.message": "Ningún script congela la ventana y hace una pausa después.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Freeze Window",
+    "findings_table.props.columns[3].label": "Primera pausa",
+    "findings_table.props.columns[4].label": "Pausas tras congelar"
+  }
+}

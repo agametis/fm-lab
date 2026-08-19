@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Recherche cassée",
+    "description": "Règle de risque d'erreur — une recherche dont la source n'existe plus : l'occurrence de table a disparu, la table source manque dans le fichier cible, ou la rubrique source a été supprimée. Une recherche qui ne se résout pas ne copie rien et ne signale rien — la rubrique reste simplement vide sur chaque nouvel enregistrement.\n\nD’après le contrôle fmCheckMate « ListFieldsWithBrokenLookup » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-relationship": "La recherche pointe vers une occurrence de table qui n'existe plus",
+    "messages.missing-table": "La table source de la recherche manque dans le fichier cible",
+    "messages.missing-field": "La rubrique source de la recherche n'existe pas dans la table source"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Recherches dans la portée",
+    "summary_kpi.props.items[2].label": "Non vérifiable",
+    "summary_kpi.props.items[3].label": "Fichiers concernés",
+    "findings_card.props.title": "Recherche cassée",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Table",
+    "findings_table.props.columns[2].label": "Rubrique",
+    "findings_table.props.columns[3].label": "Relation de recherche",
+    "findings_table.props.columns[4].label": "Rubrique source",
+    "findings_table.props.columns[5].label": "Fichier cible",
+    "findings_table.props.columns[6].label": "Défaut",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, une table ou une rubrique…",
+    "findings_table.props.empty.message": "Aucune recherche cassée trouvée."
+  }
+}

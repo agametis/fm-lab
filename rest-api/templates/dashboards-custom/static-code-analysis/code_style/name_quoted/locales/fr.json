@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Nom d'objet entre guillemets",
+    "description": "Règle de style — un nom d'objet commence et se termine par un guillemet, presque toujours parce qu'il a été collé depuis un calcul. Les guillemets font partie du nom : tout accès par nom doit les reproduire.\n\nD’après le contrôle fmCheckMate « Quoted Object Name » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.quoted-name": "Le nom est entre guillemets"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Types d'objet",
+    "summary_kpi.props.items[2].label": "Fichiers concernés",
+    "findings_card.props.title": "Nom d'objet entre guillemets",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Type d'objet",
+    "findings_table.props.columns[2].label": "Objet",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un type d'objet ou un nom…",
+    "findings_table.props.empty.message": "Aucun nom d'objet entre guillemets trouvé."
+  }
+}

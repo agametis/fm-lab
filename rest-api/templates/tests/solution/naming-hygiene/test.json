@@ -1,0 +1,138 @@
+{
+  "id": "naming-hygiene",
+  "version": "1.0.0",
+  "title": "Naming Hygiene",
+  "description": "Name-level checks across the user-named schema objects — scripts, fields, layouts, custom functions, table occurrences, base tables, value lists, custom menus, accounts and privilege sets. Covers invisible whitespace at the edges of a name, names beyond a readable length or sitting on FileMaker's 100-character ceiling, leftover duplicate suffixes and names that were pasted out of a calculation together with their quotes.",
+  "keywords": [
+    "naming",
+    "hygiene",
+    "code-style",
+    "fmcheckmate"
+  ],
+  "testType": "code-quality",
+  "objectTypes": [
+    "Script",
+    "Field",
+    "Layout",
+    "CustomFunction",
+    "TableOccurrence",
+    "BaseTable",
+    "ValueList"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "name_trailing_whitespace"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "name_too_long"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "name_copied_suffix"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "name_quoted"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "quick",
+      "title": "Quick Check",
+      "description": "Names that break references",
+      "members": [
+        "name_trailing_whitespace",
+        "name_quoted"
+      ]
+    },
+    {
+      "id": "full",
+      "title": "Full Check"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Namens-Hygiene",
+      "description": "Prüfungen auf Namensebene über die benutzerbenannten Schemaobjekte — Scripts, Felder, Layouts, Custom Functions, Tabellenauftreten, Basistabellen, Wertelisten, benutzerdefinierte Menüs, Konten und Berechtigungen. Erfasst unsichtbare Leerzeichen am Namensrand, Namen jenseits der Lesbarkeitsgrenze oder genau auf FileMakers 100-Zeichen-Limit, übrig gebliebene Duplikat-Suffixe und Namen, die samt Anführungszeichen aus einer Formel eingefügt wurden.",
+      "profiles.quick.title": "Schnellprüfung",
+      "profiles.quick.description": "Namen, die Referenzen brechen",
+      "profiles.full.title": "Vollprüfung"
+    },
+    "es": {
+      "title": "Higiene de nombres",
+      "description": "Comprobaciones a nivel de nombre en los objetos de esquema con nombre propio: guiones, campos, presentaciones, funciones personalizadas, ocurrencias de tabla, tablas base, listas de valores, menús personalizados, cuentas y conjuntos de privilegios. Cubre espacios invisibles en los extremos, nombres por encima del umbral de legibilidad o justo en el límite de 100 caracteres, sufijos de duplicado olvidados y nombres pegados desde una fórmula con sus comillas.",
+      "profiles.quick.title": "Comprobación rápida",
+      "profiles.quick.description": "Nombres que rompen referencias",
+      "profiles.full.title": "Comprobación completa"
+    },
+    "fr": {
+      "title": "Hygiène des noms",
+      "description": "Vérifications au niveau des noms sur les objets de schéma nommés par l'utilisateur : scripts, rubriques, modèles, fonctions personnalisées, occurrences de table, tables source, listes de valeurs, menus personnalisés, comptes et jeux de privilèges. Couvre les espaces invisibles en bordure, les noms au-delà du seuil de lisibilité ou à la limite de 100 caractères, les suffixes de duplication oubliés et les noms collés depuis un calcul avec leurs guillemets.",
+      "profiles.quick.title": "Vérification rapide",
+      "profiles.quick.description": "Noms qui cassent les références",
+      "profiles.full.title": "Vérification complète"
+    },
+    "it": {
+      "title": "Igiene dei nomi",
+      "description": "Controlli a livello di nome sugli oggetti di schema con nome utente: script, campi, formati, funzioni personalizzate, occorrenze tabella, tabelle base, liste valori, menu personalizzati, account e set di privilegi. Copre spazi invisibili ai bordi, nomi oltre la soglia di leggibilità o al limite di 100 caratteri, suffissi di duplicazione dimenticati e nomi incollati da un calcolo con le virgolette.",
+      "profiles.quick.title": "Controllo rapido",
+      "profiles.quick.description": "Nomi che rompono i riferimenti",
+      "profiles.full.title": "Controllo completo"
+    },
+    "ja": {
+      "title": "命名の衛生チェック",
+      "description": "ユーザーが命名するスキーマオブジェクト（スクリプト、フィールド、レイアウト、カスタム関数、テーブルオカレンス、ベーステーブル、値一覧、カスタムメニュー、アカウント、アクセス権セット）に対する名前レベルの検査です。名前の前後の見えない空白、可読性のしきい値超過や FileMaker の 100 文字上限ちょうどの名前、残ったままの複製接尾辞、計算式から引用符ごと貼り付けられた名前を対象とします。",
+      "profiles.quick.title": "クイックチェック",
+      "profiles.quick.description": "参照を壊す名前",
+      "profiles.full.title": "フルチェック"
+    },
+    "ko": {
+      "title": "이름 위생 검사",
+      "description": "사용자가 이름을 붙이는 스키마 객체(스크립트, 필드, 레이아웃, 사용자 정의 함수, 테이블 어커런스, 기본 테이블, 값 목록, 사용자 정의 메뉴, 계정, 접근 권한 세트)에 대한 이름 수준 검사입니다. 이름 앞뒤의 보이지 않는 공백, 가독성 임계값을 넘거나 FileMaker의 100자 한계에 걸린 이름, 남아 있는 복제 접미사, 계산식에서 따옴표째 붙여넣은 이름을 다룹니다.",
+      "profiles.quick.title": "빠른 검사",
+      "profiles.quick.description": "참조를 깨뜨리는 이름",
+      "profiles.full.title": "전체 검사"
+    },
+    "nl": {
+      "title": "Naamhygiëne",
+      "description": "Controles op naamniveau over de door de gebruiker benoemde schemaobjecten — scripts, velden, lay-outs, aangepaste functies, tabelinstanties, basistabellen, keuzelijsten, aangepaste menu's, accounts en bevoegdheden. Omvat onzichtbare spaties aan de randen, namen boven de leesbaarheidsdrempel of precies op FileMakers grens van 100 tekens, achtergebleven duplicaat-achtervoegsels en namen die met aanhalingstekens uit een berekening zijn geplakt.",
+      "profiles.quick.title": "Snelle controle",
+      "profiles.quick.description": "Namen die verwijzingen breken",
+      "profiles.full.title": "Volledige controle"
+    },
+    "pt": {
+      "title": "Higiene de nomes",
+      "description": "Verificações ao nível do nome nos objetos de esquema nomeados pelo utilizador — scripts, campos, esquemas de página, funções personalizadas, ocorrências de tabela, tabelas base, listas de valores, menus personalizados, contas e conjuntos de privilégios. Abrange espaços invisíveis nas extremidades, nomes acima do limiar de legibilidade ou no limite de 100 caracteres, sufixos de duplicação esquecidos e nomes colados de um cálculo com as aspas.",
+      "profiles.quick.title": "Verificação rápida",
+      "profiles.quick.description": "Nomes que quebram referências",
+      "profiles.full.title": "Verificação completa"
+    },
+    "sv": {
+      "title": "Namnhygien",
+      "description": "Kontroller på namnnivå över de användarnamngivna schemaobjekten — skript, fält, layouter, egna funktioner, tabellförekomster, bastabeller, värdelistor, egna menyer, konton och behörigheter. Omfattar osynliga blanksteg i kanterna, namn över läsbarhetströskeln eller precis vid FileMakers gräns på 100 tecken, kvarglömda dubblettsuffix och namn som klistrats in från en beräkning med citattecken och allt.",
+      "profiles.quick.title": "Snabbkontroll",
+      "profiles.quick.description": "Namn som bryter referenser",
+      "profiles.full.title": "Fullständig kontroll"
+    },
+    "zh-Hans": {
+      "title": "命名卫生检查",
+      "description": "针对由用户命名的架构对象（脚本、字段、版面、自定义函数、表实例、基表、值列表、自定义菜单、账户与权限集）的名称层面检查。涵盖名称首尾不可见的空白、超过可读阈值或正好卡在 FileMaker 100 字符上限的名称、残留的复制后缀，以及连同引号一起从计算式粘贴过来的名称。",
+      "profiles.quick.title": "快速检查",
+      "profiles.quick.description": "会破坏引用的名称",
+      "profiles.full.title": "完整检查"
+    }
+  }
+}

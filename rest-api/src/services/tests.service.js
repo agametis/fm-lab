@@ -559,18 +559,30 @@ function humanizeFolderSegment(seg) {
   return seg.replace(/[-_]/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase());
 }
 
-async function resolveFolderLabel(folderPath, lang) {
-  if (!folderPath) return null;
-  const segs = String(folderPath).split('/');
-  const parts = [];
+// Splits a folder path into localized crumbs: "a/b" → [{path:"a",label},
+// {path:"a/b",label}]. Each crumb carries its PARTIAL path so the breadcrumb of
+// a single test can link back into the overview (`/tests?folder=<partial>`),
+// segment by segment. Same cascade as the dashboard side:
+// folder.json locales[lang] → title → humanized segment.
+async function resolveFolderCrumbs(folderPath, lang) {
+  if (!folderPath) return [];
+  const crumbs = [];
   let prefix = '';
-  for (const seg of segs) {
+  for (const seg of String(folderPath).split('/')) {
     prefix = prefix ? `${prefix}/${seg}` : seg;
     const meta = await loadFolderMeta(prefix);
     const label = (lang && meta?.locales && meta.locales[lang]) || meta?.title || humanizeFolderSegment(seg);
-    parts.push(label);
+    crumbs.push({ path: prefix, label });
   }
-  return parts.join(' / ');
+  return crumbs;
+}
+
+// Joined display name of a folder path ("a/b" → "A-Label / B-Label").
+// Deliberately routed through resolveFolderCrumbs so there is exactly ONE
+// label cascade — crumbs and joined label cannot drift apart.
+async function resolveFolderLabel(folderPath, lang) {
+  if (!folderPath) return null;
+  return (await resolveFolderCrumbs(folderPath, lang)).map(c => c.label).join(' / ');
 }
 
 // ---------------------------------------------------------------------------
@@ -765,6 +777,34 @@ function buildOpenTarget(member, params) {
   return qs ? `${base}?${qs}` : base;
 }
 
+/**
+ * Row-click action of the bundle's findings table: the `onRowClick` spec of
+ * the Table component whose enclosing data binding is the `findings` dataset
+ * (the same dataset-id convention the findings fetch in results.service uses).
+ * The tests tab replays this spec per finding row so a finding click jumps
+ * straight to the object deep link the dashboard row click would produce.
+ * Null when the bundle declares none (query members, aggregate-only tables).
+ */
+function findingsRowAction(layout) {
+  if (!layout || typeof layout !== 'object') return null;
+  let found = null;
+  const walk = (node, dataset) => {
+    if (found || !node || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      for (const child of node) walk(child, dataset);
+      return;
+    }
+    const bound = node.data && node.data.dataset ? node.data.dataset : dataset;
+    if (node.type === 'Table' && bound === 'findings' && node.props && node.props.onRowClick) {
+      found = node.props.onRowClick;
+      return;
+    }
+    if (node.children) walk(node.children, bound);
+  };
+  walk(layout.root, null);
+  return found;
+}
+
 // Two-axis derivation and the catalog fingerprint moved to results.service
 // (Result Envelope v1) — re-exported below so existing consumers keep working.
 const { deriveResultState, catalogMeta } = resultsService;
@@ -800,9 +840,10 @@ async function runMember(ctx, member, scopeParams, options) {
   // Members can declare reference requirements (manifest analysis.requires).
   // A missing plugin-spec DB is an install-state, not an error: skip with an
   // explanatory reason instead of failing the member (pattern: DDR-Info).
+  let bundle = null;
   if (member.kind === 'dashboard') {
     try {
-      const bundle = await dashboardService.getBundle(member.ref);
+      bundle = await dashboardService.getBundle(member.ref);
       const requires = (bundle.manifest.analysis && bundle.manifest.analysis.requires) || [];
       if (requires.includes('plugin-spec') && !db.isPluginSpecAttached()) {
         return {
@@ -861,7 +902,11 @@ async function runMember(ctx, member, scopeParams, options) {
       value: envelope.value,
     },
   };
-  if (envelope.findings) memberResult.findings = envelope.findings;
+  if (envelope.findings) {
+    memberResult.findings = envelope.findings;
+    const rowAction = findingsRowAction(bundle && bundle.layout);
+    if (rowAction) memberResult.rowAction = rowAction;
+  }
   memberResult.resultState = envelope.resultState;
   return memberResult;
 }
@@ -1031,6 +1076,7 @@ module.exports = {
   resolveMemberSummary,
   runTest,
   resolveFolderLabel,
+  resolveFolderCrumbs,
   resolveFolderOrder,
   loadFolderMeta,
   localizeTest,
@@ -1040,5 +1086,6 @@ module.exports = {
   // exported for tests
   normalizeScope,
   validateTest,
+  findingsRowAction,
   deriveResultState,
 };

@@ -66,10 +66,6 @@
                 {
                   "field": "script_name",
                   "label": "Script"
-                },
-                {
-                  "field": "message",
-                  "label": "Finding"
                 }
               ],
               "onRowClick": {

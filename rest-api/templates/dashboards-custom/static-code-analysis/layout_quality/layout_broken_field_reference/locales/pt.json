@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Referência de campo quebrada",
+    "description": "Regra de qualidade de Layout — um objeto de layout referencia um campo ou ocorrência de tabela que já não existe. A resolução usa os ID numéricos (ID do campo na tabela de destino, ID da ocorrência de tabela no ficheiro) e nunca os UUID: referências entre ficheiros carregam frequentemente um UUID desatualizado mesmo com o campo intacto, e o FileMaker resolve por ID em execução. Objetos cujo ficheiro de destino não está no catálogo são ignorados, e objetos contentores são excluídos porque o seu XML engloba a marcação dos filhos.\n\nBaseado na verificação fmCheckMate “Broken Field” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-field": "O campo já não existe na tabela de destino",
+    "messages.missing-to": "A ocorrência de tabela já não existe neste ficheiro"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Layouts afetados",
+    "summary_kpi.props.items[2].label": "Arquivos afetados",
+    "findings_card.props.title": "Referência de campo quebrada",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, Layout ou objeto…",
+    "findings_table.props.empty.message": "Não foram encontradas referências de campo quebradas.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Campo",
+    "findings_table.props.columns[5].label": "Ocorrência de tabela",
+    "findings_table.props.columns[8].label": "Largura",
+    "findings_table.props.columns[9].label": "Altura"
+  }
+}

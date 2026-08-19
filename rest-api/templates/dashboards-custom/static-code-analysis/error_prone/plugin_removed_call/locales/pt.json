@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Chamada de função de plug-in removida",
-  "analysis.defaultResult.meaning": "Chamadas de funções de plug-in no escopo cuja função está marcada como removida na documentação do fabricante — estas chamadas falham com um plug-in atual"
- }
+  "manifest": {
+    "title": "Chamada de função de plug-in removida",
+    "analysis.defaultResult.meaning": "Chamadas de funções de plug-in no escopo cuja função está marcada como removida na documentação do fabricante — estas chamadas falham com um plug-in atual"
+  },
+  "layout": {}
 }

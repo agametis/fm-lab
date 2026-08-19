@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Gebroken commentaarstructuur",
+    "description": "Foutgevoeligheidsregel — een formule bevat commentaartekens die niet kunnen nesten: een tweede /* binnen een open commentaar, een overtollige */ na het al gesloten blok, of een //-regelcommentaar direct tegen een openende /*. FileMaker-commentaar nest niet, dus delen van de formule komen tegen de bedoeling in binnen of buiten het commentaar terecht.\n\nGebaseerd op de fmCheckMate-controle “Broken Calculation /*Commented Out*/” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.nested-open": "Een commentaar opent binnen een open commentaar",
+    "messages.double-close": "Een commentaar wordt tweemaal gesloten",
+    "messages.line-in-block": "Een regelcommentaar staat in een commentaarblok"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Genest geopend",
+    "summary_kpi.props.items[2].label": "Dubbel gesloten",
+    "summary_kpi.props.items[3].label": "Betrokken bestanden",
+    "findings_card.props.title": "Gebroken commentaarstructuur",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Objecttype",
+    "findings_table.props.columns[2].label": "Object",
+    "findings_table.props.columns[3].label": "Slot",
+    "findings_table.props.columns[4].label": "Locatie",
+    "findings_table.props.columns[5].label": "Defect",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, object of formule…",
+    "findings_table.props.empty.message": "Geen gebroken commentaarstructuren gevonden."
+  }
+}

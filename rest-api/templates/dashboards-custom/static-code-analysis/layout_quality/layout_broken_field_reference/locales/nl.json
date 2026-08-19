@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Verbroken veldverwijzing",
+    "description": "Layoutkwaliteitsregel — een layoutobject verwijst naar een veld of tabelvoorkomen dat niet meer bestaat. De resolutie verloopt via de numerieke ID's (veld-ID in de doeltabel, tabelvoorkomen-ID in het bestand), nooit via UUID's: verwijzingen tussen bestanden dragen vaak een verouderd UUID terwijl het veld intact is, en FileMaker lost tijdens uitvoering op via het ID. Objecten waarvan het doelbestand ontbreekt in de catalogus worden overgeslagen, en containerobjecten zijn uitgesloten omdat hun XML de markup van hun kinderen bevat.\n\nGebaseerd op de fmCheckMate-controle “Broken Field” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-field": "Het veld bestaat niet meer in de doeltabel",
+    "messages.missing-to": "Het tabelvoorkomen bestaat niet meer in dit bestand"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken Layouts",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "Verbroken veldverwijzing",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen verbroken veldverwijzingen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objecttype",
+    "findings_table.props.columns[3].label": "Object",
+    "findings_table.props.columns[4].label": "Veld",
+    "findings_table.props.columns[5].label": "Tabelvoorkomen",
+    "findings_table.props.columns[8].label": "Breedte",
+    "findings_table.props.columns[9].label": "Hoogte"
+  }
+}

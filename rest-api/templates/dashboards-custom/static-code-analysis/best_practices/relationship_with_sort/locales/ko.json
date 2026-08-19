@@ -12,6 +12,11 @@
     "findings_table.props.columns[0].label": "파일",
     "findings_table.props.columns[1].label": "왼쪽 TO",
     "findings_table.props.columns[2].label": "오른쪽 TO",
-    "findings_table.props.columns[3].label": "정렬"
+    "findings_table.props.columns[3].label": "정렬",
+    "findings_table.props.columns[4].label": "소비 포털 수",
+    "findings_table.props.columns[5].label": "자체 정렬 포털",
+    "consumer_filter_chips.props.options[0].label": "모든 관계",
+    "consumer_filter_chips.props.options[1].label": "소비 포털",
+    "consumer_filter_chips.props.options[2].label": "자체 정렬 포털"
   }
 }

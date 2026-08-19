@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "无动作的按钮",
+    "description": "Layout 质量规则 — 按钮既没有脚本调用，也没有单步动作。检测读取对象序列化后的动作：脚本动作表现为脚本引用，单步动作表现为步骤元素；两者皆无的按钮点击后不执行任何操作。大型方案中约 40 % 的按钮可能命中，因此处理前请按上下文复核：装饰性图标和未激活的按钮栏分段是合理的，上下文筛选器可缩小列表。\n\n基于 fmCheckMate 检查“Button Action <Missing>” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.no-action": "该按钮既无脚本调用也无单步动作"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响的 Layout",
+    "summary_kpi.props.items[2].label": "范围内按钮数",
+    "findings_card.props.title": "无动作的按钮",
+    "findings_table.props.searchPlaceholder": "搜索文件、Layout 或对象…",
+    "findings_table.props.empty.message": "未发现无动作的按钮。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "对象",
+    "findings_table.props.columns[3].label": "上下文",
+    "findings_table.props.columns[6].label": "宽度",
+    "findings_table.props.columns[7].label": "高度",
+    "context_select.props.label": "上下文",
+    "context_select.props.emptyOptionLabel": "所有上下文"
+  }
+}

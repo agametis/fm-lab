@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Cálculo de entrada automática que cruza relacionamentos",
+    "description": "Regra de desempenho — cálculos de entrada automática que leem campos relacionados percorrem relacionamentos a cada gravação do registro. Em WAN cada travessia pode significar idas e voltas adicionais na entrada de dados."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Tabelas afetadas",
+    "summary_kpi.props.items[2].label": "Arquivos afetados",
+    "findings_card.props.title": "Cálculo de entrada automática que cruza relacionamentos",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, tabela ou campo…",
+    "findings_table.props.empty.message": "Nenhum cálculo de entrada automática lê campos relacionados.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Tabela",
+    "findings_table.props.columns[2].label": "Campo",
+    "findings_table.props.columns[3].label": "Referências relacionadas",
+    "findings_table.props.columns[4].label": "Fórmula (início)"
+  }
+}

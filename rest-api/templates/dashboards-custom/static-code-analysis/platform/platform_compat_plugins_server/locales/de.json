@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Plug-in-Kompatibilität: FileMaker Server",
-  "analysis.defaultResult.meaning": "Plug-in-Funktionsaufrufe im Prüfumfang, die auf FileMaker Server nicht laufen"
- }
+  "manifest": {
+    "title": "Plug-in-Kompatibilität: FileMaker Server",
+    "analysis.defaultResult.meaning": "Plug-in-Funktionsaufrufe im Prüfumfang, die auf FileMaker Server nicht laufen"
+  },
+  "layout": {}
 }

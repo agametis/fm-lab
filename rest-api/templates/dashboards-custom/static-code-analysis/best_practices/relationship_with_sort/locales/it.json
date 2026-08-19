@@ -12,6 +12,11 @@
     "findings_table.props.columns[0].label": "File",
     "findings_table.props.columns[1].label": "TO sinistra",
     "findings_table.props.columns[2].label": "TO destra",
-    "findings_table.props.columns[3].label": "Ordinato"
+    "findings_table.props.columns[3].label": "Ordinato",
+    "findings_table.props.columns[4].label": "Portali consumatori",
+    "findings_table.props.columns[5].label": "Portali con ordinamento proprio",
+    "consumer_filter_chips.props.options[0].label": "Tutte le relazioni",
+    "consumer_filter_chips.props.options[1].label": "Portali consumatori",
+    "consumer_filter_chips.props.options[2].label": "Portali con ordinamento proprio"
   }
 }

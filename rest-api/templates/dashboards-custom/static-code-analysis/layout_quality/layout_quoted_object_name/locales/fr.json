@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "Nom d'objet entre guillemets",
+    "description": "Règle de qualité de Layout — le nom d'un objet commence et se termine par un guillemet. Presque toujours une erreur de collage ; les noms entre guillemets cassent les accès par nom comme GetLayoutObjectAttribute ou Activer l'objet.\n\nD’après le contrôle fmCheckMate « Quoted Object Name » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.quoted-name": "Le nom de l'objet est entre guillemets — probablement collé par accident"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Layouts concernés",
+    "summary_kpi.props.items[2].label": "Fichiers concernés",
+    "findings_card.props.title": "Nom d'objet entre guillemets",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un Layout ou un objet…",
+    "findings_table.props.empty.message": "Aucun nom d'objet entre guillemets trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Type d'objet",
+    "findings_table.props.columns[3].label": "Objet",
+    "findings_table.props.columns[6].label": "Largeur",
+    "findings_table.props.columns[7].label": "Hauteur"
+  }
+}

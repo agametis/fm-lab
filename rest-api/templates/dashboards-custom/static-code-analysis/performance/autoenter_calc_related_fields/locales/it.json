@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Calcolo di immissione automatica che attraversa relazioni",
+    "description": "Regola di prestazioni — i calcoli di immissione automatica che leggono campi correlati attraversano relazioni a ogni scrittura del record. Su WAN ogni attraversamento può comportare round trip aggiuntivi in fase di inserimento."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Tabelle interessate",
+    "summary_kpi.props.items[2].label": "File interessati",
+    "findings_card.props.title": "Calcolo di immissione automatica che attraversa relazioni",
+    "findings_table.props.searchPlaceholder": "Cerca file, tabella o campo…",
+    "findings_table.props.empty.message": "Nessun calcolo di immissione automatica legge campi correlati.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tabella",
+    "findings_table.props.columns[2].label": "Campo",
+    "findings_table.props.columns[3].label": "Riferimenti correlati",
+    "findings_table.props.columns[4].label": "Formula (inizio)"
+  }
+}

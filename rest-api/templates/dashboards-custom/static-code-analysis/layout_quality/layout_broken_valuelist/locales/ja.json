@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "壊れた値一覧参照",
+    "description": "Layout 品質ルール — レイアウトオブジェクトが、そのファイルに存在しない値一覧を参照しています。解決は名前ではなく値一覧 ID で行うため、名称変更された一覧は報告されません。\n\nfmCheckMate チェック「Broken Value List <Missing>」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-valuelist": "値一覧はこのファイルに存在しません"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象 Layout 数",
+    "summary_kpi.props.items[2].label": "対象ファイル数",
+    "findings_card.props.title": "壊れた値一覧参照",
+    "findings_table.props.searchPlaceholder": "ファイル、Layout、オブジェクトを検索…",
+    "findings_table.props.empty.message": "壊れた値一覧参照は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "オブジェクトタイプ",
+    "findings_table.props.columns[3].label": "オブジェクト",
+    "findings_table.props.columns[4].label": "値一覧",
+    "findings_table.props.columns[7].label": "幅",
+    "findings_table.props.columns[8].label": "高さ"
+  }
+}

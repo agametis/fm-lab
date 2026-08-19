@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "필드 반복이 범위를 벗어남",
+    "description": "Layout 품질 규칙 — 레이아웃 개체가 필드의 실제 반복 횟수보다 큰 반복을 표시합니다. 런타임에 개체가 비어 있게 되며, 보통 나중에 필드 정의가 축소된 경우입니다.\n\nfmCheckMate 검사 “Field repetition out of range” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.out-of-range": "개체가 반복 {repetition}을(를) 표시하지만 필드에는 {max_repetitions}개뿐입니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 Layout",
+    "summary_kpi.props.items[2].label": "영향받는 파일",
+    "findings_card.props.title": "필드 반복이 범위를 벗어남",
+    "findings_table.props.searchPlaceholder": "파일, Layout 또는 개체 검색…",
+    "findings_table.props.empty.message": "범위를 벗어난 필드 반복을 찾지 못했습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "개체 유형",
+    "findings_table.props.columns[3].label": "개체",
+    "findings_table.props.columns[4].label": "필드",
+    "findings_table.props.columns[5].label": "반복",
+    "findings_table.props.columns[6].label": "최대 반복"
+  }
+}

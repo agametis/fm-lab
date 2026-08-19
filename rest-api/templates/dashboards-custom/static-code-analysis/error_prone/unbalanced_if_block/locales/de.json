@@ -10,7 +10,6 @@
     "findings_table.props.searchPlaceholder": "Datei, Script oder Befund suchen…",
     "findings_table.props.empty.message": "Keine unbalancierten If/End-If-Blöcke gefunden.",
     "findings_table.props.columns[0].label": "Datei",
-    "findings_table.props.columns[1].label": "Script",
-    "findings_table.props.columns[2].label": "Befund"
+    "findings_table.props.columns[1].label": "Script"
   }
 }

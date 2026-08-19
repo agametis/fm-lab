@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Objetos duplicados sobrepostos",
+    "description": "Regra de qualidade de Layout — dois objetos irmãos do mesmo tipo compartilham exatamente os mesmos limites. O de cima cobre completamente o outro — tipicamente uma colagem dupla. Painéis de guias e popover são excluídos (congruentes por construção).",
+    "messages.pair": "Dois objetos {type} compartilham limites idênticos — o de cima cobre completamente o de baixo"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Layouts afetados",
+    "summary_kpi.props.items[2].label": "Arquivos afetados",
+    "findings_card.props.title": "Objetos duplicados sobrepostos",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, Layout ou objeto…",
+    "findings_table.props.empty.message": "Nenhum duplicado sobreposto encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Objeto parceiro",
+    "findings_table.props.columns[9].label": "Ordem Z",
+    "findings_table.props.columns[7].label": "Largura",
+    "findings_table.props.columns[8].label": "Altura"
+  }
+}

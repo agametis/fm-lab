@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilité de plateforme : FileMaker Cloud",
-  "analysis.defaultResult.meaning": "Actions de script du périmètre non prises en charge ou seulement partiellement sur FileMaker Cloud"
- }
+  "manifest": {
+    "title": "Compatibilité de plateforme : FileMaker Cloud",
+    "analysis.defaultResult.meaning": "Actions de script du périmètre non prises en charge ou seulement partiellement sur FileMaker Cloud"
+  },
+  "layout": {}
 }

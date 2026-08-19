@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Objekt dolt bakom en container",
+    "description": "Layoutkvalitetsregel — ett objekt ligger helt inom ytan för en portal, flikkontroll eller skjutkontroll som ligger framför det i staplingsordningen. Objektet täcks i bläddringsläge och kan inte klickas — oftast ett staplingsmisstag.\n\nBaserad på fmCheckMate-kontrollen ”Hidden Object (Behind Container)” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.occluded": "Objektet ligger helt bakom en framförliggande {container} — täckt och oåtkomligt i bläddringsläge"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda Layouter",
+    "summary_kpi.props.items[2].label": "Berörda filer",
+    "findings_card.props.title": "Objekt dolt bakom en container",
+    "findings_table.props.searchPlaceholder": "Sök fil, Layout eller objekt…",
+    "findings_table.props.empty.message": "Inga objekt dolda bakom containrar hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Container",
+    "findings_table.props.columns[7].label": "Bredd",
+    "findings_table.props.columns[8].label": "Höjd"
+  }
+}

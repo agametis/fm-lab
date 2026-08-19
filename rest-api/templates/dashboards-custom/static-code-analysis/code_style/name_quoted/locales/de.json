@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Objektname in Anführungszeichen",
+    "description": "Code-Stil-Regel — ein Objektname beginnt und endet mit einem Anführungszeichen, fast immer weil ein Name direkt aus einer Formel eingefügt wurde. Die Anführungszeichen werden Teil des Namens, jeder namensbasierte Zugriff muss sie mitschreiben.\n\nAngelehnt an die fmCheckMate-Prüfung „Quoted Object Name“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.quoted-name": "Der Name steht in Anführungszeichen"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Objekttypen",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "findings_card.props.title": "Objektname in Anführungszeichen",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Objekttyp",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.searchPlaceholder": "Datei, Objekttyp oder Name suchen…",
+    "findings_table.props.empty.message": "Keine Objektnamen in Anführungszeichen gefunden."
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "仍带复制后缀的名称",
+    "description": "代码风格规则 — 对象名仍带着 FileMaker 复制时追加的后缀。副本后缀（Copy / copy / Kopie）是默认的检出集合；数字类（以空格加最多四位数字结尾的名称）特意放在单独的筛选条上，因为大量有意为之的命名也是这种写法。\n\n基于 fmCheckMate 检查“Copied Function Name” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy": "名称仍带着 FileMaker 的复制后缀",
+    "messages.numeric": "名称以数字结尾 — 可能是从未改名的副本"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "副本后缀",
+    "summary_kpi.props.items[2].label": "数字后缀",
+    "summary_kpi.props.items[3].label": "受影响文件",
+    "findings_card.props.title": "仍带复制后缀的名称",
+    "suffix_kind_filter.props.options[0].label": "两者",
+    "suffix_kind_filter.props.options[1].label": "副本后缀",
+    "suffix_kind_filter.props.options[2].label": "数字后缀",
+    "object_type_select.props.label": "对象类型",
+    "object_type_select.props.emptyOptionLabel": "全部对象类型",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "对象类型",
+    "findings_table.props.columns[2].label": "对象",
+    "findings_table.props.columns[3].label": "后缀",
+    "findings_table.props.searchPlaceholder": "搜索文件、对象类型或名称…",
+    "findings_table.props.empty.message": "未发现带复制后缀的名称。"
+  }
+}

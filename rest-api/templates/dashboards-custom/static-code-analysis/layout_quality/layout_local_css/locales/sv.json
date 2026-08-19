@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Lokala CSS-överskrivningar",
+    "description": "Layoutkvalitetsmått — hur många objekt som bär lokal CSS i stället för att hämta sitt utseende från temat. I litet antal är det normalt; en hög andel betyder att temat inte längre styr utseendet och att varje visuell ändring måste göras objekt för objekt. Detta är en kvotpanel: nyckeltalen visar andelen för hela lösningen och tabellen listar layouter över tröskeln, inte enskilda objekt.\n\nBaserad på fmCheckMate-kontrollen ”LocalCSS” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.local-css": "{objects_with_css} av {objects_total} objekt på denna layout bär lokal CSS ({share_pct} %)"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Layoutobjekt",
+    "summary_kpi.props.items[1].label": "Med lokal CSS",
+    "summary_kpi.props.items[2].label": "Andel %",
+    "summary_kpi.props.items[3].label": "Listade Layouter",
+    "findings_card.props.title": "Lokala CSS-överskrivningar",
+    "findings_table.props.searchPlaceholder": "Sök fil, Layout eller objekt…",
+    "findings_table.props.empty.message": "Ingen layout når den inställda andelen lokal CSS.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Med lokal CSS",
+    "findings_table.props.columns[4].label": "Andel %",
+    "min_share_slider.props.label": "Minsta andel"
+  }
+}

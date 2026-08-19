@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Auskommentierte Berechnung",
+    "description": "Fehleranfälligkeits-Regel — eine Berechnung besteht vollständig aus einem Kommentarblock. Erfasst werden Feldberechnungen, Automatische-Eingabe- und Prüfformeln, Custom Functions und Scriptschritt-Berechnungen. Die Formel wird nie ausgewertet, das beabsichtigte Verhalten ist still deaktiviert — der Slot sieht in den FileMaker-Dialogen trotzdem gefüllt aus.\n\nAngelehnt an die fmCheckMate-Prüfung „Broken Calculation /*Commented Out*/“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.commented-out": "Die gesamte Formel ist auskommentiert und wird nie ausgewertet"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Feldberechnungen",
+    "summary_kpi.props.items[2].label": "Scriptschritte",
+    "summary_kpi.props.items[3].label": "Betroffene Dateien",
+    "findings_card.props.title": "Auskommentierte Berechnung",
+    "calc_slot_filter.props.options[0].label": "alle Slots",
+    "calc_slot_filter.props.options[1].label": "Feldberechnung",
+    "calc_slot_filter.props.options[2].label": "Scriptschritt",
+    "calc_slot_filter.props.options[3].label": "Automatische Eingabe",
+    "calc_slot_filter.props.options[4].label": "Prüfung",
+    "calc_slot_filter.props.options[5].label": "Custom Function",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Objekttyp",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Slot",
+    "findings_table.props.columns[4].label": "Fundstelle",
+    "findings_table.props.searchPlaceholder": "Datei, Objekt oder Formel suchen…",
+    "findings_table.props.empty.message": "Keine auskommentierten Berechnungen gefunden."
+  }
+}

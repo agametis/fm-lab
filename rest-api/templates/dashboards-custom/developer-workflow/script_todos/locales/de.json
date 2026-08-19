@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "TO-DOs in Scripts (Explorer)",
+    "description": "Explorer für offene Arbeiten in Script-Kommentaren über drei Notationen (TO DO, FIX IT, TBD). Klick auf eine Anzahl filtert die Ergebnisliste. Inventar, keine Regel: das Bundle deklariert bewusst keinen Ergebniswert, bleibt damit aus dem Healthcheck heraus und trägt keinen Kachel-Chip — gezählt wird von den Regeln script_comment_fixme (warning) und script_comment_todo (info)."
+  },
+  "layout": {
+    "todo_kpi_kpistrip.props.items[0].label": "Zeilen Gesamt",
+    "todo_kpi_kpistrip.props.items[1].label": "Zeilen TO DO",
+    "todo_kpi_kpistrip.props.items[2].label": "Zeilen FIX IT",
+    "todo_kpi_kpistrip.props.items[3].label": "Zeilen TBD",
+    "todo_kpi_kpistrip.props.items[4].label": "Scripts",
+    "todo_kpi_kpistrip.props.items[5].label": "Dateien",
+    "todo_lines.props.title": "Markierte Kommentar-Zeilen",
+    "todo_lines_table.props.columns[0].label": "Datei",
+    "todo_lines_table.props.columns[1].label": "Script-Name",
+    "todo_lines_table.props.columns[2].label": "Pattern",
+    "todo_lines_table.props.columns[3].label": "Kommentar",
+    "todo_lines_table.props.searchPlaceholder": "Kommentare durchsuchen …"
+  }
+}

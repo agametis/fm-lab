@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilidad de plataforma: FileMaker WebDirect",
-  "analysis.defaultResult.meaning": "Pasos en el alcance que no son compatibles o solo lo son parcialmente en FileMaker WebDirect"
- }
+  "manifest": {
+    "title": "Compatibilidad de plataforma: FileMaker WebDirect",
+    "analysis.defaultResult.meaning": "Pasos en el alcance que no son compatibles o solo lo son parcialmente en FileMaker WebDirect"
+  },
+  "layout": {}
 }

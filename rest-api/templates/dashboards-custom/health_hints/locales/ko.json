@@ -1,10 +1,9 @@
 {
   "manifest": {
     "title": "Healthchecks",
-    "description": "결과 레이어(Result Envelope v1)의 순수 소비자로서의 솔루션 전체 상태 개요: 정적 코드 분석 및 메타데이터 무결성 규칙 대시보드에 대한 상태별 규칙 수를 루브릭별로 그룹화하여 표시하며, 각 행은 해당 규칙 대시보드로 연결됩니다. 서버 결과 캐시만 읽으며 페이지 로드 시 규칙 SQL을 실행하지 않습니다. 대기 중 항목은 아직 현재 카탈로그에 대해 실행되지 않았으며 명시적 실행 전까지 표시됩니다. 의도적으로 자체 결과 선언을 갖지 않습니다(규칙이 아닌 소비자 — 설계상 칩 표시 없음)."
+    "description": "결과 레이어의 순수 소비자로서의 솔루션 전체 상태 개요: 규칙 대시보드에 대한 상태별 개수를 루브릭별로 그룹화하여 표시하며, 각 행은 해당 대시보드로 연결됩니다. 서버 결과 캐시만 읽습니다."
   },
   "layout": {
-    "results_kpi_card.props.subtitle": "공유 결과 레이어의 규칙 결과 — 요청 시 계산되며 카탈로그 지문별로 캐시됩니다. 대기 중인 규칙은 아직 현재 카탈로그에 대해 실행되지 않았습니다. '모든 규칙 실행'을 사용하세요.",
     "results_kpi_strip.props.items[0].label": "규칙",
     "results_kpi_strip.props.items[1].label": "오류",
     "results_kpi_strip.props.items[2].label": "경고",
@@ -25,6 +24,8 @@
     "rp_unused_code_list.props.empty.message": "보고할 항목이 없습니다.",
     "rp_code_style_card.props.title": "코드 스타일",
     "rp_code_style_list.props.empty.message": "보고할 항목이 없습니다.",
+    "rp_layout_quality_card.props.title": "Layout 품질",
+    "rp_layout_quality_list.props.empty.message": "보고할 항목이 없습니다.",
     "rp_documentation_card.props.title": "문서화",
     "rp_documentation_list.props.empty.message": "보고할 항목이 없습니다.",
     "rp_best_practices_card.props.title": "모범 사례",
@@ -32,6 +33,8 @@
     "rp_platform_card.props.title": "플랫폼 호환성",
     "rp_platform_list.props.empty.message": "보고할 항목이 없습니다.",
     "rp_metadata_integrity_card.props.title": "메타데이터 무결성",
-    "rp_metadata_integrity_list.props.empty.message": "보고할 항목이 없습니다."
+    "rp_metadata_integrity_list.props.empty.message": "보고할 항목이 없습니다.",
+    "rp_developer_workflow_card.props.title": "개발자 워크플로",
+    "rp_developer_workflow_list.props.empty.message": "보고할 항목이 없습니다."
   }
 }

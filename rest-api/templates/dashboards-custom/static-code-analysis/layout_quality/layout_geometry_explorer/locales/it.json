@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "Esploratore di geometria dei layout",
+    "description": "Dashboard di inventario — tutti gli oggetti di layout con colonne di geometria ordinabili singolarmente (X, Y, larghezza, altezza, ordine Z). Filtrabile per sezione del layout (intestazione, corpo, piè di pagina …), tipo di oggetto, larghezza/altezza massime e una finestra di coordinate assoluta al layout (X/Y da/a) per esaminare zone specifiche. Le coordinate degli oggetti annidati sono relative al loro contenitore; la finestra di coordinate corrisponde esattamente agli oggetti di primo livello, quelli annidati contano tramite il loro contenitore di primo livello. I parametri URL w_min/h_min integrano i cursori. Un clic su una riga apre il layout con l'oggetto evidenziato."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Oggetti",
+    "summary_kpi.props.items[1].label": "Layout",
+    "summary_kpi.props.items[2].label": "File",
+    "objects_card.props.title": "Oggetti del layout",
+    "part_select.props.label": "Sezione del layout",
+    "part_select.props.emptyOptionLabel": "tutte le sezioni",
+    "object_type_select.props.label": "Tipo di oggetto",
+    "object_type_select.props.emptyOptionLabel": "tutti i tipi di oggetto",
+    "w_max_slider.props.label": "Larghezza max.",
+    "h_max_slider.props.label": "Altezza max.",
+    "x_min_slider.props.label": "Finestra X da",
+    "x_max_slider.props.label": "Finestra X a",
+    "y_min_slider.props.label": "Finestra Y da",
+    "y_max_slider.props.label": "Finestra Y a",
+    "objects_table.props.searchPlaceholder": "Cerca file, layout o oggetto…",
+    "objects_table.props.empty.message": "Nessun oggetto di layout corrisponde ai filtri attuali.",
+    "objects_table.props.columns[0].label": "File",
+    "objects_table.props.columns[1].label": "Layout",
+    "objects_table.props.columns[2].label": "Sezione",
+    "objects_table.props.columns[3].label": "Tipo di oggetto",
+    "objects_table.props.columns[4].label": "Oggetto",
+    "objects_table.props.columns[5].label": "Livello",
+    "objects_table.props.columns[8].label": "Larghezza",
+    "objects_table.props.columns[9].label": "Altezza"
+  }
+}

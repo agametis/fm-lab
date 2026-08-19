@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "コメントアウトされた計算",
+    "description": "エラー誘発ルール — 計算式全体が 1 つのコメントブロックになっています。フィールド計算、自動入力・入力値の制限の計算式、カスタム関数、スクリプトステップの計算式が対象です。計算式は評価されないため、意図した動作は無言のまま無効化されますが、FileMaker のダイアログ上ではスロットが埋まって見えます。\n\nfmCheckMate チェック「Broken Calculation /*Commented Out*/」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.commented-out": "計算式全体がコメントアウトされており、評価されません"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "フィールド計算",
+    "summary_kpi.props.items[2].label": "スクリプトステップ",
+    "summary_kpi.props.items[3].label": "対象ファイル",
+    "findings_card.props.title": "コメントアウトされた計算",
+    "calc_slot_filter.props.options[0].label": "すべてのスロット",
+    "calc_slot_filter.props.options[1].label": "フィールド計算",
+    "calc_slot_filter.props.options[2].label": "スクリプトステップ",
+    "calc_slot_filter.props.options[3].label": "自動入力",
+    "calc_slot_filter.props.options[4].label": "入力値の制限",
+    "calc_slot_filter.props.options[5].label": "カスタム関数",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "オブジェクトタイプ",
+    "findings_table.props.columns[2].label": "オブジェクト",
+    "findings_table.props.columns[3].label": "スロット",
+    "findings_table.props.columns[4].label": "場所",
+    "findings_table.props.searchPlaceholder": "ファイル・オブジェクト・計算式を検索…",
+    "findings_table.props.empty.message": "コメントアウトされた計算はありません。"
+  }
+}

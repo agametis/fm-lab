@@ -5,6 +5,7 @@
   "autoTable": {
     "rowCount_one": "{{count}} entrée",
     "rowCount_other": "{{count}} entrées",
+    "rowCountTruncated": "{{shown}} sur {{total}} entrées",
     "filteredFrom": "filtré depuis {{count}}",
     "newCount": "{{count}} nouveaux",
     "totalSize": "Taille totale {{size}}",
@@ -362,7 +363,8 @@
     "highlightsCount_one": "{{count}} résultat mis en évidence",
     "highlightsCount_other": "{{count}} résultats mis en évidence",
     "dismissAria": "Supprimer la mise en évidence de la référence",
-    "dismissTitle": "Supprimer la mise en évidence de la référence (Échap)"
+    "dismissTitle": "Supprimer la mise en évidence de la référence (Échap)",
+    "sourceLabel": "Source :"
   },
   "tableDetails": "Détails de la table",
   "scriptDetails": "Détails du script",

@@ -1,8 +1,10 @@
 {
   "id": "health_hints",
-  "version": "3.0.0",
+  "version": "3.3.0",
+  "featured": true,
+  "badgeRoots": "static-code-analysis,metadata-integrity,developer-workflow",
   "title": "Healthchecks",
-  "description": "Solution-wide health overview as a pure consumer of the results layer (Result Envelope v1): rule counts per state over the static-code-analysis and metadata-integrity rule dashboards, grouped by rubric, each row linking into its rule dashboard. Reads only the server result cache — never executes rule SQL on page load; pending entries have not been run against the current catalog yet and stay visible until an explicit run. Deliberately carries NO result declaration itself (consumer, not rule — chipless by design).",
+  "description": "Solution-wide health overview as a pure consumer of the results layer: counts per state over the rule dashboards, grouped by rubric, each row linking into its dashboard. Reads only the server result cache.",
   "author": "fm-lab core",
   "icon": "activity",
   "tags": [
@@ -15,53 +17,99 @@
     {
       "id": "results_overview",
       "source": "builtin:results_aggregate",
-      "params": { "kinds": "dashboard", "roots": "static-code-analysis,metadata-integrity" },
+      "params": {
+        "kinds": "dashboard",
+        "roots": "static-code-analysis,metadata-integrity,developer-workflow"
+      },
       "description": "Combined top node ('' path, row 1) + per-rubric nodes over both rule subtrees — feeds the hero KPI strip and coverage. Cache-only, never executes SQL."
     },
     {
       "id": "results_performance",
       "source": "builtin:results_list",
-      "params": { "kinds": "dashboard", "root": "static-code-analysis/performance" }
+      "params": {
+        "kinds": "dashboard",
+        "root": "static-code-analysis/performance"
+      }
     },
     {
       "id": "results_error_prone",
       "source": "builtin:results_list",
-      "params": { "kinds": "dashboard", "root": "static-code-analysis/error_prone" }
+      "params": {
+        "kinds": "dashboard",
+        "root": "static-code-analysis/error_prone"
+      }
     },
     {
       "id": "results_security",
       "source": "builtin:results_list",
-      "params": { "kinds": "dashboard", "root": "static-code-analysis/security" }
+      "params": {
+        "kinds": "dashboard",
+        "root": "static-code-analysis/security"
+      }
     },
     {
       "id": "results_unused_code",
       "source": "builtin:results_list",
-      "params": { "kinds": "dashboard", "root": "static-code-analysis/unused_code" }
+      "params": {
+        "kinds": "dashboard",
+        "root": "static-code-analysis/unused_code"
+      }
     },
     {
       "id": "results_code_style",
       "source": "builtin:results_list",
-      "params": { "kinds": "dashboard", "root": "static-code-analysis/code_style" }
+      "params": {
+        "kinds": "dashboard",
+        "root": "static-code-analysis/code_style"
+      }
+    },
+    {
+      "id": "results_layout_quality",
+      "source": "builtin:results_list",
+      "params": {
+        "kinds": "dashboard",
+        "root": "static-code-analysis/layout_quality"
+      }
     },
     {
       "id": "results_documentation",
       "source": "builtin:results_list",
-      "params": { "kinds": "dashboard", "root": "static-code-analysis/documentation" }
+      "params": {
+        "kinds": "dashboard",
+        "root": "static-code-analysis/documentation"
+      }
     },
     {
       "id": "results_best_practices",
       "source": "builtin:results_list",
-      "params": { "kinds": "dashboard", "root": "static-code-analysis/best_practices" }
+      "params": {
+        "kinds": "dashboard",
+        "root": "static-code-analysis/best_practices"
+      }
     },
     {
       "id": "results_platform",
       "source": "builtin:results_list",
-      "params": { "kinds": "dashboard", "root": "static-code-analysis/platform" }
+      "params": {
+        "kinds": "dashboard",
+        "root": "static-code-analysis/platform"
+      }
     },
     {
       "id": "results_metadata_integrity",
       "source": "builtin:results_list",
-      "params": { "kinds": "dashboard", "root": "metadata-integrity" }
+      "params": {
+        "kinds": "dashboard",
+        "root": "metadata-integrity"
+      }
+    },
+    {
+      "id": "results_developer_workflow",
+      "source": "builtin:results_list",
+      "params": {
+        "kinds": "dashboard",
+        "root": "developer-workflow"
+      }
     }
   ],
   "params": [

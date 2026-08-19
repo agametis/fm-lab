@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Uso specifico della piattaforma: FileMaker Server",
-  "analysis.defaultResult.meaning": "Script nell'ambito che sono destinazione di chiamate Perform Script on Server (creati per l'esecuzione lato server)"
- }
+  "manifest": {
+    "title": "Uso specifico della piattaforma: FileMaker Server",
+    "analysis.defaultResult.meaning": "Script nell'ambito che sono destinazione di chiamate Perform Script on Server (creati per l'esecuzione lato server)"
+  },
+  "layout": {}
 }

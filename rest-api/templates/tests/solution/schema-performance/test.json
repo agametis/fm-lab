@@ -1,0 +1,125 @@
+{
+  "id": "schema-performance",
+  "version": "1.0.0",
+  "title": "Schema Performance",
+  "description": "Field-level performance patterns from the WAN-first guidance: displayed unstored calculations that trigger a host round trip per render (Get(CurrentHostTimestamp)), and auto-enter calculations that traverse relationships on every write.",
+  "keywords": [
+    "performance",
+    "wan",
+    "field",
+    "schema",
+    "slow",
+    "community-patterns"
+  ],
+  "testType": "performance",
+  "objectTypes": [
+    "Field"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "unstored_calc_network_function"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "autoenter_calc_related_fields"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "quick",
+      "title": "Quick Check",
+      "description": "Host round trips per render only — the Claris-documented network cost.",
+      "members": [
+        "unstored_calc_network_function"
+      ]
+    },
+    {
+      "id": "full",
+      "title": "Full Check"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Schema-Performance",
+      "description": "Feld-Ebene-Performance-Patterns aus den WAN-First-Empfehlungen: angezeigte Unstored-Formeln mit Host-Roundtrip pro Darstellung (Get(CurrentHostTimestamp)) und AutoEnter-Formeln, die bei jedem Schreiben Beziehungen traversieren.",
+      "profiles.quick.title": "Schnellprüfung",
+      "profiles.quick.description": "Nur Host-Roundtrips pro Darstellung — die von Claris dokumentierten Netzwerkkosten.",
+      "profiles.full.title": "Vollprüfung"
+    },
+    "es": {
+      "title": "Rendimiento del esquema",
+      "description": "Patrones de rendimiento a nivel de campo de las recomendaciones WAN-first: cálculos no almacenados visibles que provocan una ida y vuelta al host por renderizado (Get(CurrentHostTimestamp)) y cálculos de autointroducción que recorren relaciones en cada escritura.",
+      "profiles.quick.title": "Comprobación rápida",
+      "profiles.quick.description": "Solo idas y vueltas al host por renderizado — el coste de red documentado por Claris.",
+      "profiles.full.title": "Comprobación completa"
+    },
+    "fr": {
+      "title": "Performance du schéma",
+      "description": "Motifs de performance au niveau des rubriques issus des recommandations WAN-first : calculs non mémorisés affichés déclenchant un aller-retour vers l'hôte à chaque rendu (Get(CurrentHostTimestamp)) et calculs d'entrée automatique traversant des liens à chaque écriture.",
+      "profiles.quick.title": "Vérification rapide",
+      "profiles.quick.description": "Uniquement les allers-retours vers l'hôte par rendu — le coût réseau documenté par Claris.",
+      "profiles.full.title": "Vérification complète"
+    },
+    "it": {
+      "title": "Prestazioni dello schema",
+      "description": "Pattern di prestazioni a livello di campo dalle raccomandazioni WAN-first: calcoli non memorizzati visualizzati che generano un round trip verso l'host a ogni rendering (Get(CurrentHostTimestamp)) e calcoli di immissione automatica che attraversano relazioni a ogni scrittura.",
+      "profiles.quick.title": "Controllo rapido",
+      "profiles.quick.description": "Solo round trip verso l'host per rendering — il costo di rete documentato da Claris.",
+      "profiles.full.title": "Controllo completo"
+    },
+    "ja": {
+      "title": "スキーマパフォーマンス",
+      "description": "WAN ファースト推奨に基づくフィールドレベルのパフォーマンスパターン：表示のたびにホスト往復を起こす非保存計算（Get(CurrentHostTimestamp)）と、書き込みのたびにリレーションシップを横断する自動入力計算。",
+      "profiles.quick.title": "クイックチェック",
+      "profiles.quick.description": "表示ごとのホスト往復のみ — Claris が文書化したネットワークコスト。",
+      "profiles.full.title": "フルチェック"
+    },
+    "ko": {
+      "title": "스키마 성능",
+      "description": "WAN 우선 권고의 필드 수준 성능 패턴: 표시할 때마다 호스트 왕복을 일으키는 비저장 계산(Get(CurrentHostTimestamp))과 쓸 때마다 관계를 순회하는 자동 입력 계산.",
+      "profiles.quick.title": "빠른 검사",
+      "profiles.quick.description": "렌더링별 호스트 왕복만 — Claris가 문서화한 네트워크 비용.",
+      "profiles.full.title": "전체 검사"
+    },
+    "nl": {
+      "title": "Schemaprestaties",
+      "description": "Prestatiepatronen op veldniveau uit de WAN-first-aanbevelingen: weergegeven niet-opgeslagen berekeningen die per render een host-roundtrip veroorzaken (Get(CurrentHostTimestamp)) en auto-invoerberekeningen die bij elke schrijfactie relaties doorlopen.",
+      "profiles.quick.title": "Snelle controle",
+      "profiles.quick.description": "Alleen host-roundtrips per render — de door Claris gedocumenteerde netwerkkosten.",
+      "profiles.full.title": "Volledige controle"
+    },
+    "pt": {
+      "title": "Desempenho do esquema",
+      "description": "Padrões de desempenho no nível de campo das recomendações WAN-first: cálculos não armazenados exibidos que disparam uma ida e volta ao host por renderização (Get(CurrentHostTimestamp)) e cálculos de entrada automática que percorrem relacionamentos a cada gravação.",
+      "profiles.quick.title": "Verificação rápida",
+      "profiles.quick.description": "Apenas idas e voltas ao host por renderização — o custo de rede documentado pela Claris.",
+      "profiles.full.title": "Verificação completa"
+    },
+    "sv": {
+      "title": "Schemaprestanda",
+      "description": "Prestandamönster på fältnivå från WAN-first-rekommendationerna: visade olagrade beräkningar som utlöser en värd-rundresa per rendering (Get(CurrentHostTimestamp)) och autoinmatningsberäkningar som traverserar relationer vid varje skrivning.",
+      "profiles.quick.title": "Snabbkontroll",
+      "profiles.quick.description": "Endast värd-rundresor per rendering — den Claris-dokumenterade nätverkskostnaden.",
+      "profiles.full.title": "Fullständig kontroll"
+    },
+    "zh-Hans": {
+      "title": "架构性能",
+      "description": "来自 WAN 优先建议的字段级性能模式：每次渲染都会触发主机往返的可见非存储计算（Get(CurrentHostTimestamp)），以及每次写入都会遍历关系的自动输入计算。",
+      "profiles.quick.title": "快速检查",
+      "profiles.quick.description": "仅检查每次渲染的主机往返 — Claris 文档记载的网络开销。",
+      "profiles.full.title": "完整检查"
+    }
+  }
+}

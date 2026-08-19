@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Marcatore TODO su un oggetto del formato",
+    "description": "Regola della famiglia «Lavoro incompiuto»: un oggetto del formato contiene un marcatore TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) nel testo, nel suggerimento o nella formula dell’etichetta. Un TODO descrive lavoro pianificato, non un difetto: severità info, il semaforo resta neutro. Inasprimento voluto rispetto alla regola originale: senza distinzione di maiuscole e con tolleranza ai separatori — solo così si trova un oggetto testo il cui contenuto è «TO DO».\n\nBasato sul controllo fmCheckMate «FIXME» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.text": "Marcatore TODO nel contenuto testuale",
+    "messages.tooltip": "Marcatore TODO nella formula del suggerimento",
+    "messages.label": "Marcatore TODO nella formula dell’etichetta"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Formati interessati",
+    "summary_kpi.props.items[2].label": "File interessati",
+    "findings_card.props.title": "Marcatore TODO su un oggetto del formato",
+    "findings_table.props.searchPlaceholder": "Cerca file, formato o oggetto…",
+    "findings_table.props.empty.message": "Nessun marcatore TODO sugli oggetti del formato.",
+    "findings_table.props.columns[1].label": "Formato",
+    "findings_table.props.columns[2].label": "Tipo di oggetto",
+    "findings_table.props.columns[3].label": "Oggetto",
+    "findings_table.props.columns[4].label": "Posizione",
+    "findings_table.props.columns[5].label": "Marcatore",
+    "findings_table.props.columns[8].label": "Larghezza",
+    "findings_table.props.columns[9].label": "Altezza"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "設定されるが読み取られない変数",
+    "description": "未使用コードのルール — 変数に値が書き込まれるものの、カタログ内のどこでも読み取られていません。良くて余分な処理、悪ければ片側だけ行われた名前変更の痕跡です。既知の誤検出: スクリプト引数として渡される値、実行時に組み立てられる変数名、書き出されたファイルの外での読み取り。そのため本ルールは情報レベルです。\n\nfmCheckMate チェック「ListVarsDefinedButUnused」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.set-never-read": "変数は書き込まれますが読み取られません"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "ローカル",
+    "summary_kpi.props.items[2].label": "グローバル",
+    "summary_kpi.props.items[3].label": "対象スクリプト",
+    "summary_kpi.props.items[4].label": "対象ファイル",
+    "findings_card.props.title": "設定されるが読み取られない変数",
+    "variable_scope_filter.props.options[0].label": "すべてのスコープ",
+    "variable_scope_filter.props.options[1].label": "ローカル",
+    "variable_scope_filter.props.options[2].label": "グローバル",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "変数",
+    "findings_table.props.columns[2].label": "スコープ",
+    "findings_table.props.columns[3].label": "初出",
+    "findings_table.props.columns[4].label": "書き込み回数",
+    "findings_table.props.columns[5].label": "根拠",
+    "findings_table.props.searchPlaceholder": "ファイル・変数・スクリプトを検索…",
+    "findings_table.props.empty.message": "書き込まれるだけで読み取られない変数はありません。"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "설정 없이 읽히는 변수",
+    "description": "오류 유발 규칙 — 카탈로그 어디에서도 쓰지 않는 변수를 읽고 있습니다. 쓰는 쪽이 이름이 바뀌었거나 삭제되었거나, 값이 내보내지 않은 파일에서 오도록 되어 있습니다. Let() 정의는 제외합니다 — 같은 계산식 안에서 정의되고 읽히므로 결과를 뒤덮게 됩니다.\n\nfmCheckMate 검사 “ListVarsUndefined” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.read-never-set": "변수를 읽지만 쓰지 않습니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "로컬",
+    "summary_kpi.props.items[2].label": "전역",
+    "summary_kpi.props.items[3].label": "영향받은 스크립트",
+    "summary_kpi.props.items[4].label": "영향받은 파일",
+    "findings_card.props.title": "설정 없이 읽히는 변수",
+    "variable_scope_filter.props.options[0].label": "모든 범위",
+    "variable_scope_filter.props.options[1].label": "로컬",
+    "variable_scope_filter.props.options[2].label": "전역",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "변수",
+    "findings_table.props.columns[2].label": "범위",
+    "findings_table.props.columns[3].label": "최초 위치",
+    "findings_table.props.columns[4].label": "읽기 횟수",
+    "findings_table.props.columns[5].label": "다른 파일에서 설정됨",
+    "findings_table.props.columns[6].label": "근거",
+    "findings_table.props.searchPlaceholder": "파일, 변수 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "쓰지 않고 읽기만 하는 변수가 없습니다."
+  }
+}

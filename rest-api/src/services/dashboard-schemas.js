@@ -41,6 +41,11 @@ const manifestSchema = Joi.object({
       })
     )
     .default([]),
+  // Message-token catalog for findings context deep links: a target view
+  // resolves `ref_msgid` → template ({name} placeholders interpolated from
+  // `ref_arg_<name>` URL params). Localized via "messages.<key>" manifest
+  // overrides in locales/<lang>.json.
+  messages: Joi.object().pattern(Joi.string(), Joi.string()).optional(),
   permissions: Joi.object({
     read_only: Joi.boolean().default(true),
     allow_navigation: Joi.boolean().default(true),
@@ -64,7 +69,9 @@ const manifestSchema = Joi.object({
       references: Joi.array().items(Joi.object({
         project: Joi.string().required(),
         rule: Joi.string().required(),
-        url: Joi.string().uri().required(),
+        // null = no public URL exists for this source (e.g. a user feature
+        // request) — same convention as meta.url above.
+        url: Joi.string().uri().allow(null).required(),
       })).default([]),
     }).unknown(true).optional(),
   }).unknown(true).optional(),

@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Deckungsgleiche Objekt-Duplikate",
+    "description": "Layout-Qualitätsregel — zwei Geschwisterobjekte desselben Typs haben exakt dieselben Bounds. Das obere verdeckt das untere vollständig — typischerweise ein doppeltes Einfügen. Tab- und Popover-Panels sind ausgenommen (konstruktionsbedingt deckungsgleich).",
+    "messages.pair": "Zwei {type}-Objekte haben exakt dieselben Bounds — das obere verdeckt das untere vollständig"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Layouts",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "findings_card.props.title": "Deckungsgleiche Objekt-Duplikate",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine deckungsgleichen Duplikate gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Partnerobjekt",
+    "findings_table.props.columns[9].label": "Z-Order",
+    "findings_table.props.columns[7].label": "Breite",
+    "findings_table.props.columns[8].label": "Höhe"
+  }
+}

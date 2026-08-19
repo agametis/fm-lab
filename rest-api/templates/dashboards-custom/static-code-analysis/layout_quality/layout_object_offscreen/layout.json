@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary_card",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpi",
+            "props": {
+              "items": [
+                {
+                  "label": "Findings",
+                  "field": "finding_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Completely outside",
+                  "field": "complete_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Partially outside",
+                  "field": "partial_count",
+                  "format": "number"
+                }
+              ]
+            }
+          },
+          {
+            "type": "Slider",
+            "id": "tolerance_slider",
+            "props": {
+              "param": "tolerance",
+              "label": "Tolerance",
+              "min": 0,
+              "max": 20,
+              "default": 0,
+              "step": 1,
+              "valueSuffix": "px",
+              "comparator": ">"
+            },
+            "data": {
+              "dataset": "summary"
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings_card",
+        "props": {
+          "span": 12,
+          "title": "Object outside the layout"
+        },
+        "data": {
+          "dataset": "findings"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search file, layout or object…",
+              "columns": [
+                {
+                  "field": "file_name",
+                  "label": "File"
+                },
+                {
+                  "field": "layout_name",
+                  "label": "Layout"
+                },
+                {
+                  "field": "object_type",
+                  "label": "Object type"
+                },
+                {
+                  "field": "object_name",
+                  "label": "Object"
+                },
+                {
+                  "field": "direction",
+                  "label": "Direction"
+                },
+                {
+                  "field": "extent",
+                  "label": "Extent"
+                },
+                {
+                  "field": "x",
+                  "label": "X"
+                },
+                {
+                  "field": "y",
+                  "label": "Y"
+                },
+                {
+                  "field": "w",
+                  "label": "Width"
+                },
+                {
+                  "field": "h",
+                  "label": "Height"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "Layout",
+                  "file": "{{file_name}}",
+                  "ref": "{{object_uuid}}",
+                  "ref_src": "layout_object_offscreen",
+                  "ref_msgid": "{{extent}}"
+                }
+              },
+              "empty": {
+                "message": "No objects outside the layout boundaries found."
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

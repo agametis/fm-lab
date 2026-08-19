@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "TODO-Marker in einem Formel-Kommentar",
+    "description": "Regel der Familie „Unfertige Arbeit“ — eine FileMaker-Formel trägt einen TODO-Marker (TODO, TO DO, TO-DO, TBD, to be done, to be defined) in einem ihrer Kommentare. Geprüft werden fünf Slots: Custom-Function-Rümpfe, Feldformeln, AutoEingabe- und Prüfformeln sowie Script-Schritt-Formeln. Ein TODO beschreibt geplante Arbeit, keinen Defekt — deshalb Severity info: die Regel zählt mit eigener Zahl, färbt die Ampel aber nie gelb. Der Marker zählt nur innerhalb eines Kommentar-Segments (// bis Zeilenende oder /* … */) — ein Textliteral „TODO“ ist kein Fund.",
+    "messages.custom_function": "TODO-Marker im Kommentar einer Custom Function",
+    "messages.field_calc": "TODO-Marker im Kommentar einer Feldformel",
+    "messages.field_autoenter": "TODO-Marker im Kommentar einer AutoEingabe-Formel",
+    "messages.field_validation": "TODO-Marker im Kommentar einer Prüfformel",
+    "messages.script_step": "TODO-Marker im Kommentar einer Script-Schritt-Formel"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Custom Functions",
+    "summary_kpi.props.items[2].label": "Felder",
+    "summary_kpi.props.items[3].label": "Script-Schritte",
+    "summary_kpi.props.items[4].label": "Betroffene Dateien",
+    "findings_card.props.title": "TODO-Marker in einem Formel-Kommentar",
+    "findings_table.props.searchPlaceholder": "Datei, Objekt oder Kommentar suchen…",
+    "findings_table.props.empty.message": "Keine TODO-Marker in Formel-Kommentaren gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Stelle",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Schritt",
+    "findings_table.props.columns[5].label": "Kommentar"
+  }
+}

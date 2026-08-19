@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "脚本注释中的 FIXME 标记",
+    "description": "“未完成工作”规则族 — 脚本的注释步骤中含有 FIXME 标记（FIXME, FIX ME, FIX IT, FIXIT）。 FIXME 表示已随版本发布的已知缺陷，因此严重度为 warning。 匹配不区分大小写并允许分隔符，因此与开发者的书写方式无关。",
+    "messages.comment": "脚本注释中的 FIXME 标记"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "受影响脚本",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "findings_card.props.title": "脚本注释中的 FIXME 标记",
+    "findings_table.props.searchPlaceholder": "搜索文件、脚本或注释…",
+    "findings_table.props.empty.message": "脚本注释中未发现 FIXME 标记。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "步骤",
+    "findings_table.props.columns[3].label": "标记",
+    "findings_table.props.columns[4].label": "注释"
+  }
+}

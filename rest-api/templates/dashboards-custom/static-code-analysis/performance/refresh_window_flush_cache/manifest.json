@@ -1,0 +1,106 @@
+{
+  "id": "refresh_window_flush_cache",
+  "version": "1.0.0",
+  "title": "Refresh Window flushing cached joins",
+  "description": "Performance rule — Refresh Window with 'Flush cached join results' (or 'Flush cached external data') discards relationship caches and forces FileMaker to re-fetch related records from the server. Claris explicitly warns about the network cost.",
+  "author": "fm-lab rules",
+  "icon": "gauge",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "performance",
+    "wan",
+    "community-patterns"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "performance",
+    "rationale": "Flushing the join cache invalidates every cached related record: the next display of any related data goes back to the server. Inside a loop or on a busy layout this multiplies into a stream of avoidable round trips. Plain Refresh Window (without flush) is cheap by comparison and therefore not reported — its count appears as a context KPI only.",
+    "remediation": "Remove the flush option unless a stale join result is the actual problem being fixed; prefer Refresh Object or Refresh Portal for targeted updates. If a flush is genuinely needed, keep it out of loops.",
+    "meta": {
+      "name": "Refresh Window flushing cached joins",
+      "author": "fm-lab rules",
+      "source": "FileMaker community / Claris",
+      "url": "https://help.claris.com/en/pro-help/content/refresh-window.html",
+      "description": "Detects enabled Refresh Window steps whose flush options are set. The options are read via their numeric ids (256 = join results, 512 = external data) — the type attribute of the Boolean parameter follows the export language and must not be matched. Loop context is reported per finding.",
+      "created": "2026-08-17",
+      "references": [
+        {
+          "project": "Claris Help",
+          "rule": "Refresh Window",
+          "url": "https://help.claris.com/en/pro-help/content/refresh-window.html"
+        },
+        {
+          "project": "DB Services",
+          "rule": "Claris FileMaker Performance Optimization Guide",
+          "url": "https://dbservices.com/blog/claris-filemaker-performance-optimization"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Refresh Window flushing cached joins"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "flush_kind",
+      "type": "string",
+      "required": false,
+      "description": "Optional class filter: join, external."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

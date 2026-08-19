@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Minimaler Index bei aktivem Auto-Index",
+    "description": "Performance-Regel — der Index eines Feldes steht auf „Minimal“, während die automatische Indexierung weiterhin aktiv ist. Minimal behält nur den Wortindex und verwirft den Wertindex; bei aktiver Auto-Indexierung baut FileMaker aber ohnehin wieder auf, was eine Suche braucht. Die Einstellung spart nichts Vorhersehbares und dokumentiert meist einen Index, der einmal geleert und nie wieder überdacht wurde.\n\nAngelehnt an die fmCheckMate-Prüfung „ListFieldsWithIndexMinimalLocked“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.index-minimal-locked": "Index steht auf Minimal, während die automatische Indexierung aktiv ist"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Tabellen",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "findings_card.props.title": "Minimaler Index bei aktivem Auto-Index",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Tabelle",
+    "findings_table.props.columns[2].label": "Feld",
+    "findings_table.props.columns[3].label": "Feldtyp",
+    "findings_table.props.columns[4].label": "Datentyp",
+    "findings_table.props.searchPlaceholder": "Datei, Tabelle oder Feld suchen…",
+    "findings_table.props.empty.message": "Keine Felder mit minimalem Index und aktiver Auto-Indexierung gefunden."
+  }
+}

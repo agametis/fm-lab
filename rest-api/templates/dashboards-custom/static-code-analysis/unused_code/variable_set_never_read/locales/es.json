@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Variable asignada y nunca leída",
+    "description": "Regla de código sin uso: una variable se escribe pero nunca se lee en ningún lugar del catálogo. En el mejor caso es lastre; en el peor, la mitad visible de un cambio de nombre hecho a medias. Falsos positivos conocidos: valores pasados como parámetros de guion, nombres de variable construidos en tiempo de ejecución y lecturas fuera de los archivos exportados; por eso la regla es informativa.\n\nBasado en la comprobación de fmCheckMate «ListVarsDefinedButUnused» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.set-never-read": "La variable se escribe pero nunca se lee"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Locales",
+    "summary_kpi.props.items[2].label": "Globales",
+    "summary_kpi.props.items[3].label": "Guiones afectados",
+    "summary_kpi.props.items[4].label": "Archivos afectados",
+    "findings_card.props.title": "Variable asignada y nunca leída",
+    "variable_scope_filter.props.options[0].label": "todos los ámbitos",
+    "variable_scope_filter.props.options[1].label": "Locales",
+    "variable_scope_filter.props.options[2].label": "Globales",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Variable",
+    "findings_table.props.columns[2].label": "Ámbito",
+    "findings_table.props.columns[3].label": "Visto primero en",
+    "findings_table.props.columns[4].label": "Escrituras",
+    "findings_table.props.columns[5].label": "Evidencia",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, variable o guion…",
+    "findings_table.props.empty.message": "No se encontraron variables que se escriban sin leerse nunca."
+  }
+}

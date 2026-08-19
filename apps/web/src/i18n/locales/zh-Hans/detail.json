@@ -5,6 +5,7 @@
   "autoTable": {
     "rowCount_one": "{{count}} 条",
     "rowCount_other": "{{count}} 条",
+    "rowCountTruncated": "{{total}} 条中的 {{shown}} 条",
     "filteredFrom": "从 {{count}} 条中筛选",
     "newCount": "{{count}} 条新增",
     "totalSize": "总大小 {{size}}",
@@ -362,7 +363,8 @@
     "highlightsCount_one": "已高亮 {{count}} 处匹配",
     "highlightsCount_other": "已高亮 {{count}} 处匹配",
     "dismissAria": "移除引用高亮",
-    "dismissTitle": "移除引用高亮(Esc)"
+    "dismissTitle": "移除引用高亮(Esc)",
+    "sourceLabel": "来源："
   },
   "tableDetails": "表详情",
   "scriptDetails": "脚本详情",

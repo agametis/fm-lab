@@ -150,6 +150,8 @@
     "showFindings": "Show findings",
     "memberError": "Error",
     "openMember": "Open dashboard/query",
+    "openFinding": "Open in detail view",
+    "openMemberFindings": "Open all findings in the detail view",
     "truncated": "Further findings truncated — open the member for the full list.",
     "duration": "{{ms}} ms",
     "searchPlaceholder": "Filter tests…",
@@ -187,6 +189,8 @@
     "state_neutral": "Neutral results",
     "state_ok": "Passed",
     "state_skipped": "Skipped",
-    "state_failed": "Run failed"
+    "state_failed": "Run failed",
+    "filterReset": "Reset filters",
+    "noResultsYet": "No results yet — run the tests to populate this list."
   }
 }

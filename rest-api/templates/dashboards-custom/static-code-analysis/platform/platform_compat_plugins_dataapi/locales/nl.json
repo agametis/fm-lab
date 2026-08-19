@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Plug-incompatibiliteit: FileMaker Data API",
-  "analysis.defaultResult.meaning": "Plug-infunctieaanroepen binnen het bereik die niet werken op FileMaker Data API"
- }
+  "manifest": {
+    "title": "Plug-incompatibiliteit: FileMaker Data API",
+    "analysis.defaultResult.meaning": "Plug-infunctieaanroepen binnen het bereik die niet werken op FileMaker Data API"
+  },
+  "layout": {}
 }

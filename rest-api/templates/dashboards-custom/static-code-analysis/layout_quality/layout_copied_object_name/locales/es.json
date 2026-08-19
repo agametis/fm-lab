@@ -1,0 +1,31 @@
+{
+  "manifest": {
+    "title": "Nombre de objeto copiado",
+    "description": "Regla de calidad de Layout — un objeto con nombre lleva un sufijo de copia (' Copy', ' Kopie'), un sufijo numérico de pegado o comparte nombre con otro objeto del mismo Layout. Los objetos con nombre se referencian desde scripts y cálculos; los restos de copia apuntan al objeto equivocado o a ninguno. Los sufijos numéricos también pueden ser intencionados — verificar antes de renombrar.\n\nBasado en la comprobación de fmCheckMate «Copied Object Name» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy-suffix": "El nombre del objeto lleva un sufijo de copia — probablemente un resto de pegado",
+    "messages.duplicate-name": "El nombre del objeto aparece más de una vez en este Layout",
+    "messages.numeric-suffix": "El nombre del objeto termina en un sufijo numérico — quizá un resto de pegado, quizá un nombre intencionado"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Sufijo de copia",
+    "summary_kpi.props.items[2].label": "Sufijo numérico",
+    "summary_kpi.props.items[3].label": "Nombres duplicados",
+    "findings_card.props.title": "Nombre de objeto copiado",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, Layout u objeto…",
+    "findings_table.props.empty.message": "No se encontraron nombres copiados o duplicados.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Motivo",
+    "reason_filter.props.options[0].label": "todos los motivos",
+    "reason_filter.props.options[1].label": "sufijo de copia",
+    "reason_filter.props.options[2].label": "sufijo numérico",
+    "reason_filter.props.options[3].label": "nombres duplicados",
+    "object_type_select.props.label": "Tipo de objeto",
+    "object_type_select.props.emptyOptionLabel": "todos los tipos de objeto",
+    "findings_table.props.columns[7].label": "Ancho",
+    "findings_table.props.columns[8].label": "Alto"
+  }
+}

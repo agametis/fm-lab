@@ -20,6 +20,7 @@
 - Working with an IDE
 - Using the Terminal
 - Using the Skills
+- [Static Code Analysis](Wiki/Static%20Code%20Analysis.md)
 - Preparing your FileMaker solution
 - [XML conversion](Wiki/katana-engine.md)
 - [Troubleshooting](Wiki/Troubleshooting.md)
@@ -49,8 +50,8 @@
 - DuckDB
 - Claris FileMaker
 - MBS Plugin
-- other projects
+- [Other projects](Wiki/Other%20projects.md)
 
 
 **Note:** This documentation is a work in progress and will evolve alongside future releases.
-(last edit: 2026-07-27)
+(last edit: 2026-08-19)

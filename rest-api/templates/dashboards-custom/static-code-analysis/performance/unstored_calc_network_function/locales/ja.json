@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "ホストへの往復を伴う非保存計算",
+    "description": "パフォーマンスルール — 非保存の計算フィールドが Get(CurrentHostTimestamp) を呼び出し、レイアウトに配置されています。Claris は、このフィールドの表示のたびにホストへの追加ネットワークアクセスが発生することを文書化しています。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "レイアウト配置数",
+    "summary_kpi.props.items[2].label": "対象ファイル数",
+    "findings_card.props.title": "ホストへの往復を伴う非保存計算",
+    "findings_table.props.searchPlaceholder": "ファイル・テーブル・フィールドを検索…",
+    "findings_table.props.empty.message": "Get(CurrentHostTimestamp) を呼び出す表示中の非保存計算はありません。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "テーブル",
+    "findings_table.props.columns[2].label": "フィールド",
+    "findings_table.props.columns[3].label": "レイアウト数",
+    "findings_table.props.columns[4].label": "配置数",
+    "findings_table.props.columns[5].label": "リスト形式レイアウト上"
+  }
+}

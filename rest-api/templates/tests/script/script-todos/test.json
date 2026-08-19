@@ -1,22 +1,26 @@
 {
   "id": "script-todos",
-  "version": "1.0.0",
-  "title": "Script TODO Markers",
-  "description": "Scans script comments for TODO / FIX IT / TBD marker lines.",
+  "version": "2.0.0",
+  "title": "Unfinished Work in Scripts",
+  "description": "Scans script comments for unfinished-work markers, separated by class: FIXME (FIXME, FIX ME, FIX IT, FIXIT) reports a known defect that shipped and counts as a warning; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) records planned work and stays neutral. Both rules use the same detector, so the notation a developer chose does not matter. A comment line carrying both markers is counted by both rules.",
   "keywords": [
     "todo",
     "fixme",
     "tbd",
     "comments",
-    "script"
+    "script",
+    "unfinished-work"
   ],
-  "testType": "inventory",
+  "testType": "code-quality",
   "objectTypes": [
     "Script"
   ],
   "scopes": [
     "solution",
-    "file"
+    "file",
+    "object",
+    "object-list",
+    "cluster"
   ],
   "outputs": [
     "count",
@@ -25,49 +29,97 @@
   "members": [
     {
       "kind": "dashboard",
-      "ref": "script_todos"
+      "ref": "script_comment_fixme"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "script_comment_todo"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "fixme-only",
+      "title": "Defects only",
+      "description": "Only the FIXME class — known defects that shipped.",
+      "members": [
+        "script_comment_fixme"
+      ]
+    },
+    {
+      "id": "full",
+      "title": "Full Check"
     }
   ],
   "locales": {
     "de": {
-      "title": "TODO-Marker in Scripts",
-      "description": "Durchsucht Script-Kommentare nach Markerzeilen mit TODO / FIX IT / TBD."
+      "title": "Unfertige Arbeit in Scripts",
+      "description": "Durchsucht Script-Kommentare nach Markern für unfertige Arbeit, getrennt nach Klasse: FIXME (FIXME, FIX ME, FIX IT, FIXIT) benennt einen ausgelieferten, bekannten Defekt und zählt als Warnung; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) hält geplante Arbeit fest und bleibt neutral. Beide Regeln benutzen denselben Detektor, die gewählte Notation spielt also keine Rolle. Eine Kommentarzeile mit beiden Markern zählt in beiden Regeln.",
+      "profiles.fixme-only.title": "Nur Defekte",
+      "profiles.fixme-only.description": "Nur die FIXME-Klasse — bekannte Defekte, die ausgeliefert wurden.",
+      "profiles.full.title": "Vollprüfung"
     },
     "es": {
-      "title": "Marcadores TODO en scripts",
-      "description": "Examina los comentarios de script en busca de líneas con marcadores TODO / FIX IT / TBD."
+      "title": "Trabajo pendiente en scripts",
+      "description": "Examina los comentarios de script en busca de marcas de trabajo pendiente, separadas por clase: FIXME (FIXME, FIX ME, FIX IT, FIXIT) señala un defecto conocido ya entregado y cuenta como advertencia; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) registra trabajo planificado y permanece neutral. Ambas reglas usan el mismo detector, por lo que la notación elegida no importa. Una línea con ambas marcas cuenta en las dos reglas.",
+      "profiles.fixme-only.title": "Solo defectos",
+      "profiles.fixme-only.description": "Solo la clase FIXME: defectos conocidos que se entregaron.",
+      "profiles.full.title": "Comprobación completa"
     },
     "fr": {
-      "title": "Marqueurs TODO dans les scripts",
-      "description": "Parcourt les commentaires de script à la recherche de lignes marquées TODO / FIX IT / TBD."
+      "title": "Travail inachevé dans les scripts",
+      "description": "Parcourt les commentaires de script à la recherche de marqueurs de travail inachevé, séparés par classe : FIXME (FIXME, FIX ME, FIX IT, FIXIT) signale un défaut connu livré et compte comme avertissement ; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) consigne un travail planifié et reste neutre. Les deux règles utilisent le même détecteur : la notation choisie n'a pas d'importance. Une ligne portant les deux marqueurs compte dans les deux règles.",
+      "profiles.fixme-only.title": "Défauts uniquement",
+      "profiles.fixme-only.description": "Seulement la classe FIXME : les défauts connus livrés en production.",
+      "profiles.full.title": "Vérification complète"
     },
     "it": {
-      "title": "Marcatori TODO negli script",
-      "description": "Esamina i commenti degli script alla ricerca di righe con marcatori TODO / FIX IT / TBD."
+      "title": "Lavoro incompiuto negli script",
+      "description": "Esamina i commenti degli script alla ricerca di marcatori di lavoro incompiuto, distinti per classe: FIXME (FIXME, FIX ME, FIX IT, FIXIT) segnala un difetto noto già rilasciato e conta come avviso; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) registra lavoro pianificato e resta neutro. Entrambe le regole usano lo stesso rilevatore, quindi la notazione scelta non conta. Una riga con entrambi i marcatori conta in entrambe le regole.",
+      "profiles.fixme-only.title": "Solo difetti",
+      "profiles.fixme-only.description": "Solo la classe FIXME: difetti noti già rilasciati.",
+      "profiles.full.title": "Controllo completo"
     },
     "ja": {
-      "title": "スクリプト内の TODO マーカー",
-      "description": "スクリプトのコメントから TODO / FIX IT / TBD のマーカー行を探します。"
+      "title": "スクリプトの未完了作業",
+      "description": "スクリプトのコメントから未完了作業のマーカーをクラス別に探します。FIXME（FIXME, FIX ME, FIX IT, FIXIT）は出荷済みの既知の不具合を示し警告として数えます。TODO（TODO, TO DO, TO-DO, TBD, to be done, to be defined）は予定された作業の記録で中立のままです。両ルールは同じ検出器を使うため、開発者の表記は問いません。両方のマーカーを含む行は両方のルールで数えられます。",
+      "profiles.fixme-only.title": "不具合のみ",
+      "profiles.fixme-only.description": "FIXME クラスのみ — 出荷済みの既知の不具合。",
+      "profiles.full.title": "フルチェック"
     },
     "ko": {
-      "title": "스크립트의 TODO 표시",
-      "description": "스크립트 주석에서 TODO / FIX IT / TBD 표시 줄을 찾습니다."
+      "title": "스크립트의 미완료 작업",
+      "description": "스크립트 주석에서 미완료 작업 마커를 클래스별로 찾습니다. FIXME(FIXME, FIX ME, FIX IT, FIXIT)는 이미 출시된 알려진 결함을 뜻하며 경고로 집계됩니다. TODO(TODO, TO DO, TO-DO, TBD, to be done, to be defined)는 계획된 작업의 기록이며 중립으로 남습니다. 두 규칙은 동일한 검출기를 사용하므로 표기 방식은 상관없습니다. 두 마커를 모두 포함한 줄은 양쪽 규칙에서 집계됩니다.",
+      "profiles.fixme-only.title": "결함만",
+      "profiles.fixme-only.description": "FIXME 클래스만 — 이미 출시된 알려진 결함.",
+      "profiles.full.title": "전체 검사"
     },
     "nl": {
-      "title": "TODO-markeringen in scripts",
-      "description": "Doorzoekt scriptcommentaar op regels met TODO / FIX IT / TBD."
+      "title": "Onafgemaakt werk in scripts",
+      "description": "Doorzoekt scriptopmerkingen op markeringen voor onafgemaakt werk, gescheiden per klasse: FIXME (FIXME, FIX ME, FIX IT, FIXIT) benoemt een bekend defect dat is uitgeleverd en telt als waarschuwing; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) legt gepland werk vast en blijft neutraal. Beide regels gebruiken dezelfde detector, dus de gekozen notatie maakt niet uit. Een regel met beide markeringen telt in beide regels.",
+      "profiles.fixme-only.title": "Alleen defecten",
+      "profiles.fixme-only.description": "Alleen de FIXME-klasse: bekende defecten die zijn uitgeleverd.",
+      "profiles.full.title": "Volledige controle"
     },
     "pt": {
-      "title": "Marcadores TODO em scripts",
-      "description": "Examina os comentários de script em busca de linhas com marcadores TODO / FIX IT / TBD."
+      "title": "Trabalho inacabado em scripts",
+      "description": "Examina os comentários de script em busca de marcadores de trabalho inacabado, separados por classe: FIXME (FIXME, FIX ME, FIX IT, FIXIT) indica um defeito conhecido já entregue e conta como aviso; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) registra trabalho planejado e permanece neutro. As duas regras usam o mesmo detector, portanto a notação escolhida não importa. Uma linha com os dois marcadores conta nas duas regras.",
+      "profiles.fixme-only.title": "Apenas defeitos",
+      "profiles.fixme-only.description": "Apenas a classe FIXME: defeitos conhecidos que foram entregues.",
+      "profiles.full.title": "Verificação completa"
     },
     "sv": {
-      "title": "TODO-markörer i skript",
-      "description": "Söker igenom skriptkommentarer efter rader märkta TODO / FIX IT / TBD."
+      "title": "Ofärdigt arbete i skript",
+      "description": "Söker igenom skriptkommentarer efter markörer för ofärdigt arbete, uppdelade per klass: FIXME (FIXME, FIX ME, FIX IT, FIXIT) anger ett känt fel som levererats och räknas som varning; TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) noterar planerat arbete och förblir neutralt. Båda reglerna använder samma detektor, så vald notation spelar ingen roll. En rad med båda markörerna räknas i båda reglerna.",
+      "profiles.fixme-only.title": "Endast fel",
+      "profiles.fixme-only.description": "Endast FIXME-klassen — kända fel som levererats.",
+      "profiles.full.title": "Fullständig kontroll"
     },
     "zh-Hans": {
-      "title": "脚本中的 TODO 标记",
-      "description": "在脚本注释中查找带有 TODO / FIX IT / TBD 的标记行。"
+      "title": "脚本中的未完成工作",
+      "description": "在脚本注释中按类别查找未完成工作标记：FIXME（FIXME、FIX ME、FIX IT、FIXIT）表示已随版本发布的已知缺陷，计为警告；TODO（TODO、TO DO、TO-DO、TBD、to be done、to be defined）记录计划中的工作，保持中立。两条规则使用同一检测器，因此书写方式无关紧要。同时含有两种标记的行会在两条规则中各计一次。",
+      "profiles.fixme-only.title": "仅缺陷",
+      "profiles.fixme-only.description": "仅 FIXME 类 —— 已随版本发布的已知缺陷。",
+      "profiles.full.title": "完整检查"
     }
   }
 }

@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilidade de plataforma: FileMaker WebDirect",
-  "analysis.defaultResult.meaning": "Passos no escopo sem suporte ou com suporte apenas parcial em FileMaker WebDirect"
- }
+  "manifest": {
+    "title": "Compatibilidade de plataforma: FileMaker WebDirect",
+    "analysis.defaultResult.meaning": "Passos no escopo sem suporte ou com suporte apenas parcial em FileMaker WebDirect"
+  },
+  "layout": {}
 }

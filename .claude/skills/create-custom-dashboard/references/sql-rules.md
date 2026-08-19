@@ -196,7 +196,7 @@ the filtered list MUST agree:
 - Parameterised `LIMIT` on detail datasets (default 50–200); no LIMIT on
   single-row summary datasets.
 - Reference style: `rest-api/templates/dashboards/home/data/*.sql` (system),
-  `rest-api/templates/dashboards-custom/script_todos/data/*.sql` and
+  `rest-api/templates/dashboards-custom/developer-workflow/script_todos/data/*.sql` and
   `rest-api/templates/dashboards-custom/modularization/external_apis/data/*.sql`
   (custom, incl. KPI-filter wiring).
 - Read-only: never `UPDATE` / `INSERT` / `DELETE` / DDL.

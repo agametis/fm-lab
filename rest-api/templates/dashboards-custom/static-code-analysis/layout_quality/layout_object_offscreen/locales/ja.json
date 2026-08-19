@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "レイアウト外のオブジェクト",
+    "description": "Layout 品質ルール — 最上位のオブジェクトがレイアウト境界からはみ出しています（レイアウト幅の外、最終パートより下、または負の座標）。絶対レイアウト座標に配置されるのは最上位オブジェクトのみのため、それらだけを検査します。入れ子のオブジェクトはコンテナ相対であり、はみ出しオブジェクトのルールが対象とします。わずかなはみ出しは丸め誤差であることが多く、許容値スライダーで抑制できます。",
+    "messages.complete": "オブジェクトは完全にレイアウト外にあります（{direction}）",
+    "messages.partial": "オブジェクトがレイアウトからはみ出しています（{direction}）"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "完全に外",
+    "summary_kpi.props.items[2].label": "部分的に外",
+    "findings_card.props.title": "レイアウト外のオブジェクト",
+    "findings_table.props.searchPlaceholder": "ファイル、Layout、オブジェクトを検索…",
+    "findings_table.props.empty.message": "レイアウト境界の外にあるオブジェクトは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "オブジェクトタイプ",
+    "findings_table.props.columns[3].label": "オブジェクト",
+    "findings_table.props.columns[4].label": "方向",
+    "findings_table.props.columns[5].label": "程度",
+    "findings_table.props.columns[8].label": "幅",
+    "findings_table.props.columns[9].label": "高さ",
+    "tolerance_slider.props.label": "許容値"
+  }
+}

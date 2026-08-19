@@ -1,0 +1,98 @@
+{
+  "id": "layout_broken_field_reference",
+  "version": "1.0.0",
+  "title": "Broken field reference",
+  "description": "Layout-quality rule — a layout object references a field or table occurrence that no longer exists. Resolution runs over the numeric IDs (field ID within the target table, table-occurrence ID within the file), never over UUIDs: cross-file references routinely carry a stale UUID while the field itself is perfectly intact, and FileMaker resolves them by ID at runtime. Objects whose target file is missing from the catalog are skipped as unverifiable, and container objects are excluded because their XML embeds the markup of their children.\n\nBased on the fmCheckMate check \"Broken Field\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "unlink",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "error",
+    "category": "layout_quality",
+    "rationale": "A field reference with no target renders as <Field Missing> in FileMaker. The object occupies space, takes part in the tab order and silently drops whatever it was supposed to show.",
+    "remediation": "Point the object at an existing field, or delete it if the data it showed is gone for good.",
+    "meta": {
+      "name": "Broken field reference",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Layout-quality rule — a layout object references a field or table occurrence that no longer exists. Resolution runs over the numeric IDs (field ID within the target table, table-occurrence ID within the file), never over UUIDs: cross-file references routinely carry a stale UUID while the field itself is perfectly intact, and FileMaker resolves them by ID at runtime. Objects whose target file is missing from the catalog are skipped as unverifiable, and container objects are excluded because their XML embeds the markup of their children.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportBrokenFields)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "summary": "native",
+        "findings": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Broken field reference"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "missing-field": "Field no longer exists in the target table",
+    "missing-to": "Table occurrence no longer exists in this file"
+  }
+}

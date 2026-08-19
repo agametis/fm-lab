@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "관계를 가로지르는 자동 입력 계산",
+    "description": "성능 규칙 — 관련 필드를 읽는 자동 입력 계산은 레코드를 쓸 때마다 관계를 순회합니다. WAN에서는 순회마다 입력 시점의 추가 왕복이 발생할 수 있습니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 테이블",
+    "summary_kpi.props.items[2].label": "영향받는 파일",
+    "findings_card.props.title": "관계를 가로지르는 자동 입력 계산",
+    "findings_table.props.searchPlaceholder": "파일, 테이블 또는 필드 검색…",
+    "findings_table.props.empty.message": "관련 필드를 읽는 자동 입력 계산이 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "테이블",
+    "findings_table.props.columns[2].label": "필드",
+    "findings_table.props.columns[3].label": "관련 참조 수",
+    "findings_table.props.columns[4].label": "수식(시작 부분)"
+  }
+}

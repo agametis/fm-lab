@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "복제 접미사가 남은 이름",
+    "description": "코드 스타일 규칙 — 객체 이름에 FileMaker가 복제할 때 붙이는 접미사가 그대로 남아 있습니다. 복사 접미사(Copy / copy / Kopie)가 기본 검출 집합이며, 숫자 계열(공백과 최대 네 자리 숫자로 끝나는 이름)은 의도적으로 별도 칩에 두었습니다. 의도적인 이름에도 같은 형태가 많이 쓰이기 때문입니다.\n\nfmCheckMate 검사 “Copied Function Name” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy": "FileMaker의 복제 접미사가 남아 있습니다",
+    "messages.numeric": "이름이 숫자로 끝납니다 — 이름을 바꾸지 않은 복제일 수 있습니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "복사 접미사",
+    "summary_kpi.props.items[2].label": "숫자 접미사",
+    "summary_kpi.props.items[3].label": "영향받은 파일",
+    "findings_card.props.title": "복제 접미사가 남은 이름",
+    "suffix_kind_filter.props.options[0].label": "둘 다",
+    "suffix_kind_filter.props.options[1].label": "복사 접미사",
+    "suffix_kind_filter.props.options[2].label": "숫자 접미사",
+    "object_type_select.props.label": "객체 유형",
+    "object_type_select.props.emptyOptionLabel": "모든 객체 유형",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "객체 유형",
+    "findings_table.props.columns[2].label": "객체",
+    "findings_table.props.columns[3].label": "접미사",
+    "findings_table.props.searchPlaceholder": "파일, 객체 유형 또는 이름 검색…",
+    "findings_table.props.empty.message": "복제 접미사가 남은 이름이 없습니다."
+  }
+}

@@ -18,6 +18,7 @@
     "findings_table.props.columns[2].label": "Formato",
     "findings_table.props.columns[3].label": "Contesto",
     "findings_table.props.columns[4].label": "File",
-    "findings_table.props.columns[5].label": "Posizionamenti"
+    "findings_table.props.columns[5].label": "Posizionamenti",
+    "findings_table.props.columns[6].label": "Nei portali"
   }
 }

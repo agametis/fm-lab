@@ -2,17 +2,21 @@
   "schemaVersion": 1,
   "root": {
     "type": "Grid",
-    "props": { "columns": 12, "gap": 16 },
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
     "children": [
       {
         "type": "Card",
         "id": "results_kpi_card",
         "props": {
           "span": 12,
-          "variant": "hero",
-          "subtitle": "Rule results from the shared results layer — computed on demand, cached per catalog fingerprint. Pending rules have not been run against the current catalog yet; use Run all rules."
+          "variant": "hero"
         },
-        "data": { "dataset": "results_overview" },
+        "data": {
+          "dataset": "results_overview"
+        },
         "children": [
           {
             "type": "KPIStrip",
@@ -23,43 +27,99 @@
                   "label": "Rules",
                   "field": "total",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "" } } }
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "health_hints",
+                      "params": {
+                        "state": ""
+                      }
+                    }
+                  }
                 },
                 {
                   "label": "Errors",
                   "field": "error",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "error" } } }
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "health_hints",
+                      "params": {
+                        "state": "error"
+                      }
+                    }
+                  }
                 },
                 {
                   "label": "Warnings",
                   "field": "warning",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "warning" } } }
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "health_hints",
+                      "params": {
+                        "state": "warning"
+                      }
+                    }
+                  }
                 },
                 {
                   "label": "OK",
                   "field": "ok",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "ok" } } }
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "health_hints",
+                      "params": {
+                        "state": "ok"
+                      }
+                    }
+                  }
                 },
                 {
                   "label": "Neutral",
                   "field": "neutral",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "neutral" } } }
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "health_hints",
+                      "params": {
+                        "state": "neutral"
+                      }
+                    }
+                  }
                 },
                 {
                   "label": "Pending",
                   "field": "pending",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "pending" } } }
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "health_hints",
+                      "params": {
+                        "state": "pending"
+                      }
+                    }
+                  }
                 },
                 {
                   "label": "Failed",
                   "field": "failed",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "health_hints", "params": { "state": "failed" } } }
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "health_hints",
+                      "params": {
+                        "state": "failed"
+                      }
+                    }
+                  }
                 },
                 {
                   "label": "Findings",
@@ -77,7 +137,7 @@
             "type": "ResultsRunControl",
             "id": "results_run",
             "props": {
-              "roots": "static-code-analysis,metadata-integrity",
+              "roots": "static-code-analysis,metadata-integrity,developer-workflow",
               "mode": "missing",
               "label": "Run all rules"
             }
@@ -87,8 +147,13 @@
       {
         "type": "Card",
         "id": "rp_performance_card",
-        "props": { "span": 4, "title": "Performance" },
-        "data": { "dataset": "results_performance" },
+        "props": {
+          "span": 4,
+          "title": "Performance"
+        },
+        "data": {
+          "dataset": "results_performance"
+        },
         "children": [
           {
             "type": "List",
@@ -98,9 +163,16 @@
                 "primary": "{{title}}",
                 "secondary": "{{value}}",
                 "badge": "{{state}}",
-                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
+                "onClick": {
+                  "action": "navigate",
+                  "args": {
+                    "path": "{{open_target}}"
+                  }
+                }
               },
-              "empty": { "message": "Nothing to report." }
+              "empty": {
+                "message": "Nothing to report."
+              }
             }
           }
         ]
@@ -108,8 +180,13 @@
       {
         "type": "Card",
         "id": "rp_error_prone_card",
-        "props": { "span": 4, "title": "Error-prone" },
-        "data": { "dataset": "results_error_prone" },
+        "props": {
+          "span": 4,
+          "title": "Error-prone"
+        },
+        "data": {
+          "dataset": "results_error_prone"
+        },
         "children": [
           {
             "type": "List",
@@ -119,9 +196,16 @@
                 "primary": "{{title}}",
                 "secondary": "{{value}}",
                 "badge": "{{state}}",
-                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
+                "onClick": {
+                  "action": "navigate",
+                  "args": {
+                    "path": "{{open_target}}"
+                  }
+                }
               },
-              "empty": { "message": "Nothing to report." }
+              "empty": {
+                "message": "Nothing to report."
+              }
             }
           }
         ]
@@ -129,8 +213,13 @@
       {
         "type": "Card",
         "id": "rp_security_card",
-        "props": { "span": 4, "title": "Security" },
-        "data": { "dataset": "results_security" },
+        "props": {
+          "span": 4,
+          "title": "Security"
+        },
+        "data": {
+          "dataset": "results_security"
+        },
         "children": [
           {
             "type": "List",
@@ -140,9 +229,16 @@
                 "primary": "{{title}}",
                 "secondary": "{{value}}",
                 "badge": "{{state}}",
-                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
+                "onClick": {
+                  "action": "navigate",
+                  "args": {
+                    "path": "{{open_target}}"
+                  }
+                }
               },
-              "empty": { "message": "Nothing to report." }
+              "empty": {
+                "message": "Nothing to report."
+              }
             }
           }
         ]
@@ -150,8 +246,13 @@
       {
         "type": "Card",
         "id": "rp_unused_code_card",
-        "props": { "span": 4, "title": "Unused code" },
-        "data": { "dataset": "results_unused_code" },
+        "props": {
+          "span": 4,
+          "title": "Unused code"
+        },
+        "data": {
+          "dataset": "results_unused_code"
+        },
         "children": [
           {
             "type": "List",
@@ -161,9 +262,16 @@
                 "primary": "{{title}}",
                 "secondary": "{{value}}",
                 "badge": "{{state}}",
-                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
+                "onClick": {
+                  "action": "navigate",
+                  "args": {
+                    "path": "{{open_target}}"
+                  }
+                }
               },
-              "empty": { "message": "Nothing to report." }
+              "empty": {
+                "message": "Nothing to report."
+              }
             }
           }
         ]
@@ -171,8 +279,13 @@
       {
         "type": "Card",
         "id": "rp_code_style_card",
-        "props": { "span": 4, "title": "Code style" },
-        "data": { "dataset": "results_code_style" },
+        "props": {
+          "span": 4,
+          "title": "Code style"
+        },
+        "data": {
+          "dataset": "results_code_style"
+        },
         "children": [
           {
             "type": "List",
@@ -182,9 +295,49 @@
                 "primary": "{{title}}",
                 "secondary": "{{value}}",
                 "badge": "{{state}}",
-                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
+                "onClick": {
+                  "action": "navigate",
+                  "args": {
+                    "path": "{{open_target}}"
+                  }
+                }
               },
-              "empty": { "message": "Nothing to report." }
+              "empty": {
+                "message": "Nothing to report."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "rp_layout_quality_card",
+        "props": {
+          "span": 4,
+          "title": "Layout quality"
+        },
+        "data": {
+          "dataset": "results_layout_quality"
+        },
+        "children": [
+          {
+            "type": "List",
+            "id": "rp_layout_quality_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{title}}",
+                "secondary": "{{value}}",
+                "badge": "{{state}}",
+                "onClick": {
+                  "action": "navigate",
+                  "args": {
+                    "path": "{{open_target}}"
+                  }
+                }
+              },
+              "empty": {
+                "message": "Nothing to report."
+              }
             }
           }
         ]
@@ -192,8 +345,13 @@
       {
         "type": "Card",
         "id": "rp_documentation_card",
-        "props": { "span": 4, "title": "Documentation" },
-        "data": { "dataset": "results_documentation" },
+        "props": {
+          "span": 4,
+          "title": "Documentation"
+        },
+        "data": {
+          "dataset": "results_documentation"
+        },
         "children": [
           {
             "type": "List",
@@ -203,9 +361,16 @@
                 "primary": "{{title}}",
                 "secondary": "{{value}}",
                 "badge": "{{state}}",
-                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
+                "onClick": {
+                  "action": "navigate",
+                  "args": {
+                    "path": "{{open_target}}"
+                  }
+                }
               },
-              "empty": { "message": "Nothing to report." }
+              "empty": {
+                "message": "Nothing to report."
+              }
             }
           }
         ]
@@ -213,8 +378,13 @@
       {
         "type": "Card",
         "id": "rp_best_practices_card",
-        "props": { "span": 4, "title": "Best practices" },
-        "data": { "dataset": "results_best_practices" },
+        "props": {
+          "span": 4,
+          "title": "Best practices"
+        },
+        "data": {
+          "dataset": "results_best_practices"
+        },
         "children": [
           {
             "type": "List",
@@ -224,9 +394,16 @@
                 "primary": "{{title}}",
                 "secondary": "{{value}}",
                 "badge": "{{state}}",
-                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
+                "onClick": {
+                  "action": "navigate",
+                  "args": {
+                    "path": "{{open_target}}"
+                  }
+                }
               },
-              "empty": { "message": "Nothing to report." }
+              "empty": {
+                "message": "Nothing to report."
+              }
             }
           }
         ]
@@ -234,8 +411,13 @@
       {
         "type": "Card",
         "id": "rp_platform_card",
-        "props": { "span": 4, "title": "Platform compatibility" },
-        "data": { "dataset": "results_platform" },
+        "props": {
+          "span": 4,
+          "title": "Platform compatibility"
+        },
+        "data": {
+          "dataset": "results_platform"
+        },
         "children": [
           {
             "type": "List",
@@ -245,9 +427,16 @@
                 "primary": "{{title}}",
                 "secondary": "{{value}}",
                 "badge": "{{state}}",
-                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
+                "onClick": {
+                  "action": "navigate",
+                  "args": {
+                    "path": "{{open_target}}"
+                  }
+                }
               },
-              "empty": { "message": "Nothing to report." }
+              "empty": {
+                "message": "Nothing to report."
+              }
             }
           }
         ]
@@ -255,8 +444,13 @@
       {
         "type": "Card",
         "id": "rp_metadata_integrity_card",
-        "props": { "span": 4, "title": "Metadata integrity" },
-        "data": { "dataset": "results_metadata_integrity" },
+        "props": {
+          "span": 4,
+          "title": "Metadata integrity"
+        },
+        "data": {
+          "dataset": "results_metadata_integrity"
+        },
         "children": [
           {
             "type": "List",
@@ -266,9 +460,49 @@
                 "primary": "{{title}}",
                 "secondary": "{{value}}",
                 "badge": "{{state}}",
-                "onClick": { "action": "navigate", "args": { "path": "{{open_target}}" } }
+                "onClick": {
+                  "action": "navigate",
+                  "args": {
+                    "path": "{{open_target}}"
+                  }
+                }
               },
-              "empty": { "message": "Nothing to report." }
+              "empty": {
+                "message": "Nothing to report."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "rp_developer_workflow_card",
+        "props": {
+          "span": 4,
+          "title": "Developer workflow"
+        },
+        "data": {
+          "dataset": "results_developer_workflow"
+        },
+        "children": [
+          {
+            "type": "List",
+            "id": "rp_developer_workflow_list",
+            "props": {
+              "rowTemplate": {
+                "primary": "{{title}}",
+                "secondary": "{{value}}",
+                "badge": "{{state}}",
+                "onClick": {
+                  "action": "navigate",
+                  "args": {
+                    "path": "{{open_target}}"
+                  }
+                }
+              },
+              "empty": {
+                "message": "Nothing to report."
+              }
             }
           }
         ]

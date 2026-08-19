@@ -1,0 +1,111 @@
+{
+  "id": "name_trailing_whitespace",
+  "version": "1.0.0",
+  "title": "Object name with leading or trailing whitespace",
+  "description": "Code-style rule — an object name starts or ends with a space or tab. The whitespace is invisible in every list FileMaker shows, but it is part of the name: name-based access has to reproduce it exactly, and two names that look identical sort apart. Covers the user-named schema objects; layout objects and variables have their own rules, relationship names are derived by FileMaker.\n\nBased on the fmCheckMate check \"Script Name ends in white space\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "pilcrow",
+  "category": "code_style",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "code_style"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "code_style",
+    "rationale": "Nothing in the interface shows the space. It surfaces when a script calls the object by name, when a query filters on the name, or when someone types the name again and gets a second object that looks the same.",
+    "remediation": "Trim the name. Where scripts or calculations refer to it by name, update them in the same pass.",
+    "meta": {
+      "name": "Object name with leading or trailing whitespace",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Code-style rule — an object name starts or ends with a space or tab. The whitespace is invisible in every list FileMaker shows, but it is part of the name: name-based access has to reproduce it exactly, and two names that look identical sort apart. Covers the user-named schema objects; layout objects and variables have their own rules, relationship names are derived by FileMaker.",
+      "created": "2026-08-16",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XMSC_fmCM_AnalyseScripts.xsl (XMSC_fmCM_ReportBadScriptNames)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script",
+      "Field",
+      "Layout",
+      "CustomFunction",
+      "TableOccurrence",
+      "BaseTable",
+      "ValueList"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Object name with leading or trailing whitespace"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    },
+    {
+      "name": "defect",
+      "type": "string",
+      "required": false,
+      "description": "Defect-class filter chip (trailing, leading, both); unset = all."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "trailing": "Name ends with whitespace",
+    "leading": "Name starts with whitespace",
+    "both": "Name starts and ends with whitespace"
+  }
+}

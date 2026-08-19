@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "过长的对象名",
+    "description": "代码风格规则 — 对象名超过可读性阈值（max_len，默认 80 个字符），或正好卡在 FileMaker 的 100 字符上限上，此处输入被静默截断。位于上限的名称按警告报告，其余按提示报告。\n\n基于 fmCheckMate 检查“ListNamesWhichAreTooLong” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.too-long": "名称超过设定的阈值",
+    "messages.at-limit": "名称位于 FileMaker 的 100 字符上限，可能已被截断"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "超过阈值",
+    "summary_kpi.props.items[2].label": "达到上限",
+    "summary_kpi.props.items[3].label": "受影响文件",
+    "findings_card.props.title": "过长的对象名",
+    "defect_filter.props.options[0].label": "全部",
+    "defect_filter.props.options[1].label": "超过阈值",
+    "defect_filter.props.options[2].label": "达到上限",
+    "max_len_slider.props.label": "名称长度",
+    "object_type_select.props.label": "对象类型",
+    "object_type_select.props.emptyOptionLabel": "全部对象类型",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "对象类型",
+    "findings_table.props.columns[2].label": "对象",
+    "findings_table.props.columns[3].label": "长度",
+    "findings_table.props.columns[4].label": "缺陷",
+    "findings_table.props.searchPlaceholder": "搜索文件、对象类型或名称…",
+    "findings_table.props.empty.message": "未发现超过阈值的名称。"
+  }
+}

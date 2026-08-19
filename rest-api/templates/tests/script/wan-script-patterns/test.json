@@ -1,0 +1,138 @@
+{
+  "id": "wan-script-patterns",
+  "version": "1.0.0",
+  "title": "WAN Script Patterns",
+  "description": "Community-calibrated WAN performance patterns on script level: Go to Layout before Enter Find Mode (the Claris-documented record-download trap), Refresh Window flushing the join cache, Freeze Window cancelled by a pause, and navigation-heavy scripts without Freeze Window — plus a network round-trip estimate per script.",
+  "keywords": [
+    "performance",
+    "wan",
+    "network",
+    "slow",
+    "script",
+    "community-patterns"
+  ],
+  "testType": "performance",
+  "objectTypes": [
+    "Script"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "find_mode_after_layout_switch"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "refresh_window_flush_cache"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "freeze_window_then_pause"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "multi_navigation_without_freeze"
+    },
+    {
+      "kind": "query",
+      "ref": "script_network_roundtrip_ranking"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "quick",
+      "title": "Quick Check",
+      "description": "The two sharp, Claris-documented patterns: find mode after layout switch and join-cache flushes.",
+      "members": [
+        "find_mode_after_layout_switch",
+        "refresh_window_flush_cache"
+      ]
+    },
+    {
+      "id": "full",
+      "title": "Full Check"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "WAN-Script-Patterns",
+      "description": "Community-kalibrierte WAN-Performance-Patterns auf Script-Ebene: Go to Layout vor Enter Find Mode (die von Claris dokumentierte Datensatz-Download-Falle), Refresh Window mit Join-Cache-Flush, durch Pause aufgehobenes Freeze Window und navigationslastige Scripts ohne Freeze Window — plus eine Netzwerk-Roundtrip-Schätzung je Script.",
+      "profiles.quick.title": "Schnellprüfung",
+      "profiles.quick.description": "Die zwei scharfen, Claris-dokumentierten Patterns: Suchenmodus nach Layoutwechsel und Join-Cache-Flushes.",
+      "profiles.full.title": "Vollprüfung"
+    },
+    "es": {
+      "title": "Patrones WAN de scripts",
+      "description": "Patrones de rendimiento WAN calibrados por la comunidad a nivel de script: Go to Layout antes de Enter Find Mode (la trampa de descarga de registros documentada por Claris), Refresh Window vaciando la caché de combinaciones, Freeze Window cancelado por una pausa y scripts con mucha navegación sin Freeze Window — más una estimación de idas y vueltas de red por script.",
+      "profiles.quick.title": "Comprobación rápida",
+      "profiles.quick.description": "Los dos patrones precisos documentados por Claris: modo de búsqueda tras el cambio de presentación y vaciados de la caché de combinaciones.",
+      "profiles.full.title": "Comprobación completa"
+    },
+    "fr": {
+      "title": "Motifs WAN des scripts",
+      "description": "Motifs de performance WAN calibrés par la communauté au niveau des scripts : Go to Layout avant Enter Find Mode (le piège de téléchargement d'enregistrements documenté par Claris), Refresh Window vidant le cache des liens, Freeze Window annulé par une pause et scripts à forte navigation sans Freeze Window — plus une estimation des allers-retours réseau par script.",
+      "profiles.quick.title": "Vérification rapide",
+      "profiles.quick.description": "Les deux motifs nets documentés par Claris : mode recherche après changement de modèle et vidages du cache des liens.",
+      "profiles.full.title": "Vérification complète"
+    },
+    "it": {
+      "title": "Pattern WAN degli script",
+      "description": "Pattern di prestazioni WAN calibrati dalla comunità a livello di script: Go to Layout prima di Enter Find Mode (la trappola del download di record documentata da Claris), Refresh Window che svuota la cache dei join, Freeze Window annullato da una pausa e script ricchi di navigazione senza Freeze Window — più una stima dei round trip di rete per script.",
+      "profiles.quick.title": "Controllo rapido",
+      "profiles.quick.description": "I due pattern netti documentati da Claris: modo Trova dopo il cambio di formato e svuotamenti della cache dei join.",
+      "profiles.full.title": "Controllo completo"
+    },
+    "ja": {
+      "title": "WAN スクリプトパターン",
+      "description": "コミュニティで実証された WAN パフォーマンスのスクリプトレベル・パターン集：Enter Find Mode の前の Go to Layout（Claris が文書化したレコードダウンロードの罠）、ジョインキャッシュを破棄する Refresh Window、Pause で解除される Freeze Window、Freeze Window のないナビゲーション主体のスクリプト — さらにスクリプトごとのネットワーク往復推定を含みます。",
+      "profiles.quick.title": "クイックチェック",
+      "profiles.quick.description": "Claris が文書化した 2 つの明確なパターン：レイアウト切り替え後の検索モードとジョインキャッシュの破棄。",
+      "profiles.full.title": "フルチェック"
+    },
+    "ko": {
+      "title": "WAN 스크립트 패턴",
+      "description": "커뮤니티가 검증한 스크립트 수준의 WAN 성능 패턴: Enter Find Mode 전의 Go to Layout(Claris가 문서화한 레코드 다운로드 함정), 조인 캐시를 비우는 Refresh Window, 일시 정지로 해제되는 Freeze Window, Freeze Window 없는 내비게이션 위주 스크립트 — 그리고 스크립트별 네트워크 왕복 추정치.",
+      "profiles.quick.title": "빠른 검사",
+      "profiles.quick.description": "Claris가 문서화한 두 가지 명확한 패턴: 레이아웃 전환 후 찾기 모드와 조인 캐시 플러시.",
+      "profiles.full.title": "전체 검사"
+    },
+    "nl": {
+      "title": "WAN-scriptpatronen",
+      "description": "Door de community gekalibreerde WAN-prestatiepatronen op scriptniveau: Go to Layout vóór Enter Find Mode (de door Claris gedocumenteerde record-downloadval), Refresh Window met join-cache-flush, Freeze Window opgeheven door een pauze en navigatie-intensieve scripts zonder Freeze Window — plus een schatting van netwerk-roundtrips per script.",
+      "profiles.quick.title": "Snelle controle",
+      "profiles.quick.description": "De twee scherpe, door Claris gedocumenteerde patronen: zoekmodus na lay-outwissel en join-cache-flushes.",
+      "profiles.full.title": "Volledige controle"
+    },
+    "pt": {
+      "title": "Padrões WAN de scripts",
+      "description": "Padrões de desempenho WAN calibrados pela comunidade no nível de script: Go to Layout antes de Enter Find Mode (a armadilha de download de registros documentada pela Claris), Refresh Window descartando o cache de junções, Freeze Window cancelado por uma pausa e scripts com muita navegação sem Freeze Window — mais uma estimativa de idas e voltas de rede por script.",
+      "profiles.quick.title": "Verificação rápida",
+      "profiles.quick.description": "Os dois padrões precisos documentados pela Claris: modo de busca após troca de layout e descartes do cache de junções.",
+      "profiles.full.title": "Verificação completa"
+    },
+    "sv": {
+      "title": "WAN-skriptmönster",
+      "description": "Community-kalibrerade WAN-prestandamönster på skriptnivå: Go to Layout före Enter Find Mode (den Claris-dokumenterade postnedladdningsfällan), Refresh Window som tömmer join-cachen, Freeze Window upphävt av en paus och navigeringstunga skript utan Freeze Window — plus en uppskattning av nätverksrundresor per skript.",
+      "profiles.quick.title": "Snabbkontroll",
+      "profiles.quick.description": "De två skarpa, Claris-dokumenterade mönstren: sökläge efter layoutbyte och tömning av join-cachen.",
+      "profiles.full.title": "Fullständig kontroll"
+    },
+    "zh-Hans": {
+      "title": "WAN 脚本模式",
+      "description": "由社区校准的脚本级 WAN 性能模式：Enter Find Mode 之前的 Go to Layout（Claris 文档记载的记录下载陷阱）、清空联接缓存的 Refresh Window、被暂停终止的 Freeze Window，以及缺少 Freeze Window 的导航密集型脚本 — 另附每个脚本的网络往返估算。",
+      "profiles.quick.title": "快速检查",
+      "profiles.quick.description": "Claris 文档记载的两个明确模式：布局切换后的查找模式与联接缓存清空。",
+      "profiles.full.title": "完整检查"
+    }
+  }
+}

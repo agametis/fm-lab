@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Refresh Window descartando o cache de junções",
+    "description": "Regra de desempenho — Refresh Window com «Descartar resultados de junção em cache» (ou «Descartar dados externos em cache») descarta os caches de relacionamento e força o FileMaker a buscar novamente os registros relacionados no servidor. A Claris alerta explicitamente para o custo de rede."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Junções descartadas",
+    "summary_kpi.props.items[2].label": "Dados externos descartados",
+    "summary_kpi.props.items[3].label": "Refreshes simples (não reportados)",
+    "summary_kpi.props.items[4].label": "Arquivos afetados",
+    "flush_kind_filter.props.options[0].label": "Todos os descartes",
+    "flush_kind_filter.props.options[1].label": "Junções",
+    "flush_kind_filter.props.options[2].label": "Dados externos",
+    "findings_card.props.title": "Refresh Window descartando o cache de junções",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou script…",
+    "findings_table.props.empty.message": "Nenhum Refresh Window com opção de descarte encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Passo",
+    "findings_table.props.columns[3].label": "Descarta",
+    "findings_table.props.columns[4].label": "Profundidade do loop"
+  }
+}

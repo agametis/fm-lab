@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilità dei plug-in: FileMaker Go (iOS)",
-  "analysis.defaultResult.meaning": "Chiamate a funzioni plug-in nell'ambito che non vengono eseguite su FileMaker Go (iOS)"
- }
+  "manifest": {
+    "title": "Compatibilità dei plug-in: FileMaker Go (iOS)",
+    "analysis.defaultResult.meaning": "Chiamate a funzioni plug-in nell'ambito che non vengono eseguite su FileMaker Go (iOS)"
+  },
+  "layout": {}
 }

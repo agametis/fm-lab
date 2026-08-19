@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary_card",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpi",
+            "props": {
+              "items": [
+                {
+                  "label": "Findings",
+                  "field": "finding_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Object types",
+                  "field": "affected_object_types",
+                  "format": "number"
+                },
+                {
+                  "label": "Affected files",
+                  "field": "affected_files",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings_card",
+        "props": {
+          "span": 12,
+          "title": "Object name wrapped in quotes",
+          "keepChildrenOnEmpty": true
+        },
+        "data": {
+          "dataset": "findings"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search file, object type or name…",
+              "columns": [
+                {
+                  "field": "file_name",
+                  "label": "File"
+                },
+                {
+                  "field": "object_type",
+                  "label": "Object type"
+                },
+                {
+                  "field": "object_name",
+                  "label": "Object"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "{{object_type}}",
+                  "file": "{{file_name}}",
+                  "ref_src": "name_quoted",
+                  "ref_msgid": "quoted-name"
+                }
+              },
+              "empty": {
+                "message": "No quoted object names found."
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

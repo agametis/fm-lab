@@ -143,6 +143,14 @@ export function useLayoutSearch(
         updater(next);
         if (refActiveRef.current && next.has('ref')) {
           next.delete('ref');
+          // Findings-Kontext-Params gehören zum Referenz-Modus und enden mit ihm
+          // — sonst bliebe die Quelle-Zeile der RefOriginPill nach der User-
+          // Interaktion als Waise stehen.
+          next.delete('ref_src');
+          next.delete('ref_msgid');
+          for (const k of Array.from(next.keys())) {
+            if (k.startsWith('ref_arg_')) next.delete(k);
+          }
         }
         return next;
       }, { replace: true });

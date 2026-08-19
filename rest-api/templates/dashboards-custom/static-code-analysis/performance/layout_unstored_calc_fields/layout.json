@@ -27,25 +27,61 @@
                   "label": "Affected layouts",
                   "field": "affected_layouts",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "layout_unstored_calc_fields", "params": { "view": "", "file": "{{file}}" } } }
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "layout_unstored_calc_fields",
+                      "params": {
+                        "view": "",
+                        "file": "{{file}}"
+                      }
+                    }
+                  }
                 },
                 {
                   "label": "Form",
                   "field": "view_form",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "layout_unstored_calc_fields", "params": { "view": "Form", "file": "{{file}}" } } }
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "layout_unstored_calc_fields",
+                      "params": {
+                        "view": "Form",
+                        "file": "{{file}}"
+                      }
+                    }
+                  }
                 },
                 {
                   "label": "List",
                   "field": "view_list",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "layout_unstored_calc_fields", "params": { "view": "List", "file": "{{file}}" } } }
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "layout_unstored_calc_fields",
+                      "params": {
+                        "view": "List",
+                        "file": "{{file}}"
+                      }
+                    }
+                  }
                 },
                 {
                   "label": "Table",
                   "field": "view_table",
                   "format": "number",
-                  "onClick": { "action": "openDashboard", "args": { "id": "layout_unstored_calc_fields", "params": { "view": "Table", "file": "{{file}}" } } }
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "layout_unstored_calc_fields",
+                      "params": {
+                        "view": "Table",
+                        "file": "{{file}}"
+                      }
+                    }
+                  }
                 },
                 {
                   "label": "Affected files",
@@ -109,6 +145,12 @@
                 {
                   "field": "placements",
                   "label": "Placements",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "portal_placements",
+                  "label": "In portals",
                   "align": "right",
                   "format": "number"
                 }

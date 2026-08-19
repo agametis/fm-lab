@@ -19,7 +19,6 @@
     "findings_table.props.columns[4].label": "Vereist",
     "findings_table.props.columns[5].label": "Geïnstalleerd",
     "findings_table.props.columns[6].label": "Via custom function",
-    "findings_table.props.columns[7].label": "Melding",
     "findings_table.props.empty.message": "Geen controle actief — kies in de koptekst een geïnstalleerde pluginversie om de vereiste te valideren (neutrale optie = alleen inventaris).",
     "by_file_card.props.title": "Vereiste per bestand",
     "by_file_table.props.columns[0].label": "Bestand",

@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "Layout-geometrie-explorer",
+    "description": "Inventarisdashboard — alle layoutobjecten met afzonderlijk sorteerbare geometriekolommen (X, Y, breedte, hoogte, Z-volgorde). Filterbaar op layoutsectie (koptekst, body, voettekst …), objecttype, maximale breedte/hoogte en een layout-absoluut coördinatenvenster (X/Y van/tot) om specifieke layoutzones te onderzoeken. Coördinaten van geneste objecten zijn relatief ten opzichte van hun container; het coördinatenvenster komt exact overeen met objecten op het hoogste niveau, geneste objecten tellen mee via hun container op het hoogste niveau. De URL-parameters w_min/h_min vullen de schuifregelaars aan. Klik op een rij om de layout te openen met het object gemarkeerd."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Objecten",
+    "summary_kpi.props.items[1].label": "Layouts",
+    "summary_kpi.props.items[2].label": "Bestanden",
+    "objects_card.props.title": "Layoutobjecten",
+    "part_select.props.label": "Layoutsectie",
+    "part_select.props.emptyOptionLabel": "alle secties",
+    "object_type_select.props.label": "Objecttype",
+    "object_type_select.props.emptyOptionLabel": "alle objecttypen",
+    "w_max_slider.props.label": "Max. breedte",
+    "h_max_slider.props.label": "Max. hoogte",
+    "x_min_slider.props.label": "Venster X van",
+    "x_max_slider.props.label": "Venster X tot",
+    "y_min_slider.props.label": "Venster Y van",
+    "y_max_slider.props.label": "Venster Y tot",
+    "objects_table.props.searchPlaceholder": "Zoek bestand, layout of object…",
+    "objects_table.props.empty.message": "Geen layoutobjecten voldoen aan de huidige filters.",
+    "objects_table.props.columns[0].label": "Bestand",
+    "objects_table.props.columns[1].label": "Layout",
+    "objects_table.props.columns[2].label": "Sectie",
+    "objects_table.props.columns[3].label": "Objecttype",
+    "objects_table.props.columns[4].label": "Object",
+    "objects_table.props.columns[5].label": "Niveau",
+    "objects_table.props.columns[8].label": "Breedte",
+    "objects_table.props.columns[9].label": "Hoogte"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Marca FIXME en un comentario de cálculo",
+    "description": "Regla de la familia «Trabajo pendiente»: un cálculo de FileMaker contiene una marca FIXME (FIXME, FIX ME, FIX IT, FIXIT) en uno de sus comentarios. Se revisan cinco ubicaciones: funciones personalizadas, cálculos de campo, cálculos de entrada automática y de validación, y cálculos de pasos de script. Una marca FIXME señala un defecto conocido que se entregó, de ahí la severidad warning. La marca solo cuenta dentro de un comentario (// hasta fin de línea o /* … */): un literal de texto «TODO» no es un hallazgo.",
+    "messages.custom_function": "Marca FIXME en el comentario de una función personalizada",
+    "messages.field_calc": "Marca FIXME en el comentario de un cálculo de campo",
+    "messages.field_autoenter": "Marca FIXME en el comentario de un cálculo de entrada automática",
+    "messages.field_validation": "Marca FIXME en el comentario de un cálculo de validación",
+    "messages.script_step": "Marca FIXME en el comentario de un cálculo de paso de script"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Funciones personalizadas",
+    "summary_kpi.props.items[2].label": "Campos",
+    "summary_kpi.props.items[3].label": "Pasos de script",
+    "summary_kpi.props.items[4].label": "Archivos afectados",
+    "findings_card.props.title": "Marca FIXME en un comentario de cálculo",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, objeto o comentario…",
+    "findings_table.props.empty.message": "No se encontraron marcas FIXME en comentarios de cálculos.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Ubicación",
+    "findings_table.props.columns[2].label": "Objeto",
+    "findings_table.props.columns[3].label": "Paso",
+    "findings_table.props.columns[4].label": "Marca",
+    "findings_table.props.columns[5].label": "Comentario"
+  }
+}

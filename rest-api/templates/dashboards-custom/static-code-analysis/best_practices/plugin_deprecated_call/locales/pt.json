@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Chamada de função de plug-in obsoleta",
-  "analysis.defaultResult.meaning": "Chamadas de funções de plug-in no escopo cuja função está marcada como obsoleta na documentação do fabricante"
- }
+  "manifest": {
+    "title": "Chamada de função de plug-in obsoleta",
+    "analysis.defaultResult.meaning": "Chamadas de funções de plug-in no escopo cuja função está marcada como obsoleta na documentação do fabricante"
+  },
+  "layout": {}
 }

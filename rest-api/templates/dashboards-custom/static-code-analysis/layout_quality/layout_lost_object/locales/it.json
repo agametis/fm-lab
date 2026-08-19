@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Oggetto fuori dal suo genitore",
+    "description": "Regola di qualità del Layout — un oggetto annidato si trova del tutto o in parte fuori dai limiti del suo genitore (portale, pannello a schede o scorrevole, gruppo). Questi oggetti vengono ritagliati o restano invisibili in esecuzione — di solito residui dopo spostamenti o ridimensionamenti del genitore. La barra di scorrimento del portale (19 px) è tollerata; i pannelli popover e le linee ad altezza zero sul bordo sono esclusi.\n\nBasato sul controllo fmCheckMate «Lost Object (In Container)» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.completely": "L'oggetto si trova completamente fuori dal suo genitore ({parent})",
+    "messages.partially": "L'oggetto sporge oltre il suo genitore ({parent})"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Completamente fuori",
+    "summary_kpi.props.items[2].label": "Parzialmente fuori",
+    "summary_kpi.props.items[3].label": "Layout interessati",
+    "findings_card.props.title": "Oggetto fuori dal suo genitore",
+    "findings_table.props.searchPlaceholder": "Cerca file, Layout o oggetto…",
+    "findings_table.props.empty.message": "Nessun oggetto fuori dal suo genitore trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo di oggetto",
+    "findings_table.props.columns[3].label": "Oggetto",
+    "findings_table.props.columns[4].label": "Genitore",
+    "findings_table.props.columns[5].label": "Entità",
+    "extent_filter.props.options[0].label": "tutti",
+    "extent_filter.props.options[1].label": "completamente fuori",
+    "extent_filter.props.options[2].label": "parzialmente fuori",
+    "object_type_select.props.label": "Tipo di oggetto",
+    "object_type_select.props.emptyOptionLabel": "tutti i tipi di oggetto",
+    "findings_table.props.columns[8].label": "Larghezza",
+    "findings_table.props.columns[9].label": "Altezza"
+  }
+}

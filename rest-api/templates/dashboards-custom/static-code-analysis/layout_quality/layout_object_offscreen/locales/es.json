@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Objeto fuera del layout",
+    "description": "Regla de calidad de Layout — un objeto de nivel superior sobresale de los límites del layout: más allá del ancho, por debajo de la última sección o en coordenadas negativas. Solo se comprueban los objetos de nivel superior porque son los que usan coordenadas absolutas del layout; los objetos anidados son relativos a su contenedor y los cubre la regla de objetos perdidos. Los excesos pequeños suelen ser artefactos de redondeo: el control de tolerancia los oculta.",
+    "messages.complete": "El objeto está completamente fuera del layout ({direction})",
+    "messages.partial": "El objeto sobresale del layout ({direction})"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Completamente fuera",
+    "summary_kpi.props.items[2].label": "Parcialmente fuera",
+    "findings_card.props.title": "Objeto fuera del layout",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, Layout u objeto…",
+    "findings_table.props.empty.message": "No se encontraron objetos fuera de los límites del layout.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Dirección",
+    "findings_table.props.columns[5].label": "Alcance",
+    "findings_table.props.columns[8].label": "Ancho",
+    "findings_table.props.columns[9].label": "Alto",
+    "tolerance_slider.props.label": "Tolerancia"
+  }
+}

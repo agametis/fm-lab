@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "重なり合う重複オブジェクト",
+    "description": "Layout 品質ルール — 同じタイプの 2 つの兄弟オブジェクトがまったく同じ座標を共有しています。上のオブジェクトが下を完全に覆います。典型的には二重貼り付けです。タブパネルとポップオーバーパネルは除外します（構造上重なり合うため）。",
+    "messages.pair": "2 つの {type} オブジェクトがまったく同じ座標を共有しています — 上のオブジェクトが下を完全に覆います"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象 Layout 数",
+    "summary_kpi.props.items[2].label": "対象ファイル数",
+    "findings_card.props.title": "重なり合う重複オブジェクト",
+    "findings_table.props.searchPlaceholder": "ファイル、Layout、オブジェクトを検索…",
+    "findings_table.props.empty.message": "重なり合う重複オブジェクトは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "オブジェクトタイプ",
+    "findings_table.props.columns[3].label": "オブジェクト",
+    "findings_table.props.columns[4].label": "相手オブジェクト",
+    "findings_table.props.columns[9].label": "重なり順",
+    "findings_table.props.columns[7].label": "幅",
+    "findings_table.props.columns[8].label": "高さ"
+  }
+}

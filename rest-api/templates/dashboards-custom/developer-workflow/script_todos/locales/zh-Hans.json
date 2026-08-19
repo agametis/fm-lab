@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "脚本中的 TO-DO（浏览器）",
+    "description": "以三种写法（TO DO、FIX IT、TBD）浏览脚本注释中的未完成工作。点击数字可筛选结果列表。这是清单而非规则：该捆绑包有意不声明结果值，因此不进入健康检查，磁贴也不显示数值标记 —— 计数由规则 script_comment_fixme（warning）与 script_comment_todo（info）承担。"
+  },
+  "layout": {
+    "todo_kpi_kpistrip.props.items[0].label": "总行数",
+    "todo_kpi_kpistrip.props.items[1].label": "TO DO 行",
+    "todo_kpi_kpistrip.props.items[2].label": "FIX IT 行",
+    "todo_kpi_kpistrip.props.items[3].label": "TBD 行",
+    "todo_kpi_kpistrip.props.items[4].label": "脚本",
+    "todo_kpi_kpistrip.props.items[5].label": "文件",
+    "todo_lines.props.title": "标记的注释行",
+    "todo_lines_table.props.columns[0].label": "文件",
+    "todo_lines_table.props.columns[1].label": "脚本名称",
+    "todo_lines_table.props.columns[2].label": "模式",
+    "todo_lines_table.props.columns[3].label": "注释",
+    "todo_lines_table.props.searchPlaceholder": "搜索注释 …"
+  }
+}

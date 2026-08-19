@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilité des plug-ins : FileMaker WebDirect",
-  "analysis.defaultResult.meaning": "Appels de fonctions de plug-in du périmètre qui ne s'exécutent pas sur FileMaker WebDirect"
- }
+  "manifest": {
+    "title": "Compatibilité des plug-ins : FileMaker WebDirect",
+    "analysis.defaultResult.meaning": "Appels de fonctions de plug-in du périmètre qui ne s'exécutent pas sur FileMaker WebDirect"
+  },
+  "layout": {}
 }

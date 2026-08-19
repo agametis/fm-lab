@@ -12,6 +12,11 @@
     "findings_table.props.columns[0].label": "Datei",
     "findings_table.props.columns[1].label": "Linke TO",
     "findings_table.props.columns[2].label": "Rechte TO",
-    "findings_table.props.columns[3].label": "Sortiert"
+    "findings_table.props.columns[3].label": "Sortiert",
+    "findings_table.props.columns[4].label": "Konsumenten-Portale",
+    "findings_table.props.columns[5].label": "Portale mit eigener Sortierung",
+    "consumer_filter_chips.props.options[0].label": "Alle Beziehungen",
+    "consumer_filter_chips.props.options[1].label": "Konsumenten-Portale",
+    "consumer_filter_chips.props.options[2].label": "Portale mit eigener Sortierung"
   }
 }

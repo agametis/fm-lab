@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Freeze Window durch Pause beendet",
+    "description": "Performance-Regel — ein Script fixiert das Fenster und pausiert später. Pause/Resume Script beendet den fixierten Zustand: Das Fenster rendert mitten im Ablauf, die Fixierung verliert ab da ihre Wirkung."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "findings_card.props.title": "Freeze Window durch Pause beendet",
+    "findings_table.props.searchPlaceholder": "Datei oder Script suchen…",
+    "findings_table.props.empty.message": "Kein Script fixiert das Fenster und pausiert danach.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Freeze Window",
+    "findings_table.props.columns[3].label": "Erste Pause",
+    "findings_table.props.columns[4].label": "Pausen nach Freeze"
+  }
+}

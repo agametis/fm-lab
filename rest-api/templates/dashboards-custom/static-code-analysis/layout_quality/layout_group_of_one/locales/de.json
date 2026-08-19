@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Gruppe mit nur einem Objekt",
+    "description": "Layout-Qualitätsregel — eine Gruppe enthält genau ein Objekt. Die Gruppierung erzeugt Auswahl- und Verschachtelungs-Overhead, ohne etwas zu gruppieren — meist ein Rest nach dem Löschen der übrigen Gruppenmitglieder. Als Ein-Kind-Gruppe serialisierte Buttons werden nicht gemeldet.\n\nAngelehnt an die fmCheckMate-Prüfung „Group of one“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.single": "Die Gruppe enthält nur ein {child}-Objekt — Gruppierungs-Overhead ohne Gruppierung"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Layouts",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "findings_card.props.title": "Gruppe mit nur einem Objekt",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine Ein-Objekt-Gruppen gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Kind-Typ",
+    "findings_table.props.columns[4].label": "Kind-Name",
+    "findings_table.props.columns[7].label": "Breite",
+    "findings_table.props.columns[8].label": "Höhe"
+  }
+}

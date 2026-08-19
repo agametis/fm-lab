@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Marcador TODO em um comentário de cálculo",
+    "description": "Regra da família “Trabalho inacabado”: um cálculo do FileMaker contém um marcador TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) em um de seus comentários. São verificados cinco locais: funções personalizadas, cálculos de campo, cálculos de entrada automática e de validação, e cálculos de etapas de script. Um TODO descreve trabalho planejado, não um defeito: severidade info, o semáforo permanece neutro. O marcador só conta dentro de um comentário (// até o fim da linha ou /* … */): um literal de texto “TODO” não é uma ocorrência.",
+    "messages.custom_function": "Marcador TODO no comentário de uma função personalizada",
+    "messages.field_calc": "Marcador TODO no comentário de um cálculo de campo",
+    "messages.field_autoenter": "Marcador TODO no comentário de um cálculo de entrada automática",
+    "messages.field_validation": "Marcador TODO no comentário de um cálculo de validação",
+    "messages.script_step": "Marcador TODO no comentário de um cálculo de etapa de script"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Funções personalizadas",
+    "summary_kpi.props.items[2].label": "Campos",
+    "summary_kpi.props.items[3].label": "Etapas de script",
+    "summary_kpi.props.items[4].label": "Arquivos afetados",
+    "findings_card.props.title": "Marcador TODO em um comentário de cálculo",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, objeto ou comentário…",
+    "findings_table.props.empty.message": "Nenhum marcador TODO em comentários de cálculos.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Local",
+    "findings_table.props.columns[2].label": "Objeto",
+    "findings_table.props.columns[3].label": "Etapa",
+    "findings_table.props.columns[4].label": "Marcador",
+    "findings_table.props.columns[5].label": "Comentário"
+  }
+}

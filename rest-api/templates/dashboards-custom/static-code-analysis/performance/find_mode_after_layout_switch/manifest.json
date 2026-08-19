@@ -1,0 +1,110 @@
+{
+  "id": "find_mode_after_layout_switch",
+  "version": "1.0.0",
+  "title": "Enter Find Mode after Go to Layout",
+  "description": "Performance rule — Go to Layout immediately followed by Enter Find Mode. Reversing the two steps avoids downloading the target layout's records: FileMaker fetches the first records of the new context before the find discards them.",
+  "author": "fm-lab rules",
+  "icon": "gauge",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "performance",
+    "wan",
+    "community-patterns"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "performance",
+    "rationale": "Switching the layout first materializes its browse context: the client requests the first records of the target table over the network, only for the find that follows to replace them. Entering find mode before the layout switch skips that download entirely — same result, one round trip less.",
+    "remediation": "Swap the two steps: Enter Find Mode first, then Go to Layout, then set criteria and Perform Find. The order change does not affect the outcome of the find.",
+    "meta": {
+      "name": "Enter Find Mode after Go to Layout",
+      "author": "fm-lab rules",
+      "source": "FileMaker community / Claris",
+      "url": "https://support.claris.com/s/article/WAN-Performance-Data-Monitoring?language=en_US",
+      "description": "Detects the adjacent step pair Go to Layout → Enter Find Mode on the sequence of enabled non-comment steps. Adjacency is the deliberately sharp condition: with steps in between, the browse context may be used on purpose. The pause option of Enter Find Mode is reported as a class column.",
+      "created": "2026-08-17",
+      "references": [
+        {
+          "project": "Claris",
+          "rule": "WAN Performance Data Monitoring",
+          "url": "https://support.claris.com/s/article/WAN-Performance-Data-Monitoring?language=en_US"
+        },
+        {
+          "project": "A FileMaker Miscellany",
+          "rule": "Tips for Improving Performance Over WAN (2013)",
+          "url": "https://filemakermisc.wordpress.com/2013/06/11/tips-for-improving-performance-over-wan/"
+        },
+        {
+          "project": "Skeleton Key / Mark Richman",
+          "rule": "Improving FileMaker Custom App Performance (2016)",
+          "url": "https://www.skeletonkey.com/wp-content/uploads/2016/08/Improving-FileMaker-Custom-App-Performance.pdf"
+        },
+        {
+          "project": "DB Services",
+          "rule": "Claris FileMaker Performance Optimization Guide",
+          "url": "https://dbservices.com/blog/claris-filemaker-performance-optimization"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Enter Find Mode after Go to Layout"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

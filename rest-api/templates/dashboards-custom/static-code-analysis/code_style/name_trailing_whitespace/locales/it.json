@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Nome di oggetto con spazi ai bordi",
+    "description": "Regola di stile — un nome di oggetto inizia o finisce con uno spazio o una tabulazione. Il carattere è invisibile in ogni elenco mostrato da FileMaker ma fa parte del nome: l'accesso per nome deve riprodurlo esattamente e due nomi apparentemente uguali si ordinano separatamente. Copre gli oggetti di schema con nome utente; oggetti del formato e variabili hanno regole proprie, i nomi delle relazioni li deriva FileMaker.\n\nBasato sul controllo fmCheckMate «Script Name ends in white space» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.trailing": "Il nome termina con uno spazio",
+    "messages.leading": "Il nome inizia con uno spazio",
+    "messages.both": "Il nome inizia e finisce con uno spazio"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Alla fine",
+    "summary_kpi.props.items[2].label": "All'inizio",
+    "summary_kpi.props.items[3].label": "Entrambe le estremità",
+    "summary_kpi.props.items[4].label": "File interessati",
+    "findings_card.props.title": "Nome di oggetto con spazi ai bordi",
+    "defect_filter.props.options[0].label": "tutti",
+    "defect_filter.props.options[1].label": "Alla fine",
+    "defect_filter.props.options[2].label": "All'inizio",
+    "defect_filter.props.options[3].label": "Entrambe le estremità",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tipo di oggetto",
+    "findings_table.props.columns[2].label": "Nome (tra parentesi)",
+    "findings_table.props.columns[3].label": "Difetto",
+    "findings_table.props.searchPlaceholder": "Cerca file, tipo di oggetto o nome…",
+    "findings_table.props.empty.message": "Nessun nome con spazi ai bordi trovato."
+  }
+}

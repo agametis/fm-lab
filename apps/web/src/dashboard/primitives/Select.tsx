@@ -8,11 +8,14 @@ import type { PrimitiveProps } from '../types';
  * `getvariable('<param>')`, so each selection re-queries the full data.
  *
  * Props:
- *   param       URL/getvariable name to drive (required, e.g. "api_set")
- *   default     value selected when the param is absent from the URL
- *   valueField  dataset field used as the option value (default "value")
- *   labelField  dataset field used as the option caption (default "label")
- *   label       optional caption shown before the control (i18n-overridable)
+ *   param            URL/getvariable name to drive (required, e.g. "api_set")
+ *   default          value selected when the param is absent from the URL
+ *   valueField       dataset field used as the option value (default "value")
+ *   labelField       dataset field used as the option caption (default "label")
+ *   label            optional caption shown before the control (i18n-overridable)
+ *   emptyOptionLabel optional caption for a leading "no filter" option with the
+ *                    empty value — as a layout prop it is i18n-overridable,
+ *                    unlike option rows coming from the dataset
  */
 export function Select({ node, dataset }: PrimitiveProps) {
   const props = node.props ?? {};
@@ -21,6 +24,7 @@ export function Select({ node, dataset }: PrimitiveProps) {
   const valueField = (props.valueField as string) ?? 'value';
   const labelField = (props.labelField as string) ?? 'label';
   const caption = props.label as string | undefined;
+  const emptyOptionLabel = props.emptyOptionLabel as string | undefined;
   const [searchParams, setSearchParams] = useSearchParams();
 
   if (!param) return null;
@@ -43,6 +47,7 @@ export function Select({ node, dataset }: PrimitiveProps) {
     <div className="dash-select">
       {caption && <label className="dash-select__label">{caption}</label>}
       <select className="dash-select__control" value={current} onChange={onChange}>
+        {emptyOptionLabel != null && <option value="">{emptyOptionLabel}</option>}
         {rows.map(r => (
           <option key={String(r[valueField])} value={String(r[valueField])}>
             {String(r[labelField])}

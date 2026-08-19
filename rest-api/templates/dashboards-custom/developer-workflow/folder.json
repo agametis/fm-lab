@@ -1,0 +1,18 @@
+{
+  "title": "Developer Workflow",
+  "icon": "hammer",
+  "description": "Open work that lives in the code instead of the tracker: markers in script comments, layout texts and calculation comments. FIXME reports a known defect (warning), TODO a work-in-progress note (info) — both classes are tracked separately per location, so a fixable defect never hides inside a pile of nice-to-haves.",
+  "order": 4,
+  "locales": {
+    "de": "Entwickler-Workflow",
+    "es": "Flujo de trabajo del desarrollador",
+    "fr": "Flux de travail du développeur",
+    "it": "Flusso di lavoro dello sviluppatore",
+    "ja": "開発者ワークフロー",
+    "ko": "개발자 워크플로",
+    "nl": "Ontwikkelaarsworkflow",
+    "pt": "Fluxo de trabalho do desenvolvedor",
+    "sv": "Utvecklarflöde",
+    "zh-Hans": "开发者工作流"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Objeto fora do seu pai",
+    "description": "Regra de qualidade de Layout — um objeto aninhado fica total ou parcialmente fora dos limites do seu pai (portal, painel de guia ou deslizante, grupo). Esses objetos são cortados ou ficam invisíveis em tempo de execução — normalmente sobras após mover ou redimensionar o pai. A barra de rolagem do portal (19 px) é tolerada; painéis de popover e linhas de altura zero na borda são excluídos.\n\nBaseado na verificação fmCheckMate “Lost Object (In Container)” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.completely": "O objeto fica completamente fora do seu pai ({parent})",
+    "messages.partially": "O objeto ultrapassa o seu pai ({parent})"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Totalmente fora",
+    "summary_kpi.props.items[2].label": "Parcialmente fora",
+    "summary_kpi.props.items[3].label": "Layouts afetados",
+    "findings_card.props.title": "Objeto fora do seu pai",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, Layout ou objeto…",
+    "findings_table.props.empty.message": "Nenhum objeto fora do seu pai encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Pai",
+    "findings_table.props.columns[5].label": "Extensão",
+    "extent_filter.props.options[0].label": "todos",
+    "extent_filter.props.options[1].label": "totalmente fora",
+    "extent_filter.props.options[2].label": "parcialmente fora",
+    "object_type_select.props.label": "Tipo de objeto",
+    "object_type_select.props.emptyOptionLabel": "todos os tipos de objeto",
+    "findings_table.props.columns[8].label": "Largura",
+    "findings_table.props.columns[9].label": "Altura"
+  }
+}

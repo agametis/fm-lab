@@ -33,6 +33,7 @@ function parseTemplateMetadata(templateContent) {
     click_action: null,
     click_args: null,
     chip_filter: null,
+    chip_param: null,
     params: [],
     output_format: null,
     author: null,
@@ -81,11 +82,23 @@ function parseTemplateMetadata(templateContent) {
         break;
       case 'chip_filter':
         // Name einer Ergebnis-Spalte, über die der generische Renderer eine
-        // client-seitige Chip-Leiste rendert (Werte + Live-Counts über die
-        // geladene, LIMIT-gekappte Ergebnismenge). Bewusst leichtgewichtig:
-        // kein zweiter Query, kein Server-Param — die Facetten-Buckets werden
-        // in der SQL geformt (z.B. Scope → '$'/'$$'/'$$$').
+        // Chip-Leiste rendert. Die Facetten-Buckets werden in der SQL geformt
+        // (z.B. Scope → '$'/'$$'/'$$$'); die Grammatik hier bleibt ein
+        // einzelner Spaltenname.
+        //
+        // Zählung und Filterung laufen client-seitig über die geladene,
+        // LIMIT-gekappte Ergebnismenge — es sei denn, die Query liefert die
+        // Konventionsspalte `_chip_facets` (echte Facetten-Counts der
+        // Grundgesamtheit) bzw. deklariert `@chip_param` (Klick filtert
+        // serverseitig). Beides ist opt-in pro Query.
         metadata.chip_filter = value;
+        break;
+      case 'chip_param':
+        // Query-Parameter, den ein Chip-Klick in die URL schreibt, damit die
+        // Query serverseitig neu filtert statt nur die geladene Seite zu
+        // partitionieren. Setzt voraus, dass die Query den Parameter auch
+        // auswertet (`getvariable('<param>')`) und ihn unter `@params` führt.
+        metadata.chip_param = value;
         break;
       case 'params':
         metadata.params = value.split(',').map(p => p.trim()).filter(Boolean);
@@ -475,6 +488,8 @@ async function listTemplates(source = 'query') {
             display: template.metadata.display,
             click_action: template.metadata.click_action,
             click_args: template.metadata.click_args,
+            chip_filter: template.metadata.chip_filter,
+            chip_param: template.metadata.chip_param,
             params: template.metadata.params,
             tags: template.metadata.tags,
             object_types: template.metadata.object_types,

@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Marqueur TODO dans un commentaire de script",
+    "description": "Règle de la famille « Travail inachevé » : une action de commentaire d’un script porte un marqueur TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined). Un TODO décrit un travail planifié, pas un défaut : sévérité info, le voyant reste neutre. La recherche ignore la casse et tolère un séparateur : la notation du développeur n’a pas d’importance.",
+    "messages.comment": "Marqueur TODO dans un commentaire de script"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Scripts concernés",
+    "summary_kpi.props.items[2].label": "Fichiers concernés",
+    "findings_card.props.title": "Marqueur TODO dans un commentaire de script",
+    "findings_table.props.searchPlaceholder": "Rechercher fichier, script ou commentaire…",
+    "findings_table.props.empty.message": "Aucun marqueur TODO trouvé dans les commentaires de scripts.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[2].label": "Action",
+    "findings_table.props.columns[3].label": "Marqueur",
+    "findings_table.props.columns[4].label": "Commentaire"
+  }
+}

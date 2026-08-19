@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Plattformskompatibilitet: FileMaker Server",
-  "analysis.defaultResult.meaning": "Steg inom omfånget som inte eller endast delvis stöds på FileMaker Server"
- }
+  "manifest": {
+    "title": "Plattformskompatibilitet: FileMaker Server",
+    "analysis.defaultResult.meaning": "Steg inom omfånget som inte eller endast delvis stöds på FileMaker Server"
+  },
+  "layout": {}
 }

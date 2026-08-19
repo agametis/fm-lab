@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "TODO-markering in een scriptopmerking",
+    "description": "Regel uit de familie “Onafgemaakt werk”: een opmerkingsstap in een script bevat een TODO-markering (TODO, TO DO, TO-DO, TBD, to be done, to be defined). Een TODO beschrijft gepland werk, geen defect — vandaar severity info: de regel telt met een eigen getal maar kleurt het stoplicht nooit geel. Er wordt hoofdletterongevoelig en scheidingstekentolerant gezocht, zodat de notatie van de ontwikkelaar niet uitmaakt.",
+    "messages.comment": "TODO-markering in een scriptopmerking"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken scripts",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "TODO-markering in een scriptopmerking",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, script of opmerking…",
+    "findings_table.props.empty.message": "Geen TODO-markeringen in scriptopmerkingen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[2].label": "Stap",
+    "findings_table.props.columns[3].label": "Markering",
+    "findings_table.props.columns[4].label": "Opmerking"
+  }
+}

@@ -1,10 +1,9 @@
 {
   "manifest": {
     "title": "Healthchecks",
-    "description": "結果レイヤー（Result Envelope v1）の純粋なコンシューマーとしてのソリューション全体のヘルス概要：静的コード解析およびメタデータ整合性のルールダッシュボードに対する状態別ルール数を、ルーブリックごとにグループ化して表示し、各行はそのルールダッシュボードへリンクします。サーバーの結果キャッシュのみを読み取り、ページ読み込み時にルールSQLを実行することはありません。未実行の項目は現在のカタログに対してまだ実行されておらず、明示的な実行まで表示され続けます。意図的に独自の結果宣言を持ちません（ルールではなくコンシューマー — 設計上チップ表示なし）。"
+    "description": "結果レイヤーの純粋なコンシューマーとしてのソリューション全体のヘルス概要：ルールダッシュボードに対する状態別の件数を、ルーブリックごとにグループ化して表示し、各行はそのダッシュボードへリンクします。サーバーの結果キャッシュのみを読み取ります。"
   },
   "layout": {
-    "results_kpi_card.props.subtitle": "共有結果レイヤーからのルール結果 — オンデマンドで計算され、カタログのフィンガープリントごとにキャッシュされます。未実行のルールは現在のカタログに対してまだ実行されていません。「すべてのルールを実行」を使用してください。",
     "results_kpi_strip.props.items[0].label": "ルール",
     "results_kpi_strip.props.items[1].label": "エラー",
     "results_kpi_strip.props.items[2].label": "警告",
@@ -25,6 +24,8 @@
     "rp_unused_code_list.props.empty.message": "報告する項目はありません。",
     "rp_code_style_card.props.title": "コードスタイル",
     "rp_code_style_list.props.empty.message": "報告する項目はありません。",
+    "rp_layout_quality_card.props.title": "Layout 品質",
+    "rp_layout_quality_list.props.empty.message": "報告する項目はありません。",
     "rp_documentation_card.props.title": "ドキュメント",
     "rp_documentation_list.props.empty.message": "報告する項目はありません。",
     "rp_best_practices_card.props.title": "ベストプラクティス",
@@ -32,6 +33,8 @@
     "rp_platform_card.props.title": "プラットフォーム互換性",
     "rp_platform_list.props.empty.message": "報告する項目はありません。",
     "rp_metadata_integrity_card.props.title": "メタデータ整合性",
-    "rp_metadata_integrity_list.props.empty.message": "報告する項目はありません。"
+    "rp_metadata_integrity_list.props.empty.message": "報告する項目はありません。",
+    "rp_developer_workflow_card.props.title": "開発者ワークフロー",
+    "rp_developer_workflow_list.props.empty.message": "報告する項目はありません。"
   }
 }

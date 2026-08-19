@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Verbroken waardelijstverwijzing",
+    "description": "Layoutkwaliteitsregel — een layoutobject verwijst naar een waardelijst die niet meer in het bestand bestaat. De resolutie verloopt via het waardelijst-ID, niet via de naam, dus hernoemde lijsten worden niet gemeld.\n\nGebaseerd op de fmCheckMate-controle “Broken Value List <Missing>” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-valuelist": "De waardelijst bestaat niet meer in dit bestand"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken Layouts",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "Verbroken waardelijstverwijzing",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen verbroken waardelijstverwijzingen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objecttype",
+    "findings_table.props.columns[3].label": "Object",
+    "findings_table.props.columns[4].label": "Waardelijst",
+    "findings_table.props.columns[7].label": "Breedte",
+    "findings_table.props.columns[8].label": "Hoogte"
+  }
+}

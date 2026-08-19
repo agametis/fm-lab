@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "自動インデックス有効時の最小インデックス",
+    "description": "パフォーマンスルール — フィールドのインデックスが「最小」に設定されている一方で、自動インデックス作成が有効なままです。「最小」は単語インデックスのみを保持して値インデックスを破棄しますが、自動インデックスが有効なら検索に必要なものは結局再構築されます。この設定では予測できる節約は得られず、多くの場合は一度クリアしたきり見直されていないインデックスを示しています。\n\nfmCheckMate チェック「ListFieldsWithIndexMinimalLocked」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.index-minimal-locked": "自動インデックスが有効な状態でインデックスが「最小」です"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象テーブル",
+    "summary_kpi.props.items[2].label": "対象ファイル",
+    "findings_card.props.title": "自動インデックス有効時の最小インデックス",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "テーブル",
+    "findings_table.props.columns[2].label": "フィールド",
+    "findings_table.props.columns[3].label": "フィールドタイプ",
+    "findings_table.props.columns[4].label": "データタイプ",
+    "findings_table.props.searchPlaceholder": "ファイル・テーブル・フィールドを検索…",
+    "findings_table.props.empty.message": "最小インデックスかつ自動インデックス有効のフィールドはありません。"
+  }
+}

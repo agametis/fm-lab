@@ -5,6 +5,7 @@
   "autoTable": {
     "rowCount_one": "{{count}}개 항목",
     "rowCount_other": "{{count}}개 항목",
+    "rowCountTruncated": "{{total}}개 항목 중 {{shown}}개",
     "filteredFrom": "{{count}}개에서 필터링됨",
     "newCount": "새 항목 {{count}}개",
     "totalSize": "총 크기 {{size}}",
@@ -362,7 +363,8 @@
     "highlightsCount_one": "{{count}}개 일치 하이라이트됨",
     "highlightsCount_other": "{{count}}개 일치 하이라이트됨",
     "dismissAria": "참조 하이라이트 제거",
-    "dismissTitle": "참조 하이라이트 제거 (Esc)"
+    "dismissTitle": "참조 하이라이트 제거 (Esc)",
+    "sourceLabel": "출처:"
   },
   "tableDetails": "테이블 세부 정보",
   "scriptDetails": "스크립트 세부 정보",

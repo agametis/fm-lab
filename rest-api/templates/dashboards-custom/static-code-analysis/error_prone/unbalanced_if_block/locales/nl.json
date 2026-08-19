@@ -10,7 +10,6 @@
     "findings_table.props.searchPlaceholder": "Bestand, script of bevinding zoeken…",
     "findings_table.props.empty.message": "Geen ongebalanceerde If / End If-blokken gevonden.",
     "findings_table.props.columns[0].label": "Bestand",
-    "findings_table.props.columns[1].label": "Script",
-    "findings_table.props.columns[2].label": "Bevinding"
+    "findings_table.props.columns[1].label": "Script"
   }
 }

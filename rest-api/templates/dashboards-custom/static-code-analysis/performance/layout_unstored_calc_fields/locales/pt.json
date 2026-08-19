@@ -18,6 +18,7 @@
     "findings_table.props.columns[2].label": "Layout",
     "findings_table.props.columns[3].label": "Contexto",
     "findings_table.props.columns[4].label": "Arquivo",
-    "findings_table.props.columns[5].label": "Posicionamentos"
+    "findings_table.props.columns[5].label": "Posicionamentos",
+    "findings_table.props.columns[6].label": "Em portais"
   }
 }

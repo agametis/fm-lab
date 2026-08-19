@@ -1,8 +1,8 @@
 # Analysis Tests
 
-**Analysis Tests** are curated, declared checks over the solution catalog. Where a dashboard is something you *open* and a query is something you *run*, a test is something the solution can *pass or fail*: a named collection of rule dashboards and custom queries with a compact result model on top — one default result per member, a derived state per run, and a consolidated verdict per test.
+**Analysis Tests** are [curated, declared checks](Static%20Code%20Analysis.md) over the solution catalog. Where a [dashboard](Static%20Code%20Analysis.md#rule-dashboards) is something you *open* and a [query](Static%20Code%20Analysis.md#custom-queries) is something you *run*, a test is something the solution can *pass or fail*: a named collection of rule dashboards and custom queries with a compact result model on top — one default result per member, a derived state per run, and a consolidated verdict per test.
 
-Tests don't introduce a new analysis engine. Every member is an ordinary dashboard bundle or query template from the [dashboard system](Components.md#web-client); the test layer contributes the declaration (what belongs together, for which object types, in which scopes), the execution contract and the result semantics. That makes tests reproducible and curatable: the same check runs identically from the web frontend, from the REST API and from the agent skill.
+Tests don't introduce a new analysis engine. Every member is an ordinary dashboard bundle or query template from the dashboard system; the test layer contributes the declaration (what belongs together, for which object types, in which scopes), the execution contract and the result semantics. That makes tests reproducible and curatable: the same check runs identically from the web frontend, from the REST API and from the agent skill.
 
 ## Anatomy
 

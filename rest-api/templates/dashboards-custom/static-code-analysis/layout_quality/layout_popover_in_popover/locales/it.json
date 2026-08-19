@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "Popover dentro un popover",
+    "description": "Regola di qualità del Layout — un pulsante popover si trova dentro un altro pannello popover. I popover annidati non funzionano in modo affidabile in FileMaker; aprire quello interno chiude quello esterno.\n\nBasato sul controllo fmCheckMate «Popover in popover» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.nested": "Il pulsante popover è annidato in un altro pannello popover — i popover annidati chiudono quello esterno"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Layout interessati",
+    "summary_kpi.props.items[2].label": "File interessati",
+    "findings_card.props.title": "Popover dentro un popover",
+    "findings_table.props.searchPlaceholder": "Cerca file, Layout o oggetto…",
+    "findings_table.props.empty.message": "Nessun popover annidato trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Oggetto",
+    "findings_table.props.columns[3].label": "Sezione",
+    "findings_table.props.columns[6].label": "Larghezza",
+    "findings_table.props.columns[7].label": "Altezza"
+  }
+}

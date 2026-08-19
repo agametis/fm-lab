@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Repetição de campo fora do intervalo",
+    "description": "Regra de qualidade de Layout — um objeto de layout mostra uma repetição de campo superior ao número de repetições que o campo tem de facto. O objeto fica vazio em execução; normalmente a definição do campo foi reduzida mais tarde.\n\nBaseado na verificação fmCheckMate “Field repetition out of range” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.out-of-range": "O objeto mostra a repetição {repetition}, o campo tem apenas {max_repetitions}"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Layouts afetados",
+    "summary_kpi.props.items[2].label": "Arquivos afetados",
+    "findings_card.props.title": "Repetição de campo fora do intervalo",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, Layout ou objeto…",
+    "findings_table.props.empty.message": "Não foram encontradas repetições de campo fora do intervalo.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Campo",
+    "findings_table.props.columns[5].label": "Repetição",
+    "findings_table.props.columns[6].label": "Repetições máx."
+  }
+}

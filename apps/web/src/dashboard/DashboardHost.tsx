@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApiLang } from '../hooks/useApiLang';
+import { isAbortError } from '../lib/netErrors';
 import { getDashboard, getDashboardData } from '../api/dashboardApi';
 import type {
   DashboardEnvelope,
@@ -22,6 +23,19 @@ interface Props {
    * bundles render their own title and leave this off.
    */
   showManifestTitle?: boolean;
+  /**
+   * Called after the envelope (manifest + layout + nav) has loaded. The host
+   * fetches it anyway, so the route view can build its breadcrumb from the real
+   * localized title and rubric path without a second request.
+   */
+  onEnvelopeLoaded?: (envelope: DashboardEnvelope) => void;
+  /**
+   * Called after the dataset payload has loaded. Needed where the page's own
+   * identity lives in the DATA rather than the manifest — `/query/:name`
+   * renders the generic bundle, so its real title and category only arrive
+   * with the `query_meta` dataset.
+   */
+  onDatasetsLoaded?: (datasets: DashboardDataResponse) => void;
 }
 
 /**
@@ -46,13 +60,16 @@ const IDLE_POLL_MS = 6000;
 /**
  * Lädt Manifest + Daten eines Dashboards und mountet den Renderer.
  */
-export function DashboardHost({ id, params, showManifestTitle }: Props) {
+export function DashboardHost({ id, params, showManifestTitle, onEnvelopeLoaded, onDatasetsLoaded }: Props) {
   const { t } = useTranslation();
   const lang = useApiLang();
   const [envelope, setEnvelope] = useState<DashboardEnvelope | null>(null);
   const [datasets, setDatasets] = useState<DashboardDataResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Getrennte Fehlerquellen der beiden Lade-Effekte (Envelope vs. Daten), damit
+  // keiner den Fehler des anderen wegräumen oder überschreiben kann — die
+  // Anzeige faltet beide zusammen (Envelope-Fehler gewinnt).
+  const [envError, setEnvError] = useState<string | null>(null);
+  const [dataError, setDataError] = useState<string | null>(null);
   // External re-fetch trigger (e.g. after a successful docset install via
   // the DocsetInstallControl inline-control). Bumped from a window event.
   const [reloadTick, setReloadTick] = useState(0);
@@ -60,6 +77,13 @@ export function DashboardHost({ id, params, showManifestTitle }: Props) {
   // Soft-Refresh — dann besitzt das Live-SSE-Overlay (useXmlConvertFileStates)
   // die Datei-Tabelle, und ein Re-Fetch der statischen Zeilen wäre unnötig/störend.
   const convertRunningRef = useRef(false);
+  // Via ref, not via the effect's dep array: an inline callback would change
+  // identity on every parent render and re-run the envelope effect — which
+  // tears the view down (setEnvelope(null)) and would loop.
+  const onEnvelopeLoadedRef = useRef(onEnvelopeLoaded);
+  onEnvelopeLoadedRef.current = onEnvelopeLoaded;
+  const onDatasetsLoadedRef = useRef(onDatasetsLoaded);
+  onDatasetsLoadedRef.current = onDatasetsLoaded;
 
   useEffect(() => {
     const handler = () => setReloadTick(n => n + 1);
@@ -75,39 +99,66 @@ export function DashboardHost({ id, params, showManifestTitle }: Props) {
     };
   }, []);
 
+  const paramsKey = JSON.stringify(params || {});
+
+  // Effekt 1 (Envelope): Manifest + Layout. Läuft NUR bei Dashboard-/Sprach-
+  // Wechsel und externem reloadTick — nicht bei Param-Änderungen. Nur er reißt
+  // die View ab (voller Loading-Zustand); ein Param-Wechsel (Slider, Chips,
+  // Select) bleibt damit flackerfrei und unmountet keine Controls im Drag.
+  // Abbruch per AbortController: Bei schnellen Folge-Läufen (Slider-Ticks,
+  // StrictMode-Doppellauf) stirbt der alte Request, statt sich mit dem neuen
+  // um Verbindungen und State-Schreibrechte zu überlappen.
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
+    const ac = new AbortController();
+    setEnvError(null);
     setEnvelope(null);
     setDatasets(null);
 
     (async () => {
       try {
-        const [env, data] = await Promise.all([
-          getDashboard(id, lang),
-          getDashboardData(id, params, lang),
-        ]);
-        if (cancelled) return;
+        const env = await getDashboard(id, lang, ac.signal);
+        if (ac.signal.aborted) return;
         registerStickyDashboardParams(
           env.manifest.id,
           (env.manifest.params ?? []).filter(p => p.sticky).map(p => p.name),
         );
         setEnvelope(env);
-        setDatasets(data);
+        onEnvelopeLoadedRef.current?.(env);
       } catch (err) {
-        if (cancelled) return;
-        const msg = err instanceof Error ? err.message : String(err);
-        setError(msg);
-      } finally {
-        if (!cancelled) setLoading(false);
+        if (ac.signal.aborted || isAbortError(err)) return;
+        setEnvError(err instanceof Error ? err.message : String(err));
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [id, JSON.stringify(params || {}), lang, reloadTick]);
+    return () => ac.abort();
+  }, [id, lang, reloadTick]);
+
+  // Effekt 2 (Daten): lädt NUR die Dataset-Payload und tauscht sie in place —
+  // ohne Loading-Zustand, ohne die View zu leeren (Muster softRefresh). Beim
+  // Erst-Load bzw. nach Effekt 1 ist datasets null, dann greift der abgeleitete
+  // Loading-Zustand unten; bei reinen Param-Wechseln bleibt die alte View
+  // stehen, bis die neuen Daten da sind.
+  useEffect(() => {
+    const ac = new AbortController();
+
+    (async () => {
+      try {
+        const data = await getDashboardData(id, params, lang, ac.signal);
+        if (ac.signal.aborted) return;
+        setDataError(null);
+        setDatasets(data);
+        onDatasetsLoadedRef.current?.(data);
+      } catch (err) {
+        if (ac.signal.aborted || isAbortError(err)) return;
+        setDataError(err instanceof Error ? err.message : String(err));
+      }
+    })();
+
+    return () => ac.abort();
+  }, [id, paramsKey, lang, reloadTick]);
+
+  const error = envError ?? dataError;
+  const loading = !error && (!envelope || !datasets);
 
   // Nicht-destruktiver In-place-Refresh: lädt NUR die Dataset-Payload neu und
   // tauscht sie aus, OHNE `loading`/`datasets=null` zu setzen (das würde die View
@@ -127,7 +178,7 @@ export function DashboardHost({ id, params, showManifestTitle }: Props) {
     } catch {
       // Soft-Refresh bleibt still — bei transienten Fehlern die aktuelle View halten.
     }
-  }, [id, JSON.stringify(params || {}), lang]);
+  }, [id, paramsKey, lang]);
 
   // Leerzustand des Katalogs (spiegelt XmlEmptyStateCard): steuert, ob das Home
   // im Ausgangszustand mit-pollt. project_summary.db_empty kommt aus dem (gestubten)

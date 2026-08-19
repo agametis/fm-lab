@@ -1,0 +1,95 @@
+{
+  "id": "unstored_calc_network_function",
+  "version": "1.0.0",
+  "title": "Unstored calculation with host round trip",
+  "description": "Performance rule — an unstored calculation field calls Get(CurrentHostTimestamp) and is placed on layouts. Claris documents that every display of such a field triggers an additional network access to the host.",
+  "author": "fm-lab rules",
+  "icon": "gauge",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "performance",
+    "wan",
+    "community-patterns"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "performance",
+    "rationale": "An unstored calculation is re-evaluated on every display. When the formula calls Get(CurrentHostTimestamp), each evaluation asks the server for its clock — in a list view or portal this multiplies across every visible record and every refresh.",
+    "remediation": "Replace the display use with a stored value written at a defined moment (auto-enter, script), or restrict the field to contexts that render few records at a time.",
+    "meta": {
+      "name": "Unstored calculation with host round trip",
+      "author": "fm-lab rules",
+      "source": "FileMaker community / Claris",
+      "url": "https://help.claris.com/en/pro-help/content/get-currenthosttimestamp.html",
+      "description": "Only fields that are actually placed on at least one layout are reported — the Claris-documented cost is per display, not per definition. The formula is matched case-insensitively on CurrentHostTimestamp and its German display name SystemuhrzeitstempelHost. Only the field's own calculation slot is checked: auto-enter and validation formulas evaluate on write, not on render.",
+      "created": "2026-08-17",
+      "references": [
+        {
+          "project": "Claris Help",
+          "rule": "Get(CurrentHostTimestamp)",
+          "url": "https://help.claris.com/en/pro-help/content/get-currenthosttimestamp.html"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Field"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Unstored calculation with host round trip"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

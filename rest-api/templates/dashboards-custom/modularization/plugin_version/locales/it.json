@@ -19,7 +19,6 @@
     "findings_table.props.columns[4].label": "Richiede",
     "findings_table.props.columns[5].label": "Installata",
     "findings_table.props.columns[6].label": "Via funzione personalizzata",
-    "findings_table.props.columns[7].label": "Messaggio",
     "findings_table.props.empty.message": "Nessun controllo attivo — scegliere una versione installata nell'intestazione per validare il requisito (voce neutra = solo inventario).",
     "by_file_card.props.title": "Requisito per file",
     "by_file_table.props.columns[0].label": "File",

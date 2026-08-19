@@ -1,0 +1,100 @@
+{
+  "id": "field_broken_lookup",
+  "version": "1.0.0",
+  "title": "Broken lookup",
+  "description": "Error-prone rule — a lookup whose source no longer exists: the table occurrence is gone, the source table is missing in the target file, or the source field was deleted. A lookup that cannot resolve copies nothing and reports nothing, so the field simply stays empty on every new record.\n\nBased on the fmCheckMate check \"ListFieldsWithBrokenLookup\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "unlink",
+  "category": "error_prone",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "error_prone"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "error",
+    "category": "error_prone",
+    "rationale": "Nothing fails visibly. The field stays empty, and because a lookup only fires on entry, the gap shows up in new records long after the change that caused it.",
+    "remediation": "Point the lookup at an existing field, or drop the lookup if the value is now supplied elsewhere.",
+    "meta": {
+      "name": "Broken lookup",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Error-prone rule — a lookup whose source no longer exists: the table occurrence is gone, the source table is missing in the target file, or the source field was deleted. A lookup that cannot resolve copies nothing and reports nothing, so the field simply stays empty on every new record.",
+      "created": "2026-08-16",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XMFD_Text.Lines_ListFieldsWithBrokenLookup.xsl",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ],
+      "calibration": "Deliberately not built on dangling UUIDs: cross-file references routinely carry a stale UUID while the target is intact — FileMaker caches foreign UUIDs but resolves through the id at runtime — so a UUID-based check reports mostly healthy references (measured on a large solution: 97 % false positives on the comparable layout-reference check). The chain used here is table occurrence → base table → resolved data-source file → field, with lookups into files outside the export counted as unverifiable rather than broken."
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Field"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Broken lookup"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "missing-relationship": "Lookup points at a table occurrence that no longer exists",
+    "missing-table": "Lookup source table does not exist in the target file",
+    "missing-field": "Lookup source field does not exist in the source table"
+  }
+}

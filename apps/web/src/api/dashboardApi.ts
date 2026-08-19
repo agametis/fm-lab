@@ -1,4 +1,5 @@
 import { API_BASE } from '../config/apiBase';
+import { isConnectionError } from '../lib/netErrors';
 /**
  * Dashboard-API-Client.
  * Verwendet plain fetch wie der Rest des Frontends — kein react-query.
@@ -50,6 +51,12 @@ export interface DashboardManifest {
     sticky?: boolean;
   }>;
   permissions: { read_only: boolean; allow_navigation: boolean };
+  /**
+   * Message-token catalog for findings context deep links (`ref_msgid` →
+   * template with `{name}` placeholders). Localized server-side via the
+   * `messages.<key>` manifest overrides in the bundle's locale files.
+   */
+  messages?: Record<string, string>;
 }
 
 /**
@@ -87,9 +94,25 @@ export interface DashboardLayout {
   root: LayoutNode;
 }
 
+/** One folder crumb of a bundle's rubric path — partial path + localized label. */
+export interface DashboardNavCrumb {
+  path: string;
+  label: string;
+}
+
 export interface DashboardEnvelope {
   manifest: DashboardManifest;
   layout: DashboardLayout;
+  /**
+   * Rubric of the bundle (additive since the folder breadcrumb). The route
+   * carries only the flat bundle id, so without this the detail view cannot
+   * know which folder it sits in. `crumbs` are localized server-side through
+   * the same cascade as the overview's folder labels.
+   */
+  nav?: {
+    folder: string | null;
+    crumbs: DashboardNavCrumb[];
+  };
 }
 
 export interface DatasetResult {
@@ -119,8 +142,8 @@ function buildQuery(params: Record<string, unknown> | undefined): string {
   return s ? `?${s}` : '';
 }
 
-async function getJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${API}${path}`);
+async function getJsonOnce<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(`${API}${path}`, { signal });
   if (!res.ok) {
     let detail = '';
     try {
@@ -138,13 +161,35 @@ async function getJson<T>(path: string): Promise<T> {
   return body.data as T;
 }
 
+async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
+  try {
+    return await getJsonOnce<T>(path, signal);
+  } catch (err) {
+    // Einmal-Retry über den KOMPLETTEN Vorgang (fetch + Body-Read): Stirbt die
+    // Verbindung erst während des Downloads, ist `fetch()` längst resolved und
+    // erst `res.json()` wirft den Transport-TypeError — den deckt der Request-
+    // Phase-Retry in lib/solutionFetch.ts nicht ab. Der retryt seinerseits die
+    // Request-Phase bereits einmal → Worst Case 4 Verbindungsversuche pro GET;
+    // für die Dev-Workbench akzeptabel, kein Backoff nötig. Aborts nie retryen.
+    if (isConnectionError(err) && !signal?.aborted) {
+      return await getJsonOnce<T>(path, signal);
+    }
+    throw err;
+  }
+}
+
 export async function listDashboards(lang?: string): Promise<DashboardListItem[]> {
   return getJson<DashboardListItem[]>(`/dashboards${buildQuery(lang ? { lang } : undefined)}`);
 }
 
-export async function getDashboard(id: string, lang?: string): Promise<DashboardEnvelope> {
+export async function getDashboard(
+  id: string,
+  lang?: string,
+  signal?: AbortSignal,
+): Promise<DashboardEnvelope> {
   return getJson<DashboardEnvelope>(
     `/dashboards/${encodeURIComponent(id)}${buildQuery(lang ? { lang } : undefined)}`,
+    signal,
   );
 }
 
@@ -152,10 +197,12 @@ export async function getDashboardData(
   id: string,
   params?: Record<string, unknown>,
   lang?: string,
+  signal?: AbortSignal,
 ): Promise<DashboardDataResponse> {
   const merged = lang ? { ...(params || {}), lang } : params;
   const wrapper = await getJson<{ datasets: DashboardDataResponse }>(
-    `/dashboards/${encodeURIComponent(id)}/data${buildQuery(merged)}`
+    `/dashboards/${encodeURIComponent(id)}/data${buildQuery(merged)}`,
+    signal,
   );
   return wrapper.datasets;
 }

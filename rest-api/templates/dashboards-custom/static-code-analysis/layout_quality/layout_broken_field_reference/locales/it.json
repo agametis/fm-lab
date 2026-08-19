@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Riferimento a campo non valido",
+    "description": "Regola di qualità del Layout — un oggetto di layout fa riferimento a un campo o a un'occorrenza di tabella che non esiste più. La risoluzione usa gli ID numerici (ID campo nella tabella di destinazione, ID occorrenza nel file), mai gli UUID: i riferimenti tra file portano spesso un UUID obsoleto anche se il campo è intatto, e FileMaker risolve per ID in esecuzione. Gli oggetti il cui file di destinazione non è nel catalogo vengono saltati e gli oggetti contenitore sono esclusi perché il loro XML incorpora il markup dei figli.\n\nBasato sul controllo fmCheckMate «Broken Field» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-field": "Il campo non esiste più nella tabella di destinazione",
+    "messages.missing-to": "L'occorrenza di tabella non esiste più in questo file"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Layout interessati",
+    "summary_kpi.props.items[2].label": "File interessati",
+    "findings_card.props.title": "Riferimento a campo non valido",
+    "findings_table.props.searchPlaceholder": "Cerca file, Layout o oggetto…",
+    "findings_table.props.empty.message": "Nessun riferimento a campo non valido trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo di oggetto",
+    "findings_table.props.columns[3].label": "Oggetto",
+    "findings_table.props.columns[4].label": "Campo",
+    "findings_table.props.columns[5].label": "Occorrenza tabella",
+    "findings_table.props.columns[8].label": "Larghezza",
+    "findings_table.props.columns[9].label": "Altezza"
+  }
+}

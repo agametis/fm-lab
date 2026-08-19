@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Variável lida e nunca definida",
+    "description": "Regra de propensão a erros — uma variável é lida embora nada no catálogo a escreva. Ou o lado que escrevia foi renomeado ou removido, ou o valor deve vir de fora dos ficheiros exportados. As definições Let() são excluídas: são definidas e lidas na mesma fórmula e dominariam o resultado.\n\nBaseado na verificação fmCheckMate “ListVarsUndefined” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.read-never-set": "A variável é lida mas nunca escrita"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Locais",
+    "summary_kpi.props.items[2].label": "Globais",
+    "summary_kpi.props.items[3].label": "Scripts afetados",
+    "summary_kpi.props.items[4].label": "Ficheiros afetados",
+    "findings_card.props.title": "Variável lida e nunca definida",
+    "variable_scope_filter.props.options[0].label": "todos os âmbitos",
+    "variable_scope_filter.props.options[1].label": "Locais",
+    "variable_scope_filter.props.options[2].label": "Globais",
+    "findings_table.props.columns[0].label": "Ficheiro",
+    "findings_table.props.columns[1].label": "Variável",
+    "findings_table.props.columns[2].label": "Âmbito",
+    "findings_table.props.columns[3].label": "Primeira ocorrência",
+    "findings_table.props.columns[4].label": "Leituras",
+    "findings_table.props.columns[5].label": "Definida noutros ficheiros",
+    "findings_table.props.columns[6].label": "Evidência",
+    "findings_table.props.searchPlaceholder": "Procurar ficheiro, variável ou script…",
+    "findings_table.props.empty.message": "Não foram encontradas variáveis lidas sem nunca serem escritas."
+  }
+}

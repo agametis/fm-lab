@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Objeto fuera de su contenedor padre",
+    "description": "Regla de calidad de Layout — un objeto anidado queda total o parcialmente fuera de los límites de su padre (portal, panel de pestaña o deslizante, grupo). Estos objetos se recortan o quedan invisibles en tiempo de ejecución — normalmente restos tras mover o redimensionar el padre. Se tolera la barra de desplazamiento del portal (19 px); se excluyen los paneles de popover y las líneas de altura cero en el borde.\n\nBasado en la comprobación de fmCheckMate «Lost Object (In Container)» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.completely": "El objeto queda completamente fuera de su padre ({parent})",
+    "messages.partially": "El objeto sobresale de su padre ({parent})"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Completamente fuera",
+    "summary_kpi.props.items[2].label": "Parcialmente fuera",
+    "summary_kpi.props.items[3].label": "Layouts afectados",
+    "findings_card.props.title": "Objeto fuera de su contenedor padre",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, Layout u objeto…",
+    "findings_table.props.empty.message": "No se encontraron objetos fuera de su padre.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Padre",
+    "findings_table.props.columns[5].label": "Alcance",
+    "extent_filter.props.options[0].label": "todos",
+    "extent_filter.props.options[1].label": "completamente fuera",
+    "extent_filter.props.options[2].label": "parcialmente fuera",
+    "object_type_select.props.label": "Tipo de objeto",
+    "object_type_select.props.emptyOptionLabel": "todos los tipos de objeto",
+    "findings_table.props.columns[8].label": "Ancho",
+    "findings_table.props.columns[9].label": "Alto"
+  }
+}

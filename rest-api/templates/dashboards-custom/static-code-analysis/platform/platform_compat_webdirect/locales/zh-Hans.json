@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "平台兼容性：FileMaker WebDirect",
-  "analysis.defaultResult.meaning": "范围内在 FileMaker WebDirect 上不受支持或仅部分支持的步骤"
- }
+  "manifest": {
+    "title": "平台兼容性：FileMaker WebDirect",
+    "analysis.defaultResult.meaning": "范围内在 FileMaker WebDirect 上不受支持或仅部分支持的步骤"
+  },
+  "layout": {}
 }

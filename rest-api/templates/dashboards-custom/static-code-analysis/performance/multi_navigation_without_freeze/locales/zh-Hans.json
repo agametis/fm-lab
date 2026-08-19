@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "缺少 Freeze Window 的导航脚本",
+    "description": "性能规则 — 包含多次布局切换或 Go to Related Record 步骤却没有 Freeze Window 的脚本，每次跳转都会重绘屏幕。Freeze Window 可抑制中间渲染；脚本结束时 FileMaker 会自动刷新。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "最多导航步骤",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "min_nav_slider.props.label": "导航步骤",
+    "findings_card.props.title": "缺少 Freeze Window 的导航脚本",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到缺少 Freeze Window 的导航密集型脚本。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "导航步骤",
+    "findings_table.props.columns[3].label": "经 PSoS 调用"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "깨진 주석 구조",
+    "description": "오류 유발 규칙 — 계산식에 중첩할 수 없는 주석 기호가 들어 있습니다. 열린 주석 안의 두 번째 /*, 이미 닫힌 뒤의 남는 */, 여는 /* 에 바로 붙은 // 행 주석 등입니다. FileMaker 주석은 중첩되지 않으므로 의도와 달리 계산식의 일부가 주석 안이나 밖에 들어갑니다.\n\nfmCheckMate 검사 “Broken Calculation /*Commented Out*/” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.nested-open": "열린 주석 안에서 주석이 다시 시작됩니다",
+    "messages.double-close": "주석이 두 번 닫힙니다",
+    "messages.line-in-block": "행 주석이 주석 블록 안에 있습니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "중첩 시작",
+    "summary_kpi.props.items[2].label": "이중 종료",
+    "summary_kpi.props.items[3].label": "영향받은 파일",
+    "findings_card.props.title": "깨진 주석 구조",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "객체 유형",
+    "findings_table.props.columns[2].label": "객체",
+    "findings_table.props.columns[3].label": "슬롯",
+    "findings_table.props.columns[4].label": "위치",
+    "findings_table.props.columns[5].label": "결함",
+    "findings_table.props.searchPlaceholder": "파일, 객체 또는 계산식 검색…",
+    "findings_table.props.empty.message": "깨진 주석 구조가 없습니다."
+  }
+}

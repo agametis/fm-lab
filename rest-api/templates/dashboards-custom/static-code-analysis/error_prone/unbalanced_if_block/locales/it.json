@@ -10,7 +10,6 @@
     "findings_table.props.searchPlaceholder": "Cerca file, script o risultato…",
     "findings_table.props.empty.message": "Nessun blocco If / End If sbilanciato trovato.",
     "findings_table.props.columns[0].label": "File",
-    "findings_table.props.columns[1].label": "Script",
-    "findings_table.props.columns[2].label": "Risultato"
+    "findings_table.props.columns[1].label": "Script"
   }
 }

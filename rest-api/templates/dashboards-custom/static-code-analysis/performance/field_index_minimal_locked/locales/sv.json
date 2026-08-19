@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Minimalt index med automatisk indexering på",
+    "description": "Prestandaregel — ett fälts index är satt till ”Minimalt” medan automatisk indexering fortfarande är på. Minimalt behåller bara ordindexet och släpper värdeindexet, men med automatisk indexering bygger FileMaker ändå upp det en sökning behöver. Inställningen sparar inget förutsägbart och dokumenterar oftast ett index som tömdes en gång och aldrig omprövades.\n\nBaserad på fmCheckMate-kontrollen ”ListFieldsWithIndexMinimalLocked” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.index-minimal-locked": "Indexet är Minimalt medan automatisk indexering är på"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda tabeller",
+    "summary_kpi.props.items[2].label": "Berörda filer",
+    "findings_card.props.title": "Minimalt index med automatisk indexering på",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Tabell",
+    "findings_table.props.columns[2].label": "Fält",
+    "findings_table.props.columns[3].label": "Fälttyp",
+    "findings_table.props.columns[4].label": "Datatyp",
+    "findings_table.props.searchPlaceholder": "Sök fil, tabell eller fält…",
+    "findings_table.props.empty.message": "Inga fält med minimalt index och automatisk indexering på."
+  }
+}

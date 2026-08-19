@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Gebrochener Lookup",
+    "description": "Fehleranfälligkeits-Regel — ein Lookup, dessen Quelle nicht mehr existiert: das Tabellenauftreten ist weg, die Quelltabelle fehlt in der Zieldatei, oder das Quellfeld wurde gelöscht. Ein Lookup, der nicht auflöst, kopiert nichts und meldet nichts — das Feld bleibt bei jedem neuen Datensatz einfach leer.\n\nAngelehnt an die fmCheckMate-Prüfung „ListFieldsWithBrokenLookup“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-relationship": "Der Lookup zeigt auf ein Tabellenauftreten, das es nicht mehr gibt",
+    "messages.missing-table": "Die Quelltabelle des Lookups fehlt in der Zieldatei",
+    "messages.missing-field": "Das Quellfeld des Lookups gibt es in der Quelltabelle nicht"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Lookups im Scope",
+    "summary_kpi.props.items[2].label": "Nicht prüfbar",
+    "summary_kpi.props.items[3].label": "Betroffene Dateien",
+    "findings_card.props.title": "Gebrochener Lookup",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Tabelle",
+    "findings_table.props.columns[2].label": "Feld",
+    "findings_table.props.columns[3].label": "Lookup-Beziehung",
+    "findings_table.props.columns[4].label": "Quellfeld",
+    "findings_table.props.columns[5].label": "Zieldatei",
+    "findings_table.props.columns[6].label": "Defekt",
+    "findings_table.props.searchPlaceholder": "Datei, Tabelle oder Feld suchen…",
+    "findings_table.props.empty.message": "Keine gebrochenen Lookups gefunden."
+  }
+}

@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Veralteter Plug-in-Funktionsaufruf",
-  "analysis.defaultResult.meaning": "Plug-in-Funktionsaufrufe im Prüfumfang, deren Funktion in der Hersteller-Dokumentation als veraltet markiert ist"
- }
+  "manifest": {
+    "title": "Veralteter Plug-in-Funktionsaufruf",
+    "analysis.defaultResult.meaning": "Plug-in-Funktionsaufrufe im Prüfumfang, deren Funktion in der Hersteller-Dokumentation als veraltet markiert ist"
+  },
+  "layout": {}
 }

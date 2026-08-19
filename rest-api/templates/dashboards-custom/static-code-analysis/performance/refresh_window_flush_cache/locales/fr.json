@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Refresh Window vidant le cache des liens",
+    "description": "Règle de performance — Refresh Window avec « Vider les résultats de lien en cache » (ou « Vider les données externes en cache ») rejette les caches de liens et force FileMaker à recharger les enregistrements liés depuis le serveur. Claris met explicitement en garde contre le coût réseau."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Vidage des liens",
+    "summary_kpi.props.items[2].label": "Vidage des données externes",
+    "summary_kpi.props.items[3].label": "Rafraîchissements simples (non signalés)",
+    "summary_kpi.props.items[4].label": "Fichiers concernés",
+    "flush_kind_filter.props.options[0].label": "Tous les vidages",
+    "flush_kind_filter.props.options[1].label": "Résultats de lien",
+    "flush_kind_filter.props.options[2].label": "Données externes",
+    "findings_card.props.title": "Refresh Window vidant le cache des liens",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un script…",
+    "findings_table.props.empty.message": "Aucun Refresh Window avec option de vidage trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Étape",
+    "findings_table.props.columns[3].label": "Vide",
+    "findings_table.props.columns[4].label": "Profondeur de boucle"
+  }
+}

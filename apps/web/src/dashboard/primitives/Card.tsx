@@ -27,7 +27,14 @@ export function Card({ node, dataset, renderChildren }: PrimitiveProps) {
   // NavTiles sollen sich nicht selbst ausblenden, wenn das gebundene Dataset
   // leer ist (z.B. `nav_dashboards` ohne weitere Bundles) — der NavButton zeigt
   // dann eben `0` an, aber bleibt klickbar.
-  const suppressEmpty = variant === 'navtile';
+  // `keepChildrenOnEmpty` (Opt-in per layout.json) lässt die Children auch bei
+  // leerem Dataset stehen: Karten mit Filterkopf (Chips/Selects/Slider) müssen
+  // bedienbar bleiben, wenn die aktuelle Filterkombination 0 Zeilen liefert —
+  // sonst kommt man aus dem Filterzustand nicht mehr heraus. Die Empty-Anzeige
+  // übernimmt dann das Kind (z.B. die Table mit ihrer lokalisierten
+  // empty.message).
+  const suppressEmpty =
+    variant === 'navtile' || props.keepChildrenOnEmpty === true;
   const datasetIsEmpty =
     !suppressEmpty && dataset && (dataset.data?.length ?? 0) === 0;
 

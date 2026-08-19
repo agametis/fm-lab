@@ -1,0 +1,145 @@
+{
+  "id": "layout-error-checks",
+  "version": "1.0.0",
+  "title": "Layout Error Checks",
+  "description": "Bundles the error-level checks for layout objects: broken field, table-occurrence and value-list references, field repetitions beyond the field definition, hide conditions that are commented out or degraded to quoted string constants, and popovers nested inside popover panels.",
+  "keywords": [
+    "layout",
+    "error",
+    "hide",
+    "calculation",
+    "popover",
+    "broken-reference",
+    "fmcheckmate"
+  ],
+  "testType": "error-check",
+  "objectTypes": [
+    "Layout"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "layout_broken_field_reference"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_broken_valuelist"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_repetition_out_of_range"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_calc_commented_out"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_quoted_hide_calc"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_popover_in_popover"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "quick",
+      "title": "Quick Check",
+      "description": "The sharpest defect rules: broken field references, disabled or constant hide conditions and invalid popover nesting.",
+      "members": [
+        "layout_broken_field_reference",
+        "layout_calc_commented_out",
+        "layout_quoted_hide_calc",
+        "layout_popover_in_popover"
+      ]
+    },
+    {
+      "id": "full",
+      "title": "Full Check"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Layout-Fehlerprüfungen",
+      "description": "Bündelt die Fehler-Prüfungen für Layoutobjekte: defekte Feld-, Tabellenauftreten- und Wertelisten-Referenzen, Feldwiederholungen jenseits der Felddefinition, auskommentierte oder zu String-Konstanten degradierte Ausblenden-Bedingungen sowie Popover innerhalb von Popover-Panels.",
+      "profiles.quick.title": "Schnellprüfung",
+      "profiles.quick.description": "Die schärfsten Defekt-Regeln: defekte Feldreferenzen, außer Kraft gesetzte oder konstante Ausblenden-Bedingungen und unzulässige Popover-Verschachtelung.",
+      "profiles.full.title": "Vollprüfung"
+    },
+    "es": {
+      "title": "Comprobaciones de errores de layouts",
+      "description": "Agrupa las comprobaciones de nivel de error para objetos de layout: referencias rotas a campos, ocurrencias de tabla y listas de valores, repeticiones de campo más allá de la definición del campo, condiciones de ocultar comentadas o degradadas a constantes de cadena, y popovers anidados dentro de paneles popover.",
+      "profiles.quick.title": "Comprobación rápida",
+      "profiles.quick.description": "Solo las reglas de defectos más incisivas: referencias de campo rotas, condiciones de ocultar desactivadas o constantes y anidamiento de popovers no válido.",
+      "profiles.full.title": "Comprobación completa"
+    },
+    "fr": {
+      "title": "Vérifications d'erreurs des layouts",
+      "description": "Regroupe les vérifications de niveau erreur pour les objets de layout : références cassées vers des champs, occurrences de table et listes de valeurs, répétitions de champ au-delà de la définition, conditions de masquage mises en commentaire ou dégradées en constantes de chaîne, et popovers imbriqués dans des panneaux popover.",
+      "profiles.quick.title": "Vérification rapide",
+      "profiles.quick.description": "Uniquement les règles de défauts les plus tranchantes : références de champ cassées, conditions de masquage désactivées ou constantes et imbrication de popovers non valide.",
+      "profiles.full.title": "Vérification complète"
+    },
+    "it": {
+      "title": "Controlli degli errori dei layout",
+      "description": "Raggruppa i controlli di livello errore per gli oggetti di layout: riferimenti non validi a campi, occorrenze di tabella ed elenchi valori, ripetizioni di campo oltre la definizione del campo, condizioni di occultamento commentate o degradate a costanti stringa e popover annidati dentro pannelli popover.",
+      "profiles.quick.title": "Controllo rapido",
+      "profiles.quick.description": "Solo le regole più incisive: riferimenti a campi non validi, condizioni di occultamento disattivate o costanti e annidamento non valido dei popover.",
+      "profiles.full.title": "Controllo completo"
+    },
+    "ja": {
+      "title": "レイアウトのエラー検査",
+      "description": "レイアウトオブジェクトのエラーレベル検査をまとめたものです：壊れたフィールド・テーブルオカレンス・値一覧の参照、フィールド定義を超える繰り返し、コメントアウトまたは文字列定数と化した非表示条件、ポップオーバーパネル内に入れ子になったポップオーバー。",
+      "profiles.quick.title": "クイックチェック",
+      "profiles.quick.description": "最も鋭い欠陥ルールのみ：壊れたフィールド参照、無効化または定数化した非表示条件、不正なポップオーバーの入れ子。",
+      "profiles.full.title": "フルチェック"
+    },
+    "ko": {
+      "title": "레이아웃 오류 검사",
+      "description": "레이아웃 개체의 오류 수준 검사를 한데 묶습니다: 끊어진 필드·테이블 어커런스·값 목록 참조, 필드 정의를 초과하는 반복, 주석 처리되었거나 문자열 상수가 되어 버린 숨기기 조건, 팝오버 패널 안에 중첩된 팝오버.",
+      "profiles.quick.title": "빠른 검사",
+      "profiles.quick.description": "가장 날카로운 결함 규칙만: 끊어진 필드 참조, 비활성화되었거나 상수가 된 숨기기 조건, 잘못된 팝오버 중첩.",
+      "profiles.full.title": "전체 검사"
+    },
+    "nl": {
+      "title": "Foutcontroles van layouts",
+      "description": "Bundelt de foutcontroles voor layoutobjecten: verbroken veld-, tabelvoorkomen- en waardelijstverwijzingen, veldherhalingen voorbij de velddefinitie, verbergcondities die zijn uitgecommentarieerd of gedegradeerd tot stringconstanten, en popovers genest in popoverpanelen.",
+      "profiles.quick.title": "Snelle controle",
+      "profiles.quick.description": "Alleen de scherpste defectregels: verbroken veldverwijzingen, uitgeschakelde of constante verbergcondities en ongeldige popover-nesting.",
+      "profiles.full.title": "Volledige controle"
+    },
+    "pt": {
+      "title": "Verificações de erros dos layouts",
+      "description": "Reúne as verificações de nível de erro para objetos de layout: referências quebradas a campos, ocorrências de tabela e listas de valores, repetições de campo além da definição do campo, condições de ocultar comentadas ou degradadas a constantes de texto, e popovers aninhados dentro de painéis popover.",
+      "profiles.quick.title": "Verificação rápida",
+      "profiles.quick.description": "Apenas as regras de defeito mais incisivas: referências de campo quebradas, condições de ocultar desativadas ou constantes e aninhamento inválido de popovers.",
+      "profiles.full.title": "Verificação completa"
+    },
+    "sv": {
+      "title": "Felkontroller för layouter",
+      "description": "Samlar felkontrollerna för layoutobjekt: brutna fält-, tabellförekomst- och värdelistreferenser, fältupprepningar bortom fältdefinitionen, döljvillkor som är bortkommenterade eller degraderade till strängkonstanter, samt popovers nästlade i popoverpaneler.",
+      "profiles.quick.title": "Snabbkontroll",
+      "profiles.quick.description": "Endast de skarpaste defektreglerna: brutna fältreferenser, inaktiverade eller konstanta döljvillkor och ogiltig popovernästling.",
+      "profiles.full.title": "Fullständig kontroll"
+    },
+    "zh-Hans": {
+      "title": "布局错误检查",
+      "description": "汇集布局对象的错误级检查：损坏的字段、表关联与值列表引用，超出字段定义的重复次数，被注释掉或退化为字符串常量的隐藏条件，以及嵌套在弹出面板中的弹出按钮。",
+      "profiles.quick.title": "快速检查",
+      "profiles.quick.description": "仅保留最关键的缺陷规则：损坏的字段引用、失效或恒定的隐藏条件，以及无效的弹出嵌套。",
+      "profiles.full.title": "完整检查"
+    }
+  }
+}

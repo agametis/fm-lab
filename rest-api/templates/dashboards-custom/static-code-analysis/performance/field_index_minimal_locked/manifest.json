@@ -1,0 +1,97 @@
+{
+  "id": "field_index_minimal_locked",
+  "version": "1.0.0",
+  "title": "Minimal index with automatic indexing on",
+  "description": "Performance rule — a field's index is set to Minimal while automatic indexing is still enabled. Minimal keeps the word index and drops the value index, but with automatic indexing on FileMaker rebuilds whatever a find needs anyway. The setting saves nothing predictable and usually documents an index that was cleared once and never reconsidered.\n\nBased on the fmCheckMate check \"ListFieldsWithIndexMinimalLocked\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "database",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "performance"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "performance",
+    "rationale": "Storage settings are read as intent. \"Minimal\" suggests a deliberate decision to keep the file small, while automatic indexing quietly undoes it on the next find — so neither the file size nor the search behaviour is what the setting promises.",
+    "remediation": "Decide which of the two is meant: turn automatic indexing off if the index really should stay minimal, or set the index to All if the field is searched.",
+    "meta": {
+      "name": "Minimal index with automatic indexing on",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Performance rule — a field's index is set to Minimal while automatic indexing is still enabled. Minimal keeps the word index and drops the value index, but with automatic indexing on FileMaker rebuilds whatever a find needs anyway. The setting saves nothing predictable and usually documents an index that was cleared once and never reconsidered.",
+      "created": "2026-08-16",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XMFD_Text.Lines_ListFieldsWithIndexMinimalLocked.xsl",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Field"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Minimal index with automatic indexing on"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "index-minimal-locked": "Index is Minimal while automatic indexing is on"
+  }
+}

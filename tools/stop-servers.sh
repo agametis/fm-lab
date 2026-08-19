@@ -2,10 +2,14 @@
 # stop-servers.sh — Stops the frontend (port 5173) and/or the REST API (port 3003).
 #
 # Usage:  stop-servers.sh [api|frontend|all]   (default: all)
-#   api        stop the API — and the frontend too (the web client depends on the API,
-#              so it is stopped first to avoid a browser hitting a dead API)
+#   api        stop ONLY the API. The frontend deliberately keeps running: killing the
+#              Vite dev server mid-session drives the browser's HMR client into a
+#              reload loop (Safari: endless reload + focus stealing via the VS Code
+#              port-forward openBrowser hook). While the API is down the web client
+#              degrades gracefully (transport-error handling) and recovers on its own.
 #   frontend   stop only the frontend
-#   all        stop frontend + API   (same as api)
+#   all        stop frontend + API   (frontend first, so the browser doesn't sit on a
+#              dead API longer than necessary)
 #
 # In the Docker Compose topology (FMLAB_RUNTIME=container) the servers run under
 # `restart: unless-stopped`; a plain kill is immediately resurrected. This script
@@ -14,7 +18,7 @@ set -euo pipefail
 
 TARGET="${1:-all}"
 case "$TARGET" in
-  api|all) TARGET="all" ;;
+  api|all) ;;
   frontend|web) TARGET="frontend" ;;
   *) echo "Usage: $(basename "$0") [api|frontend|all]" >&2; exit 2 ;;
 esac
@@ -94,13 +98,17 @@ fe_stopped=false
 api_stopped=false
 
 # ─── Frontend first (so the browser doesn't see API errors) ──
-header "Frontend (Port 5173)"
-if stop_port 5173 "frontend server"; then
-  fe_stopped=true
+# Skipped for the `api` target: the Vite dev server must survive an API restart,
+# otherwise the browser's HMR client enters its reload loop (see header).
+if [ "$TARGET" != "api" ]; then
+  header "Frontend (Port 5173)"
+  if stop_port 5173 "frontend server"; then
+    fe_stopped=true
+  fi
 fi
 
 # ─── REST API (only when the API is a stop target) ───────────
-if [ "$TARGET" = "all" ]; then
+if [ "$TARGET" != "frontend" ]; then
   header "REST API (Port 3003)"
   if stop_port 3003 "REST API server"; then
     api_stopped=true
@@ -110,12 +118,17 @@ fi
 # ─── Summary ─────────────────────────────────────────────────
 header "Status"
 if [ "$fe_stopped" = true ] || [ "$api_stopped" = true ]; then
-  if [ "$TARGET" = "all" ]; then
+  if [ "$TARGET" != "frontend" ]; then
     [ "$api_stopped" = true ] && echo "  REST API:  stopped" || echo "  REST API:  was not active"
   fi
-  [ "$fe_stopped" = true ]  && echo "  Frontend:  stopped" || echo "  Frontend:  was not active"
+  if [ "$TARGET" != "api" ]; then
+    [ "$fe_stopped" = true ]  && echo "  Frontend:  stopped" || echo "  Frontend:  was not active"
+  fi
   if [ "$TARGET" = "frontend" ]; then
     echo "  REST API:  untouched (still running on 3003 if it was up)"
+  fi
+  if [ "$TARGET" = "api" ]; then
+    echo "  Frontend:  untouched (keeps running on 5173 if it was up)"
   fi
 else
   echo "  No servers were active."

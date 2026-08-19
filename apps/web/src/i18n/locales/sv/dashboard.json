@@ -168,5 +168,9 @@
     },
     "noFilterMatches": "Inga poster med den här statusen i det här avsnittet.",
     "openFolder": "Öppna mapp"
+  },
+  "featured": {
+    "ruleCount_one": "{{count}} regel",
+    "ruleCount_other": "{{count}} regler"
   }
 }

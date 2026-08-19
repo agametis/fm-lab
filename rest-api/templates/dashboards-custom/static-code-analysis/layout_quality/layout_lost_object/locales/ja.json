@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "親からはみ出したオブジェクト",
+    "description": "Layout 品質ルール — 入れ子のオブジェクトが親（ポータル、タブ／スライドパネル、グループ）の境界から完全または部分的にはみ出しています。実行時には切り取られるか見えなくなります。多くは親の移動やサイズ変更後の残骸です。ポータルのスクロールバー（19 px）は許容し、ポップオーバーパネルと境界上の高さゼロの線は除外します。\n\nfmCheckMate チェック「Lost Object (In Container)」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.completely": "オブジェクトが親（{parent}）の完全に外側にあります",
+    "messages.partially": "オブジェクトが親（{parent}）からはみ出しています"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "完全に外",
+    "summary_kpi.props.items[2].label": "部分的に外",
+    "summary_kpi.props.items[3].label": "対象 Layout 数",
+    "findings_card.props.title": "親からはみ出したオブジェクト",
+    "findings_table.props.searchPlaceholder": "ファイル、Layout、オブジェクトを検索…",
+    "findings_table.props.empty.message": "親からはみ出したオブジェクトは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "オブジェクトタイプ",
+    "findings_table.props.columns[3].label": "オブジェクト",
+    "findings_table.props.columns[4].label": "親",
+    "findings_table.props.columns[5].label": "程度",
+    "extent_filter.props.options[0].label": "すべて",
+    "extent_filter.props.options[1].label": "完全に外",
+    "extent_filter.props.options[2].label": "部分的に外",
+    "object_type_select.props.label": "オブジェクトタイプ",
+    "object_type_select.props.emptyOptionLabel": "すべてのオブジェクトタイプ",
+    "findings_table.props.columns[8].label": "幅",
+    "findings_table.props.columns[9].label": "高さ"
+  }
+}

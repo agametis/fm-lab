@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Navigeringsskript utan Freeze Window",
+    "description": "Prestandaregel — skript med flera layoutbyten eller Go to Related Record-steg utan Freeze Window ritar om skärmen vid varje hopp. Freeze Window undertrycker mellanliggande renderingar; FileMaker uppdaterar automatiskt när skriptet är klart."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Max navigeringssteg",
+    "summary_kpi.props.items[2].label": "Berörda filer",
+    "min_nav_slider.props.label": "Navigeringssteg",
+    "findings_card.props.title": "Navigeringsskript utan Freeze Window",
+    "findings_table.props.searchPlaceholder": "Sök fil eller skript…",
+    "findings_table.props.empty.message": "Inget navigeringstungt skript utan Freeze Window hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Skript",
+    "findings_table.props.columns[2].label": "Navigeringssteg",
+    "findings_table.props.columns[3].label": "Anropas via PSoS"
+  }
+}

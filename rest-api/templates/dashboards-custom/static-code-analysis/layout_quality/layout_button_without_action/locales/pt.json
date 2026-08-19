@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Botão sem ação",
+    "description": "Regra de qualidade de Layout — um botão não tem chamada de script nem ação de passo único. A deteção lê a ação serializada do objeto: uma ação de script surge como referência de script e uma ação de passo único como elemento de passo; um botão sem nenhuma não faz nada ao ser clicado. Em soluções grandes cerca de 40 % dos botões podem estar abrangidos, por isso reveja por contexto antes de agir: ícones decorativos e segmentos inativos de barras de botões são legítimos, e o filtro de contexto restringe a lista.\n\nBaseado na verificação fmCheckMate “Button Action <Missing>” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.no-action": "O botão não tem chamada de script nem ação de passo único"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Layouts afetados",
+    "summary_kpi.props.items[2].label": "Botões no âmbito",
+    "findings_card.props.title": "Botão sem ação",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, Layout ou objeto…",
+    "findings_table.props.empty.message": "Não foram encontrados botões sem ação.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objeto",
+    "findings_table.props.columns[3].label": "Contexto",
+    "findings_table.props.columns[6].label": "Largura",
+    "findings_table.props.columns[7].label": "Altura",
+    "context_select.props.label": "Contexto",
+    "context_select.props.emptyOptionLabel": "Todos os contextos"
+  }
+}

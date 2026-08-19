@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Object buiten zijn parent",
+    "description": "Layoutkwaliteitsregel — een genest object ligt geheel of gedeeltelijk buiten de grenzen van zijn parent (portaal, tab-/schuifpaneel, groep). Zulke objecten worden tijdens uitvoering afgesneden of zijn onzichtbaar — meestal resten na het verplaatsen of verkleinen van de parent. De portaal-scrollbalk (19 px) wordt getolereerd; popoverpanelen en lijnen met hoogte nul op de rand zijn uitgesloten.\n\nGebaseerd op de fmCheckMate-controle “Lost Object (In Container)” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.completely": "Het object ligt volledig buiten zijn parent ({parent})",
+    "messages.partially": "Het object steekt buiten zijn parent ({parent}) uit"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Volledig buiten",
+    "summary_kpi.props.items[2].label": "Gedeeltelijk buiten",
+    "summary_kpi.props.items[3].label": "Betrokken Layouts",
+    "findings_card.props.title": "Object buiten zijn parent",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen objecten buiten hun parent gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objecttype",
+    "findings_table.props.columns[3].label": "Object",
+    "findings_table.props.columns[4].label": "Parent",
+    "findings_table.props.columns[5].label": "Mate",
+    "extent_filter.props.options[0].label": "alle",
+    "extent_filter.props.options[1].label": "volledig buiten",
+    "extent_filter.props.options[2].label": "gedeeltelijk buiten",
+    "object_type_select.props.label": "Objecttype",
+    "object_type_select.props.emptyOptionLabel": "alle objecttypen",
+    "findings_table.props.columns[8].label": "Breedte",
+    "findings_table.props.columns[9].label": "Hoogte"
+  }
+}

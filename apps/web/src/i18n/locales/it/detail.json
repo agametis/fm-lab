@@ -5,6 +5,7 @@
   "autoTable": {
     "rowCount_one": "{{count}} voce",
     "rowCount_other": "{{count}} voci",
+    "rowCountTruncated": "{{shown}} di {{total}} voci",
     "filteredFrom": "filtrato da {{count}}",
     "newCount": "{{count}} nuovi",
     "totalSize": "Dimensione totale {{size}}",
@@ -362,7 +363,8 @@
     "highlightsCount_one": "{{count}} corrispondenza evidenziata",
     "highlightsCount_other": "{{count}} corrispondenze evidenziate",
     "dismissAria": "Rimuovi l’evidenziazione del riferimento",
-    "dismissTitle": "Rimuovi l’evidenziazione del riferimento (Esc)"
+    "dismissTitle": "Rimuovi l’evidenziazione del riferimento (Esc)",
+    "sourceLabel": "Fonte:"
   },
   "tableDetails": "Dettagli della tabella",
   "scriptDetails": "Dettagli dello script",

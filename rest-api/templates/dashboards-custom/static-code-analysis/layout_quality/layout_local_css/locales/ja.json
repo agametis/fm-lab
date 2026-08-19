@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "ローカル CSS の上書き",
+    "description": "Layout 品質指標 — テーマから外観を継承せずローカル CSS を持つオブジェクトの割合です。少数であれば正常ですが、割合が高いとテーマが外観を統制できておらず、見た目の変更をオブジェクトごとに行う必要があります。これは比率ダッシュボードです。KPI はソリューション全体の割合を示し、表は個々のオブジェクトではなくしきい値を超えた Layout を一覧します。\n\nfmCheckMate チェック「LocalCSS」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.local-css": "この Layout の {objects_total} 個中 {objects_with_css} 個のオブジェクトがローカル CSS を持ちます（{share_pct} %）"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "レイアウトオブジェクト数",
+    "summary_kpi.props.items[1].label": "ローカル CSS あり",
+    "summary_kpi.props.items[2].label": "割合 %",
+    "summary_kpi.props.items[3].label": "一覧の Layout 数",
+    "findings_card.props.title": "ローカル CSS の上書き",
+    "findings_table.props.searchPlaceholder": "ファイル、Layout、オブジェクトを検索…",
+    "findings_table.props.empty.message": "設定したローカル CSS の割合に達する Layout はありません。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "オブジェクト数",
+    "findings_table.props.columns[3].label": "ローカル CSS あり",
+    "findings_table.props.columns[4].label": "割合 %",
+    "min_share_slider.props.label": "最小割合"
+  }
+}

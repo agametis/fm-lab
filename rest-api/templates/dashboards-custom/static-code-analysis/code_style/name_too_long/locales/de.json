@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "Überlanger Objektname",
+    "description": "Code-Stil-Regel — ein Objektname ist länger als die Lesbarkeitsschwelle (max_len, Vorgabe 80 Zeichen) oder liegt genau auf FileMakers Grenze von 100 Zeichen, wo die Eingabe still abgeschnitten wurde. Namen an der Grenze werden als Warnung gemeldet, der Rest als Information.\n\nAngelehnt an die fmCheckMate-Prüfung „ListNamesWhichAreTooLong“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.too-long": "Der Name ist länger als die eingestellte Schwelle",
+    "messages.at-limit": "Der Name liegt an FileMakers Grenze von 100 Zeichen und wurde womöglich abgeschnitten"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Über Schwelle",
+    "summary_kpi.props.items[2].label": "An der Grenze",
+    "summary_kpi.props.items[3].label": "Betroffene Dateien",
+    "findings_card.props.title": "Überlanger Objektname",
+    "defect_filter.props.options[0].label": "alle",
+    "defect_filter.props.options[1].label": "Über Schwelle",
+    "defect_filter.props.options[2].label": "An der Grenze",
+    "max_len_slider.props.label": "Namenslänge",
+    "object_type_select.props.label": "Objekttyp",
+    "object_type_select.props.emptyOptionLabel": "alle Objekttypen",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Objekttyp",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Länge",
+    "findings_table.props.columns[4].label": "Defekt",
+    "findings_table.props.searchPlaceholder": "Datei, Objekttyp oder Name suchen…",
+    "findings_table.props.empty.message": "Keine Namen über der Schwelle gefunden."
+  }
+}

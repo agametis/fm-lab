@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "레이아웃 밖의 개체",
+    "description": "Layout 품질 규칙 — 최상위 개체가 레이아웃 경계를 벗어났습니다(레이아웃 너비 초과, 마지막 파트 아래, 또는 음수 좌표). 절대 레이아웃 좌표를 사용하는 것은 최상위 개체뿐이므로 이들만 검사합니다. 중첩 개체는 컨테이너 기준 상대 좌표이며 벗어난 개체 규칙에서 다룹니다. 약간의 초과는 반올림 오차인 경우가 많으며 허용 오차 슬라이더로 숨길 수 있습니다.",
+    "messages.complete": "개체가 레이아웃을 완전히 벗어났습니다({direction})",
+    "messages.partial": "개체가 레이아웃 밖으로 튀어나왔습니다({direction})"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "완전히 벗어남",
+    "summary_kpi.props.items[2].label": "부분적으로 벗어남",
+    "findings_card.props.title": "레이아웃 밖의 개체",
+    "findings_table.props.searchPlaceholder": "파일, Layout 또는 개체 검색…",
+    "findings_table.props.empty.message": "레이아웃 경계 밖의 개체를 찾지 못했습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "개체 유형",
+    "findings_table.props.columns[3].label": "개체",
+    "findings_table.props.columns[4].label": "방향",
+    "findings_table.props.columns[5].label": "정도",
+    "findings_table.props.columns[8].label": "너비",
+    "findings_table.props.columns[9].label": "높이",
+    "tolerance_slider.props.label": "허용 오차"
+  }
+}

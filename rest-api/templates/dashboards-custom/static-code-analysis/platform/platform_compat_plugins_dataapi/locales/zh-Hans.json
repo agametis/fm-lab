@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "插件兼容性：FileMaker Data API",
-  "analysis.defaultResult.meaning": "范围内无法在 FileMaker Data API 上运行的插件函数调用"
- }
+  "manifest": {
+    "title": "插件兼容性：FileMaker Data API",
+    "analysis.defaultResult.meaning": "范围内无法在 FileMaker Data API 上运行的插件函数调用"
+  },
+  "layout": {}
 }

@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "따옴표로 감싼 객체 이름",
+    "description": "코드 스타일 규칙 — 객체 이름이 큰따옴표로 시작하고 끝납니다. 대부분 계산식에서 복사한 이름을 그대로 붙여넣은 경우입니다. 따옴표가 이름의 일부가 되므로 이름 기반 접근은 모두 따옴표까지 그대로 써야 합니다.\n\nfmCheckMate 검사 “Quoted Object Name” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.quoted-name": "이름이 따옴표로 감싸져 있습니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "객체 유형",
+    "summary_kpi.props.items[2].label": "영향받은 파일",
+    "findings_card.props.title": "따옴표로 감싼 객체 이름",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "객체 유형",
+    "findings_table.props.columns[2].label": "객체",
+    "findings_table.props.searchPlaceholder": "파일, 객체 유형 또는 이름 검색…",
+    "findings_table.props.empty.message": "따옴표로 감싼 객체 이름이 없습니다."
+  }
+}

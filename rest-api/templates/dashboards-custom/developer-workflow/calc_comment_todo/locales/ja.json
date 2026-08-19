@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "計算式コメント内の TODO マーカー",
+    "description": "「未完了作業」ファミリーのルール — FileMaker の計算式のコメントに TODO マーカー（TODO, TO DO, TO-DO, TBD, to be done, to be defined）が含まれています。カスタム関数、フィールド計算、自動入力・入力値制限の計算、スクリプトステップの計算式の 5 か所を検査します。 TODO は不具合ではなく予定された作業を示すため、重大度は info です。独自の件数として数えますが、信号を黄色にはしません。 マーカーはコメント内（// 行末まで、または /* … */）のみを対象とします。文字列リテラルの「TODO」は検出対象外です。",
+    "messages.custom_function": "カスタム関数のコメント内の TODO マーカー",
+    "messages.field_calc": "フィールド計算式のコメント内の TODO マーカー",
+    "messages.field_autoenter": "自動入力計算式のコメント内の TODO マーカー",
+    "messages.field_validation": "入力値制限の計算式のコメント内の TODO マーカー",
+    "messages.script_step": "スクリプトステップ計算式のコメント内の TODO マーカー"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "カスタム関数",
+    "summary_kpi.props.items[2].label": "フィールド",
+    "summary_kpi.props.items[3].label": "スクリプトステップ",
+    "summary_kpi.props.items[4].label": "対象ファイル",
+    "findings_card.props.title": "計算式コメント内の TODO マーカー",
+    "findings_table.props.searchPlaceholder": "ファイル・オブジェクト・コメントを検索…",
+    "findings_table.props.empty.message": "計算式のコメントに TODO マーカーはありません。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "箇所",
+    "findings_table.props.columns[2].label": "オブジェクト",
+    "findings_table.props.columns[3].label": "ステップ",
+    "findings_table.props.columns[4].label": "マーカー",
+    "findings_table.props.columns[5].label": "コメント"
+  }
+}

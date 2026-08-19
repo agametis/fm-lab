@@ -1,0 +1,31 @@
+{
+  "manifest": {
+    "title": "Kopierat objektnamn",
+    "description": "Layoutkvalitetsregel — ett namngivet objekt bär ett kopieringssuffix (' Copy', ' Kopie'), ett numeriskt inklistringssuffix eller delar namn med ett annat objekt på samma Layout. Namngivna objekt refereras från skript och beräkningar; kopieringsrester träffar fel objekt eller inget alls. Numeriska suffix kan också vara avsiktliga — kontrollera före namnbyte.\n\nBaserad på fmCheckMate-kontrollen ”Copied Object Name” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy-suffix": "Objektnamnet bär ett kopieringssuffix — troligen en inklistringsrest",
+    "messages.duplicate-name": "Objektnamnet förekommer flera gånger på denna Layout",
+    "messages.numeric-suffix": "Objektnamnet slutar på ett numeriskt suffix — möjligen en inklistringsrest, möjligen avsiktlig namngivning"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Kopieringssuffix",
+    "summary_kpi.props.items[2].label": "Numeriskt suffix",
+    "summary_kpi.props.items[3].label": "Dubbla namn",
+    "findings_card.props.title": "Kopierat objektnamn",
+    "findings_table.props.searchPlaceholder": "Sök fil, Layout eller objekt…",
+    "findings_table.props.empty.message": "Inga kopierade eller dubbla objektnamn hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Orsak",
+    "reason_filter.props.options[0].label": "alla orsaker",
+    "reason_filter.props.options[1].label": "kopieringssuffix",
+    "reason_filter.props.options[2].label": "numeriskt suffix",
+    "reason_filter.props.options[3].label": "dubbla namn",
+    "object_type_select.props.label": "Objekttyp",
+    "object_type_select.props.emptyOptionLabel": "alla objekttyper",
+    "findings_table.props.columns[7].label": "Bredd",
+    "findings_table.props.columns[8].label": "Höjd"
+  }
+}

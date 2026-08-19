@@ -45,7 +45,7 @@ export function ResultsRunControl({ node }: PrimitiveProps) {
 
   return (
     <span className="dash-results-run">
-      <button type="button" className="dash-folderbar__runall" onClick={run} disabled={busy}>
+      <button type="button" className="dash-results-run__btn" onClick={run} disabled={busy}>
         {busy
           ? (t('dashboard:folderNav.running', { defaultValue: 'läuft…' }) as string)
           : label}

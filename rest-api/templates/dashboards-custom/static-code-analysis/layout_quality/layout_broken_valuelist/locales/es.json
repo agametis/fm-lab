@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Referencia de lista de valores rota",
+    "description": "Regla de calidad de Layout — un objeto de layout hace referencia a una lista de valores que ya no existe en su archivo. La resolución usa el ID de la lista, no el nombre, por lo que las listas renombradas no se reportan.\n\nBasado en la comprobación de fmCheckMate «Broken Value List <Missing>» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-valuelist": "La lista de valores ya no existe en este archivo"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Layouts afectados",
+    "summary_kpi.props.items[2].label": "Archivos afectados",
+    "findings_card.props.title": "Referencia de lista de valores rota",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, Layout u objeto…",
+    "findings_table.props.empty.message": "No se encontraron referencias de listas de valores rotas.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Lista de valores",
+    "findings_table.props.columns[7].label": "Ancho",
+    "findings_table.props.columns[8].label": "Alto"
+  }
+}

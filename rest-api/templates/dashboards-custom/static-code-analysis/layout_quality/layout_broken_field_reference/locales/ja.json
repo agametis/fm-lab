@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "壊れたフィールド参照",
+    "description": "Layout 品質ルール — レイアウトオブジェクトが、存在しないフィールドまたはテーブルオカレンスを参照しています。解決は UUID ではなく数値 ID（対象テーブル内のフィールド ID、ファイル内のテーブルオカレンス ID）で行います。ファイル間参照はフィールドが健全でも古い UUID を保持していることが多く、FileMaker は実行時に ID で解決するためです。対象ファイルがカタログにないオブジェクトは検証不能としてスキップし、コンテナオブジェクトはその XML に子の markup を含むため除外します。\n\nfmCheckMate チェック「Broken Field」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-field": "フィールドは対象テーブルに存在しません",
+    "messages.missing-to": "テーブルオカレンスはこのファイルに存在しません"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象 Layout 数",
+    "summary_kpi.props.items[2].label": "対象ファイル数",
+    "findings_card.props.title": "壊れたフィールド参照",
+    "findings_table.props.searchPlaceholder": "ファイル、Layout、オブジェクトを検索…",
+    "findings_table.props.empty.message": "壊れたフィールド参照は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "オブジェクトタイプ",
+    "findings_table.props.columns[3].label": "オブジェクト",
+    "findings_table.props.columns[4].label": "フィールド",
+    "findings_table.props.columns[5].label": "テーブルオカレンス",
+    "findings_table.props.columns[8].label": "幅",
+    "findings_table.props.columns[9].label": "高さ"
+  }
+}

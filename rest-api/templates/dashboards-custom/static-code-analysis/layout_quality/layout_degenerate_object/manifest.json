@@ -1,0 +1,126 @@
+{
+  "id": "layout_degenerate_object",
+  "version": "1.0.0",
+  "title": "Degenerate layout object",
+  "description": "Layout-quality rule — a layout object is degenerate. Text objects without any text, objects with zero width or height, and objects below the minimum size in both dimensions (width/height sliders, default 4 px each). Lines are excluded — zero extent is their normal shape. Tiny empty texts are often used as spacers; review before deleting.",
+  "author": "fm-lab rules",
+  "icon": "minimize-2",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "layout_quality",
+    "rationale": "Zero-size and sub-minimum objects are invisible in Layout mode yet still render, evaluate hide conditions and take part in the tab order. Empty text objects are usually paste or refactoring leftovers.",
+    "remediation": "Delete degenerate objects — but check tiny empty texts first, they are sometimes used deliberately as spacers.",
+    "meta": {
+      "name": "Degenerate layout object",
+      "author": "fm-lab rules",
+      "source": "fm-lab feature request",
+      "url": null,
+      "description": "Layout-quality rule — a layout object is degenerate. Text objects without any text, objects with zero width or height, and objects below the minimum size in both dimensions (slider, default 4 px). Lines are excluded — zero extent is their normal shape. Tiny empty texts are often used as spacers; review before deleting.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fm-lab",
+          "rule": "User feature request — layout object quality",
+          "url": null
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Degenerate layout object"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    },
+    {
+      "id": "object_types",
+      "source": "bundle:data/object_types.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    },
+    {
+      "name": "min_w",
+      "type": "number",
+      "required": false,
+      "description": "Minimum object width in px (header slider; default 4)."
+    },
+    {
+      "name": "min_h",
+      "type": "number",
+      "required": false,
+      "description": "Minimum object height in px (header slider; default 4)."
+    },
+    {
+      "name": "defect",
+      "type": "string",
+      "required": false,
+      "description": "Defect-class filter chip (zero-size, empty-text, undersized); unset = all."
+    },
+    {
+      "name": "object_type",
+      "type": "string",
+      "required": false,
+      "description": "Layout-object-type filter select; unset = all."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "zero-size": "Object has zero width or height",
+    "empty-text": "Text object contains no text",
+    "undersized": "Object is smaller than {min_w}×{min_h} px (width×height)"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Indice minimo con indicizzazione automatica attiva",
+    "description": "Regola di prestazioni — l'indice di un campo è impostato su «Minimo» mentre l'indicizzazione automatica è ancora attiva. Minimo mantiene solo l'indice delle parole e scarta quello dei valori, ma con l'indicizzazione automatica FileMaker ricostruisce comunque ciò che serve a una ricerca. L'impostazione non risparmia nulla di prevedibile e di solito documenta un indice svuotato una volta e mai più riconsiderato.\n\nBasato sul controllo fmCheckMate «ListFieldsWithIndexMinimalLocked» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.index-minimal-locked": "L'indice è su Minimo mentre l'indicizzazione automatica è attiva"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Tabelle interessate",
+    "summary_kpi.props.items[2].label": "File interessati",
+    "findings_card.props.title": "Indice minimo con indicizzazione automatica attiva",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tabella",
+    "findings_table.props.columns[2].label": "Campo",
+    "findings_table.props.columns[3].label": "Tipo di campo",
+    "findings_table.props.columns[4].label": "Tipo di dati",
+    "findings_table.props.searchPlaceholder": "Cerca file, tabella o campo…",
+    "findings_table.props.empty.message": "Nessun campo con indice minimo e indicizzazione automatica attiva."
+  }
+}

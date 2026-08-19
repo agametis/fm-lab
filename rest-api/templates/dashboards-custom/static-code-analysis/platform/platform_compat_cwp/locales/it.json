@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilità di piattaforma: Custom Web Publishing",
-  "analysis.defaultResult.meaning": "Passi nell'ambito non supportati o supportati solo parzialmente su Custom Web Publishing"
- }
+  "manifest": {
+    "title": "Compatibilità di piattaforma: Custom Web Publishing",
+    "analysis.defaultResult.meaning": "Passi nell'ambito non supportati o supportati solo parzialmente su Custom Web Publishing"
+  },
+  "layout": {}
 }

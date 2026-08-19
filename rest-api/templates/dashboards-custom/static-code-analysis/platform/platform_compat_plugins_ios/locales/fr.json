@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilité des plug-ins : FileMaker Go (iOS)",
-  "analysis.defaultResult.meaning": "Appels de fonctions de plug-in du périmètre qui ne s'exécutent pas sur FileMaker Go (iOS)"
- }
+  "manifest": {
+    "title": "Compatibilité des plug-ins : FileMaker Go (iOS)",
+    "analysis.defaultResult.meaning": "Appels de fonctions de plug-in du périmètre qui ne s'exécutent pas sur FileMaker Go (iOS)"
+  },
+  "layout": {}
 }

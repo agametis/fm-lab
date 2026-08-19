@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Appel de fonction de plug-in obsolète",
-  "analysis.defaultResult.meaning": "Appels de fonctions de plug-in du périmètre dont la fonction est marquée obsolète dans la documentation de l'éditeur"
- }
+  "manifest": {
+    "title": "Appel de fonction de plug-in obsolète",
+    "analysis.defaultResult.meaning": "Appels de fonctions de plug-in du périmètre dont la fonction est marquée obsolète dans la documentation de l'éditeur"
+  },
+  "layout": {}
 }

@@ -1,10 +1,9 @@
 {
   "manifest": {
     "title": "Healthchecks",
-    "description": "Visão geral de saúde de toda a solução como consumidor puro da camada de resultados (Result Envelope v1): contagem de regras por estado sobre os dashboards de regras de análise estática e integridade de metadados, agrupados por rubrica; cada linha leva ao seu dashboard de regra. Lê apenas o cache de resultados do servidor — nunca executa SQL de regras ao carregar a página; entradas pendentes ainda não foram executadas contra o catálogo atual e permanecem visíveis até uma execução explícita. Deliberadamente NÃO carrega declaração de resultado própria (consumidor, não regra — sem chip por design)."
+    "description": "Visão geral de saúde de toda a solução como consumidor puro da camada de resultados: contagem por estado sobre os dashboards de regras, agrupados por rubrica; cada linha leva ao seu dashboard. Lê apenas o cache de resultados do servidor."
   },
   "layout": {
-    "results_kpi_card.props.subtitle": "Resultados de regras da camada de resultados compartilhada — calculados sob demanda, em cache por fingerprint do catálogo. Regras pendentes ainda não foram executadas contra o catálogo atual; use «Executar todas as regras».",
     "results_kpi_strip.props.items[0].label": "Regras",
     "results_kpi_strip.props.items[1].label": "Erros",
     "results_kpi_strip.props.items[2].label": "Avisos",
@@ -25,6 +24,8 @@
     "rp_unused_code_list.props.empty.message": "Nada a relatar.",
     "rp_code_style_card.props.title": "Estilo de código",
     "rp_code_style_list.props.empty.message": "Nada a relatar.",
+    "rp_layout_quality_card.props.title": "Qualidade do Layout",
+    "rp_layout_quality_list.props.empty.message": "Nada a relatar.",
     "rp_documentation_card.props.title": "Documentação",
     "rp_documentation_list.props.empty.message": "Nada a relatar.",
     "rp_best_practices_card.props.title": "Boas práticas",
@@ -32,6 +33,8 @@
     "rp_platform_card.props.title": "Compatibilidade de plataforma",
     "rp_platform_list.props.empty.message": "Nada a relatar.",
     "rp_metadata_integrity_card.props.title": "Integridade de metadados",
-    "rp_metadata_integrity_list.props.empty.message": "Nada a relatar."
+    "rp_metadata_integrity_list.props.empty.message": "Nada a relatar.",
+    "rp_developer_workflow_card.props.title": "Fluxo de trabalho do desenvolvedor",
+    "rp_developer_workflow_list.props.empty.message": "Nada a relatar."
   }
 }

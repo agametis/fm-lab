@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Répétition de champ hors limites",
+    "description": "Règle de qualité de Layout — un objet de layout affiche une répétition de champ supérieure au nombre de répétitions réellement définies. L'objet reste vide à l'exécution ; la définition du champ a généralement été réduite après coup.\n\nD’après le contrôle fmCheckMate « Field repetition out of range » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.out-of-range": "L'objet affiche la répétition {repetition}, le champ n'en a que {max_repetitions}"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Layouts concernés",
+    "summary_kpi.props.items[2].label": "Fichiers concernés",
+    "findings_card.props.title": "Répétition de champ hors limites",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un Layout ou un objet…",
+    "findings_table.props.empty.message": "Aucune répétition de champ hors limites trouvée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Type d'objet",
+    "findings_table.props.columns[3].label": "Objet",
+    "findings_table.props.columns[4].label": "Champ",
+    "findings_table.props.columns[5].label": "Répétition",
+    "findings_table.props.columns[6].label": "Répétitions max."
+  }
+}

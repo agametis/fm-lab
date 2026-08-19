@@ -1,0 +1,97 @@
+{
+  "id": "layout_classic_theme",
+  "version": "1.1.0",
+  "title": "Layout uses the Classic theme",
+  "description": "Layout-quality rule — a layout still uses the deprecated Classic theme. Classic layouts render with legacy metrics, miss modern style features and slow down WebDirect.\n\nBased on the fmCheckMate check \"Object with classic style\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "palette",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "layout_quality",
+    "rationale": "The Classic theme is deprecated since FileMaker 12 — it renders with legacy metrics, supports no modern styles and slows WebDirect rendering.",
+    "remediation": "Migrate the layout to a current theme and re-apply styles deliberately; check the layout visually afterwards.",
+    "meta": {
+      "name": "Layout uses the Classic theme",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Layout-quality rule — a layout still uses the deprecated Classic theme. Classic layouts render with legacy metrics, miss modern style features and slow down WebDirect.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportObjectsWithClassicStyle)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Layout uses the Classic theme"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "classic": "Layout uses the deprecated Classic theme"
+  }
+}

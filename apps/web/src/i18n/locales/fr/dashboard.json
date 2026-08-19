@@ -168,5 +168,9 @@
     },
     "noFilterMatches": "Aucune entrée avec cet état dans cette rubrique.",
     "openFolder": "Ouvrir le dossier"
+  },
+  "featured": {
+    "ruleCount_one": "{{count}} règle",
+    "ruleCount_other": "{{count}} règles"
   }
 }

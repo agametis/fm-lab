@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Calcul non mémorisé avec aller-retour vers l'hôte",
+    "description": "Règle de performance — une rubrique de calcul non mémorisée appelle Get(CurrentHostTimestamp) et figure sur des modèles. Claris documente que chaque affichage d'une telle rubrique déclenche un accès réseau supplémentaire vers l'hôte."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Placements sur modèles",
+    "summary_kpi.props.items[2].label": "Fichiers concernés",
+    "findings_card.props.title": "Calcul non mémorisé avec aller-retour vers l'hôte",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, une table ou une rubrique…",
+    "findings_table.props.empty.message": "Aucun calcul non mémorisé affiché n'appelle Get(CurrentHostTimestamp).",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Table",
+    "findings_table.props.columns[2].label": "Rubrique",
+    "findings_table.props.columns[3].label": "Modèles",
+    "findings_table.props.columns[4].label": "Placements",
+    "findings_table.props.columns[5].label": "Sur modèles en liste"
+  }
+}

@@ -19,7 +19,6 @@
     "findings_table.props.columns[4].label": "Benötigt",
     "findings_table.props.columns[5].label": "Installiert",
     "findings_table.props.columns[6].label": "Via Custom Function",
-    "findings_table.props.columns[7].label": "Meldung",
     "findings_table.props.empty.message": "Keine Prüfung aktiv — im Kopfbereich eine installierte Plugin-Version wählen, um die Pflicht zu validieren (neutraler Eintrag = nur Inventar).",
     "by_file_card.props.title": "Pflicht je Datei",
     "by_file_table.props.columns[0].label": "Datei",

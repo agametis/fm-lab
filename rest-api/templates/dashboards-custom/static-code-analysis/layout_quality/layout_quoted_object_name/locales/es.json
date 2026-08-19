@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "Nombre de objeto entre comillas",
+    "description": "Regla de calidad de Layout — el nombre de un objeto empieza y termina con comillas. Casi siempre un descuido al pegar; los nombres con comillas rompen los accesos por nombre como GetLayoutObjectAttribute o Ir al objeto.\n\nBasado en la comprobación de fmCheckMate «Quoted Object Name» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.quoted-name": "El nombre del objeto está entre comillas literales — probablemente pegado por accidente"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Layouts afectados",
+    "summary_kpi.props.items[2].label": "Archivos afectados",
+    "findings_card.props.title": "Nombre de objeto entre comillas",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, Layout u objeto…",
+    "findings_table.props.empty.message": "No se encontraron nombres de objeto entre comillas.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[6].label": "Ancho",
+    "findings_table.props.columns[7].label": "Alto"
+  }
+}

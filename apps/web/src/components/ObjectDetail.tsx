@@ -66,8 +66,9 @@ const EmbeddedLayoutView: React.FC<{
   uuid: string;
   highlightUuids?: Set<string>;
   onClearRef?: () => void;
+  onLiveMatchCount?: (count: number) => void;
   layoutCanvasRef?: React.Ref<LayoutCanvasHandle>;
-}> = ({ uuid, highlightUuids, onClearRef, layoutCanvasRef }) => {
+}> = ({ uuid, highlightUuids, onClearRef, onLiveMatchCount, layoutCanvasRef }) => {
   const { t } = useTranslation(['common', 'detail']);
   const currentFile = useCurrentFile();
   const { data, loading, error } = useLayoutData(uuid, currentFile);
@@ -133,6 +134,7 @@ const EmbeddedLayoutView: React.FC<{
             data={data}
             externalMatchUuids={highlightUuids}
             onClearRef={onClearRef}
+            onLiveMatchCount={onLiveMatchCount}
           />
         </div>
       ) : (
@@ -268,6 +270,7 @@ export const ObjectDetail: React.FC<ObjectDetailProps> = ({
         uuid={uuid}
         highlightUuids={highlightUuids}
         onClearRef={onClearRef}
+        onLiveMatchCount={onLiveMatchCount}
         layoutCanvasRef={layoutCanvasRef}
       />
     );

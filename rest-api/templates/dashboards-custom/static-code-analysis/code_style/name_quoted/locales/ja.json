@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "引用符で囲まれたオブジェクト名",
+    "description": "コードスタイルルール — オブジェクト名が二重引用符で始まり、二重引用符で終わっています。ほぼ確実に計算式からコピーした名前をそのまま貼り付けたものです。引用符は名前の一部となるため、名前による参照はすべて引用符込みで書く必要があります。\n\nfmCheckMate チェック「Quoted Object Name」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.quoted-name": "名前が引用符で囲まれています"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "オブジェクトタイプ",
+    "summary_kpi.props.items[2].label": "対象ファイル",
+    "findings_card.props.title": "引用符で囲まれたオブジェクト名",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "オブジェクトタイプ",
+    "findings_table.props.columns[2].label": "オブジェクト",
+    "findings_table.props.searchPlaceholder": "ファイル・オブジェクトタイプ・名前を検索…",
+    "findings_table.props.empty.message": "引用符で囲まれたオブジェクト名はありません。"
+  }
+}

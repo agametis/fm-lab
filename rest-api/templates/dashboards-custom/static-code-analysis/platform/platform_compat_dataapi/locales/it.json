@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilità di piattaforma: FileMaker Data API",
-  "analysis.defaultResult.meaning": "Passi nell'ambito non supportati o supportati solo parzialmente su FileMaker Data API"
- }
+  "manifest": {
+    "title": "Compatibilità di piattaforma: FileMaker Data API",
+    "analysis.defaultResult.meaning": "Passi nell'ambito non supportati o supportati solo parzialmente su FileMaker Data API"
+  },
+  "layout": {}
 }

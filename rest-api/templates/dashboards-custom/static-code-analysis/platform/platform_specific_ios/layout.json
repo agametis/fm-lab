@@ -161,10 +161,6 @@
                   "label": "Uses",
                   "align": "right",
                   "format": "number"
-                },
-                {
-                  "field": "message",
-                  "label": "Message"
                 }
               ],
               "onRowClick": {

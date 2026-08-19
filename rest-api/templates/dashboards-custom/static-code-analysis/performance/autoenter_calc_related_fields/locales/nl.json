@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Auto-invoerberekening die relaties kruist",
+    "description": "Prestatieregel — auto-invoerberekeningen die gerelateerde velden lezen, doorlopen relaties bij elke schrijfactie van de record. Over WAN kan elke doorloop extra roundtrips bij invoer betekenen."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken tabellen",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "Auto-invoerberekening die relaties kruist",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, tabel of veld…",
+    "findings_table.props.empty.message": "Geen auto-invoerberekening leest gerelateerde velden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Tabel",
+    "findings_table.props.columns[2].label": "Veld",
+    "findings_table.props.columns[3].label": "Gerelateerde verwijzingen",
+    "findings_table.props.columns[4].label": "Formule (begin)"
+  }
+}

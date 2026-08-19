@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "本地 CSS 覆盖",
+    "description": "Layout 质量指标 — 有多少对象携带本地 CSS，而不是从主题继承外观。少量属正常；占比过高说明主题已无法统一控制外观，任何视觉调整都必须逐个对象进行。这是一个比率仪表板：KPI 给出整个方案的占比，表格列出超过阈值的 Layout 而非单个对象。\n\n基于 fmCheckMate 检查“LocalCSS” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.local-css": "此 Layout 的 {objects_total} 个对象中有 {objects_with_css} 个携带本地 CSS（{share_pct} %）"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "布局对象数",
+    "summary_kpi.props.items[1].label": "含本地 CSS",
+    "summary_kpi.props.items[2].label": "占比 %",
+    "summary_kpi.props.items[3].label": "列出的 Layout",
+    "findings_card.props.title": "本地 CSS 覆盖",
+    "findings_table.props.searchPlaceholder": "搜索文件、Layout 或对象…",
+    "findings_table.props.empty.message": "没有 Layout 达到设定的本地 CSS 占比。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "对象数",
+    "findings_table.props.columns[3].label": "含本地 CSS",
+    "findings_table.props.columns[4].label": "占比 %",
+    "min_share_slider.props.label": "最低占比"
+  }
+}

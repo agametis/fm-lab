@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Objekt utanför sin förälder",
+    "description": "Layoutkvalitetsregel — ett nästlat objekt ligger helt eller delvis utanför gränserna för sin förälder (portal, flik-/skjutpanel, grupp). Sådana objekt klipps eller är osynliga vid körning — oftast rester efter att föräldern flyttats eller storleksändrats. Portalens rullningslist (19 px) tolereras; popover-paneler och linjer med nollhöjd på kanten är undantagna.\n\nBaserad på fmCheckMate-kontrollen ”Lost Object (In Container)” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.completely": "Objektet ligger helt utanför sin förälder ({parent})",
+    "messages.partially": "Objektet sticker ut utanför sin förälder ({parent})"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Helt utanför",
+    "summary_kpi.props.items[2].label": "Delvis utanför",
+    "summary_kpi.props.items[3].label": "Berörda Layouter",
+    "findings_card.props.title": "Objekt utanför sin förälder",
+    "findings_table.props.searchPlaceholder": "Sök fil, Layout eller objekt…",
+    "findings_table.props.empty.message": "Inga objekt utanför sin förälder hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Förälder",
+    "findings_table.props.columns[5].label": "Omfattning",
+    "extent_filter.props.options[0].label": "alla",
+    "extent_filter.props.options[1].label": "helt utanför",
+    "extent_filter.props.options[2].label": "delvis utanför",
+    "object_type_select.props.label": "Objekttyp",
+    "object_type_select.props.emptyOptionLabel": "alla objekttyper",
+    "findings_table.props.columns[8].label": "Bredd",
+    "findings_table.props.columns[9].label": "Höjd"
+  }
+}

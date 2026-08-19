@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Struttura dei commenti interrotta",
+    "description": "Regola di rischio errore — una formula contiene marcatori di commento che non possono annidarsi: un secondo /* dentro un commento aperto, un */ di troppo dopo la chiusura del blocco o un commento di riga // attaccato a un /* di apertura. I commenti FileMaker non si annidano, perciò parti della formula finiscono dentro o fuori dal commento contro le intenzioni.\n\nBasato sul controllo fmCheckMate «Broken Calculation /*Commented Out*/» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.nested-open": "Un commento si apre dentro un commento aperto",
+    "messages.double-close": "Un commento viene chiuso due volte",
+    "messages.line-in-block": "Un commento di riga si trova dentro un blocco di commento"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Apertura annidata",
+    "summary_kpi.props.items[2].label": "Doppia chiusura",
+    "summary_kpi.props.items[3].label": "File interessati",
+    "findings_card.props.title": "Struttura dei commenti interrotta",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tipo di oggetto",
+    "findings_table.props.columns[2].label": "Oggetto",
+    "findings_table.props.columns[3].label": "Slot",
+    "findings_table.props.columns[4].label": "Posizione",
+    "findings_table.props.columns[5].label": "Difetto",
+    "findings_table.props.searchPlaceholder": "Cerca file, oggetto o formula…",
+    "findings_table.props.empty.message": "Nessuna struttura di commento interrotta trovata."
+  }
+}

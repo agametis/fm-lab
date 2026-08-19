@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Nom avec suffixe de duplication",
+    "description": "Règle de style — un nom d'objet porte encore le suffixe que FileMaker ajoute lors d'une duplication. Les suffixes de copie (Copy / copy / Kopie) constituent l'ensemble par défaut ; la classe numérique — un nom se terminant par une espace et jusqu'à quatre chiffres — occupe volontairement une puce distincte, car d'innombrables noms voulus sont construits ainsi.\n\nD’après le contrôle fmCheckMate « Copied Function Name » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy": "Le nom porte encore le suffixe de duplication de FileMaker",
+    "messages.numeric": "Le nom se termine par un nombre — peut-être un doublon jamais renommé"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Suffixe de copie",
+    "summary_kpi.props.items[2].label": "Suffixe numérique",
+    "summary_kpi.props.items[3].label": "Fichiers concernés",
+    "findings_card.props.title": "Nom avec suffixe de duplication",
+    "suffix_kind_filter.props.options[0].label": "les deux",
+    "suffix_kind_filter.props.options[1].label": "Suffixe de copie",
+    "suffix_kind_filter.props.options[2].label": "Suffixe numérique",
+    "object_type_select.props.label": "Type d'objet",
+    "object_type_select.props.emptyOptionLabel": "tous les types",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Type d'objet",
+    "findings_table.props.columns[2].label": "Objet",
+    "findings_table.props.columns[3].label": "Suffixe",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un type d'objet ou un nom…",
+    "findings_table.props.empty.message": "Aucun nom avec suffixe de duplication trouvé."
+  }
+}

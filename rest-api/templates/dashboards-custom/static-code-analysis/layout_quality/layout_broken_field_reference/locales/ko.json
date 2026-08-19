@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "끊어진 필드 참조",
+    "description": "Layout 품질 규칙 — 레이아웃 개체가 더 이상 존재하지 않는 필드 또는 테이블 어커런스를 참조합니다. 확인은 UUID가 아니라 숫자 ID(대상 테이블의 필드 ID, 파일 내 테이블 어커런스 ID)로 수행합니다. 파일 간 참조는 필드가 멀쩡해도 오래된 UUID를 지니는 경우가 흔하며 FileMaker는 런타임에 ID로 확인하기 때문입니다. 대상 파일이 카탈로그에 없는 개체는 검증 불가로 건너뛰고, 컨테이너 개체는 XML에 자식 마크업이 포함되므로 제외합니다.\n\nfmCheckMate 검사 “Broken Field” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-field": "필드가 대상 테이블에 더 이상 없습니다",
+    "messages.missing-to": "테이블 어커런스가 이 파일에 더 이상 없습니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 Layout",
+    "summary_kpi.props.items[2].label": "영향받는 파일",
+    "findings_card.props.title": "끊어진 필드 참조",
+    "findings_table.props.searchPlaceholder": "파일, Layout 또는 개체 검색…",
+    "findings_table.props.empty.message": "끊어진 필드 참조를 찾지 못했습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "개체 유형",
+    "findings_table.props.columns[3].label": "개체",
+    "findings_table.props.columns[4].label": "필드",
+    "findings_table.props.columns[5].label": "테이블 어커런스",
+    "findings_table.props.columns[8].label": "너비",
+    "findings_table.props.columns[9].label": "높이"
+  }
+}

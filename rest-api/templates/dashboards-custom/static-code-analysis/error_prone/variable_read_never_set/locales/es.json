@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Variable leída y nunca asignada",
+    "description": "Regla de propensión a errores: una variable se lee aunque nada en el catálogo la escriba. O bien se renombró o eliminó el lado que escribía, o el valor debe llegar desde fuera de los archivos exportados. Las definiciones Let() quedan excluidas: se definen y se leen dentro de la misma fórmula y dominarían el resultado.\n\nBasado en la comprobación de fmCheckMate «ListVarsUndefined» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.read-never-set": "La variable se lee pero nunca se escribe"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Locales",
+    "summary_kpi.props.items[2].label": "Globales",
+    "summary_kpi.props.items[3].label": "Guiones afectados",
+    "summary_kpi.props.items[4].label": "Archivos afectados",
+    "findings_card.props.title": "Variable leída y nunca asignada",
+    "variable_scope_filter.props.options[0].label": "todos los ámbitos",
+    "variable_scope_filter.props.options[1].label": "Locales",
+    "variable_scope_filter.props.options[2].label": "Globales",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Variable",
+    "findings_table.props.columns[2].label": "Ámbito",
+    "findings_table.props.columns[3].label": "Visto primero en",
+    "findings_table.props.columns[4].label": "Lecturas",
+    "findings_table.props.columns[5].label": "Asignada en otros archivos",
+    "findings_table.props.columns[6].label": "Evidencia",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, variable o guion…",
+    "findings_table.props.empty.message": "No se encontraron variables que se lean sin escribirse nunca."
+  }
+}

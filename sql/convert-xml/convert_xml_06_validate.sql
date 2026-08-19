@@ -108,9 +108,13 @@ SELECT 'grants_privilege_links',
          WHERE PrivilegeSet_IDs IS NOT NULL AND len(PrivilegeSet_IDs) > 0),
        (SELECT COUNT(*) FROM ObjectLinks WHERE Link_Role = 'grants_privilege')
 UNION ALL
+-- Hinweis uses_theme: Quelle ist die AUFGELÖSTE Theme-UUID (P3/A.11), nicht die
+-- rohe L_Theme_UUID — SaXML kodiert Classic als leere <LayoutThemeReference/>,
+-- die Rohspalte ist dort NULL und unterzählte die Erwartung massiv.
 SELECT 'uses_theme_links',
-       (SELECT COUNT(*) FROM Layouts WHERE L_Theme_UUID IS NOT NULL
-         AND (Folder_Type IS NULL OR Folder_Type = 'False')),
+       (SELECT COUNT(*) FROM Layouts WHERE L_Theme_Resolved_UUID IS NOT NULL
+         AND (Folder_Type IS NULL OR Folder_Type = 'False')
+         AND NOT COALESCE(Is_Separator, FALSE)),
        (SELECT COUNT(*) FROM ObjectLinks WHERE Link_Role = 'uses_theme');
 
 -- Rollen-Registry-Vollständigkeit: jede in ObjectLinks aktive Rolle muss

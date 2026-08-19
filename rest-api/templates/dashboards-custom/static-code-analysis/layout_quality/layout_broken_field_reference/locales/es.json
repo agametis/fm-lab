@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Referencia de campo rota",
+    "description": "Regla de calidad de Layout — un objeto de layout hace referencia a un campo u ocurrencia de tabla que ya no existe. La resolución usa los ID numéricos (ID de campo en la tabla destino, ID de ocurrencia de tabla en el archivo), nunca los UUID: las referencias entre archivos suelen llevar un UUID obsoleto aunque el campo esté intacto, y FileMaker resuelve por ID en ejecución. Se omiten los objetos cuyo archivo destino no está en el catálogo, y se excluyen los objetos contenedores porque su XML incluye el marcado de sus hijos.\n\nBasado en la comprobación de fmCheckMate «Broken Field» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-field": "El campo ya no existe en la tabla destino",
+    "messages.missing-to": "La ocurrencia de tabla ya no existe en este archivo"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Layouts afectados",
+    "summary_kpi.props.items[2].label": "Archivos afectados",
+    "findings_card.props.title": "Referencia de campo rota",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, Layout u objeto…",
+    "findings_table.props.empty.message": "No se encontraron referencias de campo rotas.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Campo",
+    "findings_table.props.columns[5].label": "Ocurrencia de tabla",
+    "findings_table.props.columns[8].label": "Ancho",
+    "findings_table.props.columns[9].label": "Alto"
+  }
+}

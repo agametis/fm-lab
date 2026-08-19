@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Nombre de objeto con espacios en los extremos",
+    "description": "Regla de estilo: un nombre de objeto empieza o termina con un espacio o tabulador. El carácter es invisible en todas las listas de FileMaker pero forma parte del nombre: el acceso por nombre debe reproducirlo con exactitud y dos nombres aparentemente iguales se ordenan por separado. Cubre los objetos de esquema con nombre propio; los objetos de presentación y las variables tienen sus propias reglas y los nombres de relación los deriva FileMaker.\n\nBasado en la comprobación de fmCheckMate «Script Name ends in white space» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.trailing": "El nombre termina con un espacio",
+    "messages.leading": "El nombre empieza con un espacio",
+    "messages.both": "El nombre empieza y termina con un espacio"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Al final",
+    "summary_kpi.props.items[2].label": "Al principio",
+    "summary_kpi.props.items[3].label": "Ambos extremos",
+    "summary_kpi.props.items[4].label": "Archivos afectados",
+    "findings_card.props.title": "Nombre de objeto con espacios en los extremos",
+    "defect_filter.props.options[0].label": "todos",
+    "defect_filter.props.options[1].label": "Al final",
+    "defect_filter.props.options[2].label": "Al principio",
+    "defect_filter.props.options[3].label": "Ambos extremos",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Tipo de objeto",
+    "findings_table.props.columns[2].label": "Nombre (entre corchetes)",
+    "findings_table.props.columns[3].label": "Defecto",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, tipo de objeto o nombre…",
+    "findings_table.props.empty.message": "No se encontraron nombres con espacios en los extremos."
+  }
+}

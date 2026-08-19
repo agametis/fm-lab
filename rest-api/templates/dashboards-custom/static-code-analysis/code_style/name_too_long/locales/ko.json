@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "너무 긴 객체 이름",
+    "description": "코드 스타일 규칙 — 객체 이름이 가독성 임계값(max_len, 기본 80자)을 넘거나 FileMaker의 100자 한계에 정확히 걸려 입력이 조용히 잘렸습니다. 한계에 걸린 이름은 경고로, 나머지는 정보로 보고합니다.\n\nfmCheckMate 검사 “ListNamesWhichAreTooLong” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.too-long": "이름이 설정한 임계값을 넘습니다",
+    "messages.at-limit": "이름이 FileMaker의 100자 한계에 있어 잘렸을 수 있습니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "임계값 초과",
+    "summary_kpi.props.items[2].label": "한계값",
+    "summary_kpi.props.items[3].label": "영향받은 파일",
+    "findings_card.props.title": "너무 긴 객체 이름",
+    "defect_filter.props.options[0].label": "전체",
+    "defect_filter.props.options[1].label": "임계값 초과",
+    "defect_filter.props.options[2].label": "한계값",
+    "max_len_slider.props.label": "이름 길이",
+    "object_type_select.props.label": "객체 유형",
+    "object_type_select.props.emptyOptionLabel": "모든 객체 유형",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "객체 유형",
+    "findings_table.props.columns[2].label": "객체",
+    "findings_table.props.columns[3].label": "길이",
+    "findings_table.props.columns[4].label": "결함",
+    "findings_table.props.searchPlaceholder": "파일, 객체 유형 또는 이름 검색…",
+    "findings_table.props.empty.message": "임계값을 넘는 이름이 없습니다."
+  }
+}

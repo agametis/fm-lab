@@ -10,7 +10,6 @@
     "findings_table.props.searchPlaceholder": "搜索文件、脚本或结果…",
     "findings_table.props.empty.message": "未找到不平衡的 If / End If 块。",
     "findings_table.props.columns[0].label": "文件",
-    "findings_table.props.columns[1].label": "脚本",
-    "findings_table.props.columns[2].label": "结果"
+    "findings_table.props.columns[1].label": "脚本"
   }
 }

@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilidade de plug-in: FileMaker Data API",
-  "analysis.defaultResult.meaning": "Chamadas de funções de plug-in no escopo que não são executadas em FileMaker Data API"
- }
+  "manifest": {
+    "title": "Compatibilidade de plug-in: FileMaker Data API",
+    "analysis.defaultResult.meaning": "Chamadas de funções de plug-in no escopo que não são executadas em FileMaker Data API"
+  },
+  "layout": {}
 }

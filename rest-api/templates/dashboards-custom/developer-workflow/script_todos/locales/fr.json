@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "TO-DO dans les scripts (explorateur)",
+    "description": "Explorateur du travail inachevé dans les commentaires de scripts, selon trois notations (TO DO, FIX IT, TBD). Cliquez sur un nombre pour filtrer la liste. Inventaire et non règle : le bundle ne déclare volontairement aucune valeur de résultat, reste donc hors du bilan de santé et n’affiche pas de pastille — le comptage revient aux règles script_comment_fixme (warning) et script_comment_todo (info)."
+  },
+  "layout": {
+    "todo_kpi_kpistrip.props.items[0].label": "Lignes totales",
+    "todo_kpi_kpistrip.props.items[1].label": "Lignes TO DO",
+    "todo_kpi_kpistrip.props.items[2].label": "Lignes FIX IT",
+    "todo_kpi_kpistrip.props.items[3].label": "Lignes TBD",
+    "todo_kpi_kpistrip.props.items[4].label": "Scripts",
+    "todo_kpi_kpistrip.props.items[5].label": "Fichiers",
+    "todo_lines.props.title": "Lignes de commentaire marquées",
+    "todo_lines_table.props.columns[0].label": "Fichier",
+    "todo_lines_table.props.columns[1].label": "Nom du script",
+    "todo_lines_table.props.columns[2].label": "Motif",
+    "todo_lines_table.props.columns[3].label": "Commentaire",
+    "todo_lines_table.props.searchPlaceholder": "Rechercher dans les commentaires …"
+  }
+}

@@ -12,6 +12,11 @@
     "findings_table.props.columns[0].label": "Fil",
     "findings_table.props.columns[1].label": "Vänster TO",
     "findings_table.props.columns[2].label": "Höger TO",
-    "findings_table.props.columns[3].label": "Sorterad"
+    "findings_table.props.columns[3].label": "Sorterad",
+    "findings_table.props.columns[4].label": "Konsumerande portaler",
+    "findings_table.props.columns[5].label": "Portaler med egen sortering",
+    "consumer_filter_chips.props.options[0].label": "Alla relationer",
+    "consumer_filter_chips.props.options[1].label": "Konsumerande portaler",
+    "consumer_filter_chips.props.options[2].label": "Portaler med egen sortering"
   }
 }

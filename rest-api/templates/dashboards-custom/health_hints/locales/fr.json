@@ -1,10 +1,9 @@
 {
   "manifest": {
     "title": "Healthchecks",
-    "description": "Vue d'ensemble de santé de la solution en pur consommateur de la couche de résultats (Result Envelope v1) : décompte des règles par état sur les tableaux de bord de règles d'analyse statique et d'intégrité des métadonnées, groupés par rubrique, chaque ligne renvoyant vers son tableau de bord de règle. Ne lit que le cache de résultats du serveur — n'exécute jamais le SQL des règles au chargement de la page ; les entrées en attente n'ont pas encore été exécutées sur le catalogue actuel et restent visibles jusqu'à une exécution explicite. Ne porte délibérément AUCUNE déclaration de résultat propre (consommateur, pas une règle — sans puce par conception)."
+    "description": "Vue d'ensemble de santé de la solution en pur consommateur de la couche de résultats : décompte par état sur les tableaux de bord de règles, groupés par rubrique, chaque ligne renvoyant vers son tableau de bord. Ne lit que le cache de résultats du serveur."
   },
   "layout": {
-    "results_kpi_card.props.subtitle": "Résultats des règles issus de la couche de résultats partagée — calculés à la demande, mis en cache par empreinte de catalogue. Les règles en attente n'ont pas encore été exécutées sur le catalogue actuel ; utilisez « Exécuter toutes les règles ».",
     "results_kpi_strip.props.items[0].label": "Règles",
     "results_kpi_strip.props.items[1].label": "Erreurs",
     "results_kpi_strip.props.items[2].label": "Avertissements",
@@ -25,6 +24,8 @@
     "rp_unused_code_list.props.empty.message": "Rien à signaler.",
     "rp_code_style_card.props.title": "Style de code",
     "rp_code_style_list.props.empty.message": "Rien à signaler.",
+    "rp_layout_quality_card.props.title": "Qualité des Layouts",
+    "rp_layout_quality_list.props.empty.message": "Rien à signaler.",
     "rp_documentation_card.props.title": "Documentation",
     "rp_documentation_list.props.empty.message": "Rien à signaler.",
     "rp_best_practices_card.props.title": "Bonnes pratiques",
@@ -32,6 +33,8 @@
     "rp_platform_card.props.title": "Compatibilité des plateformes",
     "rp_platform_list.props.empty.message": "Rien à signaler.",
     "rp_metadata_integrity_card.props.title": "Intégrité des métadonnées",
-    "rp_metadata_integrity_list.props.empty.message": "Rien à signaler."
+    "rp_metadata_integrity_list.props.empty.message": "Rien à signaler.",
+    "rp_developer_workflow_card.props.title": "Flux de travail du développeur",
+    "rp_developer_workflow_list.props.empty.message": "Rien à signaler."
   }
 }

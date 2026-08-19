@@ -1,0 +1,33 @@
+{
+  "manifest": {
+    "title": "退化した Layout オブジェクト",
+    "description": "Layout 品質ルール — オブジェクトが退化しています。テキストのないテキストオブジェクト、幅または高さがゼロのオブジェクト、両方向とも最小サイズ未満のオブジェクト（幅/高さのスライダー、既定 各 4 px）。線は除外します — ゼロの広がりは線の通常の形です。極小の空テキストはスペーサーとして使われることが多いため、削除前に確認してください。",
+    "messages.zero-size": "オブジェクトの幅または高さがゼロです",
+    "messages.empty-text": "テキストオブジェクトにテキストがありません",
+    "messages.undersized": "オブジェクトは {min_w}×{min_h} px（幅×高さ）より小さいです"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "空のテキスト",
+    "summary_kpi.props.items[2].label": "極小",
+    "summary_kpi.props.items[3].label": "サイズゼロ",
+    "min_w_slider.props.label": "最小幅",
+    "min_h_slider.props.label": "最小高さ",
+    "findings_card.props.title": "退化した Layout オブジェクト",
+    "findings_table.props.searchPlaceholder": "ファイル、Layout、オブジェクトを検索…",
+    "findings_table.props.empty.message": "退化したオブジェクトは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "オブジェクトタイプ",
+    "findings_table.props.columns[3].label": "オブジェクト",
+    "findings_table.props.columns[4].label": "欠陥",
+    "defect_filter.props.options[0].label": "すべての欠陥",
+    "defect_filter.props.options[1].label": "空のテキスト",
+    "defect_filter.props.options[2].label": "極小",
+    "defect_filter.props.options[3].label": "サイズゼロ",
+    "object_type_select.props.label": "オブジェクトタイプ",
+    "object_type_select.props.emptyOptionLabel": "すべてのオブジェクトタイプ",
+    "findings_table.props.columns[7].label": "幅",
+    "findings_table.props.columns[8].label": "高さ"
+  }
+}

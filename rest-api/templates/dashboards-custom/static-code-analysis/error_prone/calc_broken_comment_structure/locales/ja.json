@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "壊れたコメント構造",
+    "description": "エラー誘発ルール — 入れ子にできないコメント記号が計算式に含まれています。開いたコメントの中の 2 つ目の /*、閉じた後の余分な */、開始の /* に続く // 行コメントなどです。FileMaker のコメントは入れ子にできないため、意図に反して計算式の一部がコメントの内側や外側に入り込みます。\n\nfmCheckMate チェック「Broken Calculation /*Commented Out*/」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.nested-open": "開いたコメントの中でコメントが開始しています",
+    "messages.double-close": "コメントが二重に終了しています",
+    "messages.line-in-block": "行コメントがコメントブロックの中にあります"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "入れ子の開始",
+    "summary_kpi.props.items[2].label": "二重終了",
+    "summary_kpi.props.items[3].label": "対象ファイル",
+    "findings_card.props.title": "壊れたコメント構造",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "オブジェクトタイプ",
+    "findings_table.props.columns[2].label": "オブジェクト",
+    "findings_table.props.columns[3].label": "スロット",
+    "findings_table.props.columns[4].label": "場所",
+    "findings_table.props.columns[5].label": "不具合",
+    "findings_table.props.searchPlaceholder": "ファイル・オブジェクト・計算式を検索…",
+    "findings_table.props.empty.message": "壊れたコメント構造はありません。"
+  }
+}

@@ -1,8 +1,9 @@
 import React, { useMemo, useRef, useCallback, useState, useEffect, useSyncExternalStore } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useObjectDetail } from '../hooks/useObjectDetail';
 import { useRefOrigin } from '../hooks/useRefOrigin';
+import { useRefContext } from '../hooks/useRefContext';
 import { ObjectHeader } from './ObjectHeader';
 import { PluginPlatformBadge } from './PluginPlatformBadge';
 import { ScriptOsBadge } from './ScriptOsBadge';
@@ -53,7 +54,7 @@ export const DetailView: React.FC = () => {
   // `ref` (Cross-Reference-Origin) muss vor useObjectDetail gelesen werden, weil
   // er als `origin` die operationalen Referenzen eines Pseudo-Aggregats
   // (ScriptStepType) anreichert (Origin_Hit-Markierung der Zielfelder).
-  const [refParam, setRefParam] = useUrlState<string>('ref', '');
+  const [refParam] = useUrlState<string>('ref', '');
   const { object, references, loading, error, ambiguousFiles, retry } = useObjectDetail(uuid, fileParam || null, refParam || null);
   const hierarchyRef = useRef<HierarchyTreeHandle>(null);
   const graphPanelRef = useRef<ObjectGraphPanelHandle>(null);
@@ -82,7 +83,54 @@ export const DetailView: React.FC = () => {
   // destFile skopiert die Destination-Seite (das aktuell geöffnete, klon-
   // aufgelöste Objekt) im Back-Refs-Lookup; der Origin (ref) bleibt downgrade.
   const refOrigin = useRefOrigin(uuid, refParam || null, fileParam || null);
-  const dismissRefOrigin = useCallback(() => setRefParam(''), [setRefParam]);
+
+  // `?marks=` — literale Objekt-UUIDs im Destination-Container, OHNE
+  // Back-References-Auflösung direkt ins Highlight-Set (Mehrfach-Hervorhebung,
+  // z. B. alle Findings einer Regel aus dem Tests-Tab). Kombinierbar mit `ref`:
+  // beide Mengen werden vereinigt.
+  const [marksParam] = useUrlState<string>('marks', '');
+  const highlightUuids = useMemo(() => {
+    if (!marksParam) return refOrigin.matchUuids;
+    const merged = new Set(refOrigin.matchUuids);
+    for (const part of marksParam.split(',')) {
+      const v = part.trim();
+      if (v) merged.add(v);
+    }
+    return merged;
+  }, [refOrigin.matchUuids, marksParam]);
+
+  // Findings-Kontext des auslösenden Klicks: `?ref_src=` (Dashboard-ID) +
+  // `?ref_msgid=` (Message-Token) + `?ref_arg_<name>=` (Interpolation). Die
+  // lokalisierte Message kommt server-seitig aus dem Dashboard-Manifest
+  // (useRefContext); die Pill rendert sie als abgesetzte Quelle-Zeile.
+  const [refSrcParam] = useUrlState<string>('ref_src', '');
+  const [refMsgIdParam] = useUrlState<string>('ref_msgid', '');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const refArgs = useMemo(() => {
+    const args: Record<string, string> = {};
+    for (const [k, v] of searchParams.entries()) {
+      if (k.startsWith('ref_arg_')) args[k.slice('ref_arg_'.length)] = v;
+    }
+    return args;
+  }, [searchParams]);
+  const refContext = useRefContext(refSrcParam || null, refMsgIdParam || null, refArgs);
+
+  // Dismiss räumt Ref UND Kontext-Params atomar in EINEM setSearchParams-Call
+  // — separate useUrlState-Setter würden sich gegenseitig überschreiben
+  // (gleiche Race wie in useLayoutSearch.runUserUpdate dokumentiert).
+  const dismissRefOrigin = useCallback(() => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete('ref');
+      next.delete('ref_src');
+      next.delete('ref_msgid');
+      next.delete('marks');
+      for (const k of Array.from(next.keys())) {
+        if (k.startsWith('ref_arg_')) next.delete(k);
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   // Live-Match-Count aus Token-Container-Viewern (Script / CustomFunction /
   // Field). back_references zählt für diese Container nur 1 Self-Link, daher
@@ -215,7 +263,7 @@ export const DetailView: React.FC = () => {
           <TypeDetail
             objectType={object.Object_Type}
             uuid={object.Object_UUID}
-            highlightUuids={refOrigin.matchUuids}
+            highlightUuids={highlightUuids}
             highlightText={refOrigin.origin?.name ?? null}
             onClearRef={dismissRefOrigin}
             onLiveMatchCount={setLiveMatchCount}
@@ -250,12 +298,14 @@ export const DetailView: React.FC = () => {
       <SubNav breadcrumbs={breadcrumbItems} />
       <StatusBar
         onBack={handleBack}
-        message={refParam ? (
+        message={(refParam || refSrcParam) ? (
           <RefOriginPill
             state={refOrigin}
             rawRef={refParam}
             onDismiss={dismissRefOrigin}
             liveMatchCount={activeTab === 'detail' ? liveMatchCount : undefined}
+            contextState={refContext}
+            contextSrc={refSrcParam || null}
           />
         ) : undefined}
       />

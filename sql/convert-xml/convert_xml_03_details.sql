@@ -1219,3 +1219,57 @@ ALTER TABLE StepsForScripts ADD COLUMN IF NOT EXISTS Opens_Window BOOLEAN;
 UPDATE StepsForScripts
 SET Opens_Window = (Step_ID = 122 OR Step_XML LIKE '%<WindowReference%')
 WHERE Step_ID IN (74, 122);  -- 74 = Go to Related Record, 122 = New Window
+
+
+-- ============================================
+-- A.11: Layouts.L_Theme_Resolved_* — effektives Theme je Layout
+-- ============================================
+-- SaXML kodiert das Classic-Theme als LEERES Element: `<LayoutThemeReference/>`
+-- ohne id/name/UUID/Base. Nur Layouts mit einem NICHT-Classic-Theme tragen das
+-- Attribut-Tripel. P1 bildet das 1:1 ab — L_Theme_ID/_Name/_UUID/_Base bleiben
+-- für jedes Classic-Layout NULL. Ein Konsument, der auf
+-- L_Theme_Name/_Base = 'com.filemaker.theme.classic' prüft, findet deshalb NIE
+-- ein Classic-Layout (die Zeichenkette steht in keinem einzigen Layout-Datensatz);
+-- die uses_theme-Kante (P4) blieb aus demselben Grund für Classic komplett leer,
+-- das Classic-Theme erschien in jeder Datei als „unbenutzt".
+--
+-- Die Deutung „leere Referenz = Classic" ist am Korpus beidseitig verifiziert:
+-- genau die Dateien mit themenlosen Layouts führen com.filemaker.theme.classic
+-- im ThemeCatalog, und Classic wird von keinem Layout je explizit referenziert
+-- (der ThemeCatalog listet nur tatsächlich verwendete Themes).
+--
+-- Die Rohspalten bleiben unangetastet (roh = „was stand im Export"); die
+-- Auflösung kommt in eigene Spalten:
+--   L_Theme_Resolved_Name — effektiver Theme-Name, locale-unabhängig
+--                           (Anzeigename via ThemeCatalog.Theme_Display)
+--   L_Theme_Resolved_UUID — effektive Theme-UUID (für Joins/Kanten)
+-- Nur für echte Layouts belegt — Ordner (Folder_Type 'True'/'Marker') und
+-- Trenner haben nie ein Theme und bleiben NULL.
+--
+-- Theme_ID = 1 ist NICHT verlässlich Classic (im Korpus tragen zwei Dateien dort
+-- ein anderes Theme) — die UUID wird deshalb über den Theme-NAMEN aufgelöst,
+-- nie über die datei-lokale ID. Fehlt der Classic-Eintrag im ThemeCatalog einer
+-- Datei, bleibt die UUID NULL; der Name wird trotzdem gesetzt (die leere
+-- Referenz ist auch ohne Katalogeintrag eindeutig).
+-- Additiv/idempotent analog Opens_Window (A.10).
+
+ALTER TABLE Layouts ADD COLUMN IF NOT EXISTS L_Theme_Resolved_Name VARCHAR;
+ALTER TABLE Layouts ADD COLUMN IF NOT EXISTS L_Theme_Resolved_UUID VARCHAR;
+
+UPDATE Layouts l
+SET L_Theme_Resolved_Name = COALESCE(
+        l.L_Theme_Name,
+        'com.filemaker.theme.classic'
+    ),
+    L_Theme_Resolved_UUID = COALESCE(
+        l.L_Theme_UUID,
+        (SELECT tc.Theme_UUID FROM ThemeCatalog tc
+          WHERE tc.File_Name = l.File_Name
+            AND tc.Theme_Name = 'com.filemaker.theme.classic'
+          LIMIT 1)
+    )
+-- Ordner-/Trenner-Prädikat identisch zur uses_theme-Kante in P4: isFolder liefert
+-- 'True'/'Marker' für Ordner bzw. Trennlinien, echte Layouts sind NULL (oder
+-- 'False', defensiv mitgeführt).
+WHERE (l.Folder_Type IS NULL OR l.Folder_Type = 'False')
+  AND NOT COALESCE(l.Is_Separator, FALSE);

@@ -1,0 +1,120 @@
+{
+  "id": "layout_copied_object_name",
+  "version": "1.0.0",
+  "title": "Copied object name",
+  "description": "Layout-quality rule — a named layout object carries a copy suffix (' Copy', ' Kopie'), a numeric paste suffix, or shares its name with another object on the same layout. Named objects are referenced by scripts and calculations, so leftover copy names hit the wrong object or none at all. Numeric suffixes can also be deliberate naming — verify before renaming.\n\nBased on the fmCheckMate check \"Copied Object Name\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "copy",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "layout_quality",
+    "rationale": "FileMaker appends a copy suffix when pasting a named object onto the same layout. Named objects are referenced by scripts and calculations — a leftover copy name either hijacks a reference or breaks it.",
+    "remediation": "Rename or delete the copied object. Numeric suffixes can be deliberate naming — verify against the referencing scripts before renaming.",
+    "meta": {
+      "name": "Copied object name",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Layout-quality rule — a named layout object carries a copy suffix (' Copy', ' Kopie'), a numeric paste suffix, or shares its name with another object on the same layout. Named objects are referenced by scripts and calculations, so leftover copy names hit the wrong object or none at all. Numeric suffixes can also be deliberate naming — verify before renaming.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportCopiedObjectNames)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        },
+        {
+          "project": "fm-lab",
+          "rule": "User feature request — layout object quality",
+          "url": null
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Copied object name"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    },
+    {
+      "id": "object_types",
+      "source": "bundle:data/object_types.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    },
+    {
+      "name": "reason",
+      "type": "string",
+      "required": false,
+      "description": "Reason filter chip (copy-suffix, numeric-suffix, duplicate-name); unset = all."
+    },
+    {
+      "name": "object_type",
+      "type": "string",
+      "required": false,
+      "description": "Layout-object-type filter select; unset = all."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "copy-suffix": "Object name carries a copy suffix — probably a paste leftover",
+    "duplicate-name": "Object name appears more than once on this layout",
+    "numeric-suffix": "Object name ends in a numeric suffix — possibly a paste leftover, possibly deliberate naming"
+  }
+}

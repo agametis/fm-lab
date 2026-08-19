@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Knop zonder actie",
+    "description": "Layoutkwaliteitsregel — een knop heeft geen scriptaanroep en geen enkelstapsactie. De detectie leest de geserialiseerde actie van het object: een scriptactie verschijnt als scriptverwijzing, een enkelstapsactie als stapelement; een knop zonder beide doet niets bij een klik. In grote oplossingen kan ongeveer 40 % van de knoppen betrokken zijn — beoordeel daarom per context: decoratieve pictogrammen en inactieve knoppenbalksegmenten zijn legitiem, en het contextfilter beperkt de lijst.\n\nGebaseerd op de fmCheckMate-controle “Button Action <Missing>” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.no-action": "De knop heeft geen scriptaanroep en geen enkelstapsactie"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken Layouts",
+    "summary_kpi.props.items[2].label": "Knoppen in bereik",
+    "findings_card.props.title": "Knop zonder actie",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen knoppen zonder actie gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Object",
+    "findings_table.props.columns[3].label": "Context",
+    "findings_table.props.columns[6].label": "Breedte",
+    "findings_table.props.columns[7].label": "Hoogte",
+    "context_select.props.label": "Context",
+    "context_select.props.emptyOptionLabel": "Alle contexten"
+  }
+}

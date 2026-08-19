@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Plug-incompatibiliteit: Custom Web Publishing",
-  "analysis.defaultResult.meaning": "Plug-infunctieaanroepen binnen het bereik die niet werken op Custom Web Publishing"
- }
+  "manifest": {
+    "title": "Plug-incompatibiliteit: Custom Web Publishing",
+    "analysis.defaultResult.meaning": "Plug-infunctieaanroepen binnen het bereik die niet werken op Custom Web Publishing"
+  },
+  "layout": {}
 }

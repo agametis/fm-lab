@@ -618,6 +618,52 @@
   border-color: var(--color-border-strong);
 }
 
+/* Stacked variant: origin row + findings-context row below a divider. The
+   dismiss ✕ pins to the top-right corner instead of flowing in the row. */
+.ref-pill--stacked {
+  display: block;
+  position: relative;
+  padding-right: 2.2rem;
+}
+
+.ref-pill--stacked .ref-pill-dismiss {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.5rem;
+}
+
+.ref-pill-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+
+.ref-pill--stacked .ref-pill-main .ref-pill-count {
+  margin-left: auto;
+}
+
+.ref-pill-context {
+  margin-top: 0.25rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--color-accent-ring);
+  font-size: 0.8rem;
+}
+
+.ref-pill-context-label {
+  color: var(--color-text-muted);
+}
+
+.ref-pill-context-source {
+  font-weight: 600;
+  color: inherit;
+}
+
+.ref-pill-context-message {
+  color: var(--color-text-muted);
+}
+
 /* Tab bar: tab navigation on the left, object actions (fmIDE) on the right.
    Wraps the action button onto its own line when the tabs fill the row. */
 .detail-tab-bar {

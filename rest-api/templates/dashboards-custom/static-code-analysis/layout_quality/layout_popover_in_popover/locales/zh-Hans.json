@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "弹出框中的弹出框",
+    "description": "Layout 质量规则 — 一个弹出框按钮位于另一个弹出框面板内。嵌套弹出框在 FileMaker 中无法可靠工作——打开内层会关闭外层。\n\n基于 fmCheckMate 检查“Popover in popover” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.nested": "弹出框按钮嵌套在另一个弹出框面板内——嵌套弹出框会关闭外层弹出框"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响的 Layout",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "findings_card.props.title": "弹出框中的弹出框",
+    "findings_table.props.searchPlaceholder": "搜索文件、Layout 或对象…",
+    "findings_table.props.empty.message": "未找到嵌套弹出框。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "对象",
+    "findings_table.props.columns[3].label": "部分",
+    "findings_table.props.columns[6].label": "宽度",
+    "findings_table.props.columns[7].label": "高度"
+  }
+}

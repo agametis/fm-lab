@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "Nome di oggetto troppo lungo",
+    "description": "Regola di stile — un nome di oggetto supera la soglia di leggibilità (max_len, valore predefinito 80 caratteri) oppure si trova esattamente sul limite di 100 caratteri di FileMaker, dove l'input è stato troncato in silenzio. I nomi al limite sono segnalati come avviso, gli altri come informazione.\n\nBasato sul controllo fmCheckMate «ListNamesWhichAreTooLong» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.too-long": "Il nome supera la soglia impostata",
+    "messages.at-limit": "Il nome è al limite di 100 caratteri di FileMaker e potrebbe essere stato troncato"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Oltre la soglia",
+    "summary_kpi.props.items[2].label": "Al limite",
+    "summary_kpi.props.items[3].label": "File interessati",
+    "findings_card.props.title": "Nome di oggetto troppo lungo",
+    "defect_filter.props.options[0].label": "tutti",
+    "defect_filter.props.options[1].label": "Oltre la soglia",
+    "defect_filter.props.options[2].label": "Al limite",
+    "max_len_slider.props.label": "Lunghezza del nome",
+    "object_type_select.props.label": "Tipo di oggetto",
+    "object_type_select.props.emptyOptionLabel": "tutti i tipi",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tipo di oggetto",
+    "findings_table.props.columns[2].label": "Oggetto",
+    "findings_table.props.columns[3].label": "Lunghezza",
+    "findings_table.props.columns[4].label": "Difetto",
+    "findings_table.props.searchPlaceholder": "Cerca file, tipo di oggetto o nome…",
+    "findings_table.props.empty.message": "Nessun nome oltre la soglia trovato."
+  }
+}

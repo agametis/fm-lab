@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Lokale CSS-Überschreibungen",
+    "description": "Layout-Qualitätskennzahl — wie viele Objekte lokales CSS tragen, statt ihr Aussehen aus dem Theme zu beziehen. In kleiner Zahl sind lokale Überschreibungen normal; ein hoher Anteil bedeutet, dass das Theme das Erscheinungsbild nicht mehr steuert und jede optische Änderung Objekt für Objekt erfolgen muss. Dies ist ein Quoten-Dashboard: Die Kennzahlen zeigen den lösungsweiten Anteil, die Tabelle listet Layouts oberhalb der Schwelle — nicht einzelne Objekte.\n\nAngelehnt an die fmCheckMate-Prüfung „LocalCSS“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.local-css": "{objects_with_css} von {objects_total} Objekten dieses Layouts tragen lokales CSS ({share_pct} %)"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Layoutobjekte",
+    "summary_kpi.props.items[1].label": "Mit lokalem CSS",
+    "summary_kpi.props.items[2].label": "Anteil %",
+    "summary_kpi.props.items[3].label": "Gelistete Layouts",
+    "findings_card.props.title": "Lokale CSS-Überschreibungen",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Kein Layout erreicht den eingestellten Anteil an lokalem CSS.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekte",
+    "findings_table.props.columns[3].label": "Mit lokalem CSS",
+    "findings_table.props.columns[4].label": "Anteil %",
+    "min_share_slider.props.label": "Mindestanteil"
+  }
+}

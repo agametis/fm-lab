@@ -1,0 +1,103 @@
+{
+  "id": "layout_local_css",
+  "version": "1.0.0",
+  "title": "Local CSS overrides",
+  "description": "Layout-quality metric — how many objects carry local CSS instead of taking their appearance from the theme. Local overrides are normal in small numbers; a high share means the theme has stopped governing the look and every visual change has to be made object by object. This is a ratio dashboard: the KPIs give the solution-wide share and the table lists layouts above the threshold, not individual objects.\n\nBased on the fmCheckMate check \"LocalCSS\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "paintbrush",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "layout_quality",
+    "rationale": "Local CSS wins over the theme. Once a large share of objects carries its own styling, the theme no longer describes what users see and a rebranding turns into manual work on every object.",
+    "remediation": "Move recurring local styling into theme styles and reapply them, so the theme governs the appearance again.",
+    "meta": {
+      "name": "Local CSS overrides",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Layout-quality metric — how many objects carry local CSS instead of taking their appearance from the theme. Local overrides are normal in small numbers; a high share means the theme has stopped governing the look and every visual change has to be made object by object. This is a ratio dashboard: the KPIs give the solution-wide share and the table lists layouts above the threshold, not individual objects.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportLocalCSS)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "summary": "native",
+        "findings": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Local CSS overrides"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    },
+    {
+      "name": "min_share",
+      "type": "number",
+      "required": false,
+      "description": "Minimum share of objects with local CSS per layout, in percent (header slider; default 50)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "local-css": "{objects_with_css} of {objects_total} objects on this layout carry local CSS ({share_pct} %)"
+  }
+}

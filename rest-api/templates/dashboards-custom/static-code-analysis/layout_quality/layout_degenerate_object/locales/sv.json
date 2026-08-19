@@ -1,0 +1,33 @@
+{
+  "manifest": {
+    "title": "Degenererat Layout-objekt",
+    "description": "Layoutkvalitetsregel — ett objekt är degenererat. Textobjekt utan text, objekt med noll bredd eller höjd samt objekt under minsta storlek i båda riktningarna (reglage för bredd/höjd, standard 4 px vardera). Linjer är undantagna — nollutsträckning är deras normala form. Små tomma texter används ofta som avståndshållare — kontrollera före borttagning.",
+    "messages.zero-size": "Objektet har noll bredd eller höjd",
+    "messages.empty-text": "Textobjektet innehåller ingen text",
+    "messages.undersized": "Objektet är mindre än {min_w}×{min_h} px (bredd×höjd)"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Tomma textobjekt",
+    "summary_kpi.props.items[2].label": "För små",
+    "summary_kpi.props.items[3].label": "Nollstorlek",
+    "min_w_slider.props.label": "Min. bredd",
+    "min_h_slider.props.label": "Min. höjd",
+    "findings_card.props.title": "Degenererat Layout-objekt",
+    "findings_table.props.searchPlaceholder": "Sök fil, Layout eller objekt…",
+    "findings_table.props.empty.message": "Inga degenererade objekt hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Defekt",
+    "defect_filter.props.options[0].label": "alla defekter",
+    "defect_filter.props.options[1].label": "tom text",
+    "defect_filter.props.options[2].label": "för liten",
+    "defect_filter.props.options[3].label": "nollstorlek",
+    "object_type_select.props.label": "Objekttyp",
+    "object_type_select.props.emptyOptionLabel": "alla objekttyper",
+    "findings_table.props.columns[7].label": "Bredd",
+    "findings_table.props.columns[8].label": "Höjd"
+  }
+}

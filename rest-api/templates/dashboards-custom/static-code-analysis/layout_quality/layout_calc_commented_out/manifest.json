@@ -1,0 +1,115 @@
+{
+  "id": "layout_calc_commented_out",
+  "version": "1.0.0",
+  "title": "Commented-out layout calculation",
+  "description": "Layout-quality rule — a hide, tooltip or label calculation on a layout object consists entirely of a comment. The calculation never evaluates, so the intended behavior is silently disabled.\n\nBased on the fmCheckMate check \"Broken Calculation /*Commented Out*/\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "code",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "error",
+    "category": "layout_quality",
+    "rationale": "A calculation wrapped entirely in /* ... */ evaluates to nothing. A hide condition or tooltip that was disabled this way stays disabled forever without any visible trace in Layout mode.",
+    "remediation": "Restore the calculation or clear the slot entirely — an empty slot states intent, a commented-out one hides it.",
+    "meta": {
+      "name": "Commented-out layout calculation",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Layout-quality rule — a hide, tooltip or label calculation on a layout object consists entirely of a comment. The calculation never evaluates, so the intended behavior is silently disabled.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportBrokenCalculationCommentedOut)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Commented-out layout calculation"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    },
+    {
+      "id": "object_types",
+      "source": "bundle:data/object_types.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    },
+    {
+      "name": "calc_slot",
+      "type": "string",
+      "required": false,
+      "description": "Calculation-slot filter chip (hide, tooltip, label); unset = all."
+    },
+    {
+      "name": "object_type",
+      "type": "string",
+      "required": false,
+      "description": "Layout-object-type filter select; unset = all."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "hide": "The hide calculation is completely commented out",
+    "tooltip": "The tooltip calculation is completely commented out",
+    "label": "The label calculation is completely commented out"
+  }
+}

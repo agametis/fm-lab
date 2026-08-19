@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Ricerca interrotta",
+    "description": "Regola di rischio errore — una ricerca la cui origine non esiste più: l'occorrenza tabella è sparita, la tabella di origine manca nel file di destinazione o il campo di origine è stato eliminato. Una ricerca che non si risolve non copia nulla e non segnala nulla: il campo resta semplicemente vuoto su ogni nuovo record.\n\nBasato sul controllo fmCheckMate «ListFieldsWithBrokenLookup» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-relationship": "La ricerca punta a un'occorrenza tabella che non esiste più",
+    "messages.missing-table": "La tabella di origine della ricerca manca nel file di destinazione",
+    "messages.missing-field": "Il campo di origine della ricerca non esiste nella tabella di origine"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Ricerche nell'ambito",
+    "summary_kpi.props.items[2].label": "Non verificabile",
+    "summary_kpi.props.items[3].label": "File interessati",
+    "findings_card.props.title": "Ricerca interrotta",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tabella",
+    "findings_table.props.columns[2].label": "Campo",
+    "findings_table.props.columns[3].label": "Relazione di ricerca",
+    "findings_table.props.columns[4].label": "Campo di origine",
+    "findings_table.props.columns[5].label": "File di destinazione",
+    "findings_table.props.columns[6].label": "Difetto",
+    "findings_table.props.searchPlaceholder": "Cerca file, tabella o campo…",
+    "findings_table.props.empty.message": "Nessuna ricerca interrotta trovata."
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "동작이 없는 버튼",
+    "description": "Layout 품질 규칙 — 버튼에 스크립트 호출도 단일 단계 동작도 없습니다. 탐지는 개체의 직렬화된 동작을 읽습니다. 스크립트 동작은 스크립트 참조로, 단일 단계 동작은 단계 요소로 나타나며, 둘 다 없는 버튼은 클릭해도 아무 일도 하지 않습니다. 대규모 솔루션에서는 버튼의 약 40 %가 해당될 수 있으므로 조치 전에 컨텍스트별로 확인하세요. 장식용 아이콘과 비활성 버튼 바 세그먼트는 정상이며, 컨텍스트 필터로 목록을 좁힐 수 있습니다.\n\nfmCheckMate 검사 “Button Action <Missing>” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.no-action": "버튼에 스크립트 호출도 단일 단계 동작도 없습니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 Layout",
+    "summary_kpi.props.items[2].label": "범위 내 버튼",
+    "findings_card.props.title": "동작이 없는 버튼",
+    "findings_table.props.searchPlaceholder": "파일, Layout 또는 개체 검색…",
+    "findings_table.props.empty.message": "동작이 없는 버튼을 찾지 못했습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "개체",
+    "findings_table.props.columns[3].label": "컨텍스트",
+    "findings_table.props.columns[6].label": "너비",
+    "findings_table.props.columns[7].label": "높이",
+    "context_select.props.label": "컨텍스트",
+    "context_select.props.emptyOptionLabel": "모든 컨텍스트"
+  }
+}

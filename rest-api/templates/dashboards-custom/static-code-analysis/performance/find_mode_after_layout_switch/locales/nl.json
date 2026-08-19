@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Enter Find Mode na Go to Layout",
+    "description": "Prestatieregel — Go to Layout direct gevolgd door Enter Find Mode. De twee stappen omwisselen voorkomt het downloaden van de records van de doellay-out: FileMaker haalt anders de eerste records van de nieuwe context op die de volgende zoekopdracht meteen weggooit."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken scripts",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "Enter Find Mode na Go to Layout",
+    "findings_table.props.searchPlaceholder": "Zoek bestand of script…",
+    "findings_table.props.empty.message": "Geen Go to Layout → Enter Find Mode-sequentie gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Go to Layout",
+    "findings_table.props.columns[3].label": "Enter Find Mode",
+    "findings_table.props.columns[4].label": "Pauze"
+  }
+}

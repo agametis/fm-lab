@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "Layout ジオメトリエクスプローラー",
+    "description": "インベントリダッシュボード — すべての Layout オブジェクトを、個別にソート可能なジオメトリ列（X、Y、幅、高さ、Z オーダー）とともに一覧表示します。Layout パート（ヘッダ、ボディ、フッタなど）、オブジェクトタイプ、最大幅/最大高さ、および特定領域を調べるための Layout 絶対座標ウィンドウ（X/Y の開始/終了）で絞り込めます。入れ子オブジェクトの座標は親コンテナに対する相対値です。座標ウィンドウはトップレベルオブジェクトには正確に一致し、入れ子オブジェクトはそのトップレベルコンテナを介して対象になります。URL パラメータ w_min/h_min はスライダーを補完します。行をクリックすると、対象オブジェクトが強調表示された状態で Layout が開きます。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "オブジェクト",
+    "summary_kpi.props.items[1].label": "Layout",
+    "summary_kpi.props.items[2].label": "ファイル",
+    "objects_card.props.title": "Layout オブジェクト",
+    "part_select.props.label": "Layout パート",
+    "part_select.props.emptyOptionLabel": "すべてのパート",
+    "object_type_select.props.label": "オブジェクトタイプ",
+    "object_type_select.props.emptyOptionLabel": "すべてのオブジェクトタイプ",
+    "w_max_slider.props.label": "最大幅",
+    "h_max_slider.props.label": "最大高さ",
+    "x_min_slider.props.label": "ウィンドウ X 開始",
+    "x_max_slider.props.label": "ウィンドウ X 終了",
+    "y_min_slider.props.label": "ウィンドウ Y 開始",
+    "y_max_slider.props.label": "ウィンドウ Y 終了",
+    "objects_table.props.searchPlaceholder": "ファイル、Layout、オブジェクトを検索…",
+    "objects_table.props.empty.message": "現在のフィルターに一致する Layout オブジェクトはありません。",
+    "objects_table.props.columns[0].label": "ファイル",
+    "objects_table.props.columns[1].label": "Layout",
+    "objects_table.props.columns[2].label": "パート",
+    "objects_table.props.columns[3].label": "オブジェクトタイプ",
+    "objects_table.props.columns[4].label": "オブジェクト",
+    "objects_table.props.columns[5].label": "階層",
+    "objects_table.props.columns[8].label": "幅",
+    "objects_table.props.columns[9].label": "高さ"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "スペースを含む変数名",
+    "description": "エラー誘発ルール — 変数名にスペースが含まれています。FileMaker は「変数を設定」の名前欄では受け付けますが、読み取り側では ${スペースを含む名前} という記法が必要です。単なる $名前 スペース と書くと別のものを黙って読み取ります。ローカル・グローバル・Let()・MBS スーパーグローバル変数が対象です。\n\nfmCheckMate チェック「ListScriptsWithBadVariableNames」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.name-with-spaces": "変数名にスペースが含まれています"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "ローカル",
+    "summary_kpi.props.items[2].label": "グローバル",
+    "summary_kpi.props.items[3].label": "対象ファイル",
+    "findings_card.props.title": "スペースを含む変数名",
+    "variable_scope_filter.props.options[0].label": "すべてのスコープ",
+    "variable_scope_filter.props.options[1].label": "ローカル",
+    "variable_scope_filter.props.options[2].label": "グローバル",
+    "variable_scope_filter.props.options[3].label": "Let()",
+    "variable_scope_filter.props.options[4].label": "スーパーグローバル",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "変数",
+    "findings_table.props.columns[2].label": "スコープ",
+    "findings_table.props.columns[3].label": "初出",
+    "findings_table.props.columns[4].label": "書き込み回数",
+    "findings_table.props.columns[5].label": "読み取り回数",
+    "findings_table.props.searchPlaceholder": "ファイル・変数・スクリプトを検索…",
+    "findings_table.props.empty.message": "スペースを含む変数名はありません。"
+  }
+}

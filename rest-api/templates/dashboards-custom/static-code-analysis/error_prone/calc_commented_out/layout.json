@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary_card",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpi",
+            "props": {
+              "items": [
+                {
+                  "label": "Findings",
+                  "field": "finding_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Field calculations",
+                  "field": "field_calculation_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Script steps",
+                  "field": "script_step_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Affected files",
+                  "field": "affected_files",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings_card",
+        "props": {
+          "span": 12,
+          "title": "Commented-out calculation",
+          "keepChildrenOnEmpty": true
+        },
+        "data": {
+          "dataset": "findings"
+        },
+        "children": [
+          {
+            "type": "Row",
+            "id": "findings_filter_row",
+            "props": {
+              "gap": 16
+            },
+            "children": [
+              {
+                "type": "FilterChips",
+                "id": "calc_slot_filter",
+                "props": {
+                  "param": "calc_slot",
+                  "default": "",
+                  "options": [
+                    {
+                      "value": "",
+                      "label": "All slots",
+                      "countField": "finding_count"
+                    },
+                    {
+                      "value": "field-calculation",
+                      "label": "Field calculation",
+                      "countField": "field_calculation_count"
+                    },
+                    {
+                      "value": "script-step",
+                      "label": "Script step",
+                      "countField": "script_step_count"
+                    },
+                    {
+                      "value": "auto-enter",
+                      "label": "Auto-enter",
+                      "countField": "auto_enter_count"
+                    },
+                    {
+                      "value": "validation",
+                      "label": "Validation",
+                      "countField": "validation_count"
+                    },
+                    {
+                      "value": "custom-function",
+                      "label": "Custom function",
+                      "countField": "custom_function_count"
+                    }
+                  ]
+                },
+                "data": {
+                  "dataset": "summary"
+                }
+              }
+            ]
+          },
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search file, object or formula…",
+              "columns": [
+                {
+                  "field": "file_name",
+                  "label": "File"
+                },
+                {
+                  "field": "object_type",
+                  "label": "Object type"
+                },
+                {
+                  "field": "object_name",
+                  "label": "Object"
+                },
+                {
+                  "field": "calc_slot",
+                  "label": "Slot"
+                },
+                {
+                  "field": "location",
+                  "label": "Location"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "{{object_type}}",
+                  "file": "{{file_name}}",
+                  "step": "{{step_uuid}}",
+                  "ref_src": "calc_commented_out",
+                  "ref_msgid": "commented-out"
+                }
+              },
+              "empty": {
+                "message": "No commented-out calculations found."
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

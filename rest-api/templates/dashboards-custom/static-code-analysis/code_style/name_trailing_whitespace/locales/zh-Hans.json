@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "名称首尾带空白的对象",
+    "description": "代码风格规则 — 对象名以空格或制表符开头或结尾。该字符在 FileMaker 显示的任何列表中都不可见，却是名称的一部分：按名称访问必须原样重现它，两个看起来相同的名称会分开排序。涵盖由用户命名的架构对象；版面对象和变量另有专门规则，关联名称由 FileMaker 自行派生。\n\n基于 fmCheckMate 检查“Script Name ends in white space” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.trailing": "名称以空白结尾",
+    "messages.leading": "名称以空白开头",
+    "messages.both": "名称以空白开头并以空白结尾"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "末尾",
+    "summary_kpi.props.items[2].label": "开头",
+    "summary_kpi.props.items[3].label": "两端",
+    "summary_kpi.props.items[4].label": "受影响文件",
+    "findings_card.props.title": "名称首尾带空白的对象",
+    "defect_filter.props.options[0].label": "全部",
+    "defect_filter.props.options[1].label": "末尾",
+    "defect_filter.props.options[2].label": "开头",
+    "defect_filter.props.options[3].label": "两端",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "对象类型",
+    "findings_table.props.columns[2].label": "名称（方括号）",
+    "findings_table.props.columns[3].label": "缺陷",
+    "findings_table.props.searchPlaceholder": "搜索文件、对象类型或名称…",
+    "findings_table.props.empty.message": "未发现首尾带空白的名称。"
+  }
+}

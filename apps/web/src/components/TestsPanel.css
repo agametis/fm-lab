@@ -240,6 +240,27 @@
   flex-shrink: 0;
 }
 
+.tests-finding-link {
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.tests-finding-link:hover,
+.tests-finding-link:focus-visible {
+  background: var(--color-bg-hover, rgba(128, 128, 128, 0.12));
+  text-decoration: underline;
+}
+
+.tests-member-line-link {
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.tests-member-line-link:hover,
+.tests-member-line-link:focus-visible {
+  background: var(--color-bg-hover, rgba(128, 128, 128, 0.12));
+}
+
 .tests-findings-truncated {
   color: var(--color-text-secondary);
   font-style: italic;
@@ -309,6 +330,22 @@
   display: inline-flex;
   gap: 0.5rem;
   font-size: 0.8rem;
+}
+
+/* Flat result list — replaces the section hierarchy while a result/type
+   filter chip is active; rows are the level-3 member rows. */
+
+.tests-flat-list {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-surface);
+  padding: 0.3rem 0.75rem;
+}
+
+.tests-filter-reset {
+  padding: 0.15rem 0.5rem;
+  color: var(--color-text-secondary);
+  line-height: 1;
 }
 
 /* Sections */

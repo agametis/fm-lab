@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Unstored-Formel mit Host-Roundtrip",
+    "description": "Performance-Regel — ein unstored Berechnungsfeld ruft Get(CurrentHostTimestamp) auf und liegt auf Layouts. Claris dokumentiert: Jede Darstellung eines solchen Feldes löst einen zusätzlichen Netzwerkzugriff auf den Host aus."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Layout-Platzierungen",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "findings_card.props.title": "Unstored-Formel mit Host-Roundtrip",
+    "findings_table.props.searchPlaceholder": "Datei, Tabelle oder Feld suchen…",
+    "findings_table.props.empty.message": "Keine angezeigte Unstored-Formel ruft Get(CurrentHostTimestamp) auf.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Tabelle",
+    "findings_table.props.columns[2].label": "Feld",
+    "findings_table.props.columns[3].label": "Layouts",
+    "findings_table.props.columns[4].label": "Platzierungen",
+    "findings_table.props.columns[5].label": "Auf Listen-Layouts"
+  }
+}

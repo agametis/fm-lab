@@ -10,7 +10,6 @@
     "findings_table.props.searchPlaceholder": "ファイル・スクリプト・検出を検索…",
     "findings_table.props.empty.message": "アンバランスな If / End If ブロックは見つかりませんでした。",
     "findings_table.props.columns[0].label": "ファイル",
-    "findings_table.props.columns[1].label": "スクリプト",
-    "findings_table.props.columns[2].label": "検出"
+    "findings_table.props.columns[1].label": "スクリプト"
   }
 }

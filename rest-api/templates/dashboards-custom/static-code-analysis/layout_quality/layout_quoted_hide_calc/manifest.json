@@ -1,0 +1,97 @@
+{
+  "id": "layout_quoted_hide_calc",
+  "version": "1.0.0",
+  "title": "Hide condition is a quoted constant",
+  "description": "Layout-quality rule — the hide-object condition of a layout object is a single quoted string literal. The formula was probably pasted together with its quotes; it evaluates as a constant instead of the intended calculation.\n\nBased on the fmCheckMate check \"ReportBrokenCalculationQuoted\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "quote",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "error",
+    "category": "layout_quality",
+    "rationale": "A formula pasted with surrounding quotes turns into a string constant. The hide condition no longer reacts to record data — depending on the string it is constantly true or constantly false.",
+    "remediation": "Remove the surrounding quotes so the text becomes a real calculation again, and re-check the intended logic.",
+    "meta": {
+      "name": "Hide condition is a quoted constant",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Layout-quality rule — the hide-object condition of a layout object is a single quoted string literal. The formula was probably pasted together with its quotes; it evaluates as a constant instead of the intended calculation.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportBrokenCalculationQuoted)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Hide condition is a quoted constant"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "quoted": "Hide condition is a quoted string constant, not a calculation"
+  }
+}

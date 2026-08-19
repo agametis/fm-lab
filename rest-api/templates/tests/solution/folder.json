@@ -2,7 +2,7 @@
   "title": "Solution Tests",
   "icon": "activity",
   "description": "Solution-wide health and inventory checks.",
-  "order": 2,
+  "order": 3,
   "locales": {
     "de": "Lösungs-Tests",
     "es": "Pruebas de solución",

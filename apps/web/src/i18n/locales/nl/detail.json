@@ -5,6 +5,7 @@
   "autoTable": {
     "rowCount_one": "{{count}} vermelding",
     "rowCount_other": "{{count}} vermeldingen",
+    "rowCountTruncated": "{{shown}} van {{total}} vermeldingen",
     "filteredFrom": "gefilterd uit {{count}}",
     "newCount": "{{count}} nieuw",
     "totalSize": "Totale grootte {{size}}",
@@ -362,7 +363,8 @@
     "highlightsCount_one": "{{count}} match gemarkeerd",
     "highlightsCount_other": "{{count}} matches gemarkeerd",
     "dismissAria": "Markering van referentie verwijderen",
-    "dismissTitle": "Markering van referentie verwijderen (Esc)"
+    "dismissTitle": "Markering van referentie verwijderen (Esc)",
+    "sourceLabel": "Bron:"
   },
   "tableDetails": "Tabeldetails",
   "scriptDetails": "Scriptdetails",

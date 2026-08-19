@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Marcador FIXME em um comentário de script",
+    "description": "Regra da família “Trabalho inacabado”: uma etapa de comentário de um script contém um marcador FIXME (FIXME, FIX ME, FIX IT, FIXIT). Um FIXME indica um defeito conhecido que foi entregue — daí a severidade warning. A busca ignora maiúsculas e tolera separadores, de modo que a notação do desenvolvedor não importa.",
+    "messages.comment": "Marcador FIXME em um comentário de script"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Scripts afetados",
+    "summary_kpi.props.items[2].label": "Arquivos afetados",
+    "findings_card.props.title": "Marcador FIXME em um comentário de script",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, script ou comentário…",
+    "findings_table.props.empty.message": "Nenhum marcador FIXME em comentários de scripts.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[2].label": "Etapa",
+    "findings_table.props.columns[3].label": "Marcador",
+    "findings_table.props.columns[4].label": "Comentário"
+  }
+}

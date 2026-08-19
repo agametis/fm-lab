@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "공백이 있는 변수 이름",
+    "description": "오류 유발 규칙 — 변수 이름에 공백이 있습니다. FileMaker는 「변수 설정」의 이름 필드에서는 허용하지만, 읽을 때는 ${공백 있는 이름} 표기가 필요합니다. 그냥 $이름 공백으로 쓰면 조용히 다른 것을 읽습니다. 로컬·전역·Let()·MBS 슈퍼글로벌 변수를 모두 다룹니다.\n\nfmCheckMate 검사 “ListScriptsWithBadVariableNames” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.name-with-spaces": "변수 이름에 공백이 있습니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "로컬",
+    "summary_kpi.props.items[2].label": "전역",
+    "summary_kpi.props.items[3].label": "영향받은 파일",
+    "findings_card.props.title": "공백이 있는 변수 이름",
+    "variable_scope_filter.props.options[0].label": "모든 범위",
+    "variable_scope_filter.props.options[1].label": "로컬",
+    "variable_scope_filter.props.options[2].label": "전역",
+    "variable_scope_filter.props.options[3].label": "Let()",
+    "variable_scope_filter.props.options[4].label": "슈퍼글로벌",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "변수",
+    "findings_table.props.columns[2].label": "범위",
+    "findings_table.props.columns[3].label": "최초 위치",
+    "findings_table.props.columns[4].label": "쓰기 횟수",
+    "findings_table.props.columns[5].label": "읽기 횟수",
+    "findings_table.props.searchPlaceholder": "파일, 변수 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "공백이 있는 변수 이름이 없습니다."
+  }
+}

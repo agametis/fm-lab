@@ -1,0 +1,101 @@
+{
+  "id": "calc_broken_comment_structure",
+  "version": "1.0.0",
+  "title": "Broken comment structure in a calculation",
+  "description": "Error-prone rule — a formula contains comment markers that cannot nest: a second /* inside an open comment, a stray */ after the block was already closed, or a // line comment glued to an opening /*. FileMaker comments do not nest, so parts of the formula end up inside or outside the comment against the author's intent.\n\nBased on the fmCheckMate check \"Broken Calculation /*Commented Out*/\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "message-square-warning",
+  "category": "error_prone",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "error_prone"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "error_prone",
+    "rationale": "The parser resolves the markers differently than the layout of the text suggests. Code the author believes is live may sit inside a comment, or a fragment of a comment may end up being parsed as code — and the formula still saves.",
+    "remediation": "Rewrite the comments so every /* has exactly one matching */ and no comment opens inside another. Where a block needs to be switched off temporarily, comment it out in one piece.",
+    "meta": {
+      "name": "Broken comment structure in a calculation",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Error-prone rule — a formula contains comment markers that cannot nest: a second /* inside an open comment, a stray */ after the block was already closed, or a // line comment glued to an opening /*. FileMaker comments do not nest, so parts of the formula end up inside or outside the comment against the author's intent.",
+      "created": "2026-08-16",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XMFN_fmCM_AnalyseFunctions.xsl (XMFN_fmCM_ReportBrokenCalculationCommentedOut)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Field",
+      "Script",
+      "CustomFunction"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Broken comment structure in a calculation"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "nested-open": "A comment opens inside an open comment",
+    "double-close": "A comment is closed twice",
+    "line-in-block": "A line comment sits directly inside a comment block"
+  }
+}

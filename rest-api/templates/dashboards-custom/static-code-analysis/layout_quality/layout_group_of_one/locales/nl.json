@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Groep met één object",
+    "description": "Layoutkwaliteitsregel — een groep bevat precies één object. De groep voegt selectie- en nestingsoverhead toe zonder iets te groeperen — meestal een rest na het verwijderen van de andere leden. Knoppen die als groep met één kind zijn geserialiseerd, worden niet gemeld.\n\nGebaseerd op de fmCheckMate-controle “Group of one” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.single": "De groep bevat één {child}-object — groepeeroverhead zonder iets te groeperen"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken Layouts",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "Groep met één object",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen groepen met één object gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Object",
+    "findings_table.props.columns[3].label": "Type kind",
+    "findings_table.props.columns[4].label": "Naam kind",
+    "findings_table.props.columns[7].label": "Breedte",
+    "findings_table.props.columns[8].label": "Hoogte"
+  }
+}

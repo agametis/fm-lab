@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "プラットフォーム互換性: FileMaker WebDirect",
-  "analysis.defaultResult.meaning": "FileMaker WebDirect で未対応または部分的にのみ対応する対象範囲内のステップ"
- }
+  "manifest": {
+    "title": "プラットフォーム互換性: FileMaker WebDirect",
+    "analysis.defaultResult.meaning": "FileMaker WebDirect で未対応または部分的にのみ対応する対象範囲内のステップ"
+  },
+  "layout": {}
 }

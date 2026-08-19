@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Refresh Window som tömmer join-cachen",
+    "description": "Prestandaregel — Refresh Window med ”Flush cached join results” (eller ”Flush cached external data”) kastar relationscacher och tvingar FileMaker att hämta relaterade poster från servern igen. Claris varnar uttryckligen för nätverkskostnaden."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Join-resultat tömda",
+    "summary_kpi.props.items[2].label": "Externa data tömda",
+    "summary_kpi.props.items[3].label": "Vanliga refresher (rapporteras ej)",
+    "summary_kpi.props.items[4].label": "Berörda filer",
+    "flush_kind_filter.props.options[0].label": "Alla flushar",
+    "flush_kind_filter.props.options[1].label": "Join-resultat",
+    "flush_kind_filter.props.options[2].label": "Externa data",
+    "findings_card.props.title": "Refresh Window som tömmer join-cachen",
+    "findings_table.props.searchPlaceholder": "Sök fil eller skript…",
+    "findings_table.props.empty.message": "Inget Refresh Window med flush-alternativ hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Skript",
+    "findings_table.props.columns[2].label": "Steg",
+    "findings_table.props.columns[3].label": "Tömmer",
+    "findings_table.props.columns[4].label": "Loopdjup"
+  }
+}

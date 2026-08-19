@@ -19,7 +19,6 @@
     "findings_table.props.columns[4].label": "필요",
     "findings_table.props.columns[5].label": "설치됨",
     "findings_table.props.columns[6].label": "커스텀 함수 경유",
-    "findings_table.props.columns[7].label": "메시지",
     "findings_table.props.empty.message": "활성화된 검사가 없습니다 — 헤더에서 설치된 플러그인 버전을 선택하면 요구 사항을 검증할 수 있습니다(중립 항목 = 인벤토리만).",
     "by_file_card.props.title": "파일별 요구 사항",
     "by_file_table.props.columns[0].label": "파일",

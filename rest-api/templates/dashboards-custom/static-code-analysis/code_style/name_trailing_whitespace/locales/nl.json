@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Objectnaam met spatie aan het begin of eind",
+    "description": "Codestijlregel — een objectnaam begint of eindigt met een spatie of tab. Het teken is onzichtbaar in elke lijst die FileMaker toont, maar hoort bij de naam: toegang op naam moet het exact reproduceren en twee schijnbaar gelijke namen sorteren apart. Omvat de door de gebruiker benoemde schemaobjecten; lay-outobjecten en variabelen hebben eigen regels, relatienamen leidt FileMaker zelf af.\n\nGebaseerd op de fmCheckMate-controle “Script Name ends in white space” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.trailing": "De naam eindigt met een spatie",
+    "messages.leading": "De naam begint met een spatie",
+    "messages.both": "De naam begint en eindigt met een spatie"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Achteraan",
+    "summary_kpi.props.items[2].label": "Vooraan",
+    "summary_kpi.props.items[3].label": "Beide uiteinden",
+    "summary_kpi.props.items[4].label": "Betrokken bestanden",
+    "findings_card.props.title": "Objectnaam met spatie aan het begin of eind",
+    "defect_filter.props.options[0].label": "alle",
+    "defect_filter.props.options[1].label": "Achteraan",
+    "defect_filter.props.options[2].label": "Vooraan",
+    "defect_filter.props.options[3].label": "Beide uiteinden",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Objecttype",
+    "findings_table.props.columns[2].label": "Naam (tussen haakjes)",
+    "findings_table.props.columns[3].label": "Defect",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, objecttype of naam…",
+    "findings_table.props.empty.message": "Geen namen met een spatie aan begin of eind gevonden."
+  }
+}

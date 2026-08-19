@@ -12,6 +12,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.9.8] — 2026-08-18
+
+A big expansion of the analysis rule library — layout-quality and community-sourced checks — and a reworked tests-and-dashboards surface built around a traffic-light health overview.
+
+- **Layout quality checks** — a large new rule family (inspired by fmCheckMate) that flags layout-object issues
+  - Degenerate / zero-size objects, copied or duplicated object names, commented-out layout calculations, and more — each finding carries the object name and its context, with a language-independent reference message addressable by URL parameter
+  - **Layout Geometry Explorer** — inspect object position and size across a layout, with a Classic-Theme detection fix
+- **More analysis rules** — the catalog of checks keeps growing
+  - **Community-sourced rules** — performance and best-practice patterns collected from the FileMaker community, with source attribution per rule
+  - **New "Developer Workflow" category** — surfaces unfinished-work markers (TODO / FIXME and similar) across scripts, layouts, and calculations
+- **Tests & dashboards** — the surface reworked around a traffic-light health overview
+  - **Healthchecks landing page** with a one-click "run all" start button and a red / amber / green status at a glance
+  - **Folder-hierarchy breadcrumbs** for tests and custom queries, **result filter chips**, and **direct navigation** from the test panel to the affected object (or several)
+  - Filter the test panel by object type; `AutoTable` now reports correct totals even when the result is truncated by a row limit
+- **Documentation** — a **Static Code Analysis Rules Catalog** documenting the available rules and what each one flags
+- **Code generation** (`fm-generate-script`) — resolver improvements for file-scoped object resolution, backed by the fm-spec reference update (1.14.0)
+- **Fixes & setup** — a frontend HTTP keep-alive race and a dashboard slider-refresh glitch resolved; dashboards degrade gracefully when a bundled reference (e.g. the plugin spec) is absent
+
+---
+
 ## [0.9.7] — 2026-08-12
 
 The analysis layer gains two major capabilities: **Analysis Tests** — curated, repeatable checks with a traffic-light overview — and a **platform compatibility** model that answers "Will this run on FileMaker Server / WebDirect / Go / this operating system?". On the ingestion side, the XML import preserves more of the original information: intra-file UUID healing and reliable MBS plugin-call resolution.
@@ -779,7 +799,8 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 <!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
      versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
      intentionally left unlinked and render as plain text. Add a line here per new tag. -->
-[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.7...HEAD
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.8...HEAD
+[0.9.8]: https://github.com/marcel-more/fm-lab/compare/v0.9.7...v0.9.8
 [0.9.7]: https://github.com/marcel-more/fm-lab/compare/v0.9.6...v0.9.7
 [0.9.6]: https://github.com/marcel-more/fm-lab/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/marcel-more/fm-lab/compare/v0.9.4...v0.9.5

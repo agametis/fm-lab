@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Plattform-Kompatibilität: FileMaker Go (iOS)",
-  "analysis.defaultResult.meaning": "Schritte im Prüfumfang, die auf FileMaker Go (iOS) nicht oder nur teilweise unterstützt werden"
- }
+  "manifest": {
+    "title": "Plattform-Kompatibilität: FileMaker Go (iOS)",
+    "analysis.defaultResult.meaning": "Schritte im Prüfumfang, die auf FileMaker Go (iOS) nicht oder nur teilweise unterstützt werden"
+  },
+  "layout": {}
 }

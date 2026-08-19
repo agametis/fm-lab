@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Freeze Window 없는 내비게이션 스크립트",
+    "description": "성능 규칙 — 레이아웃 전환이나 Go to Related Record 스텝이 여러 번 있는데 Freeze Window가 없는 스크립트는 이동할 때마다 화면을 다시 그립니다. Freeze Window는 중간 렌더링을 억제하며 스크립트 종료 시 FileMaker가 자동으로 갱신합니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "최대 내비게이션 수",
+    "summary_kpi.props.items[2].label": "영향받는 파일",
+    "min_nav_slider.props.label": "내비게이션 스텝",
+    "findings_card.props.title": "Freeze Window 없는 내비게이션 스크립트",
+    "findings_table.props.searchPlaceholder": "파일 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "Freeze Window 없는 내비게이션 위주 스크립트를 찾지 못했습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "스크립트",
+    "findings_table.props.columns[2].label": "내비게이션 수",
+    "findings_table.props.columns[3].label": "PSoS 호출 여부"
+  }
+}

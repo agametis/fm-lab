@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Freeze Window interrompu par une pause",
+    "description": "Règle de performance — un script fige la fenêtre puis marque une pause. Pause/Resume Script met fin à l'état figé : la fenêtre se réaffiche en cours de script et le gel perd son effet à partir de là."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fichiers concernés",
+    "findings_card.props.title": "Freeze Window interrompu par une pause",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier ou un script…",
+    "findings_table.props.empty.message": "Aucun script ne fige la fenêtre puis marque une pause.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Freeze Window",
+    "findings_table.props.columns[3].label": "Première pause",
+    "findings_table.props.columns[4].label": "Pauses après le gel"
+  }
+}

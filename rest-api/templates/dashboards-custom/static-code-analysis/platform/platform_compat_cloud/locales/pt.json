@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilidade de plataforma: FileMaker Cloud",
-  "analysis.defaultResult.meaning": "Passos no escopo sem suporte ou com suporte apenas parcial em FileMaker Cloud"
- }
+  "manifest": {
+    "title": "Compatibilidade de plataforma: FileMaker Cloud",
+    "analysis.defaultResult.meaning": "Passos no escopo sem suporte ou com suporte apenas parcial em FileMaker Cloud"
+  },
+  "layout": {}
 }

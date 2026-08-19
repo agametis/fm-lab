@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilidad de plataforma: FileMaker Go (iOS)",
-  "analysis.defaultResult.meaning": "Pasos en el alcance que no son compatibles o solo lo son parcialmente en FileMaker Go (iOS)"
- }
+  "manifest": {
+    "title": "Compatibilidad de plataforma: FileMaker Go (iOS)",
+    "analysis.defaultResult.meaning": "Pasos en el alcance que no son compatibles o solo lo son parcialmente en FileMaker Go (iOS)"
+  },
+  "layout": {}
 }

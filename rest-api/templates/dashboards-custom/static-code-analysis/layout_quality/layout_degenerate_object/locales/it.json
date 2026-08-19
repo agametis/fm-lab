@@ -1,0 +1,33 @@
+{
+  "manifest": {
+    "title": "Oggetto di Layout degenere",
+    "description": "Regola di qualità del Layout — un oggetto è degenere. Oggetti di testo senza testo, oggetti con larghezza o altezza zero e oggetti sotto la dimensione minima in entrambe le dimensioni (cursori larghezza/altezza, predefinito 4 px ciascuno). Le linee sono escluse — l'estensione zero è la loro forma normale. I piccoli testi vuoti fungono spesso da distanziatori — verificare prima di eliminare.",
+    "messages.zero-size": "L'oggetto ha larghezza o altezza zero",
+    "messages.empty-text": "L'oggetto di testo non contiene testo",
+    "messages.undersized": "L'oggetto è più piccolo di {min_w}×{min_h} px (larghezza×altezza)"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Oggetti di testo vuoti",
+    "summary_kpi.props.items[2].label": "Troppo piccoli",
+    "summary_kpi.props.items[3].label": "Dimensione zero",
+    "min_w_slider.props.label": "Larghezza min.",
+    "min_h_slider.props.label": "Altezza min.",
+    "findings_card.props.title": "Oggetto di Layout degenere",
+    "findings_table.props.searchPlaceholder": "Cerca file, Layout o oggetto…",
+    "findings_table.props.empty.message": "Nessun oggetto degenere trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo di oggetto",
+    "findings_table.props.columns[3].label": "Oggetto",
+    "findings_table.props.columns[4].label": "Difetto",
+    "defect_filter.props.options[0].label": "tutti i difetti",
+    "defect_filter.props.options[1].label": "testo vuoto",
+    "defect_filter.props.options[2].label": "troppo piccolo",
+    "defect_filter.props.options[3].label": "dimensione zero",
+    "object_type_select.props.label": "Tipo di oggetto",
+    "object_type_select.props.emptyOptionLabel": "tutti i tipi di oggetto",
+    "findings_table.props.columns[7].label": "Larghezza",
+    "findings_table.props.columns[8].label": "Altezza"
+  }
+}

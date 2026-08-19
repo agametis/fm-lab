@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "清空联接缓存的 Refresh Window",
+    "description": "性能规则 — 带有“Flush cached join results”（或“Flush cached external data”）选项的 Refresh Window 会丢弃关系缓存，迫使 FileMaker 从服务器重新获取相关记录。Claris 明确警告了由此产生的网络开销。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "清空联接结果",
+    "summary_kpi.props.items[2].label": "清空外部数据",
+    "summary_kpi.props.items[3].label": "普通刷新（不报告）",
+    "summary_kpi.props.items[4].label": "受影响文件",
+    "flush_kind_filter.props.options[0].label": "全部清空",
+    "flush_kind_filter.props.options[1].label": "联接结果",
+    "flush_kind_filter.props.options[2].label": "外部数据",
+    "findings_card.props.title": "清空联接缓存的 Refresh Window",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到带清空选项的 Refresh Window。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "步骤",
+    "findings_table.props.columns[3].label": "清空内容",
+    "findings_table.props.columns[4].label": "循环深度"
+  }
+}

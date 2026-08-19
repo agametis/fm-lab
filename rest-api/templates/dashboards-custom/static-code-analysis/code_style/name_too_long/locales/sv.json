@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "För långt objektnamn",
+    "description": "Kodstilsregel — ett objektnamn är längre än läsbarhetströskeln (max_len, standard 80 tecken) eller ligger exakt på FileMakers gräns på 100 tecken, där inmatningen tyst kapades. Namn vid gränsen rapporteras som varning, övriga som information.\n\nBaserad på fmCheckMate-kontrollen ”ListNamesWhichAreTooLong” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.too-long": "Namnet är längre än den inställda tröskeln",
+    "messages.at-limit": "Namnet ligger vid FileMakers gräns på 100 tecken och kan ha kapats"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Över tröskeln",
+    "summary_kpi.props.items[2].label": "Vid gränsen",
+    "summary_kpi.props.items[3].label": "Berörda filer",
+    "findings_card.props.title": "För långt objektnamn",
+    "defect_filter.props.options[0].label": "alla",
+    "defect_filter.props.options[1].label": "Över tröskeln",
+    "defect_filter.props.options[2].label": "Vid gränsen",
+    "max_len_slider.props.label": "Namnlängd",
+    "object_type_select.props.label": "Objekttyp",
+    "object_type_select.props.emptyOptionLabel": "alla objekttyper",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Objekttyp",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Längd",
+    "findings_table.props.columns[4].label": "Defekt",
+    "findings_table.props.searchPlaceholder": "Sök fil, objekttyp eller namn…",
+    "findings_table.props.empty.message": "Inga namn över tröskeln hittades."
+  }
+}

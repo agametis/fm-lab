@@ -1,0 +1,100 @@
+{
+  "id": "layout_text_todo",
+  "version": "1.0.0",
+  "title": "TODO marker on a layout object",
+  "description": "Unfinished-work rule — a layout object carries a TODO marker (TODO, TO DO, TO-DO, TBD, to be done, to be defined) in its text content, tooltip or label calculation. A TODO describes planned work, not a defect, so the severity is info: the rule counts with its own figure but never turns the traffic light yellow. The defect half of the family is layout_text_fixme.\n\nBased on the fmCheckMate check \"FIXME\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "list-todo",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality",
+    "unfinished-work"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "layout_quality",
+    "rationale": "A TODO on a layout object records work that was planned and postponed. It is a stock figure — but one that sits on the user interface, so it can end up on screen and in print even though it is not a defect.",
+    "remediation": "Nothing to fix per finding. Check whether the marker is visible to users; if it is, move the note into the object comment and keep the canvas clean.",
+    "meta": {
+      "name": "TODO marker on a layout object",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Unfinished-work rule — a layout object carries a TODO marker in its text content, tooltip or label calculation. Detector canon of the family: (?i)(\\bto[\\s\\-_]?do|\\btbd\\b|\\bto[\\s\\-_]be[\\s\\-_](done|defined)\\b), verified by tools/tests/rules/unfinished_work_detector.sql; the family deliberately omits the trailing word boundary so plural markers (\"TO DOs\") still match. Deliberate deviation from the source rule, which matches case-sensitively without separator tolerance and therefore misses a text object reading \"TO DO\". Overlap with layout_text_fixme is intended.",
+      "created": "2026-08-16",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportFIXMEs)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "summary": "native",
+        "findings": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — TODO marker on a layout object"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "text": "TODO marker in the text content",
+    "tooltip": "TODO marker in the tooltip calculation",
+    "label": "TODO marker in the label calculation"
+  }
+}

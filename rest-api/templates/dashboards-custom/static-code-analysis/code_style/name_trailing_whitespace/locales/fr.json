@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Nom d'objet avec espace en bordure",
+    "description": "Règle de style — un nom d'objet commence ou se termine par une espace ou une tabulation. Le caractère est invisible dans toutes les listes de FileMaker mais fait partie du nom : l'accès par nom doit le reproduire exactement et deux noms d'apparence identique se trient séparément. Couvre les objets de schéma nommés par l'utilisateur ; les objets de modèle et les variables ont leurs propres règles, les noms de lien sont dérivés par FileMaker.\n\nD’après le contrôle fmCheckMate « Script Name ends in white space » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.trailing": "Le nom se termine par une espace",
+    "messages.leading": "Le nom commence par une espace",
+    "messages.both": "Le nom commence et se termine par une espace"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "À la fin",
+    "summary_kpi.props.items[2].label": "Au début",
+    "summary_kpi.props.items[3].label": "Aux deux bouts",
+    "summary_kpi.props.items[4].label": "Fichiers concernés",
+    "findings_card.props.title": "Nom d'objet avec espace en bordure",
+    "defect_filter.props.options[0].label": "tous",
+    "defect_filter.props.options[1].label": "À la fin",
+    "defect_filter.props.options[2].label": "Au début",
+    "defect_filter.props.options[3].label": "Aux deux bouts",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Type d'objet",
+    "findings_table.props.columns[2].label": "Nom (entre crochets)",
+    "findings_table.props.columns[3].label": "Défaut",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un type d'objet ou un nom…",
+    "findings_table.props.empty.message": "Aucun nom avec espace en bordure trouvé."
+  }
+}

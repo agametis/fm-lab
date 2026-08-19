@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "Nome de objeto entre aspas",
+    "description": "Regra de qualidade de Layout — o nome de um objeto começa e termina com aspas. Quase sempre um acidente de colagem; nomes entre aspas quebram acessos por nome como GetLayoutObjectAttribute ou Ir para objeto.\n\nBaseado na verificação fmCheckMate “Quoted Object Name” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.quoted-name": "O nome do objeto está entre aspas literais — provavelmente colado por engano"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Layouts afetados",
+    "summary_kpi.props.items[2].label": "Arquivos afetados",
+    "findings_card.props.title": "Nome de objeto entre aspas",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, Layout ou objeto…",
+    "findings_table.props.empty.message": "Nenhum nome de objeto entre aspas encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[6].label": "Largura",
+    "findings_table.props.columns[7].label": "Altura"
+  }
+}

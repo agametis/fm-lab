@@ -168,5 +168,9 @@
     },
     "noFilterMatches": "Nenhuma entrada com este estado nesta seção.",
     "openFolder": "Abrir pasta"
+  },
+  "featured": {
+    "ruleCount_one": "{{count}} regra",
+    "ruleCount_other": "{{count}} regras"
   }
 }

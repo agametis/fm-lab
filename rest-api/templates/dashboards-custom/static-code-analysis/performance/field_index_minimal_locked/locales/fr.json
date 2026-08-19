@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Index minimal avec indexation automatique active",
+    "description": "Règle de performance — l'index d'une rubrique est réglé sur « Minimal » alors que l'indexation automatique reste active. Minimal ne garde que l'index de mots et supprime l'index de valeurs, mais avec l'indexation automatique FileMaker reconstruit de toute façon ce dont une recherche a besoin. Le réglage n'économise rien de prévisible et documente le plus souvent un index vidé une fois puis oublié.\n\nD’après le contrôle fmCheckMate « ListFieldsWithIndexMinimalLocked » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.index-minimal-locked": "L'index est sur Minimal alors que l'indexation automatique est active"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Tables concernées",
+    "summary_kpi.props.items[2].label": "Fichiers concernés",
+    "findings_card.props.title": "Index minimal avec indexation automatique active",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Table",
+    "findings_table.props.columns[2].label": "Rubrique",
+    "findings_table.props.columns[3].label": "Type de rubrique",
+    "findings_table.props.columns[4].label": "Type de données",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, une table ou une rubrique…",
+    "findings_table.props.empty.message": "Aucune rubrique avec index minimal et indexation automatique active."
+  }
+}

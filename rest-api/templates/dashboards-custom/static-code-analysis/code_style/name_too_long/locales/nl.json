@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "Te lange objectnaam",
+    "description": "Codestijlregel — een objectnaam is langer dan de leesbaarheidsdrempel (max_len, standaard 80 tekens) of ligt precies op FileMakers grens van 100 tekens, waar de invoer stilzwijgend is afgekapt. Namen op de grens worden als waarschuwing gemeld, de rest als informatie.\n\nGebaseerd op de fmCheckMate-controle “ListNamesWhichAreTooLong” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.too-long": "De naam is langer dan de ingestelde drempel",
+    "messages.at-limit": "De naam ligt op FileMakers grens van 100 tekens en is mogelijk afgekapt"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Boven drempel",
+    "summary_kpi.props.items[2].label": "Op de limiet",
+    "summary_kpi.props.items[3].label": "Betrokken bestanden",
+    "findings_card.props.title": "Te lange objectnaam",
+    "defect_filter.props.options[0].label": "alle",
+    "defect_filter.props.options[1].label": "Boven drempel",
+    "defect_filter.props.options[2].label": "Op de limiet",
+    "max_len_slider.props.label": "Naamlengte",
+    "object_type_select.props.label": "Objecttype",
+    "object_type_select.props.emptyOptionLabel": "alle objecttypen",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Objecttype",
+    "findings_table.props.columns[2].label": "Object",
+    "findings_table.props.columns[3].label": "Lengte",
+    "findings_table.props.columns[4].label": "Defect",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, objecttype of naam…",
+    "findings_table.props.empty.message": "Geen namen boven de drempel gevonden."
+  }
+}

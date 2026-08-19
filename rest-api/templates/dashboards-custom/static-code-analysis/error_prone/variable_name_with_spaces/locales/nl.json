@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Variabelenaam met spaties",
+    "description": "Foutgevoeligheidsregel — een variabelenaam bevat een spatie. FileMaker accepteert dat in het naamveld van 'Stel variabele in', maar elke leesactie heeft dan de notatie ${naam met spaties} nodig; een simpele $naam met spaties leest stilzwijgend iets anders. Omvat lokale, globale, Let()- en MBS-superglobale variabelen.\n\nGebaseerd op de fmCheckMate-controle “ListScriptsWithBadVariableNames” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.name-with-spaces": "Variabelenaam bevat een spatie"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Lokaal",
+    "summary_kpi.props.items[2].label": "Globaal",
+    "summary_kpi.props.items[3].label": "Betrokken bestanden",
+    "findings_card.props.title": "Variabelenaam met spaties",
+    "variable_scope_filter.props.options[0].label": "alle bereiken",
+    "variable_scope_filter.props.options[1].label": "Lokaal",
+    "variable_scope_filter.props.options[2].label": "Globaal",
+    "variable_scope_filter.props.options[3].label": "Let()",
+    "variable_scope_filter.props.options[4].label": "Superglobaal",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Variabele",
+    "findings_table.props.columns[2].label": "Bereik",
+    "findings_table.props.columns[3].label": "Eerst gezien in",
+    "findings_table.props.columns[4].label": "Schrijfacties",
+    "findings_table.props.columns[5].label": "Leesacties",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, variabele of script…",
+    "findings_table.props.empty.message": "Geen variabelenamen met spaties gevonden."
+  }
+}

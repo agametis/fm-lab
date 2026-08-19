@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "触发主机往返的非存储计算",
+    "description": "性能规则 — 一个非存储计算字段调用了 Get(CurrentHostTimestamp) 且被放置在布局上。Claris 文档说明：此类字段每次显示都会触发一次对主机的额外网络访问。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "布局放置数",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "findings_card.props.title": "触发主机往返的非存储计算",
+    "findings_table.props.searchPlaceholder": "搜索文件、表或字段…",
+    "findings_table.props.empty.message": "没有显示中的非存储计算调用 Get(CurrentHostTimestamp)。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "表",
+    "findings_table.props.columns[2].label": "字段",
+    "findings_table.props.columns[3].label": "布局数",
+    "findings_table.props.columns[4].label": "放置数",
+    "findings_table.props.columns[5].label": "位于列表布局"
+  }
+}

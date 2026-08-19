@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "平台特定用法：FileMaker Server",
-  "analysis.defaultResult.meaning": "范围内作为 Perform Script on Server 调用目标的脚本（为服务器端执行而构建）"
- }
+  "manifest": {
+    "title": "平台特定用法：FileMaker Server",
+    "analysis.defaultResult.meaning": "范围内作为 Perform Script on Server 调用目标的脚本（为服务器端执行而构建）"
+  },
+  "layout": {}
 }

@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "제거된 플러그인 함수 호출",
-  "analysis.defaultResult.meaning": "공급업체 문서에서 제거됨으로 표시된 함수를 호출하는 범위 내 플러그인 함수 호출 — 현재 플러그인에서는 실패합니다"
- }
+  "manifest": {
+    "title": "제거된 플러그인 함수 호출",
+    "analysis.defaultResult.meaning": "공급업체 문서에서 제거됨으로 표시된 함수를 호출하는 범위 내 플러그인 함수 호출 — 현재 플러그인에서는 실패합니다"
+  },
+  "layout": {}
 }

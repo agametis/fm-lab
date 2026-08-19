@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Cálculo no almacenado con ida y vuelta al host",
+    "description": "Regla de rendimiento — un campo de cálculo no almacenado llama a Get(CurrentHostTimestamp) y está colocado en presentaciones. Claris documenta que cada visualización de ese campo provoca un acceso de red adicional al host."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Colocaciones en presentaciones",
+    "summary_kpi.props.items[2].label": "Archivos afectados",
+    "findings_card.props.title": "Cálculo no almacenado con ida y vuelta al host",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, tabla o campo…",
+    "findings_table.props.empty.message": "Ningún cálculo no almacenado visible llama a Get(CurrentHostTimestamp).",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Tabla",
+    "findings_table.props.columns[2].label": "Campo",
+    "findings_table.props.columns[3].label": "Presentaciones",
+    "findings_table.props.columns[4].label": "Colocaciones",
+    "findings_table.props.columns[5].label": "En presentaciones de lista"
+  }
+}

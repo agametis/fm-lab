@@ -1,0 +1,123 @@
+{
+  "id": "field-integrity",
+  "version": "1.0.0",
+  "title": "Field Integrity",
+  "description": "Schema-level checks on fields: lookups whose source no longer exists, and index settings that contradict themselves. Broken lookups are resolved through the id chain — table occurrence, base table, resolved data-source file — rather than through UUIDs, so cross-file references with a stale UUID are not reported as broken.",
+  "keywords": [
+    "fields",
+    "schema",
+    "integrity",
+    "fmcheckmate"
+  ],
+  "testType": "error-check",
+  "objectTypes": [
+    "Field"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "field_broken_lookup"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "field_index_minimal_locked"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "quick",
+      "title": "Quick Check",
+      "description": "Broken lookups only — the check that points at a real data defect.",
+      "members": [
+        "field_broken_lookup"
+      ]
+    },
+    {
+      "id": "full",
+      "title": "Full Check"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Feld-Integrität",
+      "description": "Schemaprüfungen auf Feldebene: Lookups, deren Quelle nicht mehr existiert, und Index-Einstellungen, die sich selbst widersprechen. Gebrochene Lookups werden über die ID-Kette aufgelöst — Tabellenauftreten, Basistabelle, aufgelöste Datenquellen-Datei — und nicht über UUIDs; dateiübergreifende Referenzen mit veralteter UUID gelten deshalb nicht als gebrochen.",
+      "profiles.quick.title": "Schnellprüfung",
+      "profiles.quick.description": "Nur gebrochene Lookups — die Prüfung mit echtem Datendefekt.",
+      "profiles.full.title": "Vollprüfung"
+    },
+    "es": {
+      "title": "Integridad de campos",
+      "description": "Comprobaciones de esquema a nivel de campo: búsquedas cuya fuente ya no existe y ajustes de índice que se contradicen. Las búsquedas rotas se resuelven por la cadena de identificadores —ocurrencia de tabla, tabla base, archivo de origen resuelto— y no por UUID, de modo que las referencias entre archivos con UUID obsoleto no se marcan como rotas.",
+      "profiles.quick.title": "Comprobación rápida",
+      "profiles.quick.description": "Solo búsquedas rotas: la comprobación con un defecto de datos real.",
+      "profiles.full.title": "Comprobación completa"
+    },
+    "fr": {
+      "title": "Intégrité des rubriques",
+      "description": "Vérifications de schéma au niveau des rubriques : recherches dont la source n'existe plus et réglages d'index qui se contredisent. Les recherches cassées sont résolues par la chaîne d'identifiants — occurrence de table, table source, fichier de source de données résolu — et non par UUID : les références inter-fichiers à UUID périmé ne sont donc pas signalées comme cassées.",
+      "profiles.quick.title": "Vérification rapide",
+      "profiles.quick.description": "Uniquement les recherches cassées — la vérification qui pointe un vrai défaut de données.",
+      "profiles.full.title": "Vérification complète"
+    },
+    "it": {
+      "title": "Integrità dei campi",
+      "description": "Controlli di schema a livello di campo: ricerche la cui origine non esiste più e impostazioni di indice che si contraddicono. Le ricerche interrotte sono risolte tramite la catena di id — occorrenza tabella, tabella base, file di origine dati risolto — e non tramite UUID, così i riferimenti tra file con UUID obsoleto non risultano interrotti.",
+      "profiles.quick.title": "Controllo rapido",
+      "profiles.quick.description": "Solo ricerche interrotte — il controllo con un vero difetto dei dati.",
+      "profiles.full.title": "Controllo completo"
+    },
+    "ja": {
+      "title": "フィールドの整合性",
+      "description": "フィールドレベルのスキーマ検査です。参照元が存在しなくなったルックアップと、矛盾したインデックス設定を対象とします。壊れたルックアップは UUID ではなく ID の連鎖（テーブルオカレンス → ベーステーブル → 解決済みのデータソースファイル）で判定するため、UUID が古いだけのファイル間参照は壊れたとは扱いません。",
+      "profiles.quick.title": "クイックチェック",
+      "profiles.quick.description": "壊れたルックアップのみ — 実際のデータ不具合を指す検査。",
+      "profiles.full.title": "フルチェック"
+    },
+    "ko": {
+      "title": "필드 무결성",
+      "description": "필드 수준의 스키마 검사입니다. 원본이 사라진 조회와 서로 모순되는 인덱스 설정을 다룹니다. 깨진 조회는 UUID가 아니라 ID 체인(테이블 어커런스 → 기본 테이블 → 해석된 데이터 원본 파일)으로 판정하므로, UUID만 오래된 파일 간 참조는 깨진 것으로 보고하지 않습니다.",
+      "profiles.quick.title": "빠른 검사",
+      "profiles.quick.description": "깨진 조회만 — 실제 데이터 결함을 가리키는 검사.",
+      "profiles.full.title": "전체 검사"
+    },
+    "nl": {
+      "title": "Veldintegriteit",
+      "description": "Schemacontroles op veldniveau: lookups waarvan de bron niet meer bestaat en indexinstellingen die zichzelf tegenspreken. Gebroken lookups worden opgelost via de id-keten — tabelinstantie, basistabel, opgelost gegevensbronbestand — en niet via UUID's, zodat bestandsoverschrijdende verwijzingen met een verouderde UUID niet als gebroken worden gemeld.",
+      "profiles.quick.title": "Snelle controle",
+      "profiles.quick.description": "Alleen gebroken lookups — de controle met een echt gegevensdefect.",
+      "profiles.full.title": "Volledige controle"
+    },
+    "pt": {
+      "title": "Integridade dos campos",
+      "description": "Verificações de esquema ao nível do campo: pesquisas cuja origem já não existe e definições de índice que se contradizem. As pesquisas quebradas são resolvidas pela cadeia de ids — ocorrência de tabela, tabela base, ficheiro de origem de dados resolvido — e não por UUID, pelo que referências entre ficheiros com UUID desatualizado não são comunicadas como quebradas.",
+      "profiles.quick.title": "Verificação rápida",
+      "profiles.quick.description": "Apenas pesquisas quebradas — a verificação com um defeito de dados real.",
+      "profiles.full.title": "Verificação completa"
+    },
+    "sv": {
+      "title": "Fältintegritet",
+      "description": "Schemakontroller på fältnivå: sökningar vars källa inte längre finns och indexinställningar som motsäger sig själva. Trasiga sökningar löses via id-kedjan — tabellförekomst, bastabell, upplöst datakällfil — och inte via UUID:er, så filöverskridande referenser med föråldrat UUID rapporteras inte som trasiga.",
+      "profiles.quick.title": "Snabbkontroll",
+      "profiles.quick.description": "Endast trasiga sökningar — kontrollen som pekar på en verklig datadefekt.",
+      "profiles.full.title": "Fullständig kontroll"
+    },
+    "zh-Hans": {
+      "title": "字段完整性",
+      "description": "字段层面的架构检查：来源已不存在的查找，以及自相矛盾的索引设置。失效查找通过 ID 链（表实例 → 基表 → 解析出的数据源文件）判定，而不是通过 UUID，因此仅 UUID 过期的跨文件引用不会被报为失效。",
+      "profiles.quick.title": "快速检查",
+      "profiles.quick.description": "仅失效查找 — 指向真实数据缺陷的检查。",
+      "profiles.full.title": "完整检查"
+    }
+  }
+}

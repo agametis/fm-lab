@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Verouderde plug-infunctieaanroep",
-  "analysis.defaultResult.meaning": "Plug-infunctieaanroepen binnen het bereik waarvan de functie in de leveranciersdocumentatie als verouderd is gemarkeerd"
- }
+  "manifest": {
+    "title": "Verouderde plug-infunctieaanroep",
+    "analysis.defaultResult.meaning": "Plug-infunctieaanroepen binnen het bereik waarvan de functie in de leveranciersdocumentatie als verouderd is gemarkeerd"
+  },
+  "layout": {}
 }

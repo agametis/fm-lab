@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Nome di oggetto tra virgolette",
+    "description": "Regola di stile — un nome di oggetto inizia e finisce con virgolette doppie, quasi sempre perché è stato incollato da un calcolo. Le virgolette diventano parte del nome e ogni accesso per nome deve riprodurle.\n\nBasato sul controllo fmCheckMate «Quoted Object Name» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.quoted-name": "Il nome è tra virgolette"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Tipi di oggetto",
+    "summary_kpi.props.items[2].label": "File interessati",
+    "findings_card.props.title": "Nome di oggetto tra virgolette",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tipo di oggetto",
+    "findings_table.props.columns[2].label": "Oggetto",
+    "findings_table.props.searchPlaceholder": "Cerca file, tipo di oggetto o nome…",
+    "findings_table.props.empty.message": "Nessun nome di oggetto tra virgolette trovato."
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Variable définie, jamais lue",
+    "description": "Règle de code inutilisé — une variable est écrite mais jamais lue dans le catalogue. Au mieux du lest, au pire la moitié visible d'un renommage fait à moitié. Faux positifs connus : valeurs transmises en paramètre de script, noms de variables construits à l'exécution et lectures hors des fichiers exportés — la règle est donc informative.\n\nD’après le contrôle fmCheckMate « ListVarsDefinedButUnused » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.set-never-read": "La variable est écrite mais jamais lue"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Locales",
+    "summary_kpi.props.items[2].label": "Globales",
+    "summary_kpi.props.items[3].label": "Scripts concernés",
+    "summary_kpi.props.items[4].label": "Fichiers concernés",
+    "findings_card.props.title": "Variable définie, jamais lue",
+    "variable_scope_filter.props.options[0].label": "toutes les portées",
+    "variable_scope_filter.props.options[1].label": "Locales",
+    "variable_scope_filter.props.options[2].label": "Globales",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Variable",
+    "findings_table.props.columns[2].label": "Portée",
+    "findings_table.props.columns[3].label": "Première occurrence",
+    "findings_table.props.columns[4].label": "Écritures",
+    "findings_table.props.columns[5].label": "Preuve",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, une variable ou un script…",
+    "findings_table.props.empty.message": "Aucune variable écrite sans jamais être lue."
+  }
+}

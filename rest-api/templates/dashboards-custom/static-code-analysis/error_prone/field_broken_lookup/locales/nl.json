@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Gebroken lookup",
+    "description": "Foutgevoeligheidsregel — een lookup waarvan de bron niet meer bestaat: de tabelinstantie is weg, de brontabel ontbreekt in het doelbestand, of het bronveld is verwijderd. Een lookup die niet oplost kopieert niets en meldt niets — het veld blijft bij elk nieuw record gewoon leeg.\n\nGebaseerd op de fmCheckMate-controle “ListFieldsWithBrokenLookup” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-relationship": "De lookup wijst naar een tabelinstantie die niet meer bestaat",
+    "messages.missing-table": "De brontabel van de lookup ontbreekt in het doelbestand",
+    "messages.missing-field": "Het bronveld van de lookup bestaat niet in de brontabel"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Lookups in bereik",
+    "summary_kpi.props.items[2].label": "Niet verifieerbaar",
+    "summary_kpi.props.items[3].label": "Betrokken bestanden",
+    "findings_card.props.title": "Gebroken lookup",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Tabel",
+    "findings_table.props.columns[2].label": "Veld",
+    "findings_table.props.columns[3].label": "Lookup-relatie",
+    "findings_table.props.columns[4].label": "Bronveld",
+    "findings_table.props.columns[5].label": "Doelbestand",
+    "findings_table.props.columns[6].label": "Defect",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, tabel of veld…",
+    "findings_table.props.empty.message": "Geen gebroken lookups gevonden."
+  }
+}

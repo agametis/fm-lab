@@ -1,0 +1,31 @@
+{
+  "manifest": {
+    "title": "복사된 개체 이름",
+    "description": "Layout 품질 규칙 — 이름 있는 개체에 복사 접미사(' Copy', ' Kopie')나 붙여넣기 숫자 접미사가 붙어 있거나 같은 Layout의 다른 개체와 이름이 중복됩니다. 이름 있는 개체는 스크립트와 계산식에서 참조되므로 복사 잔재는 잘못된 개체를 가리키거나 아무것도 가리키지 않습니다. 숫자 접미사는 의도적 명명일 수도 있으니 이름 변경 전에 확인하세요.\n\nfmCheckMate 검사 “Copied Object Name” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy-suffix": "개체 이름에 복사 접미사가 붙어 있습니다 — 붙여넣기 잔재일 가능성이 높습니다",
+    "messages.duplicate-name": "개체 이름이 이 Layout에서 여러 번 나타납니다",
+    "messages.numeric-suffix": "개체 이름이 숫자 접미사로 끝납니다 — 붙여넣기 잔재일 수도, 의도적 명명일 수도 있습니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "복사 접미사",
+    "summary_kpi.props.items[2].label": "숫자 접미사",
+    "summary_kpi.props.items[3].label": "중복된 이름",
+    "findings_card.props.title": "복사된 개체 이름",
+    "findings_table.props.searchPlaceholder": "파일, Layout 또는 개체 검색…",
+    "findings_table.props.empty.message": "복사되거나 중복된 이름을 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "개체 유형",
+    "findings_table.props.columns[3].label": "개체",
+    "findings_table.props.columns[4].label": "사유",
+    "reason_filter.props.options[0].label": "모든 사유",
+    "reason_filter.props.options[1].label": "복사 접미사",
+    "reason_filter.props.options[2].label": "숫자 접미사",
+    "reason_filter.props.options[3].label": "중복된 이름",
+    "object_type_select.props.label": "개체 유형",
+    "object_type_select.props.emptyOptionLabel": "모든 개체 유형",
+    "findings_table.props.columns[7].label": "너비",
+    "findings_table.props.columns[8].label": "높이"
+  }
+}

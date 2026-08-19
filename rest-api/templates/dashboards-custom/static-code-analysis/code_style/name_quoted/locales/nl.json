@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Objectnaam tussen aanhalingstekens",
+    "description": "Codestijlregel — een objectnaam begint en eindigt met een dubbel aanhalingsteken, vrijwel altijd omdat een naam rechtstreeks uit een berekening is geplakt. De aanhalingstekens worden deel van de naam; elke toegang op naam moet ze meenemen.\n\nGebaseerd op de fmCheckMate-controle “Quoted Object Name” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.quoted-name": "De naam staat tussen aanhalingstekens"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Objecttypen",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "Objectnaam tussen aanhalingstekens",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Objecttype",
+    "findings_table.props.columns[2].label": "Object",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, objecttype of naam…",
+    "findings_table.props.empty.message": "Geen objectnamen tussen aanhalingstekens gevonden."
+  }
+}

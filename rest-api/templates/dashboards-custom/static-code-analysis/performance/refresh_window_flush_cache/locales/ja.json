@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "ジョインキャッシュを破棄する Refresh Window",
+    "description": "パフォーマンスルール — 「キャッシュされたジョイン結果を破棄」（または「キャッシュされた外部データを破棄」）オプション付きの Refresh Window はリレーションシップのキャッシュを破棄し、FileMaker に関連レコードをサーバーから再取得させます。Claris はそのネットワークコストを明示的に警告しています。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "ジョイン結果の破棄",
+    "summary_kpi.props.items[2].label": "外部データの破棄",
+    "summary_kpi.props.items[3].label": "通常のリフレッシュ（対象外）",
+    "summary_kpi.props.items[4].label": "対象ファイル数",
+    "flush_kind_filter.props.options[0].label": "すべての破棄",
+    "flush_kind_filter.props.options[1].label": "ジョイン結果",
+    "flush_kind_filter.props.options[2].label": "外部データ",
+    "findings_card.props.title": "ジョインキャッシュを破棄する Refresh Window",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "破棄オプション付きの Refresh Window は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "ステップ",
+    "findings_table.props.columns[3].label": "破棄対象",
+    "findings_table.props.columns[4].label": "ループ深度"
+  }
+}

@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Plug-incompatibiliteit: FileMaker Go (iOS)",
-  "analysis.defaultResult.meaning": "Plug-infunctieaanroepen binnen het bereik die niet werken op FileMaker Go (iOS)"
- }
+  "manifest": {
+    "title": "Plug-incompatibiliteit: FileMaker Go (iOS)",
+    "analysis.defaultResult.meaning": "Plug-infunctieaanroepen binnen het bereik die niet werken op FileMaker Go (iOS)"
+  },
+  "layout": {}
 }

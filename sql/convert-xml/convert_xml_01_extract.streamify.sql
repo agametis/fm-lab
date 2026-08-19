@@ -27,8 +27,30 @@
 --   Drift-Indikator herangezogen wird. build_resolutions.sql bewusst NICHT
 --   enthalten, weil es nur abgeleitete Tabellen anlegt.
 
--- @SCHEMA_VERSION 1.20.0
--- @SCHEMA_VERSION_DATE 2026-08-11
+-- @SCHEMA_VERSION 1.21.0
+-- @SCHEMA_VERSION_DATE 2026-08-15
+-- @SCHEMA_CHANGELOG 1.21.0: Classic-Theme sichtbar machen (P3/A.11 + P4): SaXML
+--   kodiert das Classic-Theme als LEERES Element <LayoutThemeReference/> ohne
+--   id/name/UUID/Base — nur Nicht-Classic-Themes tragen das Attribut-Tripel.
+--   Folge bisher: L_Theme_* ist für JEDES Classic-Layout NULL, die Zeichenkette
+--   'com.filemaker.theme.classic' steht in keinem einzigen Layout-Datensatz, und
+--   die uses_theme-Kante blieb für Classic komplett leer (Classic erschien in
+--   jeder Datei als unbenutzt). NEU: Layouts.L_Theme_Resolved_Name/_UUID
+--   (abgeleitet in P3, nur für echte Layouts belegt — Ordner/Trenner bleiben
+--   NULL): leere Referenz → Name 'com.filemaker.theme.classic', UUID aus dem
+--   ThemeCatalog der Datei, aufgelöst über den Theme-NAMEN (Theme_ID=1 ist NICHT
+--   verlässlich Classic). Die Rohspalten bleiben unverändert (roh = „was stand im
+--   Export"). P4 baut uses_theme jetzt über die aufgelöste UUID, P6
+--   (v_check_synthetic/uses_theme_links) zählt die Erwartung entsprechend.
+--   Deutung am Korpus beidseitig verifiziert: genau die Dateien mit themenlosen
+--   Layouts führen Classic im ThemeCatalog, und Classic wird nie explizit
+--   referenziert. Neue Spalten + Inhalts-Korrektur an ObjectLinks → Version-Bump.
+--   ANMERKUNG zum Rebuild: P3 läuft einmal auf der Master-DB (ALTER … IF NOT
+--   EXISTS + UPDATE über alle Layouts) und P4 baut ObjectLinks per CREATE OR
+--   REPLACE komplett neu — fachlich genügt ein erneuter Pipeline-Lauf. Der
+--   Versions-Mismatch löst über die Auto-Heal-Erkennung trotzdem einen
+--   Rebuild aus (Absicht: SchemaInfo darf nicht über den DB-Inhalt lügen);
+--   P7 re-clustert danach automatisch.
 -- @SCHEMA_CHANGELOG 1.20.0: PSoS-Ausführungskontext als Link_Subrole (P4 Block 15):
 --   calls_script-Kanten aus Perform Script on Server tragen Subrole 'on_server'
 --   (Step 164) bzw. 'on_server_callback' (Step 210); gewöhnliche Aufrufe (Step 1)

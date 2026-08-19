@@ -466,6 +466,7 @@ async function builtinQueryMeta(params = {}) {
       click_action: null,
       click_args: null,
       chip_filter: null,
+      chip_param: null,
     }];
   }
   return [{
@@ -479,6 +480,7 @@ async function builtinQueryMeta(params = {}) {
     click_action: t.click_action || null,
     click_args: t.click_args || null,
     chip_filter: t.chip_filter || null,
+    chip_param: t.chip_param || null,
     object_types: t.object_types || [],
     output_types: t.output_types || [],
     scope: t.scope || [],
@@ -519,23 +521,32 @@ async function loadFolderMeta(folderPath) {
   return null;
 }
 
-// Baut den lokalisierten Anzeigenamen eines Ordner-Pfads ("a/b" → "A-Label / B-Label").
-// Pro Segment: folder.json locales[lang] → folder.json title → humanisiertes Segment.
-// Der Pfad-Key bleibt der führende Identifier; dies ist reine Anzeige-Datenschicht.
-async function resolveFolderLabel(folderPath, lang) {
-  if (!folderPath) return null;
-  const segs = String(folderPath).split('/');
-  const parts = [];
+// Zerlegt einen Ordner-Pfad in lokalisierte Krumen: "a/b" → [{path:"a",label},
+// {path:"a/b",label}]. Pro Segment gilt die Kaskade folder.json locales[lang] →
+// folder.json title → humanisiertes Segment. Jede Krume trägt ihren TEILPFAD,
+// damit die Breadcrumb im Frontend klickbar wird (`/dashboard?folder=<teilpfad>`).
+// Der Pfad-Key bleibt der führende Identifier; Labels sind reine Anzeigeschicht.
+async function resolveFolderCrumbs(folderPath, lang) {
+  if (!folderPath) return [];
+  const crumbs = [];
   let prefix = '';
-  for (const seg of segs) {
+  for (const seg of String(folderPath).split('/')) {
     prefix = prefix ? `${prefix}/${seg}` : seg;
     const meta = await loadFolderMeta(prefix);
     const label = (lang && meta?.locales && meta.locales[lang])
       || meta?.title
       || humanizeFolderSegment(seg);
-    parts.push(label);
+    crumbs.push({ path: prefix, label });
   }
-  return parts.join(' / ');
+  return crumbs;
+}
+
+// Baut den lokalisierten Anzeigenamen eines Ordner-Pfads ("a/b" → "A-Label / B-Label").
+// Bewusst auf resolveFolderCrumbs zurückgeführt, damit es genau EINE
+// Label-Kaskade gibt — Krumen und zusammengefügtes Label können nicht auseinanderlaufen.
+async function resolveFolderLabel(folderPath, lang) {
+  if (!folderPath) return null;
+  return (await resolveFolderCrumbs(folderPath, lang)).map(c => c.label).join(' / ');
 }
 
 async function builtinListDashboards(params = {}) {
@@ -570,6 +581,11 @@ async function builtinListDashboards(params = {}) {
       folder_label: await resolveFolderLabel(b.folder, lang),
       author: manifest.author || null,
       version: manifest.version || null,
+      // Entry-point marker (`featured`) + the folder subtrees its entry count
+      // spans — the overview renders such a bundle as a band above the folder
+      // grid instead of as an equal tile below it.
+      featured: manifest.featured === true,
+      badge_roots: manifest.badgeRoots || null,
     };
   }));
 
@@ -1681,6 +1697,8 @@ module.exports = {
   DASHBOARDS_DIRS,
   listBundles,
   getBundle,
+  resolveFolderCrumbs,
+  resolveFolderLabel,
   executeAllDatasets,
   executeSingleDataset,
   clearCache,

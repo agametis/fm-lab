@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Go to Layout 다음의 Enter Find Mode",
+    "description": "성능 규칙 — Go to Layout 바로 다음에 Enter Find Mode가 오는 패턴입니다. 두 스텝의 순서를 바꾸면 대상 레이아웃의 레코드 다운로드를 피할 수 있습니다. 그렇지 않으면 FileMaker가 새 컨텍스트의 첫 레코드를 가져오지만 곧바로 검색이 이를 버립니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 스크립트",
+    "summary_kpi.props.items[2].label": "영향받는 파일",
+    "findings_card.props.title": "Go to Layout 다음의 Enter Find Mode",
+    "findings_table.props.searchPlaceholder": "파일 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "Go to Layout → Enter Find Mode 시퀀스를 찾지 못했습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "스크립트",
+    "findings_table.props.columns[2].label": "Go to Layout",
+    "findings_table.props.columns[3].label": "Enter Find Mode",
+    "findings_table.props.columns[4].label": "일시 정지"
+  }
+}

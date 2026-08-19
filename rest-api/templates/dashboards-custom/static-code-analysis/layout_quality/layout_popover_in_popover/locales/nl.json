@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "Popover in een popover",
+    "description": "Layoutkwaliteitsregel — een popoverknop staat binnen een ander popoverpaneel. Geneste popovers werken niet betrouwbaar in FileMaker; het openen van de binnenste sluit de buitenste.\n\nGebaseerd op de fmCheckMate-controle “Popover in popover” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.nested": "De popoverknop is genest in een ander popoverpaneel — geneste popovers sluiten de buitenste"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken Layouts",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "Popover in een popover",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen geneste popovers gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Object",
+    "findings_table.props.columns[3].label": "Gedeelte",
+    "findings_table.props.columns[6].label": "Breedte",
+    "findings_table.props.columns[7].label": "Hoogte"
+  }
+}

@@ -119,6 +119,10 @@ async function getTest(req, res, next) {
       data: {
         ...toListRow(test),
         folder_label: await testsService.resolveFolderLabel(test.folder, lang),
+        // Additive next to folder_label: the same cascade, but per segment and
+        // with the partial path. The route carries only the flat test id, so
+        // without this the detail view cannot render a navigable rubric path.
+        folder_crumbs: await testsService.resolveFolderCrumbs(test.folder, lang),
         members,
       },
       meta: { lang },

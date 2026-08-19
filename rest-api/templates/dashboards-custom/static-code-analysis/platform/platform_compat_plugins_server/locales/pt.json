@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilidade de plug-in: FileMaker Server",
-  "analysis.defaultResult.meaning": "Chamadas de funções de plug-in no escopo que não são executadas em FileMaker Server"
- }
+  "manifest": {
+    "title": "Compatibilidade de plug-in: FileMaker Server",
+    "analysis.defaultResult.meaning": "Chamadas de funções de plug-in no escopo que não são executadas em FileMaker Server"
+  },
+  "layout": {}
 }

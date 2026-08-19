@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "레이아웃 개체의 TODO 마커",
+    "description": "「미완료 작업」 규칙군 — 레이아웃 개체의 텍스트, 도구 설명 또는 레이블 계산식에 TODO 마커(TODO, TO DO, TO-DO, TBD, to be done, to be defined)가 있습니다. TODO는 결함이 아니라 계획된 작업이므로 심각도는 info입니다. 자체 수치로 집계되지만 신호등을 노란색으로 바꾸지 않습니다. 원본 규칙보다 의도적으로 강화했습니다. 대소문자를 구분하지 않고 구분 기호를 허용하므로 내용이 「TO DO」인 텍스트 개체도 찾아냅니다.\n\nfmCheckMate 검사 “FIXME” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.text": "텍스트 내용의 TODO 마커",
+    "messages.tooltip": "도구 설명 계산식의 TODO 마커",
+    "messages.label": "레이블 계산식의 TODO 마커"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "검출 수",
+    "summary_kpi.props.items[1].label": "해당 레이아웃",
+    "summary_kpi.props.items[2].label": "해당 파일",
+    "findings_card.props.title": "레이아웃 개체의 TODO 마커",
+    "findings_table.props.searchPlaceholder": "파일·레이아웃·개체 검색…",
+    "findings_table.props.empty.message": "레이아웃 개체에 TODO 마커가 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "레이아웃",
+    "findings_table.props.columns[2].label": "개체 유형",
+    "findings_table.props.columns[3].label": "개체",
+    "findings_table.props.columns[4].label": "위치",
+    "findings_table.props.columns[5].label": "마커",
+    "findings_table.props.columns[8].label": "너비",
+    "findings_table.props.columns[9].label": "높이"
+  }
+}

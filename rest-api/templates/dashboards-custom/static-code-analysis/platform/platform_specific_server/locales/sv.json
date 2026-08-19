@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Plattformsspecifik användning: FileMaker Server",
-  "analysis.defaultResult.meaning": "Skript inom omfånget som är mål för Perform Script on Server-anrop (byggda för körning på servern)"
- }
+  "manifest": {
+    "title": "Plattformsspecifik användning: FileMaker Server",
+    "analysis.defaultResult.meaning": "Skript inom omfånget som är mål för Perform Script on Server-anrop (byggda för körning på servern)"
+  },
+  "layout": {}
 }

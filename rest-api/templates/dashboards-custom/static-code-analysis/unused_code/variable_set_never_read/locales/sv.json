@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Variabel sätts men läses aldrig",
+    "description": "Regel för oanvänd kod — en variabel skrivs men läses aldrig någonstans i katalogen. I bästa fall ballast, i värsta fall den synliga halvan av en halvgjord namnändring. Kända falska positiva: värden som skickas vidare som skriptparameter, variabelnamn som byggs vid körning och läsningar utanför de exporterade filerna — därför är regeln informativ.\n\nBaserad på fmCheckMate-kontrollen ”ListVarsDefinedButUnused” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.set-never-read": "Variabeln skrivs men läses aldrig"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Lokala",
+    "summary_kpi.props.items[2].label": "Globala",
+    "summary_kpi.props.items[3].label": "Berörda skript",
+    "summary_kpi.props.items[4].label": "Berörda filer",
+    "findings_card.props.title": "Variabel sätts men läses aldrig",
+    "variable_scope_filter.props.options[0].label": "alla räckvidder",
+    "variable_scope_filter.props.options[1].label": "Lokala",
+    "variable_scope_filter.props.options[2].label": "Globala",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Variabel",
+    "findings_table.props.columns[2].label": "Räckvidd",
+    "findings_table.props.columns[3].label": "Först sedd i",
+    "findings_table.props.columns[4].label": "Skrivningar",
+    "findings_table.props.columns[5].label": "Underlag",
+    "findings_table.props.searchPlaceholder": "Sök fil, variabel eller skript…",
+    "findings_table.props.empty.message": "Inga variabler som skrivs utan att någonsin läsas."
+  }
+}

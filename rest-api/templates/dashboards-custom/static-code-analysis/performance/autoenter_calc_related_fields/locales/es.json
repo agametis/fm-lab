@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Cálculo de autointroducción que cruza relaciones",
+    "description": "Regla de rendimiento — los cálculos de autointroducción que leen campos relacionados recorren relaciones en cada escritura del registro. En WAN cada recorrido puede suponer idas y vueltas adicionales al introducir datos."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Tablas afectadas",
+    "summary_kpi.props.items[2].label": "Archivos afectados",
+    "findings_card.props.title": "Cálculo de autointroducción que cruza relaciones",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, tabla o campo…",
+    "findings_table.props.empty.message": "Ningún cálculo de autointroducción lee campos relacionados.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Tabla",
+    "findings_table.props.columns[2].label": "Campo",
+    "findings_table.props.columns[3].label": "Referencias relacionadas",
+    "findings_table.props.columns[4].label": "Fórmula (inicio)"
+  }
+}

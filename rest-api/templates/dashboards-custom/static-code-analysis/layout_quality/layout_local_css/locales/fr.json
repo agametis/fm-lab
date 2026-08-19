@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Surcharges CSS locales",
+    "description": "Indicateur de qualité de Layout — combien d'objets portent du CSS local au lieu de tenir leur apparence du thème. En petit nombre, c'est normal ; une part élevée signifie que le thème ne gouverne plus l'apparence et que chaque changement visuel doit se faire objet par objet. Il s'agit d'un tableau de bord de ratio : les indicateurs donnent la part à l'échelle de la solution et le tableau liste les layouts au-dessus du seuil, pas les objets individuels.\n\nD’après le contrôle fmCheckMate « LocalCSS » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.local-css": "{objects_with_css} objets sur {objects_total} de ce layout portent du CSS local ({share_pct} %)"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Objets de layout",
+    "summary_kpi.props.items[1].label": "Avec CSS local",
+    "summary_kpi.props.items[2].label": "Part %",
+    "summary_kpi.props.items[3].label": "Layouts listés",
+    "findings_card.props.title": "Surcharges CSS locales",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un Layout ou un objet…",
+    "findings_table.props.empty.message": "Aucun layout n'atteint la part de CSS local configurée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objets",
+    "findings_table.props.columns[3].label": "Avec CSS local",
+    "findings_table.props.columns[4].label": "Part %",
+    "min_share_slider.props.label": "Part minimale"
+  }
+}

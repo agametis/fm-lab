@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Enter Find Mode dopo Go to Layout",
+    "description": "Regola di prestazioni — Go to Layout immediatamente seguito da Enter Find Mode. Invertire i due passaggi evita di scaricare i record del formato di destinazione: FileMaker recupera i primi record del nuovo contesto solo perché la ricerca successiva li scarti."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Script interessati",
+    "summary_kpi.props.items[2].label": "File interessati",
+    "findings_card.props.title": "Enter Find Mode dopo Go to Layout",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Nessuna sequenza Go to Layout → Enter Find Mode trovata.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Go to Layout",
+    "findings_table.props.columns[3].label": "Enter Find Mode",
+    "findings_table.props.columns[4].label": "Pausa"
+  }
+}

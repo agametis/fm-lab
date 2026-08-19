@@ -12,6 +12,11 @@
     "findings_table.props.columns[0].label": "Fichier",
     "findings_table.props.columns[1].label": "TO gauche",
     "findings_table.props.columns[2].label": "TO droite",
-    "findings_table.props.columns[3].label": "Trié"
+    "findings_table.props.columns[3].label": "Trié",
+    "findings_table.props.columns[4].label": "Portails consommateurs",
+    "findings_table.props.columns[5].label": "Portails avec tri propre",
+    "consumer_filter_chips.props.options[0].label": "Toutes les relations",
+    "consumer_filter_chips.props.options[1].label": "Portails consommateurs",
+    "consumer_filter_chips.props.options[2].label": "Portails avec tri propre"
   }
 }

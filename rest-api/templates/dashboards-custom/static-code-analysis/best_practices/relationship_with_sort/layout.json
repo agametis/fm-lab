@@ -43,12 +43,50 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Relationship with sorted records"
+          "title": "Relationship with sorted records",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
         },
         "children": [
+          {
+            "type": "Row",
+            "id": "findings_filter_row",
+            "props": {
+              "gap": 16
+            },
+            "children": [
+              {
+                "type": "FilterChips",
+                "id": "consumer_filter_chips",
+                "props": {
+                  "param": "consumer_filter",
+                  "default": "",
+                  "options": [
+                    {
+                      "value": "",
+                      "label": "All relationships",
+                      "countField": "finding_count"
+                    },
+                    {
+                      "value": "portals",
+                      "label": "With consumer portals",
+                      "countField": "with_portals_count"
+                    },
+                    {
+                      "value": "sorted-portals",
+                      "label": "With self-sorting portals",
+                      "countField": "with_sorted_portals_count"
+                    }
+                  ]
+                },
+                "data": {
+                  "dataset": "summary"
+                }
+              }
+            ]
+          },
           {
             "type": "Table",
             "id": "findings_table",
@@ -77,6 +115,18 @@
                 {
                   "field": "sorted_side",
                   "label": "Sorted"
+                },
+                {
+                  "field": "consumer_portals",
+                  "label": "Consumer portals",
+                  "align": "right",
+                  "format": "number"
+                },
+                {
+                  "field": "portals_own_sort",
+                  "label": "Portals with own sort",
+                  "align": "right",
+                  "format": "number"
                 }
               ],
               "onRowClick": {

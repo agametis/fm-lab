@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Navigatiescript zonder Freeze Window",
+    "description": "Prestatieregel — scripts met meerdere lay-outwissels of Go to Related Record-stappen zonder Freeze Window tekenen het scherm bij elke sprong opnieuw. Freeze Window onderdrukt de tussentijdse renders; aan het einde van het script ververst FileMaker automatisch."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Max. navigatiestappen",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "min_nav_slider.props.label": "Navigatiestappen",
+    "findings_card.props.title": "Navigatiescript zonder Freeze Window",
+    "findings_table.props.searchPlaceholder": "Zoek bestand of script…",
+    "findings_table.props.empty.message": "Geen navigatie-intensief script zonder Freeze Window gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Navigatiestappen",
+    "findings_table.props.columns[3].label": "Aangeroepen via PSoS"
+  }
+}

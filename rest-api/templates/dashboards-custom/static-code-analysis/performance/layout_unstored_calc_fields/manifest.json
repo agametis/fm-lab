@@ -1,6 +1,6 @@
 {
   "id": "layout_unstored_calc_fields",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "Layouts with unstored calculations",
   "description": "Performance rule — layouts ranked by how many unstored calculation fields they display. Each unstored calculation is re-evaluated for every visible record, so layouts that show many records at once and carry a high count are the most expensive to render.",
   "author": "fm-lab rules",
@@ -21,7 +21,7 @@
       "author": "fm-lab rules",
       "source": "fm-lab",
       "url": null,
-      "description": "Per-layout count of displayed unstored calculation fields. Note: FileMaker view type (form/list) is not captured in the catalog, so the placement count is the render-cost proxy.",
+      "description": "Per-layout count of displayed unstored calculation fields, qualified by the decoded view type (Layouts.Default_View: Form/List/Table) and by how many placements sit inside portals — the two contexts that repeat the evaluation per visible row. Community calibration (WAN-first guidance): list and portal placements are the expensive class.",
       "created": "2026-07-15",
       "references": []
     }

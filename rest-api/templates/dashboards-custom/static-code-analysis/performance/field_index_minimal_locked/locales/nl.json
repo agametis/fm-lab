@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Minimale index met automatisch indexeren aan",
+    "description": "Prestatieregel — de index van een veld staat op 'Minimaal' terwijl automatisch indexeren nog aan staat. Minimaal houdt alleen de woordindex en laat de waarde-index vallen, maar met automatisch indexeren bouwt FileMaker toch weer op wat een zoekopdracht nodig heeft. De instelling bespaart niets voorspelbaars en documenteert meestal een index die ooit is geleegd en nooit meer is heroverwogen.\n\nGebaseerd op de fmCheckMate-controle “ListFieldsWithIndexMinimalLocked” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.index-minimal-locked": "Index staat op Minimaal terwijl automatisch indexeren aan staat"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken tabellen",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "Minimale index met automatisch indexeren aan",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Tabel",
+    "findings_table.props.columns[2].label": "Veld",
+    "findings_table.props.columns[3].label": "Veldtype",
+    "findings_table.props.columns[4].label": "Gegevenstype",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, tabel of veld…",
+    "findings_table.props.empty.message": "Geen velden met minimale index en automatisch indexeren aan gevonden."
+  }
+}

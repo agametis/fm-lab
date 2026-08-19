@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Calcolo commentato",
+    "description": "Regola di rischio errore — un calcolo è composto interamente da un blocco di commento. Sono coperti i calcoli dei campi, le formule di immissione automatica e di convalida, le funzioni personalizzate e i calcoli dei passi script. La formula non viene mai valutata e il comportamento previsto resta silenziosamente disattivato.\n\nBasato sul controllo fmCheckMate «Broken Calculation /*Commented Out*/» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.commented-out": "L'intera formula è commentata e non viene mai valutata"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Calcoli dei campi",
+    "summary_kpi.props.items[2].label": "Passi script",
+    "summary_kpi.props.items[3].label": "File interessati",
+    "findings_card.props.title": "Calcolo commentato",
+    "calc_slot_filter.props.options[0].label": "tutti gli slot",
+    "calc_slot_filter.props.options[1].label": "Calcolo del campo",
+    "calc_slot_filter.props.options[2].label": "Passo script",
+    "calc_slot_filter.props.options[3].label": "Immissione automatica",
+    "calc_slot_filter.props.options[4].label": "Convalida",
+    "calc_slot_filter.props.options[5].label": "Funzione personalizzata",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tipo di oggetto",
+    "findings_table.props.columns[2].label": "Oggetto",
+    "findings_table.props.columns[3].label": "Slot",
+    "findings_table.props.columns[4].label": "Posizione",
+    "findings_table.props.searchPlaceholder": "Cerca file, oggetto o formula…",
+    "findings_table.props.empty.message": "Nessun calcolo commentato trovato."
+  }
+}

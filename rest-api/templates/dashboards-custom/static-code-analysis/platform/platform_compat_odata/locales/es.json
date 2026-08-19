@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilidad de plataforma: OData",
-  "analysis.defaultResult.meaning": "Hallazgos de preparación para OData (base de Server prestada + reglas de nomenclatura y de commit)"
- }
+  "manifest": {
+    "title": "Compatibilidad de plataforma: OData",
+    "analysis.defaultResult.meaning": "Hallazgos de preparación para OData (base de Server prestada + reglas de nomenclatura y de commit)"
+  },
+  "layout": {}
 }

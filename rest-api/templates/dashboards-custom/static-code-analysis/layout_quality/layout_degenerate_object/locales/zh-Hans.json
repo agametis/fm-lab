@@ -1,0 +1,33 @@
+{
+  "manifest": {
+    "title": "退化的 Layout 对象",
+    "description": "Layout 质量规则 — 对象处于退化状态。没有文本的文本对象、宽度或高度为零的对象，以及两个方向都小于最小尺寸的对象（宽度/高度滑块，默认各 4 px）。线条被排除——零尺寸是线条的正常形态。极小的空文本常用作间隔符——删除前请检查。",
+    "messages.zero-size": "对象的宽度或高度为零",
+    "messages.empty-text": "文本对象不包含任何文本",
+    "messages.undersized": "对象小于 {min_w}×{min_h} px（宽×高）"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "空文本对象",
+    "summary_kpi.props.items[2].label": "过小",
+    "summary_kpi.props.items[3].label": "零尺寸",
+    "min_w_slider.props.label": "最小宽度",
+    "min_h_slider.props.label": "最小高度",
+    "findings_card.props.title": "退化的 Layout 对象",
+    "findings_table.props.searchPlaceholder": "搜索文件、Layout 或对象…",
+    "findings_table.props.empty.message": "未找到退化的对象。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "对象类型",
+    "findings_table.props.columns[3].label": "对象",
+    "findings_table.props.columns[4].label": "缺陷",
+    "defect_filter.props.options[0].label": "所有缺陷",
+    "defect_filter.props.options[1].label": "空文本",
+    "defect_filter.props.options[2].label": "过小",
+    "defect_filter.props.options[3].label": "零尺寸",
+    "object_type_select.props.label": "对象类型",
+    "object_type_select.props.emptyOptionLabel": "所有对象类型",
+    "findings_table.props.columns[7].label": "宽度",
+    "findings_table.props.columns[8].label": "高度"
+  }
+}

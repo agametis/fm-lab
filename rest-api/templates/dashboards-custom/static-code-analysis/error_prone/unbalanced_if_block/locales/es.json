@@ -10,7 +10,6 @@
     "findings_table.props.searchPlaceholder": "Buscar archivo, script o hallazgo…",
     "findings_table.props.empty.message": "No se encontraron bloques If / End If desbalanceados.",
     "findings_table.props.columns[0].label": "Archivo",
-    "findings_table.props.columns[1].label": "Script",
-    "findings_table.props.columns[2].label": "Hallazgo"
+    "findings_table.props.columns[1].label": "Script"
   }
 }

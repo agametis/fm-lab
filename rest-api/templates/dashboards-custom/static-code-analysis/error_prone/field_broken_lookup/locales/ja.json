@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "壊れたルックアップ",
+    "description": "エラー誘発ルール — 参照元がすでに存在しないルックアップです。テーブルオカレンスが削除された、対象ファイルに参照元テーブルがない、参照元フィールドが削除された、のいずれかです。解決できないルックアップは何もコピーせず、何も通知しません。新規レコードでフィールドが空のままになるだけです。\n\nfmCheckMate チェック「ListFieldsWithBrokenLookup」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-relationship": "ルックアップが存在しないテーブルオカレンスを参照しています",
+    "messages.missing-table": "ルックアップの参照元テーブルが対象ファイルにありません",
+    "messages.missing-field": "ルックアップの参照元フィールドが参照元テーブルにありません"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "スコープ内のルックアップ",
+    "summary_kpi.props.items[2].label": "検証不可",
+    "summary_kpi.props.items[3].label": "対象ファイル",
+    "findings_card.props.title": "壊れたルックアップ",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "テーブル",
+    "findings_table.props.columns[2].label": "フィールド",
+    "findings_table.props.columns[3].label": "ルックアップのリレーション",
+    "findings_table.props.columns[4].label": "参照元フィールド",
+    "findings_table.props.columns[5].label": "対象ファイル",
+    "findings_table.props.columns[6].label": "不具合",
+    "findings_table.props.searchPlaceholder": "ファイル・テーブル・フィールドを検索…",
+    "findings_table.props.empty.message": "壊れたルックアップはありません。"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "manifest": {
+    "title": "Degeneriertes Layoutobjekt",
+    "description": "Layout-Qualitätsregel — ein Layoutobjekt ist degeneriert. Textobjekte ohne Text, Objekte mit Breite oder Höhe null sowie Objekte, die in beiden Dimensionen die Mindestgröße unterschreiten (Regler für Breite/Höhe, Standard je 4 px). Linien sind ausgenommen — Null-Ausdehnung ist dort die Normalform. Winzige leere Texte dienen oft als Abstandshalter — vor dem Löschen prüfen.",
+    "messages.zero-size": "Das Objekt hat Breite oder Höhe null",
+    "messages.empty-text": "Das Textobjekt enthält keinen Text",
+    "messages.undersized": "Das Objekt ist kleiner als {min_w}×{min_h} px (Breite×Höhe)"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Leere Textobjekte",
+    "summary_kpi.props.items[2].label": "Zu klein",
+    "summary_kpi.props.items[3].label": "Nullgröße",
+    "min_w_slider.props.label": "Mindestbreite",
+    "min_h_slider.props.label": "Mindesthöhe",
+    "findings_card.props.title": "Degeneriertes Layoutobjekt",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine degenerierten Layoutobjekte gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Defekt",
+    "defect_filter.props.options[0].label": "alle Defekte",
+    "defect_filter.props.options[1].label": "leerer Text",
+    "defect_filter.props.options[2].label": "zu klein",
+    "defect_filter.props.options[3].label": "Nullgröße",
+    "object_type_select.props.label": "Objekttyp",
+    "object_type_select.props.emptyOptionLabel": "alle Objekttypen",
+    "findings_table.props.columns[7].label": "Breite",
+    "findings_table.props.columns[8].label": "Höhe"
+  }
+}

@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "プラットフォーム固有の利用: FileMaker Go (iOS)",
-  "analysis.defaultResult.meaning": "FileMaker Go (iOS) 固有の機能（専用ステップまたは専用関数）を使用する対象範囲内のスクリプト"
- }
+  "manifest": {
+    "title": "プラットフォーム固有の利用: FileMaker Go (iOS)",
+    "analysis.defaultResult.meaning": "FileMaker Go (iOS) 固有の機能（専用ステップまたは専用関数）を使用する対象範囲内のスクリプト"
+  },
+  "layout": {}
 }

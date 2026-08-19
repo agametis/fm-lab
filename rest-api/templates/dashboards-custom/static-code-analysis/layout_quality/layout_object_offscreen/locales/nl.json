@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Object buiten de layout",
+    "description": "Layoutkwaliteitsregel — een object op het hoogste niveau steekt buiten de layoutgrenzen uit: voorbij de breedte, onder het laatste deel of in negatieve coördinaten. Alleen objecten op het hoogste niveau worden gecontroleerd omdat alleen die absolute layoutcoördinaten gebruiken; geneste objecten zijn relatief aan hun container en vallen onder de regel voor verloren objecten. Kleine overschrijdingen zijn vaak afrondingsartefacten — de tolerantieschuif onderdrukt ze.",
+    "messages.complete": "Het object ligt volledig buiten de layout ({direction})",
+    "messages.partial": "Het object steekt buiten de layout uit ({direction})"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Volledig buiten",
+    "summary_kpi.props.items[2].label": "Gedeeltelijk buiten",
+    "findings_card.props.title": "Object buiten de layout",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen objecten buiten de layoutgrenzen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objecttype",
+    "findings_table.props.columns[3].label": "Object",
+    "findings_table.props.columns[4].label": "Richting",
+    "findings_table.props.columns[5].label": "Mate",
+    "findings_table.props.columns[8].label": "Breedte",
+    "findings_table.props.columns[9].label": "Hoogte",
+    "tolerance_slider.props.label": "Tolerantie"
+  }
+}

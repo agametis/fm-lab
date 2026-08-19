@@ -96,10 +96,6 @@
                 {
                   "field": "step_name",
                   "label": "Step type"
-                },
-                {
-                  "field": "message",
-                  "label": "Message"
                 }
               ],
               "onRowClick": {

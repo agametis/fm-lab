@@ -1,0 +1,97 @@
+{
+  "id": "layout_object_occluded",
+  "version": "1.0.0",
+  "title": "Object hidden behind a container",
+  "description": "Layout-quality rule — a layout object lies completely within the bounds of a portal, tab control or slide control that is drawn in front of it. The object is covered in Browse mode and cannot be clicked — usually a stacking-order accident.\n\nBased on the fmCheckMate check \"Hidden Object (Behind Container)\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "eye-off",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "layout_quality",
+    "rationale": "An object fully covered by a portal, tab or slide control that is drawn later in the stacking order is invisible and unclickable in Browse mode — dead weight that still renders and evaluates.",
+    "remediation": "Bring the object in front of the container, move it elsewhere, or delete it if it is a leftover.",
+    "meta": {
+      "name": "Object hidden behind a container",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Layout-quality rule — a layout object lies completely within the bounds of a portal, tab control or slide control that is drawn in front of it. The object is covered in Browse mode and cannot be clicked — usually a stacking-order accident.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportObjectsHiddenBehindContainers)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Object hidden behind a container"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "occluded": "Object lies completely behind a {container} drawn in front of it — covered and unreachable in Browse mode"
+  }
+}

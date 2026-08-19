@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "TO-DOs en scripts (explorador)",
+    "description": "Explorador del trabajo pendiente en comentarios de scripts en tres notaciones (TO DO, FIX IT, TBD). Haga clic en una cifra para filtrar la lista. Es un inventario, no una regla: el paquete no declara ningún valor de resultado, por lo que queda fuera del chequeo de salud y no muestra distintivo; quienes cuentan son las reglas script_comment_fixme (warning) y script_comment_todo (info)."
+  },
+  "layout": {
+    "todo_kpi_kpistrip.props.items[0].label": "Líneas totales",
+    "todo_kpi_kpistrip.props.items[1].label": "Líneas TO DO",
+    "todo_kpi_kpistrip.props.items[2].label": "Líneas FIX IT",
+    "todo_kpi_kpistrip.props.items[3].label": "Líneas TBD",
+    "todo_kpi_kpistrip.props.items[4].label": "Scripts",
+    "todo_kpi_kpistrip.props.items[5].label": "Archivos",
+    "todo_lines.props.title": "Líneas de comentario marcadas",
+    "todo_lines_table.props.columns[0].label": "Archivo",
+    "todo_lines_table.props.columns[1].label": "Nombre del script",
+    "todo_lines_table.props.columns[2].label": "Patrón",
+    "todo_lines_table.props.columns[3].label": "Comentario",
+    "todo_lines_table.props.searchPlaceholder": "Buscar comentarios …"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Name mit Duplikat-Suffix",
+    "description": "Code-Stil-Regel — ein Objektname trägt noch das Suffix, das FileMaker beim Duplizieren anhängt. Die Kopie-Suffixe (Copy / copy / Kopie) sind der Standard-Trefferbereich; die Ziffern-Klasse — ein Name, der auf ein Leerzeichen und bis zu vier Ziffern endet — liegt bewusst auf einem eigenen Chip, weil unzählige gewollte Namen genauso gebaut sind.\n\nAngelehnt an die fmCheckMate-Prüfung „Copied Function Name“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy": "Der Name trägt noch das Duplizier-Suffix von FileMaker",
+    "messages.numeric": "Der Name endet auf eine Zahl — möglicherweise ein nie umbenanntes Duplikat"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Kopie-Suffix",
+    "summary_kpi.props.items[2].label": "Ziffern-Suffix",
+    "summary_kpi.props.items[3].label": "Betroffene Dateien",
+    "findings_card.props.title": "Name mit Duplikat-Suffix",
+    "suffix_kind_filter.props.options[0].label": "beide",
+    "suffix_kind_filter.props.options[1].label": "Kopie-Suffix",
+    "suffix_kind_filter.props.options[2].label": "Ziffern-Suffix",
+    "object_type_select.props.label": "Objekttyp",
+    "object_type_select.props.emptyOptionLabel": "alle Objekttypen",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Objekttyp",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Suffix",
+    "findings_table.props.searchPlaceholder": "Datei, Objekttyp oder Name suchen…",
+    "findings_table.props.empty.message": "Keine Namen mit Duplikat-Suffix gefunden."
+  }
+}

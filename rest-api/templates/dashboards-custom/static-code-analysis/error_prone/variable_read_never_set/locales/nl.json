@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Variabele gelezen, nooit ingesteld",
+    "description": "Foutgevoeligheidsregel — een variabele wordt gelezen terwijl niets in de catalogus haar schrijft. Ofwel is de schrijvende kant hernoemd of verwijderd, ofwel moet de waarde van buiten de geëxporteerde bestanden komen. Let()-definities zijn uitgesloten: die worden binnen dezelfde formule gedefinieerd en gelezen en zouden het resultaat overheersen.\n\nGebaseerd op de fmCheckMate-controle “ListVarsUndefined” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.read-never-set": "Variabele wordt gelezen maar nooit geschreven"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Lokaal",
+    "summary_kpi.props.items[2].label": "Globaal",
+    "summary_kpi.props.items[3].label": "Betrokken scripts",
+    "summary_kpi.props.items[4].label": "Betrokken bestanden",
+    "findings_card.props.title": "Variabele gelezen, nooit ingesteld",
+    "variable_scope_filter.props.options[0].label": "alle bereiken",
+    "variable_scope_filter.props.options[1].label": "Lokaal",
+    "variable_scope_filter.props.options[2].label": "Globaal",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Variabele",
+    "findings_table.props.columns[2].label": "Bereik",
+    "findings_table.props.columns[3].label": "Eerst gezien in",
+    "findings_table.props.columns[4].label": "Leesacties",
+    "findings_table.props.columns[5].label": "Ingesteld in andere bestanden",
+    "findings_table.props.columns[6].label": "Bewijs",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, variabele of script…",
+    "findings_table.props.empty.message": "Geen variabelen gevonden die worden gelezen zonder ooit geschreven te worden."
+  }
+}

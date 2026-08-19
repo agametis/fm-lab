@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "已移除的插件函数调用",
-  "analysis.defaultResult.meaning": "范围内调用了厂商文档中标记为已移除的函数的插件函数调用 — 这些调用在当前插件下会失败"
- }
+  "manifest": {
+    "title": "已移除的插件函数调用",
+    "analysis.defaultResult.meaning": "范围内调用了厂商文档中标记为已移除的函数的插件函数调用 — 这些调用在当前插件下会失败"
+  },
+  "layout": {}
 }

@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Marqueur TODO dans un commentaire de calcul",
+    "description": "Règle de la famille « Travail inachevé » : un calcul FileMaker porte un marqueur TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) dans l’un de ses commentaires. Cinq emplacements sont analysés : fonctions personnalisées, calculs de rubrique, calculs d’entrée automatique et de validation, et calculs d’actions de script. Un TODO décrit un travail planifié, pas un défaut : sévérité info, le voyant reste neutre. Le marqueur ne compte qu’à l’intérieur d’un commentaire (// jusqu’à la fin de la ligne, ou /* … */) : un littéral « TODO » n’est pas un résultat.",
+    "messages.custom_function": "Marqueur TODO dans le commentaire d’une fonction personnalisée",
+    "messages.field_calc": "Marqueur TODO dans le commentaire d’un calcul de rubrique",
+    "messages.field_autoenter": "Marqueur TODO dans le commentaire d’un calcul d’entrée automatique",
+    "messages.field_validation": "Marqueur TODO dans le commentaire d’un calcul de validation",
+    "messages.script_step": "Marqueur TODO dans le commentaire d’un calcul d’action de script"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Fonctions personnalisées",
+    "summary_kpi.props.items[2].label": "Rubriques",
+    "summary_kpi.props.items[3].label": "Actions de script",
+    "summary_kpi.props.items[4].label": "Fichiers concernés",
+    "findings_card.props.title": "Marqueur TODO dans un commentaire de calcul",
+    "findings_table.props.searchPlaceholder": "Rechercher fichier, objet ou commentaire…",
+    "findings_table.props.empty.message": "Aucun marqueur TODO trouvé dans les commentaires de calculs.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Emplacement",
+    "findings_table.props.columns[2].label": "Objet",
+    "findings_table.props.columns[3].label": "Action",
+    "findings_table.props.columns[4].label": "Marqueur",
+    "findings_table.props.columns[5].label": "Commentaire"
+  }
+}

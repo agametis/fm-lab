@@ -19,7 +19,6 @@
     "findings_table.props.columns[4].label": "Kräver",
     "findings_table.props.columns[5].label": "Installerad",
     "findings_table.props.columns[6].label": "Via custom function",
-    "findings_table.props.columns[7].label": "Meddelande",
     "findings_table.props.empty.message": "Ingen kontroll aktiv — välj en installerad pluginversion i sidhuvudet för att validera kravet (neutralt val = endast inventering).",
     "by_file_card.props.title": "Krav per fil",
     "by_file_table.props.columns[0].label": "Fil",

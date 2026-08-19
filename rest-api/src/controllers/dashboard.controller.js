@@ -104,9 +104,17 @@ async function getDashboard(req, res, next) {
     const lang = pickLang(req.query);
     const bundle = await dashboardService.getBundle(id);
     const { manifest, layout } = await dashboardI18nService.resolveBundleForLanguage(bundle, lang);
+    // `nav` ist additiv: der Ordnerpfad des Bundles plus die lokalisierten
+    // Krumen mit ihren Teilpfaden. Ohne ihn kennt die Detailansicht ihre
+    // Rubrik gar nicht (die Route trägt nur die flache Bundle-ID) und müsste
+    // die komplette Bundle-Liste ziehen, um zwei Felder zu erfahren.
+    const nav = {
+      folder: bundle.folder || null,
+      crumbs: await dashboardService.resolveFolderCrumbs(bundle.folder, lang),
+    };
     res.json({
       success: true,
-      data: { manifest, layout: withContextSolutionTitle(id, layout, req.solutionContext) },
+      data: { manifest, layout: withContextSolutionTitle(id, layout, req.solutionContext), nav },
       meta: { lang },
     });
   } catch (err) {

@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "Layoutgeometri-utforskare",
+    "description": "Inventeringspanel — alla layoutobjekt med individuellt sorterbara geometrikolumner (X, Y, bredd, höjd, Z-ordning). Filtrerbar på layoutdel (sidhuvud, body, sidfot …), objekttyp, maximal bredd/höjd samt ett layoutabsolut koordinatfönster (X/Y från/till) för att undersöka specifika layoutzoner. Koordinater för nästlade objekt är relativa till deras container; koordinatfönstret träffar toppnivåobjekt exakt, nästlade objekt räknas via sin toppnivåcontainer. URL-parametrarna w_min/h_min kompletterar reglagen. Klicka på en rad för att öppna layouten med objektet markerat."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Objekt",
+    "summary_kpi.props.items[1].label": "Layouter",
+    "summary_kpi.props.items[2].label": "Filer",
+    "objects_card.props.title": "Layoutobjekt",
+    "part_select.props.label": "Layoutdel",
+    "part_select.props.emptyOptionLabel": "alla delar",
+    "object_type_select.props.label": "Objekttyp",
+    "object_type_select.props.emptyOptionLabel": "alla objekttyper",
+    "w_max_slider.props.label": "Max. bredd",
+    "h_max_slider.props.label": "Max. höjd",
+    "x_min_slider.props.label": "Fönster X från",
+    "x_max_slider.props.label": "Fönster X till",
+    "y_min_slider.props.label": "Fönster Y från",
+    "y_max_slider.props.label": "Fönster Y till",
+    "objects_table.props.searchPlaceholder": "Sök fil, layout eller objekt…",
+    "objects_table.props.empty.message": "Inga layoutobjekt matchar de aktuella filtren.",
+    "objects_table.props.columns[0].label": "Fil",
+    "objects_table.props.columns[1].label": "Layout",
+    "objects_table.props.columns[2].label": "Del",
+    "objects_table.props.columns[3].label": "Objekttyp",
+    "objects_table.props.columns[4].label": "Objekt",
+    "objects_table.props.columns[5].label": "Nivå",
+    "objects_table.props.columns[8].label": "Bredd",
+    "objects_table.props.columns[9].label": "Höjd"
+  }
+}

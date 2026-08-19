@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Pesquisa quebrada",
+    "description": "Regra de propensão a erros — uma pesquisa cuja origem já não existe: a ocorrência de tabela desapareceu, a tabela de origem falta no ficheiro de destino, ou o campo de origem foi eliminado. Uma pesquisa que não resolve não copia nada nem comunica nada — o campo fica simplesmente vazio em cada novo registo.\n\nBaseado na verificação fmCheckMate “ListFieldsWithBrokenLookup” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-relationship": "A pesquisa aponta para uma ocorrência de tabela que já não existe",
+    "messages.missing-table": "A tabela de origem da pesquisa falta no ficheiro de destino",
+    "messages.missing-field": "O campo de origem da pesquisa não existe na tabela de origem"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Pesquisas no âmbito",
+    "summary_kpi.props.items[2].label": "Não verificável",
+    "summary_kpi.props.items[3].label": "Ficheiros afetados",
+    "findings_card.props.title": "Pesquisa quebrada",
+    "findings_table.props.columns[0].label": "Ficheiro",
+    "findings_table.props.columns[1].label": "Tabela",
+    "findings_table.props.columns[2].label": "Campo",
+    "findings_table.props.columns[3].label": "Relação de pesquisa",
+    "findings_table.props.columns[4].label": "Campo de origem",
+    "findings_table.props.columns[5].label": "Ficheiro de destino",
+    "findings_table.props.columns[6].label": "Defeito",
+    "findings_table.props.searchPlaceholder": "Procurar ficheiro, tabela ou campo…",
+    "findings_table.props.empty.message": "Não foram encontradas pesquisas quebradas."
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "id": "layout_object_offscreen",
+  "version": "1.0.0",
+  "title": "Object outside the layout",
+  "description": "Layout-quality rule — a top-level object sticks out beyond the layout boundaries: past the layout width, below the last part, or into negative coordinates. Only top-level objects are checked because those are positioned in absolute layout coordinates; nested objects are relative to their container and are covered by the lost-object rule. Small overshoots are often rounding artefacts — the tolerance slider suppresses them.",
+  "author": "fm-lab rules",
+  "icon": "square-dashed",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "layout_quality",
+    "rationale": "Objects beyond the layout boundary are invisible in Browse mode but still evaluate hide conditions, join the tab order and can widen the printed page.",
+    "remediation": "Move the object back into the layout area, or delete it if it is a leftover.",
+    "meta": {
+      "name": "Object outside the layout",
+      "author": "fm-lab rules",
+      "source": "fm-lab feature request",
+      "url": null,
+      "description": "Layout-quality rule — a top-level object sticks out beyond the layout boundaries: past the layout width, below the last part, or into negative coordinates. Only top-level objects are checked because those are positioned in absolute layout coordinates; nested objects are relative to their container and are covered by the lost-object rule. Small overshoots are often rounding artefacts — the tolerance slider suppresses them.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fm-lab",
+          "rule": "User feature request — layout object quality",
+          "url": null
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "summary": "native",
+        "findings": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Object outside the layout"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    },
+    {
+      "name": "tolerance",
+      "type": "number",
+      "required": false,
+      "description": "Overshoot tolerance in px (header slider; default 0). Objects that stick out by no more than this are ignored."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "complete": "Object lies completely outside the layout ({direction})",
+    "partial": "Object sticks out beyond the layout ({direction})"
+  }
+}

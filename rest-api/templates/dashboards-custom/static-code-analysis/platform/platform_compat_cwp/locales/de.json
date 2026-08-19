@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Plattform-Kompatibilität: Custom Web Publishing",
-  "analysis.defaultResult.meaning": "Schritte im Prüfumfang, die auf Custom Web Publishing nicht oder nur teilweise unterstützt werden"
- }
+  "manifest": {
+    "title": "Plattform-Kompatibilität: Custom Web Publishing",
+    "analysis.defaultResult.meaning": "Schritte im Prüfumfang, die auf Custom Web Publishing nicht oder nur teilweise unterstützt werden"
+  },
+  "layout": {}
 }

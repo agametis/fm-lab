@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "プラットフォーム互換性: OData",
-  "analysis.defaultResult.meaning": "OData 対応状況の検出結果（Server のベースを借用 + 命名・コミット規則）"
- }
+  "manifest": {
+    "title": "プラットフォーム互換性: OData",
+    "analysis.defaultResult.meaning": "OData 対応状況の検出結果（Server のベースを借用 + 命名・コミット規則）"
+  },
+  "layout": {}
 }

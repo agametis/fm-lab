@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilité de plateforme : FileMaker Server",
-  "analysis.defaultResult.meaning": "Actions de script du périmètre non prises en charge ou seulement partiellement sur FileMaker Server"
- }
+  "manifest": {
+    "title": "Compatibilité de plateforme : FileMaker Server",
+    "analysis.defaultResult.meaning": "Actions de script du périmètre non prises en charge ou seulement partiellement sur FileMaker Server"
+  },
+  "layout": {}
 }

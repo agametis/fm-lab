@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "TODO-markering in een formuleopmerking",
+    "description": "Regel uit de familie “Onafgemaakt werk”: een FileMaker-formule bevat een TODO-markering (TODO, TO DO, TO-DO, TBD, to be done, to be defined) in een van haar opmerkingen. Vijf plaatsen worden gecontroleerd: aangepaste functies, veldformules, formules voor automatisch invoeren en validatie, en formules van scriptstappen. Een TODO beschrijft gepland werk, geen defect — vandaar severity info: de regel telt met een eigen getal maar kleurt het stoplicht nooit geel. De markering telt alleen binnen een opmerking (// tot einde regel of /* … */); een tekstliteral “TODO” is geen bevinding.",
+    "messages.custom_function": "TODO-markering in de opmerking van een aangepaste functie",
+    "messages.field_calc": "TODO-markering in de opmerking van een veldformule",
+    "messages.field_autoenter": "TODO-markering in de opmerking van een formule voor automatisch invoeren",
+    "messages.field_validation": "TODO-markering in de opmerking van een validatieformule",
+    "messages.script_step": "TODO-markering in de opmerking van een scriptstapformule"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Aangepaste functies",
+    "summary_kpi.props.items[2].label": "Velden",
+    "summary_kpi.props.items[3].label": "Scriptstappen",
+    "summary_kpi.props.items[4].label": "Betrokken bestanden",
+    "findings_card.props.title": "TODO-markering in een formuleopmerking",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, object of opmerking…",
+    "findings_table.props.empty.message": "Geen TODO-markeringen in formuleopmerkingen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Plaats",
+    "findings_table.props.columns[3].label": "Stap",
+    "findings_table.props.columns[4].label": "Markering",
+    "findings_table.props.columns[5].label": "Opmerking"
+  }
+}

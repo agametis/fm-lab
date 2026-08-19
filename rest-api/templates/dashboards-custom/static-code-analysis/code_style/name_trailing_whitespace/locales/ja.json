@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "前後に空白があるオブジェクト名",
+    "description": "コードスタイルルール — オブジェクト名がスペースまたはタブで始まる、あるいは終わっています。この文字は FileMaker が表示するどのリストでも見えませんが、名前の一部です。名前による参照は正確に再現する必要があり、見た目が同じ 2 つの名前は別々にソートされます。対象はユーザーが命名するスキーマオブジェクトです（レイアウトオブジェクトと変数には専用ルールがあり、リレーションシップ名は FileMaker が生成します）。\n\nfmCheckMate チェック「Script Name ends in white space」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.trailing": "名前が空白で終わっています",
+    "messages.leading": "名前が空白で始まっています",
+    "messages.both": "名前が空白で始まり空白で終わっています"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "末尾",
+    "summary_kpi.props.items[2].label": "先頭",
+    "summary_kpi.props.items[3].label": "両端",
+    "summary_kpi.props.items[4].label": "対象ファイル",
+    "findings_card.props.title": "前後に空白があるオブジェクト名",
+    "defect_filter.props.options[0].label": "すべて",
+    "defect_filter.props.options[1].label": "末尾",
+    "defect_filter.props.options[2].label": "先頭",
+    "defect_filter.props.options[3].label": "両端",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "オブジェクトタイプ",
+    "findings_table.props.columns[2].label": "名前（角括弧付き）",
+    "findings_table.props.columns[3].label": "不具合",
+    "findings_table.props.searchPlaceholder": "ファイル・オブジェクトタイプ・名前を検索…",
+    "findings_table.props.empty.message": "前後に空白のある名前はありません。"
+  }
+}

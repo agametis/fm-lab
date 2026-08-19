@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "설정만 되고 읽히지 않는 변수",
+    "description": "미사용 코드 규칙 — 변수에 값을 쓰지만 카탈로그 어디에서도 읽지 않습니다. 잘해야 불필요한 코드이고, 나쁘면 한쪽만 반영된 이름 변경의 흔적입니다. 알려진 오탐: 스크립트 매개변수로 전달되는 값, 런타임에 조합되는 변수 이름, 내보낸 파일 밖에서의 읽기 — 그래서 이 규칙은 정보 수준입니다.\n\nfmCheckMate 검사 “ListVarsDefinedButUnused” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.set-never-read": "변수에 값을 쓰지만 읽지 않습니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "로컬",
+    "summary_kpi.props.items[2].label": "전역",
+    "summary_kpi.props.items[3].label": "영향받은 스크립트",
+    "summary_kpi.props.items[4].label": "영향받은 파일",
+    "findings_card.props.title": "설정만 되고 읽히지 않는 변수",
+    "variable_scope_filter.props.options[0].label": "모든 범위",
+    "variable_scope_filter.props.options[1].label": "로컬",
+    "variable_scope_filter.props.options[2].label": "전역",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "변수",
+    "findings_table.props.columns[2].label": "범위",
+    "findings_table.props.columns[3].label": "최초 위치",
+    "findings_table.props.columns[4].label": "쓰기 횟수",
+    "findings_table.props.columns[5].label": "근거",
+    "findings_table.props.searchPlaceholder": "파일, 변수 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "쓰기만 하고 읽지 않는 변수가 없습니다."
+  }
+}

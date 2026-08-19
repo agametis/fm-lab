@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "부모를 벗어난 개체",
+    "description": "Layout 품질 규칙 — 중첩된 개체가 부모(포털, 탭/슬라이드 패널, 그룹)의 경계를 완전히 또는 부분적으로 벗어났습니다. 이런 개체는 실행 시 잘리거나 보이지 않습니다. 대부분 부모를 이동하거나 크기 조정한 후의 잔재입니다. 포털 스크롤바(19px)는 허용되며 팝오버 패널과 경계 위의 높이 0 선은 제외됩니다.\n\nfmCheckMate 검사 “Lost Object (In Container)” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.completely": "개체가 부모({parent}) 밖에 완전히 벗어나 있습니다",
+    "messages.partially": "개체가 부모({parent}) 경계를 벗어납니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "완전히 벗어남",
+    "summary_kpi.props.items[2].label": "부분적으로 벗어남",
+    "summary_kpi.props.items[3].label": "영향받는 Layout",
+    "findings_card.props.title": "부모를 벗어난 개체",
+    "findings_table.props.searchPlaceholder": "파일, Layout 또는 개체 검색…",
+    "findings_table.props.empty.message": "부모를 벗어난 개체를 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "개체 유형",
+    "findings_table.props.columns[3].label": "개체",
+    "findings_table.props.columns[4].label": "부모",
+    "findings_table.props.columns[5].label": "정도",
+    "extent_filter.props.options[0].label": "모두",
+    "extent_filter.props.options[1].label": "완전히 벗어남",
+    "extent_filter.props.options[2].label": "부분적으로 벗어남",
+    "object_type_select.props.label": "개체 유형",
+    "object_type_select.props.emptyOptionLabel": "모든 개체 유형",
+    "findings_table.props.columns[8].label": "너비",
+    "findings_table.props.columns[9].label": "높이"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "設定されずに読み取られる変数",
+    "description": "エラー誘発ルール — カタログ内のどこでも書き込まれていない変数が読み取られています。書き込み側が名前変更・削除されたか、値が書き出し対象外のファイルから来ることが前提になっています。Let() の定義は除外します（同じ計算式内で定義・読み取りされるため、結果を埋め尽くしてしまいます）。\n\nfmCheckMate チェック「ListVarsUndefined」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.read-never-set": "変数は読み取られますが書き込まれません"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "ローカル",
+    "summary_kpi.props.items[2].label": "グローバル",
+    "summary_kpi.props.items[3].label": "対象スクリプト",
+    "summary_kpi.props.items[4].label": "対象ファイル",
+    "findings_card.props.title": "設定されずに読み取られる変数",
+    "variable_scope_filter.props.options[0].label": "すべてのスコープ",
+    "variable_scope_filter.props.options[1].label": "ローカル",
+    "variable_scope_filter.props.options[2].label": "グローバル",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "変数",
+    "findings_table.props.columns[2].label": "スコープ",
+    "findings_table.props.columns[3].label": "初出",
+    "findings_table.props.columns[4].label": "読み取り回数",
+    "findings_table.props.columns[5].label": "他ファイルでの設定数",
+    "findings_table.props.columns[6].label": "根拠",
+    "findings_table.props.searchPlaceholder": "ファイル・変数・スクリプトを検索…",
+    "findings_table.props.empty.message": "書き込まれずに読み取られる変数はありません。"
+  }
+}

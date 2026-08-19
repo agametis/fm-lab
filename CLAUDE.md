@@ -68,7 +68,28 @@ For object analyses prefer the dedicated skills over ad-hoc SQL — they encapsu
 
 **Offer tests & patterns proactively:** for object-, cluster- or solution-level analyses — and especially for **symptom descriptions** ("hangs", "slow", "wrong results", "unexpected behavior", "escalating calls") — first check whether matching Analysis Tests (`/fm-test --find`, `GET /api/tests`) or an analysis pattern (`docs/agents/analysis-patterns.md`: call-chain, control-flow/reachability, window lifecycle, platform context) exist, and offer them to the user as a structured complement to `fm-analyze`/`fm-summarize`: tests give reproducible, curated checks with findings; the skills give free interpretation. This is an offer, not a mandatory step.
 
-Ad-hoc SQL is right for lists, counts, cross-references and everything the skills don't cover. Canonical patterns (where-used, dead code, cross-file dependencies, layout composition) and pitfalls (e.g. `restricts_*` links never count as usage): → `docs/agents/analysis-workflows.md`
+**Look up before you write SQL.** For recurring subjects the query already
+exists — consult it *before* composing ad-hoc SQL and **before writing any
+private helper script**:
+
+| About to … | Read first |
+|---|---|
+| read a script's steps | `query-cookbook.md` § Script dump |
+| find callers / walk a call chain | `analysis-patterns.md` `call-chain-resolution` |
+| judge branch scope, dead code, reachability | `analysis-patterns.md` `control-flow-reachability` |
+| where-used for any object | `query-cookbook.md` § Where-used & dependencies |
+| reach for a helper script | stop — query directly; report a shortfall (below) |
+
+`docs/agents/*` and this file are **maintainer-owned reference material** that
+ships with the workbench. **Never edit them to repair a pattern.** If one is
+missing, incomplete or wrong: name the file, the pattern and the concrete defect,
+then solve the task with a session-local query and say which workaround you used.
+The report is the deliverable — a silently patched local copy hides the defect
+from the maintainer and is overwritten by the next update.
+
+Ad-hoc SQL stays right for what is genuinely uncovered: lists, counts, one-off
+cross-references. Pitfalls (e.g. `restricts_*` links never count as usage):
+→ `docs/agents/analysis-workflows.md`
 
 ## 6. Code generation workflows
 
@@ -110,7 +131,7 @@ Use these skills instead of answering from memory — the local mirrors are vers
 
 ## 8. Query examples
 
-Three canonical patterns inline; the full cookbook (layout composition, cross-file links, statistics, DuckDB idioms): → `docs/agents/query-cookbook.md`
+Three canonical patterns inline; the full cookbook (script dumps, where-used, layout composition, cross-file links, statistics, DuckDB idioms): → `docs/agents/query-cookbook.md`
 
 **Never regex a `*_XML` column (`Step_XML`, `Object_XML`, …) for something `ObjectLinks` already resolves** (which fields a script sets/reads, which scripts it calls, which layouts/variables it touches, …). The relations are resolved at import — query the edge. Raw XML is the last resort, only for step-exact position or the concrete written value, and only when DDR-Info is absent (see §5 · `analysis-workflows.md`).
 

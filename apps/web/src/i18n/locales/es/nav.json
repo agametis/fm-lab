@@ -136,6 +136,8 @@
     "showFindings": "Mostrar hallazgos",
     "memberError": "Error",
     "openMember": "Abrir dashboard/consulta",
+    "openFinding": "Abrir en la vista de detalle",
+    "openMemberFindings": "Abrir todos los hallazgos en la vista de detalle",
     "truncated": "Más hallazgos truncados: abra el miembro para la lista completa.",
     "duration": "{{ms}} ms",
     "searchPlaceholder": "Filtrar pruebas…",
@@ -173,6 +175,8 @@
     "state_neutral": "Resultados neutros",
     "state_ok": "Superadas",
     "state_skipped": "Omitidas",
-    "state_failed": "Ejecución fallida"
+    "state_failed": "Ejecución fallida",
+    "filterReset": "Restablecer filtros",
+    "noResultsYet": "Aún no hay resultados — ejecuta las pruebas para llenar esta lista."
   }
 }

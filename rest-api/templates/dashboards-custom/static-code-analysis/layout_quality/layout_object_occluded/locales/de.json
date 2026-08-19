@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Objekt hinter Container verdeckt",
+    "description": "Layout-Qualitätsregel — ein Layoutobjekt liegt vollständig innerhalb der Fläche eines Portals, Tab- oder Slide-Controls, das in der Stapelreihenfolge vor ihm liegt. Das Objekt ist im Blätternmodus verdeckt und nicht klickbar — meist ein Stapelreihenfolge-Versehen.\n\nAngelehnt an die fmCheckMate-Prüfung „Hidden Object (Behind Container)“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.occluded": "Das Objekt liegt vollständig hinter einem davor liegenden {container} — im Blätternmodus verdeckt und nicht erreichbar"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Layouts",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "findings_card.props.title": "Objekt hinter Container verdeckt",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine hinter Containern verdeckten Objekte gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Container",
+    "findings_table.props.columns[7].label": "Breite",
+    "findings_table.props.columns[8].label": "Höhe"
+  }
+}

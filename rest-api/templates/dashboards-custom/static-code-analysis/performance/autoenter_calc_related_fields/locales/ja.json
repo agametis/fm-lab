@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "リレーションシップを横断する自動入力計算",
+    "description": "パフォーマンスルール — 関連フィールドを読む自動入力計算は、レコードの書き込みのたびにリレーションシップを横断します。WAN では横断のたびにデータ入力時の追加往復が発生し得ます。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象テーブル数",
+    "summary_kpi.props.items[2].label": "対象ファイル数",
+    "findings_card.props.title": "リレーションシップを横断する自動入力計算",
+    "findings_table.props.searchPlaceholder": "ファイル・テーブル・フィールドを検索…",
+    "findings_table.props.empty.message": "関連フィールドを読む自動入力計算はありません。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "テーブル",
+    "findings_table.props.columns[2].label": "フィールド",
+    "findings_table.props.columns[3].label": "関連参照数",
+    "findings_table.props.columns[4].label": "計算式（先頭）"
+  }
+}

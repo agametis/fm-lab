@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Référence de champ cassée",
+    "description": "Règle de qualité de Layout — un objet de layout référence un champ ou une occurrence de table qui n'existe plus. La résolution utilise les ID numériques (ID du champ dans la table cible, ID de l'occurrence de table dans le fichier), jamais les UUID : les références inter-fichiers portent souvent un UUID obsolète alors que le champ est intact, et FileMaker résout par ID à l'exécution. Les objets dont le fichier cible est absent du catalogue sont ignorés, et les objets conteneurs sont exclus car leur XML englobe le balisage de leurs enfants.\n\nD’après le contrôle fmCheckMate « Broken Field » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-field": "Le champ n'existe plus dans la table cible",
+    "messages.missing-to": "L'occurrence de table n'existe plus dans ce fichier"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Layouts concernés",
+    "summary_kpi.props.items[2].label": "Fichiers concernés",
+    "findings_card.props.title": "Référence de champ cassée",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un Layout ou un objet…",
+    "findings_table.props.empty.message": "Aucune référence de champ cassée trouvée.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Type d'objet",
+    "findings_table.props.columns[3].label": "Objet",
+    "findings_table.props.columns[4].label": "Champ",
+    "findings_table.props.columns[5].label": "Occurrence de table",
+    "findings_table.props.columns[8].label": "Largeur",
+    "findings_table.props.columns[9].label": "Hauteur"
+  }
+}

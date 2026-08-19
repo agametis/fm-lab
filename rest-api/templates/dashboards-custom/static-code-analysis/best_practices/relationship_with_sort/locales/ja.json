@@ -12,6 +12,11 @@
     "findings_table.props.columns[0].label": "ファイル",
     "findings_table.props.columns[1].label": "左 TO",
     "findings_table.props.columns[2].label": "右 TO",
-    "findings_table.props.columns[3].label": "ソート"
+    "findings_table.props.columns[3].label": "ソート",
+    "findings_table.props.columns[4].label": "利用ポータル数",
+    "findings_table.props.columns[5].label": "独自ソートのポータル",
+    "consumer_filter_chips.props.options[0].label": "すべてのリレーションシップ",
+    "consumer_filter_chips.props.options[1].label": "利用ポータルあり",
+    "consumer_filter_chips.props.options[2].label": "独自ソートのポータルあり"
   }
 }

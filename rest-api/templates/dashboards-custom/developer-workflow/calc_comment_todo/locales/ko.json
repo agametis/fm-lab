@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "계산식 주석의 TODO 마커",
+    "description": "「미완료 작업」 규칙군 — FileMaker 계산식의 주석에 TODO 마커(TODO, TO DO, TO-DO, TBD, to be done, to be defined)가 있습니다. 사용자 정의 함수, 필드 계산, 자동 입력·유효성 검사 계산, 스크립트 단계 계산식의 다섯 곳을 검사합니다. TODO는 결함이 아니라 계획된 작업이므로 심각도는 info입니다. 자체 수치로 집계되지만 신호등을 노란색으로 바꾸지 않습니다. 마커는 주석 안(// 줄 끝까지 또는 /* … */)에서만 집계됩니다. 문자열 리터럴 「TODO」는 검출 대상이 아닙니다.",
+    "messages.custom_function": "사용자 정의 함수 주석의 TODO 마커",
+    "messages.field_calc": "필드 계산식 주석의 TODO 마커",
+    "messages.field_autoenter": "자동 입력 계산식 주석의 TODO 마커",
+    "messages.field_validation": "유효성 검사 계산식 주석의 TODO 마커",
+    "messages.script_step": "스크립트 단계 계산식 주석의 TODO 마커"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "검출 수",
+    "summary_kpi.props.items[1].label": "사용자 정의 함수",
+    "summary_kpi.props.items[2].label": "필드",
+    "summary_kpi.props.items[3].label": "스크립트 단계",
+    "summary_kpi.props.items[4].label": "해당 파일",
+    "findings_card.props.title": "계산식 주석의 TODO 마커",
+    "findings_table.props.searchPlaceholder": "파일·개체·주석 검색…",
+    "findings_table.props.empty.message": "계산식 주석에 TODO 마커가 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "위치",
+    "findings_table.props.columns[2].label": "개체",
+    "findings_table.props.columns[3].label": "단계",
+    "findings_table.props.columns[4].label": "마커",
+    "findings_table.props.columns[5].label": "주석"
+  }
+}

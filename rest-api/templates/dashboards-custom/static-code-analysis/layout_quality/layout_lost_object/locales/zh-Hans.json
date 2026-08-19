@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "超出父对象的对象",
+    "description": "Layout 质量规则 — 嵌套对象完全或部分超出其父对象（入口、标签/滑动面板、组）的边界。此类对象在运行时会被裁剪或不可见——通常是移动或缩小父对象后的残留。允许入口滚动条区域（19 px）；排除弹出框面板和边界上高度为零的线条。\n\n基于 fmCheckMate 检查“Lost Object (In Container)” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.completely": "对象完全位于其父对象（{parent}）之外",
+    "messages.partially": "对象超出其父对象（{parent}）的边界"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "完全超出",
+    "summary_kpi.props.items[2].label": "部分超出",
+    "summary_kpi.props.items[3].label": "受影响的 Layout",
+    "findings_card.props.title": "超出父对象的对象",
+    "findings_table.props.searchPlaceholder": "搜索文件、Layout 或对象…",
+    "findings_table.props.empty.message": "未找到超出父对象的对象。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "对象类型",
+    "findings_table.props.columns[3].label": "对象",
+    "findings_table.props.columns[4].label": "父对象",
+    "findings_table.props.columns[5].label": "程度",
+    "extent_filter.props.options[0].label": "全部",
+    "extent_filter.props.options[1].label": "完全超出",
+    "extent_filter.props.options[2].label": "部分超出",
+    "object_type_select.props.label": "对象类型",
+    "object_type_select.props.emptyOptionLabel": "所有对象类型",
+    "findings_table.props.columns[8].label": "宽度",
+    "findings_table.props.columns[9].label": "高度"
+  }
+}

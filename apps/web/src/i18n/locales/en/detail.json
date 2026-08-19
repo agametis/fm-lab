@@ -5,6 +5,7 @@
   "autoTable": {
     "rowCount_one": "{{count}} entry",
     "rowCount_other": "{{count}} entries",
+    "rowCountTruncated": "{{shown}} of {{total}} entries",
     "filteredFrom": "filtered from {{count}}",
     "newCount": "{{count}} new",
     "totalSize": "Total size {{size}}",
@@ -393,7 +394,8 @@
     "highlightsCount_one": "{{count}} match highlighted",
     "highlightsCount_other": "{{count}} matches highlighted",
     "dismissAria": "Remove reference highlight",
-    "dismissTitle": "Remove reference highlight (Esc)"
+    "dismissTitle": "Remove reference highlight (Esc)",
+    "sourceLabel": "Source:"
   },
   "tableDetails": "Table details",
   "scriptDetails": "Script details",

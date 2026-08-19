@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Objektname mit Leerzeichen am Rand",
+    "description": "Code-Stil-Regel — ein Objektname beginnt oder endet mit einem Leerzeichen oder Tabulator. Das Zeichen ist in jeder Liste, die FileMaker zeigt, unsichtbar, gehört aber zum Namen: namensbasierte Zugriffe müssen es exakt reproduzieren, und zwei scheinbar gleiche Namen sortieren auseinander. Erfasst die benutzerbenannten Schemaobjekte; Layoutobjekte und Variablen haben eigene Regeln, Beziehungsnamen leitet FileMaker selbst ab.\n\nAngelehnt an die fmCheckMate-Prüfung „Script Name ends in white space“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.trailing": "Der Name endet mit einem Leerzeichen",
+    "messages.leading": "Der Name beginnt mit einem Leerzeichen",
+    "messages.both": "Der Name beginnt und endet mit einem Leerzeichen"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Am Ende",
+    "summary_kpi.props.items[2].label": "Am Anfang",
+    "summary_kpi.props.items[3].label": "Beide Enden",
+    "summary_kpi.props.items[4].label": "Betroffene Dateien",
+    "findings_card.props.title": "Objektname mit Leerzeichen am Rand",
+    "defect_filter.props.options[0].label": "alle",
+    "defect_filter.props.options[1].label": "Am Ende",
+    "defect_filter.props.options[2].label": "Am Anfang",
+    "defect_filter.props.options[3].label": "Beide Enden",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Objekttyp",
+    "findings_table.props.columns[2].label": "Name (in Klammern)",
+    "findings_table.props.columns[3].label": "Defekt",
+    "findings_table.props.searchPlaceholder": "Datei, Objekttyp oder Name suchen…",
+    "findings_table.props.empty.message": "Keine Namen mit Leerzeichen am Rand gefunden."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "title": "Layout Tests",
+  "icon": "layout-dashboard",
+  "description": "Curated checks for layouts and their objects — from a single layout to solution-wide sweeps.",
+  "order": 2,
+  "locales": {
+    "de": "Layout-Tests",
+    "es": "Pruebas de layouts",
+    "fr": "Tests de layouts",
+    "it": "Test dei layout",
+    "ja": "レイアウトテスト",
+    "ko": "레이아웃 테스트",
+    "nl": "Layouttests",
+    "pt": "Testes de layouts",
+    "sv": "Layouttester",
+    "zh-Hans": "布局测试"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Refresh Window vaciando la caché de combinaciones",
+    "description": "Regla de rendimiento — Refresh Window con «Vaciar resultados de combinación en caché» (o «Vaciar datos externos en caché») descarta las cachés de relaciones y obliga a FileMaker a volver a obtener los registros relacionados del servidor. Claris advierte explícitamente del coste de red."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Vaciar combinaciones",
+    "summary_kpi.props.items[2].label": "Vaciar datos externos",
+    "summary_kpi.props.items[3].label": "Refrescos simples (no informados)",
+    "summary_kpi.props.items[4].label": "Archivos afectados",
+    "flush_kind_filter.props.options[0].label": "Todos los vaciados",
+    "flush_kind_filter.props.options[1].label": "Combinaciones",
+    "flush_kind_filter.props.options[2].label": "Datos externos",
+    "findings_card.props.title": "Refresh Window vaciando la caché de combinaciones",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o script…",
+    "findings_table.props.empty.message": "No se encontró ningún Refresh Window con opción de vaciado.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Paso",
+    "findings_table.props.columns[3].label": "Vacía",
+    "findings_table.props.columns[4].label": "Profundidad de bucle"
+  }
+}

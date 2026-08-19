@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Utilisation spécifique à la plateforme : FileMaker Go (iOS)",
-  "analysis.defaultResult.meaning": "Scripts du périmètre utilisant des fonctionnalités propres à FileMaker Go (iOS) (actions exclusives ou fonctions dédiées)"
- }
+  "manifest": {
+    "title": "Utilisation spécifique à la plateforme : FileMaker Go (iOS)",
+    "analysis.defaultResult.meaning": "Scripts du périmètre utilisant des fonctionnalités propres à FileMaker Go (iOS) (actions exclusives ou fonctions dédiées)"
+  },
+  "layout": {}
 }

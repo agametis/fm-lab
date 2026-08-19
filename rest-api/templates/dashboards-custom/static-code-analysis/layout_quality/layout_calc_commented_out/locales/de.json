@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Auskommentierte Layout-Berechnung",
+    "description": "Layout-Qualitätsregel — eine Ausblenden-, Tooltip- oder Beschriftungs-Berechnung eines Layoutobjekts besteht vollständig aus einem Kommentar. Die Formel wird nie ausgewertet, das beabsichtigte Verhalten ist still deaktiviert.\n\nAngelehnt an die fmCheckMate-Prüfung „Broken Calculation /*Commented Out*/“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.hide": "Die Ausblenden-Berechnung ist vollständig auskommentiert",
+    "messages.tooltip": "Die Tooltip-Berechnung ist vollständig auskommentiert",
+    "messages.label": "Die Beschriftungs-Berechnung ist vollständig auskommentiert"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Layouts",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "findings_card.props.title": "Auskommentierte Layout-Berechnung",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine auskommentierten Layout-Berechnungen gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Slot",
+    "calc_slot_filter.props.options[0].label": "alle Berechnungen",
+    "calc_slot_filter.props.options[1].label": "Ausblenden",
+    "calc_slot_filter.props.options[2].label": "Tooltip",
+    "calc_slot_filter.props.options[3].label": "Beschriftung",
+    "object_type_select.props.label": "Objekttyp",
+    "object_type_select.props.emptyOptionLabel": "alle Objekttypen",
+    "findings_table.props.columns[7].label": "Breite",
+    "findings_table.props.columns[8].label": "Höhe"
+  }
+}

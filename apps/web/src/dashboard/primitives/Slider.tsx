@@ -20,6 +20,10 @@ import type { PrimitiveProps } from '../types';
  *   max        static upper bound (used when maxField is absent/empty)
  *   maxField   dataset field holding the dynamic upper bound
  *   default    fallback value when the param is not present in the URL
+ *   defaultTo  "max" makes the (possibly data-driven) upper bound the fallback
+ *              — an upper-limit slider then starts inactive at "no limit"
+ *   comparator display prefix before the value ("≥" default; "≤" for
+ *              upper-limit sliders)
  *   step       slider step (default 1)
  *   valueSuffix optional unit shown next to the current value (e.g. "objects")
  */
@@ -30,7 +34,7 @@ export function Slider({ node, dataset }: PrimitiveProps) {
   const label = props.label as string | undefined;
   const min = Number(props.min ?? 0);
   const step = Number(props.step ?? 1);
-  const fallback = Number(props.default ?? min);
+  const comparator = (props.comparator as string | undefined) ?? '≥';
   const valueSuffix = props.valueSuffix as string | undefined;
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -45,8 +49,13 @@ export function Slider({ node, dataset }: PrimitiveProps) {
       if (Number.isFinite(n) && n > 0) return n;
     }
     const staticMax = Number(props.max);
-    return Number.isFinite(staticMax) && staticMax > 0 ? staticMax : Math.max(fallback, min + 1);
-  }, [dataset, props.maxField, props.max, fallback, min]);
+    return Number.isFinite(staticMax) && staticMax > 0 ? staticMax : min + 1;
+  }, [dataset, props.maxField, props.max, min]);
+
+  // defaultTo: "max" — upper-limit sliders rest at the (data-driven) ceiling,
+  // meaning "no limit"; the param is dropped there, so the query stays
+  // unfiltered until the user pulls the slider down.
+  const fallback = props.defaultTo === 'max' ? dynamicMax : Number(props.default ?? min);
 
   // Current committed value comes from the URL param (source of truth); local
   // state tracks the live drag position for a smooth track, committed to the
@@ -93,7 +102,7 @@ export function Slider({ node, dataset }: PrimitiveProps) {
       <div className="dash-slider__head">
         <label className="dash-slider__label" htmlFor={`slider-${param}`}>{caption}</label>
         <span className="dash-slider__value">
-          ≥ {value.toLocaleString()}{valueSuffix ? ` ${valueSuffix}` : ''}
+          {comparator} {value.toLocaleString()}{valueSuffix ? ` ${valueSuffix}` : ''}
         </span>
       </div>
       <div className="dash-slider__track">

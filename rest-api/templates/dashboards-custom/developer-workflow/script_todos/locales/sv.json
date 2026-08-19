@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "TO-DO i skript (utforskare)",
+    "description": "Utforskare för ofärdigt arbete i skriptkommentarer i tre notationer (TO DO, FIX IT, TBD). Klicka på ett antal för att filtrera listan. Inventering, inte en regel: paketet deklarerar medvetet inget resultatvärde, hamnar därför utanför hälsokontrollen och har ingen bricka — räkningen sköts av reglerna script_comment_fixme (warning) och script_comment_todo (info)."
+  },
+  "layout": {
+    "todo_kpi_kpistrip.props.items[0].label": "Totalt rader",
+    "todo_kpi_kpistrip.props.items[1].label": "TO DO-rader",
+    "todo_kpi_kpistrip.props.items[2].label": "FIX IT-rader",
+    "todo_kpi_kpistrip.props.items[3].label": "TBD-rader",
+    "todo_kpi_kpistrip.props.items[4].label": "Skript",
+    "todo_kpi_kpistrip.props.items[5].label": "Filer",
+    "todo_lines.props.title": "Markerade kommentarsrader",
+    "todo_lines_table.props.columns[0].label": "Fil",
+    "todo_lines_table.props.columns[1].label": "Skriptnamn",
+    "todo_lines_table.props.columns[2].label": "Mönster",
+    "todo_lines_table.props.columns[3].label": "Kommentar",
+    "todo_lines_table.props.searchPlaceholder": "Sök i kommentarer …"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Layout com tema Classic",
+    "description": "Regra de qualidade de Layout — um Layout ainda usa o tema Classic obsoleto. Layouts Classic renderizam com métricas legadas, não têm recursos de estilo modernos e deixam o WebDirect mais lento.\n\nBaseado na verificação fmCheckMate “Object with classic style” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.classic": "O Layout usa o tema Classic obsoleto"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "findings_card.props.title": "Layout com tema Classic",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou Layout…",
+    "findings_table.props.empty.message": "Nenhum Layout com tema Classic encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tema"
+  }
+}

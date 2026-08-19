@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Nome con suffisso di duplicazione",
+    "description": "Regola di stile — un nome di oggetto porta ancora il suffisso che FileMaker aggiunge alla duplicazione. I suffissi di copia (Copy / copy / Kopie) sono l'insieme predefinito; la classe numerica — un nome che finisce con uno spazio e fino a quattro cifre — sta volutamente su un chip a parte, perché innumerevoli nomi intenzionali sono costruiti allo stesso modo.\n\nBasato sul controllo fmCheckMate «Copied Function Name» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy": "Il nome porta ancora il suffisso di duplicazione di FileMaker",
+    "messages.numeric": "Il nome finisce con un numero — forse un duplicato mai rinominato"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Suffisso di copia",
+    "summary_kpi.props.items[2].label": "Suffisso numerico",
+    "summary_kpi.props.items[3].label": "File interessati",
+    "findings_card.props.title": "Nome con suffisso di duplicazione",
+    "suffix_kind_filter.props.options[0].label": "entrambi",
+    "suffix_kind_filter.props.options[1].label": "Suffisso di copia",
+    "suffix_kind_filter.props.options[2].label": "Suffisso numerico",
+    "object_type_select.props.label": "Tipo di oggetto",
+    "object_type_select.props.emptyOptionLabel": "tutti i tipi",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Tipo di oggetto",
+    "findings_table.props.columns[2].label": "Oggetto",
+    "findings_table.props.columns[3].label": "Suffisso",
+    "findings_table.props.searchPlaceholder": "Cerca file, tipo di oggetto o nome…",
+    "findings_table.props.empty.message": "Nessun nome con suffisso di duplicazione trovato."
+  }
+}

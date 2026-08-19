@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Objet hors de son parent",
+    "description": "Règle de qualité de Layout — un objet imbriqué se trouve totalement ou partiellement hors des limites de son parent (portail, panneau d'onglet ou volet, groupe). Ces objets sont rognés ou invisibles à l'exécution — le plus souvent des restes après déplacement ou redimensionnement du parent. La barre de défilement du portail (19 px) est tolérée ; les panneaux popover et les lignes de hauteur nulle sur le bord sont exclus.\n\nD’après le contrôle fmCheckMate « Lost Object (In Container) » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.completely": "L'objet se trouve entièrement hors de son parent ({parent})",
+    "messages.partially": "L'objet dépasse de son parent ({parent})"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Entièrement hors limites",
+    "summary_kpi.props.items[2].label": "Partiellement hors limites",
+    "summary_kpi.props.items[3].label": "Layouts concernés",
+    "findings_card.props.title": "Objet hors de son parent",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un Layout ou un objet…",
+    "findings_table.props.empty.message": "Aucun objet hors de son parent trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Type d'objet",
+    "findings_table.props.columns[3].label": "Objet",
+    "findings_table.props.columns[4].label": "Parent",
+    "findings_table.props.columns[5].label": "Étendue",
+    "extent_filter.props.options[0].label": "tous",
+    "extent_filter.props.options[1].label": "entièrement hors limites",
+    "extent_filter.props.options[2].label": "partiellement hors limites",
+    "object_type_select.props.label": "Type d'objet",
+    "object_type_select.props.emptyOptionLabel": "tous les types d'objet",
+    "findings_table.props.columns[8].label": "Largeur",
+    "findings_table.props.columns[9].label": "Hauteur"
+  }
+}

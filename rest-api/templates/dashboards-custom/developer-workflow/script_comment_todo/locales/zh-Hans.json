@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "脚本注释中的 TODO 标记",
+    "description": "“未完成工作”规则族 — 脚本的注释步骤中含有 TODO 标记（TODO, TO DO, TO-DO, TBD, to be done, to be defined）。 TODO 描述的是计划中的工作而非缺陷，因此严重度为 info：规则单独计数，但不会把信号灯变黄。 匹配不区分大小写并允许分隔符，因此与开发者的书写方式无关。",
+    "messages.comment": "脚本注释中的 TODO 标记"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "受影响脚本",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "findings_card.props.title": "脚本注释中的 TODO 标记",
+    "findings_table.props.searchPlaceholder": "搜索文件、脚本或注释…",
+    "findings_table.props.empty.message": "脚本注释中未发现 TODO 标记。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "步骤",
+    "findings_table.props.columns[3].label": "标记",
+    "findings_table.props.columns[4].label": "注释"
+  }
+}

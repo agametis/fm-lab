@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "失效的查找",
+    "description": "易错规则 — 查找的来源已不存在：表实例已被删除、目标文件中缺少源表，或源字段已被删除。无法解析的查找不会复制任何内容，也不会给出任何提示 — 字段只是在每条新记录中保持为空。\n\n基于 fmCheckMate 检查“ListFieldsWithBrokenLookup” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-relationship": "查找指向的表实例已不存在",
+    "messages.missing-table": "查找的源表在目标文件中不存在",
+    "messages.missing-field": "查找的源字段在源表中不存在"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "范围内的查找",
+    "summary_kpi.props.items[2].label": "无法验证",
+    "summary_kpi.props.items[3].label": "受影响文件",
+    "findings_card.props.title": "失效的查找",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "表",
+    "findings_table.props.columns[2].label": "字段",
+    "findings_table.props.columns[3].label": "查找关系",
+    "findings_table.props.columns[4].label": "源字段",
+    "findings_table.props.columns[5].label": "目标文件",
+    "findings_table.props.columns[6].label": "缺陷",
+    "findings_table.props.searchPlaceholder": "搜索文件、表或字段…",
+    "findings_table.props.empty.message": "未发现失效的查找。"
+  }
+}

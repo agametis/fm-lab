@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "字段重复次数超出范围",
+    "description": "Layout 质量规则 — 布局对象显示的字段重复序号高于该字段实际的重复次数。运行时该对象将保持为空，通常是字段定义后来被缩减所致。\n\n基于 fmCheckMate 检查“Field repetition out of range” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.out-of-range": "对象显示第 {repetition} 个重复，而该字段只有 {max_repetitions} 个"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响的 Layout",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "findings_card.props.title": "字段重复次数超出范围",
+    "findings_table.props.searchPlaceholder": "搜索文件、Layout 或对象…",
+    "findings_table.props.empty.message": "未发现超出范围的字段重复。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "对象类型",
+    "findings_table.props.columns[3].label": "对象",
+    "findings_table.props.columns[4].label": "字段",
+    "findings_table.props.columns[5].label": "重复",
+    "findings_table.props.columns[6].label": "最大重复数"
+  }
+}

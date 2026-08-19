@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Plattformskompatibilitet: FileMaker Cloud",
-  "analysis.defaultResult.meaning": "Steg inom omfånget som inte eller endast delvis stöds på FileMaker Cloud"
- }
+  "manifest": {
+    "title": "Plattformskompatibilitet: FileMaker Cloud",
+    "analysis.defaultResult.meaning": "Steg inom omfånget som inte eller endast delvis stöds på FileMaker Cloud"
+  },
+  "layout": {}
 }

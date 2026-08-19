@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Estrutura de comentários quebrada",
+    "description": "Regra de propensão a erros — uma fórmula contém marcas de comentário que não podem aninhar-se: um segundo /* dentro de um comentário aberto, um */ a mais depois de o bloco já ter fechado, ou um comentário de linha // colado a um /* de abertura. Os comentários do FileMaker não aninham, pelo que partes da fórmula acabam dentro ou fora do comentário contra a intenção.\n\nBaseado na verificação fmCheckMate “Broken Calculation /*Commented Out*/” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.nested-open": "Um comentário abre dentro de um comentário aberto",
+    "messages.double-close": "Um comentário é fechado duas vezes",
+    "messages.line-in-block": "Um comentário de linha está dentro de um bloco de comentário"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Abertura aninhada",
+    "summary_kpi.props.items[2].label": "Fecho duplo",
+    "summary_kpi.props.items[3].label": "Ficheiros afetados",
+    "findings_card.props.title": "Estrutura de comentários quebrada",
+    "findings_table.props.columns[0].label": "Ficheiro",
+    "findings_table.props.columns[1].label": "Tipo de objeto",
+    "findings_table.props.columns[2].label": "Objeto",
+    "findings_table.props.columns[3].label": "Ranhura",
+    "findings_table.props.columns[4].label": "Localização",
+    "findings_table.props.columns[5].label": "Defeito",
+    "findings_table.props.searchPlaceholder": "Procurar ficheiro, objeto ou fórmula…",
+    "findings_table.props.empty.message": "Não foram encontradas estruturas de comentários quebradas."
+  }
+}

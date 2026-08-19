@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "スクリプトの TO-DO（エクスプローラ）",
+    "description": "スクリプトコメント内の未完了作業を 3 つの表記（TO DO, FIX IT, TBD）で探索します。件数をクリックすると一覧を絞り込めます。これはルールではなくインベントリです。結果値を意図的に宣言しないため、ヘルスチェックには含まれず、タイルのチップも表示されません。計上は script_comment_fixme（warning）と script_comment_todo（info）が担います。"
+  },
+  "layout": {
+    "todo_kpi_kpistrip.props.items[0].label": "合計行数",
+    "todo_kpi_kpistrip.props.items[1].label": "TO DO 行数",
+    "todo_kpi_kpistrip.props.items[2].label": "FIX IT 行数",
+    "todo_kpi_kpistrip.props.items[3].label": "TBD 行数",
+    "todo_kpi_kpistrip.props.items[4].label": "スクリプト",
+    "todo_kpi_kpistrip.props.items[5].label": "ファイル",
+    "todo_lines.props.title": "マークされたコメント行",
+    "todo_lines_table.props.columns[0].label": "ファイル",
+    "todo_lines_table.props.columns[1].label": "スクリプト名",
+    "todo_lines_table.props.columns[2].label": "パターン",
+    "todo_lines_table.props.columns[3].label": "コメント",
+    "todo_lines_table.props.searchPlaceholder": "コメントを検索 …"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Marca TODO en un objeto de layout",
+    "description": "Regla de la familia «Trabajo pendiente»: un objeto de layout contiene una marca TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) en su texto, en la información sobre herramientas o en la fórmula de la etiqueta. Una marca TODO describe trabajo planificado, no un defecto: severidad info, el semáforo permanece neutral. Endurecimiento deliberado frente a la regla de origen: sin distinguir mayúsculas y tolerando separadores; solo así se encuentra un objeto de texto cuyo contenido es «TO DO».\n\nBasado en la comprobación de fmCheckMate «FIXME» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.text": "Marca TODO en el contenido de texto",
+    "messages.tooltip": "Marca TODO en la fórmula de información sobre herramientas",
+    "messages.label": "Marca TODO en la fórmula de la etiqueta"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Layouts afectados",
+    "summary_kpi.props.items[2].label": "Archivos afectados",
+    "findings_card.props.title": "Marca TODO en un objeto de layout",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, layout u objeto…",
+    "findings_table.props.empty.message": "No se encontraron marcas TODO en objetos de layout.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Ubicación",
+    "findings_table.props.columns[5].label": "Marca",
+    "findings_table.props.columns[8].label": "Ancho",
+    "findings_table.props.columns[9].label": "Alto"
+  }
+}

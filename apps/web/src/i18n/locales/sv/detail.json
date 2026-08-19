@@ -5,6 +5,7 @@
   "autoTable": {
     "rowCount_one": "{{count}} post",
     "rowCount_other": "{{count}} poster",
+    "rowCountTruncated": "{{shown}} av {{total}} poster",
     "filteredFrom": "filtrerat från {{count}}",
     "newCount": "{{count}} nya",
     "totalSize": "Total storlek {{size}}",
@@ -362,7 +363,8 @@
     "highlightsCount_one": "{{count}} träff markerad",
     "highlightsCount_other": "{{count}} träffar markerade",
     "dismissAria": "Ta bort referensmarkering",
-    "dismissTitle": "Ta bort referensmarkering (Esc)"
+    "dismissTitle": "Ta bort referensmarkering (Esc)",
+    "sourceLabel": "Källa:"
   },
   "tableDetails": "Tabelldetaljer",
   "scriptDetails": "Skriptdetaljer",

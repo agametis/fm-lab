@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "コンテナの背後に隠れたオブジェクト",
+    "description": "Layout 品質ルール — オブジェクトが、重なり順で手前にあるポータル、タブコントロール、スライドコントロールの範囲内に完全に収まっています。ブラウズモードでは覆われてクリックできません。多くは重なり順のミスです。\n\nfmCheckMate チェック「Hidden Object (Behind Container)」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.occluded": "オブジェクトが手前の {container} の背後に完全に隠れています — ブラウズモードでは覆われて操作できません"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象 Layout 数",
+    "summary_kpi.props.items[2].label": "対象ファイル数",
+    "findings_card.props.title": "コンテナの背後に隠れたオブジェクト",
+    "findings_table.props.searchPlaceholder": "ファイル、Layout、オブジェクトを検索…",
+    "findings_table.props.empty.message": "コンテナの背後に隠れたオブジェクトは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "オブジェクトタイプ",
+    "findings_table.props.columns[3].label": "オブジェクト",
+    "findings_table.props.columns[4].label": "コンテナ",
+    "findings_table.props.columns[7].label": "幅",
+    "findings_table.props.columns[8].label": "高さ"
+  }
+}

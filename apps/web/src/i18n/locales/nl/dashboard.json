@@ -168,5 +168,9 @@
     },
     "noFilterMatches": "Geen items met deze status in deze rubriek.",
     "openFolder": "Map openen"
+  },
+  "featured": {
+    "ruleCount_one": "{{count}} regel",
+    "ruleCount_other": "{{count}} regels"
   }
 }

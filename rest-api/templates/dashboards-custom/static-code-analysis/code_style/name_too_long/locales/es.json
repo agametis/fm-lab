@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "title": "Nombre de objeto demasiado largo",
+    "description": "Regla de estilo: un nombre de objeto supera el umbral de legibilidad (max_len, 80 caracteres por omisión) o se sitúa justo en el límite de 100 caracteres de FileMaker, donde la entrada se truncó en silencio. Los nombres en el límite se avisan como advertencia; el resto, como información.\n\nBasado en la comprobación de fmCheckMate «ListNamesWhichAreTooLong» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.too-long": "El nombre supera el umbral configurado",
+    "messages.at-limit": "El nombre está en el límite de 100 caracteres de FileMaker y puede haberse truncado"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Sobre el umbral",
+    "summary_kpi.props.items[2].label": "En el límite",
+    "summary_kpi.props.items[3].label": "Archivos afectados",
+    "findings_card.props.title": "Nombre de objeto demasiado largo",
+    "defect_filter.props.options[0].label": "todos",
+    "defect_filter.props.options[1].label": "Sobre el umbral",
+    "defect_filter.props.options[2].label": "En el límite",
+    "max_len_slider.props.label": "Longitud del nombre",
+    "object_type_select.props.label": "Tipo de objeto",
+    "object_type_select.props.emptyOptionLabel": "todos los tipos",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Tipo de objeto",
+    "findings_table.props.columns[2].label": "Objeto",
+    "findings_table.props.columns[3].label": "Longitud",
+    "findings_table.props.columns[4].label": "Defecto",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, tipo de objeto o nombre…",
+    "findings_table.props.empty.message": "No se encontraron nombres por encima del umbral."
+  }
+}

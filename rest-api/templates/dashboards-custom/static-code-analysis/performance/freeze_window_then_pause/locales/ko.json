@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Pause로 해제되는 Freeze Window",
+    "description": "성능 규칙 — 창을 고정한 스크립트가 나중에 일시 정지합니다. Pause/Resume Script는 고정 상태를 해제하므로 스크립트 중간에 창이 렌더링되고 그 이후 고정 효과가 사라집니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "findings_card.props.title": "Pause로 해제되는 Freeze Window",
+    "findings_table.props.searchPlaceholder": "파일 또는 스크립트 검색…",
+    "findings_table.props.empty.message": "창을 고정한 뒤 일시 정지하는 스크립트가 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "스크립트",
+    "findings_table.props.columns[2].label": "Freeze Window",
+    "findings_table.props.columns[3].label": "첫 일시 정지",
+    "findings_table.props.columns[4].label": "고정 후 일시 정지 수"
+  }
+}

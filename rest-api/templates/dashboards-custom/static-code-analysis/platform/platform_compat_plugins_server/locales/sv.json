@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Plug-in-kompatibilitet: FileMaker Server",
-  "analysis.defaultResult.meaning": "Plug-in-funktionsanrop inom omfånget som inte körs på FileMaker Server"
- }
+  "manifest": {
+    "title": "Plug-in-kompatibilitet: FileMaker Server",
+    "analysis.defaultResult.meaning": "Plug-in-funktionsanrop inom omfånget som inte körs på FileMaker Server"
+  },
+  "layout": {}
 }

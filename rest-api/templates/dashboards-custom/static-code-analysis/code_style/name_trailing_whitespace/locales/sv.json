@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Objektnamn med blanksteg i kanten",
+    "description": "Kodstilsregel — ett objektnamn börjar eller slutar med ett blanksteg eller en tabb. Tecknet är osynligt i alla listor FileMaker visar men ingår i namnet: åtkomst via namn måste återge det exakt, och två till synes identiska namn sorteras isär. Omfattar de användarnamngivna schemaobjekten; layoutobjekt och variabler har egna regler, relationsnamn härleds av FileMaker.\n\nBaserad på fmCheckMate-kontrollen ”Script Name ends in white space” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.trailing": "Namnet slutar med ett blanksteg",
+    "messages.leading": "Namnet börjar med ett blanksteg",
+    "messages.both": "Namnet börjar och slutar med ett blanksteg"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "I slutet",
+    "summary_kpi.props.items[2].label": "I början",
+    "summary_kpi.props.items[3].label": "Båda ändarna",
+    "summary_kpi.props.items[4].label": "Berörda filer",
+    "findings_card.props.title": "Objektnamn med blanksteg i kanten",
+    "defect_filter.props.options[0].label": "alla",
+    "defect_filter.props.options[1].label": "I slutet",
+    "defect_filter.props.options[2].label": "I början",
+    "defect_filter.props.options[3].label": "Båda ändarna",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Objekttyp",
+    "findings_table.props.columns[2].label": "Namn (inom hakparenteser)",
+    "findings_table.props.columns[3].label": "Defekt",
+    "findings_table.props.searchPlaceholder": "Sök fil, objekttyp eller namn…",
+    "findings_table.props.empty.message": "Inga namn med blanksteg i kanten hittades."
+  }
+}

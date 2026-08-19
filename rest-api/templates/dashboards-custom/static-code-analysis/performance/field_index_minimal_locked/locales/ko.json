@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "자동 인덱싱이 켜진 최소 인덱스",
+    "description": "성능 규칙 — 필드의 인덱스가 「최소」로 설정되어 있는데 자동 인덱싱은 여전히 켜져 있습니다. 최소는 단어 인덱스만 남기고 값 인덱스를 버리지만, 자동 인덱싱이 켜져 있으면 FileMaker는 검색에 필요한 것을 어차피 다시 만듭니다. 이 설정은 예측 가능한 절약을 주지 못하며, 대개 한 번 지운 뒤 다시 검토하지 않은 인덱스를 뜻합니다.\n\nfmCheckMate 검사 “ListFieldsWithIndexMinimalLocked” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.index-minimal-locked": "자동 인덱싱이 켜진 상태에서 인덱스가 「최소」입니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받은 테이블",
+    "summary_kpi.props.items[2].label": "영향받은 파일",
+    "findings_card.props.title": "자동 인덱싱이 켜진 최소 인덱스",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "테이블",
+    "findings_table.props.columns[2].label": "필드",
+    "findings_table.props.columns[3].label": "필드 유형",
+    "findings_table.props.columns[4].label": "데이터 유형",
+    "findings_table.props.searchPlaceholder": "파일, 테이블 또는 필드 검색…",
+    "findings_table.props.empty.message": "최소 인덱스이면서 자동 인덱싱이 켜진 필드가 없습니다."
+  }
+}

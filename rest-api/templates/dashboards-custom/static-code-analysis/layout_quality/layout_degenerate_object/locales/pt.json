@@ -1,0 +1,33 @@
+{
+  "manifest": {
+    "title": "Objeto de Layout degenerado",
+    "description": "Regra de qualidade de Layout — um objeto está degenerado. Objetos de texto sem texto, objetos com largura ou altura zero e objetos abaixo do tamanho mínimo em ambas as dimensões (controles deslizantes de largura/altura, padrão 4 px cada). Linhas são excluídas — extensão zero é sua forma normal. Textos vazios minúsculos costumam servir de espaçadores — revise antes de excluir.",
+    "messages.zero-size": "O objeto tem largura ou altura zero",
+    "messages.empty-text": "O objeto de texto não contém texto",
+    "messages.undersized": "O objeto é menor que {min_w}×{min_h} px (largura×altura)"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Objetos de texto vazios",
+    "summary_kpi.props.items[2].label": "Muito pequenos",
+    "summary_kpi.props.items[3].label": "Tamanho zero",
+    "min_w_slider.props.label": "Largura mín.",
+    "min_h_slider.props.label": "Altura mín.",
+    "findings_card.props.title": "Objeto de Layout degenerado",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, Layout ou objeto…",
+    "findings_table.props.empty.message": "Nenhum objeto degenerado encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Defeito",
+    "defect_filter.props.options[0].label": "todos os defeitos",
+    "defect_filter.props.options[1].label": "texto vazio",
+    "defect_filter.props.options[2].label": "muito pequeno",
+    "defect_filter.props.options[3].label": "tamanho zero",
+    "object_type_select.props.label": "Tipo de objeto",
+    "object_type_select.props.emptyOptionLabel": "todos os tipos de objeto",
+    "findings_table.props.columns[7].label": "Largura",
+    "findings_table.props.columns[8].label": "Altura"
+  }
+}

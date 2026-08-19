@@ -10,7 +10,6 @@
     "findings_table.props.searchPlaceholder": "Rechercher un fichier, un script ou un résultat…",
     "findings_table.props.empty.message": "Aucun bloc If / End If déséquilibré trouvé.",
     "findings_table.props.columns[0].label": "Fichier",
-    "findings_table.props.columns[1].label": "Script",
-    "findings_table.props.columns[2].label": "Résultat"
+    "findings_table.props.columns[1].label": "Script"
   }
 }

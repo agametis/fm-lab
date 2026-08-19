@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "Layout 几何浏览器",
+    "description": "清单仪表板 — 列出所有 Layout 对象，并提供可单独排序的几何列（X、Y、宽度、高度、Z 顺序）。可按 Layout 分区（页眉、正文、页脚等）、对象类型、最大宽度/高度以及 Layout 绝对坐标窗口（X/Y 起/止）进行筛选，以检查特定的布局区域。嵌套对象的坐标相对于其父容器；坐标窗口对顶层对象精确匹配，嵌套对象通过其顶层容器计入。URL 参数 w_min/h_min 是滑块的补充。点击行即可打开 Layout 并高亮显示该对象。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "对象",
+    "summary_kpi.props.items[1].label": "Layout",
+    "summary_kpi.props.items[2].label": "文件",
+    "objects_card.props.title": "Layout 对象",
+    "part_select.props.label": "Layout 分区",
+    "part_select.props.emptyOptionLabel": "所有分区",
+    "object_type_select.props.label": "对象类型",
+    "object_type_select.props.emptyOptionLabel": "所有对象类型",
+    "w_max_slider.props.label": "最大宽度",
+    "h_max_slider.props.label": "最大高度",
+    "x_min_slider.props.label": "窗口 X 起",
+    "x_max_slider.props.label": "窗口 X 止",
+    "y_min_slider.props.label": "窗口 Y 起",
+    "y_max_slider.props.label": "窗口 Y 止",
+    "objects_table.props.searchPlaceholder": "搜索文件、Layout 或对象…",
+    "objects_table.props.empty.message": "没有符合当前筛选条件的 Layout 对象。",
+    "objects_table.props.columns[0].label": "文件",
+    "objects_table.props.columns[1].label": "Layout",
+    "objects_table.props.columns[2].label": "分区",
+    "objects_table.props.columns[3].label": "对象类型",
+    "objects_table.props.columns[4].label": "对象",
+    "objects_table.props.columns[5].label": "层级",
+    "objects_table.props.columns[8].label": "宽度",
+    "objects_table.props.columns[9].label": "高度"
+  }
+}

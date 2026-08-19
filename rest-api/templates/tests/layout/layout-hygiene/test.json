@@ -1,0 +1,180 @@
+{
+  "id": "layout-hygiene",
+  "version": "1.1.0",
+  "title": "Layout Hygiene",
+  "description": "Best-practice checks for layout objects: objects lost outside their container or beyond the layout, occluded and degenerate objects, stacked duplicates, copied or quoted object names, unfinished-work markers, single-child groups, buttons without an action, the deprecated Classic theme and the share of objects styled with local CSS. Also includes the overlap inventory as a query member: every pairwise overlap between sibling objects, of which the stacked-duplicate rule is the sharp, congruent-and-same-type slice.",
+  "keywords": [
+    "layout",
+    "hygiene",
+    "geometry",
+    "naming",
+    "theme",
+    "styling",
+    "overlap",
+    "fmcheckmate"
+  ],
+  "testType": "code-quality",
+  "objectTypes": [
+    "Layout"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table",
+    "inventory-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "layout_lost_object"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_object_occluded"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_object_offscreen"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_degenerate_object"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_stacked_duplicate_object"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_quoted_object_name"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_copied_object_name"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_text_fixme"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_text_todo"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_group_of_one"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_button_without_action"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_classic_theme"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "layout_local_css"
+    },
+    {
+      "kind": "query",
+      "ref": "layout_overlap_explorer"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "quick",
+      "title": "Quick Check",
+      "description": "Geometry-focused core rules: lost, off-layout, occluded, degenerate and stacked duplicate objects.",
+      "members": [
+        "layout_lost_object",
+        "layout_object_occluded",
+        "layout_object_offscreen",
+        "layout_degenerate_object",
+        "layout_stacked_duplicate_object"
+      ]
+    },
+    {
+      "id": "full",
+      "title": "Full Check"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Layout-Hygiene",
+      "description": "Best-Practice-Prüfungen für Layoutobjekte: Objekte außerhalb ihres Containers oder des Layouts, verdeckte und degenerierte Objekte, deckungsgleiche Duplikate, kopierte oder in Anführungszeichen gesetzte Objektnamen, Marker für unfertige Arbeit, Gruppen mit nur einem Element, Schaltflächen ohne Aktion, das veraltete Classic-Theme und der Anteil der per lokalem CSS gestalteten Objekte. Enthält außerdem das Überlappungs-Inventar als Query-Member: alle paarweisen Überlappungen zwischen Geschwisterobjekten, von denen die Regel zu deckungsgleichen Duplikaten die scharfe Teilmenge ist.",
+      "profiles.quick.title": "Schnellprüfung",
+      "profiles.quick.description": "Geometrie-Kernregeln: verlorene, außerhalb des Layouts liegende, verdeckte, degenerierte und deckungsgleich gestapelte Objekte.",
+      "profiles.full.title": "Vollprüfung"
+    },
+    "es": {
+      "title": "Higiene de layouts",
+      "description": "Comprobaciones de buenas prácticas para objetos de layout: objetos fuera de su contenedor o del layout, objetos ocultados y degenerados, duplicados superpuestos, nombres copiados o entre comillas, marcadores de trabajo pendiente, grupos de un solo elemento, botones sin acción, el tema Classic obsoleto y la proporción de objetos con CSS local. Incluye además el inventario de solapamientos como miembro de consulta: todos los solapamientos por pares entre objetos hermanos, del cual la regla de duplicados superpuestos es el subconjunto preciso.",
+      "profiles.quick.title": "Comprobación rápida",
+      "profiles.quick.description": "Reglas centrales de geometría: objetos perdidos, fuera del layout, ocultados, degenerados y duplicados superpuestos.",
+      "profiles.full.title": "Comprobación completa"
+    },
+    "fr": {
+      "title": "Hygiène des layouts",
+      "description": "Vérifications de bonnes pratiques pour les objets de layout : objets hors de leur conteneur ou du layout, objets masqués et dégénérés, doublons superposés, noms copiés ou entre guillemets, marqueurs de travail inachevé, groupes à élément unique, boutons sans action, thème Classic obsolète et part des objets stylés en CSS local. Inclut également l'inventaire des chevauchements comme membre de requête : tous les chevauchements par paires entre objets frères, dont la règle des doublons superposés constitue le sous-ensemble précis.",
+      "profiles.quick.title": "Vérification rapide",
+      "profiles.quick.description": "Règles géométriques centrales : objets perdus, hors du layout, masqués, dégénérés et doublons superposés.",
+      "profiles.full.title": "Vérification complète"
+    },
+    "it": {
+      "title": "Igiene dei layout",
+      "description": "Controlli di buone pratiche per gli oggetti di layout: oggetti fuori dal contenitore o dal layout, oggetti occlusi e degeneri, duplicati sovrapposti, nomi copiati o tra virgolette, marcatori di lavoro incompiuto, gruppi con un solo elemento, pulsanti senza azione, il tema Classic obsoleto e la quota di oggetti con CSS locale. Include inoltre l'inventario delle sovrapposizioni come membro query: tutte le sovrapposizioni a coppie tra oggetti fratelli, di cui la regola dei duplicati sovrapposti è il sottoinsieme preciso.",
+      "profiles.quick.title": "Controllo rapido",
+      "profiles.quick.description": "Regole geometriche centrali: oggetti persi, fuori dal layout, occlusi, degeneri e duplicati sovrapposti.",
+      "profiles.full.title": "Controllo completo"
+    },
+    "ja": {
+      "title": "レイアウト衛生チェック",
+      "description": "レイアウトオブジェクトのベストプラクティス検査：コンテナやレイアウトの外にあるオブジェクト、遮蔽・退化したオブジェクト、重なった複製、コピーまたは引用符付きの名前、未完了マーカー、要素が 1 つだけのグループ、アクションのないボタン、非推奨の Classic テーマ、ローカル CSS で装飾されたオブジェクトの割合。 さらに重なりインベントリをクエリメンバーとして含みます：兄弟オブジェクト間のすべての組み合わせの重なりで、重なった複製のルールはその厳密な部分集合です。",
+      "profiles.quick.title": "クイックチェック",
+      "profiles.quick.description": "ジオメトリ中心のコアルール：はみ出し、レイアウト外、遮蔽、退化、重なった複製オブジェクト。",
+      "profiles.full.title": "フルチェック"
+    },
+    "ko": {
+      "title": "레이아웃 위생 검사",
+      "description": "레이아웃 개체의 모범 사례 검사: 컨테이너나 레이아웃을 벗어난 개체, 가려지거나 퇴화된 개체, 겹쳐진 중복, 복사되었거나 따옴표로 묶인 이름, 미완료 표시, 요소가 하나뿐인 그룹, 동작 없는 버튼, 사용 중단된 Classic 테마, 로컬 CSS로 스타일링된 개체 비율. 또한 겹침 인벤토리를 쿼리 멤버로 포함합니다: 형제 개체 간의 모든 쌍별 겹침이며, 겹쳐진 중복 규칙은 그중 정밀한 부분집합입니다.",
+      "profiles.quick.title": "빠른 검사",
+      "profiles.quick.description": "지오메트리 중심 핵심 규칙: 벗어난 개체, 레이아웃 밖 개체, 가려진 개체, 퇴화된 개체, 겹쳐진 중복 개체.",
+      "profiles.full.title": "전체 검사"
+    },
+    "nl": {
+      "title": "Layouthygiëne",
+      "description": "Best-practice-controles voor layoutobjecten: objecten buiten hun container of de layout, bedekte en gedegenereerde objecten, gestapelde duplicaten, gekopieerde of aangehaalde objectnamen, markeringen voor onafgemaakt werk, groepen met één element, knoppen zonder actie, het verouderde Classic-thema en het aandeel objecten met lokale CSS. Bevat daarnaast de overlapinventaris als queryonderdeel: alle paarsgewijze overlappingen tussen broer-objecten, waarvan de regel voor gestapelde duplicaten de scherpe deelverzameling is.",
+      "profiles.quick.title": "Snelle controle",
+      "profiles.quick.description": "Geometrie-kernregels: verloren objecten, objecten buiten de layout, bedekte, gedegenereerde en gestapelde dubbele objecten.",
+      "profiles.full.title": "Volledige controle"
+    },
+    "pt": {
+      "title": "Higiene de layouts",
+      "description": "Verificações de boas práticas para objetos de layout: objetos fora do seu contentor ou do layout, objetos encobertos e degenerados, duplicados sobrepostos, nomes copiados ou entre aspas, marcadores de trabalho por concluir, grupos com um único elemento, botões sem ação, o tema Classic obsoleto e a proporção de objetos com CSS local. Inclui ainda o inventário de sobreposições como membro de consulta: todas as sobreposições aos pares entre objetos irmãos, das quais a regra de duplicados sobrepostos é o subconjunto preciso.",
+      "profiles.quick.title": "Verificação rápida",
+      "profiles.quick.description": "Regras centrais de geometria: objetos perdidos, fora do layout, encobertos, degenerados e duplicados sobrepostos.",
+      "profiles.full.title": "Verificação completa"
+    },
+    "sv": {
+      "title": "Layouthygien",
+      "description": "Bästa praxis-kontroller för layoutobjekt: objekt utanför sin container eller layouten, skymda och degenererade objekt, staplade dubbletter, kopierade eller citerade objektnamn, markeringar för ofärdigt arbete, grupper med ett enda element, knappar utan åtgärd, det föråldrade Classic-temat och andelen objekt med lokal CSS. Innehåller dessutom överlappningsinventariet som frågemedlem: alla parvisa överlappningar mellan syskonobjekt, varav regeln för staplade dubbletter är den skarpa delmängden.",
+      "profiles.quick.title": "Snabbkontroll",
+      "profiles.quick.description": "Geometriska kärnregler: förlorade objekt, objekt utanför layouten, skymda, degenererade och staplade dubbletter.",
+      "profiles.full.title": "Fullständig kontroll"
+    },
+    "zh-Hans": {
+      "title": "布局卫生检查",
+      "description": "布局对象的最佳实践检查：超出容器或布局范围的对象、被遮挡与退化的对象、重叠的重复对象、复制或带引号的对象名称、未完成标记、仅含一个元素的组、无动作的按钮、已弃用的 Classic 主题，以及使用本地 CSS 的对象占比。 此外以查询成员的形式包含重叠清单：同级对象之间的所有成对重叠，其中重叠重复规则是其精确子集。",
+      "profiles.quick.title": "快速检查",
+      "profiles.quick.description": "以几何为核心的规则：丢失、超出布局、被遮挡、退化以及重叠重复的对象。",
+      "profiles.full.title": "完整检查"
+    }
+  }
+}

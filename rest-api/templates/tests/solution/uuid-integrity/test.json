@@ -1,0 +1,76 @@
+{
+  "id": "uuid-integrity",
+  "version": "1.0.0",
+  "title": "UUID Integrity",
+  "description": "Metadata-integrity checks for duplicate UUIDs: native UUIDs shared across files (clone collisions) and UUIDs assigned twice within a single file (absorbed at import). Structural checks on the invisible metadata of the FileMaker file format - the solution runs fine, but UUID-keyed developer tooling is affected.",
+  "keywords": [
+    "uuid",
+    "metadata",
+    "integrity",
+    "clones",
+    "duplicates",
+    "import-census"
+  ],
+  "testType": "error-check",
+  "objectTypes": [],
+  "scopes": [
+    "solution",
+    "file"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "uuid_clone_collisions"
+    },
+    {
+      "kind": "dashboard",
+      "ref": "uuid_intrafile_duplicates"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "UUID-Integrität",
+      "description": "Metadaten-Integritätsprüfungen auf doppelte UUIDs: native UUIDs, die sich mehrere Dateien teilen (Klon-Kollisionen), und UUIDs, die innerhalb einer Datei zweimal vergeben sind (beim Import absorbiert). Strukturprüfungen auf den unsichtbaren Metadaten des FileMaker-Dateiformats — die Lösung läuft einwandfrei, betroffen ist UUID-gestütztes Entwickler-Werkzeug."
+    },
+    "es": {
+      "title": "Integridad de UUID",
+      "description": "Comprobaciones de integridad de metadatos sobre UUID duplicados: UUID nativos compartidos por varios archivos (colisiones de clonación) y UUID asignados dos veces dentro de un mismo archivo (absorbidos en la importación). Comprobaciones estructurales sobre los metadatos invisibles del formato de archivo de FileMaker: la solución funciona sin problemas, lo afectado son las herramientas de desarrollo basadas en UUID."
+    },
+    "fr": {
+      "title": "Intégrité des UUID",
+      "description": "Vérifications d'intégrité des métadonnées sur les UUID en double : UUID natifs partagés par plusieurs fichiers (collisions de clonage) et UUID attribués deux fois dans un même fichier (absorbés à l'import). Vérifications structurelles sur les métadonnées invisibles du format de fichier FileMaker — la solution fonctionne parfaitement, ce sont les outils de développement fondés sur les UUID qui sont touchés."
+    },
+    "it": {
+      "title": "Integrità degli UUID",
+      "description": "Controlli di integrità dei metadati sugli UUID duplicati: UUID nativi condivisi da più file (collisioni da clonazione) e UUID assegnati due volte all'interno di un singolo file (assorbiti all'importazione). Controlli strutturali sui metadati invisibili del formato di file FileMaker — la soluzione funziona correttamente, a risentirne sono gli strumenti di sviluppo basati sugli UUID."
+    },
+    "ja": {
+      "title": "UUID の整合性",
+      "description": "UUID の重複に関するメタデータ整合性の検査です：複数のファイルで共有されているネイティブ UUID（クローン由来の衝突）と、単一ファイル内で二重に割り当てられた UUID（インポート時に吸収）。FileMaker ファイル形式の不可視メタデータに対する構造検査であり、ソリューション自体は問題なく動作します。影響を受けるのは UUID を用いる開発ツールです。"
+    },
+    "ko": {
+      "title": "UUID 무결성",
+      "description": "UUID 중복에 대한 메타데이터 무결성 검사입니다: 여러 파일이 공유하는 네이티브 UUID(클론 충돌)와 한 파일 안에서 두 번 할당된 UUID(가져오기 시 흡수됨). FileMaker 파일 형식의 보이지 않는 메타데이터에 대한 구조 검사이며, 솔루션 자체는 정상적으로 동작합니다. 영향을 받는 것은 UUID를 사용하는 개발 도구입니다."
+    },
+    "nl": {
+      "title": "UUID-integriteit",
+      "description": "Metadata-integriteitscontroles op dubbele UUID's: native UUID's die door meerdere bestanden worden gedeeld (kloonbotsingen) en UUID's die binnen één bestand twee keer zijn toegekend (bij import geabsorbeerd). Structurele controles op de onzichtbare metadata van het FileMaker-bestandsformaat — de oplossing draait prima; wat eronder lijdt is op UUID's steunend ontwikkelgereedschap."
+    },
+    "pt": {
+      "title": "Integridade de UUID",
+      "description": "Verificações de integridade de metadados sobre UUIDs duplicados: UUIDs nativos compartilhados por vários arquivos (colisões de clonagem) e UUIDs atribuídos duas vezes dentro de um mesmo arquivo (absorvidos na importação). Verificações estruturais sobre os metadados invisíveis do formato de arquivo do FileMaker — a solução funciona perfeitamente; o que é afetado são as ferramentas de desenvolvimento baseadas em UUID."
+    },
+    "sv": {
+      "title": "UUID-integritet",
+      "description": "Integritetskontroller av metadata för dubbletta UUID:n: inbyggda UUID:n som delas av flera filer (klonkollisioner) och UUID:n som tilldelats två gånger inom en och samma fil (absorberade vid importen). Strukturkontroller av det osynliga metadatat i FileMakers filformat — lösningen fungerar utmärkt; det som drabbas är utvecklingsverktyg som bygger på UUID:n."
+    },
+    "zh-Hans": {
+      "title": "UUID 完整性",
+      "description": "针对重复 UUID 的元数据完整性检查：被多个文件共用的原生 UUID（克隆冲突），以及在同一文件内被分配两次的 UUID（导入时已吸收）。这是对 FileMaker 文件格式中不可见元数据的结构性检查 —— 解决方案本身运行正常，受影响的是依赖 UUID 的开发工具。"
+    }
+  }
+}

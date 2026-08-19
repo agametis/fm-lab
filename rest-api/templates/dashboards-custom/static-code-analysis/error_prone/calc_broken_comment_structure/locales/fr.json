@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Structure de commentaires cassée",
+    "description": "Règle de risque d'erreur — une formule contient des marques de commentaire non imbricables : un second /* dans un commentaire ouvert, un */ superflu après la fermeture du bloc, ou un commentaire de ligne // collé à un /* ouvrant. Les commentaires FileMaker ne s'imbriquent pas : des parties de la formule se retrouvent dans ou hors du commentaire contre l'intention de l'auteur.\n\nD’après le contrôle fmCheckMate « Broken Calculation /*Commented Out*/ » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.nested-open": "Un commentaire s'ouvre dans un commentaire déjà ouvert",
+    "messages.double-close": "Un commentaire est fermé deux fois",
+    "messages.line-in-block": "Un commentaire de ligne se trouve dans un bloc de commentaire"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Ouverture imbriquée",
+    "summary_kpi.props.items[2].label": "Double fermeture",
+    "summary_kpi.props.items[3].label": "Fichiers concernés",
+    "findings_card.props.title": "Structure de commentaires cassée",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Type d'objet",
+    "findings_table.props.columns[2].label": "Objet",
+    "findings_table.props.columns[3].label": "Emplacement",
+    "findings_table.props.columns[4].label": "Emplacement",
+    "findings_table.props.columns[5].label": "Défaut",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un objet ou une formule…",
+    "findings_table.props.empty.message": "Aucune structure de commentaire cassée trouvée."
+  }
+}

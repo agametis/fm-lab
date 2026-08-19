@@ -1,0 +1,95 @@
+{
+  "id": "freeze_window_then_pause",
+  "version": "1.0.0",
+  "title": "Freeze Window ended by Pause",
+  "description": "Performance rule — a script freezes the window and later pauses. Pause/Resume Script ends the frozen state, so the window renders mid-script and the freeze loses its effect from that point on.",
+  "author": "fm-lab rules",
+  "icon": "gauge",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "performance",
+    "wan",
+    "community-patterns"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "performance",
+    "rationale": "Freeze Window suppresses screen updates until the script ends or pauses. A Pause/Resume step therefore silently cancels the freeze: everything after the pause renders live again, including layout switches and record loops the freeze was meant to hide. The script looks optimized but is not.",
+    "remediation": "If the pause is intentional (user interaction), re-issue Freeze Window right after it. If the pause is a leftover debugging aid, remove it.",
+    "meta": {
+      "name": "Freeze Window ended by Pause",
+      "author": "fm-lab rules",
+      "source": "FileMaker community / Claris",
+      "url": "https://help.claris.com/en/pro-help/content/freeze-window.html",
+      "description": "Reports scripts containing an enabled Freeze Window step (id 79) followed at a later step index by an enabled Pause/Resume Script step (id 62). One finding per script; the jump marks the freeze and every subsequent pause.",
+      "created": "2026-08-17",
+      "references": [
+        {
+          "project": "Claris Help",
+          "rule": "Freeze Window",
+          "url": "https://help.claris.com/en/pro-help/content/freeze-window.html"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Freeze Window ended by Pause"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

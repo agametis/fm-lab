@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Sobrescrituras de CSS local",
+    "description": "Métrica de calidad de Layout — cuántos objetos llevan CSS local en lugar de tomar su apariencia del tema. En pequeñas cantidades es normal; una proporción alta significa que el tema ya no gobierna el aspecto y cada cambio visual debe hacerse objeto por objeto. Es un panel de proporción: los KPI muestran el porcentaje de toda la solución y la tabla lista los layouts por encima del umbral, no los objetos individuales.\n\nBasado en la comprobación de fmCheckMate «LocalCSS» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.local-css": "{objects_with_css} de {objects_total} objetos de este layout llevan CSS local ({share_pct} %)"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Objetos de layout",
+    "summary_kpi.props.items[1].label": "Con CSS local",
+    "summary_kpi.props.items[2].label": "Porcentaje %",
+    "summary_kpi.props.items[3].label": "Layouts listados",
+    "findings_card.props.title": "Sobrescrituras de CSS local",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, Layout u objeto…",
+    "findings_table.props.empty.message": "Ningún layout alcanza la proporción configurada de CSS local.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objetos",
+    "findings_table.props.columns[3].label": "Con CSS local",
+    "findings_table.props.columns[4].label": "Porcentaje %",
+    "min_share_slider.props.label": "Porcentaje mínimo"
+  }
+}

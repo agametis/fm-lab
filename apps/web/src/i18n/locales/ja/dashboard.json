@@ -168,5 +168,9 @@
     },
     "noFilterMatches": "このセクションには該当する状態の項目がありません。",
     "openFolder": "フォルダーを開く"
+  },
+  "featured": {
+    "ruleCount_one": "{{count}} 件のルール",
+    "ruleCount_other": "{{count}} 件のルール"
   }
 }

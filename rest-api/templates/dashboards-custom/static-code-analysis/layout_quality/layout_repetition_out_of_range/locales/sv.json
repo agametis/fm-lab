@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Fältupprepning utanför intervallet",
+    "description": "Layoutkvalitetsregel — ett layoutobjekt visar en fältupprepning som är högre än fältets faktiska antal upprepningar. Objektet förblir tomt vid körning; oftast har fältdefinitionen minskats i efterhand.\n\nBaserad på fmCheckMate-kontrollen ”Field repetition out of range” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.out-of-range": "Objektet visar upprepning {repetition}, fältet har bara {max_repetitions}"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda Layouter",
+    "summary_kpi.props.items[2].label": "Berörda filer",
+    "findings_card.props.title": "Fältupprepning utanför intervallet",
+    "findings_table.props.searchPlaceholder": "Sök fil, Layout eller objekt…",
+    "findings_table.props.empty.message": "Inga fältupprepningar utanför intervallet hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Fält",
+    "findings_table.props.columns[5].label": "Upprepning",
+    "findings_table.props.columns[6].label": "Max. upprepningar"
+  }
+}

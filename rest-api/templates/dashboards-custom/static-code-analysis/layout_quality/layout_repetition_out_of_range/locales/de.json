@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Feldwiederholung außerhalb des gültigen Bereichs",
+    "description": "Layout-Qualitätsregel — ein Layoutobjekt zeigt eine Feldwiederholung an, die höher ist als die tatsächliche Wiederholungszahl des Feldes. Das Objekt bleibt zur Laufzeit leer; meist wurde die Felddefinition nachträglich verkleinert.\n\nAngelehnt an die fmCheckMate-Prüfung „Field repetition out of range“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.out-of-range": "Objekt zeigt Wiederholung {repetition}, das Feld hat nur {max_repetitions}"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Layouts",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "findings_card.props.title": "Feldwiederholung außerhalb des gültigen Bereichs",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine Feldwiederholungen außerhalb des gültigen Bereichs gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Feld",
+    "findings_table.props.columns[5].label": "Wiederholung",
+    "findings_table.props.columns[6].label": "Max. Wiederholungen"
+  }
+}

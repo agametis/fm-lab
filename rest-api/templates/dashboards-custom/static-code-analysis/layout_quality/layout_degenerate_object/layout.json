@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary_card",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpi",
+            "props": {
+              "items": [
+                {
+                  "label": "Findings",
+                  "field": "finding_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Empty text objects",
+                  "field": "empty_text_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Undersized",
+                  "field": "undersized_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Zero size",
+                  "field": "zero_size_count",
+                  "format": "number"
+                }
+              ]
+            }
+          },
+          {
+            "type": "Slider",
+            "id": "min_w_slider",
+            "props": {
+              "param": "min_w",
+              "label": "Min. width",
+              "min": 1,
+              "max": 24,
+              "default": 4,
+              "step": 1,
+              "valueSuffix": "px"
+            },
+            "data": {
+              "dataset": "summary"
+            }
+          },
+          {
+            "type": "Slider",
+            "id": "min_h_slider",
+            "props": {
+              "param": "min_h",
+              "label": "Min. height",
+              "min": 1,
+              "max": 24,
+              "default": 4,
+              "step": 1,
+              "valueSuffix": "px"
+            },
+            "data": {
+              "dataset": "summary"
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings_card",
+        "props": {
+          "span": 12,
+          "title": "Degenerate layout object",
+          "keepChildrenOnEmpty": true
+        },
+        "data": {
+          "dataset": "findings"
+        },
+        "children": [
+          {
+            "type": "Row",
+            "id": "findings_filter_row",
+            "props": {
+              "gap": 16
+            },
+            "children": [
+              {
+                "type": "FilterChips",
+                "id": "defect_filter",
+                "props": {
+                  "param": "defect",
+                  "default": "",
+                  "options": [
+                    {
+                      "value": "",
+                      "label": "All defects",
+                      "countField": "finding_count"
+                    },
+                    {
+                      "value": "empty-text",
+                      "label": "Empty text",
+                      "countField": "empty_text_count"
+                    },
+                    {
+                      "value": "undersized",
+                      "label": "Undersized",
+                      "countField": "undersized_count"
+                    },
+                    {
+                      "value": "zero-size",
+                      "label": "Zero size",
+                      "countField": "zero_size_count"
+                    }
+                  ]
+                },
+                "data": {
+                  "dataset": "summary"
+                }
+              },
+              {
+                "type": "Select",
+                "id": "object_type_select",
+                "props": {
+                  "param": "object_type",
+                  "default": "",
+                  "label": "Object type",
+                  "emptyOptionLabel": "All object types"
+                },
+                "data": {
+                  "dataset": "object_types"
+                }
+              }
+            ]
+          },
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search file, layout or object…",
+              "columns": [
+                {
+                  "field": "file_name",
+                  "label": "File"
+                },
+                {
+                  "field": "layout_name",
+                  "label": "Layout"
+                },
+                {
+                  "field": "object_type",
+                  "label": "Object type"
+                },
+                {
+                  "field": "object_name",
+                  "label": "Object"
+                },
+                {
+                  "field": "defect",
+                  "label": "Defect"
+                },
+                {
+                  "field": "x",
+                  "label": "X"
+                },
+                {
+                  "field": "y",
+                  "label": "Y"
+                },
+                {
+                  "field": "w",
+                  "label": "Width"
+                },
+                {
+                  "field": "h",
+                  "label": "Height"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "Layout",
+                  "file": "{{file_name}}",
+                  "ref": "{{object_uuid}}",
+                  "ref_src": "layout_degenerate_object",
+                  "ref_msgid": "{{defect}}",
+                  "ref_arg_min_w": "{{min_w}}",
+                  "ref_arg_min_h": "{{min_h}}"
+                }
+              },
+              "empty": {
+                "message": "No degenerate layout objects found."
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

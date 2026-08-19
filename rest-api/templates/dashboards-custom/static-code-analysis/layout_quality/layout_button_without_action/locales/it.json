@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Pulsante senza azione",
+    "description": "Regola di qualità del Layout — un pulsante non ha né una chiamata a script né un'azione a passo singolo. Il rilevamento legge l'azione serializzata dell'oggetto: un'azione script appare come riferimento a script, un'azione a passo singolo come elemento passo; un pulsante privo di entrambi non fa nulla al clic. Nelle soluzioni grandi può essere interessato circa il 40 % dei pulsanti, quindi valuta per contesto prima di intervenire: icone decorative e segmenti inattivi di barre pulsanti sono legittimi e il filtro di contesto restringe l'elenco.\n\nBasato sul controllo fmCheckMate «Button Action <Missing>» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.no-action": "Il pulsante non ha né chiamata a script né azione a passo singolo"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Layout interessati",
+    "summary_kpi.props.items[2].label": "Pulsanti nell'ambito",
+    "findings_card.props.title": "Pulsante senza azione",
+    "findings_table.props.searchPlaceholder": "Cerca file, Layout o oggetto…",
+    "findings_table.props.empty.message": "Nessun pulsante senza azione trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Oggetto",
+    "findings_table.props.columns[3].label": "Contesto",
+    "findings_table.props.columns[6].label": "Larghezza",
+    "findings_table.props.columns[7].label": "Altezza",
+    "context_select.props.label": "Contesto",
+    "context_select.props.emptyOptionLabel": "Tutti i contesti"
+  }
+}

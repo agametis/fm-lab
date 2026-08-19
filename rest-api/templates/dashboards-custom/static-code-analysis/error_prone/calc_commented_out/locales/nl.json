@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Uitgecommentarieerde berekening",
+    "description": "Foutgevoeligheidsregel — een berekening bestaat volledig uit één commentaarblok. Het betreft veldberekeningen, formules voor automatisch invoeren en validatie, aangepaste functies en berekeningen in scriptstappen. De formule wordt nooit geëvalueerd, het bedoelde gedrag staat stilzwijgend uit terwijl de slot in de FileMaker-dialoogvensters gevuld lijkt.\n\nGebaseerd op de fmCheckMate-controle “Broken Calculation /*Commented Out*/” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.commented-out": "De volledige formule staat in commentaar en wordt nooit geëvalueerd"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Veldberekeningen",
+    "summary_kpi.props.items[2].label": "Scriptstappen",
+    "summary_kpi.props.items[3].label": "Betrokken bestanden",
+    "findings_card.props.title": "Uitgecommentarieerde berekening",
+    "calc_slot_filter.props.options[0].label": "alle slots",
+    "calc_slot_filter.props.options[1].label": "Veldberekening",
+    "calc_slot_filter.props.options[2].label": "Scriptstap",
+    "calc_slot_filter.props.options[3].label": "Automatisch invoeren",
+    "calc_slot_filter.props.options[4].label": "Validatie",
+    "calc_slot_filter.props.options[5].label": "Aangepaste functie",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Objecttype",
+    "findings_table.props.columns[2].label": "Object",
+    "findings_table.props.columns[3].label": "Slot",
+    "findings_table.props.columns[4].label": "Locatie",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, object of formule…",
+    "findings_table.props.empty.message": "Geen uitgecommentarieerde berekeningen gevonden."
+  }
+}

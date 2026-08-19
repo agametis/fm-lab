@@ -12,6 +12,11 @@
     "findings_table.props.columns[0].label": "文件",
     "findings_table.props.columns[1].label": "左 TO",
     "findings_table.props.columns[2].label": "右 TO",
-    "findings_table.props.columns[3].label": "已排序"
+    "findings_table.props.columns[3].label": "已排序",
+    "findings_table.props.columns[4].label": "使用该关系的入口",
+    "findings_table.props.columns[5].label": "自带排序的入口",
+    "consumer_filter_chips.props.options[0].label": "全部关系",
+    "consumer_filter_chips.props.options[1].label": "使用该关系的入口",
+    "consumer_filter_chips.props.options[2].label": "自带排序的入口"
   }
 }

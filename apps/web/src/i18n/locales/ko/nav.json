@@ -136,6 +136,8 @@
     "showFindings": "발견 항목 표시",
     "memberError": "오류",
     "openMember": "대시보드/쿼리 열기",
+    "openFinding": "상세 보기에서 열기",
+    "openMemberFindings": "모든 발견 항목을 상세 보기에서 열기",
     "truncated": "추가 발견 항목이 생략되었습니다 — 전체 목록은 멤버를 여세요.",
     "duration": "{{ms}} ms",
     "searchPlaceholder": "테스트 필터링…",
@@ -173,6 +175,8 @@
     "state_neutral": "중립 결과",
     "state_ok": "통과",
     "state_skipped": "건너뜀",
-    "state_failed": "실행 실패"
+    "state_failed": "실행 실패",
+    "filterReset": "필터 초기화",
+    "noResultsYet": "아직 결과가 없습니다 — 테스트를 실행하면 이 목록이 채워집니다."
   }
 }

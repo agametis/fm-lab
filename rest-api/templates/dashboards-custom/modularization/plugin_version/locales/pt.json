@@ -19,7 +19,6 @@
     "findings_table.props.columns[4].label": "Exige",
     "findings_table.props.columns[5].label": "Instalada",
     "findings_table.props.columns[6].label": "Via função personalizada",
-    "findings_table.props.columns[7].label": "Mensagem",
     "findings_table.props.empty.message": "Nenhuma verificação ativa — escolha uma versão instalada no cabeçalho para validar o requisito (entrada neutra = apenas inventário).",
     "by_file_card.props.title": "Requisito por arquivo",
     "by_file_table.props.columns[0].label": "Arquivo",

@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "Nome oggetto tra virgolette",
+    "description": "Regola di qualità del Layout — il nome di un oggetto inizia e finisce con virgolette. Quasi sempre un incidente di incollaggio; i nomi tra virgolette rompono gli accessi per nome come GetLayoutObjectAttribute o Vai all'oggetto.\n\nBasato sul controllo fmCheckMate «Quoted Object Name» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.quoted-name": "Il nome dell'oggetto è tra virgolette letterali — probabilmente incollato per errore"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Layout interessati",
+    "summary_kpi.props.items[2].label": "File interessati",
+    "findings_card.props.title": "Nome oggetto tra virgolette",
+    "findings_table.props.searchPlaceholder": "Cerca file, Layout o oggetto…",
+    "findings_table.props.empty.message": "Nessun nome oggetto tra virgolette trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo di oggetto",
+    "findings_table.props.columns[3].label": "Oggetto",
+    "findings_table.props.columns[6].label": "Larghezza",
+    "findings_table.props.columns[7].label": "Altezza"
+  }
+}

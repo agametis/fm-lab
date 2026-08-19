@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "끊어진 값 목록 참조",
+    "description": "Layout 품질 규칙 — 레이아웃 개체가 해당 파일에 더 이상 존재하지 않는 값 목록을 참조합니다. 이름이 아닌 값 목록 ID로 확인하므로 이름이 변경된 목록은 보고되지 않습니다.\n\nfmCheckMate 검사 “Broken Value List <Missing>” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-valuelist": "값 목록이 이 파일에 더 이상 없습니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 Layout",
+    "summary_kpi.props.items[2].label": "영향받는 파일",
+    "findings_card.props.title": "끊어진 값 목록 참조",
+    "findings_table.props.searchPlaceholder": "파일, Layout 또는 개체 검색…",
+    "findings_table.props.empty.message": "끊어진 값 목록 참조를 찾지 못했습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "개체 유형",
+    "findings_table.props.columns[3].label": "개체",
+    "findings_table.props.columns[4].label": "값 목록",
+    "findings_table.props.columns[7].label": "너비",
+    "findings_table.props.columns[8].label": "높이"
+  }
+}

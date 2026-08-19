@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Uso específico de plataforma: FileMaker Server",
-  "analysis.defaultResult.meaning": "Scripts en el alcance que son destino de llamadas Perform Script on Server (creados para ejecución en el servidor)"
- }
+  "manifest": {
+    "title": "Uso específico de plataforma: FileMaker Server",
+    "analysis.defaultResult.meaning": "Scripts en el alcance que son destino de llamadas Perform Script on Server (creados para ejecución en el servidor)"
+  },
+  "layout": {}
 }

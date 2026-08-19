@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Veldherhaling buiten bereik",
+    "description": "Layoutkwaliteitsregel — een layoutobject toont een veldherhaling die hoger is dan het werkelijke aantal herhalingen van het veld. Het object blijft leeg tijdens uitvoering; meestal is de velddefinitie later verkleind.\n\nGebaseerd op de fmCheckMate-controle “Field repetition out of range” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.out-of-range": "Object toont herhaling {repetition}, het veld heeft er slechts {max_repetitions}"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken Layouts",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "Veldherhaling buiten bereik",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen veldherhalingen buiten bereik gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objecttype",
+    "findings_table.props.columns[3].label": "Object",
+    "findings_table.props.columns[4].label": "Veld",
+    "findings_table.props.columns[5].label": "Herhaling",
+    "findings_table.props.columns[6].label": "Max. herhalingen"
+  }
+}

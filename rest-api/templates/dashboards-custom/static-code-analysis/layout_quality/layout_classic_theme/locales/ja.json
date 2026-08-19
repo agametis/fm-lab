@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "title": "Classic テーマの Layout",
+    "description": "Layout 品質ルール — Layout が非推奨の Classic テーマをまだ使用しています。Classic の Layout はレガシーな描画になり、最新のスタイル機能が使えず、WebDirect を遅くします。\n\nfmCheckMate チェック「Object with classic style」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.classic": "Layout が非推奨の Classic テーマを使用しています"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "findings_card.props.title": "Classic テーマの Layout",
+    "findings_table.props.searchPlaceholder": "ファイルまたは Layout を検索…",
+    "findings_table.props.empty.message": "Classic テーマの Layout は見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "テーマ"
+  }
+}

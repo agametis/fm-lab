@@ -136,6 +136,8 @@
     "showFindings": "検出結果を表示",
     "memberError": "エラー",
     "openMember": "ダッシュボード／クエリを開く",
+    "openFinding": "詳細ビューで開く",
+    "openMemberFindings": "すべての検出結果を詳細ビューで開く",
     "truncated": "以降の検出結果は省略されています — 全リストはメンバーを開いてください。",
     "duration": "{{ms}} ms",
     "searchPlaceholder": "テストを絞り込む…",
@@ -173,6 +175,8 @@
     "state_neutral": "中立的な結果",
     "state_ok": "合格",
     "state_skipped": "スキップ",
-    "state_failed": "実行失敗"
+    "state_failed": "実行失敗",
+    "filterReset": "フィルターをリセット",
+    "noResultsYet": "まだ結果がありません — テストを実行するとこのリストに表示されます。"
   }
 }

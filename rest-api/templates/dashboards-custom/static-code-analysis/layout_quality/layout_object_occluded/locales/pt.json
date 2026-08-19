@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Objeto escondido atrás de um contêiner",
+    "description": "Regra de qualidade de Layout — um objeto fica completamente dentro da área de um portal, controle de guias ou controle deslizante que está à sua frente na ordem de empilhamento. O objeto fica coberto no modo Navegar e não pode ser clicado — normalmente um acidente de empilhamento.\n\nBaseado na verificação fmCheckMate “Hidden Object (Behind Container)” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.occluded": "O objeto fica completamente atrás de um {container} à sua frente — coberto e inacessível no modo Navegar"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Layouts afetados",
+    "summary_kpi.props.items[2].label": "Arquivos afetados",
+    "findings_card.props.title": "Objeto escondido atrás de um contêiner",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, Layout ou objeto…",
+    "findings_table.props.empty.message": "Nenhum objeto escondido atrás de contêineres encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Contêiner",
+    "findings_table.props.columns[7].label": "Largura",
+    "findings_table.props.columns[8].label": "Altura"
+  }
+}

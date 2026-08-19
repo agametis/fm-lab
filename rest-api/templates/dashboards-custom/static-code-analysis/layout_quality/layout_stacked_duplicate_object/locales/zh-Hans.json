@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "堆叠的重复对象",
+    "description": "Layout 质量规则 — 两个同类型的兄弟对象共享完全相同的边界。上面的对象完全覆盖另一个——通常是重复粘贴。标签面板和弹出框面板被排除（设计上即重合）。",
+    "messages.pair": "两个 {type} 对象共享完全相同的边界——上面的对象完全覆盖下面的对象"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响的 Layout",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "findings_card.props.title": "堆叠的重复对象",
+    "findings_table.props.searchPlaceholder": "搜索文件、Layout 或对象…",
+    "findings_table.props.empty.message": "未找到堆叠的重复对象。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "对象类型",
+    "findings_table.props.columns[3].label": "对象",
+    "findings_table.props.columns[4].label": "配对对象",
+    "findings_table.props.columns[9].label": "堆叠顺序",
+    "findings_table.props.columns[7].label": "宽度",
+    "findings_table.props.columns[8].label": "高度"
+  }
+}

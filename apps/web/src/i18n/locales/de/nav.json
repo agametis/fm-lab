@@ -150,6 +150,8 @@
     "showFindings": "Findings anzeigen",
     "memberError": "Fehler",
     "openMember": "Dashboard/Query öffnen",
+    "openFinding": "In der Detailansicht öffnen",
+    "openMemberFindings": "Alle Findings in der Detailansicht öffnen",
     "truncated": "Weitere Findings gekürzt — Member für die vollständige Liste öffnen.",
     "duration": "{{ms}} ms",
     "searchPlaceholder": "Tests filtern…",
@@ -187,6 +189,8 @@
     "state_neutral": "Neutrale Ergebnisse",
     "state_ok": "Bestanden",
     "state_skipped": "Übersprungen",
-    "state_failed": "Lauf fehlgeschlagen"
+    "state_failed": "Lauf fehlgeschlagen",
+    "filterReset": "Filter zurücksetzen",
+    "noResultsYet": "Noch keine Ergebnisse — führe die Tests aus, um diese Liste zu füllen."
   }
 }

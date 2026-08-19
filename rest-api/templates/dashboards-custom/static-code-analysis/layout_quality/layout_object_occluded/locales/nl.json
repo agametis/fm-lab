@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Object verborgen achter een container",
+    "description": "Layoutkwaliteitsregel — een object ligt volledig binnen het vlak van een portaal, tabbesturing of schuifbesturing die er in de stapelvolgorde vóór ligt. Het object is in de bladermodus bedekt en niet klikbaar — meestal een stapelvolgorde-ongeluk.\n\nGebaseerd op de fmCheckMate-controle “Hidden Object (Behind Container)” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.occluded": "Het object ligt volledig achter een ervoor liggende {container} — bedekt en onbereikbaar in de bladermodus"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken Layouts",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "Object verborgen achter een container",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen achter containers verborgen objecten gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objecttype",
+    "findings_table.props.columns[3].label": "Object",
+    "findings_table.props.columns[4].label": "Container",
+    "findings_table.props.columns[7].label": "Breedte",
+    "findings_table.props.columns[8].label": "Hoogte"
+  }
+}

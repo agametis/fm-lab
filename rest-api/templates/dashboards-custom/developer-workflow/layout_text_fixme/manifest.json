@@ -1,0 +1,100 @@
+{
+  "id": "layout_text_fixme",
+  "version": "2.0.0",
+  "title": "FIXME marker on a layout object",
+  "description": "Unfinished-work rule — a layout object carries a FIXME marker (FIXME, FIX ME, FIX IT, FIXIT) in its text content, tooltip or label calculation. A FIXME states a known defect that was shipped; on a layout it is often visible to end users, which is why the severity is warning. The TODO half of the family is layout_text_todo. Matching is case-insensitive and tolerates a separator — a deliberate tightening of the source rule.\n\nBased on the fmCheckMate check \"FIXME\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "flag",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality",
+    "unfinished-work"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "layout_quality",
+    "rationale": "A FIXME on a layout object is a known defect that shipped — and unlike a script comment it is often visible to end users: a marker in a text object appears on screen and in print.",
+    "remediation": "Fix the defect and remove the marker, or move the note into the object comment if it has to stay in the file.",
+    "meta": {
+      "name": "FIXME marker on a layout object",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Unfinished-work rule — a layout object carries a FIXME marker in its text content, tooltip or label calculation. Detector canon of the family: (?i)\\bfix[\\s\\-_]?(it|me)\\b, verified by tools/tests/rules/unfinished_work_detector.sql. Deliberate deviation from the source rule, which matches case-sensitively without separator tolerance: the family uses one detector across scripts, layouts and calculations, so notations such as FIX ME or fixme are found too. Overlap with layout_text_todo is intended — an object carrying both markers is counted by both rules.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportFIXMEs)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "summary": "native",
+        "findings": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — FIXME marker on a layout object"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "text": "FIXME marker in the text content",
+    "tooltip": "FIXME marker in the tooltip calculation",
+    "label": "FIXME marker in the label calculation"
+  }
+}

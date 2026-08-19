@@ -1,0 +1,33 @@
+{
+  "manifest": {
+    "title": "퇴화된 Layout 개체",
+    "description": "Layout 품질 규칙 — 개체가 퇴화 상태입니다. 텍스트 없는 텍스트 개체, 너비나 높이가 0인 개체, 두 방향 모두 최소 크기 미만인 개체(너비/높이 슬라이더, 기본 각 4px). 선은 제외됩니다 — 0 크기는 선의 정상 형태입니다. 아주 작은 빈 텍스트는 종종 간격 조정용이니 삭제 전 확인하세요.",
+    "messages.zero-size": "개체의 너비 또는 높이가 0입니다",
+    "messages.empty-text": "텍스트 개체에 텍스트가 없습니다",
+    "messages.undersized": "오브젝트가 {min_w}×{min_h} px(너비×높이)보다 작습니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "빈 텍스트",
+    "summary_kpi.props.items[2].label": "극소형",
+    "summary_kpi.props.items[3].label": "크기 0",
+    "min_w_slider.props.label": "최소 너비",
+    "min_h_slider.props.label": "최소 높이",
+    "findings_card.props.title": "퇴화된 Layout 개체",
+    "findings_table.props.searchPlaceholder": "파일, Layout 또는 개체 검색…",
+    "findings_table.props.empty.message": "퇴화된 개체를 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "개체 유형",
+    "findings_table.props.columns[3].label": "개체",
+    "findings_table.props.columns[4].label": "결함",
+    "defect_filter.props.options[0].label": "모든 결함",
+    "defect_filter.props.options[1].label": "빈 텍스트",
+    "defect_filter.props.options[2].label": "극소형",
+    "defect_filter.props.options[3].label": "크기 0",
+    "object_type_select.props.label": "개체 유형",
+    "object_type_select.props.emptyOptionLabel": "모든 개체 유형",
+    "findings_table.props.columns[7].label": "너비",
+    "findings_table.props.columns[8].label": "높이"
+  }
+}

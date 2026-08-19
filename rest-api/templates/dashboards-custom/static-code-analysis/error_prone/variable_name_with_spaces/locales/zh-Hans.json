@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "含空格的变量名",
+    "description": "易错规则 — 变量名中含有空格。FileMaker 在「设置变量」的名称字段中允许这样写，但每次读取都必须使用 ${含空格的名称} 记法；直接写 $名称 空格 会悄悄读到别的东西。涵盖局部、全局、Let() 和 MBS 超全局变量。\n\n基于 fmCheckMate 检查“ListScriptsWithBadVariableNames” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.name-with-spaces": "变量名中含有空格"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "局部",
+    "summary_kpi.props.items[2].label": "全局",
+    "summary_kpi.props.items[3].label": "受影响文件",
+    "findings_card.props.title": "含空格的变量名",
+    "variable_scope_filter.props.options[0].label": "全部作用域",
+    "variable_scope_filter.props.options[1].label": "局部",
+    "variable_scope_filter.props.options[2].label": "全局",
+    "variable_scope_filter.props.options[3].label": "Let()",
+    "variable_scope_filter.props.options[4].label": "超全局",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "变量",
+    "findings_table.props.columns[2].label": "作用域",
+    "findings_table.props.columns[3].label": "首次出现于",
+    "findings_table.props.columns[4].label": "写入次数",
+    "findings_table.props.columns[5].label": "读取次数",
+    "findings_table.props.searchPlaceholder": "搜索文件、变量或脚本…",
+    "findings_table.props.empty.message": "未发现含空格的变量名。"
+  }
+}

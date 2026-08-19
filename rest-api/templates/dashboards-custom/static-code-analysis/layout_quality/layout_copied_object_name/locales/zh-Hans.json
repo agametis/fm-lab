@@ -1,0 +1,31 @@
+{
+  "manifest": {
+    "title": "复制的对象名称",
+    "description": "Layout 质量规则 — 命名对象带有复制后缀（' Copy'、' Kopie'）、粘贴产生的数字后缀，或与同一 Layout 上的另一对象同名。命名对象被脚本和计算公式引用；复制残留会指向错误的对象或找不到对象。数字后缀也可能是有意命名——重命名前请核实。\n\n基于 fmCheckMate 检查“Copied Object Name” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy-suffix": "对象名称带有复制后缀——很可能是粘贴残留",
+    "messages.duplicate-name": "对象名称在此 Layout 上出现多次",
+    "messages.numeric-suffix": "对象名称以数字后缀结尾——可能是粘贴残留，也可能是有意命名"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "复制后缀",
+    "summary_kpi.props.items[2].label": "数字后缀",
+    "summary_kpi.props.items[3].label": "重复名称",
+    "findings_card.props.title": "复制的对象名称",
+    "findings_table.props.searchPlaceholder": "搜索文件、Layout 或对象…",
+    "findings_table.props.empty.message": "未找到复制或重复的对象名称。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "对象类型",
+    "findings_table.props.columns[3].label": "对象",
+    "findings_table.props.columns[4].label": "原因",
+    "reason_filter.props.options[0].label": "所有原因",
+    "reason_filter.props.options[1].label": "复制后缀",
+    "reason_filter.props.options[2].label": "数字后缀",
+    "reason_filter.props.options[3].label": "重复名称",
+    "object_type_select.props.label": "对象类型",
+    "object_type_select.props.emptyOptionLabel": "所有对象类型",
+    "findings_table.props.columns[7].label": "宽度",
+    "findings_table.props.columns[8].label": "高度"
+  }
+}

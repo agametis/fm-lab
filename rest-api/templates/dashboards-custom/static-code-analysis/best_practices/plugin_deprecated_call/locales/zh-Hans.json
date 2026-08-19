@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "已弃用的插件函数调用",
-  "analysis.defaultResult.meaning": "范围内调用了厂商文档中标记为已弃用的函数的插件函数调用"
- }
+  "manifest": {
+    "title": "已弃用的插件函数调用",
+    "analysis.defaultResult.meaning": "范围内调用了厂商文档中标记为已弃用的函数的插件函数调用"
+  },
+  "layout": {}
 }

@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Refresh Window che svuota la cache dei join",
+    "description": "Regola di prestazioni — Refresh Window con «Svuota risultati di join memorizzati» (o «Svuota dati esterni memorizzati») scarta le cache delle relazioni e costringe FileMaker a recuperare di nuovo i record correlati dal server. Claris avverte esplicitamente del costo di rete."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Svuota join",
+    "summary_kpi.props.items[2].label": "Svuota dati esterni",
+    "summary_kpi.props.items[3].label": "Refresh semplici (non segnalati)",
+    "summary_kpi.props.items[4].label": "File interessati",
+    "flush_kind_filter.props.options[0].label": "Tutti gli svuotamenti",
+    "flush_kind_filter.props.options[1].label": "Risultati join",
+    "flush_kind_filter.props.options[2].label": "Dati esterni",
+    "findings_card.props.title": "Refresh Window che svuota la cache dei join",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Nessun Refresh Window con opzione di svuotamento trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Passo",
+    "findings_table.props.columns[3].label": "Svuota",
+    "findings_table.props.columns[4].label": "Profondità del loop"
+  }
+}

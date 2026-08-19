@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "オブジェクトが 1 つだけのグループ",
+    "description": "Layout 品質ルール — グループにオブジェクトが 1 つしかありません。何もまとめずに選択と入れ子のオーバーヘッドだけを生みます。多くは他のメンバー削除後の残骸です。1 子グループとしてシリアライズされたボタンは対象外です。\n\nfmCheckMate チェック「Group of one」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.single": "グループに {child} オブジェクトが 1 つしかありません — 何もまとめないグループ化のオーバーヘッドです"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象 Layout 数",
+    "summary_kpi.props.items[2].label": "対象ファイル数",
+    "findings_card.props.title": "オブジェクトが 1 つだけのグループ",
+    "findings_table.props.searchPlaceholder": "ファイル、Layout、オブジェクトを検索…",
+    "findings_table.props.empty.message": "オブジェクトが 1 つだけのグループは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "オブジェクト",
+    "findings_table.props.columns[3].label": "子のタイプ",
+    "findings_table.props.columns[4].label": "子の名前",
+    "findings_table.props.columns[7].label": "幅",
+    "findings_table.props.columns[8].label": "高さ"
+  }
+}

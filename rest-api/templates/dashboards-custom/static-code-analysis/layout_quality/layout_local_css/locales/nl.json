@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Lokale CSS-overschrijvingen",
+    "description": "Layoutkwaliteitsmetriek — hoeveel objecten lokale CSS dragen in plaats van hun uiterlijk uit het thema te halen. In kleine aantallen is dat normaal; een hoog aandeel betekent dat het thema het uiterlijk niet meer bepaalt en elke visuele wijziging object voor object moet gebeuren. Dit is een verhoudingsdashboard: de KPI's geven het aandeel voor de hele oplossing en de tabel toont layouts boven de drempel, niet losse objecten.\n\nGebaseerd op de fmCheckMate-controle “LocalCSS” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.local-css": "{objects_with_css} van {objects_total} objecten op deze layout dragen lokale CSS ({share_pct} %)"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Layoutobjecten",
+    "summary_kpi.props.items[1].label": "Met lokale CSS",
+    "summary_kpi.props.items[2].label": "Aandeel %",
+    "summary_kpi.props.items[3].label": "Vermelde Layouts",
+    "findings_card.props.title": "Lokale CSS-overschrijvingen",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen layout haalt het ingestelde aandeel lokale CSS.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objecten",
+    "findings_table.props.columns[3].label": "Met lokale CSS",
+    "findings_table.props.columns[4].label": "Aandeel %",
+    "min_share_slider.props.label": "Min. aandeel"
+  }
+}

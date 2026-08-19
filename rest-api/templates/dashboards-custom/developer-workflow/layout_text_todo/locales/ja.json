@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "レイアウトオブジェクトの TODO マーカー",
+    "description": "「未完了作業」ファミリーのルール — レイアウトオブジェクトのテキスト、ツールチップ、またはラベル計算式に TODO マーカー（TODO, TO DO, TO-DO, TBD, to be done, to be defined）が含まれています。 TODO は不具合ではなく予定された作業を示すため、重大度は info です。独自の件数として数えますが、信号を黄色にはしません。 元ルールに対する意図的な強化です。大文字小文字を区別せず区切り文字も許容するため、内容が「TO DO」のテキストオブジェクトも検出できます。\n\nfmCheckMate チェック「FIXME」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.text": "テキスト内容の TODO マーカー",
+    "messages.tooltip": "ツールチップ計算式の TODO マーカー",
+    "messages.label": "ラベル計算式の TODO マーカー"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象レイアウト",
+    "summary_kpi.props.items[2].label": "対象ファイル",
+    "findings_card.props.title": "レイアウトオブジェクトの TODO マーカー",
+    "findings_table.props.searchPlaceholder": "ファイル・レイアウト・オブジェクトを検索…",
+    "findings_table.props.empty.message": "レイアウトオブジェクトに TODO マーカーはありません。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "レイアウト",
+    "findings_table.props.columns[2].label": "オブジェクト種別",
+    "findings_table.props.columns[3].label": "オブジェクト",
+    "findings_table.props.columns[4].label": "箇所",
+    "findings_table.props.columns[5].label": "マーカー",
+    "findings_table.props.columns[8].label": "幅",
+    "findings_table.props.columns[9].label": "高さ"
+  }
+}

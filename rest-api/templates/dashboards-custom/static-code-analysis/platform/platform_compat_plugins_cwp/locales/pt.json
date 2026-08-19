@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilidade de plug-in: Custom Web Publishing",
-  "analysis.defaultResult.meaning": "Chamadas de funções de plug-in no escopo que não são executadas em Custom Web Publishing"
- }
+  "manifest": {
+    "title": "Compatibilidade de plug-in: Custom Web Publishing",
+    "analysis.defaultResult.meaning": "Chamadas de funções de plug-in no escopo que não são executadas em Custom Web Publishing"
+  },
+  "layout": {}
 }

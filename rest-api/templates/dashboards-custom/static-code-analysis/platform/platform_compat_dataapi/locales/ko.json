@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "플랫폼 호환성: FileMaker Data API",
-  "analysis.defaultResult.meaning": "FileMaker Data API에서 지원되지 않거나 부분적으로만 지원되는 범위 내 단계"
- }
+  "manifest": {
+    "title": "플랫폼 호환성: FileMaker Data API",
+    "analysis.defaultResult.meaning": "FileMaker Data API에서 지원되지 않거나 부분적으로만 지원되는 범위 내 단계"
+  },
+  "layout": {}
 }

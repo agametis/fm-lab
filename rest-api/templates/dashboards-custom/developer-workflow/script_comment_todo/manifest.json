@@ -1,0 +1,98 @@
+{
+  "id": "script_comment_todo",
+  "version": "1.0.0",
+  "title": "TODO marker in a script comment",
+  "description": "Unfinished-work rule — a comment step in a script carries a TODO marker (TODO, TO DO, TO-DO, TBD, to be done, to be defined). A TODO describes planned or optional work, not a defect, which is why the severity is info: the rule counts with its own figure but never turns the traffic light yellow. The defect half of the family is script_comment_fixme.",
+  "author": "fm-lab rules",
+  "icon": "list-todo",
+  "category": "documentation",
+  "tags": [
+    "rule",
+    "documentation",
+    "scripts",
+    "unfinished-work"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "documentation",
+    "rationale": "A TODO records work that was planned and postponed. That is a stock figure, not a defect — it says how much of the solution is still an intention. Rising TODO counts in a module are a maintenance signal; individual lines are not.",
+    "remediation": "Nothing to fix per line. Use the inventory to spot modules where postponed work piles up, and move anything with an owner and a date into the tracker.",
+    "meta": {
+      "name": "TODO marker in a script comment",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Unfinished-work rule — a comment step carries a TODO marker. Detector canon of the family: (?i)(\\bto[\\s\\-_]?do|\\btbd\\b|\\bto[\\s\\-_]be[\\s\\-_](done|defined)\\b), verified by tools/tests/rules/unfinished_work_detector.sql; the family deliberately omits the trailing word boundary so plural markers (\"TO DOs\") still match. Overlap with script_comment_fixme is intended: a comment line carrying both markers is counted by both rules, so the sum of the two rules can exceed the number of marked lines.",
+      "created": "2026-08-16",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (ReportFixmeComments)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "summary": "native",
+        "findings": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — TODO marker in a script comment"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "comment": "TODO marker in a script comment"
+  }
+}

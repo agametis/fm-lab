@@ -1,0 +1,97 @@
+{
+  "id": "layout_group_of_one",
+  "version": "1.0.0",
+  "title": "Group with a single object",
+  "description": "Layout-quality rule — a group contains exactly one object. The group adds selection and nesting overhead without grouping anything, usually a leftover after deleting the other group members. Buttons serialized as one-child grouped buttons are not flagged.\n\nBased on the fmCheckMate check \"Group of one\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "group",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "layout_quality",
+    "rationale": "A group around a single object adds a selection and nesting level without grouping anything — usually a leftover after the other members were deleted.",
+    "remediation": "Ungroup the object. FileMaker buttons serialized as one-child grouped buttons are already excluded from this rule.",
+    "meta": {
+      "name": "Group with a single object",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Layout-quality rule — a group contains exactly one object. The group adds selection and nesting overhead without grouping anything, usually a leftover after deleting the other group members. Buttons serialized as one-child grouped buttons are not flagged.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportGroupOfOne)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Group with a single object"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "single": "Group contains a single {child} object — grouping overhead without grouping anything"
+  }
+}

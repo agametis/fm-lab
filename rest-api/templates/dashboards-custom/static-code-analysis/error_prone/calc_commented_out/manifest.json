@@ -1,0 +1,106 @@
+{
+  "id": "calc_commented_out",
+  "version": "1.0.0",
+  "title": "Commented-out calculation",
+  "description": "Error-prone rule — a calculation slot whose entire formula is one comment block. Field calculations, auto-enter and validation formulas, custom functions and script-step calculations are all covered. The formula never evaluates, so the intended behavior is silently disabled while the slot still looks occupied in the FileMaker dialogs.\n\nBased on the fmCheckMate check \"Broken Calculation /*Commented Out*/\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "message-square-off",
+  "category": "error_prone",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "error_prone"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "error_prone",
+    "rationale": "A formula wrapped entirely in a comment evaluates to nothing. Whatever the slot was meant to compute stays switched off, and nothing in the interface hints at it — the field still shows a calculation, the step still shows a formula.",
+    "remediation": "Restore the formula or clear the slot entirely — an empty slot states the intent, a commented-out one hides it.",
+    "meta": {
+      "name": "Commented-out calculation",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Error-prone rule — a calculation slot whose entire formula is one comment block, across field calculations, auto-enter and validation formulas, custom functions and script-step calculations.",
+      "created": "2026-08-16",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XMFN_fmCM_AnalyseFunctions.xsl / XMSC_fmCM_AnalyseScripts.xsl (XMFN_fmCM_ReportBrokenCalculationCommentedOut / XMSC_fmCM_ReportBrokenCalculationCommentedOut)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ],
+      "calibration": "Sharpened against the source: only formulas containing exactly one comment block are reported, so a formula that opens and closes with a comment but carries live code in between stays out."
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Field",
+      "Script",
+      "CustomFunction"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Commented-out calculation"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    },
+    {
+      "name": "calc_slot",
+      "type": "string",
+      "required": false,
+      "description": "Calculation-slot filter chip (custom-function, field-calculation, auto-enter, validation, script-step); unset = all."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "commented-out": "The entire formula is commented out and never evaluates"
+  }
+}

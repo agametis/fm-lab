@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "FIXME-Marker an einem Layoutobjekt",
+    "description": "Regel der Familie „Unfertige Arbeit“ — ein Layoutobjekt trägt einen FIXME-Marker (FIXME, FIX ME, FIX IT, FIXIT) im Textinhalt, in der QuickInfo- oder in der Beschriftungs-Formel. Ein FIXME benennt einen bekannten Defekt, der ausgeliefert wurde — deshalb Severity warning. Bewusste Verschärfung gegenüber der Quellregel: case-insensitiv und trennzeichentolerant — nur so wird etwa ein Textobjekt mit dem Inhalt „TO DO“ gefunden.\n\nAngelehnt an die fmCheckMate-Prüfung „FIXME“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.text": "FIXME-Marker im Textinhalt",
+    "messages.tooltip": "FIXME-Marker in der QuickInfo-Formel",
+    "messages.label": "FIXME-Marker in der Beschriftungs-Formel"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Layouts",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "findings_card.props.title": "FIXME-Marker an einem Layoutobjekt",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine FIXME-Marker an Layoutobjekten gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Stelle",
+    "findings_table.props.columns[8].label": "Breite",
+    "findings_table.props.columns[9].label": "Höhe"
+  }
+}

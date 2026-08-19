@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "被 Pause 终止的 Freeze Window",
+    "description": "性能规则 — 脚本冻结了窗口，随后又暂停。Pause/Resume Script 会结束冻结状态：窗口在脚本执行中途重新渲染，冻结从此失效。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "findings_card.props.title": "被 Pause 终止的 Freeze Window",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "没有脚本在冻结窗口后暂停。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "Freeze Window",
+    "findings_table.props.columns[3].label": "首次暂停",
+    "findings_table.props.columns[4].label": "冻结后的暂停数"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "manifest": {
+    "title": "Gekopieerde objectnaam",
+    "description": "Layoutkwaliteitsregel — een benoemd object draagt een kopieersuffix (' Copy', ' Kopie'), een numeriek plaksuffix, of deelt zijn naam met een ander object op hetzelfde Layout. Benoemde objecten worden door scripts en berekeningen gerefereerd; kopieerresten raken het verkeerde of geen object. Numerieke suffixen kunnen ook bewuste naamgeving zijn — controleer vóór het hernoemen.\n\nGebaseerd op de fmCheckMate-controle “Copied Object Name” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy-suffix": "De objectnaam draagt een kopieersuffix — waarschijnlijk een plakrest",
+    "messages.duplicate-name": "De objectnaam komt meerdere keren voor op dit Layout",
+    "messages.numeric-suffix": "De objectnaam eindigt op een numeriek suffix — mogelijk een plakrest, mogelijk bewuste naamgeving"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Kopieersuffix",
+    "summary_kpi.props.items[2].label": "Numeriek suffix",
+    "summary_kpi.props.items[3].label": "Dubbele namen",
+    "findings_card.props.title": "Gekopieerde objectnaam",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen gekopieerde of dubbele objectnamen gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objecttype",
+    "findings_table.props.columns[3].label": "Object",
+    "findings_table.props.columns[4].label": "Reden",
+    "reason_filter.props.options[0].label": "alle redenen",
+    "reason_filter.props.options[1].label": "kopieersuffix",
+    "reason_filter.props.options[2].label": "numeriek suffix",
+    "reason_filter.props.options[3].label": "dubbele namen",
+    "object_type_select.props.label": "Objecttype",
+    "object_type_select.props.emptyOptionLabel": "alle objecttypen",
+    "findings_table.props.columns[7].label": "Breedte",
+    "findings_table.props.columns[8].label": "Hoogte"
+  }
+}

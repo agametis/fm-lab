@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "Popover dentro de un popover",
+    "description": "Regla de calidad de Layout — un botón de popover está dentro de otro panel de popover. Los popovers anidados no funcionan de forma fiable en FileMaker; abrir el interior cierra el exterior.\n\nBasado en la comprobación de fmCheckMate «Popover in popover» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.nested": "El botón de popover está anidado en otro panel de popover — los popovers anidados cierran el exterior"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Layouts afectados",
+    "summary_kpi.props.items[2].label": "Archivos afectados",
+    "findings_card.props.title": "Popover dentro de un popover",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, Layout u objeto…",
+    "findings_table.props.empty.message": "No se encontraron popovers anidados.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objeto",
+    "findings_table.props.columns[3].label": "Parte",
+    "findings_table.props.columns[6].label": "Ancho",
+    "findings_table.props.columns[7].label": "Alto"
+  }
+}

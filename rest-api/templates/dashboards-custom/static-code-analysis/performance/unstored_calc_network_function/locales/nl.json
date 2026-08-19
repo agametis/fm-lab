@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Niet-opgeslagen berekening met host-roundtrip",
+    "description": "Prestatieregel — een niet-opgeslagen berekeningsveld roept Get(CurrentHostTimestamp) aan en staat op lay-outs. Claris documenteert dat elke weergave van zo'n veld een extra netwerktoegang naar de host veroorzaakt."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Lay-outplaatsingen",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "Niet-opgeslagen berekening met host-roundtrip",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, tabel of veld…",
+    "findings_table.props.empty.message": "Geen weergegeven niet-opgeslagen berekening roept Get(CurrentHostTimestamp) aan.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Tabel",
+    "findings_table.props.columns[2].label": "Veld",
+    "findings_table.props.columns[3].label": "Lay-outs",
+    "findings_table.props.columns[4].label": "Plaatsingen",
+    "findings_table.props.columns[5].label": "Op lijstlay-outs"
+  }
+}

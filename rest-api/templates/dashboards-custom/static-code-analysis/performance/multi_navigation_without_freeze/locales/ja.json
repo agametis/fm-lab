@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Freeze Window のないナビゲーションスクリプト",
+    "description": "パフォーマンスルール — レイアウト切り替えや Go to Related Record を複数回行うのに Freeze Window がないスクリプトは、移動のたびに画面を再描画します。Freeze Window は中間の描画を抑止し、スクリプト終了時に FileMaker が自動的に更新します。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "最大ナビゲーション数",
+    "summary_kpi.props.items[2].label": "対象ファイル数",
+    "min_nav_slider.props.label": "ナビゲーションステップ",
+    "findings_card.props.title": "Freeze Window のないナビゲーションスクリプト",
+    "findings_table.props.searchPlaceholder": "ファイルまたはスクリプトを検索…",
+    "findings_table.props.empty.message": "Freeze Window のないナビゲーション主体のスクリプトは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "スクリプト",
+    "findings_table.props.columns[2].label": "ナビゲーション数",
+    "findings_table.props.columns[3].label": "PSoS 経由の呼び出し"
+  }
+}

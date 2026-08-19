@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "Cálculo não armazenado com ida e volta ao host",
+    "description": "Regra de desempenho — um campo de cálculo não armazenado chama Get(CurrentHostTimestamp) e está posicionado em layouts. A Claris documenta que cada exibição desse campo dispara um acesso de rede adicional ao host."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Posicionamentos em layouts",
+    "summary_kpi.props.items[2].label": "Arquivos afetados",
+    "findings_card.props.title": "Cálculo não armazenado com ida e volta ao host",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, tabela ou campo…",
+    "findings_table.props.empty.message": "Nenhum cálculo não armazenado exibido chama Get(CurrentHostTimestamp).",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Tabela",
+    "findings_table.props.columns[2].label": "Campo",
+    "findings_table.props.columns[3].label": "Layouts",
+    "findings_table.props.columns[4].label": "Posicionamentos",
+    "findings_table.props.columns[5].label": "Em layouts de lista"
+  }
+}

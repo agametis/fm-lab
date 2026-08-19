@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary_card",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpi",
+            "props": {
+              "items": [
+                {
+                  "label": "Layout objects",
+                  "field": "objects_total",
+                  "format": "number"
+                },
+                {
+                  "label": "With local CSS",
+                  "field": "objects_with_css",
+                  "format": "number"
+                },
+                {
+                  "label": "Share %",
+                  "field": "share_pct",
+                  "format": "number"
+                },
+                {
+                  "label": "Layouts listed",
+                  "field": "finding_count",
+                  "format": "number"
+                }
+              ]
+            }
+          },
+          {
+            "type": "Slider",
+            "id": "min_share_slider",
+            "props": {
+              "param": "min_share",
+              "label": "Min. share",
+              "min": 0,
+              "max": 100,
+              "default": 50,
+              "step": 5,
+              "valueSuffix": "%"
+            },
+            "data": {
+              "dataset": "summary"
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings_card",
+        "props": {
+          "span": 12,
+          "title": "Local CSS overrides"
+        },
+        "data": {
+          "dataset": "findings"
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search file, layout or object…",
+              "columns": [
+                {
+                  "field": "file_name",
+                  "label": "File"
+                },
+                {
+                  "field": "layout_name",
+                  "label": "Layout"
+                },
+                {
+                  "field": "objects_total",
+                  "label": "Objects"
+                },
+                {
+                  "field": "objects_with_css",
+                  "label": "With local CSS"
+                },
+                {
+                  "field": "share_pct",
+                  "label": "Share %"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "Layout",
+                  "file": "{{file_name}}",
+                  "ref_src": "layout_local_css",
+                  "ref_msgid": "local-css"
+                }
+              },
+              "empty": {
+                "message": "No layout reaches the configured local-CSS share."
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Script de navegación sin Freeze Window",
+    "description": "Regla de rendimiento — los scripts con varios cambios de presentación o pasos Go to Related Record sin Freeze Window redibujan la pantalla en cada salto. Freeze Window suprime los renderizados intermedios; FileMaker actualiza automáticamente al terminar el script."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Máx. pasos de navegación",
+    "summary_kpi.props.items[2].label": "Archivos afectados",
+    "min_nav_slider.props.label": "Pasos de navegación",
+    "findings_card.props.title": "Script de navegación sin Freeze Window",
+    "findings_table.props.searchPlaceholder": "Buscar archivo o script…",
+    "findings_table.props.empty.message": "No se encontró ningún script con mucha navegación sin Freeze Window.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Pasos de navegación",
+    "findings_table.props.columns[3].label": "Llamado vía PSoS"
+  }
+}

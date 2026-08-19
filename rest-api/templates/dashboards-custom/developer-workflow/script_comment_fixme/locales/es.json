@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Marca FIXME en un comentario de script",
+    "description": "Regla de la familia «Trabajo pendiente»: un paso de comentario de un script contiene una marca FIXME (FIXME, FIX ME, FIX IT, FIXIT). Una marca FIXME señala un defecto conocido que se entregó, de ahí la severidad warning. La búsqueda no distingue mayúsculas y tolera separadores, de modo que la notación del desarrollador no importa.",
+    "messages.comment": "Marca FIXME en un comentario de script"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Scripts afectados",
+    "summary_kpi.props.items[2].label": "Archivos afectados",
+    "findings_card.props.title": "Marca FIXME en un comentario de script",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, script o comentario…",
+    "findings_table.props.empty.message": "No se encontraron marcas FIXME en comentarios de scripts.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[2].label": "Paso",
+    "findings_table.props.columns[3].label": "Marca",
+    "findings_table.props.columns[4].label": "Comentario"
+  }
+}

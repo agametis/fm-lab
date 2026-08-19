@@ -136,6 +136,8 @@
     "showFindings": "Mostra risultati",
     "memberError": "Errore",
     "openMember": "Apri dashboard/query",
+    "openFinding": "Apri nella vista di dettaglio",
+    "openMemberFindings": "Apri tutti i risultati nella vista di dettaglio",
     "truncated": "Altri risultati troncati: apri il membro per l’elenco completo.",
     "duration": "{{ms}} ms",
     "searchPlaceholder": "Filtra i test…",
@@ -173,6 +175,8 @@
     "state_neutral": "Risultati neutri",
     "state_ok": "Superati",
     "state_skipped": "Saltati",
-    "state_failed": "Esecuzione fallita"
+    "state_failed": "Esecuzione fallita",
+    "filterReset": "Reimposta i filtri",
+    "noResultsYet": "Ancora nessun risultato — esegui i test per popolare questo elenco."
   }
 }

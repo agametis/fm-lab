@@ -180,19 +180,28 @@ GROUP BY Object_Type, File_Name
 ORDER BY Object_Type, File_Name;
 ```
 
-## DDR-aware display
+## Script dump
 
-**Human-readable script steps only when DDR-Info is available:**
+**Read a script's steps — ordered, human-readable, with nesting and disabled flag.**
+This is the canonical way to look at a script; do not hand-roll a variant.
+
 ```sql
-SELECT
-    s.Script_Name,
-    s.Step_Index,
-    CASE WHEN (SELECT Has_DDR_INFO FROM XMLMetadata) = 'True'
-         THEN ddr.Step_Text
-         ELSE s.Step_Name END as Display_Text
+SELECT lpad(CAST(s.Step_Index + 1 AS VARCHAR), 3, ' ')            -- user-facing numbering
+       || ' ' || repeat('   ', CAST(coalesce(t.block_depth_before, 0) AS INT))
+       || coalesce(d.Step_Text, s.Step_Name)                       -- DDR text, else locale name
+       || CASE WHEN s.Is_Enabled = false THEN '   <<disabled>>' ELSE '' END AS step
 FROM StepsForScripts s
-LEFT JOIN DDR_ScriptSteps ddr ON s.DDR_UUID = ddr.Step_UUID;
+LEFT JOIN DDR_ScriptSteps     d ON d.Step_UUID = s.Step_UUID
+LEFT JOIN v_script_block_tree t ON t.Step_UUID = s.Step_UUID
+WHERE s.File_Name = '<File>' AND s.Script_Name = '<Script>'
+ORDER BY s.Step_Index;
 ```
+
+The `coalesce` replaces the old DDR case distinction: without DDR-Info
+`Step_Text` is NULL and the query falls back to the (localized) `Step_Name` by
+itself — no unscoped `XMLMetadata` lookup, correct in multi-file catalogs.
+Nesting comes from `v_script_block_tree`, never from re-reading `Step_Index`
+sequences (`analysis-patterns.md` → `control-flow-reachability`).
 
 ⚠️ **Locale caveat:** `Step_Name` is written in the exporting client's UI language.
 Never gate logic on `Step_Name` literals — use `Step_ID` (via `ScriptStepRoleMap` /

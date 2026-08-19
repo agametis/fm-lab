@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "Explorateur de géométrie des layouts",
+    "description": "Tableau d'inventaire — tous les objets de layout avec des colonnes de géométrie triables individuellement (X, Y, largeur, hauteur, ordre Z). Filtrable par section du layout (en-tête, corps, pied …), type d'objet, largeur/hauteur maximales et une fenêtre de coordonnées absolue au layout (X/Y de/à) pour examiner des zones précises. Les coordonnées des objets imbriqués sont relatives à leur conteneur ; la fenêtre de coordonnées correspond exactement aux objets de premier niveau, les objets imbriqués comptent via leur conteneur de premier niveau. Les paramètres d'URL w_min/h_min complètent les curseurs. Un clic sur une ligne ouvre le layout avec l'objet mis en évidence."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Objets",
+    "summary_kpi.props.items[1].label": "Layouts",
+    "summary_kpi.props.items[2].label": "Fichiers",
+    "objects_card.props.title": "Objets du layout",
+    "part_select.props.label": "Section du layout",
+    "part_select.props.emptyOptionLabel": "toutes les sections",
+    "object_type_select.props.label": "Type d'objet",
+    "object_type_select.props.emptyOptionLabel": "tous les types d'objet",
+    "w_max_slider.props.label": "Largeur max.",
+    "h_max_slider.props.label": "Hauteur max.",
+    "x_min_slider.props.label": "Fenêtre X de",
+    "x_max_slider.props.label": "Fenêtre X à",
+    "y_min_slider.props.label": "Fenêtre Y de",
+    "y_max_slider.props.label": "Fenêtre Y à",
+    "objects_table.props.searchPlaceholder": "Rechercher fichier, layout ou objet…",
+    "objects_table.props.empty.message": "Aucun objet de layout ne correspond aux filtres actuels.",
+    "objects_table.props.columns[0].label": "Fichier",
+    "objects_table.props.columns[1].label": "Layout",
+    "objects_table.props.columns[2].label": "Section",
+    "objects_table.props.columns[3].label": "Type d'objet",
+    "objects_table.props.columns[4].label": "Objet",
+    "objects_table.props.columns[5].label": "Niveau",
+    "objects_table.props.columns[8].label": "Largeur",
+    "objects_table.props.columns[9].label": "Hauteur"
+  }
+}

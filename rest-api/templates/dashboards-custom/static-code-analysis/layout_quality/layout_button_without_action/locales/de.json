@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Schaltfläche ohne Aktion",
+    "description": "Layout-Qualitätsregel — eine Schaltfläche trägt weder einen Scriptaufruf noch eine Einzelschritt-Aktion. Die Erkennung liest die serialisierte Aktion des Objekts: Eine Script-Aktion erscheint als Script-Referenz, eine Einzelschritt-Aktion als Schritt-Element; eine Schaltfläche ohne beides tut beim Klick nichts. In großen Lösungen können rund 40 % der Schaltflächen betroffen sein — prüfe daher nach Kontext, bevor du handelst: Dekorative Icons und inaktive Schaltflächenleisten-Segmente sind legitim, der Kontextfilter grenzt die Liste ein.\n\nAngelehnt an die fmCheckMate-Prüfung „Button Action <Missing>“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.no-action": "Die Schaltfläche hat weder einen Scriptaufruf noch eine Einzelschritt-Aktion"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Layouts",
+    "summary_kpi.props.items[2].label": "Schaltflächen im Bereich",
+    "findings_card.props.title": "Schaltfläche ohne Aktion",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine Schaltflächen ohne Aktion gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Kontext",
+    "findings_table.props.columns[6].label": "Breite",
+    "findings_table.props.columns[7].label": "Höhe",
+    "context_select.props.label": "Kontext",
+    "context_select.props.emptyOptionLabel": "Alle Kontexte"
+  }
+}

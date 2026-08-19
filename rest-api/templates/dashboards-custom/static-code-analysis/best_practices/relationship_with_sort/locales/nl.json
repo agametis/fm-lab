@@ -12,6 +12,11 @@
     "findings_table.props.columns[0].label": "Bestand",
     "findings_table.props.columns[1].label": "Linker TO",
     "findings_table.props.columns[2].label": "Rechter TO",
-    "findings_table.props.columns[3].label": "Gesorteerd"
+    "findings_table.props.columns[3].label": "Gesorteerd",
+    "findings_table.props.columns[4].label": "Consumerende portalen",
+    "findings_table.props.columns[5].label": "Portalen met eigen sortering",
+    "consumer_filter_chips.props.options[0].label": "Alle relaties",
+    "consumer_filter_chips.props.options[1].label": "Consumerende portalen",
+    "consumer_filter_chips.props.options[2].label": "Portalen met eigen sortering"
   }
 }

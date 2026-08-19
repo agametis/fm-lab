@@ -1,0 +1,33 @@
+{
+  "manifest": {
+    "title": "Objeto de Layout degenerado",
+    "description": "Regla de calidad de Layout — un objeto es degenerado. Objetos de texto sin texto, objetos con anchura o altura cero y objetos por debajo del tamaño mínimo en ambas dimensiones (controles deslizantes de ancho/alto, predeterminado 4 px cada uno). Las líneas están excluidas — la extensión cero es su forma normal. Los textos vacíos diminutos suelen usarse como separadores — revisar antes de borrar.",
+    "messages.zero-size": "El objeto tiene anchura o altura cero",
+    "messages.empty-text": "El objeto de texto no contiene texto",
+    "messages.undersized": "El objeto es más pequeño que {min_w}×{min_h} px (ancho×alto)"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Objetos de texto vacíos",
+    "summary_kpi.props.items[2].label": "Demasiado pequeños",
+    "summary_kpi.props.items[3].label": "Tamaño cero",
+    "min_w_slider.props.label": "Ancho mín.",
+    "min_h_slider.props.label": "Alto mín.",
+    "findings_card.props.title": "Objeto de Layout degenerado",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, Layout u objeto…",
+    "findings_table.props.empty.message": "No se encontraron objetos degenerados.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Defecto",
+    "defect_filter.props.options[0].label": "todos los defectos",
+    "defect_filter.props.options[1].label": "texto vacío",
+    "defect_filter.props.options[2].label": "demasiado pequeño",
+    "defect_filter.props.options[3].label": "tamaño cero",
+    "object_type_select.props.label": "Tipo de objeto",
+    "object_type_select.props.emptyOptionLabel": "todos los tipos de objeto",
+    "findings_table.props.columns[7].label": "Ancho",
+    "findings_table.props.columns[8].label": "Alto"
+  }
+}

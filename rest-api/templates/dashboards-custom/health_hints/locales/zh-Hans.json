@@ -1,10 +1,9 @@
 {
   "manifest": {
     "title": "Healthchecks",
-    "description": "作为结果层（Result Envelope v1）纯消费者的解决方案级健康概览：按状态统计静态代码分析和元数据完整性规则仪表板的规则数量，按栏目分组，每行链接到其规则仪表板。仅读取服务器结果缓存 — 页面加载时从不执行规则 SQL；待执行条目尚未针对当前目录运行，并在显式运行前保持可见。有意不携带自身的结果声明（是消费者而非规则 — 设计上不显示结果徽章）。"
+    "description": "作为结果层纯消费者的解决方案级健康概览：按状态统计规则仪表板的数量，按栏目分组，每行链接到其仪表板。仅读取服务器结果缓存。"
   },
   "layout": {
-    "results_kpi_card.props.subtitle": "来自共享结果层的规则结果 — 按需计算，按目录指纹缓存。待执行的规则尚未针对当前目录运行；请使用“运行所有规则”。",
     "results_kpi_strip.props.items[0].label": "规则",
     "results_kpi_strip.props.items[1].label": "错误",
     "results_kpi_strip.props.items[2].label": "警告",
@@ -25,6 +24,8 @@
     "rp_unused_code_list.props.empty.message": "无可报告项。",
     "rp_code_style_card.props.title": "代码风格",
     "rp_code_style_list.props.empty.message": "无可报告项。",
+    "rp_layout_quality_card.props.title": "Layout 质量",
+    "rp_layout_quality_list.props.empty.message": "无可报告项。",
     "rp_documentation_card.props.title": "文档",
     "rp_documentation_list.props.empty.message": "无可报告项。",
     "rp_best_practices_card.props.title": "最佳实践",
@@ -32,6 +33,8 @@
     "rp_platform_card.props.title": "平台兼容性",
     "rp_platform_list.props.empty.message": "无可报告项。",
     "rp_metadata_integrity_card.props.title": "元数据完整性",
-    "rp_metadata_integrity_list.props.empty.message": "无可报告项。"
+    "rp_metadata_integrity_list.props.empty.message": "无可报告项。",
+    "rp_developer_workflow_card.props.title": "开发者工作流",
+    "rp_developer_workflow_list.props.empty.message": "无可报告项。"
   }
 }

@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "只赋值从不读取的变量",
+    "description": "未使用代码规则 — 变量被写入，却从未在目录中的任何位置被读取。往好里说是多余负担，往坏里说是只改了一半的重命名留下的痕迹。已知误报：作为脚本参数传出的值、运行时拼接的变量名，以及发生在导出文件之外的读取 — 因此本规则仅为提示级别。\n\n基于 fmCheckMate 检查“ListVarsDefinedButUnused” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.set-never-read": "变量被写入但从未被读取"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "局部",
+    "summary_kpi.props.items[2].label": "全局",
+    "summary_kpi.props.items[3].label": "受影响脚本",
+    "summary_kpi.props.items[4].label": "受影响文件",
+    "findings_card.props.title": "只赋值从不读取的变量",
+    "variable_scope_filter.props.options[0].label": "全部作用域",
+    "variable_scope_filter.props.options[1].label": "局部",
+    "variable_scope_filter.props.options[2].label": "全局",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "变量",
+    "findings_table.props.columns[2].label": "作用域",
+    "findings_table.props.columns[3].label": "首次出现于",
+    "findings_table.props.columns[4].label": "写入次数",
+    "findings_table.props.columns[5].label": "证据来源",
+    "findings_table.props.searchPlaceholder": "搜索文件、变量或脚本…",
+    "findings_table.props.empty.message": "未发现只写入而从不读取的变量。"
+  }
+}

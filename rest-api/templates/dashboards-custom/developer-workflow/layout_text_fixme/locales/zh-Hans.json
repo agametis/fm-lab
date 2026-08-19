@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "布局对象上的 FIXME 标记",
+    "description": "“未完成工作”规则族 — 布局对象的文本内容、工具提示或标签计算式中含有 FIXME 标记（FIXME, FIX ME, FIX IT, FIXIT）。 FIXME 表示已随版本发布的已知缺陷，因此严重度为 warning。 相对源规则的有意收紧：不区分大小写并允许分隔符 —— 只有这样才能找到内容为“TO DO”的文本对象。\n\n基于 fmCheckMate 检查“FIXME” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.text": "文本内容中的 FIXME 标记",
+    "messages.tooltip": "工具提示计算式中的 FIXME 标记",
+    "messages.label": "标签计算式中的 FIXME 标记"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "受影响布局",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "findings_card.props.title": "布局对象上的 FIXME 标记",
+    "findings_table.props.searchPlaceholder": "搜索文件、布局或对象…",
+    "findings_table.props.empty.message": "布局对象上未发现 FIXME 标记。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "布局",
+    "findings_table.props.columns[2].label": "对象类型",
+    "findings_table.props.columns[3].label": "对象",
+    "findings_table.props.columns[4].label": "位置",
+    "findings_table.props.columns[5].label": "标记",
+    "findings_table.props.columns[8].label": "宽度",
+    "findings_table.props.columns[9].label": "高度"
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "id": "autoenter_calc_related_fields",
+  "version": "1.0.0",
+  "title": "Auto-enter calculation crossing relationships",
+  "description": "Performance rule — auto-enter calculations that read related fields traverse relationships on every write of the record. Over WAN each traversal can mean extra round trips at data-entry time.",
+  "author": "fm-lab rules",
+  "icon": "gauge",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "performance",
+    "wan",
+    "community-patterns"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "performance",
+    "rationale": "Writing a record evaluates its auto-enter calculations. When such a formula reads related fields, the relationship is resolved as part of the write — on remote clients this adds network work to every commit, invisible in the script that triggers it.",
+    "remediation": "Check whether the related value can be resolved once (lookup, script-set value) instead of per write, or whether the traversal is shallow enough to be harmless. This is a review pointer, not a defect list.",
+    "meta": {
+      "name": "Auto-enter calculation crossing relationships",
+      "author": "fm-lab rules",
+      "source": "FileMaker community (DevCon 2019, WAN-first)",
+      "url": null,
+      "description": "Detects '::' (related-field syntax) in the auto-enter calculation text. False-positive classes documented: '::' inside string literals or formula comments counts as a match — hence severity info.",
+      "created": "2026-08-17",
+      "references": [
+        {
+          "project": "Chris Irvine, FileMaker DevCon 2019",
+          "rule": "Doing it Right: Fast Solutions Developed WAN First",
+          "url": null
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Field"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Auto-enter calculation crossing relationships"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

@@ -184,5 +184,9 @@
     },
     "noFilterMatches": "No entries with this status in this section.",
     "openFolder": "Open folder"
+  },
+  "featured": {
+    "ruleCount_one": "{{count}} rule",
+    "ruleCount_other": "{{count}} rules"
   }
 }

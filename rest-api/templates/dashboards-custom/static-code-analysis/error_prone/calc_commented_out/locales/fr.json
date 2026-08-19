@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Calcul mis en commentaire",
+    "description": "Règle de risque d'erreur — un calcul est entièrement constitué d'un bloc de commentaire. Sont couverts les calculs de rubrique, les formules d'entrée automatique et de validation, les fonctions personnalisées et les calculs des actions de script. La formule n'est jamais évaluée, le comportement prévu est désactivé sans aucune trace visible.\n\nD’après le contrôle fmCheckMate « Broken Calculation /*Commented Out*/ » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.commented-out": "La formule entière est en commentaire et n'est jamais évaluée"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Calculs de rubrique",
+    "summary_kpi.props.items[2].label": "Actions de script",
+    "summary_kpi.props.items[3].label": "Fichiers concernés",
+    "findings_card.props.title": "Calcul mis en commentaire",
+    "calc_slot_filter.props.options[0].label": "tous les emplacements",
+    "calc_slot_filter.props.options[1].label": "Calcul de rubrique",
+    "calc_slot_filter.props.options[2].label": "Action de script",
+    "calc_slot_filter.props.options[3].label": "Entrée automatique",
+    "calc_slot_filter.props.options[4].label": "Validation",
+    "calc_slot_filter.props.options[5].label": "Fonction personnalisée",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Type d'objet",
+    "findings_table.props.columns[2].label": "Objet",
+    "findings_table.props.columns[3].label": "Emplacement",
+    "findings_table.props.columns[4].label": "Emplacement",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un objet ou une formule…",
+    "findings_table.props.empty.message": "Aucun calcul mis en commentaire trouvé."
+  }
+}

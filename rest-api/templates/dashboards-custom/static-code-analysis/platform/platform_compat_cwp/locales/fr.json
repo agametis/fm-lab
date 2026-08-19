@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilité de plateforme : Custom Web Publishing",
-  "analysis.defaultResult.meaning": "Actions de script du périmètre non prises en charge ou seulement partiellement sur Custom Web Publishing"
- }
+  "manifest": {
+    "title": "Compatibilité de plateforme : Custom Web Publishing",
+    "analysis.defaultResult.meaning": "Actions de script du périmètre non prises en charge ou seulement partiellement sur Custom Web Publishing"
+  },
+  "layout": {}
 }

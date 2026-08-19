@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilité de plateforme : FileMaker Data API",
-  "analysis.defaultResult.meaning": "Actions de script du périmètre non prises en charge ou seulement partiellement sur FileMaker Data API"
- }
+  "manifest": {
+    "title": "Compatibilité de plateforme : FileMaker Data API",
+    "analysis.defaultResult.meaning": "Actions de script du périmètre non prises en charge ou seulement partiellement sur FileMaker Data API"
+  },
+  "layout": {}
 }

@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "Popover in Popover",
+    "description": "Layout-Qualitätsregel — ein Popover-Button liegt innerhalb eines anderen Popover-Panels. Verschachtelte Popover funktionieren in FileMaker nicht zuverlässig — das Öffnen des inneren schließt das äußere.\n\nAngelehnt an die fmCheckMate-Prüfung „Popover in popover“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.nested": "Der Popover-Button liegt in einem anderen Popover-Panel — verschachtelte Popover schließen das äußere"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Layouts",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "findings_card.props.title": "Popover in Popover",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine verschachtelten Popover gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Bereich",
+    "findings_table.props.columns[6].label": "Breite",
+    "findings_table.props.columns[7].label": "Höhe"
+  }
+}

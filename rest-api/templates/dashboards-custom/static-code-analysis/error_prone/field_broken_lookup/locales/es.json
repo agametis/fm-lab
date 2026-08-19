@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Búsqueda rota",
+    "description": "Regla de propensión a errores: una búsqueda cuya fuente ya no existe: falta la ocurrencia de tabla, falta la tabla de origen en el archivo de destino, o se borró el campo de origen. Una búsqueda que no resuelve no copia nada ni avisa de nada: el campo simplemente queda vacío en cada registro nuevo.\n\nBasado en la comprobación de fmCheckMate «ListFieldsWithBrokenLookup» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-relationship": "La búsqueda apunta a una ocurrencia de tabla que ya no existe",
+    "messages.missing-table": "La tabla de origen de la búsqueda falta en el archivo de destino",
+    "messages.missing-field": "El campo de origen de la búsqueda no existe en la tabla de origen"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Búsquedas en el ámbito",
+    "summary_kpi.props.items[2].label": "No verificable",
+    "summary_kpi.props.items[3].label": "Archivos afectados",
+    "findings_card.props.title": "Búsqueda rota",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Tabla",
+    "findings_table.props.columns[2].label": "Campo",
+    "findings_table.props.columns[3].label": "Relación de búsqueda",
+    "findings_table.props.columns[4].label": "Campo de origen",
+    "findings_table.props.columns[5].label": "Archivo de destino",
+    "findings_table.props.columns[6].label": "Defecto",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, tabla o campo…",
+    "findings_table.props.empty.message": "No se encontraron búsquedas rotas."
+  }
+}

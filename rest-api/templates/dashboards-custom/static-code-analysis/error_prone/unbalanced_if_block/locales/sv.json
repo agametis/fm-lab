@@ -10,7 +10,6 @@
     "findings_table.props.searchPlaceholder": "Sök fil, skript eller träff…",
     "findings_table.props.empty.message": "Inga obalanserade If / End If-block hittades.",
     "findings_table.props.columns[0].label": "Fil",
-    "findings_table.props.columns[1].label": "Skript",
-    "findings_table.props.columns[2].label": "Träff"
+    "findings_table.props.columns[1].label": "Skript"
   }
 }

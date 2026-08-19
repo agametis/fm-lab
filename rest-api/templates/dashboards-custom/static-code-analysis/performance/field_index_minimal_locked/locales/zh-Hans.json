@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "title": "自动索引开启时的最小索引",
+    "description": "性能规则 — 字段的索引设为「最小」，而自动索引仍然开启。最小只保留单词索引并丢弃值索引，但在自动索引开启时，FileMaker 仍会按查找需要重建索引。该设置带不来可预期的节省，通常只是记录了一个曾被清空却再未复核的索引。\n\n基于 fmCheckMate 检查“ListFieldsWithIndexMinimalLocked” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.index-minimal-locked": "自动索引开启时索引设为最小"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "受影响表",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "findings_card.props.title": "自动索引开启时的最小索引",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "表",
+    "findings_table.props.columns[2].label": "字段",
+    "findings_table.props.columns[3].label": "字段类型",
+    "findings_table.props.columns[4].label": "数据类型",
+    "findings_table.props.searchPlaceholder": "搜索文件、表或字段…",
+    "findings_table.props.empty.message": "未发现索引为最小且自动索引开启的字段。"
+  }
+}

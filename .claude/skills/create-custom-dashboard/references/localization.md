@@ -58,7 +58,7 @@ API — after generating locales, the validation gate's log check will surface t
 **Never translate:** dataset IDs, `field` names, `param` names / option `value`s,
 `format` values, icon names, action names/args, node `id`s.
 
-Reference bundles: `script_todos/locales/de.json` (compact),
+Reference bundles: `developer-workflow/script_todos/locales/de.json` (compact),
 `modularization/external_apis/locales/fr.json` (ID-form with full layout overrides).
 
 ## Folder bundles

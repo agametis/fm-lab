@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "summary_card",
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "summary_kpi",
+            "props": {
+              "items": [
+                {
+                  "label": "Findings",
+                  "field": "finding_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Local",
+                  "field": "local_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Global",
+                  "field": "global_count",
+                  "format": "number"
+                },
+                {
+                  "label": "Affected files",
+                  "field": "affected_files",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "findings_card",
+        "props": {
+          "span": 12,
+          "title": "Variable name with spaces",
+          "keepChildrenOnEmpty": true
+        },
+        "data": {
+          "dataset": "findings"
+        },
+        "children": [
+          {
+            "type": "Row",
+            "id": "findings_filter_row",
+            "props": {
+              "gap": 16
+            },
+            "children": [
+              {
+                "type": "FilterChips",
+                "id": "variable_scope_filter",
+                "props": {
+                  "param": "variable_scope",
+                  "default": "",
+                  "options": [
+                    {
+                      "value": "",
+                      "label": "All scopes",
+                      "countField": "finding_count"
+                    },
+                    {
+                      "value": "local",
+                      "label": "Local",
+                      "countField": "local_count"
+                    },
+                    {
+                      "value": "global",
+                      "label": "Global",
+                      "countField": "global_count"
+                    },
+                    {
+                      "value": "let_local",
+                      "label": "Let()",
+                      "countField": "let_local_count"
+                    },
+                    {
+                      "value": "superglobal",
+                      "label": "Superglobal",
+                      "countField": "superglobal_count"
+                    }
+                  ]
+                },
+                "data": {
+                  "dataset": "summary"
+                }
+              }
+            ]
+          },
+          {
+            "type": "Table",
+            "id": "findings_table",
+            "props": {
+              "rowKey": "row_key",
+              "density": "comfortable",
+              "sortable": true,
+              "searchable": true,
+              "searchPlaceholder": "Search file, variable or script…",
+              "columns": [
+                {
+                  "field": "file_name",
+                  "label": "File"
+                },
+                {
+                  "field": "variable_name",
+                  "label": "Variable"
+                },
+                {
+                  "field": "variable_scope",
+                  "label": "Scope"
+                },
+                {
+                  "field": "context",
+                  "label": "First seen in"
+                },
+                {
+                  "field": "set_count",
+                  "label": "Writes"
+                },
+                {
+                  "field": "read_count",
+                  "label": "Reads"
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "{{nav_type}}",
+                  "file": "{{file_name}}",
+                  "ref": "{{nav_ref}}",
+                  "step": "{{step_uuid}}",
+                  "marks": "{{marks}}",
+                  "ref_src": "variable_name_with_spaces",
+                  "ref_msgid": "name-with-spaces"
+                }
+              },
+              "empty": {
+                "message": "No variable names containing spaces found."
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "깨진 조회",
+    "description": "오류 유발 규칙 — 원본이 더 이상 존재하지 않는 조회입니다. 테이블 어커런스가 사라졌거나, 대상 파일에 원본 테이블이 없거나, 원본 필드가 삭제되었습니다. 해결되지 않는 조회는 아무것도 복사하지 않고 아무 것도 알리지 않습니다 — 새 레코드마다 필드가 그냥 비어 있게 됩니다.\n\nfmCheckMate 검사 “ListFieldsWithBrokenLookup” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-relationship": "조회가 더 이상 없는 테이블 어커런스를 가리킵니다",
+    "messages.missing-table": "조회의 원본 테이블이 대상 파일에 없습니다",
+    "messages.missing-field": "조회의 원본 필드가 원본 테이블에 없습니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "범위 내 조회",
+    "summary_kpi.props.items[2].label": "확인 불가",
+    "summary_kpi.props.items[3].label": "영향받은 파일",
+    "findings_card.props.title": "깨진 조회",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "테이블",
+    "findings_table.props.columns[2].label": "필드",
+    "findings_table.props.columns[3].label": "조회 관계",
+    "findings_table.props.columns[4].label": "원본 필드",
+    "findings_table.props.columns[5].label": "대상 파일",
+    "findings_table.props.columns[6].label": "결함",
+    "findings_table.props.searchPlaceholder": "파일, 테이블 또는 필드 검색…",
+    "findings_table.props.empty.message": "깨진 조회가 없습니다."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Freeze Window beëindigd door pauze",
+    "description": "Prestatieregel — een script bevriest het venster en pauzeert later. Pause/Resume Script beëindigt de bevroren toestand: het venster rendert midden in het script en de bevriezing verliest vanaf dat punt haar effect."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "findings_card.props.title": "Freeze Window beëindigd door pauze",
+    "findings_table.props.searchPlaceholder": "Zoek bestand of script…",
+    "findings_table.props.empty.message": "Geen script bevriest het venster en pauzeert daarna.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Freeze Window",
+    "findings_table.props.columns[3].label": "Eerste pauze",
+    "findings_table.props.columns[4].label": "Pauzes na freeze"
+  }
+}

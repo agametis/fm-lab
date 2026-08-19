@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Oggetto fuori dal layout",
+    "description": "Regola di qualità del Layout — un oggetto di primo livello sporge oltre i confini del layout: oltre la larghezza, sotto l'ultima sezione o in coordinate negative. Vengono controllati solo gli oggetti di primo livello perché solo essi usano coordinate assolute; gli oggetti annidati sono relativi al loro contenitore e rientrano nella regola degli oggetti persi. Le piccole sporgenze sono spesso artefatti di arrotondamento — il cursore di tolleranza le nasconde.",
+    "messages.complete": "L'oggetto è completamente fuori dal layout ({direction})",
+    "messages.partial": "L'oggetto sporge oltre il layout ({direction})"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Completamente fuori",
+    "summary_kpi.props.items[2].label": "Parzialmente fuori",
+    "findings_card.props.title": "Oggetto fuori dal layout",
+    "findings_table.props.searchPlaceholder": "Cerca file, Layout o oggetto…",
+    "findings_table.props.empty.message": "Nessun oggetto fuori dai confini del layout trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo di oggetto",
+    "findings_table.props.columns[3].label": "Oggetto",
+    "findings_table.props.columns[4].label": "Direzione",
+    "findings_table.props.columns[5].label": "Entità",
+    "findings_table.props.columns[8].label": "Larghezza",
+    "findings_table.props.columns[9].label": "Altezza",
+    "tolerance_slider.props.label": "Tolleranza"
+  }
+}

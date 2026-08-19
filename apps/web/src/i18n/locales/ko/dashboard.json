@@ -168,5 +168,9 @@
     },
     "noFilterMatches": "이 섹션에는 해당 상태의 항목이 없습니다.",
     "openFolder": "폴더 열기"
+  },
+  "featured": {
+    "ruleCount_one": "규칙 {{count}}개",
+    "ruleCount_other": "규칙 {{count}}개"
   }
 }

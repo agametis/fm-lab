@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "FIXME-markering op een lay-outobject",
+    "description": "Regel uit de familie “Onafgemaakt werk”: een lay-outobject bevat een FIXME-markering (FIXME, FIX ME, FIX IT, FIXIT) in de tekst, de knopinfo of de labelformule. Een FIXME benoemt een bekend defect dat is uitgeleverd — vandaar severity warning. Bewuste aanscherping ten opzichte van de bronregel: hoofdletterongevoelig en scheidingstekentolerant — alleen zo wordt een tekstobject met de inhoud “TO DO” gevonden.\n\nGebaseerd op de fmCheckMate-controle “FIXME” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.text": "FIXME-markering in de tekstinhoud",
+    "messages.tooltip": "FIXME-markering in de knopinfoformule",
+    "messages.label": "FIXME-markering in de labelformule"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken lay-outs",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "FIXME-markering op een lay-outobject",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, lay-out of object…",
+    "findings_table.props.empty.message": "Geen FIXME-markeringen op lay-outobjecten gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Lay-out",
+    "findings_table.props.columns[2].label": "Objecttype",
+    "findings_table.props.columns[4].label": "Plaats",
+    "findings_table.props.columns[5].label": "Markering",
+    "findings_table.props.columns[8].label": "Breedte",
+    "findings_table.props.columns[9].label": "Hoogte"
+  }
+}

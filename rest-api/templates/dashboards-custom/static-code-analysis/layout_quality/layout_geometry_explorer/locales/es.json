@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "Explorador de geometría de layouts",
+    "description": "Panel de inventario — todos los objetos de layout con columnas de geometría ordenables individualmente (X, Y, ancho, alto, orden Z). Filtrable por sección del layout (encabezado, cuerpo, pie …), tipo de objeto, ancho/alto máximos y una ventana de coordenadas absoluta al layout (X/Y desde/hasta) para examinar zonas concretas. Las coordenadas de los objetos anidados son relativas a su contenedor; la ventana de coordenadas coincide exactamente con los objetos de nivel superior y los anidados cuentan a través de su contenedor de nivel superior. Los parámetros de URL w_min/h_min complementan los controles. Al hacer clic en una fila se abre el layout con el objeto resaltado."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Objetos",
+    "summary_kpi.props.items[1].label": "Layouts",
+    "summary_kpi.props.items[2].label": "Archivos",
+    "objects_card.props.title": "Objetos del layout",
+    "part_select.props.label": "Sección del layout",
+    "part_select.props.emptyOptionLabel": "todas las secciones",
+    "object_type_select.props.label": "Tipo de objeto",
+    "object_type_select.props.emptyOptionLabel": "todos los tipos de objeto",
+    "w_max_slider.props.label": "Ancho máx.",
+    "h_max_slider.props.label": "Alto máx.",
+    "x_min_slider.props.label": "Ventana X desde",
+    "x_max_slider.props.label": "Ventana X hasta",
+    "y_min_slider.props.label": "Ventana Y desde",
+    "y_max_slider.props.label": "Ventana Y hasta",
+    "objects_table.props.searchPlaceholder": "Buscar archivo, layout u objeto…",
+    "objects_table.props.empty.message": "Ningún objeto de layout coincide con los filtros actuales.",
+    "objects_table.props.columns[0].label": "Archivo",
+    "objects_table.props.columns[1].label": "Layout",
+    "objects_table.props.columns[2].label": "Sección",
+    "objects_table.props.columns[3].label": "Tipo de objeto",
+    "objects_table.props.columns[4].label": "Objeto",
+    "objects_table.props.columns[5].label": "Nivel",
+    "objects_table.props.columns[8].label": "Ancho",
+    "objects_table.props.columns[9].label": "Alto"
+  }
+}

@@ -22,6 +22,12 @@ type Props = {
    * der URL und beendet damit den Referenz-Modus.
    */
   onClearRef?: () => void;
+  /**
+   * Meldet die Anzahl der tatsächlich im Canvas hervorgehobenen Ref-Treffer
+   * nach oben (RefOriginPill) — nur solange die externe Ref-Vorauswahl den
+   * Filter treibt; eigene Suche/Typ-Filter beenden den Ref-Modus ohnehin.
+   */
+  onLiveMatchCount?: (count: number) => void;
 };
 
 /**
@@ -81,7 +87,7 @@ const PART_FILL: Record<string, string> = {
   Footer: '#fff8f0',
 };
 
-export const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(({ data, externalMatchUuids, onClearRef }, externalRef) => {
+export const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(({ data, externalMatchUuids, onClearRef, onLiveMatchCount }, externalRef) => {
   const { t } = useTranslation(['common', 'detail']);
   const navigate = useNavigate();
   // Aktuelle Detail-View-UUID — wird als Origin für Cross-Nav-Klicks mitgegeben.
@@ -97,6 +103,17 @@ export const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(({ data, exter
   const [hoverState, setHoverState] = useState<{ uuid: string; x: number; y: number } | null>(null);
 
   const search = useLayoutSearch(data.objects, externalMatchUuids ?? null, onClearRef);
+
+  // Ref-getriebener Match-Report für die RefOriginPill: back_references liefert
+  // für LayoutObject-Refs keine Container-Matches (matchCount 0), der Canvas
+  // kennt die echte Trefferzahl. Nur melden, solange weder Suche noch Typ-Filter
+  // aktiv sind — sonst gehört die Fundmenge dem User, nicht der Referenz.
+  const refDriven = !!(externalMatchUuids && externalMatchUuids.size > 0)
+    && search.query === '' && search.activeTypes.size === 0;
+  const refMatchCount = refDriven ? search.matches.length : null;
+  useEffect(() => {
+    if (refMatchCount !== null) onLiveMatchCount?.(refMatchCount);
+  }, [refMatchCount, onLiveMatchCount]);
 
   const viewport = useMemo(
     () => computeViewport(data.objects, data.parts),

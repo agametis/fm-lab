@@ -14,6 +14,7 @@ import { StatusBar } from '../components/StatusBar';
 import { SolutionSettingsControls } from '../components/SolutionSettingsControls';
 import { TitleBox } from '../components/TitleBox';
 import { buildBreadcrumb, type BreadcrumbCtx } from '../lib/navigation';
+import type { BreadcrumbItem } from '../types';
 
 /**
  * Leitseiten: clean top-level routes that render an
@@ -158,13 +159,24 @@ export function DashboardsPage() {
   );
 }
 
-/** `/query` → `custom_queries` bundle. Breadcrumb `Home / Custom Queries`. */
+/**
+ * `/query` → `custom_queries` bundle. Breadcrumb `Home / Custom Queries / <Kategorie>`.
+ *
+ * Queries have no folder tree; their one grouping level is the `@category:`
+ * header of the SQL template. `?category=` narrows the tile grid to that
+ * category — the same param `builtin:list_custom_queries` already filters on —
+ * and is what the category crumb of a single query links back to.
+ */
 export function CustomQueriesPage() {
   const { t } = useTranslation(['nav']);
+  const [searchParams] = useSearchParams();
+  const category = searchParams.get('category');
+
   return (
     <BundlePage
       id="custom_queries"
-      ctx={{ kind: 'customQueries' }}
+      ctx={{ kind: 'customQueries', category }}
+      params={category ? { category } : undefined}
       pageTitle={t('nav:crumbs.customQueries') as string}
       pageDescription={t('nav:leitDescription.customQueries') as string}
     />
@@ -205,17 +217,25 @@ export function TestDetailPage() {
   const testId = id ?? '';
   const [title, setTitle] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
+  // Tier rubric of the test — same light fetch as title/description, so the
+  // crumb chain matches the dashboard detail: Home / Tests / <Rubrik> / <Test>.
+  const [folderCrumbs, setFolderCrumbs] = useState<BreadcrumbItem[] | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
     setTitle(null);
     setDescription(null);
+    setFolderCrumbs(undefined);
     (async () => {
       try {
         const test = await getTest(testId);
         if (cancelled) return;
         setTitle(test.title);
         setDescription(test.description);
+        setFolderCrumbs((test.folder_crumbs ?? []).map(c => ({
+          label: c.label,
+          path: `/tests?folder=${encodeURIComponent(c.path)}`,
+        })));
       } catch {
         /* unknown/invalid id — the bundle's guard card explains it */
       }
@@ -226,7 +246,7 @@ export function TestDetailPage() {
   return (
     <BundlePage
       id="test_detail"
-      ctx={{ kind: 'testDetail', testLabel: title ?? testId }}
+      ctx={{ kind: 'testDetail', testLabel: title ?? testId, folderCrumbs }}
       params={{ id: testId }}
       pageTitle={title ?? testId}
       pageDescription={description ?? undefined}

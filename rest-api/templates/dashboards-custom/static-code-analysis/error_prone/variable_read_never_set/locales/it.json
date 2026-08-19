@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Variabile letta e mai impostata",
+    "description": "Regola di rischio errore — una variabile viene letta benché nulla nel catalogo la scriva. O il lato scrittura è stato rinominato o rimosso, oppure il valore deve arrivare da file esterni all'esportazione. Le definizioni Let() sono escluse: vengono definite e lette nella stessa formula e altrimenti dominerebbero il risultato.\n\nBasato sul controllo fmCheckMate «ListVarsUndefined» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.read-never-set": "La variabile viene letta ma mai scritta"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Locali",
+    "summary_kpi.props.items[2].label": "Globali",
+    "summary_kpi.props.items[3].label": "Script interessati",
+    "summary_kpi.props.items[4].label": "File interessati",
+    "findings_card.props.title": "Variabile letta e mai impostata",
+    "variable_scope_filter.props.options[0].label": "tutti gli ambiti",
+    "variable_scope_filter.props.options[1].label": "Locali",
+    "variable_scope_filter.props.options[2].label": "Globali",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Variabile",
+    "findings_table.props.columns[2].label": "Ambito",
+    "findings_table.props.columns[3].label": "Prima occorrenza",
+    "findings_table.props.columns[4].label": "Letture",
+    "findings_table.props.columns[5].label": "Impostata in altri file",
+    "findings_table.props.columns[6].label": "Evidenza",
+    "findings_table.props.searchPlaceholder": "Cerca file, variabile o script…",
+    "findings_table.props.empty.message": "Nessuna variabile letta e mai scritta."
+  }
+}

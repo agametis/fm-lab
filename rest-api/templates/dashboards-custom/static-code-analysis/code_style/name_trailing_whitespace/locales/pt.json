@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Nome de objeto com espaço nas extremidades",
+    "description": "Regra de estilo — um nome de objeto começa ou termina com um espaço ou tabulação. O carácter é invisível em todas as listas do FileMaker mas faz parte do nome: o acesso por nome tem de o reproduzir exatamente e dois nomes aparentemente iguais ordenam-se em separado. Abrange os objetos de esquema nomeados pelo utilizador; objetos de esquema de página e variáveis têm regras próprias e os nomes das relações são derivados pelo FileMaker.\n\nBaseado na verificação fmCheckMate “Script Name ends in white space” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.trailing": "O nome termina com um espaço",
+    "messages.leading": "O nome começa com um espaço",
+    "messages.both": "O nome começa e termina com um espaço"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "No fim",
+    "summary_kpi.props.items[2].label": "No início",
+    "summary_kpi.props.items[3].label": "Ambas as extremidades",
+    "summary_kpi.props.items[4].label": "Ficheiros afetados",
+    "findings_card.props.title": "Nome de objeto com espaço nas extremidades",
+    "defect_filter.props.options[0].label": "todos",
+    "defect_filter.props.options[1].label": "No fim",
+    "defect_filter.props.options[2].label": "No início",
+    "defect_filter.props.options[3].label": "Ambas as extremidades",
+    "findings_table.props.columns[0].label": "Ficheiro",
+    "findings_table.props.columns[1].label": "Tipo de objeto",
+    "findings_table.props.columns[2].label": "Nome (entre parênteses)",
+    "findings_table.props.columns[3].label": "Defeito",
+    "findings_table.props.searchPlaceholder": "Procurar ficheiro, tipo de objeto ou nome…",
+    "findings_table.props.empty.message": "Não foram encontrados nomes com espaços nas extremidades."
+  }
+}

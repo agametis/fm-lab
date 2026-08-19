@@ -136,6 +136,8 @@
     "showFindings": "显示发现项",
     "memberError": "错误",
     "openMember": "打开仪表板/查询",
+    "openFinding": "在详情视图中打开",
+    "openMemberFindings": "在详情视图中打开所有发现项",
     "truncated": "更多发现项已截断 — 打开成员查看完整列表。",
     "duration": "{{ms}} ms",
     "searchPlaceholder": "筛选测试…",
@@ -173,6 +175,8 @@
     "state_neutral": "中性结果",
     "state_ok": "通过",
     "state_skipped": "已跳过",
-    "state_failed": "运行失败"
+    "state_failed": "运行失败",
+    "filterReset": "重置筛选",
+    "noResultsYet": "暂无结果 — 运行测试以填充此列表。"
   }
 }

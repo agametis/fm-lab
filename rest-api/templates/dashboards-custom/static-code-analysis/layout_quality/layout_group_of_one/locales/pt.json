@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Grupo com um único objeto",
+    "description": "Regra de qualidade de Layout — um grupo contém exatamente um objeto. O agrupamento adiciona sobrecarga de seleção e aninhamento sem agrupar nada — normalmente uma sobra após excluir os demais membros. Botões serializados como grupo de um filho não são sinalizados.\n\nBaseado na verificação fmCheckMate “Group of one” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.single": "O grupo contém um único objeto {child} — sobrecarga de agrupamento sem agrupar nada"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Layouts afetados",
+    "summary_kpi.props.items[2].label": "Arquivos afetados",
+    "findings_card.props.title": "Grupo com um único objeto",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, Layout ou objeto…",
+    "findings_table.props.empty.message": "Nenhum grupo com um único objeto encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objeto",
+    "findings_table.props.columns[3].label": "Tipo do filho",
+    "findings_table.props.columns[4].label": "Nome do filho",
+    "findings_table.props.columns[7].label": "Largura",
+    "findings_table.props.columns[8].label": "Altura"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "title": "Freeze Window terminato da una pausa",
+    "description": "Regola di prestazioni — uno script blocca la finestra e più avanti si mette in pausa. Pause/Resume Script termina lo stato bloccato: la finestra viene ridisegnata a metà script e il blocco perde effetto da quel punto."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "File interessati",
+    "findings_card.props.title": "Freeze Window terminato da una pausa",
+    "findings_table.props.searchPlaceholder": "Cerca file o script…",
+    "findings_table.props.empty.message": "Nessuno script blocca la finestra e poi si mette in pausa.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Freeze Window",
+    "findings_table.props.columns[3].label": "Prima pausa",
+    "findings_table.props.columns[4].label": "Pause dopo il blocco"
+  }
+}

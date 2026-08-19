@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Defekte Feldreferenz",
+    "description": "Layout-Qualitätsregel — ein Layoutobjekt referenziert ein Feld oder Tabellenauftreten, das nicht mehr existiert. Die Auflösung läuft über die numerischen IDs (Feld-ID in der Zieltabelle, Tabellenauftreten-ID in der Datei), niemals über UUIDs: Dateiübergreifende Referenzen tragen regelmäßig eine veraltete UUID, obwohl das Feld intakt ist — FileMaker löst zur Laufzeit über die ID auf. Objekte, deren Zieldatei nicht im Katalog liegt, werden als nicht prüfbar übersprungen; Container-Objekte sind ausgenommen, weil ihr XML das Markup ihrer Kinder enthält.\n\nAngelehnt an die fmCheckMate-Prüfung „Broken Field“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-field": "Das Feld existiert in der Zieltabelle nicht mehr",
+    "messages.missing-to": "Das Tabellenauftreten existiert in dieser Datei nicht mehr"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Layouts",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "findings_card.props.title": "Defekte Feldreferenz",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine defekten Feldreferenzen gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Feld",
+    "findings_table.props.columns[5].label": "Tabellenauftreten",
+    "findings_table.props.columns[8].label": "Breite",
+    "findings_table.props.columns[9].label": "Höhe"
+  }
+}

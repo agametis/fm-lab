@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "Popover dans un popover",
+    "description": "Règle de qualité de Layout — un bouton popover se trouve dans un autre panneau popover. Les popovers imbriqués ne fonctionnent pas de manière fiable dans FileMaker ; ouvrir l'intérieur ferme l'extérieur.\n\nD’après le contrôle fmCheckMate « Popover in popover » — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.nested": "Le bouton popover est imbriqué dans un autre panneau popover — les popovers imbriqués ferment l'extérieur"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Résultats",
+    "summary_kpi.props.items[1].label": "Layouts concernés",
+    "summary_kpi.props.items[2].label": "Fichiers concernés",
+    "findings_card.props.title": "Popover dans un popover",
+    "findings_table.props.searchPlaceholder": "Rechercher un fichier, un Layout ou un objet…",
+    "findings_table.props.empty.message": "Aucun popover imbriqué trouvé.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objet",
+    "findings_table.props.columns[3].label": "Partie",
+    "findings_table.props.columns[6].label": "Largeur",
+    "findings_table.props.columns[7].label": "Hauteur"
+  }
+}

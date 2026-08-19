@@ -1,0 +1,59 @@
+{
+  "id": "script_todos",
+  "version": "2.0.0",
+  "title": "TO-DOs in scripts (explorer)",
+  "description": "Explorer for open work in script comments across three notations (TO DO, FIX IT, TBD). Click a count to filter the result list. Inventory, not a rule: the bundle deliberately declares no result value, so it stays out of the health check and carries no tile chip — the counting half of the family are the rules script_comment_fixme (warning) and script_comment_todo (info).",
+  "author": "fm-lab custom",
+  "icon": "list-todo",
+  "tags": [
+    "custom",
+    "scripts",
+    "inventory",
+    "unfinished-work"
+  ],
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {}
+    }
+  },
+  "entry": "layout.json",
+  "datasets": [
+    {
+      "id": "todo_kpi",
+      "source": "bundle:data/todo_kpi.sql"
+    },
+    {
+      "id": "todo_lines",
+      "source": "bundle:data/todo_lines.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter — derived from the app-level filter."
+    },
+    {
+      "name": "pattern",
+      "type": "string",
+      "required": false,
+      "description": "Optional notation filter (todo | fixit | tbd) — set by clicking a hero value."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

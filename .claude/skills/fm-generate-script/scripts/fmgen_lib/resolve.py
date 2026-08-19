@@ -37,8 +37,32 @@ _XMLPATH_ELEMENT = {
     "Field": "Field", "Layout": "Layout", "Script": "Script",
     "ValueList": "ValueList", "Table": "Table", "FileReference": "DataSource",
     "Window": "Window", "Object": "Object", "PrivilegeSet": "PrivilegeSet",
-    "CustomMenuSet": "CustomMenuSet",
+    "CustomMenuSet": "CustomMenuSet", "ScriptName": "Script",
 }
+
+
+def _xmlpath_element(xml_path: str | None) -> str | None:
+    """Map an option's xml_path onto its ref_element_semantics element.
+
+    Identity sits on the leaf, not on the container: a Field nested under
+    Query/RequestRow/Criteria/ is still a Field, and the callback block of
+    Perform Script On Server with Callback holds its FileReference and
+    ScriptName one level down. Try the first segment (flat options), then the
+    last element segment. Attribute steps (@state) never name an element.
+    """
+    segs = [s.split("[")[0] for s in (xml_path or "").split("/")
+            if s and not s.startswith("@")]
+    if not segs:
+        return None
+    return _XMLPATH_ELEMENT.get(segs[0]) or _XMLPATH_ELEMENT.get(segs[-1])
+
+
+def _option_section(xml_path: str | None) -> str:
+    """Container element an option lives in — "" for top level. Mirrors
+    textform._option_section so parser and resolver agree on the grouping."""
+    segs = [s.split("[")[0] for s in (xml_path or "").split("/")
+            if s and not s.startswith("@")]
+    return segs[0] if len(segs) > 1 else ""
 
 
 @dataclass
@@ -105,14 +129,13 @@ class Resolver:
         self._collect_new_declarations(parsed)
         for ps in parsed:
             for opt in self.ref.options(ps.step_id):
-                key = opt["option_key"]
-                if key not in ps.options:
+                if opt["option_type"] not in ("object_ref", "target"):
                     continue
-                if opt["option_type"] in ("object_ref", "target"):
-                    element = _XMLPATH_ELEMENT.get(
-                        (opt["xml_path"] or "").split("/")[0].split("[")[0])
-                    if element:
-                        self._resolve_ref(ps, key, element)
+                element = _xmlpath_element(opt["xml_path"])
+                if not element:
+                    continue
+                for key in self._instance_keys(ps, opt):
+                    self._resolve_ref(ps, key, element, opt["xml_path"])
             self._mark_calc_repetition(ps)
             for calc in self._calcs(ps):
                 self._scan_calc(ps, calc)
@@ -207,9 +230,31 @@ class Resolver:
             })
         return name
 
+    @staticmethod
+    def _instance_keys(ps: ParsedStep, opt: dict) -> list[str]:
+        """Option keys actually present for this option.
+
+        A repeating group is declared ONCE in the reference, with the slot in
+        the xml_path (Show Custom Dialog: input_field ->
+        InputFields/InputField[n]/Field). Template and text form address the
+        slots individually (input1_field .. input3_field), so the declared key
+        never appears verbatim in a parsed step — expand it to the slot keys
+        that are present. Flat options return their own key unchanged.
+        """
+        key = opt["option_key"]
+        if "[n]" not in (opt["xml_path"] or ""):
+            return [key] if key in ps.options else []
+        head, _, tail = key.partition("_")
+        if not tail:
+            return []
+        pat = re.compile(rf"^{re.escape(head)}(\d+)_{re.escape(tail)}$")
+        return sorted((k for k in ps.options if pat.match(k)),
+                      key=lambda k: int(pat.match(k).group(1)))
+
     # ------------------------------------------------------ object references
 
-    def _resolve_ref(self, ps: ParsedStep, key: str, element: str) -> None:
+    def _resolve_ref(self, ps: ParsedStep, key: str, element: str,
+                     xml_path: str | None = None) -> None:
         ref_val = ps.options[key]
         if not isinstance(ref_val, dict):
             return
@@ -228,6 +273,16 @@ class Resolver:
             })
             ref_val["id"] = 1
             return
+        if element == "DataSource" and (xml_path or "").endswith("FileReference"):
+            # The FileReference of an external script call needs a numeric id,
+            # so it does not take the generic by-name shortcut below. It is
+            # resolved together with the script ref in _script()/_external_file();
+            # in degraded mode (target file absent) fall back to the name form so
+            # the FileReference group stays complete for the emitter.
+            if self.file_row is None:
+                ref_val["id"] = 1
+                ref_val["fallback"] = "by-name"
+            return
         if mode in ("by-name", "by-name-only"):
             return  # literal name, no catalog IDs (Window, Object, ...)
         if self.file_row is None:
@@ -241,8 +296,13 @@ class Resolver:
                 ref_val["fallback"] = "by-name"
             return
 
+        if element == "Script":
+            # the file the script lives in is the FileReference of the SAME
+            # section, so a callback script resolves against callback_file
+            self._script(ps, ref_val, _option_section(xml_path))
+            return
         handler = {
-            "Field": self._field, "Layout": self._layout, "Script": self._script,
+            "Field": self._field, "Layout": self._layout,
             "ValueList": self._valuelist, "Table": self._table,
             "DataSource": self._datasource, "PrivilegeSet": self._privilegeset,
         }.get(element)
@@ -333,21 +393,112 @@ class Resolver:
             "file": self.file,
         })
 
-    def _script(self, ps: ParsedStep, ref_val: dict) -> None:
+    def _file_in_catalog(self, name: str) -> bool:
+        return bool(self.cat.query(
+            f"SELECT 1 FROM FilesCatalog WHERE File_Name = {sql_quote(name)}"))
+
+    def _file_option_key(self, ps: ParsedStep, section: str) -> str | None:
+        """Key of the FileReference option belonging to `section` — `file` at the
+        top level, `callback_file` inside <CallbackScript>, and so on."""
+        for o in self.ref.options(ps.step_id):
+            if o["option_type"] != "object_ref":
+                continue
+            segs = [x.split("[")[0] for x in (o["xml_path"] or "").split("/")
+                    if x and not x.startswith("@")]
+            if segs and segs[-1] == "FileReference" and _option_section(o["xml_path"]) == section:
+                return o["option_key"]
+        return None
+
+    def _external_file(self, ps: ParsedStep, section: str = "") -> dict | None:
+        """Resolve the `from file:` option of an external script call.
+
+        FileMaker stores such a call as a FileReference — the data source *as
+        declared in the calling file* — plus a Script reference whose id is the
+        script's id **in the referenced file**. The two ids come from different
+        catalogs, and neither is the calling file's own ScriptCatalog, so the
+        data source has to be resolved before the script can be looked up.
+
+        The DataSource element itself carries `resolution = by-name` in
+        ref_element_semantics, so the generic `_resolve_ref` traversal returns
+        before reaching a handler. That is correct for steps that merely name a
+        file, but an external script call needs the numeric DS_ID — hence the
+        explicit resolution here.
+
+        Returns the data-source row, or None when the step carries no file
+        option **or** the option could not be resolved (the error is reported).
+        """
+        key = self._file_option_key(ps, section)
+        ref_val = ps.options.get(key) if key else None
+        if not isinstance(ref_val, dict) or not ref_val.get("name"):
+            return None
+        name = ref_val["name"]
+        rows = self.cat.query(
+            "SELECT ds.DS_ID, ds.DS_Name, ds.DS_UUID, ds.Path, m.Resolved_File "
+            "FROM ExternalDataSourceCatalog ds "
+            "LEFT JOIN DataSourceFileMap m "
+            "  ON m.DS_UUID = ds.DS_UUID AND m.File_Name = ds.File_Name "
+            f"WHERE ds.File_Name = {sql_quote(self.file)} "
+            f"AND ds.DS_Name = {sql_quote(name)}")
+        if not rows:
+            cands = [r["DS_Name"] for r in self.cat.query(
+                "SELECT DS_Name FROM ExternalDataSourceCatalog "
+                f"WHERE File_Name = {sql_quote(self.file)}")]
+            self._unresolved(ps, "DataSource", ref_val, "error",
+                             f"data source '{name}' is not declared in "
+                             f"'{self.file}' — FileMaker resolves the "
+                             "FileReference by id, name fallback is invalid",
+                             self._suggest(name, cands))
+            return None
+        row = rows[0]
+        # Resolved_File is the authoritative data-source -> file mapping;
+        # fall back to the declared name for catalogs written before it existed.
+        row["target_file"] = row["Resolved_File"] or row["DS_Name"]
+        self._hit(ps, "DataSource", ref_val, {
+            "id": row["DS_ID"], "name": row["DS_Name"],
+            "uuid": row["DS_UUID"], "file": row["target_file"],
+        })
+        # The FileReference element carries the declared path verbatim
+        # (<UniversalPathList>); _hit only propagates id/name/table.
+        if row["Path"]:
+            ref_val["path"] = row["Path"]
+        return row
+
+    def _script(self, ps: ParsedStep, ref_val: dict, section: str = "") -> None:
+        file_key = self._file_option_key(ps, section)
+        has_file = (file_key is not None
+                    and isinstance(ps.options.get(file_key), dict)
+                    and bool(ps.options[file_key].get("name")))
+        ext = self._external_file(ps, section)
+        if has_file and ext is None:
+            return  # data-source error already reported; the scope is unknown
+        scope = ext["target_file"] if ext else self.file
+
+        if ext and not self._file_in_catalog(scope):
+            # The data source is declared but its file was not exported. Script
+            # refs resolve by-name-fallback in FileMaker, so emit by name and
+            # say that the id could not be verified.
+            self.report.warnings.append(
+                f"line {ps.line}: external file '{scope}' is not in the catalog "
+                f"— script '{ref_val.get('name')}' cannot be verified; "
+                "emitted by name with id fallback")
+            ref_val["id"] = 1
+            ref_val["fallback"] = "by-name"
+            return
+
         rows = self.cat.query(
             "SELECT Script_ID, Script_Name, Script_UUID FROM ScriptCatalog "
             f"WHERE Script_Name = {sql_quote(ref_val.get('name'))} "
-            f"AND File_Name = {sql_quote(self.file)} AND NOT Is_Separator")
+            f"AND File_Name = {sql_quote(scope)} AND NOT Is_Separator")
         if not rows:
             cands = [r["Script_Name"] for r in self.cat.query(
-                f"SELECT Script_Name FROM ScriptCatalog WHERE File_Name = {sql_quote(self.file)}")]
+                f"SELECT Script_Name FROM ScriptCatalog WHERE File_Name = {sql_quote(scope)}")]
             self._unresolved(ps, "Script", ref_val, "error",
-                             f"script '{ref_val.get('name')}' not in '{self.file}'",
+                             f"script '{ref_val.get('name')}' not in '{scope}'",
                              self._suggest(ref_val.get("name") or "", cands))
             return
         self._hit(ps, "Script", ref_val, {
             "id": rows[0]["Script_ID"], "name": rows[0]["Script_Name"],
-            "uuid": rows[0]["Script_UUID"], "file": self.file,
+            "uuid": rows[0]["Script_UUID"], "file": scope,
         })
 
     def _valuelist(self, ps: ParsedStep, ref_val: dict) -> None:

@@ -1,0 +1,98 @@
+{
+  "id": "script_comment_fixme",
+  "version": "1.0.0",
+  "title": "FIXME marker in a script comment",
+  "description": "Unfinished-work rule — a comment step in a script carries a FIXME marker (FIXME, FIX ME, FIX IT, FIXIT). A FIXME states a known defect that was shipped, which is why this rule is a warning while its TODO sibling (script_comment_todo) is neutral. Matching is case-insensitive and tolerates a separator, so the marker is found whatever notation the developer used.",
+  "author": "fm-lab rules",
+  "icon": "flag",
+  "category": "documentation",
+  "tags": [
+    "rule",
+    "documentation",
+    "scripts",
+    "unfinished-work"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "documentation",
+    "rationale": "FIXME is the developer's own admission that something is broken. Unlike a TODO it does not describe planned work but a defect that is live in the solution — every one of these lines is a bug someone already found and did not fix.",
+    "remediation": "Fix the defect and remove the marker, or turn it into a tracker issue and replace the comment with the issue reference. A FIXME that survives a release cycle is a defect nobody owns.",
+    "meta": {
+      "name": "FIXME marker in a script comment",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Unfinished-work rule — a comment step carries a FIXME marker. Detector canon of the family: (?i)\\bfix[\\s\\-_]?(it|me)\\b, verified by tools/tests/rules/unfinished_work_detector.sql. Overlap with script_comment_todo is intended: a comment line carrying both markers is counted by both rules, so the sum of the two rules can exceed the number of marked lines.",
+      "created": "2026-08-16",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (ReportFixmeComments)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "summary": "native",
+        "findings": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — FIXME marker in a script comment"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "comment": "FIXME marker in a script comment"
+  }
+}

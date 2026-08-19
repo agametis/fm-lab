@@ -1,0 +1,17 @@
+{
+  "title": "Layout quality",
+  "icon": "layout-template",
+  "order": 8,
+  "locales": {
+    "de": "Layout-Qualität",
+    "es": "Calidad del Layout",
+    "fr": "Qualité des Layouts",
+    "it": "Qualità del Layout",
+    "ja": "Layout 品質",
+    "ko": "Layout 품질",
+    "nl": "Layoutkwaliteit",
+    "pt": "Qualidade do Layout",
+    "sv": "Layoutkvalitet",
+    "zh-Hans": "Layout 质量"
+  }
+}

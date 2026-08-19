@@ -18,6 +18,7 @@
     "findings_table.props.columns[2].label": "Diseño",
     "findings_table.props.columns[3].label": "Contexto",
     "findings_table.props.columns[4].label": "Archivo",
-    "findings_table.props.columns[5].label": "Ubicaciones"
+    "findings_table.props.columns[5].label": "Ubicaciones",
+    "findings_table.props.columns[6].label": "En portales"
   }
 }

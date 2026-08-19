@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "title": "Objekt außerhalb des Layouts",
+    "description": "Layout-Qualitätsregel — ein Objekt der obersten Ebene ragt über die Layoutgrenzen hinaus: über die Layoutbreite, unter den letzten Bereich oder in negative Koordinaten. Geprüft werden nur Objekte der obersten Ebene, weil nur sie in absoluten Layoutkoordinaten liegen; verschachtelte Objekte sind relativ zu ihrem Container positioniert und werden von der Regel zu verlorenen Objekten abgedeckt. Kleine Überstände sind oft Rundungsartefakte — der Toleranz-Regler blendet sie aus.",
+    "messages.complete": "Das Objekt liegt komplett außerhalb des Layouts ({direction})",
+    "messages.partial": "Das Objekt ragt über das Layout hinaus ({direction})"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Komplett draußen",
+    "summary_kpi.props.items[2].label": "Teilweise draußen",
+    "findings_card.props.title": "Objekt außerhalb des Layouts",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine Objekte außerhalb der Layoutgrenzen gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Richtung",
+    "findings_table.props.columns[5].label": "Ausmaß",
+    "findings_table.props.columns[8].label": "Breite",
+    "findings_table.props.columns[9].label": "Höhe",
+    "tolerance_slider.props.label": "Toleranz"
+  }
+}

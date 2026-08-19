@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Föråldrat plug-in-funktionsanrop",
-  "analysis.defaultResult.meaning": "Plug-in-funktionsanrop inom omfånget vars funktion är markerad som föråldrad i tillverkarens dokumentation"
- }
+  "manifest": {
+    "title": "Föråldrat plug-in-funktionsanrop",
+    "analysis.defaultResult.meaning": "Plug-in-funktionsanrop inom omfånget vars funktion är markerad som föråldrad i tillverkarens dokumentation"
+  },
+  "layout": {}
 }

@@ -1,0 +1,108 @@
+{
+  "id": "layout_button_without_action",
+  "version": "1.0.0",
+  "title": "Button without action",
+  "description": "Layout-quality rule — a button carries neither a script call nor a single-step action. Detection reads the serialised action of the object: a script action appears as a script reference, a single-step action as a step element, and a button with neither does nothing when clicked. Roughly 40 % of the buttons in a large solution can be affected, so review by context before acting: decorative icons and inactive button-bar segments are legitimate, and the context filter narrows the list.\n\nBased on the fmCheckMate check \"Button Action <Missing>\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "mouse-pointer-click",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "layout_quality",
+    "rationale": "A button that looks clickable but does nothing is a dead end for users — usually an action lost during refactoring, or a decorative shape left as a button.",
+    "remediation": "Assign the intended action, or convert the object into a plain graphic so it no longer invites a click.",
+    "meta": {
+      "name": "Button without action",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Layout-quality rule — a button carries neither a script call nor a single-step action. Detection reads the serialised action of the object: a script action appears as a script reference, a single-step action as a step element, and a button with neither does nothing when clicked. Roughly 40 % of the buttons in a large solution can be affected, so review by context before acting: decorative icons and inactive button-bar segments are legitimate, and the context filter narrows the list.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportButtonActionMissing)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "summary": "native",
+        "findings": "native",
+        "contexts": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Button without action"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    },
+    {
+      "id": "contexts",
+      "source": "bundle:data/contexts.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    },
+    {
+      "name": "context",
+      "type": "string",
+      "required": false,
+      "description": "Container-context filter select (Button Bar, Portal, top-level, …); unset = all."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "no-action": "Button has neither a script call nor a single-step action"
+  }
+}

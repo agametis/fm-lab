@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilité de plateforme : FileMaker WebDirect",
-  "analysis.defaultResult.meaning": "Actions de script du périmètre non prises en charge ou seulement partiellement sur FileMaker WebDirect"
- }
+  "manifest": {
+    "title": "Compatibilité de plateforme : FileMaker WebDirect",
+    "analysis.defaultResult.meaning": "Actions de script du périmètre non prises en charge ou seulement partiellement sur FileMaker WebDirect"
+  },
+  "layout": {}
 }

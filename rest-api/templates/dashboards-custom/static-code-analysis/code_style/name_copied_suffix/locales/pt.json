@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Nome com sufixo de duplicação",
+    "description": "Regra de estilo — um nome de objeto ainda tem o sufixo que o FileMaker acrescenta ao duplicar. Os sufixos de cópia (Copy / copy / Kopie) são o conjunto por omissão; a classe numérica — um nome terminado em espaço e até quatro algarismos — fica propositadamente num chip próprio, porque incontáveis nomes intencionais são construídos da mesma forma.\n\nBaseado na verificação fmCheckMate “Copied Function Name” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy": "O nome ainda tem o sufixo de duplicação do FileMaker",
+    "messages.numeric": "O nome termina num número — possivelmente um duplicado nunca renomeado"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Sufixo de cópia",
+    "summary_kpi.props.items[2].label": "Sufixo numérico",
+    "summary_kpi.props.items[3].label": "Ficheiros afetados",
+    "findings_card.props.title": "Nome com sufixo de duplicação",
+    "suffix_kind_filter.props.options[0].label": "ambos",
+    "suffix_kind_filter.props.options[1].label": "Sufixo de cópia",
+    "suffix_kind_filter.props.options[2].label": "Sufixo numérico",
+    "object_type_select.props.label": "Tipo de objeto",
+    "object_type_select.props.emptyOptionLabel": "todos os tipos",
+    "findings_table.props.columns[0].label": "Ficheiro",
+    "findings_table.props.columns[1].label": "Tipo de objeto",
+    "findings_table.props.columns[2].label": "Objeto",
+    "findings_table.props.columns[3].label": "Sufixo",
+    "findings_table.props.searchPlaceholder": "Procurar ficheiro, tipo de objeto ou nome…",
+    "findings_table.props.empty.message": "Não foram encontrados nomes com sufixo de duplicação."
+  }
+}

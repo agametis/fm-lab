@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../api/client';
+import { isConnectionError } from '../lib/netErrors';
 import type { components } from '@packages/shared/types';
 
 type FMObject = components['schemas']['FMObject'];
@@ -11,30 +12,13 @@ const CHUNK_SIZE = 100;
  * und in der UI (App.tsx) in eine übersetzte Hinweis-Meldung übersetzt, statt
  * einen kryptischen Laufzeitfehler (z. B. „undefined is not an object …") oder
  * die rohe Fetch-Fehlermeldung anzuzeigen.
+ *
+ * Zweite Ausprägung neben dem Transport-TypeError (lib/netErrors.ts): Läuft der
+ * Request über den Vite-Dev-Proxy, das Backend ist aber down, liefert der Proxy
+ * 5xx mit leerem Body; openapi-fetch gibt dann eine `undefined`-Response zurück
+ * (siehe Aufrufer-Guards unten).
  */
 export const CONNECTION_ERROR = '__NO_CONNECTION__';
-
-/**
- * Erkennt Netzwerk-/Verbindungsfehler. Zwei Ausprägungen:
- *  1. `fetch` lehnt direkt ab (kein Proxy / Ziel down) → TypeError mit
- *     „Failed to fetch" (Chromium), „Load failed" (Safari/WebKit),
- *     „NetworkError…" (Firefox).
- *  2. Über den Vite-Dev-Proxy läuft der Request, das Backend ist aber down →
- *     der Proxy liefert 5xx mit leerem Body; openapi-fetch gibt dann eine
- *     `undefined`-Response zurück (siehe Aufrufer-Guards).
- */
-function isConnectionError(err: unknown): boolean {
-  if (err instanceof TypeError) {
-    const m = err.message.toLowerCase();
-    return (
-      m.includes('failed to fetch') ||
-      m.includes('load failed') ||
-      m.includes('networkerror') ||
-      m.includes('network request failed')
-    );
-  }
-  return false;
-}
 
 interface UseInfiniteSearchOptions {
   searchName: string;

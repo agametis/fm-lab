@@ -111,7 +111,16 @@ Base columns: Table_ID/Name/UUID, Field_ID/Name/Type, Data_Type, Field_Comment, 
 - `Storage_IndexLanguage/_IndexLanguage_ID` — default index language (`<Storage><LanguageReference @name/@id>`; a **child element**, not an attribute)
 - `Summary_RestartEachGroup`, `Summary_RepetitionMode` (`Together`/`Individually`) — `<SummaryInfo @restartEachGroup/@summarizeRepetition>`
 
-**Layouts metadata columns (schema 1.5.0):** `L_TO_UUID` (context TO by UUID), `L_Width`, `L_Theme_ID/_Name/_UUID` (→ `uses_theme` link).
+**Layouts metadata columns (schema 1.5.0):** `L_TO_UUID` (context TO by UUID), `L_Width`, `L_Theme_ID/_Name/_UUID` (raw `<LayoutThemeReference>` triple), `L_Theme_Base` (schema 1.9.0, `@Base`).
+
+**Layout theme — always read `L_Theme_Resolved_Name/_UUID` (schema 1.21.0), never the raw columns.**
+SaXML encodes the **Classic theme as an empty element** `<LayoutThemeReference/>` — no `id`, `name`, `UUID` or `Base`. Only non-Classic themes carry the attribute triple, so the raw `L_Theme_*` columns are `NULL` for **every** Classic layout and the literal `'com.filemaker.theme.classic'` appears in no layout row at all. A rule that tests `L_Theme_Name = '…classic'` (or `L_Theme_Base`) therefore silently returns zero findings on a solution that is entirely Classic.
+
+The derived columns (filled in P3, `uses_theme` links built from them in P4) resolve this:
+- `L_Theme_Resolved_Name` — effective theme name, locale-independent; empty reference → `com.filemaker.theme.classic`. Display name via `ThemeCatalog.Theme_Display`.
+- `L_Theme_Resolved_UUID` — effective theme UUID; for Classic taken from the file's `ThemeCatalog` **by theme name** (`Theme_ID = 1` is *not* reliably Classic), `NULL` if the file has no Classic entry.
+
+Both are populated for real layouts only — folders (`Folder_Type` `True`/`Marker`) and separators never carry a theme and stay `NULL`. When a query must also work against catalogs older than 1.21.0, fall back to `L_Theme_Base = '…classic' OR L_Theme_Name = '…classic' OR L_Theme_ID IS NULL` (plus the folder/separator exclusion).
 
 ## LayoutObjects — structure
 

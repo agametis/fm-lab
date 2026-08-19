@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Riferimento a elenco valori non valido",
+    "description": "Regola di qualità del Layout — un oggetto di layout fa riferimento a un elenco valori che non esiste più nel suo file. La risoluzione usa l'ID dell'elenco, non il nome, quindi gli elenchi rinominati non vengono segnalati.\n\nBasato sul controllo fmCheckMate «Broken Value List <Missing>» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-valuelist": "L'elenco valori non esiste più in questo file"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Layout interessati",
+    "summary_kpi.props.items[2].label": "File interessati",
+    "findings_card.props.title": "Riferimento a elenco valori non valido",
+    "findings_table.props.searchPlaceholder": "Cerca file, Layout o oggetto…",
+    "findings_table.props.empty.message": "Nessun riferimento a elenchi valori non valido trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo di oggetto",
+    "findings_table.props.columns[3].label": "Oggetto",
+    "findings_table.props.columns[4].label": "Elenco valori",
+    "findings_table.props.columns[7].label": "Larghezza",
+    "findings_table.props.columns[8].label": "Altezza"
+  }
+}

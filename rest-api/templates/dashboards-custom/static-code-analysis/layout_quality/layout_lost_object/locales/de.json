@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "title": "Objekt außerhalb seines Parents",
+    "description": "Layout-Qualitätsregel — ein verschachteltes Layoutobjekt liegt ganz oder teilweise außerhalb der Grenzen seines Parents (Portal, Tab-/Slide-Panel, Gruppe). Solche Objekte werden zur Laufzeit abgeschnitten oder sind unsichtbar — meist Reste nach Verschieben oder Verkleinern des Parents. Der Portal-Scrollbalken (19 px) wird toleriert; Popover-Panels und Null-Höhen-Linien auf der Parent-Kante sind ausgenommen.\n\nAngelehnt an die fmCheckMate-Prüfung „Lost Object (In Container)“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.completely": "Das Objekt liegt vollständig außerhalb seines Parents ({parent})",
+    "messages.partially": "Das Objekt ragt über seinen Parent ({parent}) hinaus"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Komplett draußen",
+    "summary_kpi.props.items[2].label": "Teilweise draußen",
+    "summary_kpi.props.items[3].label": "Betroffene Layouts",
+    "findings_card.props.title": "Objekt außerhalb seines Parents",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine Objekte außerhalb ihres Parents gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Parent",
+    "findings_table.props.columns[5].label": "Ausmaß",
+    "extent_filter.props.options[0].label": "alle",
+    "extent_filter.props.options[1].label": "komplett draußen",
+    "extent_filter.props.options[2].label": "teilweise draußen",
+    "object_type_select.props.label": "Objekttyp",
+    "object_type_select.props.emptyOptionLabel": "alle Objekttypen",
+    "findings_table.props.columns[8].label": "Breite",
+    "findings_table.props.columns[9].label": "Höhe"
+  }
+}

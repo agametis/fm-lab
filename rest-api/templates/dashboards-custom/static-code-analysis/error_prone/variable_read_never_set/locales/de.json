@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Variable gelesen, nie gesetzt",
+    "description": "Fehleranfälligkeits-Regel — eine Variable wird gelesen, obwohl sie im Katalog nirgends geschrieben wird. Entweder wurde die schreibende Seite umbenannt oder entfernt, oder der Wert soll von außerhalb der exportierten Dateien kommen. Let()-Definitionen sind ausgenommen: sie werden innerhalb derselben Formel definiert und gelesen und würden das Ergebnis sonst dominieren.\n\nAngelehnt an die fmCheckMate-Prüfung „ListVarsUndefined“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.read-never-set": "Variable wird gelesen, aber nie geschrieben"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Lokal",
+    "summary_kpi.props.items[2].label": "Global",
+    "summary_kpi.props.items[3].label": "Betroffene Scripts",
+    "summary_kpi.props.items[4].label": "Betroffene Dateien",
+    "findings_card.props.title": "Variable gelesen, nie gesetzt",
+    "variable_scope_filter.props.options[0].label": "alle Bereiche",
+    "variable_scope_filter.props.options[1].label": "Lokal",
+    "variable_scope_filter.props.options[2].label": "Global",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Variable",
+    "findings_table.props.columns[2].label": "Gültigkeitsbereich",
+    "findings_table.props.columns[3].label": "Erstmals in",
+    "findings_table.props.columns[4].label": "Lesezugriffe",
+    "findings_table.props.columns[5].label": "Gesetzt in anderen Dateien",
+    "findings_table.props.columns[6].label": "Nachweis",
+    "findings_table.props.searchPlaceholder": "Datei, Variable oder Script suchen…",
+    "findings_table.props.empty.message": "Keine Variablen gefunden, die gelesen und nie geschrieben werden."
+  }
+}

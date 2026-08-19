@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Gestapelde dubbele objecten",
+    "description": "Layoutkwaliteitsregel — twee broer/zus-objecten van hetzelfde type delen exact dezelfde begrenzing. Het bovenste bedekt het andere volledig — typisch een dubbele plak. Tab- en popoverpanelen zijn uitgesloten (per ontwerp congruent).",
+    "messages.pair": "Twee {type}-objecten delen exact dezelfde begrenzing — het bovenste bedekt het onderste volledig"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken Layouts",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "Gestapelde dubbele objecten",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen gestapelde duplicaten gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objecttype",
+    "findings_table.props.columns[3].label": "Object",
+    "findings_table.props.columns[4].label": "Partnerobject",
+    "findings_table.props.columns[9].label": "Z-volgorde",
+    "findings_table.props.columns[7].label": "Breedte",
+    "findings_table.props.columns[8].label": "Hoogte"
+  }
+}

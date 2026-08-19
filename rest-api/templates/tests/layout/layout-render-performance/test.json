@@ -1,0 +1,129 @@
+{
+  "id": "layout-render-performance",
+  "version": "1.0.0",
+  "title": "Layout Render Performance",
+  "description": "Render-cost checks per layout: displayed unstored calculations weighted by view type and portal context, a composite layout complexity score, and the container placement inventory — the layouts where the WAN-first guidance pays off first.",
+  "keywords": [
+    "performance",
+    "wan",
+    "layout",
+    "render",
+    "slow",
+    "community-patterns"
+  ],
+  "testType": "performance",
+  "objectTypes": [
+    "Layout"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "layout_unstored_calc_fields"
+    },
+    {
+      "kind": "query",
+      "ref": "layout_complexity_score"
+    },
+    {
+      "kind": "query",
+      "ref": "container_field_placements"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "quick",
+      "title": "Quick Check",
+      "description": "Unstored calculations per layout only — the sharpest render-cost signal.",
+      "members": [
+        "layout_unstored_calc_fields"
+      ]
+    },
+    {
+      "id": "full",
+      "title": "Full Check"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "Layout-Render-Performance",
+      "description": "Render-Kosten-Prüfungen je Layout: angezeigte Unstored-Formeln gewichtet nach View-Typ und Portal-Kontext, ein zusammengesetzter Layout-Komplexitäts-Score und das Container-Platzierungs-Inventar — die Layouts, auf denen die WAN-First-Empfehlungen zuerst wirken.",
+      "profiles.quick.title": "Schnellprüfung",
+      "profiles.quick.description": "Nur Unstored-Formeln je Layout — das schärfste Render-Kosten-Signal.",
+      "profiles.full.title": "Vollprüfung"
+    },
+    "es": {
+      "title": "Rendimiento de renderizado de presentaciones",
+      "description": "Comprobaciones de coste de renderizado por presentación: cálculos no almacenados visibles ponderados por tipo de vista y contexto de portal, una puntuación compuesta de complejidad y el inventario de contenedores — las presentaciones donde las recomendaciones WAN-first actúan primero.",
+      "profiles.quick.title": "Comprobación rápida",
+      "profiles.quick.description": "Solo cálculos no almacenados por presentación: la señal más precisa del coste de renderizado.",
+      "profiles.full.title": "Comprobación completa"
+    },
+    "fr": {
+      "title": "Performance de rendu des modèles",
+      "description": "Vérifications du coût de rendu par modèle : calculs non mémorisés affichés pondérés par type de vue et contexte de portail, un score composite de complexité et l'inventaire des conteneurs — les modèles où les recommandations WAN-first agissent en premier.",
+      "profiles.quick.title": "Vérification rapide",
+      "profiles.quick.description": "Uniquement les calculs non mémorisés par modèle — le signal de coût de rendu le plus net.",
+      "profiles.full.title": "Vérification complète"
+    },
+    "it": {
+      "title": "Prestazioni di rendering dei formati",
+      "description": "Controlli del costo di rendering per formato: calcoli non memorizzati visualizzati ponderati per tipo di vista e contesto portale, un punteggio composito di complessità e l'inventario dei contenitori — i formati dove le raccomandazioni WAN-first agiscono per prime.",
+      "profiles.quick.title": "Controllo rapido",
+      "profiles.quick.description": "Solo calcoli non memorizzati per formato — il segnale più netto del costo di rendering.",
+      "profiles.full.title": "Controllo completo"
+    },
+    "ja": {
+      "title": "レイアウト描画パフォーマンス",
+      "description": "レイアウトごとの描画コスト検査：表示形式とポータル文脈で重み付けした非保存計算、複合的なレイアウト複雑度スコア、オブジェクトフィールド配置インベントリ — WAN ファーストの推奨が最初に効くレイアウトを特定します。",
+      "profiles.quick.title": "クイックチェック",
+      "profiles.quick.description": "レイアウトごとの非保存計算のみ — 描画コストの最も鋭い指標。",
+      "profiles.full.title": "フルチェック"
+    },
+    "ko": {
+      "title": "레이아웃 렌더링 성능",
+      "description": "레이아웃별 렌더링 비용 검사: 보기 유형과 포털 컨텍스트로 가중된 표시 비저장 계산, 복합 레이아웃 복잡도 점수, 컨테이너 배치 인벤토리 — WAN 우선 권고가 가장 먼저 효과를 내는 레이아웃을 찾습니다.",
+      "profiles.quick.title": "빠른 검사",
+      "profiles.quick.description": "레이아웃별 비저장 계산만 — 가장 날카로운 렌더링 비용 신호.",
+      "profiles.full.title": "전체 검사"
+    },
+    "nl": {
+      "title": "Lay-out-renderprestaties",
+      "description": "Rendercontroles per lay-out: weergegeven niet-opgeslagen berekeningen gewogen naar weergavetype en portaalcontext, een samengestelde complexiteitsscore en de containerplaatsingsinventaris — de lay-outs waar de WAN-first-aanbevelingen het eerst renderen.",
+      "profiles.quick.title": "Snelle controle",
+      "profiles.quick.description": "Alleen niet-opgeslagen berekeningen per lay-out — het scherpste rendersignaal.",
+      "profiles.full.title": "Volledige controle"
+    },
+    "pt": {
+      "title": "Desempenho de renderização de layouts",
+      "description": "Verificações de custo de renderização por layout: cálculos não armazenados exibidos ponderados por tipo de visualização e contexto de portal, uma pontuação composta de complexidade e o inventário de contêineres — os layouts onde as recomendações WAN-first agem primeiro.",
+      "profiles.quick.title": "Verificação rápida",
+      "profiles.quick.description": "Apenas cálculos não armazenados por layout — o sinal mais nítido de custo de renderização.",
+      "profiles.full.title": "Verificação completa"
+    },
+    "sv": {
+      "title": "Layoutrenderingsprestanda",
+      "description": "Renderkostnadskontroller per layout: visade olagrade beräkningar viktade efter vytyp och portalkontext, ett sammansatt komplexitetspoäng och containerplaceringsinventariet — layouterna där WAN-first-rekommendationerna verkar först.",
+      "profiles.quick.title": "Snabbkontroll",
+      "profiles.quick.description": "Endast olagrade beräkningar per layout — den skarpaste renderkostnadssignalen.",
+      "profiles.full.title": "Fullständig kontroll"
+    },
+    "zh-Hans": {
+      "title": "布局渲染性能",
+      "description": "按布局的渲染成本检查：按视图类型和入口上下文加权的可见非存储计算、复合布局复杂度评分，以及容器放置清单 — 找出 WAN 优先建议最先见效的布局。",
+      "profiles.quick.title": "快速检查",
+      "profiles.quick.description": "仅按布局统计非存储计算 — 最敏锐的渲染成本信号。",
+      "profiles.full.title": "完整检查"
+    }
+  }
+}

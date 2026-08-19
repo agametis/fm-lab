@@ -168,5 +168,9 @@
     },
     "noFilterMatches": "Nessuna voce con questo stato in questa sezione.",
     "openFolder": "Apri cartella"
+  },
+  "featured": {
+    "ruleCount_one": "{{count}} regola",
+    "ruleCount_other": "{{count}} regole"
   }
 }

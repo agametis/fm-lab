@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Referência de lista de valores quebrada",
+    "description": "Regra de qualidade de Layout — um objeto de layout referencia uma lista de valores que já não existe no seu ficheiro. A resolução usa o ID da lista e não o nome, pelo que listas renomeadas não são reportadas.\n\nBaseado na verificação fmCheckMate “Broken Value List <Missing>” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-valuelist": "A lista de valores já não existe neste ficheiro"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Layouts afetados",
+    "summary_kpi.props.items[2].label": "Arquivos afetados",
+    "findings_card.props.title": "Referência de lista de valores quebrada",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, Layout ou objeto…",
+    "findings_table.props.empty.message": "Não foram encontradas referências de listas de valores quebradas.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Lista de valores",
+    "findings_table.props.columns[7].label": "Largura",
+    "findings_table.props.columns[8].label": "Altura"
+  }
+}

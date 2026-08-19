@@ -40,6 +40,12 @@ export interface TestListItem {
   profiles: TestProfileSummary[];
   folder: string | null;
   folder_label?: string | null;
+  /**
+   * Tier rubric split into crumbs — partial path + localized label per segment.
+   * Same cascade as `folder_label`, but navigable: only the detail endpoint
+   * fills it (the list rows carry the joined label).
+   */
+  folder_crumbs?: Array<{ path: string; label: string }>;
   folder_order?: number;
   tier: 'system' | 'custom';
   overridesSystem: boolean;
@@ -92,6 +98,17 @@ export interface TestRunSummary {
   failed: number;
 }
 
+/**
+ * Declarative row-click action of the member's findings table, verbatim from
+ * the bundle's layout.json (`{{column}}` tokens unresolved) — structurally an
+ * ActionSpec for the dashboard action dispatcher.
+ */
+export interface TestRowAction {
+  action: string;
+  args?: Record<string, unknown>;
+  argsString?: string;
+}
+
 export interface TestRunMemberResult {
   kind: 'dashboard' | 'query';
   ref: string;
@@ -104,6 +121,7 @@ export interface TestRunMemberResult {
   severity?: string | null;
   defaultResult?: TestRunDefaultResult;
   findings?: { truncated: boolean; rows: TestRunFinding[] };
+  rowAction?: TestRowAction;
   openTarget: string;
   error?: string;
 }

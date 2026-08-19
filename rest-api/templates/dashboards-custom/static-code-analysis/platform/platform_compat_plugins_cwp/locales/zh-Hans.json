@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "插件兼容性：Custom Web Publishing",
-  "analysis.defaultResult.meaning": "范围内无法在 Custom Web Publishing 上运行的插件函数调用"
- }
+  "manifest": {
+    "title": "插件兼容性：Custom Web Publishing",
+    "analysis.defaultResult.meaning": "范围内无法在 Custom Web Publishing 上运行的插件函数调用"
+  },
+  "layout": {}
 }

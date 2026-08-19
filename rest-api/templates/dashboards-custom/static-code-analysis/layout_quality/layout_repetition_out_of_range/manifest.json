@@ -1,0 +1,97 @@
+{
+  "id": "layout_repetition_out_of_range",
+  "version": "1.0.0",
+  "title": "Field repetition out of range",
+  "description": "Layout-quality rule — a layout object displays a field repetition higher than the number of repetitions the field actually has. The object stays empty at runtime; this usually follows a field definition that was reduced later.\n\nBased on the fmCheckMate check \"Field repetition out of range\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "layers",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "error",
+    "category": "layout_quality",
+    "rationale": "A repetition beyond the field definition can never hold data. The object looks functional in Layout mode but is permanently blank for users.",
+    "remediation": "Point the object at an existing repetition, or raise the field's repetition count if the higher one was intended.",
+    "meta": {
+      "name": "Field repetition out of range",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Layout-quality rule — a layout object displays a field repetition higher than the number of repetitions the field actually has. The object stays empty at runtime; this usually follows a field definition that was reduced later.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportBrokenFieldRepetitionOutOfRange)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "summary": "native",
+        "findings": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Field repetition out of range"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "out-of-range": "Object shows repetition {repetition}, the field has only {max_repetitions}"
+  }
+}

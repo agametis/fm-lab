@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilité des plug-ins : Custom Web Publishing",
-  "analysis.defaultResult.meaning": "Appels de fonctions de plug-in du périmètre qui ne s'exécutent pas sur Custom Web Publishing"
- }
+  "manifest": {
+    "title": "Compatibilité des plug-ins : Custom Web Publishing",
+    "analysis.defaultResult.meaning": "Appels de fonctions de plug-in du périmètre qui ne s'exécutent pas sur Custom Web Publishing"
+  },
+  "layout": {}
 }

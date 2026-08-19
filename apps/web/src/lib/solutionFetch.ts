@@ -112,6 +112,12 @@ export function installSolutionFetch(): void {
     try {
       response = await original(request);
     } catch (err) {
+      // Caller-side abort (AbortController, e.g. the dashboard load effects) is
+      // not a transport failure: a retry on the aborted request would reject
+      // again immediately, and announcing it below would raise a spurious
+      // solution-context suspicion on every cancelled request.
+      if (request.signal.aborted) throw err;
+
       // Rejected fetch = the request never completed at HTTP level: server
       // unreachable, network down — or the browser refused to send it at all
       // (a cross-origin preflight that did not clear).

@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "只读取从不赋值的变量",
+    "description": "易错规则 — 变量被读取，但目录中没有任何位置写入它。要么写入端被重命名或删除，要么该值本应来自导出范围之外的文件。Let() 定义已排除：它们在同一公式内定义并读取，否则会淹没结果。\n\n基于 fmCheckMate 检查“ListVarsUndefined” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.read-never-set": "变量被读取但从未被写入"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "局部",
+    "summary_kpi.props.items[2].label": "全局",
+    "summary_kpi.props.items[3].label": "受影响脚本",
+    "summary_kpi.props.items[4].label": "受影响文件",
+    "findings_card.props.title": "只读取从不赋值的变量",
+    "variable_scope_filter.props.options[0].label": "全部作用域",
+    "variable_scope_filter.props.options[1].label": "局部",
+    "variable_scope_filter.props.options[2].label": "全局",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "变量",
+    "findings_table.props.columns[2].label": "作用域",
+    "findings_table.props.columns[3].label": "首次出现于",
+    "findings_table.props.columns[4].label": "读取次数",
+    "findings_table.props.columns[5].label": "在其他文件中被赋值",
+    "findings_table.props.columns[6].label": "证据来源",
+    "findings_table.props.searchPlaceholder": "搜索文件、变量或脚本…",
+    "findings_table.props.empty.message": "未发现只读取而从不写入的变量。"
+  }
+}

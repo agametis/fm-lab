@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "title": "Go to Layout 之后的 Enter Find Mode",
+    "description": "性能规则 — Go to Layout 之后紧跟 Enter Find Mode。交换这两个步骤可避免加载目标布局的记录：否则 FileMaker 会先获取新上下文的首批记录，而随后的查找又会将其丢弃。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响脚本",
+    "summary_kpi.props.items[2].label": "受影响文件",
+    "findings_card.props.title": "Go to Layout 之后的 Enter Find Mode",
+    "findings_table.props.searchPlaceholder": "搜索文件或脚本…",
+    "findings_table.props.empty.message": "未找到 Go to Layout → Enter Find Mode 序列。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "脚本",
+    "findings_table.props.columns[2].label": "Go to Layout",
+    "findings_table.props.columns[3].label": "Enter Find Mode",
+    "findings_table.props.columns[4].label": "暂停"
+  }
+}

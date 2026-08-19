@@ -136,6 +136,8 @@
     "showFindings": "Bevindingen tonen",
     "memberError": "Fout",
     "openMember": "Dashboard/query openen",
+    "openFinding": "Openen in detailweergave",
+    "openMemberFindings": "Alle bevindingen openen in de detailweergave",
     "truncated": "Meer bevindingen afgekapt — open het lid voor de volledige lijst.",
     "duration": "{{ms}} ms",
     "searchPlaceholder": "Tests filteren…",
@@ -173,6 +175,8 @@
     "state_neutral": "Neutrale resultaten",
     "state_ok": "Geslaagd",
     "state_skipped": "Overgeslagen",
-    "state_failed": "Uitvoering mislukt"
+    "state_failed": "Uitvoering mislukt",
+    "filterReset": "Filters resetten",
+    "noResultsYet": "Nog geen resultaten — voer de tests uit om deze lijst te vullen."
   }
 }

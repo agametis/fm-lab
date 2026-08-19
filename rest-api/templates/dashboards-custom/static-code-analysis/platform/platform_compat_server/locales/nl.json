@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Platformcompatibiliteit: FileMaker Server",
-  "analysis.defaultResult.meaning": "Stappen binnen het bereik die niet of slechts gedeeltelijk worden ondersteund op FileMaker Server"
- }
+  "manifest": {
+    "title": "Platformcompatibiliteit: FileMaker Server",
+    "analysis.defaultResult.meaning": "Stappen binnen het bereik die niet of slechts gedeeltelijk worden ondersteund op FileMaker Server"
+  },
+  "layout": {}
 }

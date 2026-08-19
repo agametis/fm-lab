@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Oggetto nascosto dietro un contenitore",
+    "description": "Regola di qualità del Layout — un oggetto si trova completamente entro l'area di un portale, controllo a schede o controllo scorrevole posto davanti a esso nell'ordine di sovrapposizione. L'oggetto è coperto in modalità Usa e non è cliccabile — di solito un incidente di sovrapposizione.\n\nBasato sul controllo fmCheckMate «Hidden Object (Behind Container)» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.occluded": "L'oggetto si trova completamente dietro un {container} posto davanti — coperto e irraggiungibile in modalità Usa"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Risultati",
+    "summary_kpi.props.items[1].label": "Layout interessati",
+    "summary_kpi.props.items[2].label": "File interessati",
+    "findings_card.props.title": "Oggetto nascosto dietro un contenitore",
+    "findings_table.props.searchPlaceholder": "Cerca file, Layout o oggetto…",
+    "findings_table.props.empty.message": "Nessun oggetto nascosto dietro contenitori trovato.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Tipo di oggetto",
+    "findings_table.props.columns[3].label": "Oggetto",
+    "findings_table.props.columns[4].label": "Contenitore",
+    "findings_table.props.columns[7].label": "Larghezza",
+    "findings_table.props.columns[8].label": "Altezza"
+  }
+}

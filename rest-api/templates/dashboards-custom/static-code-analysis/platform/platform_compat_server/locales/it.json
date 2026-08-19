@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Compatibilità di piattaforma: FileMaker Server",
-  "analysis.defaultResult.meaning": "Passi nell'ambito non supportati o supportati solo parzialmente su FileMaker Server"
- }
+  "manifest": {
+    "title": "Compatibilità di piattaforma: FileMaker Server",
+    "analysis.defaultResult.meaning": "Passi nell'ambito non supportati o supportati solo parzialmente su FileMaker Server"
+  },
+  "layout": {}
 }

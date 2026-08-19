@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Plug-in-Kompatibilität: FileMaker Go (iOS)",
-  "analysis.defaultResult.meaning": "Plug-in-Funktionsaufrufe im Prüfumfang, die auf FileMaker Go (iOS) nicht laufen"
- }
+  "manifest": {
+    "title": "Plug-in-Kompatibilität: FileMaker Go (iOS)",
+    "analysis.defaultResult.meaning": "Plug-in-Funktionsaufrufe im Prüfumfang, die auf FileMaker Go (iOS) nicht laufen"
+  },
+  "layout": {}
 }

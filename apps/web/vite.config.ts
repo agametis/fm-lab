@@ -82,7 +82,20 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:3003',
-        changeOrigin: true
+        changeOrigin: true,
+        configure(proxy) {
+          // http-proxy erzwingt ohne agent-Option Connection: close auf Hop 2
+          // (Vite→API) und kopiert den Header der API-Antwort zum Browser
+          // zurück — das tötet das Pooling auf Hop 1 (Browser→Vite) für jeden
+          // /api-Request. Der Header gehört Hop 1 nicht; ohne ihn gilt Vites
+          // Keep-Alive-Fenster (65 s, Plugin fmlab-keep-alive). Hop 2 bleibt
+          // bewusst Connection: close (container-intern, erwiesenermaßen
+          // stabil — ein keepAlive-Agent würde sich den Node-Client-Race auf
+          // wiederverwendeten Sockets einhandeln, ECONNRESET → 502).
+          proxy.on('proxyRes', proxyRes => {
+            delete proxyRes.headers.connection;
+          });
+        }
       }
     }
   }

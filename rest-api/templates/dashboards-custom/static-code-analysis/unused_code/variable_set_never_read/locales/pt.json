@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Variável definida e nunca lida",
+    "description": "Regra de código não utilizado — uma variável é escrita mas nunca lida em parte alguma do catálogo. Na melhor das hipóteses é lastro; na pior, a metade visível de uma renomeação feita pela metade. Falsos positivos conhecidos: valores passados como parâmetro de script, nomes de variável construídos em tempo de execução e leituras fora dos ficheiros exportados — daí a regra ser informativa.\n\nBaseado na verificação fmCheckMate “ListVarsDefinedButUnused” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.set-never-read": "A variável é escrita mas nunca lida"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Locais",
+    "summary_kpi.props.items[2].label": "Globais",
+    "summary_kpi.props.items[3].label": "Scripts afetados",
+    "summary_kpi.props.items[4].label": "Ficheiros afetados",
+    "findings_card.props.title": "Variável definida e nunca lida",
+    "variable_scope_filter.props.options[0].label": "todos os âmbitos",
+    "variable_scope_filter.props.options[1].label": "Locais",
+    "variable_scope_filter.props.options[2].label": "Globais",
+    "findings_table.props.columns[0].label": "Ficheiro",
+    "findings_table.props.columns[1].label": "Variável",
+    "findings_table.props.columns[2].label": "Âmbito",
+    "findings_table.props.columns[3].label": "Primeira ocorrência",
+    "findings_table.props.columns[4].label": "Escritas",
+    "findings_table.props.columns[5].label": "Evidência",
+    "findings_table.props.searchPlaceholder": "Procurar ficheiro, variável ou script…",
+    "findings_table.props.empty.message": "Não foram encontradas variáveis escritas sem nunca serem lidas."
+  }
+}

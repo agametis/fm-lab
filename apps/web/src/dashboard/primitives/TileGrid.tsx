@@ -415,6 +415,56 @@ export function TileGrid({ node, dataset, datasets, navigate }: PrimitiveProps) 
     </div>
   );
 
+  /**
+   * Entry count of a featured bundle: the number of result-capable dashboards
+   * in the subtrees it declares (`badgeRoots`). Counted, never evaluated — the
+   * summary map holds one entry per registry unit including pending stubs, so
+   * this is the same number the bundle's own "Rules" KPI shows, without a run
+   * and without an extra request. Absent while the summary is still loading.
+   */
+  const featuredCount = (row: Record<string, unknown>): number | null => {
+    if (!resultChips || !summary.results) return null;
+    const roots = String(row.badge_roots ?? '').split(',').map(s => s.trim()).filter(Boolean);
+    if (!roots.length) return null;
+    const total = roots.reduce((sum, r) => sum + (aggregateFolder(summary.results, r)?.total ?? 0), 0);
+    return total > 0 ? total : null;
+  };
+
+  /**
+   * Featured entries (manifest `featured: true`) — the overview's entry points.
+   * Rendered as a full-width band ABOVE the folder tiles instead of competing
+   * as an equal tile below them, and deliberately without result chips or a
+   * state edge: those stay the visual language of the folders, so the band
+   * reads as a different species rather than a fifth rubric.
+   */
+  const renderFeatured = (subset: Record<string, unknown>[]) => (
+    <div className="dash-featured">
+      {subset.map((row, i) => {
+        const c = buildCell(row);
+        const count = featuredCount(row);
+        return (
+          <button
+            key={i}
+            type="button"
+            className={`dash-tile dash-tile--featured${c.clickable ? ' dash-tile--clickable' : ''}`}
+            onClick={c.clickable ? () => dispatchAction(tile.onClick, row, { navigate }) : undefined}
+            disabled={!c.clickable}
+          >
+            <span className="dash-featured__head">
+              <span className="dash-tile__title">{c.title}</span>
+              {count !== null && (
+                <span className="dash-featured__count">
+                  {t('dashboard:featured.ruleCount', { count, defaultValue: '{{count}} rules' })}
+                </span>
+              )}
+            </span>
+            {c.subtitle && <span className="dash-featured__desc">{c.subtitle}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   // ---------------------------------------------------------------------------
   // Legacy grouped mode (`groupBy`) — unchanged for existing consumers.
   // ---------------------------------------------------------------------------
@@ -486,6 +536,10 @@ export function TileGrid({ node, dataset, datasets, navigate }: PrimitiveProps) 
   const childRows = folderNav
     ? search.filtered.filter(r => (currentFolder ? String(r.folder ?? '') === currentFolder : r.folder == null))
     : [];
+  // Featured entries leave the normal grid (they render as their own band) —
+  // otherwise the same bundle would appear twice on the level.
+  const featuredRows = childRows.filter(r => r.featured === true);
+  const plainRows = childRows.filter(r => r.featured !== true);
   // Search resolves globally (special case by design); an additionally active
   // state filter narrows the global hits further.
   const globalMatches = searchMode ? search.filtered.filter(matchesStateFilter) : [];
@@ -748,8 +802,9 @@ export function TileGrid({ node, dataset, datasets, navigate }: PrimitiveProps) 
           renderFilteredHierarchy()
         ) : (
           <>
+            {featuredRows.length > 0 && renderFeatured(featuredRows)}
             {childFolders.length > 0 && renderFolderTiles(childFolders)}
-            {childRows.length > 0 && renderRows(sortRows(childRows))}
+            {plainRows.length > 0 && renderRows(sortRows(plainRows))}
             {childFolders.length === 0 && childRows.length === 0 && (
               <div className="dash-tilegrid__empty">{empty?.message ?? t('common:noEntries')}</div>
             )}

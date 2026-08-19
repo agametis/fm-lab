@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "title": "Naam met duplicaat-achtervoegsel",
+    "description": "Codestijlregel — een objectnaam draagt nog het achtervoegsel dat FileMaker bij dupliceren toevoegt. De kopie-achtervoegsels (Copy / copy / Kopie) vormen de standaardset; de cijferklasse — een naam die eindigt op een spatie en maximaal vier cijfers — staat bewust op een eigen chip, omdat talloze bedoelde namen net zo zijn opgebouwd.\n\nGebaseerd op de fmCheckMate-controle “Copied Function Name” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.copy": "De naam draagt nog het duplicatie-achtervoegsel van FileMaker",
+    "messages.numeric": "De naam eindigt op een getal — mogelijk een nooit hernoemd duplicaat"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Kopie-achtervoegsel",
+    "summary_kpi.props.items[2].label": "Cijferachtervoegsel",
+    "summary_kpi.props.items[3].label": "Betrokken bestanden",
+    "findings_card.props.title": "Naam met duplicaat-achtervoegsel",
+    "suffix_kind_filter.props.options[0].label": "beide",
+    "suffix_kind_filter.props.options[1].label": "Kopie-achtervoegsel",
+    "suffix_kind_filter.props.options[2].label": "Cijferachtervoegsel",
+    "object_type_select.props.label": "Objecttype",
+    "object_type_select.props.emptyOptionLabel": "alle objecttypen",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Objecttype",
+    "findings_table.props.columns[2].label": "Object",
+    "findings_table.props.columns[3].label": "Achtervoegsel",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, objecttype of naam…",
+    "findings_table.props.empty.message": "Geen namen met duplicaat-achtervoegsel gevonden."
+  }
+}

@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Plattformskompatibilitet: FileMaker Data API",
-  "analysis.defaultResult.meaning": "Steg inom omfånget som inte eller endast delvis stöds på FileMaker Data API"
- }
+  "manifest": {
+    "title": "Plattformskompatibilitet: FileMaker Data API",
+    "analysis.defaultResult.meaning": "Steg inom omfånget som inte eller endast delvis stöds på FileMaker Data API"
+  },
+  "layout": {}
 }

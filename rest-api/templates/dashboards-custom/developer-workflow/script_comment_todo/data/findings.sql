@@ -1,0 +1,42 @@
+-- Comment steps in scripts that carry a TODO marker — planned or optional
+-- work. Part of the "Unfinished Work" rule family; the detector is the canon
+-- of tools/tests/rules/unfinished_work_detector.sql:
+--
+--   TODO: (?i)(\bto[\s\-_]?do|\btbd\b|\bto[\s\-_]be[\s\-_](done|defined)\b)
+--
+-- The TODO family deliberately has NO trailing word boundary — otherwise real
+-- markers such as "###--- TO DOs ---###" fall out. The leading \b is
+-- mandatory, so prose ("today", "into doing", "stop") does not match.
+--
+-- Severity is info (traffic light: neutral): a TODO is an inventory figure,
+-- not a defect. The defect half of the family is script_comment_fixme.
+--
+-- Source column is StepsForScripts.Comment_Text — the decoded comment text the
+-- converter extracts for Step_ID 89; Comment_Text exists for step 89 only.
+--
+-- Grain: one finding per comment step. A comment carrying TODO *and* FIXME is
+-- reported by both rules of the family — the overlap is intended.
+--
+-- Deep link: the row click opens the script, scrolls to the comment step
+-- (`step`) and marks it (`marks`).
+SELECT 'script-comment-todo' AS rule_id, 'info' AS severity,
+    s.File_Name AS file_name,
+    s.Script_UUID AS nav_uuid,
+    'Script' AS nav_type,
+    s.Script_Name AS script_name,
+    s.Step_Index + 1 AS step_no,
+    s.Step_UUID AS step_uuid,
+    s.Step_UUID AS marks,
+    regexp_extract(s.Comment_Text, '(?i)(\bto[\s\-_]?do|\btbd\b|\bto[\s\-_]be[\s\-_](done|defined)\b)', 0) AS marker,
+    s.Comment_Text AS comment,
+    'TODO marker in a script comment' AS message,
+    row_number() OVER (ORDER BY s.File_Name, s.Script_Name, s.Step_Index) AS row_key
+FROM StepsForScripts s
+WHERE s.Step_ID = 89   -- '# (Comment)' — Step_ID is locale-independent
+  AND s.Comment_Text IS NOT NULL
+  AND regexp_matches(s.Comment_Text, '(?i)(\bto[\s\-_]?do|\btbd\b|\bto[\s\-_]be[\s\-_](done|defined)\b)')
+  AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file'))
+  AND (getvariable('scope_uuids') IS NULL
+       OR s.Script_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
+ORDER BY row_key
+LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);

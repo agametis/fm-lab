@@ -1,0 +1,119 @@
+{
+  "id": "layout_lost_object",
+  "version": "1.0.0",
+  "title": "Object outside its parent",
+  "description": "Layout-quality rule — a nested layout object lies completely or partially outside the bounds of its parent (portal, tab panel, slide panel or group). Such objects are clipped or invisible at runtime, typically leftovers from moving or resizing the parent. The portal scrollbar area (19 px) is tolerated; popover panels and zero-height border lines on the parent edge are excluded.\n\nBased on the fmCheckMate check \"Lost Object (In Container)\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "author": "fm-lab rules",
+  "icon": "frame",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "fmcheckmate",
+    "layout_quality"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "warning",
+    "category": "layout_quality",
+    "rationale": "Objects outside their parent are clipped or invisible at runtime — they survive refactorings unnoticed and confuse both users and developers when they resurface.",
+    "remediation": "Move the object back inside its parent or delete it. For portals mind the 19 px scrollbar area on the right edge.",
+    "meta": {
+      "name": "Object outside its parent",
+      "author": "fm-lab rules",
+      "source": "fmCheckMate-XSLT",
+      "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
+      "description": "Layout-quality rule — a nested layout object lies completely or partially outside the bounds of its parent (portal, tab panel, slide panel or group). Such objects are clipped or invisible at runtime, typically leftovers from moving or resizing the parent. The portal scrollbar area (19 px) is tolerated; popover panels and zero-height border lines on the parent edge are excluded.",
+      "created": "2026-08-15",
+      "references": [
+        {
+          "project": "fmCheckMate-XSLT",
+          "rule": "XML2_fmCM_AnalyseLayout.xsl (XML2_fmCM_ReportObjectsLostInContainers)",
+          "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT"
+        },
+        {
+          "project": "fm-lab",
+          "rule": "User feature request — layout object quality",
+          "url": null
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Object outside its parent"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    },
+    {
+      "id": "object_types",
+      "source": "bundle:data/object_types.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    },
+    {
+      "name": "extent",
+      "type": "string",
+      "required": false,
+      "description": "Extent filter chip (completely, partially); unset = all."
+    },
+    {
+      "name": "object_type",
+      "type": "string",
+      "required": false,
+      "description": "Layout-object-type filter select; unset = all."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "completely": "Object lies completely outside its parent {parent}",
+    "partially": "Object extends beyond its parent {parent}"
+  }
+}

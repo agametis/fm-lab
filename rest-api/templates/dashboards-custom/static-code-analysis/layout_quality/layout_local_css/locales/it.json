@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Sovrascritture CSS locali",
+    "description": "Metrica di qualità del Layout — quanti oggetti hanno CSS locale invece di ereditare l'aspetto dal tema. In piccole quantità è normale; una quota elevata significa che il tema non governa più l'aspetto e ogni modifica visiva va fatta oggetto per oggetto. È una dashboard di rapporto: i KPI mostrano la quota sull'intera soluzione e la tabella elenca i layout sopra la soglia, non i singoli oggetti.\n\nBasato sul controllo fmCheckMate «LocalCSS» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.local-css": "{objects_with_css} di {objects_total} oggetti di questo layout hanno CSS locale ({share_pct} %)"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Oggetti di layout",
+    "summary_kpi.props.items[1].label": "Con CSS locale",
+    "summary_kpi.props.items[2].label": "Quota %",
+    "summary_kpi.props.items[3].label": "Layout elencati",
+    "findings_card.props.title": "Sovrascritture CSS locali",
+    "findings_table.props.searchPlaceholder": "Cerca file, Layout o oggetto…",
+    "findings_table.props.empty.message": "Nessun layout raggiunge la quota di CSS locale impostata.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Oggetti",
+    "findings_table.props.columns[3].label": "Con CSS locale",
+    "findings_table.props.columns[4].label": "Quota %",
+    "min_share_slider.props.label": "Quota minima"
+  }
+}

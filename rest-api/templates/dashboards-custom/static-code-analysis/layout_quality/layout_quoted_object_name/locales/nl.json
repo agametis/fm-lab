@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "Objectnaam tussen aanhalingstekens",
+    "description": "Layoutkwaliteitsregel — een objectnaam begint en eindigt met een aanhalingsteken. Vrijwel altijd een plakfout; namen met aanhalingstekens breken naamgebaseerde verwijzingen zoals GetLayoutObjectAttribute of Ga naar object.\n\nGebaseerd op de fmCheckMate-controle “Quoted Object Name” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.quoted-name": "De objectnaam staat tussen aanhalingstekens — waarschijnlijk per ongeluk geplakt"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken Layouts",
+    "summary_kpi.props.items[2].label": "Betrokken bestanden",
+    "findings_card.props.title": "Objectnaam tussen aanhalingstekens",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen objectnamen tussen aanhalingstekens gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objecttype",
+    "findings_table.props.columns[3].label": "Object",
+    "findings_table.props.columns[6].label": "Breedte",
+    "findings_table.props.columns[7].label": "Hoogte"
+  }
+}

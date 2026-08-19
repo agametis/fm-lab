@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "注释结构损坏",
+    "description": "易错规则 — 公式中含有无法嵌套的注释标记：已打开注释内的第二个 /*、块已关闭后多余的 */，或紧贴开始 /* 的 // 行注释。FileMaker 的注释不能嵌套，因此公式的一部分会与作者意图相反地落入注释内部或外部。\n\n基于 fmCheckMate 检查“Broken Calculation /*Commented Out*/” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.nested-open": "注释在已打开的注释内再次开始",
+    "messages.double-close": "注释被关闭了两次",
+    "messages.line-in-block": "行注释位于注释块内部"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现数",
+    "summary_kpi.props.items[1].label": "嵌套开始",
+    "summary_kpi.props.items[2].label": "重复结束",
+    "summary_kpi.props.items[3].label": "受影响文件",
+    "findings_card.props.title": "注释结构损坏",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "对象类型",
+    "findings_table.props.columns[2].label": "对象",
+    "findings_table.props.columns[3].label": "插槽",
+    "findings_table.props.columns[4].label": "位置",
+    "findings_table.props.columns[5].label": "缺陷",
+    "findings_table.props.searchPlaceholder": "搜索文件、对象或公式…",
+    "findings_table.props.empty.message": "未发现损坏的注释结构。"
+  }
+}

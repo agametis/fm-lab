@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "title": "Defekte Wertelisten-Referenz",
+    "description": "Layout-Qualitätsregel — ein Layoutobjekt referenziert eine Werteliste, die in seiner Datei nicht mehr existiert. Die Auflösung läuft über die Wertelisten-ID, nicht über den Namen; umbenannte Listen werden daher nicht gemeldet.\n\nAngelehnt an die fmCheckMate-Prüfung „Broken Value List <Missing>“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.missing-valuelist": "Die Werteliste existiert in dieser Datei nicht mehr"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Layouts",
+    "summary_kpi.props.items[2].label": "Betroffene Dateien",
+    "findings_card.props.title": "Defekte Wertelisten-Referenz",
+    "findings_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "findings_table.props.empty.message": "Keine defekten Wertelisten-Referenzen gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekttyp",
+    "findings_table.props.columns[3].label": "Objekt",
+    "findings_table.props.columns[4].label": "Werteliste",
+    "findings_table.props.columns[7].label": "Breite",
+    "findings_table.props.columns[8].label": "Höhe"
+  }
+}

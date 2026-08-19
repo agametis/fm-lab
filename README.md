@@ -47,6 +47,7 @@ FM-Lab supports [four complementary approaches](/docs/fm-lab/Wiki/4 Code Analysi
 - **REST API** — Express server providing HTTP access to the analysis database, enabling integration with external tools and services 🧩
 - **Web Client** — React/Vite frontend for interactive exploration of the solution structure and dependencies with rich visualizations 🔎
 - **Dashboard System** — library of predefined analysis patterns, with support for custom queries and custom dashboards 📁
+- **Analysis Tests** — curated, declared checks with a compact result model: static-code-analysis rules, error checks and two-axis platform tests, runnable per solution, file, object or cluster ✅
 - **Multi-user & multi-session support** - concurrent users, each on their own solution 🙌
 - **Graph Explorer** — interactive navigation of the full object graph, with automatic community detection that reveals named clusters across the solution and turns thousands of objects and links into a navigable graph map 🕸️
 - **Claude Skills** — slash commands for agentic analysis workflows in Claude Code, supported by helpers for XML conversion and documentation setup, enabling deep, solution-aware inspection beyond scripted analysis 🤖
@@ -201,35 +202,24 @@ bash tools/stop-servers.sh     # stop servers
 - [`Documentation.md`](docs/fm-lab/Documentation.md) — Full project documentation (work in progress)
 - [`CLAUDE.md`](CLAUDE.md) — the agent guide (workflows, rules, skill routing); detailed references live in [`docs/agents/`](docs/agents/) (schema & link roles, query cookbook, pipeline internals, codegen workflows)
 
-## Optional Reference Data
-
-Test data and tools for fm-lab developers are available for validation (will be downloaded from their source repositories by Claude skills on demand):
-
-```bash
-# ooe-fm — "One Of Everything" FileMaker reference database (XML parser test data)
-#   /install-ooe-fm
-
-# fm-xml-export-exploder — Rust tool for splitting FileMaker XML exports
-#   /install-fm-xml-export-exploder
-```
-
 ## Status
 
 The project has grown along a clear arc — from a solid foundation toward an increasingly capable, accessible developer platform:
 
-- **v0.1 – v0.5** · _Foundation_ — the XML conversion pipeline, the DuckDB
-  object catalog, and the first AI skills.
+- **v0.1 – v0.5** · _Foundation_ — the XML conversion pipeline, the DuckDB object catalog, and the first AI skills.
 - **v0.6.x** · _Access & exploration_ — REST API, web client, and a plugin architecture turn the catalog into an interactive surface.
 - **v0.7.0 – v0.7.1** · _Dashboards_ — declarative, data-driven views as a first-class extension layer.
 - **v0.7.2** · _Internationalization_ — the whole stack opens up to non-English developers, with all technical identifiers kept intact.
 - **v0.7.3 – v0.7.7** · _Depth & reach_ — deeper analysis, integrated documentation sets, and the XML import moving into the browser.
 - **v0.8.0 – v0.8.2** · _Katana XML engine_ — optimized and powerful XML ingestion.
 - **v0.8.3 – v0.8.5** · _Graph-based analysis_ — community detection, semantic naming, and an interactive Graph Explorer.
-- **v0.8.6** · _Docker installer_ - including all dependencies for easy setup. Experimental Windows support via Docker on WSL2.
-- **v0.8.7 – v0.8.8** · _Static code analysis_ - predefined inspection queries for standard checks, completion of the object catalog, and expanded reference coverage.
-- **v0.8.9 – v0.8.10** · _fm-spec sidecar + system prompt cleanup_ - groundwork for reliable agentic code generation.
-- **v0.9.0** · _Multi-solution support + agentic code generation_ - a generated script is validated against the FileMaker spec and the actual object catalog before being delivered.
-- **v0.9.2** · _Multi-user & multi-session support_ - concurrent users, each on their own solution.
+- **v0.8.6** · _Docker installer_ — including all dependencies for easy setup. Experimental Windows support via Docker on WSL2.
+- **v0.8.7 – v0.8.8** · _Static code analysis_ — predefined inspection queries for standard checks, completion of the object catalog, and expanded reference coverage.
+- **v0.8.9 – v0.8.10** · _fm-spec sidecar + system prompt cleanup_ — groundwork for reliable agentic code generation.
+- **v0.9.0** · _Multi-solution support + agentic code generation_ — a generated script is validated against the FileMaker spec and the actual object catalog before being delivered.
+- **v0.9.2** · _Multi-user & multi-session support_ — concurrent users, each on their own solution.
+- **v0.9.3 – v0.9.6** · _Robustness + documentation_ — hardening the setup and the processing, providing detailed docs for schema and backend.
+- **v0.9.7 – v0.9.8** · _Tests_ — providing structured tools for users and agents to apply static code analysis at different scopes. With a growing collection of rules and dashboards.
 
 - More details in [`CHANGELOG.md`](CHANGELOG.md) — release history
 
@@ -251,7 +241,6 @@ The core architecture is in place and ready for real-world use. Many more featur
 - Granular deployment options for separate ingestion, API, and frontend services
 - Auto-update of new XML imports
 - Snapshots for tracking changes over time
-- Automatic code analysis and test-sets
 - Deeper integration with developer tools and workflows, including VS Code, Raycast, Obsidian, and others
 - Support for additional AI agents and agent configuration formats
 - AI-assisted code generation, refactoring, and documentation based on the object catalog (more object types & rule based orchestration)

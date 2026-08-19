@@ -1,6 +1,7 @@
 {
- "manifest": {
-  "title": "Verwijderde plug-infunctieaanroep",
-  "analysis.defaultResult.meaning": "Plug-infunctieaanroepen binnen het bereik waarvan de functie in de leveranciersdocumentatie als verwijderd is gemarkeerd — deze aanroepen mislukken met een actuele plug-in"
- }
+  "manifest": {
+    "title": "Verwijderde plug-infunctieaanroep",
+    "analysis.defaultResult.meaning": "Plug-infunctieaanroepen binnen het bereik waarvan de functie in de leveranciersdocumentatie als verwijderd is gemarkeerd — deze aanroepen mislukken met een actuele plug-in"
+  },
+  "layout": {}
 }

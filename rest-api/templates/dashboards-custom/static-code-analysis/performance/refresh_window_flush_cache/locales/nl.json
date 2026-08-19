@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Refresh Window met join-cache-flush",
+    "description": "Prestatieregel — Refresh Window met 'Flush cached join results' (of 'Flush cached external data') gooit relatiecaches weg en dwingt FileMaker gerelateerde records opnieuw van de server op te halen. Claris waarschuwt expliciet voor de netwerkkosten."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Join-resultaten gewist",
+    "summary_kpi.props.items[2].label": "Externe data gewist",
+    "summary_kpi.props.items[3].label": "Gewone refreshes (niet gemeld)",
+    "summary_kpi.props.items[4].label": "Betrokken bestanden",
+    "flush_kind_filter.props.options[0].label": "Alle flushes",
+    "flush_kind_filter.props.options[1].label": "Join-resultaten",
+    "flush_kind_filter.props.options[2].label": "Externe data",
+    "findings_card.props.title": "Refresh Window met join-cache-flush",
+    "findings_table.props.searchPlaceholder": "Zoek bestand of script…",
+    "findings_table.props.empty.message": "Geen Refresh Window met flush-optie gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Script",
+    "findings_table.props.columns[2].label": "Stap",
+    "findings_table.props.columns[3].label": "Wist",
+    "findings_table.props.columns[4].label": "Loopdiepte"
+  }
+}

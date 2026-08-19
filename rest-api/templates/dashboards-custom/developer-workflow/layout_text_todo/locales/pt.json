@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "title": "Marcador TODO em um objeto de layout",
+    "description": "Regra da família “Trabalho inacabado”: um objeto de layout contém um marcador TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) no texto, na dica de ferramenta ou na fórmula do rótulo. Um TODO descreve trabalho planejado, não um defeito: severidade info, o semáforo permanece neutro. Endurecimento deliberado em relação à regra de origem: sem distinguir maiúsculas e tolerando separadores — só assim um objeto de texto com o conteúdo “TO DO” é encontrado.\n\nBaseado na verificação fmCheckMate “FIXME” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.text": "Marcador TODO no conteúdo de texto",
+    "messages.tooltip": "Marcador TODO na fórmula da dica de ferramenta",
+    "messages.label": "Marcador TODO na fórmula do rótulo"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Layouts afetados",
+    "summary_kpi.props.items[2].label": "Arquivos afetados",
+    "findings_card.props.title": "Marcador TODO em um objeto de layout",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo, layout ou objeto…",
+    "findings_table.props.empty.message": "Nenhum marcador TODO em objetos de layout.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[2].label": "Tipo de objeto",
+    "findings_table.props.columns[3].label": "Objeto",
+    "findings_table.props.columns[4].label": "Local",
+    "findings_table.props.columns[5].label": "Marcador",
+    "findings_table.props.columns[8].label": "Largura",
+    "findings_table.props.columns[9].label": "Altura"
+  }
+}

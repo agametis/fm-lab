@@ -2666,8 +2666,12 @@ WHERE ep.EP_UUID IS NOT NULL;
 
 -- Layout → Theme (uses_theme, operational)
 -- Theme-Aufräumfrage („welche Themes sind in Gebrauch?") — vorher waren alle
--- Themes unverlinkt. Join primär über die Referenz-UUID, Fallback über die
--- datei-lokale Theme-ID (falls Referenz- und Katalog-UUID divergieren).
+-- Themes unverlinkt. Join primär über die AUFGELÖSTE Referenz-UUID
+-- (L_Theme_Resolved_UUID aus P3/A.11), Fallback über die datei-lokale Theme-ID
+-- (falls Referenz- und Katalog-UUID divergieren).
+-- Die aufgelöste UUID statt der rohen L_Theme_UUID, weil SaXML das Classic-Theme
+-- als leere <LayoutThemeReference/> kodiert: mit der Rohspalte blieb jedes
+-- Classic-Layout unverlinkt und Classic in JEDER Datei scheinbar unbenutzt.
 INSERT INTO ObjectLinks (Source_UUID, Source_Type, Target_UUID, Target_Type,
                           Link_Type, Link_Role, Link_Subrole,
                           Source_File, Target_File, Is_Cross_File)
@@ -2685,8 +2689,8 @@ SELECT DISTINCT
 FROM Layouts l
 JOIN ThemeCatalog tc
   ON tc.File_Name = l.File_Name
- AND (tc.Theme_UUID = l.L_Theme_UUID OR tc.Theme_ID = l.L_Theme_ID)
-WHERE l.L_Theme_UUID IS NOT NULL
+ AND (tc.Theme_UUID = l.L_Theme_Resolved_UUID OR tc.Theme_ID = l.L_Theme_ID)
+WHERE l.L_Theme_Resolved_UUID IS NOT NULL
   AND (l.Folder_Type IS NULL OR l.Folder_Type = 'False')
   AND NOT COALESCE(l.Is_Separator, FALSE);
 

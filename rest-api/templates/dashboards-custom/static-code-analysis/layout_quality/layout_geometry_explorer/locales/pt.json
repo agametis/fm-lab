@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "Explorador de geometria de layouts",
+    "description": "Painel de inventário — todos os objetos de layout com colunas de geometria ordenáveis individualmente (X, Y, largura, altura, ordem Z). Filtrável por seção do layout (cabeçalho, corpo, rodapé …), tipo de objeto, largura/altura máximas e uma janela de coordenadas absoluta ao layout (X/Y de/até) para examinar zonas específicas. As coordenadas de objetos aninhados são relativas ao seu contêiner; a janela de coordenadas corresponde exatamente aos objetos de nível superior, e os aninhados contam através do seu contêiner de nível superior. Os parâmetros de URL w_min/h_min complementam os controles deslizantes. Clicar em uma linha abre o layout com o objeto destacado."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Objetos",
+    "summary_kpi.props.items[1].label": "Layouts",
+    "summary_kpi.props.items[2].label": "Arquivos",
+    "objects_card.props.title": "Objetos do layout",
+    "part_select.props.label": "Seção do layout",
+    "part_select.props.emptyOptionLabel": "todas as seções",
+    "object_type_select.props.label": "Tipo de objeto",
+    "object_type_select.props.emptyOptionLabel": "todos os tipos de objeto",
+    "w_max_slider.props.label": "Largura máx.",
+    "h_max_slider.props.label": "Altura máx.",
+    "x_min_slider.props.label": "Janela X de",
+    "x_max_slider.props.label": "Janela X até",
+    "y_min_slider.props.label": "Janela Y de",
+    "y_max_slider.props.label": "Janela Y até",
+    "objects_table.props.searchPlaceholder": "Pesquisar arquivo, layout ou objeto…",
+    "objects_table.props.empty.message": "Nenhum objeto de layout corresponde aos filtros atuais.",
+    "objects_table.props.columns[0].label": "Arquivo",
+    "objects_table.props.columns[1].label": "Layout",
+    "objects_table.props.columns[2].label": "Seção",
+    "objects_table.props.columns[3].label": "Tipo de objeto",
+    "objects_table.props.columns[4].label": "Objeto",
+    "objects_table.props.columns[5].label": "Nível",
+    "objects_table.props.columns[8].label": "Largura",
+    "objects_table.props.columns[9].label": "Altura"
+  }
+}

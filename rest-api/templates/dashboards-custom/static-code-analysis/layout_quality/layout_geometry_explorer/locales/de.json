@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "title": "Layout-Geometrie-Explorer",
+    "description": "Inventar-Dashboard — alle Layoutobjekte mit einzeln sortierbaren Geometrie-Spalten (X, Y, Breite, Höhe, Z-Order). Filterbar nach Layoutbereich (Kopf-, Body-, Fußbereich …), Objekttyp, maximaler Breite/Höhe sowie einem layoutabsoluten Koordinaten-Fenster (X/Y von/bis) zur Untersuchung bestimmter Layoutbereiche. Koordinaten verschachtelter Objekte sind relativ zu ihrem Container; das Koordinaten-Fenster trifft Top-Level-Objekte exakt, verschachtelte Objekte zählen über ihren Top-Level-Container. Die URL-Parameter w_min/h_min ergänzen die Regler. Klick auf eine Zeile öffnet das Layout mit hervorgehobenem Objekt."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Objekte",
+    "summary_kpi.props.items[1].label": "Layouts",
+    "summary_kpi.props.items[2].label": "Dateien",
+    "objects_card.props.title": "Layoutobjekte",
+    "part_select.props.label": "Layoutbereich",
+    "part_select.props.emptyOptionLabel": "alle Bereiche",
+    "object_type_select.props.label": "Objekttyp",
+    "object_type_select.props.emptyOptionLabel": "alle Objekttypen",
+    "w_max_slider.props.label": "Max. Breite",
+    "h_max_slider.props.label": "Max. Höhe",
+    "x_min_slider.props.label": "Fenster X von",
+    "x_max_slider.props.label": "Fenster X bis",
+    "y_min_slider.props.label": "Fenster Y von",
+    "y_max_slider.props.label": "Fenster Y bis",
+    "objects_table.props.searchPlaceholder": "Datei, Layout oder Objekt suchen…",
+    "objects_table.props.empty.message": "Keine Layoutobjekte für die aktuellen Filter.",
+    "objects_table.props.columns[0].label": "Datei",
+    "objects_table.props.columns[1].label": "Layout",
+    "objects_table.props.columns[2].label": "Bereich",
+    "objects_table.props.columns[3].label": "Objekttyp",
+    "objects_table.props.columns[4].label": "Objekt",
+    "objects_table.props.columns[5].label": "Ebene",
+    "objects_table.props.columns[8].label": "Breite",
+    "objects_table.props.columns[9].label": "Höhe"
+  }
+}

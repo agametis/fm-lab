@@ -5,6 +5,7 @@
   "autoTable": {
     "rowCount_one": "{{count}} entrada",
     "rowCount_other": "{{count}} entradas",
+    "rowCountTruncated": "{{shown}} de {{total}} entradas",
     "filteredFrom": "filtrado de {{count}}",
     "newCount": "{{count}} novos",
     "totalSize": "Tamanho total {{size}}",
@@ -362,7 +363,8 @@
     "highlightsCount_one": "{{count}} correspondência realçada",
     "highlightsCount_other": "{{count}} correspondências realçadas",
     "dismissAria": "Remover o realce da referência",
-    "dismissTitle": "Remover o realce da referência (Esc)"
+    "dismissTitle": "Remover o realce da referência (Esc)",
+    "sourceLabel": "Fonte:"
   },
   "tableDetails": "Detalhes da tabela",
   "scriptDetails": "Detalhes do script",

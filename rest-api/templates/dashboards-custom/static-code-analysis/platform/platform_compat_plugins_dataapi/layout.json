@@ -93,10 +93,6 @@
                 {
                   "field": "via_custom_function",
                   "label": "Via custom function"
-                },
-                {
-                  "field": "message",
-                  "label": "Message"
                 }
               ],
               "onRowClick": {

@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Nome de variável com espaços",
+    "description": "Regra de propensão a erros — um nome de variável contém um espaço. O FileMaker aceita-o no campo de nome de «Definir variável», mas cada leitura precisa da notação ${nome com espaços}; um simples $nome com espaços lê outra coisa em silêncio. Abrange variáveis locais, globais, de Let() e superglobais MBS.\n\nBaseado na verificação fmCheckMate “ListScriptsWithBadVariableNames” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.name-with-spaces": "O nome da variável contém um espaço"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Locais",
+    "summary_kpi.props.items[2].label": "Globais",
+    "summary_kpi.props.items[3].label": "Ficheiros afetados",
+    "findings_card.props.title": "Nome de variável com espaços",
+    "variable_scope_filter.props.options[0].label": "todos os âmbitos",
+    "variable_scope_filter.props.options[1].label": "Locais",
+    "variable_scope_filter.props.options[2].label": "Globais",
+    "variable_scope_filter.props.options[3].label": "Let()",
+    "variable_scope_filter.props.options[4].label": "Superglobais",
+    "findings_table.props.columns[0].label": "Ficheiro",
+    "findings_table.props.columns[1].label": "Variável",
+    "findings_table.props.columns[2].label": "Âmbito",
+    "findings_table.props.columns[3].label": "Primeira ocorrência",
+    "findings_table.props.columns[4].label": "Escritas",
+    "findings_table.props.columns[5].label": "Leituras",
+    "findings_table.props.searchPlaceholder": "Procurar ficheiro, variável ou script…",
+    "findings_table.props.empty.message": "Não foram encontrados nomes de variável com espaços."
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "manifest": {
+    "title": "Gedegenereerd Layout-object",
+    "description": "Layoutkwaliteitsregel — een object is gedegenereerd. Tekstobjecten zonder tekst, objecten met breedte of hoogte nul en objecten die in beide richtingen onder de minimale grootte blijven (schuifregelaars voor breedte/hoogte, standaard elk 4 px). Lijnen zijn uitgesloten — nul-omvang is daar de normale vorm. Kleine lege teksten dienen vaak als afstandhouders — controleer vóór het verwijderen.",
+    "messages.zero-size": "Het object heeft breedte of hoogte nul",
+    "messages.empty-text": "Het tekstobject bevat geen tekst",
+    "messages.undersized": "Het object is kleiner dan {min_w}×{min_h} px (breedte×hoogte)"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Lege tekstobjecten",
+    "summary_kpi.props.items[2].label": "Te klein",
+    "summary_kpi.props.items[3].label": "Nulgrootte",
+    "min_w_slider.props.label": "Min. breedte",
+    "min_h_slider.props.label": "Min. hoogte",
+    "findings_card.props.title": "Gedegenereerd Layout-object",
+    "findings_table.props.searchPlaceholder": "Bestand, Layout of object zoeken…",
+    "findings_table.props.empty.message": "Geen gedegenereerde objecten gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objecttype",
+    "findings_table.props.columns[3].label": "Object",
+    "findings_table.props.columns[4].label": "Defect",
+    "defect_filter.props.options[0].label": "alle defecten",
+    "defect_filter.props.options[1].label": "lege tekst",
+    "defect_filter.props.options[2].label": "te klein",
+    "defect_filter.props.options[3].label": "nulgrootte",
+    "object_type_select.props.label": "Objecttype",
+    "object_type_select.props.emptyOptionLabel": "alle objecttypen",
+    "findings_table.props.columns[7].label": "Breedte",
+    "findings_table.props.columns[8].label": "Hoogte"
+  }
+}

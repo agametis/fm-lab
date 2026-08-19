@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "title": "Variablenname mit Leerzeichen",
+    "description": "Fehleranfälligkeits-Regel — ein Variablenname enthält ein Leerzeichen. FileMaker akzeptiert das im Namensfeld von „Variable setzen“, jeder Lesezugriff braucht dann aber die Schreibweise ${Name mit Leerzeichen}; ein einfaches $Name mit Leerzeichen liest still etwas anderes. Erfasst lokale, globale, Let()- und MBS-Superglobal-Variablen.\n\nAngelehnt an die fmCheckMate-Prüfung „ListScriptsWithBadVariableNames“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "messages.name-with-spaces": "Variablenname enthält ein Leerzeichen"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Lokal",
+    "summary_kpi.props.items[2].label": "Global",
+    "summary_kpi.props.items[3].label": "Betroffene Dateien",
+    "findings_card.props.title": "Variablenname mit Leerzeichen",
+    "variable_scope_filter.props.options[0].label": "alle Bereiche",
+    "variable_scope_filter.props.options[1].label": "Lokal",
+    "variable_scope_filter.props.options[2].label": "Global",
+    "variable_scope_filter.props.options[3].label": "Let()",
+    "variable_scope_filter.props.options[4].label": "Superglobal",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Variable",
+    "findings_table.props.columns[2].label": "Gültigkeitsbereich",
+    "findings_table.props.columns[3].label": "Erstmals in",
+    "findings_table.props.columns[4].label": "Schreibzugriffe",
+    "findings_table.props.columns[5].label": "Lesezugriffe",
+    "findings_table.props.searchPlaceholder": "Datei, Variable oder Script suchen…",
+    "findings_table.props.empty.message": "Keine Variablennamen mit Leerzeichen gefunden."
+  }
+}
