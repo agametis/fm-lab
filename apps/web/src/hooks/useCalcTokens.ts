@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { fetchCalcTokens } from '../api/calcTokensApi';
+import { fetchCalcTokens, type CalcTokenKeyKind } from '../api/calcTokensApi';
 import type { CalculationTokens } from '../script/calcTokens';
 
 interface UseCalcTokensResult {
@@ -8,27 +8,31 @@ interface UseCalcTokensResult {
   error: string | null;
 }
 
-// Cache pro (hash, lang). DDR-Hashes sind über die ganze Lösung geteilt
-// (gleicher Calc-Text ⇒ gleicher Hash), daher ist der Cache lösungsweit gültig.
+// Cache pro (key-kind, key, lang). Hash-Adressierung: DDR-Hashes sind über die
+// ganze Lösung geteilt (gleicher Calc-Text ⇒ gleicher Hash), daher lösungsweit
+// gültig. UUID-Adressierung: instanz-exakt (Calculation_UUID, Schema 1.22.0).
 const cache = new Map<string, CalculationTokens>();
 
 /**
- * Lädt die Token-Sequenz einer Calculation per DDR-Hash via /api/get-calc.
- * `hash` darf undefined sein (z.B. Access_Mode ≠ Calculation) — dann passiert nichts.
+ * Lädt die Token-Sequenz einer Calculation via /api/get-calc.
+ * `key` darf undefined sein (z.B. Access_Mode ≠ Calculation, DDR-lose Instanz)
+ * — dann passiert nichts. `by` wählt die Adressierung: 'hash' (Default,
+ * bestandserhaltend) oder 'uuid' (Calculation_UUID, instanz-exakt).
  */
 export const useCalcTokens = (
-  hash: string | undefined | null,
+  key: string | undefined | null,
   lang: string,
+  by: CalcTokenKeyKind = 'hash',
 ): UseCalcTokensResult => {
   const [data, setData] = useState<CalculationTokens | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isFetchingRef = useRef(false);
 
-  const cacheKey = hash ? `${hash}::${lang}` : '';
+  const cacheKey = key ? `${by}:${key}::${lang}` : '';
 
   const fetchData = useCallback(async () => {
-    if (!hash || isFetchingRef.current) return;
+    if (!key || isFetchingRef.current) return;
 
     const cached = cache.get(cacheKey);
     if (cached) {
@@ -43,7 +47,7 @@ export const useCalcTokens = (
     setError(null);
 
     try {
-      const tokens = await fetchCalcTokens(hash, lang);
+      const tokens = await fetchCalcTokens(key, lang, by);
       cache.set(cacheKey, tokens);
       setData(tokens);
     } catch (err) {
@@ -53,17 +57,17 @@ export const useCalcTokens = (
       isFetchingRef.current = false;
       setLoading(false);
     }
-  }, [hash, lang, cacheKey]);
+  }, [key, lang, by, cacheKey]);
 
   useEffect(() => {
-    if (hash) {
+    if (key) {
       fetchData();
     } else {
       setData(null);
       setLoading(false);
       setError(null);
     }
-  }, [fetchData, hash]);
+  }, [fetchData, key]);
 
   return { data, loading, error };
 };

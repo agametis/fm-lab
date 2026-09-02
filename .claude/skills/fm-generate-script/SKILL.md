@@ -37,7 +37,7 @@ A failure in lint/resolve/gate goes back to P1 with the findings — never
 ### P1 — Draft (canonical text form)
 
 Write the draft to a `.fmscript` file (scratchpad or `output/codegen/`).
-Rules (fm-spec `script-text-notation.md` v0.1, condensed):
+Rules (fm-spec `script-text-notation.md` v0.2, condensed):
 
 - One step per line, step name first — any of the 11 locales works, it is
   canonicalized by lookup. Multi-line calculations are fine.
@@ -60,6 +60,15 @@ Rules (fm-spec `script-text-notation.md` v0.1, condensed):
   paste is on you.
 - Dialog-only options use extension labels: `Button1: "OK"`,
   `Input1: TO::Field`, `Input1Label: "..."`.
+- **Repeat groups** (T9, fm_spec 1.15.0): list-carrying steps repeat a group
+  label, one item per occurrence. Bracketed items for sort/find/filter —
+  `sort: [ field: TO::Name ; type: Descending ]`,
+  `request: [ operation: Omit Records ; criteria: [ field: TO::F ; text: * ] ]`,
+  `filter: [ name: "Bilder" ; extensions: "png; jpg" ]` — and plain scalar
+  repetition where the item is a single value: `Tables: "A" ; Tables: "B"`,
+  `web_script_parameters: $P1 ; web_script_parameters: $P2` (the `@Count`
+  attribute is derived; never author it). The old flat keys (`sort_field:` …)
+  still parse and fill item 1, but the canonical form is the group form.
 
 ### P2–P6 — Run the pipeline
 
@@ -82,7 +91,7 @@ session pin (`FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2) pass
 against the pinned solution.
 
 **When the emitter reports "not supported by the table-driven emitter"**
-(multi-instance structures beyond the covered set, exotic steps): author that
+(exotic steps without a template placeholder for the option): author that
 step's XML manually against the reference —
 `SELECT snippet_template, saxml_example FROM step_xml_map WHERE step_id = ?`
 — splice it in, and ALWAYS run `fmgen.py gate` on the final XML. Say in the
@@ -112,6 +121,32 @@ Always include, in this order:
    - `G305-var-init` — a variable is written as a step target without a
      preceding `Set Variable`. Opt-in convention (P0); `skipped` when it is off
      or when the gate ran without the IR.
+   - `G202-known-fm-bugs` — a step in the snippet carries an entry in the
+     known-FM-bug registry (`step_constraints`, kinds `clipboard_loss`,
+     `version_skew`, `save_corruption`, `serialization_unstable`,
+     `localized_build_defect`, `paste_validator_warning`). Always a warning,
+     never a fail: the snippet is valid; FileMaker itself may lose or skew
+     the marked data (e.g. 221 drops `TemplateName` on copy) — except
+     `paste_validator_warning`, which is benign (a paste-time dialog may
+     appear in some environments, nothing is lost) and gets its own softer
+     lead text. Pass the caveat on with the artifact.
+   - `G110-state-domains` (fail class) — an attribute a boolean option maps
+     to carries something other than `True`/`False`. Domain is derived from
+     the reference (`option_type='boolean'` + attribute `xml_path`), no
+     hardcoded attribute names.
+   - `G306-option-preservation` (fail class) — a parsed option did not
+     materialize in the emission and no reference rule (element binding,
+     `omit_when_false` presence boolean) explains the absence. Runs on the
+     IR (`--resolved`); `skipped` without it. Presence-only — value fidelity
+     stays with G109/G110.
+
+**Known FM bugs — direction matters.** The registry warns on the READ side:
+`fmgen decompile` attaches a `note` (never an `issue`) to steps with a
+`clipboard_loss` or `serialization_unstable` entry, because a clipboard
+snippet may already have lost a slot before fmgen saw it — an empty slot
+there does not prove it was never set. The EMIT side deliberately does not
+warn: fmgen's own emission writes the full form (the snippet carries the
+slot) and pastes intact, so a warning there would point the wrong way.
 4. Redelivery warning: pasting twice duplicates the script. Snippet paste can
    only ADD scripts, not edit in place.
 5. Verification recommendation: paste, save, copy back to clipboard, diff

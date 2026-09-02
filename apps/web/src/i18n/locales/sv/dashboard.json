@@ -25,7 +25,15 @@
     "abortOomTitle": "Otillräckligt minne",
     "abortOomBody": "Den här lösningen är för stor för det tillgängliga minnet på den här maskinen. Kör importen på en maskin med mer RAM (8 GB eller mer) eller försök igen med en reducerad minnesprofil.",
     "abortIncompleteTitle": "Ofullständig build",
-    "abortIncompleteBody": "Referenslösningen slutfördes inte, så objektkatalogen kunde inte byggas. Se körningsloggen för detaljer."
+    "abortIncompleteBody": "Referenslösningen slutfördes inte, så objektkatalogen kunde inte byggas. Se körningsloggen för detaljer.",
+    "logStart": "── Start ──",
+    "logAborted": "── Avbruten ──",
+    "logAbortedOom": "⚠ Avbruten — otillräckligt minne (lösningen är för stor för den här miljön).",
+    "logAbortedIncomplete": "⚠ Avbruten — bygget ofullständigt (referensupplösningen misslyckades).",
+    "logDone": "── Klar ──",
+    "logDoneError": "── Avslutad med fel (exit {{code}}) ──",
+    "logReloadOk": "Omläsning lyckades.",
+    "logReloadError": "Omläsning misslyckades: {{error}}"
   },
   "cellValues": {
     "yes": "Ja",

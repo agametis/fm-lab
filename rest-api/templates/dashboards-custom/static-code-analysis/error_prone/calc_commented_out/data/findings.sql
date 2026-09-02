@@ -9,29 +9,36 @@
 -- comment can still carry live code in between. Only formulas with exactly one
 -- comment block are reported, so `/* off */ code /* note */` stays out.
 --
+-- Formula source is the CalculationsCatalog (single source for all calculation
+-- slots); the roles map onto the established chip values. Script-step
+-- instances anchor at the step (Owner_UUID = Step_UUID) — StepsForScripts
+-- contributes the script context and step number, the slot label comes from
+-- the instance's Source_Path.
+--
 -- The slot chips (getvariable('calc_slot')) narrow the result server-side;
 -- unset means no filter.
 WITH slots AS (
-    SELECT File_Name, CF_UUID AS nav_uuid, 'CustomFunction' AS object_type, CF_Name AS object_name,
-           'custom-function' AS calc_slot, NULL AS step_uuid, NULL AS step_no, NULL AS step_slot,
-           Calculation_Code AS calc_text
-    FROM CalcsForCustomFunctions
+    SELECT c.File_Name, c.Owner_UUID AS nav_uuid,
+           CASE c.Owner_Type WHEN 'CustomFunction' THEN 'CustomFunction' ELSE 'Field' END AS object_type,
+           c.Owner_Name AS object_name,
+           CASE c.Calc_Role
+                WHEN 'custom_function' THEN 'custom-function'
+                WHEN 'field_calculation' THEN 'field-calculation'
+                WHEN 'auto_enter' THEN 'auto-enter'
+                ELSE 'validation' END AS calc_slot,
+           CAST(NULL AS VARCHAR) AS step_uuid, CAST(NULL AS INTEGER) AS step_no,
+           CAST(NULL AS VARCHAR) AS step_slot,
+           COALESCE(c.Formula_Text, c.Display_Text) AS calc_text
+    FROM CalculationsCatalog c
+    WHERE c.Calc_Role IN ('custom_function', 'field_calculation', 'auto_enter', 'validation')
     UNION ALL
-    SELECT File_Name, Field_UUID, 'Field', Table_Name || '::' || Field_Name,
-           'field-calculation', NULL, NULL, NULL, Calculation_Text
-    FROM FieldsForTables
-    UNION ALL
-    SELECT File_Name, Field_UUID, 'Field', Table_Name || '::' || Field_Name,
-           'auto-enter', NULL, NULL, NULL, AE_Calc_Text
-    FROM FieldsForTables
-    UNION ALL
-    SELECT File_Name, Field_UUID, 'Field', Table_Name || '::' || Field_Name,
-           'validation', NULL, NULL, NULL, Validation_Calc_Text
-    FROM FieldsForTables
-    UNION ALL
-    SELECT File_Name, Script_UUID, 'Script', Script_Name,
-           'script-step', Step_UUID, Step_Index + 1, Slot, Calc_Text
-    FROM StepCalculations
+    SELECT c.File_Name, s.Script_UUID, 'Script', s.Script_Name,
+           'script-step', c.Owner_UUID, s.Step_Index + 1,
+           substr(c.Source_Path, 6),
+           COALESCE(c.Formula_Text, c.Display_Text)
+    FROM CalculationsCatalog c
+    JOIN StepsForScripts s ON s.Step_UUID = c.Owner_UUID AND s.File_Name = c.File_Name
+    WHERE c.Calc_Role IN ('step_parameter', 'step_xslt')
 )
 SELECT 'calc-commented-out' AS rule_id, 'warning' AS severity,
     s.File_Name AS file_name, s.nav_uuid, s.object_type, s.object_name,

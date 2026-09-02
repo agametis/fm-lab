@@ -21,7 +21,7 @@ Focus-centered k-hop subgraph.
 | `focus_file` | string | — | Clone disambiguation of the focus node |
 | `depth` | integer | `1` | Traversal depth (server-capped) |
 | `direction` | enum | `both` | `out` · `in` · `both` |
-| `mode` | enum | `logical` | `logical` (condensed) · `raw` (all edges) |
+| `mode` | enum | `logical` | `logical` (condensed) · `raw` (all edges). In `logical` mode, edges of sub-objects are hoisted onto their container — except for the focus node itself, which shows its own relations directly (a layout-object or script-trigger focus is never a dead end). Trigger relations of a field-bound layout object anchor at the displayed field rather than the layout, so that chain reads object → field → script, which shows in the depth counting. |
 | `types` | string (CSV) | — | Object types to include |
 | `roles` | string (CSV) | — | Edge roles to include |
 | `include_builtins` | boolean | `false` | Include builtin-function nodes |

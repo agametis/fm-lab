@@ -33,7 +33,11 @@ Full role definitions: [Link Roles and Subroles](../object-catalog/Link%20Roles%
 
 ### Outgoing links (CustomMenu as source)
 
-*None registered.* The menu-level install condition is a calculation anchored at `_<Menu_UUID>_Install`; in the test corpus these conditions are constants (`1`), so no calc-carried edges with a CustomMenu source are observed — calculation references inside items resolve with the *item* as source instead.
+| Link_Role | Target | Kind | Description |
+|---|---|---|---|
+| `has_calculation` | [Calculation](Calculation.md) | containment | The menu-level install condition as an addressable instance (subrole `menu_install`, schema 1.22.0) — never counts as usage |
+
+*No usage edges registered.* The install condition is a calculation anchored at `_<Menu_UUID>_Install`; in the test corpus these conditions are constants (`1`), so no calc-carried usage edges with a CustomMenu source are observed — calculation references inside items resolve with the *item* as source instead.
 
 ### Incoming links (CustomMenu as target)
 

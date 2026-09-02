@@ -12,7 +12,8 @@
     "page": "Sida {{current}} / {{total}}",
     "noMatches": "Inga träffar för ”{{query}}”.",
     "prev": "← Föregående",
-    "next": "Nästa →"
+    "next": "Nästa →",
+    "rowAction": "Öppna målet"
   },
   "layoutPreview": {
     "heading": "Layoutvy",
@@ -25,11 +26,12 @@
     "Field": "Fältdetaljer",
     "BaseTable": "Tabelldetaljer",
     "CustomFunction": "Funktionsdetaljer",
-    "ValueList": "Värdelistedetaljer"
+    "ValueList": "Värdelistedetaljer",
+    "Calculation": "Beräkningsdetaljer"
   },
   "layoutCanvas": {
     "searchPlaceholder": "Sök layoutobjekt…",
-    "searchTitle": "Tab: nästa träff · Skift+Tab: föregående · Enter: öppna · Esc: återställ",
+    "searchTitle": "Tab: nästa träff · Skift+Tab: föregående · Enter: öppna detaljer · Alt+Enter: öppna mål · Esc: återställ",
     "searchAria": "Sök layoutobjekt",
     "matchCount_one": "{{count}} träff",
     "matchCount_other": "{{count}} träffar",
@@ -39,7 +41,13 @@
     "labelType": "Typ",
     "labelTypeTitle": "Visa objekttypen som etikett",
     "stats_one": "{{count}} objekt · Zoom {{zoom}}%",
-    "stats_other": "{{count}} objekt · Zoom {{zoom}}%"
+    "stats_other": "{{count}} objekt · Zoom {{zoom}}%",
+    "tooltip": {
+      "target": "Mål",
+      "logic": "Logik",
+      "slots": "Slots",
+      "moreTargets": "(+{{n}} till)"
+    }
   },
   "relationshipGraphCanvas": {
     "searchPlaceholder": "Sök tabellförekomst…",
@@ -109,14 +117,26 @@
     "groupsLabel": "Grupper",
     "detailsLabel": "Detaljer",
     "clearTitle": "Rensa alla typfilter",
-    "clearLabel": "Rensa filter"
+    "clearLabel": "Rensa filter",
+    "calcGroupLabel": "Calculations",
+    "calcCategories": {
+      "cf": "Villkorlig formatering",
+      "hide": "Döljvillkor",
+      "trigger": "Utlösare",
+      "tooltip": "Verktygstips",
+      "display": "Layoutberäkningar"
+    },
+    "calcInventoryOpen": "Öppna inventering"
   },
   "referencesFilter": {
     "searchPlaceholder": "Sök referenser…",
     "searchTitle": "Esc: rensa fält",
     "searchAria": "Sök referenser",
     "clearTypesTitle": "Rensa alla typfilter",
-    "clearTypesLabel": "Rensa filter"
+    "clearTypesLabel": "Rensa filter",
+    "rolesAria": "Filtrera på länkroll",
+    "clearRolesLabel": "Återställ roller",
+    "clearRolesTitle": "Rensa alla rollfilter"
   },
   "hierarchyTree": {
     "ariaLabel": "Objekthierarki",
@@ -132,7 +152,71 @@
     "noFilterMatches": "Inga träffar för aktuella filter",
     "crossFileBadge": "Mellan filer",
     "itemAriaLabel": "Navigera till {{type}}: {{name}}",
-    "notNavigable": "Målet finns inte i den importerade datamängden"
+    "notNavigable": "Målet finns inte i den importerade datamängden",
+    "showInLayout": "Visa i layouten (Alt+klick)",
+    "showInFile": "Visa i filen (Alt+klick)",
+    "subroles": {
+      "hide": {
+        "short": "Hide",
+        "long": "Döljvillkor"
+      },
+      "conditional_format": {
+        "short": "CF",
+        "long": "Villkorlig formatering"
+      },
+      "tooltip": {
+        "short": "Tooltip",
+        "long": "Verktygstips (tooltip)"
+      },
+      "button_action": {
+        "short": "Action",
+        "long": "Knappåtgärd"
+      },
+      "portal_filter": {
+        "short": "Portal",
+        "long": "Portalfilter"
+      },
+      "web_viewer_url": {
+        "short": "WebViewer",
+        "long": "Webbvisar-URL"
+      },
+      "placeholder": {
+        "short": "Placeholder",
+        "long": "Platshållartext"
+      },
+      "popover_title": {
+        "short": "Popover",
+        "long": "Popover-titel"
+      },
+      "script_trigger_parameter": {
+        "short": "Trigger",
+        "long": "Scriptutlösarparameter"
+      },
+      "transaction_parameter_field": {
+        "short": "TX Param",
+        "long": "Transaktionsparameterfält (kandidat)"
+      },
+      "auto_enter": {
+        "short": "Auto-Enter",
+        "long": "Automatisk inmatningsberäkning"
+      },
+      "validation": {
+        "short": "Validation",
+        "long": "Kontroll via värdelista"
+      },
+      "on_server": {
+        "short": "PSoS",
+        "long": "Utför på server (PSoS)"
+      },
+      "mbs_runscript": {
+        "short": "MBS",
+        "long": "via MBS FM.RunScript"
+      },
+      "menu_install": {
+        "short": "Install",
+        "long": "Menyinstallationsvillkor"
+      }
+    }
   },
   "searchOptions": {
     "regionAria": "Sorterings- och grupperingsalternativ",
@@ -366,6 +450,13 @@
     "dismissTitle": "Ta bort referensmarkering (Esc)",
     "sourceLabel": "Källa:"
   },
+  "varSelect": {
+    "hint": "Klicka: markera alla förekomster",
+    "clearHint": "Klicka: ta bort markeringen",
+    "pillLabel": "Variabel:",
+    "dismissAria": "Ta bort variabelmarkeringen",
+    "dismissTitle": "Ta bort variabelmarkeringen (Esc)"
+  },
   "tableDetails": "Tabelldetaljer",
   "scriptDetails": "Skriptdetaljer",
   "fieldDetails": "Fältdetaljer",
@@ -384,6 +475,22 @@
   "metadata": "Metadata",
   "rowCount_one": "{{count}} post",
   "rowCount_other": "{{count}} poster",
+  "privilegeSet": {
+    "ariaLabel": "Detaljer för behörighetsuppsättning",
+    "heading": "Behörighetsuppsättning",
+    "recordAccess": "Anpassade postbehörigheter",
+    "fieldAccess": "Anpassade fältbehörigheter",
+    "objectAccess": "Anpassade behörigheter för layouter / värdelistor / script",
+    "colTable": "Tabell",
+    "colOperation": "Åtgärd",
+    "colAccess": "Åtkomst",
+    "colFormula": "Formel / Kontext",
+    "colField": "Fält",
+    "colClass": "Klass",
+    "colObject": "Objekt",
+    "colRecordsAccess": "Poster",
+    "evalContext": "Utvärderingskontext"
+  },
   "valueList": {
     "ariaLabel": "Detaljer för värdelista",
     "metaName": "Namn",
@@ -558,5 +665,148 @@
   "osBinding": {
     "label": "OS-bindning:",
     "tooltip": "Operativsystem som detta skript är bundet till (från platform-os-binding-testkörningen - neutral inventering, ingen defekt)."
+  },
+  "textContent": {
+    "heading": "Textinnehåll"
+  },
+  "calculationDetail": {
+    "ariaLabel": "Beräkningsdetaljer",
+    "loading": "Läser in beräkning…",
+    "owner": "Ägare",
+    "slot": "Slot",
+    "kind": "Typ",
+    "kindStatic": "Statiskt värde",
+    "kindFormula": "Formel",
+    "contextTo": "Utvärderingskontext",
+    "formula": "Formel",
+    "layoutFormula": "Layoutberäkning",
+    "resultType": "Resultattyp",
+    "resultTypeTooltip": "Resultattyp: {{type}}",
+    "resultTypes": {
+      "Text": "Text",
+      "Number": "Numeriskt",
+      "Date": "Datum",
+      "Time": "Tid",
+      "Timestamp": "Tidsstämpel"
+    },
+    "targets": "Upplösta mål",
+    "slotsHeading": "Beräkningar",
+    "ddrlessHint": "Endast klartext — den här instansen saknar DDR-chunkdata; tokens, verktygstips och korsnavigering är inte tillgängliga.",
+    "recoveredHint": "Tokens rekonstruerade från den återställda formeln — den här instansen saknar DDR-chunkdata; inbyggda funktioner förblir oupplösta.",
+    "roles": {
+      "field_calculation": "Fältberäkning",
+      "auto_enter": "Beräkning för automatisk inmatning",
+      "validation": "Valideringsberäkning",
+      "validation_message": "Beräkning för valideringsmeddelande",
+      "container_path": "Containersökväg",
+      "custom_function": "Anpassad funktion",
+      "step_parameter": "Beräkning för scriptsteg",
+      "step_xslt": "XSLT-formatmall",
+      "record_access": "Beräkning för poståtkomst",
+      "hide": "Döljvillkor",
+      "tooltip": "Verktygstips",
+      "placeholder": "Platshållare",
+      "conditional_format": "Villkorlig formatering",
+      "portal_filter": "Portalfilter",
+      "web_viewer_url": "Webbvisar-URL",
+      "button_label": "Knappetikett",
+      "button_action": "Knappåtgärd",
+      "panel_title": "Panelrubrik",
+      "popover_title": "Popover-rubrik",
+      "display_calculation": "Visningsberäkning",
+      "merge_text": "Upplösta merge-ankare",
+      "chart_series": "Diagramserie",
+      "script_trigger_parameter": "Scripttriggerparameter",
+      "menu_install": "Installationsvillkor för meny",
+      "menu_title": "Menyrubrik",
+      "menu_item_install": "Installationsvillkor för menyalternativ",
+      "menu_item_name": "Namn på menyalternativ",
+      "menu_item_parameter": "Parameter för menyalternativ"
+    }
+  },
+  "scriptTriggerDetail": {
+    "heading": "Skriptutlösare",
+    "openTrigger": "Öppna skriptutlösaren",
+    "eventLabel": "Händelse",
+    "modesLabel": "Aktiv i",
+    "scriptLabel": "Skript",
+    "ownerLabel": "Förankrad vid",
+    "paramLabel": "Skriptparameter",
+    "paramFieldLabel": "Parameterfält",
+    "paramFieldCandidates": "Kandidater:",
+    "paramFieldOrphan": "Inget fält med samma namn i den här filen (föräldralöst namn)",
+    "openParamCalc": "Öppna beräkningsdetaljer"
+  },
+  "layoutObjectDetail": {
+    "showInLayout": "Visa i layout: {{name}}",
+    "showInLayoutTitle": "Öppna layouten och markera detta objekt",
+    "targetBarAria": "Mål",
+    "colBrowse": "B",
+    "colFind": "S",
+    "colPreview": "G",
+    "modeBrowse": "Bläddringsläge",
+    "modeFind": "Sökläge",
+    "modePreview": "Granska",
+    "colEvent": "Utlösarroll",
+    "colScript": "Skript (parameter)",
+    "paramLabel": "Param.:",
+    "cfColActive": "aktiv",
+    "cfColCalc": "Beräkning",
+    "cfActiveTitle": "Regel aktiverad i dialogrutan",
+    "cfColFormat": "Format",
+    "cfIconColorTitle": "Symbolfärg",
+    "cfColPreview": "Förhandsvisning",
+    "cfFormat": {
+      "bold": "fet",
+      "italic": "kursiv",
+      "underline": "understruken",
+      "wordUnderline": "understrykning per ord",
+      "doubleUnderline": "dubbel understrykning",
+      "strikethrough": "genomstruken",
+      "textColor": "textfärg",
+      "fillColor": "fyllningsfärg",
+      "iconColor": "symbolfärg",
+      "font": "teckensnitt",
+      "fontSize": "teckenstorlek",
+      "highlight": "markering",
+      "superscript": "upphöjd",
+      "subscript": "nedsänkt",
+      "smallCaps": "kapitäler",
+      "condensed": "komprimerad",
+      "expanded": "utökad",
+      "uppercase": "VERSALER",
+      "lowercase": "gemener",
+      "capitalize": "inledande versaler"
+    },
+    "cfOperatorFallback": "värde (typ {{type}})",
+    "cfOperator": {
+      "between": "mellan",
+      "notBetween": "inte mellan",
+      "equal": "lika med",
+      "notEqual": "inte lika med",
+      "greater": "större än",
+      "less": "mindre än",
+      "greaterEqual": "större än eller lika med",
+      "lessEqual": "mindre än eller lika med",
+      "contains": "innehåller",
+      "notContains": "innehåller inte",
+      "beginsWith": "börjar med",
+      "endsWith": "slutar med",
+      "empty": "tom"
+    },
+    "segmentsHeading": "Segment",
+    "childrenHeading": "Ingående objekt",
+    "colLabel": "Etikett",
+    "colType": "Typ",
+    "colObject": "Objekt",
+    "colTrigger": "Utlösare",
+    "childDetailTitle": "Öppna objektdetaljer",
+    "propsHeading": "Egenskaper",
+    "propType": "Typ",
+    "propName": "Namn",
+    "propPart": "Layoutdel",
+    "propPosition": "Position/storlek",
+    "propNesting": "Kapsling",
+    "nestingLevel": "Nivå {{level}}"
   }
 }

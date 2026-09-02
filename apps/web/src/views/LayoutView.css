@@ -264,6 +264,32 @@
   border-style: dashed;
 }
 
+/* Calculation-Chips: neutraler Akzent-Stil statt Typ-Palette — die Palette
+   kodiert SVG-Objekt-Typen, die Calc-Kategorien unterscheiden sich per Label. */
+.layout-calc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.layout-calc-pill.active {
+  background: var(--color-accent-soft-bg);
+  border-color: var(--color-accent);
+  color: var(--color-accent-soft-fg);
+}
+
+.layout-calc-pill-jump {
+  padding: 0 0.15rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.layout-calc-pill-jump:hover {
+  color: var(--color-accent-hover);
+}
+
 /* ============= Canvas ============= */
 
 .layout-canvas {
@@ -322,34 +348,17 @@
   color: var(--color-accent);
 }
 
-.layout-tooltip-link {
-  color: var(--color-accent);
+/* Kopfzeile „Typ · Name" des kompakten Indikator-Tooltips. */
+.layout-tooltip-head {
+  margin-bottom: 0.15rem;
 }
 
-.layout-tooltip-block {
-  margin: 0.3rem 0 0.1rem;
+.layout-tooltip-name {
+  font-weight: 600;
 }
 
-.layout-tooltip-pre {
-  margin: 0.2rem 0 0;
-  padding: 0.3rem 0.45rem;
-  background: var(--color-code-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 3px;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.72rem;
-  white-space: pre-wrap;
-  color: var(--color-code-fg);
-  line-height: 1.35;
-  max-height: 5.5em;
-  overflow: hidden;
-}
-
-.layout-tooltip-hint {
-  margin-top: 0.15rem;
-  font-size: 0.7rem;
+.layout-tooltip-muted {
   color: var(--color-text-muted);
-  font-style: italic;
 }
 
 /* ============= Embedded Layout im DetailView ============= */
@@ -397,4 +406,202 @@
   color: var(--color-text-muted);
   font-size: 0.9rem;
   text-align: center;
+}
+
+/* ============= LayoutObject-Detail: Ziel-Leiste, Trigger- & CF-Tabelle ============= */
+
+.fm-lo-targetbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.fm-lo-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-size: 0.82rem;
+  text-decoration: none;
+  max-width: 100%;
+}
+
+.fm-lo-chip:hover {
+  background: var(--color-accent-soft-bg);
+  border-color: var(--color-accent);
+}
+
+/* Chip des gehoisteten Ziels (= Modifier-Klick-Ziel) — steht vorn. */
+.fm-lo-chip--primary {
+  border-color: var(--color-accent);
+}
+
+.fm-lo-chip--back {
+  color: var(--color-accent);
+}
+
+.fm-lo-chip-role {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.fm-lo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.fm-lo-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--color-border-strong);
+  white-space: nowrap;
+}
+
+.fm-lo-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.fm-lo-col-mode {
+  width: 2rem;
+  text-align: center !important;
+}
+
+/* #-Spalte der Kind-Objekt-Sektion (laufende Nummer, ohne Link). */
+.fm-lo-col-num {
+  width: 2rem;
+  text-align: center !important;
+  white-space: nowrap;
+}
+
+/* Typ-Spalte der Kind-Objekt-Sektion (lokalisierter Objekt-Typ, Chip-Optik). */
+.fm-lo-col-type {
+  white-space: nowrap;
+}
+
+/* Detail-Link hinter tokenisierten Formel-Labels der Kind-Tabelle —
+   verschachtelte Anchors sind unmöglich, daher nachgestelltes Icon. */
+.fm-lo-child-detail {
+  margin-left: 0.15rem;
+  text-decoration: none;
+}
+
+.fm-lo-mode-check {
+  color: var(--color-success-fg, #2e7d32);
+  font-weight: 600;
+}
+
+.fm-lo-trigger-event {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.fm-lo-trigger-param {
+  margin-top: 0.2rem;
+  padding-left: 1.1rem;
+}
+
+.fm-lo-param-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+/* Inline tokenisierte Formel (Trigger-Parameter, CF-Zeile). */
+.fm-lo-inline-calc {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 0.1rem 0.3rem;
+  display: inline-block;
+  max-width: 100%;
+}
+
+/* Operator-Label wertbasierter CF-Regeln (vor der äquivalenten Formel). */
+.fm-lo-cf-op {
+  display: inline-block;
+  margin-right: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 3px;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* Im Dialog deaktivierte CF-Regel. */
+.fm-lo-cf-disabled td {
+  opacity: 0.55;
+}
+
+/* Format-Label-Spalte der CF-Tabelle (lokalisierte Dimension-Labels). */
+.fm-lo-cf-labels-col {
+  width: 12rem;
+}
+
+.fm-lo-cf-labels {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* Format-Vorschau-Spalte der CF-Tabelle (C3-Parser-Daten). */
+.fm-lo-cf-format-col {
+  width: 7rem;
+}
+
+.fm-lo-cf-format-cell {
+  white-space: nowrap;
+}
+
+.fm-lo-cf-format {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* "AaBb"-Sample: neutraler heller Grund, damit die FileMaker-Farbwerte in
+   beiden Themes wie im Layoutmodus lesen; Inline-Styles der Regel (format.css)
+   überschreiben Farben/Schrift. */
+.fm-lo-cf-sample {
+  display: inline-block;
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 3px;
+  background: #fff;
+  color: #000;
+  line-height: 1.2;
+}
+
+/* Symbolfarbe als runder Swatch (kein natives CSS-Pendant). */
+.fm-lo-cf-swatch {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fm-lo-cf-format-none {
+  color: var(--color-text-muted);
 }

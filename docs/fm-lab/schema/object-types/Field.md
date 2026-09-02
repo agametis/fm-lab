@@ -93,6 +93,9 @@ Fields are the most connected object type of the catalog: their own calculations
 | `summarizes_field` | Field | usage | Summary field aggregates this field (subrole = operation) |
 | `uses_valuelist` | [ValueList](ValueList.md) | usage | Validation by value list (subrole `validation`) |
 | `validates_by_calc` | Field / [CustomFunction](CustomFunction.md) | usage | Validation calculation references the target |
+| `has_calculation` | [Calculation](Calculation.md) | containment | Every calculation slot of the field (field calc, auto-enter, validation, validation message, …) as an addressable instance (subrole = `Calc_Role`, indexed for repeating slots) — never counts as usage |
+
+Since schema 1.22.0 the calculation-carried usage edges are **slot-precise**: references from the auto-enter calculation carry `Link_Subrole = auto_enter`, validate-by-calculation references carry `validation`, and a calculated error message carries `validation_message` — so a where-used can tell the three apart.
 
 ### Incoming links (Field as target)
 

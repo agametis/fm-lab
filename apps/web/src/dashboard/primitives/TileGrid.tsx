@@ -424,7 +424,7 @@ export function TileGrid({ node, dataset, datasets, navigate }: PrimitiveProps) 
    */
   const featuredCount = (row: Record<string, unknown>): number | null => {
     if (!resultChips || !summary.results) return null;
-    const roots = String(row.badge_roots ?? '').split(',').map(s => s.trim()).filter(Boolean);
+    const roots = String(row._badge_roots ?? '').split(',').map(s => s.trim()).filter(Boolean);
     if (!roots.length) return null;
     const total = roots.reduce((sum, r) => sum + (aggregateFolder(summary.results, r)?.total ?? 0), 0);
     return total > 0 ? total : null;

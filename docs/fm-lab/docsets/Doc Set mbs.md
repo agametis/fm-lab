@@ -32,15 +32,18 @@ An MBS function's component is *normally* the name prefix before the first dot: 
 | `AddToErrorLog` | — (no dot) | Plugin |
 | `CF` | — (no dot) | FM |
 
-These mappings live in the companion table **`reference/mbs_component_exceptions.csv`** (columns `Funktionsname,Component`; ~1,020 rows). It is generated automatically after each install: a post-install script parses every documentation page and records a mapping wherever the page's declared component differs from the name prefix.
+MBS also lists 121 functions under *several* components — `FM.ExecuteFileSQL` appears under both `FM` and `FMSQL`. The first one named is the **primary component**; it decides counting, filtering and catalog assignment. Additional ones are secondary memberships: they are listed on the component pages, but the counters (component badge, overview counts) include primary members only.
+
+These mappings live in the companion table **`reference/mbs_component_exceptions.csv`** (columns `Funktionsname,Component,Components`; ~1,110 rows). It is generated automatically after each install: a post-install script parses every documentation page and records a row wherever the page's declared component differs from the name prefix, or where a function belongs to more than one component. `Component` holds the primary one, `Components` the full list.
 
 The CSV is consumed wherever functions are grouped into components:
 
 - the **ingestion pipeline**, when building `PluginComponent` catalog entries and enriching `PluginFunction` objects during XML import,
 - the **REST API**, for component/category enrichment on plugin-function aggregations,
+- the **doc-set browser**, to fill the component pages under `/docs/mbs/<Component>` — the doc-set index itself stores only names and file paths, no component. Secondary members are listed there in their own section below the primary ones,
 - the CLI report `sql/list_all_mbs_functions_by_component.sql`.
 
-If the CSV is absent (MBS docs not installed), the pipeline falls back to the plain prefix heuristic — imports still work, only the exception mappings are missed. Installing the MBS docs therefore improves catalog quality even if you never read a page.
+If the CSV is absent (MBS docs not installed), pipeline and doc-set browser fall back to the plain prefix heuristic — imports still work, only the exception mappings are missed. Installing the MBS docs therefore improves catalog quality even if you never read a page.
 
 The installer also derives the **plug-in platform map** from the mirror: `reference/plugin_spec.duckdb` records for every MBS function on which operating systems and under which runtimes it is available (verbatim vendor flags plus a curated interpretation layer — see [plugin-spec](../schema/plugin-spec.md)). This map powers the plug-in members of the [platform tests](../Wiki/Analysis%20Tests.md#platform-tests) and the platform badge on PluginFunction detail views; without the mirror those members simply report *skipped*.
 

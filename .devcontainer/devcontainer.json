@@ -75,11 +75,16 @@
   // so the shared start-servers.sh stays generic.
   "postStartCommand": "setsid bash tools/start-servers.sh",
 
-  // Forward both servers to the host; once Vite listens on 5173 the auto-forward opens
-  // the browser on the entry page (working UI — the API on 3003 is up in the same box).
+  // Forward both servers to the host. 5173 uses "notify" (clickable toast), NOT
+  // "openBrowser": openBrowser runs `open http://localhost:5173` on the HOST every time
+  // the forward is (re-)established. If the Vite dev server dies while a frontend tab is
+  // open (full stop, crash, restart), the forward flaps and the browser gets a stream of
+  // new tabs plus focus stealing — closing the windows doesn't help, the opener is VS
+  // Code. The HMR client's reload polling amplifies this (any HTTP answer on the
+  // forwarded port counts as "server is back").
   "forwardPorts": [3003, 5173],
   "portsAttributes": {
     "3003": { "label": "REST-API", "onAutoForward": "silent" },
-    "5173": { "label": "Web-Frontend", "onAutoForward": "openBrowser" }
+    "5173": { "label": "Web-Frontend", "onAutoForward": "notify" }
   }
 }

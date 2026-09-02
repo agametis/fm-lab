@@ -37,5 +37,6 @@ The script steps, grouped per script: one `<Script>` wrapper with a `<ScriptRefe
 - `Step/@name` is written in the UI language of the exporting client — every robust consumer keys on `Step/@id`.
 - The step-level `DDRREF` hash joins to the human-readable step text in [XML DDR_INFO](XML%20DDR_INFO.md).
 - The catalog keeps the raw fragment (`Step_XML`) but resolves all references into [ObjectLinks](../../schema/object-catalog/ObjectLinks.md) at import.
+- A step can carry **several** `<Calculation>` elements (window name vs. geometry, dialog message vs. input fields, …), distinguished by a positional attribute; inside a Data-File parameter container the numbering restarts. Each positional calc becomes one [StepCalculations](../../schema/catalog-tables/StepCalculations.md) row and one `step_parameter` instance in [CalculationsCatalog](../../schema/catalog-tables/CalculationsCatalog.md).
 
-**Extracted into:** [StepsForScripts](../../schema/catalog-tables/StepsForScripts.md) · [DDR_ScriptSteps](../../schema/catalog-tables/DDR_ScriptSteps.md) — column details in the [schema reference](../../schema/Schema.md).
+**Extracted into:** [StepsForScripts](../../schema/catalog-tables/StepsForScripts.md) · [StepCalculations](../../schema/catalog-tables/StepCalculations.md) · [DDR_ScriptSteps](../../schema/catalog-tables/DDR_ScriptSteps.md) — column details in the [schema reference](../../schema/Schema.md).

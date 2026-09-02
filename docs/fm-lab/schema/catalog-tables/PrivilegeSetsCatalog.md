@@ -31,7 +31,7 @@ The privilege sets of each file with all class-level switches: record, layout, v
 | `Scripts_Edit` | `BOOLEAN` |
 | `Scripts_Delete` | `BOOLEAN` |
 | `Scripts_View` | `VARCHAR` |
-| `Other_Value` | `INTEGER` |
+| `Other_Value` | `BIGINT` |
 | `Allow_Print` | `BOOLEAN` |
 | `Allow_Export` | `BOOLEAN` |
 | `Manage_Database` | `BOOLEAN` |

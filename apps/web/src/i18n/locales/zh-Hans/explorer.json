@@ -117,5 +117,9 @@
     "dirBoth": "双向",
     "empty": "图中没有此类型的对象。",
     "focus": "焦点对象"
+  },
+  "edge": {
+    "represents": "代表",
+    "buttonAction": "按钮动作"
   }
 }

@@ -35,8 +35,8 @@
                   "format": "number"
                 },
                 {
-                  "label": "Functions",
-                  "field": "functions",
+                  "label": "Entries",
+                  "field": "entries",
                   "format": "number"
                 }
               ]
@@ -61,10 +61,10 @@
             "props": {
               "rowTemplate": {
                 "primary": "{{name}}",
-                "secondary": "{{function_count}} functions",
+                "secondary": "{{entry_count}} entries",
                 "onClick": {
-                  "action": "{{action}}",
-                  "argsString": "{{action_args}}"
+                  "action": "{{_action}}",
+                  "argsString": "{{_action_args}}"
                 }
               },
               "empty": {

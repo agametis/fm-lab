@@ -20,5 +20,6 @@ Formula chunks for dependency analysis, only populated for files exported with D
 
 - `Calc_Hash` identifies a calculation; `FieldsForTables.DDR_Hash`, `CustomFunctionsCatalog.DDR_Hash` and other `*_Hash` columns join against it.
 - `Chunk_Index` preserves the token order, `Chunk_Type` the token class, `Chunk_Content` the literal content.
+- Since schema 1.22.0 every DDR anchor has a catalog object: `Calc_UUID` (the `_<OwnerUUID>_<Suffix>` anchor) is `CalculationsCatalog.DDR_Calc_UUID` — analyses should address calculation *instances* through [CalculationsCatalog](CalculationsCatalog.md) and use this table only for the chunk-level token detail.
 
-**See also:** [FieldsForTables](FieldsForTables.md) · [CustomFunctionsCatalog](CustomFunctionsCatalog.md) · [VariableUsages](VariableUsages.md)
+**See also:** [CalculationsCatalog](CalculationsCatalog.md) · [FieldsForTables](FieldsForTables.md) · [CustomFunctionsCatalog](CustomFunctionsCatalog.md) · [VariableUsages](VariableUsages.md)

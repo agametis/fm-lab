@@ -220,6 +220,7 @@ The project has grown along a clear arc — from a solid foundation toward an in
 - **v0.9.2** · _Multi-user & multi-session support_ — concurrent users, each on their own solution.
 - **v0.9.3 – v0.9.6** · _Robustness + documentation_ — hardening the setup and the processing, providing detailed docs for schema and backend.
 - **v0.9.7 – v0.9.8** · _Tests_ — providing structured tools for users and agents to apply static code analysis at different scopes. With a growing collection of rules and dashboards.
+- **v0.9.9** · _Closing gaps_ — calculations, script triggers, conditional-formatting rules, merge fields, and layout variables join the object catalog.
 
 - More details in [`CHANGELOG.md`](CHANGELOG.md) — release history
 

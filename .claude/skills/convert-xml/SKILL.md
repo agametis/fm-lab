@@ -113,6 +113,16 @@ When invoked with a filename, the skill performs these steps:
 6. **Cleanup** - Remove all temporary files automatically
 7. **Report** - Provide simple success or error message
 
+**Hard Phase-2 gate (converter 2.12.0+):** if reference resolution (Phase 2)
+fails — SQL error, out-of-memory, or 0 references resolved while objects were
+loaded — the single-file run aborts BEFORE the dependent phases, exactly like
+batch mode: exit 1 with an `IMPORT ABORTED — build incomplete` banner (exit 8
+for the memory case), `done ok:false`. No REST sync runs (the served read
+copies keep the last consistent state) and no manifest row is written, so the
+next `--batch --changed-only` re-parses the file. Note that Phase 1 has
+already updated the master DB at that point; if the failure repeats
+deterministically, run `convert-xml --batch --force-rebuild`.
+
 ### Batch Mode
 
 When invoked with `--batch`, the skill performs these steps:

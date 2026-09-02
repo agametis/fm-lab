@@ -3,11 +3,12 @@
 -- the calc_slot filter is deliberately NOT applied here — the per-slot counts
 -- feed the chip badges, which must always show the true per-slot totals.
 WITH slots AS (
-    SELECT File_Name, Layout_ID, Object_Type, 'hide' AS calc_slot, Hide_Calculation_Text AS calc_text FROM LayoutObjects
-    UNION ALL
-    SELECT File_Name, Layout_ID, Object_Type, 'tooltip', Tooltip_Calculation_Text FROM LayoutObjects
-    UNION ALL
-    SELECT File_Name, Layout_ID, Object_Type, 'label', Label_Calculation_Text FROM LayoutObjects
+    SELECT lo.File_Name, lo.Layout_ID, lo.Object_Type,
+           CASE c.Calc_Role WHEN 'button_label' THEN 'label' ELSE c.Calc_Role END AS calc_slot,
+           COALESCE(c.Formula_Text, c.Display_Text) AS calc_text
+    FROM CalculationsCatalog c
+    JOIN LayoutObjects lo ON lo.Object_UUID = c.Owner_UUID AND lo.File_Name = c.File_Name
+    WHERE c.Calc_Role IN ('hide', 'tooltip', 'button_label')
 )
 SELECT COUNT(*) AS finding_count,
        COUNT(*) FILTER (WHERE s.calc_slot = 'hide') AS hide_count,

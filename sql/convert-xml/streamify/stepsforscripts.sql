@@ -47,8 +47,8 @@ script_steps AS (
 steps_extracted AS (
     SELECT
         Script_ID, Script_Name, Script_UUID, step_xml,
-        xml_extract_text(step_xml, '/Step/@index')[1]::INTEGER as Step_Index,
-        xml_extract_text(step_xml, '/Step/@id')[1]::INTEGER as Step_ID,
+        xml_extract_text(step_xml, '/Step/@index')[1]::BIGINT as Step_Index,
+        xml_extract_text(step_xml, '/Step/@id')[1]::BIGINT as Step_ID,
         xml_extract_text(step_xml, '/Step/UUID')[1] as Step_UUID
     FROM script_steps
 ),
@@ -177,7 +177,7 @@ src AS (
         Script_Name,
         step_xml,
         xml_extract_text(step_xml, '/Step/UUID')[1] AS Object_UUID,
-        xml_extract_text(step_xml, '/Step/@index')[1]::INTEGER AS Step_Index,
+        xml_extract_text(step_xml, '/Step/@index')[1]::BIGINT AS Step_Index,
         ROW_NUMBER() OVER () AS xml_ord
     FROM det_steps
 ),

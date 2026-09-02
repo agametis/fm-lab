@@ -30,7 +30,7 @@ The tables below list the property surface of the `<Layout>` element (header lev
 | Property (XML) | In catalog | Notes |
 |---|---|---|
 | `<TableOccurrenceReference>` | `L_TO_Name`, `L_TO_UUID` | Context occurrence → `context_table` link |
-| `<LayoutThemeReference>` `@id` / `@name` / `@UUID` / `@Base` | `L_Theme_ID` / `L_Theme_Name` / `L_Theme_UUID` / `L_Theme_Base` | → `uses_theme` link |
+| `<LayoutThemeReference>` `@id` / `@name` / `@UUID` / `@Base` | `L_Theme_ID` / `L_Theme_Name` / `L_Theme_UUID` / `L_Theme_Base` | An *empty* element means the Classic theme — resolved into `L_Theme_Resolved_Name`/`_UUID`, which also feed the `uses_theme` link (see [Layouts](../catalog-tables/Layouts.md)) |
 | `<LayoutThemeReference>/@Display` | — | Display name of the theme — **not extracted** here (available via [ThemeCatalog](../catalog-tables/ThemeCatalog.md)`.Theme_Display`) |
 | `<MenuSet>/<CustomMenuSetReference>` | `L_MenuSet_ID` / `_Name` / `_UUID` | → `uses_menuset` link |
 | `<ScriptTriggers>/<ScriptTrigger>` | — (own objects) | Imported as [ScriptTrigger](ScriptTrigger.md) rows; tied back via `trigger_owner` |
@@ -61,7 +61,7 @@ The layout is the hub of the tightest hierarchy in the catalog:
 
 - **Parts** — every [LayoutPart](LayoutPart.md) links to its layout via `parent_layout`; the `Link_Subrole` carries the part type (`Body`, `Header`, `Leading Sub-summary`, …), so the band structure is readable from the links alone.
 - **Objects** — every [LayoutObject](LayoutObject.md) also links to the layout via `parent_layout` (subrole `NULL`). Nesting *among* objects — tab panels, slide panels, groups, popovers, portals — is a separate `parent_object` link chain between layout objects; nesting depth 5 occurs in practice.
-- **Triggers** — layout-level [script triggers](ScriptTrigger.md) hang on the layout via `trigger_owner` (subrole = event type, e.g. `OnRecordLoad`).
+- **Triggers** — layout-level [script triggers](ScriptTrigger.md) hang on the layout via `trigger_owner` (subrole = event type, e.g. `OnRecordLoad`); the layout additionally carries the counting `triggers_script · <event>` mirror to each trigger's script.
 - **Folder tree** — layouts (and layout folders, which nest) link to their [Folder](Folder.md) via `parent_folder`.
 
 In the web frontend, parts and objects are hoisted into the layout detail view: the wireframe renders the parts as bands and the objects at their real coordinates, so [LayoutPart](LayoutPart.md) and [LayoutObject](LayoutObject.md) have no standalone detail page of their own ambition — the layout view is their home.
@@ -75,9 +75,13 @@ The layout header contributes a small, precise set of outgoing edges; the intere
 | Link_Role | Target | Kind | Description |
 |---|---|---|---|
 | `context_table` | [TableOccurrence](TableOccurrence.md) | usage | The layout's context table occurrence |
-| `uses_theme` | [Theme](Theme.md) | usage | The layout uses this theme |
+| `uses_theme` | [Theme](Theme.md) | usage | The layout uses this theme (built from the resolved theme UUID, so Classic layouts link too) |
 | `uses_menuset` | [CustomMenuSet](CustomMenuSet.md) | usage | Layout-bound menu set |
 | `displays_field` | [Field](Field.md) | usage | Merge field (`<<Field>>` in text) displayed at layout level |
+| `triggers_script` | [Script](Script.md) | usage | Counting mirror of every layout-level trigger (subrole = event) — the where-used truth for trigger-fired scripts |
+| `reads_field` / `reads_variable` | [Field](Field.md) / [Variable](Variable.md) | usage | Reference inside a layout-level script-trigger parameter calc (subrole `ScriptTrigger_<id>`) |
+| `calls_function` / `calls_customfunction` / `calls_pluginfunction` | [BuiltinFunction](BuiltinFunction.md) / [CustomFunction](CustomFunction.md) / [PluginFunction](PluginFunction.md) | usage | Function call inside a layout-level trigger parameter calc (same subrole) |
+| `has_calculation` | [Calculation](Calculation.md) | containment | Trigger-parameter calc instances of the layout as addressable objects — never counts as usage |
 | `parent_folder` | [Folder](Folder.md) | containment | The layout sits in this layout folder |
 
 ### Incoming links (Layout as target)
@@ -98,7 +102,7 @@ The layout header contributes a small, precise set of outgoing edges; the intere
 |---|---|
 | `Default_View` | `Form`, `List` (decoded from the bitmask; the table-view default is not decoded — needs calibration). Corpus shows `Form` only *(corpus)* |
 | `Folder_Type` | `True` (folder), `Marker` (folder-end marker), `NULL` (regular layout) |
-| trigger events (via `trigger_owner` subrole) | `OnRecordLoad`, `OnRecordCommit`, `OnRecordRevert`, `OnLayoutEnter`, `OnLayoutExit`, `OnLayoutKeystroke`, `OnLayoutSizeChange`, `OnModeEnter`, `OnModeExit`, `OnViewChange`, `OnGestureTap`, `OnExternalCommandReceived` *(corpus — layout-level events observed in the ooe-fm corpus)* |
+| trigger events (via `trigger_owner` subrole) | the 12 layout-level events (slot IDs 101–113), authoritatively enumerated in the [script_triggers](../fm-spec-tables/script_triggers.md) reference table — see [ScriptTrigger](ScriptTrigger.md) |
 
 ## Schema & tooling
 

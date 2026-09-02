@@ -40,6 +40,7 @@ Full role definitions: [Link Roles and Subroles](../object-catalog/Link%20Roles%
 | `parent_menu` | [CustomMenu](CustomMenu.md) | containment | The menu this item belongs to (owner backlink) |
 | `opens_menu` | [CustomMenu](CustomMenu.md) | usage | Submenu item opens this menu |
 | `calls_function` | [BuiltinFunction](BuiltinFunction.md) | usage | The item's install condition or calculated title calls a built-in function (subrole = calc slot, e.g. `Install`) |
+| `has_calculation` | [Calculation](Calculation.md) | containment | Each calculation slot of the item (install condition, calculated name, script parameter) as an addressable instance (subroles `menu_item_install` / `menu_item_name` / `menu_item_parameter`) — never counts as usage |
 
 ### Incoming links (CustomMenuItem as target)
 

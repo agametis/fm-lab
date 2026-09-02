@@ -16,17 +16,22 @@ subfolders by the view they serve. Currently, for example:
 
 - `list_with_folders.sql` — a folder-aware object listing used across views.
 - `layout/display_layout_objects_data.sql` — one JSON row per layout object with
-  absolute coordinates, part assignment, nesting and colours; the web frontend
-  draws the interactive wireframe from this.
+  absolute coordinates, part assignment, nesting, colours and per-object
+  conditional-formatting/trigger indicators (read from the owner-anchored
+  catalog tables, not from XML flags); the web frontend draws the interactive
+  wireframe from this.
 - `layout/display_layout_parts_data.sql` — the layout's parts as bands.
-- `layout/display_layout_triggers.sql` — script triggers attached to the layout.
+- `layout/display_layout_triggers.sql` — script triggers attached to the layout,
+  each with the trigger's catalog UUID for the jump to its detail view.
 - `layout/display_layout_meta.sql` — layout-level metadata (view options, …).
 
 ## How resolution works
 
 When `/api/query` is asked for a template name it isn't found in
 [sql-custom/](Custom%20Query%20Templates.md), the service falls back to a recursive
-lookup here. So a UI hook simply calls:
+lookup here; a third and last stage searches the `queries/` folder of the
+dashboard bundles, so a dashboard can ship its own drilldown templates
+self-contained (see [Dashboard Datasets](Dashboard%20Datasets.md)). So a UI hook simply calls:
 
 ```
 /api/query?template=display_layout_objects_data&params={"layout_uuid":"…"}

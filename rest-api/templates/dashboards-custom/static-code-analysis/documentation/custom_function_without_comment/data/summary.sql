@@ -2,9 +2,10 @@
 WITH cf AS (
     SELECT c.File_Name,
         EXISTS (SELECT 1 FROM DDR_Calculations d
-                WHERE d.Calc_Hash = c.DDR_Hash AND d.Chunk_Type = 'Comment') AS has_comment
-    FROM CustomFunctionsCatalog c
-    WHERE c.DDR_Hash IS NOT NULL
+                WHERE d.Calc_Hash = c.Formula_Hash AND d.Chunk_Type = 'Comment') AS has_comment
+    FROM CalculationsCatalog c
+    WHERE c.Calc_Role = 'custom_function'
+      AND c.Formula_Hash IS NOT NULL
       AND (getvariable('file') IS NULL OR c.File_Name = getvariable('file'))
 ),
 sel AS (SELECT COALESCE(getvariable('comment'), 'without') = 'with' AS want_with)

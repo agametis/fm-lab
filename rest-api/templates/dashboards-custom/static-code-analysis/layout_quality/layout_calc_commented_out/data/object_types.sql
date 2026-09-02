@@ -3,11 +3,11 @@
 -- object_type filters so the option list stays stable while filtering;
 -- respects the file/scope filters.
 WITH slots AS (
-    SELECT File_Name, Layout_ID, Object_Type, Hide_Calculation_Text AS calc_text FROM LayoutObjects
-    UNION ALL
-    SELECT File_Name, Layout_ID, Object_Type, Tooltip_Calculation_Text FROM LayoutObjects
-    UNION ALL
-    SELECT File_Name, Layout_ID, Object_Type, Label_Calculation_Text FROM LayoutObjects
+    SELECT lo.File_Name, lo.Layout_ID, lo.Object_Type,
+           COALESCE(c.Formula_Text, c.Display_Text) AS calc_text
+    FROM CalculationsCatalog c
+    JOIN LayoutObjects lo ON lo.Object_UUID = c.Owner_UUID AND lo.File_Name = c.File_Name
+    WHERE c.Calc_Role IN ('hide', 'tooltip', 'button_label')
 )
 SELECT DISTINCT s.Object_Type AS value, s.Object_Type AS label
 FROM slots s

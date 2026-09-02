@@ -32,6 +32,9 @@ function parseTemplateMetadata(templateContent) {
     display: null,
     click_action: null,
     click_args: null,
+    row_action: null,
+    row_action_args: null,
+    row_action_label: null,
     chip_filter: null,
     chip_param: null,
     params: [],
@@ -79,6 +82,21 @@ function parseTemplateMetadata(templateContent) {
         break;
       case 'click_args':
         metadata.click_args = value;
+        break;
+      case 'row_action':
+        // Zweites, pro Zeile gerendertes Klickziel (kleiner Pfeil-Button am
+        // Zeilenende) — gleiche Action-Whitelist und Token-Grammatik wie
+        // click_action/click_args. Opt-in pro Query; ohne row_action bleibt
+        // die Tabelle einspaltig klickbar wie bisher.
+        metadata.row_action = value;
+        break;
+      case 'row_action_args':
+        metadata.row_action_args = value;
+        break;
+      case 'row_action_label':
+        // Tooltip/aria-label des Pfeil-Buttons. Template-Sprache (Englisch),
+        // wie @title/@description; fehlt es, greift ein generischer i18n-Text.
+        metadata.row_action_label = value;
         break;
       case 'chip_filter':
         // Name einer Ergebnis-Spalte, über die der generische Renderer eine

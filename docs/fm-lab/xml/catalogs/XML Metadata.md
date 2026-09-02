@@ -24,8 +24,14 @@ The file-level options — a top-level `<Metadata>` branch (sibling of `<Structu
         </PageSetup>
         <IconData scale="…" type="…">…</IconData>
         <ScriptTriggers membercount="…">      <!-- file-level: OnFirstWindowOpen, … -->
-            <ScriptTrigger action="OnFirstWindowOpen" browseMode="…" id="…">
-                <ScriptReference id="…" name="…" UUID="…"/>
+            <ScriptTrigger action="OnFirstWindowOpen" browseMode="…" findMode="…"
+                           previewMode="…" scriptParameterFieldName="…" id="…">
+                <ScriptReference id="…" name="…" UUID="…">
+                    <Calculation>   <!-- optional script parameter -->
+                        <DDRREF kind="ChunkList" hash="…">…</DDRREF>
+                        <Text><![CDATA[…]]></Text>
+                    </Calculation>
+                </ScriptReference>
             </ScriptTrigger>
         </ScriptTriggers>
     </AddAction>

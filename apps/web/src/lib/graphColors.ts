@@ -29,6 +29,8 @@ export const typeColors: Record<string, string> = {
   ExternalDataSource: '#8d6e63',
   BuiltinFunction:    '#b0bec5',
   PluginFunction:     '#4db6ac',
+  // Calculation (Schema 1.22.0) — Formel-Familie nahe CustomFunction, heller
+  Calculation:        '#b39ddb',
 };
 
 /** Fallback color for object types not in the palette. */

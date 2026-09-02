@@ -71,7 +71,10 @@
   },
   "list": {
     "badgeFilter": "verwendet",
-    "noFilteredEntries": "Keine Einträge mit Treffern."
+    "noFilteredEntries": "Keine Einträge mit Treffern.",
+    "entrySearch": "auch Einträge durchsuchen",
+    "entrySearchMode": "inkl. Einträge",
+    "entrySearchLoading": "suche …"
   },
   "install": {
     "action": "Installieren",
@@ -113,7 +116,15 @@
     "abortOomTitle": "Nicht genügend Arbeitsspeicher",
     "abortOomBody": "Diese Lösung ist zu groß für den verfügbaren Speicher dieses Systems. Führe den Import auf einem System mit mehr RAM (8 GB oder mehr) aus oder starte ihn mit reduziertem Speicherprofil erneut.",
     "abortIncompleteTitle": "Build unvollständig",
-    "abortIncompleteBody": "Die Referenzauflösung wurde nicht abgeschlossen, daher konnte der Objektkatalog nicht gebaut werden. Details im Lauf-Protokoll."
+    "abortIncompleteBody": "Die Referenzauflösung wurde nicht abgeschlossen, daher konnte der Objektkatalog nicht gebaut werden. Details im Lauf-Protokoll.",
+    "logStart": "── Start ──",
+    "logAborted": "── Abgebrochen ──",
+    "logAbortedOom": "⚠ Abgebrochen — nicht genügend Arbeitsspeicher (Lösung zu groß für dieses Environment).",
+    "logAbortedIncomplete": "⚠ Abgebrochen — Build unvollständig (Referenzauflösung fehlgeschlagen).",
+    "logDone": "── Beendet ──",
+    "logDoneError": "── Beendet mit Fehler (exit {{code}}) ──",
+    "logReloadOk": "Reload erfolgreich.",
+    "logReloadError": "Reload fehlgeschlagen: {{error}}"
   },
   "semanticNames": {
     "structureLabel": "Struktur",

@@ -117,5 +117,9 @@
     "dirBoth": "Entrambe",
     "empty": "Nessun oggetto di questo tipo nel grafo.",
     "focus": "Oggetto focus"
+  },
+  "edge": {
+    "represents": "rappresenta",
+    "buttonAction": "Azione pulsante"
   }
 }

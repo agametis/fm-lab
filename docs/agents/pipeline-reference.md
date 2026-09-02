@@ -15,12 +15,12 @@ is unchanged*: XML is touched once in P1, everything downstream is pure DuckDB.
 
 | Phase | File | Reads | Produces |
 |---|---|---|---|
-| **P1 Extract** | `sql/convert-xml/convert_xml_01_extract.sql` | XML (`read_xml`) | Raw catalogs + raw-XML columns (`Step_XML`, `Object_XML`, `Parameters_XML`, …); UUID healing of intra-file duplicates (deterministic replacement UUIDs, census mapping) |
+| **P1 Extract** | `sql/convert-xml/convert_xml_01_extract.sql` | XML (`read_xml`) | Raw catalogs + raw-XML columns (`Step_XML`, `Object_XML`, `Parameters_XML`, …); UUID healing of intra-file duplicates (deterministic replacement UUIDs, census mapping); since schema 1.27.0 also `DDR_ChunkListContexts` (context TO + chunk count per DDR ChunkList anchor, including empty ChunkLists) |
 | **P1b Heal cascade** | `sql/convert-xml/convert_xml_01b_heal_cascade.sql` | tables only | Census-driven propagation of healed UUIDs into dependent foreign-UUID columns (`StepsForScripts.Script_UUID`, `ScriptTriggers.Script_UUID`, TO/BT/Field/VL carriers). Runs at the start of `run_phase2()` — after every P1 merge (multi-fed tables need the full picture), before any P2 statement; fail-hard; no-op without healed census rows |
 | **P2 Resolve** | `sql/convert-xml/convert_xml_02_resolve.sql` | tables only | Reference tables (XMLStep/Layout/Calc-Refs, MBS/GetSub, PluginUsages) |
-| **P3 Details** | `sql/convert-xml/convert_xml_03_details.sql` | tables only | Variable analysis (VariableUsages, VariablesCatalog) |
+| **P3 Details** | `sql/convert-xml/convert_xml_03_details.sql` | tables only | Variable analysis (VariableUsages, VariablesCatalog); StepCalculations (every positioned calculation slot of a step); derived step/layout columns (`Opens_Window`, `L_Theme_Resolved_*`); since schema 1.25.0 also `LayoutObjectConditions` (one row per conditional-formatting rule, depth-anchored from `Object_XML` — the `Calculation_UUID` FK is filled in P4); since schema 1.27.0 also `LayoutObjectSymbols` (`{{…}}` symbol inventory from `Text_Content`, no where-used edges by design) |
 | **P3.5 Plugin Subname Recovery** | `sql/convert-xml/convert_xml_03b_plugin_subname_recovery.sql` | tables only | Completes `MBS_SubnameMap` from the calc **plain text**: FileMaker's DDR export drops NoRef chunks carrying the first string argument of container-plugin calls in some constellations (comment adjacent to the call, nested `MBS(…, MBS(…))`), so chunk-proximity pairing alone cannot resolve them. A string/comment-aware SQL lexer pairs the k-th `MBS` ref chunk with the k-th lexed `MBS` call (guard: chunk count must equal lexed count, otherwise NULL — never mispaired). Requalifies `PluginFunctionUsages` (`'MBS'` → `'MBS:<Sub>'`) and rebuilds affected `XMLCalcReferences` MBS rows. Runs after P3 (needs `StepCalculations`), before P4 (catalog reads the map). Remaining `'MBS'` rows = genuinely dynamic first arguments (`MBS($var; …)`) |
-| **P4 Catalog** | `sql/convert-xml/convert_xml_04_catalog.sql` | tables only | ObjectCatalog + ObjectLinks |
+| **P4 Catalog** | `sql/convert-xml/convert_xml_04_catalog.sql` | tables only | ObjectCatalog + ObjectLinks; since schema 1.22.0 also `CalculationsCatalog` (one row per calculation instance — union of DDR anchors and structural slots; registered as `Object_Type='Calculation'`, containment via `has_calculation`) and the derived view `v_calculation_links` (Calculation → target from the canonical owner edges, variant A) |
 | **P5 Homes** | `sql/convert-xml/convert_xml_05_homes.sql` | tables only | Cross-file resolution (ObjectHomes, TableOccurrenceResolution) + graph views (`LogicalLinks`, `ClusterEdges`) |
 | **P6 Validate** | `sql/convert-xml/convert_xml_06_validate.sql` | tables only | Plausibility/consistency check views (`v_check_*`), queried by the post-processor |
 
@@ -35,6 +35,18 @@ succeeds, the run also writes the file's manifest row (and refreshes the
 `catalogs_built` marker), so a subsequent `--batch --changed-only` skips the file
 instead of re-parsing it. On a chain failure no manifest row is written — the next
 incremental batch then re-parses the file (loud, never a silent skip).
+
+**Single-file P2 gate (converter 2.12.0+, batch parity):** a P2 failure — SQL error
+(incl. the heal cascade), OOM, or the integrity condition "objects loaded but 0
+references resolved" — aborts the single-file run **before P3**, exactly like the batch
+gate: exit 1 (exit 8 for OOM), `emit_done false` + `aborted` event, **no REST sync**
+(the served read copies keep the last consistent state; the abort sits before the sync
+hook) and no manifest row; `catalogs_built` stays `'building'`, so the next
+`--batch --changed-only` re-parses. The master DB is already changed by P1 at that
+point (no transaction bracket) — the abort detail recommends
+`--batch --force-rebuild` on a deterministic repeat. P3–P7 failures remain
+non-gating chain warnings in both modes. Test hook: `FM_P2_TEST_FAIL=1` forces the
+failure on the single-pass P2 path (use `FM_P2_JOBS=1` on multi-file corpora).
 
 **Constraint:** P2 runs partitioned with read-only VIEWs over the master DB — no
 ALTER/UPDATE on source tables in P2 (breaks all slices); derived columns belong in P3.
@@ -55,7 +67,7 @@ Consumed by the `static-code-analysis/` rule bundles in `rest-api/templates/dash
 
 Read-only helpers over the universal catalogs:
 
-- **`LogicalLinks`** — operational links, sub-objects hoisted to their container, containment scaffold + orphans removed, **local variables `$x` excluded**. Canonical definition mirrored in `rest-api/templates/sql/graph_logical_links.sql`.
+- **`LogicalLinks`** — operational links, sub-objects hoisted to their container, containment scaffold + orphans removed, **local variables `$x` excluded**, and since converter 2.17.0 **trigger-anchored edges excluded** (`trigger_script` + the OnWindowTransaction candidates `reads_field·transaction_parameter_field`): trigger nodes were pure script satellites — the owner mirrors `triggers_script·<event>` carry the owner↔script affinity on all three owner levels; a trigger focus in the Graph Explorer is fed by the focus bridge (`graph_subgraph.sql` ≥ 1.5.0). Canonical definition mirrored in `rest-api/templates/sql/graph_logical_links.sql`.
 - **`ClusterEdgesBase`** (= `LogicalLinks` minus `BuiltinFunction`) — **materialized**: the data lives in the TABLE `ClusterEdgesBaseMat`, rebuilt on every P5 run, with `ClusterEdgesBase` as a thin view over it (avoids the multi-evaluation OOM of the pure view chain in the READ_ONLY API)
 - **`ClusterGodNodes`** — cross-cutting "god-nodes": neighbours span ≥8 files **and** ≤40 % in their own file (generic MBS-plugin utilities + global config/auth fields)
 - **`ClusterEdges`** (= `ClusterEdgesBase` minus `ClusterGodNodes`) — **single source of truth** for the community-detection edge export (`tools/graph-export/graph_export_logical.sql`) and the `fm-graph-cluster` skill's logical-degree/hub analysis

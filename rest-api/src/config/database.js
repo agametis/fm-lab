@@ -222,6 +222,22 @@ const CORE_STUB_DDL = {
      Link_Type VARCHAR, Link_Role VARCHAR, Link_Subrole VARCHAR,
      Source_File VARCHAR, Target_File VARCHAR, Is_Cross_File BOOLEAN
    )`,
+  // Calculation-Objekttyp (Schema 1.22.0) — Detail-/Token-Templates und die
+  // get-calc-Instanzliste laufen auf Alt-/Leer-DBs sonst in „Table … does not exist".
+  CalculationsCatalog: `CREATE TEMP TABLE CalculationsCatalog (
+     Calculation_UUID VARCHAR, Owner_UUID VARCHAR, Owner_Type VARCHAR, Owner_Name VARCHAR,
+     Calc_Role VARCHAR, Calc_Kind_Raw VARCHAR, Calc_Index INTEGER, Edge_Subrole VARCHAR,
+     Formula_Text VARCHAR, Formula_Hash VARCHAR, DDR_Calc_UUID VARCHAR,
+     Context_TO_UUID VARCHAR, Context_TO_Name VARCHAR,
+     Is_Static BOOLEAN, Chunk_Count BIGINT, Ref_Count BIGINT,
+     Display_Text VARCHAR, Source_Path VARCHAR, File_Name VARCHAR
+   )`,
+  // v_calculation_links ist in konvertierten DBs eine View; der leere TEMP-Stub
+  // deckt Alt-DBs (Schema < 1.22.0), in denen die View nie angelegt wurde.
+  v_calculation_links: `CREATE TEMP TABLE v_calculation_links (
+     Calculation_UUID VARCHAR, Link_Role VARCHAR, Target_UUID VARCHAR,
+     Target_Type VARCHAR, Target_File VARCHAR, Is_Cross_File BOOLEAN
+   )`,
 };
 
 // Läuft INNERHALB der Pool-Factory → direkt auf der Entry-Verbindung

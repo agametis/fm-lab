@@ -14,6 +14,14 @@ const markdownFs = require('./markdown-fs');
  *   listLanguages()                             → string[]
  *   validate(ctx)                               → { ok, errors }
  *
+ * Optional, deklariert über `capabilities.entrySearch`:
+ *
+ *   searchEntriesByCategory(ctx, { q, lang, sample })
+ *                                               → [{ category_id, hit_count, sample }]
+ *
+ * `capabilities` ist ein einfaches Flag-Objekt am Adapter-Modul. Fehlt es,
+ * gilt alles als nicht unterstützt.
+ *
  * Adapter werden über das Manifest (`catalog[].index.adapter`) ausgewählt;
  * mehrere Doc-Sets können denselben Adapter teilen (z.B. fmide + fm-lab → markdown-fs).
  */
@@ -45,6 +53,12 @@ function resolveForDocset(catalogEntry, installedEntry) {
   return {
     id: adapterId,
     raw: adapter,
+    capabilities: adapter.capabilities || {},
+    // Optionale Fähigkeit — Adapter ohne Eintragsebene (markdown-fs) liefern
+    // hier null statt einer Funktion, die leere Listen vortäuscht.
+    searchEntriesByCategory: typeof adapter.searchEntriesByCategory === 'function'
+      ? (ctx, opts = {}) => adapter.searchEntriesByCategory(ctx, { catalogEntry, installedEntry, ...opts })
+      : null,
     listCategories: (ctx, opts = {}) => adapter.listCategories(ctx, { catalogEntry, installedEntry, ...opts }),
     listFunctions: (ctx, opts = {}) => adapter.listFunctions(ctx, { catalogEntry, installedEntry, ...opts }),
     getEntry: (ctx, opts = {}) => adapter.getEntry(ctx, { catalogEntry, installedEntry, ...opts }),

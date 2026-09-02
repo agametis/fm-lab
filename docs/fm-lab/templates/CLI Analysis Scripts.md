@@ -21,8 +21,12 @@ family, but outside the `/api/query` path.
   `extract_variables.sql` (+ `_simple` / `_detailed` variants).
 - **Derived views** — `create_analysis_views.sql`,
   `create_variables_catalog.sql` build views the analysis layer relies on.
-- **The cookbook** — `sample_queries.sql` (and `sample_queries_calcHash.sql`)
-  collect canonical catalog queries to read and adapt.
+  Since schema 1.22.0 calculation analyses should target `CalculationsCatalog`
+  directly; `v_calc_anchors` remains only as a compatibility facade over it.
+- **The cookbook** — `sample_queries.sql` collects canonical catalog queries to
+  read and adapt, including a section on calculation instances
+  (`CalculationsCatalog` / `v_calculation_links`). `sample_queries_calcHash.sql`
+  documents the legacy hash-based addressing and is kept for reference only.
 
 ## Running one
 

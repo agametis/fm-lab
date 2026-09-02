@@ -4,9 +4,10 @@
 # Usage:  stop-servers.sh [api|frontend|all]   (default: all)
 #   api        stop ONLY the API. The frontend deliberately keeps running: killing the
 #              Vite dev server mid-session drives the browser's HMR client into a
-#              reload loop (Safari: endless reload + focus stealing via the VS Code
-#              port-forward openBrowser hook). While the API is down the web client
-#              degrades gracefully (transport-error handling) and recovers on its own.
+#              reload loop (Safari: endless reload; the former tab-opening/focus-stealing
+#              side is defused since onAutoForward on 5173 is "notify", not "openBrowser").
+#              While the API is down the web client degrades gracefully (transport-error
+#              handling) and recovers on its own.
 #   frontend   stop only the frontend
 #   all        stop frontend + API   (frontend first, so the browser doesn't sit on a
 #              dead API longer than necessary)

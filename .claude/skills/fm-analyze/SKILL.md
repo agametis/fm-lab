@@ -96,6 +96,12 @@ Depending on Object_Type, fetch the type-specific base data — the shared SQL t
 - **Field**: FieldsForTables (incl. Field_Comment, Calculation_Text, AE_Calc_Text)
 - **Layout**: Layouts + LayoutParts + LayoutObjects (aggregated)
 - **CustomFunction**: CustomFunctionsCatalog + CalcsForCustomFunctions + DDR_Calculations
+- **Calculation** (schema 1.22.0): CalculationsCatalog [C1/C2/C3] — one calculation
+  INSTANCE (Owner × Calc_Role × Calc_Index). The business context comes from the
+  OWNER (owner name/comment, slot role: hide condition vs. validation vs. step
+  parameter …) plus the formula (`Formula_Text`/`Display_Text` — present also
+  without DDR info). Analyze it as "the owner's <role> slot", never as a
+  free-standing formula.
 
 **Important for fm-analyze**: In contrast to fm-summarize, the **Field_Comment** is gold dust here — if present, it is the most direct source for the business purpose. Script comments in the first step (`Step_Type = 'Comment'`) should also be read, since developers often document scripts with a header comment.
 

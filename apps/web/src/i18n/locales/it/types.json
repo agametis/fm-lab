@@ -26,7 +26,9 @@
     "BuiltinFunction": "Funzioni",
     "PluginFunction": "Funzioni MBS",
     "ScriptStepType": "Passi di script",
-    "PluginComponent": "Componenti MBS"
+    "PluginComponent": "Componenti MBS",
+    "File": "File",
+    "Calculation": "Calcolo"
   },
   "categoryHeader": {
     "ScriptStepType": "Categoria",

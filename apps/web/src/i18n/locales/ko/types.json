@@ -26,7 +26,9 @@
     "BuiltinFunction": "함수",
     "PluginFunction": "MBS 함수",
     "ScriptStepType": "스크립트 스텝",
-    "PluginComponent": "MBS 컴포넌트"
+    "PluginComponent": "MBS 컴포넌트",
+    "File": "파일",
+    "Calculation": "계산식"
   },
   "categoryHeader": {
     "ScriptStepType": "카테고리",

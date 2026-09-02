@@ -78,7 +78,14 @@ Generate the artifact directly, under these ground rules:
 2. **fmxmlsnippet basics:** one well-formed `<fmxmlsnippet type="FMObjectList">`
    snippet, paste-ready; Step-IDs from the reference index (`fm_spec.duckdb`,
    `script_steps.step_id`), never from memory; calculations in CDATA; correct
-   XML entity escaping.
+   XML entity escaping. For steps that carry **lists** (sort levels, find
+   requests, import filters, …) the repetition is grounded in
+   `step_repeat_groups` (container, per-item template, derived counts) —
+   the `step_xml_map` main template shows a single-instance exemplar only.
+   The canonical script text notation is **v0.2** (rules T1–T9 incl. the
+   repeat-group form, `project/fm-spec/4-standard/script-text-notation.md`);
+   drafts written in the pre-v0.2 flat form are still accepted by
+   `fm-generate-script`, canonical output uses the group form.
 3. **Verify references:** every script, layout, field, TO or value list the artifact
    references must exist in `ObjectCatalog` — report anything unresolved instead of
    silently emitting it.

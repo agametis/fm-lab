@@ -7,7 +7,7 @@ Two data sources back this group:
 - `reference/fm_spec.duckdb` — structured step/function/category/grammar data. If it is not installed, data routes fail with `503 REF_NOT_ATTACHED`.
 - Claris Help mirror (`docs/claris-help/`, installed via the `install-claris-docs` skill) — rendered help HTML. Routes that serve HTML fall back to the mirror's fallback language (default `en`) and report the actual source in the `X-Help-Source` response header.
 
-**Languages.** Steps are localized in 11 languages (`en, de, es, fr, it, nl, pt, sv, ja, ko, zh-Hans`), functions in 9 (no `zh-Hans`; for `en` the canonical name doubles as display name). `lang` resolution is forgiving: `en-US` → `en`, unknown languages soft-fall back to `en` — no error. The mirror directory for `zh-Hans` is `zh`.
+**Languages.** Steps are localized in 11 languages (`en, de, es, fr, it, nl, pt, sv, ja, ko, zh-Hans`), functions in 10 (no `zh-Hans`; for `en` the canonical name doubles as display name). `lang` resolution is forgiving: `en-US` → `en`, unknown languages soft-fall back to `en` — no error. The mirror directory for `zh-Hans` is `zh`.
 
 All routes are `GET`. Errors follow [Error responses](../REST%20API%20Conventions.md#error-responses); 404s for unknown steps/functions include up to five `data.suggestions` (nearest names).
 
@@ -21,15 +21,15 @@ Summary block for the reference database: schema version, FileMaker coverage, en
 {
   "success": true,
   "data": {
-    "referenceMeta": { "schema_version": "1.10.0", "filemaker_coverage": "21", "built_at": "…", "source_commit": "…" },
-    "counts": { "scriptSteps": 206, "functions": 512, "stepLocales": 11, "functionLocales": 10, "grammarSteps": 206 },
-    "locales": [ { "code": "de", "steps": 206, "functions": 512, "stepParameters": 430 } ],
+    "referenceMeta": { "schema_version": "1.17.1", "filemaker_coverage": "22", "built_at": "…", "source_commit": "…" },
+    "counts": { "scriptSteps": 207, "functions": 367, "stepLocales": 11, "functionLocales": 10, "grammarSteps": 207 },
+    "locales": [ { "code": "de", "steps": 206, "functions": 367, "stepParameters": 690 } ],
     "grammarAvailable": true
   }
 }
 ```
 
-Older reference builds without grammar tables degrade gracefully (`grammarAvailable: false`).
+Older reference builds without grammar tables degrade gracefully (`grammarAvailable: false`). The same tolerance applies inside the grammar payload: blocks added by newer fm-spec schema versions simply come back empty/`null` on older builds (see the grammar endpoint below).
 
 ## GET /api/reference/categories
 
@@ -40,6 +40,16 @@ Script-step **and** function categories for one language in a single call.
 | `lang` | string | `en` | Language for category names |
 
 Response: `data.scriptSteps[]` and `data.functions[]`, each `{ id, slug, name, url }`. When `lang` is not a valid function language, functions fall back to the default; `meta.functionLang` reports the language actually used.
+
+## GET /api/reference/trigger-events
+
+Localized display labels of the script-trigger events, as FileMaker's trigger dialogs write them.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `lang` | string | `en` | Label language |
+
+Response: `data` = `{ "lang": "de", "labels": { "OnObjectEnter": "BeiObjektBetreten", … } }` — a map from canonical event name to localized label, backed by the [script_triggers_lang](../../schema/fm-spec-tables/script_triggers_lang.md) reference table. Graceful degradation: a reference database without the trigger tables yields an empty `labels` object (no `503`), and clients fall back to the canonical event names.
 
 ## GET /api/reference/lookup
 
@@ -82,7 +92,7 @@ All localized variants of one step across every available language, each with it
 
 ## GET /api/reference/steps/:idOrSlug/grammar
 
-XML grammar for snippet generation: snippet template, SaXML example, element order, options with allowed values, and constraints.
+XML grammar for snippet generation: snippet template, SaXML example, element order, options with allowed values, and constraints. Newer reference builds add further grammar blocks — `repeatGroups[]` (fm-spec ≥ 1.15.0), `skeletonElements[]`, `elementBindings[]`, `optionImplications[]` and per-constraint consumer notes (≥ 1.17.0); on older builds these degrade to empty arrays / `null` instead of erroring. Details of the underlying tables: [step_repeat_groups](../../schema/fm-spec-tables/step_repeat_groups.md), [step_skeleton_elements](../../schema/fm-spec-tables/step_skeleton_elements.md), [step_option_element_bindings](../../schema/fm-spec-tables/step_option_element_bindings.md), [step_option_implications](../../schema/fm-spec-tables/step_option_implications.md), [constraint_kinds](../../schema/fm-spec-tables/constraint_kinds.md).
 
 A valid step **without** grammar data returns `200` with `data: null` and `meta.grammarAvailable: false` — not a 404. Language-neutral.
 

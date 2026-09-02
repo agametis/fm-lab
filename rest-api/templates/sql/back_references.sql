@@ -2,10 +2,9 @@
 -- @description: Cross-Reference Back-Lookup — alle Sources im Destination-Container, die das Origin-Objekt referenzieren
 -- @params: destination (required, UUID), origin (required, UUID)
 -- @author: Marcel
--- @version: 1.0
+-- @version: 1.1
 -- @tags: references, cross-references, highlight
--- @note: PRD prd_cross_references_hilite.md §6.3.
---        Liefert alle Objekt-UUIDs, die sich INNERHALB des Destination-Containers
+-- @note: Liefert alle Objekt-UUIDs, die sich INNERHALB des Destination-Containers
 --        befinden UND einen operationalen Link auf das Origin haben.
 --        Container-Logik:
 --          • Destination ist ein Layout       → Sources sind LayoutObjects mit parent_layout
@@ -14,6 +13,8 @@
 --                                                  ODER Script direkt (z.B. calls_script)
 --          • Destination ist eine CustomFunction → Sources sind die CF selbst
 --          • Sonst                            → nur direkter Link Destination → Origin
+--        Seit 1.1 zusätzlich: Origin = ScriptTrigger-Sub-Knoten → der Trigger-
+--        OWNER (LayoutObject) im Destination-Container ist der Match (Fall 3).
 
 WITH destination AS (
   SELECT Object_UUID, Object_Type, Object_Name, File_Name
@@ -82,7 +83,7 @@ FROM (
 
   UNION ALL
 
-  -- Pseudo-Typ-Origins (PRD prd_pseudo_object_types_filter.md §6.4):
+  -- Pseudo-Typ-Origins:
   -- ScriptStepType + PluginComponent haben keine ObjectLinks-Spiegelung,
   -- daher findet der Standard-Pfad oben sie nicht. Hier matchen wir name-/
   -- Component-basiert auf die konkreten Sub-Knoten im Destination-Container.
@@ -130,6 +131,40 @@ FROM (
         oc.Object_UUID = d.Object_UUID
         AND d.Object_Type IN ('Script', 'CustomFunction')
       )
+    )
+
+  UNION ALL
+
+  -- Fall 3: Origin = ScriptTrigger (synthetischer Sub-Knoten `trig_<slot>_…`),
+  --   Destination = Layout des Trigger-Owners.
+  --   Den Trigger-Knoten referenziert nichts INNERHALB des Layouts — der
+  --   Standard-Pfad oben liefert für diese Navigation ("Sub-Knoten → Container
+  --   öffnen, Sub-Knoten als ?ref=") also nie ein Highlight. Der sichtbare
+  --   Stellvertreter im Canvas ist der OWNER des Triggers: aufgelöst über die
+  --   strukturelle trigger_owner-Kante (nie per UUID-Parsing), bewusst NUR für
+  --   LayoutObject-Owner — Layout-/File-Trigger behalten ihr bisheriges
+  --   Verhalten (Trigger-Liste im Eigenschaften-Panel matcht die trig-UUID).
+  --   Owner ohne trigger_owner-Kante (Parser-Lücke PopoverPanel) degradieren
+  --   still auf "kein Match" wie bisher.
+  SELECT
+    own.Target_UUID        AS uuid,
+    own.Target_Type        AS type,
+    'trigger_owner'        AS role,
+    oc.Object_Name         AS name
+  FROM origin o
+  JOIN ObjectLinks own   ON own.Source_UUID = o.Object_UUID
+                        AND own.Source_File = o.File_Name
+                        AND own.Link_Role = 'trigger_owner'
+                        AND own.Target_Type = 'LayoutObject'
+  JOIN destination d     ON 1=1
+  JOIN ObjectCatalog oc  ON oc.Object_UUID = own.Target_UUID
+                        AND oc.File_Name = own.Target_File
+  WHERE o.Object_Type = 'ScriptTrigger'
+    AND EXISTS (
+      SELECT 1 FROM ObjectLinks parent
+      WHERE parent.Source_UUID = own.Target_UUID
+        AND parent.Target_UUID = d.Object_UUID
+        AND parent.Link_Role IN ('parent_layout', 'parent_object')
     )
 ) all_matches
 ORDER BY type, role, name;

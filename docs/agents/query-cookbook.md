@@ -74,7 +74,9 @@ ORDER BY ol.Source_Type, oc_source.Object_Name;
 
 ⚠️ For dead-code / "unused" analyses, exclude roles that don't count as usage —
 authoritative flag: `LinkRoleRegistry.Counts_For_Where_Used` (e.g. `restricts_field`/
-`restricts_object` are restrictions, not usages). See `analysis-workflows.md`.
+`restricts_object` are restrictions, not usages; `trigger_script` is the non-counting
+granular twin of the `triggers_script·<event>` owner mirror since converter 2.17.0 —
+counting both double-counts every script trigger). See `analysis-workflows.md`.
 
 **Which fields does a script set/read?** (forward direction — the reverse of where-used)
 ```sql
@@ -101,6 +103,28 @@ the structured step columns (`StepsForScripts.Calculation_Text`, `DDR_ScriptStep
 DDR-Info is present; regex on `Step_XML` is the last resort for files without DDR-Info.
 The same forward pattern works for any resolved edge (`calls_script`, `navigates_to_layout`,
 `sets_variable`, …) — swap the role. `fm-summarize <script>` returns this grouped for free.
+
+**All calculations of an owner / calculations matching a criterion** (schema 1.22.0):
+```sql
+-- Slot inventory of one object (field, step, layout object, …)
+SELECT Calc_Role, Calc_Index, Source_Path, Is_Static,
+       left(COALESCE(Formula_Text, Display_Text), 100) AS Formula
+FROM CalculationsCatalog
+WHERE Owner_UUID = '<UUID>' AND File_Name = '<FILE>'
+ORDER BY Calc_Role, Calc_Index;
+
+-- Corpus-wide: e.g. all hide conditions calling a specific function —
+-- one catalog query instead of five type-specific joins
+SELECT c.Owner_Type, c.Owner_Name, c.Calc_Role, c.File_Name
+FROM CalculationsCatalog c
+JOIN v_calculation_links vl ON vl.Calculation_UUID = c.Calculation_UUID
+JOIN ObjectCatalog tgt ON tgt.Object_UUID = vl.Target_UUID
+WHERE c.Calc_Role = 'hide'
+  AND tgt.Object_Type = 'BuiltinFunction' AND tgt.Object_Name = 'Get(AccountName)';
+```
+⚠️ `has_calculation` is containment (`Counts_For_Where_Used = false`) and
+`v_calculation_links` is a **derived** per-slot resolution — where-used/dead-code
+still runs on the owner-projected edges, never on this layer.
 
 **Cross-file dependencies:**
 ```sql

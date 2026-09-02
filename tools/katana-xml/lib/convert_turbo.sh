@@ -59,8 +59,12 @@ init_manifest_db() {
             last_ingest_ts     TIMESTAMP
         );" >/dev/null 2>&1 || { echo "ERROR: Manifest DB ($MANIFEST_DB) could not be initialized."; exit 3; }
     # manifest_catalog (PERSISTENT): one row per (file × catalog).
-    # catalog_hash = md5(string_agg(content_hash ORDER BY split_number)) over all
-    # sub-chunks of the split-group. Gates the (expensive) P1 parse per catalog: same
+    # catalog_hash = md5(string_agg(content_hash ORDER BY seq_offset, split_number))
+    # over all sub-chunks of the split-group (canonical global order —
+    # split_number alone restarts per OOM-resplit group). Backoff-hit catalogs
+    # (NULL content_hash rows) get NO row for that run — deleted, not upserted
+    # (a subset hash would mismatch every future fresh split → permanent reload).
+    # Gates the (expensive) P1 parse per catalog: same
     # hash → chunks skipped_unchanged. The key is the XML base name (like manifest_file),
     # NOT the internal File_Name — collision groups fall back to whole-file anyway.
     "$DUCKDB_BIN" "$MANIFEST_DB" -c "
@@ -72,6 +76,23 @@ init_manifest_db() {
             last_ingest_ts TIMESTAMP,
             PRIMARY KEY (file_name, catalog)
         );" >/dev/null 2>&1 || { echo "ERROR: manifest_catalog could not be initialized."; exit 3; }
+    # manifest_run (PERSISTENT, one row): policy fingerprint of the run that
+    # wrote the currently stored hashes (policy-lock B1). The Phase-S chunk
+    # bytes — and thus every content/catalog hash — are stamped by the SAX/DOM
+    # policy and the chr(127) sentinel; the startup diagnosis compares this
+    # fingerprint against the current run and NAMES a flip instead of leaving a
+    # silent hash mismatch. Additive migration (CREATE IF NOT EXISTS): manifests
+    # from older versions simply lack the row → the diagnosis stays silent
+    # until the first successful run writes it (deliberate, no version bump).
+    "$DUCKDB_BIN" "$MANIFEST_DB" -c "
+        CREATE TABLE IF NOT EXISTS manifest_run (
+            id                INTEGER PRIMARY KEY,  -- always 1 (single-row fingerprint)
+            parser_policy     VARCHAR,              -- sax | dom
+            ws_sentinel       VARCHAR,              -- true | false (chr(127) CR sentinel)
+            webbed_version    VARCHAR,
+            converter_version VARCHAR,
+            ts                TIMESTAMP
+        );" >/dev/null 2>&1 || { echo "ERROR: manifest_run could not be initialized."; exit 3; }
     # pipeline_state (PERSISTENT): small key/value table. Key 'catalogs_built'
     # = 'ok' as soon as P2–P6 ran COMPLETELY for the current manifest state.
     # Gate for the "no changes" short-circuit (safe against an abort between
@@ -537,7 +558,7 @@ merge_part_dbs() {
 
     # Generate merge SQL: per remaining part DB ATTACH (READ_ONLY) + per table
     # DELETE of the contained File_Names (idempotent) followed by INSERT BY NAME.
-    local msql; msql="$(mktemp)"
+    local msql; msql="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")"
     local k=$start ai=0 p tbl
     while [ "$k" -lt "${#parts[@]}" ]; do
         p="${parts[$k]}"
@@ -594,7 +615,7 @@ _turbo_merge_parquet() {
 
     local pqdir="$PARTDB_DIR/pq"; mkdir -p "$pqdir"
     # Export parts[1..] → Parquet per (table, part) in ONE duckdb run (ATTACH + COPY).
-    local esql k tbl; esql="$(mktemp)"
+    local esql k tbl; esql="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")"
     for ((k = 1; k < ${#parts[@]}; k++)); do echo "ATTACH '${parts[$k]}' AS p${k} (READ_ONLY);" >> "$esql"; done
     while IFS= read -r tbl; do
         [ -z "$tbl" ] && continue
@@ -610,7 +631,7 @@ _turbo_merge_parquet() {
     # Merge: per table ONE wildcard INSERT into the seeded master (no ATTACH/DELETE).
     # a1: guard PK/UNIQUE tables against cross-chunk/clone duplicates (see _pk_constrained_tables).
     local pk_tables; pk_tables=$(_pk_constrained_tables "$seed_db")
-    local msql; msql="$(mktemp)"
+    local msql; msql="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")"
     while IFS= read -r tbl; do
         [ -z "$tbl" ] && continue
         echo "INSERT INTO \"$tbl\" BY NAME SELECT * FROM read_parquet('$pqdir/$tbl/*.parquet')$(_oc_clause "$tbl" "$pk_tables");" >> "$msql"
@@ -628,12 +649,13 @@ _turbo_catalog_owned() {
     case "$1" in
         main)            echo "__MAIN__" ;;
         StepsForScripts) echo "StepsForScripts" ;;
-        DDR_INFO)        echo "DDR_Calculations DDR_ScriptSteps" ;;
+        DDR_INFO)        echo "DDR_Calculations DDR_ChunkListContexts DDR_ScriptSteps" ;;
         # DDR_INFO nest children. The Calculation half feeds ONLY DDR_Calculations
-        # (the Script XPath finds nothing → 0 rows), the Script half ONLY
-        # DDR_ScriptSteps. They are mutually exclusive with DDR_INFO (nest on XOR off) →
-        # no OWNER conflict. WITHOUT these lines catmerge would fall back to the part path.
-        Calculation)     echo "DDR_Calculations" ;;
+        # + DDR_ChunkListContexts (the Script XPath finds nothing → 0 rows), the
+        # Script half ONLY DDR_ScriptSteps. They are mutually exclusive with
+        # DDR_INFO (nest on XOR off) → no OWNER conflict. WITHOUT these lines
+        # catmerge would fall back to the part path.
+        Calculation)     echo "DDR_Calculations DDR_ChunkListContexts" ;;
         Script)          echo "DDR_ScriptSteps" ;;
         LayoutCatalog)   echo "Layouts LayoutObjects LayoutParts" ;;
         *)               echo "?" ;;
@@ -841,7 +863,7 @@ _turbo_merge_catalog() {
     # belong to main → only main chunks copy them).
     local pqdir="$PARTDB_DIR/pq"; mkdir -p "$pqdir"
     while IFS= read -r t; do [ -n "$t" ] && mkdir -p "$pqdir/$t"; done <<< "$tables"
-    local esql; esql="$(mktemp)"
+    local esql; esql="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")"
     for i in "${!CID[@]}"; do
         echo "ATTACH '$STREAMING_DIR/chunk_${CID[$i]}.duckdb' AS k (READ_ONLY);" >> "$esql"
         while IFS= read -r t; do
@@ -884,7 +906,7 @@ _turbo_merge_catalog() {
     # collision-/incremental-safe) + wildcard INSERT. Atomic per (file×catalog) via owner partition.
     # a1: tables that may carry `ON CONFLICT DO NOTHING` (PK/UNIQUE present). Computed once.
     local pk_tables; pk_tables=$(_pk_constrained_tables "$seed_chunk")
-    local msql dtypes; msql="$(mktemp)"
+    local msql dtypes; msql="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")"
     while IFS= read -r t; do
         [ -z "$t" ] && continue
         ls "$pqdir/$t"/*.parquet >/dev/null 2>&1 || continue
@@ -948,7 +970,7 @@ _turbo_catmerge_ok() {
     # (2) Collect the internal File_Name per main chunk (= per physical XML file) and
     # check for duplicates. ONE duckdb run (sequential ATTACH→SELECT→DETACH, max. 1 DB
     # attached → no RAM peak). Prod (57 distinct File_Name) → no collision → catmerge.
-    local esql; esql="$(mktemp)" || return 0
+    local esql; esql="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")" || return 0
     local cid
     while IFS= read -r cid; do
         [ -z "$cid" ] && continue
@@ -1480,7 +1502,7 @@ _turbo_build_part() {
     # a1: same record-disjoint assumption as the catmerge — a record present in >1 chunk of
     # this file would crash the plain INSERT. Guard PK/UNIQUE tables with ON CONFLICT DO NOTHING.
     local pk_tables; pk_tables=$(_pk_constrained_tables "$part")
-    local msql; msql="$(mktemp)"
+    local msql; msql="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")"
     local k=1 cdb tbl
     while [ "$k" -lt "${#cdbs[@]}" ]; do
         cdb="${cdbs[$k]}"
@@ -1578,8 +1600,13 @@ _turbo_catalog_gate() {
         FROM (
             SELECT cur.file_name AS fn, cur.catalog AS cat
             FROM (
+                -- ORDER BY seq_offset, split_number: canonical global order.
+                -- split_number alone is ambiguous after an OOM resplit (its numbers
+                -- restart at 0 per resplit group); seq_offset is globally monotonic.
+                -- MUST stay identical to the aggregation in _turbo_write_manifest —
+                -- a divergent order would mismatch every gate comparison.
                 SELECT file_name, catalog,
-                       md5(string_agg(content_hash, '|' ORDER BY split_number)) AS h
+                       md5(string_agg(content_hash, '|' ORDER BY seq_offset, split_number)) AS h
                 FROM chunkmap
                 WHERE catalog <> 'main' AND catalog NOT IN ($_excl)
                 GROUP BY file_name, catalog
@@ -1603,11 +1630,35 @@ _turbo_catalog_gate() {
     " >/dev/null 2>&1 || true
 }
 
+# ── manifest_run writer (policy-lock B1) ───────────────────────────────
+# Stamps the one-row policy fingerprint of THIS run into the manifest —
+# called only next to actual manifest/hash writes (successful runs), so the
+# fingerprint always describes the run that produced the stored hashes.
+# The inline CREATE covers manifests touched before init_manifest_db learned
+# the table (additive, idempotent). Never fatal.
+_manifest_write_run() {
+    [ -f "$MANIFEST_DB" ] || return 0
+    local _pol _wv _cv
+    _pol=$($STREAMIFY_MODE && echo sax || echo dom)
+    _wv=$(printf '%s' "${WEBBED_VERSION_DETECTED:-unknown}" | sed "s/'/''/g")
+    _cv=$(printf '%s' "${CONVERTER_VERSION:-unknown}" | sed "s/'/''/g")
+    "$DUCKDB_BIN" "$MANIFEST_DB" -c "
+        CREATE TABLE IF NOT EXISTS manifest_run (
+            id INTEGER PRIMARY KEY, parser_policy VARCHAR, ws_sentinel VARCHAR,
+            webbed_version VARCHAR, converter_version VARCHAR, ts TIMESTAMP);
+        INSERT INTO manifest_run VALUES
+          (1, '$_pol', '${WS_SENTINEL_ON:-true}', '$_wv', '$_cv', (now() AT TIME ZONE 'UTC'))
+        ON CONFLICT (id) DO UPDATE SET
+           parser_policy=excluded.parser_policy, ws_sentinel=excluded.ws_sentinel,
+           webbed_version=excluded.webbed_version, converter_version=excluded.converter_version,
+           ts=excluded.ts;" >/dev/null 2>&1 || true
+}
+
 # ── Update the manifest — ALWAYS after a successful consolidation ──────
 # For the files actually processed (not skipped, rc 0): signature +
 # internal File_Name (from the part_<idx>.duckdb, before it is cleaned up) + versions.
 _turbo_write_manifest() {
-    local i fn part mcid internal fmver ddr h mt sz esc
+    local i fn part mcid internal fmver ddr h mt sz esc _wrote_any=false _boff _bc _excl_sql
     for i in "${!XML_FILES[@]}"; do
         [ -f "$PARTDB_DIR/${i}.unchanged" ] && continue          # skipped → manifest row stays valid
         [ "$(cat "$PARTDB_DIR/${i}.rc" 2>/dev/null)" = "0" ] || continue   # successes only
@@ -1640,23 +1691,54 @@ _turbo_write_manifest() {
                converter_version=excluded.converter_version, schema_version=excluded.schema_version,
                last_ingest_ts=excluded.last_ingest_ts;" >/dev/null 2>&1
         # manifest_catalog: catalog_hash per (file × catalog) from the content_hashes of
-        # the split-group (ordered by split_number). The chunkmap contains ALL catalogs of
-        # this file (skipped_unchanged ones also carry their content_hash from Phase S), so
-        # the hash reflects the full current state. UPSERT only →
+        # the split-group (canonical order: seq_offset, split_number — identical to the
+        # gate aggregation in _turbo_catalog_gate). The chunkmap contains ALL
+        # catalogs of this file (skipped_unchanged ones also carry their content_hash
+        # from Phase S), so the hash reflects the full current state. UPSERT only →
         # file-level skipped files (not in the chunkmap) keep their rows.
+        #
+        # Catalogs hit by the OOM backoff carry resplit rows WITHOUT a
+        # content_hash (attempt > 1; the resplit has no hashes.tsv pendant) —
+        # string_agg would silently skip the NULLs and stamp a subset hash whose
+        # chunk boundaries depend on WHERE the backoff struck (RAM-dependent →
+        # inherently run-unstable; refilling the hashes would NOT help, the
+        # boundaries still differ from any fresh split). Such catalogs are
+        # EXCLUDED: their manifest row is deleted, so the next run that processes
+        # this file re-parses exactly this catalog once and stamps a canonical
+        # hash again. Fail direction stays false-changed — a missing row can
+        # never cause a false skip.
+        _boff=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c \
+            "SELECT DISTINCT catalog FROM chunkmap WHERE file_name='$(esc "$fn")' AND (content_hash IS NULL OR attempt > 1) ORDER BY catalog;" 2>/dev/null)
+        _excl_sql=""
+        if [ -n "$_boff" ]; then
+            while IFS= read -r _bc; do
+                [ -z "$_bc" ] && continue
+                _excl_sql="$_excl_sql${_excl_sql:+,}'${_bc//\'/\'\'}'"
+                emit_log "backoff: catalog $_bc ($fn) excluded from manifest — next run re-parses it once"
+            done <<< "$_boff"
+        fi
+        [ -z "$_excl_sql" ] && _excl_sql="''"
         "$DUCKDB_BIN" "$MANIFEST_DB" -c "
             ATTACH '$CHUNKMAP_DB' AS cm (READ_ONLY);
+            DELETE FROM manifest_catalog
+             WHERE file_name='$(esc "$fn")' AND catalog IN ($_excl_sql);
             INSERT INTO manifest_catalog (file_name, catalog, catalog_hash, record_count, last_ingest_ts)
             SELECT file_name, catalog,
-                   md5(string_agg(content_hash, '|' ORDER BY split_number)),
+                   md5(string_agg(content_hash, '|' ORDER BY seq_offset, split_number)),
                    SUM(record_count), (now() AT TIME ZONE 'UTC')
             FROM cm.chunkmap WHERE file_name='$(esc "$fn")'
+              AND catalog NOT IN ($_excl_sql)
             GROUP BY file_name, catalog
             ON CONFLICT (file_name, catalog) DO UPDATE SET
                catalog_hash=excluded.catalog_hash, record_count=excluded.record_count,
                last_ingest_ts=excluded.last_ingest_ts;
             DETACH cm;" >/dev/null 2>&1
+        _wrote_any=true
     done
+    # Fingerprint only when hashes were actually (re)written this run — an
+    # all-unchanged/all-failed batch keeps the previous run's fingerprint,
+    # which still correctly describes the stored hashes (policy-lock B1).
+    $_wrote_any && _manifest_write_run
 }
 
 # ── Manifest row for a completed SINGLE-FILE run ───────────────────────
@@ -1694,6 +1776,10 @@ _manifest_write_single() {
            converter_version=excluded.converter_version, schema_version=excluded.schema_version,
            last_ingest_ts=excluded.last_ingest_ts;
         DELETE FROM manifest_catalog WHERE file_name='$(esc "$fn")';" >/dev/null 2>&1
+    # Policy fingerprint (B1): the single run rewrote this file's master rows
+    # under the current policy — stamp it even though the per-catalog hashes
+    # are deleted by design (the next batch re-hashes under its own policy).
+    _manifest_write_run
 }
 
 # Read/write the catalogs_built marker (pipeline_state in the manifest DB).

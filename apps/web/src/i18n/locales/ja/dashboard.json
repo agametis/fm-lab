@@ -25,7 +25,15 @@
     "abortOomTitle": "メモリ不足",
     "abortOomBody": "このソリューションはこのマシンの使用可能なメモリに対して大きすぎます。より多くのRAM（8 GB以上）を搭載したマシンでインポートを実行するか、メモリプロファイルを削減して再試行してください。",
     "abortIncompleteTitle": "ビルド未完了",
-    "abortIncompleteBody": "参照解決が完了しなかったため、オブジェクトカタログを構築できませんでした。詳細は実行ログを確認してください。"
+    "abortIncompleteBody": "参照解決が完了しなかったため、オブジェクトカタログを構築できませんでした。詳細は実行ログを確認してください。",
+    "logStart": "── 開始 ──",
+    "logAborted": "── 中断 ──",
+    "logAbortedOom": "⚠ 中断 — メモリ不足（この環境にはソリューションが大きすぎます）。",
+    "logAbortedIncomplete": "⚠ 中断 — ビルド未完了（参照解決に失敗しました）。",
+    "logDone": "── 完了 ──",
+    "logDoneError": "── エラーで終了 (exit {{code}}) ──",
+    "logReloadOk": "リロードに成功しました。",
+    "logReloadError": "リロードに失敗しました: {{error}}"
   },
   "cellValues": {
     "yes": "はい",

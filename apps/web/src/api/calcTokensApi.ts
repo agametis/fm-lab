@@ -1,10 +1,13 @@
 import { API_BASE } from '../config/apiBase';
-// Calc Tokens API — Fetch wrapper für /api/get-calc?hash=<hash>&format=tokens&enrich=<lang>
-// Liefert die strukturierte Token-Sequenz einer beliebigen Calculation, adressiert
-// über ihren DDR-Hash (Calcs haben keine Top-Level-UUID). Generischer Service:
-// teilt sich Template + Formatter mit Field-/CustomFunction-Tokens.
+// Calc Tokens API — Fetch wrapper für /api/get-calc?format=tokens&enrich=<lang>
+// Liefert die strukturierte Token-Sequenz einer beliebigen Calculation.
+// Adressierung (Schema 1.22.0): primär instanz-exakt über die Calculation_UUID
+// (`by: 'uuid'`), Alias über den DDR-Hash (`by: 'hash'` — Default, Hash ist
+// NICHT eindeutig, Dedup-Pick). Generischer Service: teilt sich Template +
+// Formatter mit Field-/CustomFunction-Tokens.
 //
-// Konsument u.a.: PrivilegeSetViewer (Record-Access-Calc-Formeln).
+// Konsumenten u.a.: PrivilegeSetViewer (hash), FieldViewer-Validierungs-Slots
+// und LayoutObjectDetail-Calc-Slots (uuid).
 
 import type { CalculationTokens } from '../script/calcTokens';
 
@@ -15,11 +18,15 @@ export interface CalcTokensResponse {
   data: CalculationTokens;
 }
 
+export type CalcTokenKeyKind = 'hash' | 'uuid';
+
 export async function fetchCalcTokens(
-  hash: string,
+  key: string,
   lang: string,
+  by: CalcTokenKeyKind = 'hash',
 ): Promise<CalculationTokens> {
-  const params = new URLSearchParams({ hash, format: 'tokens', enrich: lang });
+  const params = new URLSearchParams({ format: 'tokens', enrich: lang });
+  params.set(by, key);
   const response = await fetch(`${baseUrl}/api/get-calc?${params}`);
 
   if (!response.ok) {

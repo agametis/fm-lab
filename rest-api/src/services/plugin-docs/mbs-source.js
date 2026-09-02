@@ -35,6 +35,9 @@ let dbHandle = null; // better-sqlite3 Database (lazy init)
 let dbInitTried = false;
 let dbInitError = null;
 
+// Komponenten-Zuordnung (lazy, prozessweit) — siehe getComponentMap().
+let componentMap = null;
+
 const SOURCE_ID = 'mbs';
 
 function getMbsConfig() {
@@ -220,10 +223,150 @@ function getFunctionDoc(fnName) {
   return result;
 }
 
+// ─── Komponenten-Zuordnung ───────────────────────────────────────────────
+// Der Doku-Index kennt pro Funktion nur Name und Dateipfad. Welche Komponente
+// (= Rubrik) eine Funktion hat, steht auf ihrer Doku-Seite und wird beim
+// Doku-Install nach reference/mbs_component_exceptions.csv abgeleitet.
+//
+// Die Namens-Heuristik `<Komponente>.<Funktion>` trägt nur für den Regelfall:
+// ~1.000 Funktionen weichen ab (Funktionen ohne Punkt wie `IsError` gehören zu
+// `Plugin`), 121 sind in mehreren Komponenten gelistet. Ohne die Tabelle bleiben
+// diese Funktionen in keiner Rubrik auffindbar.
+//
+// Auflösung je Funktion (identisch mit Import-Pipeline und Objekt-Filter):
+//   Primärkomponente = CSV-Eintrag, sonst Namenspräfix
+// Zusätzlich liefert die CSV-Spalte `Components` die vollständige Liste; alles
+// jenseits der Primärkomponente ist eine Zweit-Mitgliedschaft.
+
+/**
+ * Zerlegt eine CSV-Zeile mit optionalen Anführungszeichen. Reicht für die
+ * schmale Zuordnungstabelle (drei Spalten, keine Zeilenumbrüche in Werten).
+ */
+function parseCsvLine(line) {
+  const out = [];
+  let cur = '';
+  let quoted = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (quoted) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i += 1; } else { quoted = false; }
+      } else cur += ch;
+    } else if (ch === '"') {
+      quoted = true;
+    } else if (ch === ',') {
+      out.push(cur); cur = '';
+    } else cur += ch;
+  }
+  out.push(cur);
+  return out.map((v) => v.trim());
+}
+
+/**
+ * Lädt die Zuordnungstabelle einmal pro Prozess.
+ * Rückgabe: `Map<Funktionsname, string[]>` (Komponenten in Doku-Reihenfolge,
+ * erste = Primärkomponente). Fehlt die Datei, bleibt die Map leer und es
+ * greift überall der Namenspräfix — der bisherige Stand, nur ohne Ausnahmen.
+ */
+function getComponentMap() {
+  if (componentMap) return componentMap;
+  componentMap = new Map();
+
+  const cfg = getMbsConfig();
+  const file = cfg && cfg.componentMapFile;
+  if (!file || !fs.existsSync(file)) {
+    console.warn(
+      `MBS-Komponenten-Tabelle nicht gefunden (${file || 'nicht konfiguriert'}) — ` +
+      'Rubriken fallen auf die Namens-Heuristik zurück (install-mbs-docs erzeugt sie neu).'
+    );
+    return componentMap;
+  }
+
+  const text = fs.readFileSync(file, 'utf-8');
+  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
+  if (!lines.length) return componentMap;
+
+  const header = parseCsvLine(lines[0]);
+  const idxName = header.indexOf('Funktionsname');
+  const idxPrimary = header.indexOf('Component');
+  const idxAll = header.indexOf('Components');
+  if (idxName < 0 || idxPrimary < 0) return componentMap;
+
+  for (let i = 1; i < lines.length; i += 1) {
+    const cells = parseCsvLine(lines[i]);
+    const name = cells[idxName];
+    if (!name) continue;
+    const all = idxAll >= 0 && cells[idxAll]
+      ? cells[idxAll].split(',').map((c) => c.trim()).filter(Boolean)
+      : [];
+    const primary = cells[idxPrimary];
+    const list = all.length ? all : (primary ? [primary] : []);
+    if (list.length) componentMap.set(name, list);
+  }
+  return componentMap;
+}
+
+/** Komponenten einer Funktion; ohne Tabelleneintrag greift der Namenspräfix. */
+function componentsOf(fnName) {
+  const mapped = getComponentMap().get(fnName);
+  if (mapped && mapped.length) return mapped;
+  const dot = fnName.indexOf('.');
+  return dot > 0 ? [fnName.slice(0, dot)] : [];
+}
+
+/**
+ * Kategorienamen aus dem Index vergleichen. Die Doku schreibt einzelne
+ * Komponenten uneinheitlich (`Webview` auf der Funktionsseite, `WebView` im
+ * Index) — Vergleiche laufen daher case-insensitiv.
+ */
+function sameComponent(a, b) {
+  return String(a || '').toLowerCase() === String(b || '').toLowerCase();
+}
+
+/**
+ * Baut die Mitgliederliste je Kategorie in einem Durchlauf über den Index.
+ * Rückgabe: `Map<lowercase(Kategorie), { primary: [], secondary: [] }>`, beide
+ * Listen nach Funktionsname sortiert. `secondary`-Einträge tragen zusätzlich
+ * die Primärkomponente, damit die Rubrikseite sie ausweisen kann.
+ */
+function buildMembership() {
+  const db = getDb();
+  const rows = db.prepare(
+    "SELECT name, path FROM searchIndex WHERE type='Function' ORDER BY name"
+  ).all();
+
+  const byComponent = new Map();
+  const bucket = (component) => {
+    const key = String(component).toLowerCase();
+    if (!byComponent.has(key)) byComponent.set(key, { primary: [], secondary: [] });
+    return byComponent.get(key);
+  };
+
+  for (const row of rows) {
+    const comps = componentsOf(row.name);
+    if (!comps.length) continue;
+    bucket(comps[0]).primary.push({ name: row.name, path: row.path, primaryComponent: comps[0] });
+    for (const extra of comps.slice(1)) {
+      if (sameComponent(extra, comps[0])) continue;
+      bucket(extra).secondary.push({ name: row.name, path: row.path, primaryComponent: comps[0] });
+    }
+  }
+  return byComponent;
+}
+
+let membershipCache = null;
+function getMembership() {
+  if (!membershipCache) membershipCache = buildMembership();
+  return membershipCache;
+}
+
 /**
  * Liefert die Kategorien-Liste aus dem SQLite-Index. Mit `withFunctionCounts`
- * wird zusätzlich pro Kategorie die Anzahl Funktionen ermittelt, deren Name
- * mit `<Kategorie>.` beginnt (Component-Präfix-Konvention der MBS-Doku).
+ * wird zusätzlich pro Kategorie die Anzahl ihrer Funktionen ermittelt.
+ *
+ * Gezählt werden nur Primär-Mitglieder — dieselbe Grundgesamtheit wie im
+ * Objekt-Katalog und im Kategorie-Filter, damit Zähler und Badge übereinstimmen.
+ * Zweit-Mitgliedschaften erscheinen auf der Rubrikseite als eigener Abschnitt.
  *
  * Rückgabe: Array von `{ name, path, functionCount? }`.
  */
@@ -236,48 +379,56 @@ function listCategories({ withFunctionCounts = false } = {}) {
 
   if (!withFunctionCounts) return rows;
 
-  // Eine einzige aggregierende Query statt N Einzelqueries.
-  const countStmt = db.prepare(
-    "SELECT substr(name, 1, instr(name, '.') - 1) AS prefix, COUNT(*) AS cnt " +
-    "FROM searchIndex WHERE type='Function' AND instr(name, '.') > 0 " +
-    "GROUP BY prefix"
-  );
-  const counts = new Map(countStmt.all().map((r) => [r.prefix, r.cnt]));
-  return rows.map((r) => ({ ...r, functionCount: counts.get(r.name) || 0 }));
+  const membership = getMembership();
+  return rows.map((r) => ({
+    ...r,
+    functionCount: (membership.get(String(r.name).toLowerCase())?.primary.length) || 0,
+  }));
 }
 
 /**
- * Funktionen innerhalb einer Kategorie. Konvention der MBS-Doku: alle
- * Funktionen einer Kategorie tragen den Kategorienamen als Component-Präfix
- * (`List.AddPrefix`, `List.AddValue`, …). Wir prüfen zunächst, ob die
- * Kategorie überhaupt im Index registriert ist (`exists`), und liefern dann
- * die Liste der zugeordneten Funktionen.
+ * Funktionen innerhalb einer Kategorie — aufgelöst über die Komponenten-
+ * Zuordnung (siehe getComponentMap), nicht über den Funktionsnamen.
  *
- * Rückgabe: `{ exists, total, results: [{ name, path }] }`.
+ * Reihenfolge: erst alle Primär-Mitglieder alphabetisch, danach die Zweit-
+ * Mitglieder (Funktionen, die MBS zusätzlich auf dieser Komponentenseite
+ * führt), gruppiert nach ihrer Primärkomponente. Damit bleiben die Gruppen
+ * für die Listendarstellung zusammenhängend.
+ *
+ * `total` zählt nur die Primär-Mitglieder — dieselbe Grundgesamtheit wie der
+ * Zähler auf der Übersichtsseite und der Objekt-Filter.
+ *
+ * Rückgabe: `{ exists, total, secondaryTotal, results: [{ name, path,
+ * secondaryOf }] }` — `secondaryOf` ist die Primärkomponente einer Zweit-
+ * Mitgliedschaft, sonst null.
  */
 function listFunctionsInCategory(categoryName, { limit = 200, offset = 0 } = {}) {
   const db = getDb();
   const trimmed = String(categoryName || '').trim();
-  if (!trimmed) return { exists: false, total: 0, results: [] };
+  if (!trimmed) return { exists: false, total: 0, secondaryTotal: 0, results: [] };
 
   const catStmt = db.prepare(
     "SELECT name FROM searchIndex WHERE type='Category' AND name = ? LIMIT 1"
   );
   const cat = catStmt.get(trimmed);
-  if (!cat) return { exists: false, total: 0, results: [] };
+  if (!cat) return { exists: false, total: 0, secondaryTotal: 0, results: [] };
 
-  const pattern = `${trimmed}.%`;
-  const totalStmt = db.prepare(
-    "SELECT COUNT(*) AS cnt FROM searchIndex WHERE type='Function' AND name LIKE ?"
+  const entry = getMembership().get(trimmed.toLowerCase()) || { primary: [], secondary: [] };
+  const secondary = [...entry.secondary].sort(
+    (a, b) => a.primaryComponent.localeCompare(b.primaryComponent) || a.name.localeCompare(b.name)
   );
-  const total = totalStmt.get(pattern).cnt;
 
-  const stmt = db.prepare(
-    "SELECT name, path FROM searchIndex WHERE type='Function' AND name LIKE ? " +
-    "ORDER BY name LIMIT ? OFFSET ?"
-  );
-  const rows = stmt.all(pattern, limit, offset);
-  return { exists: true, total, results: rows };
+  const ordered = [
+    ...entry.primary.map((f) => ({ name: f.name, path: f.path, secondaryOf: null })),
+    ...secondary.map((f) => ({ name: f.name, path: f.path, secondaryOf: f.primaryComponent })),
+  ];
+
+  return {
+    exists: true,
+    total: entry.primary.length,
+    secondaryTotal: secondary.length,
+    results: ordered.slice(offset, offset + limit),
+  };
 }
 
 /**
@@ -322,6 +473,53 @@ function searchFunctions(query, { limit = 50, offset = 0 } = {}) {
     total,
     results: rows.map((r) => ({ name: r.name, path: r.path, match: r.match_type })),
   };
+}
+
+/**
+ * Rubrikübergreifende Eintragssuche, konsolidiert auf Komponenten-Ebene.
+ *
+ * Ungedeckelt: es wird über ALLE Mitglieder aggregiert, nur das Beleg-Sample
+ * pro Rubrik ist begrenzt. Ein vorgelagerter Treffer-Cap (wie in
+ * `searchFunctions`) würde stillschweigend ganze Rubriken unterschlagen.
+ *
+ * Die Mitgliederlisten kommen aus `getMembership()` — derselben Auflösung, die
+ * auch die Rubrikseite füllt. Damit kann der Beleg keine Funktion nennen, die
+ * in der Zielrubrik dann fehlt. Gezählt werden nur Primär-Mitglieder, dieselbe
+ * Grundgesamtheit wie `entry_count` und der Objekt-Filter.
+ *
+ * Sample-Reihenfolge: Präfix-Treffer vor Substring-Treffern, darin alphabetisch.
+ *
+ * Rückgabe: `[{ category, hitCount, sample: string[] }]`, nach Trefferzahl
+ * absteigend.
+ */
+function searchByComponent(query, { sample = 5 } = {}) {
+  const trimmed = String(query || '').trim();
+  if (!trimmed) return [];
+  const needle = trimmed.toLowerCase();
+
+  const membership = getMembership();
+  const out = [];
+  // Der Index-Kategoriename ist maßgeblich — er ist das Deep-Link-Ziel der
+  // Rubrikseite. Die Mitglieder liegen unter dem case-insensitiven Schlüssel
+  // (die Doku schreibt `Webview`/`WebView` uneinheitlich, siehe sameComponent).
+  for (const cat of listCategories()) {
+    const entry = membership.get(String(cat.name).toLowerCase());
+    if (!entry) continue;
+    const hits = entry.primary.filter((f) => f.name.toLowerCase().includes(needle));
+    if (!hits.length) continue;
+    const ordered = hits.slice().sort((a, b) => {
+      const ap = a.name.toLowerCase().startsWith(needle) ? 0 : 1;
+      const bp = b.name.toLowerCase().startsWith(needle) ? 0 : 1;
+      return ap - bp || a.name.localeCompare(b.name, 'en');
+    });
+    out.push({
+      category: cat.name,
+      hitCount: hits.length,
+      sample: ordered.slice(0, Math.max(0, sample)).map((f) => f.name),
+    });
+  }
+  out.sort((a, b) => b.hitCount - a.hitCount || a.category.localeCompare(b.category, 'en'));
+  return out;
 }
 
 /**
@@ -375,6 +573,8 @@ function getStatus() {
 function clearCaches() {
   pathCache.clear();
   docCache.clear();
+  componentMap = null;
+  membershipCache = null;
 }
 
 module.exports = {
@@ -387,5 +587,6 @@ module.exports = {
   listCategories,
   listFunctionsInCategory,
   searchFunctions,
+  searchByComponent,
   clearCaches,
 };

@@ -5,6 +5,33 @@ import { useUrlState, stringSetCodec } from './useUrlState';
 
 const EMPTY_TYPES = new Set<string>();
 
+/**
+ * Kategorie-Prädikate der Calculation-Chips: markiert Objekte, die unsichtbare
+ * Layout-Logik tragen. Signale kommen katalog-basiert aus dem Canvas-Payload
+ * (cf_count aus LayoutObjectConditions, hide/tooltip aus den LayoutObjects-
+ * Spalten, trigger_count aus ScriptTriggers mit Owner_Type='LayoutObject',
+ * display_calc_count aus CalculationsCatalog mit Rolle display_calculation).
+ * Der Chip zählt TRÄGER, nicht Regeln — deaktivierte CF-Regeln zählen mit.
+ */
+export const CALC_CATEGORY_KEYS = ['cf', 'hide', 'trigger', 'tooltip', 'display'] as const;
+export type CalcCategoryKey = (typeof CALC_CATEGORY_KEYS)[number];
+
+export const CALC_PREDICATES: Record<CalcCategoryKey, (o: LayoutObject) => boolean> = {
+  cf: o => o.cf_count > 0,
+  hide: o => o.hide_text != null,
+  trigger: o => o.trigger_count > 0,
+  tooltip: o => o.tooltip_text != null,
+  display: o => o.display_calc_count > 0,
+};
+
+function matchesCalc(o: LayoutObject, activeCalc: Set<string>): boolean {
+  // OR innerhalb der Gruppe — ein Objekt matcht, sobald EINE aktive Kategorie greift.
+  for (const key of CALC_CATEGORY_KEYS) {
+    if (activeCalc.has(key) && CALC_PREDICATES[key](o)) return true;
+  }
+  return false;
+}
+
 export type LayoutSearchAPI = {
   query: string;
   setQuery: (q: string) => void;
@@ -13,6 +40,9 @@ export type LayoutSearchAPI = {
   toggleType: (type: string) => void;
   setTypes: (types: string[], active: boolean) => void;
   clearTypes: () => void;
+
+  activeCalc: Set<string>;
+  toggleCalc: (key: string) => void;
 
   matchUuids: Set<string>;
   matches: LayoutObject[];
@@ -27,8 +57,9 @@ export type LayoutSearchAPI = {
 
 /**
  * Konsolidierter Such-Text pro Layout-Objekt:
- * deckt Feldname, Script-Caption, Text-Inhalt, Object_Name und Object_Type ab,
- * sodass eine einzelne Substring-Eingabe alle relevanten Bezeichnungen findet.
+ * deckt Feldname, Script-Caption, Text-Inhalt, Object_Name, Object_Type sowie
+ * Hide- und Tooltip-Formeln ab, sodass eine einzelne Substring-Eingabe alle
+ * relevanten Bezeichnungen und die unsichtbare Layout-Logik findet.
  */
 function buildSearchText(o: LayoutObject): string {
   return [
@@ -37,6 +68,8 @@ function buildSearchText(o: LayoutObject): string {
     o.text_content ?? '',
     o.object_name ?? '',
     o.object_type,
+    o.hide_text ?? '',
+    o.tooltip_text ?? '',
   ].join(' ').toLowerCase();
 }
 
@@ -69,7 +102,8 @@ export function useLayoutSearch(
   // Lesen via useUrlState, Schreiben für User-Interaktionen via setSearchParams
   // direkt (atomarer Multi-Param-Update mit ref-Clear).
   const [query, setQueryState] = useUrlState<string>('q', '');
-  const [activeTypes, setActiveTypes] = useUrlState<Set<string>>('types', EMPTY_TYPES, stringSetCodec);
+  const [activeTypes] = useUrlState<Set<string>>('types', EMPTY_TYPES, stringSetCodec);
+  const [activeCalc] = useUrlState<Set<string>>('calc', EMPTY_TYPES, stringSetCodec);
   const [, setSearchParams] = useSearchParams();
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
 
@@ -84,22 +118,25 @@ export function useLayoutSearch(
   const externalHasItems = !!(externalMatchUuids && externalMatchUuids.size > 0);
 
   const matches = useMemo<LayoutObject[]>(() => {
+    // UND zwischen den Dimensionen: Suchtext ∩ Typ-Filter ∩ Calc-Filter.
     const typeFiltered = activeTypes.size === 0
       ? objects
       : objects.filter(o => activeTypes.has(o.object_type));
 
-    let result = typeFiltered;
+    let result = activeCalc.size === 0
+      ? typeFiltered
+      : typeFiltered.filter(o => matchesCalc(o, activeCalc));
     if (query !== '') {
       const q = query.toLowerCase();
       result = result.filter(o => buildSearchText(o).includes(q));
-    } else if (activeTypes.size === 0 && externalHasItems) {
+    } else if (activeTypes.size === 0 && activeCalc.size === 0 && externalHasItems) {
       // Ref-Vorauswahl wirkt NUR, solange weder Suche noch Typ-Filter aktiv sind.
       // Sobald der User selbst filtert, gewinnt seine Wahl — der ref-Param wird
       // zusätzlich im URL-Update mit entfernt (siehe runUserUpdate unten).
       result = result.filter(o => externalMatchUuids!.has(o.object_uuid));
     }
     return result;
-  }, [objects, activeTypes, query, externalHasItems, externalMatchUuids]);
+  }, [objects, activeTypes, activeCalc, query, externalHasItems, externalMatchUuids]);
 
   const matchUuids = useMemo(() => {
     const s = new Set<string>();
@@ -107,11 +144,16 @@ export function useLayoutSearch(
     return s;
   }, [matches]);
 
+  const anyDimensionActive =
+    query !== '' || activeTypes.size > 0 || activeCalc.size > 0 || externalHasItems;
+
   // Selektion mit Fundmenge synchronisieren — analog useGraphSearch:
-  //  - genau 1 Treffer → diesen automatisch selektieren (rote Umrandung sofort)
+  //  - genau 1 Treffer → diesen automatisch selektieren (rote Umrandung sofort);
+  //    NUR bei aktiver Filter-Dimension — ohne Filter ist die Fundmenge „alle
+  //    Objekte" und ein Ein-Objekt-Layout würde sich sonst selbst selektieren
   //  - selektierte UUID nicht mehr in der Fundmenge → Selektion verwerfen
   useEffect(() => {
-    if (matches.length === 1) {
+    if (anyDimensionActive && matches.length === 1) {
       const only = matches[0].object_uuid;
       if (selectedUuid !== only) setSelectedUuid(only);
       return;
@@ -119,7 +161,20 @@ export function useLayoutSearch(
     if (selectedUuid !== null && !matchUuids.has(selectedUuid)) {
       setSelectedUuid(null);
     }
-  }, [matches, matchUuids, selectedUuid]);
+  }, [matches, matchUuids, selectedUuid, anyDimensionActive]);
+
+  // Auto-Selektion beim Zurücknehmen des LETZTEN Filters räumen: ohne Filter
+  // enthält die Fundmenge wieder alle Objekte, der Verwerfen-Zweig oben greift
+  // also nie — der rote Selektions-Ring eines 1-Treffer-Filters bliebe sonst
+  // dauerhaft stehen. Flanken-getriggert (aktiv → inaktiv), damit ein manuell
+  // per TAB gesetzter Cursor ohne Filter nicht sofort wieder gelöscht wird.
+  const prevDimensionActiveRef = useRef(anyDimensionActive);
+  useEffect(() => {
+    if (prevDimensionActiveRef.current && !anyDimensionActive) {
+      setSelectedUuid(null);
+    }
+    prevDimensionActiveRef.current = anyDimensionActive;
+  }, [anyDimensionActive]);
 
   // Live-Ref auf externalHasItems, damit der atomare Setter den aktuellen Wert
   // ohne Re-Bind sieht — sonst müsste jeder Callback bei jedem ref-Toggle neu
@@ -205,13 +260,36 @@ export function useLayoutSearch(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runUserUpdate]);
 
+  // Calc-Chip-Toggle: gleiche URL-Semantik wie toggleType, eigener Param `calc`
+  // (Set-Codec). Ref-Vorauswahl erlischt wie bei jedem User-Filter.
+  const toggleCalc = useCallback((key: string) => {
+    runUserUpdate(p => {
+      const current = new Set(
+        (p.get('calc') ?? '').split(',').map(s => s.trim()).filter(Boolean),
+      );
+      if (current.has(key)) current.delete(key);
+      else current.add(key);
+      if (current.size === 0) p.delete('calc');
+      else p.set('calc', Array.from(current).join(','));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runUserUpdate]);
+
   const clearTypes = useCallback(() => {
     // clearTypes wird vom ESC-Stack und vom "Filter zurücksetzen"-Link genutzt
     // — beides ist eine programmatische Zurücknahme, nicht die Anlage eines
-    // neuen Filters. ref bleibt unverändert.
-    setActiveTypes(EMPTY_TYPES);
+    // neuen Filters. ref bleibt unverändert. Räumt BEIDE Filter-Dimensionen
+    // (Typen + Calc) in EINEM setSearchParams-Call — zwei separate
+    // useUrlState-Setter würden sich gegenseitig überschreiben (je eigene
+    // Memo-Closure auf searchParams, siehe Header-Kommentar).
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete('types');
+      next.delete('calc');
+      return next;
+    }, { replace: true });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setSearchParams]);
 
   const selectByOffset = useCallback((offset: 1 | -1) => {
     if (matches.length === 0) return;
@@ -235,7 +313,7 @@ export function useLayoutSearch(
     setSelectedUuid(null);
   }, []);
 
-  const filterActive = query !== '' || activeTypes.size > 0 || externalHasItems;
+  const filterActive = anyDimensionActive;
 
   return {
     query,
@@ -244,6 +322,8 @@ export function useLayoutSearch(
     toggleType,
     setTypes,
     clearTypes,
+    activeCalc,
+    toggleCalc,
     matchUuids,
     matches,
     selectedUuid,

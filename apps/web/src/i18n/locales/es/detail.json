@@ -12,7 +12,8 @@
     "page": "Página {{current}} / {{total}}",
     "noMatches": "Sin coincidencias para «{{query}}».",
     "prev": "← Anterior",
-    "next": "Siguiente →"
+    "next": "Siguiente →",
+    "rowAction": "Abrir destino"
   },
   "layoutPreview": {
     "heading": "Vista del layout",
@@ -25,11 +26,12 @@
     "Field": "Detalles del campo",
     "BaseTable": "Detalles de la tabla",
     "CustomFunction": "Detalles de la función",
-    "ValueList": "Detalles de la lista de valores"
+    "ValueList": "Detalles de la lista de valores",
+    "Calculation": "Detalles del cálculo"
   },
   "layoutCanvas": {
     "searchPlaceholder": "Buscar objeto del layout…",
-    "searchTitle": "Tab: siguiente coincidencia · Mayús+Tab: anterior · Intro: abrir · Esc: reiniciar",
+    "searchTitle": "Tab: siguiente coincidencia · Mayús+Tab: anterior · Intro: abrir detalles · Alt+Intro: abrir destino · Esc: reiniciar",
     "searchAria": "Buscar objeto del layout",
     "matchCount_one": "{{count}} coincidencia",
     "matchCount_other": "{{count}} coincidencias",
@@ -39,7 +41,13 @@
     "labelType": "Tipo",
     "labelTypeTitle": "Mostrar el tipo de objeto como etiqueta",
     "stats_one": "{{count}} objeto · Zoom {{zoom}}%",
-    "stats_other": "{{count}} objetos · Zoom {{zoom}}%"
+    "stats_other": "{{count}} objetos · Zoom {{zoom}}%",
+    "tooltip": {
+      "target": "Destino",
+      "logic": "Lógica",
+      "slots": "Slots",
+      "moreTargets": "(+{{n}} más)"
+    }
   },
   "relationshipGraphCanvas": {
     "searchPlaceholder": "Buscar ocurrencia de tabla…",
@@ -109,14 +117,26 @@
     "groupsLabel": "Grupos",
     "detailsLabel": "Detalles",
     "clearTitle": "Limpiar todos los filtros de tipo",
-    "clearLabel": "Limpiar filtros"
+    "clearLabel": "Limpiar filtros",
+    "calcGroupLabel": "Calculations",
+    "calcCategories": {
+      "cf": "Formato condicional",
+      "hide": "Condición de ocultar",
+      "trigger": "Activadores",
+      "tooltip": "Información sobre herramientas",
+      "display": "Cálculos de diseño"
+    },
+    "calcInventoryOpen": "Abrir inventario"
   },
   "referencesFilter": {
     "searchPlaceholder": "Buscar referencias…",
     "searchTitle": "Esc: limpiar campo",
     "searchAria": "Buscar referencias",
     "clearTypesTitle": "Limpiar todos los filtros de tipo",
-    "clearTypesLabel": "Limpiar filtros"
+    "clearTypesLabel": "Limpiar filtros",
+    "rolesAria": "Filtrar por rol de enlace",
+    "clearRolesLabel": "Restablecer roles",
+    "clearRolesTitle": "Quitar todos los filtros de rol"
   },
   "hierarchyTree": {
     "ariaLabel": "Jerarquía de objetos",
@@ -132,7 +152,71 @@
     "noFilterMatches": "Sin coincidencias para los filtros actuales",
     "crossFileBadge": "Entre archivos",
     "itemAriaLabel": "Navegar a {{type}}: {{name}}",
-    "notNavigable": "El destino no está en el conjunto de datos importado"
+    "notNavigable": "El destino no está en el conjunto de datos importado",
+    "showInLayout": "Mostrar en el layout (Alt+clic)",
+    "showInFile": "Mostrar en el archivo (Alt+clic)",
+    "subroles": {
+      "hide": {
+        "short": "Hide",
+        "long": "Condición de ocultar"
+      },
+      "conditional_format": {
+        "short": "CF",
+        "long": "Formato condicional"
+      },
+      "tooltip": {
+        "short": "Tooltip",
+        "long": "Información en pantalla (tooltip)"
+      },
+      "button_action": {
+        "short": "Action",
+        "long": "Acción de botón"
+      },
+      "portal_filter": {
+        "short": "Portal",
+        "long": "Filtro de portal"
+      },
+      "web_viewer_url": {
+        "short": "WebViewer",
+        "long": "URL del visor web"
+      },
+      "placeholder": {
+        "short": "Placeholder",
+        "long": "Texto de marcador de posición"
+      },
+      "popover_title": {
+        "short": "Popover",
+        "long": "Título del popover"
+      },
+      "script_trigger_parameter": {
+        "short": "Trigger",
+        "long": "Parámetro del activador de guion"
+      },
+      "transaction_parameter_field": {
+        "short": "TX Param",
+        "long": "Campo de parámetro de transacción (candidato)"
+      },
+      "auto_enter": {
+        "short": "Auto-Enter",
+        "long": "Cálculo de entrada automática"
+      },
+      "validation": {
+        "short": "Validation",
+        "long": "Validación por lista de valores"
+      },
+      "on_server": {
+        "short": "PSoS",
+        "long": "Ejecutar en el servidor (PSoS)"
+      },
+      "mbs_runscript": {
+        "short": "MBS",
+        "long": "vía MBS FM.RunScript"
+      },
+      "menu_install": {
+        "short": "Install",
+        "long": "Condición de instalación de menú"
+      }
+    }
   },
   "searchOptions": {
     "regionAria": "Opciones de orden y agrupación",
@@ -366,6 +450,13 @@
     "dismissTitle": "Quitar resaltado de la referencia (Esc)",
     "sourceLabel": "Fuente:"
   },
+  "varSelect": {
+    "hint": "Clic: resaltar todas las apariciones",
+    "clearHint": "Clic: quitar el resaltado",
+    "pillLabel": "Variable:",
+    "dismissAria": "Quitar el resaltado de la variable",
+    "dismissTitle": "Quitar el resaltado de la variable (Esc)"
+  },
   "tableDetails": "Detalles de la tabla",
   "scriptDetails": "Detalles del script",
   "fieldDetails": "Detalles del campo",
@@ -384,6 +475,22 @@
   "metadata": "Metadatos",
   "rowCount_one": "{{count}} entrada",
   "rowCount_other": "{{count}} entradas",
+  "privilegeSet": {
+    "ariaLabel": "Detalles del conjunto de privilegios",
+    "heading": "Conjunto de privilegios",
+    "recordAccess": "Privilegios de registro personalizados",
+    "fieldAccess": "Privilegios de campo personalizados",
+    "objectAccess": "Privilegios personalizados de presentaciones / listas de valores / guiones",
+    "colTable": "Tabla",
+    "colOperation": "Operación",
+    "colAccess": "Acceso",
+    "colFormula": "Fórmula / Contexto",
+    "colField": "Campo",
+    "colClass": "Clase",
+    "colObject": "Objeto",
+    "colRecordsAccess": "Registros",
+    "evalContext": "Contexto de evaluación"
+  },
   "valueList": {
     "ariaLabel": "Detalles de la lista de valores",
     "metaName": "Nombre",
@@ -558,5 +665,148 @@
   "osBinding": {
     "label": "Vinculación al SO:",
     "tooltip": "Sistemas operativos a los que está vinculado este script (del test platform-os-binding - inventario neutral, no un defecto)."
+  },
+  "textContent": {
+    "heading": "Contenido de texto"
+  },
+  "calculationDetail": {
+    "ariaLabel": "Detalles del cálculo",
+    "loading": "Cargando cálculo…",
+    "owner": "Propietario",
+    "slot": "Slot",
+    "kind": "Tipo",
+    "kindStatic": "Valor estático",
+    "kindFormula": "Fórmula",
+    "contextTo": "Contexto de evaluación",
+    "formula": "Fórmula",
+    "layoutFormula": "Cálculo de presentación",
+    "resultType": "Tipo de resultado",
+    "resultTypeTooltip": "Tipo de resultado: {{type}}",
+    "resultTypes": {
+      "Text": "Texto",
+      "Number": "Número",
+      "Date": "Fecha",
+      "Time": "Hora",
+      "Timestamp": "Fecha y hora"
+    },
+    "targets": "Destinos resueltos",
+    "slotsHeading": "Cálculos",
+    "ddrlessHint": "Solo texto sin formato — esta instancia no tiene datos de chunks DDR; tokens, tooltips y navegación cruzada no están disponibles.",
+    "recoveredHint": "Tokens reconstruidos a partir de la fórmula recuperada — esta instancia no tiene datos de chunks DDR; las funciones integradas quedan sin resolver.",
+    "roles": {
+      "field_calculation": "Cálculo de campo",
+      "auto_enter": "Cálculo de autointroducción",
+      "validation": "Cálculo de validación",
+      "validation_message": "Cálculo del mensaje de validación",
+      "container_path": "Ruta del contenedor",
+      "custom_function": "Función personalizada",
+      "step_parameter": "Cálculo del paso de guión",
+      "step_xslt": "Hoja de estilos XSLT",
+      "record_access": "Cálculo de acceso a registros",
+      "hide": "Condición de ocultación",
+      "tooltip": "Información sobre herramientas",
+      "placeholder": "Marcador de posición",
+      "conditional_format": "Formato condicional",
+      "portal_filter": "Filtro del portal",
+      "web_viewer_url": "URL del visor Web",
+      "button_label": "Etiqueta del botón",
+      "button_action": "Acción del botón",
+      "panel_title": "Título del panel",
+      "popover_title": "Título del popover",
+      "display_calculation": "Cálculo de visualización",
+      "merge_text": "Anclajes de fusión resueltos",
+      "chart_series": "Serie del gráfico",
+      "script_trigger_parameter": "Parámetro del activador de guiones",
+      "menu_install": "Condición de instalación del menú",
+      "menu_title": "Título del menú",
+      "menu_item_install": "Condición de instalación del elemento de menú",
+      "menu_item_name": "Nombre del elemento de menú",
+      "menu_item_parameter": "Parámetro del elemento de menú"
+    }
+  },
+  "scriptTriggerDetail": {
+    "heading": "Activador de script",
+    "openTrigger": "Abrir el activador de script",
+    "eventLabel": "Evento",
+    "modesLabel": "Activo en",
+    "scriptLabel": "Script",
+    "ownerLabel": "Anclado a",
+    "paramLabel": "Parámetro de script",
+    "paramFieldLabel": "Campo de parámetro",
+    "paramFieldCandidates": "Candidatos:",
+    "paramFieldOrphan": "Ningún campo con ese nombre en este archivo (nombre huérfano)",
+    "openParamCalc": "Abrir detalles del cálculo"
+  },
+  "layoutObjectDetail": {
+    "showInLayout": "Mostrar en el layout: {{name}}",
+    "showInLayoutTitle": "Abrir el layout y resaltar este objeto",
+    "targetBarAria": "Destinos",
+    "colBrowse": "V",
+    "colFind": "B",
+    "colPreview": "P",
+    "modeBrowse": "Modo Visualizar",
+    "modeFind": "Modo Buscar",
+    "modePreview": "Presentación previa",
+    "colEvent": "Rol del activador",
+    "colScript": "Script (parámetro)",
+    "paramLabel": "Parám.:",
+    "cfColActive": "activa",
+    "cfColCalc": "Cálculo",
+    "cfActiveTitle": "Regla activada en el diálogo",
+    "cfColFormat": "Formato",
+    "cfIconColorTitle": "Color del icono",
+    "cfColPreview": "Vista previa",
+    "cfFormat": {
+      "bold": "negrita",
+      "italic": "cursiva",
+      "underline": "subrayado",
+      "wordUnderline": "subrayado por palabra",
+      "doubleUnderline": "subrayado doble",
+      "strikethrough": "tachado",
+      "textColor": "color del texto",
+      "fillColor": "color de relleno",
+      "iconColor": "color del icono",
+      "font": "fuente",
+      "fontSize": "tamaño de fuente",
+      "highlight": "resaltado",
+      "superscript": "superíndice",
+      "subscript": "subíndice",
+      "smallCaps": "versalitas",
+      "condensed": "condensado",
+      "expanded": "expandido",
+      "uppercase": "MAYÚSCULAS",
+      "lowercase": "minúsculas",
+      "capitalize": "iniciales en mayúsculas"
+    },
+    "cfOperatorFallback": "valor (tipo {{type}})",
+    "cfOperator": {
+      "between": "entre",
+      "notBetween": "no entre",
+      "equal": "igual a",
+      "notEqual": "no igual a",
+      "greater": "mayor que",
+      "less": "menor que",
+      "greaterEqual": "mayor o igual que",
+      "lessEqual": "menor o igual que",
+      "contains": "contiene",
+      "notContains": "no contiene",
+      "beginsWith": "empieza por",
+      "endsWith": "termina en",
+      "empty": "vacío"
+    },
+    "segmentsHeading": "Segmentos",
+    "childrenHeading": "Objetos contenidos",
+    "colLabel": "Etiqueta",
+    "colType": "Tipo",
+    "colObject": "Objeto",
+    "colTrigger": "Activador",
+    "childDetailTitle": "Abrir detalles del objeto",
+    "propsHeading": "Propiedades",
+    "propType": "Tipo",
+    "propName": "Nombre",
+    "propPart": "Parte del layout",
+    "propPosition": "Posición/tamaño",
+    "propNesting": "Anidamiento",
+    "nestingLevel": "Nivel {{level}}"
   }
 }

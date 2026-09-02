@@ -5,7 +5,9 @@ Layer 1 (paste validity): real XML parse; Step ids exist in the reference
   attribute matches canonical name or a known xml_emission alias; Set Variable
   Name element present; Calculation content in CDATA.
 Layer 2 (save validity): step_constraints catalog — save_invalid_bare,
-  save_invalid_nesting (flat transactions), requires_pair balance on the XML.
+  save_invalid_nesting (flat transactions), requires_pair balance on the XML;
+  plus G202, the known-FM-bug registry (clipboard_loss & co) as a pure
+  warning class — the snippet is valid, FileMaker itself is the risk.
 Layer 3 (runtime validity): resolution report free of errors; version gate
   (origin_version of every step <= target file version, from step_compat data);
   calc findings (a reference that exists but is used wrongly, e.g. a custom
@@ -29,6 +31,12 @@ from .db import Reference
 
 IF_OPEN, IF_CLOSE, LOOP_OPEN, LOOP_CLOSE = 68, 70, 71, 73
 SET_VARIABLE = 141
+
+# Bug-registry kinds in step_constraints (since fm_spec 1.14.4) — a warning
+# class, never a validity rule (G202).
+_KNOWN_BUG_KINDS = {"clipboard_loss", "version_skew", "save_corruption",
+                    "serialization_unstable", "localized_build_defect",
+                    "paste_validator_warning"}
 
 
 @dataclass
@@ -104,7 +112,9 @@ def run_gate(xml_text: str, ref: Reference, resolution: dict | None = None,
         elif sid not in known:
             bad_ids.append(f"id={sid} not in fm_spec.script_steps")
         else:
-            hit = lookup.get(name.casefold())
+            # FileMaker itself ships step 227 with a trailing space in the
+            # name attribute ('Configure RAG Account ') — compare stripped.
+            hit = lookup.get(name.strip().casefold())
             if not hit or hit["step_id"] != sid:
                 bad_names.append(
                     f"id={sid}: name attribute '{name}' does not match any known "
@@ -187,6 +197,37 @@ def run_gate(xml_text: str, ref: Reference, resolution: dict | None = None,
                  + "; ".join(doc_only)) if doc_only
                 else "no doc-only enum values used")
 
+    # G110: value domains of boolean state attributes. Class check: every
+    # attribute a boolean option maps to must carry True|False in the XML —
+    # the domain is derived from the reference (option_type='boolean' +
+    # attribute-shaped xml_path, fixed slots via [n]), no attribute names are
+    # hardcoded. Catches any parse/emit path that lets a display spelling
+    # (On/Off) through into the emission.
+    if not ref.grammar_available():
+        res.add("G110-state-domains", 1, "skipped",
+                "grammar tables not installed — state domains not checked")
+    else:
+        problems110 = []
+        for st in steps:
+            sid = int(st.get("id", "-1"))
+            for o in ref.options(sid):
+                if o["option_type"] != "boolean":
+                    continue
+                path = o.get("xml_path") or ""
+                if "/@" not in path:
+                    continue
+                epath, _, attr = path.rpartition("/@")
+                for node in _nodes_at(st, epath):
+                    val = node.get(attr)
+                    if val is not None and val not in ("True", "False"):
+                        problems110.append(
+                            f"id={sid}: {epath}/@{attr}='{val}' is not a "
+                            f"valid boolean state (True|False) — option "
+                            f"'{o['option_key']}'")
+        res.add("G110-state-domains", 1, "fail" if problems110 else "pass",
+                "; ".join(problems110)
+                or "all boolean state attributes carry True/False")
+
     # ---- Layer 2: save validity --------------------------------------------
     constraints = ref.constraints() if ref.grammar_available() else []
     if_depth, problems2 = 0, []
@@ -213,6 +254,52 @@ def run_gate(xml_text: str, ref: Reference, resolution: dict | None = None,
                 "; ".join(problems2) or "no save-invalid pattern matched")
     else:
         res.add("G201-save-constraints", 2, "skipped", "step_constraints not installed")
+
+    # G202: known FileMaker bugs (registry kinds in step_constraints since
+    # fm_spec 1.14.4). Always a warning, never a fail — the steps are valid;
+    # the risk lies with FileMaker's own serialization (clipboard drops,
+    # version skew, save-time corruption). The emit side deliberately does not
+    # warn (fmgen's emission writes the full form and pastes intact); the gate
+    # reports so the deliverer can pass the caveat on with the artifact.
+    if constraints:
+        hits: dict[tuple[int, str], int] = {}
+        details: dict[tuple[int, str], dict] = {}
+        for st in steps:
+            sid = int(st.get("id", "-1"))
+            for c in constraints:
+                if c["step_id"] == sid and c["constraint_kind"] in _KNOWN_BUG_KINDS:
+                    key = (sid, c["constraint_kind"])
+                    hits[key] = hits.get(key, 0) + 1
+                    details[key] = c
+        if hits:
+            msgs = []
+            for (sid, kind), n in sorted(hits.items()):
+                c = details[(sid, kind)]
+                short = (c.get("detail") or "").split(". ")[0].strip()
+                if len(short) > 120:
+                    short = short[:117] + "…"
+                msgs.append(
+                    f"id={sid} ('{known.get(sid, {}).get('canonical_name', '?')}')"
+                    + (f" x{n}" if n > 1 else "")
+                    + f": {kind} (verified {c.get('verified_version') or '?'}) — {short}")
+            # paste_validator_warning is the one benign registry kind (a
+            # validator dialog, nothing lost) — the loss/skew lead would
+            # contradict its own detail text
+            benign_only = all(kind == "paste_validator_warning"
+                              for (_, kind) in hits)
+            lead = ("known FileMaker paste-validator quirk(s) affect step(s) "
+                    "in this snippet — a dialog may appear in some "
+                    "environments; the steps import completely: "
+                    if benign_only else
+                    "known FileMaker serialization bug(s) affect step(s) in "
+                    "this snippet — valid to paste, but FileMaker itself may "
+                    "lose or skew the marked data: ")
+            res.add("G202-known-fm-bugs", 2, "warning", lead + "; ".join(msgs))
+        else:
+            res.add("G202-known-fm-bugs", 2, "pass",
+                    "no step carries a known-FM-bug registry entry")
+    else:
+        res.add("G202-known-fm-bugs", 2, "skipped", "step_constraints not installed")
 
     # ---- Layer 3: runtime validity -----------------------------------------
     if resolution is None:
@@ -264,8 +351,99 @@ def run_gate(xml_text: str, ref: Reference, resolution: dict | None = None,
         res.add("G303-version-gate", 3, "fail" if too_new else "pass",
                 "; ".join(too_new) or f"all steps available in FM {target_version}")
 
+    _options_preserved(res, steps, ir_steps, ref)
     _var_init_check(res, ir_steps, check_var_init)
     return res
+
+
+def _nodes_at(st: ET.Element, epath: str) -> list[ET.Element]:
+    """All elements at a template element path below <Step>; a '[n]' segment
+    fans out over every instantiated sibling. '' resolves to the step itself."""
+    nodes = [st]
+    for seg in [s for s in epath.split("/") if s]:
+        tag = seg[:-3] if seg.endswith("[n]") else seg
+        nodes = [c for n in nodes for c in n.findall(tag)]
+        if not nodes:
+            return []
+    return nodes
+
+
+def _options_preserved(res: GateResult, steps: list[ET.Element],
+                       ir_steps: list[dict] | None, ref: Reference) -> None:
+    """G306: every parsed option must materialize in the emission — element or
+    attribute at its reference xml_path, repeat groups via their container —
+    or its absence must be explained by a reference rule (element bindings for
+    mode-scoped prunes, omit_when_false presence booleans). Class check behind
+    the silent WebScript prune: user data that vanishes without a finding is a
+    fail. Presence only — value fidelity is G109/G110 territory.
+    """
+    if ir_steps is None:
+        res.add("G306-option-preservation", 3, "skipped",
+                "no IR supplied — option preservation not checked")
+        return
+    if not ref.grammar_available():
+        res.add("G306-option-preservation", 3, "skipped",
+                "grammar tables not installed — option preservation not checked")
+        return
+    if len(ir_steps) != len(steps):
+        res.add("G306-option-preservation", 3, "skipped",
+                f"IR/XML step count mismatch ({len(ir_steps)}/{len(steps)}) — "
+                "pairing not possible")
+        return
+    problems = []
+    for ir, st in zip(ir_steps, steps):
+        sid = ir.get("step_id")
+        if sid is None or int(st.get("id", "-1")) != int(sid):
+            continue
+        meta = {o["option_key"]: o for o in ref.options(sid)}
+        groups = {g["group_key"]: g for g in ref.repeat_groups(sid)}
+        # only element bindings explain a SET option's absence (mode-scoped
+        # prunes); skeleton rules never do — they strip UNFILLED children,
+        # a set option's node always survives them
+        explained = [r["element_path"] for r in ref.element_bindings(sid)]
+        for key, val in (ir.get("options") or {}).items():
+            epath, attr, text_mode = None, None, False
+            if key in groups:
+                epath = groups[key]["container_path"]
+            else:
+                row = meta.get(key)
+                if row is None:
+                    # numbered fixed-slot key (button_commit_2) -> family row
+                    base, _, n = key.rpartition("_")
+                    row = meta.get(base) if n.isdigit() else None
+                if row is None:
+                    continue
+                if row.get("omit_when_false") and val == "False":
+                    continue  # presence boolean: False = element absent
+                path = row.get("xml_path") or ""
+                if not path:
+                    continue
+                if "/@" in path:
+                    epath, _, attr = path.rpartition("/@")
+                elif path.endswith("/text()"):
+                    # mixed-content text slot (202 operation)
+                    epath, text_mode = path[:-len("/text()")], True
+                else:
+                    epath = path
+            nodes = _nodes_at(st, epath)
+            if attr:
+                ok = any(nd.get(attr) is not None for nd in nodes)
+            elif text_mode:
+                ok = any((nd.text or "").strip() for nd in nodes)
+            else:
+                ok = bool(nodes)
+            if ok:
+                continue
+            if any(e and (e.startswith(epath) or epath.startswith(e))
+                   for e in explained):
+                continue  # a binding rule governs this subtree
+            problems.append(
+                f"line {ir.get('line', '?')} id={sid}: option '{key}' was "
+                f"parsed but nothing materialized at '{epath or '@' + str(attr)}'"
+                " and no reference rule explains the absence")
+    res.add("G306-option-preservation", 3, "fail" if problems else "pass",
+            "; ".join(problems)
+            or "every parsed option materialized (or is rule-explained)")
 
 
 def _var_init_check(res: GateResult, ir_steps: list[dict] | None,

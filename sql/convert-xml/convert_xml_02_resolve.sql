@@ -405,7 +405,7 @@ CREATE TABLE IF NOT EXISTS XMLLayoutReferences (
     -- sonst NULL). Trägt die locale-unabhängige Rollen-Zuordnung in P4 (ScriptStepRoleMap),
     -- analog zum Script→Field-Block. Additive Spalte (Schema-Bump unkritisch, P2-Tabelle
     -- ist volatil und wird je Lauf neu befüllt).
-    Step_ID INTEGER,
+    Step_ID BIGINT,
     -- UUID-Healing (Schema 1.19.0): FileMaker-interne @id des Referenz-Elements
     -- (Tripel id+name+UUID im SaXML) — disambiguiert Intra-File-UUID-Duplikate in der
     -- P4-Rewrite-Stufe. TO_Ref_ID = Kontext-TO-@id (nur Feld-Referenzen: FieldReference/@id
@@ -415,7 +415,7 @@ CREATE TABLE IF NOT EXISTS XMLLayoutReferences (
 );
 
 -- Additive Migration für Bestands-DBs (idempotent — neuer Bau setzt sie via CREATE).
-ALTER TABLE XMLLayoutReferences ADD COLUMN IF NOT EXISTS Step_ID INTEGER;
+ALTER TABLE XMLLayoutReferences ADD COLUMN IF NOT EXISTS Step_ID BIGINT;
 ALTER TABLE XMLLayoutReferences ADD COLUMN IF NOT EXISTS Ref_ID BIGINT;
 ALTER TABLE XMLLayoutReferences ADD COLUMN IF NOT EXISTS TO_Ref_ID BIGINT;
 
@@ -486,16 +486,30 @@ FROM (
 )
 WHERE Ref_UUID IS NOT NULL;
 
--- Script-Referenzen: //ScriptReference/@UUID (alle Nachfahren).
--- P2-Footprint-Fix: statt
+-- Script-Referenzen: //ScriptReference mit Ancestor-Guard — nur EIGENE Referenzen.
+-- Container-Object_XML (Portal, Tab Control, Panel, Group, Button Bar, Popover
+-- Button, Grouped Button, …) enthält die verschachtelten Kind-Objekte als
+-- <LayoutObject>-Elemente mit; die nackte Descendant-Achse schrieb deren Script-
+-- Refs (Kind-Trigger, Segment-Buttons) zusätzlich dem Container zu — auf jeder
+-- Verschachtelungsebene eine Kopie (Phantom-Kanten, falsche button_action-Labels
+-- in P4 Block 21b). Der Guard behält nur Refs mit genau EINEM LayoutObject-
+-- Vorfahren (= der Objekt-Wurzel selbst): eigene Trigger-Refs und eigene
+-- Action-Refs; Kinder tragen ihre Refs bereits als eigene Zeilen. Eigene
+-- Container-Trigger (z.B. OnPanelSwitch) bleiben erhalten. Der Guard muss auf
+-- allen DREI parallelen Listen identisch stehen (Zippungs-Ausrichtung).
+-- Verifikation (Korpus, 2.15.0): Guard-Ergebnis == Multiset-Subtraktion
+-- r(selbst) − Σ r(direkte Kinder) je (Objekt, Script), 37899 → 28152 Zeilen
+-- (−25,7 %, gewollt — die alte Bit-Identitäts-Notiz 38326 galt für den
+-- ungefilterten //-Stand), 0 Negativfälle, Kind-Refs unverändert 1:1.
+-- P2-Footprint-Fix bleibt: statt
 -- unnest(xml_extract_elements(…, '//ScriptReference')) — das DOM-tragende
 -- Fragment-Listen materialisiert und den EINZIGEN nicht-spillbaren >1-GB-Peak
--- erzeugte (2298 MB, reproduzierte den 2-GiB-P2-OOM) — werden zwei PARALLELE
--- String-Listen (@UUID ∥ @name) extrahiert und positionsweise gezippt. Die Listen
--- sind je ScriptReference längen-gleich (im Korpus 0 Mismatch), daher ausrichtungs-
--- treu. Footprint 2298→495 MB, voll spillbar, korpus-bit-identisch (38326 Zeilen,
--- EXCEPT ALL beidseitig 0). LIKE-Vorfilter überspringt Objekte ohne ScriptReference
--- (ein XPath-Match impliziert den Substring → kein Treffer fällt weg).
+-- erzeugte (2298 MB, reproduzierte den 2-GiB-P2-OOM) — werden PARALLELE
+-- String-Listen (@UUID ∥ @name ∥ @id) extrahiert und positionsweise gezippt. Die
+-- Listen sind je ScriptReference längen-gleich (im Korpus 0 Mismatch), daher
+-- ausrichtungstreu; Footprint voll spillbar. LIKE-Vorfilter überspringt Objekte
+-- ohne ScriptReference (ein XPath-Match impliziert den Substring → kein Treffer
+-- fällt weg; Superset auch zum Guard-Ergebnis).
 INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File_Name, Ref_ID)
 SELECT Object_UUID, 'script' AS Ref_Type, Ref_UUID, Ref_Name, File_Name,
        TRY_CAST(NULLIF(Ref_ID_raw, '') AS BIGINT) AS Ref_ID
@@ -507,9 +521,9 @@ FROM (
            File_Name
     FROM (
         SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
-               xml_extract_text(Object_XML, '//ScriptReference/@UUID') AS uuids,
-               xml_extract_text(Object_XML, '//ScriptReference/@name') AS names,
-               xml_extract_text(Object_XML, '//ScriptReference/@id') AS ids,
+               xml_extract_text(Object_XML, '//ScriptReference[not(ancestor::LayoutObject/ancestor::LayoutObject)]/@UUID') AS uuids,
+               xml_extract_text(Object_XML, '//ScriptReference[not(ancestor::LayoutObject/ancestor::LayoutObject)]/@name') AS names,
+               xml_extract_text(Object_XML, '//ScriptReference[not(ancestor::LayoutObject/ancestor::LayoutObject)]/@id') AS ids,
                File_Name
         FROM LayoutObjects
         WHERE Object_XML LIKE '%ScriptReference%'
@@ -675,7 +689,7 @@ INSERT INTO XMLLayoutReferences (Object_UUID, Ref_Type, Ref_UUID, Ref_Name, File
 SELECT ou AS Object_UUID, 'table_occurrence_step' AS Ref_Type, ref_uuid AS Ref_UUID, ref_name AS Ref_Name, File_Name, ref_id AS Ref_ID
 FROM (
     SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
-           TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@id')[1] AS INTEGER) AS sid,
+           TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@id')[1] AS BIGINT) AS sid,
            NULLIF(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step//TableOccurrenceReference/@UUID')[1], '') AS ref_uuid,
            xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step//TableOccurrenceReference/@name')[1] AS ref_name,
            TRY_CAST(NULLIF(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step//TableOccurrenceReference/@id')[1], '') AS BIGINT) AS ref_id,
@@ -684,7 +698,7 @@ FROM (
     WHERE Object_Type = 'Grouped Button' AND Object_XML LIKE '%<action>%'
     UNION ALL
     SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
-           TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@id')[1] AS INTEGER) AS sid,
+           TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@id')[1] AS BIGINT) AS sid,
            NULLIF(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step//TableOccurrenceReference/@UUID')[1], '') AS ref_uuid,
            xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step//TableOccurrenceReference/@name')[1] AS ref_name,
            TRY_CAST(NULLIF(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step//TableOccurrenceReference/@id')[1], '') AS BIGINT) AS ref_id,
@@ -710,7 +724,7 @@ FROM (
            File_Name, sid AS Step_ID
     FROM (
         SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
-               TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@id')[1] AS INTEGER) AS sid,
+               TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@id')[1] AS BIGINT) AS sid,
                xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/ParameterValues//FieldReference/@UUID') AS uuids,
                xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/ParameterValues//FieldReference/@name') AS names,
                xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/ParameterValues//FieldReference/@id') AS ids,
@@ -720,7 +734,7 @@ FROM (
         WHERE Object_Type = 'Grouped Button' AND Object_XML LIKE '%<action>%'
         UNION ALL
         SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
-               TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@id')[1] AS INTEGER) AS sid,
+               TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@id')[1] AS BIGINT) AS sid,
                xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/ParameterValues//FieldReference/@UUID') AS uuids,
                xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/ParameterValues//FieldReference/@name') AS names,
                xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/ParameterValues//FieldReference/@id') AS ids,
@@ -749,12 +763,19 @@ WHERE Ref_UUID IS NOT NULL AND Ref_UUID <> '';
 CREATE TABLE IF NOT EXISTS LayoutObjectSteps (
     Object_UUID   VARCHAR,
     File_Name     VARCHAR,
-    Step_ID       INTEGER,
+    Step_ID       BIGINT,
     Step_Name     VARCHAR,
     Step_Enabled  BOOLEAN,
     StepText_Hash VARCHAR,
     PRIMARY KEY (Object_UUID, File_Name)
 );
+
+-- Bestehende Einträge entfernen (Idempotenz; batch-weiter DELETE — P2 läuft
+-- einmal für alle Dateien bzw. je Slice in eine frische Part-DB). Ohne diesen
+-- Clear kollidiert der zweite Lauf gegen dieselbe Master-DB auf dem PRIMARY KEY —
+-- bzw. akkumuliert still Duplikate, wenn ein partitionierter Lauf die Tabelle
+-- zuvor per DROP+CTAS (ohne PK) neu aufgebaut hat.
+DELETE FROM LayoutObjectSteps WHERE TRUE;
 
 INSERT INTO LayoutObjectSteps (Object_UUID, File_Name, Step_ID, Step_Name, Step_Enabled, StepText_Hash)
 SELECT ou, File_Name, sid, sname,
@@ -762,7 +783,7 @@ SELECT ou, File_Name, sid, sname,
        shash
 FROM (
     SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
-           TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@id')[1] AS INTEGER) AS sid,
+           TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@id')[1] AS BIGINT) AS sid,
            xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@name')[1] AS sname,
            xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/@enable')[1] AS senable,
            NULLIF(xml_extract_text(Object_XML, '/LayoutObject/GroupedButton/action/Step/DDRREF[@kind=''StepText'']/@hash')[1], '') AS shash,
@@ -771,7 +792,7 @@ FROM (
     WHERE Object_Type = 'Grouped Button' AND Object_XML LIKE '%<action>%<Step %'
     UNION ALL
     SELECT Object_UUID AS ou,  -- Katalogspalte statt Roh-XML: trägt bei geheilten Zwillingen die Ersatz-UUID (H2)
-           TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@id')[1] AS INTEGER) AS sid,
+           TRY_CAST(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@id')[1] AS BIGINT) AS sid,
            xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@name')[1] AS sname,
            xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/@enable')[1] AS senable,
            NULLIF(xml_extract_text(Object_XML, '/LayoutObject/Button/action/Step/DDRREF[@kind=''StepText'']/@hash')[1], '') AS shash,
@@ -1127,10 +1148,13 @@ WHERE d.Chunk_Type = 'PluginFunctionRef'
   AND f.DDR_Hash IS NOT NULL
   AND TRUE;
 
--- A.2.4 FieldRef in AutoEnter-Calc (AE_Calc_Hash)
+-- A.2.4 FieldRef in AutoEnter-Calc (AE_Calc_Hash) — Subrole 'auto_enter'
+-- (Schema 1.22.0): unterscheidet den AutoEnter-Slot vom Haupt-Calc (Subrole
+-- NULL) — Link_Role bleibt reads_field; v_calculation_links braucht die
+-- Trennschärfe für die Slot-Zuordnung.
 INSERT INTO XMLCalcReferences
 SELECT
-    f.Field_UUID, 'Field', NULL, NULL,
+    f.Field_UUID, 'Field', NULL, 'auto_enter',
     d.Calc_Hash, 'field',
     regexp_extract(d.Chunk_Content, 'FieldReference[^>]*UUID="([^"]+)"', 1),
     regexp_extract(d.Chunk_Content, 'FieldReference[^>]*name="([^"]+)"', 1),
@@ -1147,10 +1171,10 @@ WHERE d.Chunk_Type = 'FieldRef'
   AND f.AE_Calc_Hash IS NOT NULL
   AND TRUE;
 
--- A.2.5 CustomFunctionRef in AutoEnter-Calc (AE_Calc_Hash)
+-- A.2.5 CustomFunctionRef in AutoEnter-Calc (AE_Calc_Hash) — Subrole 'auto_enter'
 INSERT INTO XMLCalcReferences
 SELECT
-    f.Field_UUID, 'Field', NULL, NULL,
+    f.Field_UUID, 'Field', NULL, 'auto_enter',
     d.Calc_Hash, 'customfunction',
     NULL,
     regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
@@ -1166,10 +1190,10 @@ WHERE d.Chunk_Type = 'CustomFunctionRef'
   AND f.AE_Calc_Hash IS NOT NULL
   AND TRUE;
 
--- A.2.6 PluginFunctionRef in AutoEnter-Calc → PluginFunctionUsages
+-- A.2.6 PluginFunctionRef in AutoEnter-Calc → PluginFunctionUsages — Subrole 'auto_enter'
 INSERT INTO PluginFunctionUsages
 SELECT
-    f.Field_UUID, 'Field', NULL, NULL,
+    f.Field_UUID, 'Field', NULL, 'auto_enter',
     regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
     d.Calc_Hash,
     d.File_Name,
@@ -1240,11 +1264,14 @@ WHERE d.Chunk_Type = 'PluginFunctionRef'
   AND TRUE;
 
 -- A.2.10 FieldRef in der eigenen Fehlermeldungs-Berechnung (Validation_Message_Calc_Hash).
--- <MessageCalc> ist Teil der Validierungs-Konfiguration → gleiche Subrole 'validation'
--- (validates_by_calc); ein nur dort referenziertes Feld wäre sonst Where-used-unsichtbar.
+-- <MessageCalc> ist Teil der Validierungs-Konfiguration → Link_Role bleibt
+-- validates_by_calc (Block 30 akzeptiert beide Subroles); ein nur dort
+-- referenziertes Feld wäre sonst Where-used-unsichtbar. Subrole seit 1.22.0
+-- 'validation_message' (statt 'validation') — trennt die Fehlermeldungs- von
+-- der Prüf-Berechnung (v_calculation_links-Slot-Zuordnung).
 INSERT INTO XMLCalcReferences
 SELECT
-    f.Field_UUID, 'Field', NULL, 'validation',
+    f.Field_UUID, 'Field', NULL, 'validation_message',
     d.Calc_Hash, 'field',
     regexp_extract(d.Chunk_Content, 'FieldReference[^>]*UUID="([^"]+)"', 1),
     regexp_extract(d.Chunk_Content, 'FieldReference[^>]*name="([^"]+)"', 1),
@@ -1262,9 +1289,10 @@ WHERE d.Chunk_Type = 'FieldRef'
   AND TRUE;
 
 -- A.2.11 CustomFunctionRef in der Fehlermeldungs-Berechnung (Validation_Message_Calc_Hash)
+-- Subrole 'validation_message' (s. A.2.10).
 INSERT INTO XMLCalcReferences
 SELECT
-    f.Field_UUID, 'Field', NULL, 'validation',
+    f.Field_UUID, 'Field', NULL, 'validation_message',
     d.Calc_Hash, 'customfunction',
     NULL,
     regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
@@ -1429,6 +1457,223 @@ JOIN _ddr_chunks_by_hash d
  AND loh.File_Name = d.File_Name
 WHERE d.Chunk_Type = 'FieldRef';
 
+-- A.5.1b Fehlklassifizierte %X:-Chunks in DisplayCalculations → FieldRef-Rettung (Schema 1.27.0).
+-- FileMaker chunked eine TYPISIERTE Layoutformel mit einzelner Feldreferenz
+-- (<<ƒ:%N:Zahl>>) als <Chunk type="VariableReference">%N:Zahl</Chunk> — Ergebnistyp-
+-- Präfix + Feldname als Variablen-Literal, die echte FieldRef fehlt (die Quelle
+-- lügt, gleiche Defekt-Kategorie wie 'Function Missing'). Rettung: Präfix strippen,
+-- Rest als Feldname gegen die Kontext-TO der ChunkList auflösen. Kontext-Join über
+-- den Anker-NAMEN (DDR_ChunkListContexts) — nie über den Hash: identische Formeln
+-- teilen den Hash, jeder Anker trägt seine eigene TO. Qualifizierte Namen
+-- (TO::Feld) lösen über den TO-Namensteil (Equi-Join auf vorberechnetem
+-- qual_to_name, NULL matcht nie). Feld-Join via TableOccurrenceCatalog →
+-- FieldsForTables (NIE über ObjectCatalog-Namen); externe TOs (Basistabelle in
+-- anderer Datei) bleiben konservativ ungelöst — kein Insert, kein Phantom.
+-- P3 A.3 verwirft dieselben Chunks aus der Variablen-Extraktion;
+-- P6 v_check_display_prefix_chunks zählt sie als Info-Finding.
+INSERT INTO XMLCalcReferences
+WITH mischunk AS (
+    SELECT
+        loh.Object_UUID, loh.Subrole, loh.Calc_Hash, loh.File_Name,
+        html_unescape(regexp_replace(
+            regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
+            '^%[A-Z]+:', '')) AS ref_token
+    FROM _layout_obj_hashes loh
+    JOIN _ddr_chunks_by_hash d
+      ON loh.Calc_Hash = d.Calc_Hash
+     AND loh.File_Name = d.File_Name
+    WHERE d.Chunk_Type = 'VariableReference'
+      AND loh.Subrole LIKE 'DisplayCalculations\_%' ESCAPE '\'
+      AND regexp_matches(regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1), '^%[A-Z]+:')
+      -- Präfix + '$' = ECHTE Variable hinter dem Ergebnistyp (<<ƒ:%N:$$var>>) —
+      -- keine Feld-Rettung; die Variablen-Extraktion behält sie mit gestripptem
+      -- Namen (A.6.10 / P3 A.3, 2.20.0).
+      AND NOT regexp_matches(regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1), '^%[A-Z]+:\$')
+),
+tokenized AS (
+    SELECT
+        m.*,
+        -- ${…}-Unwrap: bei Namenskollision Feld ↔ CustomFunction serialisiert
+        -- FileMaker die FELD-Referenz gequotet (${Text}) — für den
+        -- FieldsForTables-Join muss der nackte Name stehen (fixture-verifiziert).
+        regexp_replace(
+            CASE WHEN m.ref_token LIKE '%::%' THEN split_part(m.ref_token, '::', 2)
+                 ELSE m.ref_token END,
+            '^\$\{(.*)\}$', '\1') AS field_name,
+        regexp_replace(
+            CASE WHEN m.ref_token LIKE '%::%' THEN split_part(m.ref_token, '::', 1)
+                 END,
+            '^\$\{(.*)\}$', '\1') AS qual_to_name
+    FROM mischunk m
+),
+resolved_to AS (
+    SELECT
+        t.*,
+        COALESCE(t_qual.TO_Name, t_ctx.TO_Name) AS to_name,
+        COALESCE(t_qual.TO_UUID, t_ctx.TO_UUID) AS to_uuid,
+        COALESCE(t_qual.BT_Name, t_ctx.BT_Name) AS bt_name,
+        COALESCE(t_qual.TO_ID,   t_ctx.TO_ID)   AS to_id
+    FROM tokenized t
+    LEFT JOIN DDR_ChunkListContexts ctx
+           ON upper(ctx.Calc_UUID) = upper('_' || t.Object_UUID || '_' || t.Subrole)
+          AND ctx.File_Name = t.File_Name
+    LEFT JOIN TableOccurrenceCatalog t_ctx
+           ON t_ctx.TO_UUID   = ctx.Context_TO_UUID
+          AND t_ctx.File_Name = t.File_Name
+    LEFT JOIN TableOccurrenceCatalog t_qual
+           ON t_qual.TO_Name   = t.qual_to_name
+          AND t_qual.File_Name = t.File_Name
+)
+SELECT
+    r.Object_UUID, 'LayoutObject', NULL, r.Subrole,
+    r.Calc_Hash, 'field',
+    fft.Field_UUID,
+    r.field_name,
+    r.File_Name,
+    r.to_name, r.to_uuid,
+    NULL, NULL,  -- Variable_Scope, Usage_Type (nur für Ref_Type='variable')
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,  -- Feld-@id unbekannt (Chunk trägt nur den Namen)
+    r.to_id AS TO_Ref_ID
+FROM resolved_to r
+JOIN FieldsForTables fft
+  ON fft.Table_Name = r.bt_name
+ AND fft.Field_Name = r.field_name
+ AND fft.File_Name  = r.File_Name;
+
+-- A.5.1c Leere DisplayCalculations-ChunkList → Feldreferenzen aus Text_Content (Schema 1.27.0).
+-- Bei %X:-typisierten Layoutformeln mit AUSDRUCK schreibt FileMaker eine LEERE
+-- ChunkList (Hash = md5('')) — Formel, Feld- und Funktionsreferenzen fehlen im
+-- DDR-Teil komplett (lautloser Where-used-Verlust). Minimalziel: Feld-Kanten
+-- retten. Die lokalisierte Formel kommt aus Text_Content (i-tes <<ƒ:…>>-
+-- Vorkommen, Index aus dem Anker-Suffix, (?s) für mehrzeilige Formeln) und wird
+-- gegen die Feldnamen der Kontext-TO gematcht (Wortgrenzen-Check: Nachbar-
+-- zeichen des ersten Vorkommens kein Identifier-Zeichen). Anker-Quelle ist
+-- DDR_ChunkListContexts (Chunk_Count = 0) — NICHT _layout_obj_hashes über den
+-- Hash: der Leerhash ist dateiweit identisch und würde kreuzprodukt-artig auf
+-- jeden leeren Anker fächern. Bewusste Grenzen (Minimalziel):
+-- Felder nur aus der Kontext-TO (keine qualifizierten Fremd-TO-Refs), keine
+-- BUILTIN-Funktionsauflösung (Namen sind LOKALISIERT, z. B. 'Abschneiden' ≠
+-- 'Truncate' — Ausbaustufe via fm_spec-Emission-Namen), String-Literale nicht
+-- ausgenommen. Seit 2.20.0 zusätzlich gerettet: CustomFunction-Refs (CF-Zweig
+-- unten — CF-Namen sind locale-fest) und Variablen (P3 A.6c, syntaktisch
+-- eindeutig). Die Calc-Instanz dazu legt P4 (b_disp) an;
+-- P6 v_check_display_empty_chunklist meldet die Fälle als Import-Finding.
+INSERT INTO XMLCalcReferences
+WITH empty_disp AS (
+    SELECT
+        ctx.File_Name,
+        upper(regexp_extract(ctx.Calc_UUID, '_([0-9A-Fa-f-]{36})', 1)) AS Anchor_UUID,
+        regexp_replace(ctx.Calc_UUID, '^_[0-9A-Fa-f-]{36}_?', '')      AS Subrole,
+        ctx.Calc_Hash,
+        ctx.Context_TO_UUID,
+        TRY_CAST(regexp_extract(ctx.Calc_UUID, '_([0-9]+)$', 1) AS BIGINT) AS Disp_Index
+    FROM DDR_ChunkListContexts ctx
+    WHERE ctx.Chunk_Count = 0
+      AND ctx.Calc_UUID LIKE '%\_DisplayCalculations\_%' ESCAPE '\'
+),
+lo1 AS (
+    SELECT Object_UUID, File_Name, Text_Content,
+           ROW_NUMBER() OVER (PARTITION BY Object_UUID, File_Name ORDER BY Object_ID) AS rn
+    FROM LayoutObjects
+    WHERE Text_Content LIKE '%<<%'
+),
+formulas AS (
+    SELECT
+        e.File_Name, e.Subrole, e.Calc_Hash, e.Context_TO_UUID,
+        lo.Object_UUID,
+        regexp_replace(
+            regexp_extract_all(lo.Text_Content, '(?s)<<ƒ:(.*?)>>', 1)[e.Disp_Index + 1],
+            '^%[A-Z]+:', '') AS formula
+    FROM empty_disp e
+    JOIN lo1 lo
+      ON upper(lo.Object_UUID) = e.Anchor_UUID
+     AND lo.File_Name = e.File_Name
+     AND lo.rn = 1
+),
+ctx_fields AS (
+    SELECT
+        f.*,
+        t.TO_Name, t.TO_ID,
+        fft.Field_Name, fft.Field_UUID,
+        strpos(f.formula, fft.Field_Name) AS hit_pos,
+        -- ${…}-Quoting-Treffer: bei Namenskollision Feld ↔ CustomFunction
+        -- serialisiert FileMaker die FELD-Referenz IMMER als ${Name} — der
+        -- gequotete Treffer ist damit definitiv das Feld (fixture-verifiziert).
+        strpos(f.formula, '${' || fft.Field_Name || '}') AS qhit_pos,
+        EXISTS (SELECT 1 FROM CustomFunctionsCatalog cfc
+                 WHERE cfc.CF_Name = fft.Field_Name AND cfc.File_Name = f.File_Name
+                   AND (cfc.Folder_Type IS NULL OR cfc.Folder_Type = 'False')
+                   AND NOT COALESCE(cfc.Is_Separator, FALSE)) AS cf_collision
+    FROM formulas f
+    JOIN TableOccurrenceCatalog t
+      ON t.TO_UUID   = f.Context_TO_UUID
+     AND t.File_Name = f.File_Name
+    JOIN FieldsForTables fft
+      ON fft.Table_Name = t.BT_Name
+     AND fft.File_Name  = f.File_Name
+    WHERE f.formula IS NOT NULL AND f.formula <> ''
+),
+-- (2.20.0) CustomFunction-Namen im Formeltext — anders als Builtin-Funktionen
+-- sind CF-Namen NICHT lokalisiert und damit sauber matchbar. Ungequotete
+-- Vorkommen meinen bei Namenskollision die CF (das Feld wäre ${…}-gequotet).
+ctx_cfs AS (
+    SELECT
+        f.*,
+        cf.CF_Name,
+        strpos(f.formula, cf.CF_Name) AS hit_pos
+    FROM formulas f
+    JOIN CustomFunctionsCatalog cf
+      ON cf.File_Name = f.File_Name
+     AND (cf.Folder_Type IS NULL OR cf.Folder_Type = 'False')
+     AND NOT COALESCE(cf.Is_Separator, FALSE)
+    WHERE f.formula IS NOT NULL AND f.formula <> ''
+)
+-- Feld-Zweig: gequoteter Treffer (${Name}) gewinnt immer; ungequotete Treffer
+-- nur ohne CF-Namenskollision (sonst meint der nackte Name die CF). Die
+-- Vorgänger-Klasse verwirft zusätzlich '$' und '{' (Variablen/Quoting).
+SELECT DISTINCT
+    c.Object_UUID, 'LayoutObject', NULL, c.Subrole,
+    c.Calc_Hash, 'field',
+    c.Field_UUID,
+    c.Field_Name,
+    c.File_Name,
+    c.TO_Name, c.Context_TO_UUID,
+    NULL, NULL,  -- Variable_Scope, Usage_Type (nur für Ref_Type='variable')
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    c.TO_ID AS TO_Ref_ID
+FROM ctx_fields c
+WHERE c.qhit_pos > 0
+   OR (NOT c.cf_collision
+       AND c.hit_pos > 0
+       AND (c.hit_pos = 1
+            OR NOT regexp_matches(substr(c.formula, c.hit_pos - 1, 1), '[0-9A-Za-zÄÖÜäöüß_${]'))
+       AND (c.hit_pos + length(c.Field_Name) > length(c.formula)
+            OR NOT regexp_matches(substr(c.formula, c.hit_pos + length(c.Field_Name), 1), '[0-9A-Za-zÄÖÜäöüß_]')))
+
+UNION ALL
+
+-- CF-Zweig (A.5.1d): Ref_UUID bleibt NULL — Block 31 löst calls_customfunction
+-- über Ref_Name + File_Name (datei-lokal, wie alle CF-Refs).
+SELECT DISTINCT
+    c.Object_UUID, 'LayoutObject', NULL, c.Subrole,
+    c.Calc_Hash, 'customfunction',
+    NULL,
+    c.CF_Name,
+    c.File_Name,
+    NULL, NULL,
+    NULL, NULL,  -- Variable_Scope, Usage_Type (nur für Ref_Type='variable')
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
+FROM ctx_cfs c
+WHERE c.hit_pos > 0
+  AND (c.hit_pos = 1
+       OR NOT regexp_matches(substr(c.formula, c.hit_pos - 1, 1), '[0-9A-Za-zÄÖÜäöüß_${]'))
+  AND (c.hit_pos + length(c.CF_Name) > length(c.formula)
+       OR NOT regexp_matches(substr(c.formula, c.hit_pos + length(c.CF_Name), 1), '[0-9A-Za-zÄÖÜäöüß_]'));
+
 -- A.5.2 CustomFunctionRef in LayoutObjects
 -- layout_obj_hashes: einmal materialisiert als _layout_obj_hashes (s. o.)
 INSERT INTO XMLCalcReferences
@@ -1523,11 +1768,11 @@ WHERE d.Chunk_Type = 'VariableReference'
   AND f.DDR_Hash IS NOT NULL
   AND TRUE;
 
--- A.6.3 PluginFunctionRef in AutoEnter-Calc
+-- A.6.3 PluginFunctionRef in AutoEnter-Calc — Subrole 'auto_enter' (1.22.0)
 -- Ref_SubName aus MBS_SubnameMap (NULL für Nicht-Container-Plugins).
 INSERT INTO XMLCalcReferences
 SELECT
-    f.Field_UUID, 'Field', NULL, NULL,
+    f.Field_UUID, 'Field', NULL, 'auto_enter',
     d.Calc_Hash, 'pluginfunction',
     NULL,
     regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
@@ -1547,10 +1792,12 @@ WHERE d.Chunk_Type = 'PluginFunctionRef'
   AND f.AE_Calc_Hash IS NOT NULL
   AND TRUE;
 
--- A.6.4 VariableReference in AutoEnter-Calc
+-- A.6.4 VariableReference in AutoEnter-Calc — Subrole 'auto_enter' (1.22.0;
+-- Variable-Links laufen über VariableUsages/P3, die Subrole ist hier reine
+-- Slot-Provenienz der XMLCalcReferences-Zeile).
 INSERT INTO XMLCalcReferences
 SELECT
-    f.Field_UUID, 'Field', NULL, NULL,
+    f.Field_UUID, 'Field', NULL, 'auto_enter',
     d.Calc_Hash, 'variable',
     NULL,
     regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
@@ -1696,17 +1943,22 @@ WHERE d.Chunk_Type = 'PluginFunctionRef';
 
 -- A.6.10 VariableReference in LayoutObjects
 -- layout_obj_hashes: einmal materialisiert als _layout_obj_hashes (s. o.)
+-- %X:-Präfix-Behandlung (2.20.0, Display-Kontext): Präfix + Feldname
+-- (fehlklassifizierte FieldRef, <<ƒ:%N:Zahl>>) wird ausgeschlossen — Rettung
+-- als FieldRef in A.5.1b, Verwurf analog P3 A.3; Präfix + '$' (<<ƒ:%N:$$var>>)
+-- ist eine ECHTE Variable hinter dem Ergebnistyp und bleibt mit gestripptem
+-- Namen drin (fixture-verifiziert).
 INSERT INTO XMLCalcReferences
 SELECT
     loh.Object_UUID, 'LayoutObject', NULL, loh.Subrole,
     loh.Calc_Hash, 'variable',
     NULL,
-    regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
+    v.var_name,
     loh.File_Name,
     NULL, NULL,
     CASE
-        WHEN regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$$$%' THEN 'superglobal'
-        WHEN regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$$%'  THEN 'global'
+        WHEN v.var_name LIKE '$$$%' THEN 'superglobal'
+        WHEN v.var_name LIKE '$$%'  THEN 'global'
         ELSE 'local'
     END,
     'read',
@@ -1717,7 +1969,81 @@ FROM _layout_obj_hashes loh
 JOIN _ddr_chunks_by_hash d
   ON loh.Calc_Hash = d.Calc_Hash
  AND loh.File_Name = d.File_Name
-WHERE d.Chunk_Type = 'VariableReference';
+CROSS JOIN LATERAL (
+    SELECT CASE WHEN loh.Subrole LIKE 'DisplayCalculations\_%' ESCAPE '\'
+                 AND regexp_matches(regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1), '^%[A-Z]+:\$')
+                THEN regexp_replace(regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1), '^%[A-Z]+:', '')
+                ELSE regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1)
+           END AS var_name
+) v
+WHERE d.Chunk_Type = 'VariableReference'
+  AND NOT (loh.Subrole LIKE 'DisplayCalculations\_%' ESCAPE '\'
+           AND regexp_matches(regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1), '^%[A-Z]+:')
+           AND NOT regexp_matches(regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1), '^%[A-Z]+:\$'));
+
+-- A.6.10b Variablen aus geretteten Display-Formeln → XMLCalcReferences (2.20.0)
+-- Slot-skopiertes Spiegelbild von P3 A.6c: bei leerer DisplayCalculations-
+-- ChunkList werden Variablen aus der Text_Content-Formel geborgen — hier als
+-- XMLCalcReferences-Zeile mit Subrole (Symmetrie zu den chunk-basierten
+-- Variable-Rows der intakten Slots; A.6c bedient nur VariableUsages ohne
+-- Slot-Bezug). Konsumenten: Referenz-Tokens + synthetische D2-Tokenisierung
+-- der API (Instanz-genaue Ref-Menge je Slot). Anker-Quelle DDR_ChunkListContexts
+-- — nie der dateiweit geteilte Leerhash; String-Literale vor dem Match
+-- gestrippt; ${…}-gequotete FELD-Namen matcht die Klasse nicht ('{' nach '$').
+INSERT INTO XMLCalcReferences
+WITH empty_disp AS (
+    SELECT
+        ctx.File_Name,
+        upper(regexp_extract(ctx.Calc_UUID, '_([0-9A-Fa-f-]{36})', 1)) AS Anchor_UUID,
+        regexp_replace(ctx.Calc_UUID, '^_[0-9A-Fa-f-]{36}_?', '')      AS Subrole,
+        ctx.Calc_Hash,
+        TRY_CAST(regexp_extract(ctx.Calc_UUID, '_([0-9]+)$', 1) AS BIGINT) AS Disp_Index
+    FROM DDR_ChunkListContexts ctx
+    WHERE ctx.Chunk_Count = 0
+      AND ctx.Calc_UUID LIKE '%\_DisplayCalculations\_%' ESCAPE '\'
+),
+lo1 AS (
+    SELECT Object_UUID, File_Name, Text_Content,
+           ROW_NUMBER() OVER (PARTITION BY Object_UUID, File_Name ORDER BY Object_ID) AS rn
+    FROM LayoutObjects
+    WHERE Text_Content LIKE '%<<%'
+),
+formulas AS (
+    SELECT
+        e.File_Name, e.Subrole, e.Calc_Hash,
+        lo.Object_UUID,
+        regexp_replace(
+            regexp_replace(
+                regexp_extract_all(lo.Text_Content, '(?s)<<ƒ:(.*?)>>', 1)[e.Disp_Index + 1],
+                '^%[A-Z]+:', ''),
+            '"[^"]*"', '', 'g') AS formula_noliterals
+    FROM empty_disp e
+    JOIN lo1 lo
+      ON upper(lo.Object_UUID) = e.Anchor_UUID
+     AND lo.File_Name = e.File_Name
+     AND lo.rn = 1
+)
+SELECT DISTINCT
+    f.Object_UUID, 'LayoutObject', NULL, f.Subrole,
+    f.Calc_Hash, 'variable',
+    NULL,
+    v.var_name,
+    f.File_Name,
+    NULL, NULL,
+    CASE
+        WHEN v.var_name LIKE '$$$%' THEN 'superglobal'
+        WHEN v.var_name LIKE '$$%'  THEN 'global'
+        ELSE 'local'
+    END,
+    'read',
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
+FROM formulas f
+CROSS JOIN LATERAL unnest(
+    regexp_extract_all(f.formula_noliterals, '\$\$?\$?[\p{L}_][\p{L}\p{N}_]*')
+) as v(var_name)
+WHERE f.formula_noliterals IS NOT NULL;
 
 
 -- ============================================
@@ -1755,10 +2081,12 @@ WHERE d.Chunk_Type = 'FunctionRef'
   AND f.DDR_Hash IS NOT NULL
   AND TRUE;
 
--- A.7.2 FunctionRef in AutoEnter-Calc (AE_Calc_Hash)
+-- A.7.2 FunctionRef in AutoEnter-Calc (AE_Calc_Hash) — Subrole 'auto_enter'
+-- (1.22.0): calls_function-Kanten des AutoEnter-Slots werden damit in
+-- v_calculation_links dem richtigen Slot zugeordnet.
 INSERT INTO XMLCalcReferences
 SELECT
-    f.Field_UUID, 'Field', NULL, NULL,
+    f.Field_UUID, 'Field', NULL, 'auto_enter',
     d.Calc_Hash, 'function',
     NULL,
     regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
@@ -2149,6 +2477,156 @@ LEFT JOIN GetSubparameterMap g
       AND g.File_Name = d.File_Name
       AND g.Get_Chunk_Index = d.Chunk_Index
 WHERE d.Chunk_Type = 'FunctionRef';
+
+
+-- ============================================
+-- A.12 — Refs aus Layout-/File-Level-Trigger-Parametern (Schema 1.22.0)
+-- ============================================
+-- Layout- und File-Level-ScriptTrigger tragen ihre Parameter-Berechnung als
+-- DDRREF im Trigger-Fragment (ScriptTriggers.Trigger_XML, nur für diese beiden
+-- Owner-Typen persistiert — Object-Level-Trigger stecken in
+-- LayoutObjects.Object_XML und laufen über _layout_obj_hashes/A.5–A.7).
+-- Vor 1.22.0 waren diese Anker (z.B. 21× ScriptTrigger_103 im Referenz-Korpus)
+-- ohne Owner-Kanten: ein NUR im Layout-Trigger-Parameter gelesenes Feld war
+-- Where-used-unsichtbar. Source_Type = Owner_Type ('Layout'|'File'),
+-- Subrole = DDRREF-Suffix ('ScriptTrigger_<id>' — identisch zur
+-- LayoutObject-Konvention, matcht CalculationsCatalog.Calc_Kind_Raw).
+-- Struktur analog A.5/A.9: eigene Hash-Ernte, dann je Chunk-Typ ein Insert.
+-- Läuft VOR dem Entity-Decode-Post-Pass (Namen werden zentral dekodiert) und
+-- VOR A.10 (PluginFunctionUsages-Zeilen werden MBS-qualifiziert).
+CREATE OR REPLACE TEMP TABLE _trigger_hashes AS
+SELECT
+    Owner_UUID, Owner_Type, File_Name,
+    regexp_extract(m, 'hash="([^"]+)"', 1) AS Calc_Hash,
+    regexp_extract(m, '>_[A-F0-9-]{36}_([^<]+)</DDRREF>', 1) AS Subrole
+FROM (
+    SELECT
+        st.Owner_UUID,
+        st.Owner_Type,
+        st.File_Name,
+        unnest(regexp_extract_all(st.Trigger_XML,
+            'kind="ChunkList" hash="([^"]+)"[^>]*>_[A-F0-9-]{36}_([^<]+)</DDRREF>')) AS m
+    FROM ScriptTriggers st
+    WHERE st.Owner_Type IN ('Layout', 'File')
+      AND st.Trigger_XML LIKE '%DDRREF%'
+);
+
+-- A.12.1 FieldRef in Trigger-Parametern
+INSERT INTO XMLCalcReferences
+SELECT
+    th.Owner_UUID, th.Owner_Type, NULL, th.Subrole,
+    d.Calc_Hash, 'field',
+    regexp_extract(d.Chunk_Content, 'FieldReference[^>]*UUID="([^"]+)"', 1),
+    regexp_extract(d.Chunk_Content, 'FieldReference[^>]*name="([^"]+)"', 1),
+    d.File_Name,
+    NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*name="([^"]+)"', 1), ''),
+    NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]*UUID="([^"]+)"', 1), ''),
+    NULL, NULL,  -- Variable_Scope, Usage_Type
+    NULL,        -- Ref_SubName
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'FieldReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS Ref_ID,
+    TRY_CAST(NULLIF(regexp_extract(d.Chunk_Content, 'TableOccurrenceReference[^>]* id="([^"]+)"', 1), '') AS BIGINT) AS TO_Ref_ID
+FROM _trigger_hashes th
+JOIN _ddr_chunks_by_hash d ON th.Calc_Hash = d.Calc_Hash AND th.File_Name = d.File_Name
+WHERE d.Chunk_Type = 'FieldRef';
+
+-- A.12.2 CustomFunctionRef in Trigger-Parametern
+INSERT INTO XMLCalcReferences
+SELECT
+    th.Owner_UUID, th.Owner_Type, NULL, th.Subrole,
+    d.Calc_Hash, 'customfunction',
+    NULL,
+    regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
+    d.File_Name,
+    NULL, NULL,
+    NULL, NULL,
+    NULL,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
+FROM _trigger_hashes th
+JOIN _ddr_chunks_by_hash d ON th.Calc_Hash = d.Calc_Hash AND th.File_Name = d.File_Name
+WHERE d.Chunk_Type = 'CustomFunctionRef';
+
+-- A.12.3 Built-in FunctionRef in Trigger-Parametern (Get(<Sub>) via GetSubparameterMap)
+INSERT INTO XMLCalcReferences
+SELECT
+    th.Owner_UUID, th.Owner_Type, NULL, th.Subrole,
+    d.Calc_Hash, 'function',
+    NULL,
+    regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
+    d.File_Name,
+    NULL, NULL,
+    NULL, NULL,
+    CASE WHEN regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1) = 'Get'
+         THEN g.SubParameter ELSE NULL END,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
+FROM _trigger_hashes th
+JOIN _ddr_chunks_by_hash d ON th.Calc_Hash = d.Calc_Hash AND th.File_Name = d.File_Name
+LEFT JOIN GetSubparameterMap g
+       ON g.Calc_UUID = d.Calc_UUID
+      AND g.File_Name = d.File_Name
+      AND g.Get_Chunk_Index = d.Chunk_Index
+WHERE d.Chunk_Type = 'FunctionRef';
+
+-- A.12.4 VariableReference in Trigger-Parametern (Provenienz-Zeile; die
+-- reads_variable-Links laufen wie überall über VariableUsages/P3)
+INSERT INTO XMLCalcReferences
+SELECT
+    th.Owner_UUID, th.Owner_Type, NULL, th.Subrole,
+    d.Calc_Hash, 'variable',
+    NULL,
+    regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
+    d.File_Name,
+    NULL, NULL,
+    CASE
+        WHEN regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$$$%' THEN 'superglobal'
+        WHEN regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1) LIKE '$$%'  THEN 'global'
+        ELSE 'local'
+    END,
+    'read',
+    NULL,
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
+FROM _trigger_hashes th
+JOIN _ddr_chunks_by_hash d ON th.Calc_Hash = d.Calc_Hash AND th.File_Name = d.File_Name
+WHERE d.Chunk_Type = 'VariableReference'
+  AND regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1) <> 'Function Missing';
+
+-- A.12.5 PluginFunctionRef in Trigger-Parametern → PluginFunctionUsages
+-- (speist P4-Block 34; A.10 qualifiziert MBS-Aufrufe anschließend)
+INSERT INTO PluginFunctionUsages
+SELECT
+    th.Owner_UUID, th.Owner_Type, NULL, th.Subrole,
+    regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
+    d.Calc_Hash,
+    d.File_Name,
+    d.Calc_UUID,
+    d.Chunk_Index
+FROM _trigger_hashes th
+JOIN _ddr_chunks_by_hash d ON th.Calc_Hash = d.Calc_Hash AND th.File_Name = d.File_Name
+WHERE d.Chunk_Type = 'PluginFunctionRef';
+
+-- A.12.6 PluginFunctionRef in Trigger-Parametern → XMLCalcReferences
+-- (Token-/REST-Symmetrie, analog A.9.5)
+INSERT INTO XMLCalcReferences
+SELECT
+    th.Owner_UUID, th.Owner_Type, NULL, th.Subrole,
+    d.Calc_Hash, 'pluginfunction',
+    NULL,
+    regexp_extract(d.Chunk_Content, '>([^<]+)</Chunk>', 1),
+    d.File_Name,
+    NULL, NULL,
+    NULL, NULL,
+    m.SubName,  -- Ref_SubName
+    NULL AS Ref_ID,
+    NULL AS TO_Ref_ID
+FROM _trigger_hashes th
+JOIN _ddr_chunks_by_hash d ON th.Calc_Hash = d.Calc_Hash AND th.File_Name = d.File_Name
+LEFT JOIN MBS_SubnameMap m
+       ON m.Calc_UUID = d.Calc_UUID
+      AND m.File_Name = d.File_Name
+      AND m.Plugin_Chunk_Index = d.Chunk_Index
+WHERE d.Chunk_Type = 'PluginFunctionRef';
 
 
 -- ============================================

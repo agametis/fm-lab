@@ -87,7 +87,26 @@ SELECT
     )) as Owner_UUID,
     t.Owner_Type,
 
-    fn.File_Name as File_Name
+    fn.File_Name as File_Name,
+
+    -- Trigger_XML nur für Layout-/File-Level (Schema 1.22.0, s. Basis-SQL);
+    -- Object-Level bleibt NULL (Blob liegt bereits in LayoutObjects.Object_XML).
+    -- SAX-Capture kann in Serialisierungs-Details vom DOM-Pfad abweichen —
+    -- Konsument (P2/A.12) liest nur Attribute + DDRREF-Text (robust).
+    CASE WHEN t.Owner_Type IN ('Layout', 'File')
+         THEN t.trigger_xml::VARCHAR END as Trigger_XML,
+
+    -- Modus-Scope + Transaktions-Parameterfeld (Schema 1.24.0, s. Basis-SQL):
+    -- Attribut fehlt = Modus aus / kein Parameterfeld. Attribut-Extraktion ist
+    -- serialisierungs-unabhängig — DOM- und SAX-Pfad bleiben bit-identisch.
+    xml_extract_text(t.trigger_xml, '/ScriptTrigger/@findMode')[1] as Trigger_FindMode,
+    xml_extract_text(t.trigger_xml, '/ScriptTrigger/@previewMode')[1] as Trigger_PreviewMode,
+    xml_extract_text(t.trigger_xml, '/ScriptTrigger/@scriptParameterFieldName')[1] as Trigger_ScriptParameter_FieldName,
+
+    -- Parameter-Klartext (Schema 1.26.0, s. Basis-SQL): xml_extract_text
+    -- dekodiert CDATA/Entities — DOM- und SAX-Capture landen auf demselben
+    -- Wert, obwohl die Roh-Serialisierung divergieren kann.
+    xml_extract_text(t.trigger_xml, '/ScriptTrigger/ScriptReference/Calculation/Text')[1] as Trigger_Parameter_Text
 
 FROM all_triggers t
 CROSS JOIN filename_normalized fn
@@ -98,4 +117,9 @@ ON CONFLICT (Trigger_ID, Owner_UUID, File_Name) DO UPDATE SET
     Script_ID = EXCLUDED.Script_ID,
     Script_Name = EXCLUDED.Script_Name,
     Script_UUID = EXCLUDED.Script_UUID,
-    Owner_Type = EXCLUDED.Owner_Type;
+    Owner_Type = EXCLUDED.Owner_Type,
+    Trigger_XML = EXCLUDED.Trigger_XML,
+    Trigger_FindMode = EXCLUDED.Trigger_FindMode,
+    Trigger_PreviewMode = EXCLUDED.Trigger_PreviewMode,
+    Trigger_ScriptParameter_FieldName = EXCLUDED.Trigger_ScriptParameter_FieldName,
+    Trigger_Parameter_Text = EXCLUDED.Trigger_Parameter_Text;

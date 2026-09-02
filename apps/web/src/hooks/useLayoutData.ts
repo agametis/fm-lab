@@ -18,11 +18,27 @@ export type LayoutObject = {
   hide_text: string | null;
   tooltip_text: string | null;
   label_calc_text: string | null;
-  has_conditional_fmt: boolean;
+  /** Regel-genaue CF-Anzahl aus LayoutObjectConditions (selbstverankert). */
+  cf_count: number;
+  /** Anzahl Script-Trigger + vollständige Event-Liste (','-getrennt, Slot-Reihenfolge). */
+  trigger_count: number;
+  trigger_events: string | null;
+  /** Anzahl Layout-Calculation-Instanzen (<<ƒ:…>>, Rolle display_calculation). */
+  display_calc_count: number;
+  /** Belegte typspezifische Slot-Rollen (','-getrennt, z.B. 'placeholder,portal_filter'). */
+  other_calc_roles: string | null;
+  /** Anzahl triggers_script-Links (für „+n weitere" in der Tooltip-Ziel-Zeile). */
+  script_count: number;
   field_uuid: string | null;
   field_name: string | null;
   script_uuid: string | null;
   script_name: string | null;
+  /** Go-to-Layout-Ziel (Buttons ohne Script) — abgeleitetes Modifier-Ziel. */
+  nav_layout_uuid: string | null;
+  nav_layout_name: string | null;
+  /** Portal-TableOccurrence (portal_context) — abgeleitetes Modifier-Ziel. */
+  portal_to_uuid: string | null;
+  portal_to_name: string | null;
 };
 
 export type LayoutPart = {
@@ -80,9 +96,14 @@ export type LayoutTrigger = {
   trigger_id: number;
   trigger_action: string;
   browse_mode: boolean;
+  find_mode: boolean;
+  preview_mode: boolean;
   script_id: number | null;
   script_name: string | null;
   script_uuid: string | null;
+  /** Synthetische Katalog-UUID des ScriptTrigger-Objekts (`trig_<id>_…`);
+   *  optional, damit ältere API-Stände den Client nicht brechen. */
+  trigger_uuid?: string | null;
   file_name: string;
 };
 

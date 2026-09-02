@@ -58,3 +58,51 @@ ON CONFLICT (Calc_UUID, Chunk_Index, File_Name) DO UPDATE SET
     Calc_Hash = EXCLUDED.Calc_Hash,
     Chunk_Type = EXCLUDED.Chunk_Type,
     Chunk_Content = EXCLUDED.Chunk_Content;
+
+-- DDR_ChunkListContexts: zweiter Pass über dieselben ObjectList-Einträge
+-- (Begründung + Pfad-Semantik in der DOM-Basis). Extraktion identisch zur
+-- Basis, nur der ddr_calc_raw-Anker ist der SAX-Read.
+WITH filename_normalized AS (
+    SELECT getvariable('fm_file') as File_Name
+),
+ddr_calc_raw AS (
+    SELECT
+        unnest(xml_extract_elements('<Calculation>' || Calculation || '</Calculation>', '/Calculation/ObjectList/*')) as calc_elem
+    FROM read_xml(
+        getvariable('fm_xml'),
+        record_element='DDR_INFO',
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={'Calculation':'VARCHAR'}
+    )
+    WHERE Calculation IS NOT NULL
+),
+chunk_list_ctx AS (
+    SELECT
+        regexp_extract(calc_elem::VARCHAR, '<(_[^\s>]+)', 1) as Calc_UUID,
+        xml_extract_text(calc_elem, '//*/@hash')[1] as Calc_Hash,
+        len(xml_extract_elements(calc_elem, '//ChunkList/Chunk')) as Chunk_Count,
+        TRY_CAST(NULLIF(xml_extract_text(calc_elem, '/*/TableOccurrenceReference/@id')[1], '') AS BIGINT) as Context_TO_ID,
+        NULLIF(xml_extract_text(calc_elem, '/*/TableOccurrenceReference/@name')[1], '') as Context_TO_Name,
+        NULLIF(xml_extract_text(calc_elem, '/*/TableOccurrenceReference/@UUID')[1], '') as Context_TO_UUID
+    FROM ddr_calc_raw
+    WHERE xml_extract_text(calc_elem, '//*/@datatype')[1] = 'ChunkList'
+)
+INSERT INTO DDR_ChunkListContexts
+SELECT
+    c.Calc_UUID,
+    c.Calc_Hash,
+    c.Chunk_Count,
+    c.Context_TO_ID,
+    c.Context_TO_Name,
+    c.Context_TO_UUID,
+    fn.File_Name
+FROM chunk_list_ctx c
+CROSS JOIN filename_normalized fn
+WHERE c.Calc_UUID IS NOT NULL AND c.Calc_UUID <> ''
+ON CONFLICT (Calc_UUID, File_Name) DO UPDATE SET
+    Calc_Hash = EXCLUDED.Calc_Hash,
+    Chunk_Count = EXCLUDED.Chunk_Count,
+    Context_TO_ID = EXCLUDED.Context_TO_ID,
+    Context_TO_Name = EXCLUDED.Context_TO_Name,
+    Context_TO_UUID = EXCLUDED.Context_TO_UUID;

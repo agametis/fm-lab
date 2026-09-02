@@ -14,11 +14,20 @@ Roughly four groups of templates:
 
 - **`object_details_*`** — one template per object type (`object_details_field`,
   `object_details_script`, `object_details_layout`, `object_details_relationship`,
-  `object_details_customfunction`, …). These feed the [Objects API](../rest-api/endpoints/Objects%20API.md) detail
-  view. The `Layout` variant is special — it generates an SVG wireframe.
+  `object_details_customfunction`, `object_details_calculation`, …). These feed
+  the [Objects API](../rest-api/endpoints/Objects%20API.md) detail view. The templates describe **attributes and
+  structure**; the edges come canonically from `/api/references` and are not
+  duplicated in the detail blocks. The `Layout` variant is special — it
+  generates an SVG wireframe. Not every detail type is a template: the
+  `ScriptTrigger` detail view is a controller projection built directly from
+  the catalog tables, so there is no `object_details_scripttrigger.sql`.
 - **`*_tokens`** — token-rendered variants (e.g.
   `object_details_calculation_tokens`) used by the editor-style `tokens` output
-  format for calculations and script steps.
+  format (scripts, steps, fields, custom functions, menus, layout objects,
+  calculation instances and script triggers). Calculation instances are
+  addressed by their `Calculation_UUID` from the `CalculationsCatalog`; the
+  calculation hash remains only as a legacy alias — a hash is not unique per
+  instance.
 - **`graph_*`** — the graph/topology queries behind the [Graph API](../rest-api/endpoints/Graph%20API.md) and the
   graph explorer (`graph_overview_*`, `graph_subgraph`, `graph_depth_profile`,
   `graph_search`, …).

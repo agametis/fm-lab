@@ -49,6 +49,8 @@ Classic FileMaker code analysis means reading a DDR export with XSLT or stepping
 - **Coverage is exhaustive and repeatable.** A query sees every object in every file, every time. Re-import the solution and the same rules produce comparable results — which is what turns findings into a trend you can manage.
 - **Findings stay connected.** Every result row carries the object's identity, so a finding links straight into the detail views, the reference browser and the graph — and, via fmIDE, into FileMaker itself.
 
+Since schema 1.22.0 this reach includes every calculation formula: the calculation-based rules run on the [CalculationsCatalog](../schema/catalog-tables/CalculationsCatalog.md) instances and no longer depend on the export's optional DDR-Info sections.
+
 ## Expressive power: SQL on DuckDB
 
 The rules engine is [DuckDB](https://duckdb.org) — a fast analytical SQL database with a modern dialect: window functions, recursive CTEs, list and struct types, regular expressions, aggregation over everything. That expressiveness is what lets a single `.sql` file state things like:

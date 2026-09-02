@@ -64,6 +64,7 @@ The same encoding conventions repeat throughout all catalogs — knowing them on
 - **`*Reference` elements.** A reference to another object is an element like `<FieldReference id="…" name="…" UUID="…"/>`, often nested (a `FieldReference` carrying its `TableOccurrenceReference` context). These references are what the import resolves into the [ObjectLinks](../schema/object-catalog/ObjectLinks.md) graph. Some references have no UUID (submenu targets, external value-list targets) and are resolved by file-local ID.
 - **Localized names.** All display names — including script-step names (`Step/@name`) — are written in the UI language of the exporting client (root attribute `locale`). Stable identity always comes from numeric IDs and UUIDs, never from name strings.
 - **Calculations = CDATA + chunk hash.** A formula appears as `<Calculation>` with the plain text in `<Text><![CDATA[…]]></Text>` and a `<DDRREF kind="ChunkList" hash="…">` pointing into [XML DDR_INFO](catalogs/XML%20DDR_INFO.md), where the same formula exists as a tokenized chunk list.
+- **Unsigned 32-bit sentinels.** Some numeric attributes are serialized as unsigned 32-bit values: `4294967295` (UINT32_MAX) is FileMaker's encoding of an internal `-1` — "unlimited" / "no limit" — not a real number. Consumers must read these slots as 64-bit integers; the importer stores the sentinel of `<MaximumSize>` as NULL (see [XML FieldsForTables](catalogs/XML%20FieldsForTables.md)).
 - **`TagList`, `SourceUUID`, `OwnerID`** — bookkeeping elements that appear on most objects (tags, copy provenance, folder/owner membership).
 
 ## From XML to DuckDB — the Katana engine
@@ -92,9 +93,9 @@ The practical consequence for every consumer: **after import, the XML is done.**
 | [XML RelationshipCatalog](catalogs/XML%20RelationshipCatalog.md) | Relationships with join predicates | `RelationshipCatalog` |
 | [XML CalcsForCustomFunctions](catalogs/XML%20CalcsForCustomFunctions.md) | Custom-function formulas (v2.2 only) | `CalcsForCustomFunctions` |
 | [XML ScriptCatalog](catalogs/XML%20ScriptCatalog.md) | Scripts, folders, separators, options | `ScriptCatalog` |
-| [XML StepsForScripts](catalogs/XML%20StepsForScripts.md) | Script steps with typed parameters | `StepsForScripts` |
+| [XML StepsForScripts](catalogs/XML%20StepsForScripts.md) | Script steps with typed parameters | `StepsForScripts`, `StepCalculations` (+ the step slots of `CalculationsCatalog`) |
 | [XML ThemeCatalog](catalogs/XML%20ThemeCatalog.md) | Themes incl. CSS rule sets | `ThemeCatalog` |
-| [XML LayoutCatalog](catalogs/XML%20LayoutCatalog.md) | Layouts, parts and all layout objects | `Layouts`, `LayoutParts`, `LayoutObjects` |
+| [XML LayoutCatalog](catalogs/XML%20LayoutCatalog.md) | Layouts, parts and all layout objects | `Layouts`, `LayoutParts`, `LayoutObjects`, `LayoutObjectConditions`, `LayoutObjectSymbols`, `ScriptTriggers`, `LayoutObjectSteps` |
 | [XML PrivilegeSetsCatalog](catalogs/XML%20PrivilegeSetsCatalog.md) | Privilege sets incl. custom access trees | `PrivilegeSetsCatalog`, `PrivilegeSet*Access` |
 | [XML ExtendedPrivilegesCatalog](catalogs/XML%20ExtendedPrivilegesCatalog.md) | Extended privileges with granting sets | `ExtendedPrivilegesCatalog` |
 | [XML AccountsCatalog](catalogs/XML%20AccountsCatalog.md) | Accounts with authentication block | `AccountsCatalog` |
@@ -104,7 +105,7 @@ The practical consequence for every consumer: **after import, the XML is done.**
 | [XML LibraryCatalog](catalogs/XML%20LibraryCatalog.md) | Embedded libraries (metadata kept, blobs stripped) | `LibraryReferences` |
 | [XML PasteIndexList](catalogs/XML%20PasteIndexList.md) | Copy/paste index bookkeeping | internal |
 | [XML Metadata](catalogs/XML%20Metadata.md) | File options, start layout, file-level triggers | `FileOptionsCatalog`, `ScriptTriggers` |
-| [XML DDR_INFO](catalogs/XML%20DDR_INFO.md) | Tokenized calculations & readable script texts | `DDR_Calculations`, `DDR_ScriptSteps` |
+| [XML DDR_INFO](catalogs/XML%20DDR_INFO.md) | Tokenized calculations & readable script texts | `DDR_Calculations`, `DDR_ChunkListContexts`, `DDR_ScriptSteps` (+ the DDR side of `CalculationsCatalog`) |
 
 ## Version notes: v22 and the upcoming v26
 

@@ -17,7 +17,7 @@ Every individual usage of a variable with its full context: which script and ste
 | `Context_Name` | `VARCHAR` |
 | `Script_Name` | `VARCHAR` |
 | `Script_UUID` | `VARCHAR` |
-| `Step_Index` | `INTEGER` |
+| `Step_Index` | `BIGINT` |
 | `Table_Name` | `VARCHAR` |
 | `Field_Name` | `VARCHAR` |
 | `Calc_Hash` | `VARCHAR` |

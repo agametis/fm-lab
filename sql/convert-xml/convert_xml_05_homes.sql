@@ -168,7 +168,7 @@ CREATE INDEX IF NOT EXISTS idx_tor_file    ON TableOccurrenceResolution(File_Nam
 -- (CREATE VIEW ginge dort nicht); P5 ist der ohnehin schreibende Lauf. Die Views
 -- werden vom convert-xml-Sync automatisch in die READ_ONLY-API-Kopie gespiegelt.
 --
--- KANONISCHE QUELLE: rest-api/templates/sql/graph_logical_links.sql (v1.1.0).
+-- KANONISCHE QUELLE: rest-api/templates/sql/graph_logical_links.sql (v1.4.0).
 -- Diese LogicalLinks-Definition MUSS mit jener Datei deckungsgleich bleiben;
 -- bei Änderung beide Stellen synchron halten (Drift bricht die Cluster-Färbung).
 
@@ -194,6 +194,22 @@ WITH container AS (
   FROM ObjectLinks
   WHERE Link_Role IN ('parent_layout', 'parent_script')
 ),
+field_anchor AS (
+  -- Semantischer Anker der Objekt-Trigger-Spiegel (Converter 2.18.0): das vom
+  -- Trigger-Owner ANGEZEIGTE Feld. Ein Objekt-Trigger sitzt in FileMaker am
+  -- Layoutobjekt eines Felds — das Feld ist der Datenanker der Beziehung; das
+  -- generische Container-Hoisting aufs Layout attribuierte sie falsch („Layout
+  -- triggert Script"). Trigger-tragende Feld-Objekte zeigen ausnahmslos genau
+  -- 1 Feld (korpusverifiziert 3260/3260); min()/arg_min() sichern den
+  -- Determinismus für exotische Mehrfach-displays_field-Fälle ab. Owner ohne
+  -- Feld (UI-Kontrollen: Popover/Tab/Buttons) fallen aufs Layout zurück.
+  SELECT Source_UUID AS owner, Source_File AS owner_file,
+         min(Target_UUID) AS fld,
+         arg_min(Target_File, Target_UUID) AS fld_file
+  FROM ObjectLinks
+  WHERE Link_Role = 'displays_field' AND Source_Type = 'LayoutObject'
+  GROUP BY 1, 2
+),
 local_var AS (
   -- Lokale Variablen: Prefix genau EIN '$' (global=$$, superglobal=$$$). Exhaustiv,
   -- da alle Variablen-Knoten mit '$' beginnen; Object_Type-Guard schützt vor
@@ -205,25 +221,61 @@ local_var AS (
     AND Object_Name NOT LIKE '$$%'
 ),
 hoisted AS (
+  -- Quell-Hoisting mit Feld-Anker-Sonderfall: Event-Spiegel (triggers_script,
+  -- Subrole ≠ button_action) eines feld-gebundenen Owners wandern aufs FELD
+  -- (Existenz-Semantik: „≥1 Platzierung dieses Felds trägt den Trigger");
+  -- button_action bleibt layout-verankert (Aktion = UI-Angebot der Maske,
+  -- kein Datenanker), alles andere hoisted wie bisher auf den Container.
   SELECT
-    COALESCE(cs.parent, ol.Source_UUID) AS a,
+    CASE WHEN ol.Link_Role = 'triggers_script'
+          AND ol.Link_Subrole IS DISTINCT FROM 'button_action'
+          AND fa.fld IS NOT NULL
+         THEN fa.fld
+         ELSE COALESCE(cs.parent, ol.Source_UUID) END AS a,
     -- Klon-Robustheit: Datei der Source/Target mitführen. Containment (parent_layout/
     -- parent_script) ist datei-lokal → der hochgezogene Container liegt in DERSELBEN
-    -- Datei wie das Sub-Objekt → a_file = ol.Source_File (analog b_file).
-    ol.Source_File AS a_file,
+    -- Datei wie das Sub-Objekt → a_file = ol.Source_File (analog b_file). Der
+    -- FELD-Anker dagegen kann in einer ANDEREN Datei liegen (Related-Field-
+    -- Platzierung) → a_file/Is_Cross_File werden für diesen Zweig neu bestimmt.
+    CASE WHEN ol.Link_Role = 'triggers_script'
+          AND ol.Link_Subrole IS DISTINCT FROM 'button_action'
+          AND fa.fld IS NOT NULL
+         THEN fa.fld_file
+         ELSE ol.Source_File END AS a_file,
     COALESCE(ct.parent, ol.Target_UUID) AS b,
     ol.Target_File AS b_file,
     ol.Link_Role,
     ol.Link_Subrole,
     ol.Link_Type,
-    ol.Is_Cross_File
+    CASE WHEN ol.Link_Role = 'triggers_script'
+          AND ol.Link_Subrole IS DISTINCT FROM 'button_action'
+          AND fa.fld IS NOT NULL
+         THEN (fa.fld_file IS DISTINCT FROM ol.Target_File)
+         ELSE ol.Is_Cross_File END AS Is_Cross_File
   FROM ObjectLinks ol
   LEFT JOIN container cs ON cs.child = ol.Source_UUID
   LEFT JOIN container ct ON ct.child = ol.Target_UUID
+  LEFT JOIN field_anchor fa ON fa.owner = ol.Source_UUID AND fa.owner_file = ol.Source_File
   WHERE ol.Link_Type = 'operational'
-    -- Containment-Gerüst raus (parent_table bleibt: echte Field→BaseTable-Referenz)
+    -- Containment-Gerüst raus (parent_table bleibt: echte Field→BaseTable-Referenz).
+    -- trigger_script raus (Graph-Policy seit Converter 2.17.0): Trigger-Knoten
+    -- hingen im Graph AUSSCHLIESSLICH an ihrem Script (trigger_owner ist
+    -- structural) — reine Satelliten ohne eingehende Kanten, in großen Lösungen
+    -- ein erheblicher Teil des Cluster-Universums. Die Owner↔Script-Affinität
+    -- tragen seit 2.17.0 die triggers_script-Spiegel aller drei Owner-Ebenen
+    -- (P4 Block 21a); Trigger-Knoten bleiben Katalog-/Navigationsobjekte, der
+    -- Graph-Tab eines Trigger-Fokus läuft vollständig über die Fokus-Brücke
+    -- (graph_subgraph.sql/graph_depth_profile.sql: trigger_owner + trigger_script).
+    -- Gleiche Policy für die zweite trigger-verankerte Kanten-Familie: die
+    -- OnWindowTransaction-Namens-Kandidaten (reads_field·transaction_parameter_field,
+    -- P4 Block 18c) sind spekulative Late-Binding-Kandidaten — als Cluster-Affinität
+    -- Trigger↔Feld wertlos und sie hielten den Trigger-Knoten sonst als Satellit im
+    -- Graph. In ObjectLinks/Referenzlisten bleiben sie unberührt.
     AND ol.Link_Role NOT IN
-        ('parent_layout', 'parent_script', 'parent_object', 'parent_folder')
+        ('parent_layout', 'parent_script', 'parent_object', 'parent_folder',
+         'trigger_script')
+    AND NOT (ol.Link_Role = 'reads_field'
+             AND ol.Link_Subrole = 'transaction_parameter_field')
     -- Waisen raus: beide Endpunkte müssen katalogisiert sein
     AND ol.Source_UUID IN (SELECT Object_UUID FROM ObjectCatalog)
     AND ol.Target_UUID IN (SELECT Object_UUID FROM ObjectCatalog)

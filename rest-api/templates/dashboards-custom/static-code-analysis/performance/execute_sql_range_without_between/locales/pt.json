@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "Intervalo ExecuteSQL sem BETWEEN",
+    "description": "Regra de desempenho — condições de intervalo em ExecuteSQL escritas com >=/<= em vez de BETWEEN fazem o motor avaliar duas condições separadas e calcular a interseção; a construção BETWEEN percorre o intervalo de uma só vez e é muitas vezes mais rápida do que as duas comparações individuais."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Ocorrências",
+    "summary_kpi.props.items[1].label": "Arquivos afetados",
+    "summary_kpi.props.items[2].label": "Chamadas ExecuteSQL",
+    "summary_kpi.props.items[3].label": "Já com BETWEEN",
+    "findings_card.props.title": "Intervalo ExecuteSQL sem BETWEEN",
+    "findings_table.props.searchPlaceholder": "Pesquisar arquivo ou objeto…",
+    "findings_table.props.empty.message": "Nenhum padrão de intervalo ExecuteSQL sem BETWEEN encontrado.",
+    "findings_table.props.columns[0].label": "Arquivo",
+    "findings_table.props.columns[1].label": "Objeto",
+    "findings_table.props.columns[2].label": "Tipo",
+    "findings_table.props.columns[3].label": "Etapa",
+    "findings_table.props.columns[4].label": "Função",
+    "findings_table.props.columns[5].label": "Trecho SQL"
+  }
+}

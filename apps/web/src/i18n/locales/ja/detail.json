@@ -12,7 +12,8 @@
     "page": "ページ {{current}} / {{total}}",
     "noMatches": "「{{query}}」に一致する項目はありません。",
     "prev": "← 前へ",
-    "next": "次へ →"
+    "next": "次へ →",
+    "rowAction": "リンク先を開く"
   },
   "layoutPreview": {
     "heading": "レイアウトビュー",
@@ -25,11 +26,12 @@
     "Field": "フィールド詳細",
     "BaseTable": "テーブル詳細",
     "CustomFunction": "関数の詳細",
-    "ValueList": "値一覧の詳細"
+    "ValueList": "値一覧の詳細",
+    "Calculation": "計算式の詳細"
   },
   "layoutCanvas": {
     "searchPlaceholder": "レイアウトオブジェクトを検索…",
-    "searchTitle": "Tab: 次の一致 · Shift+Tab: 前へ · Enter: 開く · Esc: リセット",
+    "searchTitle": "Tab: 次の一致 · Shift+Tab: 前へ · Enter: 詳細を開く · Alt+Enter: ターゲットを開く · Esc: リセット",
     "searchAria": "レイアウトオブジェクトを検索",
     "matchCount_one": "{{count}} 件の一致",
     "matchCount_other": "{{count}} 件の一致",
@@ -39,7 +41,13 @@
     "labelType": "種類",
     "labelTypeTitle": "オブジェクトの種類をラベルとして表示",
     "stats_one": "{{count}} オブジェクト · ズーム {{zoom}}%",
-    "stats_other": "{{count}} オブジェクト · ズーム {{zoom}}%"
+    "stats_other": "{{count}} オブジェクト · ズーム {{zoom}}%",
+    "tooltip": {
+      "target": "ターゲット",
+      "logic": "ロジック",
+      "slots": "スロット",
+      "moreTargets": "(+{{n}} 件)"
+    }
   },
   "relationshipGraphCanvas": {
     "searchPlaceholder": "テーブルオカレンスを検索…",
@@ -109,14 +117,26 @@
     "groupsLabel": "グループ",
     "detailsLabel": "詳細",
     "clearTitle": "すべての種類フィルターをクリア",
-    "clearLabel": "フィルターをクリア"
+    "clearLabel": "フィルターをクリア",
+    "calcGroupLabel": "Calculations",
+    "calcCategories": {
+      "cf": "条件付き書式",
+      "hide": "非表示条件",
+      "trigger": "トリガ",
+      "tooltip": "ポップアップヘルプ",
+      "display": "レイアウト計算"
+    },
+    "calcInventoryOpen": "インベントリを開く"
   },
   "referencesFilter": {
     "searchPlaceholder": "参照を検索…",
     "searchTitle": "Esc: 入力をクリア",
     "searchAria": "参照を検索",
     "clearTypesTitle": "すべての種類フィルターをクリア",
-    "clearTypesLabel": "フィルターをクリア"
+    "clearTypesLabel": "フィルターをクリア",
+    "rolesAria": "リンクロールで絞り込む",
+    "clearRolesLabel": "ロールをリセット",
+    "clearRolesTitle": "すべてのロールフィルタを解除"
   },
   "hierarchyTree": {
     "ariaLabel": "オブジェクト階層",
@@ -132,7 +152,71 @@
     "noFilterMatches": "現在のフィルターに一致する項目はありません",
     "crossFileBadge": "ファイル間",
     "itemAriaLabel": "{{type}}: {{name}} に移動",
-    "notNavigable": "対象がインポートされたデータセットに存在しません"
+    "notNavigable": "対象がインポートされたデータセットに存在しません",
+    "showInLayout": "レイアウトで表示 (Alt+クリック)",
+    "showInFile": "ファイルで表示 (Alt+クリック)",
+    "subroles": {
+      "hide": {
+        "short": "Hide",
+        "long": "非表示条件"
+      },
+      "conditional_format": {
+        "short": "CF",
+        "long": "条件付き書式"
+      },
+      "tooltip": {
+        "short": "Tooltip",
+        "long": "ツールチップ"
+      },
+      "button_action": {
+        "short": "Action",
+        "long": "ボタンアクション"
+      },
+      "portal_filter": {
+        "short": "Portal",
+        "long": "ポータルフィルタ"
+      },
+      "web_viewer_url": {
+        "short": "WebViewer",
+        "long": "Web ビューア URL"
+      },
+      "placeholder": {
+        "short": "Placeholder",
+        "long": "プレースホルダテキスト"
+      },
+      "popover_title": {
+        "short": "Popover",
+        "long": "ポップオーバータイトル"
+      },
+      "script_trigger_parameter": {
+        "short": "Trigger",
+        "long": "スクリプトトリガパラメータ"
+      },
+      "transaction_parameter_field": {
+        "short": "TX Param",
+        "long": "トランザクションパラメータフィールド（候補）"
+      },
+      "auto_enter": {
+        "short": "Auto-Enter",
+        "long": "自動入力計算式"
+      },
+      "validation": {
+        "short": "Validation",
+        "long": "値一覧による入力値の制限"
+      },
+      "on_server": {
+        "short": "PSoS",
+        "long": "サーバー上で実行 (PSoS)"
+      },
+      "mbs_runscript": {
+        "short": "MBS",
+        "long": "MBS FM.RunScript 経由"
+      },
+      "menu_install": {
+        "short": "Install",
+        "long": "メニューインストール条件"
+      }
+    }
   },
   "searchOptions": {
     "regionAria": "並べ替えとグループ化のオプション",
@@ -366,6 +450,13 @@
     "dismissTitle": "参照のハイライトを解除 (Esc)",
     "sourceLabel": "参照元:"
   },
+  "varSelect": {
+    "hint": "クリック: すべての出現箇所をハイライト",
+    "clearHint": "クリック: ハイライトを解除",
+    "pillLabel": "変数:",
+    "dismissAria": "変数ハイライトを解除",
+    "dismissTitle": "変数ハイライトを解除 (Esc)"
+  },
   "tableDetails": "テーブル詳細",
   "scriptDetails": "スクリプト詳細",
   "fieldDetails": "フィールド詳細",
@@ -384,6 +475,22 @@
   "metadata": "メタデータ",
   "rowCount_one": "{{count}} 件",
   "rowCount_other": "{{count}} 件",
+  "privilegeSet": {
+    "ariaLabel": "アクセス権セットの詳細",
+    "heading": "アクセス権セット",
+    "recordAccess": "カスタムレコードアクセス権",
+    "fieldAccess": "カスタムフィールドアクセス権",
+    "objectAccess": "レイアウト / 値一覧 / スクリプトのカスタムアクセス権",
+    "colTable": "テーブル",
+    "colOperation": "操作",
+    "colAccess": "アクセス",
+    "colFormula": "計算式 / コンテキスト",
+    "colField": "フィールド",
+    "colClass": "クラス",
+    "colObject": "オブジェクト",
+    "colRecordsAccess": "レコード",
+    "evalContext": "評価コンテキスト"
+  },
   "valueList": {
     "ariaLabel": "値一覧の詳細",
     "metaName": "名前",
@@ -558,5 +665,148 @@
   "osBinding": {
     "label": "OSバインディング:",
     "tooltip": "このスクリプトがバインドされているOS（platform-os-bindingテスト実行より — 中立的なインベントリであり、欠陥ではありません）。"
+  },
+  "textContent": {
+    "heading": "テキスト内容"
+  },
+  "calculationDetail": {
+    "ariaLabel": "計算式の詳細",
+    "loading": "計算式を読み込み中…",
+    "owner": "所有者",
+    "slot": "スロット",
+    "kind": "種類",
+    "kindStatic": "静的な値",
+    "kindFormula": "計算式",
+    "contextTo": "評価コンテキスト",
+    "formula": "計算式",
+    "layoutFormula": "レイアウト計算式",
+    "resultType": "結果のタイプ",
+    "resultTypeTooltip": "結果のタイプ: {{type}}",
+    "resultTypes": {
+      "Text": "テキスト",
+      "Number": "数字",
+      "Date": "日付",
+      "Time": "時刻",
+      "Timestamp": "タイムスタンプ"
+    },
+    "targets": "解決されたターゲット",
+    "slotsHeading": "計算式",
+    "ddrlessHint": "テキストのみ — このインスタンスには DDR チャンクデータがないため、トークン、ツールチップ、クロスナビゲーションは利用できません。",
+    "recoveredHint": "復元された計算式からトークンを再構築 — このインスタンスには DDR チャンクデータがなく、組み込み関数は未解決のままです。",
+    "roles": {
+      "field_calculation": "フィールドの計算式",
+      "auto_enter": "自動入力の計算式",
+      "validation": "入力値の制限の計算式",
+      "validation_message": "入力値の制限メッセージの計算式",
+      "container_path": "オブジェクトフィールドのパス",
+      "custom_function": "カスタム関数",
+      "step_parameter": "スクリプトステップの計算式",
+      "step_xslt": "XSLT スタイルシート",
+      "record_access": "レコードアクセスの計算式",
+      "hide": "非表示条件",
+      "tooltip": "ツールチップ",
+      "placeholder": "プレースホルダテキスト",
+      "conditional_format": "条件付き書式",
+      "portal_filter": "ポータルフィルタ",
+      "web_viewer_url": "Web ビューア URL",
+      "button_label": "ボタンのラベル",
+      "button_action": "ボタンのアクション",
+      "panel_title": "パネルのタイトル",
+      "popover_title": "ポップオーバーのタイトル",
+      "display_calculation": "表示計算式",
+      "merge_text": "解決済みマージアンカー",
+      "chart_series": "グラフ系列",
+      "script_trigger_parameter": "スクリプトトリガのパラメータ",
+      "menu_install": "メニューのインストール条件",
+      "menu_title": "メニューのタイトル",
+      "menu_item_install": "メニュー項目のインストール条件",
+      "menu_item_name": "メニュー項目の名前",
+      "menu_item_parameter": "メニュー項目のパラメータ"
+    }
+  },
+  "scriptTriggerDetail": {
+    "heading": "スクリプトトリガ",
+    "openTrigger": "スクリプトトリガを開く",
+    "eventLabel": "イベント",
+    "modesLabel": "有効なモード",
+    "scriptLabel": "スクリプト",
+    "ownerLabel": "設定場所",
+    "paramLabel": "スクリプト引数",
+    "paramFieldLabel": "引数フィールド",
+    "paramFieldCandidates": "候補:",
+    "paramFieldOrphan": "このファイルに同名のフィールドがありません（孤立した名前）",
+    "openParamCalc": "計算式の詳細を開く"
+  },
+  "layoutObjectDetail": {
+    "showInLayout": "レイアウトで表示: {{name}}",
+    "showInLayoutTitle": "レイアウトを開いてこのオブジェクトをハイライト",
+    "targetBarAria": "ターゲット",
+    "colBrowse": "ブ",
+    "colFind": "検",
+    "colPreview": "プ",
+    "modeBrowse": "ブラウズモード",
+    "modeFind": "検索モード",
+    "modePreview": "プレビュー",
+    "colEvent": "トリガロール",
+    "colScript": "スクリプト（引数）",
+    "paramLabel": "引数:",
+    "cfColActive": "有効",
+    "cfColCalc": "計算式",
+    "cfActiveTitle": "ダイアログで有効化されたルール",
+    "cfColFormat": "書式",
+    "cfIconColorTitle": "アイコンの色",
+    "cfColPreview": "プレビュー",
+    "cfFormat": {
+      "bold": "太字",
+      "italic": "斜体",
+      "underline": "下線",
+      "wordUnderline": "単語下線",
+      "doubleUnderline": "二重下線",
+      "strikethrough": "取り消し線",
+      "textColor": "テキスト色",
+      "fillColor": "塗りつぶし色",
+      "iconColor": "アイコンの色",
+      "font": "フォント",
+      "fontSize": "フォントサイズ",
+      "highlight": "ハイライト",
+      "superscript": "上付き",
+      "subscript": "下付き",
+      "smallCaps": "スモールキャップ",
+      "condensed": "圧縮",
+      "expanded": "拡張",
+      "uppercase": "大文字",
+      "lowercase": "小文字",
+      "capitalize": "先頭を大文字"
+    },
+    "cfOperatorFallback": "値（タイプ {{type}}）",
+    "cfOperator": {
+      "between": "の間",
+      "notBetween": "の間以外",
+      "equal": "等しい",
+      "notEqual": "等しくない",
+      "greater": "より大きい",
+      "less": "より小さい",
+      "greaterEqual": "以上",
+      "lessEqual": "以下",
+      "contains": "を含む",
+      "notContains": "を含まない",
+      "beginsWith": "で始まる",
+      "endsWith": "で終わる",
+      "empty": "空白"
+    },
+    "segmentsHeading": "セグメント",
+    "childrenHeading": "含まれるオブジェクト",
+    "colLabel": "ラベル",
+    "colType": "タイプ",
+    "colObject": "オブジェクト",
+    "colTrigger": "トリガ",
+    "childDetailTitle": "オブジェクトの詳細を開く",
+    "propsHeading": "プロパティ",
+    "propType": "タイプ",
+    "propName": "名前",
+    "propPart": "レイアウトパート",
+    "propPosition": "位置/サイズ",
+    "propNesting": "ネスト",
+    "nestingLevel": "レベル {{level}}"
   }
 }

@@ -67,6 +67,7 @@ Privilege sets produce three kinds of edges: grants (extended privileges), restr
 | `reads_variable` | [Variable](Variable.md) | usage | Record-access calculation reads a global variable |
 | `calls_customfunction` | [CustomFunction](CustomFunction.md) | usage | Record-access calculation calls a custom function |
 | `calls_pluginfunction` | [PluginFunction](PluginFunction.md) | usage | Record-access calculation calls a plugin function |
+| `has_calculation` | [Calculation](Calculation.md) | containment | Each record-access calculation as an addressable instance (subrole `record_access`) — never counts as usage |
 
 ### Incoming links (PrivilegeSet as target)
 

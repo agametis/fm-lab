@@ -12,7 +12,8 @@
     "page": "Pagina {{current}} / {{total}}",
     "noMatches": "Geen overeenkomsten voor „{{query}}”.",
     "prev": "← Vorige",
-    "next": "Volgende →"
+    "next": "Volgende →",
+    "rowAction": "Doel openen"
   },
   "layoutPreview": {
     "heading": "Layout-weergave",
@@ -25,11 +26,12 @@
     "Field": "Velddetails",
     "BaseTable": "Tabeldetails",
     "CustomFunction": "Functiedetails",
-    "ValueList": "Waardelijstdetails"
+    "ValueList": "Waardelijstdetails",
+    "Calculation": "Berekeningsdetails"
   },
   "layoutCanvas": {
     "searchPlaceholder": "Zoek layout-object…",
-    "searchTitle": "Tab: volgende match · Shift+Tab: vorige · Enter: openen · Esc: resetten",
+    "searchTitle": "Tab: volgende match · Shift+Tab: vorige · Enter: details openen · Alt+Enter: doel openen · Esc: resetten",
     "searchAria": "Zoek layout-object",
     "matchCount_one": "{{count}} match",
     "matchCount_other": "{{count}} matches",
@@ -39,7 +41,13 @@
     "labelType": "Type",
     "labelTypeTitle": "Toon objecttype als label",
     "stats_one": "{{count}} object · Zoom {{zoom}}%",
-    "stats_other": "{{count}} objecten · Zoom {{zoom}}%"
+    "stats_other": "{{count}} objecten · Zoom {{zoom}}%",
+    "tooltip": {
+      "target": "Doel",
+      "logic": "Logica",
+      "slots": "Slots",
+      "moreTargets": "(+{{n}} meer)"
+    }
   },
   "relationshipGraphCanvas": {
     "searchPlaceholder": "Zoek table occurrence…",
@@ -109,14 +117,26 @@
     "groupsLabel": "Groepen",
     "detailsLabel": "Details",
     "clearTitle": "Alle typefilters wissen",
-    "clearLabel": "Filters wissen"
+    "clearLabel": "Filters wissen",
+    "calcGroupLabel": "Calculations",
+    "calcCategories": {
+      "cf": "Voorwaardelijke opmaak",
+      "hide": "Verbergvoorwaarde",
+      "trigger": "Triggers",
+      "tooltip": "Knopinfo",
+      "display": "Lay-outberekeningen"
+    },
+    "calcInventoryOpen": "Inventaris openen"
   },
   "referencesFilter": {
     "searchPlaceholder": "Zoek referenties…",
     "searchTitle": "Esc: invoer wissen",
     "searchAria": "Zoek referenties",
     "clearTypesTitle": "Alle typefilters wissen",
-    "clearTypesLabel": "Filters wissen"
+    "clearTypesLabel": "Filters wissen",
+    "rolesAria": "Filteren op linkrol",
+    "clearRolesLabel": "Rollen herstellen",
+    "clearRolesTitle": "Alle rolfilters wissen"
   },
   "hierarchyTree": {
     "ariaLabel": "Objecthiërarchie",
@@ -132,7 +152,71 @@
     "noFilterMatches": "Geen matches voor de huidige filters",
     "crossFileBadge": "Tussen bestanden",
     "itemAriaLabel": "Navigeer naar {{type}}: {{name}}",
-    "notNavigable": "Doel niet in de geïmporteerde dataset"
+    "notNavigable": "Doel niet in de geïmporteerde dataset",
+    "showInLayout": "Toon in layout (Alt+klik)",
+    "showInFile": "Toon in bestand (Alt+klik)",
+    "subroles": {
+      "hide": {
+        "short": "Hide",
+        "long": "Verbergconditie"
+      },
+      "conditional_format": {
+        "short": "CF",
+        "long": "Voorwaardelijke opmaak"
+      },
+      "tooltip": {
+        "short": "Tooltip",
+        "long": "Knopinfo (tooltip)"
+      },
+      "button_action": {
+        "short": "Action",
+        "long": "Knopactie"
+      },
+      "portal_filter": {
+        "short": "Portal",
+        "long": "Portaalfilter"
+      },
+      "web_viewer_url": {
+        "short": "WebViewer",
+        "long": "Webviewer-URL"
+      },
+      "placeholder": {
+        "short": "Placeholder",
+        "long": "Tijdelijke-aanduidingstekst"
+      },
+      "popover_title": {
+        "short": "Popover",
+        "long": "Popover-titel"
+      },
+      "script_trigger_parameter": {
+        "short": "Trigger",
+        "long": "Scripttrigger-parameter"
+      },
+      "transaction_parameter_field": {
+        "short": "TX Param",
+        "long": "Transactieparameterveld (kandidaat)"
+      },
+      "auto_enter": {
+        "short": "Auto-Enter",
+        "long": "Formule voor automatische invoer"
+      },
+      "validation": {
+        "short": "Validation",
+        "long": "Validatie via waardenlijst"
+      },
+      "on_server": {
+        "short": "PSoS",
+        "long": "Uitvoeren op server (PSoS)"
+      },
+      "mbs_runscript": {
+        "short": "MBS",
+        "long": "via MBS FM.RunScript"
+      },
+      "menu_install": {
+        "short": "Install",
+        "long": "Installatieconditie van menu"
+      }
+    }
   },
   "searchOptions": {
     "regionAria": "Sorteer- en groepeeropties",
@@ -366,6 +450,13 @@
     "dismissTitle": "Markering van referentie verwijderen (Esc)",
     "sourceLabel": "Bron:"
   },
+  "varSelect": {
+    "hint": "Klik: alle voorkomens markeren",
+    "clearHint": "Klik: markering verwijderen",
+    "pillLabel": "Variabele:",
+    "dismissAria": "Variabelemarkering verwijderen",
+    "dismissTitle": "Variabelemarkering verwijderen (Esc)"
+  },
   "tableDetails": "Tabeldetails",
   "scriptDetails": "Scriptdetails",
   "fieldDetails": "Velddetails",
@@ -384,6 +475,22 @@
   "metadata": "Metadata",
   "rowCount_one": "{{count}} vermelding",
   "rowCount_other": "{{count}} vermeldingen",
+  "privilegeSet": {
+    "ariaLabel": "Details privilegeset",
+    "heading": "Privilegeset",
+    "recordAccess": "Aangepaste recordprivileges",
+    "fieldAccess": "Aangepaste veldprivileges",
+    "objectAccess": "Aangepaste privileges voor lay-outs / waardenlijsten / scripts",
+    "colTable": "Tabel",
+    "colOperation": "Bewerking",
+    "colAccess": "Toegang",
+    "colFormula": "Formule / Context",
+    "colField": "Veld",
+    "colClass": "Klasse",
+    "colObject": "Object",
+    "colRecordsAccess": "Records",
+    "evalContext": "Evaluatiecontext"
+  },
   "valueList": {
     "ariaLabel": "Details waardelijst",
     "metaName": "Naam",
@@ -558,5 +665,148 @@
   "osBinding": {
     "label": "OS-binding:",
     "tooltip": "Besturingssystemen waaraan dit script gebonden is (uit de platform-os-binding-testrun - neutrale inventaris, geen defect)."
+  },
+  "textContent": {
+    "heading": "Tekstinhoud"
+  },
+  "calculationDetail": {
+    "ariaLabel": "Berekeningsdetails",
+    "loading": "Berekening wordt geladen…",
+    "owner": "Eigenaar",
+    "slot": "Slot",
+    "kind": "Soort",
+    "kindStatic": "Statische waarde",
+    "kindFormula": "Formule",
+    "contextTo": "Evaluatiecontext",
+    "formula": "Formule",
+    "layoutFormula": "Lay-outberekening",
+    "resultType": "Resultaattype",
+    "resultTypeTooltip": "Resultaattype: {{type}}",
+    "resultTypes": {
+      "Text": "Tekst",
+      "Number": "Getal",
+      "Date": "Datum",
+      "Time": "Tijd",
+      "Timestamp": "Tijdstempel"
+    },
+    "targets": "Opgeloste doelen",
+    "slotsHeading": "Berekeningen",
+    "ddrlessHint": "Alleen platte tekst — deze instantie heeft geen DDR-chunkgegevens; tokens, tooltips en kruisnavigatie zijn niet beschikbaar.",
+    "recoveredHint": "Tokens gereconstrueerd uit de herstelde formule — deze instantie heeft geen DDR-chunkgegevens; ingebouwde functies blijven onopgelost.",
+    "roles": {
+      "field_calculation": "Veldberekening",
+      "auto_enter": "Berekening automatische invoer",
+      "validation": "Valideringsberekening",
+      "validation_message": "Berekening valideringsmelding",
+      "container_path": "Containerpad",
+      "custom_function": "Aangepaste functie",
+      "step_parameter": "Berekening scriptstap",
+      "step_xslt": "XSLT-stylesheet",
+      "record_access": "Berekening recordtoegang",
+      "hide": "Verbergconditie",
+      "tooltip": "Knopinfo",
+      "placeholder": "Tijdelijke aanduiding",
+      "conditional_format": "Voorwaardelijke opmaak",
+      "portal_filter": "Portaalfilter",
+      "web_viewer_url": "Webviewer-URL",
+      "button_label": "Knoplabel",
+      "button_action": "Knopactie",
+      "panel_title": "Paneeltitel",
+      "popover_title": "Popover-titel",
+      "display_calculation": "Weergaveberekening",
+      "merge_text": "Opgeloste samenvoegankers",
+      "chart_series": "Diagramreeks",
+      "script_trigger_parameter": "Scripttriggerparameter",
+      "menu_install": "Installatievoorwaarde menu",
+      "menu_title": "Menutitel",
+      "menu_item_install": "Installatievoorwaarde menu-item",
+      "menu_item_name": "Naam menu-item",
+      "menu_item_parameter": "Parameter menu-item"
+    }
+  },
+  "scriptTriggerDetail": {
+    "heading": "Scripttrigger",
+    "openTrigger": "Scripttrigger openen",
+    "eventLabel": "Gebeurtenis",
+    "modesLabel": "Actief in",
+    "scriptLabel": "Script",
+    "ownerLabel": "Verankerd aan",
+    "paramLabel": "Scriptparameter",
+    "paramFieldLabel": "Parameterveld",
+    "paramFieldCandidates": "Kandidaten:",
+    "paramFieldOrphan": "Geen veld met deze naam in dit bestand (verweesde naam)",
+    "openParamCalc": "Berekeningsdetails openen"
+  },
+  "layoutObjectDetail": {
+    "showInLayout": "Tonen in layout: {{name}}",
+    "showInLayoutTitle": "De layout openen en dit object markeren",
+    "targetBarAria": "Doelen",
+    "colBrowse": "B",
+    "colFind": "Z",
+    "colPreview": "V",
+    "modeBrowse": "Bladermodus",
+    "modeFind": "Zoekmodus",
+    "modePreview": "Voorbeeld",
+    "colEvent": "Triggerrol",
+    "colScript": "Script (parameter)",
+    "paramLabel": "Param.:",
+    "cfColActive": "actief",
+    "cfColCalc": "Berekening",
+    "cfActiveTitle": "Regel geactiveerd in het dialoogvenster",
+    "cfColFormat": "Opmaak",
+    "cfIconColorTitle": "Symboolkleur",
+    "cfColPreview": "Voorbeeld",
+    "cfFormat": {
+      "bold": "vet",
+      "italic": "cursief",
+      "underline": "onderstreept",
+      "wordUnderline": "per woord onderstreept",
+      "doubleUnderline": "dubbel onderstreept",
+      "strikethrough": "doorgehaald",
+      "textColor": "tekstkleur",
+      "fillColor": "vulkleur",
+      "iconColor": "symboolkleur",
+      "font": "lettertype",
+      "fontSize": "tekengrootte",
+      "highlight": "markering",
+      "superscript": "superscript",
+      "subscript": "subscript",
+      "smallCaps": "klein kapitaal",
+      "condensed": "gecomprimeerd",
+      "expanded": "verbreed",
+      "uppercase": "HOOFDLETTERS",
+      "lowercase": "kleine letters",
+      "capitalize": "beginhoofdletters"
+    },
+    "cfOperatorFallback": "waarde (type {{type}})",
+    "cfOperator": {
+      "between": "tussen",
+      "notBetween": "niet tussen",
+      "equal": "gelijk aan",
+      "notEqual": "niet gelijk aan",
+      "greater": "groter dan",
+      "less": "kleiner dan",
+      "greaterEqual": "groter dan of gelijk aan",
+      "lessEqual": "kleiner dan of gelijk aan",
+      "contains": "bevat",
+      "notContains": "bevat niet",
+      "beginsWith": "begint met",
+      "endsWith": "eindigt op",
+      "empty": "leeg"
+    },
+    "segmentsHeading": "Segmenten",
+    "childrenHeading": "Ingesloten objecten",
+    "colLabel": "Label",
+    "colType": "Type",
+    "colObject": "Object",
+    "colTrigger": "Trigger",
+    "childDetailTitle": "Objectdetails openen",
+    "propsHeading": "Eigenschappen",
+    "propType": "Type",
+    "propName": "Naam",
+    "propPart": "Layoutgedeelte",
+    "propPosition": "Positie/grootte",
+    "propNesting": "Nesting",
+    "nestingLevel": "Niveau {{level}}"
   }
 }

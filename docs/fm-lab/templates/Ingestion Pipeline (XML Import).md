@@ -17,8 +17,9 @@ The phase files run in order:
 |---|---|
 | `convert_xml_01_extract.sql` | P1 · extract objects from the XML export |
 | `convert_xml_01b_heal_cascade.sql` | P1b · propagate healed duplicate UUIDs into dependent extracts ([UUID healing](../schema/UUID%20Healing%20and%20Duplicate%20Census.md)) |
-| `convert_xml_02_resolve.sql` | P2 · resolve links (read-only) |
+| `convert_xml_02_resolve.sql` | P2 · resolve references out of the raw XML columns (touches no XML files) |
 | `convert_xml_03_details.sql` | P3 · derived detail columns |
+| `convert_xml_03b_plugin_subname_recovery.sql` | P3.5 · recover MBS plug-in subnames from calc plain text (compensates DDR chunk loss) |
 | `convert_xml_04_catalog.sql` | P4 · build `ObjectCatalog` / `ObjectLinks` |
 | `convert_xml_05_homes.sql` | P5 · home / ownership resolution |
 | `convert_xml_06_validate.sql` | P6 · validation gate |
@@ -40,10 +41,18 @@ Healing of duplicate object UUIDs runs inside P1/P4 by default; the environment
 switch `FM_UUID_HEAL=0` disables it for comparison imports (see
 [UUID Healing and Duplicate Census](../schema/UUID%20Healing%20and%20Duplicate%20Census.md)).
 
-The distinction from [CLI Analysis Scripts](CLI%20Analysis%20Scripts.md) is direction: those **read** the
-catalog, these **produce** it. Once P6 passes, the catalog is ready for every
-query tier — [Built-in Query Templates](Built-in%20Query%20Templates.md), [Custom Query Templates](Custom%20Query%20Templates.md) and the
-[Dashboard Datasets](Dashboard%20Datasets.md).
+Two independent version marks gate the incremental path: the converter version
+in the driver script and the schema version declared in the P1 template. A
+bump of either invalidates the import manifest, so a `--changed-only` run
+performs a full re-conversion — a skip can never serve a catalog built by an
+older schema or converter.
+
+The pipeline is gated: a P2 failure aborts the run before P3 (exit 1, no
+publish — the previously served catalog stays untouched), and P6 is the final
+validation gate. Once P6 passes, the catalog is ready for every query tier —
+[Built-in Query Templates](Built-in%20Query%20Templates.md), [Custom Query Templates](Custom%20Query%20Templates.md) and the
+[Dashboard Datasets](Dashboard%20Datasets.md). The distinction from [CLI Analysis Scripts](CLI%20Analysis%20Scripts.md) is
+direction: those **read** the catalog, these **produce** it.
 
 ## See also
 

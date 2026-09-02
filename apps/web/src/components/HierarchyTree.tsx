@@ -4,15 +4,19 @@ import { useTranslation } from 'react-i18next';
 import type { GroupedReferences, ReferenceItem } from '../types';
 import { ReferencesFilter } from './ReferencesFilter';
 import { useUrlState, stringSetCodec, type UrlStateCodec } from '../hooks/useUrlState';
-import { buildNavigablePath } from '../lib/navigation';
+import { buildNavigablePath, buildObjectPath } from '../lib/navigation';
 import { useCurrentFile } from '../lib/currentFileContext';
 import { formatObjectDisplayName } from '../lib/objectName';
 
 const EMPTY_TYPES = new Set<string>();
 
 /**
- * Richtungs-Filter der Referenzliste. parent/structuralParent = eingehend (←,
- * „wird verwendet von"), child/structuralChild = ausgehend (→, „verwendet").
+ * Richtungs-Filter der Referenzliste. Semantisch aufwärts/abwärts: parent
+ * („wird verwendet von") und structuralParent („strukturell enthalten in")
+ * zählen als eingehend (←), child („verwendet") und structuralChild
+ * („strukturell enthält") als ausgehend (→). Die strukturellen Gruppen sind
+ * dabei bereits semantisch einsortiert (useObjectDetail invertiert die
+ * Kanten-Richtung der Sub→Container-Rollen), nicht roh kanten-gerichtet.
  * 'both' ist Default und fällt aus der URL heraus (saubere URLs).
  */
 type DirFilter = 'in' | 'out' | 'both';
@@ -37,14 +41,55 @@ export type HierarchyTreeHandle = {
   clearFilters: () => void;
 };
 
-function buildSearchText(ref: ReferenceItem): string {
+function buildSearchText(ref: ReferenceItem, subroleLabels: string): string {
   return [
     ref.Object_Name ?? '',
     ref.Object_Type ?? '',
     ref.Link_Role ?? '',
+    ref.Subrole_Class ?? '',
+    ref.Subrole_Event ?? '',
+    subroleLabels,
     ref.File_Name ?? '',
     ref.Container_Name ?? '',
   ].join(' ').toLowerCase();
+}
+
+/**
+ * Kuratiertes Chip-Vokabular: nur diese Slot-Klassen bilden eigene Rollen-Chips
+ * (Spiegel der i18n-Wörterbuch-Keys `hierarchyTree.subroles.*`). `Subrole_Class`
+ * ist API-seitig ein bewusster Roh-Durchreicher („Unbekanntes wird nie
+ * verschluckt") — instanzgebundene Werte (Trigger-Events, Part-Namen,
+ * Slot-Indizes wie `script_trigger_parameter:12`) würden sonst je Instanz einen
+ * eigenen Filter-Chip prägen (Kardinalität 1 = sinnlose Filter-Dimension).
+ */
+const CURATED_CHIP_CLASSES = new Set([
+  'auto_enter', 'button_action', 'conditional_format', 'hide', 'mbs_runscript',
+  'menu_install', 'on_server', 'placeholder', 'popover_title', 'portal_filter',
+  'script_trigger_parameter', 'tooltip', 'transaction_parameter_field',
+  'validation', 'web_viewer_url',
+]);
+
+/**
+ * Chip-/Filter-Identität einer Referenzzeile: Rolle und ggf. Slot-Klasse als
+ * KOMBINIERTE Einheit (`reads_field~conditional_format`). Tilde als Separator —
+ * kollisionsfrei zu Rollen-/Klassen-Keys und URL-unkritisch (`roles=`-Param).
+ * Die Klasse wird für die CHIP-Identität normalisiert: numerisches
+ * Instanz-Suffix gestrippt (`:12`), dann nur kuratierte Klassen als eigener
+ * Chip — alles andere fällt auf den nackten Rollen-Chip zurück. Zeilen-Labels
+ * und Suchindex behalten die volle Detailtiefe (Events bleiben tippbar).
+ */
+function roleKeyOf(ref: ReferenceItem): string {
+  const cls = ref.Subrole_Class ? ref.Subrole_Class.replace(/:\d+$/, '') : null;
+  return cls && CURATED_CHIP_CLASSES.has(cls) ? `${ref.Link_Role}~${cls}` : ref.Link_Role;
+}
+
+/**
+ * Klassen-Key → i18n-Key-Segment. Roh durchgereichte Subroles können ':' / '.'
+ * enthalten (calc_kinds wie `conditional_format:2`) — beides sind i18next-
+ * Separatoren. Ohne Treffer greift ohnehin der defaultValue (Roh-Anzeige).
+ */
+function subroleI18nKey(cls: string): string {
+  return cls.replace(/[:.]/g, '_');
 }
 
 /**
@@ -71,7 +116,11 @@ function compareRefs(a: ReferenceItem, b: ReferenceItem, key: RefSortKey): numbe
       || cmp(a.Object_Name, b.Object_Name);
   }
   if (key === 'role') {
-    return cmp(a.Link_Role, b.Link_Role) || cmp(a.Object_Name, b.Object_Name) || cmp(a.File_Name, b.File_Name);
+    // Sekundärschlüssel Slot-Klasse: Hide-/CF-Blöcke gruppieren sich innerhalb
+    // der Rolle automatisch untereinander — ohne eigenen Sortier-Button.
+    return cmp(a.Link_Role, b.Link_Role)
+      || cmp(a.Subrole_Class ?? '', b.Subrole_Class ?? '')
+      || cmp(a.Object_Name, b.Object_Name) || cmp(a.File_Name, b.File_Name);
   }
   return cmp(a.Object_Name, b.Object_Name) || cmp(a.File_Name, b.File_Name);
 }
@@ -98,6 +147,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
   // damit der Filter sich nicht mit dem Referenz-Modus schneidet.
   const [query, setQuery] = useUrlState<string>('q', '');
   const [activeTypes, setActiveTypes] = useUrlState<Set<string>>('types', EMPTY_TYPES, stringSetCodec);
+  const [activeRoles, setActiveRoles] = useUrlState<Set<string>>('roles', EMPTY_TYPES, stringSetCodec);
   const [dirFilter] = useUrlState<DirFilter>('rdir', 'both', dirFilterCodec);
   const [, setSearchParams] = useSearchParams();
   const treeRef = useRef<HTMLElement>(null);
@@ -126,42 +176,76 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
   queryRef.current = query;
   const activeTypesRef = useRef(activeTypes);
   activeTypesRef.current = activeTypes;
+  const activeRolesRef = useRef(activeRoles);
+  activeRolesRef.current = activeRoles;
 
   useImperativeHandle(externalRef, () => ({
     hasQuery: () => queryRef.current.trim() !== '',
-    hasFilters: () => activeTypesRef.current.size > 0,
+    hasFilters: () => activeTypesRef.current.size > 0 || activeRolesRef.current.size > 0,
     clearQuery: () => setQuery(''),
-    clearFilters: () => setActiveTypes(EMPTY_TYPES),
+    // Beide Setter arbeiten funktional auf den URLSearchParams — die Updates
+    // komponieren racefrei im selben Render-Zyklus.
+    clearFilters: () => { setActiveTypes(EMPTY_TYPES); setActiveRoles(EMPTY_TYPES); },
   // Setter sind stabil per useUrlState; eslint-disable verhindert false-positive deps.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), []);
 
-  const handleReferenceClick = (ref: ReferenceItem) => {
+  /**
+   * Kurz-/Langlabel einer Slot-Klasse. Kurzlabels sind sprachneutrale
+   * Quasi-Eigennamen (CF, Hide, PSoS, …) und in allen Locales identisch;
+   * nur die Langlabels (Tooltip) sind übersetzt. Fallback-Prinzip: unbekannte
+   * Klasse → Roh-Anzeige des Keys, niemals verschlucken.
+   */
+  const subroleShort = useCallback((cls: string) =>
+    t(`detail:hierarchyTree.subroles.${subroleI18nKey(cls)}.short`, { defaultValue: cls }) as string, [t]);
+  const subroleLong = useCallback((cls: string) =>
+    t(`detail:hierarchyTree.subroles.${subroleI18nKey(cls)}.long`, { defaultValue: cls }) as string, [t]);
+
+  /**
+   * Sub-Knoten-Referenzen MIT eigener Detail-Seite (LayoutObject, ScriptTrigger)
+   * haben ZWEI sinnvolle Ziele: die eigene Detail-Seite und den umgebenden
+   * Container (Layout bzw. Datei) mit Hervorhebung. Der normale Klick öffnet
+   * die Detail-Seite; den Container erreicht man über den Pfeil-Button hinter
+   * der Typ-Pille oder Alt+Klick/Alt+Enter auf der Zeile (gleicher Modifier
+   * wie der Cross-Nav-Klick im LayoutCanvas).
+   */
+  const DETAIL_SUB_NODE_TYPES = new Set(['LayoutObject', 'ScriptTrigger']);
+  const isDetailSubNode = (ref: ReferenceItem) =>
+    DETAIL_SUB_NODE_TYPES.has(ref.Object_Type) && !!ref.Container_UUID && ref.Container_UUID !== ref.uuid;
+
+  const handleReferenceClick = (ref: ReferenceItem, opts?: { toContainer?: boolean }) => {
     // Container-Resolution:
     // - Aktuelles Objekt als Origin mitgeben (Standard-Highlight-Mechanik).
-    // - Wenn das Ziel ein Sub-Knoten ist (Container_UUID gesetzt, z.B.
-    //   LayoutObject → Layout), wird transparent der Container geöffnet und
-    //   der Sub-Knoten als ref gesetzt — der spezifischere Treffer ist die
-    //   nützlichere Hervorhebung.
+    // - Sub-Knoten OHNE eigene Detail-Seite (Container_UUID gesetzt) öffnen
+    //   transparent den Container und setzen den Sub-Knoten als ref — der
+    //   spezifischere Treffer ist die nützlichere Hervorhebung.
+    // - Sub-Knoten MIT eigener Detail-Seite (LayoutObject, ScriptTrigger):
+    //   der normale Klick öffnet SIE; nur toContainer (Pfeil-Button / Alt)
+    //   springt in den Container (Layout bzw. Datei).
     //
     // Sonderfall parent_script: aus einer ScriptStep-Detail-Seite springt der
     // Klick auf den "enthalten in Script"-Eintrag zur Script-Detail-Seite.
     // Wir hängen `?step=<currentUuid>` an, damit der ScriptViewer dort direkt
     // zur passenden Zeile scrollt und sie kurz hervorhebt (siehe
     // ScriptViewer.tsx stepAnchor-useEffect).
+    if (isDetailSubNode(ref) && !opts?.toContainer) {
+      navigate(buildObjectPath(ref.uuid, currentUuid ?? null, ref.File_Name ?? null));
+      return;
+    }
     const extras = ref.Link_Role === 'parent_script' && currentUuid
       ? { step: currentUuid }
       : undefined;
     navigate(buildNavigablePath(ref.uuid, currentUuid ?? null, ref.Container_UUID ?? null, ref.File_Name ?? null, extras));
   };
 
-  // Item-Handler: Enter/Space löst Navigation aus. Pfeiltasten werden hier
-  // bewusst NICHT abgefangen — sie laufen via Bubbling in den Container-Handler,
-  // damit eine einzige Quelle die Auf-/Abwärts-Logik kontrolliert.
+  // Item-Handler: Enter/Space löst Navigation aus (Alt+Enter → Layout-Sprung,
+  // analog Alt+Klick). Pfeiltasten werden hier bewusst NICHT abgefangen — sie
+  // laufen via Bubbling in den Container-Handler, damit eine einzige Quelle
+  // die Auf-/Abwärts-Logik kontrolliert.
   const handleItemKeyDown = (e: React.KeyboardEvent, ref: ReferenceItem) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      handleReferenceClick(ref);
+      handleReferenceClick(ref, { toContainer: e.altKey });
     }
   };
 
@@ -222,12 +306,31 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
     return m;
   }, [directionScopedRefs]);
 
+  // Zähler der kombinierten Rollen-Chips (Rolle bzw. Rolle~Klasse) — wie die
+  // Typ-Pillen richtungs-skopiert, von Typ-/Such-Filter unabhängig.
+  const roleCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of directionScopedRefs) {
+      const key = roleKeyOf(r);
+      m.set(key, (m.get(key) ?? 0) + 1);
+    }
+    return m;
+  }, [directionScopedRefs]);
+
   const queryLower = query.trim().toLowerCase();
   const filterFn = useCallback((r: ReferenceItem) => {
     if (activeTypes.size > 0 && !activeTypes.has(r.Object_Type)) return false;
-    if (queryLower !== '' && !buildSearchText(r).includes(queryLower)) return false;
+    if (activeRoles.size > 0 && !activeRoles.has(roleKeyOf(r))) return false;
+    if (queryLower !== '') {
+      // Slot-Klasse + Labels in den Suchindex aufnehmen — `hide`, `cf`,
+      // „bedingte" werden tippbar.
+      const subroleLabels = r.Subrole_Class
+        ? `${subroleShort(r.Subrole_Class)} ${subroleLong(r.Subrole_Class)}`
+        : '';
+      if (!buildSearchText(r, subroleLabels).includes(queryLower)) return false;
+    }
     return true;
-  }, [activeTypes, queryLower]);
+  }, [activeTypes, activeRoles, queryLower, subroleShort, subroleLong]);
 
   const matches = useMemo(() => ({
     parent: inOn ? references.parent.filter(filterFn) : [],
@@ -269,6 +372,21 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
   // "Filter zurücksetzen"-Link und ESC-Stack — programmatische Zurücknahme,
   // ref-Modus wird nicht angerührt (kein User-Filter-Eingriff).
   const clearTypes = () => setActiveTypes(EMPTY_TYPES);
+  const clearRoles = () => setActiveRoles(EMPTY_TYPES);
+
+  // User-Klick auf Rollen-Chip: exakt die Typ-Pillen-Mechanik (Multi-Select OR,
+  // atomares ref-Clearing im selben URL-Update).
+  const toggleRole = (roleKey: string) => {
+    runUserUpdate(p => {
+      const current = new Set(
+        (p.get('roles') ?? '').split(',').map(s => s.trim()).filter(Boolean),
+      );
+      if (current.has(roleKey)) current.delete(roleKey);
+      else current.add(roleKey);
+      if (current.size === 0) p.delete('roles');
+      else p.set('roles', Array.from(current).join(','));
+    });
+  };
 
   // Richtungs-Filter: gleiche atomare Mechanik wie die Typ-Pillen (ref-Param
   // wird im selben Update entfernt). 'both' ist Default → Param fällt weg.
@@ -309,12 +427,37 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
     const isNavigable = ref.navigable !== false;
     // Fokus-Objekt selbst (z.B. Self-Reference eines Scripts) hervorheben.
     const isFocus = currentUuid != null && ref.uuid === currentUuid;
+    // Slot-Klasse der Kanten-Subrole: inline die Kurzform (`reads_field · CF`,
+    // Middot als Haus-Konvention), im Pfeil-Tooltip die Langform samt Roh-
+    // Detail (Regelnummern etc.). Das Detail entfällt, wenn es nur den
+    // Klassen-Key wiederholt (z.B. Roh-Wert 'Hide' zur Klasse 'hide').
+    const subroleCls = ref.Subrole_Class ?? null;
+    // Aufgelöste Trigger-Events (API-Feld Subrole_Event, fm_spec ≥ 1.18.0):
+    // genau EIN Event ersetzt das Kurzlabel „Trigger" inline
+    // (`reads_field · OnObjectValidate`); mehrere Events bleiben beim
+    // Kurzlabel und wandern in den Pfeil-Tooltip hinter die Langform. Ohne
+    // Referenz-DB fehlt das Feld → exakt bisheriges Verhalten.
+    const subroleEvents = subroleCls === 'script_trigger_parameter' && ref.Subrole_Event
+      ? ref.Subrole_Event.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+    const roleLabel = subroleCls
+      ? `${ref.Link_Role} · ${subroleEvents.length === 1 ? subroleEvents[0] : subroleShort(subroleCls)}`
+      : ref.Link_Role;
+    const subroleDetail = subroleCls
+      && ref.Subrole_Detail
+      && ref.Subrole_Detail.toLowerCase() !== subroleCls.toLowerCase()
+      ? ref.Subrole_Detail : null;
+    const roleTitle = subroleCls
+      ? `${ref.Link_Role} · ${subroleLong(subroleCls)}`
+        + (subroleEvents.length > 0 ? ` · ${subroleEvents.join(', ')}` : '')
+        + (subroleDetail ? ` (${subroleDetail})` : '')
+      : ref.Link_Role;
     return (
       <li
         key={`${ref.uuid}-${ref.Link_Role}-${idx}`}
         className={`reference-item${isNavigable ? '' : ' is-not-navigable'}${isFocus ? ' is-focus' : ''}`}
         aria-current={isFocus ? 'true' : undefined}
-        onClick={isNavigable ? () => handleReferenceClick(ref) : undefined}
+        onClick={isNavigable ? (e) => handleReferenceClick(ref, { toContainer: e.altKey }) : undefined}
         onKeyDown={isNavigable ? (e) => handleItemKeyDown(e, ref) : undefined}
         tabIndex={isNavigable ? 0 : -1}
         role={isNavigable ? 'button' : undefined}
@@ -331,6 +474,61 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
         <span className="object-type">
           {t(`types:objectTypes.${ref.Object_Type}`, { defaultValue: ref.Object_Type })}
         </span>
+        {/* Container-Sprung: Zweitziel direkt hinter der Typ-Pille (Pfeil-Button,
+            analog Dashboard-Row-Action und TO-Graph-Link). Der Zeilen-Klick
+            öffnet die Detail-Seite des Sub-Knotens (LayoutObject/ScriptTrigger);
+            der Pfeil (oder Alt+Klick auf die Zeile) den umgebenden Container —
+            Layout bzw. Datei (File-Trigger) — mit Hervorhebung. */}
+        {isNavigable && isDetailSubNode(ref) && (
+          <button
+            type="button"
+            className="ref-layout-jump"
+            title={(ref.Container_Type === 'File'
+              ? t('detail:hierarchyTree.showInFile', { defaultValue: 'In der Datei zeigen (Alt+Klick)' })
+              : t('detail:hierarchyTree.showInLayout', { defaultValue: 'Im Layout zeigen (Alt+Klick)' })) as string}
+            aria-label={(ref.Container_Type === 'File'
+              ? t('detail:hierarchyTree.showInFile', { defaultValue: 'In der Datei zeigen (Alt+Klick)' })
+              : t('detail:hierarchyTree.showInLayout', { defaultValue: 'Im Layout zeigen (Alt+Klick)' })) as string}
+            onClick={(e) => {
+              // Nicht auch noch den Zeilen-Klick (Detail-Seite) feuern.
+              e.stopPropagation();
+              handleReferenceClick(ref, { toContainer: true });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                handleReferenceClick(ref, { toContainer: true });
+              }
+            }}
+          >
+            →
+          </button>
+        )}
+        {/* Trigger-Absprung: konsolidierte Spiegel-Zeilen (triggers_script·Event)
+            vertreten ihren unterdrückten ScriptTrigger-Sub-Knoten — der ↗-Button
+            öffnet dessen Detailseite (der Zeilen-Klick gehört dem Owner-Objekt). */}
+        {isNavigable && ref.Trigger_UUID && (
+          <button
+            type="button"
+            className="ref-layout-jump ref-trigger-jump"
+            title={t('detail:scriptTriggerDetail.openTrigger', { defaultValue: 'Script-Trigger öffnen' }) as string}
+            aria-label={t('detail:scriptTriggerDetail.openTrigger', { defaultValue: 'Script-Trigger öffnen' }) as string}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(buildObjectPath(ref.Trigger_UUID!, currentUuid ?? null, ref.File_Name ?? null));
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                navigate(buildObjectPath(ref.Trigger_UUID!, currentUuid ?? null, ref.File_Name ?? null));
+              }
+            }}
+          >
+            ↗
+          </button>
+        )}
         <span className="ref-name" title={ref.Object_Name}>
           {formatObjectDisplayName(ref.Object_Type, ref.Object_Name)}
         </span>
@@ -358,10 +556,11 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
             }) as string}>×{ref.Call_Count}</span>
           )}
           {ref.Link_Role && (
-            // Rohe Link-Rolle als Klartext (calls_script, reads_field, …). Per
-            // Container-Query nur eingeblendet, wenn die Referenz-Spalte breit
-            // genug ist (sonst trägt der Pfeil-Tooltip die Rolle weiter).
-            <span className="ref-role-label">{ref.Link_Role}</span>
+            // Rohe Link-Rolle als Klartext, plus Slot-Klasse als Kurzlabel
+            // (`reads_field · Hide`). Per Container-Query nur eingeblendet,
+            // wenn die Referenz-Spalte breit genug ist (sonst trägt der
+            // Pfeil-Tooltip Rolle und Slot weiter).
+            <span className="ref-role-label" title={subroleDetail ?? undefined}>{roleLabel}</span>
           )}
           {ref.File_Name && ref.File_Name !== focusFile && !ref.Container_Name && (
             <span className="ref-file">
@@ -390,7 +589,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
               className={`ref-dir ref-dir-${dir}`}
               title={`${dir === 'in'
                 ? t('detail:hierarchyTree.dirIn', { defaultValue: 'Eingehend' })
-                : t('detail:hierarchyTree.dirOut', { defaultValue: 'Ausgehend' })} · ${ref.Link_Role}`}
+                : t('detail:hierarchyTree.dirOut', { defaultValue: 'Ausgehend' })} · ${roleTitle}`}
               aria-hidden="true"
             >
               {dir === 'in' ? '←' : '→'}
@@ -499,7 +698,7 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
   const hasStructChildren = matches.structuralChild.length > 0;
   const hasAny = hasParents || hasChildren || hasStructParents || hasStructChildren;
   const hasAnyTotal = totalCount > 0;
-  const filterActive = activeTypes.size > 0 || queryLower !== '';
+  const filterActive = activeTypes.size > 0 || activeRoles.size > 0 || queryLower !== '';
 
   return (
     <div className="hierarchy-tree-wrapper">
@@ -509,6 +708,11 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
           activeTypes={activeTypes}
           onToggleType={toggleType}
           onClearTypes={clearTypes}
+          roleCounts={roleCounts}
+          activeRoles={activeRoles}
+          onToggleRole={toggleRole}
+          onClearRoles={clearRoles}
+          subroleShort={subroleShort}
           query={query}
           onQueryChange={handleQueryChange}
           matchCount={matchCount}

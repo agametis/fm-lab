@@ -471,6 +471,52 @@
   font-size: 0.84rem;
   color: var(--color-text-secondary);
 }
+.fmspec-constraint__detail summary {
+  cursor: pointer;
+}
+.fmspec-constraint__badge {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--color-warning-fg, var(--color-accent));
+  color: var(--color-bg-surface, #fff);
+  cursor: help;
+}
+.fmspec-constraint__version {
+  margin-left: 8px;
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+}
+
+.fmspec-repeat-groups {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fmspec-repeat-groups li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--color-border, var(--color-accent));
+  border-radius: 4px;
+  background: var(--color-bg-surface-2, rgba(128, 128, 128, 0.06));
+}
+.fmspec-rg__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.fmspec-rg__meta {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+}
 
 .fmspec-notes {
   font-size: 0.84rem;

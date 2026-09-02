@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "Rango en ExecuteSQL sin BETWEEN",
+    "description": "Regla de rendimiento: las condiciones de rango en ExecuteSQL escritas con >=/<= en lugar de BETWEEN hacen que el motor evalúe dos condiciones separadas y calcule su intersección; la construcción BETWEEN recorre el rango una sola vez y es muchas veces más rápida que las dos comparaciones individuales."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Archivos afectados",
+    "summary_kpi.props.items[2].label": "Llamadas ExecuteSQL",
+    "summary_kpi.props.items[3].label": "Ya con BETWEEN",
+    "findings_card.props.title": "Rango en ExecuteSQL sin BETWEEN",
+    "findings_table.props.searchPlaceholder": "Buscar archivo u objeto…",
+    "findings_table.props.empty.message": "No se encontró ningún patrón de rango ExecuteSQL sin BETWEEN.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Objeto",
+    "findings_table.props.columns[2].label": "Tipo",
+    "findings_table.props.columns[3].label": "Paso",
+    "findings_table.props.columns[4].label": "Función",
+    "findings_table.props.columns[5].label": "Extracto SQL"
+  }
+}

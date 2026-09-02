@@ -2,20 +2,19 @@
 -- Keep the slot list, the detector and the filters in sync with
 -- data/findings.sql.
 WITH slots AS (
-    SELECT File_Name, 'custom_function' AS slot, CF_UUID AS nav_uuid, Calculation_Code AS calc
-    FROM CalcsForCustomFunctions WHERE Calculation_Code IS NOT NULL
-    UNION ALL
-    SELECT File_Name, 'field_calc', Field_UUID, Calculation_Text
-    FROM FieldsForTables WHERE Calculation_Text IS NOT NULL
-    UNION ALL
-    SELECT File_Name, 'field_autoenter', Field_UUID, AE_Calc_Text
-    FROM FieldsForTables WHERE AE_Calc_Text IS NOT NULL
-    UNION ALL
-    SELECT File_Name, 'field_validation', Field_UUID, Validation_Calc_Text
-    FROM FieldsForTables WHERE Validation_Calc_Text IS NOT NULL
-    UNION ALL
-    SELECT File_Name, 'script_step', Script_UUID, Calc_Text
-    FROM StepCalculations WHERE Calc_Text IS NOT NULL
+    SELECT c.File_Name,
+           CASE c.Calc_Role
+                WHEN 'custom_function' THEN 'custom_function'
+                WHEN 'field_calculation' THEN 'field_calc'
+                WHEN 'auto_enter' THEN 'field_autoenter'
+                WHEN 'validation' THEN 'field_validation'
+                ELSE 'script_step' END AS slot,
+           CASE WHEN c.Owner_Type IN ('CustomFunction', 'Field') THEN c.Owner_UUID END AS nav_uuid,
+           c.Owner_UUID AS step_owner,
+           COALESCE(c.Formula_Text, c.Display_Text) AS calc
+    FROM CalculationsCatalog c
+    WHERE c.Calc_Role IN ('custom_function', 'field_calculation', 'auto_enter', 'validation',
+                          'step_parameter', 'step_xslt')
 ),
 marked AS (
     SELECT *, list_filter(regexp_extract_all(calc, '(?s)/\*.*?\*/|//[^\n\r]*'),
@@ -24,12 +23,14 @@ marked AS (
 )
 SELECT
     COUNT(*) AS finding_count,
-    COUNT(*) FILTER (WHERE slot = 'custom_function') AS custom_function_count,
-    COUNT(*) FILTER (WHERE slot IN ('field_calc', 'field_autoenter', 'field_validation')) AS field_count,
-    COUNT(*) FILTER (WHERE slot = 'script_step') AS script_step_count,
-    COUNT(DISTINCT File_Name) AS affected_files
-FROM marked
-WHERE len(segments) > 0
-  AND (getvariable('file') IS NULL OR File_Name = getvariable('file'))
+    COUNT(*) FILTER (WHERE m.slot = 'custom_function') AS custom_function_count,
+    COUNT(*) FILTER (WHERE m.slot IN ('field_calc', 'field_autoenter', 'field_validation')) AS field_count,
+    COUNT(*) FILTER (WHERE m.slot = 'script_step') AS script_step_count,
+    COUNT(DISTINCT m.File_Name) AS affected_files
+FROM marked m
+LEFT JOIN StepsForScripts st ON m.slot = 'script_step'
+     AND st.Step_UUID = m.step_owner AND st.File_Name = m.File_Name
+WHERE len(m.segments) > 0
+  AND (getvariable('file') IS NULL OR m.File_Name = getvariable('file'))
   AND (getvariable('scope_uuids') IS NULL
-       OR nav_uuid IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))));
+       OR COALESCE(m.nav_uuid, st.Script_UUID) IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))));

@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "ExecuteSQL-Bereichssuche ohne BETWEEN",
+    "description": "Performance-Regel — ExecuteSQL-Bereichsbedingungen mit >=/<= statt BETWEEN werten zwei getrennte Bedingungen aus und bilden die Schnittmenge; die BETWEEN-Konstruktion läuft den Bereich einmal ab und ist um ein Vielfaches schneller als der Einzelvergleich."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Betroffene Dateien",
+    "summary_kpi.props.items[2].label": "ExecuteSQL-Aufrufe",
+    "summary_kpi.props.items[3].label": "Bereits BETWEEN",
+    "findings_card.props.title": "ExecuteSQL-Bereichssuche ohne BETWEEN",
+    "findings_table.props.searchPlaceholder": "Datei oder Objekt suchen…",
+    "findings_table.props.empty.message": "Kein ExecuteSQL-Bereichsmuster ohne BETWEEN gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Objekt",
+    "findings_table.props.columns[2].label": "Typ",
+    "findings_table.props.columns[3].label": "Schritt",
+    "findings_table.props.columns[4].label": "Funktion",
+    "findings_table.props.columns[5].label": "SQL-Ausschnitt"
+  }
+}

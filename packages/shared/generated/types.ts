@@ -548,12 +548,548 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Analysis Tests (declared collections of dashboards/custom queries) */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Only tests applicable to this ObjectCatalog.Object_Type */
+                    objectType?: string;
+                    testType?: "exploration" | "code-quality" | "error-check" | "security" | "inventory" | "performance" | "platform";
+                    /** @description Only tests declaring this scope */
+                    scope?: "solution" | "file" | "object" | "object-list" | "cluster";
+                    keyword?: string;
+                    /** @description Text search over title, description and keywords */
+                    q?: string;
+                    folder?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Test list incl. tier, override flag, validation status, shipped profiles and folder_order (sorted by folder.json order, then folder, then title). Each profile carries `memberCount` plus `members` — the member refs it covers, `null` for a profile without a `members` field (= the full check). */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tests/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Effective solution + catalog fingerprint (result-cache key)
+         * @description Lightweight cache-key endpoint. `catalogFingerprint` is mtime+size of the solution's read copy — a new XML import replaces the copy atomically and thereby invalidates client-side result caches.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description { solution, catalogFingerprint, catalogMtimeMs } */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Test definition with resolved members and validation report */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Test definition with members resolved against their source of truth (title, icon, severity, analysis block, plus the dashboard's `folder` resp. the query's `category`) and shipped profiles incl. their `members` refs */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Test not found or invalid */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tests/{id}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Run all members' default results in a scope context
+         * @description Scope params: `uuid` (+`file` for clone disambiguation) = object scope, `uuids` (CSV) = object-list scope, `file` alone = file scope, `cluster` (community id or semantic name) = cluster scope, none = solution scope. `include=findings` adds severity-sorted findings rows (capped by `findingsLimit`, default 20) per member with value > 0. `profile=<id>` runs only that shipped profile's members; the rest are reported as runStatus=skipped (unknown profile id = 400). Each member result carries the two-axis state model: `runStatus` (ran|failed|skipped) and `resultState` (error|warning|neutral|ok); the response aggregates them in `summary` and echoes `solution` + `catalogFingerprint` in `meta`. The legacy `status` field (ok|error) is kept as a deprecated alias of runStatus ran|failed.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    uuid?: string;
+                    uuids?: string;
+                    /** @description Filter by filename */
+                    file?: components["parameters"]["FileFilter"];
+                    cluster?: string;
+                    object_type?: string;
+                    include?: "findings";
+                    findingsLimit?: number;
+                    /** @description Shipped profile id — run only this member subset */
+                    profile?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Per-member default results (and optional findings) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unsupported scope, oversized scope list or consistency errors */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tests/{id}/run/{memberIndex}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Run a single member of a test (incremental loading) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    memberIndex: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Single member result */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/results/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Flat Result-Envelope map over all result-capable units (cache read)
+         * @description Result Envelope v1 — one normative result shape per unit (`kind:id`, kind ∈ dashboard | query | test). Reads ONLY the server result cache: units that never ran under the current `catalogFingerprint` appear with `runStatus: pending`; the endpoint computes nothing. Runs are triggered explicitly via POST /results/run (or arrive as write-through from solution-scope test runs).
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description CSV filter over ref kinds (dashboard,query,test) */
+                    kinds?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description { meta: { solution, catalogFingerprint }, results: { "<kind:id>": Envelope } } — Envelope carries runStatus (ran|failed|pending), resultState (ok|warning|error|neutral), value, unit, name, meaning, severity, source, rubric, fingerprint */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/results/aggregate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Folder-hierarchy consolidation of the cached envelopes
+         * @description Pure fold over registry + cache — never executes anything. Per node: counts per state + worst (error → warning → failed → neutral → ok → pending), sums only within the same `unit`, and covered/declared/total so partial coverage stays visible.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Subtree root folder path (empty = whole hierarchy) */
+                    root?: string;
+                    /** @description Comma-separated list of subtree roots. Scopes to several subtrees at once; the '' node is then the combined aggregate over all of them. Wins over `root` when both are set. */
+                    roots?: string;
+                    kinds?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description { meta, nodes: [{ path, counts, worst, sums, covered, declared, total }] } */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/results/registry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Result-capable units (declaration union of the existing catalogs)
+         * @description Dashboards with `analysis.defaultResult` or the summary/finding_count convention, queries with `@default_result` frontmatter, tests (read- only). Units without declaration are absent by design and stay chipless.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    kinds?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Registry rows (ref, rubric, title, severity, unit, source) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/results/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Explicit result run for singles or folder subtrees
+         * @description Body { targets, mode }. Targets are { kind, id } singles or { kind: "folder", path, kinds } subtrees (expanded via the registry; only dashboard/query run — tests keep their own run endpoint). mode "missing" (default) runs only units without a cached envelope under the current fingerprint (idempotent); "refresh" re-runs all addressed units. Synchronous with a concurrency cap — chunk a full root run per top-level folder.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        targets?: Record<string, never>[];
+                        /** @enum {string} */
+                        mode?: "missing" | "refresh";
+                    };
+                };
+            };
+            responses: {
+                /** @description { meta: { …, requested, executed, skippedCached }, results: Envelope[] } */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Invalid targets/mode or oversized expansion */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reference/steps/{idOrSlug}/grammar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * XMLSnippet grammar of one script step (fm-spec emission layer)
+         * @description Snippet template, element order, options (with per-value evidence), structural constraints incl. the known-FM-bug registry kinds (clipboard_loss, version_skew, save_corruption, serialization_unstable, localized_build_defect — a warning class, never a validity rule), repeat groups (fm_spec >= 1.15.0; fixed-slot columns max_items/slot_positional/pad_mode >= 1.16.0), and the hint-inventory layer (fm_spec >= 1.17.0): skeleton hulls, option-bound elements, notation implications, the structural variable-target marker and the per-kind consumer note of the bug registry. Fields absent from older reference builds are null/empty — consumers must stay graceful.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Numeric step id or url_slug */
+                    idOrSlug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Step grammar (data envelope) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: {
+                                stepId?: number;
+                                canonicalName?: string;
+                                /** @description false when the reference has no grammar row */
+                                available?: boolean;
+                                xmlMap?: {
+                                    snippetTemplate?: string;
+                                    saxmlParamTypes?: string | null;
+                                    saxmlExample?: string | null;
+                                    elementOrder?: string | null;
+                                    /** @description true = the snippet carries an empty <Text/> step-level marker exactly when a target slot holds a variable (fm_spec >= 1.17.0; null = column absent on this reference build) */
+                                    variableTargetMarker?: boolean | null;
+                                    evidence?: string | null;
+                                    verifiedVersion?: string | null;
+                                    notes?: string | null;
+                                } | null;
+                                options?: {
+                                    optionKey?: string;
+                                    optionType?: string;
+                                    required?: boolean;
+                                    displayLocation?: string | null;
+                                    displayLabelEn?: string | null;
+                                    trueText?: string | null;
+                                    falseText?: string | null;
+                                    omitWhenFalse?: boolean;
+                                    invertedLabel?: boolean;
+                                    xmlPath?: string | null;
+                                    sortOrder?: number | null;
+                                    evidence?: string | null;
+                                    verifiedVersion?: string | null;
+                                    values?: {
+                                        xmlValue?: string;
+                                        displayTextEn?: string | null;
+                                        evidence?: string | null;
+                                    }[];
+                                }[];
+                                constraints?: {
+                                    constraintKind?: string;
+                                    detail?: string | null;
+                                    evidence?: string | null;
+                                    verifiedVersion?: string | null;
+                                    /** @description Consumer-facing lead text of the constraint kind (fm_spec >= 1.17.0 constraint_kinds registry; bug-registry kinds only) */
+                                    consumerNote?: string | null;
+                                }[];
+                                /** @description Empty on references older than 1.15.0 */
+                                repeatGroups?: {
+                                    groupKey?: string;
+                                    groupLabel?: string;
+                                    parentGroup?: string | null;
+                                    containerPath?: string;
+                                    countAttr?: string | null;
+                                    /** @enum {string} */
+                                    itemForm?: "bracket" | "scalar";
+                                    maxItems?: number | null;
+                                    slotPositional?: boolean | null;
+                                    padMode?: string | null;
+                                    evidence?: string | null;
+                                    verifiedVersion?: string | null;
+                                }[];
+                                /** @description Skeleton hulls the step keeps alive even unconfigured (fm_spec >= 1.17.0; empty on older references) */
+                                skeletonElements?: {
+                                    parentTag?: string;
+                                    childTag?: string;
+                                    conditionOption?: string | null;
+                                    conditionValue?: string | null;
+                                    /** @enum {string} */
+                                    keepMode?: "hull" | "hull_strip_children";
+                                    evidence?: string | null;
+                                    verifiedVersion?: string | null;
+                                }[];
+                                /** @description Option-value/element couplings (fm_spec >= 1.17.0; empty on older references) */
+                                elementBindings?: {
+                                    optionKey?: string | null;
+                                    optionValue?: string | null;
+                                    elementPath?: string;
+                                    /** @enum {string} */
+                                    binding?: "requires" | "excludes" | "requires_option" | "excludes_option" | "suppress_empty";
+                                    evidence?: string | null;
+                                    verifiedVersion?: string | null;
+                                }[];
+                                /** @description Parse-side notation implications (fm_spec >= 1.17.0; empty on older references) */
+                                optionImplications?: {
+                                    /** @enum {string} */
+                                    triggerKind?: "option_present" | "value_form" | "keyword" | "mode_switch";
+                                    trigger?: string;
+                                    impliedOption?: string;
+                                    impliedValue?: string | null;
+                                    isDefault?: boolean | null;
+                                    /** @enum {string} */
+                                    direction?: "parse";
+                                    evidence?: string | null;
+                                    verifiedVersion?: string | null;
+                                }[];
+                            };
+                        };
+                    };
+                };
+                /** @description Unknown step id/slug (REF_STEP_NOT_FOUND) */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /** @enum {string} */
-        ObjectType: "BaseTable" | "TableOccurrence" | "Relationship" | "Field" | "ValueList" | "CustomFunction" | "Script" | "ScriptStep" | "Layout" | "LayoutObject" | "LayoutPart" | "Account" | "PrivilegeSet" | "ExtendedPrivilege" | "Theme" | "CustomMenu" | "ScriptTrigger" | "ExternalDataSource" | "BaseDirectory" | "Variable" | "Folder" | "File" | "PluginFunction" | "PluginComponent" | "CustomMenuItem" | "BuiltinFunction" | "ScriptStepType" | "PasteIndexObject";
+        ObjectType: "BaseTable" | "TableOccurrence" | "Relationship" | "Field" | "ValueList" | "CustomFunction" | "Script" | "ScriptStep" | "Layout" | "LayoutObject" | "LayoutPart" | "Account" | "PrivilegeSet" | "ExtendedPrivilege" | "Theme" | "CustomMenu" | "ScriptTrigger" | "ExternalDataSource" | "BaseDirectory" | "Variable" | "Folder" | "File" | "PluginFunction" | "PluginComponent" | "CustomMenuItem" | "BuiltinFunction" | "ScriptStepType" | "PasteIndexObject" | "Calculation";
         /** @enum {string} */
         OutputFormat: "json" | "raw" | "text" | "short" | "detailed" | "html" | "markdown" | "content" | "mermaid" | "mermaid-raw";
         /** @enum {string} */
@@ -606,6 +1142,12 @@ export interface components {
             Target_File?: string;
             /** @description Role of the link (e.g., calls_script, displays_field) */
             Link_Role?: string;
+            /** @description Normalized slot class of the edge subrole, using the calc_kind vocabulary of CalculationsCatalog (e.g. `hide`, `conditional_format`, `tooltip`, `on_server`). Named slots are mapped (Condition_N collapses into `conditional_format`), positional script-slot indices (and XML/XSL) are suppressed to null, unknown subroles pass through raw. Null when the edge carries no semantic subrole. */
+            Subrole_Class?: string | null;
+            /** @description Raw subrole value(s) behind the class — for `direction=all` the aggregated DISTINCT raw values of the group (e.g. `Condition_1, Condition_2`), in the ungrouped child/parent branches the single raw value. Null when Subrole_Class is null (direction=all) or no subrole exists. */
+            Subrole_Detail?: string | null;
+            /** @description Additive since fm_spec 1.18.0 — canonical trigger event name(s) resolved from the `ScriptTrigger_<id>` slot(s) of rows with Subrole_Class `script_trigger_parameter` (e.g. `OnObjectValidate`; aggregated rows yield a DISTINCT list in Subrole_Detail order, e.g. `OnPanelSwitch, OnObjectValidate`). Omitted when the reference DB is not attached, predates 1.18.0, or a slot of the list cannot be resolved (complete-or-absent contract). */
+            Subrole_Event?: string | null;
             Is_Cross_File?: boolean;
         };
         ResponseMeta: {

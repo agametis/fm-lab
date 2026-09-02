@@ -15,6 +15,7 @@ import { ExplorerTypeListPanel, type TypeListSort, type TypeListDir } from './Ex
 import {
   useSubgraph,
   fetchNeighbors,
+  subgraphToElements,
   type GraphNode,
   type SubgraphDirection,
 } from '../hooks/useSubgraph';
@@ -251,13 +252,16 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
       return { out, inc, roleOut, roleIn };
     }, [data, focusNode]);
 
-    // Report stats to the host toolbar.
+    // Report stats to the host toolbar. Kanten-Zahl = GRUPPIERTE (gerenderte)
+    // Kanten (Nutzerentscheid): parallele Event-Kanten desselben Paars und
+    // reziproke Doppel zählen wie im Canvas — nicht die rohen Server-Zeilen.
     useEffect(() => {
       onStats?.(
         data
           ? {
               nodeCount: data.stats.nodeCount,
-              edgeCount: data.stats.edgeCount,
+              edgeCount: subgraphToElements(data.nodes, data.edges)
+                .filter((el) => (el.data as { source?: string }).source !== undefined).length,
               totalReachable: data.stats.totalReachable,
               truncated: data.truncated,
               communityCount: new Set(
@@ -455,11 +459,13 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
     }, []);
 
     // Neighbors of the inspected node, derived from the loaded edges (no fetch).
+    // Parallel-Kanten (gleiche Rolle, verschiedene Subroles — z. B. mehrere
+    // Trigger-Events) falten zu EINER Zeile und sammeln die Subroles fürs
+    // Detail-Label im Panel.
     const neighbors = useMemo<InspectNeighbor[]>(() => {
       if (!data || !selectedNode) return [];
       const byId = new Map(data.nodes.map((n) => [n.id, n]));
-      const seen = new Set<string>();
-      const out: InspectNeighbor[] = [];
+      const rows = new Map<string, InspectNeighbor>();
       for (const e of data.edges) {
         let otherId: string | null = null;
         let dir: 'out' | 'in' | null = null;
@@ -467,12 +473,17 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
         else if (e.target === selectedNode.id) { otherId = e.source; dir = 'in'; }
         if (!otherId || !dir) continue;
         const key = `${dir}-${otherId}-${e.role}`;
-        if (seen.has(key)) continue;
+        const existing = rows.get(key);
+        if (existing) {
+          if (e.subrole && !existing.subroles.includes(e.subrole)) existing.subroles.push(e.subrole);
+          continue;
+        }
         const otherNode = byId.get(otherId);
         if (!otherNode) continue;
-        seen.add(key);
-        out.push({ node: otherNode, role: e.role, direction: dir });
+        rows.set(key, { node: otherNode, role: e.role, direction: dir, subroles: e.subrole ? [e.subrole] : [] });
       }
+      const out = [...rows.values()];
+      for (const r of out) r.subroles.sort();
       return out.sort((a, b) => a.node.label.localeCompare(b.node.label));
     }, [data, selectedNode]);
 

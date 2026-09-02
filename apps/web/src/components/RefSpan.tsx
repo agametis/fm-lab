@@ -6,6 +6,7 @@ import type { ScriptRef } from '../script/types';
 import { fetchPluginDoc, type PluginDoc } from '../script/pluginDocsApi';
 import { sanitizePluginHtml } from '../script/sanitize';
 import { useHighlightRefUuids, isUuidHighlighted, useScriptSearchPredicate } from '../script/highlightContext';
+import { useVarSelection, varKeyFromScriptRef, varClickProps } from '../script/varSelectionContext';
 import { buildObjectPath } from '../lib/navigation';
 import { useHoverPopover } from './useHoverPopover';
 import { PopoverPortal } from './PopoverPortal';
@@ -287,6 +288,7 @@ export const RefSpan: React.FC<RefSpanProps> = ({ reference, text }) => {
   const { t } = useTranslation(['detail']);
   const highlightSet = useHighlightRefUuids();
   const searchPredicate = useScriptSearchPredicate();
+  const varSel = useVarSelection();
   const { uuid: currentUuid } = useParams<{ uuid: string }>();
 
   // Highlight greift, wenn die Ref-UUID im Set ist (Token-Match). Fallback auf
@@ -307,6 +309,32 @@ export const RefSpan: React.FC<RefSpanProps> = ({ reference, text }) => {
   const sm = searchMatch ? ' fm-ref--search-match' : '';
   const className = `${baseClass}${crossFile}${hl}${sm}`;
   const title = buildTitle(reference, t);
+
+  // Variablen-Auswahl: Klick toggelt die namens-
+  // basierte Hervorhebung aller Vorkommen im Script; `usage='set'` (Set-
+  // Variable-Step) bekommt zusätzlich den Definitions-Marker. Ohne Provider
+  // bleibt das Token wie bisher ein reiner Tooltip-Span.
+  if (reference.type === 'variable') {
+    const varKey = varKeyFromScriptRef(reference);
+    const isSelected = !!varSel && varSel.selectedKey === varKey;
+    const varClass = isSelected
+      ? ` fm-ref--var-selected${reference.usage === 'set' ? ' fm-ref--var-set' : ''}`
+      : '';
+    const varTitle = varSel
+      ? `${title} — ${t(isSelected ? 'detail:varSelect.clearHint' : 'detail:varSelect.hint')}`
+      : title;
+    return (
+      <span
+        className={`${className}${varClass}${varSel ? ' fm-ref-link' : ''}`}
+        title={varTitle}
+        data-ref-type="variable"
+        {...varClickProps(varSel, varKey)}
+      >
+        {text}
+      </span>
+    );
+  }
+
   // Helper: refTargetPath erzeugt nur einen Pfad, wenn die UUID einem unterstützten
   // Type angehört — wenn buildObjectPath direkt verwendet wird, wäre für Plugin/
   // Function-Types fälschlich ein Link erzeugt. Daher explizit prüfen.

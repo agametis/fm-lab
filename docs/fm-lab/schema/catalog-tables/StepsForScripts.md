@@ -12,8 +12,8 @@ Every script step of every script, one row per step, ordered by `Step_Index`. `S
 | `Script_ID` | `BIGINT` |
 | `Script_Name` | `VARCHAR` |
 | `Script_UUID` | `VARCHAR` |
-| `Step_Index` | `INTEGER` |
-| `Step_ID` | `INTEGER` |
+| `Step_Index` | `BIGINT` |
+| `Step_ID` | `BIGINT` |
 | `Step_Name` | `VARCHAR` |
 | `Is_Enabled` | `BOOLEAN` |
 | `Step_UUID` | `VARCHAR` |
@@ -29,11 +29,13 @@ Every script step of every script, one row per step, ordered by `Step_Index`. `S
 | `File_Name` | `VARCHAR` |
 | `Inserted_Text` | `VARCHAR` |
 | `Comment_Text` | `VARCHAR` |
+| `Opens_Window` | `BOOLEAN` |
 
 ## Notes
 
 - Always filter or group by `Step_ID`, never by `Step_Name` — SaXML writes step names in the UI language of the exporting client.
 - Extracted parameter columns: `Variable_Name` (Set Variable), `Calculation_Text` (the step's main calc expression), `Inserted_Text`, `Comment_Text`, `Boolean_Type`/`Boolean_Value` (on/off style options).
+- `Opens_Window` (schema 1.16.0) is a derived flag: `TRUE` for every New Window step, and for Go to Related Record when a `<WindowReference>` option is present — the base signal for window-lifecycle analyses.
 - `Step_XML`/`Parameters_XML` hold the raw fragment; object references inside them are already resolved into [ObjectLinks](../object-catalog/ObjectLinks.md) — query the edge, not the XML.
 - `DDR_UUID` joins to [DDR_ScriptSteps](DDR_ScriptSteps.md) for the human-readable step text.
 - Script steps carry no per-instance ID in the export, so a healed duplicate step's replacement UUID is keyed by `(script identity, Step_Index)` — stable across re-imports only as long as the script is not restructured. See [UUID Healing and Duplicate Census](../UUID%20Healing%20and%20Duplicate%20Census.md).

@@ -1,0 +1,79 @@
+{
+  "id": "sql-performance-checks",
+  "version": "1.0.0",
+  "title": "SQL Performance Checks",
+  "description": "Performance-critical patterns in embedded SQL (native ExecuteSQL and MBS SQL calls): range conditions written as >=/<= instead of BETWEEN.",
+  "keywords": [
+    "performance",
+    "sql",
+    "executesql",
+    "between",
+    "slow",
+    "query"
+  ],
+  "testType": "performance",
+  "objectTypes": [
+    "Script",
+    "Field",
+    "CustomFunction"
+  ],
+  "scopes": [
+    "solution",
+    "file",
+    "object",
+    "object-list",
+    "cluster"
+  ],
+  "outputs": [
+    "count",
+    "findings-table"
+  ],
+  "members": [
+    {
+      "kind": "dashboard",
+      "ref": "execute_sql_range_without_between"
+    }
+  ],
+  "locales": {
+    "de": {
+      "title": "SQL-Performance-Prüfungen",
+      "description": "Performance-kritische Muster in eingebettetem SQL (natives ExecuteSQL und MBS-SQL-Aufrufe): Bereichsbedingungen mit >=/<= statt BETWEEN."
+    },
+    "es": {
+      "title": "Comprobaciones de rendimiento SQL",
+      "description": "Patrones críticos para el rendimiento en SQL incrustado (ExecuteSQL nativo y llamadas SQL de MBS): condiciones de rango con >=/<= en lugar de BETWEEN."
+    },
+    "fr": {
+      "title": "Vérifications de performance SQL",
+      "description": "Motifs critiques pour la performance dans le SQL embarqué (ExecuteSQL natif et appels SQL MBS) : conditions de plage écrites avec >=/<= au lieu de BETWEEN."
+    },
+    "it": {
+      "title": "Controlli di prestazione SQL",
+      "description": "Schemi critici per le prestazioni nell'SQL incorporato (ExecuteSQL nativo e chiamate SQL MBS): condizioni di intervallo con >=/<= invece di BETWEEN."
+    },
+    "ja": {
+      "title": "SQL パフォーマンス検査",
+      "description": "埋め込み SQL（ネイティブ ExecuteSQL と MBS の SQL 呼び出し）のパフォーマンスを損なうパターン：BETWEEN ではなく >=/<= で書かれた範囲条件。"
+    },
+    "ko": {
+      "title": "SQL 성능 검사",
+      "description": "내장 SQL(네이티브 ExecuteSQL 및 MBS SQL 호출)에서 성능에 치명적인 패턴: BETWEEN 대신 >=/<= 로 작성된 범위 조건."
+    },
+    "nl": {
+      "title": "SQL-prestatiecontroles",
+      "description": "Prestatiekritische patronen in ingebed SQL (native ExecuteSQL en MBS-SQL-aanroepen): bereikcondities met >=/<= in plaats van BETWEEN."
+    },
+    "pt": {
+      "title": "Verificações de desempenho SQL",
+      "description": "Padrões críticos para o desempenho em SQL incorporado (ExecuteSQL nativo e chamadas SQL do MBS): condições de intervalo com >=/<= em vez de BETWEEN."
+    },
+    "sv": {
+      "title": "SQL-prestandakontroller",
+      "description": "Prestandakritiska mönster i inbäddad SQL (nativt ExecuteSQL och MBS-SQL-anrop): intervallvillkor skrivna med >=/<= i stället för BETWEEN."
+    },
+    "zh-Hans": {
+      "title": "SQL 性能检查",
+      "description": "嵌入式 SQL（原生 ExecuteSQL 与 MBS SQL 调用）中影响性能的模式：用 >=/<= 而非 BETWEEN 编写的范围条件。"
+    }
+  }
+}

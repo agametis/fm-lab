@@ -12,7 +12,8 @@
     "page": "{{current}} / {{total}} 페이지",
     "noMatches": "「{{query}}」에 대한 일치 항목이 없습니다.",
     "prev": "← 이전",
-    "next": "다음 →"
+    "next": "다음 →",
+    "rowAction": "대상 열기"
   },
   "layoutPreview": {
     "heading": "레이아웃 보기",
@@ -25,11 +26,12 @@
     "Field": "필드 세부 정보",
     "BaseTable": "테이블 세부 정보",
     "CustomFunction": "함수 세부 정보",
-    "ValueList": "값 목록 세부 정보"
+    "ValueList": "값 목록 세부 정보",
+    "Calculation": "계산식 상세"
   },
   "layoutCanvas": {
     "searchPlaceholder": "레이아웃 오브젝트 검색…",
-    "searchTitle": "Tab: 다음 일치 · Shift+Tab: 이전 · Enter: 열기 · Esc: 재설정",
+    "searchTitle": "Tab: 다음 일치 · Shift+Tab: 이전 · Enter: 세부 정보 열기 · Alt+Enter: 대상 열기 · Esc: 재설정",
     "searchAria": "레이아웃 오브젝트 검색",
     "matchCount_one": "{{count}}개 일치",
     "matchCount_other": "{{count}}개 일치",
@@ -39,7 +41,13 @@
     "labelType": "유형",
     "labelTypeTitle": "오브젝트 유형을 레이블로 표시",
     "stats_one": "{{count}}개 오브젝트 · 줌 {{zoom}}%",
-    "stats_other": "{{count}}개 오브젝트 · 줌 {{zoom}}%"
+    "stats_other": "{{count}}개 오브젝트 · 줌 {{zoom}}%",
+    "tooltip": {
+      "target": "대상",
+      "logic": "로직",
+      "slots": "슬롯",
+      "moreTargets": "(+{{n}}개 더)"
+    }
   },
   "relationshipGraphCanvas": {
     "searchPlaceholder": "테이블 어커런스 검색…",
@@ -109,14 +117,26 @@
     "groupsLabel": "그룹",
     "detailsLabel": "세부 정보",
     "clearTitle": "모든 유형 필터 지우기",
-    "clearLabel": "필터 지우기"
+    "clearLabel": "필터 지우기",
+    "calcGroupLabel": "Calculations",
+    "calcCategories": {
+      "cf": "조건부 서식",
+      "hide": "숨김 조건",
+      "trigger": "트리거",
+      "tooltip": "도구 설명",
+      "display": "레이아웃 계산"
+    },
+    "calcInventoryOpen": "인벤토리 열기"
   },
   "referencesFilter": {
     "searchPlaceholder": "참조 검색…",
     "searchTitle": "Esc: 입력 지우기",
     "searchAria": "참조 검색",
     "clearTypesTitle": "모든 유형 필터 지우기",
-    "clearTypesLabel": "필터 지우기"
+    "clearTypesLabel": "필터 지우기",
+    "rolesAria": "링크 역할로 필터링",
+    "clearRolesLabel": "역할 재설정",
+    "clearRolesTitle": "모든 역할 필터 해제"
   },
   "hierarchyTree": {
     "ariaLabel": "오브젝트 계층",
@@ -132,7 +152,71 @@
     "noFilterMatches": "현재 필터에 일치하는 항목이 없습니다",
     "crossFileBadge": "파일 간",
     "itemAriaLabel": "{{type}}: {{name}}로 이동",
-    "notNavigable": "대상이 가져온 데이터 집합에 없습니다"
+    "notNavigable": "대상이 가져온 데이터 집합에 없습니다",
+    "showInLayout": "레이아웃에서 보기 (Alt+클릭)",
+    "showInFile": "파일에서 보기 (Alt+클릭)",
+    "subroles": {
+      "hide": {
+        "short": "Hide",
+        "long": "숨기기 조건"
+      },
+      "conditional_format": {
+        "short": "CF",
+        "long": "조건부 서식"
+      },
+      "tooltip": {
+        "short": "Tooltip",
+        "long": "툴팁"
+      },
+      "button_action": {
+        "short": "Action",
+        "long": "버튼 동작"
+      },
+      "portal_filter": {
+        "short": "Portal",
+        "long": "포털 필터"
+      },
+      "web_viewer_url": {
+        "short": "WebViewer",
+        "long": "웹 뷰어 URL"
+      },
+      "placeholder": {
+        "short": "Placeholder",
+        "long": "자리 표시자 텍스트"
+      },
+      "popover_title": {
+        "short": "Popover",
+        "long": "팝오버 제목"
+      },
+      "script_trigger_parameter": {
+        "short": "Trigger",
+        "long": "스크립트 트리거 매개 변수"
+      },
+      "transaction_parameter_field": {
+        "short": "TX Param",
+        "long": "트랜잭션 매개 변수 필드 (후보)"
+      },
+      "auto_enter": {
+        "short": "Auto-Enter",
+        "long": "자동 입력 계산"
+      },
+      "validation": {
+        "short": "Validation",
+        "long": "값 목록 유효성 검사"
+      },
+      "on_server": {
+        "short": "PSoS",
+        "long": "서버에서 실행 (PSoS)"
+      },
+      "mbs_runscript": {
+        "short": "MBS",
+        "long": "MBS FM.RunScript 경유"
+      },
+      "menu_install": {
+        "short": "Install",
+        "long": "메뉴 설치 조건"
+      }
+    }
   },
   "searchOptions": {
     "regionAria": "정렬 및 그룹 옵션",
@@ -366,6 +450,13 @@
     "dismissTitle": "참조 하이라이트 제거 (Esc)",
     "sourceLabel": "출처:"
   },
+  "varSelect": {
+    "hint": "클릭: 모든 위치 강조 표시",
+    "clearHint": "클릭: 강조 표시 해제",
+    "pillLabel": "변수:",
+    "dismissAria": "변수 강조 표시 해제",
+    "dismissTitle": "변수 강조 표시 해제 (Esc)"
+  },
   "tableDetails": "테이블 세부 정보",
   "scriptDetails": "스크립트 세부 정보",
   "fieldDetails": "필드 세부 정보",
@@ -384,6 +475,22 @@
   "metadata": "메타데이터",
   "rowCount_one": "{{count}}개 항목",
   "rowCount_other": "{{count}}개 항목",
+  "privilegeSet": {
+    "ariaLabel": "권한 세트 상세정보",
+    "heading": "권한 세트",
+    "recordAccess": "사용자 정의 레코드 권한",
+    "fieldAccess": "사용자 정의 필드 권한",
+    "objectAccess": "레이아웃 / 값 목록 / 스크립트 사용자 정의 권한",
+    "colTable": "테이블",
+    "colOperation": "작업",
+    "colAccess": "액세스",
+    "colFormula": "계산식 / 컨텍스트",
+    "colField": "필드",
+    "colClass": "클래스",
+    "colObject": "오브젝트",
+    "colRecordsAccess": "레코드",
+    "evalContext": "평가 컨텍스트"
+  },
   "valueList": {
     "ariaLabel": "값 목록 세부 정보",
     "metaName": "이름",
@@ -558,5 +665,148 @@
   "osBinding": {
     "label": "OS 바인딩:",
     "tooltip": "이 스크립트가 바인딩된 운영 체제(platform-os-binding 테스트 실행 결과 - 중립적 인벤토리이며 결함이 아님)."
+  },
+  "textContent": {
+    "heading": "텍스트 내용"
+  },
+  "calculationDetail": {
+    "ariaLabel": "계산 상세정보",
+    "loading": "계산 불러오는 중…",
+    "owner": "소유자",
+    "slot": "슬롯",
+    "kind": "종류",
+    "kindStatic": "정적 값",
+    "kindFormula": "계산식",
+    "contextTo": "평가 컨텍스트",
+    "formula": "계산식",
+    "layoutFormula": "레이아웃 계산",
+    "resultType": "결과 유형",
+    "resultTypeTooltip": "결과 유형: {{type}}",
+    "resultTypes": {
+      "Text": "텍스트",
+      "Number": "숫자",
+      "Date": "날짜",
+      "Time": "시간",
+      "Timestamp": "타임스탬프"
+    },
+    "targets": "확인된 대상",
+    "slotsHeading": "계산",
+    "ddrlessHint": "일반 텍스트만 표시 — 이 인스턴스에는 DDR 청크 데이터가 없어 토큰, 도구 설명, 교차 탐색을 사용할 수 없습니다.",
+    "recoveredHint": "복구된 계산식에서 토큰을 재구성했습니다 — 이 인스턴스에는 DDR 청크 데이터가 없으며 기본 제공 함수는 확인되지 않은 상태로 남습니다.",
+    "roles": {
+      "field_calculation": "필드 계산",
+      "auto_enter": "자동 입력 계산",
+      "validation": "유효성 확인 계산",
+      "validation_message": "유효성 확인 메시지 계산",
+      "container_path": "컨테이너 경로",
+      "custom_function": "사용자 정의 함수",
+      "step_parameter": "스크립트 단계 계산",
+      "step_xslt": "XSLT 스타일시트",
+      "record_access": "레코드 액세스 계산",
+      "hide": "숨김 조건",
+      "tooltip": "도구 설명",
+      "placeholder": "자리 표시자",
+      "conditional_format": "조건부 서식",
+      "portal_filter": "포털 필터",
+      "web_viewer_url": "웹 뷰어 URL",
+      "button_label": "버튼 레이블",
+      "button_action": "버튼 동작",
+      "panel_title": "패널 제목",
+      "popover_title": "팝오버 제목",
+      "display_calculation": "표시 계산",
+      "merge_text": "확인된 병합 앵커",
+      "chart_series": "차트 계열",
+      "script_trigger_parameter": "스크립트 트리거 매개 변수",
+      "menu_install": "메뉴 설치 조건",
+      "menu_title": "메뉴 제목",
+      "menu_item_install": "메뉴 항목 설치 조건",
+      "menu_item_name": "메뉴 항목 이름",
+      "menu_item_parameter": "메뉴 항목 매개 변수"
+    }
+  },
+  "scriptTriggerDetail": {
+    "heading": "스크립트 트리거",
+    "openTrigger": "스크립트 트리거 열기",
+    "eventLabel": "이벤트",
+    "modesLabel": "활성 모드",
+    "scriptLabel": "스크립트",
+    "ownerLabel": "연결 위치",
+    "paramLabel": "스크립트 매개변수",
+    "paramFieldLabel": "매개변수 필드",
+    "paramFieldCandidates": "후보:",
+    "paramFieldOrphan": "이 파일에 같은 이름의 필드가 없습니다(고아 이름)",
+    "openParamCalc": "계산 상세 열기"
+  },
+  "layoutObjectDetail": {
+    "showInLayout": "레이아웃에서 보기: {{name}}",
+    "showInLayoutTitle": "레이아웃을 열고 이 개체를 강조 표시",
+    "targetBarAria": "대상",
+    "colBrowse": "브",
+    "colFind": "찾",
+    "colPreview": "미",
+    "modeBrowse": "브라우즈 모드",
+    "modeFind": "찾기 모드",
+    "modePreview": "미리보기",
+    "colEvent": "트리거 역할",
+    "colScript": "스크립트(매개변수)",
+    "paramLabel": "매개변수:",
+    "cfColActive": "활성",
+    "cfColCalc": "계산식",
+    "cfActiveTitle": "대화상자에서 활성화된 규칙",
+    "cfColFormat": "서식",
+    "cfIconColorTitle": "아이콘 색상",
+    "cfColPreview": "미리보기",
+    "cfFormat": {
+      "bold": "굵게",
+      "italic": "기울임꼴",
+      "underline": "밑줄",
+      "wordUnderline": "단어 밑줄",
+      "doubleUnderline": "이중 밑줄",
+      "strikethrough": "취소선",
+      "textColor": "텍스트 색상",
+      "fillColor": "채우기 색상",
+      "iconColor": "아이콘 색상",
+      "font": "글꼴",
+      "fontSize": "글꼴 크기",
+      "highlight": "강조",
+      "superscript": "위 첨자",
+      "subscript": "아래 첨자",
+      "smallCaps": "작은 대문자",
+      "condensed": "압축",
+      "expanded": "확장",
+      "uppercase": "대문자",
+      "lowercase": "소문자",
+      "capitalize": "첫 글자 대문자"
+    },
+    "cfOperatorFallback": "값(유형 {{type}})",
+    "cfOperator": {
+      "between": "사이",
+      "notBetween": "사이 아님",
+      "equal": "같음",
+      "notEqual": "같지 않음",
+      "greater": "보다 큼",
+      "less": "보다 작음",
+      "greaterEqual": "크거나 같음",
+      "lessEqual": "작거나 같음",
+      "contains": "포함",
+      "notContains": "포함 안 함",
+      "beginsWith": "(으)로 시작",
+      "endsWith": "(으)로 끝남",
+      "empty": "비어 있음"
+    },
+    "segmentsHeading": "세그먼트",
+    "childrenHeading": "포함된 오브젝트",
+    "colLabel": "레이블",
+    "colType": "유형",
+    "colObject": "오브젝트",
+    "colTrigger": "트리거",
+    "childDetailTitle": "오브젝트 세부사항 열기",
+    "propsHeading": "속성",
+    "propType": "유형",
+    "propName": "이름",
+    "propPart": "레이아웃 파트",
+    "propPosition": "위치/크기",
+    "propNesting": "중첩",
+    "nestingLevel": "레벨 {{level}}"
   }
 }

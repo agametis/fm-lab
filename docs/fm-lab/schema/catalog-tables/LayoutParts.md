@@ -11,14 +11,14 @@ The parts (sections) of every layout — header, body, footer, sub-summaries and
 |---|---|
 | `Layout_ID` | `BIGINT` |
 | `Layout_Name` | `VARCHAR` |
-| `Part_Seq` | `INTEGER` |
+| `Part_Seq` | `BIGINT` |
 | `Part_Type` | `VARCHAR` |
-| `Part_Kind` | `INTEGER` |
+| `Part_Kind` | `BIGINT` |
 | `Definition_Type` | `VARCHAR` |
-| `Definition_Kind` | `INTEGER` |
-| `Part_Size` | `INTEGER` |
-| `Part_Absolute` | `INTEGER` |
-| `Part_Options` | `INTEGER` |
+| `Definition_Kind` | `BIGINT` |
+| `Part_Size` | `BIGINT` |
+| `Part_Absolute` | `BIGINT` |
+| `Part_Options` | `BIGINT` |
 | `Object_Count` | `BIGINT` |
 | `Break_Field_ID` | `BIGINT` |
 | `Break_Field_Name` | `VARCHAR` |

@@ -283,3 +283,23 @@ WHERE oc_target.Object_Type = 'Field'
   AND ol.Link_Role = 'lookup_source';
 
 
+
+-- ============================================
+-- Calculations als Objekte (Schema 1.22.0)
+-- ============================================
+-- Alle Berechnungs-Instanzen eines Owners (Slot-Inventar): Rolle, Index,
+-- struktureller Ursprung, Formel-Vorschau. Instanzen existieren auch ohne
+-- DDR-Info (Formula_Hash/Chunk-Spalten sind dann NULL).
+SELECT Calc_Role, Calc_Index, Source_Path, Is_Static,
+       left(COALESCE(Formula_Text, Display_Text), 100) AS Formula
+FROM CalculationsCatalog
+WHERE Owner_Name = 'Artikel::Preis' AND File_Name = 'Artikel'
+ORDER BY Calc_Role, Calc_Index;
+
+-- Ziel-Aufloesung einer Instanz (abgeleitete Sicht, Variante A — Where-used
+-- bleibt auf den Owner-Kanten; has_calculation zaehlt nie als Verwendung):
+SELECT vl.Link_Role, tgt.Object_Type, tgt.Object_Name
+FROM v_calculation_links vl
+JOIN ObjectCatalog tgt ON tgt.Object_UUID = vl.Target_UUID
+WHERE vl.Calculation_UUID = '<Calculation_UUID>'
+ORDER BY vl.Link_Role, tgt.Object_Name;

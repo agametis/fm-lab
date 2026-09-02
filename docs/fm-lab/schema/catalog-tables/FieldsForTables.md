@@ -19,7 +19,7 @@ All fields of all base tables, with the complete field definition: data type, st
 | `Field_Comment` | `VARCHAR` |
 | `Field_UUID` | `VARCHAR` |
 | `Is_Global` | `BOOLEAN` |
-| `Max_Repetitions` | `INTEGER` |
+| `Max_Repetitions` | `BIGINT` |
 | `DDR_Hash` | `VARCHAR` |
 | `Calculation_Text` | `VARCHAR` |
 | `AutoEnter_Type` | `VARCHAR` |
@@ -54,7 +54,7 @@ All fields of all base tables, with the complete field definition: data type, st
 | `Summary_Field_UUID` | `VARCHAR` |
 | `Validation_AlwaysValidate` | `BOOLEAN` |
 | `Validation_StrictType` | `VARCHAR` |
-| `Validation_MaxChars` | `INTEGER` |
+| `Validation_MaxChars` | `BIGINT` |
 | `Validation_Range_From` | `VARCHAR` |
 | `Validation_Range_To` | `VARCHAR` |
 | `Validation_Calc_Text` | `VARCHAR` |
@@ -72,6 +72,7 @@ All fields of all base tables, with the complete field definition: data type, st
 - `Calculation_Text`/`DDR_Hash` belong to true Calculated fields (`Field_Type='Calculated'`); `AE_Calc_Text`/`AE_Calc_Hash` belong to Normal fields with an auto-enter calculation. A field never has both populated.
 - Lookup fields carry their source field and relationship in the `Lookup_*` columns (→ `lookup_source` / `lookup_relationship` links).
 - Validation by value list is captured in `Validation_VL_*` (→ `uses_valuelist` link with subrole `validation`); validation by calculation in `Validation_Calc_*` (→ `validates_by_calc` link).
+- `Validation_MaxChars` is sentinel-normalized at import: FileMaker serializes "no character limit" as `4294967295` (UINT32_MAX, the unsigned form of an internal `-1`); the importer stores it as `NULL` — the same state as validation without a configured maximum. Real limits import verbatim. A guard check (`v_check_numeric_sentinels`) warns if a future export ships an unrecognized implausible value (> 10⁹) instead.
 - Summary fields describe their operation and target in the `Summary_*` columns (→ `summarizes_field` link).
 - `DDR_Hash`-family columns join to [DDR_Calculations](DDR_Calculations.md) via `Calc_Hash`.
 

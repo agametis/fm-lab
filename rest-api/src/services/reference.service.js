@@ -36,6 +36,8 @@ function clearCaches() {
   refColumnExistsCache.clear();
   stepCompatMapCache = null;
   functionAffinityMapCache = null;
+  scriptTriggerEventMapCache = null;
+  scriptTriggerEventLabelsCache.clear();
 }
 
 function isStepLang(lang) {
@@ -279,6 +281,62 @@ async function getOsAffinity(ctx, table, idColumn, id) {
     provenance: a.provenance,
     note:       a.note || null,
   }));
+}
+
+/**
+ * Slot→Event-Map (trigger_id → event_name) aus `script_triggers`
+ * (Referenz ≥ 1.18.0) — die kuratierte, locale-feste Auflösung der SaXML-
+ * ScriptTrigger-Slot-IDs auf kanonische Event-Namen (der Action-Name im
+ * Quell-XML ist ein lokalisierbarer Passthrough und taugt nicht als Quelle).
+ * Sprachneutral, ein Query, prozessweit gecacht. Graceful: ohne attachte
+ * Referenz-DB oder bei älterem Stand liefert sie eine leere Map — Konsumenten
+ * lassen das Event-Feld dann einfach weg, kein Fehlerpfad.
+ */
+let scriptTriggerEventMapCache = null;
+async function getScriptTriggerEventMap(ctx) {
+  if (scriptTriggerEventMapCache) return scriptTriggerEventMapCache;
+  const map = new Map();
+  if (db.isReferenceAttached() && (await refTableExists(ctx, 'script_triggers'))) {
+    const r = await db.executeQuery(ctx, `
+      SELECT trigger_id, event_name FROM ref.script_triggers
+    `);
+    for (const row of r.rows) map.set(Number(row.trigger_id), row.event_name);
+  }
+  scriptTriggerEventMapCache = map;
+  return map;
+}
+
+/**
+ * Lokalisierte Event-Beschriftungen (event_name → event_label) aus
+ * `script_triggers` × `script_triggers_lang` (Referenz ≥ 1.18.0) für EINE
+ * Sprache — die Anzeige-Namen des FileMaker-Trigger-Dialogs (z.B.
+ * OnRecordLoad → „BeiDatensatzLaden"). Sprach-Normalisierung über die
+ * Step-Domäne (identisches 11-Sprachen-Set). Pro Sprache gecacht; graceful:
+ * ohne attachte Referenz-DB oder älteren Stand ein leeres Objekt — die
+ * Konsumenten fallen dann auf den kanonischen Namen zurück.
+ */
+const scriptTriggerEventLabelsCache = new Map();
+async function getScriptTriggerEventLabels(ctx, lang) {
+  const refLang = resolveStepLang(lang);
+  if (scriptTriggerEventLabelsCache.has(refLang)) {
+    return { lang: refLang, labels: scriptTriggerEventLabelsCache.get(refLang) };
+  }
+  const labels = {};
+  if (db.isReferenceAttached()
+      && (await refTableExists(ctx, 'script_triggers'))
+      && (await refTableExists(ctx, 'script_triggers_lang'))) {
+    const r = await db.executeQuery(ctx, `
+      SELECT s.event_name, l.event_label
+      FROM ref.script_triggers s
+      JOIN ref.script_triggers_lang l USING (trigger_id)
+      WHERE l.language = '${refLang}'
+    `);
+    for (const row of r.rows) {
+      if (row.event_label) labels[row.event_name] = row.event_label;
+    }
+  }
+  scriptTriggerEventLabelsCache.set(refLang, labels);
+  return { lang: refLang, labels };
 }
 
 /**
@@ -1129,6 +1187,10 @@ async function getStepGrammar(ctx, idOrSlug) {
     xmlMap: null,
     options: [],
     constraints: [],
+    repeatGroups: [],
+    skeletonElements: [],
+    elementBindings: [],
+    optionImplications: [],
   };
 
   if (!(await refTableExists(ctx, 'step_xml_map'))) return empty;
@@ -1193,12 +1255,104 @@ async function getStepGrammar(ctx, idOrSlug) {
     values:         valuesByKey.get(o.option_key) || [],
   }));
 
+  // Constraint-kind registry (fm_spec >= 1.17.0): consumer-facing lead text
+  // per kind (bug-registry kinds only); tolerant on older references.
+  let kindNotes = new Map();
+  if (await refTableExists(ctx, 'constraint_kinds')) {
+    const kRes = await db.executeQuery(ctx, `
+      SELECT constraint_kind, consumer_note
+      FROM ref.constraint_kinds
+      WHERE consumer_note IS NOT NULL
+    `);
+    kindNotes = new Map(kRes.rows.map((k) => [k.constraint_kind, k.consumer_note]));
+  }
+
   const constraints = conRes.rows.map((c) => ({
     constraintKind:  c.constraint_kind,
     detail:          c.detail,
     evidence:        c.evidence,
     verifiedVersion: c.verified_version,
+    consumerNote:    kindNotes.get(c.constraint_kind) ?? null,
   }));
+
+  // Repeat groups (fm_spec >= 1.15.0; fixed-slot columns >= 1.16.0).
+  // SELECT * keeps this tolerant across reference schema versions.
+  let repeatGroups = [];
+  if (await refTableExists(ctx, 'step_repeat_groups')) {
+    const grpRes = await db.executeQuery(ctx, `
+      SELECT * FROM ref.step_repeat_groups
+      WHERE step_id = ?
+      ORDER BY (parent_group IS NOT NULL), group_key
+    `, [base.step_id]);
+    repeatGroups = grpRes.rows.map((g) => ({
+      groupKey:       g.group_key,
+      groupLabel:     g.group_label,
+      parentGroup:    g.parent_group ?? null,
+      containerPath:  g.container_path,
+      countAttr:      g.count_attr ?? null,
+      itemForm:       g.item_form,
+      maxItems:       g.max_items != null ? Number(g.max_items) : null,
+      slotPositional: g.slot_positional != null ? Boolean(g.slot_positional) : null,
+      padMode:        g.pad_mode ?? null,
+      evidence:       g.evidence ?? null,
+      verifiedVersion: g.verified_version ?? null,
+    }));
+  }
+
+  // Hint-inventory tables (fm_spec >= 1.17.0): skeleton hulls, option-bound
+  // elements and notation implications per step. SELECT * keeps the reads
+  // tolerant across reference schema versions; empty on older references.
+  let skeletonElements = [];
+  let elementBindings = [];
+  let optionImplications = [];
+  if (await refTableExists(ctx, 'step_skeleton_elements')) {
+    const skRes = await db.executeQuery(ctx, `
+      SELECT * FROM ref.step_skeleton_elements
+      WHERE step_id = ?
+      ORDER BY (parent_tag <> 'Step'), child_tag
+    `, [base.step_id]);
+    skeletonElements = skRes.rows.map((s) => ({
+      parentTag:       s.parent_tag,
+      childTag:        s.child_tag,
+      conditionOption: s.condition_option ?? null,
+      conditionValue:  s.condition_value ?? null,
+      keepMode:        s.keep_mode,
+      evidence:        s.evidence ?? null,
+      verifiedVersion: s.verified_version ?? null,
+    }));
+  }
+  if (await refTableExists(ctx, 'step_option_element_bindings')) {
+    const bdRes = await db.executeQuery(ctx, `
+      SELECT * FROM ref.step_option_element_bindings
+      WHERE step_id = ?
+      ORDER BY element_path, binding, option_key, option_value
+    `, [base.step_id]);
+    elementBindings = bdRes.rows.map((b) => ({
+      optionKey:       b.option_key ?? null,
+      optionValue:     b.option_value ?? null,
+      elementPath:     b.element_path,
+      binding:         b.binding,
+      evidence:        b.evidence ?? null,
+      verifiedVersion: b.verified_version ?? null,
+    }));
+  }
+  if (await refTableExists(ctx, 'step_option_implications')) {
+    const imRes = await db.executeQuery(ctx, `
+      SELECT * FROM ref.step_option_implications
+      WHERE step_id = ?
+      ORDER BY trigger_kind, trigger
+    `, [base.step_id]);
+    optionImplications = imRes.rows.map((i) => ({
+      triggerKind:     i.trigger_kind,
+      trigger:         i.trigger,
+      impliedOption:   i.implied_option,
+      impliedValue:    i.implied_value ?? null,
+      isDefault:       i.is_default != null ? Boolean(i.is_default) : null,
+      direction:       i.direction,
+      evidence:        i.evidence ?? null,
+      verifiedVersion: i.verified_version ?? null,
+    }));
+  }
 
   return {
     stepId: base.step_id,
@@ -1209,12 +1363,20 @@ async function getStepGrammar(ctx, idOrSlug) {
       saxmlParamTypes:  m.saxml_param_types,
       saxmlExample:     m.saxml_example ?? null,
       elementOrder:     m.element_order,
+      // structural variable-target marker (fm_spec >= 1.17.0); null = column
+      // absent on this reference build
+      variableTargetMarker: m.variable_target_marker != null
+        ? Boolean(m.variable_target_marker) : null,
       evidence:         m.evidence,
       verifiedVersion:  m.verified_version,
       notes:            m.notes ?? null,
     },
     options,
     constraints,
+    repeatGroups,
+    skeletonElements,
+    elementBindings,
+    optionImplications,
   };
 }
 
@@ -1242,6 +1404,9 @@ module.exports = {
   // Reverse-Lookup
   lookupToken,
   enrichFunctionTokens,
+  // Script-Trigger-Referenz
+  getScriptTriggerEventMap,
+  getScriptTriggerEventLabels,
   // Help-URL
   buildLocalHelpUrl,
   mirrorLangDir,

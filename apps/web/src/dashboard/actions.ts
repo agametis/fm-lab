@@ -241,7 +241,15 @@ export function dispatchAction(
         console.warn('[dashboard] navigate requires an app-internal path (leading "/")', args);
         return;
       }
-      ctx.navigate(path);
+      // Optionaler Suchzustand: `q` reist als Query-Param mit, damit die
+      // Zielseite ihr Suchfeld daraus vorbelegen kann (Doc-Set-Rubrikliste →
+      // Eintragsliste). Ohne das Argument bleibt der Pfad unverändert.
+      const q = args.q != null ? String(args.q) : '';
+      if (!q) {
+        ctx.navigate(path);
+        return;
+      }
+      ctx.navigate(`${path}${path.includes('?') ? '&' : '?'}q=${encodeURIComponent(q)}`);
       return;
     }
     case 'applyFilter': {

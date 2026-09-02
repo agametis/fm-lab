@@ -17,12 +17,35 @@ import {
 } from '../api/fmSpecApi';
 import './FmSpecView.css';
 
+// Bug-registry kinds in step_constraints (fm_spec >= 1.14.4) — rendered with
+// a badge: warning class, never a validity rule (the step is valid, the risk
+// lies with FileMaker's own serialization).
+const KNOWN_BUG_KINDS = new Set([
+  'clipboard_loss', 'version_skew', 'save_corruption',
+  'serialization_unstable', 'localized_build_defect',
+]);
+
+/** Registry details are long prose — collapse behind the first sentence. */
+function ConstraintDetail({ detail }: { detail: string | null }) {
+  if (!detail) return null;
+  const firstSentence = detail.split('. ')[0];
+  if (detail.length <= 200 || firstSentence.length >= detail.length - 1) {
+    return <span className="fmspec-constraint__detail">{detail}</span>;
+  }
+  return (
+    <details className="fmspec-constraint__detail">
+      <summary>{firstSentence}.</summary>
+      {detail}
+    </details>
+  );
+}
+
 /**
  * fm-spec ScriptStep-Detail (`/fm-spec/step/:stepId`).
  *
  * Vier Abschnitte untereinander: (1) lokalisierte Step-Daten über alle Sprachen,
  * (2) strukturierte Parameter (Sprache umschaltbar), (3) XMLSnippet-Grammatik
- * (nur wenn erfasst, sonst W4-Hinweis), (4) SaXML-Details. Read-only.
+ * (nur wenn erfasst, sonst Hinweis), (4) SaXML-Details. Read-only.
  */
 export function FmSpecStepView() {
   const { stepId } = useParams();
@@ -179,6 +202,12 @@ export function FmSpecStepView() {
                   <dl className="fmspec-facts">
                     <dt>{t('fmSpec:step.grammar.elementOrder')}</dt>
                     <dd className="mono">{grammar.xmlMap.elementOrder ?? dash}</dd>
+                    {grammar.xmlMap.variableTargetMarker === true && (
+                      <>
+                        <dt>{t('fmSpec:step.grammar.variableTargetMarker')}</dt>
+                        <dd>{t('fmSpec:step.grammar.variableTargetMarkerHint')}</dd>
+                      </>
+                    )}
                     <dt>{t('fmSpec:step.grammar.evidence')}</dt>
                     <dd>{grammar.xmlMap.evidence ?? dash}{grammar.xmlMap.verifiedVersion ? ` · ${grammar.xmlMap.verifiedVersion}` : ''}</dd>
                   </dl>
@@ -214,8 +243,142 @@ export function FmSpecStepView() {
                       <ul className="fmspec-constraints">
                         {grammar.constraints.map((c) => (
                           <li key={c.constraintKind}>
-                            <span className="fmspec-constraint__kind mono">{c.constraintKind}</span>
-                            <span className="fmspec-constraint__detail">{c.detail}</span>
+                            <span className="fmspec-constraint__kind mono">
+                              {c.constraintKind}
+                              {KNOWN_BUG_KINDS.has(c.constraintKind) && (
+                                <span
+                                  className="fmspec-constraint__badge"
+                                  title={t('fmSpec:step.grammar.knownBugHint') as string}
+                                >
+                                  FM bug
+                                </span>
+                              )}
+                              {c.verifiedVersion && (
+                                <span className="fmspec-constraint__version">{c.verifiedVersion}</span>
+                              )}
+                            </span>
+                            <ConstraintDetail detail={c.detail} />
+                            {c.consumerNote && (
+                              <div className="fmspec-muted">
+                                {t('fmSpec:step.grammar.consumerNote')}: {c.consumerNote}
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+
+                  {(grammar.repeatGroups?.length ?? 0) > 0 && (
+                    <>
+                      <div className="fmspec-subhead">{t('fmSpec:step.grammar.repeatGroups')}</div>
+                      <ul className="fmspec-repeat-groups">
+                        {grammar.repeatGroups!.map((g) => (
+                          <li key={g.groupKey}>
+                            <span className="fmspec-rg__label mono">{g.groupLabel}</span>
+                            <span className="fmspec-rg__meta">
+                              {t('fmSpec:step.grammar.rg.container')}: <code>{g.containerPath}</code>
+                              {' · '}{g.itemForm}
+                              {g.maxItems != null && (
+                                <> · {t('fmSpec:step.grammar.rg.fixedSlots', { n: g.maxItems })}
+                                  {g.padMode ? ` (${g.padMode})` : ''}</>
+                              )}
+                              {g.parentGroup && (
+                                <> · {t('fmSpec:step.grammar.rg.nestedIn', { parent: g.parentGroup })}</>
+                              )}
+                              {g.countAttr && (
+                                <> · {t('fmSpec:step.grammar.rg.countAttr', { attr: `@${g.countAttr}` })}</>
+                              )}
+                              {g.evidence && (
+                                <> · {g.evidence}{g.verifiedVersion ? ` · ${g.verifiedVersion}` : ''}</>
+                              )}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+
+                  {(grammar.skeletonElements?.length ?? 0) > 0 && (
+                    <>
+                      <div className="fmspec-subhead">{t('fmSpec:step.grammar.skeletons')}</div>
+                      <ul className="fmspec-repeat-groups">
+                        {grammar.skeletonElements!.map((s, i) => (
+                          <li key={`${s.parentTag}/${s.childTag}/${i}`}>
+                            <span className="fmspec-rg__label mono">{`<${s.childTag}>`}</span>
+                            <span className="fmspec-rg__meta">
+                              {s.parentTag !== 'Step' && (
+                                <>{t('fmSpec:step.grammar.sk.in', { parent: `<${s.parentTag}>` })}{' · '}</>
+                              )}
+                              {t(`fmSpec:step.grammar.sk.${s.keepMode}`, { defaultValue: s.keepMode })}
+                              {s.conditionOption && (
+                                <> · {t('fmSpec:step.grammar.sk.condition', {
+                                  cond: `${s.conditionOption} = ${s.conditionValue}`,
+                                })}</>
+                              )}
+                              {s.evidence && (
+                                <> · {s.evidence}{s.verifiedVersion ? ` · ${s.verifiedVersion}` : ''}</>
+                              )}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+
+                  {(grammar.elementBindings?.length ?? 0) > 0 && (
+                    <>
+                      <div className="fmspec-subhead">{t('fmSpec:step.grammar.bindings')}</div>
+                      <ul className="fmspec-repeat-groups">
+                        {grammar.elementBindings!.map((b, i) => (
+                          <li key={`${b.elementPath}/${b.binding}/${i}`}>
+                            <span className="fmspec-rg__label mono">{`<${b.elementPath.split('/').pop()}>`}</span>
+                            <span className="fmspec-rg__meta">
+                              {b.elementPath.includes('/') && (
+                                <><code>{b.elementPath}</code>{' · '}</>
+                              )}
+                              {b.binding === 'requires' && t('fmSpec:step.grammar.bd.requires', {
+                                cond: `${b.optionKey} = ${b.optionValue}`,
+                              })}
+                              {b.binding === 'excludes' && t('fmSpec:step.grammar.bd.excludes', {
+                                cond: `${b.optionKey} = ${b.optionValue}`,
+                              })}
+                              {b.binding === 'requires_option' && t('fmSpec:step.grammar.bd.requiresOption', {
+                                option: b.optionKey ?? '',
+                              })}
+                              {b.binding === 'excludes_option' && t('fmSpec:step.grammar.bd.excludesOption', {
+                                option: b.optionKey ?? '',
+                              })}
+                              {b.binding === 'suppress_empty' && t('fmSpec:step.grammar.bd.suppressEmpty')}
+                              {b.evidence && (
+                                <> · {b.evidence}{b.verifiedVersion ? ` · ${b.verifiedVersion}` : ''}</>
+                              )}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+
+                  {(grammar.optionImplications?.length ?? 0) > 0 && (
+                    <>
+                      <div className="fmspec-subhead">{t('fmSpec:step.grammar.implications')}</div>
+                      <ul className="fmspec-repeat-groups">
+                        {grammar.optionImplications!.map((im, i) => (
+                          <li key={`${im.triggerKind}/${im.trigger}/${i}`}>
+                            <span className="fmspec-rg__label mono">{im.trigger}</span>
+                            <span className="fmspec-rg__meta">
+                              {t(`fmSpec:step.grammar.imp.${im.triggerKind}`, { defaultValue: im.triggerKind })}
+                              {' → '}
+                              <code>
+                                {im.impliedOption}
+                                {im.impliedValue != null ? ` = ${im.impliedValue}` : ''}
+                              </code>
+                              {im.isDefault && <> · {t('fmSpec:step.grammar.imp.default')}</>}
+                              {im.evidence && (
+                                <> · {im.evidence}{im.verifiedVersion ? ` · ${im.verifiedVersion}` : ''}</>
+                              )}
+                            </span>
                           </li>
                         ))}
                       </ul>

@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApiLang } from '../hooks/useApiLang';
 import { useCurrentFile } from '../lib/currentFileContext';
 import { useCustomMenuTokens } from '../hooks/useCustomMenuTokens';
 import { useObjectDetails } from '../hooks/useObjectDetails';
+import { useVarSelection, countCalcVarMatches } from '../script/varSelectionContext';
 import { CalcTokenList } from './CalcTokenSpan';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
@@ -42,6 +43,25 @@ export const CustomMenuDetail: React.FC<CustomMenuDetailProps> = ({ uuid, object
       </span>
     ));
   }, [contentState.data]);
+
+  // Variablen-Auswahl: Trefferzählung über alle Calc-Blöcke des Menüs
+  // (Install-Bedingung + pro-Item-Berechnungen) für die VarSelectionPill.
+  const varSel = useVarSelection();
+  const varMatches = useMemo(() => {
+    const key = varSel?.selectedKey ?? null;
+    if (!key) return { count: 0, displayName: null as string | null };
+    let count = 0;
+    let displayName: string | null = null;
+    for (const calc of tokensState.data?.calcs ?? []) {
+      const m = countCalcVarMatches(calc.tokens, key);
+      count += m.count;
+      if (!displayName) displayName = m.displayName;
+    }
+    return { count, displayName };
+  }, [tokensState.data, varSel?.selectedKey]);
+  useEffect(() => {
+    varSel?.reportMatches(varMatches.count, varMatches.displayName);
+  }, [varMatches, varSel]);
 
   if (contentState.loading || tokensState.loading) {
     return <LoadingSpinner message={t('common:loading') as string} />;

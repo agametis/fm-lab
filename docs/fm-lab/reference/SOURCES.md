@@ -55,6 +55,12 @@ database points at this file through its `reference_meta.attribution` key.
   Authoring notation targeted by the ActionScript emitter;
   no data imported into reference tables.
 
+## Additional public sources
+
+- **FileMaker Clipboard Bugs** — ai2fm · Dimitris Kokoutsidis  
+  https://axelareu.github.io/ai2fm-community/claris_bugs/claris_clipboard_bugs.html  
+  18 FileMaker Clipboard Bugs — verified, with reproducible test files
+
 ---
 
 Example payloads (`step_xml_map.saxml_example`) were originally derived from the

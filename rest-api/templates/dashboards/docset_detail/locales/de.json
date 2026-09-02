@@ -6,9 +6,9 @@
   "layout": {
     "info_markdown.props.content": "# {{name}}\n\n{{description}}\n\n[{{source_url}}]({{source_url}})\n\n*Sprachen: {{languages_display}}*",
     "info_kpistrip.props.items[0].label": "Rubriken",
-    "info_kpistrip.props.items[1].label": "Funktionen",
+    "info_kpistrip.props.items[1].label": "Einträge",
     "categories.props.title": "Rubriken",
-    "categories_list.props.rowTemplate.secondary": "{{function_count}} Funktionen",
+    "categories_list.props.rowTemplate.secondary": "{{entry_count}} Einträge",
     "categories_list.props.empty.message": "Keine Rubriken für diese Doku-Quelle verfügbar."
   }
 }

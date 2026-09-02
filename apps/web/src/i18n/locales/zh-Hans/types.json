@@ -26,7 +26,9 @@
     "BuiltinFunction": "函数",
     "PluginFunction": "MBS 函数",
     "ScriptStepType": "脚本步骤",
-    "PluginComponent": "MBS 组件"
+    "PluginComponent": "MBS 组件",
+    "File": "文件",
+    "Calculation": "计算公式"
   },
   "categoryHeader": {
     "ScriptStepType": "类别",

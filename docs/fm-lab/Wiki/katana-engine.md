@@ -47,7 +47,7 @@ A FileMaker SaXML document is a set of top-level **catalogs** (branches) — scr
 Two bookkeeping structures make this safe and fast:
 
 - **Chunk map** (transient, rebuilt per run) — one row per chunk with its source file, catalog, split number, record count, byte size, content hash, parser policy (`dom` or `sax`) and a dispatch status. It is the work queue of the run: the dispatcher pulls pending chunks from it, and the memory backoff writes retry attempts back into it.
-- **Import manifest** (persistent, survives runs) — one row per source XML (mtime, size and an authoritative SHA-256 content hash, plus converter and schema version stamps) and one row per *file × catalog* (a hash over the ordered chunk hashes of that catalog). Converter or schema drift invalidates the manifest and forces a clean rebuild — so a skip can never hide a stale format.
+- **Import manifest** (persistent, survives runs) — one row per source XML (mtime, size and an authoritative SHA-256 content hash, plus converter and schema version stamps and the parser-policy fingerprint of the run that wrote the hashes) and one row per *file × catalog* (a hash over the ordered chunk hashes of that catalog). Converter, schema or policy drift invalidates the manifest and forces a clean rebuild — so a skip can never hide a stale format.
 
 ---
 
@@ -77,6 +77,8 @@ Katana knows two parser policies per chunk:
 - **SAX streaming** — reads records as a stream with a fraction of the memory, enabled by the webbed extension. Streaming needs unique record anchors, so Katana's renamer pass gives repeating elements branch-unique names (e.g. `Layout` inside `LayoutCatalog` becomes `LC_Layout`) — surgical renames of structural tags only, never content.
 
 Which policy wins is not hardcoded. A **capability registry** (`tools/katana-xml/version_check.json`) describes known webbed fixes together with behavioral probes; at startup the driver probes the actually loaded extension and enables SAX as the default only when the probes confirm it is fully text-faithful. Older extensions transparently stay on the DOM path — correctness always outranks speed.
+
+A confirmed policy is also **sticky** across runs, so a transient probe failure never flips it. And because the stored content hashes are policy-stamped, an actual policy change — typically after a webbed update — triggers a one-time full reload of the affected catalogs instead of manifest skips.
 
 ### Memory limiting and auto-backoff
 
@@ -134,7 +136,7 @@ Around the Katana chunk machinery, the conversion itself runs as seven SQL phase
 
 **P3 — Details.** Derives detail structures from the resolved data — most prominently the variable analysis: every variable usage across all scripts and calculations, aggregated into a per-variable catalog.
 
-**P4 — Catalog.** Builds the two universal tables at the heart of FM-Lab: the **ObjectCatalog** (every object of every type across all files, uniformly addressable) and **ObjectLinks** (every relationship between them). Before the edge list is built, a rewrite stage distributes incoming references onto healed duplicate twins via their internal reference IDs. This is the [knowledge graph](How%20it%20works.md#layer-3-links) the analysis workflows run on.
+**P4 — Catalog.** Builds the two universal tables at the heart of FM-Lab: the **ObjectCatalog** (every object of every type across all files, uniformly addressable) and **ObjectLinks** (every relationship between them). Before the edge list is built, a rewrite stage distributes incoming references onto healed duplicate twins via their internal reference IDs. This phase also materializes every calculation slot — auto-enter, validation, hide conditions, tooltips, conditional-formatting rules, merge fields, trigger parameters, script-step parameters and more — as a first-class [Calculation](../schema/object-types/Calculation.md) object of its own. This is the [knowledge graph](How%20it%20works.md#layer-3-links) the analysis workflows run on.
 
 **P5 — Homes.** Resolves cross-file references — external table occurrences, scripts called across files — and builds the graph views that feed the Graph Explorer and clustering.
 
@@ -142,7 +144,7 @@ Around the Katana chunk machinery, the conversion itself runs as seven SQL phase
 
 **P7 — Clustering.** Segments the object graph into modules/communities (community detection) so that freshly imported solutions immediately show a meaningful module structure. It runs only on full rebuilds and is non-fatal — a clustering hiccup never invalidates the import.
 
-After P7 the master database is synced to the REST API's read copy and the running server reloads it — no restart needed (see [Architecture](Architecture.md#deployment-options)).
+After P7 the master database is synced to the REST API's read copy and the running server reloads it — no restart needed (see [Architecture](Architecture.md#deployment-options)). Publishing is conditional on a valid build: a Phase-2 failure aborts the run before P3 and leaves the previously served catalog untouched, a healing re-run publishes like any successful run, and only a batch in which every file failed stays unpublished.
 
 ---
 

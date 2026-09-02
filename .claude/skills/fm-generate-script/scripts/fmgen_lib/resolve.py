@@ -136,6 +136,7 @@ class Resolver:
                     continue
                 for key in self._instance_keys(ps, opt):
                     self._resolve_ref(ps, key, element, opt["xml_path"])
+            self._resolve_groups(ps)
             self._mark_calc_repetition(ps)
             for calc in self._calcs(ps):
                 self._scan_calc(ps, calc)
@@ -164,6 +165,49 @@ class Resolver:
                         and not ref_val.get("repetition")):
                     ref_val["repetition"] = "0"
                 return
+
+    def _resolve_groups(self, ps: ParsedStep) -> None:
+        """T9 repeat groups: run every reference-typed item value through the
+        same resolution as its flat counterpart, and scan item calculations.
+        Items are mutated in place (list holds the same dicts)."""
+        groups = self.ref.repeat_groups(ps.step_id)
+        if not groups:
+            return
+        metas = {o["option_key"]: o for o in self.ref.options(ps.step_id)}
+        by_key = {g["group_key"]: g for g in groups}
+
+        def handle_items(g: dict, items: list) -> None:
+            for item in items:
+                if g["item_form"] == "scalar" or not isinstance(item, dict):
+                    o = metas.get(g["group_key"])
+                    if isinstance(item, dict) and o and \
+                            o["option_type"] in ("object_ref", "target"):
+                        self._resolve_ref_value(
+                            ps, item, _xmlpath_element(o["xml_path"]), o["xml_path"])
+                    elif isinstance(item, str) and o and \
+                            o["option_type"] in ("calculation", "repetition"):
+                        self._scan_calc(ps, item)
+                    continue
+                for k, v in item.items():
+                    if k in by_key and isinstance(v, list):
+                        handle_items(by_key[k], v)
+                        continue
+                    o = metas.get(k)
+                    if o is None:
+                        continue
+                    if o["option_type"] in ("object_ref", "target") and isinstance(v, dict):
+                        self._resolve_ref_value(
+                            ps, v, _xmlpath_element(o["xml_path"]), o["xml_path"])
+                    elif o["option_type"] in ("calculation", "repetition") and isinstance(v, str):
+                        self._scan_calc(ps, v)
+
+        for g in groups:
+            if g["parent_group"]:
+                continue
+            val = ps.options.get(g["group_key"])
+            if val is None:
+                continue
+            handle_items(g, val if isinstance(val, list) else [val])
 
     def _calc_items(self, ps: ParsedStep) -> list[tuple[str, str]]:
         out = []
@@ -255,7 +299,10 @@ class Resolver:
 
     def _resolve_ref(self, ps: ParsedStep, key: str, element: str,
                      xml_path: str | None = None) -> None:
-        ref_val = ps.options[key]
+        self._resolve_ref_value(ps, ps.options[key], element, xml_path)
+
+    def _resolve_ref_value(self, ps: ParsedStep, ref_val, element: str,
+                           xml_path: str | None = None) -> None:
         if not isinstance(ref_val, dict):
             return
         if ref_val.get("_form") == "variable":

@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useObjectDetails } from '../hooks/useObjectDetails';
 import { useLayoutData } from '../hooks/useLayoutData';
 import { useCurrentFile } from '../lib/currentFileContext';
 import { LayoutCanvas, type LayoutCanvasHandle } from './LayoutCanvas';
@@ -11,10 +10,13 @@ import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
 import { ScriptDetail } from './ScriptDetail';
 import { ScriptStepDetail } from './ScriptStepDetail';
-import { ScriptViewer } from './ScriptViewer';
-import { useScriptTokens } from '../hooks/useScriptTokens';
-import { useApiLang } from '../hooks/useApiLang';
+import { CalculationDetail } from './CalculationDetail';
 import { CustomFunctionDetail } from './CustomFunctionDetail';
+import { GenericObjectDetail } from './GenericObjectDetail';
+import { LayoutObjectDetail } from './LayoutObjectDetail';
+import { ScriptTriggerDetail } from './ScriptTriggerDetail';
+import './CustomFunctionViewer.css';
+import './FieldViewer.css';
 import { CustomMenuDetail } from './CustomMenuDetail';
 import { FieldDetail } from './FieldDetail';
 import { PrivilegeSetDetail } from './PrivilegeSetDetail';
@@ -145,112 +147,6 @@ const EmbeddedLayoutView: React.FC<{
 };
 
 /**
- * Highlight-Substring rendern: zerlegt Text an allen Vorkommen von `needle`
- * und wrappt diese in <mark>. Case-insensitive. Bei leerem needle: Text 1:1.
- */
-function highlightSubstring(text: string, needle: string | null | undefined): React.ReactNode {
-  if (!needle || needle.length < 2) return text;
-  const lowerText = text.toLowerCase();
-  const lowerNeedle = needle.toLowerCase();
-  const out: React.ReactNode[] = [];
-  let start = 0;
-  let idx = lowerText.indexOf(lowerNeedle, start);
-  while (idx !== -1) {
-    if (idx > start) out.push(text.slice(start, idx));
-    out.push(
-      <mark key={`m-${idx}`} className="fm-content-highlight">
-        {text.slice(idx, idx + needle.length)}
-      </mark>
-    );
-    start = idx + needle.length;
-    idx = lowerText.indexOf(lowerNeedle, start);
-  }
-  if (start < text.length) out.push(text.slice(start));
-  return out;
-}
-
-/**
- * Generic non-Layout detail view: lädt content via /api/get-details und rendert
- * als formatierten Text-Block. Eigene Komponente, damit ihre Hooks in einer
- * eigenen Aufruf-Reihenfolge stehen und nicht mit dem Layout-Pfad kollidieren.
- *
- * `highlightText` legt einen Substring-Highlight über alle Zeilen.
- */
-const GenericObjectDetail: React.FC<ObjectDetailProps> = ({ uuid, objectType, highlightText }) => {
-  const { t } = useTranslation(['common', 'detail']);
-  const currentFile = useCurrentFile();
-  const { data, loading, error, retry } = useObjectDetails(uuid, currentFile);
-
-  const renderedLines = useMemo(() => {
-    if (!data) return null;
-    return data.map((row, index) => (
-      <span key={index} className="content-line">
-        {highlightSubstring(String(row.content), highlightText)}
-        {'\n'}
-      </span>
-    ));
-  }, [data, highlightText]);
-
-  if (loading) return <LoadingSpinner message={t('common:loading') as string} />;
-  if (error) return <ErrorMessage message={error} onRetry={retry} />;
-  if (!data || data.length === 0) {
-    return <div className="no-references">{t('common:noData')}</div>;
-  }
-
-  const heading = t(`detail:headings.${objectType}`, { defaultValue: 'Details' });
-  const countLabel = objectType === 'Script' ? ` ${t('detail:scriptViewer.stepCount', { count: data.length })}` : '';
-
-  return (
-    <div className="object-detail" aria-label={heading as string}>
-      <h2 className="type-detail-heading">{heading}{countLabel}</h2>
-      <pre className="content-text">
-        <code>{renderedLines}</code>
-      </pre>
-    </div>
-  );
-};
-
-/**
- * Klartext-Darstellung des button-eingebetteten Script-Steps (Grouped Button /
- * Button). Nutzt dieselbe Token-Pipeline wie der Script-Detail-View (kind:'script',
- * 1-Zeilen-Payload) — das Backend liefert für ein Button-LayoutObject den Step als
- * Tokens, sodass ScriptViewer/ScriptStepSpan/RefSpan das Klartext-Rendering, den
- * Step-Namen-Tooltip (enrich) und die klickbaren Parameter übernehmen.
- *
- * LayoutObjects ohne eingebetteten Step liefern 0 Zeilen → die Sektion entfällt
- * komplett (kein Header, kein Platzhalter).
- */
-const LayoutObjectStepView: React.FC<{ uuid: string }> = ({ uuid }) => {
-  const { t } = useTranslation(['detail']);
-  const lang = useApiLang();
-  const currentFile = useCurrentFile();
-  const { data } = useScriptTokens(uuid, lang, currentFile);
-
-  if (!data || !data.lines || data.lines.length === 0) return null;
-
-  return (
-    <div className="object-detail layoutobject-step" aria-label={t('detail:buttonStep.heading', { defaultValue: 'Button-Aktion' }) as string}>
-      <h2 className="type-detail-heading">{t('detail:buttonStep.heading', { defaultValue: 'Button-Aktion' })}</h2>
-      <ScriptViewer tokens={data} hideToolbar />
-    </div>
-  );
-};
-
-/**
- * LayoutObject-Detail: bestehende Text-Ansicht (Position, Kalkulationen,
- * Referenzen) plus — bei Buttons — die Klartext-Sektion des eingebetteten Steps
- * oberhalb.
- */
-const LayoutObjectDetail: React.FC<ObjectDetailProps> = ({ uuid, objectType, highlightText }) => {
-  return (
-    <>
-      <LayoutObjectStepView uuid={uuid} />
-      <GenericObjectDetail uuid={uuid} objectType={objectType} highlightText={highlightText} />
-    </>
-  );
-};
-
-/**
  * Unified Object Detail Component.
  * - Layouts: interactive LayoutCanvas (Hover, Suche, Filter, Cross-Nav)
  * - Other types: formatted text in a code block
@@ -303,13 +199,13 @@ export const ObjectDetail: React.FC<ObjectDetailProps> = ({
     return <BaseTableDetail uuid={uuid} />;
   }
   if (objectType === 'LayoutObject') {
-    return (
-      <LayoutObjectDetail
-        uuid={uuid}
-        objectType={objectType}
-        highlightText={highlightText}
-      />
-    );
+    return <LayoutObjectDetail uuid={uuid} objectType={objectType} />;
+  }
+  if (objectType === 'Calculation') {
+    return <CalculationDetail uuid={uuid} highlightRefUuids={highlightUuids} onLiveMatchCount={onLiveMatchCount} />;
+  }
+  if (objectType === 'ScriptTrigger') {
+    return <ScriptTriggerDetail uuid={uuid} />;
   }
   return (
     <GenericObjectDetail

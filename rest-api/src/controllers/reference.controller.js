@@ -129,6 +129,19 @@ const getMeta = asyncWrap(async (req, res) => {
 });
 
 /**
+ * GET /reference/trigger-events?lang=de
+ * Lokalisierte Script-Trigger-Event-Beschriftungen (event_name → event_label,
+ * fm_spec ≥ 1.18.0). Graceful: ohne attachte/ältere Referenz-DB ein leeres
+ * `labels`-Objekt — der Client fällt auf die kanonischen Namen zurück.
+ */
+const getTriggerEvents = asyncWrap(async (req, res) => {
+  const data = await referenceService.getScriptTriggerEventLabels(
+    req.solutionContext, req.query.lang,
+  );
+  res.json({ success: true, data });
+});
+
+/**
  * GET /api/reference/steps/:idOrSlug/langs — lokalisierte Step-Daten +
  * Parameter über alle Sprachen in einem Call.
  */
@@ -381,6 +394,7 @@ function path_relative(absPath) {
 module.exports = {
   getCategories,
   getMeta,
+  getTriggerEvents,
   listSteps,
   getStepLangs,
   getStepGrammar,

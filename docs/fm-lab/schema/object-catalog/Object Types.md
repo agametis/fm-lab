@@ -2,7 +2,7 @@
 
 Part of the [FM-Lab schema](../Schema.md) · Object catalog · enumeration of [ObjectCatalog](ObjectCatalog.md)`.Object_Type`
 
-> Enumeration state: **schema version 1.14.0** (2026-07-16) — see [Schema Version History](../Schema%20Version%20History.md). Which types actually occur in a given catalog depends on the imported solution; the pipeline reports unknown types via the P6 check views instead of dropping them.
+> Enumeration state: **schema version 1.27.0** (2026-09-02) — see [Schema Version History](../Schema%20Version%20History.md). Which types actually occur in a given catalog depends on the imported solution; the pipeline reports unknown types via the P6 check views instead of dropping them.
 
 `Object_Type` classifies every row of [ObjectCatalog](ObjectCatalog.md). This page is the *enumeration* reference; the semantic description of each type — properties, hierarchies, reference vocabulary — lives in [FileMaker Object Types](../object-types/FileMaker%20Object%20Types.md), one page per type. Two groups exist: **exported types** mirror an XML catalog of the [FileMaker export](../../xml/XML.md) one-to-one, while **synthetic types** are derived by the import pipeline for things FileMaker has no catalog of its own for (variables, called functions, plugin components) — deriving them is what makes these objects addressable in the [ObjectLinks](ObjectLinks.md) graph at all.
 
@@ -43,6 +43,7 @@ Part of the [FM-Lab schema](../Schema.md) · Object catalog · enumeration of [O
 | `PluginFunction` | [PluginFunctionUsages](../catalog-tables/PluginFunctionUsages.md) | External plugin function (qualified as `MBS:<Component.Function>`), target of `calls_pluginfunction` |
 | `PluginComponent` | [PluginFunctionUsages](../catalog-tables/PluginFunctionUsages.md) | Plugin component aggregating its functions via `groups_into` |
 | `ScriptStepType` | [StepsForScripts](../catalog-tables/StepsForScripts.md) | Step *type* (e.g. "Set Variable") as a catalog object — one per step ID in use, incl. button-embedded steps |
+| `Calculation` | [CalculationsCatalog](../catalog-tables/CalculationsCatalog.md) | One calculation **instance** per owner slot (field calc, step parameter, hide condition, …) — identity Owner × role × index, exists also without DDR-Info; anchored via `has_calculation` (schema 1.22.0) |
 | `PasteIndexObject` | [XML PasteIndexList](../../xml/catalogs/XML%20PasteIndexList.md) | Copy/paste index entry (bookkeeping, no analytical role) |
 
 ## LayoutObject subtypes

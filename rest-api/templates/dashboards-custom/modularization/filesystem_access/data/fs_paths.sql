@@ -4,21 +4,21 @@
 
 WITH raw AS (
     SELECT
-        s.File_Name                                             AS file,
+        c.File_Name                                             AS file,
         s.Script_Name                                           AS carrier,
         s.Step_Name                                             AS detail,
         s.Step_Index + 1                                            AS step_index,
         s.Script_UUID                                           AS nav_uuid,
-        s.Step_UUID                                             AS step_uuid,
+        c.Owner_UUID                                            AS step_uuid,
         -- Alternation statt (?:win|mac)?-Gruppe: der API-SQL-Präprozessor ersetzt
         -- ":win" in einer non-capturing Gruppe sonst durch NULL (":<wort>"-Bindung).
         -- Längste Variante zuerst (filewin/filemac vor file).
-        regexp_extract(s.Calculation_Text,
+        regexp_extract(COALESCE(c.Formula_Text, c.Display_Text),
             '(?i)(filewin|filemac|file):[^"''\n\r]*', 0)         AS path_literal
-    FROM StepsForScripts s
-    WHERE s.Calculation_Text IS NOT NULL
-      AND regexp_matches(s.Calculation_Text, '(?i)(filewin|filemac|file):')
-      AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file'))
+    FROM CalculationsCatalog c
+    JOIN StepsForScripts s ON s.Step_UUID = c.Owner_UUID AND s.File_Name = c.File_Name
+    WHERE regexp_matches(COALESCE(c.Formula_Text, c.Display_Text), '(?i)(filewin|filemac|file):')
+      AND (getvariable('file') IS NULL OR c.File_Name = getvariable('file'))
 )
 SELECT
     file,

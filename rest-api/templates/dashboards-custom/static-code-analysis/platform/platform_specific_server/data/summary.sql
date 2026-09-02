@@ -47,12 +47,12 @@ resolved AS (
      AND tgt.Object_Type = 'Script'
 ),
 dynamic AS (
-    SELECT sc.File_Name AS file_name, sc.Script_UUID AS caller_uuid,
-           sc.Script_Name AS caller_name, sc.Step_Index + 1 AS step_no,
-           sc.Step_UUID AS step_uuid, trim(sc.Calc_Text) AS dyn_expr
-    FROM StepCalculations sc
-    JOIN StepsForScripts s ON s.Step_UUID = sc.Step_UUID AND s.File_Name = sc.File_Name
-    WHERE s.Step_ID IN (164, 210) AND s.Is_Enabled AND sc.Slot = 'List'
+    SELECT c.File_Name AS file_name, s.Script_UUID AS caller_uuid,
+           s.Script_Name AS caller_name, s.Step_Index + 1 AS step_no,
+           c.Owner_UUID AS step_uuid, trim(COALESCE(c.Formula_Text, c.Display_Text)) AS dyn_expr
+    FROM CalculationsCatalog c
+    JOIN StepsForScripts s ON s.Step_UUID = c.Owner_UUID AND s.File_Name = c.File_Name
+    WHERE s.Step_ID IN (164, 210) AND s.Is_Enabled AND c.Source_Path = 'Step/List'
 ),
 targets AS (
     SELECT resolved_uuid AS nav_uuid, resolved_name AS script_name,

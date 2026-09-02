@@ -125,5 +125,9 @@
   "unconnectedHidden_other": "{{count}} Knoten ohne Verbindung zum Fokus",
   "unconnectedToggleShow": "einblenden",
   "unconnectedToggleHide": "ausblenden",
-  "unconnectedToggleHint": "Knoten ohne Pfad zum Fokus entstehen durch den Typ-/Tiefenfilter — ein- oder ausblenden"
+  "unconnectedToggleHint": "Knoten ohne Pfad zum Fokus entstehen durch den Typ-/Tiefenfilter — ein- oder ausblenden",
+  "edge": {
+    "represents": "repräsentiert",
+    "buttonAction": "Button-Aktion"
+  }
 }

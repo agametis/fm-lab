@@ -17,7 +17,7 @@ All scripts of the solution, including the folder tree of the Script Workspace: 
 | `Modifications` | `BIGINT` |
 | `Last_Modified_By` | `VARCHAR` |
 | `Last_Modified_At` | `VARCHAR` |
-| `Option_Bitmask` | `INTEGER` |
+| `Option_Bitmask` | `BIGINT` |
 | `Is_Hidden` | `BOOLEAN` |
 | `Full_Access` | `BOOLEAN` |
 | `Sequence_ID` | `BIGINT` |

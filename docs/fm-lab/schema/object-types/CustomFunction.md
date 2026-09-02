@@ -45,6 +45,7 @@ All edges of a custom function are **calc-carried**: the formula body produces t
 | `reads_field` | [Field](Field.md) | usage | The formula reads a field |
 | `reads_variable` | [Variable](Variable.md) | usage | The formula reads a global variable |
 | `sets_variable` | [Variable](Variable.md) | usage | A `Let` assignment in the formula writes a variable |
+| `has_calculation` | [Calculation](Calculation.md) | containment | The formula body as an addressable [Calculation](Calculation.md) instance (subrole `custom_function`) — never counts as usage |
 
 ### Incoming links (CustomFunction as target)
 

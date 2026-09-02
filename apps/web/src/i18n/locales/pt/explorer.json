@@ -117,5 +117,9 @@
     "dirBoth": "Ambas",
     "empty": "Nenhum objeto deste tipo no grafo.",
     "focus": "Objeto de foco"
+  },
+  "edge": {
+    "represents": "representa",
+    "buttonAction": "Ação de botão"
   }
 }

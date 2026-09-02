@@ -1,5 +1,5 @@
 import { API_BASE } from '../../config/apiBase';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { PrimitiveProps } from '../types';
@@ -41,10 +41,17 @@ interface LogLine {
   level?: 'info' | 'warn' | 'error';
 }
 
-function eventToLine(evt: Record<string, unknown>): LogLine | null {
+// Übersetzer-Signatur lokal, damit eventToLine ohne i18next-Typimport auskommt.
+type Translate = (key: string, opts?: Record<string, unknown>) => string;
+
+// Rendert ein Roh-Event in eine Log-Zeile. Wird bei JEDEM Render mit dem
+// aktuellen `t` aufgerufen (die Komponente hält Roh-Events im State, keine
+// fertigen Strings) — nur so übersetzt ein Sprachwechsel auch bereits
+// angezeigte Zeilen um.
+function eventToLine(evt: Record<string, unknown>, t: Translate): LogLine | null {
   switch (evt.event) {
     case 'start':
-      return { text: '── Start ──', level: 'info' };
+      return { text: t('xmlConvert.logStart', { defaultValue: '── Start ──' }), level: 'info' };
     case 'progress': {
       const phase = String(evt.phase ?? '');
       const pct = typeof evt.pct === 'number' ? evt.pct : Number(evt.pct ?? 0);
@@ -89,25 +96,35 @@ function eventToLine(evt: Record<string, unknown>): LogLine | null {
     case 'reload':
       return {
         text: evt.ok === false
-          ? `Reload fehlgeschlagen: ${String(evt.error ?? '')}`
-          : 'Reload erfolgreich.',
+          ? t('xmlConvert.logReloadError', { defaultValue: 'Reload failed: {{error}}', error: String(evt.error ?? '') })
+          : t('xmlConvert.logReloadOk', { defaultValue: 'Reload successful.' }),
         level: evt.ok === false ? 'error' : 'info',
       };
     case 'aborted': {
       const reason = String(evt.reason ?? '');
       if (reason === 'oom') {
-        return { text: '⚠ Abgebrochen — nicht genügend Arbeitsspeicher (Lösung zu groß für dieses Environment).', level: 'error' };
+        return {
+          text: t('xmlConvert.logAbortedOom', {
+            defaultValue: '⚠ Aborted — not enough memory (solution too large for this environment).',
+          }),
+          level: 'error',
+        };
       }
       if (reason === 'incomplete') {
-        return { text: '⚠ Abgebrochen — Build unvollständig (Referenzauflösung fehlgeschlagen).', level: 'error' };
+        return {
+          text: t('xmlConvert.logAbortedIncomplete', {
+            defaultValue: '⚠ Aborted — build incomplete (reference resolution failed).',
+          }),
+          level: 'error',
+        };
       }
-      return { text: '── Abgebrochen ──', level: 'warn' };
+      return { text: t('xmlConvert.logAborted', { defaultValue: '── Aborted ──' }), level: 'warn' };
     }
     case 'done':
       return {
         text: evt.ok === false
-          ? `── Beendet mit Fehler (exit ${evt.exit_code ?? '?'}) ──`
-          : '── Beendet ──',
+          ? t('xmlConvert.logDoneError', { defaultValue: '── Finished with error (exit {{code}}) ──', code: evt.exit_code ?? '?' })
+          : t('xmlConvert.logDone', { defaultValue: '── Finished ──' }),
         level: evt.ok === false ? 'error' : 'info',
       };
     default:
@@ -119,7 +136,9 @@ export function XmlConvertLog({}: PrimitiveProps) {
   const { t, i18n } = useTranslation('dashboard');
   const lang = i18n.language;
   const [run, setRun] = useState<LastRun | null>(null);
-  const [lines, setLines] = useState<LogLine[]>([]);
+  // Roh-Events statt fertiger Zeilen: die Übersetzung passiert erst beim
+  // Rendern (useMemo unten), damit ein Sprachwechsel das ganze Log umzieht.
+  const [events, setEvents] = useState<Record<string, unknown>[]>([]);
   const [status, setStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
   const [liveCounts, setLiveCounts] = useState<{ processed: number; total: number; errorCount: number }>({
     processed: 0,
@@ -149,12 +168,7 @@ export function XmlConvertLog({}: PrimitiveProps) {
         const data = json?.data as LastRun | undefined;
         if (!data || !data.run_id) return;
         setRun(data);
-        const initialLines: LogLine[] = [];
-        for (const evt of data.events || []) {
-          const line = eventToLine(evt);
-          if (line) initialLines.push(line);
-        }
-        setLines(initialLines);
+        setEvents(data.events || []);
         setLiveCounts({
           processed: data.processed || 0,
           total: data.total || 0,
@@ -173,8 +187,7 @@ export function XmlConvertLog({}: PrimitiveProps) {
       const detail = (e as CustomEvent<XmlConvertEventDetail>).detail;
       if (!detail || !detail.evt) return;
       const evt = detail.evt;
-      const line = eventToLine(evt);
-      if (line) setLines(prev => [...prev, line]);
+      setEvents(prev => [...prev, evt]);
 
       if (evt.event === 'file_start') {
         // Gesamtzahl steht damit schon vor dem ersten abgeschlossenen File —
@@ -195,7 +208,7 @@ export function XmlConvertLog({}: PrimitiveProps) {
       if (evt.event === 'start') {
         // Bei Neustart Log und Counter resetten — der persistierte Record
         // wird beim done.ok=true gleich überschrieben.
-        setLines([{ text: '── Start ──', level: 'info' }]);
+        setEvents([{ event: 'start' }]);
         setLiveCounts({ processed: 0, total: 0, errorCount: 0 });
       }
     };
@@ -226,6 +239,17 @@ export function XmlConvertLog({}: PrimitiveProps) {
     window.addEventListener(STATUS_EVENT, onStatus);
     return () => window.removeEventListener(STATUS_EVENT, onStatus);
   }, [liveCounts]);
+
+  // Abgeleitete Log-Zeilen — sprachabhängig, daher `lang` in den Deps.
+  const lines = useMemo(() => {
+    const out: LogLine[] = [];
+    for (const evt of events) {
+      const line = eventToLine(evt, t as Translate);
+      if (line) out.push(line);
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, lang]);
 
   // Auto-Scroll auf neuestes Log-Ende.
   useEffect(() => {

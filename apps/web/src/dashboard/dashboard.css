@@ -487,7 +487,19 @@
   text-align: center;
 }
 
-/* Used-Filter-Toggle direkt hinter der Sucheingabe. Aktiviert sich nur, wenn
+/* Sucheingabe + das Kästchen, das ihre Reichweite erweitert („auch Einträge
+ * durchsuchen"), als eine Gruppe. Ohne sie verteilte `space-between` alle
+ * Kinder der Leiste gleichmäßig und der Used-Filter stünde nicht mehr rechts
+ * über der Zählerspalte. */
+.dash-search-bar__field {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* Used-Filter-Toggle am rechten Rand der Leiste. Aktiviert sich nur, wenn
  * der List-Container in seiner Spec `badgeOptions.filterable: true` setzt UND
  * Rows mit/ohne Badge gemischt sind (siehe primitives/List.tsx). */
 .dash-search-bar__toggle {
@@ -633,6 +645,31 @@
   color: var(--color-text-muted);
   font-style: italic;
   text-align: center;
+}
+/* Zweites Klickziel pro Zeile (`@row_action`): schmale Spalte am Zeilenende
+ * mit kleinem Pfeil-Button. Der Button bleibt dezent und färbt sich erst beim
+ * Hover der Zeile bzw. des Buttons selbst. */
+.dash-autotable__th--rowaction,
+.dash-autotable__rowaction-cell {
+  width: 2rem;
+  text-align: right;
+  white-space: nowrap;
+}
+.dash-autotable__rowaction {
+  padding: 1px 7px;
+  border: 1px solid var(--color-border, #ccc);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-secondary, #888);
+  cursor: pointer;
+  font-size: 0.9em;
+  line-height: 1.4;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+}
+.dash-autotable__rowaction:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: var(--color-hover-bg);
 }
 .dash-autotable__pager {
   display: flex;

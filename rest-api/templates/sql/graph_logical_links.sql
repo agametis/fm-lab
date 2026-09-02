@@ -1,11 +1,28 @@
 -- @title: Logical Links View (Graph Explorer)
 -- @description: Operationale Referenz-Kanten mit Sub-Objekten auf ihren Container hochgezogen
--- @version: 1.2.0
+-- @version: 1.4.0
 -- @author: Marcel / Claude
 -- @tags: graph, subgraph, logical-view
 -- @note: Ab v1.1.0 wird diese View regulär in convert-xml Phase 5 angelegt
 --        (sql/convert-xml/convert_xml_05_homes.sql) — diese Datei bleibt die
 --        KANONISCHE Definition; bei Änderung beide Stellen synchron halten.
+--        v1.4.0 (Feld-Verankerung, Converter 2.18.0): Objekt-Trigger-Spiegel
+--        (triggers_script von LayoutObject-Quellen, Subrole ≠ button_action)
+--        werden aufs ANGEZEIGTE FELD des Owners umgelenkt statt aufs Layout —
+--        das Feld ist der Datenanker der Beziehung, das Layout war ein Proxy
+--        („Layout triggert Script" ist falsch attribuiert). Kanten-Vertrag:
+--        Existenz-Semantik („≥1 Platzierung des Felds trägt den Trigger");
+--        Owner ohne Feld (UI-Kontrollen) und button_action bleiben layout-
+--        verankert; Is_Cross_File wird für den Feld-Zweig neu berechnet
+--        (Related-Field-Platzierungen).
+--        v1.3.0 (Graph-Policy, Converter 2.17.0): trigger_script UND die
+--        OnWindowTransaction-Feld-Kandidaten (reads_field·transaction_parameter_field)
+--        ausgeschlossen — Trigger-Knoten waren reine Satelliten ihres Scripts
+--        (0 eingehende Kanten, trigger_owner ist structural); die Owner↔Script-
+--        Affinität tragen die triggers_script-Spiegel aller drei Owner-Ebenen
+--        (P4 Block 21a). Der Graph-Tab eines Trigger-Fokus läuft über die
+--        Fokus-Brücke (graph_subgraph.sql ≥1.5.0: trigger_owner + trigger_script
+--        + Feld-Kandidaten aus raw_links).
 --        v1.2.0 (Stufe C): lokale Variablen ($x) ausgeschlossen — siehe DEFINITION (5).
 --
 -- ============================================================================
@@ -91,6 +108,17 @@ WITH container AS (
   FROM ObjectLinks
   WHERE Link_Role IN ('parent_layout', 'parent_script')
 ),
+field_anchor AS (
+  -- Feld-Anker der Objekt-Trigger-Spiegel (s. Kopf-Note v1.4.0): das vom Owner
+  -- angezeigte Feld; genau 1 je Trigger-Owner (korpusverifiziert), min()/arg_min()
+  -- als Determinismus-Guard. Owner ohne Feld fallen aufs Layout zurück.
+  SELECT Source_UUID AS owner, Source_File AS owner_file,
+         min(Target_UUID) AS fld,
+         arg_min(Target_File, Target_UUID) AS fld_file
+  FROM ObjectLinks
+  WHERE Link_Role = 'displays_field' AND Source_Type = 'LayoutObject'
+  GROUP BY 1, 2
+),
 local_var AS (
   -- Stufe C: lokale Variablen ($x; global=$$, superglobal=$$$). Prefix-Test
   -- exhaustiv (alle Variablen-Knoten beginnen mit '$'); Object_Type-Guard schützt
@@ -102,26 +130,51 @@ local_var AS (
     AND Object_Name NOT LIKE '$$%'
 ),
 hoisted AS (
+  -- Quell-Hoisting mit Feld-Anker-Sonderfall (v1.4.0): Event-Spiegel eines
+  -- feld-gebundenen Owners wandern aufs FELD, button_action bleibt Layout,
+  -- alles andere hoisted wie bisher auf den Container.
   SELECT
-    COALESCE(cs.parent, ol.Source_UUID) AS a,
+    CASE WHEN ol.Link_Role = 'triggers_script'
+          AND ol.Link_Subrole IS DISTINCT FROM 'button_action'
+          AND fa.fld IS NOT NULL
+         THEN fa.fld
+         ELSE COALESCE(cs.parent, ol.Source_UUID) END AS a,
     -- Klon-Robustheit: Datei mitführen. Containment (parent_layout/parent_script) ist
     -- datei-lokal → der hochgezogene Container liegt in DERSELBEN Datei wie das Sub-
-    -- Objekt → a_file = ol.Source_File (analog b_file). Erlaubt dem Subgraph-Walk, einer
-    -- Kante datei-genau zu folgen statt eine geklonte UUID über alle Dateien zu mergen.
-    ol.Source_File AS a_file,
+    -- Objekt → a_file = ol.Source_File (analog b_file). Der FELD-Anker kann dagegen in
+    -- einer ANDEREN Datei liegen (Related-Field-Platzierung) → a_file/Is_Cross_File
+    -- werden für diesen Zweig neu bestimmt.
+    CASE WHEN ol.Link_Role = 'triggers_script'
+          AND ol.Link_Subrole IS DISTINCT FROM 'button_action'
+          AND fa.fld IS NOT NULL
+         THEN fa.fld_file
+         ELSE ol.Source_File END AS a_file,
     COALESCE(ct.parent, ol.Target_UUID) AS b,
     ol.Target_File AS b_file,
     ol.Link_Role,
     ol.Link_Subrole,
     ol.Link_Type,
-    ol.Is_Cross_File
+    CASE WHEN ol.Link_Role = 'triggers_script'
+          AND ol.Link_Subrole IS DISTINCT FROM 'button_action'
+          AND fa.fld IS NOT NULL
+         THEN (fa.fld_file IS DISTINCT FROM ol.Target_File)
+         ELSE ol.Is_Cross_File END AS Is_Cross_File
   FROM ObjectLinks ol
   LEFT JOIN container cs ON cs.child = ol.Source_UUID
   LEFT JOIN container ct ON ct.child = ol.Target_UUID
+  LEFT JOIN field_anchor fa ON fa.owner = ol.Source_UUID AND fa.owner_file = ol.Source_File
   WHERE ol.Link_Type = 'operational'
-    -- Containment-Gerüst raus (parent_table bleibt: echte Field→BaseTable-Referenz)
+    -- Containment-Gerüst raus (parent_table bleibt: echte Field→BaseTable-Referenz).
+    -- trigger_script raus (Graph-Policy, s. Kopf-Note v1.3.0): Owner↔Script-
+    -- Affinität tragen die triggers_script-Spiegel; Trigger-Knoten sind sonst
+    -- reine Satelliten ihres Scripts (trigger_owner ist structural).
     AND ol.Link_Role NOT IN
-        ('parent_layout', 'parent_script', 'parent_object', 'parent_folder')
+        ('parent_layout', 'parent_script', 'parent_object', 'parent_folder',
+         'trigger_script')
+    -- dito trigger-verankerte OnWindowTransaction-Namens-Kandidaten (Block 18c):
+    -- spekulatives Late-Binding, hielte den Trigger-Knoten als Satellit im Graph
+    AND NOT (ol.Link_Role = 'reads_field'
+             AND ol.Link_Subrole = 'transaction_parameter_field')
     -- Waisen raus: beide Endpunkte müssen katalogisiert sein
     AND ol.Source_UUID IN (SELECT Object_UUID FROM ObjectCatalog)
     AND ol.Target_UUID IN (SELECT Object_UUID FROM ObjectCatalog)

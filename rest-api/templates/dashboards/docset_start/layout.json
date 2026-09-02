@@ -44,13 +44,13 @@
             "props": {
               "rowTemplate": {
                 "primary": "{{name}}",
-                "badge": "{{function_count}}",
+                "badge": "{{entry_count}}",
                 "badgeOptions": {
                   "hideZero": true
                 },
                 "onClick": {
-                  "action": "{{action}}",
-                  "argsString": "{{action_args}}"
+                  "action": "{{_action}}",
+                  "argsString": "{{_action_args}}"
                 }
               },
               "empty": {

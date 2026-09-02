@@ -36,10 +36,12 @@ The `<LayoutObject>` element has a small common surface plus a **type-specific p
 | hide condition calculation | `Hide_Calculation_Text` | Also tokenized via its `DDRREF` hash |
 | tooltip calculation | `Tooltip_Calculation_Text` | |
 | button/label calculation | `Label_Calculation_Text` | |
-| script trigger parameter | `ScriptTrigger_Parameter_Text` | |
-| text content (`<Text>/<StyledText>/<Data>`) | `Text_Content` | Plain text of Text objects |
+| script trigger parameter | `ScriptTrigger_Parameter_Text` | Object-level aggregate (all parameter texts concatenated); the per-trigger truth is `ScriptTriggers.Trigger_Parameter_Text` |
+| text content (`<Text>/<StyledText>/<Data>`) | `Text_Content` | Plain text of Text objects — including merge fields (`<<::field>>`), merge variables (`<<$$var>>`) and layout calculations (`<<ƒ:…>>`), which resolve into `displays_field` / `displays_variable` edges and `display_calculation` instances |
+| conditional formatting (`<Conditions><Formatting>`) | [LayoutObjectConditions](../catalog-tables/LayoutObjectConditions.md) | One row per rule with parsed condition, operands, enable bit and format — never regex `Object_XML` for CF |
+| `{{…}}` symbols in the text | [LayoutObjectSymbols](../catalog-tables/LayoutObjectSymbols.md) | Symbol inventory per text object — never regex `Text_Content` for symbols |
 | button-embedded step (`Button/action/<Step>`) | — (links) | The single step's references are resolved into links; the step type registers as [ScriptStepType](ScriptStepType.md); the raw step stays in `Object_XML` |
-| conditional formatting, placeholders, chart definitions, sort specifications, formatting/styles, tab order, animations, icon data | — | Payload details without dedicated columns — **not extracted** (in `Object_XML`); their calculations are covered via `DDRREF` hashes ([XML DDR_INFO](../../xml/catalogs/XML%20DDR_INFO.md)) and appear as links with calc-slot subroles |
+| placeholders, chart definitions, sort specifications, formatting/styles, tab order, animations, icon data | — | Payload details without dedicated columns — **not extracted** (in `Object_XML`); their calculations are covered via `DDRREF` hashes ([XML DDR_INFO](../../xml/catalogs/XML%20DDR_INFO.md)) and appear as links with calc-slot subroles |
 
 ## Object hierarchy
 
@@ -57,7 +59,7 @@ Layout objects carry more link roles than any other source type: display edges, 
 |---|---|---|---|
 | `displays_field` | [Field](Field.md) | usage | Field control displays the field |
 | `displays_variable` | [Variable](Variable.md) | usage | Merge variable displayed on the layout |
-| `triggers_script` | [Script](Script.md) | usage | Button or trigger carrier performs the script |
+| `triggers_script` | [Script](Script.md) | usage | Button action or trigger mirror performs the script (subrole = event or `button_action`) — the counting where-used edge for trigger-fired scripts |
 | `uses_valuelist` | [ValueList](ValueList.md) | usage | Field control uses the value list |
 | `portal_context` | [TableOccurrence](TableOccurrence.md) | usage | The portal's data-source occurrence |
 | `navigates_to_layout` | [Layout](Layout.md) | usage | Button-embedded Go to Layout / GTRR step |
@@ -74,6 +76,7 @@ Layout objects carry more link roles than any other source type: display edges, 
 | `calls_pluginfunction` | [PluginFunction](PluginFunction.md) | usage | An object calculation calls a plugin function |
 | `parent_layout` | [Layout](Layout.md) | containment | The object belongs to the layout |
 | `parent_object` | LayoutObject | containment | The object's container parent (tab panel, group, popover, …) |
+| `has_calculation` | [Calculation](Calculation.md) | containment | Every calculation slot of the object (hide, tooltip, conditional formatting, portal filter, …) as an addressable instance (subrole = `Calc_Role`, indexed for repeating slots) — never counts as usage |
 
 ### Incoming links (LayoutObject as target)
 
@@ -82,7 +85,7 @@ Layout objects carry more link roles than any other source type: display edges, 
 | `parent_object` | LayoutObject | containment | A nested child object points here |
 | `trigger_owner` | [ScriptTrigger](ScriptTrigger.md) | containment | Object-level trigger hangs on this object (subrole = event type) |
 
-For calculation-carried roles the `Link_Subrole` names the **calc slot** that contains the reference — the DDR calc-anchor suffix: `Hide`, `Tooltip`, `Placeholder`, `Condition_1` (conditional formatting), `Filter` (portal filter), chart series keys like `Series_Value` / `YSeriesList_0_Value` *(corpus)*. References of a button-embedded step carry the step index instead. This makes "which formula on this object touches that field?" answerable from the link table alone.
+For calculation-carried roles the `Link_Subrole` names the **calc slot** that contains the reference — the DDR calc-anchor suffix: `Hide`, `Tooltip`, `Placeholder`, `Condition_1` (conditional formatting), `Filter` (portal filter), `ScriptTrigger_<id>` (trigger parameter), `DisplayCalculations_<i>` (merge/layout calculation), chart series keys like `Series_Value` / `YSeriesList_0_Value` *(corpus)*. References of a button-embedded step carry the step index instead. This makes "which formula on this object touches that field?" answerable from the link table alone.
 
 ## Enumerations
 

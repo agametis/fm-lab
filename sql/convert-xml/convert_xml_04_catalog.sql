@@ -947,6 +947,674 @@ FROM resolved
 WHERE component_name IS NOT NULL
   AND component_name != '';
 
+-- ========================================
+-- CalculationsCatalog — Berechnungs-Instanzen als Objekte (Schema 1.22.0)
+-- ========================================
+-- Eine Zeile pro Berechnungs-INSTANZ (Verwendungsort), NIE pro Formel-Inhalt:
+-- Identität = Owner × Calc_Role × Calc_Index (strukturell aus SaXML), der
+-- Formel-Hash ist eine EIGENSCHAFT (SaXML dedupliziert ChunkLists inhaltsbasiert
+-- — 1 Hash ↔ bis zu 63k Instanzen; ein Hash-Objekt wäre kein Verwendungsort).
+-- Nachfolger/Superset von v_calc_anchors (die in der Analysis-Views-Phase zur
+-- materialisierten Fassade über dieser Tabelle wird).
+--
+-- Zwei Quellklassen, per Anti-Join dedupliziert:
+--   (A) DDR-Anker aus DDR_Calculations (_<OwnerUUID>_<Suffix>) — tragen Hash,
+--       Chunk-Aggregate und Display_Text; Owner-Auflösung über ObjectCatalog.
+--       Suffix-Vokabular (korpus-verifiziert): Feld '0'=Haupt-Calc/'1'=AutoEnter;
+--       ScriptStep = Calc-POSITION (137.149/137.149 matchen StepCalculations.
+--       Calc_Position exakt) bzw. 'XML'/'XSL' (XSLT-Slots); LayoutObject
+--       Hide/Tooltip/Condition_N/action/…; leeres Suffix = CF-Body.
+--   (B) strukturelle Slots OHNE eigenen DDR-Anker — Instanzen existieren auch
+--       ohne DDR-Info: FieldsForTables-Slots (Validierung/Fehlermeldung ankern
+--       NIE, Haupt/AutoEnter nur mit DDR), StepCalculations,
+--       CalcsForCustomFunctions, LayoutObjects-Textslots,
+--       ScriptTriggers-Parameter (per Trigger, alle drei Owner-Ebenen),
+--       PrivilegeSetRecordAccess. Hash-lose Zeilen: Formula_Hash NULL.
+--
+-- Calc_Index: 1-basiert je (File, Owner, Rolle) in Dokument-/Positions-Ordnung
+-- (deterministisch über stabile Eingaben: Calc-Position, Suffix-Nummern,
+-- DDR-Anker-UUID — NICHT FileMakers @position allein, die in manchen
+-- Parameter-Containern neu startet).
+-- Edge_Subrole = der Link_Subrole-Wert, den die owner-projizierten Kanten
+-- dieser Instanz tragen (Join-Schlüssel der View v_calculation_links).
+--
+-- PERFORMANCE (Anti-Muster-Warnung): In den LEFT-JOIN-ON-Klauseln dieses CTAS
+-- stehen bewusst KEINE rein linksseitigen Prädikate (a.Owner_Type = '…',
+-- i.Owner_Name IS NULL o. ä.) — solche Bedingungen sind Teil der Join-Semantik,
+-- nicht als Filter pushbar, und kippen DuckDB in BLOCKWISE_NL_JOIN
+-- (Kreuzprodukt: 18 s statt 0,6 s auf einem 187k-Zeilen-Korpus). Der
+-- Typ-Dispatch läuft stattdessen über die per Owner_Type gegateten
+-- CASE-Konsumenten; die ON-Klauseln bleiben reine Equi-Joins (Step_Pos dafür
+-- in a_owner vorberechnet). Beim Erweitern: neue Dispatch-Joins nach demselben
+-- Muster bauen.
+CREATE OR REPLACE TABLE CalculationsCatalog AS
+WITH chunk_pieces AS (
+    -- Ein Scan über DDR_Calculations: pro Chunk das lesbare Fragment
+    -- (identisch zur bisherigen v_calc_anchors-Mechanik).
+    SELECT
+        Calc_UUID,
+        File_Name,
+        Calc_Hash,
+        Chunk_Index,
+        Chunk_Type,
+        CASE Chunk_Type
+            WHEN 'FieldRef' THEN
+                COALESCE(xml_extract_text(Chunk_Content, '/Chunk/FieldReference/TableOccurrenceReference/@name')[1] || '::', '')
+                || COALESCE(xml_extract_text(Chunk_Content, '/Chunk/FieldReference/@name')[1], '?')
+            ELSE COALESCE(xml_extract_text(Chunk_Content, '/Chunk')[1], '')
+        END AS Piece
+    FROM DDR_Calculations
+),
+ddr_inst AS (
+    SELECT
+        Calc_UUID,
+        File_Name,
+        MIN(Calc_Hash)                                                      AS Calc_Hash,
+        upper(regexp_extract(Calc_UUID, '_([0-9A-Fa-f-]{36})', 1))          AS Anchor_UUID,
+        regexp_replace(Calc_UUID, '^_[0-9A-Fa-f-]{36}_?', '')               AS Calc_Kind_Raw,
+        COUNT(*)                                                            AS Chunk_Count,
+        COUNT(*) FILTER (WHERE Chunk_Type NOT IN ('NoRef', 'Comment'))      AS Ref_Count,
+        string_agg(Piece, '' ORDER BY Chunk_Index)                          AS Display_Text
+    FROM chunk_pieces
+    GROUP BY Calc_UUID, File_Name
+),
+-- Hash-Repräsentant je (File, Hash) — Anreicherung der strukturellen B-Zeilen,
+-- deren Slot einen Hash trägt, aber keinen eigenen Anker (Feld-Validierung).
+hash_rep AS (
+    SELECT File_Name, Calc_Hash, Chunk_Count, Ref_Count, Display_Text
+    FROM ddr_inst
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY File_Name, Calc_Hash ORDER BY Calc_UUID) = 1
+),
+-- StepCalculations mit deterministischem Vertreter je (Step, Position) —
+-- 21 exakte Duplikat-Gruppen im Korpus (Quell-Doppel-Serialisierung).
+step_slots AS (
+    SELECT Step_UUID, File_Name, Calc_Position, Slot, Slot_Seq, Calc_Text,
+           Script_Name, Step_Index, Step_Name,
+           ROW_NUMBER() OVER (PARTITION BY Step_UUID, File_Name, Calc_Position
+                              ORDER BY Slot, Slot_Seq, Calc_Text) AS pos_rn
+    FROM StepCalculations
+),
+-- PrivilegeSetRecordAccess-Vertreter je (Set, Hash) — derselbe Hash kann
+-- mehrere (Tabelle, Operation)-Slots bedienen; deterministischer Erst-Treffer
+-- (die exakte Slot-Zuordnung des DDR-Suffix ist nicht dekodierbar,
+-- dokumentierte Modellgrenze).
+pra_rep AS (
+    SELECT PrivilegeSet_UUID, File_Name, DDR_Hash, Operation, BaseTable_Name,
+           Context_TO_UUID, Context_TO_Name, Calculation_Text,
+           ROW_NUMBER() OVER (PARTITION BY PrivilegeSet_UUID, File_Name, DDR_Hash
+                              ORDER BY Operation, BaseTable_Name) AS rn
+    FROM PrivilegeSetRecordAccess
+),
+lo_rep AS (
+    SELECT Object_UUID, File_Name, Hide_Calculation_Text, Tooltip_Calculation_Text,
+           Label_Calculation_Text, ScriptTrigger_Parameter_Text,
+           ROW_NUMBER() OVER (PARTITION BY Object_UUID, File_Name ORDER BY Object_ID) AS rn
+    FROM LayoutObjects
+),
+-- (A) DDR-Anker mit Owner-Auflösung. Nicht auflösbare Anker bleiben erhalten
+-- (Owner_Type='unresolved', Owner_UUID=Anchor_UUID — P6-überwacht, Soll 0).
+a_owner AS (
+    SELECT
+        di.File_Name,
+        di.Calc_UUID                                AS DDR_Calc_UUID,
+        di.Calc_Hash,
+        di.Calc_Kind_Raw,
+        di.Chunk_Count,
+        di.Ref_Count,
+        di.Display_Text,
+        (di.Ref_Count = 0)                          AS Is_Static,
+        COALESCE(oc.Object_Type, 'unresolved')      AS Owner_Type,
+        COALESCE(oc.Object_UUID, di.Anchor_UUID)    AS Owner_UUID,
+        oc.Object_Name                              AS Owner_Name,
+        -- vorberechnete Step-Position: Equi-Schlüssel für den step_slots-Join
+        -- und den b_step-Anti-Join (hält deren Bedingungen ausdrucks-frei)
+        TRY_CAST(regexp_extract(di.Calc_Kind_Raw, '^([0-9]+)', 1) AS BIGINT) AS Step_Pos,
+        -- vorberechnete Trigger-ID: Equi-Schlüssel für den ScriptTriggers-Join
+        -- (Formula_Text der Trigger-Parameter, Schema 1.26.0). Extraktion NUR
+        -- über das Suffix-Muster — NIE über Calc_Index (positions-, nicht
+        -- slot-basiert; bekannte Falle aus dem CF-FK).
+        TRY_CAST(regexp_extract(di.Calc_Kind_Raw, '^ScriptTrigger_([0-9]+)$', 1) AS BIGINT) AS Trigger_Pos
+    FROM ddr_inst di
+    LEFT JOIN ObjectCatalog oc
+           ON upper(oc.Object_UUID) = di.Anchor_UUID
+          AND oc.File_Name          = di.File_Name
+    WHERE di.Anchor_UUID <> ''
+),
+a_rows AS (
+    SELECT
+        a.File_Name, a.Owner_UUID, a.Owner_Type, a.Owner_Name,
+        CAST(NULL AS VARCHAR)          AS Role_Override,
+        a.Calc_Kind_Raw,
+        a.DDR_Calc_UUID,
+        a.Calc_Hash                    AS Formula_Hash,
+        -- strukturelle Klartext-Anreicherung je Owner-Typ (NULL, wo die Quelle
+        -- keinen Klartext führt — Display_Text bleibt die Chunk-Rekonstruktion)
+        CASE
+            WHEN a.Owner_Type = 'Field' AND a.Calc_Kind_Raw = '0' THEN ft.Calculation_Text
+            WHEN a.Owner_Type = 'Field' AND a.Calc_Kind_Raw = '1' THEN ft.AE_Calc_Text
+            WHEN a.Owner_Type = 'ScriptStep'                      THEN ss.Calc_Text
+            WHEN a.Owner_Type = 'CustomFunction'                  THEN cfc.Calculation_Code
+            WHEN a.Owner_Type = 'PrivilegeSet'                    THEN pra.Calculation_Text
+            WHEN a.Owner_Type = 'LayoutObject' AND a.Calc_Kind_Raw = 'Hide'    THEN lo.Hide_Calculation_Text
+            WHEN a.Owner_Type = 'LayoutObject' AND a.Calc_Kind_Raw = 'Tooltip' THEN lo.Tooltip_Calculation_Text
+            WHEN a.Owner_Type = 'LayoutObject' AND a.Calc_Kind_Raw = 'Label'   THEN lo.Label_Calculation_Text
+            -- Trigger-Parameter (alle 3 Owner-Ebenen): Klartext aus
+            -- ScriptTriggers.Trigger_Parameter_Text (Schema 1.26.0)
+            WHEN a.Calc_Kind_Raw LIKE 'ScriptTrigger\_%' ESCAPE '\'            THEN st.Trigger_Parameter_Text
+        END                            AS Formula_Text,
+        pra.Context_TO_UUID,
+        pra.Context_TO_Name,
+        a.Is_Static, a.Chunk_Count, a.Ref_Count, a.Display_Text,
+        CASE
+            WHEN a.Owner_Type = 'Field' AND a.Calc_Kind_Raw = '0' THEN 'Field/Calculation'
+            WHEN a.Owner_Type = 'Field' AND a.Calc_Kind_Raw = '1' THEN 'Field/AutoEnter/Calculated'
+            WHEN a.Owner_Type = 'ScriptStep' AND ss.Slot IS NOT NULL THEN 'Step/' || ss.Slot
+            WHEN a.Owner_Type = 'ScriptStep'                      THEN 'Step/@position=' || a.Calc_Kind_Raw
+            WHEN a.Owner_Type = 'CustomFunction'                  THEN 'CustomFunction/Calculation'
+            WHEN a.Owner_Type = 'PrivilegeSet' AND pra.Operation IS NOT NULL
+                 THEN 'RecordAccess/' || pra.Operation || ':' || COALESCE(pra.BaseTable_Name, '?')
+            WHEN a.Owner_Type = 'PrivilegeSet'                    THEN 'RecordAccess'
+            ELSE a.Owner_Type || '/' || NULLIF(a.Calc_Kind_Raw, '')
+        END                            AS Source_Path
+    FROM a_owner a
+    -- Reine Equi-Joins ohne a.Owner_Type-Prädikate (Blockwise-NL-Falle, s. Blockkopf).
+    -- Jede Quelltabelle enthält nur Owner EINES Typs und die Vertreter
+    -- (pos_rn/rn = 1) sind je Schlüssel eindeutig → kein Fan-out; die
+    -- CASE-Konsumenten oben bleiben per Owner_Type gegated.
+    LEFT JOIN FieldsForTables ft
+           ON ft.Field_UUID = a.Owner_UUID AND ft.File_Name = a.File_Name
+    LEFT JOIN step_slots ss
+           ON ss.pos_rn = 1
+          AND ss.Step_UUID = a.Owner_UUID AND ss.File_Name = a.File_Name
+          AND ss.Calc_Position = a.Step_Pos
+    LEFT JOIN CalcsForCustomFunctions cfc
+           ON cfc.CF_UUID = a.Owner_UUID AND cfc.File_Name = a.File_Name
+    LEFT JOIN pra_rep pra
+           ON pra.rn = 1
+          AND pra.PrivilegeSet_UUID = a.Owner_UUID AND pra.File_Name = a.File_Name
+          AND pra.DDR_Hash = a.Calc_Hash
+    LEFT JOIN lo_rep lo
+           ON lo.rn = 1
+          AND lo.Object_UUID = a.Owner_UUID AND lo.File_Name = a.File_Name
+    -- Trigger-Parameter-Klartext: PK (Trigger_ID, Owner_UUID, File_Name) →
+    -- max. 1 Treffer; Trigger_Pos ist für Nicht-Trigger-Anker NULL (kein Match).
+    LEFT JOIN ScriptTriggers st
+           ON st.Owner_UUID = a.Owner_UUID AND st.File_Name = a.File_Name
+          AND st.Trigger_ID = a.Trigger_Pos
+),
+-- (B1) Feld-Slots ohne eigenen DDR-Anker. Haupt-/AutoEnter-Slots ankern mit
+-- DDR ('0'/'1') — Anti-Join je Slot; Validierung/Fehlermeldung ankern NIE.
+b_field AS (
+    SELECT * FROM (
+        SELECT f.File_Name, f.Field_UUID AS Owner_UUID, 'Field' AS Owner_Type,
+               f.Table_Name || '::' || f.Field_Name AS Owner_Name,
+               'field_calculation' AS Role_Override, '0' AS Calc_Kind_Raw,
+               f.DDR_Hash AS Formula_Hash, f.Calculation_Text AS Formula_Text,
+               'Field/Calculation' AS Source_Path
+        FROM FieldsForTables f
+        WHERE (f.DDR_Hash IS NOT NULL OR NULLIF(f.Calculation_Text, '') IS NOT NULL)
+          AND NOT EXISTS (SELECT 1 FROM a_owner a
+                           WHERE a.Owner_UUID = f.Field_UUID AND a.File_Name = f.File_Name
+                             AND a.Owner_Type = 'Field' AND a.Calc_Kind_Raw = '0')
+        UNION ALL
+        SELECT f.File_Name, f.Field_UUID, 'Field',
+               f.Table_Name || '::' || f.Field_Name,
+               'auto_enter', '1',
+               f.AE_Calc_Hash, f.AE_Calc_Text,
+               'Field/AutoEnter/Calculated'
+        FROM FieldsForTables f
+        WHERE (f.AE_Calc_Hash IS NOT NULL OR NULLIF(f.AE_Calc_Text, '') IS NOT NULL)
+          AND NOT EXISTS (SELECT 1 FROM a_owner a
+                           WHERE a.Owner_UUID = f.Field_UUID AND a.File_Name = f.File_Name
+                             AND a.Owner_Type = 'Field' AND a.Calc_Kind_Raw = '1')
+        UNION ALL
+        SELECT f.File_Name, f.Field_UUID, 'Field',
+               f.Table_Name || '::' || f.Field_Name,
+               'validation', NULL,
+               f.Validation_Calc_Hash, f.Validation_Calc_Text,
+               'Field/Validation/Calculated'
+        FROM FieldsForTables f
+        WHERE (f.Validation_Calc_Hash IS NOT NULL OR NULLIF(f.Validation_Calc_Text, '') IS NOT NULL)
+          AND NOT EXISTS (SELECT 1 FROM a_owner a
+                           WHERE a.Owner_UUID = f.Field_UUID AND a.File_Name = f.File_Name
+                             AND a.Owner_Type = 'Field' AND a.Calc_Kind_Raw = '2')
+        UNION ALL
+        -- Fehlermeldungs-Berechnung: nur der Hash ist strukturell greifbar
+        -- (Validation_Message ist die STATISCHE Meldung, nicht die Formel).
+        SELECT f.File_Name, f.Field_UUID, 'Field',
+               f.Table_Name || '::' || f.Field_Name,
+               'validation_message', NULL,
+               f.Validation_Message_Calc_Hash, NULL,
+               'Field/Validation/MessageCalc'
+        FROM FieldsForTables f
+        WHERE f.Validation_Message_Calc_Hash IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM a_owner a
+                           WHERE a.Owner_UUID = f.Field_UUID AND a.File_Name = f.File_Name
+                             AND a.Owner_Type = 'Field' AND a.Calc_Kind_Raw = '4')
+    )
+),
+-- (B2) Step-Slots ohne DDR-Anker (Dateien ohne DDR-Info bzw. anker-lose Slots)
+b_step AS (
+    SELECT DISTINCT
+        sc.File_Name, sc.Step_UUID AS Owner_UUID, 'ScriptStep' AS Owner_Type,
+        sc.Script_Name || ' [' || sc.Step_Index || '] ' || sc.Step_Name AS Owner_Name,
+        'step_parameter' AS Role_Override,
+        sc.Calc_Position::VARCHAR AS Calc_Kind_Raw,
+        CAST(NULL AS VARCHAR) AS Formula_Hash,
+        sc.Calc_Text AS Formula_Text,
+        'Step/' || sc.Slot AS Source_Path
+    FROM step_slots sc
+    WHERE sc.pos_rn = 1
+      AND NOT EXISTS (SELECT 1 FROM a_owner a
+                       WHERE a.Owner_UUID = sc.Step_UUID AND a.File_Name = sc.File_Name
+                         AND a.Owner_Type = 'ScriptStep'
+                         AND a.Step_Pos = sc.Calc_Position)
+),
+-- (B3) CF-Bodies ohne DDR-Anker
+b_cf AS (
+    SELECT
+        cfc.File_Name, cfc.CF_UUID AS Owner_UUID, 'CustomFunction' AS Owner_Type,
+        cfc.CF_Name AS Owner_Name,
+        'custom_function' AS Role_Override, '' AS Calc_Kind_Raw,
+        cfc.DDR_Hash AS Formula_Hash, cfc.Calculation_Code AS Formula_Text,
+        'CustomFunction/Calculation' AS Source_Path
+    FROM CalcsForCustomFunctions cfc
+    WHERE NULLIF(cfc.Calculation_Code, '') IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM a_owner a
+                       WHERE a.Owner_UUID = cfc.CF_UUID AND a.File_Name = cfc.File_Name
+                         AND a.Owner_Type = 'CustomFunction')
+),
+-- (B4) LayoutObject-Textslots ohne DDR-Anker (nur die 3 in P1 extrahierten
+-- Klartext-Slots Hide/Tooltip/Label; alle übrigen LO-Slots existieren nur mit
+-- DDR-Info — Trigger-Parameter kommen per-Trigger aus B4b)
+b_lo AS (
+    SELECT * FROM (
+        SELECT lo.File_Name, lo.Object_UUID AS Owner_UUID, 'LayoutObject' AS Owner_Type,
+               CAST(NULL AS VARCHAR) AS Owner_Name,
+               'hide' AS Role_Override, 'Hide' AS Calc_Kind_Raw,
+               CAST(NULL AS VARCHAR) AS Formula_Hash,
+               lo.Hide_Calculation_Text AS Formula_Text,
+               'LayoutObject/HideCondition' AS Source_Path
+        FROM lo_rep lo
+        WHERE lo.rn = 1 AND NULLIF(lo.Hide_Calculation_Text, '') IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM a_owner a
+                           WHERE a.Owner_UUID = lo.Object_UUID AND a.File_Name = lo.File_Name
+                             AND a.Calc_Kind_Raw = 'Hide')
+        UNION ALL
+        SELECT lo.File_Name, lo.Object_UUID, 'LayoutObject', NULL,
+               'tooltip', 'Tooltip', NULL, lo.Tooltip_Calculation_Text,
+               'LayoutObject/Tooltip'
+        FROM lo_rep lo
+        WHERE lo.rn = 1 AND NULLIF(lo.Tooltip_Calculation_Text, '') IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM a_owner a
+                           WHERE a.Owner_UUID = lo.Object_UUID AND a.File_Name = lo.File_Name
+                             AND a.Calc_Kind_Raw = 'Tooltip')
+        UNION ALL
+        SELECT lo.File_Name, lo.Object_UUID, 'LayoutObject', NULL,
+               'button_label', 'Label', NULL, lo.Label_Calculation_Text,
+               'LayoutObject/Label'
+        FROM lo_rep lo
+        WHERE lo.rn = 1 AND NULLIF(lo.Label_Calculation_Text, '') IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM a_owner a
+                           WHERE a.Owner_UUID = lo.Object_UUID AND a.File_Name = lo.File_Name
+                             AND a.Calc_Kind_Raw = 'Label')
+    )
+),
+-- (B4b) Trigger-Parameter ohne DDR-Anker — per Trigger aus ScriptTriggers
+-- (Schema 1.26.0), alle drei Owner-Ebenen (LayoutObject/Layout/File; Layout und
+-- File hatten zuvor OHNE DDR gar keine Instanz). Calc_Kind_Raw trägt die echte
+-- Trigger-ID → Edge_Subrole und damit die Event-Zuordnung der LO-Trigger-
+-- Tabelle funktionieren auch ohne DDR-Info; die frühere kollabierte
+-- Ein-Instanz-Zeile pro Objekt (Quelle LayoutObjects.ScriptTrigger_Parameter_
+-- Text-Aggregat, Calc_Kind_Raw NULL) entfällt. Anti-Join jetzt pro Trigger-ID
+-- statt pauschal gegen jeden ScriptTrigger_-Anker des Owners.
+b_trig AS (
+    SELECT
+        st.File_Name, st.Owner_UUID, st.Owner_Type AS Owner_Type,
+        CAST(NULL AS VARCHAR) AS Owner_Name,
+        'script_trigger_parameter' AS Role_Override,
+        'ScriptTrigger_' || st.Trigger_ID AS Calc_Kind_Raw,
+        CAST(NULL AS VARCHAR) AS Formula_Hash,
+        st.Trigger_Parameter_Text AS Formula_Text,
+        st.Owner_Type || '/ScriptTrigger_' || st.Trigger_ID || '/Parameter' AS Source_Path
+    FROM ScriptTriggers st
+    WHERE NULLIF(st.Trigger_Parameter_Text, '') IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM a_owner a
+                       WHERE a.Owner_UUID = st.Owner_UUID AND a.File_Name = st.File_Name
+                         AND a.Calc_Kind_Raw = 'ScriptTrigger_' || st.Trigger_ID)
+),
+-- (B5) Record-Access-Calcs ohne DDR-Anker. Anti-Join auf OWNER-Ebene (nicht
+-- per Hash): PrivilegeSetRecordAccess.DDR_Hash kann trotz DDR-Info leer sein
+-- (ooe-verifiziert) — ein Hash-Anti-Join ließe dann dieselben Calcs doppelt
+-- entstehen (einmal als Anker-Zeile 131_2, einmal strukturell). Hat ein Set
+-- IRGENDEINEN DDR-Anker, deckt die DDR seine Record-Access-Calcs vollständig
+-- ab → B5 liefert nur für anker-lose Sets (Dateien ohne DDR-Info).
+b_pra AS (
+    SELECT
+        pra.File_Name, pra.PrivilegeSet_UUID AS Owner_UUID, 'PrivilegeSet' AS Owner_Type,
+        CAST(NULL AS VARCHAR) AS Owner_Name,
+        'record_access' AS Role_Override, CAST(NULL AS VARCHAR) AS Calc_Kind_Raw,
+        pra.DDR_Hash AS Formula_Hash, pra.Calculation_Text AS Formula_Text,
+        'RecordAccess/' || pra.Operation || ':' || COALESCE(pra.BaseTable_Name, '?') AS Source_Path
+    FROM PrivilegeSetRecordAccess pra
+    WHERE NULLIF(pra.Calculation_Text, '') IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM a_owner a
+                       WHERE a.Owner_UUID = pra.PrivilegeSet_UUID AND a.File_Name = pra.File_Name
+                         AND a.Owner_Type = 'PrivilegeSet')
+),
+-- (B6) Display-Calculations mit LEERER ChunkList (Schema 1.27.0): Bei
+-- %X:-typisierten Layoutformeln mit Ausdruck verliert FileMaker die komplette
+-- Chunk-Zerlegung (ChunkList leer, Hash = md5('')) — ohne diesen Fallback
+-- existierte weder eine Instanz noch irgendeine Kante (lautloser Where-used-
+-- Verlust). Anker + Kontext-TO liefert DDR_ChunkListContexts (erfasst auch
+-- leere ChunkLists); Formula_Text/Result_Type/Kontext-TO füllt der Display-
+-- UPDATE nach dem CTAS, die Feld-Kanten legt P2 A.5.1c an. Join über den
+-- Anker-NAMEN — nie über den (dateiweit geteilten) Leerhash. Rollen-
+-- Klassifikation läuft über Calc_Kind_Raw ('DisplayCalculations_<i>') wie bei
+-- den A-Zeilen; der a_owner-Anti-Join ist defensiv (0 Chunks ⇒ kein Anker).
+b_disp AS (
+    SELECT
+        ctx.File_Name,
+        oc_lo.Object_UUID AS Owner_UUID,
+        'LayoutObject' AS Owner_Type,
+        CAST(NULL AS VARCHAR) AS Owner_Name,
+        CAST(NULL AS VARCHAR) AS Role_Override,
+        regexp_replace(ctx.Calc_UUID, '^_[0-9A-Fa-f-]{36}_?', '') AS Calc_Kind_Raw,
+        ctx.Calc_Hash AS Formula_Hash,
+        CAST(NULL AS VARCHAR) AS Formula_Text,
+        'LayoutObject/DisplayCalculations' AS Source_Path
+    FROM DDR_ChunkListContexts ctx
+    JOIN ObjectCatalog oc_lo
+      ON upper(oc_lo.Object_UUID) = upper(regexp_extract(ctx.Calc_UUID, '_([0-9A-Fa-f-]{36})', 1))
+     AND oc_lo.File_Name   = ctx.File_Name
+     AND oc_lo.Object_Type = 'LayoutObject'
+    WHERE ctx.Chunk_Count = 0
+      AND ctx.Calc_UUID LIKE '%\_DisplayCalculations\_%' ESCAPE '\'
+      AND NOT EXISTS (SELECT 1 FROM a_owner a
+                       WHERE a.Owner_UUID = oc_lo.Object_UUID AND a.File_Name = ctx.File_Name
+                         AND a.Calc_Kind_Raw = regexp_replace(ctx.Calc_UUID, '^_[0-9A-Fa-f-]{36}_?', ''))
+),
+b_rows AS (
+    SELECT File_Name, Owner_UUID, Owner_Type, Owner_Name, Role_Override,
+           Calc_Kind_Raw, CAST(NULL AS VARCHAR) AS DDR_Calc_UUID, Formula_Hash,
+           Formula_Text, CAST(NULL AS VARCHAR) AS Context_TO_UUID,
+           CAST(NULL AS VARCHAR) AS Context_TO_Name,
+           CAST(NULL AS BOOLEAN) AS Is_Static, CAST(NULL AS INTEGER) AS Chunk_Count,
+           CAST(NULL AS INTEGER) AS Ref_Count, CAST(NULL AS VARCHAR) AS Display_Text,
+           Source_Path
+    FROM (
+        SELECT * FROM b_field
+        UNION ALL SELECT * FROM b_step
+        UNION ALL SELECT * FROM b_cf
+        UNION ALL SELECT * FROM b_lo
+        UNION ALL SELECT * FROM b_trig
+        UNION ALL SELECT * FROM b_pra
+        UNION ALL SELECT * FROM b_disp
+    )
+),
+-- B-Zeilen mit Hash: Chunk-Aggregate über den Hash-Repräsentanten anreichern
+b_enriched AS (
+    SELECT
+        b.File_Name, b.Owner_UUID, b.Owner_Type, b.Owner_Name, b.Role_Override,
+        b.Calc_Kind_Raw, b.DDR_Calc_UUID, b.Formula_Hash, b.Formula_Text,
+        b.Context_TO_UUID, b.Context_TO_Name,
+        COALESCE(b.Is_Static, (hr.Ref_Count = 0)) AS Is_Static,
+        COALESCE(b.Chunk_Count, hr.Chunk_Count)   AS Chunk_Count,
+        COALESCE(b.Ref_Count, hr.Ref_Count)       AS Ref_Count,
+        COALESCE(b.Display_Text, hr.Display_Text) AS Display_Text,
+        b.Source_Path
+    FROM b_rows b
+    LEFT JOIN hash_rep hr
+           ON hr.File_Name = b.File_Name AND hr.Calc_Hash = b.Formula_Hash
+),
+cand AS (
+    SELECT * FROM a_rows
+    UNION ALL BY NAME
+    SELECT * FROM b_enriched
+),
+classified AS (
+    SELECT
+        cand.*,
+        -- Rollen-Normalisierung (locale-unabhängig, stabil); unbekannte
+        -- Suffixe fallen auf lower(raw) zurück → P6 v_check_calc_roles meldet
+        -- Vokabular-Drift statt still zu raten.
+        COALESCE(cand.Role_Override,
+            CASE
+                -- Feld-Slot-Codes (ooe-fm-verifiziert): 0=Haupt-Calc, 1=AutoEnter,
+                -- 2=Validierung, 3=Container-Storage-Pfad, 4=Fehlermeldungs-Calc
+                WHEN cand.Owner_Type = 'Field' AND cand.Calc_Kind_Raw = '0' THEN 'field_calculation'
+                WHEN cand.Owner_Type = 'Field' AND cand.Calc_Kind_Raw = '1' THEN 'auto_enter'
+                WHEN cand.Owner_Type = 'Field' AND cand.Calc_Kind_Raw = '2' THEN 'validation'
+                WHEN cand.Owner_Type = 'Field' AND cand.Calc_Kind_Raw = '3' THEN 'container_path'
+                WHEN cand.Owner_Type = 'Field' AND cand.Calc_Kind_Raw = '4' THEN 'validation_message'
+                -- Step-Slots generisch: jedes Suffix außer den XSLT-Slots ist ein
+                -- positionierter Parameter (deckt auch benannte Wiederhol-Slots
+                -- wie Filter_0/Filter_1 und Text-Slots wie SQL ab)
+                WHEN cand.Owner_Type = 'ScriptStep' AND cand.Calc_Kind_Raw IN ('XML', 'XSL') THEN 'step_xslt'
+                WHEN cand.Owner_Type = 'ScriptStep' THEN 'step_parameter'
+                WHEN cand.Owner_Type = 'PrivilegeSet' THEN 'record_access'
+                -- Berechnete Menü-Item-Parameter (numerische Suffixe, ooe-fm)
+                WHEN cand.Owner_Type = 'CustomMenuItem'
+                     AND cand.Calc_Kind_Raw ~ '^[0-9]+(_[0-9]+)*$' THEN 'menu_item_parameter'
+                WHEN cand.Owner_Type = 'LayoutObject'
+                     AND cand.Calc_Kind_Raw LIKE 'DisplayCalculations\_%' ESCAPE '\' THEN 'display_calculation'
+                WHEN cand.Calc_Kind_Raw = ''                                 THEN 'custom_function'
+                WHEN cand.Calc_Kind_Raw LIKE 'ScriptTrigger\_%' ESCAPE '\'   THEN 'script_trigger_parameter'
+                WHEN cand.Calc_Kind_Raw LIKE 'Condition\_%'     ESCAPE '\'   THEN 'conditional_format'
+                WHEN cand.Calc_Kind_Raw = 'Hide'         THEN 'hide'
+                WHEN cand.Calc_Kind_Raw = 'Tooltip'      THEN 'tooltip'
+                WHEN cand.Calc_Kind_Raw = 'Placeholder'  THEN 'placeholder'
+                WHEN cand.Calc_Kind_Raw = 'Label'        THEN 'button_label'
+                WHEN cand.Calc_Kind_Raw = 'action'       THEN 'button_action'
+                WHEN cand.Calc_Kind_Raw = 'Portal'       THEN 'portal_filter'
+                WHEN cand.Calc_Kind_Raw = 'WebViewer'    THEN 'web_viewer_url'
+                WHEN cand.Calc_Kind_Raw = 'TabPanel'     THEN 'panel_title'
+                WHEN cand.Calc_Kind_Raw = 'PopoverPanel' THEN 'popover_title'
+                WHEN cand.Owner_Type = 'CustomMenu'     AND cand.Calc_Kind_Raw = 'Install' THEN 'menu_install'
+                WHEN cand.Owner_Type = 'CustomMenu'     AND cand.Calc_Kind_Raw = 'Title'   THEN 'menu_title'
+                WHEN cand.Owner_Type = 'CustomMenuItem' AND cand.Calc_Kind_Raw = 'Install' THEN 'menu_item_install'
+                WHEN cand.Owner_Type = 'CustomMenuItem' AND cand.Calc_Kind_Raw = 'Name'    THEN 'menu_item_name'
+                WHEN cand.Calc_Kind_Raw = 'Series_Value'
+                  OR cand.Calc_Kind_Raw LIKE 'YSeriesList\_%' ESCAPE '\'     THEN 'chart_series'
+                ELSE COALESCE(NULLIF(lower(cand.Calc_Kind_Raw), ''), 'unknown')
+            END
+        ) AS Calc_Role,
+        -- Sortier-Schlüssel für Calc_Index: führende Nummer (Step-Position,
+        -- Condition_N via zweitem Extract), Sub-Nummer ('137_2'), dann stabile
+        -- Tiebreaker (Suffix, Anker-UUID, Hash).
+        COALESCE(TRY_CAST(regexp_extract(cand.Calc_Kind_Raw, '^([0-9]+)', 1) AS BIGINT),
+                 TRY_CAST(regexp_extract(cand.Calc_Kind_Raw, '_([0-9]+)$', 1) AS BIGINT),
+                 0) AS sort_n1,
+        COALESCE(TRY_CAST(regexp_extract(cand.Calc_Kind_Raw, '^[0-9]+_([0-9]+)$', 1) AS BIGINT), 0) AS sort_n2
+    FROM cand
+),
+indexed AS (
+    SELECT
+        classified.*,
+        ROW_NUMBER() OVER (
+            PARTITION BY File_Name, Owner_UUID, Calc_Role
+            ORDER BY sort_n1, sort_n2,
+                     COALESCE(Calc_Kind_Raw, ''), COALESCE(DDR_Calc_UUID, ''),
+                     COALESCE(Formula_Hash, ''), COALESCE(Source_Path, '')
+        ) AS Calc_Index
+    FROM classified
+)
+SELECT
+    -- Typ-getaggter synthetischer Schlüssel (docs/agents/synthetic-uuids.md);
+    -- File_Name im Schlüssel, weil Owner-UUIDs nur je Datei eindeutig sind.
+    md5('Calculation::' || i.File_Name || '::' || i.Owner_UUID || '::'
+        || i.Calc_Role || '::' || i.Calc_Index)     AS Calculation_UUID,
+    i.Owner_UUID,
+    i.Owner_Type,
+    COALESCE(i.Owner_Name, oc2.Object_Name)         AS Owner_Name,
+    i.Calc_Role,
+    i.Calc_Kind_Raw,
+    i.Calc_Index,
+    -- Link_Subrole-Wert der owner-projizierten Kanten dieser Instanz
+    -- (Join-Schlüssel für v_calculation_links; NULL = Kanten ohne Subrole)
+    CASE
+        WHEN i.Owner_Type = 'Field' THEN
+            CASE i.Calc_Role
+                WHEN 'field_calculation'  THEN NULL
+                WHEN 'auto_enter'         THEN 'auto_enter'
+                WHEN 'validation'         THEN 'validation'
+                WHEN 'validation_message' THEN 'validation_message'
+                ELSE NULLIF(i.Calc_Kind_Raw, '')
+            END
+        WHEN i.Owner_Type = 'CustomFunction' THEN NULL
+        ELSE NULLIF(i.Calc_Kind_Raw, '')
+    END                                             AS Edge_Subrole,
+    i.Formula_Text,
+    i.Formula_Hash,
+    i.DDR_Calc_UUID,
+    i.Context_TO_UUID,
+    i.Context_TO_Name,
+    i.Is_Static,
+    i.Chunk_Count,
+    i.Ref_Count,
+    i.Display_Text,
+    i.Source_Path,
+    i.File_Name
+FROM indexed i
+-- Owner-Name-Fallback als reiner Equi-Join — bewusst OHNE i.Owner_Name-IS-NULL-
+-- Guard in der ON-Klausel (linksseitiges Prädikat → Blockwise-NL-Falle, s.
+-- Blockkopf). Semantischer Guard bleibt das COALESCE in der Projektion: bei
+-- gesetztem Owner_Name ist das Join-Ergebnis irrelevant. Fan-out nur bei
+-- Katalog-Duplikaten auf (Object_UUID, File_Name, Object_Type) — durch die
+-- Duplikat-Absorption ausgeschlossen und via v_check_catalog_dups überwacht.
+LEFT JOIN ObjectCatalog oc2
+       ON oc2.Object_UUID = i.Owner_UUID
+      AND oc2.File_Name   = i.File_Name
+      AND oc2.Object_Type = i.Owner_Type;
+
+CREATE INDEX idx_calculations_owner ON CalculationsCatalog(Owner_UUID, File_Name);
+CREATE INDEX idx_calculations_hash  ON CalculationsCatalog(Formula_Hash);
+CREATE INDEX idx_calculations_role  ON CalculationsCatalog(Calc_Role);
+CREATE INDEX idx_calculations_ddr   ON CalculationsCatalog(DDR_Calc_UUID);
+
+-- LayoutObjectConditions.Calculation_UUID (Schema 1.25.0): FK der CF-Regel auf
+-- ihre Berechnungs-Instanz — füllbar erst HIER (P3 legt die Tabelle vor dem
+-- CalculationsCatalog-Aufbau an). Join über Calc_Kind_Raw = 'Condition_' ||
+-- Rule_Index (DDRREF-Suffix == Serialisierungsposition, korpus-verifiziert 0
+-- Abweichungen), NICHT über Calc_Index: DDRREF-lose Regeln erzeugen dort Lücken.
+-- Bleibt NULL für Regeln ohne CalculationsCatalog-Zeile (wertbasiert ohne Anker,
+-- Dateien ohne DDR-Info, Fremd-Anker-Kopierartefakte) — P6 v_check_cf_rules
+-- meldet die Hash-tragenden Fälle darunter.
+UPDATE LayoutObjectConditions c
+SET Calculation_UUID = (
+    SELECT cc.Calculation_UUID
+    FROM CalculationsCatalog cc
+    WHERE cc.Owner_UUID   = c.Object_UUID
+      AND cc.File_Name    = c.File_Name
+      AND cc.Calc_Role    = 'conditional_format'
+      AND cc.Calc_Kind_Raw = 'Condition_' || c.Rule_Index
+);
+
+-- Display-Calculation-Anreicherung (Schema 1.27.0): Formula_Text war bei allen
+-- display_calculation-Instanzen NULL (die Original-Formel steht nur im
+-- Text_Content des Owners), Kontext-TO ebenso (die ChunkList trägt sie, wurde
+-- aber nicht extrahiert). Jetzt: Formula_Text = lokalisierte Rohformel aus
+-- Text_Content (i-tes <<ƒ:…>>-Vorkommen, Index aus dem Calc_Kind_Raw-Suffix,
+-- (?s) für mehrzeilige Formeln; Wrapper + %X:-Präfix gestrippt), Result_Type
+-- aus dem Präfix (kein Präfix = Text; unbekannte Präfixe bleiben roh sichtbar
+-- als '%<X>'), Kontext-TO aus DDR_ChunkListContexts (Anker-Join über den
+-- NAMEN — nie über den Hash: geteilte Hashes tragen je Anker eigene TOs).
+-- Deckt A-Zeilen (DDR-Anker) UND b_disp-Fallback-Zeilen (leere ChunkList) ab.
+-- Index-Annahme: DisplayCalculations_<i> ↔ (i+1)-tes <<ƒ:…>>-Vorkommen in
+-- Dokumentreihenfolge (membercount>1 im Fixture noch unbelegt).
+ALTER TABLE CalculationsCatalog ADD COLUMN Result_Type VARCHAR;
+
+UPDATE CalculationsCatalog cc
+SET Formula_Text    = COALESCE(src.formula_stripped, cc.Formula_Text),
+    Result_Type     = src.result_type,
+    Context_TO_UUID = COALESCE(cc.Context_TO_UUID, src.Context_TO_UUID),
+    Context_TO_Name = COALESCE(cc.Context_TO_Name, src.Context_TO_Name)
+FROM (
+    WITH lo1 AS (
+        SELECT Object_UUID, File_Name, Text_Content,
+               ROW_NUMBER() OVER (PARTITION BY Object_UUID, File_Name ORDER BY Object_ID) AS rn
+        FROM LayoutObjects
+    ),
+    disp AS (
+        SELECT
+            c.Calculation_UUID, c.Owner_UUID, c.File_Name, c.Calc_Kind_Raw,
+            regexp_extract_all(lo.Text_Content, '(?s)<<ƒ:(.*?)>>', 1)
+                [TRY_CAST(regexp_extract(c.Calc_Kind_Raw, '_([0-9]+)$', 1) AS BIGINT) + 1] AS raw_formula
+        FROM CalculationsCatalog c
+        JOIN lo1 lo
+          ON lo.Object_UUID = c.Owner_UUID
+         AND lo.File_Name   = c.File_Name
+         AND lo.rn = 1
+        WHERE c.Calc_Role = 'display_calculation'
+    )
+    SELECT
+        d.Calculation_UUID,
+        NULLIF(regexp_replace(d.raw_formula, '^%[A-Z]+:', ''), '') AS formula_stripped,
+        CASE regexp_extract(d.raw_formula, '^%([A-Z]+):', 1)
+            WHEN 'N' THEN 'Number'
+            WHEN 'D' THEN 'Date'
+            WHEN 'I' THEN 'Time'
+            WHEN 'M' THEN 'Timestamp'
+            WHEN ''  THEN 'Text'
+            ELSE '%' || regexp_extract(d.raw_formula, '^%([A-Z]+):', 1)
+        END AS result_type,
+        ctx.Context_TO_UUID,
+        ctx.Context_TO_Name
+    FROM disp d
+    LEFT JOIN DDR_ChunkListContexts ctx
+           ON upper(ctx.Calc_UUID) = upper('_' || d.Owner_UUID || '_' || d.Calc_Kind_Raw)
+          AND ctx.File_Name = d.File_Name
+) src
+WHERE cc.Calculation_UUID = src.Calculation_UUID;
+
+-- Calculation-Zeilen in den ObjectCatalog (post-CTAS-INSERT, Muster
+-- PluginComponent — liest CalculationsCatalog + die Owner-Namen).
+-- Object_Name = '<Owner> › <Rollen-Label>[ <Index>]' (Index nur, wenn der
+-- Owner mehrere Instanzen derselben Rolle hat). Sichtbarkeits-Entscheid:
+-- in Suche/Listen sichtbar wie ScriptStep/LayoutObject (High-Cardinality-
+-- Präzedenz); Explorer/Atlas blenden den Typ default aus.
+INSERT INTO ObjectCatalog (Object_UUID, Object_Type, Object_Name, File_Name, Source_Table, Object_ID)
+SELECT
+    c.Calculation_UUID                              AS Object_UUID,
+    'Calculation'                                   AS Object_Type,
+    COALESCE(c.Owner_Name, '(unresolved)') || ' › '
+        || CASE c.Calc_Role
+               WHEN 'field_calculation'        THEN 'Calculation'
+               WHEN 'auto_enter'               THEN 'Auto-Enter Calculation'
+               WHEN 'validation'               THEN 'Validation'
+               WHEN 'validation_message'       THEN 'Validation Message'
+               WHEN 'container_path'           THEN 'Container Storage Path'
+               WHEN 'custom_function'          THEN 'Function Body'
+               WHEN 'step_parameter'           THEN 'Step Parameter'
+               WHEN 'step_xslt'                THEN 'XSLT'
+               WHEN 'record_access'            THEN 'Record Access'
+               WHEN 'hide'                     THEN 'Hide Condition'
+               WHEN 'tooltip'                  THEN 'Tooltip'
+               WHEN 'placeholder'              THEN 'Placeholder Text'
+               WHEN 'button_label'             THEN 'Calculated Label'
+               WHEN 'button_action'            THEN 'Button Action'
+               WHEN 'portal_filter'            THEN 'Portal Filter'
+               WHEN 'web_viewer_url'           THEN 'Web Viewer URL'
+               WHEN 'panel_title'              THEN 'Tab Title'
+               WHEN 'popover_title'            THEN 'Popover Title'
+               WHEN 'conditional_format'       THEN 'Conditional Formatting'
+               WHEN 'script_trigger_parameter' THEN 'Script Trigger Parameter'
+               WHEN 'menu_install'             THEN 'Install Condition'
+               WHEN 'menu_item_install'        THEN 'Install Condition'
+               WHEN 'menu_title'               THEN 'Menu Title'
+               WHEN 'menu_item_name'           THEN 'Calculated Name'
+               WHEN 'menu_item_parameter'      THEN 'Item Parameter'
+               WHEN 'display_calculation'      THEN 'Display Calculation'
+               WHEN 'chart_series'             THEN 'Chart Series'
+               ELSE c.Calc_Role
+           END
+        || CASE WHEN COUNT(*) OVER (PARTITION BY c.File_Name, c.Owner_UUID, c.Calc_Role) > 1
+                THEN ' ' || c.Calc_Index ELSE '' END AS Object_Name,
+    c.File_Name,
+    'CalculationsCatalog'                           AS Source_Table,
+    NULL                                            AS Object_ID
+FROM CalculationsCatalog c;
+
 -- Indexes für ObjectCatalog
 CREATE INDEX idx_objectcatalog_type ON ObjectCatalog(Object_Type);
 CREATE INDEX idx_objectcatalog_file ON ObjectCatalog(File_Name);
@@ -1682,6 +2350,36 @@ WHERE oc_owner.Object_UUID IS NOT NULL
 
 UNION ALL
 
+-- 18c. Script Trigger → Transaktions-Parameterfeld (Namens-Kandidaten)
+-- OnWindowTransaction-Attribut scriptParameterFieldName: reine Namens-Referenz
+-- ohne Tabellen-Qualifizierung, von FileMaker zur Laufzeit je auslösender
+-- Tabelle spät gebunden — eine deterministische 1:1-Kante ist prinzipiell
+-- unmöglich. Stattdessen KANDIDATEN-Kanten: eine je gleichnamigem Feld der
+-- EIGENEN Datei (file-lokale Fächerung = dokumentierte Modellgrenze; cross-file
+-- wäre Raterei). Join über FieldsForTables.Field_Name (unqualifiziert —
+-- ObjectCatalog.Object_Name ist 'Tabelle::Feld' und matcht den Roh-Namen nie);
+-- Field_UUID == ObjectCatalog-UUID des Felds. Ein verwaister Name (0
+-- Kandidaten, z.B. nach Feld-Umbenennung) ist ein legitimer Lösungszustand —
+-- Report-View v_report_trigger_parameter_fields (P6), bewusst kein FAIL-Gate.
+SELECT
+    'trig_' || st.Trigger_ID::VARCHAR || '_' || st.Owner_UUID || '_' || st.File_Name as Source_UUID,
+    'ScriptTrigger' as Source_Type,
+    ft.Field_UUID as Target_UUID,
+    'Field' as Target_Type,
+    'operational' as Link_Type,
+    'reads_field' as Link_Role,
+    'transaction_parameter_field' as Link_Subrole,
+    st.File_Name as Source_File,
+    ft.File_Name as Target_File,
+    FALSE as Is_Cross_File
+FROM ScriptTriggers st
+JOIN FieldsForTables ft
+    ON ft.Field_Name = st.Trigger_ScriptParameter_FieldName
+   AND ft.File_Name  = st.File_Name
+WHERE NULLIF(st.Trigger_ScriptParameter_FieldName, '') IS NOT NULL
+
+UNION ALL
+
 -- 19. Accounts → Privilege Sets
 SELECT
     ac.Account_UUID as Source_UUID,
@@ -1719,22 +2417,75 @@ WHERE xlr.Ref_Type = 'field' AND xlr.Ref_UUID IS NOT NULL
 
 UNION ALL
 
--- 21. LayoutObject → Script (Button/GroupedButton/PopoverButton Actions)
--- Extrahiert aus XMLLayoutReferences (Python XML-Extraktor, findet auch GroupedButton)
+-- 21. Owner → Script (Trigger-Spiegel + Button/GroupedButton/PopoverButton Actions)
+-- Owner-granulare Where-used-Kanten: EINE Rolle (triggers_script) für beide
+-- Auslöser-Arten, der Subrole-Wert diskriminiert (Event vs. 'button_action').
+-- Seit 2.17.0 symmetrisch über ALLE DREI Owner-Ebenen (LayoutObject/Layout/File)
+-- — die Spiegel sind die einzige zählende Where-used-Wahrheit (LinkRoleRegistry:
+-- trigger_script zählt nicht mehr); Invariante je Ebene: 1 Spiegel ⇔ 1
+-- ScriptTriggers-Zeile mit Script ⇔ 1 Trigger-Knoten (P6:
+-- v_check_trigger_mirror_symmetry).
+-- Objekt-Ebene: zwei UNION-Teile, Gesamt-Kantenzahl je Gruppe (Object_UUID,
+-- File_Name, Script_UUID) bleibt r (= XMLLayoutReferences-Zeilen mit
+-- Ref_Type='script'). Die Quell-Zeilen tragen KEINEN direkten Diskriminator
+-- Trigger vs. Button (Step_ID dort immer NULL); die Aufteilung ist als Multiset
+-- deterministisch rekonstruierbar über die korpusverifizierte Invariante t ≤ r:
+-- t Kanten aus ScriptTriggers (Subrole = Event), r−t Kanten als 'button_action'.
+-- Die Attribution gilt je Gruppe als Multiset, nicht zeilen-identisch.
+-- Layout-/File-Ebene: KEIN Multiset nötig — dort existieren keine Button-
+-- Actions, jede ScriptTriggers-Zeile ist eindeutig ein Trigger (21b bleibt
+-- darum LayoutObject-gebunden).
+-- 21a. Trigger-Kanten: eine je ScriptTriggers-Zeile, Source = Owner (Typ aus
+--      Owner_Type); Link_Subrole = Trigger_Action (kanonisches Event;
+--      Roh-Passthrough wie trigger_owner in Block 18b — ein Locale-Leak der
+--      Quelle fließt roh mit).
 SELECT
-    xlr.Object_UUID as Source_UUID,
-    'LayoutObject' as Source_Type,
-    xlr.Ref_UUID as Target_UUID,
+    st.Owner_UUID as Source_UUID,
+    st.Owner_Type as Source_Type,
+    st.Script_UUID as Target_UUID,
     'Script' as Target_Type,
     'operational' as Link_Type,
     'triggers_script' as Link_Role,
-    NULL as Link_Subrole,
-    xlr.File_Name as Source_File,
+    st.Trigger_Action as Link_Subrole,
+    st.File_Name as Source_File,
     oc_target.File_Name as Target_File,
-    (xlr.File_Name != oc_target.File_Name) as Is_Cross_File
-FROM XMLLayoutReferences xlr
-LEFT JOIN ObjectCatalog oc_target ON xlr.Ref_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Script'
-WHERE xlr.Ref_Type = 'script'
+    (st.File_Name != oc_target.File_Name) as Is_Cross_File
+FROM ScriptTriggers st
+LEFT JOIN ObjectCatalog oc_target ON st.Script_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Script'
+WHERE st.Owner_Type IN ('LayoutObject', 'Layout', 'File') AND st.Script_UUID IS NOT NULL
+
+UNION ALL
+
+-- 21b. Button-Rest: XMLLayoutReferences-Script-Zeilen (Python XML-Extraktor,
+--      findet auch GroupedButton), je Gruppe die ersten t Zeilen verworfen
+--      (t = Trigger-Anzahl der Gruppe aus 21a) — die Gruppen-Zeilen sind als
+--      Kanten-Payload identisch, daher braucht ROW_NUMBER kein ORDER BY.
+--      Gruppen ohne ScriptTriggers-Zeilen (coalesce 0) bleiben komplett.
+SELECT
+    x.Object_UUID as Source_UUID,
+    'LayoutObject' as Source_Type,
+    x.Ref_UUID as Target_UUID,
+    'Script' as Target_Type,
+    'operational' as Link_Type,
+    'triggers_script' as Link_Role,
+    'button_action' as Link_Subrole,
+    x.File_Name as Source_File,
+    oc_target.File_Name as Target_File,
+    (x.File_Name != oc_target.File_Name) as Is_Cross_File
+FROM (
+    SELECT xlr.Object_UUID, xlr.Ref_UUID, xlr.File_Name,
+           ROW_NUMBER() OVER (PARTITION BY xlr.Object_UUID, xlr.File_Name, xlr.Ref_UUID) as rn
+    FROM XMLLayoutReferences xlr
+    WHERE xlr.Ref_Type = 'script'
+) x
+LEFT JOIN (
+    SELECT Owner_UUID, File_Name, Script_UUID, count(*) as t
+    FROM ScriptTriggers
+    WHERE Owner_Type = 'LayoutObject' AND Script_UUID IS NOT NULL
+    GROUP BY ALL
+) tt ON tt.Owner_UUID = x.Object_UUID AND tt.File_Name = x.File_Name AND tt.Script_UUID = x.Ref_UUID
+LEFT JOIN ObjectCatalog oc_target ON x.Ref_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Script'
+WHERE x.rn > coalesce(tt.t, 0)
 
 UNION ALL
 
@@ -2223,9 +2974,11 @@ SELECT DISTINCT
     xcr.Ref_UUID as Target_UUID,
     'Field' as Target_Type,
     'operational' as Link_Type,
-    -- Feld-Refs aus einem Validierungs-Calc (Subrole='validation', A.2.7) tragen die
-    -- eigene Rolle validates_by_calc; alle übrigen Calc-Feld-Refs bleiben reads_field.
-    CASE WHEN xcr.Subrole = 'validation' AND xcr.Source_Type = 'Field'
+    -- Feld-Refs aus einem Validierungs-Calc (Subrole='validation', A.2.7) oder der
+    -- Fehlermeldungs-Berechnung (Subrole='validation_message', A.2.10 — seit 1.22.0
+    -- eigene Subrole) tragen die eigene Rolle validates_by_calc; alle übrigen
+    -- Calc-Feld-Refs bleiben reads_field.
+    CASE WHEN xcr.Subrole IN ('validation', 'validation_message') AND xcr.Source_Type = 'Field'
          THEN 'validates_by_calc' ELSE 'reads_field' END as Link_Role,
     xcr.Subrole as Link_Subrole,
     xcr.File_Name as Source_File,
@@ -2252,8 +3005,10 @@ SELECT DISTINCT
     cf.CF_UUID as Target_UUID,
     'CustomFunction' as Target_Type,
     'operational' as Link_Type,
-    -- CF-Refs aus einem Validierungs-Calc (A.2.8) → validates_by_calc; sonst calls_customfunction.
-    CASE WHEN xcr.Subrole = 'validation' AND xcr.Source_Type = 'Field'
+    -- CF-Refs aus einem Validierungs-Calc (A.2.8) oder der Fehlermeldungs-
+    -- Berechnung (A.2.11, Subrole 'validation_message' seit 1.22.0)
+    -- → validates_by_calc; sonst calls_customfunction.
+    CASE WHEN xcr.Subrole IN ('validation', 'validation_message') AND xcr.Source_Type = 'Field'
          THEN 'validates_by_calc' ELSE 'calls_customfunction' END as Link_Role,
     xcr.Subrole as Link_Subrole,
     xcr.File_Name as Source_File,
@@ -2907,6 +3662,39 @@ JOIN AccountsCatalog ac
 WHERE fo.Login_AccountName IS NOT NULL;
 
 -- ========================================
+-- Owner → Calculation (has_calculation, structural) — Schema 1.22.0
+-- ========================================
+-- Containment-Schicht der Berechnungs-Instanzen (Variante A des Calculation-
+-- Objekttyps): macht Owner ↔ Calculation in beiden Richtungen navigierbar,
+-- OHNE eine einzige Nutzungs-Semantik zu verändern — die owner-projizierten
+-- Usage-Kanten bleiben kanonisch, Calculation→Ziel gibt es nur als abgeleitete
+-- View v_calculation_links (s. Ende dieser Datei). Link_Kind='containment',
+-- Counts_For_Where_Used=false (Registry) → fällt aus Where-used-Analysen und
+-- (weil structural) per Konstruktion aus LogicalLinks/ClusterEdges heraus.
+-- Link_Subrole = Calc_Role[:Calc_Index] (Index nur bei Mehrfach-Instanzen
+-- derselben Rolle, konsistent zur Object_Name-Bildung).
+-- Owner-Typ 'unresolved' (Anker ohne Katalog-Treffer, Soll 0) erzeugt bewusst
+-- KEINE Kante (Quelle wäre unkatalogisiert → v_check_orphan_sources).
+INSERT INTO ObjectLinks (Source_UUID, Source_Type, Target_UUID, Target_Type,
+                          Link_Type, Link_Role, Link_Subrole,
+                          Source_File, Target_File, Is_Cross_File)
+SELECT
+    c.Owner_UUID          as Source_UUID,
+    c.Owner_Type          as Source_Type,
+    c.Calculation_UUID    as Target_UUID,
+    'Calculation'         as Target_Type,
+    'structural'          as Link_Type,
+    'has_calculation'     as Link_Role,
+    c.Calc_Role
+        || CASE WHEN COUNT(*) OVER (PARTITION BY c.File_Name, c.Owner_UUID, c.Calc_Role) > 1
+                THEN ':' || c.Calc_Index ELSE '' END as Link_Subrole,
+    c.File_Name           as Source_File,
+    c.File_Name           as Target_File,
+    FALSE                 as Is_Cross_File
+FROM CalculationsCatalog c
+WHERE c.Owner_Type <> 'unresolved';
+
+-- ========================================
 -- Link-Hygiene: NULL-Ziele entfernen, Is_Cross_File normalisieren
 -- ========================================
 -- Diverse LEFT-JOIN-Blöcke reichen NULL-Targets bzw. NULL-Is_Cross_File durch
@@ -2998,7 +3786,14 @@ INSERT INTO LinkRoleRegistry VALUES
     -- External-Werteliste: Wrapper-VL → Ziel-VL der Quelldatei (Block 13b)
     ('source_valuelist',     'usage',       TRUE),
     ('summarizes_field',     'usage',       TRUE),
-    ('trigger_script',       'usage',       TRUE),
+    -- Granulare Detail-Kante des reifizierten Triggers (Block 18). Zählt seit
+    -- 2.17.0 NICHT mehr für Where-used: die Owner-Spiegel (triggers_script,
+    -- Block 21a, alle drei Owner-Ebenen) sind die einzige zählende Wahrheit —
+    -- vorher zählte dieselbe ScriptTriggers-Zeile auf Objekt-Ebene doppelt.
+    -- Kind bleibt 'usage' (die Kante IST eine Script-Verwendung, nur nicht die
+    -- zählende Repräsentation); Navigation/Detailseite/Graph-Fokus-Brücke
+    -- lesen sie weiter.
+    ('trigger_script',       'usage',       FALSE),
     ('triggers_script',      'usage',       TRUE),
     ('uses_menuset',         'usage',       TRUE),
     ('uses_theme',           'usage',       TRUE),
@@ -3017,6 +3812,10 @@ INSERT INTO LinkRoleRegistry VALUES
     ('contains_menu',        'containment', FALSE),
     ('groups_into',          'containment', FALSE),
     ('trigger_owner',        'containment', FALSE),
+    -- Owner → Calculation (Schema 1.22.0): Berechnungs-Instanz als Sub-Objekt
+    -- ihres Owners; zählt NIE als Verwendung (die Usage-Semantik liegt in den
+    -- owner-projizierten Kanten, Variante A).
+    ('has_calculation',      'containment', FALSE),
     -- Restriktionen (nie eine Verwendung — s. PrivilegeSet-Doku)
     ('restricts_field',      'restriction', FALSE),
     ('restricts_object',     'restriction', FALSE);
@@ -3172,3 +3971,156 @@ JOIN ObjectCatalog oc_source ON ol.Source_UUID = oc_source.Object_UUID
 JOIN ObjectCatalog oc_target ON ol.Target_UUID = oc_target.Object_UUID
 WHERE ol.Is_Cross_File = true
 ORDER BY ol.Source_Type, oc_source.Object_Name;
+
+-- ========================================
+-- v_calculation_links — Calculation → Ziel, ABGELEITET (Schema 1.22.0)
+-- ========================================
+-- Kernentscheidung Variante A: die owner-projizierten Usage-Kanten bleiben die
+-- kanonische Nutzungsschicht; diese View rekonstruiert die Detailauflösung
+-- „welche Kante gehört zu welcher Berechnungs-Instanz" — es entstehen KEINE
+-- physischen Zusatz-Kanten (kein Where-used-Doppel, kein Graph-Wachstum).
+--
+-- Zwei Auflösungswege:
+--   (1) Nicht-Step-Owner: ObjectLinks ankert direkt am Owner; der Slot steckt
+--       in Link_Subrole und matcht CalculationsCatalog.Edge_Subrole
+--       (Rollen-Whitelist = die calc-gespeisten Rollen der Blöcke 30/31/33/34 —
+--       schließt Kollisionen mit gleich-subrolten Nicht-Calc-Kanten wie
+--       uses_valuelist/'validation' aus).
+--   (2) ScriptStep-Owner: ObjectLinks ankert am SCRIPT (Source_UUID =
+--       Script_UUID) und Link_Subrole = Calc-Position — über Steps hinweg
+--       mehrdeutig (Position 0 hat fast jeder Step). Instanz-exakt geht es
+--       über XMLCalcReferences/PluginFunctionUsages (tragen Source_Subkey =
+--       Step_Index); die Ziel-Auflösung spiegelt die Blöcke 30/31/33/34
+--       (XMLCalcReferences.Ref_UUID ist zu diesem Zeitpunkt bereits geheilt).
+--
+-- Bekannte Grenzen (dokumentiert, Stufe 1): Variablen-Ziele fehlen (laufen über
+-- VariableUsages, nicht slot-attribuierbar); calls_script via MBS:FM.RunScript
+-- (Block 34b) fehlt (Subrole trägt dort die Methode, nicht den Slot); bei
+-- Feldern vor Re-Import mit Schema <1.22.0 sind AutoEnter-Kanten noch
+-- Subrole-NULL (Trennschärfe erst nach Neuimport).
+CREATE OR REPLACE VIEW v_calculation_links AS
+-- (1) Nicht-Step-Owner über ObjectLinks
+SELECT DISTINCT
+    c.Calculation_UUID,
+    ol.Link_Role,
+    ol.Target_UUID,
+    ol.Target_Type,
+    ol.Target_File,
+    ol.Is_Cross_File
+FROM CalculationsCatalog c
+JOIN ObjectLinks ol
+  ON ol.Source_UUID  = c.Owner_UUID
+ AND ol.Source_File  = c.File_Name
+ AND ol.Link_Type    = 'operational'
+ AND ol.Link_Role IN ('reads_field', 'validates_by_calc', 'calls_customfunction',
+                      'calls_function', 'calls_pluginfunction')
+ AND ol.Link_Subrole IS NOT DISTINCT FROM c.Edge_Subrole
+WHERE c.Owner_Type NOT IN ('ScriptStep', 'unresolved')
+
+UNION ALL
+
+-- (2a) ScriptStep → Field (instanz-exakt via XMLCalcReferences)
+SELECT DISTINCT
+    c.Calculation_UUID,
+    'reads_field'         AS Link_Role,
+    oc.Object_UUID        AS Target_UUID,
+    'Field'               AS Target_Type,
+    oc.File_Name          AS Target_File,
+    (c.File_Name != oc.File_Name) AS Is_Cross_File
+FROM CalculationsCatalog c
+JOIN StepsForScripts s
+  ON s.Step_UUID = c.Owner_UUID AND s.File_Name = c.File_Name
+JOIN XMLCalcReferences x
+  ON x.Source_Type   = 'Script'
+ AND x.Source_UUID   = s.Script_UUID
+ AND x.File_Name     = c.File_Name
+ AND x.Source_Subkey = s.Step_Index::VARCHAR
+ AND x.Subrole IS NOT DISTINCT FROM c.Edge_Subrole
+ AND x.Ref_Type = 'field'
+ AND x.Ref_UUID IS NOT NULL
+JOIN ObjectCatalog oc
+  ON oc.Object_UUID = x.Ref_UUID AND oc.Object_Type = 'Field'
+WHERE c.Owner_Type = 'ScriptStep'
+
+UNION ALL
+
+-- (2b) ScriptStep → CustomFunction (Spiegel Block 31: namensbasiert, datei-lokal)
+SELECT DISTINCT
+    c.Calculation_UUID,
+    'calls_customfunction' AS Link_Role,
+    cf.CF_UUID             AS Target_UUID,
+    'CustomFunction'       AS Target_Type,
+    cf.File_Name           AS Target_File,
+    FALSE                  AS Is_Cross_File
+FROM CalculationsCatalog c
+JOIN StepsForScripts s
+  ON s.Step_UUID = c.Owner_UUID AND s.File_Name = c.File_Name
+JOIN XMLCalcReferences x
+  ON x.Source_Type   = 'Script'
+ AND x.Source_UUID   = s.Script_UUID
+ AND x.File_Name     = c.File_Name
+ AND x.Source_Subkey = s.Step_Index::VARCHAR
+ AND x.Subrole IS NOT DISTINCT FROM c.Edge_Subrole
+ AND x.Ref_Type = 'customfunction'
+ AND x.Ref_Name IS NOT NULL
+JOIN CustomFunctionsCatalog cf
+  ON cf.CF_Name = x.Ref_Name AND cf.File_Name = x.File_Name
+ AND (cf.Folder_Type IS NULL OR cf.Folder_Type = 'False')
+ AND NOT COALESCE(cf.Is_Separator, FALSE)
+WHERE c.Owner_Type = 'ScriptStep'
+
+UNION ALL
+
+-- (2c) ScriptStep → BuiltinFunction (Spiegel Block 33 inkl. Get(<Sub>))
+SELECT DISTINCT
+    c.Calculation_UUID,
+    'calls_function'       AS Link_Role,
+    md5('BuiltinFunction::' ||
+        CASE WHEN x.Ref_Name = 'Get' AND x.Ref_SubName IS NOT NULL
+             THEN x.Ref_Name || '::' || x.Ref_SubName
+             ELSE x.Ref_Name END) AS Target_UUID,
+    'BuiltinFunction'      AS Target_Type,
+    CAST(NULL AS VARCHAR)  AS Target_File,
+    FALSE                  AS Is_Cross_File
+FROM CalculationsCatalog c
+JOIN StepsForScripts s
+  ON s.Step_UUID = c.Owner_UUID AND s.File_Name = c.File_Name
+JOIN XMLCalcReferences x
+  ON x.Source_Type   = 'Script'
+ AND x.Source_UUID   = s.Script_UUID
+ AND x.File_Name     = c.File_Name
+ AND x.Source_Subkey = s.Step_Index::VARCHAR
+ AND x.Subrole IS NOT DISTINCT FROM c.Edge_Subrole
+ AND x.Ref_Type = 'function'
+ AND x.Ref_Name IS NOT NULL AND x.Ref_Name != ''
+WHERE c.Owner_Type = 'ScriptStep'
+
+UNION ALL
+
+-- (2d) ScriptStep → PluginFunction (Spiegel Block 34; dynamische MBS-Aufrufe
+-- ohne SubName fallen wie dort heraus)
+SELECT DISTINCT
+    c.Calculation_UUID,
+    'calls_pluginfunction' AS Link_Role,
+    md5('PluginFunction::' || p.Plugin_Function_Name || '::' ||
+        COALESCE(msm.SubName, '')) AS Target_UUID,
+    'PluginFunction'       AS Target_Type,
+    CAST(NULL AS VARCHAR)  AS Target_File,
+    FALSE                  AS Is_Cross_File
+FROM CalculationsCatalog c
+JOIN StepsForScripts s
+  ON s.Step_UUID = c.Owner_UUID AND s.File_Name = c.File_Name
+JOIN PluginFunctionUsages p
+  ON p.Source_Type   = 'Script'
+ AND p.Source_UUID   = s.Script_UUID
+ AND p.File_Name     = c.File_Name
+ AND p.Source_Subkey = s.Step_Index::VARCHAR
+ AND p.Subrole IS NOT DISTINCT FROM c.Edge_Subrole
+LEFT JOIN MBS_SubnameMap msm
+  ON msm.Calc_UUID = p.Calc_UUID
+ AND msm.File_Name = p.File_Name
+ AND msm.Plugin_Chunk_Index = p.Plugin_Chunk_Index
+WHERE c.Owner_Type = 'ScriptStep'
+  AND p.Plugin_Function_Name IS NOT NULL
+  AND p.Plugin_Function_Name != ''
+  AND (msm.SubName IS NOT NULL OR p.Plugin_Function_Name != 'MBS');

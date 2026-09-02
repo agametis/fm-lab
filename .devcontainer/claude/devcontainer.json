@@ -72,9 +72,13 @@
   // complete first); only the long-running server launch is handed off.
   "postStartCommand": "sudo /usr/local/bin/init-firewall.sh; /usr/local/bin/claude-auth-preflight.sh || true; setsid bash tools/start-servers.sh",
 
+  // 5173 uses "notify" (clickable toast), NOT "openBrowser": openBrowser reopens the
+  // browser on the HOST every time the forward is (re-)established — if Vite dies while
+  // a frontend tab is open, the flapping forward spawns endless new tabs and steals
+  // focus. See the note in ../devcontainer.json.
   "forwardPorts": [3003, 5173],
   "portsAttributes": {
     "3003": { "label": "REST-API", "onAutoForward": "silent" },
-    "5173": { "label": "Web-Frontend", "onAutoForward": "openBrowser" }
+    "5173": { "label": "Web-Frontend", "onAutoForward": "notify" }
   }
 }

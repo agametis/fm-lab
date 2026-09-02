@@ -145,3 +145,30 @@
   color: var(--color-text-primary);
   border: 1px solid var(--color-border-strong);
 }
+
+/* Nebenslot-Formeln (Validierung / Fehlermeldungs-Formel) als kompakte
+   Token-Blöcke innerhalb der Property-Liste. */
+.fm-field-slot-calc {
+  margin: 0;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.82rem;
+}
+
+/* Deklarierter DDR-los-Fallback: sichtbarer Hinweis unter dem Klartext-Block. */
+.fm-calc-fallback-hint {
+  margin-top: 0.25rem;
+  font-size: 0.74rem;
+  font-style: italic;
+  color: var(--color-text-secondary, #888);
+}
+
+/* Ziel-Links einer Calculation-Instanz (CalculationDetail). */
+.fm-calc-target-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.2rem 0;
+}
+
+.fm-calc-target-list li {
+  padding: 0.15rem 0;
+}

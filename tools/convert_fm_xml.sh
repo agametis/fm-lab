@@ -86,7 +86,9 @@
 #                          is reached; indivisible units (main/DDR_INFO, ≤1 record)
 #                          escalate with a clear diagnosis. Test hook: FM_AUTO_TEST_OOM="Cat[:N]"
 #                          (P1 chunk OOM); FM_P2_TEST_OOM="all"|<slice-idx> simulates a P2
-#                          slice OOM → post-P2 gate → clean memory abort (exit 8). Test-only.
+#                          slice OOM → post-P2 gate → clean memory abort (exit 8);
+#                          FM_P2_TEST_FAIL=1 simulates a P2 SQL failure (single-pass path)
+#                          → post-P2 gate (batch and single-file) → abort, exit 1. Test-only.
 #   --no-auto              Disable the memory backoff even where a mode implies it (e.g.
 #                          --turbo, which otherwise turns --auto on).
 #   --attempt <N>          Attempt counter (1-based, default 1) for retry tracking;
@@ -191,6 +193,129 @@ export LC_NUMERIC=C
 # on the next --changed-only run, a full re-conversion is triggered. Bump it as soon
 # as the CONVERSION RESULT can change (new columns, changed
 # extraction/normalization) — independent of the header or @SCHEMA_VERSION.
+#   2.20.0 — display-calculation recovery refinements (no DDL, @SCHEMA_VERSION
+#           stays 1.27.0; fixture-driven, layout "Fixtures"): (a) %X:-prefixed
+#           VariableReference chunks whose remainder starts with '$' are REAL
+#           variables behind the result type (<<ƒ:%N:$$var>>) — kept with the
+#           prefix stripped (P3 A.3, P2 A.6.10) instead of discarded, and
+#           excluded from the field rescue (P2 A.5.1b). (b) Empty-ChunkList
+#           recovery extended: variables are matched from the recovered
+#           formula text (P3 A.6c, double-quoted literals stripped; variables
+#           are syntactically unambiguous) and CustomFunction names are
+#           matched file-locally (P2 A.5.1c CF branch — CF names are NOT
+#           localized, unlike builtins). (c) Name-collision semantics
+#           (fixture-verified): when a field and a CF share a name, FileMaker
+#           serializes the FIELD reference quoted as ${Name} — the field
+#           rescue unwraps ${…} (A.5.1b) and the empty-ChunkList field match
+#           requires the quoted form on collision, while unquoted occurrences
+#           resolve to the CF; the boundary predecessor class additionally
+#           rejects '$' and '{'. (d) The empty-ChunkList variable recovery is
+#           mirrored slot-scoped into XMLCalcReferences (P2 A.6.10b, Subrole =
+#           DisplayCalculations_<i>) — symmetry with the chunk-based variable
+#           rows of intact slots; feeds the API's synthetic D2 tokenization.
+#   2.19.0 — display-calculation gaps of the merge family (@SCHEMA_VERSION
+#           1.27.0): new P1 table DDR_ChunkListContexts (context TO +
+#           chunk count per DDR ChunkList anchor, INCLUDING empty ChunkLists;
+#           DOM + streamify extended identically) and new P3 table
+#           LayoutObjectSymbols ({{…}} inventory from Text_Content, no
+#           where-used edges by design). CalculationsCatalog gains Result_Type
+#           (result type from the %X: prefix of typed layout calculations,
+#           default Text); display_calculation instances get Formula_Text
+#           (localized raw formula from Text_Content, wrapper + prefix
+#           stripped) and their context TO. Compensation for two FileMaker DDR
+#           defects in typed layout calculations: (a) misclassified
+#           VariableReference chunks ('%N:Zahl') no longer create phantom
+#           variables (P3 A.3 exclusion + P2 A.6.10) — the field reference is
+#           recovered against the ChunkList's context TO (P2 A.5.1b);
+#           (b) EMPTY ChunkLists (expression + prefix) get a fallback instance
+#           (P4 b_disp) plus field edges matched from the layout text against
+#           the context TO's field names (P2 A.5.1c). Two new P6 info views
+#           v_check_display_prefix_chunks / v_check_display_empty_chunklist.
+#   2.18.0 — field-anchored trigger mirrors in the graph projection (view-only,
+#           @SCHEMA_VERSION stays 1.26.0): the P5 LogicalLinks view redirects
+#           object-level trigger mirrors (triggers_script from LayoutObject
+#           sources, subrole != button_action) onto the owner's displayed
+#           field instead of the parent layout — the field is the data anchor
+#           of the trigger, the layout was a mis-attributed proxy. Owners
+#           without a displayed field (UI controls: popover/tab/buttons) and
+#           button_action edges keep the layout anchor; Is_Cross_File is
+#           recomputed for the field branch (related-field placements).
+#           Edge contract: existence semantics ("at least one placement of
+#           this field carries the trigger"). ClusterEdgesBaseMat follows the
+#           view; ObjectLinks/where-used stay untouched.
+#   2.17.0 — trigger model revision (no DDL, @SCHEMA_VERSION stays 1.26.0):
+#           P4 block 21a emits the triggers_script·<event> owner mirror for ALL
+#           THREE owner levels (LayoutObject/Layout/File; Source_Type from
+#           Owner_Type — Layout/File need no multiset, they have no button
+#           actions; 21b stays LayoutObject-bound). LinkRoleRegistry demotes
+#           trigger_script to Counts_For_Where_Used=FALSE (the owner mirrors are
+#           the only counting where-used truth; the granular edge remains for
+#           navigation/detail). P5 LogicalLinks excludes trigger_script and the
+#           OnWindowTransaction field candidates (reads_field·
+#           transaction_parameter_field) (graph policy: trigger nodes were
+#           pure script satellites — the owner mirrors now carry the affinity;
+#           the graph tab of a trigger focus is fed by the focus bridge in
+#           graph_subgraph.sql 1.5.0 / graph_depth_profile.sql 1.2.0). New P6 view
+#           v_check_trigger_mirror_symmetry (per-level 1:1 invariant, WARN).
+#   2.16.0 — (see @SCHEMA_VERSION 1.26.0) trigger parameter plain text +
+#           candidates: P1 column ScriptTriggers.Trigger_Parameter_Text
+#           (structural /ScriptTrigger/ScriptReference/Calculation/Text, all
+#           three owner levels, DOM + streamify). P4: script_trigger_parameter
+#           DDR-anchor instances gain Formula_Text via an equi join on the
+#           trigger id (a_owner.Trigger_Pos); the collapsed no-DDR fallback
+#           (one Calc_Kind_Raw NULL instance per object) is replaced by
+#           per-trigger instances from ScriptTriggers (b_trig — covers Layout/
+#           File owners without DDR-Info for the first time); new candidate
+#           edges reads_field·transaction_parameter_field for the
+#           OnWindowTransaction parameter field (one edge per same-named field
+#           of the own file, via FieldsForTables). New P6 report view
+#           v_report_trigger_parameter_fields (info, no gate).
+#   2.15.1 — P4 CalculationsCatalog CTAS join physics (no DDL, bit-identical
+#           result, EXCEPT-ALL-verified on a 59-file corpus): left-side-only
+#           predicates removed from the LEFT-JOIN ON clauses (5× a.Owner_Type
+#           type dispatch, 1× i.Owner_Name IS NULL fallback guard) and the step
+#           position precomputed as an equi key (a_owner.Step_Pos). DuckDB
+#           planned those joins as BLOCKWISE_NL_JOIN (cross product, ~18 s /
+#           260 s CPU for 187k rows); as pure equi/hash joins the CTAS runs in
+#           ~0.6 s. Bumped despite the identical result to keep the schema-hash
+#           manifests consistent (P4 is in @SCHEMA_HASH_FILES).
+#   2.15.0 — owner-exact layout script references (P2, no DDL): the
+#           XMLLayoutReferences script block gains an ancestor guard
+#           //ScriptReference[not(ancestor::LayoutObject/ancestor::LayoutObject)]
+#           on all three parallel lists (@UUID/@name/@id), keeping only each
+#           object's OWN references. Previously the bare descendant axis also
+#           copied every nested child's refs onto each container ancestor
+#           (portal, tab control, panel, group, button bar, popover/grouped
+#           button — one phantom copy per nesting level), which block 21b then
+#           mislabeled as 'button_action'. Row count drops intentionally
+#           (corpus −25.7%); guard result equals the multiset subtraction
+#           r(self) − Σ r(direct children) with 0 negatives; own container
+#           triggers (e.g. OnPanelSwitch) and child refs are unchanged.
+#   2.14.0 — triggers_script edges carry a Link_Subrole (P4 block 21, no DDL):
+#           block 21 split into 21a (one edge per LayoutObject-owned
+#           ScriptTriggers row, subrole = Trigger_Action event passthrough)
+#           + 21b (remaining XMLLayoutReferences script rows as
+#           'button_action'). Edge count per (object, file, script) group is
+#           unchanged (multiset reconstruction over the t<=r invariant);
+#           role, link kind and where-used semantics untouched.
+#   2.13.0 — (see @SCHEMA_VERSION 1.25.0) conditional-formatting rules as
+#           structured import table LayoutObjectConditions (P3 A.12): one row
+#           per rule, depth-anchored at /LayoutObject/Conditions/Formatting/
+#           Condition (own rules only — container nesting cannot double-count),
+#           with condition type/kind, Options bitmask, formula text+hash,
+#           value-operator operands (Range Start/End, FM pre-encoding decoded)
+#           and the raw LocalCSS payload; Calculation_UUID FK filled in P4 via
+#           Calc_Kind_Raw='Condition_N'; new P6 view v_check_cf_rules
+#           (membercount guard + FK coverage).
+#   2.12.0 — hard P2 gate in single-file mode (batch parity): a Phase-2 failure
+#           (SQL error incl. heal cascade, OOM, or 0 references with objects
+#           loaded) now aborts BEFORE P3 with exit 1, done ok:false and no REST
+#           sync, instead of warning and publishing a stale catalog with rc=0.
+#           No conversion-result change on healthy runs; bumped so existing
+#           manifests re-convert once under the gated semantics.
+#   2.11.0 — (see @SCHEMA_VERSION 1.22.0) Calculation object type: CalculationsCatalog
+#           (one row per calculation instance), Object_Type='Calculation' in P4,
+#           has_calculation containment edges and v_calculation_links.
 #   2.10.0 — MBS subname recovery from calc plain text (new phase 3.5,
 #           convert_xml_03b_plugin_subname_recovery.sql): FileMaker's DDR export
 #           drops NoRef chunks carrying the first string argument of container
@@ -225,8 +350,20 @@ export LC_NUMERIC=C
 #           duplicates (same UUID, distinct object ids) separately from FileMaker's
 #           double serialization; the catmerge a2 dup report is persisted into the
 #           new MergeAbsorptions table (best-effort, s. convert_turbo.sh).
-CONVERTER_VERSION="2.10.0"
+CONVERTER_VERSION="2.20.0"
 PROJECT_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel 2>/dev/null || (cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd))"
+
+# fm-lab release provenance for the log headers: bug reports quote the RELEASE
+# version (e.g. "v0.9.8"), while the logs so far only carried converter-internal
+# versions — mapping a log to a release needed the release history. Source:
+# version.json (release version + source commit of the version stamp), fallback
+# package.json, else "unknown". Deliberately grep/sed (no jq dependency,
+# bash-3.2-safe); the first "version" key in version.json is the global one.
+FMLAB_VERSION=$(grep -m1 '"version"' "$PROJECT_ROOT/version.json" 2>/dev/null | sed -E 's/.*"version"[^"]*"([^"]*)".*/\1/')
+[ -z "$FMLAB_VERSION" ] && FMLAB_VERSION=$(grep -m1 '"version"' "$PROJECT_ROOT/package.json" 2>/dev/null | sed -E 's/.*"version"[^"]*"([^"]*)".*/\1/')
+[ -z "$FMLAB_VERSION" ] && FMLAB_VERSION="unknown"
+FMLAB_SOURCE_COMMIT=$(grep -m1 '"source_commit"' "$PROJECT_ROOT/version.json" 2>/dev/null | sed -E 's/.*"source_commit"[^"]*"([^"]*)".*/\1/')
+[ -z "$FMLAB_SOURCE_COMMIT" ] && FMLAB_SOURCE_COMMIT="unknown"
 # Six-phase pipeline. Phase 1 (extraction, the only XML-reading phase) and Phase 2
 # (reference resolution) live in separate files; the skill script runs them per
 # file in sequence.
@@ -240,7 +377,7 @@ ANALYSIS_VIEWS_TEMPLATE="$PROJECT_ROOT/sql/create_analysis_views.sql"
 # (StepsForScripts, DDR_INFO) into their own chunks to lower the
 # Phase-1 peak memory. P2–P5 run unchanged, batch-wide.
 SPLITTER_AWK="$PROJECT_ROOT/tools/katana-xml/split_fm_xml.awk"
-# Shared Katana core functions (A-W1): loaded on EVERY splitter/fuse/renamer
+# Shared Katana core functions: loaded on EVERY splitter/fuse/renamer
 # call via an additional -f BEFORE the specific file.
 KATANA_COMMON_AWK="$PROJECT_ROOT/tools/katana-xml/katana_common.awk"
 # Turbo Phase-S pass fusion: ONE awk pass replaces
@@ -767,6 +904,28 @@ WEBBED_HAS_NESTED_ATTR_FIX=false
 WEBBED_HAS_CR_PARITY=false
 WEBBED_HAS_WS_PRESERVE=false
 WEBBED_PROBE_RAN=false
+WEBBED_PROBE_ERRORS=""            # three-state probes: raw error text on probe 'error' outcomes
+WEBBED_VERSION_DETECTED=unknown   # filled by _probe_webbed_caps (duckdb_extensions())
+# Policy-lock (B2): where this run's SAX/DOM policy and sentinel state came from.
+# Values: flag (explicit user intent: FM_FORCE_DOM/--streamify/mode flags/
+# FM_FORCE_WS_SENTINEL) · probe (clean capability/gate verdict, true OR false) ·
+# sticky (last successfully used policy, adopted because a probe/gate failed
+# with an infra error) · default (conservative default, no state available).
+# Surfaced in the Strategy line and the JSON sidecar (run.strategy.source).
+POLICY_SOURCE=default
+WS_SENTINEL_SOURCE=default
+# Sticky state file: installation-wide (.fmlab/), because the policy depends on
+# webbed + repo state, not on the solution — and this block runs BEFORE the
+# solution/manifest path resolution. Test mode ignores the installation state
+# entirely (neither read nor write); FM_POLICY_STATE_FILE overrides the location
+# (sticky-path E2E tests, analog FM_WEBBED_MANIFEST).
+POLICY_STATE_FILE=""
+if [ -n "${FM_POLICY_STATE_FILE:-}" ]; then
+    POLICY_STATE_FILE="$FM_POLICY_STATE_FILE"
+elif ! $TEST_MODE; then
+    POLICY_STATE_FILE="$PROJECT_ROOT/.fmlab/webbed_policy.state"
+fi
+_policy_state_read   # → STICKY_POLICY / STICKY_WS_SENTINEL (empty when absent)
 # chr(127) sentinel gate (#73): ON = workaround active (default, conservative). Set to OFF
 # below if the probe confirms that webbed preserves whitespace natively.
 # Single source for (a) the preproc gating (preprocess_file tr pipeline + awk -v ws_sentinel)
@@ -803,15 +962,30 @@ if [ -z "${FM_SKIP_WEBBED_PROBE:-}" ] && [ -f "$WEBBED_SAX_PROBE" ]; then
     fi
     # #73: webbed preserves whitespace natively → sentinel off (preproc CR→0x7F is dropped,
     # SQL ws_restore becomes a no-op). Otherwise conservatively ON. Shared source for preproc + SQL.
-    [ "$WEBBED_HAS_WS_PRESERVE" = "true" ] && WS_SENTINEL_ON=false || WS_SENTINEL_ON=true
+    # Three-state (policy-lock): a clean probe verdict (true/false) decides; on
+    # 'error' (probe infra failure) the run keeps the last successfully used
+    # sentinel state (sticky) — the sentinel stamps the Phase-S chunk bytes, so
+    # a transient flip would devalue every stored content_hash (false-changed).
+    # Without a state the conservative default (ON) applies, as before.
+    if [ "$WEBBED_HAS_WS_PRESERVE" = "true" ]; then
+        WS_SENTINEL_ON=false; WS_SENTINEL_SOURCE=probe
+    elif [ "$WEBBED_HAS_WS_PRESERVE" = "false" ]; then
+        WS_SENTINEL_ON=true; WS_SENTINEL_SOURCE=probe
+    elif [ -n "${STICKY_WS_SENTINEL:-}" ]; then
+        WS_SENTINEL_ON="$STICKY_WS_SENTINEL"; WS_SENTINEL_SOURCE=sticky
+        emit_warn "ws-preserve probe (#73) failed (infra, not a capability verdict) — keeping the last successfully used chr(127)-sentinel state ($([ "$WS_SENTINEL_ON" = "true" ] && echo ON || echo OFF), sticky). A clean probe run will re-decide. Probe error: ${WEBBED_PROBE_ERRORS:-unknown}"
+    else
+        WS_SENTINEL_ON=true; WS_SENTINEL_SOURCE=default
+        emit_warn "ws-preserve probe (#73) failed and no policy state exists yet — conservative default: chr(127)-sentinel ON (this may restamp the chunk bytes and force a one-time full reload). Probe error: ${WEBBED_PROBE_ERRORS:-unknown}"
+    fi
 fi
 # Operator/test override for the chr(127) sentinel (analogous to FM_FORCE_DOM): 1/true = force ON,
 # 0/false = force OFF. Overrides the probe decision and
 # activates the SQL injection even without a run probe (identity tests; misdetection).
 WS_SENTINEL_FORCED=""
 case "${FM_FORCE_WS_SENTINEL:-}" in
-    1|true|on|ON|TRUE)     WS_SENTINEL_ON=true;  WS_SENTINEL_FORCED=" (FM_FORCE_WS_SENTINEL)" ;;
-    0|false|off|OFF|FALSE) WS_SENTINEL_ON=false; WS_SENTINEL_FORCED=" (FM_FORCE_WS_SENTINEL)" ;;
+    1|true|on|ON|TRUE)     WS_SENTINEL_ON=true;  WS_SENTINEL_FORCED=" (FM_FORCE_WS_SENTINEL)"; WS_SENTINEL_SOURCE=flag ;;
+    0|false|off|OFF|FALSE) WS_SENTINEL_ON=false; WS_SENTINEL_FORCED=" (FM_FORCE_WS_SENTINEL)"; WS_SENTINEL_SOURCE=flag ;;
 esac
 if [ "$WEBBED_PROBE_RAN" = "true" ]; then
     $QUIET_MODE || echo "webbed capabilities [registry: ${WEBBED_VERSION_CHECK_MANIFEST#$PROJECT_ROOT/}]: streaming-param=$WEBBED_HAS_STREAMING_PARAM · nested-attr-SAX(#98)=$WEBBED_HAS_NESTED_ATTR_FIX · sax-cr-parity(#109)=$WEBBED_HAS_CR_PARITY · ws-preserve(#73)=$WEBBED_HAS_WS_PRESERVE → chr(127)-sentinel=$([ "$WS_SENTINEL_ON" = "true" ] && echo ON || echo OFF)${WS_SENTINEL_FORCED}"
@@ -828,18 +1002,37 @@ STREAMIFY_SQL="$PROJECT_ROOT/sql/convert-xml/convert_xml_01_extract.streamify.sq
 # Preconditions of the SAX/streamify path: renamer + awk present, generate present
 # AND fresh. Returns 0 = ready, 1 = not ready (reason in $_STREAMIFY_PRECOND_MSG).
 # Pure read-check — the freshness gate regenerates only into mktemp, writes nothing.
+# _STREAMIFY_PRECOND_CLASS distinguishes the failure class (policy-lock E4):
+#   not_ready = genuine state (assets missing, generate stale rc 2, pattern
+#               drift rc 3) → DOM fallback stays correct;
+#   infra     = the gate itself failed (rc 4 = mktemp/cmp, or any unexpected
+#               rc) → NOT a staleness verdict; sticky candidate — the adaptive
+#               default may keep the last successfully used policy instead of
+#               flipping SAX→DOM on a transient error.
+# Test hook: FM_TEST_FRESHNESS_RC=<rc> substitutes the gate's exit code
+# (convention analog FM_P2_TEST_FAIL / FM_AUTO_TEST_OOM).
 _STREAMIFY_PRECOND_MSG=""
+_STREAMIFY_PRECOND_CLASS=""
 _streamify_preconditions_ok() {
+    _STREAMIFY_PRECOND_MSG=""; _STREAMIFY_PRECOND_CLASS=""
     if [ ! -f "$STREAMIFY_RENAMER" ] || ! command -v awk >/dev/null 2>&1; then
-        _STREAMIFY_PRECOND_MSG="needs awk + $STREAMIFY_RENAMER"; return 1
+        _STREAMIFY_PRECOND_MSG="needs awk + $STREAMIFY_RENAMER"; _STREAMIFY_PRECOND_CLASS=not_ready; return 1
     fi
     if [ ! -f "$STREAMIFY_SQL" ]; then
-        _STREAMIFY_PRECOND_MSG="streamify SQL variant missing ($STREAMIFY_SQL; generate via tools/gen_streamify_sql.sh)"; return 1
+        _STREAMIFY_PRECOND_MSG="streamify SQL variant missing ($STREAMIFY_SQL; generate via tools/gen_streamify_sql.sh)"; _STREAMIFY_PRECOND_CLASS=not_ready; return 1
     fi
-    if ! bash "$PROJECT_ROOT/tools/gen_streamify_sql.sh" --check >/dev/null 2>&1; then
-        _STREAMIFY_PRECOND_MSG="streamify SQL generate is stale (run tools/gen_streamify_sql.sh and commit)"; return 1
+    local _rc=0
+    if [ -n "${FM_TEST_FRESHNESS_RC:-}" ]; then
+        _rc="$FM_TEST_FRESHNESS_RC"
+    else
+        bash "$PROJECT_ROOT/tools/gen_streamify_sql.sh" --check >/dev/null 2>&1 || _rc=$?
     fi
-    return 0
+    case "$_rc" in
+        0) return 0 ;;
+        2) _STREAMIFY_PRECOND_MSG="streamify SQL generate is stale/missing (run tools/gen_streamify_sql.sh and commit)"; _STREAMIFY_PRECOND_CLASS=not_ready; return 1 ;;
+        3) _STREAMIFY_PRECOND_MSG="streamify base pattern drift (adjust EXPECT_* in tools/gen_streamify_sql.sh deliberately)"; _STREAMIFY_PRECOND_CLASS=not_ready; return 1 ;;
+        *) _STREAMIFY_PRECOND_MSG="freshness gate failed with rc $_rc (infrastructure — mktemp/cmp/TMPDIR? —, not a staleness verdict)"; _STREAMIFY_PRECOND_CLASS=infra; return 1 ;;
+    esac
 }
 
 # ── Adaptive default ──────────────────────────────────────────────────────────
@@ -855,17 +1048,67 @@ _streamify_preconditions_ok() {
 # SAX→DOM at runtime if #98 turns out missing.
 if ! $MODE_EXPLICIT && ! $TEST_MODE; then
     TURBO_MODE=true; SPLIT_MODE=true; AUTO_MODE=true
-    if [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ] && [ "$WEBBED_HAS_CR_PARITY" = "true" ] && [ "${FM_FORCE_DOM:-}" != "1" ] && _streamify_preconditions_ok; then
+    # Policy decision, three-valued (policy-lock E2/E3). Priority order:
+    # explicit flag (FM_FORCE_DOM) > clean probe/gate verdict (true OR false)
+    # > sticky state (only on error/infra) > conservative default. A SAX
+    # default needs #98 (functional identity) AND #109 (CR text fidelity) AND
+    # a ready streamify path — but a probe 'error' or an infra failure of the
+    # freshness gate is NOT evidence of a missing capability: with a 'sax'
+    # sticky state the run keeps the last successfully used policy (loud
+    # warning) instead of silently flipping to DOM and thereby devaluing every
+    # policy-stamped content_hash (false-changed full reload). A clean 'false'
+    # (capability provably absent) always decides — sticky never overrides
+    # genuine state.
+    _sax_ok=false; _sax_sticky_reason=""
+    if [ "${FM_FORCE_DOM:-}" != "1" ] && [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ]; then
+        _cr_ok=false
+        if [ "$WEBBED_HAS_CR_PARITY" = "true" ]; then
+            _cr_ok=true
+        elif [ "$WEBBED_HAS_CR_PARITY" = "error" ] && [ "${STICKY_POLICY:-}" = "sax" ]; then
+            _cr_ok=true; _sax_sticky_reason="CR-parity probe (#109) failed: ${WEBBED_PROBE_ERRORS:-unknown}"
+        fi
+        if $_cr_ok; then
+            if _streamify_preconditions_ok; then
+                _sax_ok=true
+            elif [ "$_STREAMIFY_PRECOND_CLASS" = "infra" ] && [ "${STICKY_POLICY:-}" = "sax" ]; then
+                _sax_ok=true
+                _sax_sticky_reason="${_sax_sticky_reason:+$_sax_sticky_reason; }$_STREAMIFY_PRECOND_MSG"
+            fi
+        fi
+    fi
+    if $_sax_ok; then
         STREAMIFY_MODE=true
-        echo "Note: adaptive default — SAX streaming (webbed with #98 nested-attr AND #109 CR-parity → text-faithful) + turbo + auto-backoff. Opt-out: FM_FORCE_DOM=1 or an explicit mode flag (e.g. --split)."
-    elif [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ] && [ "$WEBBED_HAS_CR_PARITY" = "true" ] && [ "${FM_FORCE_DOM:-}" != "1" ]; then
+        if [ -n "$_sax_sticky_reason" ]; then
+            POLICY_SOURCE=sticky
+            emit_warn "Adaptive default: keeping the last successfully used policy SAX despite a transient check failure (sticky) — $_sax_sticky_reason. A clean probe run will re-decide; if webbed is genuinely broken, this run will fail visibly on read_xml instead of silently switching to DOM."
+        else
+            POLICY_SOURCE=probe
+            echo "Note: adaptive default — SAX streaming (webbed with #98 nested-attr AND #109 CR-parity → text-faithful) + turbo + auto-backoff. Opt-out: FM_FORCE_DOM=1 or an explicit mode flag (e.g. --split)."
+        fi
+    elif [ "${FM_FORCE_DOM:-}" = "1" ]; then
+        POLICY_SOURCE=flag
+        echo "Note: adaptive default — turbo (DOM, chunked) + auto-backoff (FM_FORCE_DOM=1)."
+    elif [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ] && [ "$WEBBED_HAS_CR_PARITY" = "error" ]; then
+        # Probe infra failure without a usable sticky-SAX path → conservative
+        # default (DOM, today's behavior) — but loud, since this is exactly the
+        # silent-flip class the policy lock exists for. (Either no 'sax' state
+        # exists, or the streamify path is additionally genuinely not ready.)
+        POLICY_SOURCE=$([ "${STICKY_POLICY:-}" = "dom" ] && echo sticky || echo default)
+        emit_warn "CR-parity probe (#109) failed (infra, not a capability verdict) — conservative default: DOM${_STREAMIFY_PRECOND_MSG:+ (streamify path additionally: $_STREAMIFY_PRECOND_MSG)}. If the previous runs were SAX, expect a one-time full reload (content hashes are policy-stamped). Probe error: ${WEBBED_PROBE_ERRORS:-unknown}"
+    elif [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ] && [ "$WEBBED_HAS_CR_PARITY" = "true" ] && [ "$_STREAMIFY_PRECOND_CLASS" = "infra" ]; then
+        POLICY_SOURCE=$([ "${STICKY_POLICY:-}" = "dom" ] && echo sticky || echo default)
+        emit_warn "Streamify freshness gate failed with an infrastructure error and no 'sax' policy state exists — conservative default: DOM. $_STREAMIFY_PRECOND_MSG"
+    elif [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ] && [ "$WEBBED_HAS_CR_PARITY" = "true" ]; then
         # webbed COULD do SAX (text-faithful), but the streamify path is not ready →
         # safe DOM fallback instead of a hard abort (the adaptive default must never
         # block a conversion the user never asked to stream).
+        POLICY_SOURCE=probe
         echo "Note: adaptive default — turbo (DOM, chunked) + auto-backoff. (webbed could do SAX, but the streamify path is not ready: $_STREAMIFY_PRECOND_MSG → DOM fallback.)"
-    elif [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ] && [ "${FM_FORCE_DOM:-}" != "1" ]; then
+    elif [ "$WEBBED_HAS_NESTED_ATTR_FIX" = "true" ]; then
+        POLICY_SOURCE=probe
         echo "Note: adaptive default — turbo (DOM, chunked) + auto-backoff. (#98 present, but #109 CR-parity missing → DOM stays text-faithful; --streamify only as opt-in with a text caveat.)"
     else
+        POLICY_SOURCE=probe
         echo "Note: adaptive default — turbo (DOM, chunked) + auto-backoff (never a hard RAM abort).$([ "$WEBBED_HAS_NESTED_ATTR_FIX" != "true" ] && echo ' (No #98-capable webbed → no SAX.)')"
     fi
 fi
@@ -873,6 +1116,12 @@ fi
 # --no-auto wins over every mode that would otherwise imply the backoff (explicit
 # --turbo or the adaptive default), regardless of argument order.
 $NO_AUTO && AUTO_MODE=false
+
+# Policy source for explicit user choices (E3: flags outrank probe and sticky).
+# An explicit mode flag (incl. --streamify) or FM_FORCE_DOM pins the policy by
+# intent — the adaptive block above never ran, or its verdict is overridden.
+$MODE_EXPLICIT && POLICY_SOURCE=flag
+[ "${FM_FORCE_DOM:-}" = "1" ] && POLICY_SOURCE=flag
 
 # Effective mode + memory metrics. Streaming: low per-file floor, spillable, cheap
 # workers. DOM: full whole-doc peak, NOT spillable (libxml2 lives outside
@@ -1028,7 +1277,7 @@ fi
 # Dry-run hook (test/diagnose): print the resolved strategy flags and exit before any
 # build. Used by the mode-selection unit checks; never set in normal operation.
 if [ "${FM_DRYRUN_MODES:-}" = "1" ]; then
-    echo "RESOLVED MODE_EXPLICIT=$MODE_EXPLICIT TURBO=$TURBO_MODE SPLIT=$SPLIT_MODE AUTO=$AUTO_MODE STREAMIFY=$STREAMIFY_MODE CHANGED_ONLY=$CHANGED_ONLY streaming=$_streaming_mode jobs=$JOBS subchunk=$SUBCHUNK eff_floor=${_eff_floor:-?} mem_base=$_mem_base avail=$_avail_mb"
+    echo "RESOLVED MODE_EXPLICIT=$MODE_EXPLICIT TURBO=$TURBO_MODE SPLIT=$SPLIT_MODE AUTO=$AUTO_MODE STREAMIFY=$STREAMIFY_MODE CHANGED_ONLY=$CHANGED_ONLY streaming=$_streaming_mode jobs=$JOBS subchunk=$SUBCHUNK eff_floor=${_eff_floor:-?} mem_base=$_mem_base avail=$_avail_mb policy_source=$POLICY_SOURCE sentinel=$WS_SENTINEL_ON sentinel_source=$WS_SENTINEL_SOURCE sticky_policy=${STICKY_POLICY:-none} precond_class=${_STREAMIFY_PRECOND_CLASS:-none}"
     exit 0
 fi
 
@@ -1044,7 +1293,17 @@ fi
 # some awks is unverified terrain, and no real-world failure is on record — a
 # hard abort there could ground platforms whose files never contain NUL.
 if $TURBO_MODE && [ "${FM_SKIP_AWK_PROBE:-}" != "1" ]; then
-    _probe_dir=$(mktemp -d)
+    # Template form so BSD mktemp honors TMPDIR (bare `mktemp -d` on macOS always
+    # goes via _CS_DARWIN_USER_TEMP_DIR to /var/folders/…). Guard explicitly:
+    # without it an unwritable temp dir made the probe fail with a misleading
+    # "install mawk/gawk" remediation.
+    _probe_dir=$(mktemp -d "${TMPDIR:-/tmp}/fmlab.XXXXXX") || _probe_dir=""
+    if [ -z "$_probe_dir" ]; then
+        echo "ERROR: cannot create a temp directory under '${TMPDIR:-/tmp}' — the AWK self-probe needs one."
+        echo "       Point TMPDIR at a writable directory and retry."
+        echo "       Override at your own risk: FM_SKIP_AWK_PROBE=1."
+        exit 1
+    fi
     _probe_fuse() {  # $1 = printf format → od hex of the real fuse-pass output
         printf "$1" > "$_probe_dir/in"
         rm -f "$_probe_dir/chunk_000_main.xml"
@@ -1264,7 +1523,19 @@ ERROR_LOG_FILE="$LOG_DIR/${LOG_PREFIX}_${TIMESTAMP}_errors.log"
 # would otherwise only ever reach the terminal. This is the authoritative "what
 # actually happened" trace for post-mortem debugging.
 CONSOLE_LOG="$LOG_DIR/${LOG_PREFIX}_${TIMESTAMP}_console.log"
-LOG_SCHEMA="fmlab.convert-log/2.0"
+# 2.2: additive — run.strategy gains 'source'/'sentinel_source' (policy-lock).
+LOG_SCHEMA="fmlab.convert-log/2.2"
+
+# Error-log run header, written lazily on the FIRST error append: the error log
+# must not exist for error-free runs ([ -s ] gates the "Error details" hint at
+# the end of the run), so no eager creation. The file-existence guard makes it
+# safe from subshells/workers (a plain variable guard would not survive them).
+errlog_header_once() {
+    [ -e "$ERROR_LOG_FILE" ] && return 0
+    printf 'fm-lab %s (commit %s) · converter %s · schema %s · run %s\n\n' \
+        "$FMLAB_VERSION" "$FMLAB_SOURCE_COMMIT" "$CONVERTER_VERSION" \
+        "${SCHEMA_VERSION_EXPECTED:-?}" "${LOG_PREFIX}_${TIMESTAMP}" >> "$ERROR_LOG_FILE" 2>/dev/null
+}
 
 # Activate the console mirror as early as possible (right after the log paths are
 # known) so nothing downstream escapes it. Opt-out: FM_NO_CONSOLE_LOG=1.
@@ -1279,6 +1550,7 @@ if [ "${FM_NO_CONSOLE_LOG:-}" != "1" ] && [ "${_FM_CONSOLE_LOG_ACTIVE:-}" != "1"
     {
         echo "===== convert_fm_xml.sh console log ====="
         echo "Started: $(date '+%Y-%m-%d %H:%M:%S')  PID:$$  mode:$MODE  args:$ORIGINAL_ARGS"
+        echo "fm-lab: $FMLAB_VERSION (commit $FMLAB_SOURCE_COMMIT) · converter $CONVERTER_VERSION"
         echo "========================================="
     } >> "$CONSOLE_LOG" 2>/dev/null
     if $QUIET_MODE; then
@@ -1286,6 +1558,22 @@ if [ "${FM_NO_CONSOLE_LOG:-}" != "1" ] && [ "${_FM_CONSOLE_LOG_ACTIVE:-}" != "1"
     else
         exec > >(tee -a "$CONSOLE_LOG") 2>&1
     fi
+fi
+
+# Persist the resolved run strategy into a durable log: the decisive startup
+# echoes (webbed capability probe, adaptive-default SAX/DOM decision, sentinel
+# state, jobs resolution) all run BEFORE the console mirror above starts — in a
+# non-interactive invocation they are gone, and precisely these choices are
+# stamped into the Phase-S chunk bytes (streamify rename, chr(127) sentinel)
+# and thus into every content_hash. One consolidated line, re-emitted here so
+# it is guaranteed to reach _console.log; write_text_log/write_json_sidecar
+# reuse it for the structured logs.
+RUN_STRATEGY_TEXT="policy=$($STREAMIFY_MODE && echo sax || echo dom) policy-source=$POLICY_SOURCE · chr(127)-sentinel=$([ "$WS_SENTINEL_ON" = "true" ] && echo ON || echo OFF) sentinel-source=$WS_SENTINEL_SOURCE · webbed=$WEBBED_VERSION_DETECTED streaming-param=$WEBBED_HAS_STREAMING_PARAM #98=$WEBBED_HAS_NESTED_ATTR_FIX #109=$WEBBED_HAS_CR_PARITY #73=$WEBBED_HAS_WS_PRESERVE probe=$WEBBED_PROBE_RAN · turbo=$TURBO_MODE auto=$AUTO_MODE split=$SPLIT_MODE changed-only=$CHANGED_ONLY · jobs=$JOBS subchunk=$SUBCHUNK · avail=${_avail_mb}MB"
+if $QUIET_MODE; then
+    # Quiet stdout is a pristine NDJSON stream (SSE bridge) — file-only append.
+    [ "${FM_NO_CONSOLE_LOG:-}" != "1" ] && printf 'Strategy: %s\n' "$RUN_STRATEGY_TEXT" >> "$CONSOLE_LOG" 2>/dev/null
+else
+    echo "Strategy: $RUN_STRATEGY_TEXT"
 fi
 
 # ── Turbo mode: streaming directory + chunkmap ──
@@ -1300,6 +1588,34 @@ STREAMING_DIR="${STREAMING_DIR:-$DB_DIR/streaming}"
 _DB_BASE="$(basename "$DB_FILE" .duckdb)"
 CHUNKMAP_DB="$STREAMING_DIR/chunkmap_${_DB_BASE}.duckdb"
 MANIFEST_DB="$STREAMING_DIR/manifest_${_DB_BASE}.duckdb"
+
+# ── Policy-flip diagnosis (policy-lock B1) ───────────────────────────────────
+# Compare this run's policy fingerprint against manifest_run — the fingerprint
+# of the run that wrote the currently stored catalog hashes (per solution, like
+# the hashes themselves). The Phase-S chunk bytes are policy-stamped (streamify
+# rename, chr(127) sentinel), so a flip devalues every content_hash: the
+# catalog gate then reports "changed" for byte-identical XML and reloads the
+# rename catalogs (false-changed — safe but expensive). This diagnosis NAMES
+# that instead of leaving a silent hash mismatch. Warn level only, never a
+# gate: the reload is the correct behavior and runs unchanged. A missing
+# table/row (pre-policy-lock manifest) stays silent until the first successful
+# run writes the fingerprint — deliberate, no forced rebuild.
+POLICY_CHANGE_DIAG=""
+_RUN_POLICY=$($STREAMIFY_MODE && echo sax || echo dom)
+if [ -f "$MANIFEST_DB" ]; then
+    _prev_fp=$("$DUCKDB_BIN" -readonly "$MANIFEST_DB" -noheader -list -c \
+        "SELECT parser_policy || '|' || ws_sentinel FROM manifest_run WHERE id=1;" 2>/dev/null)
+    if [ -n "$_prev_fp" ]; then
+        _prev_pol="${_prev_fp%%|*}"; _prev_ws="${_prev_fp#*|}"
+        if [ "$_prev_pol" != "$_RUN_POLICY" ] || [ "$_prev_ws" != "$WS_SENTINEL_ON" ]; then
+            POLICY_CHANGE_DIAG="policy changed ${_prev_pol}/sentinel=$([ "$_prev_ws" = "true" ] && echo ON || echo OFF) → ${_RUN_POLICY}/sentinel=$([ "$WS_SENTINEL_ON" = "true" ] && echo ON || echo OFF) (source=$POLICY_SOURCE) — content hashes are policy-stamped; expect a one-time reload of the affected catalogs instead of a skip"
+            # Console line right after the Strategy line; in quiet mode via
+            # emit_log (NDJSON purity — reaches the web import log without any
+            # server change). Re-surfaced as a post-check finding in P6 (E5).
+            emit_log "Policy change: $POLICY_CHANGE_DIAG"
+        fi
+    fi
+fi
 TURBO_W=1
 TURBO_WORKER_THREADS=""   # per-worker thread budget for Phase D (see below)
 if $TURBO_MODE; then
@@ -2057,7 +2373,7 @@ run_phase2_resolve() {
 # --jobs: P2 is table-only, batch-fixed and does NOT parallelize over DuckDB's
 # intra-query threads (the xml_extract UDF path is serialized per row). Instead of
 # a single pass, the files are split across K workers; each worker builds its file
-# slice of the 6 target tables into its own part DB (read-only ATTACH on the master,
+# slice of the 7 target tables into its own part DB (read-only ATTACH on the master,
 # filtered VIEWs as sources, then the UNCHANGED P2 template), followed by a central merge.
 #
 # CORRECTNESS: all P2 INSERTs are File_Name-scoped (every produced row carries the
@@ -2107,7 +2423,7 @@ _p2_effective_jobs() {
     echo "$want"
 }
 
-# One P2 slice worker: builds the 6 target tables for the files in $partdir/bin_$idx.list
+# One P2 slice worker: builds the 7 target tables for the files in $partdir/bin_$idx.list
 # into its own part DB ($partdir/p2_$idx.duckdb). Writes rc to $partdir/$idx.rc.
 _p2_worker() {
     local idx="$1" partdir="$2" threads="${3:-}"
@@ -2121,7 +2437,7 @@ _p2_worker() {
         echo 137 > "$partdir/${idx}.rc"
         return 0
     fi
-    local ssql; ssql="$(mktemp)"
+    local ssql; ssql="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")"
     # IN list of this slice's File_Names (single-quoted, internal quotes doubled).
     local infiles
     infiles=$(awk '{gsub(/'"'"'/,"'"'"''"'"'"); printf "%s'"'"'%s'"'"'", (NR>1?",":""), $0}' "$list")
@@ -2136,7 +2452,7 @@ _p2_worker() {
         # bare names and stays unchanged. Filter pushdown ensures xml_extract only
         # runs over the slice's portion.
         local t
-        for t in StepsForScripts LayoutObjects DDR_Calculations FieldsForTables CustomFunctionsCatalog PrivilegeSetRecordAccess CustomMenuCatalog CustomMenuItemCatalog; do
+        for t in StepsForScripts LayoutObjects DDR_Calculations DDR_ChunkListContexts TableOccurrenceCatalog FieldsForTables CustomFunctionsCatalog PrivilegeSetRecordAccess CustomMenuCatalog CustomMenuItemCatalog ScriptTriggers; do
             echo "CREATE VIEW $t AS SELECT * FROM src.$t WHERE File_Name IN ($infiles);"
         done
         cat "$P2_TEMPLATE"
@@ -2150,7 +2466,7 @@ _p2_worker() {
 # Returns: 0 = ok, otherwise error (worker or merge rc).
 run_phase2_partitioned() {
     local K="$1" logfile="$2" p2_thr="${3:-}"
-    local partdir; partdir="$(mktemp -d)"
+    local partdir; partdir="$(mktemp -d "${TMPDIR:-/tmp}/fmlab.XXXXXX")"
     : > "$logfile"
     [ -n "$p2_thr" ] && echo "P2 partitioned ×$K, ⌊cores/K⌋=$p2_thr threads/slice" >> "$logfile"
 
@@ -2212,7 +2528,7 @@ run_phase2_partitioned() {
     #    fully anyway, and between P2 and P3 nobody reads them), then fill additively
     #    from all slices. No persistent views depend on them.
     local msql ai=0 j s tbl
-    msql="$(mktemp)"
+    msql="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")"
     {
         for s in "${slices[@]}"; do echo "ATTACH '$s' AS s${ai} (READ_ONLY);"; ai=$((ai+1)); done
         for tbl in XMLStepReferences XMLLayoutReferences LayoutObjectSteps MBS_SubnameMap GetSubparameterMap XMLCalcReferences PluginFunctionUsages; do
@@ -2250,6 +2566,16 @@ run_phase2() {
     fi
     local K; K=$(_p2_effective_jobs)
     if [ "${K:-1}" -lt 2 ]; then
+        # Test hook: force a P2 failure without running the template. The natural
+        # trigger (PK collision on a re-run) is gone since the clear-before-insert
+        # fix, so the post-P2 gates (batch AND single-file) need a deterministic
+        # switch to stay end-to-end testable. Single-pass branch only — force
+        # K=1 via FM_P2_JOBS=1 on multi-file corpora. Never set in production.
+        if [ -n "${FM_P2_TEST_FAIL:-}" ]; then
+            echo "[FM_P2_TEST_FAIL] simulated P2 failure (template skipped)"
+            P2_FAILED=true
+            return 1
+        fi
         run_pipeline_step "$label" "$P2_TEMPLATE"; local rc=$?
         # Mirror the partitioned path: surface a non-fatal SQL failure via P2_FAILED
         # so the post-P2 gate (batch) and the single-mode chain tracking see it.
@@ -2264,7 +2590,7 @@ run_phase2() {
     local p2_thr
     if [ -n "${FM_P2_THREADS:-}" ]; then p2_thr="$FM_P2_THREADS"
     else p2_thr=$(( _nproc / K )); [ "$p2_thr" -lt 1 ] && p2_thr=1; fi
-    local templog; templog=$(mktemp); local rc=0
+    local templog; templog=$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX"); local rc=0
     if (cd "$PROJECT_ROOT" && run_phase2_partitioned "$K" "$templog" "$p2_thr"); then
         echo "✓ $label (partitioned ×$K, ${p2_thr} threads/slice)"
     else
@@ -2277,6 +2603,7 @@ run_phase2() {
         # (memory_limit exceeded) leaves its own stderr text. Match both.
         grep -qiE 'P2_OOM_MARKER|out of memory|failed to allocate|exceeds.*memory_limit' "$templog" 2>/dev/null && P2_OOM=true
         echo "✗ WARNING: $label (partitioned ×$K) failed"
+        errlog_header_once
         {
             echo "================================================================================"
             echo "ERROR: $label (partitioned ×$K)"
@@ -2310,7 +2637,7 @@ run_p1_on() {
     # Sequence_ID catalog the split loop passes the global record offset through.
     local seqoff="${P1_SEQ_OFFSET:-0}"
     case "$seqoff" in ''|*[!0-9]*) seqoff=0 ;; esac
-    local tsql; tsql="$(mktemp)"
+    local tsql; tsql="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")"
     # $xfile lands as a sed replacement AND an SQL literal: first double the
     # quotes for the SQL ('→''), then escape the sed-active characters (\ & /) in the
     # replacement — otherwise e.g. O'Brien.xml breaks the SQL (injection into
@@ -2409,6 +2736,7 @@ run_p1_on() {
 log_error_section() {
     local title="$1" body="${2:-}"
     mkdir -p "$LOG_DIR" 2>/dev/null
+    errlog_header_once
     {
         echo "================================================================================"
         echo "ERROR: $title"
@@ -2537,7 +2865,7 @@ process_single_file() {
     fi
 
     # 2. Create temporary working directory
-    local TEMP_DIR=$(mktemp -d)
+    local TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/fmlab.XXXXXX")
     trap "rm -rf '$TEMP_DIR'; trap - RETURN" RETURN  # A-B10: cleanup + clear the trap itself (otherwise it fires again on every later return)
 
     # 3. Pre-Processor (stage 1): encoding→UTF-8 (BOM sniffing) + special-char
@@ -2646,7 +2974,6 @@ process_single_file() {
         if [ -z "$NCHUNKS" ] || [ ! -f "$CHUNK_DIR/chunk_000_main.xml" ]; then
             echo "  ERROR: XML split failed"
             sed 's/^/    /' "$ERROR_LOG"
-            cat "$ERROR_LOG"
             return 3
         fi
         echo "  Converting $NCHUNKS chunk(s) to DuckDB..."
@@ -2684,7 +3011,7 @@ process_single_file() {
                      columns={'catalog':'VARCHAR','split_number':'INTEGER','record_count':'INTEGER','sub_m':'INTEGER','chunk_file':'VARCHAR'});
                 " >>"$ERROR_LOG" 2>&1; then
                 echo "  ERROR: Chunk map load failed"
-                sed 's/^/    /' "$ERROR_LOG"; cat "$ERROR_LOG"
+                sed 's/^/    /' "$ERROR_LOG"
                 return 3
             fi
             # Phase D: parse chunkmap-driven sequentially into the master. Order by
@@ -2734,7 +3061,6 @@ process_single_file() {
         echo "  ERROR: DuckDB conversion failed (exit code: $RESULT)"
         echo "  Error details:"
         sed 's/^/    /' "$ERROR_LOG"
-        cat "$ERROR_LOG"
         return 3
     fi
 }
@@ -2780,6 +3106,13 @@ postprocess_db() {
     POSTCHECK_WARN=0
     CHECKS_RUN=0
     [ ! -f "$DB_FILE" ] && return 0
+
+    # Policy-flip diagnosis (policy-lock B1), detected at startup against
+    # manifest_run — re-surfaced here so it lands in the post-check section of
+    # the .log/JSON too (warn level, never gates: the reload is correct).
+    if [ -n "${POLICY_CHANGE_DIAG:-}" ]; then
+        add_finding consistency warn "$POLICY_CHANGE_DIAG" "One-time full reload under the new policy is expected; check the Strategy line (policy-source) and run.strategy in the JSON sidecar if the flip was not intended"
+    fi
 
     # Phase 6: (re)create the check views — data logic in the SQL, assessment here.
     # CREATE OR REPLACE VIEW is idempotent; needs write access (master DB).
@@ -2855,6 +3188,19 @@ postprocess_db() {
         local synth_rules
         synth_rules=$(pp_query "SELECT string_agg(rule, ', ') FROM v_check_synthetic WHERE source_n > 0 AND derived_n = 0")
         add_finding regression warn "$synth_bad synthetic rule(s) violated: ${synth_rules:-?} (source populated, derived rows = 0)" "Check the silent 0-row INSERT of the associated P4 block (pattern/naming-convention drift)"
+    fi
+
+    # Numeric sentinel drift (guard): Validation_MaxChars is normalized at
+    # extraction (NULLIF on 4294967295 = FileMaker's "unlimited" sentinel).
+    # Any value still above the coarse plausibility bound means the sentinel
+    # changed shape and the NULLIF no longer matches — detect, never mutate.
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local sentinel_n
+    sentinel_n=$(pp_num "SELECT sentinel_n FROM v_check_numeric_sentinels")
+    if [ "$sentinel_n" -gt 0 ]; then
+        local sentinel_sample
+        sentinel_sample=$(pp_query "SELECT sample FROM v_check_numeric_sentinels")
+        add_finding regression warn "$sentinel_n implausible Validation_MaxChars value(s) > 1e9: ${sentinel_sample:-?}" "Unrecognized sentinel or new serialization — check the NULLIF normalization in convert_xml_01_extract.sql"
     fi
 
     # Orphan link SOURCES + NULL-target stock (guard). Sources are same-file
@@ -3044,6 +3390,34 @@ postprocess_db() {
         add_finding plugin info "$fm_missing „Function Missing\" chunk(s) — plugin function not loaded at export time: ${fm_files:-?}" "A plugin is missing on the exporting client; the affected function references are unresolvable in the DDR (discarded from the variable extraction)"
     fi
 
+    # %X:-prefixed display-calculation chunks (FileMaker DDR defect): a TYPED layout
+    # calculation with a single field reference is chunked as a VariableReference
+    # ('%N:Zahl'). P3 discards these from the variable extraction (no phantom
+    # variables), P2 A.5.1b recovers the field reference against the ChunkList's
+    # context TO. Reported as info so the source defect stays visible.
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local disp_prefix
+    disp_prefix=$(pp_num "SELECT chunk_n FROM v_check_display_prefix_chunks")
+    if [ "$disp_prefix" -gt 0 ]; then
+        local disp_prefix_files
+        disp_prefix_files=$(pp_query "SELECT files FROM v_check_display_prefix_chunks")
+        add_finding consistency info "$disp_prefix typed display-calculation chunk(s) misclassified by FileMaker (%X: prefix): ${disp_prefix_files:-?}" "DDR defect compensated: no phantom variables are created and the field reference is recovered against the context TO where resolvable"
+    fi
+
+    # Empty display-calculation ChunkLists (FileMaker DDR defect): a TYPED layout
+    # calculation with an expression loses its complete chunk decomposition. P4
+    # creates a fallback instance (formula recovered from the layout text), P2
+    # A.5.1c recovers field edges of the context TO; function references in these
+    # formulas remain lost (localized names).
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local disp_empty
+    disp_empty=$(pp_num "SELECT anchor_n FROM v_check_display_empty_chunklist")
+    if [ "$disp_empty" -gt 0 ]; then
+        local disp_empty_files
+        disp_empty_files=$(pp_query "SELECT files FROM v_check_display_empty_chunklist")
+        add_finding consistency info "$disp_empty display calculation(s) with an empty DDR ChunkList: ${disp_empty_files:-?}" "DDR defect compensated: instance + field edges recovered from the layout text; function references of these formulas are missing in where-used"
+    fi
+
     # unknown LayoutObject types (after the P4 locale normalization). > 0 ⇒
     # a new locale name (extend the mapping) or a genuine new FileMaker type (canon set).
     CHECKS_RUN=$((CHECKS_RUN + 1))
@@ -3064,6 +3438,81 @@ postprocess_db() {
         local unkp_detail
         unkp_detail=$(pp_query "SELECT string_agg(Part_Type || ' ×' || n, ', ' ORDER BY n DESC) FROM v_check_unknown_part_types")
         add_finding consistency warn "$unk_parts unknown LayoutPart type(s): ${unkp_detail:-?}" "Locale name? Add the DE→EN mapping in convert_xml_04_catalog.sql (missed sub-summary names cost breaks_on_field links). Genuine new part type? Extend the canon set in v_check_unknown_part_types"
+    fi
+
+    # Calculation object type (schema 1.22.0): unresolved anchors, UUID collisions,
+    # uncovered DDR anchors — all expected 0 (coverage/identity regression guards).
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    # (unresolved_n is intentionally NOT re-reported here — the threshold-based
+    # anchor-resolution check on v_calc_anchors already covers it, incl. the
+    # expected partial-corpus remainder.)
+    local calc_dups calc_uncov
+    calc_dups=$(pp_num "SELECT dup_uuid_n FROM v_check_calculations")
+    calc_uncov=$(pp_num "SELECT uncovered_anchor_n FROM v_check_calculations")
+    if [ "$calc_dups" -gt 0 ]; then
+        add_finding consistency warn "$calc_dups CalculationsCatalog UUID collision(s)" "Identity Owner × Calc_Role × Calc_Index is no longer unique — check the Calc_Index window in convert_xml_04_catalog.sql"
+    fi
+    if [ "$calc_uncov" -gt 0 ]; then
+        add_finding consistency warn "$calc_uncov DDR anchor(s) without CalculationsCatalog row" "Coverage regression — the DDR side of the CalculationsCatalog union lost anchors"
+    fi
+
+    # Calc role vocabulary: roles outside the normalized set = unknown DDR
+    # suffix (curation signal, not an error).
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local unk_roles
+    unk_roles=$(pp_num "SELECT COUNT(*) FROM v_check_calc_roles")
+    if [ "$unk_roles" -gt 0 ]; then
+        local unkr_detail
+        unkr_detail=$(pp_query "SELECT string_agg(Calc_Role || ' ×' || n, ', ' ORDER BY n DESC) FROM v_check_calc_roles")
+        add_finding consistency warn "$unk_roles unknown calc role(s): ${unkr_detail:-?}" "New DDR suffix — extend the role mapping in convert_xml_04_catalog.sql (CalculationsCatalog classification) and the vocabulary in v_check_calc_roles"
+    fi
+
+    # Conditional-formatting rules (schema 1.25.0): membercount guard (anti-
+    # nesting/coverage, expected 0), reverse FK coverage (expected 0) and the
+    # informational foreign-anchor remainder (small >0 is a known FM copy
+    # artifact — the rule carries another object's DDRREF).
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local cf_mm cf_norule cf_nofk
+    cf_mm=$(pp_num "SELECT membercount_mismatch_n FROM v_check_cf_rules")
+    cf_norule=$(pp_num "SELECT calc_without_rule_n FROM v_check_cf_rules")
+    cf_nofk=$(pp_num "SELECT hash_without_fk_n FROM v_check_cf_rules")
+    if [ "$cf_mm" -gt 0 ]; then
+        add_finding consistency warn "$cf_mm layout object(s) with CF rule count ≠ Formatting/@membercount" "Depth-anchored extraction drifted (nested child rules counted, or own rules lost) — check LayoutObjectConditions in convert_xml_03_details.sql (A.12)"
+    fi
+    if [ "$cf_norule" -gt 0 ]; then
+        add_finding consistency warn "$cf_norule conditional_format calc instance(s) without LayoutObjectConditions row" "Reverse FK coverage gap — the rule extraction lost rules the DDR anchors still see"
+    fi
+    if [ "$cf_nofk" -gt 0 ]; then
+        add_finding consistency info "$cf_nofk CF rule(s) with DDRREF hash but no Calculation_UUID FK" "Expected small remainder: FM copy artifacts carrying a foreign object's DDRREF anchor"
+    fi
+
+    # Owner-exact layout script refs (converter 2.15.0, P2 ancestor guard):
+    # both regression directions of the guard, expected 0 each — a deficit
+    # means own trigger refs were over-filtered, container excess means
+    # descendant refs hoist into containers again (phantom button_action).
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local lsr_deficit lsr_container
+    lsr_deficit=$(pp_num "SELECT trigger_deficit_n FROM v_check_layout_script_refs")
+    lsr_container=$(pp_num "SELECT container_action_n FROM v_check_layout_script_refs")
+    if [ "$lsr_deficit" -gt 0 ]; then
+        add_finding consistency warn "$lsr_deficit layout-object script-ref group(s) with fewer rows than own triggers" "The P2 ancestor guard over-filtered OWN trigger refs — check the XMLLayoutReferences script block in convert_xml_02_resolve.sql"
+    fi
+    if [ "$lsr_container" -gt 0 ]; then
+        add_finding consistency warn "$lsr_container container script-ref row(s) beyond own triggers (phantom button_action)" "Descendant refs hoist into containers again — check the ancestor guard in convert_xml_02_resolve.sql"
+    fi
+
+    # Trigger mirror symmetry (converter 2.17.0, P4 block 21a on all three owner
+    # levels): per owner level, event mirrors == ScriptTriggers rows with a
+    # script == granular trigger_script edges. The mirrors are the only
+    # where-used truth since 2.17.0 — a broken 1:1 means double counting or a
+    # where-used gap. WARN, no hard gate (pre-2.17.0 catalogs keep running).
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local tms_n
+    tms_n=$(pp_num "SELECT COUNT(*) FROM v_check_trigger_mirror_symmetry WHERE mirror_n <> triggers_with_script_n OR granular_n <> triggers_with_script_n")
+    if [ "$tms_n" -gt 0 ]; then
+        local tms_sample
+        tms_sample=$(pp_query "SELECT string_agg(owner_type || ': triggers=' || triggers_with_script_n || ' mirrors=' || mirror_n || ' granular=' || granular_n, ', ') FROM v_check_trigger_mirror_symmetry WHERE mirror_n <> triggers_with_script_n OR granular_n <> triggers_with_script_n")
+        add_finding consistency warn "$tms_n owner level(s) with broken trigger mirror symmetry: ${tms_sample:-?}" "Event mirrors must be 1:1 with ScriptTriggers rows per owner level — check P4 block 21a / block 18 in convert_xml_04_catalog.sql"
     fi
 
     # Schema consistency: DB SchemaInfo == template version (double-check of the detection)
@@ -3176,7 +3625,7 @@ finalize_run() {
 # that must gate on success (single-mode manifest write) despite the tolerant rc.
 run_pipeline_step() {
     local label="$1"; shift
-    local templog; templog=$(mktemp)
+    local templog; templog=$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")
     local rc=0
     PIPELINE_STEP_OK=true
     if (cd "$PROJECT_ROOT" && { memory_limit_prefix; cat "$@"; } | "$DUCKDB_BIN" "$DB_FILE") > "$templog" 2>&1; then
@@ -3184,6 +3633,7 @@ run_pipeline_step() {
     else
         PIPELINE_STEP_OK=false
         echo "✗ WARNING: $label failed"
+        errlog_header_once
         {
             echo "================================================================================"
             echo "ERROR: $label"
@@ -3563,7 +4013,7 @@ if [[ "$MODE" == "batch" ]]; then
     if $TURBO_MODE; then
         # Turbo engine (phases S/D/C). Produces the master DB + per-file sidecars.
         P1_PREPROCESSED=true
-        PARTDB_DIR=$(mktemp -d)
+        PARTDB_DIR=$(mktemp -d "${TMPDIR:-/tmp}/fmlab.XXXXXX")
         if $QUIET_MODE; then
             emit_log "Turbo: phase S/D/C ($TURBO_W workers, chunkmap-driven)"
         else
@@ -3591,7 +4041,7 @@ if [[ "$MODE" == "batch" ]]; then
     elif [ "$JOBS" -gt 1 ] && [ "$TOTAL" -gt 1 ]; then
         PARALLEL_P1=true
         P1_PREPROCESSED=true
-        PARTDB_DIR=$(mktemp -d)
+        PARTDB_DIR=$(mktemp -d "${TMPDIR:-/tmp}/fmlab.XXXXXX")
         if $QUIET_MODE; then
             emit_log "Phase 1 parallel: $JOBS workers for $TOTAL files (part DBs + merge)"
         else
@@ -3738,6 +4188,7 @@ if [[ "$MODE" == "batch" ]]; then
 
             # Write error details to separate error log file
             if [ -n "$ERROR_OUTPUT" ]; then
+                errlog_header_once
                 echo "================================================================================" >> "$ERROR_LOG_FILE"
                 echo "ERROR: $BASENAME" >> "$ERROR_LOG_FILE"
                 echo "Time: $(date '+%Y-%m-%d %H:%M:%S')" >> "$ERROR_LOG_FILE"
@@ -3952,12 +4403,18 @@ if [[ "$MODE" == "batch" ]]; then
     # whatever imported successfully → internally consistent. So sync when at least one file
     # succeeded, even if others failed. FM_SYNC_STRICT=1 restores the strict gate (sync only on a
     # fully clean batch). sync_to_rest_api additionally refuses a master without ObjectCatalog.
+    # Heal runs sync too: reaching this point means P2–P6 were rebuilt THIS run (the
+    # nothing-changed short-circuit exits earlier). A heal run after an aborted import
+    # has SUCCESS_COUNT=0 with every file "unchanged", yet its read copy can be stale —
+    # the run that stamped the file manifests aborted before publishing. Requiring
+    # SUCCESS_COUNT>0 here left that copy stale forever ("DB already up to date" checks
+    # only the master). Only an all-failed batch stays unpublished.
     DO_SYNC=false
     if ! $TEST_MODE; then
         if [ -n "${FM_SYNC_STRICT:-}" ]; then
             [ ${#FAILED_FILES[@]} -eq 0 ] && DO_SYNC=true
         else
-            [ "${SUCCESS_COUNT:-0}" -gt 0 ] && DO_SYNC=true
+            if [ "${SUCCESS_COUNT:-0}" -gt 0 ] || [ ${#FAILED_FILES[@]} -eq 0 ]; then DO_SYNC=true; fi
         fi
     fi
     if $DO_SYNC; then
@@ -4055,6 +4512,11 @@ if [[ "$MODE" == "batch" ]]; then
     else
         emit_done true "Successful: $SUCCESS_COUNT, Skipped: $SKIPPED_COUNT"
     fi
+    # Policy-lock E7: persist the successfully used policy as the sticky
+    # fallback state — written ONLY at the end of successful runs, so a
+    # sticky-adopted policy never perpetuates itself while runs fail.
+    # (No-op in test mode unless FM_POLICY_STATE_FILE is set.)
+    _policy_state_write "$_RUN_POLICY" "$WS_SENTINEL_ON"
     stamp_last_run true 0 "$SUCCESS_COUNT" "$TOTAL"        # mirror CLI success too
     exit 0
 
@@ -4106,6 +4568,7 @@ elif [[ "$MODE" == "single" ]]; then
         FAILED_FILES_INFO+=("$BASENAME|$ERR_CATEGORY|$ERR_RETRY_HINT")
         FILE_ERR_CAT="$ERR_CATEGORY"; FILE_ERR_RC="$SINGLE_RC"; FILE_ERR_HINT="$ERR_RETRY_HINT"
         if [ -n "$SINGLE_OUT" ]; then
+            errlog_header_once
             {
                 echo "================================================================================"
                 echo "ERROR: $BASENAME"
@@ -4144,16 +4607,41 @@ elif [[ "$MODE" == "single" ]]; then
         echo "Resolving references (Phase 2)..."
         phase_begin P2 Resolve
         run_phase2 "Phase 2 Reference Resolution" >/dev/null 2>&1
-        if $P2_FAILED; then
-            SINGLE_CHAIN_OK=false; echo "✗ WARNING: Phase 2 reference resolution failed"
+        P2_REF=$(count_table_sum XMLCalcReferences XMLStepReferences XMLLayoutReferences PluginFunctionUsages MBS_SubnameMap GetSubparameterMap)
+        # Hard P2 gate (batch parity): a P2 failure — or 0 references while P1
+        # loaded objects — aborts BEFORE P3, with the same conditions and abort
+        # helpers as the batch gate. Running the dependent phases on missing or
+        # stale reference tables would build a hollow catalog, publish it via
+        # the unconditional sync below, and still report "successful"; the a4
+        # sync guard cannot catch this case (after an incremental P2 failure
+        # the stale ObjectCatalog is non-empty). P3+ failures stay chain
+        # warnings via SINGLE_CHAIN_OK, exactly like in batch mode.
+        P2_GATE=false
+        if $P2_FAILED || { [ "${P1_OBJ:-0}" -gt 0 ] && [ "${P2_REF:-0}" -eq 0 ]; }; then P2_GATE=true; fi
+        if $P2_GATE; then
+            if $P2_FAILED; then
+                echo "✗ Phase 2 reference resolution failed"
+            else
+                echo "✗ Phase 2 resolved 0 references while Phase 1 loaded $(group_de "${P1_OBJ:-0}") objects — stopping (integrity gate)"
+            fi
         else
             echo "✓ Phase 2 references resolved"
         fi
-        P2_REF=$(count_table_sum XMLCalcReferences XMLStepReferences XMLLayoutReferences PluginFunctionUsages MBS_SubnameMap GetSubparameterMap)
-        # Integrity gate (batch parity): objects loaded but 0 references resolved →
-        # do not trust the chain (P4 would build an empty/hollow catalog).
-        [ "${P1_OBJ:-0}" -gt 0 ] && [ "${P2_REF:-0}" -eq 0 ] && SINGLE_CHAIN_OK=false
         phase_finish "$(group_de "$P2_REF") references" "{\"references_resolved\":$P2_REF}"
+        if $P2_GATE; then
+            if $P2_OOM; then
+                abort_insufficient_memory "Reference resolution (Phase 2)"
+            fi
+            # Unlike batch, P1 has already re-imported this file into the master
+            # (no transaction bracket around P1/P2) — only the SERVED read copies
+            # are guaranteed unchanged, because the abort sits before the sync
+            # hook. The detail text states that explicitly.
+            SINGLE_P2_DETAIL="Single-file mode: Phase 1 already re-imported ${FILENAME} into the master DB, which now holds a partial state; the served read copies are unchanged (no sync ran). If this failure repeats, rebuild with: convert-xml --batch --force-rebuild"
+            if ! $P2_FAILED; then
+                SINGLE_P2_DETAIL="Phase 2 completed without error but resolved 0 references while Phase 1 loaded ${P1_OBJ:-0} objects. ${SINGLE_P2_DETAIL}"
+            fi
+            abort_pipeline_incomplete "Phase 2 Reference Resolution" "$SINGLE_P2_DETAIL"
+        fi
 
         # Phase 3 (Details) — variable parser; table-only and catalog-wide like in
         # batch (03→04 order mandatory).
@@ -4264,6 +4752,9 @@ elif [[ "$MODE" == "single" ]]; then
         else
             emit_done true "Single-file import successful"
         fi
+        # Policy-lock E7: sticky state only after a fully successful run
+        # (same contract as the batch writer above).
+        _policy_state_write "$_RUN_POLICY" "$WS_SENTINEL_ON"
         stamp_last_run true 0 1 1
         exit 0
     else

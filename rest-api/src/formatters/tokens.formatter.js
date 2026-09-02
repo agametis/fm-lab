@@ -38,6 +38,10 @@ const CHUNK_RE = /^<Chunk[^>]*>([\s\S]*)<\/Chunk>$/;
 // Bsp:  '( "List.AddPrefix" ; '  →  'List.AddPrefix'
 const FIRST_QUOTED_ARG_RE = /\(\s*"([^"]+)"/;
 
+// Ergebnistyp-Präfix einer typisierten Layoutformel (<<ƒ:%N:…>>) — Kennung der
+// fehlklassifizierten VariableReference-Chunks im DisplayCalculations-Kontext.
+const DISPLAY_PREFIX_RE = /^%[A-Z]+:/;
+
 // FieldRef chunks contain nested XML with FieldReference + TableOccurrenceReference.
 const FIELD_REF_RE = /<FieldReference[^>]*\bname="([^"]*)"[^>]*\bUUID="([^"]*)"/;
 const TO_REF_RE = /<TableOccurrenceReference[^>]*\bname="([^"]*)"/;
@@ -121,6 +125,39 @@ function tokenFromChunk(chunk, idx, allChunks) {
   }
 
   const content = decodeXmlEntities(inner);
+
+  // FileMaker DDR defect (display calculations, schema 1.27.0): a TYPED layout
+  // calculation whose formula is a single field reference is chunked as
+  // <Chunk type="VariableReference">%X:<field></Chunk> — result-type prefix plus
+  // field name, no FieldRef. The calculation token template pairs such chunks
+  // with the rescued field reference (P2 A.5.1b, resolved against the
+  // ChunkList's context TO) — render a regular field token (canonical
+  // TO::Field, clickable; the ref-highlight works again). Without a rescue
+  // (external TO, renamed field, hash-alias path) fall back to plain text with
+  // the prefix stripped — never a phantom variable token. Gated on the
+  // template's is_display_slot flag so genuine variables in other calc roles
+  // (and script/CF token shapes, which lack the column) stay untouched.
+  if (
+    apiType === 'variable'
+    && (chunk.is_display_slot === true || chunk.is_display_slot === 'true')
+    && DISPLAY_PREFIX_RE.test(content)
+  ) {
+    const fieldName = chunk.rescued_field_name != null ? String(chunk.rescued_field_name) : null;
+    if (fieldName) {
+      const toName = chunk.rescued_to_name != null ? String(chunk.rescued_to_name) : null;
+      const fieldTok = { type: 'field', content: toName ? `${toName}::${fieldName}` : fieldName };
+      if (chunk.rescued_field_uuid != null) fieldTok.uuid = String(chunk.rescued_field_uuid);
+      return fieldTok;
+    }
+    const stripped = content.replace(DISPLAY_PREFIX_RE, '');
+    // Präfix + '$' = echte Variable hinter dem Ergebnistyp (<<ƒ:%N:$$var>>) —
+    // als Variablen-Token rendern (Scope wie der generische Variable-Pfad).
+    if (stripped.startsWith('$')) {
+      return { type: 'variable', content: stripped, scope: stripped.startsWith('$$') ? 'global' : 'local' };
+    }
+    return { type: 'text', content: stripped };
+  }
+
   const tok = { type: apiType, content };
 
   if (apiType === 'variable') {
@@ -698,8 +735,14 @@ function formatField(rows, { object }) {
   const vRangeTo   = nn(head.validation_range_to);
   const vCalcText  = nn(head.validation_calc_text);
   const vMessage   = nn(head.validation_message);
+  // Calculation-Instanz-UUIDs der Validierungs-Slots (Schema 1.22.0) —
+  // Token-Rendering via get-calc?uuid; null = DDR-los → Klartext-Fallback.
+  const vCalcUuid    = nn(head.validation_calc_uuid);
+  const vMsgCalcUuid = nn(head.validation_message_calc_uuid);
+  const vMsgCalcText = nn(head.validation_message_calc_text);
   const hasValidation = vNotEmpty || vUnique || vExisting || !!vlName || vType === 'Always'
-    || !!vStrict || vMaxChars != null || !!vRangeFrom || !!vRangeTo || !!vCalcText || !!vMessage;
+    || !!vStrict || vMaxChars != null || !!vRangeFrom || !!vRangeTo || !!vCalcText || !!vMessage
+    || !!vMsgCalcUuid || !!vMsgCalcText;
   const validation = hasValidation
     ? {
         mode:          vType,                              // Always | OnlyDuringDataEntry
@@ -713,7 +756,11 @@ function formatField(rows, { object }) {
         rangeFrom:     vRangeFrom,
         rangeTo:       vRangeTo,
         calcText:      vCalcText,                          // „Überprüfung durch Berechnung" (Klartext)
+        calcUuid:      vCalcUuid,                          // Instanz-UUID für Token-Rendering
         message:       vMessage,                           // eigene Fehlermeldung (statisch)
+        messageCalc:   (vMsgCalcUuid || vMsgCalcText)
+          ? { uuid: vMsgCalcUuid, text: vMsgCalcText }     // Fehlermeldungs-FORMEL (validation_message)
+          : null,
       }
     : null;
 
@@ -858,11 +905,281 @@ function formatCustomMenu(rows, { object }) {
   return { kind: 'custommenu', object: enrichedObject, calcs };
 }
 
+// Identifier-Nachbarklasse der synthetischen Tokenisierung — identisch zur
+// Wortgrenzen-Klasse der Converter-Rettung (P2 A.5.1c).
+const RECOVER_IDENT_RE = /[0-9A-Za-zÄÖÜäöüß_]/;
+
+/**
+ * Doppelt-gequotete String-Literal-Spannen der Formel ("…", \" escaped) —
+ * Referenz-Treffer INNERHALB von Literalen werden verworfen (Parität zur
+ * Literal-Strippung der Converter-Variablen-Rettung, P3 A.6c).
+ */
+function literalRanges(text) {
+  const ranges = [];
+  let start = -1;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '\\') { i++; continue; }
+    if (ch === '"') {
+      if (start === -1) start = i;
+      else { ranges.push([start, i + 1]); start = -1; }
+    }
+  }
+  if (start !== -1) ranges.push([start, text.length]);
+  return ranges;
+}
+
+/**
+ * Synthetische Tokenisierung einer GERETTETEN Display-Calculation (leere
+ * DDR-ChunkList, FileMaker-Defekt bei %X:-typisierten Layoutformeln mit
+ * Ausdruck): lokalisiert die instanz-genau geborgenen Referenzen (Felder mit
+ * UUID, CustomFunctions, Variablen — slot-skopierte XMLCalcReferences des
+ * Converters) im geretteten Formeltext und emittiert reguläre typisierte
+ * Tokens; alles andere bleibt Text. Builtin-Funktionen bleiben bewusst Text
+ * (lokalisierte Namen — Auflösungsgrenze der Rettung).
+ *
+ * Match-Regeln spiegeln die Converter-Heuristik (P2 A.5.1b/c):
+ *   - Feld: `${Name}`-gequotete Spanne (inkl. Quoting, bei Feld↔CF-Kollision
+ *     die einzige Feld-Form) ODER nackter Name mit Identifier-Wortgrenzen
+ *     (Vorgänger zusätzlich nie '$'/'{').
+ *   - CustomFunction/Variable: nackte Spanne mit Wortgrenzen; Vorgänger nie
+ *     '$'/'{' (CF) bzw. nie '$' (Variable — verhindert $var-in-$$var).
+ *   - Treffer in String-Literalen werden verworfen; Überlappungen löst die
+ *     früheste, bei Gleichstand die längste Spanne.
+ *
+ * Token-Content ist die ORIGINAL-Spanne (lokalisierte Layout-Wahrheit, inkl.
+ * ${…}); die kanonische Form bleibt den aufgelösten Zielen überlassen.
+ * Rückgabe: Token-Array oder null, wenn KEINE Referenz gematcht hat (der
+ * Aufrufer bleibt dann beim Klartext-Fallback samt ehrlichem Hinweis).
+ */
+function synthesizeRecoveredCalcTokens(formulaText, refs) {
+  if (!formulaText || !Array.isArray(refs) || refs.length === 0) return null;
+  const literals = literalRanges(formulaText);
+  const inLiteral = (pos) => literals.some(([s, e]) => pos >= s && pos < e);
+  const prevOk = (pos, extra) => {
+    if (pos === 0) return true;
+    const ch = formulaText[pos - 1];
+    return !RECOVER_IDENT_RE.test(ch) && !(extra && extra.includes(ch));
+  };
+  const nextOk = (end) => end >= formulaText.length || !RECOVER_IDENT_RE.test(formulaText[end]);
+
+  const findAll = (needle) => {
+    const hits = [];
+    let from = 0;
+    for (;;) {
+      const i = formulaText.indexOf(needle, from);
+      if (i === -1) break;
+      hits.push(i);
+      from = i + 1;
+    }
+    return hits;
+  };
+
+  const matches = [];
+  for (const ref of refs) {
+    if (!ref || !ref.name) continue;
+    if (ref.type === 'field') {
+      const quoted = '${' + ref.name + '}';
+      for (const i of findAll(quoted)) {
+        if (!inLiteral(i)) matches.push({ start: i, end: i + quoted.length, ref });
+      }
+      for (const i of findAll(ref.name)) {
+        if (!inLiteral(i) && prevOk(i, '${') && nextOk(i + ref.name.length)) {
+          matches.push({ start: i, end: i + ref.name.length, ref });
+        }
+      }
+    } else if (ref.type === 'customFunction') {
+      for (const i of findAll(ref.name)) {
+        if (!inLiteral(i) && prevOk(i, '${') && nextOk(i + ref.name.length)) {
+          matches.push({ start: i, end: i + ref.name.length, ref });
+        }
+      }
+    } else if (ref.type === 'variable') {
+      for (const i of findAll(ref.name)) {
+        if (!inLiteral(i) && prevOk(i, '$') && nextOk(i + ref.name.length)) {
+          matches.push({ start: i, end: i + ref.name.length, ref });
+        }
+      }
+    }
+  }
+  if (matches.length === 0) return null;
+
+  matches.sort((a, b) => a.start - b.start || b.end - a.end);
+  const chosen = [];
+  let cursor = -1;
+  for (const m of matches) {
+    if (m.start > cursor) { chosen.push(m); cursor = m.end - 1; }
+  }
+
+  const tokens = [];
+  let pos = 0;
+  for (const m of chosen) {
+    if (m.start > pos) tokens.push({ type: 'text', content: formulaText.slice(pos, m.start) });
+    const span = formulaText.slice(m.start, m.end);
+    if (m.ref.type === 'field') {
+      const tok = { type: 'field', content: span };
+      if (m.ref.uuid) tok.uuid = String(m.ref.uuid);
+      tokens.push(tok);
+    } else if (m.ref.type === 'customFunction') {
+      tokens.push({ type: 'customFunction', content: span });
+    } else {
+      tokens.push({ type: 'variable', content: span, scope: span.startsWith('$$') ? 'global' : 'local' });
+    }
+    pos = m.end;
+  }
+  if (pos < formulaText.length) tokens.push({ type: 'text', content: formulaText.slice(pos) });
+  return tokens;
+}
+
+// Anker-Grammatik des Merge-Text-Scans, Alternations-Reihenfolge ist
+// Prioritätsreihenfolge: ƒ-Layoutformel vor Variable vor Feld vor Symbol.
+// ƒ-Formeln non-greedy bis zum ersten '>>' — identisch zur Converter-Regex
+// (ein '>>' INNERHALB eines Formel-Literals bricht dort wie hier den Anker).
+const MERGE_ANCHOR_RE = /<<ƒ:([\s\S]*?)>>|<<(\$[^>]*?)>>|<<([^>]+?)>>|\{\{([^}]+?)\}\}/g;
+
+/**
+ * Aufgelöste Merge-Text-Zeile eines Text-LayoutObjects: scannt Text_Content
+ * nach Merge-Ankern und ersetzt jedes VORKOMMEN durch typisierte Tokens —
+ * Merge Fields über die displays_field-Kanten, Merge Variables über
+ * displays_variable, valide Symbole als Get-Token-Gruppe in DDR-Chunk-Gestalt
+ * ('Get' · '( ' · Parameter · ' )', beide Namen enrich-fähig). ƒ-Anker bleiben
+ * verbatim Text (ihre Formeln zeigt die display_calculation-Slot-Sektion);
+ * unauflösbare Anker bleiben byte-identisch literal — das spiegelt das
+ * Laufzeitverhalten (ungültige Anker rendern literal).
+ *
+ * ctx (alles vom Aufrufer beschafft, die Funktion bleibt DB-frei):
+ *   - fields:      [{ name, baseTable, uuid }]  displays_field-Ziele
+ *   - variables:   [{ name, uuid }]             displays_variable-Ziele
+ *   - symbols:     [{ text, norm, valid }]      LayoutObjectSymbols + Kanon-Check
+ *   - toBaseTable: { lower(TO-Name) → BaseTable-Name } (File-skopiert)
+ *   - layoutTOName: Kontext-TO des Layouts (qualifiziert unqualifizierte Anker)
+ *
+ * Feld-Match: qualifizierter Anker `TO::Feld` über TO→BaseTable, sonst über
+ * das Kontext-TO des Layouts; Fallback genau EINE namensgleiche Kante.
+ * Repetitions-Suffix `[n]` zählt nur fürs Matching nicht mit, das Token-
+ * Content behält die Original-Schreibweise. Alle Vergleiche case-insensitiv.
+ *
+ * Rückgabe: { tokens, anchorsTotal, anchorsResolved } — ƒ-Anker zählen nicht
+ * mit; NULL, wenn kein Nicht-ƒ-Anker aufgelöst wurde (Emissionsbedingung des
+ * Aufrufers: dann gibt es nichts über die Slot-Sektion hinaus zu zeigen).
+ */
+function synthesizeMergeTextTokens(textContent, ctx) {
+  if (!textContent || typeof textContent !== 'string') return null;
+  const fields = (ctx && Array.isArray(ctx.fields)) ? ctx.fields : [];
+  const variables = (ctx && Array.isArray(ctx.variables)) ? ctx.variables : [];
+  const symbols = (ctx && Array.isArray(ctx.symbols)) ? ctx.symbols : [];
+  const toBaseTable = (ctx && ctx.toBaseTable) || {};
+  const layoutTOName = (ctx && ctx.layoutTOName) || null;
+  const lower = (s) => String(s).toLowerCase();
+
+  const tokens = [];
+  let anchorsTotal = 0;
+  let anchorsResolved = 0;
+  const pushText = (s) => {
+    if (!s) return;
+    const last = tokens[tokens.length - 1];
+    if (last && last.type === 'text') last.content += s;
+    else tokens.push({ type: 'text', content: s });
+  };
+
+  const matchField = (inner) => {
+    // `[n]`-Repetition nur fürs Matching strippen.
+    const rep = inner.match(/^(.*?)\s*\[\s*\d+\s*\]$/);
+    const bare = rep ? rep[1].trim() : inner;
+    const sep = bare.indexOf('::');
+    const toPart = sep >= 0 ? bare.slice(0, sep).trim() : null;
+    const fieldPart = sep >= 0 ? bare.slice(sep + 2).trim() : bare;
+    if (!fieldPart) return null;
+    const byTable = (btName) =>
+      fields.find(f => f && f.name != null && lower(f.name) === lower(fieldPart)
+        && f.baseTable != null && lower(f.baseTable) === lower(btName)) || null;
+    if (toPart) {
+      const bt = toBaseTable[lower(toPart)];
+      return bt ? byTable(bt) : null;
+    }
+    const ctxBt = layoutTOName ? toBaseTable[lower(layoutTOName)] : null;
+    if (ctxBt) {
+      const hit = byTable(ctxBt);
+      if (hit) return hit;
+    }
+    const nameHits = fields.filter(f => f && f.name != null && lower(f.name) === lower(fieldPart));
+    return nameHits.length === 1 ? nameHits[0] : null;
+  };
+
+  const re = new RegExp(MERGE_ANCHOR_RE.source, 'g');
+  let m;
+  let pos = 0;
+  while ((m = re.exec(textContent)) !== null) {
+    pushText(textContent.slice(pos, m.index));
+    pos = m.index + m[0].length;
+
+    if (m[1] !== undefined) {
+      // ƒ-Layoutformel: Pass-through, Auflösung leistet der Slot darunter.
+      pushText(m[0]);
+      continue;
+    }
+    if (m[2] !== undefined) {
+      anchorsTotal += 1;
+      const name = m[2].trim();
+      const hit = variables.find(v => v && v.name != null && lower(v.name) === lower(name));
+      if (hit) {
+        anchorsResolved += 1;
+        const tok = { type: 'variable', content: name, scope: name.startsWith('$$') ? 'global' : 'local' };
+        if (hit.uuid) tok.uuid = String(hit.uuid);
+        tokens.push(tok);
+      } else {
+        pushText(m[0]);
+      }
+      continue;
+    }
+    if (m[3] !== undefined) {
+      anchorsTotal += 1;
+      const inner = m[3].trim();
+      const hit = matchField(inner);
+      if (hit) {
+        anchorsResolved += 1;
+        const qualified = inner.indexOf('::') >= 0;
+        const qualifier = layoutTOName || hit.baseTable || '';
+        const tok = { type: 'field', content: qualified || !qualifier ? inner : `${qualifier}::${inner}` };
+        if (hit.uuid) tok.uuid = String(hit.uuid);
+        tokens.push(tok);
+      } else {
+        pushText(m[0]);
+      }
+      continue;
+    }
+    // {{Symbol}}
+    anchorsTotal += 1;
+    const symName = m[4].trim();
+    const sym = symbols.find(s => s && s.norm != null && lower(s.norm) === lower(symName));
+    if (sym && sym.valid) {
+      anchorsResolved += 1;
+      tokens.push({ type: 'function', content: 'Get' });
+      tokens.push({ type: 'text', content: ' ( ' });
+      tokens.push({ type: 'function', content: sym.text || symName });
+      tokens.push({ type: 'text', content: ' )' });
+    } else {
+      pushText(m[0]);
+    }
+  }
+  pushText(textContent.slice(pos));
+
+  if (anchorsResolved === 0) return null;
+  return { tokens, anchorsTotal, anchorsResolved };
+}
+
 function formatCalculation(rows, { object }) {
   const chunkRows = (rows || []).map(r => ({
     chunk_type: r.chunk_type,
     chunk_content: r.chunk_content,
     sub_function: r.sub_function,
+    // Display-Calculation-Rettung (Template v1.4): Flag + geretteter Feld-Ref
+    // der fehlklassifizierten %X:-Chunks — tokenFromChunk rendert daraus ein
+    // Feld-Token statt einer Phantom-Variablen.
+    is_display_slot: r.is_display_slot,
+    rescued_field_uuid: r.rescued_field_uuid,
+    rescued_field_name: r.rescued_field_name,
+    rescued_to_name: r.rescued_to_name,
   }));
   const tokens = chunkRows.map((c, i, arr) => tokenFromChunk(c, i, arr));
 
@@ -905,6 +1222,8 @@ function format(data, options = {}) {
 
 module.exports = {
   format,
+  synthesizeRecoveredCalcTokens,
+  synthesizeMergeTextTokens,
   // Exported for testing
   tokenFromChunk,
   stripChunkWrap,

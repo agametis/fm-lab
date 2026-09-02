@@ -1,0 +1,1258 @@
+openapi: 3.0.3
+info:
+  title: FM-Lab REST API
+  description: REST API for programmatic access to FileMaker metadata stored in DuckDB
+  version: 1.0.0
+  contact:
+    name: Marcel
+  license:
+    name: ISC
+
+servers:
+  - url: http://localhost:3003
+    description: Local development server
+
+tags:
+  - name: Objects
+    description: Object retrieval and listing
+  - name: Search
+    description: Object search and counting
+  - name: References
+    description: Object references and dependencies
+  - name: Templates
+    description: SQL template execution
+  - name: System
+    description: System information and health
+  - name: Reference
+    description: >-
+      fm-spec language reference (schema viewer backend). Only the grammar
+      endpoint is specified so far — the remaining /reference/* endpoints are
+      a known documentation gap from the REST docs round.
+
+paths:
+  /version:
+    get:
+      summary: Get API version and health status
+      tags: [System]
+      responses:
+        '200':
+          description: API version information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+
+  /info:
+    get:
+      summary: Get solution information
+      tags: [System]
+      parameters:
+        - $ref: '#/components/parameters/FileFilter'
+      responses:
+        '200':
+          description: Solution metadata and statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+
+  /get:
+    get:
+      summary: Get object by UUID
+      tags: [Objects]
+      parameters:
+        - name: uuid
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Object UUID
+        - $ref: '#/components/parameters/CloneFile'
+        - $ref: '#/components/parameters/Format'
+        - $ref: '#/components/parameters/Debug'
+        - $ref: '#/components/parameters/Meta'
+      responses:
+        '200':
+          description: Object details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /list:
+    get:
+      summary: List objects by type
+      tags: [Objects]
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/ObjectType'
+          description: Object type to list
+        - $ref: '#/components/parameters/FileFilter'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Format'
+        - $ref: '#/components/parameters/Debug'
+        - $ref: '#/components/parameters/Meta'
+      responses:
+        '200':
+          description: List of objects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectListResponse'
+
+  /search:
+    get:
+      summary: Search objects by name
+      tags: [Search]
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Name pattern (SQL LIKE, e.g. %Import%)
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/ObjectType'
+        - $ref: '#/components/parameters/FileFilter'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Format'
+        - $ref: '#/components/parameters/Debug'
+        - $ref: '#/components/parameters/Meta'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectListResponse'
+
+  /search/count:
+    get:
+      summary: Count search results by name pattern
+      tags: [Search]
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Name pattern (SQL LIKE, e.g. %Import%)
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/ObjectType'
+        - $ref: '#/components/parameters/FileFilter'
+        - $ref: '#/components/parameters/Format'
+        - $ref: '#/components/parameters/Debug'
+        - $ref: '#/components/parameters/Meta'
+      responses:
+        '200':
+          description: Search result count
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountResponse'
+
+  /count:
+    get:
+      summary: Count objects
+      tags: [Search]
+      parameters:
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/ObjectType'
+        - $ref: '#/components/parameters/FileFilter'
+        - name: group_by
+          in: query
+          schema:
+            type: string
+            enum: [type, file, 'type,file']
+          description: Group results by field
+        - $ref: '#/components/parameters/Format'
+        - $ref: '#/components/parameters/Debug'
+        - $ref: '#/components/parameters/Meta'
+      responses:
+        '200':
+          description: Object counts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountResponse'
+
+  /references:
+    get:
+      summary: Get object references
+      tags: [References]
+      parameters:
+        - name: uuid
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Object UUID
+        - name: direction
+          in: query
+          schema:
+            $ref: '#/components/schemas/ReferenceDirection'
+          default: all
+        - name: link_type
+          in: query
+          schema:
+            $ref: '#/components/schemas/LinkType'
+          default: operational
+        - name: origin
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >-
+            Origin object UUID (the `?ref=` cross-reference origin). For pseudo
+            aggregate types (ScriptStepType) it flags the rows reachable from
+            that origin via `Origin_Hit`, so the UI can pin/highlight them.
+        - $ref: '#/components/parameters/CloneFile'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Format'
+        - $ref: '#/components/parameters/Debug'
+        - $ref: '#/components/parameters/Meta'
+      responses:
+        '200':
+          description: Object references
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferencesResponse'
+
+  /query:
+    get:
+      summary: Execute custom SQL template
+      tags: [Templates]
+      parameters:
+        - name: template
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Template name (without .sql extension)
+        - name: params
+          in: query
+          schema:
+            type: object
+            additionalProperties: true
+          description: Template parameters as JSON
+        - $ref: '#/components/parameters/Format'
+        - $ref: '#/components/parameters/Debug'
+        - $ref: '#/components/parameters/Meta'
+      responses:
+        '200':
+          description: Query results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponse'
+        '404':
+          $ref: '#/components/responses/TemplateNotFound'
+    post:
+      summary: Execute custom SQL template (POST)
+      tags: [Templates]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+      responses:
+        '200':
+          description: Query results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponse'
+
+  /report:
+    get:
+      summary: Execute report template
+      tags: [Templates]
+      parameters:
+        - name: template
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: params
+          in: query
+          schema:
+            type: object
+            additionalProperties: true
+        - $ref: '#/components/parameters/Format'
+        - $ref: '#/components/parameters/Debug'
+        - $ref: '#/components/parameters/Meta'
+      responses:
+        '200':
+          description: Report results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponse'
+    post:
+      summary: Execute report template (POST)
+      tags: [Templates]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+      responses:
+        '200':
+          description: Report results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponse'
+
+  /tests:
+    get:
+      summary: List Analysis Tests (declared collections of dashboards/custom queries)
+      tags: [Templates]
+      parameters:
+        - name: objectType
+          in: query
+          schema:
+            type: string
+          description: Only tests applicable to this ObjectCatalog.Object_Type
+        - name: testType
+          in: query
+          schema:
+            type: string
+            enum: [exploration, code-quality, error-check, security, inventory, performance, platform]
+        - name: scope
+          in: query
+          schema:
+            type: string
+            enum: [solution, file, object, object-list, cluster]
+          description: Only tests declaring this scope
+        - name: keyword
+          in: query
+          schema:
+            type: string
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Text search over title, description and keywords
+        - name: folder
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: >-
+            Test list incl. tier, override flag, validation status, shipped
+            profiles and folder_order (sorted by folder.json order, then
+            folder, then title). Each profile carries `memberCount` plus
+            `members` — the member refs it covers, `null` for a profile
+            without a `members` field (= the full check).
+
+  /tests/context:
+    get:
+      summary: Effective solution + catalog fingerprint (result-cache key)
+      description: >-
+        Lightweight cache-key endpoint. `catalogFingerprint` is mtime+size of
+        the solution's read copy — a new XML import replaces the copy
+        atomically and thereby invalidates client-side result caches.
+      tags: [Templates]
+      responses:
+        '200':
+          description: '{ solution, catalogFingerprint, catalogMtimeMs }'
+
+  /tests/{id}:
+    get:
+      summary: Test definition with resolved members and validation report
+      tags: [Templates]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: >-
+            Test definition with members resolved against their source of
+            truth (title, icon, severity, analysis block, plus the dashboard's
+            `folder` resp. the query's `category`) and shipped profiles incl.
+            their `members` refs
+        '404':
+          description: Test not found or invalid
+
+  /tests/{id}/run:
+    get:
+      summary: Run all members' default results in a scope context
+      description: >-
+        Scope params: `uuid` (+`file` for clone disambiguation) = object scope,
+        `uuids` (CSV) = object-list scope, `file` alone = file scope,
+        `cluster` (community id or semantic name) = cluster scope, none =
+        solution scope. `include=findings` adds severity-sorted findings rows
+        (capped by `findingsLimit`, default 20) per member with value > 0.
+        `profile=<id>` runs only that shipped profile's members; the rest are
+        reported as runStatus=skipped (unknown profile id = 400).
+        Each member result carries the two-axis state model: `runStatus`
+        (ran|failed|skipped) and `resultState` (error|warning|neutral|ok);
+        the response aggregates them in `summary` and echoes `solution` +
+        `catalogFingerprint` in `meta`. The legacy `status` field (ok|error)
+        is kept as a deprecated alias of runStatus ran|failed.
+      tags: [Templates]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: uuid
+          in: query
+          schema:
+            type: string
+        - name: uuids
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/FileFilter'
+        - name: cluster
+          in: query
+          schema:
+            type: string
+        - name: object_type
+          in: query
+          schema:
+            type: string
+        - name: include
+          in: query
+          schema:
+            type: string
+            enum: [findings]
+        - name: findingsLimit
+          in: query
+          schema:
+            type: integer
+        - name: profile
+          in: query
+          schema:
+            type: string
+          description: Shipped profile id — run only this member subset
+      responses:
+        '200':
+          description: Per-member default results (and optional findings)
+        '400':
+          description: Unsupported scope, oversized scope list or consistency errors
+
+  /tests/{id}/run/{memberIndex}:
+    get:
+      summary: Run a single member of a test (incremental loading)
+      tags: [Templates]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: memberIndex
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Single member result
+
+  /results/summary:
+    get:
+      summary: Flat Result-Envelope map over all result-capable units (cache read)
+      description: >-
+        Result Envelope v1 — one normative result shape per unit
+        (`kind:id`, kind ∈ dashboard | query | test). Reads ONLY the server
+        result cache: units that never ran under the current
+        `catalogFingerprint` appear with `runStatus: pending`; the endpoint
+        computes nothing. Runs are triggered explicitly via POST /results/run
+        (or arrive as write-through from solution-scope test runs).
+      tags: [Results]
+      parameters:
+        - name: kinds
+          in: query
+          schema:
+            type: string
+          description: CSV filter over ref kinds (dashboard,query,test)
+      responses:
+        '200':
+          description: >-
+            { meta: { solution, catalogFingerprint }, results: { "<kind:id>":
+            Envelope } } — Envelope carries runStatus (ran|failed|pending),
+            resultState (ok|warning|error|neutral), value, unit, name,
+            meaning, severity, source, rubric, fingerprint
+
+  /results/aggregate:
+    get:
+      summary: Folder-hierarchy consolidation of the cached envelopes
+      description: >-
+        Pure fold over registry + cache — never executes anything. Per node:
+        counts per state + worst (error → warning → failed → neutral → ok →
+        pending), sums only within the same `unit`, and covered/declared/total
+        so partial coverage stays visible.
+      tags: [Results]
+      parameters:
+        - name: root
+          in: query
+          schema:
+            type: string
+          description: Subtree root folder path (empty = whole hierarchy)
+        - name: roots
+          in: query
+          schema:
+            type: string
+          description: >-
+            Comma-separated list of subtree roots. Scopes to several subtrees
+            at once; the '' node is then the combined aggregate over all of
+            them. Wins over `root` when both are set.
+        - name: kinds
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '{ meta, nodes: [{ path, counts, worst, sums, covered, declared, total }] }'
+
+  /results/registry:
+    get:
+      summary: Result-capable units (declaration union of the existing catalogs)
+      description: >-
+        Dashboards with `analysis.defaultResult` or the summary/finding_count
+        convention, queries with `@default_result` frontmatter, tests (read-
+        only). Units without declaration are absent by design and stay
+        chipless.
+      tags: [Results]
+      parameters:
+        - name: kinds
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Registry rows (ref, rubric, title, severity, unit, source)
+
+  /results/run:
+    post:
+      summary: Explicit result run for singles or folder subtrees
+      description: >-
+        Body { targets, mode }. Targets are { kind, id } singles or
+        { kind: "folder", path, kinds } subtrees (expanded via the registry;
+        only dashboard/query run — tests keep their own run endpoint).
+        mode "missing" (default) runs only units without a cached envelope
+        under the current fingerprint (idempotent); "refresh" re-runs all
+        addressed units. Synchronous with a concurrency cap — chunk a full
+        root run per top-level folder.
+      tags: [Results]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targets:
+                  type: array
+                  items:
+                    type: object
+                mode:
+                  type: string
+                  enum: [missing, refresh]
+      responses:
+        '200':
+          description: '{ meta: { …, requested, executed, skippedCached }, results: Envelope[] }'
+        '400':
+          description: Invalid targets/mode or oversized expansion
+
+  /reference/steps/{idOrSlug}/grammar:
+    get:
+      summary: XMLSnippet grammar of one script step (fm-spec emission layer)
+      description: >-
+        Snippet template, element order, options (with per-value evidence),
+        structural constraints incl. the known-FM-bug registry kinds
+        (clipboard_loss, version_skew, save_corruption,
+        serialization_unstable, localized_build_defect — a warning class,
+        never a validity rule), repeat groups (fm_spec >= 1.15.0;
+        fixed-slot columns max_items/slot_positional/pad_mode >= 1.16.0),
+        and the hint-inventory layer (fm_spec >= 1.17.0): skeleton hulls,
+        option-bound elements, notation implications, the structural
+        variable-target marker and the per-kind consumer note of the
+        bug registry. Fields absent from older reference builds are
+        null/empty — consumers must stay graceful.
+      tags: [Reference]
+      parameters:
+        - name: idOrSlug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Numeric step id or url_slug
+      responses:
+        '200':
+          description: Step grammar (data envelope)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      stepId:
+                        type: integer
+                      canonicalName:
+                        type: string
+                      available:
+                        type: boolean
+                        description: false when the reference has no grammar row
+                      xmlMap:
+                        type: object
+                        nullable: true
+                        properties:
+                          snippetTemplate: { type: string }
+                          saxmlParamTypes: { type: string, nullable: true }
+                          saxmlExample: { type: string, nullable: true }
+                          elementOrder: { type: string, nullable: true }
+                          variableTargetMarker:
+                            type: boolean
+                            nullable: true
+                            description: >-
+                              true = the snippet carries an empty <Text/>
+                              step-level marker exactly when a target slot
+                              holds a variable (fm_spec >= 1.17.0; null =
+                              column absent on this reference build)
+                          evidence: { type: string, nullable: true }
+                          verifiedVersion: { type: string, nullable: true }
+                          notes: { type: string, nullable: true }
+                      options:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            optionKey: { type: string }
+                            optionType: { type: string }
+                            required: { type: boolean }
+                            displayLocation: { type: string, nullable: true }
+                            displayLabelEn: { type: string, nullable: true }
+                            trueText: { type: string, nullable: true }
+                            falseText: { type: string, nullable: true }
+                            omitWhenFalse: { type: boolean }
+                            invertedLabel: { type: boolean }
+                            xmlPath: { type: string, nullable: true }
+                            sortOrder: { type: integer, nullable: true }
+                            evidence: { type: string, nullable: true }
+                            verifiedVersion: { type: string, nullable: true }
+                            values:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  xmlValue: { type: string }
+                                  displayTextEn: { type: string, nullable: true }
+                                  evidence: { type: string, nullable: true }
+                      constraints:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            constraintKind: { type: string }
+                            detail: { type: string, nullable: true }
+                            evidence: { type: string, nullable: true }
+                            verifiedVersion: { type: string, nullable: true }
+                            consumerNote:
+                              type: string
+                              nullable: true
+                              description: >-
+                                Consumer-facing lead text of the constraint
+                                kind (fm_spec >= 1.17.0 constraint_kinds
+                                registry; bug-registry kinds only)
+                      repeatGroups:
+                        type: array
+                        description: Empty on references older than 1.15.0
+                        items:
+                          type: object
+                          properties:
+                            groupKey: { type: string }
+                            groupLabel: { type: string }
+                            parentGroup: { type: string, nullable: true }
+                            containerPath: { type: string }
+                            countAttr: { type: string, nullable: true }
+                            itemForm:
+                              type: string
+                              enum: [bracket, scalar]
+                            maxItems: { type: integer, nullable: true }
+                            slotPositional: { type: boolean, nullable: true }
+                            padMode: { type: string, nullable: true }
+                            evidence: { type: string, nullable: true }
+                            verifiedVersion: { type: string, nullable: true }
+                      skeletonElements:
+                        type: array
+                        description: >-
+                          Skeleton hulls the step keeps alive even
+                          unconfigured (fm_spec >= 1.17.0; empty on older
+                          references)
+                        items:
+                          type: object
+                          properties:
+                            parentTag: { type: string }
+                            childTag: { type: string }
+                            conditionOption: { type: string, nullable: true }
+                            conditionValue: { type: string, nullable: true }
+                            keepMode:
+                              type: string
+                              enum: [hull, hull_strip_children]
+                            evidence: { type: string, nullable: true }
+                            verifiedVersion: { type: string, nullable: true }
+                      elementBindings:
+                        type: array
+                        description: >-
+                          Option-value/element couplings (fm_spec >= 1.17.0;
+                          empty on older references)
+                        items:
+                          type: object
+                          properties:
+                            optionKey: { type: string, nullable: true }
+                            optionValue: { type: string, nullable: true }
+                            elementPath: { type: string }
+                            binding:
+                              type: string
+                              enum: [requires, excludes, requires_option,
+                                     excludes_option, suppress_empty]
+                            evidence: { type: string, nullable: true }
+                            verifiedVersion: { type: string, nullable: true }
+                      optionImplications:
+                        type: array
+                        description: >-
+                          Parse-side notation implications (fm_spec >= 1.17.0;
+                          empty on older references)
+                        items:
+                          type: object
+                          properties:
+                            triggerKind:
+                              type: string
+                              enum: [option_present, value_form, keyword,
+                                     mode_switch]
+                            trigger: { type: string }
+                            impliedOption: { type: string }
+                            impliedValue: { type: string, nullable: true }
+                            isDefault: { type: boolean, nullable: true }
+                            direction:
+                              type: string
+                              enum: [parse]
+                            evidence: { type: string, nullable: true }
+                            verifiedVersion: { type: string, nullable: true }
+        '404':
+          description: Unknown step id/slug (REF_STEP_NOT_FOUND)
+
+components:
+  parameters:
+    FileFilter:
+      name: file
+      in: query
+      schema:
+        type: string
+      description: Filter by filename
+
+    CloneFile:
+      name: file
+      in: query
+      schema:
+        type: string
+      description: >-
+        Clone disambiguation: exact source file (File_Name) of the object.
+        Geklonte/modulare FileMaker-Dateien teilen sich dieselbe Object_UUID,
+        d.h. eine bare UUID kann mehrdeutig sein. Mit `file` wird das Paar
+        (UUID, File_Name) eindeutig aufgelöst. Fehlt der Param, gilt Graceful
+        Downgrade (bare UUID, solange eindeutig; sonst 409 AMBIGUOUS_UUID).
+
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 10000
+        default: 100
+      description: Maximum number of results (0 = all)
+
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: Number of results to skip (for pagination)
+
+    Format:
+      name: format
+      in: query
+      schema:
+        $ref: '#/components/schemas/OutputFormat'
+      default: json
+      description: Output format
+
+    Debug:
+      name: debug
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Include SQL query in response
+
+    Meta:
+      name: meta
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Include metadata in response
+
+  schemas:
+    ObjectType:
+      type: string
+      enum:
+        - BaseTable
+        - TableOccurrence
+        - Relationship
+        - Field
+        - ValueList
+        - CustomFunction
+        - Script
+        - ScriptStep
+        - Layout
+        - LayoutObject
+        - LayoutPart
+        - Account
+        - PrivilegeSet
+        - ExtendedPrivilege
+        - Theme
+        - CustomMenu
+        - ScriptTrigger
+        - ExternalDataSource
+        - BaseDirectory
+        - Variable
+        - Folder
+        - File
+        - PluginFunction
+        - PluginComponent
+        - CustomMenuItem
+        - BuiltinFunction
+        - ScriptStepType
+        - PasteIndexObject
+        # Calculation instance (owner × role × index), schema 1.22.0
+        - Calculation
+
+    OutputFormat:
+      type: string
+      enum:
+        - json
+        - raw
+        - text
+        - short
+        - detailed
+        - html
+        - markdown
+        - content
+        - mermaid
+        - mermaid-raw
+
+    LinkType:
+      type: string
+      enum:
+        - operational
+        - structural
+        - all
+
+    ReferenceDirection:
+      type: string
+      enum:
+        - all
+        - parent
+        - child
+        - recursive
+
+    FMObject:
+      type: object
+      required:
+        - Object_UUID
+        - Object_Type
+        - Object_Name
+        - File_Name
+      properties:
+        Object_UUID:
+          type: string
+          description: Unique object identifier
+        Object_Type:
+          $ref: '#/components/schemas/ObjectType'
+        Object_Name:
+          type: string
+          description: Object name
+        File_Name:
+          type: string
+          description: Source FileMaker file
+        Source_Table:
+          type: string
+          description: Source database table
+        Object_ID:
+          type: integer
+          description: Internal FileMaker ID
+        Step_Text:
+          type: string
+          nullable: true
+          description: |
+            Full rendered text of a script step (ScriptStep results only).
+            Combines DDR_ScriptSteps.Step_Text (FileMaker 21+ DDR_INFO) with
+            a fallback that extracts comment values from Parameters_XML.
+            Used by full-text search on script-step contents and by the
+            search-result UI to display the step in its rendered form.
+        Script_Name:
+          type: string
+          nullable: true
+          description: |
+            Name of the script containing this step (ScriptStep results only).
+            Used to render the "File ▸ Script ▸ Step N" breadcrumb context.
+        Step_Index:
+          type: integer
+          nullable: true
+          description: |
+            Zero-based position of the step within its script (ScriptStep
+            results only). The UI displays it 1-based to match FileMaker's
+            script editor numbering.
+        Matched_Values:
+          type: string
+          nullable: true
+          description: |
+            Comma-separated list of the custom values that matched the search
+            term (ValueList results only, max. 20). Set only when a value list
+            was hit through its stored values rather than its name; the
+            search-result UI displays it below the value-list name.
+
+    ObjectReference:
+      type: object
+      properties:
+        Target_UUID:
+          type: string
+        Target_Type:
+          $ref: '#/components/schemas/ObjectType'
+        Target_Name:
+          type: string
+        Target_File:
+          type: string
+        Link_Role:
+          type: string
+          description: Role of the link (e.g., calls_script, displays_field)
+        Subrole_Class:
+          type: string
+          nullable: true
+          description: >-
+            Normalized slot class of the edge subrole, using the calc_kind
+            vocabulary of CalculationsCatalog (e.g. `hide`,
+            `conditional_format`, `tooltip`, `on_server`). Named slots are
+            mapped (Condition_N collapses into `conditional_format`),
+            positional script-slot indices (and XML/XSL) are suppressed to
+            null, unknown subroles pass through raw. Null when the edge
+            carries no semantic subrole.
+        Subrole_Detail:
+          type: string
+          nullable: true
+          description: >-
+            Raw subrole value(s) behind the class — for `direction=all` the
+            aggregated DISTINCT raw values of the group (e.g. `Condition_1,
+            Condition_2`), in the ungrouped child/parent branches the single
+            raw value. Null when Subrole_Class is null (direction=all) or no
+            subrole exists.
+        Subrole_Event:
+          type: string
+          nullable: true
+          description: >-
+            Additive since fm_spec 1.18.0 — canonical trigger event name(s)
+            resolved from the `ScriptTrigger_<id>` slot(s) of rows with
+            Subrole_Class `script_trigger_parameter` (e.g. `OnObjectValidate`;
+            aggregated rows yield a DISTINCT list in Subrole_Detail order,
+            e.g. `OnPanelSwitch, OnObjectValidate`). Omitted when the
+            reference DB is not attached, predates 1.18.0, or a slot of the
+            list cannot be resolved (complete-or-absent contract).
+        Is_Cross_File:
+          type: boolean
+
+    ResponseMeta:
+      type: object
+      properties:
+        execution_time_ms:
+          type: integer
+          description: Query execution time in milliseconds
+        result_count:
+          type: integer
+          description: Number of results returned
+        query:
+          type: string
+          description: SQL query (only if debug=true)
+
+    ApiResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    ObjectResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/FMObject'
+
+    ObjectListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/FMObject'
+
+    CountResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              oneOf:
+                - type: object
+                  properties:
+                    count:
+                      type: integer
+                - type: array
+                  items:
+                    type: object
+                    properties:
+                      Object_Type:
+                        $ref: '#/components/schemas/ObjectType'
+                      File_Name:
+                        type: string
+                      count:
+                        type: integer
+
+    ReferencesResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                source:
+                  $ref: '#/components/schemas/FMObject'
+                references:
+                  type: object
+                  properties:
+                    parent:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/ObjectReference'
+                    child:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/ObjectReference'
+
+    QueryRequest:
+      type: object
+      required:
+        - template
+      properties:
+        template:
+          type: string
+          description: Template name
+        params:
+          type: object
+          additionalProperties: true
+          description: Template parameters
+        format:
+          $ref: '#/components/schemas/OutputFormat'
+        debug:
+          type: boolean
+        meta:
+          type: boolean
+
+    QueryResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+
+    VersionResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                version:
+                  type: string
+                api_name:
+                  type: string
+                duckdb_version:
+                  type: string
+                node_version:
+                  type: string
+                uptime_seconds:
+                  type: integer
+                health:
+                  type: string
+                  enum: [healthy, degraded, unhealthy]
+                database:
+                  type: object
+                  properties:
+                    connected:
+                      type: boolean
+                    path:
+                      type: string
+                    size_mb:
+                      type: number
+
+    InfoResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                solution:
+                  type: object
+                  properties:
+                    file_count:
+                      type: integer
+                    files:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          File_Name:
+                            type: string
+                          File_FullName:
+                            type: string
+                          FileMaker_Version:
+                            type: string
+                          Has_DDR_INFO:
+                            type: boolean
+                          Import_Timestamp:
+                            type: string
+                            format: date-time
+                    object_statistics:
+                      type: object
+                      additionalProperties:
+                        type: integer
+                    link_statistics:
+                      type: object
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              enum:
+                - VALIDATION_ERROR
+                - OBJECT_NOT_FOUND
+                - TEMPLATE_NOT_FOUND
+                - DATABASE_ERROR
+                - TEMPLATE_ERROR
+                - FILE_NOT_FOUND
+                - IMPORT_ERROR
+                - INTERNAL_ERROR
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+        meta:
+          type: object
+          properties:
+            request_id:
+              type: string
+            timestamp:
+              type: string
+              format: date-time
+
+  responses:
+    NotFound:
+      description: Object not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: OBJECT_NOT_FOUND
+              message: Object with UUID 'ABC-123' not found
+              details:
+                uuid: ABC-123
+
+    TemplateNotFound:
+      description: Template not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: TEMPLATE_NOT_FOUND
+              message: Template 'unknown_template' not found
+              details:
+                template: unknown_template
+
+    ValidationError:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: VALIDATION_ERROR
+              message: Invalid parameter 'type'
+              details:
+                field: type
+                value: InvalidType

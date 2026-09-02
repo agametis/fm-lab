@@ -94,7 +94,12 @@ function extendFieldRangeLeft(
 
 const SUBTOKEN_RE = /(".*?(?<!\\)")|(\d+(?:\.\d+)?)|(<>|≠|≥|≤|=|<|>|\+|-|\*|\/|&|;)/g;
 
-function splitGap(text: string): Piece[] {
+/**
+ * Zerlegt ref-freien Formel-/Steptext in Sub-Tokens (string/number/operator/
+ * text). Exportiert, weil auch die Calc-Token-Views (CalcTokenSpan) ihre
+ * NoRef-Text-Chunks damit nachlexen — gleiche Färbung wie im ScriptViewer.
+ */
+export function splitGap(text: string): Piece[] {
   if (!text) return [];
   const out: Piece[] = [];
   let last = 0;

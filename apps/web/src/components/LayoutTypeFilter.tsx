@@ -1,7 +1,14 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { LayoutObject } from '../hooks/useLayoutData';
+import {
+  CALC_CATEGORY_KEYS,
+  CALC_PREDICATES,
+  type CalcCategoryKey,
+} from '../hooks/useLayoutSearch';
 import { useLayoutObjectPalette } from './layoutObjectTheme';
+import { useTriggerEventFormat } from '../lib/triggerEvents';
 
 type Props = {
   objects: LayoutObject[];
@@ -11,6 +18,13 @@ type Props = {
   onClear: () => void;
   detailsMode: boolean;
   onToggleDetailsMode: () => void;
+  activeCalc: Set<string>;
+  onToggleCalc: (key: string) => void;
+  /**
+   * Deeplinks „↗" pro Calc-Chip in die jeweilige Inventar-Query
+   * (Layout-Scope via file + scope_uuids). Fehlender Eintrag = kein Link.
+   */
+  calcInventoryUrls?: Partial<Record<CalcCategoryKey, string>>;
 };
 
 type Category = {
@@ -55,16 +69,39 @@ export function LayoutTypeFilter({
   onClear,
   detailsMode,
   onToggleDetailsMode,
+  activeCalc,
+  onToggleCalc,
+  calcInventoryUrls,
 }: Props) {
   const { t } = useTranslation(['detail']);
   const palette = useLayoutObjectPalette();
+  const fmtEvent = useTriggerEventFormat();
   const counts = useMemo(() => {
     const m = new Map<string, number>();
     for (const o of objects) m.set(o.object_type, (m.get(o.object_type) ?? 0) + 1);
     return m;
   }, [objects]);
 
-  const hasAnyActive = activeTypes.size > 0;
+  // Calc-Kategorien: Träger-Anzahl pro Kategorie (Objekte, nicht Regeln) +
+  // distinct Event-Namen für den Trigger-Chip-Tooltip.
+  const calcStats = useMemo(() => {
+    const catCounts = new Map<CalcCategoryKey, number>();
+    const events = new Set<string>();
+    for (const o of objects) {
+      for (const key of CALC_CATEGORY_KEYS) {
+        if (CALC_PREDICATES[key](o)) catCounts.set(key, (catCounts.get(key) ?? 0) + 1);
+      }
+      if (o.trigger_count > 0 && o.trigger_events) {
+        for (const ev of o.trigger_events.split(',')) {
+          if (ev) events.add(fmtEvent(ev));
+        }
+      }
+    }
+    return { catCounts, eventNames: Array.from(events).sort() };
+  }, [objects, fmtEvent]);
+
+  const hasAnyActive = activeTypes.size > 0 || activeCalc.size > 0;
+  const visibleCalcKeys = CALC_CATEGORY_KEYS.filter(k => (calcStats.catCounts.get(k) ?? 0) > 0);
 
   return (
     <div className="layout-type-filter">
@@ -133,6 +170,47 @@ export function LayoutTypeFilter({
           </div>
         );
       })}
+      {/* Calculation-Chips: markieren Träger unsichtbarer Layout-Logik (CF/Hide/
+          Trigger/QuickInfo). Stufen-unabhängig immer als Einzel-Chips mit
+          Gruppen-Label — eine Sammel-Pille wäre semantisch leer. Neutraler
+          Akzent-Stil statt Typ-Palette: deren Farben kodieren SVG-Objekt-Typen. */}
+      {visibleCalcKeys.length > 0 && (
+        <div className="layout-type-filter-group layout-calc-filter-group">
+          <span className="layout-type-filter-cat">
+            {t('detail:layoutTypeFilter.calcGroupLabel', { defaultValue: 'Calculations' })}
+          </span>
+          {visibleCalcKeys.map(key => {
+            const count = calcStats.catCounts.get(key) ?? 0;
+            const active = activeCalc.has(key);
+            const label = t(`detail:layoutTypeFilter.calcCategories.${key}`, { defaultValue: key }) as string;
+            const title = key === 'trigger' && calcStats.eventNames.length > 0
+              ? `${label} (${count}): ${calcStats.eventNames.join(', ')}`
+              : `${label} (${count})`;
+            const inventoryUrl = calcInventoryUrls?.[key];
+            return (
+              <span key={key} className="layout-calc-chip">
+                <button
+                  type="button"
+                  className={`layout-type-pill layout-calc-pill${active ? ' active' : ''}`}
+                  onClick={() => onToggleCalc(key)}
+                  title={title}
+                >
+                  {label}<span className="layout-type-pill-count">({count})</span>
+                </button>
+                {inventoryUrl && (
+                  <Link
+                    to={inventoryUrl}
+                    className="layout-calc-pill-jump"
+                    title={`${label} — ${t('detail:layoutTypeFilter.calcInventoryOpen', { defaultValue: 'Open inventory' })}`}
+                  >
+                    ↗
+                  </Link>
+                )}
+              </span>
+            );
+          })}
+        </div>
+      )}
       <div className="layout-type-filter-actions">
         <button
           type="button"

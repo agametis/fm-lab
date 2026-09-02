@@ -108,7 +108,7 @@
       "copied": "Copied",
       "elementOrder": "Element order",
       "evidence": "Evidence",
-      "notAvailable": "Grammar not captured yet — wave W4",
+      "notAvailable": "Grammar not captured yet",
       "options": "Options",
       "constraints": "Constraints",
       "opt": {
@@ -121,6 +121,42 @@
         "values": "Values",
         "invertedHint": "Label semantics are inverted relative to the XML state — true_text/false_text already carry the complete text-to-XML mapping; never invert again.",
         "docOnly": "Documented by Claris, but not roundtrip-verified — verify behaviour after paste."
+      },
+      "repeatGroups": "Repeat groups (lists)",
+      "rg": {
+        "group": "Group",
+        "container": "Container",
+        "form": "Item form",
+        "fixedSlots": "{{n}} fixed slots",
+        "nestedIn": "nested in {{parent}}",
+        "countAttr": "count attribute {{attr}}"
+      },
+      "knownBugHint": "Known FileMaker bug — a warning class, not a validity rule: the step is valid, FileMaker's own serialization is the risk.",
+      "variableTargetMarker": "Variable-target marker",
+      "variableTargetMarkerHint": "Carries an empty <Text/> step-level marker exactly when the target slot holds a variable instead of a field reference.",
+      "consumerNote": "Consumer note",
+      "skeletons": "Skeleton hulls",
+      "sk": {
+        "in": "in {{parent}}",
+        "hull": "hull — persists with default content even unconfigured",
+        "hull_strip_children": "hull — keeps its attributes, unfilled children are stripped",
+        "condition": "only with {{cond}}"
+      },
+      "bindings": "Option-bound elements",
+      "bd": {
+        "requires": "exists only with {{cond}}",
+        "excludes": "dropped with {{cond}}",
+        "requiresOption": "exists only while {{option}} is set",
+        "excludesOption": "dropped while {{option}} is set",
+        "suppressEmpty": "empty element is never emitted deterministically (dialog residue)"
+      },
+      "implications": "Notation implications",
+      "imp": {
+        "option_present": "option present",
+        "value_form": "reference form",
+        "keyword": "keyword",
+        "mode_switch": "mode switch",
+        "default": "default mode (switch label absent)"
       }
     },
     "saxml": {

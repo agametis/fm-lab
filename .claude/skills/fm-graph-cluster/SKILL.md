@@ -261,9 +261,12 @@ a run log) with the Write tool. Data source is the final, named state of
    nodes — use the fixed query below, **not** raw `ObjectLinks`), **cross-file interweaving**,
    isolated vs. central clusters. → *What does this say about the solution's build?*
    **Do not list builtin primitives** (`and`/`or`/`Case`, `Object_Type='BuiltinFunction'`) as hubs —
-   they are excluded from the clustered graph by design (`ClusterEdges`). If their raw prominence is
-   worth a remark, mention them **separately** as "primitives excluded from clustering", never as
-   geclusterte Hubs.
+   they are excluded from the clustered graph by design (`ClusterEdges`). The same goes for
+   `Object_Type='Calculation'` (schema 1.22.0): calculation instances hang on their owner via the
+   structural `has_calculation` link only and never enter `LogicalLinks`/`ClusterEdges` — they can
+   never be hubs; if one shows up in a degree list, that is a pipeline regression, not a finding.
+   If a builtin's raw prominence is worth a remark, mention it **separately** as "primitives
+   excluded from clustering", never as geclusterte Hubs.
 3. **Business-logic findings** — derive the **business domains** from the `Semantic_Name`/
    `Semantic_Description` (e.g. customer import, invoicing, rights/security, reporting). → *Which business functions, and how do they connect?*
 4. **List of ALL communities with description** — table per community: `Semantic_Name` · Description

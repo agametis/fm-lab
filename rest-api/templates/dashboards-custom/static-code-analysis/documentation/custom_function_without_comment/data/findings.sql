@@ -1,12 +1,15 @@
 -- The comment filter (getvariable('comment'), default 'without') toggles between
 -- custom functions WITHOUT and WITH an inline comment (DDR Comment chunk) in the
--- function body. Only functions with a resolvable body (DDR_Hash) can be judged.
+-- function body. Only functions with a resolvable body (Formula_Hash) can be
+-- judged. Instance base is the CalculationsCatalog custom_function slot;
+-- DDR_Calculations contributes the chunk-level comment detection.
 WITH cf AS (
-    SELECT c.File_Name, c.CF_UUID, c.CF_Name,
+    SELECT c.File_Name, c.Owner_UUID AS CF_UUID, c.Owner_Name AS CF_Name,
         EXISTS (SELECT 1 FROM DDR_Calculations d
-                WHERE d.Calc_Hash = c.DDR_Hash AND d.Chunk_Type = 'Comment') AS has_comment
-    FROM CustomFunctionsCatalog c
-    WHERE c.DDR_Hash IS NOT NULL
+                WHERE d.Calc_Hash = c.Formula_Hash AND d.Chunk_Type = 'Comment') AS has_comment
+    FROM CalculationsCatalog c
+    WHERE c.Calc_Role = 'custom_function'
+      AND c.Formula_Hash IS NOT NULL
       AND (getvariable('file') IS NULL OR c.File_Name = getvariable('file'))
 )
 SELECT 'custom-function-without-comment' AS rule_id, 'info' AS severity,

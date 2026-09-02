@@ -4,7 +4,9 @@ Endpoints under `/api/xml/*` drive the XML-to-catalog conversion pipeline for a 
 
 **Solution scoping (special in this group):** the target solution is resolved with this precedence: explicit `?solution=<id>` query parameter or `"solution"` body field → `X-Solution` header → server-default solution. Unknown ids yield `404 SOLUTION_NOT_FOUND`. Imports of *different* solutions may run in parallel; a second import of the *same* solution is rejected.
 
-**Locking:** the per-solution lock file is shared with the CLI pipeline (`convert-xml`). Whichever side starts first wins; the other receives `409 ALREADY_RUNNING`. Stale locks (dead process) are ignored automatically.
+**Locking:** the per-solution lock file is shared with the CLI pipeline (`convert-xml`). Whichever side starts first wins; the other receives `409 ALREADY_RUNNING` — on the CLI side the same collision is exit code `7`. Stale locks (dead process) are ignored automatically.
+
+**When a run publishes:** a finished run syncs the catalog to the API's read copy and triggers the `reload` event only when it built a valid catalog. A resolve-phase (P2) failure aborts before the detail phases with `done { ok: false }` and **no** sync — the previously served catalog stays untouched. A healing re-run publishes like any successful run; only a batch in which every file failed stays unpublished. One more effect worth knowing: content hashes are parser-policy-stamped, so after a webbed/DuckDB update a `changedOnly` run may legitimately re-read unchanged files once (a `log` event names the policy change) instead of skipping them.
 
 ---
 
@@ -26,7 +28,7 @@ Start a conversion job. Returns immediately with `202` — the run continues ser
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `changedOnly` | boolean | `true` | Only convert new/changed files (manifest skip); `false` forces a full rebuild |
+| `changedOnly` | boolean | `true` | Only convert new/changed files (manifest skip); `false` forces a full rebuild. Legacy alias: `incremental` |
 | `solution` | string | context | Target solution id |
 
 **Response (202):** `{ "run_id": "…", "running": true, "changedOnly": true, "solution": "…" }`

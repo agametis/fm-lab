@@ -43,9 +43,12 @@ The DuckDB tables mirror the XML object catalogs. Most-used tables:
 | `FilesCatalog` | Imported FileMaker files (version, DDR-Info flag) |
 | `ScriptCatalog` / `StepsForScripts` | Scripts and their steps (+ `DDR_ScriptSteps` human-readable). `Step_Index` is 0-based — user-facing step numbers are `Step_Index + 1` |
 | `StepCalculations` / `v_script_block_tree` | All calculation slots of a step (window name vs. geometry, dialog title vs. message) / per-step Loop-&-If nesting depth — use for any branch-scope question instead of hand-reconstructing control flow |
+| `CalculationsCatalog` / `v_calculation_links` | Every calculation **instance** (owner × role × index; `Object_Type='Calculation'`, exists also without DDR-Info) / its per-slot target resolution derived from the owner edges — where-used stays on the owner edges (`has_calculation` never counts as usage) |
 | `FieldsForTables` | Fields incl. type, AutoEnter, validation, storage |
 | `BaseTableCatalog` / `TableOccurrenceCatalog` / `RelationshipCatalog` | Data model & relationship graph |
 | `Layouts` / `LayoutObjects` / `LayoutParts` | Layouts, all 22 layout-object types, parts |
+| `LayoutObjectConditions` | Conditional-formatting rules, one row per rule (type/operator, operands, formula + `Calculation_UUID`-FK, raw CSS) — never regex `Object_XML` for CF |
+| `LayoutObjectSymbols` | `{{…}}` symbol inventory per text layout object (`Symbol_Norm` = case-robust key; deliberately no where-used edges) — never regex `Text_Content` for symbols |
 | `CustomFunctionsCatalog` / `CalcsForCustomFunctions` | Custom functions and their formulas |
 | `ValueListCatalog` / `OptionsForValueLists` | Value lists |
 | `VariableUsages` / `VariablesCatalog` | Every variable usage / aggregated per variable |

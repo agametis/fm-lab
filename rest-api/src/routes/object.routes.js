@@ -17,7 +17,10 @@ router.get('/get-details', validate('getDetails'), objectController.getDetails);
 // GET /api/get-calc - Standalone calculation by hash (tokens format)
 router.get('/get-calc', validate('getCalc'), objectController.getCalc);
 
-// GET /api/list/categories - Pseudo-Token-Filter-Pillen Datenbasis (PRD §7.2)
+// GET /api/conditional-formatting - CF rules of a layout object (parsed format + raw CSS)
+router.get('/conditional-formatting', validate('conditionalFormatting'), objectController.conditionalFormatting);
+
+// GET /api/list/categories - Pseudo-Token-Filter-Pillen Datenbasis
 // MUSS vor /list stehen, sonst kollidiert das Subpfad-Routing mit /list?type=...
 router.get('/list/categories', validate('listCategories'), objectController.listCategories);
 
@@ -39,7 +42,7 @@ router.get('/search', validate('search'), objectController.search);
 // GET /api/references - Get object references
 router.get('/references', validate('references'), objectController.references);
 
-// GET /api/back-references - Cross-Reference Highlight Lookup (PRD §6.3)
+// GET /api/back-references - Cross-Reference Highlight Lookup
 router.get('/back-references', validate('backReferences'), objectController.backReferences);
 
 module.exports = router;

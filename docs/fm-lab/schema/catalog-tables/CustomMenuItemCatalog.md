@@ -11,7 +11,7 @@ The individual items of every custom menu, parsed from the menu XML: command ite
 |---|---|
 | `Item_UUID` | `VARCHAR` |
 | `Item_Hash` | `VARCHAR` |
-| `Item_Index` | `INTEGER` |
+| `Item_Index` | `BIGINT` |
 | `Is_SubMenuItem` | `BOOLEAN` |
 | `Is_SeparatorItem` | `BOOLEAN` |
 | `Command_Name` | `VARCHAR` |

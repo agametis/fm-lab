@@ -460,8 +460,12 @@ def parse_target(value: str) -> dict | None:
     Shared by _coerce and the step hints so both agree on the rule.
     """
     value = value.strip()
-    if _VAR_RE.match(value):
-        return {"name": value, "_form": "variable"}
+    m = re.match(r"^(\$\$?[A-Za-z_][\w.]*)\s*(?:\[\s*(.+?)\s*\])?$", value)
+    if m and _VAR_RE.match(m.group(1)):
+        ref = {"name": m.group(1), "_form": "variable"}
+        if m.group(2):
+            ref["repetition"] = m.group(2)
+        return ref
     return parse_ref(value)
 
 
@@ -481,6 +485,108 @@ def _option_section(xml_path: str) -> str:
 
 def _norm_label(s: str) -> str:
     return re.sub(r"[^0-9a-zA-Z]+", "", s).casefold()
+
+
+# ------------------------------------------------------------- repeat groups
+# script-text-notation v0.2 T9: repeatable group labels collect list values.
+# One knowledge source (fm_spec.step_repeat_groups), read by parse, render,
+# emit and decompile alike.
+
+_ITEM_PH_RE = re.compile(r"\{([a-z0-9_]+)(?::[a-z_]+)?(?:\|([^{}]*))?\??\}")
+_GROUP_SLOT_RE = re.compile(r"\{([a-z0-9_]+)\[\]\}")
+
+
+def group_item_keys(group: dict) -> list[str]:
+    """Flat option keys of a group's item template, in template order."""
+    seen: list[str] = []
+    for m in _ITEM_PH_RE.finditer(group["item_template"]):
+        if m.group(1) not in seen:
+            seen.append(m.group(1))
+    return seen
+
+
+def group_item_defaults(group: dict) -> dict[str, str]:
+    """{flat key: default} for defaulted item placeholders."""
+    out = {}
+    for m in _ITEM_PH_RE.finditer(group["item_template"]):
+        if m.group(2) is not None:
+            out.setdefault(m.group(1), m.group(2))
+    return out
+
+
+def group_child_keys(group: dict) -> list[str]:
+    """Nested group slots ({key[]}) of the item template."""
+    return [m.group(1) for m in _GROUP_SLOT_RE.finditer(group["item_template"])]
+
+
+# ---------------------------------------------------------- fixed-slot groups
+# T9 fixed-slot rule (fm_spec 1.16.0, Show Custom Dialog): a constant number
+# of positional slots whose index is semantic (Get(LastMessageChoice)). These
+# groups are slot-addressed via numbered extension labels derived from the
+# [n] convention in step_options.xml_path — never the bracket/list form, and
+# never touched by the list machinery (_instantiate/_extract/top_bracket).
+
+def is_fixed_slot(group: dict) -> bool:
+    return bool(group.get("max_items"))
+
+
+def slot_families(ref: "Reference", step_id: int, group: dict) -> list[dict]:
+    """The declared [n]-options of a fixed-slot group, in declared order
+    (sort_order): [{opt, head, tail, primary}]. The container is matched by
+    the first xml_path segment against the group's container element."""
+    container_tag = group["container_path"].split("/")[-1]
+    fams = []
+    for o in ref.options(step_id):
+        path = o.get("xml_path") or ""
+        if "[n]" not in path or path.split("/")[0] != container_tag:
+            continue
+        head, _, tail = o["option_key"].partition("_")
+        if not tail:
+            continue
+        fams.append({"opt": o, "head": head, "tail": tail,
+                     "primary": not fams})
+    return fams
+
+
+def slot_key(fam: dict, n: int) -> str:
+    """button_label + slot 2 -> button2_label (resolve._instance_keys pattern)."""
+    return f"{fam['head']}{n}_{fam['tail']}"
+
+
+def slot_label(fam: dict, n: int) -> str:
+    """Canonical slot label: Head+N for the group's first-declared option
+    (Button1, Input2), Head+N+LastSegment for the others (Button1Commit,
+    Input1Label, Input1Password)."""
+    base = fam["head"].capitalize() + str(n)
+    if fam["primary"]:
+        return base
+    return base + fam["tail"].rpartition("_")[2].capitalize()
+
+
+def fixed_slot_extras(options: dict, ref: "Reference", step_id: int) -> list[str]:
+    """Render (and pop) the slot options of every fixed-slot group as
+    extension-label parts, group / slot / declared-option order. Values pass
+    verbatim (booleans keep their XML state text) — the parse direction is
+    symmetric. Replaces the former 87 reverse hint."""
+    extras: list[str] = []
+    for g in ref.repeat_groups(step_id):
+        if not is_fixed_slot(g) or g.get("parent_group"):
+            continue
+        fams = slot_families(ref, step_id, g)
+        for n in range(1, int(g["max_items"]) + 1):
+            for fam in fams:
+                val = options.pop(slot_key(fam, n), None)
+                if val is None:
+                    continue
+                rendered = render_ref(val) if isinstance(val, dict) else str(val)
+                extras.append(f"{slot_label(fam, n)}: {rendered}")
+    return extras
+
+
+def item_label(group_key: str, flat_key: str) -> str:
+    """Canonical item-local label: the flat key minus the group prefix."""
+    prefix = group_key + "_"
+    return flat_key[len(prefix):] if flat_key.startswith(prefix) else flat_key
 
 
 @dataclass
@@ -538,27 +644,58 @@ def parse_step(st: RawStep, ref: Reference) -> ParsedStep:
         return ps
 
     params = split_params(st.params_raw)
-    hint = STEP_HINTS.get(st.step_id)
-    if hint:
-        params = hint(ps, params, ref)
+    params = _apply_pre_implications(ps, params, ref)
+
+    groups = ref.repeat_groups(st.step_id)
+    groups_by_key = {g["group_key"]: g for g in groups}
+    top_bracket = {_norm_label(g["group_label"]): g for g in groups
+                   if g["item_form"] == "bracket" and not g["parent_group"]
+                   and not is_fixed_slot(g)}
+    scalar_keys = {g["group_key"] for g in groups if g["item_form"] == "scalar"}
+
+    # Fixed-slot groups: numbered slot labels (Button2:, Input1Label:) derived
+    # from the [n] convention; the declared [n]-options themselves never bind
+    # by label or position — slots are the only address (T9 fixed-slot rule).
+    slot_by_label: dict[str, tuple[str, dict]] = {}
+    for g in groups:
+        if not is_fixed_slot(g):
+            continue
+        for fam in slot_families(ref, st.step_id, g):
+            suffix = fam["tail"].rpartition("_")[2].capitalize()
+            for n in range(1, int(g["max_items"]) + 1):
+                sk = slot_key(fam, n)
+                slot_by_label[_norm_label(slot_label(fam, n))] = (sk, fam["opt"])
+                if fam["primary"]:
+                    # the long form (Input1Field) stays accepted as input
+                    slot_by_label.setdefault(
+                        _norm_label(fam["head"].capitalize() + str(n) + suffix),
+                        (sk, fam["opt"]))
+
+    def _slotted(o: dict) -> bool:
+        return "[n]" in (o.get("xml_path") or "")
 
     by_label = {}
     label_candidates: dict[str, list[dict]] = {}
     for o in opts:
+        if _slotted(o):
+            continue
         if o["display_label_en"]:
             by_label[_norm_label(o["display_label_en"])] = o
             label_candidates.setdefault(_norm_label(o["display_label_en"]), []).append(o)
         by_label.setdefault(_norm_label(o["option_key"]), o)
     positional = [o for o in opts
-                  if o["display_location"] == "inline" and not o["display_label_en"]]
-    inline_all = [o for o in opts if o["display_location"] == "inline"]
+                  if o["display_location"] == "inline" and not o["display_label_en"]
+                  and not _slotted(o)]
+    inline_all = [o for o in opts if o["display_location"] == "inline"
+                  and not _slotted(o)]
 
     def take_bare_boolean(param: str):
         """Flag-style booleans render as a bare keyword (Sort Records
         'Restore', Insert Text 'Select') — match against true_/false_text."""
         p = param.strip().casefold()
         for o in opts:
-            if o["option_type"] != "boolean" or o["option_key"] in ps.options:
+            if o["option_type"] != "boolean" or o["option_key"] in ps.options \
+                    or _slotted(o):
                 continue
             if p and p in ((o["true_text"] or "").casefold(), (o["false_text"] or "").casefold()):
                 return o
@@ -573,6 +710,21 @@ def parse_step(st: RawStep, ref: Reference) -> ParsedStep:
         # ref-typed options; a bare quoted string is usually a calculation
         r = parse_ref(param) if _LABEL_RE.match(param) is None else None
         is_ref = bool(r) and r.get("_form") in ("field", "layout")
+        if not is_ref and _LABEL_RE.match(param) is None:
+            # A bare value that belongs to the domain of exactly this kind of
+            # free inline enum binds by value, not by position — FileMaker
+            # renders inline enums label-free ('Records being browsed',
+            # 'Blank record, as formatted'), so position alone is ambiguous
+            # against free text options (Tier-1 fixture 22.0.6, step 144).
+            v = param.strip().casefold()
+            for o in inline_all:
+                if o["option_type"] != "enum" or o["option_key"] in ps.options:
+                    continue
+                for row in ref.option_values(ps.step_id):
+                    if row["option_key"] != o["option_key"]:
+                        continue
+                    if v == (row["display_text_en"] or "").casefold() or v == row["xml_value"].casefold():
+                        return o
         if is_ref:
             # ref params may also fill labeled ref options (label often
             # omitted in drafts, e.g. Insert Text 'Target:')
@@ -605,6 +757,40 @@ def parse_step(st: RawStep, ref: Reference) -> ParsedStep:
         opt = None
         value = param
         m = _LABEL_RE.match(param)
+        if m and _norm_label(m.group(1)) in top_bracket:
+            g = top_bracket[_norm_label(m.group(1))]
+            item = _parse_group_item(ps, g, m.group(2).strip(), ref, groups_by_key)
+            if item is not None:
+                ps.options.setdefault(g["group_key"], []).append(item)
+            continue
+        if m and _norm_label(m.group(1)) in slot_by_label:
+            skey, srow = slot_by_label[_norm_label(m.group(1))]
+            if skey in ps.options:
+                ps.errors.append(f"line {st.line}: option '{skey}' given twice")
+                continue
+            val = m.group(2).strip()
+            if srow["option_type"] in ("object_ref", "target"):
+                parsed = (parse_target(val) if srow["option_type"] == "target"
+                          else parse_ref(val))
+                if parsed is None:
+                    ps.errors.append(
+                        f"line {st.line}: '{_ellipsis(val)}' is not a valid "
+                        f"field or variable for '{skey}'")
+                    continue
+                ps.options[skey] = parsed
+            elif srow["option_type"] == "boolean":
+                # coerce like every other boolean: XML state is always
+                # True/False; the render direction (fixed_slot_extras) is
+                # verbatim only because decompiled XML never carries On/Off
+                coerced = _coerce(ps, {**srow, "option_key": skey}, val, ref)
+                if coerced is None:
+                    continue
+                ps.options[skey] = coerced
+            else:
+                # verbatim — symmetric with fixed_slot_extras' render
+                # direction (booleans handled above)
+                ps.options[skey] = val
+            continue
         if m and _norm_label(m.group(1)) in by_label:
             label = _norm_label(m.group(1))
             cands = label_candidates.get(label, [])
@@ -624,6 +810,16 @@ def parse_step(st: RawStep, ref: Reference) -> ParsedStep:
                 f"to an option of '{canonical}'")
             continue
         if opt["option_key"] in ps.options:
+            if opt["option_key"] in scalar_keys:
+                # T9 scalar repetition: the label of a scalar repeat group may
+                # occur any number of times; each occurrence appends one item
+                coerced = _coerce(ps, opt, value, ref)
+                if coerced is not None:
+                    prev = ps.options[opt["option_key"]]
+                    if not isinstance(prev, list):
+                        ps.options[opt["option_key"]] = [prev]
+                    ps.options[opt["option_key"]].append(coerced)
+                continue
             ps.errors.append(f"line {st.line}: option '{opt['option_key']}' given twice")
             continue
         section = _option_section(opt["xml_path"])
@@ -631,12 +827,138 @@ def parse_step(st: RawStep, ref: Reference) -> ParsedStep:
         if coerced is not None:
             ps.options[opt["option_key"]] = coerced
 
+    _canonicalize_flat_groups(ps, groups, groups_by_key)
+    _apply_post_implications(ps, ref)
+
     for key in unsatisfied_required(set(ps.options)):
         ps.errors.append(
             f"line {st.line}: required option '{key}' missing for '{canonical}'")
 
     ps.canonical_text = render_canonical(ps, ref)
     return ps
+
+
+def _parse_group_item(ps: ParsedStep, group: dict, value: str, ref: Reference,
+                      groups_by_key: dict) -> dict | None:
+    """Parse one T9 item bracket `[ ... ]` against the group's item options."""
+    value = value.strip()
+    if not (value.startswith("[") and value.endswith("]")):
+        ps.errors.append(
+            f"line {ps.line}: value of repeat group '{group['group_label']}' "
+            f"must be an item bracket [ ... ], got '{_ellipsis(value)}'")
+        return None
+    inner = value[1:-1].strip()
+    parts = split_params(inner)
+    if not parts:
+        ps.errors.append(
+            f"line {ps.line}: empty item for repeat group '{group['group_label']}'")
+        return None
+    metas = {o["option_key"]: o for o in ref.options(ps.step_id)}
+    item_keys = [k for k in group_item_keys(group) if k in metas]
+    children = {c: groups_by_key[c] for c in group_child_keys(group)
+                if c in groups_by_key}
+    child_labels = {_norm_label(groups_by_key[c]["group_label"]): c for c in children}
+    item: dict = {}
+    for part in parts:
+        m = _LABEL_RE.match(part)
+        if m:
+            label = _norm_label(m.group(1))
+            if label in child_labels:
+                ck = child_labels[label]
+                sub = _parse_group_item(ps, children[ck], m.group(2).strip(),
+                                        ref, groups_by_key)
+                if sub is not None:
+                    item.setdefault(ck, []).append(sub)
+                continue
+            hit = next((k for k in item_keys
+                        if label in (_norm_label(item_label(group["group_key"], k)),
+                                     _norm_label(k))), None)
+            if hit is None:
+                ps.errors.append(
+                    f"line {ps.line}: '{m.group(1)}' is not an item option of "
+                    f"repeat group '{group['group_label']}'")
+                continue
+            if hit in item:
+                ps.errors.append(
+                    f"line {ps.line}: item option '{hit}' given twice in one "
+                    f"'{group['group_label']}' item")
+                continue
+            coerced = _coerce(ps, metas[hit], m.group(2).strip(), ref)
+            if coerced is not None:
+                item[hit] = coerced
+            continue
+        # positional inside the item: same T4 rules against the item options
+        free = [metas[k] for k in item_keys if k not in item]
+        opt = _take_item_positional(ps, part, free, ref)
+        if opt is None:
+            ps.errors.append(
+                f"line {ps.line}: cannot map item parameter '{_ellipsis(part)}' "
+                f"in repeat group '{group['group_label']}'")
+            continue
+        coerced = _coerce(ps, opt, part.strip(), ref)
+        if coerced is not None:
+            item[opt["option_key"]] = coerced
+    if not item:
+        return None
+    return item
+
+
+def _take_item_positional(ps: ParsedStep, param: str, free: list[dict],
+                          ref: Reference):
+    r = parse_ref(param)
+    is_ref = bool(r) and r.get("_form") in ("field", "layout")
+    if is_ref:
+        pool = [o for o in free if o["option_type"] in ("object_ref", "target")]
+        if pool:
+            return pool[0]
+    v = param.strip().casefold()
+    for o in free:
+        if o["option_type"] != "enum":
+            continue
+        for row in ref.option_values(ps.step_id):
+            if row["option_key"] != o["option_key"]:
+                continue
+            if v == (row["display_text_en"] or "").casefold() \
+                    or v == row["xml_value"].casefold():
+                return o
+    nonref = [o for o in free if o["option_type"] not in ("object_ref", "target")]
+    if len(nonref) == 1:
+        return nonref[0]
+    if len(free) == 1:
+        return free[0]
+    return None
+
+
+def _canonicalize_flat_groups(ps: ParsedStep, groups: list[dict],
+                              groups_by_key: dict) -> None:
+    """Flat-alias rule (T9): pre-v0.2 flat keys fill item 1 of their group.
+
+    Runs bottom-up (children first) so nested flat keys (criteria_*) land
+    inside the parent's item. Mixing flat and group form of the same group in
+    one step is an error — the flat keys can only describe ONE item, so their
+    meaning next to explicit items would be ambiguous.
+    """
+    for g in [g for g in groups if g["parent_group"]] + \
+             [g for g in groups if not g["parent_group"]]:
+        if g["item_form"] != "bracket" or is_fixed_slot(g):
+            continue
+        flat = [k for k in group_item_keys(g) if k in ps.options]
+        child_items = {c: ps.options.pop("__pending_" + c)
+                       for c in group_child_keys(g)
+                       if "__pending_" + c in ps.options}
+        if not flat and not child_items:
+            continue
+        if g["group_key"] in ps.options and not str(g["group_key"]).startswith("__pending_"):
+            ps.errors.append(
+                f"line {ps.line}: repeat group '{g['group_label']}' given in "
+                "group form and flat form at once — use one form per step")
+            for k in flat:
+                ps.options.pop(k, None)
+            continue
+        item = {k: ps.options.pop(k) for k in flat}
+        item.update(child_items)
+        key = g["group_key"] if not g["parent_group"] else "__pending_" + g["group_key"]
+        ps.options[key] = [item]
 
 
 def _coerce(ps: ParsedStep, opt: dict, value: str, ref: Reference):
@@ -683,6 +1005,11 @@ def _coerce(ps: ParsedStep, opt: dict, value: str, ref: Reference):
                 f"line {ps.line}: '{_ellipsis(value)}' is not a valid object reference for '{key}'")
             return None
         return r
+    if kind == "text" and ";" in value and len(value) >= 2 \
+            and value.startswith('"') and value.endswith('"'):
+        # decompile wraps text values containing the parameter separator in
+        # quotes (render_canonical) — unwrap them here, symmetric pair
+        return value[1:-1]
     return value  # calculation / text / repetition: verbatim
 
 
@@ -691,102 +1018,113 @@ def _ellipsis(s: str, n: int = 60) -> str:
     return s if len(s) <= n else s[: n - 1] + "…"
 
 
-# ------------------------------------------------------- step-specific hints
-# The canonical text form of a few very common steps cannot be mapped purely
-# data-driven. Hints pre-process the param list; they may set options directly
-# and return the remaining params. Extension labels (Button1:, Input1:) cover
-# dialog-only options that rule T4 excludes from the plain text form.
+# ------------------------------------------------------ option implications
+# Parse-side implications (fm_spec.step_option_implications, 1.17.0): the
+# canonical text form of a few very common steps leaves an option implicit —
+# a keyword, a reference form, a mode switch or the mere presence of another
+# option implies its value. The facts are data rows; the machinery here is
+# generic. 87 Show Custom Dialog needs none of this since fm_spec 1.16.0:
+# slot labels derive from the [n] convention, the default OK button and the
+# slot padding live in step_repeat_groups (fixed-slot columns).
 
-def _hint_go_to_layout(ps: ParsedStep, params: list[str], ref: Reference) -> list[str]:
-    rest = []
+def _apply_pre_implications(ps: ParsedStep, params: list[str],
+                            ref: Reference) -> list[str]:
+    """Pre-loop implication kinds — they consume parameters.
+
+    keyword:     a bare parameter equal to the trigger (label-normalized)
+                 implies the option value and is consumed.
+    mode_switch: the switch label ('Specified: <mode>') is consumed; the
+                 matching mode row names the option that unlabeled positional
+                 parameters bind to. An object_ref target consumes every
+                 reference-shaped bare parameter; a calculation target
+                 consumes every bare parameter verbatim. Without the switch
+                 label the is_default row's mode applies (dialog default).
+    """
+    rows = ref.option_implications(ps.step_id)
+    if not rows:
+        return params
+    keywords = [r for r in rows if r["trigger_kind"] == "keyword"]
+    switches = [r for r in rows if r["trigger_kind"] == "mode_switch"]
+    if keywords:
+        rest = []
+        for p in params:
+            kw = next((r for r in keywords if _LABEL_RE.match(p) is None
+                       and _norm_label(p.strip()) == _norm_label(r["trigger"])),
+                      None)
+            if kw is not None:
+                ps.options[kw["implied_option"]] = kw["implied_value"]
+            else:
+                rest.append(p)
+        params = rest
+    if not switches:
+        return params
+    switch_label = switches[0]["trigger"].split(":", 1)[0]
+    mode, rest = None, []
     for p in params:
-        pl = p.strip().casefold()
-        if "destination" in ps.options and parse_ref(p) is None and _LABEL_RE.match(p) is None:
-            rest.append(p); continue
-        if pl in ("original layout", "originallayout"):
-            ps.options["destination"] = "OriginalLayout"
-        elif parse_ref(p) and _QUOTED_TO_RE.match(p.strip()):
-            ps.options["destination"] = "SelectedLayout"
-            ps.options["layout"] = parse_ref(p)
+        m = _LABEL_RE.match(p)
+        if m and mode is None and _norm_label(m.group(1)) == _norm_label(switch_label):
+            mode = m.group(2).strip()
         else:
             rest.append(p)
-    return rest
-
-
-def _hint_perform_script(ps: ParsedStep, params: list[str], ref: Reference) -> list[str]:
-    rest, mode = [], "From list"
-    for p in params:
-        m = _LABEL_RE.match(p)
-        if m and _norm_label(m.group(1)) == "specified":
-            mode = m.group(2).strip()
-            continue
-        rest.append(p)
+    if mode is None:
+        default = next((r for r in switches if r["is_default"]), None)
+        if default is None:
+            return rest
+        mode = default["trigger"].split(":", 1)[1].strip()
+    row = next((r for r in switches
+                if _norm_label(r["trigger"].split(":", 1)[1]) == _norm_label(mode)),
+               None)
+    if row is None:
+        return rest
+    target = row["implied_option"]
+    meta = next((o for o in ref.options(ps.step_id)
+                 if o["option_key"] == target), {})
     out = []
     for p in rest:
-        m = _LABEL_RE.match(p)
-        if m:
-            out.append(p); continue
-        if mode.casefold() == "by name":
-            ps.options["script_name_calc"] = p
-        elif parse_ref(p):
-            ps.options["script"] = parse_ref(p)
-        else:
+        if _LABEL_RE.match(p):
             out.append(p)
+        elif meta.get("option_type") in ("object_ref", "target"):
+            r_ = parse_ref(p)
+            if r_ is not None:
+                ps.options[target] = r_
+            else:
+                out.append(p)
+        else:
+            ps.options[target] = p
     return out
 
 
-def _hint_custom_dialog(ps: ParsedStep, params: list[str], ref: Reference) -> list[str]:
-    rest = []
-    for p in params:
-        m = _LABEL_RE.match(p)
-        if m:
-            label = _norm_label(m.group(1))
-            bm = re.match(r"^button([123])(commit)?$", label)
-            im = re.match(r"^input([1-3])(field|label|password)?$", label)
-            if bm:
-                suffix = "commit" if bm.group(2) else "label"
-                ps.options[f"button{bm.group(1)}_{suffix}"] = m.group(2).strip()
-                continue
-            if im:
-                kind = im.group(2) or "field"
-                key = {"field": f"input{im.group(1)}_field",
-                       "label": f"input{im.group(1)}_label",
-                       "password": f"input{im.group(1)}_use_password"}[kind]
-                val = m.group(2).strip()
-                if kind == "field":
-                    # input slots are target-typed: field or variable
-                    parsed = parse_target(val)
-                    if parsed is None:
-                        ps.errors.append(
-                            f"line {ps.line}: '{_ellipsis(val)}' is not a valid "
-                            f"field or variable for '{key}'")
-                        continue
-                    ps.options[key] = parsed
-                else:
-                    ps.options[key] = val
-                continue
-        rest.append(p)
-    # a dialog always carries at least one button; FileMaker's default is "OK"
-    if not any(k.startswith("button") and k.endswith("_label") for k in ps.options):
-        ps.options["button1_label"] = '"OK"'
-    return rest
+def _apply_post_implications(ps: ParsedStep, ref: Reference) -> None:
+    """Post-loop implication kinds — they read the parsed options and never
+    override an explicit value.
 
-
-def _hint_pause(ps: ParsedStep, params: list[str], ref: Reference) -> list[str]:
-    # 'Duration (seconds): n' implies pause_time=ForDuration
-    for p in params:
-        m = _LABEL_RE.match(p)
-        if m and _norm_label(m.group(1)) == "durationseconds":
-            ps.options.setdefault("pause_time", "ForDuration")
-    return params
-
-
-STEP_HINTS = {
-    6: _hint_go_to_layout,
-    1: _hint_perform_script,
-    87: _hint_custom_dialog,
-    62: _hint_pause,
-}
+    option_present: the trigger option being set implies the value
+                    (62: duration => pause_time='ForDuration'). Group items
+                    carry full option keys, so the same rule applies per
+                    item when trigger and implied option live inside a
+                    repeat group (39: sort_value_list => sort_type='Custom'
+                    within each sort item) — flat-form drafts are collapsed
+                    into items before this runs, so the item walk covers
+                    both draft forms.
+    value_form:     a parsed option holding a reference of the trigger's T5
+                    form implies the value (6: layout form =>
+                    destination='SelectedLayout').
+    """
+    for r in ref.option_implications(ps.step_id):
+        if r["trigger_kind"] == "option_present":
+            if r["trigger"] in ps.options:
+                ps.options.setdefault(r["implied_option"], r["implied_value"])
+            else:
+                for v in ps.options.values():
+                    if isinstance(v, list):
+                        for item in v:
+                            if isinstance(item, dict) and r["trigger"] in item:
+                                item.setdefault(r["implied_option"],
+                                                r["implied_value"])
+        elif r["trigger_kind"] == "value_form":
+            if any(isinstance(v, dict) and v.get("_form") == r["trigger"]
+                   for v in ps.options.values()):
+                ps.options.setdefault(r["implied_option"], r["implied_value"])
 
 
 # ------------------------------------------------------------ canonical render
@@ -794,7 +1132,8 @@ STEP_HINTS = {
 def render_ref(val: dict) -> str:
     form = val.get("_form", "named")
     if form == "variable":
-        return val.get("name", "")
+        rep = f' [{val["repetition"]}]' if val.get("repetition") else ""
+        return val.get("name", "") + rep
     if form == "field":
         rep = f' [{val["repetition"]}]' if val.get("repetition") else ""
         return f'{val["table"]}::{val["name"]}{rep}'
@@ -804,7 +1143,7 @@ def render_ref(val: dict) -> str:
 
 
 def render_canonical(ps: ParsedStep, ref: Reference | None = None) -> str:
-    """Render the parsed step back to canonical text (T1-T4 spacing)."""
+    """Render the parsed step back to canonical text (T1-T4 spacing; T9 groups)."""
     prefix = "" if ps.enabled else "// "
     if ps.step_id == 89:
         text = ps.options.get("text", "")
@@ -816,35 +1155,101 @@ def render_canonical(ps: ParsedStep, ref: Reference | None = None) -> str:
     meta = {}
     if ref is not None:
         meta = {o["option_key"]: o for o in ref.options(ps.step_id)}
+    groups_by_key = {g["group_key"]: g for g in
+                     (ref.repeat_groups(ps.step_id) if ref is not None else [])}
     parts = []
     for key, val in ps.options.items():
-        o = meta.get(key, {})
-        if isinstance(val, dict):
-            rendered = render_ref(val)
-        elif o.get("option_type") == "boolean":
-            # true_/false_text map XML state -> display text directly (1.7.0 norm)
-            state = val == "True"
-            if o.get("true_text") and not o.get("false_text"):
-                # Flag-style boolean (no off text): displayed as the bare flag
-                # keyword when set, absent when not — matches FileMaker's
-                # rendering and take_bare_boolean's parse direction.
-                if not state:
-                    continue
-                parts.append(o["true_text"])
+        if isinstance(val, list):
+            g = groups_by_key.get(key)
+            if g is None:
+                # a list without a group declaration cannot be rendered — keep
+                # the values visible rather than dropping them silently
+                parts += [f"{key}: {render_ref(v) if isinstance(v, dict) else v}"
+                          for v in val]
                 continue
-            rendered = (o.get("true_text") or "On") if state else (o.get("false_text") or "Off")
-        elif o.get("option_type") == "enum":
-            # enum states whose display text is another option's value (e.g.
-            # Go to Layout destination=SelectedLayout) do not render separately
-            display = next((r["display_text_en"] for r in (ref.option_values(ps.step_id) if ref else [])
-                            if r["option_key"] == key and r["xml_value"] == val), None)
-            if display and "{" in display:
-                continue
-            rendered = display or str(val)
-        else:
-            rendered = str(val)
-        label = o.get("display_label_en")
-        parts.append(f"{label}: {rendered}" if label else rendered)
+            if g["item_form"] == "scalar":
+                for v in val:
+                    part = _render_option_part(ps, key, v, meta.get(key, {}), ref)
+                    if part is not None:
+                        parts.append(part)
+            else:
+                for item in val:
+                    parts.append(_render_item(ps, g, item, meta, ref, groups_by_key))
+            continue
+        part = _render_option_part(ps, key, val, meta.get(key, {}), ref)
+        if part is not None:
+            parts.append(part)
     if not parts:
         return prefix + ps.canonical_name
     return f"{prefix}{ps.canonical_name} [ {' ; '.join(parts)} ]"
+
+
+def _render_item(ps: ParsedStep, group: dict, item: dict, meta: dict,
+                 ref: Reference | None, groups_by_key: dict) -> str:
+    """One T9 item bracket: short labels, defaults omitted, refs first."""
+    defaults = group_item_defaults(group)
+    keys = [k for k in group_item_keys(group) if k in item]
+    keys.sort(key=lambda k: 0 if isinstance(item[k], dict) else 1)
+    out = []
+    for k in keys:
+        v = item[k]
+        if not isinstance(v, dict) and str(v) == defaults.get(k, "\x00"):
+            continue
+        part = _render_option_part(ps, k, v, dict(meta.get(k, {})), ref)
+        if part is None:
+            continue
+        value_str = render_ref(v) if isinstance(v, dict) else \
+            (part.split(": ", 1)[1] if ": " in part else part)
+        out.append(f"{item_label(group['group_key'], k)}: {value_str}")
+    for ck in group_child_keys(group):
+        cg = groups_by_key.get(ck)
+        if cg is None:
+            continue
+        for sub in item.get(ck, []):
+            out.append(_render_item(ps, cg, sub, meta, ref, groups_by_key))
+    return f"{group['group_label']}: [ {' ; '.join(out)} ]"
+
+
+def _render_option_part(ps: ParsedStep, key: str, val, o: dict,
+                        ref: Reference | None) -> str | None:
+    """One `Label: value` / bare part — the per-option rendering of T4."""
+    if isinstance(val, str) and val == "":
+        # an empty value carries no information the text form could hold —
+        # the template's empty default reproduces it on emit (131
+        # UniversalPathList without a source path)
+        return None
+    if isinstance(val, dict):
+        rendered = render_ref(val)
+    elif o.get("option_type") == "boolean":
+        # true_/false_text map XML state -> display text directly (1.7.0 norm)
+        state = val == "True"
+        if o.get("true_text") and not o.get("false_text"):
+            # Flag-style boolean (no off text): displayed as the bare flag
+            # keyword when set, absent when not — matches FileMaker's
+            # rendering and take_bare_boolean's parse direction.
+            if not state:
+                return None
+            return o["true_text"]
+        rendered = (o.get("true_text") or "On") if state else (o.get("false_text") or "Off")
+    elif o.get("option_type") == "enum":
+        # enum states whose display text is another option's value (e.g.
+        # Go to Layout destination=SelectedLayout) do not render separately
+        display = next((r["display_text_en"] for r in (ref.option_values(ps.step_id) if ref else [])
+                        if r["option_key"] == key and r["xml_value"] == val), None)
+        if display and "{" in display:
+            return None
+        rendered = display or str(val)
+    else:
+        rendered = str(val)
+        if o.get("option_type") == "text" and ";" in rendered:
+            # the parameter separator would split this value on re-parse —
+            # wrap in quotes; _coerce unwraps (symmetric pair)
+            rendered = f'"{rendered}"'
+    label = o.get("display_label_en")
+    if not label and o.get("display_location") not in (None, "inline"):
+        # Hidden/dialog-only options have no positional slot in the text
+        # form (T4) — an unlabeled value could never be parsed back. Use
+        # the option_key as extension label; parse_step accepts option_key
+        # labels via by_label, so both directions stay symmetric.
+        label = key
+    return f"{label}: {rendered}" if label else rendered

@@ -25,7 +25,15 @@
     "abortOomTitle": "Mémoire insuffisante",
     "abortOomBody": "Cette solution est trop volumineuse pour la mémoire disponible de cette machine. Lancez l'importation sur une machine avec plus de RAM (8 Go ou plus) ou réessayez avec un profil mémoire réduit.",
     "abortIncompleteTitle": "Construction incomplète",
-    "abortIncompleteBody": "La résolution des références ne s'est pas terminée ; le catalogue d'objets n'a donc pas pu être créé. Consultez le journal d'exécution pour plus de détails."
+    "abortIncompleteBody": "La résolution des références ne s'est pas terminée ; le catalogue d'objets n'a donc pas pu être créé. Consultez le journal d'exécution pour plus de détails.",
+    "logStart": "── Début ──",
+    "logAborted": "── Interrompu ──",
+    "logAbortedOom": "⚠ Interrompu — mémoire insuffisante (solution trop volumineuse pour cet environnement).",
+    "logAbortedIncomplete": "⚠ Interrompu — build incomplet (échec de la résolution des références).",
+    "logDone": "── Terminé ──",
+    "logDoneError": "── Terminé avec erreur (exit {{code}}) ──",
+    "logReloadOk": "Rechargement réussi.",
+    "logReloadError": "Échec du rechargement : {{error}}"
   },
   "cellValues": {
     "yes": "Oui",

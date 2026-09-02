@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useImperativeHandle,
+  useMemo,
   useRef,
   useEffect,
   useState,
@@ -11,6 +12,8 @@ import type { GraphNode, GraphEdge, SubgraphResponse } from '../hooks/useSubgrap
 import { subgraphToElements } from '../hooks/useSubgraph';
 import { getCommunityColor, readGraphThemeTokens } from '../lib/graphColors';
 import { useTheme } from '../hooks/useTheme';
+import { useTriggerEventFormat } from '../lib/triggerEvents';
+import { makeEdgeLabeler, edgeTooltipLines, type EdgeLabelStrings } from '../lib/graphEdgeLabels';
 
 /**
  * Graph-Explorer canvas.
@@ -898,6 +901,27 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
     const tRef = useRef(t);
     tRef.current = t;
 
+    // Kanten-Beschriftung: Trigger-Events als Label (lokalisiert, adaptiv
+    // aggregiert) + Platzierungs-Label „repräsentiert" für displays_field von
+    // LayoutObject-Quellen. Der Formatter lädt seine Label-Map nach → Labels
+    // werden dann in-place aktualisiert (eigener Effekt, kein Re-Layout).
+    const formatTriggerEvent = useTriggerEventFormat();
+    const edgeStrings = useMemo<EdgeLabelStrings>(() => ({
+      buttonAction: t('edge.buttonAction', { defaultValue: 'Button-Aktion' }) as string,
+      represents: t('edge.represents', { defaultValue: 'repräsentiert' }) as string,
+    }), [t]);
+    const edgeLabeler = useMemo(
+      () => makeEdgeLabeler(formatTriggerEvent, edgeStrings),
+      [formatTriggerEvent, edgeStrings],
+    );
+    const edgeLabelerRef = useRef(edgeLabeler);
+    edgeLabelerRef.current = edgeLabeler;
+    // Tooltip-Zeilen für Kanten-Hover (volle Subrole-Liste — hält das kompakte
+    // „×N"-Label ehrlich); als Ref, damit der mount-only Handler aktuell bleibt.
+    const edgeTipRef = useRef<(role: string, subroles: string[]) => string[]>(() => []);
+    edgeTipRef.current = (role, subroles) =>
+      edgeTooltipLines(role, subroles, formatTriggerEvent, edgeStrings);
+
     useImperativeHandle(ref, () => ({
       fit: () => {
         const cy = cyRef.current;
@@ -915,7 +939,7 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
       mergeElements: (nodes, edges) => {
         const cy = cyRef.current;
         if (!cy) return;
-        const incoming = subgraphToElements(nodes, edges);
+        const incoming = subgraphToElements(nodes, edges, edgeLabelerRef.current);
         // Only add elements not already present (cytoscape throws on dup ids).
         const fresh = incoming.filter((el) => cy.getElementById(el.data.id as string).empty());
         if (fresh.length === 0) return;
@@ -1090,6 +1114,29 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
           if (containerRef.current) containerRef.current.style.cursor = 'default';
           hideTooltip();
         });
+
+        // Kanten-Hover: Rolle + vollständige (lokalisierte) Subrole-Liste als
+        // Tooltip — hält das adaptive/kompakte Kanten-Label ehrlich (das „×N"-
+        // Label und ein „repräsentiert" zeigen hier ihre technische Wahrheit).
+        cy.on('mouseover', 'edge', (evt) => {
+          const edge = evt.target;
+          const tip = tooltipRef.current;
+          if (!tip) return;
+          const role = edge.data('role') as string | undefined;
+          if (!role) return;
+          const subroles = (edge.data('subroles') as string[] | null) ?? [];
+          const lines = edgeTipRef.current(role, subroles);
+          if (lines.length === 0) return;
+          tip.innerHTML = lines
+            .map((l, i) => (i === 0 ? `<strong>${escapeHtml(l)}</strong>` : escapeHtml(l)))
+            .join('<br/>');
+          const pos = evt.renderedPosition ?? edge.midpoint();
+          tip.style.left = `${pos.x}px`;
+          tip.style.top = `${pos.y}px`;
+          tip.hidden = false;
+        });
+        cy.on('mouseout', 'edge', hideTooltip);
+
         // Any pan/zoom invalidates the tooltip anchor — just hide it.
         cy.on('pan zoom drag', hideTooltip);
 
@@ -1138,7 +1185,7 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
     useEffect(() => {
       const cy = cyRef.current;
       if (!cy || !ready) return;
-      const elements = data ? subgraphToElements(data.nodes, data.edges) : [];
+      const elements = data ? subgraphToElements(data.nodes, data.edges, edgeLabelerRef.current) : [];
       cy.batch(() => {
         cy.elements().remove();
         if (elements.length) cy.add(elements);
@@ -1163,6 +1210,25 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
       // without forcing a full element rebuild.
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, ready]);
+
+    // Kanten-Labels in place aktualisieren, wenn der Labeler wechselt (die
+    // lokalisierte Event-Map lädt asynchron nach) — reines Text-Upgrade, kein
+    // Element-Rebuild, kein Re-Layout.
+    useEffect(() => {
+      const cy = cyRef.current;
+      if (!cy || !ready) return;
+      cy.batch(() => {
+        cy.edges().forEach((edge) => {
+          const role = edge.data('role') as string | undefined;
+          if (!role) return;
+          edge.data('label', edgeLabeler(
+            role,
+            (edge.data('subroles') as string[] | null) ?? [],
+            (edge.data('sourceType') as string | null) ?? null,
+          ));
+        });
+      });
+    }, [edgeLabeler, ready]);
 
     // Toggle not-connected visibility without rebuilding the graph (preserves any
     // incrementally expanded nodes). Skips the initial paint — the data effect

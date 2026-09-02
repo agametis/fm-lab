@@ -1,13 +1,20 @@
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { CalcToken } from '../script/calcTokens';
 import type { ScriptRef } from '../script/types';
+import { splitGap } from '../script/tokenize';
 import { FunctionTokenSpan } from './FunctionTokenSpan';
 import { PluginRefSpan } from './RefSpan';
 import {
   useHighlightRefUuids,
   isUuidHighlighted,
 } from '../script/highlightContext';
+import {
+  useVarSelection,
+  varKeyFromCalcToken,
+  varClickProps,
+} from '../script/varSelectionContext';
 import { buildObjectPath } from '../lib/navigation';
 import { useCurrentFile } from '../lib/currentFileContext';
 
@@ -36,8 +43,10 @@ export function normalizeCalcWhitespace(s: string): string {
  *   - text           → roher Text
  */
 export const CalcTokenSpan: React.FC<{ token: CalcToken }> = ({ token }) => {
+  const { t } = useTranslation(['detail']);
   const text = normalizeCalcWhitespace(token.content);
   const highlightSet = useHighlightRefUuids();
+  const varSel = useVarSelection();
   const { uuid: currentUuid } = useParams<{ uuid: string }>();
   // Klon-Disambiguierung: CustomFunctions sind in FileMaker datei-lokal — eine
   // in dieser Calc referenzierte CF liegt zwingend in derselben Datei wie das
@@ -98,16 +107,27 @@ export const CalcTokenSpan: React.FC<{ token: CalcToken }> = ({ token }) => {
         />
       );
     }
-    case 'variable':
+    case 'variable': {
+      // Variablen-Auswahl: Klick toggelt die
+      // namensbasierte Hervorhebung aller Vorkommen; ohne Provider (fm-spec,
+      // Dashboards) bleibt das Token wie bisher nicht klickbar.
+      const varKey = varKeyFromCalcToken(token);
+      const isSelected = !!varSel && varSel.selectedKey === varKey;
+      const scopeLabel = `Variable (${token.scope || 'local'})`;
+      const title = varSel
+        ? `${scopeLabel} — ${t(isSelected ? 'detail:varSelect.clearHint' : 'detail:varSelect.hint')}`
+        : scopeLabel;
       return (
         <span
-          className={`fm-ref fm-ref--variable${hlClass}`}
+          className={`fm-ref fm-ref--variable${hlClass}${isSelected ? ' fm-ref--var-selected' : ''}${varSel ? ' fm-ref-link' : ''}`}
           data-ref-type="variable"
-          title={`Variable (${token.scope || 'local'})`}
+          title={title}
+          {...varClickProps(varSel, varKey)}
         >
           {text}
         </span>
       );
+    }
     case 'field':
       if (token.uuid) {
         return (
@@ -130,7 +150,25 @@ export const CalcTokenSpan: React.FC<{ token: CalcToken }> = ({ token }) => {
       return <span className="fm-customfunction-comment">{text}</span>;
     case 'text':
     default:
-      return <span className="fm-customfunction-text">{text}</span>;
+      // NoRef-Text-Chunks nachlexen (Strings, Zahlen, Operatoren) — dieselben
+      // fm-token--*-Klassen und damit dieselbe Färbung wie im ScriptViewer.
+      // Refs (Field/CF/Variable/Function) kommen bereits als eigene Chunks.
+      return (
+        <span className="fm-customfunction-text">
+          {splitGap(text).map((p, i) => {
+            switch (p.type) {
+              case 'string':
+                return <span key={i} className="fm-token fm-token--string">{p.content}</span>;
+              case 'number':
+                return <span key={i} className="fm-token fm-token--number">{p.content}</span>;
+              case 'operator':
+                return <span key={i} className="fm-token fm-token--operator">{p.content}</span>;
+              default:
+                return <React.Fragment key={i}>{p.content}</React.Fragment>;
+            }
+          })}
+        </span>
+      );
   }
 };
 

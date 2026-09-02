@@ -25,7 +25,15 @@
     "abortOomTitle": "Memória insuficiente",
     "abortOomBody": "Esta solução é demasiado grande para a memória disponível desta máquina. Execute a importação numa máquina com mais RAM (8 GB ou mais) ou tente novamente com um perfil de memória reduzido.",
     "abortIncompleteTitle": "Compilação incompleta",
-    "abortIncompleteBody": "A resolução de referências não foi concluída, pelo que não foi possível criar o catálogo de objetos. Consulte o registo da execução para mais detalhes."
+    "abortIncompleteBody": "A resolução de referências não foi concluída, pelo que não foi possível criar o catálogo de objetos. Consulte o registo da execução para mais detalhes.",
+    "logStart": "── Início ──",
+    "logAborted": "── Interrompido ──",
+    "logAbortedOom": "⚠ Interrompido — memória insuficiente (solução grande demais para este ambiente).",
+    "logAbortedIncomplete": "⚠ Interrompido — build incompleto (falha na resolução de referências).",
+    "logDone": "── Concluído ──",
+    "logDoneError": "── Terminado com erro (exit {{code}}) ──",
+    "logReloadOk": "Recarregamento concluído.",
+    "logReloadError": "Falha ao recarregar: {{error}}"
   },
   "cellValues": {
     "yes": "Sim",

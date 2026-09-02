@@ -12,36 +12,38 @@
  * FileMaker Object Types (from ObjectCatalog)
  */
 export const OBJECT_TYPES = [
-  'BaseTable',
-  'TableOccurrence',
-  'Relationship',
-  'Field',
-  'ValueList',
-  'CustomFunction',
-  'Script',
-  'ScriptStep',
-  'Layout',
-  'LayoutObject',
-  'LayoutPart',
-  'Account',
-  'PrivilegeSet',
-  'ExtendedPrivilege',
-  'Theme',
-  'CustomMenu',
-  'ScriptTrigger',
-  'ExternalDataSource',
-  'BaseDirectory',
-  'Variable',
-  'ScriptFolder',
-  'LayoutFolder',
-  'RelationshipGraph',
-  'BuiltinFunction',
-  'PluginFunction',
-  'ScriptStepType',
-  'PluginComponent',
+  "BaseTable",
+  "TableOccurrence",
+  "Relationship",
+  "Field",
+  "ValueList",
+  "CustomFunction",
+  "Script",
+  "ScriptStep",
+  "Layout",
+  "LayoutObject",
+  "LayoutPart",
+  "Account",
+  "PrivilegeSet",
+  "ExtendedPrivilege",
+  "Theme",
+  "CustomMenu",
+  "ScriptTrigger",
+  "ExternalDataSource",
+  "BaseDirectory",
+  "Variable",
+  "ScriptFolder",
+  "LayoutFolder",
+  "RelationshipGraph",
+  "BuiltinFunction",
+  "PluginFunction",
+  "ScriptStepType",
+  "PluginComponent",
+  "File",
+  "Calculation",
 ] as const;
 
-export type ObjectType = typeof OBJECT_TYPES[number];
+export type ObjectType = (typeof OBJECT_TYPES)[number];
 
 /**
  * Pseudo-Token-Types — synthetische Aggregat-Einträge mit Inline-Filter-
@@ -50,41 +52,47 @@ export type ObjectType = typeof OBJECT_TYPES[number];
  * PluginComponent ist bewusst NICHT enthalten — es ist selbst die Category-Ebene
  * und unterstützt nur ?with_usage / ?sort, kein ?with_category / ?category.
  */
-export const PSEUDO_TOKEN_TYPES = ['ScriptStepType', 'BuiltinFunction', 'PluginFunction'] as const;
-export type PseudoTokenType = typeof PSEUDO_TOKEN_TYPES[number];
+export const PSEUDO_TOKEN_TYPES = [
+  "ScriptStepType",
+  "BuiltinFunction",
+  "PluginFunction",
+] as const;
+export type PseudoTokenType = (typeof PSEUDO_TOKEN_TYPES)[number];
 
 /**
  * Mapping from lowercase type to PascalCase (for database queries)
  * Used for case-insensitive API parameter handling
  */
 export const OBJECT_TYPE_MAP: Record<string, ObjectType> = {
-  'basetable': 'BaseTable',
-  'tableoccurrence': 'TableOccurrence',
-  'relationship': 'Relationship',
-  'field': 'Field',
-  'valuelist': 'ValueList',
-  'customfunction': 'CustomFunction',
-  'script': 'Script',
-  'scriptstep': 'ScriptStep',
-  'layout': 'Layout',
-  'layoutobject': 'LayoutObject',
-  'layoutpart': 'LayoutPart',
-  'account': 'Account',
-  'privilegeset': 'PrivilegeSet',
-  'extendedprivilege': 'ExtendedPrivilege',
-  'theme': 'Theme',
-  'custommenu': 'CustomMenu',
-  'scripttrigger': 'ScriptTrigger',
-  'externaldatasource': 'ExternalDataSource',
-  'basedirectory': 'BaseDirectory',
-  'variable': 'Variable',
-  'scriptfolder': 'ScriptFolder',
-  'layoutfolder': 'LayoutFolder',
-  'relationshipgraph': 'RelationshipGraph',
-  'builtinfunction': 'BuiltinFunction',
-  'pluginfunction': 'PluginFunction',
-  'scriptsteptype': 'ScriptStepType',
-  'plugincomponent': 'PluginComponent',
+  basetable: "BaseTable",
+  tableoccurrence: "TableOccurrence",
+  relationship: "Relationship",
+  field: "Field",
+  valuelist: "ValueList",
+  customfunction: "CustomFunction",
+  script: "Script",
+  scriptstep: "ScriptStep",
+  layout: "Layout",
+  layoutobject: "LayoutObject",
+  layoutpart: "LayoutPart",
+  account: "Account",
+  privilegeset: "PrivilegeSet",
+  extendedprivilege: "ExtendedPrivilege",
+  theme: "Theme",
+  custommenu: "CustomMenu",
+  scripttrigger: "ScriptTrigger",
+  externaldatasource: "ExternalDataSource",
+  basedirectory: "BaseDirectory",
+  variable: "Variable",
+  scriptfolder: "ScriptFolder",
+  layoutfolder: "LayoutFolder",
+  relationshipgraph: "RelationshipGraph",
+  builtinfunction: "BuiltinFunction",
+  pluginfunction: "PluginFunction",
+  scriptsteptype: "ScriptStepType",
+  plugincomponent: "PluginComponent",
+  file: "File",
+  calculation: "Calculation",
 };
 
 /**
@@ -109,14 +117,16 @@ export const OBJECT_TYPE_MAP: Record<string, ObjectType> = {
  */
 export interface PseudoTypeDrilldown {
   type: ObjectType;
-  via: 'category';
+  via: "category";
   mapValue?: (objectName: string) => string;
 }
-export const PSEUDO_TYPE_DRILLDOWN: Partial<Record<ObjectType, PseudoTypeDrilldown>> = {
+export const PSEUDO_TYPE_DRILLDOWN: Partial<
+  Record<ObjectType, PseudoTypeDrilldown>
+> = {
   PluginComponent: {
-    type: 'PluginFunction',
-    via: 'category',
-    mapValue: (name) => name.replace(/^MBS::/, ''),
+    type: "PluginFunction",
+    via: "category",
+    mapValue: (name) => name.replace(/^MBS::/, ""),
   },
 };
 
@@ -124,55 +134,56 @@ export const PSEUDO_TYPE_DRILLDOWN: Partial<Record<ObjectType, PseudoTypeDrilldo
  * Link Types (from ObjectLinks)
  */
 export const LINK_TYPES = {
-  OPERATIONAL: 'operational',
-  STRUCTURAL: 'structural',
-  ALL: 'all',
+  OPERATIONAL: "operational",
+  STRUCTURAL: "structural",
+  ALL: "all",
 } as const;
 
-export type LinkType = typeof LINK_TYPES[keyof typeof LINK_TYPES];
+export type LinkType = (typeof LINK_TYPES)[keyof typeof LINK_TYPES];
 
 /**
  * Reference Directions
  */
 export const REFERENCE_DIRECTIONS = {
-  ALL: 'all',
-  PARENT: 'parent',
-  CHILD: 'child',
-  RECURSIVE: 'recursive',
+  ALL: "all",
+  PARENT: "parent",
+  CHILD: "child",
+  RECURSIVE: "recursive",
 } as const;
 
-export type ReferenceDirection = typeof REFERENCE_DIRECTIONS[keyof typeof REFERENCE_DIRECTIONS];
+export type ReferenceDirection =
+  (typeof REFERENCE_DIRECTIONS)[keyof typeof REFERENCE_DIRECTIONS];
 
 /**
  * Output Formats
  */
 export const OUTPUT_FORMATS = {
-  JSON: 'json',
-  RAW: 'raw',
-  TEXT: 'text',
-  SHORT: 'short',
-  DETAILED: 'detailed',
-  HTML: 'html',
-  MARKDOWN: 'markdown',
-  CONTENT: 'content',
-  MERMAID: 'mermaid',         // HTML-Wrapper mit Mermaid.js
-  MERMAID_RAW: 'mermaid-raw', // Nur Mermaid-Code
+  JSON: "json",
+  RAW: "raw",
+  TEXT: "text",
+  SHORT: "short",
+  DETAILED: "detailed",
+  HTML: "html",
+  MARKDOWN: "markdown",
+  CONTENT: "content",
+  MERMAID: "mermaid", // HTML-Wrapper mit Mermaid.js
+  MERMAID_RAW: "mermaid-raw", // Nur Mermaid-Code
 } as const;
 
-export type OutputFormat = typeof OUTPUT_FORMATS[keyof typeof OUTPUT_FORMATS];
+export type OutputFormat = (typeof OUTPUT_FORMATS)[keyof typeof OUTPUT_FORMATS];
 
 /**
  * Error Codes with HTTP Status Codes
  */
 export const ERROR_CODES = {
-  VALIDATION_ERROR: { code: 'VALIDATION_ERROR', status: 400 },
-  OBJECT_NOT_FOUND: { code: 'OBJECT_NOT_FOUND', status: 404 },
-  TEMPLATE_NOT_FOUND: { code: 'TEMPLATE_NOT_FOUND', status: 404 },
-  DATABASE_ERROR: { code: 'DATABASE_ERROR', status: 500 },
-  TEMPLATE_ERROR: { code: 'TEMPLATE_ERROR', status: 500 },
-  FILE_NOT_FOUND: { code: 'FILE_NOT_FOUND', status: 404 },
-  IMPORT_ERROR: { code: 'IMPORT_ERROR', status: 500 },
-  INTERNAL_ERROR: { code: 'INTERNAL_ERROR', status: 500 },
+  VALIDATION_ERROR: { code: "VALIDATION_ERROR", status: 400 },
+  OBJECT_NOT_FOUND: { code: "OBJECT_NOT_FOUND", status: 404 },
+  TEMPLATE_NOT_FOUND: { code: "TEMPLATE_NOT_FOUND", status: 404 },
+  DATABASE_ERROR: { code: "DATABASE_ERROR", status: 500 },
+  TEMPLATE_ERROR: { code: "TEMPLATE_ERROR", status: 500 },
+  FILE_NOT_FOUND: { code: "FILE_NOT_FOUND", status: 404 },
+  IMPORT_ERROR: { code: "IMPORT_ERROR", status: 500 },
+  INTERNAL_ERROR: { code: "INTERNAL_ERROR", status: 500 },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;
@@ -193,25 +204,26 @@ export const DEFAULTS = {
  * Mermaid Themes
  */
 export const MERMAID_THEMES = {
-  DEFAULT: 'default',
-  DARK: 'dark',
-  FOREST: 'forest',
-  NEUTRAL: 'neutral',
+  DEFAULT: "default",
+  DARK: "dark",
+  FOREST: "forest",
+  NEUTRAL: "neutral",
 } as const;
 
-export type MermaidTheme = typeof MERMAID_THEMES[keyof typeof MERMAID_THEMES];
+export type MermaidTheme = (typeof MERMAID_THEMES)[keyof typeof MERMAID_THEMES];
 
 /**
  * Mermaid Graph Directions
  */
 export const MERMAID_DIRECTIONS = {
-  TOP_DOWN: 'TD',
-  BOTTOM_UP: 'BT',
-  LEFT_RIGHT: 'LR',
-  RIGHT_LEFT: 'RL',
+  TOP_DOWN: "TD",
+  BOTTOM_UP: "BT",
+  LEFT_RIGHT: "LR",
+  RIGHT_LEFT: "RL",
 } as const;
 
-export type MermaidDirection = typeof MERMAID_DIRECTIONS[keyof typeof MERMAID_DIRECTIONS];
+export type MermaidDirection =
+  (typeof MERMAID_DIRECTIONS)[keyof typeof MERMAID_DIRECTIONS];
 
 /**
  * HTTP Status Codes
@@ -224,4 +236,4 @@ export const HTTP_STATUS = {
   INTERNAL_SERVER_ERROR: 500,
 } as const;
 
-export type HttpStatus = typeof HTTP_STATUS[keyof typeof HTTP_STATUS];
+export type HttpStatus = (typeof HTTP_STATUS)[keyof typeof HTTP_STATUS];

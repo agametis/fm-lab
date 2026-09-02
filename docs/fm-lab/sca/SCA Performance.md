@@ -1,6 +1,6 @@
 # SCA Performance
 
-**Rubric:** [Static Code Analysis](../Wiki/Static%20Code%20Analysis.md) · 19 rules · `rest-api/templates/dashboards-custom/static-code-analysis/performance/`
+**Rubric:** [Static Code Analysis](../Wiki/Static%20Code%20Analysis.md) · 20 rules · `rest-api/templates/dashboards-custom/static-code-analysis/performance/`
 
 Performance rules flag constructs that are cheap once but expensive in aggregate: work repeated inside loops, calculations re-evaluated per displayed record, step *sequences* and *options* that cause avoidable network round trips, and index settings that defer their cost to the first find. Most of them are structural — they don't need timing data, because the pattern itself predicts the cost.
 
@@ -40,10 +40,11 @@ The **WAN pattern family** encodes community-established remote-performance prac
 | Auto-enter calculation crossing relationships | info | Auto-enter formulas that read related fields — a relationship traversal on every write | community |
 | OnRecordLoad trigger | info | Triggers that fire for every record scrolled into view | fm-lab |
 | Minimal index with automatic indexing on | info | An index cleared to Minimal that FileMaker will silently rebuild anyway | fmCheckMate |
+| ExecuteSQL range without BETWEEN | info | Range conditions written as `>=`/`<=` instead of `BETWEEN` — the engine evaluates two conditions and intersects the results where a single range scan would do | fm-lab / community |
 
 ## See also
 
 - [Static Code Analysis](../Wiki/Static%20Code%20Analysis.md) — the rubric overview
 - [SCA Best Practices](SCA%20Best%20Practices.md) — the *Auto-index field* sibling trap, and the sorted-relationship rule with its consumer-portal analysis
 - [SCA Code Style](SCA%20Code%20Style.md) — heavy layouts and portal counts (render cost)
-- [Analysis Tests](../Wiki/Analysis%20Tests.md) — the WAN rules ship bundled as the tests *WAN Script Patterns*, *Layout Render Performance* and *Schema Performance* (keyword `wan`)
+- [Analysis Tests](../Wiki/Analysis%20Tests.md) — the WAN rules ship bundled as the tests *WAN Script Patterns*, *Layout Render Performance* and *Schema Performance* (keyword `wan`); the ExecuteSQL rule ships as the test set *SQL Performance Checks*

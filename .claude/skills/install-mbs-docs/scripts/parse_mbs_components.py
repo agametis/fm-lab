@@ -1,8 +1,20 @@
 #!/usr/bin/env python3
 """
 Parsing-Script für MBS FileMaker Plugin Dokumentation
-Extrahiert nur die Ausnahmen (Funktionen wo Prefix ≠ Component)
-und erstellt eine vereinfachte CSV mit 2 Spalten: Funktionsname, Component
+
+Erzeugt die Komponenten-Zuordnungstabelle für alle Konsumenten, die ohne den
+Doku-Mirror auskommen müssen (XML-Import-Pipeline, Objekt-Filter, Doc-Set).
+
+Erfasst werden Funktionen, bei denen die Namens-Heuristik nicht ausreicht:
+  * Ausnahmen   — Namenspräfix ≠ Primärkomponente (inkl. Funktionen ohne Punkt)
+  * Mehrfach    — Funktion ist in mehr als einer Komponente gelistet
+
+Spalten:
+  Funktionsname  Name laut Doku-Seite
+  Component      Primärkomponente (erste Nennung) — maßgeblich für Zuordnung,
+                 Zählung und Filter
+  Components     vollständige Liste aller Komponenten, komma-separiert; für
+                 Zweit-Mitgliedschaften (identisch mit Component, wenn nur eine)
 
 Ausgabe: reference/mbs_component_exceptions.csv
 
@@ -111,15 +123,21 @@ def analyze_functions(docs_path):
             # Funktionen ohne Punkt sind immer Ausnahmen
             is_exception = True
 
-        # Nur Ausnahmen speichern
-        if is_exception:
+        # Mehrfach-Mitgliedschaft: MBS listet manche Funktionen auf mehreren
+        # Komponentenseiten (z.B. FM.ExecuteFileSQL unter FM und FMSQL). Die
+        # Primärkomponente allein würde die Zweit-Rubrik leer lassen.
+        is_multi = len(components) > 1
+
+        if is_exception or is_multi:
             exceptions.append({
                 'Funktionsname': function_name,
-                'Component': primary_component
+                'Component': primary_component,
+                'Components': ', '.join(components)
             })
 
+    multi = sum(1 for e in exceptions if ', ' in e['Components'])
     print(f"Gesamt analysiert: {total_functions} Funktionen")
-    print(f"Ausnahmen gefunden: {len(exceptions)}")
+    print(f"Zuordnungen erfasst: {len(exceptions)} (davon {multi} mit mehreren Komponenten)")
 
     return exceptions
 
@@ -130,15 +148,15 @@ def write_csv(exceptions, output_file):
         print("Keine Ausnahmen zum Schreiben.")
         return
 
-    fieldnames = ['Funktionsname', 'Component']
+    fieldnames = ['Funktionsname', 'Component', 'Components']
 
     with open(output_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(exceptions)
 
-    print(f"\nAusnahmen-CSV erstellt: {output_file}")
-    print(f"Anzahl Ausnahmen: {len(exceptions)}")
+    print(f"\nKomponenten-CSV erstellt: {output_file}")
+    print(f"Anzahl Zuordnungen: {len(exceptions)}")
 
     # Statistiken nach Component
     component_counts = {}
@@ -146,9 +164,9 @@ def write_csv(exceptions, output_file):
         comp = exc['Component']
         component_counts[comp] = component_counts.get(comp, 0) + 1
 
-    print(f"\nTop 10 Components mit Ausnahmen:")
+    print(f"\nTop 10 Components mit Zuordnungen:")
     for comp, count in sorted(component_counts.items(), key=lambda x: x[1], reverse=True)[:10]:
-        print(f"  {comp:20} {count:4} Ausnahmen")
+        print(f"  {comp:20} {count:4} Zuordnungen")
 
 if __name__ == '__main__':
     # Bestimme PROJECT_ROOT aus verschiedenen Quellen
@@ -175,7 +193,7 @@ if __name__ == '__main__':
 
     print(f"MBS Component Exceptions Parser")
     print(f"=" * 50)
-    print(f"Extrahiert nur Ausnahmen (Prefix ≠ Component)")
+    print(f"Erfasst Ausnahmen (Prefix != Component) und Mehrfach-Zuordnungen")
     print(f"PROJECT_ROOT: {project_root}")
     print()
 

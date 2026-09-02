@@ -41,7 +41,7 @@ No documented roles originate from a Theme.
 |---|---|---|---|
 | `uses_theme` | [Layout](Layout.md) | usage | The layout uses this theme |
 
-A theme with no incoming `uses_theme` edge is dead weight in the file — the classic cleanup query for this type.
+A theme with no incoming `uses_theme` edge is dead weight in the file — the classic cleanup query for this type. Note that SaXML writes the **Classic** theme as an *empty* `<LayoutThemeReference/>` on the layout; the edge is therefore built from the resolved theme columns (`Layouts.L_Theme_Resolved_*`, schema 1.21.0), so Classic layouts link correctly too.
 
 ## Schema & tooling
 

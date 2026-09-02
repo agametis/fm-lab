@@ -15,7 +15,7 @@ Real FileMaker exports occasionally carry the **same UUID on two different objec
 
 ### Recognizing a synthetic UUID
 
-Replacement UUIDs are md5 hex strings — **32 characters, no dashes** — and therefore never match the native `8-4-4-4-12` UUID shape. Any filter for native UUIDs excludes them automatically; conversely `Object_UUID NOT SIMILAR TO '[0-9A-Fa-f]{8}-.*'`-style checks find them. The original UUID of a healed object is always recoverable from the census (below).
+Replacement UUIDs are md5 hex strings — **32 characters, no dashes** — and therefore never match the native `8-4-4-4-12` UUID shape. Any filter for native UUIDs excludes them automatically. The reverse direction is **not** specific anymore: since schema 1.22.0 several synthetic object types carry md5-shaped UUIDs by construction — most massively every [Calculation](object-types/Calculation.md) instance, but also `PasteIndexObject`, `LayoutPart`, the per-type aggregates and variables — so a bare shape filter returns far more than healed twins. The authoritative test is the census: `DuplicateAbsorptionDetails.Healed_UUID` lists exactly the replacement UUIDs, and the original UUID of a healed object is always recoverable from it (below).
 
 ### What is deliberately NOT healed
 

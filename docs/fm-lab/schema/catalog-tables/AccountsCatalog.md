@@ -10,7 +10,7 @@ The user accounts of each file with type, enabled state, description and the pri
 | Column | Type |
 |---|---|
 | `Account_ID` | `BIGINT` |
-| `Account_Kind` | `INTEGER` |
+| `Account_Kind` | `BIGINT` |
 | `Account_Type` | `VARCHAR` |
 | `Is_Enabled` | `BOOLEAN` |
 | `Account_UUID` | `VARCHAR` |

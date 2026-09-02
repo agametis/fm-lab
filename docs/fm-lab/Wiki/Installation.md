@@ -47,7 +47,7 @@ The catalog (`db/`), conversions and settings live in the cloned repo **on the h
 
 ### b) VS Code Dev Container (easy start)
 
-Open the repository in VS Code with the **Dev Containers** extension installed, select **“Reopen in Container”** → pick **`fm-lab`** or **`fm-lab + Claude Code`**. Everything starts automatically — bootstrap, both servers, and the browser opens the web client. In the Claude variant the egress firewall and a credentials preflight run on start, and you reach the agent through the **Claude Code for VS Code** extension — no terminal steps required.
+Open the repository in VS Code with the **Dev Containers** extension installed, select **“Reopen in Container”** → pick **`fm-lab`** or **`fm-lab + Claude Code`**. Everything starts automatically — bootstrap and both servers; VS Code then shows a clickable notification for the web client on port 5173. In the Claude variant the egress firewall and a credentials preflight run on start, and you reach the agent through the **Claude Code for VS Code** extension — no terminal steps required.
 Recommended if you already work in VS Code.
 
 ### c) Native (no Docker, macOS / Linux)

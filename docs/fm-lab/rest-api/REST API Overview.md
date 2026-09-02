@@ -27,7 +27,7 @@ curl "http://localhost:3003/api/references?uuid=<Object_UUID>"
 
 | Group | Endpoints | Documentation |
 |---|---|---|
-| Objects | `/get`, `/get-details`, `/get-calc` | [Objects API](endpoints/Objects%20API.md) |
+| Objects | `/get`, `/get-details`, `/get-calc`, `/conditional-formatting` | [Objects API](endpoints/Objects%20API.md) |
 | Lists & search | `/list`, `/list/categories`, `/list-with-folders`, `/count`, `/search`, `/search/count` | [Search API](endpoints/Search%20API.md) |
 | References | `/references`, `/back-references` | [References API](endpoints/References%20API.md) |
 | Query & report | `/query`, `/report`, `/query/list`, `/report/list` | [Query and Report API](endpoints/Query%20and%20Report%20API.md) |
@@ -56,6 +56,7 @@ The following groups exist to support the FM-Lab web frontend and are **not** co
 
 - `/dashboards/*` — declarative dashboard bundles for the web UI
 - `/docs/*`, `/plugin-docs/*` — local documentation mirrors (Claris Help, MBS, DuckDB)
+- `/plugin-spec/*` — plug-in platform metadata derived from the installed MBS docs (see [plugin-spec](../schema/plugin-spec.md))
 - `/plugins/*`, `/fmide/*`, `/graphify/*` — plugin management and optional plugins (disabled by default)
 - `/annotations/*` — user annotations for the Graph Explorer
 - `/debug/session*` — frontend debug-session ingestion

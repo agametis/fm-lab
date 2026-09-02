@@ -19,6 +19,12 @@ import type { ActionSpec } from '../actions';
  *   clickAction      String — Name der Action (z.B. "openObject"). Fallback,
  *                    wenn metaDataset fehlt.
  *   clickArgs        String im Format "k=v&k2=v2" mit Token-Subst. gegen Row.
+ *   rowAction        Optionales ZWEITES Klickziel pro Zeile — rendert einen
+ *                    kleinen Pfeil-Button am Zeilenende. Gleiche Grammatik wie
+ *                    clickAction; aus dem Meta-Dataset (`row_action`) oder Props.
+ *   rowActionArgs    Args-String des Zweitziels (wie clickArgs).
+ *   rowActionLabel   Tooltip/aria-label des Buttons. Fallback: generischer
+ *                    i18n-Text `detail:autoTable.rowAction`.
  *   exclude          Array<string> mit Spaltennamen, die nicht angezeigt werden.
  *                    Spalten mit `_`-Präfix werden immer übersprungen.
  *   paginate         Boolean (Default false). Aktiviert Paginierung.
@@ -91,6 +97,22 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
   const clickArgs =
     (meta?.click_args as string | null | undefined) ??
     (props.clickArgs as string | undefined) ??
+    null;
+
+  // Optionales zweites Klickziel pro Zeile (kleiner Pfeil-Button am
+  // Zeilenende) — gleiche Action-Grammatik wie click_action/click_args.
+  // Kommt aus dem SQL-Frontmatter (`@row_action` …) oder den Props.
+  const rowAction =
+    (meta?.row_action as string | null | undefined) ??
+    (props.rowAction as string | undefined) ??
+    null;
+  const rowActionArgs =
+    (meta?.row_action_args as string | null | undefined) ??
+    (props.rowActionArgs as string | undefined) ??
+    null;
+  const rowActionLabel =
+    (meta?.row_action_label as string | null | undefined) ??
+    (props.rowActionLabel as string | undefined) ??
     null;
 
   const columns = useMemo(() => {
@@ -209,6 +231,10 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
   const clickSpec: ActionSpec | undefined = clickAction
     ? { action: clickAction, argsString: clickArgs ?? '' }
     : undefined;
+  const rowSpec: ActionSpec | undefined = rowAction
+    ? { action: rowAction, argsString: rowActionArgs ?? '' }
+    : undefined;
+  const rowActionTitle = rowActionLabel ?? (t('detail:autoTable.rowAction') as string);
 
   function handleHeaderClick(field: string) {
     if (!sortable) return;
@@ -306,6 +332,7 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
                   </th>
                 );
               })}
+              {rowSpec && <th className="dash-autotable__th--rowaction" aria-label={rowActionTitle} />}
             </tr>
           </thead>
           <tbody>
@@ -321,12 +348,29 @@ export function AutoTable({ node, dataset, datasets, navigate }: PrimitiveProps)
                   {columns.map(c => (
                     <td key={c.field}>{formatTableCell(row[c.field], c.format, lang)}</td>
                   ))}
+                  {rowSpec && (
+                    <td className="dash-autotable__rowaction-cell">
+                      <button
+                        type="button"
+                        className="dash-autotable__rowaction"
+                        title={rowActionTitle}
+                        aria-label={rowActionTitle}
+                        onClick={e => {
+                          // Nicht auch noch den Zeilen-Klick (Primärziel) feuern.
+                          e.stopPropagation();
+                          dispatchAction(rowSpec, row, { navigate });
+                        }}
+                      >
+                        →
+                      </button>
+                    </td>
+                  )}
                 </tr>
               );
             })}
             {visible.length === 0 && (
               <tr>
-                <td colSpan={columns.length} className="dash-autotable__noresult">
+                <td colSpan={columns.length + (rowSpec ? 1 : 0)} className="dash-autotable__noresult">
                   {t('detail:autoTable.noMatches', { query: search })}
                 </td>
               </tr>

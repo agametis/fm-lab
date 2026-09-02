@@ -49,5 +49,6 @@ The complete field definitions, grouped per base table: one `<FieldCatalog>` per
 - `fieldtype` (Normal/Calculated/Summary) and `datatype` (Text/Number/Date/…) are separate attributes.
 - A true calculated field carries `<Calculation>` directly under `<Field>`; a normal field with an auto-enter calc nests it under `<AutoEnter><Calculated>` — the catalog keeps the two apart (`Calculation_Text` vs. `AE_Calc_Text`).
 - `DDRREF/@hash` joins the formula to its chunk list in [XML DDR_INFO](XML%20DDR_INFO.md).
+- `<Validation><MaximumSize>` carries the unsigned 32-bit sentinel `4294967295` when the field has no character limit — the importer normalizes exactly this slot to `NULL` (`Validation_MaxChars`); all other numeric slots import verbatim into 64-bit columns.
 
 **Extracted into:** [FieldsForTables](../../schema/catalog-tables/FieldsForTables.md) — column details in the [schema reference](../../schema/Schema.md).

@@ -7,6 +7,7 @@ import { ScriptViewerHeader, type FilterStyle } from './ScriptViewerHeader';
 import { ScriptSearchFilter } from './ScriptSearchFilter';
 import { useUrlState, stringSetCodec } from '../hooks/useUrlState';
 import { HighlightRefContext, ScriptSearchContext, ScriptSearchQueryContext, ScriptLineSearchQueryContext, type ScriptSearchPredicate } from '../script/highlightContext';
+import { useVarSelection, useVarDeepLinkScroll, varKeyFromScriptRef } from '../script/varSelectionContext';
 import './ScriptViewer.css';
 
 interface ScriptViewerProps {
@@ -279,6 +280,28 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({ tokens, highlightRef
   useEffect(() => {
     onLiveMatchCount?.(liveMatchCount);
   }, [liveMatchCount, onLiveMatchCount]);
+
+  // Variablen-Auswahl: Trefferzählung über die Zeilen-Refs (set + read) für
+  // die VarSelectionPill. Zählbasis sind die pro Zeile deduplizierten Refs —
+  // dieselbe Granularität wie liveMatchCount, nicht die textuellen Vorkommen.
+  const varSel = useVarSelection();
+  const varMatches = useMemo(() => {
+    const key = varSel?.selectedKey;
+    if (!key) return { count: 0, displayName: null as string | null };
+    let count = 0;
+    let displayName: string | null = null;
+    for (const ref of allRefs) {
+      if (ref.type !== 'variable') continue;
+      if (varKeyFromScriptRef(ref) !== key) continue;
+      count++;
+      if (!displayName) displayName = ref.name;
+    }
+    return { count, displayName };
+  }, [allRefs, varSel?.selectedKey]);
+  useEffect(() => {
+    varSel?.reportMatches(varMatches.count, varMatches.displayName);
+  }, [varMatches, varSel]);
+  useVarDeepLinkScroll(rootRef);
 
   // Step-Anchor (Deep-Link via ?step=<uuid>) — bleibt URL-getragen, damit ein
   // Reload die Sprungposition reproduziert.

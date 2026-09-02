@@ -117,5 +117,9 @@
     "dirBoth": "Beide",
     "empty": "Geen objecten van dit type in de graaf.",
     "focus": "Focusobject"
+  },
+  "edge": {
+    "represents": "representeert",
+    "buttonAction": "Knopactie"
   }
 }

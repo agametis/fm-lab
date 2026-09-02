@@ -59,7 +59,9 @@ This skill uses bundled scripts that handle all operations:
   - Usage: Execute with optional `--force` flag
 - **Component Parser**: `scripts/parse_mbs_components.py`
   - Analyzes MBS function HTML documentation
-  - Extracts exceptions where function prefix ≠ component
+  - Records functions whose prefix ≠ component and those listed under more
+    than one component (columns `Funktionsname,Component,Components` —
+    primary component plus the full list)
   - Creates `reference/mbs_component_exceptions.csv`
   - Called automatically by installation script
 - **Plugin-Spec Deriver**: `tools/plugin-spec/derive_mbs.py` (project tool)
@@ -156,17 +158,17 @@ MBS Component Exceptions Parser
 ==================================================
 Extrahiert nur Ausnahmen (Prefix ≠ Component)
 PROJECT_ROOT: <project-root>
-Analysiere 4567 HTML-Dateien...
-Gesamt analysiert: 4520 Funktionen
-Ausnahmen gefunden: 342
+Analysiere 8246 HTML-Dateien...
+Gesamt analysiert: 8245 Funktionen
+Zuordnungen erfasst: 1113 (davon 121 mit mehreren Komponenten)
 
-Ausnahmen-CSV erstellt: <project-root>/reference/mbs_component_exceptions.csv
-Anzahl Ausnahmen: 342
+Komponenten-CSV erstellt: <project-root>/reference/mbs_component_exceptions.csv
+Anzahl Zuordnungen: 1113
 
-Top 10 Components mit Ausnahmen:
-  Plugin                58 Ausnahmen
-  DynaPDF              45 Ausnahmen
-  CURL                 28 Ausnahmen
+Top 10 Components mit Zuordnungen:
+  GraphicsMagick       364 Zuordnungen
+  Menu                  76 Zuordnungen
+  Contacts              69 Zuordnungen
   ...
 Component parsing completed successfully
 
@@ -210,6 +212,6 @@ ERROR: [specific error message]
 - The script is safe to run multiple times
 - Documentation is required by the `mbs-function-reference` skill
 - Component parsing creates `reference/mbs_component_exceptions.csv` automatically
-- Component exceptions table is used by the `mbs-function-reference` skill for improved function lookup
+- The component table is used by the `mbs-function-reference` skill for improved function lookup, by the XML import (PluginComponent catalog entries) and by the doc-set browser (component pages under `/docs/mbs/<Component>`)
 - Python 3 is required for component parsing (gracefully skipped if not available)
 - After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.py`, so the web home dashboard's Docs card can list it.

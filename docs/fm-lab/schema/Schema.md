@@ -26,16 +26,16 @@ A few rules hold across the whole solution catalog:
 
 The heart of the solution catalog is a deliberately simple pair: a registry of **objects** and a registry of the **links** between them. Whatever the object type — a field, a script, a layout object five levels deep inside a tab control, even a synthetic object like a variable or a plugin function — it has exactly one row in [ObjectCatalog](object-catalog/ObjectCatalog.md) and one stable `Object_UUID`. Every reference between two objects, whether functional ("this script sets that field") or structural ("this object sits on that layout"), is one row in [ObjectLinks](object-catalog/ObjectLinks.md).
 
-This pair is what makes FM-Lab's dependency analysis uniform: *where-used*, *dead code*, call chains, cross-file dependencies and the graph views are all walks over the same edge list, regardless of object type. The vocabulary of those edges — 59 link roles — is classified in [LinkRoleRegistry](object-catalog/LinkRoleRegistry.md), which also records the crucial distinction between links that count as real usage and links that do not (a privilege restriction on a layout, for instance, is not a usage of that layout).
+This pair is what makes FM-Lab's dependency analysis uniform: *where-used*, *dead code*, call chains, cross-file dependencies and the graph views are all walks over the same edge list, regardless of object type. The vocabulary of those edges — 60 link roles — is classified in [LinkRoleRegistry](object-catalog/LinkRoleRegistry.md), which also records the crucial distinction between links that count as real usage and links that do not (a privilege restriction on a layout, for instance, is not a usage of that layout).
 
 | Table | Content |
 |---|---|
 | [ObjectCatalog](object-catalog/ObjectCatalog.md) | Central registry of every object across all files (25+ types) |
 | [ObjectLinks](object-catalog/ObjectLinks.md) | All resolved references between objects — operational and structural, including cross-file |
-| [LinkRoleRegistry](object-catalog/LinkRoleRegistry.md) | Classification of the 59 link roles: usage / containment / restriction, where-used relevance |
+| [LinkRoleRegistry](object-catalog/LinkRoleRegistry.md) | Classification of the 60 link roles: usage / containment / restriction, where-used relevance |
 | [FilesCatalog](object-catalog/FilesCatalog.md) | The imported FileMaker files: version, DDR-Info flag, import metadata |
 
-Two enumeration references document the vocabularies of this pair in detail: [Link Roles and Subroles](object-catalog/Link%20Roles%20and%20Subroles.md) (all 59 `Link_Role` values with source/target types and every `Link_Subrole` pattern) and [Object Types](object-catalog/Object%20Types.md) (all `Object_Type` values incl. the synthetic types and the LayoutObject subtypes). Beyond the enumerations, [FileMaker Object Types](object-types/FileMaker%20Object%20Types.md) documents each type *semantically* — its full property surface in the export (including what the catalog does not extract), its object hierarchies and its reference vocabulary, one page per type.
+Two enumeration references document the vocabularies of this pair in detail: [Link Roles and Subroles](object-catalog/Link%20Roles%20and%20Subroles.md) (all 60 `Link_Role` values with source/target types and every `Link_Subrole` pattern) and [Object Types](object-catalog/Object%20Types.md) (all `Object_Type` values incl. the synthetic types and the LayoutObject subtypes). Beyond the enumerations, [FileMaker Object Types](object-types/FileMaker%20Object%20Types.md) documents each type *semantically* — its full property surface in the export (including what the catalog does not extract), its object hierarchies and its reference vocabulary, one page per type.
 
 
 ---
@@ -50,6 +50,7 @@ The [XML export](../xml/XML.md) represents each object type as its own dictionar
 |---|---|
 | [ScriptCatalog](catalog-tables/ScriptCatalog.md) | All scripts incl. folder tree, options and modification metadata |
 | [StepsForScripts](catalog-tables/StepsForScripts.md) | Every script step, ordered, with extracted parameters |
+| [StepCalculations](catalog-tables/StepCalculations.md) | Every positioned calculation of a step with its slot context |
 | [DDR_ScriptSteps](catalog-tables/DDR_ScriptSteps.md) | Human-readable step text (requires DDR-Info) |
 | [ScriptTriggers](catalog-tables/ScriptTriggers.md) | Script triggers with owner (file / layout / object) and target script |
 
@@ -57,7 +58,9 @@ The [XML export](../xml/XML.md) represents each object type as its own dictionar
 
 | Table | Content |
 |---|---|
+| [CalculationsCatalog](catalog-tables/CalculationsCatalog.md) | Every calculation instance (owner × role × index) as an addressable object |
 | [DDR_Calculations](catalog-tables/DDR_Calculations.md) | Tokenized formula chunks for dependency analysis (requires DDR-Info) |
+| [DDR_ChunkListContexts](catalog-tables/DDR_ChunkListContexts.md) | Context TO and chunk count per ChunkList anchor — records empty ChunkLists too (requires DDR-Info) |
 | [VariablesCatalog](catalog-tables/VariablesCatalog.md) | Aggregated view per variable: scope, counts, reliability |
 | [VariableUsages](catalog-tables/VariableUsages.md) | Every single variable set/read with its context |
 | [PluginFunctionUsages](catalog-tables/PluginFunctionUsages.md) | Plugin function calls (e.g. MBS) found in calculations |
@@ -79,6 +82,8 @@ The [XML export](../xml/XML.md) represents each object type as its own dictionar
 | [Layouts](catalog-tables/Layouts.md) | Layouts incl. folder tree, context TO, theme/menu-set refs, view options |
 | [LayoutParts](catalog-tables/LayoutParts.md) | Layout parts in sequence, incl. sub-summary break fields |
 | [LayoutObjects](catalog-tables/LayoutObjects.md) | All layout objects (22 types) with real container nesting |
+| [LayoutObjectConditions](catalog-tables/LayoutObjectConditions.md) | Conditional-formatting rules, one row per rule, with parsed condition and format |
+| [LayoutObjectSymbols](catalog-tables/LayoutObjectSymbols.md) | `{{…}}` symbol inventory per text layout object |
 | [ThemeCatalog](catalog-tables/ThemeCatalog.md) | Layout themes incl. raw CSS rule set |
 
 ### Custom functions
@@ -126,7 +131,7 @@ The [XML export](../xml/XML.md) represents each object type as its own dictionar
 
 ### Internal & auxiliary tables
 
-Beyond the documented surface, the catalog contains working tables the pipeline and the tooling use internally: raw reference extractions before resolution (`XMLStepReferences`, `XMLLayoutReferences`, `XMLCalcReferences`, `LayoutObjectSteps`), resolver helpers (`TableOccurrenceResolution`, `ObjectHomes`, `ScriptStepRoleMap`, `GetSubparameterMap`, `MBS_SubnameMap`, `step_metadata`, `sql_name_wrappers`), import monitoring and the [duplicate census](UUID%20Healing%20and%20Duplicate%20Census.md) (`DuplicateAbsorptions`, `DuplicateAbsorptionDetails`, `MergeAbsorptions` — since schema 1.19.0 also the UUID-healing mapping), bookkeeping (`PasteIndexList`, `SchemaInfo`) and the graph-clustering layer (`ObjectClusters`, `CommunityNames`, `ClusterNodeUniverse`, `ClusterEdgesBaseMat`). A set of `v_check_*` views implements the import quality gate, and analysis views (`v_calc_anchors`, `v_script_block_tree`, `v_cross_file_dependencies`, `LogicalLinks`, `FolderHierarchy`, …) provide prepared perspectives for common queries. They are stable enough to query, but their shape follows the pipeline's needs and may change between releases — treat the tables above as the documented contract.
+Beyond the documented surface, the catalog contains working tables the pipeline and the tooling use internally: raw reference extractions before resolution (`XMLStepReferences`, `XMLLayoutReferences`, `XMLCalcReferences`, `LayoutObjectSteps`), resolver helpers (`TableOccurrenceResolution`, `ObjectHomes`, `ScriptStepRoleMap`, `GetSubparameterMap`, `MBS_SubnameMap`, `DataSourceFileMap`, `step_metadata`, `sql_name_wrappers`), import monitoring and the [duplicate census](UUID%20Healing%20and%20Duplicate%20Census.md) (`DuplicateAbsorptions`, `DuplicateAbsorptionDetails`, `MergeAbsorptions` — since schema 1.19.0 also the UUID-healing mapping), bookkeeping (`PasteIndexList`, `SchemaInfo`) and the graph-clustering layer (`ObjectClusters`, `CommunityNames`, `ClusterNodeUniverse`, `ClusterEdgesBaseMat`). A set of `v_check_*` views implements the import quality gate, and analysis views (`v_calculation_links`, `v_script_block_tree`, `v_cross_file_dependencies`, `LogicalLinks`, `FolderHierarchy`, …) provide prepared perspectives for common queries — `v_calc_anchors` lives on as a materialized compatibility facade over [CalculationsCatalog](catalog-tables/CalculationsCatalog.md) (a table, not a view, since schema 1.22.0). They are stable enough to query, but their shape follows the pipeline's needs and may change between releases — treat the tables above as the documented contract.
 
 
 ---
@@ -135,7 +140,7 @@ Beyond the documented surface, the catalog contains working tables the pipeline 
 
 Where the object catalog describes your solution, [fm-spec](../Wiki/fm-spec.md) describes FileMaker itself. `reference/fm_spec.duckdb` is a solution-independent, machine-readable reference of the FileMaker language: all 207 script steps and 367 calculation functions with stable IDs, official documentation links in up to 11 locales, structured parameter definitions, and — the part no documentation site offers — a machine-readable emission layer: per-step XML templates, option grammars with allowed values, structural constraints, per-step platform compatibility and curated per-function platform affinity. Names are treated strictly as a localized display layer over stable IDs, which is why FM-Lab's analyses and generated artifacts work regardless of the language a developer's FileMaker runs in.
 
-The database is organized in four layers plus a build stamp:
+The database is organized in five layers plus a build stamp:
 
 ### Canonical core
 
@@ -148,6 +153,7 @@ The database is organized in four layers plus a build stamp:
 | [function_parameters](fm-spec-tables/function_parameters.md) | Function parameter positions, optional/variadic flags |
 | [step_options](fm-spec-tables/step_options.md) | Option grammar per step: type, required, display rules, XML path |
 | [step_option_values](fm-spec-tables/step_option_values.md) | Allowed values of enumerated options |
+| [script_triggers](fm-spec-tables/script_triggers.md) | Script-trigger events: stable slot ID, owner level, parameter capability, origin version |
 | [script_step_legacy_ids](fm-spec-tables/script_step_legacy_ids.md) | Undocumented / legacy step IDs seen in real exports |
 
 ### Language layer (locales & docs reference)
@@ -162,6 +168,7 @@ The database is organized in four layers plus a build stamp:
 | [function_categories_lang](fm-spec-tables/function_categories_lang.md) | Localized function-category names |
 | [function_parameters_lang](fm-spec-tables/function_parameters_lang.md) | Localized function-parameter names |
 | [function_name_lookup](fm-spec-tables/function_name_lookup.md) | Any localized name → canonical function ID |
+| [script_triggers_lang](fm-spec-tables/script_triggers_lang.md) | Localized trigger-event labels as the trigger dialogs write them |
 | [language_constants](fm-spec-tables/language_constants.md) | Canonical spellings of language constants |
 
 ### Emission layer (machine-readable syntax & grammar)
@@ -169,13 +176,23 @@ The database is organized in four layers plus a build stamp:
 | Table | Content |
 |---|---|
 | [step_xml_map](fm-spec-tables/step_xml_map.md) | XML snippet template, element order and SaXML example per step |
-| [step_constraints](fm-spec-tables/step_constraints.md) | Structural rules a valid snippet must satisfy |
+| [step_repeat_groups](fm-spec-tables/step_repeat_groups.md) | Repeat groups (lists) per step: container, item template, notation label |
+| [step_skeleton_elements](fm-spec-tables/step_skeleton_elements.md) | Skeleton hulls per step that survive the pruning of unconfigured content |
+| [step_option_element_bindings](fm-spec-tables/step_option_element_bindings.md) | Option-value/element couplings per step (mode-bound elements, e.g. device modes) |
+| [step_option_implications](fm-spec-tables/step_option_implications.md) | Parse-side option implications of the text notation (keywords, reference forms, mode switches) |
+| [step_constraints](fm-spec-tables/step_constraints.md) | Structural rules a valid snippet must satisfy — plus the registry of documented FileMaker serialization bugs (warning class) |
+| [constraint_kinds](fm-spec-tables/constraint_kinds.md) | Registry of the constraint-kind vocabulary with consumer-facing lead texts for the bug kinds |
 | [step_compat](fm-spec-tables/step_compat.md) | Platform matrix per step: Pro, Server, Go, WebDirect, Cloud, Data API, CWP (tri-state: Yes / No / Partial) |
 | [function_platform_affinity](fm-spec-tables/function_platform_affinity.md) | Curated platform *affinity* per function ("meaningful results only there") — Claris publishes no function compatibility table |
+| [ref_element_semantics](fm-spec-tables/ref_element_semantics.md) | How reference elements resolve against the solution catalog |
+
+### Platform/OS layer
+
+| Table | Content |
+|---|---|
 | [step_os_affinity](fm-spec-tables/step_os_affinity.md) | Curated OS affinity per step (macOS / Windows / Linux / iOS): exclusive, source-true inverse *unsupported*, behavioral variants — distilled from Claris help prose, quote per row |
 | [function_os_affinity](fm-spec-tables/function_os_affinity.md) | Curated OS affinity per function, plus the `os_probe` class (Get(SystemPlatform) & co — the guard idiom, not a binding) |
 | [runtime_os_matrix](fm-spec-tables/runtime_os_matrix.md) | Host matrix runtime × OS — the only sanctioned translator between the runtime and OS axes |
-| [ref_element_semantics](fm-spec-tables/ref_element_semantics.md) | How reference elements resolve against the solution catalog |
 
 ### Action layer
 

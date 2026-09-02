@@ -6,7 +6,7 @@
   "layout": {
     "installed.props.title": "Installiert",
     "installed.props.subtitle": "In diesem Projekt installierte Dokumentationsquellen. Klick öffnet die Startseite.",
-    "installed_list.props.rowTemplate.tertiary": "{{categories}} Rubriken · {{functions}} Funktionen",
+    "installed_list.props.rowTemplate.tertiary": "{{categories}} Rubriken · {{entries}} Einträge",
     "installed_list.props.empty.message": "Keine Dokumentation installiert — über /install-claris-docs, /install-mbs-docs oder /install-fmide-docs installieren.",
     "available.props.title": "Verfügbar",
     "available.props.subtitle": "Bekannte Dokumentationsquellen, die in diesem Projekt noch nicht installiert sind.",

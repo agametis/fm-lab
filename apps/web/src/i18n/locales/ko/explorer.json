@@ -117,5 +117,9 @@
     "dirBoth": "양방향",
     "empty": "그래프에 이 유형의 오브젝트가 없습니다.",
     "focus": "포커스 오브젝트"
+  },
+  "edge": {
+    "represents": "나타냄",
+    "buttonAction": "버튼 동작"
   }
 }

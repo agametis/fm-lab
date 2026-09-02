@@ -16,6 +16,7 @@ const settingsStore = require('../plugins/settings-store');
  *   GET  /api/docs/:id/categories/:cat?lang=        Funktionen einer Kategorie
  *   GET  /api/docs/:id/categories/:cat/:fn?lang=    Volltext-Eintrag einer Funktion
  *   GET  /api/docs/:id/search?q=                    Per-Set-Suche
+ *   GET  /api/docs/:id/search?q=&group=category     Treffer je Rubrik (Aggregation)
  *
  * Counter-Pills (Code-Referenzen) sind in den Aggregations-Datasets implementiert
  * (siehe dashboard.service.js Builtins `docset_categories_with_counts` /
@@ -160,15 +161,40 @@ async function getEntry(req, res, next) {
 
 /**
  * GET /api/docs/:id/search?q=...&lang=
+ *
+ * Zwei Modi:
+ *   ohne `group`        → Zeilen-Suche (Kategorien + Einträge, gedeckelt)
+ *   `group=category`    → rubrikübergreifende Eintragssuche, konsolidiert auf
+ *                         Rubrikebene und UNGEDECKELT aggregiert. Liefert
+ *                         `[{ category_id, hit_count, sample }]`; `sample`
+ *                         begrenzt nur den Beleg je Rubrik (Default 5).
+ *
+ * Der Aggregations-Modus antwortet auf leere oder zu kurze Eingaben mit einer
+ * leeren Liste statt mit 400 — die Mindestlänge ist eine Ergebnisregel, kein
+ * Aufrufer-Fehler (der Client fragt bei kurzer Eingabe gar nicht erst).
  */
 async function search(req, res, next) {
   try {
     const { id } = req.params;
     const q = String(req.query.q || '').trim();
     const lang = req.query.lang || 'en';
-    if (!q) return validationError(res, 'Query parameter "q" is required.');
+    const group = String(req.query.group || '').trim();
     const catalog = docsManifest.getCatalogEntry(id);
     if (!catalog) return notFound(res, `Unknown doc-set: ${id}`);
+
+    if (group === 'category') {
+      const result = await docsSource.searchDocsetEntriesByCategory(
+        req.solutionContext, id, q, { lang, sample: req.query.sample }
+      );
+      return ok(res, result, {
+        id, q, lang,
+        group: 'category',
+        min_chars: docsSource.ENTRY_SEARCH_MIN_CHARS,
+      });
+    }
+    if (group) return validationError(res, `Unsupported group mode: ${group}`);
+
+    if (!q) return validationError(res, 'Query parameter "q" is required.');
     const result = await docsSource.searchDocset(req.solutionContext, id, q, lang);
     return ok(res, result, { id, q, lang });
   } catch (err) {

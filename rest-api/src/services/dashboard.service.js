@@ -422,8 +422,11 @@ async function builtinListCustomQueries(params = {}) {
     category: t.category || 'Allgemein',
     icon: t.icon || 'query',
     display: t.display || 'auto',
-    click_action: t.click_action || null,
-    click_args: t.click_args || null,
+    // Klick-Konfiguration der Query — technisch ('_'-Präfix): sie beschreibt,
+    // was das Ergebnis-Dashboard beim Zeilenklick tut, und gehört nicht in die
+    // Suche über den Query-Katalog.
+    _click_action: t.click_action || null,
+    _click_args: t.click_args || null,
     tags: t.tags || [],
     params: Array.isArray(t.params) ? t.params.join(', ') : (t.params || ''),
   }));
@@ -465,6 +468,9 @@ async function builtinQueryMeta(params = {}) {
       display: 'auto',
       click_action: null,
       click_args: null,
+      row_action: null,
+      row_action_args: null,
+      row_action_label: null,
       chip_filter: null,
       chip_param: null,
     }];
@@ -479,6 +485,9 @@ async function builtinQueryMeta(params = {}) {
     display: t.display || 'auto',
     click_action: t.click_action || null,
     click_args: t.click_args || null,
+    row_action: t.row_action || null,
+    row_action_args: t.row_action_args || null,
+    row_action_label: t.row_action_label || null,
     chip_filter: t.chip_filter || null,
     chip_param: t.chip_param || null,
     object_types: t.object_types || [],
@@ -585,7 +594,7 @@ async function builtinListDashboards(params = {}) {
       // spans — the overview renders such a bundle as a band above the folder
       // grid instead of as an equal tile below it.
       featured: manifest.featured === true,
-      badge_roots: manifest.badgeRoots || null,
+      _badge_roots: manifest.badgeRoots || null,
     };
   }));
 
@@ -701,7 +710,9 @@ async function builtinListDocs() {
       skill: catalog.skill || null,
       source_url: catalog.source_url || null,
       categories: installed?.stats?.categories ?? null,
-      functions: installed?.stats?.functions ?? null,
+      // Manifest-Grenze — siehe docs-source.getDocsetInfo: gespeichert als
+      // `stats.functions`, ausgeliefert als `entries`.
+      entries: installed?.stats?.entries ?? installed?.stats?.functions ?? null,
       languages: langs,
       languages_count: langs.length,
       languages_display: langs.map(l => String(l).toUpperCase()).join(' · '),
@@ -783,7 +794,13 @@ async function builtinDocsetInfo(params = {}) {
     source_url: info.source_url || null,
     online_link_md: info.online_link_md || '',
     categories: typeof info.categories === 'number' ? info.categories : null,
-    functions: typeof info.functions === 'number' ? info.functions : null,
+    entries: typeof info.entries === 'number' ? info.entries : null,
+    // Capability + Endpoint der rubrikübergreifenden Eintragssuche. Die List
+    // liest beides über ihre `entrySearch.metaDataset`-Prop; Sets ohne
+    // Eintragsebene liefern entry_search=false und bekommen kein Kästchen.
+    entry_search: !!info.entry_search,
+    entry_search_url: info.entry_search_url || null,
+    entry_search_min_chars: info.entry_search_min_chars ?? null,
     start_page: info.start_page || null,
     languages: langs,
     languages_count: langs.length,
@@ -865,7 +882,7 @@ async function builtinDocsetCategoryInfo(ctx, params = {}) {
     source_url: info.source_url || null,
     online_url: info.online_url || null,
     online_link_md: info.online_link_md || '',
-    function_count: typeof info.function_count === 'number' ? info.function_count : null,
+    entry_count: typeof info.entry_count === 'number' ? info.entry_count : null,
   }];
 }
 
@@ -1147,10 +1164,14 @@ async function builtinListTests(params = {}) {
     folder: t.folder || null,
     folder_label: await testsService.resolveFolderLabel(t.folder, lang),
     tier: t.tier,
-    overrides_system: t.overridesSystem === true,
-    validation_status: t.validation.status,
-    validation_warnings: t.validation.warnings.length,
-    validation_errors: t.validation.errors.length,
+    // Pflege-Metadaten der Kachel — technisch ('_'-Präfix). Die Detailseite
+    // (builtin:test_detail) zeigt den Validierungsstatus prominent; in der
+    // Übersicht trägt er nur den Kachel-Zustand und würde sonst jede Suche
+    // nach "ok"/"false" auf alle Zeilen ausweiten.
+    _overrides_system: t.overridesSystem === true,
+    _validation_status: t.validation.status,
+    _validation_warnings: t.validation.warnings.length,
+    _validation_errors: t.validation.errors.length,
   })));
   rows.sort((a, b) => String(a.title).localeCompare(String(b.title), lang));
   return rows;
@@ -1481,7 +1502,11 @@ async function builtinResultsList(ctx, params = {}) {
       : envelope.runStatus === 'failed' ? 'failed' : 'pending';
     if (states && !states.has(state)) continue;
     out.push({
-      ref_kind: envelope.ref.kind,
+      // Herkunfts-Plumbing: je Karte konstant ('dashboard'/'defaultResult') —
+      // ohne '_'-Präfix träfe die Suche nach "dashboard" jede Zeile der Karte.
+      // `ref_id` und `rubric` bleiben durchsuchbar: das sind die fachlichen
+      // Bezeichner, über die man einen Eintrag tatsächlich sucht.
+      _ref_kind: envelope.ref.kind,
       ref_id: envelope.ref.id,
       rubric: envelope.rubric,
       title: envelope.title,
@@ -1492,8 +1517,10 @@ async function builtinResultsList(ctx, params = {}) {
       unit: envelope.unit,
       meaning: envelope.meaning,
       severity: envelope.severity,
-      source: envelope.source,
-      open_target: envelope.ref.kind === 'dashboard' ? `/dashboard/${envelope.ref.id}`
+      _source: envelope.source,
+      // '_'-Präfix = technisches Feld: Navigationsziel, keine Anzeige und
+      // nicht Teil der Zeilensuche (siehe _useRowSearch).
+      _open_target: envelope.ref.kind === 'dashboard' ? `/dashboard/${envelope.ref.id}`
         : envelope.ref.kind === 'query' ? `/query/${envelope.ref.id}`
           : `/tests/${envelope.ref.id}`,
     });

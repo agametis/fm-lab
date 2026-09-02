@@ -117,5 +117,9 @@
     "dirBoth": "Båda",
     "empty": "Inga objekt av den här typen i grafen.",
     "focus": "Fokusobjekt"
+  },
+  "edge": {
+    "represents": "representerar",
+    "buttonAction": "Knappåtgärd"
   }
 }

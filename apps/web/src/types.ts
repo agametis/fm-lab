@@ -42,6 +42,28 @@ export interface ReferenceItem {
   Object_Name: string;
   File_Name: string;
   Link_Role: string;
+  /**
+   * Normalisierte Slot-Klasse der Kanten-Subrole (calc_kind-Vokabular:
+   * 'hide', 'conditional_format', 'tooltip', …). NULL/fehlend bei Kanten ohne
+   * semantische Subrole — insbesondere Script-Kanten, deren positionelle
+   * Slot-Indizes API-seitig unterdrückt werden. Unbekannte Subroles werden
+   * roh durchgereicht (Fallback-Anzeige, nie verschluckt).
+   */
+  Subrole_Class?: string | null;
+  /**
+   * Roh-Subrole(n) für den Tooltip: bei direction=all die aggregierten
+   * DISTINCT-Werte der Gruppe ('Condition_1, Condition_2'), in den
+   * ungruppierten child/parent-Zweigen der einzelne Roh-Wert.
+   */
+  Subrole_Detail?: string | null;
+  /**
+   * Aufgelöste Trigger-Event-Namen zu `ScriptTrigger_<id>`-Subroles
+   * (Klasse 'script_trigger_parameter') — DISTINCT-Liste kanonischer Events
+   * ('OnObjectValidate' bzw. 'OnPanelSwitch, OnObjectValidate'), API-seitig
+   * über die fm_spec-Referenz aufgelöst. Fehlt ohne Referenz-DB/ältere
+   * fm_spec-Stände — die Anzeige degradiert dann aufs Klassen-Kurzlabel.
+   */
+  Subrole_Event?: string | null;
   Is_Cross_File: boolean;
   Container_UUID?: string | null;
   Container_Type?: string | null;
@@ -53,6 +75,13 @@ export interface ReferenceItem {
    */
   Container_Name?: string | null;
   Container_File?: string | null;
+  /**
+   * Nur konsolidierte Spiegel-Zeilen (`triggers_script·<Event>`): Katalog-UUID
+   * des ScriptTrigger-Sub-Knotens (`trig_<id>_…`), dessen granulare Zeile die
+   * Anzeige-Konsolidierung unterdrückt. Trägt den Sekundär-Absprung auf die
+   * Trigger-Detailseite; NULL auf allen anderen Zeilen und älteren API-Ständen.
+   */
+  Trigger_UUID?: string | null;
   navigable?: boolean;
   /**
    * Nur Pseudo-Aggregat-Typen (ScriptStepType): Anzahl der Schritte dieses Typs,

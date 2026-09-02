@@ -115,7 +115,7 @@ Only meaningful for edge-shaped results (`/references`, graph-shaped `/query` te
 
 A structured JSON payload that tokenizes FileMaker script and calculation content into typed spans for editor-style rendering — the format behind the FM-Lab detail views and the VS Code extension.
 
-Available **only** on `/api/get-details` (object types `Script`, `ScriptStep`, `LayoutObject`, `CustomFunction`, `Field`, `CustomMenu`, `CustomMenuItem`) and `/api/get-calc`; other endpoints and types reject it. Token types: `text`, `function`, `customFunction`, `pluginFunction`, `variable` (with `scope: local|global`), `field` (with resolved `TO::Field` and UUID), `comment`. Field references, find requests and sort orders are parsed out of the step definitions; function tokens carry stable synthetic UUIDs for cross-navigation.
+Available **only** on `/api/get-details` (object types `Script`, `ScriptStep`, `LayoutObject`, `CustomFunction`, `Field`, `CustomMenu`, `CustomMenuItem`, `Calculation`, `ScriptTrigger`) and `/api/get-calc`; other endpoints and types reject it. Token types: `text`, `function`, `customFunction`, `pluginFunction`, `variable` (with `scope: local|global`), `field` (with resolved `TO::Field` and UUID), `comment`. Field references, find requests and sort orders are parsed out of the step definitions; function tokens carry stable synthetic UUIDs for cross-navigation.
 
 With `enrich=<lang>`, step and function tokens are augmented with localized display names, signatures and help links from the [reference database](endpoints/Reference%20Database%20API.md) (soft-fails with `enrich_error` when it is not installed).
 
@@ -135,7 +135,7 @@ Abbreviated example (`kind: "script"`):
 }
 ```
 
-Other kinds follow the same pattern: `customfunction` (parameters + token stream), `field` (storage/auto-enter context + calc tokens), `calculation` (hash-addressed, see [GET /api/get-calc](endpoints/Objects%20API.md#get-apiget-calc)), `custommenu` (one token stream per attached calculation).
+Other kinds follow the same pattern: `customfunction` (parameters + token stream), `field` (storage/auto-enter context + calc tokens), `calculation` (addressed by `Calculation_UUID`, hash as legacy alias — carries a `calc { role, index, owner, … }` block and resolved `targets[]`, see [GET /api/get-calc](endpoints/Objects%20API.md#get-apiget-calc)), `custommenu` (one token stream per attached calculation), `scripttrigger` (no token lines — the structured trigger projection: event, modes, script, owner chain, parameter calculation).
 
 ---
 

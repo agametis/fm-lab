@@ -1,9 +1,16 @@
-import { Fragment, useMemo, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { PrimitiveProps } from '../types';
 import { substituteString } from '../tokens';
 import { useRowSearch } from './_useRowSearch';
+import {
+  useEntrySearch,
+  formatHitSample,
+  withSearchArg,
+  metaRow,
+  type EntrySearchProps,
+} from './_useEntrySearch';
 import { dispatchAction, resolveAction } from '../actions';
 import { translateCellValue } from './_cellTranslate';
 import type { ActionSpec } from '../actions';
@@ -67,7 +74,7 @@ function isZeroBadge(badgeText: string): boolean {
   return false;
 }
 
-export function List({ node, dataset, navigate }: PrimitiveProps) {
+export function List({ node, dataset, datasets, navigate }: PrimitiveProps) {
   const { t } = useTranslation(['common', 'detail', 'dashboard']);
   // Pipe substituted row strings through the dashboard cell-value translator
   // so canonical English labels emitted from SQL (e.g. health indicators)
@@ -81,7 +88,50 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
   // Rows (Gruppen zusammenhängend); ein leerer Gruppenwert rendert ohne
   // Header (Konvention: Root-Gruppe zuerst).
   const groupBy = node.props?.groupBy as string | undefined;
-  const rows = dataset?.data ?? [];
+  const rawRows = dataset?.data ?? [];
+
+  // Suchzustand in der URL (Opt-in): der Param-Name wird vom Layout deklariert,
+  // damit Reload, Zurück-Navigation und geteilte Links die Eingabe behalten.
+  const searchParam = node.props?.searchParam as string | undefined;
+  // Rubrikübergreifende Eintragssuche (Opt-in): Capability + Endpoint stehen im
+  // Meta-Dataset, das Kästchen rendert nur, wenn das Set eine Eintragsebene hat.
+  const entrySearchProps = node.props?.entrySearch as EntrySearchProps | undefined;
+  const entryMeta = metaRow(datasets, entrySearchProps?.metaDataset);
+
+  // Den Suchbegriff kennt `useRowSearch` erst weiter unten — die Annotation
+  // braucht ihn aber vorher. Im URL-Modus liest die Eintragssuche ihn selbst
+  // aus demselben Param; ohne URL-Param wird er eine Render-Runde später
+  // nachgereicht (der Filter selbst bleibt synchron).
+  const [localQueryEcho, setLocalQueryEcho] = useState('');
+  const entrySearch = useEntrySearch(entrySearchProps, entryMeta, localQueryEcho, searchParam);
+
+  // Annotation statt Ersetzung: die Zeilen bleiben die geladenen Rubrikzeilen,
+  // sie bekommen nur zwei zusätzliche Felder. `hit_sample` ist ein normales
+  // Feld — damit matcht die generische Zeilensuche die Rubrik allein wegen
+  // ihrer Einträge, ohne eigene Filterlogik.
+  const rows = useMemo(() => {
+    if (!entrySearch.active || entrySearch.hits.size === 0) return rawRows;
+    const annotated = rawRows.map(row => {
+      const hit = entrySearch.hits.get(String(row.id ?? ''));
+      if (!hit) return row;
+      return {
+        ...row,
+        hit_sample: formatHitSample(hit),
+        hit_count: hit.hit_count,
+        // Sucheingabe reist mit in die Rubrik — die Eintragsliste dort ist
+        // dann sofort passend gefiltert.
+        _action_args: withSearchArg(row._action_args, entrySearch.term),
+      };
+    });
+    // Breite Eingaben treffen viele Rubriken (`win` → 37 von 168). Rubriken mit
+    // Eintragstreffern stehen deshalb nach Trefferzahl vorn; reine Namens-
+    // treffer behalten darunter ihre ursprüngliche Reihenfolge.
+    if (groupBy) return annotated;  // Gruppen müssen zusammenhängend bleiben
+    return annotated
+      .map((row, i) => ({ row, i, n: Number(row.hit_count ?? 0) }))
+      .sort((a, b) => b.n - a.n || a.i - b.i)
+      .map(x => x.row);
+  }, [rawRows, entrySearch.active, entrySearch.hits, entrySearch.term, groupBy]);
 
   // Pre-compute badge text per row once, so the filter and the render pass
   // see consistent values without re-running substitution.
@@ -112,7 +162,17 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
     searchable: node.props?.searchable as boolean | 'auto' | undefined,
     autoThreshold: node.props?.searchAutoThreshold as number | undefined,
     placeholder: node.props?.searchPlaceholder as string | undefined,
+    searchParam,
   });
+
+  // Ohne URL-Param wird der Suchbegriff eine Render-Runde nach oben
+  // gespiegelt, damit die Annotation (die vor useRowSearch läuft) ihn kennt.
+  // Im URL-Modus liest die Eintragssuche direkt aus dem Param — dann ist der
+  // Spiegel überflüssig, und der Filter bleibt in beiden Fällen synchron.
+  useEffect(() => {
+    if (searchParam) return;
+    setLocalQueryEcho(search.query);
+  }, [search.query, searchParam]);
 
   if (rows.length === 0) {
     return <div className="dash-list__empty">{empty?.message ?? t('common:noEntries')}</div>;
@@ -121,6 +181,8 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
   const hasQuery = search.query.trim() !== '';
   const filterToggleLabel = badgeOpts.filterLabel
     || (t('dashboard:list.badgeFilter', { defaultValue: 'verwendet' }) as string);
+  const entryToggleLabel = entrySearchProps?.label
+    || (t('dashboard:list.entrySearch', { defaultValue: 'auch Einträge durchsuchen' }) as string);
 
   // Lookup-Map row → badgeText (for the visible/filtered rows). Built off the
   // pre-filtered list so we don't lose entries when usedOnly is on.
@@ -128,22 +190,49 @@ export function List({ node, dataset, navigate }: PrimitiveProps) {
 
   return (
     <div className="dash-list-wrap">
-      {(search.visible || showUsedToggle) && (
+      {(search.visible || showUsedToggle || entrySearch.available) && (
         <div className="dash-search-bar">
           <span className="dash-search-bar__count">
             {t('detail:autoTable.rowCount', { count: search.filtered.length })}
             {(hasQuery || usedOnly) && search.filtered.length !== rows.length && (
               <> · {t('detail:autoTable.filteredFrom', { count: rows.length })}</>
             )}
+            {/* Dasselbe Eingabefeld filtert einmal rein lokal und einmal
+                serverunterstützt. Ohne die Modusanzeige wirkt derselbe Begriff
+                je nach Kästchen unerklärlich anders. */}
+            {entrySearch.active && (
+              <> · {t('dashboard:list.entrySearchMode', { defaultValue: 'inkl. Einträge' })}</>
+            )}
+            {entrySearch.loading && (
+              <> · {t('dashboard:list.entrySearchLoading', { defaultValue: 'suche …' })}</>
+            )}
           </span>
-          {search.visible && (
-            <input
-              type="search"
-              className="dash-search-bar__input"
-              placeholder={search.placeholder}
-              value={search.query}
-              onChange={e => search.setQuery(e.target.value)}
-            />
+          {/* Sucheingabe und das Kästchen, das ihre Reichweite erweitert, bilden
+              eine Gruppe — sonst verteilte die Leiste (space-between) beide
+              gleichmäßig und der Used-Filter verlöre seinen Platz rechts über
+              der Zählerspalte. */}
+          {(search.visible || entrySearch.available) && (
+            <div className="dash-search-bar__field">
+              {search.visible && (
+                <input
+                  type="search"
+                  className="dash-search-bar__input"
+                  placeholder={search.placeholder}
+                  value={search.query}
+                  onChange={e => search.setQuery(e.target.value)}
+                />
+              )}
+              {entrySearch.available && (
+                <label className="dash-search-bar__toggle" title={entryToggleLabel}>
+                  <input
+                    type="checkbox"
+                    checked={entrySearch.enabled}
+                    onChange={e => entrySearch.setEnabled(e.target.checked)}
+                  />
+                  <span>{entryToggleLabel}</span>
+                </label>
+              )}
+            </div>
           )}
           {showUsedToggle && (
             <label className="dash-search-bar__toggle" title={filterToggleLabel}>

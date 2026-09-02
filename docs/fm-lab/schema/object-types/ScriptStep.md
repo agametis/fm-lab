@@ -41,7 +41,7 @@ Step parameters are typed `<Parameter>` children; the parameter vocabulary is an
 | `Boolean` parameter | `Boolean_Type`, `Boolean_Value` | On/off style options |
 | other parameter types | — | Only in `Parameters_XML`; object references are resolved into [ObjectLinks](../object-catalog/ObjectLinks.md) at import — query the edge, not the XML |
 
-**Important:** [ObjectLinks](../object-catalog/ObjectLinks.md) edges carried by calculations and references *inside* steps attach to the parent **Script** with the step index as `Link_Subrole` — not to the ScriptStep object. The ScriptStep object itself only carries its structural `parent_script` edge.
+**Important:** [ObjectLinks](../object-catalog/ObjectLinks.md) edges carried by calculations and references *inside* steps attach to the parent **Script** with the step index as `Link_Subrole` — not to the ScriptStep object. The ScriptStep object itself carries only structural edges: `parent_script`, plus `has_calculation` to each of its parameter-calculation instances (schema 1.22.0).
 
 ## Object hierarchy
 
@@ -56,10 +56,11 @@ ScriptStep is deliberately link-poor: usage edges live on the parent script (see
 | Link_Role | Target | Kind | Description |
 |---|---|---|---|
 | `parent_script` | [Script](Script.md) | containment | The step belongs to the script |
+| `has_calculation` | [Calculation](Calculation.md) | containment | Each parameter-calculation slot of the step as an addressable instance (subrole `step_parameter`, indexed for multi-calc steps) — never counts as usage |
 
 ### Incoming links (ScriptStep as target)
 
-No link role targets ScriptStep — the type appears only as a source of `parent_script`.
+No link role targets ScriptStep — the type appears only as a source of `parent_script` and `has_calculation`.
 
 ## Schema & tooling
 

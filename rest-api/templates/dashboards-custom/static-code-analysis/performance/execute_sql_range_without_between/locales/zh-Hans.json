@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "未使用 BETWEEN 的 ExecuteSQL 范围查询",
+    "description": "性能规则 — ExecuteSQL 范围条件若用 >=/<= 而非 BETWEEN，引擎会分别求值两个条件再取交集；BETWEEN 结构只需一次范围扫描，比两个单独比较快许多倍。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "结果数",
+    "summary_kpi.props.items[1].label": "受影响文件",
+    "summary_kpi.props.items[2].label": "ExecuteSQL 调用",
+    "summary_kpi.props.items[3].label": "已用 BETWEEN",
+    "findings_card.props.title": "未使用 BETWEEN 的 ExecuteSQL 范围查询",
+    "findings_table.props.searchPlaceholder": "搜索文件或对象…",
+    "findings_table.props.empty.message": "未找到未使用 BETWEEN 的 ExecuteSQL 范围模式。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "对象",
+    "findings_table.props.columns[2].label": "类型",
+    "findings_table.props.columns[3].label": "步骤",
+    "findings_table.props.columns[4].label": "函数",
+    "findings_table.props.columns[5].label": "SQL 片段"
+  }
+}

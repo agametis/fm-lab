@@ -301,12 +301,14 @@ write_text_log() {
         printf '================================================================================\n'
         printf 'Start Time:        %s\n' "$RUN_STARTED_HUMAN"
         printf 'End Time:          %s\n' "$RUN_ENDED_HUMAN"
+        printf 'fm-lab Version:    %s  (commit %s)\n' "${FMLAB_VERSION:-unknown}" "${FMLAB_SOURCE_COMMIT:-unknown}"
         printf 'Converter Version: %s\n' "$CONVERTER_VERSION"
         printf 'Log Schema:        %s\n' "$LOG_SCHEMA"
         printf 'Schema Version:    %s  (Template)\n' "$SCHEMA_VERSION_EXPECTED"
         printf 'Mode:              %s\n' "$RUN_MODE"
         printf 'Options:           %s\n' "$OPTIONS_TEXT"
         printf 'Attempt:           %s\n' "$ATTEMPT_TEXT"
+        printf 'Strategy:          %s\n' "${RUN_STRATEGY_TEXT:-n/a}"
         printf -- '--------------------------------------------------------------------------------\n'
         printf 'Environment\n'
         printf '  OS:              %s · %s %s\n' "$ENV_OS_PRETTY" "$ENV_KERNEL" "$ENV_ARCH"
@@ -314,6 +316,7 @@ write_text_log() {
         printf '  CPU cores:       %s\n' "$ENV_CPU_CORES"
         printf '  RAM limit:       %s  (swap %s)\n' "$(fmt_gib "$ENV_RAM_BYTES")" "$(fmt_gib "$ENV_SWAP_BYTES")"
         printf '  DuckDB:          %s\n' "$ENV_DUCKDB_DISPLAY"
+        printf '  webbed:          %s\n' "${WEBBED_VERSION_DETECTED:-unknown}"
         printf '  AWK:             %s  (%s)\n' "$ENV_AWK_BIN" "$ENV_AWK_FLAVOR"
         printf '  DuckDB threads:  %s\n' "$ENV_DUCKDB_THREADS"
         printf '  DuckDB memory:   %s (effective)\n' "$ENV_DUCKDB_MEM"
@@ -383,7 +386,7 @@ write_text_log() {
 write_json_sidecar() {
     local jsonfile="$1"
     local ph_tsv fl_tsv i j
-    ph_tsv=$(mktemp); fl_tsv=$(mktemp)
+    ph_tsv=$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX"); fl_tsv=$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")
 
     # Store phases/files as TAB-separated tables (idx as the first column for stable
     # order). DuckDB reads them as in-memory tables and assembles the JSON itself —
@@ -429,6 +432,11 @@ write_json_sidecar() {
        J_SCHEMA="$LOG_SCHEMA" \
        J_STARTED="$RUN_STARTED_ISO" J_ENDED="$RUN_ENDED_ISO" J_DURATION="$BATCH_DURATION" \
        J_CONVERTER="$CONVERTER_VERSION" J_SCHEMAVER="$SCHEMA_VERSION_EXPECTED" \
+       J_FMLAB_VER="${FMLAB_VERSION:-unknown}" J_FMLAB_COMMIT="${FMLAB_SOURCE_COMMIT:-unknown}" \
+       J_POLICY="$($STREAMIFY_MODE && echo sax || echo dom)" \
+       J_POLICY_SOURCE="${POLICY_SOURCE:-}" J_SENTINEL_SOURCE="${WS_SENTINEL_SOURCE:-}" \
+       J_WS_SENTINEL="$WS_SENTINEL_ON" J_STRATEGY="${RUN_STRATEGY_TEXT:-}" \
+       J_WEBBED_VER="${WEBBED_VERSION_DETECTED:-unknown}" \
        J_MODE="$RUN_MODE" \
        J_FORCE_REBUILD="$FORCE_REBUILD" J_SPLIT="$SPLIT_MODE" J_FAIL_FAST="$FAIL_FAST" \
        J_NO_AUTO_HEAL="$NO_AUTO_HEAL" J_QUIET="$QUIET_MODE" J_MEMORY_LIMIT="$MEMORY_LIMIT" \
@@ -456,6 +464,15 @@ COPY (
       'duration_s': TRY_CAST(getenv('J_DURATION') AS DOUBLE),
       'converter_version': getenv('J_CONVERTER'),
       'schema_version': getenv('J_SCHEMAVER'),
+      'fmlab_version': getenv('J_FMLAB_VER'),
+      'source_commit': nullif(getenv('J_FMLAB_COMMIT'),'unknown'),
+      'strategy': {
+        'policy': getenv('J_POLICY'),
+        'source': nullif(getenv('J_POLICY_SOURCE'),''),
+        'ws_sentinel': getenv('J_WS_SENTINEL')='true',
+        'sentinel_source': nullif(getenv('J_SENTINEL_SOURCE'),''),
+        'text': nullif(getenv('J_STRATEGY'),'')
+      },
       'mode': getenv('J_MODE'),
       'options': {
         'force_rebuild': getenv('J_FORCE_REBUILD')='true',
@@ -492,6 +509,7 @@ COPY (
         'memory_limit': getenv('J_DUCKDB_MEM'),
         'preserve_insertion_order': getenv('J_PRESERVE_ORDER')='true'
       },
+      'webbed': {'version': nullif(getenv('J_WEBBED_VER'),'unknown')},
       'spill': {'dir': getenv('J_SPILL_DIR'), 'max': getenv('J_SPILL_MAX'), 'dedicated_volume': getenv('J_SPILL_DEDICATED')='true'},
       'awk': {'bin': getenv('J_AWK_BIN'), 'flavor': nullif(getenv('J_AWK_FLAVOR'),'unknown')}
     } AS environment,

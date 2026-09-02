@@ -12,7 +12,8 @@
     "page": "Page {{current}} / {{total}}",
     "noMatches": "No matches for “{{query}}”.",
     "prev": "← Previous",
-    "next": "Next →"
+    "next": "Next →",
+    "rowAction": "Open target"
   },
   "layoutPreview": {
     "heading": "Layout view",
@@ -25,11 +26,12 @@
     "Field": "Field details",
     "BaseTable": "Table details",
     "CustomFunction": "Function details",
-    "ValueList": "Value list details"
+    "ValueList": "Value list details",
+    "Calculation": "Calculation Details"
   },
   "layoutCanvas": {
     "searchPlaceholder": "Search layout object…",
-    "searchTitle": "Tab: next match · Shift+Tab: previous · Enter: open · Esc: reset",
+    "searchTitle": "Tab: next match · Shift+Tab: previous · Enter: open details · Alt+Enter: open target · Esc: reset",
     "searchAria": "Search layout object",
     "matchCount_one": "{{count}} match",
     "matchCount_other": "{{count}} matches",
@@ -39,7 +41,13 @@
     "labelType": "Type",
     "labelTypeTitle": "Show object type as the label",
     "stats_one": "{{count}} object · Zoom {{zoom}}%",
-    "stats_other": "{{count}} objects · Zoom {{zoom}}%"
+    "stats_other": "{{count}} objects · Zoom {{zoom}}%",
+    "tooltip": {
+      "target": "Target",
+      "logic": "Logic",
+      "slots": "Slots",
+      "moreTargets": "(+{{n}} more)"
+    }
   },
   "relationshipGraphCanvas": {
     "searchPlaceholder": "Search table occurrence…",
@@ -109,14 +117,26 @@
     "groupsLabel": "Groups",
     "detailsLabel": "Details",
     "clearTitle": "Clear all type filters",
-    "clearLabel": "Clear filters"
+    "clearLabel": "Clear filters",
+    "calcGroupLabel": "Calculations",
+    "calcCategories": {
+      "cf": "Conditional Formatting",
+      "hide": "Hide Condition",
+      "trigger": "Triggers",
+      "tooltip": "Tooltip",
+      "display": "Layout Calculations"
+    },
+    "calcInventoryOpen": "Open inventory"
   },
   "referencesFilter": {
     "searchPlaceholder": "Search references…",
     "searchTitle": "Esc: clear input",
     "searchAria": "Search references",
     "clearTypesTitle": "Clear all type filters",
-    "clearTypesLabel": "Clear filters"
+    "clearTypesLabel": "Clear filters",
+    "rolesAria": "Filter by link role",
+    "clearRolesLabel": "Reset roles",
+    "clearRolesTitle": "Clear all role filters"
   },
   "hierarchyTree": {
     "ariaLabel": "Object hierarchy",
@@ -133,11 +153,75 @@
     "crossFileBadge": "Cross-file",
     "itemAriaLabel": "Navigate to {{type}}: {{name}}",
     "notNavigable": "Target not in the imported dataset",
+    "showInLayout": "Show in layout (Alt+click)",
+    "showInFile": "Show in file (Alt+click)",
     "dirFilterAria": "Filter by direction",
     "dirFilterLabel": "Direction",
     "dirIn": "Incoming",
     "dirOut": "Outgoing",
-    "dirBoth": "Both"
+    "dirBoth": "Both",
+    "subroles": {
+      "hide": {
+        "short": "Hide",
+        "long": "Hide condition"
+      },
+      "conditional_format": {
+        "short": "CF",
+        "long": "Conditional formatting"
+      },
+      "tooltip": {
+        "short": "Tooltip",
+        "long": "Tooltip"
+      },
+      "button_action": {
+        "short": "Action",
+        "long": "Button action"
+      },
+      "portal_filter": {
+        "short": "Portal",
+        "long": "Portal filter"
+      },
+      "web_viewer_url": {
+        "short": "WebViewer",
+        "long": "Web viewer URL"
+      },
+      "placeholder": {
+        "short": "Placeholder",
+        "long": "Placeholder text"
+      },
+      "popover_title": {
+        "short": "Popover",
+        "long": "Popover title"
+      },
+      "script_trigger_parameter": {
+        "short": "Trigger",
+        "long": "Script trigger parameter"
+      },
+      "transaction_parameter_field": {
+        "short": "TX Param",
+        "long": "Transaction parameter field (candidate)"
+      },
+      "auto_enter": {
+        "short": "Auto-Enter",
+        "long": "Auto-enter calculation"
+      },
+      "validation": {
+        "short": "Validation",
+        "long": "Validation by value list"
+      },
+      "on_server": {
+        "short": "PSoS",
+        "long": "Perform on server (PSoS)"
+      },
+      "mbs_runscript": {
+        "short": "MBS",
+        "long": "via MBS FM.RunScript"
+      },
+      "menu_install": {
+        "short": "Install",
+        "long": "Menu install condition"
+      }
+    }
   },
   "searchOptions": {
     "regionAria": "Sort and group options",
@@ -198,7 +282,8 @@
     "storageIndexLanguage": "Index language",
     "summaryRestartGroup": "Restart for each group",
     "summaryRepMode": "Summarize repetitions",
-    "calcEvaluatesWhenEmpty": "Evaluates even if fields empty"
+    "calcEvaluatesWhenEmpty": "Evaluates even if fields empty",
+    "validationMessageCalc": "Message calculation"
   },
   "typeDetail": {
     "loading": "Loading…",
@@ -396,6 +481,13 @@
     "dismissAria": "Remove reference highlight",
     "dismissTitle": "Remove reference highlight (Esc)",
     "sourceLabel": "Source:"
+  },
+  "varSelect": {
+    "hint": "Click to highlight all occurrences",
+    "clearHint": "Click to remove the highlight",
+    "pillLabel": "Variable:",
+    "dismissAria": "Remove variable highlight",
+    "dismissTitle": "Remove variable highlight (Esc)"
   },
   "tableDetails": "Table details",
   "scriptDetails": "Script details",
@@ -605,5 +697,142 @@
   "osBinding": {
     "label": "OS binding:",
     "tooltip": "Operating systems this script is bound to (from the platform-os-binding test run - neutral inventory, not a defect)."
+  },
+  "textContent": {
+    "heading": "Text content"
+  },
+  "calculationDetail": {
+    "ariaLabel": "Calculation details",
+    "loading": "Loading calculation…",
+    "owner": "Owner",
+    "slot": "Slot",
+    "kind": "Kind",
+    "kindStatic": "Static value",
+    "kindFormula": "Formula",
+    "contextTo": "Evaluation context",
+    "formula": "Formula",
+    "layoutFormula": "Layout calculation",
+    "resultType": "Result type",
+    "resultTypeTooltip": "Result type: {{type}}",
+    "resultTypes": { "Text": "Text", "Number": "Number", "Date": "Date", "Time": "Time", "Timestamp": "Timestamp" },
+    "targets": "Resolved targets",
+    "slotsHeading": "Calculations",
+    "ddrlessHint": "Plain text only — this instance has no DDR chunk data, so tokens, tooltips and cross-navigation are unavailable.",
+    "recoveredHint": "Tokens reconstructed from the recovered formula — this instance has no DDR chunk data; built-in functions remain unresolved.",
+    "roles": {
+      "field_calculation": "Field calculation",
+      "auto_enter": "Auto-enter calculation",
+      "validation": "Validation calculation",
+      "validation_message": "Validation message calculation",
+      "container_path": "Container path",
+      "custom_function": "Custom function",
+      "step_parameter": "Script step calculation",
+      "step_xslt": "XSLT stylesheet",
+      "record_access": "Record access calculation",
+      "hide": "Hide condition",
+      "tooltip": "Tooltip",
+      "placeholder": "Placeholder",
+      "conditional_format": "Conditional formatting",
+      "portal_filter": "Portal filter",
+      "web_viewer_url": "Web viewer URL",
+      "button_label": "Button label",
+      "button_action": "Button action",
+      "panel_title": "Panel title",
+      "popover_title": "Popover title",
+      "display_calculation": "Display calculation",
+      "merge_text": "Resolved merge anchors",
+      "chart_series": "Chart series",
+      "script_trigger_parameter": "Script trigger parameter",
+      "menu_install": "Menu install condition",
+      "menu_title": "Menu title",
+      "menu_item_install": "Menu item install condition",
+      "menu_item_name": "Menu item name",
+      "menu_item_parameter": "Menu item parameter"
+    }
+  },
+  "scriptTriggerDetail": {
+    "heading": "Script trigger",
+    "openTrigger": "Open script trigger",
+    "eventLabel": "Event",
+    "modesLabel": "Active in",
+    "scriptLabel": "Script",
+    "ownerLabel": "Attached to",
+    "paramLabel": "Script parameter",
+    "paramFieldLabel": "Parameter field",
+    "paramFieldCandidates": "Candidates:",
+    "paramFieldOrphan": "No matching field in this file (orphaned name)",
+    "openParamCalc": "Open calculation details"
+  },
+  "layoutObjectDetail": {
+    "showInLayout": "Show in layout: {{name}}",
+    "showInLayoutTitle": "Open the layout and highlight this object",
+    "targetBarAria": "Targets",
+    "colBrowse": "B",
+    "colFind": "F",
+    "colPreview": "P",
+    "modeBrowse": "Browse mode",
+    "modeFind": "Find mode",
+    "modePreview": "Preview",
+    "colEvent": "Trigger role",
+    "colScript": "Script (parameter)",
+    "paramLabel": "Param:",
+    "cfColActive": "active",
+    "cfColCalc": "Calculation",
+    "cfActiveTitle": "Rule enabled in the dialog",
+    "cfColFormat": "Format",
+    "cfIconColorTitle": "Icon color",
+    "cfColPreview": "Preview",
+    "cfFormat": {
+      "bold": "bold",
+      "italic": "italic",
+      "underline": "underline",
+      "wordUnderline": "word underline",
+      "doubleUnderline": "double underline",
+      "strikethrough": "strikethrough",
+      "textColor": "text color",
+      "fillColor": "fill color",
+      "iconColor": "icon color",
+      "font": "font",
+      "fontSize": "font size",
+      "highlight": "highlight",
+      "superscript": "superscript",
+      "subscript": "subscript",
+      "smallCaps": "small caps",
+      "condensed": "condensed",
+      "expanded": "expanded",
+      "uppercase": "UPPERCASE",
+      "lowercase": "lowercase",
+      "capitalize": "title case"
+    },
+    "cfOperatorFallback": "value (type {{type}})",
+    "cfOperator": {
+      "between": "between",
+      "notBetween": "not between",
+      "equal": "equal to",
+      "notEqual": "not equal to",
+      "greater": "greater than",
+      "less": "less than",
+      "greaterEqual": "greater than or equal to",
+      "lessEqual": "less than or equal to",
+      "contains": "contains",
+      "notContains": "does not contain",
+      "beginsWith": "begins with",
+      "endsWith": "ends with",
+      "empty": "empty"
+    },
+    "segmentsHeading": "Segments",
+    "childrenHeading": "Contained objects",
+    "colLabel": "Label",
+    "colType": "Type",
+    "colObject": "Object",
+    "colTrigger": "Trigger",
+    "childDetailTitle": "Open object details",
+    "propsHeading": "Properties",
+    "propType": "Type",
+    "propName": "Name",
+    "propPart": "Layout part",
+    "propPosition": "Position/size",
+    "propNesting": "Nesting",
+    "nestingLevel": "Level {{level}}"
   }
 }

@@ -12,6 +12,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.9.9] — 2026-09-02
+
+A large release on two fronts: script triggers and layout-object formulas become a fully catalogued, navigable analysis surface, and the pipeline gets more correct and robust — more precise script generation, a hardened XML import, and a performance fix.
+
+- **Script triggers & layout-object formulas** — a major new analysis surface
+  - **Calculations as first-class catalog objects** — every calculation instance (conditional formatting, hide condition, tooltip, auto-enter, script-trigger parameter, …) is now catalogued, so the frontend detail views read from the catalog and where-used / dependency analysis sharpens accordingly
+  - **Script triggers fully catalogued** — activation modes (Browse / Find / Preview), parameter formulas extracted even from exports without DDR-Info, and their file-, layout-, and object-level owners; a dedicated script-trigger detail page with navigation, event names localized to the interface language, and Browse/Find/Preview badges in the layout panel
+  - **Layout formulas & merge content** — conditional formatting, hide conditions, tooltips, merge fields, and layout variables/calculations are captured, with new inventory queries and richer layout-object detail views (object groups and button bars included)
+  - **Graph & references** — trigger edges and structural-containment direction corrected, reference subroles surfaced, and variable-reference highlighting in the detail views
+- **Code generation & the FileMaker reference** (`fm-generate-script`, fm-spec 1.17.1)
+  - **Data-driven step model** — script-step specifics (parameter groups, repetition groups, fixed-slot groups, boolean slots) are now encoded in the fm-spec schema and checked during generation, replacing hardcoded hints; malformed step parameters that previously slipped through are caught
+  - **fm-spec schema browser** extended in the web client, with refreshed schema documentation
+- **XML import — robustness, correctness & performance** (converter 2.12.0)
+  - **Single-file mode fails loudly** — a reference-resolution failure now aborts before the dependent catalog phases (non-zero exit, clear banner) instead of publishing a stale catalog, the served copies keep their last consistent state, and a heal run after a mid-run abort now actually publishes its rebuilt catalog
+  - **64-bit numeric slots** — values that overflowed a 32-bit `INTEGER` are widened to `BIGINT` and the "unlimited" sentinel is stored as "no limit", each with a drift guard and regression test
+  - **Faster catalog build** — a performance-critical join in the catalog phase optimized
+  - **More fixes** — single-file binder error, a clear-before-rebuild restoring missing layout-object steps, content-hash stability after an out-of-memory re-split, unified temp-directory handling, and a cleaner, fully localized import log
+- **New tests & inventory queries** — a new SQL performance test set flags `ExecuteSQL` range searches that avoid `BETWEEN`, and new custom queries surface solution-wide inventories of script triggers, conditional formatting, hide conditions, tooltips, merge fields, and layout calculations
+- **Docs & setup** — the doc-set search now matches inside entries and a function can belong to several categories; documentation and schema references updated; dev-container and stop-servers setup fixes
+
+---
+
 ## [0.9.8] — 2026-08-18
 
 A big expansion of the analysis rule library — layout-quality and community-sourced checks — and a reworked tests-and-dashboards surface built around a traffic-light health overview.
@@ -508,7 +530,7 @@ Internationalization across the whole stack: 11 languages in the web client, loc
   - New `LanguageSelector` component and `useApiLang` hook for synchronising UI language with API requests
   - Practically every frontend component migrated to `t()` calls — Breadcrumbs, DetailView, FieldDetail/Viewer, ObjectDetail, ScriptDetail/Viewer, SearchOptions, FolderTree, HierarchyTree, DependencyGraph, RelationshipGraph, LayoutCanvas, ReferencesFilter, SettingsView, ErrorMessage, LoadingSpinner, ThemeToggle, plugins, and more
 - **Localized dashboards** — translations live alongside the dashboards
-  - Each dashboard bundle now carries a `locales/<lang>.json` file (10 non-English locales) — applies to `home`, `_generic`, `custom_queries`, `dashboards`, `external_apis`, `external_apis_skandix`, `script_todos`
+  - Each dashboard bundle now carries a `locales/<lang>.json` file (10 non-English locales) — applies to `home`, `_generic`, `custom_queries`, `dashboards`, `external_apis`, `script_todos`
   - New `dashboard-i18n.service` in the REST-API resolves manifest, layout, and dataset labels against the active language with English fallback
   - Dashboard primitives translate cell content through the new `_cellTranslate` helper, with extended formatters in `_format.ts`
 - **REST-API language plumbing**
@@ -522,7 +544,7 @@ Internationalization across the whole stack: 11 languages in the web client, loc
   - **XML schema docs** (`docs/agents/xml-schema.md`, `xml-schema-extended.md`) translated to English
 - **Inline help in the frontend** — help text inside `DetailView`, `ObjectDetail`, `ScriptDetail`, `ScriptViewer`, and `TypeDetail` rewritten in English; `object_references_script.sql` adjusted accordingly
 - **Custom dashboards moved to their own directory**
-  - `external_apis`, `external_apis_skandix`, `script_todos` relocated from `templates/dashboards/` to `templates/dashboards-custom/` — clean separation between core and user-authored bundles
+  - `external_apis`, `script_todos` relocated from `templates/dashboards/` to `templates/dashboards-custom/` — clean separation between core and user-authored bundles
   - SQL templates reorganized: home-dashboard analyses moved into `dashboards/home/queries/`, layout-specific SQL into `dashboards/home/layout/`
   - Home dashboard gained navigation tiles for sub-templates
   - `create-custom-dashboard` skill updated for the new target directory and structure
@@ -799,7 +821,8 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 <!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
      versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
      intentionally left unlinked and render as plain text. Add a line here per new tag. -->
-[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.8...HEAD
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.9...HEAD
+[0.9.9]: https://github.com/marcel-more/fm-lab/compare/v0.9.8...v0.9.9
 [0.9.8]: https://github.com/marcel-more/fm-lab/compare/v0.9.7...v0.9.8
 [0.9.7]: https://github.com/marcel-more/fm-lab/compare/v0.9.6...v0.9.7
 [0.9.6]: https://github.com/marcel-more/fm-lab/compare/v0.9.5...v0.9.6

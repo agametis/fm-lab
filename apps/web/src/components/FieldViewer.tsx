@@ -3,11 +3,51 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { FieldTokens } from '../script/calcTokens';
 import { HighlightRefContext } from '../script/highlightContext';
+import { useVarSelection, useVarDeepLinkScroll, countCalcVarMatches } from '../script/varSelectionContext';
 import { buildObjectPath } from '../lib/navigation';
 import { fieldOptionLabel } from '../lib/fieldOptionLabels';
-import { CalcTokenList } from './CalcTokenSpan';
+import { CalcTokenList, normalizeCalcWhitespace } from './CalcTokenSpan';
+import { useCalcTokens } from '../hooks/useCalcTokens';
+import { useApiLang } from '../hooks/useApiLang';
 import './CustomFunctionViewer.css';
 import './FieldViewer.css';
+
+/**
+ * Nebenslot-Formel (Validierung / Fehlermeldungs-Formel): DDR-verankerte
+ * Instanzen rendern tokenisiert via get-calc?uuid (Tooltips + Cross-Nav wie im
+ * Script-Detail); DDR-lose Instanzen fallen deklariert auf den Klartext zurück
+ * — entschieden am Katalog-Datensatz (uuid == null), nie am Fehlerpfad.
+ */
+const FieldSlotCalc: React.FC<{ uuid: string | null; fallbackText: string | null }> = ({ uuid, fallbackText }) => {
+  const { t } = useTranslation(['detail']);
+  const lang = useApiLang();
+  const { data } = useCalcTokens(uuid, lang, 'uuid');
+
+  if (uuid && data && data.tokens.length > 0) {
+    return (
+      <pre className="fm-customfunction-body fm-field-slot-calc">
+        <code>
+          <CalcTokenList tokens={data.tokens} />
+        </code>
+      </pre>
+    );
+  }
+  if (!fallbackText) return null;
+  return (
+    <>
+      <pre className="fm-customfunction-body fm-field-slot-calc">
+        <code>{normalizeCalcWhitespace(fallbackText)}</code>
+      </pre>
+      {!uuid && (
+        <div className="fm-calc-fallback-hint">
+          {t('detail:calculationDetail.ddrlessHint', {
+            defaultValue: 'Plain text only — this instance has no DDR chunk data, so tokens, tooltips and cross-navigation are unavailable.',
+          })}
+        </div>
+      )}
+    </>
+  );
+};
 
 interface FieldViewerProps {
   data: FieldTokens;
@@ -56,6 +96,19 @@ export const FieldViewer: React.FC<FieldViewerProps> = ({ data, highlightRefUuid
   useEffect(() => {
     onLiveMatchCount?.(liveMatchCount);
   }, [liveMatchCount, onLiveMatchCount]);
+
+  // Variablen-Auswahl: Zählung über die Haupt-Formel (Nebenslot-Formeln der
+  // FieldSlotCalc-Komponenten laden eigenständig und markieren via Kontext,
+  // zählen aber nicht mit — bewusste v1-Vereinfachung analog liveMatchCount).
+  const varSel = useVarSelection();
+  const varMatches = useMemo(
+    () => countCalcVarMatches(data.tokens, varSel?.selectedKey ?? null),
+    [data.tokens, varSel?.selectedKey],
+  );
+  useEffect(() => {
+    varSel?.reportMatches(varMatches.count, varMatches.displayName);
+  }, [varMatches, varSel]);
+  useVarDeepLinkScroll(rootRef);
 
   const field = data.field;
   const hasFormula = data.tokens && data.tokens.length > 0;
@@ -252,16 +305,32 @@ export const FieldViewer: React.FC<FieldViewerProps> = ({ data, highlightRefUuid
                       <dd>{field.validation.rangeFrom ?? '…'} – {field.validation.rangeTo ?? '…'}</dd>
                     </>
                   )}
-                  {field.validation.calcText && (
+                  {(field.validation.calcText || field.validation.calcUuid) && (
                     <>
                       <dt>{t('detail:fieldViewer.validationByCalc', { defaultValue: 'Validated by calculation' })}</dt>
-                      <dd><code className="fm-field-inline-calc">{field.validation.calcText}</code></dd>
+                      <dd>
+                        <FieldSlotCalc
+                          uuid={field.validation.calcUuid}
+                          fallbackText={field.validation.calcText}
+                        />
+                      </dd>
                     </>
                   )}
                   {field.validation.message && (
                     <>
                       <dt>{t('detail:fieldViewer.validationMessage', { defaultValue: 'Custom message' })}</dt>
                       <dd className="fm-field-comment">{field.validation.message}</dd>
+                    </>
+                  )}
+                  {field.validation.messageCalc && (
+                    <>
+                      <dt>{t('detail:fieldViewer.validationMessageCalc', { defaultValue: 'Message calculation' })}</dt>
+                      <dd>
+                        <FieldSlotCalc
+                          uuid={field.validation.messageCalc.uuid}
+                          fallbackText={field.validation.messageCalc.text}
+                        />
+                      </dd>
                     </>
                   )}
                   {field.validation.allowOverride && (

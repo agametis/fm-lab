@@ -35,8 +35,8 @@
                   "format": "number"
                 },
                 {
-                  "label": "Functions",
-                  "field": "functions",
+                  "label": "Entries",
+                  "field": "entries",
                   "format": "number"
                 }
               ]
@@ -59,21 +59,29 @@
             "type": "List",
             "id": "categories_list",
             "props": {
+              "searchParam": "q",
+              "entrySearch": {
+                "metaDataset": "info",
+                "minChars": 3,
+                "sample": 5,
+                "param": "entries"
+              },
               "rowTemplate": {
                 "primary": "{{name}}",
-                "secondary": "{{function_count}} functions",
+                "secondary": "{{entry_count}} entries",
+                "tertiary": "{{hit_sample}}",
                 "badge": "{{code_ref_count}}",
                 "badgeOptions": {
                   "hideZero": true,
                   "filterable": true,
                   "onClick": {
-                    "action": "{{badge_action}}",
-                    "argsString": "{{badge_action_args}}"
+                    "action": "{{_badge_action}}",
+                    "argsString": "{{_badge_action_args}}"
                   }
                 },
                 "onClick": {
-                  "action": "{{action}}",
-                  "argsString": "{{action_args}}"
+                  "action": "{{_action}}",
+                  "argsString": "{{_action_args}}"
                 }
               },
               "empty": {

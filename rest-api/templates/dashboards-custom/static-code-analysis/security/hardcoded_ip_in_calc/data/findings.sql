@@ -1,31 +1,31 @@
+-- Hardcoded IPv4 addresses in the active code of any calculation slot.
+-- Instance base is the CalculationsCatalog (single source for all calculation
+-- slots, DDR-less instances included). Comments are stripped before matching
+-- so addresses in documentation comments do not score: /* ... */ blocks and
+-- // line comments (a // that is part of a URL scheme is protected). Known
+-- limit: a // inside a string literal that is not a scheme still strips to
+-- end of line — same convention as the comment-marker rule family.
+-- Script-step instances anchor at the step (Owner_UUID = Step_UUID);
+-- StepsForScripts contributes the script context for navigation.
 WITH hit AS (
-    SELECT d.Calc_Hash, d.File_Name, d.Chunk_Content,
-        upper(regexp_extract(d.Calc_UUID, '_([0-9A-Fa-f-]{36})_', 1)) AS anchor_uuid
-    FROM DDR_Calculations d
-    WHERE d.Chunk_Type = 'NoRef'
-      AND regexp_matches(d.Chunk_Content, '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
-      AND (getvariable('file') IS NULL OR d.File_Name = getvariable('file'))
-),
-step_owner AS (
-    SELECT upper(Step_UUID) AS anchor, File_Name, any_value(Step_UUID) AS step_uuid,
-        any_value(Script_UUID) AS owner_uuid, any_value(Script_Name) AS owner_name
-    FROM StepsForScripts GROUP BY upper(Step_UUID), File_Name
-),
-oc_owner AS (
-    SELECT upper(Object_UUID) AS anchor, File_Name, any_value(Object_UUID) AS owner_uuid,
-        any_value(Object_Type) AS owner_type, any_value(Object_Name) AS owner_name
-    FROM ObjectCatalog GROUP BY upper(Object_UUID), File_Name
+    SELECT c.File_Name, c.Owner_UUID, c.Owner_Type, c.Owner_Name,
+        regexp_replace(
+            regexp_replace(COALESCE(c.Formula_Text, c.Display_Text), '(?s)/\*.*?\*/', ' ', 'g'),
+            '(?m)(^|[^:])//[^\n\r]*', '\1', 'g') AS active_text
+    FROM CalculationsCatalog c
+    WHERE (getvariable('file') IS NULL OR c.File_Name = getvariable('file'))
 )
 SELECT 'hardcoded-ip-in-calc' AS rule_id, 'warning' AS severity,
     h.File_Name AS file_name,
-    COALESCE(s.owner_name, o.owner_name, '—') AS owner,
-    regexp_extract(h.Chunk_Content, '([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})', 1) AS ip,
-    COALESCE(s.owner_uuid, o.owner_uuid) AS nav_uuid,
-    CASE WHEN s.owner_uuid IS NOT NULL THEN 'Script' ELSE o.owner_type END AS nav_type,
-    s.step_uuid AS step_uuid,
+    COALESCE(s.Script_Name, h.Owner_Name, '—') AS owner,
+    regexp_extract(h.active_text, '([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})', 1) AS ip,
+    COALESCE(s.Script_UUID, h.Owner_UUID) AS nav_uuid,
+    CASE WHEN s.Script_UUID IS NOT NULL THEN 'Script' ELSE h.Owner_Type END AS nav_type,
+    CASE WHEN s.Script_UUID IS NOT NULL THEN h.Owner_UUID END AS step_uuid,
     row_number() OVER (ORDER BY h.File_Name) AS row_key
 FROM hit h
-LEFT JOIN step_owner s ON s.anchor = h.anchor_uuid AND s.File_Name = h.File_Name
-LEFT JOIN oc_owner o ON o.anchor = h.anchor_uuid AND o.File_Name = h.File_Name
+LEFT JOIN StepsForScripts s ON h.Owner_Type = 'ScriptStep'
+     AND s.Step_UUID = h.Owner_UUID AND s.File_Name = h.File_Name
+WHERE regexp_matches(h.active_text, '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
 ORDER BY h.File_Name
 LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);

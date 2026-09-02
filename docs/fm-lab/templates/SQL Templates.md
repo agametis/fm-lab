@@ -56,7 +56,7 @@ and dashboard tiles. Common keys:
 
 | Key | Purpose |
 |---|---|
-| `@template_type` | `report`, `object`, … — how the result is consumed |
+| `@template_type` | `report`, `content` (the `object_details_*` family), `object` — how the result is consumed |
 | `@title` / `@description` | shown in listings and on tiles |
 | `@params` | expected parameters (with optional/default notes) |
 | `@output_format` | the columns the template returns |

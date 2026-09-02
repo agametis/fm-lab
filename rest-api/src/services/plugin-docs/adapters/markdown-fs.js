@@ -16,6 +16,14 @@ const settingsStore = require('../../../plugins/settings-store');
  *     übernimmt der Controller bzw. die Renderer-Pipeline)
  */
 
+/**
+ * Adapter-Capabilities (siehe adapters/index.js). markdown-fs-Sets haben keine
+ * eigene Eintragsebene — Rubriken und Einträge sind deckungsgleich, es gibt
+ * also nichts zusätzlich zu durchsuchen. Das Kästchen „auch Einträge
+ * durchsuchen" rendert bei diesen Sets deshalb nicht.
+ */
+const capabilities = { entrySearch: false };
+
 function repoRoot() {
   return settingsStore.resolveRepoRoot();
 }
@@ -98,7 +106,7 @@ async function allCategories({ catalogEntry, installedEntry } = {}) {
       slug,
       folder,
       kind: 'page',
-      function_count: null,        // markdown-fs hat keine Funktionsebene
+      entry_count: null,           // markdown-fs hat keine Eintragsebene
     };
   });
 }
@@ -106,7 +114,7 @@ async function allCategories({ catalogEntry, installedEntry } = {}) {
 /**
  * Top-Level-Navigationsmodell (analog zu den indizierten Sets):
  *   - jeder Top-Level-Ordner ist eine "Category" (kind: 'folder',
- *     function_count = Anzahl enthaltener Seiten, rekursiv)
+ *     entry_count = Anzahl enthaltener Seiten, rekursiv)
  *   - Root-Seiten bleiben direkte "Categories" (kind: 'page') — flache
  *     Doc-Sets (z.B. fmide) verhalten sich damit wie bisher
  *   - die als start_page deklarierte Seite ist der Einstieg des Doc-Sets
@@ -133,7 +141,7 @@ async function listCategories(ctx, { catalogEntry, installedEntry } = {}) {
       slug: name,
       folder: '',
       kind: 'folder',
-      function_count: count,
+      entry_count: count,
     }))
     .sort((a, b) =>
       a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })
@@ -229,6 +237,7 @@ async function validate(ctx, { catalogEntry, installedEntry } = {}) {
 }
 
 module.exports = {
+  capabilities,
   listCategories,
   listFunctions,
   getEntry,

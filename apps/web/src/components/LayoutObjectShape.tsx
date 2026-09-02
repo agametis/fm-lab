@@ -12,7 +12,8 @@ type Props = {
   onMouseEnter: (uuid: string, clientX: number, clientY: number) => void;
   onMouseMove: (clientX: number, clientY: number) => void;
   onMouseLeave: () => void;
-  onClick: (object: LayoutObject) => void;
+  /** `modifier` = Alt-Klick (macOS ⌥) → gehoistetes Cross-Nav-Ziel statt Detail. */
+  onClick: (object: LayoutObject, opts?: { modifier?: boolean }) => void;
 };
 
 const CONTAINER_TYPES = new Set([
@@ -79,7 +80,7 @@ export const LayoutObjectShape = memo(function LayoutObjectShape({
       onMouseEnter={e => onMouseEnter(object.object_uuid, e.clientX, e.clientY)}
       onMouseMove={e => onMouseMove(e.clientX, e.clientY)}
       onMouseLeave={onMouseLeave}
-      onClick={() => onClick(object)}
+      onClick={e => onClick(object, { modifier: e.altKey })}
     >
       <rect
         x={x}

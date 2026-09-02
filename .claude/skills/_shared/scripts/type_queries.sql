@@ -104,6 +104,31 @@ WHERE (Left_TO_UUID = '<UUID>' OR Right_TO_UUID = '<UUID>')
 -- R1 — relationship (predicates in Left_*/Right_* columns, operator in Operator)
 SELECT * FROM RelationshipCatalog WHERE Rel_ID = <REL_ID> AND File_Name = '<FILE>';
 
+-- ============================================================ Calculation (schema 1.22.0)
+-- C1 — calculation instance (owner × role × index; exists WITHOUT DDR info too —
+--      Formula_Text/Display_Text carry the readable formula, Formula_Hash/DDR_Calc_UUID
+--      are DDR enrichment and may be NULL)
+SELECT Owner_Type, Owner_Name, Calc_Role, Calc_Index, Source_Path,
+       Is_Static, COALESCE(Formula_Text, Display_Text) AS Formula,
+       Formula_Hash, DDR_Calc_UUID, File_Name
+FROM CalculationsCatalog
+WHERE Calculation_UUID = '<UUID>' AND File_Name = '<FILE>';
+
+-- C2 — resolved targets of the instance (derived view, variant A — the usage
+--      semantics live on the OWNER edges; this is the per-slot detail resolution)
+SELECT vl.Link_Role, vl.Target_Type, vl.Target_File,
+       (SELECT Object_Name FROM ObjectCatalog WHERE Object_UUID = vl.Target_UUID) AS Target_Name
+FROM v_calculation_links vl
+WHERE vl.Calculation_UUID = '<UUID>'
+ORDER BY vl.Link_Role, Target_Name;
+
+-- C3 — all calculation instances of an OWNER object (slot inventory)
+SELECT Calc_Role, Calc_Index, Source_Path, Is_Static,
+       left(COALESCE(Formula_Text, Display_Text), 120) AS Formula_Preview
+FROM CalculationsCatalog
+WHERE Owner_UUID = '<UUID>' AND File_Name = '<FILE>'
+ORDER BY Calc_Role, Calc_Index;
+
 -- ============================================================ Generic fallback
 -- G0 — basic info (any Object_Type without a specific template above)
 SELECT * FROM ObjectCatalog WHERE Object_UUID = '<UUID>' AND File_Name = '<FILE>';

@@ -712,8 +712,13 @@ function runConverter({ onEvent, signal, changedOnly = true, solution } = {}) {
     const pushEvent = (evt) => {
       // Transiente Live-Events nur live weiterreichen, nicht persistieren (s.o.).
       const transient = TRANSIENT_EVENTS.has(evt.event);
+      // Das Kind-`done` (emit_done, ohne exit_code) wird NICHT als Log-Event
+      // persistiert — der close-Handler hängt EIN definitives `done` mit dem
+      // echten Exit-Code an, damit der Replay (last-run/log) wie der Live-Stream
+      // genau eine Endzeile rendert. record.ok/exit_code zieht es unten trotzdem.
+      const suppressReplay = evt.event === 'done';
       // Kappen, damit das JSON nicht ins Unendliche wächst.
-      if (!transient) {
+      if (!transient && !suppressReplay) {
         if (record.events.length < MAX_EVENTS_RETAINED) {
           record.events.push(evt);
         } else if (record.events.length === MAX_EVENTS_RETAINED) {
@@ -806,6 +811,9 @@ function runConverter({ onEvent, signal, changedOnly = true, solution } = {}) {
       record.ok = record.ok ?? (exitCode === 0);
       record.finished_at = nowIso();
       record.duration_ms = computeDurationMs(record);
+      // Definitives Terminal-Event für den Replay — Gegenstück zum angereicherten
+      // Hub-`done` im Live-Stream (das Kind-`done` wird oben unterdrückt).
+      record.events.push({ event: 'done', ok: record.ok, exit_code: record.exit_code });
 
       // Final persist — ohne Throttle.
       try {

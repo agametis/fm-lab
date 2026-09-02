@@ -146,15 +146,31 @@ const schemas = {
     enrich: Joi.string().optional(),
   }),
 
-  // GET /api/get-calc - Standalone calculation by hash (token format only)
+  // GET /api/get-calc - Standalone calculation (token format only).
+  // Primärpfad seit Schema 1.22.0: ?uuid=<Calculation_UUID> (instanz-eindeutig,
+  // CalculationsCatalog); ?hash= bleibt als Alias (hash-dedupliziert, bei
+  // Mehrdeutigkeit best-effort-Pick + Instanzliste in meta).
+  // GET /api/conditional-formatting - CF-Regeln eines Layout-Objekts
+  // (LayoutObjectConditions + C3-CSS-Parser). Nur JSON — die Regel-Struktur
+  // hat keine sinnvolle Flat-Format-Projektion.
+  conditionalFormatting: Joi.object({
+    uuid: Joi.string().required(),
+    file: Joi.string().optional(), // Clone-Disambiguierung wie bei get/get-details
+    format: Joi.string().lowercase().valid('json').default('json'),
+    meta: Joi.boolean().default(false),
+    debug: Joi.boolean().default(false),
+  }),
+
   getCalc: Joi.object({
-    hash: Joi.string().required(),
+    uuid: Joi.string().optional(),
+    hash: Joi.string().optional(),
+    file: Joi.string().optional(), // Clone-Disambiguierung beim uuid-Pfad
     format: Joi.string().lowercase().valid('tokens', 'json').default('tokens'),
     meta: Joi.boolean().default(false),
     debug: Joi.boolean().default(false),
     // Optionale Calc-Token-Anreicherung über function_name_lookup
     enrich: Joi.string().optional(),
-  }),
+  }).or('uuid', 'hash'),
 
   // GET/POST /api/query - Execute custom SQL template
   query: Joi.object({

@@ -16,7 +16,7 @@
 
 | Artifact type | Preferred skill | Level | Notes |
 |---|---|---|---|
-| Script (fmxmlsnippet) | `fm-generate-script` | project | Reference-driven pipeline (lint → resolve → table-driven emit → gate); NOT in `publish-manifest.json` `include_skills` — in published setups this row dangles and falls back to discovery (A2), which is intended |
+| Script (fmxmlsnippet) | `fm-generate-script` | project | Reference-driven pipeline (lint → resolve → table-driven emit → gate); canonical text notation v0.2 (T1–T9, repeat-group form); NOT in `publish-manifest.json` `include_skills` — in published setups this row dangles and falls back to discovery (A2), which is intended |
 | Custom function | — | — | No skill → fallback path (A4) |
 | Schema (table/field) | — | — | No skill → fallback path (A4) |
 | Layout / layout objects | — | — | Deliberately no skill (generation too unreliable without live feedback) → fallback path with explicit caveat |

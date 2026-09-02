@@ -115,7 +115,18 @@ SELECT 'uses_theme_links',
        (SELECT COUNT(*) FROM Layouts WHERE L_Theme_Resolved_UUID IS NOT NULL
          AND (Folder_Type IS NULL OR Folder_Type = 'False')
          AND NOT COALESCE(Is_Separator, FALSE)),
-       (SELECT COUNT(*) FROM ObjectLinks WHERE Link_Role = 'uses_theme');
+       (SELECT COUNT(*) FROM ObjectLinks WHERE Link_Role = 'uses_theme')
+UNION ALL
+-- Calculation-Objekttyp (Schema 1.22.0): jede CalculationsCatalog-Zeile muss
+-- als ObjectCatalog-Eintrag existieren; jede Zeile mit aufgelöstem Owner
+-- zusätzlich als has_calculation-Kante.
+SELECT 'calculation_objects',
+       (SELECT COUNT(*) FROM CalculationsCatalog),
+       (SELECT COUNT(*) FROM ObjectCatalog WHERE Object_Type = 'Calculation')
+UNION ALL
+SELECT 'has_calculation_links',
+       (SELECT COUNT(*) FROM CalculationsCatalog WHERE Owner_Type <> 'unresolved'),
+       (SELECT COUNT(*) FROM ObjectLinks WHERE Link_Role = 'has_calculation');
 
 -- Rollen-Registry-Vollständigkeit: jede in ObjectLinks aktive Rolle muss
 -- in LinkRoleRegistry klassifiziert sein (usage/containment/restriction) — sonst
@@ -474,6 +485,37 @@ FROM DDR_Calculations
 WHERE Chunk_Type = 'VariableReference'
   AND regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) = 'Function Missing';
 
+-- %X:-Fehlchunks in DisplayCalculations (Schema 1.27.0) — FileMaker chunked
+-- typisierte Layoutformeln mit einzelner Feldreferenz (<<ƒ:%N:Zahl>>) als
+-- <Chunk type="VariableReference">%N:Zahl</Chunk>. P3 verwirft sie aus der
+-- Variablen-Extraktion (keine Phantom-Variablen), P2 A.5.1b rettet die
+-- Feldreferenz gegen die Kontext-TO. Diese View zählt die kompensierten
+-- Chunks, damit der Quell-Defekt sichtbar bleibt. > 0 ⇒ DDR-Defekt kompensiert
+-- (Info, kein Handlungsbedarf — Kanten sind gerettet, sofern auflösbar).
+CREATE OR REPLACE VIEW v_check_display_prefix_chunks AS
+SELECT
+    COUNT(*) AS chunk_n,
+    string_agg(DISTINCT File_Name, ', ') AS files
+FROM DDR_Calculations
+WHERE Chunk_Type = 'VariableReference'
+  AND Calc_UUID LIKE '%\_DisplayCalculations\_%' ESCAPE '\'
+  AND regexp_matches(regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1), '^%[A-Z]+:');
+
+-- Leere DisplayCalculations-ChunkLists (Schema 1.27.0) — bei %X:-typisierten
+-- Layoutformeln mit Ausdruck schreibt FileMaker eine leere ChunkList
+-- (Chunk_Count = 0): Formel + Referenzen fehlen im DDR-Teil komplett.
+-- P4 b_disp legt eine Fallback-Instanz an (Formula_Text aus Text_Content),
+-- P2 A.5.1c rettet die Feldkanten der Kontext-TO; Funktionsreferenzen bleiben
+-- verloren (lokalisierte Namen, Ausbaustufe). > 0 ⇒ Import-Qualitäts-Finding:
+-- strukturell kompensiert, aber Funktions-Where-used dieser Formeln unvollständig.
+CREATE OR REPLACE VIEW v_check_display_empty_chunklist AS
+SELECT
+    COUNT(*) AS anchor_n,
+    string_agg(DISTINCT File_Name, ', ') AS files
+FROM DDR_ChunkListContexts
+WHERE Chunk_Count = 0
+  AND Calc_UUID LIKE '%\_DisplayCalculations\_%' ESCAPE '\';
+
 -- unbekannte LayoutObject-Typen. `Object_Type` ist der lokalisierte
 -- /LayoutObject/@type-String; die P4-Locale-Normalisierung bildet die bekannten dt.
 -- Namen auf ihr englisches Kanon ab. Diese View listet jeden Object_Type, der NACH der
@@ -500,6 +542,92 @@ WHERE Object_Type IS NOT NULL
 GROUP BY Object_Type
 ORDER BY n DESC;
 
+-- Calculation-Objekttyp (Schema 1.22.0) — drei Wächter in einer Zeile:
+--   unresolved_n : DDR-Anker ohne ObjectCatalog-Owner (Soll 0; Regression der
+--                  Anker-Auflösung, vormals v_calc_anchors/'unresolved')
+--   dup_uuid_n   : Calculation_UUID-Kollisionen (Soll 0; Identität
+--                  Owner × Rolle × Index ist dann nicht mehr eindeutig)
+--   uncovered_anchor_n : DDR-Anker (verankerte Calc_UUIDs) OHNE
+--                  CalculationsCatalog-Zeile (Soll 0; Abdeckungs-Regression —
+--                  „Vollständigkeit wird messbar")
+CREATE OR REPLACE VIEW v_check_calculations AS
+SELECT
+    (SELECT COUNT(*) FROM CalculationsCatalog WHERE Owner_Type = 'unresolved') AS unresolved_n,
+    (SELECT COUNT(*) FROM (
+        SELECT Calculation_UUID FROM CalculationsCatalog
+        GROUP BY Calculation_UUID HAVING COUNT(*) > 1
+    )) AS dup_uuid_n,
+    (SELECT COUNT(*) FROM (
+        SELECT DISTINCT Calc_UUID, File_Name
+        FROM DDR_Calculations
+        WHERE regexp_extract(Calc_UUID, '_([0-9A-Fa-f-]{36})', 1) <> ''
+    ) d
+    WHERE NOT EXISTS (
+        SELECT 1 FROM CalculationsCatalog c
+        WHERE c.DDR_Calc_UUID = d.Calc_UUID AND c.File_Name = d.File_Name
+    )) AS uncovered_anchor_n;
+
+-- Rollen-Vokabular-Wächter: Calc_Role außerhalb des normalisierten Vokabulars
+-- = neuer/unbekannter DDR-Suffix (lower(raw)-Fallback der P4-Klassifi-
+-- kation). > 0 ⇒ Vokabular in convert_xml_04_catalog.sql nachkuratieren
+-- (analog v_check_unknown_object_types; kein Fehler, ein Kurations-Signal).
+CREATE OR REPLACE VIEW v_check_calc_roles AS
+SELECT
+    Calc_Role,
+    COUNT(*)                              AS n,
+    string_agg(DISTINCT File_Name, ', ')  AS files
+FROM CalculationsCatalog
+-- Unaufgelöste Anker haben keinen Owner-Typ-Kontext für die Klassifikation und
+-- sind bereits über unresolved_n (v_check_calculations) gezählt.
+WHERE Owner_Type <> 'unresolved'
+  AND Calc_Role NOT IN (
+    'field_calculation', 'auto_enter', 'validation', 'validation_message',
+    'container_path',
+    'custom_function',
+    'step_parameter', 'step_xslt',
+    'record_access',
+    'hide', 'tooltip', 'placeholder', 'conditional_format', 'portal_filter',
+    'web_viewer_url', 'button_label', 'button_action', 'panel_title', 'popover_title',
+    'display_calculation', 'chart_series',
+    'script_trigger_parameter',
+    'menu_install', 'menu_title', 'menu_item_install', 'menu_item_name',
+    'menu_item_parameter'
+)
+GROUP BY Calc_Role
+ORDER BY n DESC;
+
+-- Conditional-Formatting-Regeln (LayoutObjectConditions, Schema 1.25.0) —
+-- drei table-only Kennzahlen, Bewertung macht die Shell:
+--   membercount_mismatch_n — Objekte, deren extrahierte Regelzahl vom
+--     Formatting/@membercount des eigenen Blocks abweicht. Korpus-verifiziert
+--     0 (8.745/8.745); > 0 ⇒ die depth-verankerte Extraktion zählt Kind-Regeln
+--     mit (Nesting-Regression) oder verliert eigene Regeln. WARN.
+--   calc_without_rule_n — CalculationsCatalog-Instanzen der Rolle
+--     conditional_format ohne zugehörige Regel-Zeile (FK-Rückrichtung).
+--     Soll 0; > 0 ⇒ Coverage-Lücke der Regel-Extraktion. WARN.
+--   hash_without_fk_n — Regeln mit DDRREF-Hash, aber ohne aufgelösten
+--     Calculation_UUID-FK. Erwartbar KLEIN > 0: Fremd-Anker-Kopierartefakte
+--     (Regel trägt den DDRREF eines anderen Objekts; Referenz-Korpus: 1) — INFO,
+--     kein Gate.
+CREATE OR REPLACE VIEW v_check_cf_rules AS
+SELECT
+    (SELECT COUNT(*) FROM (
+        SELECT File_Name, Object_UUID
+        FROM LayoutObjectConditions
+        GROUP BY File_Name, Object_UUID
+        HAVING COUNT(*) <> MAX(Formatting_Membercount)
+    ))                                                        AS membercount_mismatch_n,
+    (SELECT COUNT(*)
+     FROM CalculationsCatalog cc
+     WHERE cc.Calc_Role = 'conditional_format'
+       AND NOT EXISTS (SELECT 1 FROM LayoutObjectConditions c
+                        WHERE c.Calculation_UUID = cc.Calculation_UUID))
+                                                              AS calc_without_rule_n,
+    (SELECT COUNT(*) FROM LayoutObjectConditions c
+     WHERE c.Calc_Hash IS NOT NULL AND c.Calculation_UUID IS NULL)
+                                                              AS hash_without_fk_n,
+    (SELECT COUNT(*) FROM LayoutObjectConditions)             AS rules_n;
+
 -- unbekannte LayoutPart-Typen (nach der P4-Locale-Normalisierung). Analog
 -- v_check_unknown_object_types: jeder Part_Type außerhalb des kanonischen englischen
 -- Part-Sets ⇒ neuer Locale-Name (DE→EN-Mapping in convert_xml_04_catalog.sql erweitern)
@@ -519,3 +647,128 @@ WHERE Part_Type IS NOT NULL
   )
 GROUP BY Part_Type
 ORDER BY n DESC;
+
+-- Numerik-Sentinel-Drift (Wächter zur Sentinel-Normalisierung in P1):
+-- Validation_MaxChars wird bei der Extraktion per NULLIF(…, 4294967295) auf NULL
+-- normalisiert („unbegrenzt" = kein Limit). Der Wächter zählt, was danach noch
+-- oberhalb einer bewusst groben Plausibilitätsschwelle (10⁹ Zeichen) liegt —
+-- jeder Treffer ist per Konstruktion ein NICHT erkannter Sentinel (FileMaker hat
+-- den Wert geändert) oder eine neue Serialisierungsform. Erkennung statt
+-- Bereichsregel: der Wächter verändert nie Daten, die Shell reportet WARN
+-- (kein Gate). Schwelle bewusst nicht „schlau": kein reales Zeichenlimit liegt
+-- darüber, jeder Sentinel-Kandidat deutlich darüber.
+CREATE OR REPLACE VIEW v_check_numeric_sentinels AS
+SELECT
+    COUNT(*)                                                   AS sentinel_n,
+    string_agg(File_Name || '/' || Table_Name || '::' || Field_Name
+               || '=' || Validation_MaxChars, ', ')            AS sample
+FROM FieldsForTables
+WHERE Validation_MaxChars > 1000000000;
+
+-- Owner-exakte Layout-Script-Referenzen (Converter 2.15.0, P2-Ancestor-Guard) —
+-- zwei table-only Kennzahlen für die beiden Regressionsrichtungen des Guards,
+-- Bewertung macht die Shell:
+--   trigger_deficit_n — (Objekt, Datei, Script)-Gruppen, deren eigene
+--     ScriptTriggers-Zeilen (t, P1 owner-exakt) die XMLLayoutReferences-
+--     Script-Zeilen (r) übersteigen. Invariante r ≥ t; < ⇒ der Guard
+--     verliert EIGENE Trigger-Refs (Über-Filterung) — P4 Block 21b bliebe
+--     dann still hinter 21a zurück. Soll 0. WARN.
+--   container_action_n — überschüssige Script-Zeilen (r − t) auf reinen
+--     Container-Typen (können keine eigene Button-Action tragen). > 0 ⇒
+--     Kinder-Refs hoisten wieder in den Container (Descendant-Regression,
+--     Phantom-'button_action'-Kanten). Soll 0. WARN.
+CREATE OR REPLACE VIEW v_check_layout_script_refs AS
+WITH r AS (
+    SELECT Object_UUID, File_Name, Ref_UUID, COUNT(*) AS r
+    FROM XMLLayoutReferences
+    WHERE Ref_Type = 'script' AND Ref_UUID IS NOT NULL
+    GROUP BY ALL
+), t AS (
+    SELECT Owner_UUID, File_Name, Script_UUID, COUNT(*) AS t
+    FROM ScriptTriggers
+    WHERE Owner_Type = 'LayoutObject' AND Script_UUID IS NOT NULL
+    GROUP BY ALL
+)
+SELECT
+    (SELECT COUNT(*)
+     FROM t
+     LEFT JOIN r ON r.Object_UUID = t.Owner_UUID
+                AND r.File_Name  = t.File_Name
+                AND r.Ref_UUID   = t.Script_UUID
+     WHERE COALESCE(r.r, 0) < t.t)                             AS trigger_deficit_n,
+    (SELECT COALESCE(SUM(r.r - COALESCE(t.t, 0)), 0)
+     FROM r
+     LEFT JOIN t ON t.Owner_UUID = r.Object_UUID
+                AND t.File_Name  = r.File_Name
+                AND t.Script_UUID = r.Ref_UUID
+     WHERE r.r > COALESCE(t.t, 0)
+       -- EXISTS statt Join: geheilte UUID-Zwillinge dürfen nicht multiplizieren
+       AND EXISTS (SELECT 1 FROM LayoutObjects lo
+                    WHERE lo.Object_UUID = r.Object_UUID
+                      AND lo.File_Name   = r.File_Name
+                      AND lo.Object_Type IN ('Portal', 'Tab Control', 'Panel',
+                                             'Group', 'PopoverPanel', 'Button Bar',
+                                             'Slide Control')))
+                                                               AS container_action_n;
+
+-- Transaktions-Parameterfelder (Report, KEIN Gate): OnWindowTransaction-Trigger
+-- mit gesetztem scriptParameterFieldName und die Zahl ihrer file-lokalen
+-- Namens-Kandidaten (Kanten reads_field·transaction_parameter_field, Block 18c
+-- in P4). candidates_n = 0 heißt "verwaister Name" — z.B. nach einer Feld-
+-- Umbenennung ein realer, legitimer Lösungszustand (der Name ist spät gebunden,
+-- FileMaker validiert ihn nicht). Deshalb bewusst reine Info-View ohne
+-- FAIL-Bewertung in der Shell.
+CREATE OR REPLACE VIEW v_report_trigger_parameter_fields AS
+SELECT
+    st.File_Name,
+    st.Owner_Type,
+    st.Owner_UUID,
+    st.Trigger_ID,
+    st.Trigger_Action,
+    st.Trigger_ScriptParameter_FieldName AS Parameter_Field_Name,
+    (SELECT COUNT(*) FROM FieldsForTables ft
+      WHERE ft.Field_Name = st.Trigger_ScriptParameter_FieldName
+        AND ft.File_Name  = st.File_Name)  AS candidates_n
+FROM ScriptTriggers st
+WHERE NULLIF(st.Trigger_ScriptParameter_FieldName, '') IS NOT NULL;
+
+-- Trigger-Spiegel-Symmetrie (Converter 2.17.0, P4 Block 21a auf allen drei
+-- Owner-Ebenen): je Owner-Ebene muss gelten
+--     #Event-Spiegel (triggers_script, Subrole ≠ button_action)
+--   = #ScriptTriggers-Zeilen mit Script
+--   = #granulare trigger_script-Kanten der Trigger-Knoten dieser Ebene.
+-- Die Spiegel sind seit 2.17.0 die einzige zählende Where-used-Wahrheit
+-- (LinkRoleRegistry: trigger_script Counts_For_Where_Used=FALSE) — ein Bruch
+-- der 1:1-Beziehung heißt Doppelzählung oder Where-used-Lücke. owner_edge_n
+-- (trigger_owner, Basis: ALLE Trigger der Ebene inkl. script-loser) ist
+-- Info-Spalte: eine Lücke dort ist die bekannte PopoverPanel-Parser-Klasse,
+-- kein Spiegel-Defekt. Bewertung macht die Shell (WARN, kein hartes Gate —
+-- Alt-Kataloge vor 2.17.0 laufen absichtlich weiter).
+CREATE OR REPLACE VIEW v_check_trigger_mirror_symmetry AS
+WITH lvl AS (
+    SELECT Owner_Type,
+           COUNT(*) AS triggers_total_n,
+           COUNT(*) FILTER (WHERE Script_UUID IS NOT NULL) AS triggers_with_script_n
+    FROM ScriptTriggers
+    GROUP BY Owner_Type
+)
+SELECT
+    l.Owner_Type                                              AS owner_type,
+    l.triggers_total_n,
+    l.triggers_with_script_n,
+    (SELECT COUNT(*) FROM ObjectLinks ol
+      WHERE ol.Link_Role = 'triggers_script'
+        AND ol.Link_Subrole IS NOT NULL
+        AND ol.Link_Subrole <> 'button_action'
+        AND ol.Source_Type = l.Owner_Type)                    AS mirror_n,
+    (SELECT COUNT(*) FROM ObjectLinks ol
+      JOIN ScriptTriggers st
+        ON ol.Source_UUID = 'trig_' || st.Trigger_ID::VARCHAR
+                            || '_' || st.Owner_UUID || '_' || st.File_Name
+      WHERE ol.Link_Role = 'trigger_script'
+        AND ol.Target_UUID IS NOT NULL
+        AND st.Owner_Type = l.Owner_Type)                     AS granular_n,
+    (SELECT COUNT(*) FROM ObjectLinks ol
+      WHERE ol.Link_Role = 'trigger_owner'
+        AND ol.Target_Type = l.Owner_Type)                    AS owner_edge_n
+FROM lvl l;

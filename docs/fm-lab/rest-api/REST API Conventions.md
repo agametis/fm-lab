@@ -92,10 +92,12 @@ Errors use the same envelope with `success: false`:
 | `CODEGEN_ERROR` | 500 | Codegen execution failure |
 | `INTERNAL_ERROR` | 500 | Unexpected server error |
 
+This table lists the **core codes** shared across endpoint groups — it is not exhaustive. Individual endpoint groups define additional codes (for example `ALREADY_RUNNING` for the XML import lock or the solution-management codes); those are documented on the respective endpoint pages.
+
 ## Object types
 
 Type parameters (`type=`) accept these values (case-insensitive):
 
-`BaseTable`, `TableOccurrence`, `Relationship`, `Field`, `ValueList`, `CustomFunction`, `Script`, `ScriptStep`, `Layout`, `LayoutObject`, `LayoutPart`, `Account`, `PrivilegeSet`, `ExtendedPrivilege`, `Theme`, `CustomMenu`, `CustomMenuItem`, `ScriptTrigger`, `ExternalDataSource`, `BaseDirectory`, `Variable`, `Folder`, `File`, `PluginFunction`, `PluginComponent`, `BuiltinFunction`, `ScriptStepType`, `PasteIndexObject`.
+`BaseTable`, `TableOccurrence`, `Relationship`, `Field`, `ValueList`, `CustomFunction`, `Script`, `ScriptStep`, `Layout`, `LayoutObject`, `LayoutPart`, `Account`, `PrivilegeSet`, `ExtendedPrivilege`, `Theme`, `CustomMenu`, `ScriptTrigger`, `ExternalDataSource`, `BaseDirectory`, `Variable`, `ScriptFolder`, `LayoutFolder`, `RelationshipGraph`, `BuiltinFunction`, `PluginFunction`, `ScriptStepType`, `PluginComponent`, `File`, `Calculation`.
 
-`ScriptStepType`, `BuiltinFunction` and `PluginFunction` are **pseudo token types**: aggregate objects representing step/function *kinds* rather than user-created objects. Some list parameters (`with_usage`, `category`, …) only apply to them — see [Search API](endpoints/Search%20API.md).
+`ScriptStepType`, `BuiltinFunction` and `PluginFunction` are **pseudo token types**: aggregate objects representing step/function *kinds* rather than user-created objects. Some list parameters (`with_usage`, `category`, …) only apply to them — see [Search API](endpoints/Search%20API.md). `ScriptFolder`/`LayoutFolder` are pseudo types over the single catalog type `Folder`, so consumers can tell script and layout folders apart. Note that a few catalog `Object_Type` values (`CustomMenuItem`, `Folder`, `PasteIndexObject`) are **not** accepted as `type=` filters. `Calculation` (schema 1.22.0) is a valid filter but high-cardinality and excluded from the generic name search — see [Search API](endpoints/Search%20API.md).

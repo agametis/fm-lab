@@ -97,6 +97,13 @@ each statement as `duckdb db/fm_catalog.duckdb -c "…"`. Every template filters
 - **BaseTable** [BT1, BT2 fields, BT3 table occurrences].
 - **TableOccurrence** [TO1, TO2 relationships].
 - **Relationship** [R1]: predicates in `Left_*`/`Right_*`, operator in `Operator`.
+- **Calculation** [C1 instance, C2 resolved targets, C3 sibling slots of the owner]:
+  a calculation INSTANCE (schema 1.22.0, `CalculationsCatalog`) — identity is
+  Owner × `Calc_Role` × `Calc_Index`, the formula text comes from
+  `Formula_Text`/`Display_Text` and exists **also without DDR info** (hash/chunk
+  columns are enrichment, may be NULL). Owner context via the `has_calculation`
+  backlink; usage semantics live on the OWNER's edges (variant A) — C2 is the
+  per-slot detail resolution, never a where-used substitute.
 - **Any other type** [G0 basics, G1 incoming links, G2 outgoing links].
 
 ### Step 3 — Dependencies (for all types)

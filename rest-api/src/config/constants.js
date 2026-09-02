@@ -35,6 +35,7 @@ const OBJECT_TYPES = [
   "ScriptStepType",
   "PluginComponent",
   "File",
+  "Calculation",
 ];
 
 /**
@@ -93,6 +94,7 @@ const OBJECT_TYPE_MAP = {
   scriptsteptype: "ScriptStepType",
   plugincomponent: "PluginComponent",
   file: "File",
+  calculation: "Calculation",
 };
 
 /**
@@ -266,6 +268,7 @@ const DETAIL_TEMPLATE_MAP = {
   CustomMenu: "object_details_custommenu",
   CustomMenuItem: "object_details_custommenuitem",
   Theme: "object_details_theme",
+  Calculation: "object_details_calculation",
 };
 
 /**

@@ -22,7 +22,7 @@ WITH cf AS (
     AND (getvariable('file') IS NULL OR cf.File_Name = getvariable('file'))
   LIMIT 1
 ),
--- Robuste Calc-Auflösung über die kanonische Anker-Registry v_calc_anchors.
+-- Robuste Calc-Auflösung über den CalculationsCatalog (Instanz = Owner × Rolle).
 -- NICHT über Calc_Hash: der Hash ist NICHT eindeutig — mehrere Calc_UUIDs teilen
 -- sich einen Hash. Meist sind das identische Mehrdatei-Kopien derselben CF (harmlos),
 -- vereinzelt aber ECHTE Kollisionen unterschiedlicher Formeln → ein MIN(Calc_UUID)
@@ -30,11 +30,12 @@ WITH cf AS (
 -- nicht eindeutig. Erst die robuste Kombination Owner-UUID + Owner-Datei löst
 -- eindeutig auf (1:1); der DDR-JOIN wird ebenfalls datei-skopiert.
 calc_uuid AS (
-  SELECT va.Calc_UUID, va.Owner_File AS File_Name
-  FROM v_calc_anchors va, cf
-  WHERE va.Owner_Type = 'CustomFunction'
-    AND va.Owner_UUID = cf.CF_UUID
-    AND va.Owner_File = cf.File_Name
+  SELECT cc.DDR_Calc_UUID AS Calc_UUID, cc.File_Name
+  FROM CalculationsCatalog cc, cf
+  WHERE cc.Calc_Role = 'custom_function'
+    AND cc.Owner_UUID = cf.CF_UUID
+    AND cc.File_Name = cf.File_Name
+    AND cc.DDR_Calc_UUID IS NOT NULL
   LIMIT 1
 )
 SELECT

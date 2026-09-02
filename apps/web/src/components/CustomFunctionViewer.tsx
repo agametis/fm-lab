@@ -1,6 +1,14 @@
 import React, { useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { CustomFunctionTokens } from '../script/calcTokens';
 import { HighlightRefContext } from '../script/highlightContext';
+import {
+  useVarSelection,
+  useVarDeepLinkScroll,
+  countCalcVarMatches,
+  makeVarKey,
+  varClickProps,
+} from '../script/varSelectionContext';
 import { CalcTokenList } from './CalcTokenSpan';
 import './CustomFunctionViewer.css';
 
@@ -28,6 +36,7 @@ interface CustomFunctionViewerProps {
  * und Zeilenumbrüche sichtbar werden.
  */
 export const CustomFunctionViewer: React.FC<CustomFunctionViewerProps> = ({ data, highlightRefUuids, onLiveMatchCount }) => {
+  const { t } = useTranslation(['detail']);
   // Erstes markiertes Token in den Sichtbereich scrollen (analog ScriptViewer).
   const rootRef = useRef<HTMLDivElement>(null);
   const highlightSig = highlightRefUuids ? Array.from(highlightRefUuids).sort().join(',') : '';
@@ -56,6 +65,18 @@ export const CustomFunctionViewer: React.FC<CustomFunctionViewerProps> = ({ data
     onLiveMatchCount?.(liveMatchCount);
   }, [liveMatchCount, onLiveMatchCount]);
 
+  // Variablen-Auswahl: Trefferzählung für die VarSelectionPill (datenbasiert,
+  // analog liveMatchCount) + Deep-Link-Scroll zum ersten markierten Vorkommen.
+  const varSel = useVarSelection();
+  const varMatches = useMemo(
+    () => countCalcVarMatches(data.tokens, varSel?.selectedKey ?? null),
+    [data.tokens, varSel?.selectedKey],
+  );
+  useEffect(() => {
+    varSel?.reportMatches(varMatches.count, varMatches.displayName);
+  }, [varMatches, varSel]);
+  useVarDeepLinkScroll(rootRef);
+
   return (
     <HighlightRefContext.Provider value={highlightRefUuids ?? null}>
       <div ref={rootRef} className="fm-customfunction" aria-label="CustomFunction-Definition">
@@ -64,7 +85,30 @@ export const CustomFunctionViewer: React.FC<CustomFunctionViewerProps> = ({ data
             {data.object.name}
             {Array.isArray(data.parameters) && data.parameters.length > 0 && (
               <span className="fm-customfunction-params">
-                ( {data.parameters.join(' ; ')} )
+                {'( '}
+                {data.parameters.map((param, i) => {
+                  // CF-Parameter sind formellokale Bezeichner — als Klick-
+                  // Quellen der Variablen-Auswahl beantwortet der Header
+                  // direkt „wo wird dieser Parameter benutzt?".
+                  const paramKey = makeVarKey('local', param);
+                  const isSelected = !!varSel && varSel.selectedKey === paramKey;
+                  return (
+                    <React.Fragment key={i}>
+                      {i > 0 && ' ; '}
+                      <span
+                        className={`fm-ref fm-ref--variable${isSelected ? ' fm-ref--var-selected' : ''}${varSel ? ' fm-ref-link' : ''}`}
+                        data-ref-type="variable"
+                        title={varSel
+                          ? (t(isSelected ? 'detail:varSelect.clearHint' : 'detail:varSelect.hint') as string)
+                          : undefined}
+                        {...varClickProps(varSel, paramKey)}
+                      >
+                        {param}
+                      </span>
+                    </React.Fragment>
+                  );
+                })}
+                {' )'}
               </span>
             )}
           </h2>

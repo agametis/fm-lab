@@ -2,10 +2,64 @@
 -- @title: Graph Subgraph (Recursive k-Hop)
 -- @description: Fokus-zentrierter k-Hop-Subgraph aus ObjectCatalog/ObjectLinks — gefiltert, gedeckelt, ehrlich gekürzt
 -- @params: focus (required, UUID), focus_file, depth, direction, mode, types, roles, include_builtins, node_limit, hub_degree
--- @version: 1.3.0
+-- @version: 1.9.0
 -- @author: Marcel / Claude
 -- @tags: graph, subgraph, explorer
 -- @note: Core-Endpoint /api/graph/subgraph.
+--        1.9.0 (Anker-Durchgriff): ein feld-gebundener LayoutObject-Fokus erreicht
+--        die Trigger-Ziele seines Anker-Felds schon bei depth 1 — als SYNTHETISCHE
+--        Walk-Kante (Fokus → Trigger-Ziel), komponiert aus displays_field (roh,
+--        nur LayoutObject-Quellen) × triggers_script des Felds. Sie lebt NUR in
+--        der edges-CTE (Erreichbarkeits-Rechnung); final_edges liest aus base_f,
+--        gezeichnet wird also KEINE Fokus→Script-Linie — sichtbar ist die ehrliche
+--        Kette Fokus →repräsentiert→ Feld →Event→ Script. Bewusst NICHT die ganze
+--        Feld-Nachbarschaft (Anker-Seed wäre bei Hub-Feldern die nächste Flut:
+--        90/1518 Anker-Felder im Großkorpus mit Grad > 50, max 972); zählt als
+--        „verwendet"-Richtung (nur out/both). Spiegelbild in graph_depth_profile.sql.
+--        1.8.0 (ein Sprecher pro Trigger-Fakt): die Fokus-Selbst-Enklave klammert
+--        `triggers_script` aus, wenn der Fokus FELD-GEBUNDEN ist (eigene
+--        displays_field-Kante) — seit der Feld-Verankerung (LogicalLinks 1.4.0)
+--        spricht dann das Feld; die Box sagt nur noch „repräsentiert Feld".
+--        Vorher vertrat derselbe Fakt sich doppelt auf zwei Ebenen (Box UND
+--        Feld). UI-Fokusse ohne Feld (Buttons/Panels) behalten ihre
+--        triggers_script-/button_action-Kanten — kein anderer Träger.
+--        Konsequenz der Tiefen-Semantik: am Feld-gebundenen Fokus liegt das
+--        Script jetzt bei depth 2 (Fokus → Feld → Script). Spiegelbild in
+--        graph_depth_profile.sql.
+--        1.7.0 (Fokus-Selbst-Enklave): ALLE rohen operationalen Kanten des Fokus
+--        selbst werden durchgereicht — ein LayoutObject-Fokus zeigt damit seine
+--        eigenen Feld-/Script-/Variablen-Bezüge direkt (vorher Sackgasse: das
+--        P5-Hoisting hebt sie aufs Layout), inkl. seiner eigenen triggers_script-
+--        Kanten (am eigenen Fokus sind sie seine Logik — bewusst OHNE den
+--        triggers_script-Ausschluss der Owner-Enklave). Für nicht-gehoistete
+--        Fokus-Typen (Script, Field, Layout …) sind die Zeilen Duplikate der
+--        logischen Basis und falten weg; LayoutPart wird mitgenommen. Subsumiert
+--        die bisherigen Brücken-Sonderzweige trigger_script + Feld-Kandidaten
+--        (Whitelist bereinigt; deren Richtungs-Unabhängigkeit in der edges-CTE
+--        bleibt). Spiegelbild in graph_depth_profile.sql.
+--        1.6.0 (Owner-Enklave): der Owner eines ScriptTrigger-Fokus kommt per
+--        trigger_owner-Brücke in den Graph, hatte in der logischen Basis aber null
+--        eigene Kanten (P5-Hoisting hebt LayoutObject-Kanten aufs Layout) — eine
+--        Sackgasse. Die Enklave reicht die rohen operationalen Kanten GENAU dieses
+--        Owners durch (triggers_script ausgeschlossen: Event-Spiegel duplizieren den
+--        Trigger-Pfad und ziehen Geschwister-Trigger-Lärm hinein; button_action der
+--        Einfachheit halber mit ausgeschlossen — Revisit-Option:
+--        `AND NOT (Link_Role='triggers_script' AND Link_Subrole IS DISTINCT FROM
+--        'button_action')` ließe Button-Aktionen zu). Ergebnis: Kette
+--        Trigger → Owner → Feld ab depth 2; ins Layout läuft der Walk über die
+--        operationale parent_layout-Kante des Owners regulär weiter. Spiegelbild in
+--        graph_depth_profile.sql (Zähl-Konsistenz).
+--        1.5.0 (Trigger-Fokus-Flanke): Fokus-Brücke reicht zusätzlich die
+--        `trigger_script`-Kante und die OnWindowTransaction-Feld-Kandidaten
+--        (reads_field·transaction_parameter_field) des Fokus-Triggers aus raw_links
+--        durch — seit der Graph-Policy von Converter 2.17.0 (LogicalLinks ohne beide)
+--        ist die Brücke der ALLEINIGE Kantenlieferant eines Trigger-Fokus (Owner via
+--        trigger_owner, Script via trigger_script). Spiegelbild in
+--        graph_depth_profile.sql.
+--        1.4.0: Fokus-Brücke um `trigger_owner` ergänzt — ein ScriptTrigger-Fokus
+--        zeigt im logical-Modus sonst nur die trigger_script-Kante (die Owner-Kante
+--        ist strukturell und fehlt in LogicalLinks). Spiegelbild in
+--        graph_depth_profile.sql (Zähl-Konsistenz des Tiefen-Sliders).
 --        1.3.0: FOKUS-AUSNAHME im Typ-Filter (nodes_ranked) — der Fokus-Knoten bleibt
 --        IMMER Teil des Subgraphen, unabhängig vom `types`-Filter. Vorher kollabierte
 --        der Graph im „Nur gewählte Typen"-Modus, sobald man den Object_Type des Fokus
@@ -79,16 +133,48 @@ base AS (
   FROM logical_dedup
   WHERE getvariable('mode') = 'logical'
   UNION ALL
-  -- Fokus-Brücke (logical): ist der Fokus selbst ein Sub-Objekt (ScriptStep /
-  -- LayoutObject / CustomMenuItem), wurden alle seine operationalen Kanten auf den
-  -- Container hochgezogen (bzw. sind Builtins/ausgeblendet) → die echte strukturelle
-  -- Parent-Kante (Fokus → Script/Layout/CustomMenu) hält den Einstieg anschlussfähig.
-  -- Greift nur für den Fokus.
+  -- Fokus-Brücke (logical), strukturelle Seite: ist der Fokus selbst ein
+  -- Sub-Objekt (ScriptStep / LayoutObject / CustomMenuItem / ScriptTrigger),
+  -- hält die echte strukturelle Parent-Kante (Fokus → Script/Layout/CustomMenu/
+  -- Owner) den Einstieg anschlussfähig. Greift nur für den Fokus.
   SELECT a, a_file, b, b_file, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
   FROM raw_links
   WHERE getvariable('mode') = 'logical'
     AND a = getvariable('focus')
-    AND Link_Role IN ('parent_layout', 'parent_script', 'parent_menu')
+    AND Link_Role IN ('parent_layout', 'parent_script', 'parent_menu', 'trigger_owner')
+  UNION ALL
+  -- Fokus-Selbst-Enklave (s. Kopf-Note 1.7.0): ALLE rohen operationalen Kanten
+  -- des Fokus selbst — liefert einem gehoisteten Fokus (LayoutObject, LayoutPart)
+  -- seine eigenen Bezüge und einem ScriptTrigger-Fokus trigger_script + Feld-
+  -- Kandidaten (LogicalLinks führt beide seit der Graph-Policy 2.17.0 nicht mehr).
+  -- Nicht-gehoistete Fokus-Typen erzeugen nur Duplikate der logischen Basis
+  -- (UNION der edges-CTE + DISTINCT der final_edges falten sie weg).
+  -- AUSNAHME (Kopf-Note 1.8.0): triggers_script eines FELD-GEBUNDENEN Fokus —
+  -- das Feld ist der Sprecher, die Box nur die Repräsentation.
+  SELECT rl.a, rl.a_file, rl.b, rl.b_file, rl.Link_Role, rl.Link_Subrole, rl.Link_Type, rl.Is_Cross_File
+  FROM raw_links rl
+  WHERE getvariable('mode') = 'logical'
+    AND rl.a = getvariable('focus')
+    AND rl.Link_Type = 'operational'
+    AND NOT (rl.Link_Role = 'triggers_script'
+             AND EXISTS (SELECT 1 FROM ObjectLinks fx
+                         WHERE fx.Source_UUID = rl.a
+                           AND fx.Source_File = rl.a_file
+                           AND fx.Link_Role = 'displays_field'))
+  UNION ALL
+  -- Owner-Enklave (s. Kopf-Note 1.6.0): rohe operationale Kanten des Trigger-Owners.
+  -- Nur für den Owner des FOKUS-Triggers; Tupel-Join datei-genau (Klon-Robustheit).
+  -- triggers_script komplett ausgeschlossen (Kopf-Note); Duplikate bei Layout-/File-
+  -- Ownern (deren Kanten liegen schon in LogicalLinks) schlucken das UNION der
+  -- edges-CTE und das DISTINCT der final_edges.
+  SELECT a, a_file, b, b_file, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
+  FROM raw_links
+  WHERE getvariable('mode') = 'logical'
+    AND (a, a_file) IN (SELECT b, b_file FROM raw_links
+                        WHERE a = getvariable('focus')
+                          AND Link_Role = 'trigger_owner')
+    AND Link_Type = 'operational'
+    AND Link_Role <> 'triggers_script'
   UNION ALL
   -- Fokus-Brücke Container-Seite: ist der Fokus ein CustomMenu, seine
   -- CustomMenuItems (parent_menu) als strukturelle Kinder zeigen. Menüs haben
@@ -126,13 +212,32 @@ edges AS (
   SELECT b AS a, b_file AS a_file, a AS b, a_file AS b_file FROM base_f WHERE getvariable('direction') IN ('in', 'both')
   UNION
   -- Fokus-Brücke richtungsunabhängig walkbar halten (auch bei direction='in').
-  -- a=focus: Sub-Objekt → Container (parent_*). b=focus: CustomMenu → seine Items
-  -- (parent_menu, Container-Seite) — beide strukturell, beide Richtungen erreichbar.
+  -- a=focus: Sub-Objekt → Container (parent_*) + Trigger → Script/Feld-Kandidaten
+  -- (operational — kommen in base nur als Brücken-Zweig vor). b=focus:
+  -- CustomMenu → seine Items (parent_menu, Container-Seite).
   SELECT a, a_file, b, b_file FROM base_f
   WHERE getvariable('mode') = 'logical'
-    AND Link_Type = 'structural'
-    AND (a = getvariable('focus')
-         OR (b = getvariable('focus') AND Link_Role = 'parent_menu'))
+    AND ((a = getvariable('focus')
+          AND (Link_Type = 'structural' OR Link_Role = 'trigger_script'
+               OR (Link_Role = 'reads_field'
+                   AND Link_Subrole = 'transaction_parameter_field')))
+         OR (b = getvariable('focus')
+             AND Link_Type = 'structural' AND Link_Role = 'parent_menu'))
+  UNION
+  -- Anker-Durchgriff (Kopf-Note 1.9.0): Fokus → Trigger-Ziele des Anker-Felds.
+  -- df aus raw_links (rohe displays_field-Kanten haben NUR LayoutObject-Quellen —
+  -- das gehoistete Layout→Feld matcht hier nicht, ein Layout-Fokus bekommt keinen
+  -- Durchgriff); ts aus base_f (Builtin-/Rollen-Filter gelten fürs Ziel). Datei-
+  -- genauer Tupel-Join; a_file = Datei der eigenen displays_field-Kante = Fokus-Datei.
+  SELECT df.a, df.a_file, ts.b, ts.b_file
+  FROM raw_links df
+  JOIN base_f ts
+    ON ts.a = df.b AND ts.a_file IS NOT DISTINCT FROM df.b_file
+   AND ts.Link_Role = 'triggers_script'
+  WHERE getvariable('mode') = 'logical'
+    AND getvariable('direction') IN ('out', 'both')
+    AND df.a = getvariable('focus')
+    AND df.Link_Role = 'displays_field'
 ),
 -- 6) Fokus-Saat: (UUID, File). focus_file wird durchgereicht; fehlt es (Nicht-Klon,
 --    Downgrade), wird die eindeutige Datei aus dem Katalog aufgelöst. (Bei KLON ohne

@@ -20,14 +20,14 @@ Every table occurrence on the relationship graph, with its base table reference,
 | `BT_Name` | `VARCHAR` |
 | `BT_UUID` | `VARCHAR` |
 | `View_State` | `VARCHAR` |
-| `Box_Height` | `INTEGER` |
-| `Coord_Top` | `INTEGER` |
-| `Coord_Left` | `INTEGER` |
-| `Coord_Bottom` | `INTEGER` |
-| `Coord_Right` | `INTEGER` |
-| `Color_R` | `INTEGER` |
-| `Color_G` | `INTEGER` |
-| `Color_B` | `INTEGER` |
+| `Box_Height` | `BIGINT` |
+| `Coord_Top` | `BIGINT` |
+| `Coord_Left` | `BIGINT` |
+| `Coord_Bottom` | `BIGINT` |
+| `Coord_Right` | `BIGINT` |
+| `Color_R` | `BIGINT` |
+| `Color_G` | `BIGINT` |
+| `Color_B` | `BIGINT` |
 | `Color_Alpha` | `DOUBLE` |
 | `File_Name` | `VARCHAR` |
 

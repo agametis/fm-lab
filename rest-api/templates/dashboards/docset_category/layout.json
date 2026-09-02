@@ -30,7 +30,7 @@
               "items": [
                 {
                   "label": "Entries",
-                  "field": "function_count",
+                  "field": "entry_count",
                   "format": "number"
                 }
               ]
@@ -53,6 +53,8 @@
             "type": "List",
             "id": "functions_list",
             "props": {
+              "searchParam": "q",
+              "groupBy": "section",
               "rowTemplate": {
                 "primary": "{{name}}",
                 "secondary": "{{signature}}",
@@ -62,13 +64,13 @@
                   "hideZero": true,
                   "filterable": true,
                   "onClick": {
-                    "action": "{{badge_action}}",
-                    "argsString": "{{badge_action_args}}"
+                    "action": "{{_badge_action}}",
+                    "argsString": "{{_badge_action_args}}"
                   }
                 },
                 "onClick": {
-                  "action": "{{action}}",
-                  "argsString": "{{action_args}}"
+                  "action": "{{_action}}",
+                  "argsString": "{{_action_args}}"
                 }
               },
               "empty": {

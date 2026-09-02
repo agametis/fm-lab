@@ -108,7 +108,7 @@
       "copied": "Kopiert",
       "elementOrder": "Element-Reihenfolge",
       "evidence": "Evidenz",
-      "notAvailable": "Grammatik noch nicht erfasst — Welle W4",
+      "notAvailable": "Grammatik noch nicht erfasst",
       "options": "Optionen",
       "constraints": "Constraints",
       "opt": {
@@ -121,6 +121,42 @@
         "values": "Werte",
         "invertedHint": "Label-Semantik ist gegenüber dem XML-Zustand invertiert — true_text/false_text tragen die vollständige Text→XML-Abbildung; niemals zusätzlich invertieren.",
         "docOnly": "Von Claris dokumentiert, aber nicht roundtrip-verifiziert — Verhalten nach dem Einfügen prüfen."
+      },
+      "repeatGroups": "Wiederholgruppen (Listen)",
+      "rg": {
+        "group": "Gruppe",
+        "container": "Container",
+        "form": "Item-Form",
+        "fixedSlots": "{{n}} feste Slots",
+        "nestedIn": "geschachtelt in {{parent}}",
+        "countAttr": "Count-Attribut {{attr}}"
+      },
+      "knownBugHint": "Bekannter FileMaker-Bug — Warnklasse, keine Validitätsregel: der Step ist gültig, das Risiko liegt in FileMakers eigener Serialisierung.",
+      "variableTargetMarker": "Variablen-Target-Marker",
+      "variableTargetMarkerHint": "Trägt einen leeren <Text/>-Marker auf Step-Ebene genau dann, wenn der Target-Slot eine Variable statt einer Feldreferenz hält.",
+      "consumerNote": "Konsumenten-Hinweis",
+      "skeletons": "Skelett-Hüllen",
+      "sk": {
+        "in": "in {{parent}}",
+        "hull": "Hülle — persistiert auch unkonfiguriert mit Default-Inhalt",
+        "hull_strip_children": "Hülle — behält Attribute, ungefüllte Kinder entfallen",
+        "condition": "nur bei {{cond}}"
+      },
+      "bindings": "Optionsgebundene Elemente",
+      "bd": {
+        "requires": "existiert nur bei {{cond}}",
+        "excludes": "entfällt bei {{cond}}",
+        "requiresOption": "existiert nur bei gesetztem {{option}}",
+        "excludesOption": "entfällt bei gesetztem {{option}}",
+        "suppressEmpty": "leeres Element wird deterministisch nie emittiert (Dialog-Residuum)"
+      },
+      "implications": "Notations-Implikationen",
+      "imp": {
+        "option_present": "Option gesetzt",
+        "value_form": "Referenz-Form",
+        "keyword": "Schlüsselwort",
+        "mode_switch": "Modus-Weiche",
+        "default": "Default-Modus (ohne Weichen-Label)"
       }
     },
     "saxml": {

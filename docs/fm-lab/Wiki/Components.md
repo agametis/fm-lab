@@ -44,7 +44,7 @@ A separate catalog is populated for each solution during XML conversion.
 ---
 ## FileMaker Reference
 
-Reference tables for FileMaker script steps and functions. They include machine-readable syntax and grammar definitions for linting during code generation, plus an additional mapping layer from script step names to distinct tokens and to emitter templates in multiple output formats. They also support up to 11 locales for translations into human language.
+Reference tables for FileMaker script steps, calculation functions and script-trigger events. They include machine-readable syntax and grammar definitions for linting during code generation, plus an additional mapping layer from script step names to distinct tokens and to emitter templates in multiple output formats. They also support up to 11 locales for translations into human language.
 Refer to detailed description of [fm-spec](fm-spec.md) content and schema.
 
 ### fm-spec
@@ -66,11 +66,15 @@ Refer to detailed [REST API Overview](../rest-api/REST%20API%20Overview.md).
 - `rest-api/templates/dashboards-custom/static-code-analysis/` — Dashboard bundles for static code analysis, inspired by the PMD standard ruleset. They are accessible through the web frontend and provide quick access to different code metrics. All dashboards support drill-down filters and interactive navigation to code references within the object browser.
 - `rest-api/templates/sql/` — [SQL templates](../templates/Built-in%20Query%20Templates.md) for standard queries exposed through API endpoints.
 - `rest-api/templates/sql-custom/` — [Additional SQL templates](../templates/Custom%20Query%20Templates.md) for custom use cases.
+- `rest-api/templates/tests/` — Declared [Analysis Tests](Analysis%20Tests.md) test sets bundled with the installation.
+- `rest-api/templates/tests-custom/` — User-defined test sets (user space, not overwritten by updates).
 
 ---
 ## Web Client
 
 Rich browser-based interface for application-level functions and for [Interactive exploration](4%20Code%20Analysis%20Approaches.md#1-interactive-exploration) of the solution's object catalog. Most of FM-Lab's features are fully supported in the web interface (except agentic workflows).
+
+Besides the object browser, dashboards and Graph Explorer, the web client includes an interactive [fm-spec](fm-spec.md) schema browser (`/fm-spec`, with detail pages per script step and per function).
 
 `apps/web/` — React/Vite frontend
 
@@ -80,6 +84,10 @@ Rich browser-based interface for application-level functions and for [Interactiv
 - `tools/` — Utility scripts for various tasks.
 - `tools/fmlab.sh` — Wrapper for starting FM-Lab through Docker or the native CLI.
 - `tools/init.sh` — Initializes the project on first run by installing npm packages and configuring paths and default settings. It includes a preflight check for dependencies and expected versions.
+- `tools/bootstrap.sh` — Shared, idempotent bootstrap steps used by both the native init and the Docker setup, so the two can never drift.
+- `tools/solution.sh` — Multi-solution control tool: lists, creates and switches solution bundles (pointer file, workspace symlinks, running API). Backend of the `select-solution` skill.
+- `tools/migrate-multisolution.sh` — One-time, idempotent migration of a flat legacy workspace to the multi-solution bundle layout.
+- `tools/install_modes.sh` — Shared helpers sourced by all doc-set installer skills.
 - `tools/start-servers.sh` — Starts the included HTTP servers.
 - `tools/stop-servers.sh` — Stops the included HTTP servers.
 
@@ -116,6 +124,8 @@ Some documentation packages include their own databases for fast indexed queries
 - `.claude/skills/install-claris-docs` — Installs the Claris FileMaker documentation.
 - `.claude/skills/install-mbs-docs` — Installs the MBS plugin documentation.
 - `.claude/skills/install-fmide-docs` — Installs the fmIDE documentation.
+- `.claude/skills/install-duckdb-docs` — Installs the DuckDB documentation.
+- `.claude/skills/select-solution` — Switches the active solution (pointer file, workspace symlinks and running API) via `tools/solution.sh`.
 
 **Optional tools**
 
@@ -136,6 +146,7 @@ Some documentation packages include their own databases for fast indexed queries
 - `.claude/skills/fm-summarize` — Creates a concise technical briefing for a given object.
 - `.claude/skills/fm-analyze` — Runs an in-depth object analysis using semantic signals and recursive graph traversal up to five levels deep. It gathers context about dependencies, structure, logic, technical rules, and semantic meaning. This helps the agent explain functionality and business rules within the solution.
 - `.claude/skills/fm-graph-cluster` — Segments the FileMaker object graph into functional clusters (communities) using [Graph analysis](4%20Code%20Analysis%20Approaches.md#3-graph-analysis) algorithms. When run in `--deep-research` mode, the LLM recursively follows the graph structure of top-level clusters and builds a comprehensive architectural analysis based on technical structure and semantic signals. The output is genrated in Markdown format at `output/graph_cluster_report_<timestamp>.md`.
+- `.claude/skills/fm-test` — Runs curated [Analysis Tests](Analysis%20Tests.md) (static-code-analysis rules and custom checks with a compact result model) in solution, file, object or cluster scope; `--find` discovers matching tests without running them.
 
 - `.claude/skills/create-custom-dashboard` — Helps you build a new custom dashboard for [Static code analysis](4%20Code%20Analysis%20Approaches.md#2-static-code-analysis) by describing its goals in plain language.
 
@@ -157,7 +168,7 @@ Some documentation packages include their own databases for fast indexed queries
 
 ### Plugin registry
 
-`.fmlab/` — Registry and preferences for FM-Lab plugins.
+`.fmlab/` — Registry and preferences for FM-Lab: the plugin registry, the installed doc-set catalog, the active-solution pointer, server settings and the converter's persisted parser-policy state.
 
 ---
 

@@ -27,8 +27,119 @@
 --   Drift-Indikator herangezogen wird. build_resolutions.sql bewusst NICHT
 --   enthalten, weil es nur abgeleitete Tabellen anlegt.
 
--- @SCHEMA_VERSION 1.21.0
--- @SCHEMA_VERSION_DATE 2026-08-15
+-- @SCHEMA_VERSION 1.27.0
+-- @SCHEMA_VERSION_DATE 2026-09-02
+-- @SCHEMA_CHANGELOG 1.27.0: Display-Calculation-Lücken (Merge-Familie): neue
+--   P1-Tabelle DDR_ChunkListContexts (Kontext-TO + Chunk_Count je ChunkList-
+--   Anker aus DDR_INFO, AUCH für leere ChunkLists — die tauchten bisher
+--   nirgends auf) und neue P3-Tabelle LayoutObjectSymbols ({{…}}-Inventar aus
+--   Text_Content, bewusst ohne Where-used-Kanten). CalculationsCatalog erhält
+--   Result_Type (Ergebnistyp aus dem %X:-Präfix der Layoutformel, Default
+--   Text); display_calculation-Instanzen bekommen Formula_Text (lokalisierte
+--   Rohformel aus Text_Content) + Kontext-TO. Defekt-Kompensation FileMaker-
+--   DDR: %X:-Fehlchunks (VariableReference statt FieldRef) erzeugen keine
+--   Phantom-Variablen mehr, die Feldreferenz wird gegen die Kontext-TO
+--   gerettet (P2 A.5.1b); leere DisplayCalculations-ChunkLists erhalten eine
+--   Fallback-Instanz + Feldkanten aus Text_Content (P2 A.5.1c, P4 b_disp).
+--   Neue Tabellen/Spalte → MINOR-Bump.
+-- @SCHEMA_CHANGELOG 1.26.0: ScriptTriggers.Trigger_Parameter_Text (P1): neue
+--   Spalte am Tabellenende — der strukturelle Klartext der Trigger-Parameter-
+--   Berechnung (/ScriptTrigger/ScriptReference/Calculation/Text, CDATA-dekodiert
+--   via xml_extract_text; alle drei Owner-Ebenen File/Layout/LayoutObject).
+--   Bisher existierte der Klartext nur als P1-Objekt-Aggregat
+--   (LayoutObjects.ScriptTrigger_Parameter_Text, ALLE Parameter eines Objekts
+--   konkateniert) — Formula_Text der script_trigger_parameter-Instanzen blieb
+--   dadurch immer NULL und Dateien ohne DDR-Info hatten auf Layout-/File-Ebene
+--   gar keine Parameter-Instanz. P4 befüllt daraus (a) Formula_Text der
+--   DDR-Anker-Instanzen und (b) per-Trigger-Fallback-Instanzen ohne DDR
+--   (Calc_Kind_Raw='ScriptTrigger_<id>' statt kollabierter NULL-Instanz);
+--   neue Kandidaten-Kanten reads_field·transaction_parameter_field für das
+--   OnWindowTransaction-Parameterfeld (Namens-Kandidaten, file-lokal). Reiner
+--   Payload (PK unverändert), DOM- und Streamify-Pfad identisch erweitert.
+--   Neue Spalte → MINOR-Bump (Master-Rebuild befüllt Bestandskataloge).
+-- @SCHEMA_CHANGELOG 1.25.0: Conditional Formatting strukturiert (P3/P4): neue
+--   Tabelle LayoutObjectConditions — eine Zeile pro CF-Regel, depth-verankert
+--   aus LayoutObjects.Object_XML extrahiert (/LayoutObject/Conditions/
+--   Formatting/Condition; eigene Regeln, Container-Nesting kann nicht
+--   doppelzählen — ersetzt den fehlerhaften Leaf-Filter-/Regex-Pfad der
+--   Inventar-Query: 4.557 FP/920 FN im Referenzkorpus). Spalten: Rule_UUID
+--   (md5 CFRule::File::Object::Index), Object_UUID, Layout_ID, Rule_Index
+--   (1-basiert == Condition/@id+1 == DDRREF-Suffix N), Condition_Type (@type
+--   roh: 0 Formel, 1-13 wertbasierter Operator), Condition_Kind
+--   ('formula'/'value'), Options_Raw (Format-Bitmaske roh; Bit0 = Enable), Calc_Text
+--   (Bedingungsformel; bei wertbasierten Regeln die von FM mitserialisierte
+--   äquivalente Self-Formel), Calc_Hash (DDRREF), Calculation_UUID (FK auf
+--   CalculationsCatalog Rolle conditional_format, in P4 über
+--   Calc_Kind_Raw='Condition_N' gefüllt; NULL ohne Anker), Range_Start/
+--   Range_End (Operanden wertbasierter Regeln als Ausdruckstext, FM-Vor-
+--   kodierung dekodiert), Formatting_Membercount (@membercount, P6-Guard-
+--   Basis), Local_CSS (angewandtes Format roh, CDATA). Neue P6-View
+--   v_check_cf_rules (membercount-Guard, FK-Coverage). Neue Tabelle →
+--   MINOR-Bump (Master-Rebuild befüllt Bestandskataloge).
+-- @SCHEMA_CHANGELOG 1.24.0: ScriptTriggers-Vervollständigung (P1): drei neue
+--   Spalten am Tabellenende. (a) Trigger_FindMode + Trigger_PreviewMode — SaXML
+--   schreibt je Trigger NUR die aktivierten Modi als Attribute (browseMode/
+--   findMode/previewMode="True"); bisher wurde allein browseMode extrahiert,
+--   wodurch ein Nur-Suchen-Trigger als Trigger_BrowseMode=NULL erschien (kein
+--   aktiver Modus sichtbar) und Blättern+Suchen von reinem Blättern nicht
+--   unterscheidbar war. (b) Trigger_ScriptParameter_FieldName — das
+--   OnWindowTransaction-Attribut scriptParameterFieldName (Feldname, dessen
+--   Inhalt FileMaker in den JSON-Scriptparameter aufnimmt); reine Namens-
+--   Referenz ohne Tabellen-Qualifizierung/ID/UUID, spät gebunden — hier nur
+--   persistiert, KEINE Feld-Kante (Kandidaten-Auflösung ist Folgearbeit).
+--   Alle drei als VARCHAR-Passthrough analog Trigger_BrowseMode ('True'/NULL
+--   bzw. Roh-Name/NULL). DOM- und Streamify-Pfad identisch erweitert.
+--   Neue Spalten → MINOR-Bump (Master-Rebuild befüllt Bestandskataloge).
+-- @SCHEMA_CHANGELOG 1.23.0: int32-Härtung der XML-gespeisten Numerik (P1/P2/P3):
+--   FileMaker serialisiert vorzeichenlose 32-bit-Werte (z. B. 4294967295 =
+--   UINT32_MAX als „-1"/Sentinel), die den Wertebereich von INTEGER (int32)
+--   sprengen — webbed bricht dann den kompletten Datei-Scan hart ab
+--   (XmlUncastableValue, upstream issue #102; trifft auch explizite
+--   columns={…}-Schemata, DOM wie SAX). Daher ALLE XML-gespeisten INTEGER-
+--   Deklarationen auf BIGINT geweitet: read_xml-columns-Specs + zugehörige DDL
+--   (TableOccurrenceCatalog Box_/Coord_/Color_*, FieldsForTables
+--   Max_Repetitions/Validation_MaxChars, ScriptCatalog Option_Bitmask/
+--   compatibility, Layouts L_Width/Modifications, AccountsCatalog Account_Kind,
+--   PrivilegeSets Other_Value, CustomMenuItems Item_Index) sowie die
+--   ::INTEGER-/TRY_CAST-Extraktionen (StepsForScripts Step_Index/Step_ID,
+--   LayoutParts Part_*, LayoutObjects Object_Kind, Bounds_*, Z_Order,
+--   P2 XMLLayoutReferences/LayoutObjectSteps Step_ID, P3 StepCalculations
+--   Step_Index/Calc_Position) — inkl. der streamify-Overrides. Statische
+--   kuratierte Maps (ScriptStepRoleMap, ScriptStepControlMap) bleiben bewusst
+--   INTEGER (nicht XML-gespeist). Nur Typ-Weitung, keine neuen Spalten/Tabellen;
+--   MINOR-Bump, weil der Master-Rebuild die Spaltentypen erneuern muss.
+--   Ergaenzung (gleicher Bump): Sentinel-Normalisierung Validation_MaxChars —
+--   4294967295 wird per NULLIF zu NULL („unbegrenzt" = kein Limit gesetzt);
+--   nur dieser eine Slot (Semantik belegt), alle anderen geweiteten Slots
+--   tragen den Rohwert. Drift-Waechter v_check_numeric_sentinels in P6.
+-- @SCHEMA_CHANGELOG 1.22.0: Calculation als eigenständiger Objekttyp (P1/P2/P4/P6):
+--   Neue Tabelle CalculationsCatalog (P4) — eine Zeile pro Berechnungs-INSTANZ
+--   (Identität Owner × Calc_Role × Calc_Index, synthetische UUID
+--   md5('Calculation::'||File||'::'||Owner||'::'||Role||'::'||Index)); Union aus
+--   den DDR-Ankern (DDR_Calculations, Nachfolger von v_calc_anchors) und den
+--   strukturellen Slots ohne DDR-Anker (FieldsForTables-Slots, StepCalculations,
+--   CalcsForCustomFunctions, LayoutObjects-Textslots, PrivilegeSetRecordAccess) —
+--   Instanzen existieren damit auch OHNE DDR-Info. ObjectCatalog führt die Zeilen
+--   als Object_Type='Calculation' (post-CTAS-Block, Muster PluginComponent);
+--   neue structural Link-Rolle has_calculation (Owner → Calculation, containment,
+--   Counts_For_Where_Used=false, Registry + P6-Wächter). Die bestehenden owner-
+--   projizierten Usage-Kanten bleiben KANONISCH (Variante A) — Calculation→Ziel
+--   gibt es nur als abgeleitete View v_calculation_links (kein Kanten-Duplikat,
+--   kein Graph-Blowup; has_calculation ist structural und bleibt damit per
+--   Konstruktion aus LogicalLinks/ClusterEdges draußen). v_calc_anchors wird zur
+--   materialisierten Fassade über CalculationsCatalog (Spaltenset unverändert).
+--   Subrole-Präzisierung an den P2-Feld-Kanten: AutoEnter-Refs tragen jetzt
+--   Link_Subrole 'auto_enter' (A.2.4–A.2.6, A.6.3, A.6.4, A.7.2), die Refs der
+--   Fehlermeldungs-Berechnung 'validation_message' statt 'validation'
+--   (A.2.10–A.2.11; Link_Role bleibt validates_by_calc) — damit sind die
+--   Feld-Slots in v_calculation_links trennscharf. Lücken-Schließung:
+--   ScriptTriggers speichert neu Trigger_XML (nur Owner-Typen Layout/File;
+--   Object-Level steckt bereits in LayoutObjects.Object_XML), P2 erntet daraus
+--   die Layout-/File-Level-Trigger-Parameter-Refs (neue Sektion A.12) — die
+--   bisher unsichtbaren Layout-Trigger-Parameter-Anker bekommen Owner-Kanten.
+--   Neue P6-Views v_check_calculations (Owner-Existenz, UUID-Dups,
+--   DDR-Anker-Abdeckung, Rollen-Vokabular). Neue Tabelle + neue Spalte +
+--   Inhalts-Korrektur an ObjectLinks → MINOR-Bump (Master-Rebuild nötig).
 -- @SCHEMA_CHANGELOG 1.21.0: Classic-Theme sichtbar machen (P3/A.11 + P4): SaXML
 --   kodiert das Classic-Theme als LEERES Element <LayoutThemeReference/> ohne
 --   id/name/UUID/Base — nur Nicht-Classic-Themes tragen das Attribut-Tripel.
@@ -956,14 +1067,14 @@ CREATE TABLE IF NOT EXISTS TableOccurrenceCatalog (
     BT_Name VARCHAR,
     BT_UUID VARCHAR,
     View_State VARCHAR,
-    Box_Height INTEGER,
-    Coord_Top INTEGER,
-    Coord_Left INTEGER,
-    Coord_Bottom INTEGER,
-    Coord_Right INTEGER,
-    Color_R INTEGER,
-    Color_G INTEGER,
-    Color_B INTEGER,
+    Box_Height BIGINT,
+    Coord_Top BIGINT,
+    Coord_Left BIGINT,
+    Coord_Bottom BIGINT,
+    Coord_Right BIGINT,
+    Color_R BIGINT,
+    Color_G BIGINT,
+    Color_B BIGINT,
     Color_Alpha DOUBLE,
     File_Name VARCHAR,
     PRIMARY KEY (TO_UUID, File_Name)
@@ -987,7 +1098,7 @@ to_records AS (
             'name': 'VARCHAR',
             'type': 'VARCHAR',
             'View': 'VARCHAR',
-            'height': 'INTEGER',
+            'height': 'BIGINT',
             'UUID': 'STRUCT("#text" VARCHAR, "accountName" VARCHAR, "modifications" BIGINT, "timestamp" VARCHAR, "userName" VARCHAR)',
             'BaseTableSourceReference': 'STRUCT(
                 "DataSourceReference" STRUCT(
@@ -1001,8 +1112,8 @@ to_records AS (
                     "UUID" VARCHAR
                 )
             )',
-            'CoordRect': 'STRUCT("top" INTEGER, "left" INTEGER, "bottom" INTEGER, "right" INTEGER)',
-            'Color': 'STRUCT("red" INTEGER, "green" INTEGER, "blue" INTEGER, "alpha" DOUBLE)'
+            'CoordRect': 'STRUCT("top" BIGINT, "left" BIGINT, "bottom" BIGINT, "right" BIGINT)',
+            'Color': 'STRUCT("red" BIGINT, "green" BIGINT, "blue" BIGINT, "alpha" DOUBLE)'
         }
     )
 ),
@@ -1470,7 +1581,7 @@ CREATE TABLE IF NOT EXISTS FieldsForTables (
     Field_Comment VARCHAR,
     Field_UUID VARCHAR,
     Is_Global BOOLEAN,
-    Max_Repetitions INTEGER,
+    Max_Repetitions BIGINT,
     DDR_Hash VARCHAR,  -- DDR-Hash für Calculated Fields (ab FM21+)
     Calculation_Text VARCHAR,  -- Klartext-Formel aus <Text> CDATA (vollständiger als ChunkList)
     -- AutoEnter-Basisattribute (alle Typen)
@@ -1515,7 +1626,7 @@ CREATE TABLE IF NOT EXISTS FieldsForTables (
     -- Validierung, Speicher-Indexsprache und Summary-Modifikatoren (Schema 1.10.0)
     Validation_AlwaysValidate BOOLEAN,   -- <Validation @alwaysValidate>
     Validation_StrictType VARCHAR,       -- <Strict>: 'FourDigitYear' | numerisch | Zeit (Token roh, kein Enum-Zwang)
-    Validation_MaxChars INTEGER,         -- <MaximumSize> maximale Zeichenanzahl
+    Validation_MaxChars BIGINT,         -- <MaximumSize> maximale Zeichenanzahl
     Validation_Range_From VARCHAR,       -- <Range @from> (Datum/Zeit/Zahl → VARCHAR)
     Validation_Range_To VARCHAR,         -- <Range @to>
     Validation_Calc_Text VARCHAR,        -- <Calculated><Calculation><Text> Prüf-Calc (Klartext)
@@ -1558,7 +1669,7 @@ field_records AS (
                     "UUID" STRUCT("#text" VARCHAR),
                     "Storage" STRUCT(
                         "global" BOOLEAN,
-                        "maxRepetitions" INTEGER,
+                        "maxRepetitions" BIGINT,
                         "autoIndex" BOOLEAN,
                         "index" VARCHAR,
                         "storeCalculationResults" BOOLEAN,
@@ -1572,7 +1683,7 @@ field_records AS (
                         "unique" BOOLEAN,
                         "existing" BOOLEAN,
                         "Strict" VARCHAR,
-                        "MaximumSize" INTEGER,
+                        "MaximumSize" BIGINT,
                         "Range" STRUCT("from" VARCHAR, "to" VARCHAR),
                         "Message" VARCHAR,
                         "Calculated" STRUCT("Calculation" STRUCT("DDRREF" STRUCT("hash" VARCHAR), "Text" VARCHAR)),
@@ -1702,7 +1813,11 @@ SELECT
     -- Validierung / Indexsprache / Summary-Modifikatoren (Schema 1.10.0)
     f.Validation.alwaysValidate AS Validation_AlwaysValidate,
     NULLIF(f.Validation.Strict, '') AS Validation_StrictType,
-    f.Validation.MaximumSize AS Validation_MaxChars,
+    -- Sentinel-Normalisierung: 4294967295 (UINT32_MAX) = FileMakers "unbegrenzt"
+    -- fuer die maximale Zeichenanzahl -> NULL (= kein Limit gesetzt, deckt sich
+    -- mit nicht konfigurierter Validierung). Exakt-Match, bewusst keine
+    -- Bereichsregel; Drift-Waechter: v_check_numeric_sentinels (P6).
+    NULLIF(f.Validation.MaximumSize, 4294967295) AS Validation_MaxChars,
     NULLIF(f.Validation.Range."from", '') AS Validation_Range_From,
     NULLIF(f.Validation.Range."to", '') AS Validation_Range_To,
     -- Prüf-Calc: Text (ws_restore wie AE-Calc) + DDR-Hash für die Graph-Kante
@@ -2516,7 +2631,7 @@ CREATE TABLE IF NOT EXISTS ScriptCatalog (
     Modifications BIGINT,
     Last_Modified_By VARCHAR,
     Last_Modified_At VARCHAR,
-    Option_Bitmask INTEGER,
+    Option_Bitmask BIGINT,
     Is_Hidden BOOLEAN,
     Full_Access BOOLEAN,
     Sequence_ID BIGINT,
@@ -2546,7 +2661,7 @@ script_records AS (
             'isFolder': 'VARCHAR',
             'isSeparatorItem': 'BOOLEAN',
             'UUID': 'STRUCT("#text" VARCHAR, modifications BIGINT, userName VARCHAR, accountName VARCHAR, timestamp VARCHAR)',
-            'Options': 'STRUCT("#text" INTEGER, hidden BOOLEAN, access VARCHAR, SiriShortcutVisible BOOLEAN, runwithfullaccess BOOLEAN, compatibility INTEGER)'
+            'Options': 'STRUCT("#text" BIGINT, hidden BOOLEAN, access VARCHAR, SiriShortcutVisible BOOLEAN, runwithfullaccess BOOLEAN, compatibility BIGINT)'
         }
     )
     WHERE id IS NOT NULL
@@ -2683,8 +2798,8 @@ CREATE TABLE IF NOT EXISTS StepsForScripts (
     Script_ID BIGINT,
     Script_Name VARCHAR,
     Script_UUID VARCHAR,
-    Step_Index INTEGER,
-    Step_ID INTEGER,
+    Step_Index BIGINT,
+    Step_ID BIGINT,
     Step_Name VARCHAR,
     Is_Enabled BOOLEAN,
     Step_UUID VARCHAR,
@@ -2759,8 +2874,8 @@ script_steps AS (
 steps_extracted AS (
     SELECT
         Script_ID, Script_Name, Script_UUID, step_xml,
-        xml_extract_text(step_xml, '/Step/@index')[1]::INTEGER as Step_Index,
-        xml_extract_text(step_xml, '/Step/@id')[1]::INTEGER as Step_ID,
+        xml_extract_text(step_xml, '/Step/@index')[1]::BIGINT as Step_Index,
+        xml_extract_text(step_xml, '/Step/@id')[1]::BIGINT as Step_ID,
         xml_extract_text(step_xml, '/Step/UUID')[1] as Step_UUID
     FROM script_steps
 ),
@@ -2889,7 +3004,7 @@ src AS (
         Script_Name,
         step_xml,
         xml_extract_text(step_xml, '/Step/UUID')[1] AS Object_UUID,
-        xml_extract_text(step_xml, '/Step/@index')[1]::INTEGER AS Step_Index,
+        xml_extract_text(step_xml, '/Step/@index')[1]::BIGINT AS Step_Index,
         ROW_NUMBER() OVER () AS xml_ord
     FROM det_steps
 ),
@@ -2955,7 +3070,7 @@ CREATE TABLE IF NOT EXISTS Layouts (
     L_TO_Name VARCHAR,
     -- Layout-Metadaten (Schema 1.5.0)
     L_TO_UUID VARCHAR,       -- Kontext-TO per UUID (statt fragiler Namens-Auflösung)
-    L_Width INTEGER,         -- Layout-Breite in px
+    L_Width BIGINT,         -- Layout-Breite in px
     L_Theme_ID BIGINT,       -- LayoutThemeReference (→ uses_theme-Kante)
     L_Theme_Name VARCHAR,
     L_Theme_UUID VARCHAR,
@@ -2989,7 +3104,7 @@ CREATE TABLE IF NOT EXISTS Layouts (
     L_Theme_Base VARCHAR,     -- LayoutThemeReference@Base (Basis-Theme des Custom-Themes)
     Modified_By VARCHAR,      -- <UUID @userName> — zuletzt geändert von
     Modified_At VARCHAR,      -- <UUID @timestamp> — ISO-Zeitstempel (roh als Text)
-    Modifications INTEGER,    -- <UUID @modifications> — Änderungszähler
+    Modifications BIGINT,    -- <UUID @modifications> — Änderungszähler
     Folder_Type VARCHAR,
     Is_Separator BOOLEAN,
     Sequence_ID BIGINT,
@@ -3017,11 +3132,11 @@ layout_records AS (
         columns={
             'id': 'BIGINT',
             'name': 'VARCHAR',
-            'width': 'INTEGER',
+            'width': 'BIGINT',
             'isFolder': 'VARCHAR',
             'isSeparatorItem': 'BOOLEAN',
             -- UUID trägt Autoren-Metadaten als Attribute (bare names, kein "@"-Präfix)
-            'UUID': 'STRUCT("#text" VARCHAR, userName VARCHAR, timestamp VARCHAR, modifications INTEGER)',
+            'UUID': 'STRUCT("#text" VARCHAR, userName VARCHAR, timestamp VARCHAR, modifications BIGINT)',
             'TableOccurrenceReference': 'STRUCT(name VARCHAR, UUID VARCHAR)',
             'LayoutThemeReference': 'STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR, Base VARCHAR)',
             'MenuSet': 'STRUCT("CustomMenuSetReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR))',
@@ -3045,7 +3160,21 @@ layouts_healed AS (
             OR lr.id = MIN(lr.id) OVER (PARTITION BY lr.UUID."#text")) AS is_survivor
     FROM layout_records lr
 )
-INSERT INTO Layouts
+-- Explizite Spaltenliste zwingend: P3 erweitert Layouts um abgeleitete Spalten
+-- (L_Theme_Resolved_Name/_UUID) — eine bestehende Master-DB hat also MEHR Spalten
+-- als das DDL oben. Ein positionaler INSERT bindet dann nicht mehr (Binder Error
+-- am excluded-Binding des UPSERT) und bricht jeden inkrementellen Lauf ab, der
+-- P1 direkt gegen die Master-DB fährt (Einzeldatei-Modus).
+INSERT INTO Layouts (
+    L_ID, L_Name, L_UUID, L_TO_Name, L_TO_UUID, L_Width,
+    L_Theme_ID, L_Theme_Name, L_Theme_UUID,
+    L_MenuSet_ID, L_MenuSet_Name, L_MenuSet_UUID,
+    Options_Raw, View_Form_Available, View_List_Available, View_Table_Available,
+    Default_View, Auto_Save_Changes, Show_Field_Frames, Frame_Current_Record_Only,
+    Show_Current_Record_List, Quick_Find_Enabled, Is_Hidden, L_Theme_Base,
+    Modified_By, Modified_At, Modifications,
+    Folder_Type, Is_Separator, Sequence_ID, File_Name
+)
 SELECT
     lr.id AS L_ID,
     xml_unescape(lr.name) AS L_Name,
@@ -3164,7 +3293,7 @@ WITH src AS (
             'name': 'VARCHAR',
             'isFolder': 'VARCHAR',
             'isSeparatorItem': 'BOOLEAN',
-            'UUID': 'STRUCT("#text" VARCHAR, userName VARCHAR, timestamp VARCHAR, modifications INTEGER)',
+            'UUID': 'STRUCT("#text" VARCHAR, userName VARCHAR, timestamp VARCHAR, modifications BIGINT)',
             'TableOccurrenceReference': 'STRUCT(name VARCHAR, UUID VARCHAR)'
         }
     )
@@ -3223,14 +3352,14 @@ ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTH
 CREATE TABLE IF NOT EXISTS LayoutParts (
     Layout_ID BIGINT,
     Layout_Name VARCHAR,
-    Part_Seq INTEGER,
+    Part_Seq BIGINT,
     Part_Type VARCHAR,
-    Part_Kind INTEGER,
+    Part_Kind BIGINT,
     Definition_Type VARCHAR,
-    Definition_Kind INTEGER,
-    Part_Size INTEGER,
-    Part_Absolute INTEGER,
-    Part_Options INTEGER,
+    Definition_Kind BIGINT,
+    Part_Size BIGINT,
+    Part_Absolute BIGINT,
+    Part_Options BIGINT,
     Object_Count BIGINT,
     Break_Field_ID BIGINT,
     Break_Field_Name VARCHAR,
@@ -3288,12 +3417,12 @@ parts_extracted AS (
         Layout_Name,
         Part_Seq,
         xml_extract_text(part_xml, '/Part/@type')[1] as Part_Type,
-        xml_extract_text(part_xml, '/Part/@kind')[1]::INTEGER as Part_Kind,
+        xml_extract_text(part_xml, '/Part/@kind')[1]::BIGINT as Part_Kind,
         xml_extract_text(part_xml, '/Part/Definition/@type')[1] as Definition_Type,
-        xml_extract_text(part_xml, '/Part/Definition/@kind')[1]::INTEGER as Definition_Kind,
-        xml_extract_text(part_xml, '/Part/Definition/@size')[1]::INTEGER as Part_Size,
-        xml_extract_text(part_xml, '/Part/Definition/@absolute')[1]::INTEGER as Part_Absolute,
-        xml_extract_text(part_xml, '/Part/Definition/@Options')[1]::INTEGER as Part_Options,
+        xml_extract_text(part_xml, '/Part/Definition/@kind')[1]::BIGINT as Definition_Kind,
+        xml_extract_text(part_xml, '/Part/Definition/@size')[1]::BIGINT as Part_Size,
+        xml_extract_text(part_xml, '/Part/Definition/@absolute')[1]::BIGINT as Part_Absolute,
+        xml_extract_text(part_xml, '/Part/Definition/@Options')[1]::BIGINT as Part_Options,
         list_count(xml_extract_elements(part_xml, '/Part/ObjectList/LayoutObject')) as Object_Count,
         xml_extract_text(part_xml, '/Part/Definition/FieldReference/@id')[1]::BIGINT as Break_Field_ID,
         xml_unescape(xml_extract_text(part_xml, '/Part/Definition/FieldReference/@name')[1]) as Break_Field_Name,
@@ -3360,16 +3489,16 @@ CREATE TABLE IF NOT EXISTS LayoutObjects (
     Object_ID BIGINT,
     Object_Type VARCHAR,
     Object_Name VARCHAR,
-    Object_Kind INTEGER,
+    Object_Kind BIGINT,
     Object_Hash VARCHAR,
     Object_UUID VARCHAR,
-    Bounds_Top INTEGER,
-    Bounds_Left INTEGER,
-    Bounds_Bottom INTEGER,
-    Bounds_Right INTEGER,
+    Bounds_Top BIGINT,
+    Bounds_Left BIGINT,
+    Bounds_Bottom BIGINT,
+    Bounds_Right BIGINT,
     Parent_Object_ID BIGINT,
-    Nesting_Level INTEGER,
-    Z_Order INTEGER,
+    Nesting_Level BIGINT,
+    Z_Order BIGINT,
     Hide_Calculation_Text VARCHAR,
     Tooltip_Calculation_Text VARCHAR,
     Label_Calculation_Text VARCHAR,
@@ -3426,19 +3555,19 @@ root_objects AS (
         xml_extract_text(object_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
         fm_canon_layout_type(
             xml_extract_text(object_xml, '/LayoutObject/@type')[1],
-            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::INTEGER,
+            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::BIGINT,
             object_xml) as Object_Type,
         xml_unescape(xml_extract_text(object_xml, '/LayoutObject/@name')[1]) as Object_Name,
-        xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::INTEGER as Object_Kind,
+        xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::BIGINT as Object_Kind,
         xml_extract_text(object_xml, '/LayoutObject/@hash')[1] as Object_Hash,
         xml_extract_text(object_xml, '/LayoutObject/UUID')[1] as Object_UUID,
-        xml_extract_text(object_xml, '/LayoutObject/Bounds/@top')[1]::INTEGER as Bounds_Top,
-        xml_extract_text(object_xml, '/LayoutObject/Bounds/@left')[1]::INTEGER as Bounds_Left,
-        xml_extract_text(object_xml, '/LayoutObject/Bounds/@bottom')[1]::INTEGER as Bounds_Bottom,
-        xml_extract_text(object_xml, '/LayoutObject/Bounds/@right')[1]::INTEGER as Bounds_Right,
+        xml_extract_text(object_xml, '/LayoutObject/Bounds/@top')[1]::BIGINT as Bounds_Top,
+        xml_extract_text(object_xml, '/LayoutObject/Bounds/@left')[1]::BIGINT as Bounds_Left,
+        xml_extract_text(object_xml, '/LayoutObject/Bounds/@bottom')[1]::BIGINT as Bounds_Bottom,
+        xml_extract_text(object_xml, '/LayoutObject/Bounds/@right')[1]::BIGINT as Bounds_Right,
         NULL::BIGINT as Parent_Object_ID,
         0 as Nesting_Level,
-        t.z_order::INTEGER as Z_Order,
+        t.z_order::BIGINT as Z_Order,
         xml_extract_text(object_xml, '/LayoutObject/Conditions/Hide/Calculation/Text')[1] as Hide_Calculation_Text,
         xml_extract_text(object_xml, '/LayoutObject/Tooltip/Calculation/Text')[1] as Tooltip_Calculation_Text,
         COALESCE(
@@ -3474,19 +3603,19 @@ nested_objects AS (
         xml_extract_text(child_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
         fm_canon_layout_type(
             xml_extract_text(child_xml, '/LayoutObject/@type')[1],
-            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::INTEGER,
+            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::BIGINT,
             child_xml) as Object_Type,
         xml_unescape(xml_extract_text(child_xml, '/LayoutObject/@name')[1]) as Object_Name,
-        xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::INTEGER as Object_Kind,
+        xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::BIGINT as Object_Kind,
         xml_extract_text(child_xml, '/LayoutObject/@hash')[1] as Object_Hash,
         xml_extract_text(child_xml, '/LayoutObject/UUID')[1] as Object_UUID,
-        xml_extract_text(child_xml, '/LayoutObject/Bounds/@top')[1]::INTEGER as Bounds_Top,
-        xml_extract_text(child_xml, '/LayoutObject/Bounds/@left')[1]::INTEGER as Bounds_Left,
-        xml_extract_text(child_xml, '/LayoutObject/Bounds/@bottom')[1]::INTEGER as Bounds_Bottom,
-        xml_extract_text(child_xml, '/LayoutObject/Bounds/@right')[1]::INTEGER as Bounds_Right,
+        xml_extract_text(child_xml, '/LayoutObject/Bounds/@top')[1]::BIGINT as Bounds_Top,
+        xml_extract_text(child_xml, '/LayoutObject/Bounds/@left')[1]::BIGINT as Bounds_Left,
+        xml_extract_text(child_xml, '/LayoutObject/Bounds/@bottom')[1]::BIGINT as Bounds_Bottom,
+        xml_extract_text(child_xml, '/LayoutObject/Bounds/@right')[1]::BIGINT as Bounds_Right,
         parent.Object_ID as Parent_Object_ID,
         parent.Nesting_Level + 1 as Nesting_Level,
-        t.z_order::INTEGER as Z_Order,
+        t.z_order::BIGINT as Z_Order,
         xml_extract_text(child_xml, '/LayoutObject/Conditions/Hide/Calculation/Text')[1] as Hide_Calculation_Text,
         xml_extract_text(child_xml, '/LayoutObject/Tooltip/Calculation/Text')[1] as Tooltip_Calculation_Text,
         COALESCE(
@@ -3637,7 +3766,7 @@ census_objects AS (
         xml_extract_text(object_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
         fm_canon_layout_type(
             xml_extract_text(object_xml, '/LayoutObject/@type')[1],
-            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::INTEGER,
+            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::BIGINT,
             object_xml) as Object_Type,
         xml_unescape(xml_extract_text(object_xml, '/LayoutObject/@name')[1]) as Object_Name,
         xml_extract_text(object_xml, '/LayoutObject/UUID')[1] as Object_UUID,
@@ -3655,7 +3784,7 @@ census_objects AS (
         xml_extract_text(child_xml, '/LayoutObject/@id')[1]::BIGINT as Object_ID,
         fm_canon_layout_type(
             xml_extract_text(child_xml, '/LayoutObject/@type')[1],
-            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::INTEGER,
+            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::BIGINT,
             child_xml) as Object_Type,
         xml_unescape(xml_extract_text(child_xml, '/LayoutObject/@name')[1]) as Object_Name,
         xml_extract_text(child_xml, '/LayoutObject/UUID')[1] as Object_UUID,
@@ -3766,7 +3895,7 @@ DROP TABLE IF EXISTS _lo_census;
 -- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS AccountsCatalog (
     Account_ID BIGINT,
-    Account_Kind INTEGER,
+    Account_Kind BIGINT,
     Account_Type VARCHAR,
     Is_Enabled BOOLEAN,
     Account_UUID VARCHAR,
@@ -3798,7 +3927,7 @@ account_records AS (
         columns={
             'Account': 'STRUCT(
                 id BIGINT,
-                kind INTEGER,
+                kind BIGINT,
                 type VARCHAR,
                 enable BOOLEAN,
                 "UUID" STRUCT("#text" VARCHAR, modifications BIGINT, userName VARCHAR, accountName VARCHAR, timestamp VARCHAR),
@@ -3980,7 +4109,7 @@ CREATE TABLE IF NOT EXISTS PrivilegeSetsCatalog (
     Scripts_Edit BOOLEAN,
     Scripts_Delete BOOLEAN,
     Scripts_View VARCHAR,
-    Other_Value INTEGER,
+    Other_Value BIGINT,
     Allow_Print BOOLEAN,
     Allow_Export BOOLEAN,
     Manage_Database BOOLEAN,
@@ -4030,7 +4159,7 @@ SELECT
     xml_extract_text(ps_xml, '/PrivilegeSet/access/Scripts/@Edit')[1] = 'True' as Scripts_Edit,
     xml_extract_text(ps_xml, '/PrivilegeSet/access/Scripts/@Delete')[1] = 'True' as Scripts_Delete,
     xml_extract_text(ps_xml, '/PrivilegeSet/access/Scripts/@View')[1] as Scripts_View,
-    xml_extract_text(ps_xml, '/PrivilegeSet/access/Other/@value')[1]::INTEGER as Other_Value,
+    xml_extract_text(ps_xml, '/PrivilegeSet/access/Other/@value')[1]::BIGINT as Other_Value,
     xml_extract_text(ps_xml, '/PrivilegeSet/access/Other/@Print')[1] = 'True' as Allow_Print,
     xml_extract_text(ps_xml, '/PrivilegeSet/access/Other/@Export')[1] = 'True' as Allow_Export,
     xml_extract_text(ps_xml, '/PrivilegeSet/access/Other/@manageDatabase')[1] = 'True' as Manage_Database,
@@ -4515,6 +4644,26 @@ CREATE TABLE IF NOT EXISTS DDR_Calculations (
     PRIMARY KEY (Calc_UUID, Chunk_Index, File_Name)
 );
 
+-- DDR_ChunkListContexts (Schema 1.27.0): eine Zeile pro ChunkList-Anker des
+-- DDR_INFO-Teils — inkl. LEERER ChunkLists (Chunk_Count = 0), die in
+-- DDR_Calculations naturgemäß keine Zeile hinterlassen (kein Chunk). Trägt die
+-- Kontext-TO des Ankers (direktes TableOccurrenceReference-Kind neben der
+-- ChunkList). Konsumenten: P2 A.5.1b/A.5.1c (Feld-Auflösung gegen die
+-- Kontext-TO), P4 b_disp + Display-Anreicherung (Kontext-TO, D2-Fallback),
+-- P6 v_check_display_empty_chunklist. Der Join auf den Anker läuft IMMER über
+-- Calc_UUID (Anker-Name) — nie über Calc_Hash: identische Formeln teilen den
+-- Hash, aber jeder Anker trägt seine eigene Kontext-TO.
+CREATE TABLE IF NOT EXISTS DDR_ChunkListContexts (
+    Calc_UUID VARCHAR,          -- Anker-Name '_<Owner-UUID>_<Slot>' (wie DDR_Calculations)
+    Calc_Hash VARCHAR,
+    Chunk_Count BIGINT,         -- 0 = leere ChunkList (z. B. %X:-Layoutformel-Defekt)
+    Context_TO_ID BIGINT,
+    Context_TO_Name VARCHAR,
+    Context_TO_UUID VARCHAR,
+    File_Name VARCHAR,
+    PRIMARY KEY (Calc_UUID, File_Name)
+);
+
 -- @P1_SECTION:Calculation,DDR_INFO@
 -- [streamify block: ddr_calculations — eingefügt von gen_streamify_sql.sh]
 -- streamify-Override für DDR_Calculations.
@@ -4577,6 +4726,54 @@ ON CONFLICT (Calc_UUID, Chunk_Index, File_Name) DO UPDATE SET
     Calc_Hash = EXCLUDED.Calc_Hash,
     Chunk_Type = EXCLUDED.Chunk_Type,
     Chunk_Content = EXCLUDED.Chunk_Content;
+
+-- DDR_ChunkListContexts: zweiter Pass über dieselben ObjectList-Einträge
+-- (Begründung + Pfad-Semantik in der DOM-Basis). Extraktion identisch zur
+-- Basis, nur der ddr_calc_raw-Anker ist der SAX-Read.
+WITH filename_normalized AS (
+    SELECT getvariable('fm_file') as File_Name
+),
+ddr_calc_raw AS (
+    SELECT
+        unnest(xml_extract_elements('<Calculation>' || Calculation || '</Calculation>', '/Calculation/ObjectList/*')) as calc_elem
+    FROM read_xml(
+        getvariable('fm_xml'),
+        record_element='DDR_INFO',
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={'Calculation':'VARCHAR'}
+    )
+    WHERE Calculation IS NOT NULL
+),
+chunk_list_ctx AS (
+    SELECT
+        regexp_extract(calc_elem::VARCHAR, '<(_[^\s>]+)', 1) as Calc_UUID,
+        xml_extract_text(calc_elem, '//*/@hash')[1] as Calc_Hash,
+        len(xml_extract_elements(calc_elem, '//ChunkList/Chunk')) as Chunk_Count,
+        TRY_CAST(NULLIF(xml_extract_text(calc_elem, '/*/TableOccurrenceReference/@id')[1], '') AS BIGINT) as Context_TO_ID,
+        NULLIF(xml_extract_text(calc_elem, '/*/TableOccurrenceReference/@name')[1], '') as Context_TO_Name,
+        NULLIF(xml_extract_text(calc_elem, '/*/TableOccurrenceReference/@UUID')[1], '') as Context_TO_UUID
+    FROM ddr_calc_raw
+    WHERE xml_extract_text(calc_elem, '//*/@datatype')[1] = 'ChunkList'
+)
+INSERT INTO DDR_ChunkListContexts
+SELECT
+    c.Calc_UUID,
+    c.Calc_Hash,
+    c.Chunk_Count,
+    c.Context_TO_ID,
+    c.Context_TO_Name,
+    c.Context_TO_UUID,
+    fn.File_Name
+FROM chunk_list_ctx c
+CROSS JOIN filename_normalized fn
+WHERE c.Calc_UUID IS NOT NULL AND c.Calc_UUID <> ''
+ON CONFLICT (Calc_UUID, File_Name) DO UPDATE SET
+    Calc_Hash = EXCLUDED.Calc_Hash,
+    Chunk_Count = EXCLUDED.Chunk_Count,
+    Context_TO_ID = EXCLUDED.Context_TO_ID,
+    Context_TO_Name = EXCLUDED.Context_TO_Name,
+    Context_TO_UUID = EXCLUDED.Context_TO_UUID;
 
 
 
@@ -4704,8 +4901,43 @@ CREATE TABLE IF NOT EXISTS ScriptTriggers (
     Owner_UUID VARCHAR,
     Owner_Type VARCHAR,
     File_Name VARCHAR,
+    -- Roh-Fragment des Triggers (Schema 1.22.0) — NUR für Owner-Typen
+    -- 'Layout'/'File' belegt: deren Parameter-Berechnungen (DDRREF-Hashes)
+    -- liegen in KEINEM anderen persistierten Blob (Object-Level-Trigger
+    -- stecken bereits in LayoutObjects.Object_XML). P2/A.12 erntet daraus
+    -- die Trigger-Parameter-Referenzen. Inhalt kann zwischen DOM- und
+    -- SAX-Pfad in Serialisierungs-Details divergieren (CDATA/Whitespace) —
+    -- die A.12-Regex-Ernte liest nur Attribute + DDRREF-Text (robust);
+    -- NIE als Identitätsquelle verwenden (PK bleibt serialisierungs-frei).
+    Trigger_XML VARCHAR,
+    -- Modus-Scope (Schema 1.24.0): SaXML schreibt NUR aktivierte Modi als
+    -- Attribute — NULL heißt "Modus nicht aktiviert", nie "unbekannt".
+    -- VARCHAR-Passthrough ('True'/NULL) analog Trigger_BrowseMode.
+    Trigger_FindMode VARCHAR,
+    Trigger_PreviewMode VARCHAR,
+    -- Nur OnWindowTransaction (Schema 1.24.0): Feldname, dessen Inhalt in den
+    -- JSON-Scriptparameter aufgenommen wird. Reine Namens-Referenz (keine
+    -- Tabellen-Qualifizierung, keine ID/UUID), von FileMaker zur Laufzeit je
+    -- auslösender Tabelle spät gebunden — deshalb hier nur persistiert, ohne
+    -- aufgelöste Feld-Kante.
+    Trigger_ScriptParameter_FieldName VARCHAR,
+    -- Klartext der Parameter-Berechnung (Schema 1.26.0):
+    -- /ScriptTrigger/ScriptReference/Calculation/Text, via xml_extract_text
+    -- CDATA-/Entity-dekodiert — DOM- und SAX-Capture landen auf demselben Wert.
+    -- Reiner Payload (NIE Identitätsquelle, PK bleibt serialisierungs-frei);
+    -- P4 speist daraus Formula_Text der script_trigger_parameter-Instanzen
+    -- inkl. per-Trigger-No-DDR-Fallback aller drei Owner-Ebenen.
+    Trigger_Parameter_Text VARCHAR,
     PRIMARY KEY (Trigger_ID, Owner_UUID, File_Name)
 );
+
+-- Additive Migration für Bestands-DBs (Spalte ans Ende, positionsbasierte
+-- INSERTs bleiben konsistent — Muster XMLCalcReferences).
+ALTER TABLE ScriptTriggers ADD COLUMN IF NOT EXISTS Trigger_XML VARCHAR;
+ALTER TABLE ScriptTriggers ADD COLUMN IF NOT EXISTS Trigger_FindMode VARCHAR;
+ALTER TABLE ScriptTriggers ADD COLUMN IF NOT EXISTS Trigger_PreviewMode VARCHAR;
+ALTER TABLE ScriptTriggers ADD COLUMN IF NOT EXISTS Trigger_ScriptParameter_FieldName VARCHAR;
+ALTER TABLE ScriptTriggers ADD COLUMN IF NOT EXISTS Trigger_Parameter_Text VARCHAR;
 
 -- Owner-getrennte Extraktion: das frühere flache '//ScriptTriggers/ScriptTrigger'
 -- verwarf den Parent-Kontext. Drei Quellen per UNION ALL, jede trägt Owner_UUID
@@ -4804,7 +5036,26 @@ SELECT
     )) as Owner_UUID,
     t.Owner_Type,
 
-    fn.File_Name as File_Name
+    fn.File_Name as File_Name,
+
+    -- Trigger_XML nur für Layout-/File-Level (Schema 1.22.0, s. Basis-SQL);
+    -- Object-Level bleibt NULL (Blob liegt bereits in LayoutObjects.Object_XML).
+    -- SAX-Capture kann in Serialisierungs-Details vom DOM-Pfad abweichen —
+    -- Konsument (P2/A.12) liest nur Attribute + DDRREF-Text (robust).
+    CASE WHEN t.Owner_Type IN ('Layout', 'File')
+         THEN t.trigger_xml::VARCHAR END as Trigger_XML,
+
+    -- Modus-Scope + Transaktions-Parameterfeld (Schema 1.24.0, s. Basis-SQL):
+    -- Attribut fehlt = Modus aus / kein Parameterfeld. Attribut-Extraktion ist
+    -- serialisierungs-unabhängig — DOM- und SAX-Pfad bleiben bit-identisch.
+    xml_extract_text(t.trigger_xml, '/ScriptTrigger/@findMode')[1] as Trigger_FindMode,
+    xml_extract_text(t.trigger_xml, '/ScriptTrigger/@previewMode')[1] as Trigger_PreviewMode,
+    xml_extract_text(t.trigger_xml, '/ScriptTrigger/@scriptParameterFieldName')[1] as Trigger_ScriptParameter_FieldName,
+
+    -- Parameter-Klartext (Schema 1.26.0, s. Basis-SQL): xml_extract_text
+    -- dekodiert CDATA/Entities — DOM- und SAX-Capture landen auf demselben
+    -- Wert, obwohl die Roh-Serialisierung divergieren kann.
+    xml_extract_text(t.trigger_xml, '/ScriptTrigger/ScriptReference/Calculation/Text')[1] as Trigger_Parameter_Text
 
 FROM all_triggers t
 CROSS JOIN filename_normalized fn
@@ -4815,7 +5066,12 @@ ON CONFLICT (Trigger_ID, Owner_UUID, File_Name) DO UPDATE SET
     Script_ID = EXCLUDED.Script_ID,
     Script_Name = EXCLUDED.Script_Name,
     Script_UUID = EXCLUDED.Script_UUID,
-    Owner_Type = EXCLUDED.Owner_Type;
+    Owner_Type = EXCLUDED.Owner_Type,
+    Trigger_XML = EXCLUDED.Trigger_XML,
+    Trigger_FindMode = EXCLUDED.Trigger_FindMode,
+    Trigger_PreviewMode = EXCLUDED.Trigger_PreviewMode,
+    Trigger_ScriptParameter_FieldName = EXCLUDED.Trigger_ScriptParameter_FieldName,
+    Trigger_Parameter_Text = EXCLUDED.Trigger_Parameter_Text;
 
 
 -- ============================================
@@ -4944,7 +5200,7 @@ ON CONFLICT (Menu_UUID, File_Name) DO UPDATE SET
 CREATE TABLE IF NOT EXISTS CustomMenuItemCatalog (
     Item_UUID VARCHAR,
     Item_Hash VARCHAR,
-    Item_Index INTEGER,
+    Item_Index BIGINT,
     Is_SubMenuItem BOOLEAN,
     Is_SeparatorItem BOOLEAN,
     Command_Name VARCHAR,
@@ -4969,7 +5225,7 @@ INSERT INTO CustomMenuItemCatalog
 SELECT
     upper(xml_extract_text(Item_XML, '/CustomMenuItem/UUID')[1])                 AS Item_UUID,
     xml_extract_text(Item_XML, '/CustomMenuItem/@hash')[1]                       AS Item_Hash,
-    TRY_CAST(xml_extract_text(Item_XML, '/CustomMenuItem/@index')[1] AS INTEGER) AS Item_Index,
+    TRY_CAST(xml_extract_text(Item_XML, '/CustomMenuItem/@index')[1] AS BIGINT) AS Item_Index,
     xml_extract_text(Item_XML, '/CustomMenuItem/@isSubMenuItem')[1] = 'True'     AS Is_SubMenuItem,
     xml_extract_text(Item_XML, '/CustomMenuItem/@isSeparatorItem')[1] = 'True'   AS Is_SeparatorItem,
     xml_extract_text(Item_XML, '/CustomMenuItem/Command/@name')[1]               AS Command_Name,

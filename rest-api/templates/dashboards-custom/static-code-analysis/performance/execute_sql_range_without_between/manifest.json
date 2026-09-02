@@ -1,0 +1,96 @@
+{
+  "id": "execute_sql_range_without_between",
+  "version": "1.0.0",
+  "title": "ExecuteSQL range without BETWEEN",
+  "description": "Performance rule — ExecuteSQL range conditions written as >=/<= instead of BETWEEN make the engine evaluate two separate conditions and intersect the results; the BETWEEN construct runs the range once and is many times faster than the two single comparisons.",
+  "author": "fm-lab rules",
+  "icon": "gauge",
+  "category": "performance",
+  "tags": [
+    "rule",
+    "performance",
+    "sql"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "performance",
+    "rationale": "The internal SQL engine treats `field >= X AND field <= Y` as two separate conditions and intersects the result sets; `BETWEEN` is recognized as a single range scan. A community measurement on ~500k records saw a factor-88 difference (728 ms vs 8 ms, averaged over 8 runs).",
+    "remediation": "Replace `field >= X AND field <= Y` with `field BETWEEN X AND Y` — semantically identical (both bounds inclusive, same NULL behavior), so the rewrite can never change the result.",
+    "meta": {
+      "name": "ExecuteSQL range without BETWEEN",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "Performance rule — ExecuteSQL range conditions written as >=/<= instead of BETWEEN make the engine evaluate two separate conditions and intersect the results; the BETWEEN construct runs the range once and is many times faster than the two single comparisons.",
+      "created": "2026-08-30",
+      "references": [
+        {
+          "project": "Community measurement",
+          "rule": "ExecuteSQL date range >=/<= vs BETWEEN — factor 88 on ~500k records",
+          "url": null
+        }
+      ]
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Script",
+      "Field",
+      "CustomFunction"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "findings": "native",
+        "summary": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — ExecuteSQL range without BETWEEN"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  }
+}

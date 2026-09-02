@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "BETWEEN 없는 ExecuteSQL 범위 검색",
+    "description": "성능 규칙 — ExecuteSQL 범위 조건을 BETWEEN 대신 >=/<= 로 작성하면 엔진이 두 조건을 따로 평가한 뒤 교집합을 만듭니다. BETWEEN 구문은 범위를 한 번에 스캔하며 개별 비교보다 몇 배나 빠릅니다."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 수",
+    "summary_kpi.props.items[1].label": "영향받는 파일",
+    "summary_kpi.props.items[2].label": "ExecuteSQL 호출",
+    "summary_kpi.props.items[3].label": "BETWEEN 사용 중",
+    "findings_card.props.title": "BETWEEN 없는 ExecuteSQL 범위 검색",
+    "findings_table.props.searchPlaceholder": "파일 또는 오브젝트 검색…",
+    "findings_table.props.empty.message": "BETWEEN 없는 ExecuteSQL 범위 패턴을 찾을 수 없습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "오브젝트",
+    "findings_table.props.columns[2].label": "유형",
+    "findings_table.props.columns[3].label": "단계",
+    "findings_table.props.columns[4].label": "함수",
+    "findings_table.props.columns[5].label": "SQL 발췌"
+  }
+}

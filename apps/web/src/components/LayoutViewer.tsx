@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { LayoutMeta, LayoutTrigger } from '../hooks/useLayoutData';
 import { buildObjectPath } from '../lib/navigation';
+import { useTriggerEventFormat } from '../lib/triggerEvents';
 import './FieldViewer.css';
 import './LayoutViewer.css';
 
@@ -43,11 +44,6 @@ function prettyTheme(name: string | null): string | null {
     .join(' ');
 }
 
-/** Kanonischer Trigger-Action-Name → lesbare Beschriftung: "OnRecordLoad" → "On Record Load". */
-function humanizeAction(action: string): string {
-  return action.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
-}
-
 /** ISO-Zeitstempel "2026-07-15T14:57:39" → "2026-07-15 14:57" (ohne Sekunden). */
 function formatTimestamp(ts: string | null): string | null {
   if (!ts) return null;
@@ -64,6 +60,7 @@ function formatTimestamp(ts: string | null): string | null {
 export const LayoutViewer: React.FC<LayoutViewerProps> = ({ meta, triggers, originUuid, highlightUuids }) => {
   const { t } = useTranslation(['detail']);
   const navigate = useNavigate();
+  const fmtEvent = useTriggerEventFormat();
   const hlTriggerIds = useMemo(() => highlightedTriggerIds(highlightUuids), [highlightUuids]);
   const firstHlIndex = triggers.findIndex(tr => hlTriggerIds.has(tr.trigger_id));
   const firstHlRef = useRef<HTMLLIElement>(null);
@@ -222,7 +219,39 @@ export const LayoutViewer: React.FC<LayoutViewerProps> = ({ meta, triggers, orig
                   ref={isFirstHl ? firstHlRef : undefined}
                   className={'fm-layout-trigger' + (isHl ? ' is-highlighted' : '')}
                 >
-                  <span className="fm-layout-trigger-event">{humanizeAction(tr.trigger_action)}</span>
+                  {/* Event-Name als Link auf die ScriptTrigger-Detailseite;
+                      reiner Text auf älteren API-Ständen ohne trigger_uuid. */}
+                  {tr.trigger_uuid ? (
+                    <button
+                      type="button"
+                      className="fm-field-link fm-layout-trigger-event"
+                      title={t('detail:scriptTriggerDetail.openTrigger', { defaultValue: 'Script-Trigger öffnen' }) as string}
+                      onClick={() => navigate(buildObjectPath(tr.trigger_uuid!, originUuid, tr.file_name))}
+                    >
+                      {fmtEvent(tr.trigger_action)}
+                    </button>
+                  ) : (
+                    <span className="fm-layout-trigger-event">{fmtEvent(tr.trigger_action)}</span>
+                  )}
+                  {(tr.browse_mode || tr.find_mode || tr.preview_mode) && (
+                    <span className="fm-layout-trigger-modes">
+                      {tr.browse_mode && (
+                        <span className="fm-layout-trigger-mode" title={t('detail:layoutObjectDetail.modeBrowse', { defaultValue: 'Browse mode' }) as string}>
+                          {t('detail:layoutObjectDetail.colBrowse', { defaultValue: 'B' })}
+                        </span>
+                      )}
+                      {tr.find_mode && (
+                        <span className="fm-layout-trigger-mode" title={t('detail:layoutObjectDetail.modeFind', { defaultValue: 'Find mode' }) as string}>
+                          {t('detail:layoutObjectDetail.colFind', { defaultValue: 'F' })}
+                        </span>
+                      )}
+                      {tr.preview_mode && (
+                        <span className="fm-layout-trigger-mode" title={t('detail:layoutObjectDetail.modePreview', { defaultValue: 'Preview mode' }) as string}>
+                          {t('detail:layoutObjectDetail.colPreview', { defaultValue: 'P' })}
+                        </span>
+                      )}
+                    </span>
+                  )}
                   <span className="fm-layout-trigger-arrow" aria-hidden="true">→</span>
                   {tr.script_uuid ? (
                     <button

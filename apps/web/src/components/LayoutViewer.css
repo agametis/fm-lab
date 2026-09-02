@@ -146,6 +146,23 @@
   font-weight: 500;
 }
 
+/* Modus-Scope-Badges (Blättern/Suchen/Vorschau) — kompakte Buchstaben-Chips,
+   Kurzform aus detail:layoutObjectDetail.col*, Langform im title-Tooltip. */
+.fm-layout-trigger-modes {
+  display: inline-flex;
+  gap: 0.15rem;
+}
+
+.fm-layout-trigger-mode {
+  font-size: 0.68rem;
+  line-height: 1.2;
+  padding: 0 0.28rem;
+  border: 1px solid var(--color-border, rgba(128, 128, 128, 0.45));
+  border-radius: 3px;
+  color: var(--color-text-secondary, var(--color-text-primary));
+  cursor: default;
+}
+
 /* Trigger, zu dem per ?ref=trig_… navigiert wurde — hervorgehoben: Akzent-Fläche
    PLUS roter Rahmen, passend zum roten Selektions-/Match-Ring im LayoutCanvas
    (layoutObjectTheme selectionRing: #dc2626 hell / #ff5a5a dunkel). */

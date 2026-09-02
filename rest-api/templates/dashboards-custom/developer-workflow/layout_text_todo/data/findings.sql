@@ -13,6 +13,10 @@
 -- "TO DO" — a real finding in the reference corpus. The family uses one
 -- detector across scripts, layouts and calculations.
 --
+-- Slot sources: the text slot is LayoutObjects.Text_Content (static layout
+-- text, not a calculation slot); the tooltip and label slots are the
+-- CalculationsCatalog instances of the object (roles tooltip / button_label).
+--
 -- Severity is info (traffic light: neutral): a TODO is an inventory figure,
 -- not a defect. The defect half of the family is layout_text_fixme.
 --
@@ -24,15 +28,13 @@ WITH slots AS (
            'text' AS slot, Text_Content AS content
     FROM LayoutObjects WHERE Text_Content IS NOT NULL
     UNION ALL
-    SELECT File_Name, Layout_ID, Object_UUID, Object_Type, Object_Name, Part_Type,
-           Bounds_Left, Bounds_Top, Bounds_Right, Bounds_Bottom,
-           'tooltip' AS slot, Tooltip_Calculation_Text AS content
-    FROM LayoutObjects WHERE Tooltip_Calculation_Text IS NOT NULL
-    UNION ALL
-    SELECT File_Name, Layout_ID, Object_UUID, Object_Type, Object_Name, Part_Type,
-           Bounds_Left, Bounds_Top, Bounds_Right, Bounds_Bottom,
-           'label' AS slot, Label_Calculation_Text AS content
-    FROM LayoutObjects WHERE Label_Calculation_Text IS NOT NULL
+    SELECT lo.File_Name, lo.Layout_ID, lo.Object_UUID, lo.Object_Type, lo.Object_Name, lo.Part_Type,
+           lo.Bounds_Left, lo.Bounds_Top, lo.Bounds_Right, lo.Bounds_Bottom,
+           CASE c.Calc_Role WHEN 'button_label' THEN 'label' ELSE 'tooltip' END AS slot,
+           COALESCE(c.Formula_Text, c.Display_Text) AS content
+    FROM CalculationsCatalog c
+    JOIN LayoutObjects lo ON lo.Object_UUID = c.Owner_UUID AND lo.File_Name = c.File_Name
+    WHERE c.Calc_Role IN ('tooltip', 'button_label')
 )
 SELECT 'layout-text-todo' AS rule_id, 'info' AS severity,
     s.File_Name AS file_name, ly.L_UUID AS nav_uuid, ly.L_Name AS layout_name,

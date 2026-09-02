@@ -222,6 +222,13 @@
   gap: 0.3rem;
 }
 
+/* Kombinierte Rollen-Chips (`reads_field · CF`) — zweite Filter-Reihe unter
+   den Typ-Pillen, per Hairline von diesen abgesetzt. */
+.references-filter-roles {
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.4rem;
+}
+
 .references-filter-pill {
   display: inline-flex;
   align-items: center;
@@ -349,6 +356,33 @@
   flex: 1;
   color: var(--color-accent);
   font-weight: 500;
+}
+
+/* Layout-Sprung eines LayoutObject-Eintrags: Zweitziel-Pfeil direkt hinter der
+   Typ-Pille (Muster: Dashboard-Row-Action / TO-Graph-Link). stopPropagation
+   gegen den Zeilen-Klick, der die Detail-Seite öffnet. */
+.ref-layout-jump {
+  flex: 0 0 auto;
+  padding: 1px 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 0.9em;
+  line-height: 1.4;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+}
+
+.ref-layout-jump:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: var(--color-hover-bg);
+}
+
+.ref-layout-jump:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }
 
 /* Rechte Meta-Gruppe (Zähler · Rolle · Datei · Badges · Pfeil). Eigenes
@@ -528,6 +562,15 @@
   color: var(--color-text-muted);
 }
 
+/* Pill-Container im StatusBar-Message-Slot: RefOriginPill und VarSelectionPill
+   können gleichzeitig sichtbar sein und fließen nebeneinander. */
+.status-pill-stack {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 /* RefOriginPill — Cross-Reference Highlight */
 .ref-pill {
   display: flex;
@@ -543,6 +586,17 @@
   color: var(--color-accent-soft-fg);
   font-size: 0.85rem;
   flex-wrap: wrap;
+}
+
+/* VarSelectionPill — Variablen-Auswahl: blauer Links-Akzent, konsistent mit
+   dem .fm-ref--var-selected-Ring der Token-Hervorhebung. Steht NACH .ref-pill,
+   damit die border-left-color das Shorthand der Basisklasse überschreibt. */
+.var-pill {
+  border-left-color: #2563eb;
+}
+
+[data-theme="dark"] .var-pill {
+  border-left-color: #60a5fa;
 }
 
 .ref-pill--unresolved {

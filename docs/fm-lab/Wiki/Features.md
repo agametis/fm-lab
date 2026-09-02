@@ -6,9 +6,9 @@ The current public setup supports the following features:
 
 - **Katana-Engine** — XML chunking and streaming for processing massive catalogs with minimal memory usage and maximum parallelism (see [details](katana-engine.md)) 🔪
 
-- **Detailed Object Catalog** — detailed tables for the relevant FileMaker object types, combined with a universal catalog that links objects and their dependencies for fast cross-reference queries 🔗
+- **Detailed Object Catalog** — detailed tables for the relevant FileMaker object types — from scripts, fields and layouts to relationships, value lists and custom functions — combined with a universal catalog that links objects and their dependencies for fast cross-reference queries. The resolution reaches down to the finest grain: even every calculation formula, conditional-formatting rule, merge field and script trigger is an individually addressable object 🔗
 
-- **Detailed Reference Catalog** — localized reference tables for documented FileMaker script steps and functions, enabling linting and inline help across up to 11 locales (see [details](fm-spec.md)) 📄
+- **Detailed Reference Catalog** — localized reference tables for documented FileMaker script steps, functions and trigger events, enabling linting and inline help across up to 11 locales (see [details](fm-spec.md)) 📄
 
 - **DuckDB Backend** — in-process analytical database engine for fast and flexible queries without server setup, often delivering results in milliseconds, even for large solutions 🚀
 

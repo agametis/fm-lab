@@ -140,47 +140,24 @@ CREATE INDEX idx_block_tree_step   ON v_script_block_tree (Step_UUID);
 -- Dekodierung in der Konvertierungs-Phase passieren, analog StepsForScripts.Inserted_Text.
 LOAD webbed;
 
+-- Seit Schema 1.22.0 ist die Anker-Auflösung in die Konvertierungs-Phase P4
+-- gewandert (CalculationsCatalog, convert_xml_04_catalog.sql) — dort entsteht
+-- eine Zeile pro Berechnungs-INSTANZ inkl. der strukturellen Slots ohne
+-- DDR-Anker. v_calc_anchors bleibt als KOMPATIBILITÄTS-FASSADE bestehen:
+-- dieselben Spalten, derselbe Zeilenbestand (nur DDR-verankerte Instanzen),
+-- jetzt als billige materialisierte Projektion (bewusst TABLE, kein VIEW —
+-- DuckDBs DROP … IF EXISTS scheitert am Typ-Wechsel Table↔View in beiden
+-- Richtungen, eine In-Place-Umwandlung wäre nicht idempotent skriptbar).
+-- Kind_Label bleibt hier die Single Source für Detail-Templates/Frontend.
 DROP TABLE IF EXISTS v_calc_anchors;
 CREATE TABLE v_calc_anchors AS
-WITH chunk_pieces AS (
-    -- Ein Scan über DDR_Calculations: pro Chunk das lesbare Fragment.
-    -- Chunk_Index ist pro Calc_UUID eindeutig (nur 5 degenerierte __N-UUIDs
-    -- ohne Anker haben Duplikate, die der Anchor-Filter unten ohnehin verwirft),
-    -- daher keine Dedup nötig.
-    SELECT
-        Calc_UUID,
-        File_Name,
-        Calc_Hash,
-        Chunk_Index,
-        Chunk_Type,
-        CASE Chunk_Type
-            WHEN 'FieldRef' THEN
-                COALESCE(xml_extract_text(Chunk_Content, '/Chunk/FieldReference/TableOccurrenceReference/@name')[1] || '::', '')
-                || COALESCE(xml_extract_text(Chunk_Content, '/Chunk/FieldReference/@name')[1], '?')
-            ELSE COALESCE(xml_extract_text(Chunk_Content, '/Chunk')[1], '')
-        END AS Piece
-    FROM DDR_Calculations
-),
-calc AS (
-    SELECT
-        Calc_UUID,
-        File_Name,
-        MIN(Calc_Hash)                                                      AS Calc_Hash,
-        upper(regexp_extract(Calc_UUID, '_([0-9A-Fa-f-]{36})', 1))          AS Anchor_UUID,
-        regexp_replace(Calc_UUID, '^_[0-9A-Fa-f-]{36}_?', '')               AS Calc_Kind_Raw,
-        COUNT(*)                                                            AS Chunk_Count,
-        COUNT(*) FILTER (WHERE Chunk_Type NOT IN ('NoRef', 'Comment'))      AS Ref_Count,
-        string_agg(Piece, '' ORDER BY Chunk_Index)                          AS Display_Text
-    FROM chunk_pieces
-    GROUP BY Calc_UUID, File_Name
-)
 SELECT
-    c.Calc_UUID,
-    c.Calc_Hash,
-    c.Anchor_UUID,
+    c.DDR_Calc_UUID                                                         AS Calc_UUID,
+    c.Formula_Hash                                                          AS Calc_Hash,
+    upper(regexp_extract(c.DDR_Calc_UUID, '_([0-9A-Fa-f-]{36})', 1))        AS Anchor_UUID,
     -- Normalisierter Eigenschafts-Schlüssel:
     --   BARE    = CF-Body (leeres Suffix)
-    --   NUMERIC = Script-Step-Parameter (Suffix = Step-Typ-ID, evtl. mit Sub-Index 137_2)
+    --   NUMERIC = Script-Step-Parameter (Suffix = Calc-Position, evtl. mit Sub-Index 137_2)
     --   sonst   = die Eigenschaft (Hide, Condition_1, PopoverPanel, Install, Title, Name …)
     CASE
         WHEN c.Calc_Kind_Raw = ''                        THEN 'BARE'
@@ -211,19 +188,18 @@ SELECT
             THEN 'Script Trigger Parameter ' || regexp_extract(c.Calc_Kind_Raw, '_(\d+)$', 1)
         ELSE c.Calc_Kind_Raw
     END                                                                     AS Kind_Label,
-    COALESCE(oc.Object_Type, 'unresolved')                                  AS Owner_Type,
-    oc.Object_UUID                                                          AS Owner_UUID,
-    oc.Object_Name                                                          AS Owner_Name,
+    c.Owner_Type,
+    -- Fassaden-Semantik wie zuvor: unaufgelöste Anker tragen Owner_UUID NULL
+    -- (CalculationsCatalog speichert dort die Anker-UUID als Identitätsträger)
+    CASE WHEN c.Owner_Type = 'unresolved' THEN NULL ELSE c.Owner_UUID END   AS Owner_UUID,
+    c.Owner_Name,
     c.File_Name                                                             AS Owner_File,
-    (c.Ref_Count = 0)                                                       AS Is_Static,
+    c.Is_Static,
     c.Chunk_Count,
     c.Ref_Count,
     c.Display_Text
-FROM calc c
-LEFT JOIN ObjectCatalog oc
-       ON upper(oc.Object_UUID) = c.Anchor_UUID
-      AND oc.File_Name          = c.File_Name
-WHERE c.Anchor_UUID <> '';
+FROM CalculationsCatalog c
+WHERE c.DDR_Calc_UUID IS NOT NULL;
 
 CREATE INDEX idx_calc_anchors_owner ON v_calc_anchors (Owner_UUID, Owner_File);
 CREATE INDEX idx_calc_anchors_hash  ON v_calc_anchors (Calc_Hash);

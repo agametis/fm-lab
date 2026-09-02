@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "ExecuteSQL-intervall utan BETWEEN",
+    "description": "Prestandaregel — ExecuteSQL-intervallvillkor skrivna med >=/<= i stället för BETWEEN får motorn att utvärdera två separata villkor och bilda snittmängden; BETWEEN-konstruktionen går igenom intervallet en enda gång och är många gånger snabbare än de enskilda jämförelserna."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Berörda filer",
+    "summary_kpi.props.items[2].label": "ExecuteSQL-anrop",
+    "summary_kpi.props.items[3].label": "Redan BETWEEN",
+    "findings_card.props.title": "ExecuteSQL-intervall utan BETWEEN",
+    "findings_table.props.searchPlaceholder": "Sök fil eller objekt…",
+    "findings_table.props.empty.message": "Inget ExecuteSQL-intervallmönster utan BETWEEN hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Objekt",
+    "findings_table.props.columns[2].label": "Typ",
+    "findings_table.props.columns[3].label": "Steg",
+    "findings_table.props.columns[4].label": "Funktion",
+    "findings_table.props.columns[5].label": "SQL-utdrag"
+  }
+}

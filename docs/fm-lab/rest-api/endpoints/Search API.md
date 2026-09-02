@@ -74,6 +74,8 @@ Search objects by name pattern.
 
 Beyond object names, the search also matches **value-list values** (hits report the matched values in `Matched_Values`) and **script-step contents** (hits are `ScriptStep` rows carrying `Step_Text`, `Script_Name` and `Step_Index` for breadcrumb display). Results are ordered by name.
 
+`Calculation` objects are **excluded** from the generic (untyped) name search — their generated names (`<Owner> › <Role>`) would flood every owner-name query with duplicates. With an explicit `type=calculation` the type remains fully searchable and listable.
+
 ```bash
 curl "http://localhost:3003/api/search?name=%25Invoice%25&type=script"
 ```

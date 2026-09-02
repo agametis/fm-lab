@@ -25,7 +25,15 @@
     "abortOomTitle": "内存不足",
     "abortOomBody": "此解决方案对于本机可用内存来说过大。请在内存更大（8 GB 或以上）的机器上运行导入，或使用降低的内存配置重试。",
     "abortIncompleteTitle": "构建不完整",
-    "abortIncompleteBody": "引用解析未完成，因此无法构建对象目录。请查看运行日志了解详情。"
+    "abortIncompleteBody": "引用解析未完成，因此无法构建对象目录。请查看运行日志了解详情。",
+    "logStart": "── 开始 ──",
+    "logAborted": "── 已中止 ──",
+    "logAbortedOom": "⚠ 已中止 — 内存不足（解决方案对此环境而言过大）。",
+    "logAbortedIncomplete": "⚠ 已中止 — 构建未完成（引用解析失败）。",
+    "logDone": "── 完成 ──",
+    "logDoneError": "── 已结束，出现错误 (exit {{code}}) ──",
+    "logReloadOk": "重新加载成功。",
+    "logReloadError": "重新加载失败：{{error}}"
   },
   "cellValues": {
     "yes": "是",

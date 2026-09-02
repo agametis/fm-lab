@@ -125,5 +125,9 @@
   "unconnectedHidden_other": "{{count}} nodes not connected to the focus",
   "unconnectedToggleShow": "show",
   "unconnectedToggleHide": "hide",
-  "unconnectedToggleHint": "Nodes with no path to the focus result from the type/depth filter — show or hide them"
+  "unconnectedToggleHint": "Nodes with no path to the focus result from the type/depth filter — show or hide them",
+  "edge": {
+    "represents": "represents",
+    "buttonAction": "Button action"
+  }
 }

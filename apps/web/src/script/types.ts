@@ -82,6 +82,32 @@ export interface ScriptTokens {
   };
   lines: ScriptLineToken[];
   plainText?: string;
+  /**
+   * Nur bei LayoutObject-Detail gesetzt: die Calc-Slot-Instanzen des Objekts
+   * (hide, tooltip, portal_filter, web_viewer_url, …) aus dem
+   * CalculationsCatalog — das Frontend rendert jeden Slot tokenisiert via
+   * get-calc?uuid (DDR-los: plainText-Fallback). Trigger-Parameter und
+   * conditional_format-Slots sind in `triggers`/`conditions` konsolidiert,
+   * sofern die Tabellen sie abdecken.
+   */
+  calcSlots?: import('./calcTokens').LayoutObjectCalcSlot[];
+  /** Nur bei LayoutObject-Detail: konkreter Objekt-Typ + Eltern-Layout + Panel-Eigenschaften. */
+  layoutObject?: import('./calcTokens').LayoutObjectContext | null;
+  /** Nur bei LayoutObject-Detail: direkte Kind-Objekte (Z_Order-sortiert). */
+  children?: import('./calcTokens').LayoutObjectChild[];
+  /** Nur bei LayoutObject-Detail: Script-Trigger-Tabelle (Trigger_ID-sortiert). */
+  triggers?: import('./calcTokens').LayoutObjectTrigger[];
+  /** Nur bei LayoutObject-Detail: Ziel-Links der Ziel-Leiste. */
+  targets?: import('./calcTokens').LayoutObjectTarget[];
+  /** Nur bei LayoutObject-Detail: CF-Regeln (LayoutObjectConditions). */
+  conditions?: import('./calcTokens').LayoutObjectCondition[];
+  /**
+   * Nur bei Text-LayoutObjects mit aufgelösten Merge-Ankern: die server-
+   * synthetisierte Token-Zeile des Textinhalts (<<Feld>>/<<$$var>>/{{Symbol}}
+   * ersetzt durch typisierte Tokens, ƒ-Anker verbatim). Keine Calculation-
+   * Instanz dahinter — direkt rendern, kein get-calc-Fetch.
+   */
+  mergeText?: import('./calcTokens').LayoutObjectMergeText | null;
 }
 
 export type FoldKind = 'if' | 'loop' | 'transaction' | 'multiline' | 'comment-block';

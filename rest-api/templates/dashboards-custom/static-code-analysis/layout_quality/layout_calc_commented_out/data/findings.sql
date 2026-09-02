@@ -1,24 +1,21 @@
 -- Hide, tooltip and label calculation slots whose entire text is one /* ... */
 -- comment block. Such a slot never evaluates, so the intended behavior is
 -- silently disabled. Translated from fmCheckMate ReportBrokenCalculationCommentedOut.
+-- Formula source is the CalculationsCatalog (single source for all calculation
+-- slots; roles hide / tooltip / button_label — surfaced as the established
+-- chip values hide / tooltip / label); LayoutObjects contributes geometry and
+-- typing of the owning object.
 -- The slot chips (getvariable('calc_slot')) and the object-type select
 -- (getvariable('object_type')) narrow the result server-side — unset means
 -- no filter.
 WITH slots AS (
-    SELECT File_Name, Layout_ID, Object_UUID, Object_Type, Object_Name, Part_Type,
-           Bounds_Left, Bounds_Top, Bounds_Right, Bounds_Bottom,
-           'hide' AS calc_slot, Hide_Calculation_Text AS calc_text
-    FROM LayoutObjects
-    UNION ALL
-    SELECT File_Name, Layout_ID, Object_UUID, Object_Type, Object_Name, Part_Type,
-           Bounds_Left, Bounds_Top, Bounds_Right, Bounds_Bottom,
-           'tooltip', Tooltip_Calculation_Text
-    FROM LayoutObjects
-    UNION ALL
-    SELECT File_Name, Layout_ID, Object_UUID, Object_Type, Object_Name, Part_Type,
-           Bounds_Left, Bounds_Top, Bounds_Right, Bounds_Bottom,
-           'label', Label_Calculation_Text
-    FROM LayoutObjects
+    SELECT lo.File_Name, lo.Layout_ID, lo.Object_UUID, lo.Object_Type, lo.Object_Name, lo.Part_Type,
+           lo.Bounds_Left, lo.Bounds_Top, lo.Bounds_Right, lo.Bounds_Bottom,
+           CASE c.Calc_Role WHEN 'button_label' THEN 'label' ELSE c.Calc_Role END AS calc_slot,
+           COALESCE(c.Formula_Text, c.Display_Text) AS calc_text
+    FROM CalculationsCatalog c
+    JOIN LayoutObjects lo ON lo.Object_UUID = c.Owner_UUID AND lo.File_Name = c.File_Name
+    WHERE c.Calc_Role IN ('hide', 'tooltip', 'button_label')
 )
 SELECT 'layout-calc-commented-out' AS rule_id, 'error' AS severity,
     s.File_Name AS file_name, l.L_UUID AS nav_uuid, l.L_Name AS layout_name,

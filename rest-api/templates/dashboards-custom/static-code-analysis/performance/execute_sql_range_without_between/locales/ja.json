@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "BETWEEN を使わない ExecuteSQL 範囲検索",
+    "description": "パフォーマンスルール — ExecuteSQL の範囲条件を BETWEEN ではなく >=/<= で書くと、エンジンは 2 つの条件を別々に評価して積集合を作ります。BETWEEN 構文なら範囲を一度でスキャンし、個別比較より何倍も高速です。"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "対象ファイル数",
+    "summary_kpi.props.items[2].label": "ExecuteSQL 呼び出し",
+    "summary_kpi.props.items[3].label": "BETWEEN 使用済み",
+    "findings_card.props.title": "BETWEEN を使わない ExecuteSQL 範囲検索",
+    "findings_table.props.searchPlaceholder": "ファイルまたはオブジェクトを検索…",
+    "findings_table.props.empty.message": "BETWEEN を使わない ExecuteSQL 範囲パターンは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "オブジェクト",
+    "findings_table.props.columns[2].label": "タイプ",
+    "findings_table.props.columns[3].label": "ステップ",
+    "findings_table.props.columns[4].label": "関数",
+    "findings_table.props.columns[5].label": "SQL 抜粋"
+  }
+}

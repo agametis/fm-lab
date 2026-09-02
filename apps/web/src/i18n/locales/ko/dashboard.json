@@ -25,7 +25,15 @@
     "abortOomTitle": "메모리 부족",
     "abortOomBody": "이 솔루션은 이 시스템의 사용 가능한 메모리에 비해 너무 큽니다. RAM이 더 많은(8GB 이상) 시스템에서 가져오기를 실행하거나 축소된 메모리 프로필로 다시 시도하세요.",
     "abortIncompleteTitle": "빌드 미완료",
-    "abortIncompleteBody": "참조 확인이 완료되지 않아 객체 카탈로그를 만들 수 없습니다. 자세한 내용은 실행 로그를 확인하세요."
+    "abortIncompleteBody": "참조 확인이 완료되지 않아 객체 카탈로그를 만들 수 없습니다. 자세한 내용은 실행 로그를 확인하세요.",
+    "logStart": "── 시작 ──",
+    "logAborted": "── 중단 ──",
+    "logAbortedOom": "⚠ 중단 — 메모리가 부족합니다(이 환경에는 솔루션이 너무 큽니다).",
+    "logAbortedIncomplete": "⚠ 중단 — 빌드 미완료(참조 해석에 실패했습니다).",
+    "logDone": "── 완료 ──",
+    "logDoneError": "── 오류로 종료 (exit {{code}}) ──",
+    "logReloadOk": "다시 불러오기에 성공했습니다.",
+    "logReloadError": "다시 불러오기 실패: {{error}}"
   },
   "cellValues": {
     "yes": "예",

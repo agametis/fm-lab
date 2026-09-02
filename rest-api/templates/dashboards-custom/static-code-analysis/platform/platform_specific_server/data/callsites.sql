@@ -1,6 +1,6 @@
 -- Callsite detail (second level below findings): WHO calls the server-bound
 -- target from WHERE. Same structured core as data/findings.sql (schema 1.20.0:
--- XMLStepReferences + on_server edge + StepCalculations, no Step_XML regex) —
+-- XMLStepReferences + on_server edge + CalculationsCatalog, no Step_XML regex) —
 -- keep the CTEs and the file/S-Block filters in sync. The scope filter applies
 -- to the TARGET script (the platform-bound object), never to the caller: the
 -- solution-wide callsite scan is what proves an in-scope script server-bound.
@@ -43,13 +43,13 @@ rows_all AS (
                 ELSE 'external' END AS target_kind
     FROM resolved
     UNION ALL
-    SELECT sc.File_Name, sc.Script_Name, sc.Script_UUID,
-           sc.Step_Index + 1, sc.Step_UUID,
-           'By name: ' || COALESCE(trim(sc.Calc_Text), '(calculated name)'),
+    SELECT c.File_Name, s.Script_Name, s.Script_UUID,
+           s.Step_Index + 1, c.Owner_UUID,
+           'By name: ' || COALESCE(trim(COALESCE(c.Formula_Text, c.Display_Text)), '(calculated name)'),
            CAST(NULL AS VARCHAR), 'dynamic'
-    FROM StepCalculations sc
-    JOIN StepsForScripts s ON s.Step_UUID = sc.Step_UUID AND s.File_Name = sc.File_Name
-    WHERE s.Step_ID IN (164, 210) AND s.Is_Enabled AND sc.Slot = 'List'
+    FROM CalculationsCatalog c
+    JOIN StepsForScripts s ON s.Step_UUID = c.Owner_UUID AND s.File_Name = c.File_Name
+    WHERE s.Step_ID IN (164, 210) AND s.Is_Enabled AND c.Source_Path = 'Step/List'
 )
 SELECT file_name, caller_name, caller_uuid, step_no, step_uuid,
     target_name, target_uuid, target_kind,

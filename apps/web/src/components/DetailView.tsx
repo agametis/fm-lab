@@ -17,7 +17,9 @@ import { StatusBar } from './StatusBar';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
 import { RefOriginPill } from './RefOriginPill';
+import { VarSelectionPill } from './VarSelectionPill';
 import { AmbiguousFilePicker } from './AmbiguousFilePicker';
+import { VarSelectionContext, parseVarParam, type VarSelection } from '../script/varSelectionContext';
 import { Slot } from '../plugins';
 import { useEscapeStack } from '../hooks/useEscapeStack';
 import { useUrlState } from '../hooks/useUrlState';
@@ -139,6 +141,34 @@ export const DetailView: React.FC = () => {
   const [liveMatchCount, setLiveMatchCount] = useState<number | undefined>(undefined);
   useEffect(() => { setLiveMatchCount(undefined); }, [uuid, refParam]);
 
+  // Variablen-Auswahl: `?var=<scope>:<name>` ist die
+  // Single Source of Truth; Klicks auf Variable-Tokens toggeln den Param rein
+  // client-seitig (replace, kein Server-Roundtrip). Der Kontext versorgt die
+  // Token-Blatt-Komponenten (CalcTokenSpan/RefSpan) in allen Tab-Viewern.
+  const [varParam, setVarParam] = useUrlState<string>('var', '');
+  const selectedVarKey = useMemo(() => parseVarParam(varParam), [varParam]);
+  const toggleVar = useCallback((key: string) => {
+    setVarParam(prev => (parseVarParam(prev) === key ? '' : key));
+  }, [setVarParam]);
+  const clearVarSelection = useCallback(() => { setVarParam(''); }, [setVarParam]);
+  // Trefferzahl + Original-Schreibweise, datenbasiert vom aktiven Viewer
+  // gemeldet. Kein Reset bei var-Wechsel: der Viewer meldet im selben Commit
+  // synchron nach (Child-Effekte laufen vor Parent-Effekten — ein Parent-Reset
+  // würde die frische Meldung überschreiben). Reset nur beim Objektwechsel.
+  const [varMatches, setVarMatches] = useState<{ count: number; name: string | null }>({ count: 0, name: null });
+  const reportVarMatches = useCallback((count: number, name: string | null) => {
+    setVarMatches(prev => (prev.count === count && prev.name === name ? prev : { count, name }));
+  }, []);
+  useEffect(() => { setVarMatches({ count: 0, name: null }); }, [uuid]);
+  const varSelection = useMemo<VarSelection>(() => ({
+    selectedKey: selectedVarKey,
+    toggle: toggleVar,
+    reportMatches: reportVarMatches,
+  }), [selectedVarKey, toggleVar, reportVarMatches]);
+  // Pill nur, wenn der aktive Detail-Tab tatsächlich Treffer rendert — in den
+  // anderen Tabs ist die Auswahl wirkungslos (Param bleibt harmlos in der URL).
+  const showVarPill = !!selectedVarKey && activeTab === 'detail' && varMatches.count > 0;
+
   // Tests-Tab badge: worst cached test result for this object — shows
   // a dot on the tab before it is even opened. Fed by the tests result store.
   const testsBadge = useSyncExternalStore(
@@ -197,6 +227,14 @@ export const DetailView: React.FC = () => {
     // wenn der Graph-Tab aktiv ist — sonst ist der Ref null und die Stage fällt
     // durch zur Zurück-Navigation).
     () => graphPanelRef.current?.clearTransientFilters() ?? false,
+    // Aktive Variablen-Auswahl räumen, bevor ESC zurücknavigiert.
+    () => {
+      if (selectedVarKey) {
+        clearVarSelection();
+        return true;
+      }
+      return false;
+    },
     () => {
       handleBack();
       return true;
@@ -289,6 +327,7 @@ export const DetailView: React.FC = () => {
 
   return (
     <CurrentFileContext.Provider value={object.File_Name ?? null}>
+    <VarSelectionContext.Provider value={varSelection}>
     <div className="app" role="main" aria-labelledby="object-title">
       {/* Navigation (Ebene 3+4): Home-Icon + Breadcrumb + Meta-Navi, darunter Back.
           Die Origin-Indikator-Pill (Cross-Reference Highlight) erscheint direkt
@@ -298,15 +337,27 @@ export const DetailView: React.FC = () => {
       <SubNav breadcrumbs={breadcrumbItems} />
       <StatusBar
         onBack={handleBack}
-        message={(refParam || refSrcParam) ? (
-          <RefOriginPill
-            state={refOrigin}
-            rawRef={refParam}
-            onDismiss={dismissRefOrigin}
-            liveMatchCount={activeTab === 'detail' ? liveMatchCount : undefined}
-            contextState={refContext}
-            contextSrc={refSrcParam || null}
-          />
+        message={(refParam || refSrcParam || showVarPill) ? (
+          <div className="status-pill-stack">
+            {(refParam || refSrcParam) && (
+              <RefOriginPill
+                state={refOrigin}
+                rawRef={refParam}
+                onDismiss={dismissRefOrigin}
+                liveMatchCount={activeTab === 'detail' ? liveMatchCount : undefined}
+                contextState={refContext}
+                contextSrc={refSrcParam || null}
+              />
+            )}
+            {showVarPill && (
+              <VarSelectionPill
+                varKey={selectedVarKey!}
+                displayName={varMatches.name}
+                count={varMatches.count}
+                onDismiss={clearVarSelection}
+              />
+            )}
+          </div>
         ) : undefined}
       />
 
@@ -360,6 +411,7 @@ export const DetailView: React.FC = () => {
         {renderTabContent()}
       </div>
     </div>
+    </VarSelectionContext.Provider>
     </CurrentFileContext.Provider>
   );
 };

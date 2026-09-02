@@ -20,10 +20,13 @@ FROM ObjectCatalog
 WHERE LOWER(Object_Name) = LOWER('<NAME>')
 ORDER BY Object_Type, File_Name;
 
--- Q3 — fuzzy fallback (only when Q2 is empty); noisy sub-object types excluded
+-- Q3 — fuzzy fallback (only when Q2 is empty); noisy sub-object types excluded.
+-- Calculation (schema 1.22.0) is excluded like ScriptStep: its names are
+-- GENERATED ('<Owner> › <Role>'), so every owner-name search would also match
+-- all of the owner's calculation rows (duplicate flood, not user-given names).
 SELECT Object_UUID, Object_Type, Object_Name, File_Name
 FROM ObjectCatalog
 WHERE Object_Name ILIKE '%<NAME>%'
-  AND Object_Type NOT IN ('DDR_ScriptStep', 'DDR_Calculation', 'ScriptStep', 'LayoutObject', 'LayoutPart')
+  AND Object_Type NOT IN ('DDR_ScriptStep', 'DDR_Calculation', 'ScriptStep', 'LayoutObject', 'LayoutPart', 'Calculation')
 ORDER BY Object_Type, File_Name
 LIMIT 15;

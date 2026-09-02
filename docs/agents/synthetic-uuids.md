@@ -89,6 +89,7 @@ defining parts.
 | **BuiltinFunction** | `md5('BuiltinFunction::' \|\| Name [:: SubParam])` | solution-independent → `File_Name = NULL`; `Get(<x>)` splits per sub-parameter |
 | **ScriptStepType** | `md5('ScriptStepType::' \|\| Step_Name)` | one entry per distinct step type |
 | **PluginComponent** | `md5('PluginComponent::<vendor>::' \|\| component)` | plugin component registry |
+| **Calculation** | `md5('Calculation::' \|\| File_Name :: Owner_UUID :: Calc_Role :: Calc_Index)` | schema 1.22.0; one identity per calculation **instance** (owner slot). `File_Name` is part of the key because owner UUIDs are only unique per file (clone corpora). `Calc_Index` is a `ROW_NUMBER` over a **deterministic** order (calc position / suffix numbers / anchor UUID / hash) — stable across re-imports for unchanged sources; inserting a new instance of the same role before an existing one shifts the following indexes (documented model boundary, same class as position-keyed step discriminators) |
 
 ## For contrast — native FileMaker UUIDs
 

@@ -24,8 +24,12 @@ const { performReload } = require('./system-reload');
  *
  * Der Hub besitzt den vollen Lebenszyklus: Lauf → (exit 0) Reload NUR wenn die
  * Lauf-Lösung die aktive ist (No-op-Regel wie am Reload-Endpoint) → finales
- * `done`. Persistenz bleibt in runConverter (transiente import_progress-/chunk_*-
- * Events landen im Live-`ring`, werden aber NICHT in last_xml_run.json persistiert).
+ * `done`. Das Terminal-`done` sendet AUSSCHLIESSLICH der Hub (angereichert mit
+ * exit_code); das eigene `done` des Konverters (emit_done, ohne exit_code) wird
+ * beim Broadcast absorbiert — sonst sähen Subscriber das Paar "exit ?" + echter
+ * Code als doppelte Endzeile. Persistenz bleibt in runConverter (transiente
+ * import_progress-/chunk_*-Events landen im Live-`ring`, werden aber NICHT in
+ * last_xml_run.json persistiert).
  */
 
 const RING_CAP = 2000;
@@ -175,7 +179,8 @@ function startRun({ changedOnly = true, solution } = {}) {
     try {
       broadcast(run, { event: 'start', ts: started_at, changedOnly, solution: targetSolution });
       const { exit_code } = await xmlConvert.runConverter({
-        onEvent: (evt) => broadcast(run, evt),
+        // Kind-`done` absorbieren — das eine Terminal-`done` sendet der Hub unten.
+        onEvent: (evt) => { if (evt?.event !== 'done') broadcast(run, evt); },
         signal: controller.signal,
         changedOnly,
         solution: targetSolution,

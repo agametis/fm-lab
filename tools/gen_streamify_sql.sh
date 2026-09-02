@@ -28,6 +28,13 @@
 #                                                geschrieben). Wird vom Treiber
 #                                                (convert_fm_xml.sh) vor --streamify
 #                                                aufgerufen.
+#
+# Exit-code contract (policy-lock E4) — the driver's adaptive default reads it:
+#   0 = fresh · 2 = generate stale/missing (genuine, incl. missing base SQL) ·
+#   3 = base pattern drift (genuine) · 4 = infrastructure (mktemp/cmp unusable —
+#   NOT a staleness verdict). Genuine states (2/3) keep the DOM fallback; 4 and
+#   any unexpected rc are sticky candidates (the caller may keep the last
+#   successfully used policy instead of flipping SAX→DOM on a transient error).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -45,9 +52,22 @@ CHECK_MODE=false
 EXPECT_PS_CTE=4     # privilege_sets-CTE-Quellen (Pattern A)
 EXPECT_PS_GUARD=3   # DELETE-Chunk-Guards (Pattern B, echter Guard)
 
-[ -f "$BASE" ] || { echo "ERROR: Basis-SQL fehlt: $BASE"; exit 1; }
+# Fehlende Basis = 2er-Familie (echt „nicht bereit", kein Infra-Fall): der
+# Treiber behandelt 2 wie „Generat stale/fehlt" → DOM-Fallback mit Grund.
+[ -f "$BASE" ] || { echo "ERROR: Basis-SQL fehlt: $BASE"; exit 2; }
 
-tmp="$(mktemp)"
+# Infra-Guards (rc 4): mktemp/cmp-Ausfälle sind KEIN Freshness-Befund. Ohne die
+# Guards stürbe das Skript via `set -e` mit dem rc des fehlschlagenden Kommandos
+# (mktemp: 1) bzw. cmp-127 fiele in den STALE-Zweig — beides würde beim Treiber
+# fälschlich als „echt nicht bereit" ankommen und die Policy still auf DOM kippen.
+if $CHECK_MODE && ! command -v cmp >/dev/null 2>&1; then
+  echo "ERROR: cmp nicht verfügbar — Freshness-Gate nicht ausführbar (Infrastruktur)." >&2
+  exit 4
+fi
+if ! tmp="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX" 2>/dev/null)" || [ -z "$tmp" ]; then
+  echo "ERROR: mktemp fehlgeschlagen (TMPDIR=${TMPDIR:-/tmp} nicht beschreibbar?) — Infrastruktur, kein Freshness-Befund." >&2
+  exit 4
+fi
 trap 'rm -f "$tmp" "$tmp.2"' EXIT
 
 # Kopf-Kommentar (kennzeichnet generierte Datei; NICHT von Hand editieren)
@@ -156,7 +176,7 @@ fi
 # Variante an ihren @SCHEMA_HASH_FILES-Header zusätzlich SICH SELBST + den Renamer
 # anhängen. Die Override-Inhalte (sql/convert-xml/streamify/*.sql) sind in diese Datei eingebacken,
 # also deckt ihr Hash die Overrides mit ab; der Renamer wirkt auf den Input und kommt
-# separat dazu. Seit A-W1-Fortsetzung (Paket 2) lebt die Rename-Logik in
+# separat dazu. Die Rename-Logik lebt in
 # katana_common.awk (parse_rules/rename_line) — die Common-Datei gehört daher mit
 # ins Gate. Damit lösen Edits an Overrides/Renamer/Common/Generat einen Schema-
 # Drift → Rebuild aus (im DOM-Pfad bleibt der Hash unverändert = nur Basis-Dateien).

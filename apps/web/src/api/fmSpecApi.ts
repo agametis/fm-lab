@@ -240,6 +240,53 @@ export interface StepConstraint {
   detail: string | null;
   evidence: string | null;
   verifiedVersion: string | null;
+  /** Lead text of the constraint kind (fm_spec ≥ 1.17.0 constraint_kinds registry). */
+  consumerNote?: string | null;
+}
+
+export interface StepRepeatGroup {
+  groupKey: string;
+  groupLabel: string;
+  parentGroup: string | null;
+  containerPath: string;
+  countAttr: string | null;
+  itemForm: string;
+  /** Fixed-slot columns (fm_spec ≥ 1.16.0); null on older references. */
+  maxItems: number | null;
+  slotPositional: boolean | null;
+  padMode: string | null;
+  evidence: string | null;
+  verifiedVersion: string | null;
+}
+
+export interface StepSkeletonElement {
+  parentTag: string;
+  childTag: string;
+  conditionOption: string | null;
+  conditionValue: string | null;
+  keepMode: 'hull' | 'hull_strip_children' | string;
+  evidence: string | null;
+  verifiedVersion: string | null;
+}
+
+export interface StepElementBinding {
+  optionKey: string | null;
+  optionValue: string | null;
+  elementPath: string;
+  binding: 'requires' | 'excludes' | 'requires_option' | 'excludes_option' | 'suppress_empty' | string;
+  evidence: string | null;
+  verifiedVersion: string | null;
+}
+
+export interface StepOptionImplication {
+  triggerKind: 'option_present' | 'value_form' | 'keyword' | 'mode_switch' | string;
+  trigger: string;
+  impliedOption: string;
+  impliedValue: string | null;
+  isDefault: boolean | null;
+  direction: string;
+  evidence: string | null;
+  verifiedVersion: string | null;
 }
 
 export interface StepXmlMap {
@@ -247,6 +294,8 @@ export interface StepXmlMap {
   saxmlParamTypes: string | null;
   saxmlExample: string | null;
   elementOrder: string | null;
+  /** Structural variable-target marker (fm_spec ≥ 1.17.0); null on older references. */
+  variableTargetMarker?: boolean | null;
   evidence: string | null;
   verifiedVersion: string | null;
   notes: string | null;
@@ -259,6 +308,12 @@ export interface StepGrammar {
   xmlMap: StepXmlMap | null;
   options: StepOption[];
   constraints: StepConstraint[];
+  /** Repeat groups (fm_spec ≥ 1.15.0); empty on older references. */
+  repeatGroups?: StepRepeatGroup[];
+  /** Hint-inventory layer (fm_spec ≥ 1.17.0); empty on older references. */
+  skeletonElements?: StepSkeletonElement[];
+  elementBindings?: StepElementBinding[];
+  optionImplications?: StepOptionImplication[];
 }
 
 /** Returns `null` when no grammar row exists (or reference < 1.2.0). */

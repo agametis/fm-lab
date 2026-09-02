@@ -59,6 +59,9 @@ router.get('/reference/categories', controller.getCategories);
 router.get('/reference/lookup', controller.lookup);
 router.get('/reference/meta', controller.getMeta);
 
+// Lokalisierte Script-Trigger-Event-Beschriftungen (fm_spec ≥ 1.18.0)
+router.get('/reference/trigger-events', controller.getTriggerEvents);
+
 // === Steps ====================================================================
 // Reihenfolge: literale/spezifische Sub-Pfade VOR dem :idOrSlug-Detail.
 router.get('/reference/steps', controller.listSteps);

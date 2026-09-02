@@ -533,10 +533,14 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false }
   // Non-ScriptStep-Branch (Object_Name-Match). ScriptSteps immer ausgeschlossen;
   // ValueLists nur im Volltext-Modus (dort übernimmt sie der Wert-Branch unten,
   // sonst käme jede Werteliste doppelt) — im Wildcard-Modus bleiben sie hier.
+  // Calculation (Schema 1.22.0) wie ScriptStep: High-Cardinality-Typ mit
+  // GENERIERTEN Namen ('<Owner> › <Rolle>') — jede Owner-Namenssuche träfe sonst
+  // zusätzlich alle Calc-Zeilen des Owners (Dubletten-Flut). Per explizitem
+  // Typ-Filter (Pfad A) bleibt der Typ voll such-/listbar (bewusster Entscheid).
   const isWildcardOnly = !name.replace(/%/g, '').trim();
   const nonStepExcluded = isWildcardOnly
-    ? "'DDR_ScriptStep', 'DDR_Calculation', 'ScriptStep'"
-    : "'DDR_ScriptStep', 'DDR_Calculation', 'ScriptStep', 'ValueList'";
+    ? "'DDR_ScriptStep', 'DDR_Calculation', 'ScriptStep', 'Calculation'"
+    : "'DDR_ScriptStep', 'DDR_Calculation', 'ScriptStep', 'Calculation', 'ValueList'";
   let nonStepInner = `
     SELECT Object_UUID, Object_Type, Object_Name, File_Name, Source_Table, Object_ID,
            CAST(NULL AS VARCHAR) AS Step_Text,
@@ -779,6 +783,99 @@ async function countSearchResults(ctx, searchOptions) {
 }
 
 /**
+ * Subrole-Normalisierung für Referenzlisten.
+ *
+ * Mappt die Kanten-Subrole (DDRREF-Anker-Suffix, siehe convert_xml_02_resolve.sql)
+ * auf einen locale-unabhängigen Klassen-Key im calc_kind-Vokabular der
+ * CalculationsCatalog — kein zweites Vokabular. Drei Fälle:
+ *   - benannte Slots → calc_kind-Klasse. `Condition_N` kollabiert bewusst zur
+ *     Klasse (ein LayoutObject mit demselben Feld in Regel 1+2 bleibt EINE
+ *     Aggregat-Zeile); die Regelnummern transportiert `Subrole_Detail`.
+ *   - positionelle Slots → NULL: Script-Kanten tragen den numerischen
+ *     Calc-Slot-Index des Steps (plus XML/XSL bei Import/Export-XSLT). Ohne
+ *     Unterdrückung zerfiele die ×N-Aggregation der Script-Zeilen in
+ *     bedeutungslose Slot-Zeilen.
+ *   - alles andere (primary/left/Total/Part-Typen/Trigger-Events/calc_kinds/…)
+ *     → Durchreichung roh. Die Anzeige-Labels im Frontend sind Politur,
+ *     kein Gatekeeper — Unbekanntes wird nie verschluckt.
+ * `PopoverPanel` → `popover_title` (NICHT panel_title): das Suffix hängt am
+ * Popover-Titel-Calc (CalculationsCatalog: Calc_Kind_Raw='PopoverPanel' →
+ * Calc_Role='popover_title'); Tab-Panel-Titel haben das eigene Raw-Kind
+ * 'TabPanel' und treten als Kanten-Subrole nicht auf.
+ *
+ * @param {string} col - SQL-Spaltenreferenz auf die rohe Subrole (z.B. 'ol.Link_Subrole')
+ * @returns {string} CASE-Ausdruck, der den Klassen-Key (oder NULL) liefert
+ */
+function subroleClassSql(col) {
+  return `CASE
+    WHEN ${col} IS NULL THEN NULL
+    WHEN ${col} = 'Hide' THEN 'hide'
+    WHEN starts_with(${col}, 'Condition_') THEN 'conditional_format'
+    WHEN ${col} = 'Tooltip' THEN 'tooltip'
+    WHEN ${col} = 'action' THEN 'button_action'
+    WHEN ${col} = 'Portal' THEN 'portal_filter'
+    WHEN ${col} = 'WebViewer' THEN 'web_viewer_url'
+    WHEN ${col} = 'Placeholder' THEN 'placeholder'
+    WHEN ${col} = 'PopoverPanel' THEN 'popover_title'
+    WHEN starts_with(${col}, 'ScriptTrigger_') THEN 'script_trigger_parameter'
+    WHEN ${col} = 'MBS:FM.RunScript' THEN 'mbs_runscript'
+    WHEN ${col} = 'Install' THEN 'menu_install'
+    WHEN regexp_full_match(${col}, '[0-9]+') OR ${col} IN ('XML', 'XSL') THEN NULL
+    ELSE ${col}
+  END`;
+}
+
+/**
+ * Trigger-Event-Auflösung für Referenzlisten (additives Feld `Subrole_Event`).
+ *
+ * Zeilen, deren Roh-Subrole(s) `ScriptTrigger_<id>`-Slots tragen (Klasse
+ * `script_trigger_parameter`; child/parent: einzelner Roh-Wert, all: DISTINCT-
+ * aggregierte Liste in `Subrole_Detail`), bekommen die Slot-Nummern über die
+ * kuratierte fm_spec-Tabelle `script_triggers` (Referenz ≥ 1.18.0) zu
+ * kanonischen Event-Namen aufgelöst — als DISTINCT-Liste in Detail-Reihenfolge
+ * (`'OnObjectValidate'` bzw. `'OnPanelSwitch, OnObjectValidate'`).
+ *
+ * Graceful-Vertrag: ohne attachte Referenz-DB oder ohne Tabelle (Consumer-DB
+ * < 1.18.0) bleibt das Feld weg — exakt heutiges Verhalten, kein Fehlerpfad.
+ * Teil-unauflösbare Slot-Listen lassen das Feld ebenfalls weg (lieber kein
+ * Event als ein irreführend verkürztes). Die Chip-Identität (Klassenebene)
+ * und alle übrigen Spalten bleiben unberührt.
+ */
+async function enrichSubroleEvents(ctx, rows) {
+  if (!Array.isArray(rows)) return rows;
+  const candidates = rows.filter((r) => r
+    && r.Subrole_Class === 'script_trigger_parameter'
+    && typeof r.Subrole_Detail === 'string');
+  if (candidates.length === 0) return rows;
+
+  let eventMap;
+  try {
+    // Lazy require + eigener try/catch: die Referenz-DB ist optional und darf
+    // den Referenzen-Pfad nie brechen (REF_NOT_ATTACHED & Co. → unverändert).
+    const referenceService = require('./reference.service');
+    eventMap = await referenceService.getScriptTriggerEventMap(ctx);
+  } catch {
+    return rows;
+  }
+  if (!eventMap || eventMap.size === 0) return rows;
+
+  for (const r of candidates) {
+    const slots = [...r.Subrole_Detail.matchAll(/ScriptTrigger_(\d+)/g)]
+      .map((m) => Number(m[1]));
+    if (slots.length === 0) continue;
+    const events = [];
+    let complete = true;
+    for (const slot of slots) {
+      const event = eventMap.get(slot);
+      if (!event) { complete = false; break; }
+      if (!events.includes(event)) events.push(event);
+    }
+    if (complete && events.length > 0) r.Subrole_Event = events.join(', ');
+  }
+  return rows;
+}
+
+/**
  * Pseudo-Type Reference-Resolver.
  *
  * ScriptStepType + PluginComponent haben keine vollständigen ObjectLinks-
@@ -842,6 +939,8 @@ async function getPseudoTypeReferences(ctx, uuid, direction, link_type, limit, o
           s.Script_Name as Object_Name,
           s.File_Name as File_Name,
           'uses_step_type' as Link_Role,
+          NULL as Subrole_Class,
+          NULL as Subrole_Detail,
           FALSE as Is_Cross_File,
           NULL as Container_UUID,
           NULL as Container_Type,
@@ -862,6 +961,8 @@ async function getPseudoTypeReferences(ctx, uuid, direction, link_type, limit, o
           COALESCE(boc.Object_Name, 'Button') as Object_Name,
           los.File_Name as File_Name,
           'uses_step_type' as Link_Role,
+          NULL as Subrole_Class,
+          NULL as Subrole_Detail,
           FALSE as Is_Cross_File,
           pl.Target_UUID as Container_UUID,
           pc_container.Object_Type as Container_Type,
@@ -907,6 +1008,8 @@ async function getPseudoTypeReferences(ctx, uuid, direction, link_type, limit, o
         Object_Name,
         File_Name,
         Link_Role,
+        NULL as Subrole_Class,
+        NULL as Subrole_Detail,
         BOOL_OR(Is_Cross_File) as Is_Cross_File,
         NULL as Container_UUID,
         NULL as Container_Type,
@@ -990,6 +1093,8 @@ async function getPseudoTypeReferences(ctx, uuid, direction, link_type, limit, o
         Object_Name,
         File_Name,
         'sets_variable' as Link_Role,
+        NULL as Subrole_Class,
+        NULL as Subrole_Detail,
         FALSE as Is_Cross_File,
         NULL as Container_UUID,
         NULL as Container_Type,
@@ -1064,6 +1169,8 @@ async function getPseudoTypeReferences(ctx, uuid, direction, link_type, limit, o
         oc.Object_Name as Object_Name,
         oc.File_Name as File_Name,
         'calls_component' as Link_Role,
+        NULL as Subrole_Class,
+        NULL as Subrole_Detail,
         FALSE as Is_Cross_File,
         pl.Target_UUID as Container_UUID,
         pc_container.Object_Type as Container_Type,
@@ -1133,18 +1240,22 @@ async function getReferences(ctx, refOptions) {
     // datei-gleich ausgerichtet werden. Sonst matcht eine geteilte Klon-UUID die
     // ObjectCatalog-/ObjectLinks-Zeilen ALLER Klon-Dateien → kartesisches Produkt
     // (z.B. parent_script eines geklonten Scripts explodierte auf ~10000 Zeilen).
-    // ScriptTrigger → besitzendes Layout: ein Layout-/Objekt-Trigger hängt via
-    // `trigger_owner` an einem Layout (Layout-Ebene) ODER einem LayoutObject
-    // (Objekt-Ebene) → dann einen Hop weiter über `parent_layout` zum Layout.
+    // ScriptTrigger → Container: ein Trigger hängt via `trigger_owner` an
+    // einem Layout oder der Datei (direkter Container) ODER an einem
+    // LayoutObject (Objekt-Ebene) → dann einen Hop weiter über `parent_layout`
+    // zum Layout. Der Owner-Typ wird DURCHGEREICHT statt hartkodiert
+    // (Owner_Kind: 'Layout' bzw. 'File' direkt, nach dem Hop il.Object_Type =
+    // 'Layout') — File-Trigger trugen sonst Container None/None.
     // Liefert je ScriptTrigger genau eine Zeile (1:1-Kanten, keine Fächerung).
     const TRIGGER_LAYOUT_JOIN = `
       LEFT JOIN (
         SELECT
           trg.Object_UUID AS st_uuid,
           trg.File_Name   AS st_file,
-          CASE WHEN ownc.Object_Type = 'Layout' THEN ownc.Object_UUID ELSE il.Object_UUID END AS Layout_UUID,
-          CASE WHEN ownc.Object_Type = 'Layout' THEN ownc.Object_Name ELSE il.Object_Name END AS Layout_Name,
-          CASE WHEN ownc.Object_Type = 'Layout' THEN ownc.File_Name   ELSE il.File_Name   END AS Layout_File
+          CASE WHEN ownc.Object_Type = 'LayoutObject' THEN il.Object_UUID ELSE ownc.Object_UUID END AS Layout_UUID,
+          CASE WHEN ownc.Object_Type = 'LayoutObject' THEN il.Object_Name ELSE ownc.Object_Name END AS Layout_Name,
+          CASE WHEN ownc.Object_Type = 'LayoutObject' THEN il.File_Name   ELSE ownc.File_Name   END AS Layout_File,
+          CASE WHEN ownc.Object_Type = 'LayoutObject' THEN il.Object_Type ELSE ownc.Object_Type END AS Owner_Kind
         FROM ObjectCatalog trg
         JOIN ObjectLinks own ON own.Source_UUID = trg.Object_UUID AND own.Source_File = trg.File_Name
                             AND own.Link_Role = 'trigger_owner'
@@ -1165,10 +1276,11 @@ async function getReferences(ctx, refOptions) {
       ${TRIGGER_LAYOUT_JOIN}
     `;
     // Container-Spalten (UUID/Type/Name/File): parent_layout/parent_script-Container
-    // (LayoutObject/ScriptStep) ODER — für ScriptTrigger — das besitzende Layout.
+    // (LayoutObject/ScriptStep) ODER — für ScriptTrigger — Layout bzw. Datei
+    // (Owner_Kind aus dem Trigger-Join statt hartkodiertem 'Layout').
     const CONTAINER_SELECT = `
           COALESCE(pl.Target_UUID, tl.Layout_UUID) as Container_UUID,
-          COALESCE(pc.Object_Type, CASE WHEN tl.Layout_UUID IS NOT NULL THEN 'Layout' END) as Container_Type,
+          COALESCE(pc.Object_Type, tl.Owner_Kind) as Container_Type,
           COALESCE(pc.Object_Name, tl.Layout_Name) as Container_Name,
           COALESCE(pc.File_Name, tl.Layout_File) as Container_File`;
 
@@ -1232,8 +1344,11 @@ async function getReferences(ctx, refOptions) {
         COALESCE(oc.Object_Name, xsr.Ref_Name) as Object_Name,
         COALESCE(oc.File_Name, xsr.File_Name) as File_Name,
         ${STEP_REF_ROLE} as Link_Role,
+        NULL as Subrole_Class,
+        NULL as Subrole_Raw,
         (xsr.File_Name <> COALESCE(oc.File_Name, xsr.File_Name)) as Is_Cross_File,
         NULL as Container_UUID, NULL as Container_Type, NULL as Container_Name, NULL as Container_File,
+        NULL as Trigger_UUID,
         (oc.Object_UUID IS NOT NULL) as navigable
       FROM XMLStepReferences xsr
       LEFT JOIN ObjectCatalog oc ON xsr.Ref_UUID = oc.Object_UUID
@@ -1247,13 +1362,86 @@ async function getReferences(ctx, refOptions) {
         COALESCE(oc.Object_Name, xsr.Ref_Name) as Target_Name,
         COALESCE(oc.File_Name, xsr.File_Name) as Target_File,
         ${STEP_REF_ROLE} as Link_Role,
+        NULL as Subrole_Class,
+        NULL as Subrole_Detail,
         (xsr.File_Name <> COALESCE(oc.File_Name, xsr.File_Name)) as Is_Cross_File,
         NULL as Container_UUID, NULL as Container_Type, NULL as Container_Name, NULL as Container_File,
+        NULL as Trigger_UUID,
         (oc.Object_UUID IS NOT NULL) as navigable
       FROM XMLStepReferences xsr
       LEFT JOIN ObjectCatalog oc ON xsr.Ref_UUID = oc.Object_UUID
       WHERE xsr.Step_UUID = ? AND xsr.Ref_UUID IS NOT NULL
     `;
+
+    // ── Anzeige-Konsolidierung der Trigger-Doppelrepräsentation ───────────
+    // Trigger erscheinen in der Aufrufer-Richtung doppelt: als granulare
+    // trigger_script-Kante des ScriptTrigger-Sub-Knotens UND als deren
+    // 1:1-Spiegel triggers_script·<Event> vom Owner (Objekt-Ebene seit
+    // Converter 2.14.0, alle drei Owner-Ebenen — LayoutObject/Layout/File —
+    // seit 2.17.0; aus derselben ScriptTriggers-Zeile erzeugt). Die granulare
+    // Zeile wird NUR unterdrückt, wenn ihr Spiegel in der Liste sichtbar wäre:
+    //   - die trigger_owner-Kante muss existieren — fehlt sie (Parser-Lücke
+    //     PopoverPanel-Owner), fällt der Spiegel im Katalog-JOIN der Liste
+    //     weg und die granulare Zeile bleibt die einzige Repräsentation,
+    //   - der Spiegel muss eine Event-Subrole tragen — Alt-Kataloge
+    //     (< 2.14.0, Subrole NULL) zeigen das Event nur am Trigger-Knoten
+    //     und behalten deshalb das ungefilterte Bild bis zum Re-Import.
+    //     Alt-Kataloge 2.14.0–2.16.x (Spiegel nur auf Objekt-Ebene) bleiben
+    //     ebenfalls graceful: Layout-/File-Trigger haben dort keinen Spiegel,
+    //     der EXISTS greift nicht, die granulare Zeile bleibt stehen.
+    // Reine Anzeige-Ebene: ObjectLinks, Graph, LinkRoleRegistry und die
+    // Where-used-Flags bleiben unberührt. (Where-used zählt seit 2.17.0
+    // ohnehin nur die Spiegel — trigger_script ist demotiert.)
+    const TRIGGER_MIRROR_FILTER = `AND NOT (
+          ol.Link_Role = 'trigger_script'
+          AND EXISTS (
+            SELECT 1
+            FROM ObjectLinks owner_edge
+            JOIN ObjectLinks mirror
+              ON mirror.Source_UUID = owner_edge.Target_UUID
+             AND mirror.Source_File = owner_edge.Target_File
+             AND mirror.Link_Role = 'triggers_script'
+             AND mirror.Link_Subrole IS NOT NULL
+             AND mirror.Link_Subrole <> 'button_action'
+             AND mirror.Target_UUID = ol.Target_UUID
+             AND mirror.Target_File IS NOT DISTINCT FROM ol.Target_File
+            WHERE owner_edge.Source_UUID = ol.Source_UUID
+              AND owner_edge.Source_File = ol.Source_File
+              AND owner_edge.Link_Role = 'trigger_owner'
+          )
+        )`;
+
+    // ── Trigger-Absprung auf konsolidierten Spiegel-Zeilen ────────────────
+    // Objekt-Level-Spiegelkanten (triggers_script·<Event>) tragen die UUID
+    // ihres ScriptTrigger-Sub-Knotens als Zusatzspalte, damit das Frontend
+    // vom konsolidierten Owner-Eintrag zur Trigger-Detailseite springen kann —
+    // die granulare trigger_script-Zeile ist in der Liste ja gerade
+    // unterdrückt (TRIGGER_MIRROR_FILTER). Auflösung rein über ObjectLinks
+    // (trigger_owner + trigger_script): die Subroles beider Kanten stammen
+    // aus demselben Trigger_Action-Passthrough, der Join ist damit
+    // locale-konsistent; (Owner, Event) ist je Owner eindeutig (FileMaker:
+    // ein Script pro Event-Slot), LIMIT 1 ist defensiv. button_action-Zeilen
+    // und alle anderen Rollen liefern NULL ohne Subquery-Evaluation.
+    const TRIGGER_UUID_SELECT = `CASE
+          WHEN ol.Link_Role = 'triggers_script'
+           AND ol.Link_Subrole IS NOT NULL
+           AND ol.Link_Subrole <> 'button_action'
+          THEN (
+            SELECT own.Source_UUID
+            FROM ObjectLinks own
+            JOIN ObjectLinks ts
+              ON ts.Source_UUID = own.Source_UUID
+             AND ts.Source_File = own.Source_File
+             AND ts.Link_Role = 'trigger_script'
+            WHERE own.Link_Role = 'trigger_owner'
+              AND own.Target_UUID = ol.Source_UUID
+              AND own.Target_File = ol.Source_File
+              AND own.Link_Subrole = ol.Link_Subrole
+              AND ts.Target_UUID = ol.Target_UUID
+            LIMIT 1
+          )
+          ELSE NULL
+        END`;
 
     if (direction === 'child') {
       // Downstream dependencies (what this object references)
@@ -1264,8 +1452,11 @@ async function getReferences(ctx, refOptions) {
           oc.Object_Name as Target_Name,
           oc.File_Name as Target_File,
           ol.Link_Role,
+          ${subroleClassSql('ol.Link_Subrole')} as Subrole_Class,
+          ol.Link_Subrole as Subrole_Detail,
           ol.Is_Cross_File,
 ${CONTAINER_SELECT},
+          ${TRIGGER_UUID_SELECT} as Trigger_UUID,
           TRUE as navigable
         FROM ObjectLinks ol
         JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID AND ol.Target_File = oc.File_Name
@@ -1293,12 +1484,16 @@ ${CONTAINER_SELECT},
           oc.Object_Name as Source_Name,
           oc.File_Name as Source_File,
           ol.Link_Role,
+          ${subroleClassSql('ol.Link_Subrole')} as Subrole_Class,
+          ol.Link_Subrole as Subrole_Detail,
           ol.Is_Cross_File,
-${CONTAINER_SELECT}
+${CONTAINER_SELECT},
+          ${TRIGGER_UUID_SELECT} as Trigger_UUID
         FROM ObjectLinks ol
         JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID AND ol.Source_File = oc.File_Name
         ${CONTAINER_JOIN}
         WHERE ol.Target_UUID = ?
+        ${TRIGGER_MIRROR_FILTER}
       `;
       params = [uuid];
 
@@ -1353,8 +1548,12 @@ ${CONTAINER_SELECT}
         SELECT 'child' as direction,
           ol.Target_UUID as uuid,
           oc.Object_Type, oc.Object_Name, oc.File_Name,
-          ol.Link_Role, ol.Is_Cross_File,
+          ol.Link_Role,
+          ${subroleClassSql('ol.Link_Subrole')} as Subrole_Class,
+          ol.Link_Subrole as Subrole_Raw,
+          ol.Is_Cross_File,
 ${CONTAINER_SELECT},
+          ${TRIGGER_UUID_SELECT} as Trigger_UUID,
           TRUE as navigable
         FROM ObjectLinks ol
         JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID AND ol.Target_File = oc.File_Name
@@ -1366,13 +1565,18 @@ ${CONTAINER_SELECT},
         SELECT 'parent' as direction,
           ol.Source_UUID as uuid,
           oc.Object_Type, oc.Object_Name, oc.File_Name,
-          ol.Link_Role, ol.Is_Cross_File,
+          ol.Link_Role,
+          ${subroleClassSql('ol.Link_Subrole')} as Subrole_Class,
+          ol.Link_Subrole as Subrole_Raw,
+          ol.Is_Cross_File,
 ${CONTAINER_SELECT},
+          ${TRIGGER_UUID_SELECT} as Trigger_UUID,
           TRUE as navigable
         FROM ObjectLinks ol
         JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID AND ol.Source_File = oc.File_Name
         ${CONTAINER_JOIN}
         WHERE ol.Target_UUID = ?
+        ${TRIGGER_MIRROR_FILTER}
         ${focusFile ? 'AND ol.Target_File = ?' : ''}
       `;
       // Param-Reihenfolge je UNION-Hälfte: uuid [, focusFile] [, link_type].
@@ -1392,20 +1596,37 @@ ${CONTAINER_SELECT},
         params.push(uuid);
       }
       // Identische Mehrfachkanten zu EINER Referenz je (Richtung · Ziel · Rolle ·
-      // Container) zusammenfassen. ObjectLinks hält bewusst eine Kante pro
-      // Vorkommen (z.B. ruft ein Script dasselbe Ziel-Script in 4 Perform-Script-
-      // Schritten → 4 calls_script-Zeilen); in der Referenzliste zeigt jedes
-      // dieselbe Zielzeile, was nur Lärm ist. Call_Count = Anzahl der Vorkommen
-      // (Frontend rendert ×N) — gleiche Aggregation wie der Pseudo-Type-Resolver.
+      // Subrole-Klasse · Container) zusammenfassen. ObjectLinks hält bewusst eine
+      // Kante pro Vorkommen (z.B. ruft ein Script dasselbe Ziel-Script in 4
+      // Perform-Script-Schritten → 4 calls_script-Zeilen); in der Referenzliste
+      // zeigt jedes dieselbe Zielzeile, was nur Lärm ist. Call_Count = Anzahl der
+      // Vorkommen (Frontend rendert ×N) — gleiche Aggregation wie der Pseudo-
+      // Type-Resolver. Die Subrole-Klasse splittet Zeilen NUR, wo Slots wirklich
+      // differieren (Hide vs. CF); Script-Zeilen bleiben durch die Numerik-
+      // Unterdrückung (Klasse NULL) unverändert aggregiert. Subrole_Detail trägt
+      // die Roh-Werte der Gruppe (z.B. 'Condition_1, Condition_2') für den
+      // Tooltip — nur bei echter Klasse, sonst wäre es Slot-Index-Lärm.
+      // Trigger_UUID ist gruppen-konstant: befüllt nur auf Spiegel-Zeilen
+      // (triggers_script·<Event>), und Event-Subroles sind ihre EIGENE
+      // Subrole-Klasse (ELSE-Durchreichung) — je (Owner, Event) existiert
+      // genau ein Trigger. Die Spalte im GROUP BY splittet daher keine
+      // bestehende Aggregat-Zeile.
       sql = `
         SELECT direction, uuid, Object_Type, Object_Name, File_Name, Link_Role,
+               Subrole_Class,
+               CASE WHEN Subrole_Class IS NOT NULL
+                    THEN string_agg(DISTINCT Subrole_Raw, ', ' ORDER BY Subrole_Raw)
+               END AS Subrole_Detail,
                BOOL_OR(Is_Cross_File) AS Is_Cross_File,
                Container_UUID, Container_Type, Container_Name, Container_File,
+               Trigger_UUID,
                BOOL_OR(navigable) AS navigable,
                COUNT(*) AS Call_Count
         FROM (${sql}) ref_union
         GROUP BY direction, uuid, Object_Type, Object_Name, File_Name, Link_Role,
-                 Container_UUID, Container_Type, Container_Name, Container_File
+                 Subrole_Class,
+                 Container_UUID, Container_Type, Container_Name, Container_File,
+                 Trigger_UUID
       `;
     }
 
@@ -1417,7 +1638,7 @@ ${CONTAINER_SELECT},
     const result = await db.executeQuery(ctx, sql, params);
 
     return {
-      data: convertBigInts(result.rows),
+      data: await enrichSubroleEvents(ctx, convertBigInts(result.rows)),
       meta: result.meta,
     };
   } catch (error) {
@@ -1488,4 +1709,7 @@ module.exports = {
   searchObjects,
   countSearchResults,
   getReferences,
+  enrichSubroleEvents,
+  // Für Unit-Tests exportiert — Konsumenten nutzen getReferences.
+  subroleClassSql,
 };

@@ -15,6 +15,13 @@ const mbsSource = require('../mbs-source');
  * Adapter wiederverwendet werden, sobald die Path-Resolution generalisiert ist.
  */
 
+/**
+ * Adapter-Capabilities (siehe adapters/index.js). `entrySearch` heißt: das Set
+ * hat eine eigene Eintragsebene, die serverseitig durchsucht und nach Rubriken
+ * konsolidiert werden kann (→ searchEntriesByCategory).
+ */
+const capabilities = { entrySearch: true };
+
 function repoRoot() {
   return settingsStore.resolveRepoRoot();
 }
@@ -42,19 +49,22 @@ async function listCategories(ctx, { catalogEntry, installedEntry } = {}) {
     id: r.name,
     name: r.name,
     slug: r.name,
-    function_count: r.functionCount || 0,
+    entry_count: r.functionCount || 0,
   }));
 }
 
 async function listFunctions(ctx, { catalogEntry, installedEntry, categoryId } = {}) {
   if (catalogEntry?.id !== 'mbs') return [];
   if (!mbsSource.isAvailable()) return [];
-  const { results } = mbsSource.listFunctionsInCategory(categoryId, { limit: 1000 });
+  const { results } = mbsSource.listFunctionsInCategory(categoryId, { limit: 10000 });
   return results.map(r => ({
     id: r.name,
     name: r.name,
     canonical: `MBS::${r.name}`,
     path: r.path,
+    // Zweit-Mitgliedschaft: MBS führt die Funktion zusätzlich auf dieser
+    // Komponentenseite, ihre Primärkomponente ist eine andere.
+    secondary_of: r.secondaryOf || null,
   }));
 }
 
@@ -94,6 +104,23 @@ async function search(ctx, { catalogEntry, q, limit = 50 } = {}) {
   return { categories, functions };
 }
 
+/**
+ * Rubrikübergreifende Eintragssuche, konsolidiert auf Rubrikebene.
+ * Ungedeckelt aggregiert — nur das Beleg-Sample pro Rubrik ist begrenzt.
+ * `category_id` ist bei MBS identisch mit dem Komponentennamen (= Deep-Link-
+ * Ziel der Rubrikseite).
+ */
+async function searchEntriesByCategory(ctx, { catalogEntry, q, sample = 5 } = {}) {
+  if (catalogEntry?.id !== 'mbs') return [];
+  if (!mbsSource.isAvailable()) return [];
+  return mbsSource.searchByComponent(q, { sample }).map(r => ({
+    category_id: r.category,
+    category: r.category,
+    hit_count: r.hitCount,
+    sample: r.sample,
+  }));
+}
+
 async function listLanguages({ installedEntry } = {}) {
   return Array.isArray(installedEntry?.languages) ? installedEntry.languages : ['en'];
 }
@@ -113,10 +140,12 @@ async function validate(ctx, { catalogEntry, installedEntry } = {}) {
 }
 
 module.exports = {
+  capabilities,
   listCategories,
   listFunctions,
   getEntry,
   search,
+  searchEntriesByCategory,
   listLanguages,
   validate,
 };

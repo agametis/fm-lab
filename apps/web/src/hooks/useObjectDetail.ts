@@ -95,23 +95,52 @@ export const useObjectDetail = (
       const objectData = objectResponse.data as FMObject;
 
       // Split flat reference arrays into parent/child groups.
-      // Sonderfall für `parent_*`-Roles: in ObjectLinks ist die Beziehung als
-      // Sub→Container modelliert (Source=ScriptStep → Target=Script, Source=
-      // LayoutObject → Target=Layout). Der Endpoint kennzeichnet das als
-      // direction='child' — semantisch ist es aber eine Parent-Beziehung
-      // ("Step ist ENTHALTEN IM Script"). Wir reklassifizieren diese Rollen
-      // in structuralParent, damit die UI "Strukturell enthalten in" rendert.
-      const PARENT_ROLES = new Set(['parent_script', 'parent_layout', 'parent_object']);
+      // Die Sektionen sind SEMANTISCH: structuralParent = „Strukturell enthalten
+      // in" (meine Container), structuralChild = „Strukturell enthält" (meine
+      // Inhalte). Die Kanten-Richtung des Endpoints (parent = eingehend,
+      // child = ausgehend) fällt damit je Rollen-Stil anders aus:
+      //   - Container→Sub-Rollen (has_calculation): ausgehend = mein Inhalt,
+      //     eingehend = mein Container → Richtung direkt übernehmen.
+      //   - Sub→Container-Rollen (PARENT_ROLES: parent_*/trigger_owner/
+      //     groups_into, Source=Sub → Target=Container): ausgehend = mein
+      //     Container, eingehend = mein Inhalt → Richtung INVERTIEREN.
+      // Beide Zweige symmetrisch — vorher wurden nur die ausgehenden
+      // PARENT_ROLES reklassifiziert, wodurch Container-Seiten ihre Inhalte
+      // (Steps eines Scripts, Parts/Trigger eines Layouts, Scripts eines
+      // Ordners) invertiert unter „Strukturell enthalten in" zeigten.
+      const PARENT_ROLES = new Set([
+        'parent_script', 'parent_layout', 'parent_object', 'parent_folder',
+        'groups_into', 'trigger_owner',
+      ]);
       const opRefs = (opRefsResponse.data ?? []) as unknown as ReferenceItem[];
-      const structRefs = (structRefsResponse.data ?? []) as unknown as ReferenceItem[];
+      // Struktur-Sub-Knoten, die der Owner-Detailview bereits vollständig
+      // rendert, sind in der Referenzliste Struktur-Lärm ohne Inhalts-Mehrwert
+      // — ausgeblendet wird jeweils NUR die Richtung, deren GELISTETES Objekt
+      // der Sub-Knoten ist; die Gegenzeile auf der Sub-Seite („Strukturell
+      // enthalten in <Owner>") bleibt als Rücknavigation erhalten:
+      //   - has_calculation → Calculation: Formeln sind inline sichtbar
+      //     (Slot-/CF-Sektionen, Trigger-Tabellen/-Detailseite, PrivilegeSet-
+      //     Zugriffsformeln); erreichbar bleiben Instanzen über Suche
+      //     (?type=Calculation) und die Slot-Deeplinks.
+      //   - parent_script → ScriptStep: die Steps stehen vollständig im
+      //     Detail-Tab (ScriptViewer, mit eigener Suche); der Zeilen-Klick
+      //     führte ohnehin nur per Container-Transparenz zur selben
+      //     Script-Seite zurück (Scroll-Anchor). Die Step-DETAILSEITE war von
+      //     der Script-Seite aus nie verlinkt (Viewer-Klick geht zur
+      //     StepType-Doku) — sie bleibt über die Suche erreichbar.
+      const structRefs = ((structRefsResponse.data ?? []) as unknown as ReferenceItem[])
+        .filter(r => !(
+          (r.Link_Role === 'has_calculation' && r.Object_Type === 'Calculation')
+          || (r.Link_Role === 'parent_script' && r.Object_Type === 'ScriptStep')
+        ));
       const grouped: GroupedReferences = {
         parent: opRefs.filter(r => r.direction === 'parent'),
         child: opRefs.filter(r => r.direction === 'child'),
         structuralParent: structRefs.filter(r =>
-          r.direction === 'parent' || (r.direction === 'child' && PARENT_ROLES.has(r.Link_Role))
+          (r.direction === 'child') === PARENT_ROLES.has(r.Link_Role)
         ),
         structuralChild: structRefs.filter(r =>
-          r.direction === 'child' && !PARENT_ROLES.has(r.Link_Role)
+          (r.direction === 'parent') === PARENT_ROLES.has(r.Link_Role)
         ),
       };
 

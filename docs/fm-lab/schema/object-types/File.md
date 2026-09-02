@@ -51,7 +51,7 @@ The *File Access* authorization list (which other files may reference this one) 
 
 The File object is the **owner anchor** at the top of the containment tree. It has no containing parent itself; two kinds of children attach to it:
 
-- **File-level script triggers** (`OnFirstWindowOpen`, `OnLastWindowClose`, `OnWindowTransaction`, …) hang on the File via `trigger_owner` links, with the event type as subrole. The trigger's target script is a separate `trigger_script` edge from the [ScriptTrigger](ScriptTrigger.md) object.
+- **File-level script triggers** (`OnFirstWindowOpen`, `OnLastWindowClose`, `OnWindowTransaction`, …) hang on the File via `trigger_owner` links, with the event type as subrole. Each trigger's target script is reachable twice: as the granular `trigger_script` edge of the [ScriptTrigger](ScriptTrigger.md) object (navigation, never counting) and as the File's own counting `triggers_script · <event>` mirror.
 - **Everything else** is file-scoped by convention rather than by explicit links: catalog rows reference their file through the `File_Name` column, not through graph edges — the graph stays free of one-edge-per-object noise.
 
 In the frontend there is no dedicated file view; the object opens with the generic detail view.
@@ -66,6 +66,10 @@ The File object carries the security- and startup-relevant file options as graph
 |---|---|---|---|
 | `auto_login_account` | [Account](Account.md) | usage | Auto-login account from the file options (security-relevant) |
 | `default_layout` | [Layout](Layout.md) | usage | Start layout from the file options |
+| `triggers_script` | [Script](Script.md) | usage | Counting mirror of every file-level trigger (subrole = event) — the where-used truth for trigger-fired scripts |
+| `reads_field` / `reads_variable` | [Field](Field.md) / [Variable](Variable.md) | usage | Reference inside a file-level script-trigger parameter calc (subrole `ScriptTrigger_<id>`) |
+| `calls_function` / `calls_customfunction` / `calls_pluginfunction` | [BuiltinFunction](BuiltinFunction.md) / [CustomFunction](CustomFunction.md) / [PluginFunction](PluginFunction.md) | usage | Function call inside a file-level trigger parameter calc (same subrole) |
+| `has_calculation` | [Calculation](Calculation.md) | containment | Trigger-parameter calc instances of the file as addressable objects — never counts as usage |
 
 ### Incoming links (File as target)
 

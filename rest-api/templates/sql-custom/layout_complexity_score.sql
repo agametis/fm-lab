@@ -28,10 +28,13 @@
 -- container XML nests its children's XML, an unfiltered count doubles the
 -- inventory. related_fields is the v1 proxy for relationship depth: displayed
 -- fields whose base table differs from the layout context's base table.
--- script_links counts triggers_script edges of the layout's objects; the
--- catalog does not separate script triggers from button actions, so the
--- column deliberately covers both. Folders and separators carry no
--- Default_View and are excluded by the join on real layouts.
+-- script_links counts triggers_script edges of the layout's OBJECTS (source
+-- type pinned to LayoutObject): object-level triggers plus button actions —
+-- both are per-object wiring the layout renders. Layout-/file-level trigger
+-- mirrors (Source_Type Layout/File, converter 2.17.0) are deliberately NOT
+-- counted: they are per-layout/per-file event handlers, not object load cost.
+-- Folders and separators carry no Default_View and are excluded by the join
+-- on real layouts.
 WITH objs AS (
     SELECT lo.File_Name, lo.Layout_ID,
            CAST(count(*) AS INTEGER) AS objects,

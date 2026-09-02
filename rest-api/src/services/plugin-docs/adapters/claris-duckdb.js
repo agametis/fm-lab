@@ -29,6 +29,13 @@ function clearSlugMapCache() {
  * bzw. ref.script_steps).
  */
 
+/**
+ * Adapter-Capabilities (siehe adapters/index.js). Funktionen UND Script-Steps
+ * bilden die Eintragsebene — beide sind durchsuchbar und über ihre
+ * `category_id` einer Rubrik zugeordnet.
+ */
+const capabilities = { entrySearch: true };
+
 function repoRoot() {
   return settingsStore.resolveRepoRoot();
 }
@@ -51,7 +58,7 @@ async function listCategories(ctx, { lang = 'en' } = {}) {
         c.category_name AS name_en,
         c.url_slug AS slug,
         'function' AS kind,
-        (SELECT COUNT(*) FROM ref.functions f WHERE f.category_id = c.category_id) AS function_count
+        (SELECT COUNT(*) FROM ref.functions f WHERE f.category_id = c.category_id) AS entry_count
       FROM ref.function_categories c
       LEFT JOIN ref.function_categories_lang cl
              ON cl.category_id = c.category_id AND cl.language = '${lang}'
@@ -63,14 +70,14 @@ async function listCategories(ctx, { lang = 'en' } = {}) {
         c.category_name_en AS name_en,
         c.url_slug AS slug,
         'script_step' AS kind,
-        (SELECT COUNT(*) FROM ref.script_steps s WHERE s.category_id = c.category_id) AS function_count
+        (SELECT COUNT(*) FROM ref.script_steps s WHERE s.category_id = c.category_id) AS entry_count
       FROM ref.script_steps_categories c
       LEFT JOIN ref.script_steps_categories_lang cl
              ON cl.category_id = c.category_id AND cl.language = '${lang}'
     )
-    SELECT id, name, name_en, slug, kind, function_count FROM fc
+    SELECT id, name, name_en, slug, kind, entry_count FROM fc
     UNION ALL
-    SELECT id, name, name_en, slug, kind, function_count FROM sc
+    SELECT id, name, name_en, slug, kind, entry_count FROM sc
     ORDER BY kind, name
   `;
   const result = await db.executeQuery(ctx, sql);
@@ -80,7 +87,7 @@ async function listCategories(ctx, { lang = 'en' } = {}) {
     name_en: r.name_en,
     slug: r.slug,
     kind: r.kind,
-    function_count: Number(r.function_count || 0),
+    entry_count: Number(r.entry_count || 0),
   }));
 }
 
@@ -381,6 +388,67 @@ async function search(ctx, { q, lang = 'en' } = {}) {
   };
 }
 
+/**
+ * Rubrikübergreifende Eintragssuche, konsolidiert auf Rubrikebene.
+ *
+ * Ein `GROUP BY` über Funktions- UND Script-Step-Kategorien, ungedeckelt —
+ * nur das Beleg-Sample pro Rubrik wird über `list(...)[1:n]` begrenzt. Gesucht
+ * wird über den lokalisierten Anzeigenamen und den Kanon-Namen, also über
+ * dieselben Felder, die auf der Rubrikseite in der Zeile stehen; damit kann
+ * der Beleg keinen Eintrag nennen, den der Filter dort nicht findet.
+ *
+ * `category_id` trägt dasselbe `fn:`/`ss:`-Präfix wie listCategories und ist
+ * damit direkt das Deep-Link-Ziel.
+ */
+async function searchEntriesByCategory(ctx, { q, lang = 'en', sample = 5 } = {}) {
+  const term = String(q || '').trim();
+  if (!term) return [];
+  const esc = term.replace(/'/g, "''");
+  const like = `%${esc}%`;
+  const prefix = `${esc}%`;
+  const size = Math.max(1, Math.min(50, Number(sample) || 5));
+
+  const sql = `
+    WITH hits AS (
+      SELECT 'fn:' || f.category_id AS category_id,
+             COALESCE(fl.display_name, f.canonical_name) AS name
+      FROM ref.functions f
+      LEFT JOIN ref.functions_lang fl
+             ON fl.function_id = f.function_id AND fl.language = '${lang}'
+      WHERE COALESCE(fl.display_name, f.canonical_name) ILIKE '${like}'
+         OR f.canonical_name ILIKE '${like}'
+      UNION ALL
+      SELECT 'ss:' || s.category_id AS category_id,
+             COALESCE(sl.display_name, s.canonical_name) AS name
+      FROM ref.script_steps s
+      LEFT JOIN ref.script_steps_lang sl
+             ON sl.step_id = s.step_id AND sl.language = '${lang}'
+      WHERE COALESCE(sl.display_name, s.canonical_name) ILIKE '${like}'
+         OR s.canonical_name ILIKE '${like}'
+    ),
+    ranked AS (
+      SELECT category_id, name,
+             CASE WHEN name ILIKE '${prefix}' THEN 0 ELSE 1 END AS match_rank
+      FROM hits
+    )
+    SELECT category_id,
+           COUNT(*) AS hit_count,
+           list(name ORDER BY match_rank, name)[1:${size}] AS sample
+    FROM ranked
+    -- Einträge ohne Rubrik (category_id NULL) haben kein Navigationsziel —
+    -- eine Belegzeile ohne anklickbare Rubrik wäre eine Sackgasse.
+    WHERE category_id IS NOT NULL
+    GROUP BY category_id
+    ORDER BY hit_count DESC, category_id
+  `;
+  const result = await db.executeQuery(ctx, sql);
+  return result.rows.map(r => ({
+    category_id: r.category_id,
+    hit_count: Number(r.hit_count || 0),
+    sample: Array.isArray(r.sample) ? r.sample.map(String) : [],
+  }));
+}
+
 async function listLanguages({ installedEntry } = {}) {
   return Array.isArray(installedEntry?.languages) ? installedEntry.languages : ['en'];
 }
@@ -408,10 +476,12 @@ async function validate(ctx, { catalogEntry, installedEntry } = {}) {
 }
 
 module.exports = {
+  capabilities,
   listCategories,
   listFunctions,
   getEntry,
   search,
+  searchEntriesByCategory,
   listLanguages,
   validate,
   clearSlugMapCache,

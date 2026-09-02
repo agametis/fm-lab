@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "title": "ExecuteSQL-bereik zonder BETWEEN",
+    "description": "Prestatieregel — ExecuteSQL-bereikcondities met >=/<= in plaats van BETWEEN laten de engine twee losse condities evalueren en de doorsnede bepalen; de BETWEEN-constructie doorloopt het bereik in één keer en is vele malen sneller dan de losse vergelijkingen."
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Betrokken bestanden",
+    "summary_kpi.props.items[2].label": "ExecuteSQL-aanroepen",
+    "summary_kpi.props.items[3].label": "Al met BETWEEN",
+    "findings_card.props.title": "ExecuteSQL-bereik zonder BETWEEN",
+    "findings_table.props.searchPlaceholder": "Bestand of object zoeken…",
+    "findings_table.props.empty.message": "Geen ExecuteSQL-bereikpatroon zonder BETWEEN gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Object",
+    "findings_table.props.columns[2].label": "Type",
+    "findings_table.props.columns[3].label": "Stap",
+    "findings_table.props.columns[4].label": "Functie",
+    "findings_table.props.columns[5].label": "SQL-fragment"
+  }
+}

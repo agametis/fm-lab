@@ -5,17 +5,24 @@
 -- (no file scoping on the producer side). A literal close with no producer is a
 -- guaranteed no-op (dead cleanup, severity error); a dynamic name (variable /
 -- expression) is only comparable textually (severity info — verify at runtime).
+-- Formula source is the CalculationsCatalog (Owner_UUID = Step_UUID, slot
+-- selected via the instance's Source_Path); StepsForScripts contributes the
+-- step type, enabled state and script context.
 WITH closes AS (
-    SELECT File_Name, Script_UUID, Script_Name, Step_Index, Step_UUID, Calc_Text,
-           regexp_full_match(Calc_Text, '"[^"]*"') AS is_literal
-    FROM StepCalculations
-    WHERE Step_ID = 121 AND Slot = 'Name' AND Is_Enabled
+    SELECT c.File_Name, s.Script_UUID, s.Script_Name, s.Step_Index, c.Owner_UUID AS Step_UUID,
+           COALESCE(c.Formula_Text, c.Display_Text) AS Calc_Text,
+           regexp_full_match(COALESCE(c.Formula_Text, c.Display_Text), '"[^"]*"') AS is_literal
+    FROM CalculationsCatalog c
+    JOIN StepsForScripts s ON s.Step_UUID = c.Owner_UUID AND s.File_Name = c.File_Name
+    WHERE s.Step_ID = 121 AND c.Source_Path = 'Step/Name' AND s.Is_Enabled
 ),
 producers AS (
-    SELECT DISTINCT Calc_Text
-    FROM StepCalculations
-    WHERE Is_Enabled
-      AND ((Step_ID IN (122, 74) AND Slot = 'Name') OR (Step_ID = 124 AND Slot = 'Rename'))
+    SELECT DISTINCT COALESCE(c.Formula_Text, c.Display_Text) AS Calc_Text
+    FROM CalculationsCatalog c
+    JOIN StepsForScripts s ON s.Step_UUID = c.Owner_UUID AND s.File_Name = c.File_Name
+    WHERE s.Is_Enabled
+      AND ((s.Step_ID IN (122, 74) AND c.Source_Path = 'Step/Name')
+           OR (s.Step_ID = 124 AND c.Source_Path = 'Step/Rename'))
 )
 SELECT 'close-window-name-never-created' AS rule_id,
     CASE WHEN c.is_literal THEN 'error' ELSE 'info' END AS severity,

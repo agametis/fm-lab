@@ -112,6 +112,25 @@ function buildCategoryBadgeAction(setId, cat) {
   };
 }
 
+/**
+ * Überschrift für den Abschnitt der Zweit-Mitglieder einer Rubrik.
+ *
+ * MBS führt 121 Funktionen auf mehreren Komponentenseiten (z.B.
+ * `FM.ExecuteFileSQL` unter FM und FMSQL). Gezählt und gefiltert werden sie
+ * über ihre Primärkomponente — auf der Zweit-Rubrik erscheinen sie deshalb
+ * unterhalb eines eigenen Abschnitts statt in der Hauptliste.
+ */
+const SECONDARY_SECTION_LABELS = {
+  de: (comp) => `Weitere Funktionen dieser Komponente · Primär: ${comp}`,
+  en: (comp) => `Also listed in this component · primary: ${comp}`,
+};
+
+function secondarySection(primaryComponent, lang) {
+  if (!primaryComponent) return '';
+  const build = SECONDARY_SECTION_LABELS[lang] || SECONDARY_SECTION_LABELS.en;
+  return build(primaryComponent);
+}
+
 function buildFunctionAction(setId, fn, lang, categoryId) {
   // Neue Route /docs/:set/:category/:fn → DocsEntryView.
   // Wir behalten `source_url` für die Code-Referenz-Auflösung und das alte
@@ -140,10 +159,25 @@ function buildFunctionAction(setId, fn, lang, categoryId) {
 // Public surface — kompatibel mit dashboard.service.js Builtins
 // ---------------------------------------------------------------------------
 
+/**
+ * Mindestlänge der rubrikübergreifenden Eintragssuche. Serverseitig
+ * durchgesetzt, damit der Client nicht die einzige Bremse ist: kürzere
+ * Eingaben liefern ein leeres Ergebnis statt 130 von 168 Rubriken.
+ */
+const ENTRY_SEARCH_MIN_CHARS = 3;
+const ENTRY_SEARCH_SAMPLE_DEFAULT = 5;
+const ENTRY_SEARCH_SAMPLE_MAX = 25;
+
 async function getDocsetInfo(id, lang = 'en') {
   const { catalog, installed } = ctxOf(id);
   if (!catalog) return null;
   const stats = installed?.stats || {};
+  // Capability-Flag des Adapters (E2): nur Sets mit eigener Eintragsebene
+  // bekommen auf der Rubrikliste das Kästchen „auch Einträge durchsuchen".
+  const adapter = resolveAdapter(id);
+  const entrySearch = !!installed
+    && !!adapter?.capabilities?.entrySearch
+    && typeof adapter.searchEntriesByCategory === 'function';
   return {
     id: catalog.id,
     name: catalog.name,
@@ -158,7 +192,14 @@ async function getDocsetInfo(id, lang = 'en') {
     installed: !!installed,
     languages: installed?.languages || catalog.languages || [],
     categories: stats.categories ?? null,
-    functions: stats.functions ?? null,
+    // Manifest-Grenze: `.fmlab/docs.json` speichert den Zähler historisch als
+    // `stats.functions`. Wir mappen ihn hier auf den Vertragsnamen `entries`,
+    // statt das gespeicherte Artefakt zu migrieren — sonst bräuchte jeder
+    // bestehende Workspace eine Nachpflege.
+    entries: stats.entries ?? stats.functions ?? null,
+    entry_search: entrySearch,
+    entry_search_url: entrySearch ? `/api/docs/${encodeURIComponent(id)}/search` : null,
+    entry_search_min_chars: ENTRY_SEARCH_MIN_CHARS,
   };
 }
 
@@ -172,11 +213,15 @@ async function listDocsetCategories(ctx, id, lang = 'en') {
     return {
       ...c,
       description: c.description || null,
-      function_count: typeof c.function_count === 'number' ? c.function_count : null,
-      action: rowAct.action,
-      action_args: rowAct.action_args,
-      badge_action: badgeAct.action,
-      badge_action_args: badgeAct.action_args,
+      entry_count: typeof c.entry_count === 'number' ? c.entry_count : null,
+      // Navigations-Plumbing: '_'-Präfix = technisches Feld. Die Listen-
+      // Primitives blenden solche Felder aus Anzeige UND Zeilensuche aus —
+      // ohne das trifft z.B. die Suche nach "plugin" jede Zeile, weil in
+      // jedem badge_action_args "type=PluginFunction" steht.
+      _action: rowAct.action,
+      _action_args: rowAct.action_args,
+      _badge_action: badgeAct.action,
+      _badge_action_args: badgeAct.action_args,
     };
   });
 }
@@ -211,7 +256,7 @@ async function getDocsetCategoryInfo(ctx, id, categoryId, lang = 'en') {
     source_url: online_url,                       // Externer Link (Backwards-Compat-Feld)
     online_url,
     online_link_md: onlineLinkMd(online_url, lang),
-    function_count: typeof cat.function_count === 'number' ? cat.function_count : null,
+    entry_count: typeof cat.entry_count === 'number' ? cat.entry_count : null,
   };
 }
 
@@ -240,14 +285,19 @@ async function listDocsetFunctions(ctx, id, categoryId, lang = 'en') {
       signature: fn.signature || null,
       uuid,
       referenced: !!uuid,
-      source_url: rowAct.source_url,
+      // Abschnitts-Überschrift für Zweit-Mitglieder (leer = Hauptliste).
+      // Die Liste erwartet zusammenhängend sortierte Gruppen; der Adapter
+      // liefert Primär-Mitglieder zuerst, danach nach Primärkomponente sortiert.
+      section: secondarySection(fn.secondary_of, lang),
+      // Technische Felder ('_'-Präfix): weder Anzeige noch Zeilensuche.
+      _source_url: rowAct.source_url,
       // Row-Klick: Volltext-View der Function-Dokumentation öffnen.
-      action: rowAct.action,
-      action_args: rowAct.action_args,
+      _action: rowAct.action,
+      _action_args: rowAct.action_args,
       // Pill-Klick: References-Ansicht (DetailView des Pseudo-Objects
       // bzw. Suche nach allen Verwendungen).
-      badge_action: badgeAct.action,
-      badge_action_args: badgeAct.action_args,
+      _badge_action: badgeAct.action,
+      _badge_action_args: badgeAct.action_args,
     };
   });
 }
@@ -373,6 +423,38 @@ async function searchDocset(ctx, id, q, lang = 'en') {
   return adapter.search(ctx, { q, lang });
 }
 
+/**
+ * Rubrikübergreifende Eintragssuche, konsolidiert auf Rubrikebene.
+ *
+ * Der Unterschied zu `searchDocset`: hier wird UNGEDECKELT aggregiert. Der
+ * Treffer-Cap der Zeilen-Suche (50/200) darf nicht vorgelagert greifen, sonst
+ * fehlen ganze Rubriken im Ergebnis — und eine fehlende Rubrik ist im
+ * konsolidierten Bild nicht als Lücke erkennbar. Begrenzt wird nur das
+ * Beleg-Sample je Rubrik.
+ *
+ * Rückgabe: `[{ category_id, hit_count, sample: string[] }]` — absteigend nach
+ * Trefferzahl. Leeres Array bei zu kurzer Eingabe oder Sets ohne Eintragsebene.
+ */
+async function searchDocsetEntriesByCategory(ctx, id, q, { lang = 'en', sample } = {}) {
+  const term = String(q || '').trim();
+  if (term.length < ENTRY_SEARCH_MIN_CHARS) return [];
+  const adapter = resolveAdapter(id);
+  if (!adapter?.capabilities?.entrySearch) return [];
+  if (typeof adapter.searchEntriesByCategory !== 'function') return [];
+
+  const parsed = Number(sample);
+  const size = Number.isFinite(parsed) && parsed > 0
+    ? Math.min(ENTRY_SEARCH_SAMPLE_MAX, Math.floor(parsed))
+    : ENTRY_SEARCH_SAMPLE_DEFAULT;
+
+  const rows = await adapter.searchEntriesByCategory(ctx, { q: term, lang, sample: size });
+  return (rows || []).map(r => ({
+    category_id: r.category_id,
+    hit_count: Number(r.hit_count || 0),
+    sample: Array.isArray(r.sample) ? r.sample : [],
+  }));
+}
+
 async function getDocsetEntry(ctx, id, categoryId, functionId, lang = 'en') {
   const adapter = resolveAdapter(id);
   if (!adapter) return null;
@@ -462,11 +544,14 @@ async function validateDocset(ctx, id) {
 }
 
 module.exports = {
+  ENTRY_SEARCH_MIN_CHARS,
+  ENTRY_SEARCH_SAMPLE_DEFAULT,
   getDocsetInfo,
   listDocsetCategories,
   getDocsetCategoryInfo,
   listDocsetFunctions,
   searchDocset,
+  searchDocsetEntriesByCategory,
   getDocsetEntry,
   validateDocset,
 };

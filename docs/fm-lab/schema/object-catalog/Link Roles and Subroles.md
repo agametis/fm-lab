@@ -2,9 +2,9 @@
 
 Part of the [FM-Lab schema](../Schema.md) · Object catalog · enumerations of [ObjectLinks](ObjectLinks.md)
 
-> Enumeration state: **schema version 1.14.0** (2026-07-16) — see [Schema Version History](../Schema%20Version%20History.md). The authoritative runtime source is the [LinkRoleRegistry](LinkRoleRegistry.md) table; new schema versions may add roles.
+> Enumeration state: **schema version 1.27.0** (2026-09-02) — see [Schema Version History](../Schema%20Version%20History.md). The authoritative runtime source is the [LinkRoleRegistry](LinkRoleRegistry.md) table; new schema versions may add roles.
 
-Every edge in [ObjectLinks](ObjectLinks.md) is classified by three values: `Link_Type` (the coarse class), `Link_Role` (the specific relation — a closed vocabulary of 59 registered roles) and `Link_Subrole` (an optional, role-specific qualifier). This page enumerates all three. `Link_Role` and `Link_Subrole` live on one page deliberately: a subrole has no meaning of its own — it always qualifies a specific role.
+Every edge in [ObjectLinks](ObjectLinks.md) is classified by three values: `Link_Type` (the coarse class), `Link_Role` (the specific relation — a closed vocabulary of 60 registered roles) and `Link_Subrole` (an optional, role-specific qualifier). This page enumerates all three. `Link_Role` and `Link_Subrole` live on one page deliberately: a subrole has no meaning of its own — it always qualifies a specific role.
 
 ## Link_Type
 
@@ -15,7 +15,7 @@ Every edge in [ObjectLinks](ObjectLinks.md) is classified by three values: `Link
 
 ## Link_Role
 
-Roles are registered in [LinkRoleRegistry](LinkRoleRegistry.md) with their kind (`usage` / `containment` / `restriction`) and the `Counts_For_Where_Used` flag. All 49 usage roles count for where-used; containment and restriction roles never do — a privilege set restricting a layout does not make that layout "used".
+Roles are registered in [LinkRoleRegistry](LinkRoleRegistry.md) with their kind (`usage` / `containment` / `restriction`) and the `Counts_For_Where_Used` flag. 48 of the 49 usage roles count for where-used — the exception is `trigger_script`, whose counting truth is the owner mirror `triggers_script` (see the two rows below); the 9 containment and 2 restriction roles never count — a privilege set restricting a layout does not make that layout "used".
 
 The *Source → Target* column lists the documented carrier types; a role can have several (e.g. `reads_field` is carried by scripts, calculated fields, custom functions, layout objects and privilege sets alike).
 
@@ -52,7 +52,7 @@ The *Source → Target* column lists the documented carrier types; a role can ha
 | `parent_table`         | Field → BaseTable                                                             | The base table the field belongs to                             |
 | `portal_context`       | LayoutObject → TableOccurrence                                                | The portal's data-source occurrence                             |
 | `privilege_set`        | Account → PrivilegeSet                                                        | The account is assigned this privilege set                      |
-| `reads_field`          | Script/Field/CustomFunction/ LayoutObject/PrivilegeSet → Field                | A step or calculation reads the field                           |
+| `reads_field`          | Script/Field/CustomFunction/ LayoutObject/Layout/File/ ScriptTrigger/PrivilegeSet → Field | A step or calculation reads the field (Layout/File: layout-/file-level trigger parameter calcs; ScriptTrigger: the OnWindowTransaction parameter-field candidates) |
 | `reads_variable`       | Script/Field/CustomFunction/ LayoutObject/PrivilegeSet → Variable             | A step or calculation reads the variable                        |
 | `references_field`     | Script/LayoutObject → Field                                                   | Field reference whose direction is not differentiated (see below) |
 | `right_field`          | Relationship → Field                                                          | Join-predicate field of the right side                          |
@@ -66,8 +66,8 @@ The *Source → Target* column lists the documented carrier types; a role can ha
 | `source_table`         | ValueList → TableOccurrence                                                   | Field-based value list: the source occurrence                   |
 | `source_valuelist`     | ValueList → ValueList                                                         | External wrapper sources its values from a list in another file |
 | `summarizes_field`     | Field → Field                                                                 | Summary field aggregates this field                             |
-| `trigger_script`       | ScriptTrigger → Script                                                        | The script the trigger fires                                    |
-| `triggers_script`      | LayoutObject → Script                                                         | The object (button, trigger carrier) performs the script        |
+| `trigger_script`       | ScriptTrigger → Script                                                        | The script the trigger fires — granular navigation edge; **does not count for where-used** (the owner mirror `triggers_script` does) |
+| `triggers_script`      | LayoutObject/Layout/File → Script                                             | The owner performs the script — button actions and the counting mirror of every script trigger (subrole = event or `button_action`) |
 | `uses_menuset`         | Layout → CustomMenuSet                                                        | Layout-bound menu set                                           |
 | `uses_theme`           | Layout → Theme                                                                | The layout uses this theme                                      |
 | `uses_valuelist`       | LayoutObject/Field → ValueList                                                | Field control uses the list; field validation by list           |
@@ -77,7 +77,7 @@ The *Source → Target* column lists the documented carrier types; a role can ha
 
 Reading a role off a step's option type is unreliable in the other direction, too: in the [fm-spec](../../Wiki/fm-spec.md) reference, `target` describes the XML shape of an option, not the direction of the data. Write to Data File carries its field as a `target` option although the field is read from — hence its `reads_field` role.
 
-### Containment roles (8)
+### Containment roles (9)
 
 Structural owner relations (`Link_Type = 'structural'`); never counted as usage.
 
@@ -85,6 +85,7 @@ Structural owner relations (`Link_Type = 'structural'`); never counted as usage.
 |---|---|---|
 | `contains_menu` | CustomMenuSet → CustomMenu | The menu set contains the menu as a member |
 | `groups_into` | PluginFunction → PluginComponent | Plugin functions aggregate into their component |
+| `has_calculation` | owner → [Calculation](../object-types/Calculation.md) | Every calculation instance hangs on its owner (field, step, layout object, layout, file, CF, menu (item), privilege set). The usage semantics stay on the owner-projected edges — *Calculation → target* exists only as the derived view `v_calculation_links` |
 | `parent_folder` | Script/Layout/Folder → Folder | The object sits in this folder (script/layout folder trees; folders nest) |
 | `parent_layout` | LayoutObject/LayoutPart → Layout | The object or part belongs to the layout |
 | `parent_menu` | CustomMenuItem → CustomMenu | The item belongs to the menu (owner backlink — the *usage* counterpart is `opens_menu`) |
@@ -109,6 +110,8 @@ Access limitations from Custom Privileges (`Access_Mode <> 'ReadWrite'` only). A
 |---|---|---|
 | `calls_script` | `on_server`, `on_server_callback` (since schema 1.20.0) · `MBS:FM.RunScript` | The call's execution context: the target of a *Perform Script on Server* step (164) / *… with Callback* (210) runs **server-side** — this is the platform-binding evidence for FileMaker Server. `MBS:FM.RunScript` marks plugin-mediated calls; `NULL` = ordinary Perform Script. "By name" callsites (runtime-computed target) have no static target and no edge |
 | `trigger_owner` | `OnFirstWindowOpen`, `OnRecordLoad`, `OnLayoutEnter`, `OnObjectSave`, … | The trigger event type |
+| `triggers_script` | canonical event name (`OnObjectSave`, …) · `button_action` | Trigger mirror vs. Button/GroupedButton/PopoverButton action |
+| `reads_field` (ScriptTrigger-carried) | `transaction_parameter_field` | OnWindowTransaction parameter-field candidate (name-resolved, file-local) |
 | `parent_layout` (LayoutPart) | `Body`, `Header`, `Footer`, `Title Header`, `Leading Sub-summary`, `Trailing Grand Summary`, `Top Navigation`, … | The part type |
 | `breaks_on_field` | part type (e.g. `Leading Sub-summary`) | Which part breaks on the field |
 | `sort_field` | `left`, `right` | Which relationship side sorts |
@@ -116,8 +119,9 @@ Access limitations from Custom Privileges (`Access_Mode <> 'ReadWrite'` only). A
 | `sorts_by_field` | `portal`, `button` | Portal sort vs. button-embedded sort step |
 | `restricts_field`, `restricts_object` | `NoAccess`, `ReadOnly`, `Calculation`, … | The access mode of the restriction |
 | PrivilegeSet-carried `reads_field`, `reads_variable`, `calls_customfunction`, `calls_pluginfunction` | `<Operation>:<Table>` (e.g. `Delete:Contacts`) | Which Custom-Record-Privilege rule carries the reference |
-| calculation-carried roles (`reads_field`, `calls_function`, …) | step index (`0`, `1`, …) or calc slot (`Hide`, `Tooltip`, `Condition_1`, `Filter`, `Install`, `Placeholder`, chart series keys, …) | Which calculation of the owner contains the reference — the DDR calc-anchor suffix (see [XML DDR_INFO](../../xml/catalogs/XML%20DDR_INFO.md)) |
-| `uses_valuelist`, `validates_by_calc` | `validation` | The reference comes from a field validation |
+| calculation-carried roles (`reads_field`, `calls_function`, …) | step calc position (`0`, `1`, …) or calc slot (`Hide`, `Tooltip`, `Condition_1`, `Filter`, `Install`, `Placeholder`, `ScriptTrigger_<id>`, `DisplayCalculations_<i>`, chart series keys, …); field slots also `auto_enter` | Which calculation of the owner contains the reference — the DDR calc-anchor suffix (see [XML DDR_INFO](../../xml/catalogs/XML%20DDR_INFO.md)); the slot key that `v_calculation_links` joins on |
+| `uses_valuelist`, `validates_by_calc` | `validation` · `validation_message` (message calc) | The reference comes from a field validation (check calc vs. custom-message calc) |
+| `has_calculation` | `<Calc_Role>[:<Calc_Index>]` (e.g. `hide`, `conditional_format:2`, `display_calculation:1`, `script_trigger_parameter:2`) | Which slot of the owner the calculation instance is |
 | `source_field` | `primary`, `secondary`, `secondary_sort` | Which value-list field slot |
 | `summarizes_field` | `List`, `Total`, `Average`, … | The summary operation |
 

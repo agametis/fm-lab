@@ -7,6 +7,7 @@ import { HighlightRing, LayoutObjectShape, SelectionRing, type LabelMode } from 
 import { LayoutObjectTooltip } from './LayoutObjectTooltip';
 import { LayoutTypeFilter } from './LayoutTypeFilter';
 import { buildObjectPath } from '../lib/navigation';
+import { resolveCrossNavTarget } from '../lib/layoutObjectNav';
 
 type Props = {
   data: LayoutData;
@@ -49,19 +50,6 @@ const MAX_SCALE = 5;
 const PAN_MARGIN = 40;
 
 type ViewTransform = { tx: number; ty: number; scale: number };
-
-// Cross-Nav-Subset.
-const FIELD_NAV_TYPES = new Set([
-  'Edit Box', 'Drop-down List', 'Drop-down Calendar', 'Pop-up Menu',
-  'Radio Button Set', 'Checkbox Set', 'Concealed Edit Box', 'Container',
-]);
-const SCRIPT_NAV_TYPES = new Set(['Button', 'Grouped Button', 'Popover Button']);
-
-function resolveCrossNavTarget(o: LayoutObject): string {
-  if (FIELD_NAV_TYPES.has(o.object_type) && o.field_uuid) return o.field_uuid;
-  if (SCRIPT_NAV_TYPES.has(o.object_type) && o.script_uuid) return o.script_uuid;
-  return o.object_uuid;
-}
 
 function computeViewport(objects: LayoutObject[], parts: LayoutData['parts']) {
   if (objects.length === 0 && parts.length === 0) {
@@ -109,7 +97,7 @@ export const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(({ data, exter
   // kennt die echte Trefferzahl. Nur melden, solange weder Suche noch Typ-Filter
   // aktiv sind — sonst gehört die Fundmenge dem User, nicht der Referenz.
   const refDriven = !!(externalMatchUuids && externalMatchUuids.size > 0)
-    && search.query === '' && search.activeTypes.size === 0;
+    && search.query === '' && search.activeTypes.size === 0 && search.activeCalc.size === 0;
   const refMatchCount = refDriven ? search.matches.length : null;
   useEffect(() => {
     if (refMatchCount !== null) onLiveMatchCount?.(refMatchCount);
@@ -213,11 +201,15 @@ export const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(({ data, exter
     });
   };
 
-  const handleObjectClick = (o: LayoutObject) => {
-    const target = resolveCrossNavTarget(o);
-    // Layout-UUID als Origin mitgeben — beim Sprung zum Field/Script
-    // weiß der Ziel-View, woher der Klick kam.
-    navigate(buildObjectPath(target, currentUuid ?? null));
+  // Klick-Semantik (Primär = Detail, Modifier = Ziel): Primärklick öffnet für
+  // ALLE Objekttypen die LayoutObject-Detail (die Zwischeninstanz trägt Hide/
+  // Trigger/CF-Logik); Alt-Klick (macOS ⌥) springt zum gehoisteten Ziel
+  // (Feld/Script/Portal-TO/Go-to-Layout). `file` geht in beide Pfade mit —
+  // Klon-Disambiguierung, kein AMBIGUOUS_UUID-409 mehr.
+  const handleObjectClick = (o: LayoutObject, opts?: { modifier?: boolean }) => {
+    const target = opts?.modifier ? resolveCrossNavTarget(o) : o.object_uuid;
+    // Layout-UUID als Origin mitgeben — der Ziel-View weiß, woher der Klick kam.
+    navigate(buildObjectPath(target, currentUuid ?? null, data.fileName || null));
   };
 
   const handleShapeMouseEnter = useCallback((uuid: string, x: number, y: number) => {
@@ -256,7 +248,8 @@ export const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(({ data, exter
       // Filter restriktiv sind (Stage 3 räumt das im nächsten Druck).
       searchStateRef.current.clear();
     },
-    hasFilters: () => searchStateRef.current.activeTypes.size > 0,
+    hasFilters: () => searchStateRef.current.activeTypes.size > 0
+      || searchStateRef.current.activeCalc.size > 0,
     clearFilters: () => searchStateRef.current.clearTypes(),
   }), []);
 
@@ -270,7 +263,8 @@ export const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(({ data, exter
     } else if (e.key === 'Enter' && search.selectedUuid) {
       e.preventDefault();
       const o = objectsByUuid.get(search.selectedUuid);
-      if (o) handleObjectClick(o);
+      // Enter → LayoutObject-Detail; Alt+Enter → gehoistetes Ziel.
+      if (o) handleObjectClick(o, { modifier: e.altKey });
     }
   };
 
@@ -280,6 +274,21 @@ export const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(({ data, exter
 
   const hoverObject = hoverState ? objectsByUuid.get(hoverState.uuid) : null;
   const filterActive = search.filterActive;
+
+  // Inventar-Deeplinks der Calc-Chips: Layout-Scope über file + scope_uuids
+  // (= L_UUID). Die Queries akzeptieren beide Params (S-Block auf ly.L_UUID).
+  const layoutUuid = data.meta?.layout_uuid ?? data.parts[0]?.layout_uuid ?? null;
+  const calcInventoryUrls = useMemo(() => {
+    if (!layoutUuid) return undefined;
+    const scope = `?file=${encodeURIComponent(data.fileName)}&scope_uuids=${encodeURIComponent(layoutUuid)}`;
+    return {
+      cf: `/query/conditional_formatting_inventory${scope}`,
+      hide: `/query/hide_condition_inventory${scope}`,
+      trigger: `/query/script_trigger_inventory${scope}`,
+      tooltip: `/query/tooltip_inventory${scope}`,
+      display: `/query/layout_calculation_inventory${scope}`,
+    };
+  }, [layoutUuid, data.fileName]);
 
   return (
     <div className="layout-canvas-wrapper">
@@ -336,6 +345,9 @@ export const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(({ data, exter
           onClear={search.clearTypes}
           detailsMode={filterDetailsMode}
           onToggleDetailsMode={() => setFilterDetailsMode(p => !p)}
+          activeCalc={search.activeCalc}
+          onToggleCalc={search.toggleCalc}
+          calcInventoryUrls={calcInventoryUrls}
         />
       </div>
 

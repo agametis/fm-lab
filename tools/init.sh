@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # init.sh — First-time setup for fm-lab
-set -euo pipefail
+# -E (errtrace): without it the ERR trap below is not inherited by shell
+# functions, so any failure inside a function died silently despite F-A7.
+set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -152,13 +154,16 @@ RAM_MIN_GB=6
 DISK_MIN_GB=20
 check_resources() {
   # ── RAM ── Linux via /proc/meminfo, macOS via sysctl hw.memsize.
+  # `|| true` on every probe: a blocked/failing probe command (e.g. sysctl in
+  # hardened environments exits non-zero) must not kill an advisory check via
+  # set -e — the assignment inherits the substitution's exit status.
   local ram_gb="" kb bytes
   if [ -r /proc/meminfo ]; then
-    kb=$(awk '/^MemTotal:/ {print $2; exit}' /proc/meminfo 2>/dev/null)
-    [ -n "$kb" ] && ram_gb=$(( kb / 1024 / 1024 ))
+    kb=$(awk '/^MemTotal:/ {print $2; exit}' /proc/meminfo 2>/dev/null || true)
+    if [ -n "$kb" ]; then ram_gb=$(( kb / 1024 / 1024 )); fi
   elif command -v sysctl >/dev/null 2>&1; then
-    bytes=$(sysctl -n hw.memsize 2>/dev/null)
-    [ -n "$bytes" ] && ram_gb=$(( bytes / 1024 / 1024 / 1024 ))
+    bytes=$(sysctl -n hw.memsize 2>/dev/null || true)
+    if [ -n "$bytes" ]; then ram_gb=$(( bytes / 1024 / 1024 / 1024 )); fi
   fi
   if [ -n "$ram_gb" ]; then
     if [ "$ram_gb" -lt "$RAM_MIN_GB" ]; then
@@ -171,8 +176,8 @@ check_resources() {
   fi
   # ── Free disk on the project volume ── POSIX `df -Pk` (portable columns).
   local disk_gb="" avail_kb
-  avail_kb=$(df -Pk "$PROJECT_ROOT" 2>/dev/null | awk 'NR==2 {print $4; exit}')
-  [ -n "$avail_kb" ] && disk_gb=$(( avail_kb / 1024 / 1024 ))
+  avail_kb=$(df -Pk "$PROJECT_ROOT" 2>/dev/null | awk 'NR==2 {print $4; exit}' || true)
+  if [ -n "$avail_kb" ]; then disk_gb=$(( avail_kb / 1024 / 1024 )); fi
   if [ -n "$disk_gb" ]; then
     if [ "$disk_gb" -lt "$DISK_MIN_GB" ]; then
       warn "Only ${disk_gb} GB free disk on the project volume — ≥ ${DISK_MIN_GB} GB recommended."

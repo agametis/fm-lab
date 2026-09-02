@@ -33,6 +33,11 @@ const sources = {
     indexFile: 'docSet.dsidx',
     docsDir: 'Documents',
     versionFile: '.version',
+    // Komponenten-Zuordnung: der Doku-Index (docSet.dsidx) kennt nur Namen und
+    // Pfade, nicht die Komponente einer Funktion. Die maßgebliche Tabelle wird
+    // beim Doku-Install aus den Seiten abgeleitet und liegt in reference/ —
+    // dieselbe Quelle, die auch Import-Pipeline und Objekt-Filter benutzen.
+    componentMapFile: resolveAbsolute('../reference/mbs_component_exceptions.csv'),
     externalUrl: (fnName) => `https://www.mbsplugins.eu/${fnToSlug(fnName)}.shtml`,
     // Lazy require: Adapter erst zur Laufzeit laden, sonst Zirkularimport
     // mit dem gemeinsamen html-extractor.

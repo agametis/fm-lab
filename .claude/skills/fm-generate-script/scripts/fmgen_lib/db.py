@@ -154,18 +154,106 @@ class Reference:
             f"FROM step_option_values WHERE step_id = {int(step_id)}"
         )
 
+    @lru_cache(maxsize=1)
+    def _xml_map_has_marker(self) -> bool:
+        # the structural variable-target marker column exists since fm_spec
+        # 1.17.0 — older builds simply have no marker steps
+        rows = self.db.query(
+            "SELECT 1 AS x FROM information_schema.columns "
+            "WHERE table_name = 'step_xml_map' AND column_name = 'variable_target_marker' LIMIT 1"
+        )
+        return bool(rows)
+
     @lru_cache(maxsize=None)
     def xml_map(self, step_id: int) -> dict | None:
+        marker = ("variable_target_marker" if self._xml_map_has_marker()
+                  else "NULL AS variable_target_marker")
         rows = self.db.query(
-            "SELECT step_id, snippet_template, element_order, evidence, verified_version "
+            f"SELECT step_id, snippet_template, element_order, {marker}, "
+            "evidence, verified_version "
             f"FROM step_xml_map WHERE step_id = {int(step_id)}"
         )
         return rows[0] if rows else None
 
     @lru_cache(maxsize=1)
+    def repeat_groups_available(self) -> bool:
+        return self.db.has_table("step_repeat_groups")
+
+    @lru_cache(maxsize=None)
+    def repeat_groups(self, step_id: int) -> list[dict]:
+        """Repeat groups of a step (since fm_spec 1.15.0), parents before
+        children so instantiation can nest top-down. Empty on older builds.
+        SELECT * so the fixed-slot columns (since 1.16.0: max_items,
+        slot_positional, pad_mode, empty/default_item_template) flow through
+        when present — consumers read them via .get() and stay graceful on
+        older builds."""
+        if not self.repeat_groups_available():
+            return []
+        return self.db.query(
+            f"SELECT * FROM step_repeat_groups WHERE step_id = {int(step_id)} "
+            "ORDER BY (parent_group IS NOT NULL), group_key"
+        )
+
+    @lru_cache(maxsize=1)
     def constraints(self) -> list[dict]:
         return self.db.query(
-            "SELECT step_id, constraint_kind, detail, evidence FROM step_constraints"
+            "SELECT step_id, constraint_kind, detail, evidence, verified_version "
+            "FROM step_constraints"
+        )
+
+    @lru_cache(maxsize=1)
+    def constraint_kinds(self) -> dict[str, str]:
+        """constraint_kind -> consumer_note for kinds that carry one (the
+        bug-registry kinds; since fm_spec 1.17.0). Empty on older builds —
+        decompile bug notes then degrade gracefully to none."""
+        if not self.db.has_table("constraint_kinds"):
+            return {}
+        return {
+            r["constraint_kind"]: r["consumer_note"]
+            for r in self.db.query(
+                "SELECT constraint_kind, consumer_note FROM constraint_kinds "
+                "WHERE consumer_note IS NOT NULL")
+        }
+
+    @lru_cache(maxsize=1)
+    def _hint_tables_available(self) -> bool:
+        # the hint-inventory tables (fm_spec 1.17.0) travel together
+        return all(self.db.has_table(t) for t in (
+            "step_skeleton_elements", "step_option_element_bindings",
+            "step_option_implications"))
+
+    @lru_cache(maxsize=None)
+    def skeleton_elements(self, step_id: int) -> list[dict]:
+        """Skeleton hulls of a step (since fm_spec 1.17.0), Step-level rows
+        first so restored parents exist before their child rows run. Empty on
+        older builds."""
+        if not self._hint_tables_available():
+            return []
+        return self.db.query(
+            f"SELECT * FROM step_skeleton_elements WHERE step_id = {int(step_id)} "
+            "ORDER BY (parent_tag <> 'Step'), child_tag"
+        )
+
+    @lru_cache(maxsize=None)
+    def element_bindings(self, step_id: int) -> list[dict]:
+        """Option-value/element couplings of a step (since fm_spec 1.17.0).
+        Empty on older builds."""
+        if not self._hint_tables_available():
+            return []
+        return self.db.query(
+            f"SELECT * FROM step_option_element_bindings WHERE step_id = {int(step_id)} "
+            "ORDER BY element_path, binding, option_key, option_value"
+        )
+
+    @lru_cache(maxsize=None)
+    def option_implications(self, step_id: int) -> list[dict]:
+        """Parse-side option implications of a step (since fm_spec 1.17.0).
+        Empty on older builds."""
+        if not self._hint_tables_available():
+            return []
+        return self.db.query(
+            f"SELECT * FROM step_option_implications WHERE step_id = {int(step_id)} "
+            "ORDER BY trigger_kind, trigger"
         )
 
     @lru_cache(maxsize=1)

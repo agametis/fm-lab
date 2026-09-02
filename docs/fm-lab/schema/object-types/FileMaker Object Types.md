@@ -37,7 +37,7 @@ These types mirror an XML catalog of the [FileMaker export](../../xml/XML.md) on
 | [Relationship](Relationship.md) | Relationship between two table occurrences | ✓ |
 | [Script](Script.md) | Script: the step sequence plus folder tree and options | ✓ |
 | [ScriptStep](ScriptStep.md) | Single script step, ordered within its script | hoisted into the script view |
-| [ScriptTrigger](ScriptTrigger.md) | Script trigger at file, layout or object level | TBD (generic) |
+| [ScriptTrigger](ScriptTrigger.md) | Script trigger at file, layout or object level | ✓ |
 | [TableOccurrence](TableOccurrence.md) | Table occurrence on the relationship graph | TBD (generic) |
 | [Theme](Theme.md) | Layout theme incl. its CSS rule set | ✓ |
 | [ValueList](ValueList.md) | Value list (custom values, field-based or external) | ✓ |
@@ -55,6 +55,7 @@ The import pipeline derives these for things FileMaker has no catalog of its own
 | [PluginFunction](PluginFunction.md) | External plugin function (e.g. MBS) referenced by calculations | ✓ |
 | [PluginComponent](PluginComponent.md) | Plugin component aggregating its functions | ✓ |
 | [ScriptStepType](ScriptStepType.md) | Script-step *type* (e.g. "Set Variable") as a catalog object | ✓ |
+| [Calculation](Calculation.md) | One calculation *instance* per owner slot (field calc, step parameter, hide condition, …) — schema 1.22.0 | ✓ |
 | [PasteIndexObject](PasteIndexObject.md) | Copy/paste index entry (bookkeeping, no analytical role) | generic |
 
 **See also:** [Object Types](../object-catalog/Object%20Types.md) · [ObjectCatalog](../object-catalog/ObjectCatalog.md) · [ObjectLinks](../object-catalog/ObjectLinks.md) · [Link Roles and Subroles](../object-catalog/Link%20Roles%20and%20Subroles.md) · [Schema](../Schema.md)

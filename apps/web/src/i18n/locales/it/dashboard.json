@@ -25,7 +25,15 @@
     "abortOomTitle": "Memoria insufficiente",
     "abortOomBody": "Questa soluzione è troppo grande per la memoria disponibile su questa macchina. Esegui l'importazione su una macchina con più RAM (8 GB o più) oppure riprova con un profilo di memoria ridotto.",
     "abortIncompleteTitle": "Build incompleta",
-    "abortIncompleteBody": "La risoluzione dei riferimenti non è stata completata, quindi non è stato possibile creare il catalogo degli oggetti. Controlla il log dell'esecuzione per i dettagli."
+    "abortIncompleteBody": "La risoluzione dei riferimenti non è stata completata, quindi non è stato possibile creare il catalogo degli oggetti. Controlla il log dell'esecuzione per i dettagli.",
+    "logStart": "── Avvio ──",
+    "logAborted": "── Interrotto ──",
+    "logAbortedOom": "⚠ Interrotto — memoria insufficiente (soluzione troppo grande per questo ambiente).",
+    "logAbortedIncomplete": "⚠ Interrotto — build incompleta (risoluzione dei riferimenti non riuscita).",
+    "logDone": "── Completato ──",
+    "logDoneError": "── Terminato con errore (exit {{code}}) ──",
+    "logReloadOk": "Ricaricamento riuscito.",
+    "logReloadError": "Ricaricamento non riuscito: {{error}}"
   },
   "cellValues": {
     "yes": "Sì",

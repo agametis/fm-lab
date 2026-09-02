@@ -20,7 +20,9 @@ The two reference-heavy doc sets are backed by a real database index: the FileMa
 
 ### Rubrics
 
-Doc entries carry the **vendor's own taxonomy**: 19 function categories and 13 script-step categories for the FileMaker reference (localized), 168 plugin components for MBS. Thematic search ("which functions deal with JSON?") becomes a catalog query with a guaranteed-complete result — no similarity threshold deciding what you get to see. In the web frontend the same rubrics drive the docs browser's navigation.
+Doc entries carry the **vendor's own taxonomy**: 19 function categories and 13 script-step categories for the FileMaker reference (localized), 168 plugin components for MBS (counted by primary assignment; multi-component memberships are listed on [Doc Set mbs](Doc%20Set%20mbs.md)). Thematic search ("which functions deal with JSON?") becomes a catalog query with a guaranteed-complete result — no similarity threshold deciding what you get to see. In the web frontend the same rubrics drive the docs browser's navigation.
+
+The indexed doc sets additionally support **entry-level search**: a query is matched against the individual entries (functions *and* script steps for the FileMaker reference, function names for MBS) and aggregated *per rubric* — every rubric with at least one hit appears, with its full hit count and a small evidence sample. True to the "complete, not top-k" principle above, no global result cap decides which rubrics you get to see. Doc sets without a database index (plain markdown mirrors like fmIDE) offer rubric navigation only.
 
 ### Pseudo object types
 

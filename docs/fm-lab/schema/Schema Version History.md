@@ -8,6 +8,13 @@ Two scope notes: this history covers the **solution catalog** (`db/fm_catalog.du
 
 | Schema version | fm-lab version | Date |
 |---|---|---|
+| [1.27.0](#1270) | 0.9.9 | 2026-09-02 |
+| [1.26.0](#1260) | 0.9.9 | 2026-09-01 |
+| [1.25.0](#1250) | 0.9.9 | 2026-08-29 |
+| [1.24.0](#1240) | 0.9.9 | 2026-08-29 |
+| [1.23.0](#1230) | 0.9.8 | 2026-08-25 |
+| [1.22.0](#1220) | 0.9.7 | 2026-08-23 |
+| [1.21.0](#1210) | 0.9.7 | 2026-08-15 |
 | [1.20.0](#1200) | 0.9.7 | 2026-08-11 |
 | [1.19.0](#1190) | 0.9.6 | 2026-08-10 |
 | [1.18.0](#1180) | 0.9.6 | 2026-08-09 |
@@ -36,6 +43,95 @@ Two scope notes: this history covers the **solution catalog** (`db/fm_catalog.du
 | [1.0.0](#100) | — | 2026-05-13 |
 
 ## Changes by version
+
+### 1.27.0
+
+Display-calculation gaps of the merge family closed. New P1 table
+[DDR_ChunkListContexts](catalog-tables/DDR_ChunkListContexts.md): the context table occurrence and chunk count of every
+ChunkList anchor in DDR-Info — including **empty** ChunkLists, which appear
+nowhere else in the export. New P3 table [LayoutObjectSymbols](catalog-tables/LayoutObjectSymbols.md): the `{{…}}`
+symbol inventory per text layout object (deliberately without where-used
+edges). [CalculationsCatalog](catalog-tables/CalculationsCatalog.md) gains `Result_Type` (the result type from the
+`%X:` prefix of a layout formula, default Text); `display_calculation`
+instances gain `Formula_Text` (the localized raw formula recovered from
+`Text_Content`) and their context TO. Two documented FileMaker DDR defects are
+compensated: `%X:` mis-chunks (a `VariableReference` chunk where a `FieldRef`
+belongs) no longer produce phantom variables — the field reference is rescued
+against the context TO; empty `DisplayCalculations` ChunkLists get a fallback
+instance plus field edges derived from `Text_Content`.
+
+### 1.26.0
+
+`ScriptTriggers.Trigger_Parameter_Text`: the structural plain text of a
+trigger's parameter calculation, extracted per trigger on all three owner
+levels (file, layout, layout object). It fills `Formula_Text` of the
+`script_trigger_parameter` calculation instances, provides per-trigger fallback
+instances for files without DDR-Info (`Calc_Kind_Raw = 'ScriptTrigger_<id>'`),
+and feeds the candidate edges `reads_field · transaction_parameter_field` for
+the OnWindowTransaction parameter field (name candidates, file-local).
+
+### 1.25.0
+
+Conditional formatting as structured rules: new table
+[LayoutObjectConditions](catalog-tables/LayoutObjectConditions.md) — one row per rule, extracted depth-anchored from
+the object payload so container nesting can never double-count. Carries the
+raw condition type (formula or value operator), the enable bit, the condition
+formula (for value-based rules the equivalent self formula FileMaker
+serializes alongside), the value operands, the applied format as raw CSS, and
+a foreign key to the rule's calculation instance (role `conditional_format`,
+matched via `Calc_Kind_Raw = 'Condition_<N>'`). New P6 guard view
+`v_check_cf_rules` (membercount and FK coverage).
+
+### 1.24.0
+
+`ScriptTriggers` completion: three new columns. `Trigger_FindMode` and
+`Trigger_PreviewMode` — SaXML writes only the *activated* modes per trigger,
+so all three mode flags are needed to tell browse-only from browse+find
+apart. `Trigger_ScriptParameter_FieldName` — the OnWindowTransaction
+attribute naming the field whose content FileMaker includes in the JSON
+script parameter (a late-bound name reference without table qualification).
+
+### 1.23.0
+
+int32 hardening of all XML-fed numeric columns. FileMaker serializes some
+numeric slots as unsigned 32-bit values — most prominently `4294967295`
+(UINT32_MAX), the unsigned representation of a `-1` sentinel — which overflow a
+32-bit `INTEGER` column. The XML reader (webbed) hard-aborts the **entire file
+scan** on the first such value (upstream issue #102; the abort also applies
+when the column type is declared explicitly, in DOM and SAX mode alike), so a
+single sentinel value could fail the import of a whole file. All `INTEGER`
+declarations fed from XML values were therefore widened to `BIGINT`: the
+`read_xml` column specifications and their target DDL in
+[TableOccurrenceCatalog](catalog-tables/TableOccurrenceCatalog.md) (`Box_Height`, `Coord_*`, `Color_*`),
+[FieldsForTables](catalog-tables/FieldsForTables.md) (`Max_Repetitions`, `Validation_MaxChars`),
+[ScriptCatalog](catalog-tables/ScriptCatalog.md) (`Option_Bitmask`), [Layouts](catalog-tables/Layouts.md) (`L_Width`,
+`Modifications`), [AccountsCatalog](catalog-tables/AccountsCatalog.md) (`Account_Kind`),
+[PrivilegeSetsCatalog](catalog-tables/PrivilegeSetsCatalog.md) (`Other_Value`) and [CustomMenuItemCatalog](catalog-tables/CustomMenuItemCatalog.md)
+(`Item_Index`), plus the extraction casts behind [StepsForScripts](catalog-tables/StepsForScripts.md)
+(`Step_Index`, `Step_ID`), [LayoutParts](catalog-tables/LayoutParts.md) (`Part_*`), [LayoutObjects](catalog-tables/LayoutObjects.md)
+(`Object_Kind`, `Bounds_*`, `Z_Order`), [StepCalculations](catalog-tables/StepCalculations.md) (`Step_Index`,
+`Step_ID`, `Calc_Position`) and [VariableUsages](catalog-tables/VariableUsages.md) (`Step_Index`) — including
+the SAX streamify overrides and the P2 reference tables. Sentinel values now
+import verbatim (`4294967295` is stored as-is; raw = what the export said) —
+with one documented semantic exception: [FieldsForTables](catalog-tables/FieldsForTables.md)
+`Validation_MaxChars` normalizes the sentinel to `NULL` ("no character limit",
+the same state as validation without a configured maximum), because the value
+is FileMaker's encoding of "unlimited", not a real limit. Only this slot is
+normalized; a new guard check (`v_check_numeric_sentinels`, phase 6) warns —
+without changing data — if a future export ships an implausible value (> 10⁹)
+that the normalization did not recognize.
+Deliberately unchanged: the static curated maps (`ScriptStepRoleMap`,
+`ScriptStepControlMap`), which are not XML-fed. Pure type widening plus the
+one normalization above, no new columns or tables; the bump forces the rebuild
+that renews the column types.
+
+### 1.22.0
+
+Calculations become first-class objects: the new [CalculationsCatalog](catalog-tables/CalculationsCatalog.md) holds one row per calculation **instance** (identity Owner × `Calc_Role` × `Calc_Index` — structural, never the content hash), as the union of the DDR calculation anchors and the structural slots the export carries even without DDR-Info. Every instance is registered in [ObjectCatalog](object-catalog/ObjectCatalog.md) as `Object_Type` [Calculation](object-types/Calculation.md) and anchored to its owner via the new containment role `has_calculation` (never counts as usage). The canonical usage layer is untouched: the owner-projected edges stay authoritative, *Calculation → target* exists only as the derived view `v_calculation_links` — no duplicate edges, no graph growth (structural links never enter the logical graph). Slot precision on the field edges: AutoEnter references now carry `Link_Subrole` `auto_enter`, the custom-message calc of a validation carries `validation_message` (both previously indistinguishable from their sibling slot). Gap closure: `ScriptTriggers` newly persists `Trigger_XML` for layout-/file-level triggers, and P2 harvests their parameter calcs — objects referenced only in a layout-/file-trigger parameter finally appear in where-used. The former analysis table `v_calc_anchors` continues as a materialized facade over the new catalog (same columns, DDR-anchored rows). New table + new column + content correction to [ObjectLinks](object-catalog/ObjectLinks.md) → version bump.
+
+### 1.21.0
+
+The Classic theme becomes visible: SaXML encodes it as an **empty** `<LayoutThemeReference/>` (no id/name/UUID), so `L_Theme_*` stayed NULL for every Classic layout and Classic appeared unused in every file. New resolved columns `Layouts.L_Theme_Resolved_Name`/`_UUID` (derived in P3: empty reference → `com.filemaker.theme.classic`, UUID resolved via the theme *name*, never the file-local id); the `uses_theme` link and the P6 expectation now build on the resolved UUID. Raw columns stay untouched ("raw = what the export said"). Content correction to [ObjectLinks](object-catalog/ObjectLinks.md) → version bump.
 
 ### 1.20.0
 

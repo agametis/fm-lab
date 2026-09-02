@@ -4,11 +4,12 @@ WITH slots AS (
     SELECT File_Name, Layout_ID, Object_UUID, 'text' AS slot, Text_Content AS content
     FROM LayoutObjects WHERE Text_Content IS NOT NULL
     UNION ALL
-    SELECT File_Name, Layout_ID, Object_UUID, 'tooltip', Tooltip_Calculation_Text
-    FROM LayoutObjects WHERE Tooltip_Calculation_Text IS NOT NULL
-    UNION ALL
-    SELECT File_Name, Layout_ID, Object_UUID, 'label', Label_Calculation_Text
-    FROM LayoutObjects WHERE Label_Calculation_Text IS NOT NULL
+    SELECT lo.File_Name, lo.Layout_ID, lo.Object_UUID,
+           CASE c.Calc_Role WHEN 'button_label' THEN 'label' ELSE 'tooltip' END,
+           COALESCE(c.Formula_Text, c.Display_Text)
+    FROM CalculationsCatalog c
+    JOIN LayoutObjects lo ON lo.Object_UUID = c.Owner_UUID AND lo.File_Name = c.File_Name
+    WHERE c.Calc_Role IN ('tooltip', 'button_label')
 )
 SELECT COUNT(*) AS finding_count,
        COUNT(DISTINCT ly.L_UUID) AS affected_layouts,

@@ -107,6 +107,12 @@ Set `ref` automatically in two more cases:
   `parent_script` link) with `ref=<sub-object UUID>`.
 - **`--ref`** names an object explicitly → resolve it like any object argument.
 
+`Object_Type = Calculation` (schema 1.22.0) is NOT a sub-object in this sense:
+it has its own detail view — open the normal detail URL with the Calculation
+UUID. Only when the user clearly asks for the owner context ("show the field
+whose hide condition …") open the OWNER (via the `has_calculation` backlink)
+instead.
+
 Do NOT attach `ref` to unrelated lookups (plain `/fm-show <name>` with no
 relationship in the request) — the frontend degrades gracefully on a no-match
 ref (highlight pill hides), but a meaningless ref is still noise in the URL.

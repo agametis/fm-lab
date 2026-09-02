@@ -71,6 +71,22 @@ WITH fld AS (
     f.Summary_Field_UUID,
     f.Summary_RestartEachGroup,
     f.Summary_RepetitionMode,
+    -- Calculation-Instanz-UUIDs der Validierungs-Slots (CalculationsCatalog):
+    -- nur DDR-verankerte Instanzen (get-calc?uuid liefert sonst 404) — ohne
+    -- Tokens bleibt der Klartext-Fallback (Validation_Calc_Text bzw. der
+    -- strukturelle Text der validation_message-Instanz).
+    (SELECT cc.Calculation_UUID FROM CalculationsCatalog cc
+      WHERE cc.Owner_UUID = f.Field_UUID AND cc.File_Name = f.File_Name
+        AND cc.Calc_Role = 'validation' AND cc.DDR_Calc_UUID IS NOT NULL
+      LIMIT 1) AS Validation_Calc_UUID,
+    (SELECT cc.Calculation_UUID FROM CalculationsCatalog cc
+      WHERE cc.Owner_UUID = f.Field_UUID AND cc.File_Name = f.File_Name
+        AND cc.Calc_Role = 'validation_message' AND cc.DDR_Calc_UUID IS NOT NULL
+      LIMIT 1) AS Validation_Message_Calc_UUID,
+    (SELECT COALESCE(cc.Formula_Text, cc.Display_Text) FROM CalculationsCatalog cc
+      WHERE cc.Owner_UUID = f.Field_UUID AND cc.File_Name = f.File_Name
+        AND cc.Calc_Role = 'validation_message'
+      LIMIT 1) AS Validation_Message_Calc_Text,
     COALESCE(f.Calculation_Text, f.AE_Calc_Text) AS Effective_Text
   FROM FieldsForTables f
   JOIN ObjectCatalog oc ON f.Field_UUID = oc.Object_UUID AND f.File_Name = oc.File_Name
@@ -81,7 +97,7 @@ WITH fld AS (
     AND (getvariable('file') IS NULL OR f.File_Name = getvariable('file'))
   LIMIT 1
 ),
--- Robuste Calc-Auflösung über die kanonische Anker-Registry v_calc_anchors.
+-- Robuste Calc-Auflösung über den CalculationsCatalog (Instanz = Owner × Rolle).
 -- NICHT über Calc_Hash: der Hash ist NICHT eindeutig — semantisch-triviale Formeln
 -- (z.B. Auto-Enter-„Konto-Name") teilen sich einen Hash über viele fremde Owner
 -- (~16 % der Calc-Felder betroffen); ein MIN(Calc_UUID) pro Hash lieferte die
@@ -89,12 +105,15 @@ WITH fld AS (
 -- genügt nicht, weil Field_UUID bei Klonen mehrfach (über Dateien) vorkommt.
 -- Erst die robuste Kombination Owner-UUID + Owner-Datei löst eindeutig auf (1:1),
 -- und der DDR-JOIN wird ebenfalls datei-skopiert (analog custommenu-Templates).
+-- Rollen-Präferenz spiegelt Effective_Text: Haupt-Calculation vor AutoEnter.
 calc_uuid AS (
-  SELECT va.Calc_UUID, va.Owner_File AS File_Name
-  FROM v_calc_anchors va, fld
-  WHERE va.Owner_Type = 'Field'
-    AND va.Owner_UUID = fld.Field_UUID
-    AND va.Owner_File = fld.File_Name
+  SELECT cc.DDR_Calc_UUID AS Calc_UUID, cc.File_Name
+  FROM CalculationsCatalog cc, fld
+  WHERE cc.Owner_UUID = fld.Field_UUID
+    AND cc.File_Name = fld.File_Name
+    AND cc.Calc_Role IN ('field_calculation', 'auto_enter')
+    AND cc.DDR_Calc_UUID IS NOT NULL
+  ORDER BY CASE cc.Calc_Role WHEN 'field_calculation' THEN 0 ELSE 1 END
   LIMIT 1
 )
 SELECT
@@ -135,6 +154,9 @@ SELECT
   fld.Validation_Range_To      AS validation_range_to,
   fld.Validation_Calc_Text     AS validation_calc_text,
   fld.Validation_Message       AS validation_message,
+  fld.Validation_Calc_UUID     AS validation_calc_uuid,
+  fld.Validation_Message_Calc_UUID AS validation_message_calc_uuid,
+  fld.Validation_Message_Calc_Text AS validation_message_calc_text,
   fld.Storage_Index            AS storage_index,
   fld.Storage_AutoIndex        AS storage_auto_index,
   fld.Storage_StoreCalcResults AS storage_store_calc_results,

@@ -75,6 +75,7 @@ def lint(raw_steps: list[RawStep], parsed: list[ParsedStep], ref: Reference) -> 
     _block_balance(parsed, res)
     _text_rules(parsed, res)
     _calc_rules(parsed, ref, res)
+    _option_coupling(parsed, ref, res)
     for ps in parsed:
         for e in ps.errors:
             res.add("PARSE", "error", ps.line, e)
@@ -146,6 +147,37 @@ def _text_rules(parsed: list[ParsedStep], res: LintResult) -> None:
         for m in re.finditer(r"(?<![\w.\"])::\s*[\w]", code):
             res.add("L004", "error", ps.line,
                     "bare '::Field' reference — always qualify with a table occurrence (T5)")
+
+
+# Option couplings whose absence makes the emitter prune user data: the
+# whole group is context-less without its carrier options, so the generic
+# template prune drops it silently (WebScript subtree, steps 214/220 and any
+# future step sharing the trio). Formulated over option keys, applied only
+# where the step's reference declares all keys involved — a data-driven
+# option-on-option table in the reference is the designated successor.
+_OPTION_REQUIRES = {
+    "web_script_parameters": ("web_viewer", "function_name"),
+}
+
+
+def _option_coupling(parsed: list[ParsedStep], ref: Reference, res: LintResult) -> None:
+    for ps in parsed:
+        if not ps.step_id:
+            continue
+        declared = None
+        for key, required in _OPTION_REQUIRES.items():
+            if key not in ps.options:
+                continue
+            if declared is None:
+                declared = {o["option_key"] for o in ref.options(ps.step_id)}
+            if key not in declared or not all(r in declared for r in required):
+                continue
+            missing = [r for r in required if r not in ps.options]
+            if missing:
+                res.add("L009", "error", ps.line,
+                        f"'{key}' requires {' and '.join(repr(r) for r in required)}"
+                        f" — without {' and '.join(repr(r) for r in missing)} the"
+                        " group would be silently dropped from the emission")
 
 
 def _calc_options(ps: ParsedStep, ref: Reference) -> list[str]:

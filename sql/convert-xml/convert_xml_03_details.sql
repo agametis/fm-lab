@@ -1,10 +1,13 @@
 /*
 -- convert_xml_03_details.sql — Phase 3 der XML-Konvertierungs-Pipeline.
--- Spezial-Parser: Variablen-Analyse.
+-- Spezial-Parser: Variablen-Analyse + strukturelle Detail-Tabellen.
 -- Erzeugt VariableUsages + VariablesCatalog aus DDR-Chunks, Set-Variable-Steps,
--- MBS-Superglobalen, Merge-Variablen, Trigger-Parametern und Regex-Fallback.
+-- MBS-Superglobalen, Merge-Variablen, Trigger-Parametern und Regex-Fallback;
+-- außerdem StepCalculations (A.9), abgeleitete Step-/Layout-Spalten (A.10/A.11)
+-- und LayoutObjectConditions (A.12, Conditional-Formatting-Regeln).
 -- TABLE-ONLY (liest nur P1/P2-Tabellen, kein read_xml). Läuft nach Phase 2 und
--- VOR Phase 4 (ObjectCatalog registriert die Variablen-Objekte).
+-- VOR Phase 4 (ObjectCatalog registriert die Variablen-Objekte; P4 füllt den
+-- Calculation_UUID-FK von LayoutObjectConditions).
 -- Ausgekoppelt aus create_universal_catalogs.sql (Phase A, Logik unverändert).
 */
 
@@ -62,7 +65,7 @@ CREATE TABLE VariableUsages (
     Context_Name VARCHAR,
     Script_Name VARCHAR,
     Script_UUID VARCHAR,
-    Step_Index INTEGER,
+    Step_Index BIGINT,
     Table_Name VARCHAR,
     Field_Name VARCHAR,
     Calc_Hash VARCHAR,
@@ -89,6 +92,15 @@ WHERE Chunk_Type IS NULL
 -- Formel (mehrere Chunk-Rows) und (b) shared Calc_Hashes über mehrere Calc_UUIDs
 -- (z.B. wenn viele Felder dieselbe Formel haben → identischer Hash).
 
+-- DisplayCalculations-Anker-Hashes (Schema 1.27.0): Ausschluss-Menge für die
+-- %X:-Fehlchunks (s. u.). Konservativ über den Anker-Suffix bestimmt — nur
+-- Hashes, die (auch) an einem DisplayCalculations-Anker hängen.
+DROP TABLE IF EXISTS _display_calc_hashes;
+CREATE TEMP TABLE _display_calc_hashes AS
+SELECT DISTINCT File_Name, Calc_Hash
+FROM DDR_Calculations
+WHERE Calc_UUID LIKE '%\_DisplayCalculations\_%' ESCAPE '\';
+
 DROP TABLE IF EXISTS _DDR_VarRefs_Distinct;
 CREATE TEMP TABLE _DDR_VarRefs_Distinct AS
 SELECT DISTINCT
@@ -97,9 +109,23 @@ SELECT DISTINCT
     -- html_unescape: Roh-Chunks tragen un-dekodierte XML-Entities (`Datens&#xE4;tze`);
     -- ohne Decode landen sie in VariableUsages/VariablesCatalog und den md5-UUIDs (P4).
     -- wa_entity_decode-gegatet (Default ON): OFF → Roh-Wert ohne Decode.
-    CASE WHEN getvariable('wa_entity_decode')
-         THEN html_unescape(regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1))
-         ELSE regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) END as Variable_Name
+    -- %X:-Präfix-Strip (2.20.0): eine typisierte Layoutformel mit einzelner
+    -- VARIABLEN-Referenz (<<ƒ:%N:$$var>>) chunked FileMaker als
+    -- VariableReference '%N:$$var' — hinter dem Präfix steht eine ECHTE
+    -- Variable (FileMaker selbst klassifiziert sie so, nur der Ergebnistyp
+    -- klebt davor). Display-Kontext-gegated wie der Ausschluss unten;
+    -- fixture-verifiziert (Merge Fields, Layout Fixtures).
+    CASE WHEN regexp_matches(regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1), '^%[A-Z]+:\$')
+              AND (File_Name, Calc_Hash) IN (SELECT (File_Name, Calc_Hash) FROM _display_calc_hashes)
+         THEN regexp_replace(
+                  CASE WHEN getvariable('wa_entity_decode')
+                       THEN html_unescape(regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1))
+                       ELSE regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) END,
+                  '^%[A-Z]+:', '')
+         ELSE CASE WHEN getvariable('wa_entity_decode')
+                   THEN html_unescape(regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1))
+                   ELSE regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) END
+    END as Variable_Name
 FROM DDR_Calculations
 WHERE Chunk_Type = 'VariableReference'
   AND regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) IS NOT NULL
@@ -110,7 +136,19 @@ WHERE Chunk_Type = 'VariableReference'
   -- Literal (englisch, kein Präfix/keine Entities) → Roh-Extract-Vergleich ist locale-
   -- robust; kein reales Variablenobjekt heißt exakt so (korpus-verifiziert). Die Zahl
   -- der so verworfenen Chunks meldet P6 als Info-Finding (v_check_function_missing).
-  AND regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) <> 'Function Missing';
+  AND regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1) <> 'Function Missing'
+  -- %X:-Fehlchunks aus DisplayCalculations (Schema 1.27.0): FileMaker chunked
+  -- typisierte Layoutformeln mit einzelner Feldreferenz (<<ƒ:%N:Zahl>>) als
+  -- VariableReference '%N:Zahl' — Ergebnistyp-Präfix + Feldname, KEINE Variable.
+  -- Ohne Ausschluss entstehen Phantom-Variablen (let_local) in VariableUsages/
+  -- VariablesCatalog/ObjectCatalog. Konservativ auf den DisplayCalculations-
+  -- Kontext beschränkt (Hash-Menge der Anker); die Feldreferenz rettet P2
+  -- A.5.1b, die Zahl der verworfenen Chunks meldet P6 als Info-Finding
+  -- (v_check_display_prefix_chunks). Präfix + '$' bleibt DRIN (echte Variable
+  -- hinter dem Ergebnistyp — Präfix-Strip oben, 2.20.0).
+  AND NOT (regexp_matches(regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1), '^%[A-Z]+:')
+           AND NOT regexp_matches(regexp_extract(Chunk_Content, '>([^<]+)</Chunk>', 1), '^%[A-Z]+:\$')
+           AND (File_Name, Calc_Hash) IN (SELECT (File_Name, Calc_Hash) FROM _display_calc_hashes));
 
 -- 3a: Variablen in Calculated Fields (FieldsForTables.DDR_Hash)
 INSERT INTO VariableUsages
@@ -744,6 +782,73 @@ WHERE lo.ScriptTrigger_Parameter_Text IS NOT NULL
 
 
 -- ========================================
+-- A.6c: Variablen aus geretteten Display-Formeln (leere ChunkList, 2.20.0)
+-- ========================================
+-- Bei %X:-typisierten Layoutformeln mit Ausdruck ist die DDR-ChunkList LEER —
+-- Variablen-Referenzen (<<ƒ:%N:Abs( $$var + 1 )>>) fehlen komplett. Anders als
+-- Builtin-Funktionsnamen sind Variablen SYNTAKTISCH eindeutig ($-Präfix) und
+-- werden aus der Text_Content-Formel geborgen (Anker + Index aus
+-- DDR_ChunkListContexts — nie über den dateiweit geteilten Leerhash).
+-- Doppelt-gequotete String-Literale werden vor dem Match entfernt ("$$x" zählt
+-- nicht); ${…}-gequotete FELD-Namen matcht die Klasse nicht ('{' nach '$').
+-- Kanten entstehen generisch aus VariableUsages (P4 Block 28, reads_variable).
+-- Slot-skopiertes Spiegelbild: P2 A.6.10b schreibt dieselben Funde als
+-- XMLCalcReferences-Zeilen (Subrole je Slot) für Ref-Tokens + synthetische
+-- D2-Tokenisierung der API — Extraktionslogik hier und dort identisch halten.
+INSERT INTO VariableUsages
+WITH empty_disp AS (
+    SELECT
+        ctx.File_Name,
+        upper(regexp_extract(ctx.Calc_UUID, '_([0-9A-Fa-f-]{36})', 1)) AS Anchor_UUID,
+        TRY_CAST(regexp_extract(ctx.Calc_UUID, '_([0-9]+)$', 1) AS BIGINT) AS Disp_Index
+    FROM DDR_ChunkListContexts ctx
+    WHERE ctx.Chunk_Count = 0
+      AND ctx.Calc_UUID LIKE '%\_DisplayCalculations\_%' ESCAPE '\'
+),
+lo1 AS (
+    SELECT Object_UUID, Layout_ID, File_Name, Text_Content,
+           ROW_NUMBER() OVER (PARTITION BY Object_UUID, File_Name ORDER BY Object_ID) AS rn
+    FROM LayoutObjects
+    WHERE Text_Content LIKE '%<<%'
+),
+formulas AS (
+    SELECT
+        lo.Object_UUID, lo.Layout_ID, e.File_Name,
+        regexp_replace(
+            regexp_replace(
+                regexp_extract_all(lo.Text_Content, '(?s)<<ƒ:(.*?)>>', 1)[e.Disp_Index + 1],
+                '^%[A-Z]+:', ''),
+            '"[^"]*"', '', 'g') AS formula_noliterals
+    FROM empty_disp e
+    JOIN lo1 lo
+      ON upper(lo.Object_UUID) = e.Anchor_UUID
+     AND lo.File_Name = e.File_Name
+     AND lo.rn = 1
+)
+SELECT DISTINCT
+    v.var_name as Variable_Name,
+    CASE WHEN v.var_name LIKE '$$$%' THEN 'superglobal' WHEN v.var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
+    'read' as Usage_Type,
+    'layout_object' as Context_Type,
+    f.Object_UUID as Context_UUID,
+    l.L_Name as Context_Name,
+    NULL as Script_Name,
+    NULL as Script_UUID,
+    NULL as Step_Index,
+    NULL as Table_Name,
+    NULL as Field_Name,
+    NULL as Calc_Hash,
+    'display_calc_recovery' as Source,
+    f.File_Name
+FROM formulas f
+JOIN Layouts l ON f.Layout_ID = l.L_ID AND l.File_Name = f.File_Name
+CROSS JOIN LATERAL unnest(
+    regexp_extract_all(f.formula_noliterals, '\$\$?\$?[\p{L}_][\p{L}\p{N}_]*')
+) as v(var_name)
+WHERE f.formula_noliterals IS NOT NULL;
+
+
+-- ========================================
 -- A.7: Regex-Fallback für Dateien ohne DDR
 -- ========================================
 
@@ -1196,7 +1301,7 @@ SELECT
     Step_UUID, File_Name, Script_UUID, Script_Name, Script_ID,
     Step_Index, Step_ID, Step_Name, Is_Enabled,
     Slot,
-    xml_extract_text(calc_xml, '/Calculation/@position')[1]::INTEGER AS Calc_Position,
+    xml_extract_text(calc_xml, '/Calculation/@position')[1]::BIGINT AS Calc_Position,
     Slot_Seq,
     xml_extract_text(calc_xml, '/Calculation/Calculation/Text')[1] AS Calc_Text
 FROM slot_calcs;
@@ -1273,3 +1378,152 @@ SET L_Theme_Resolved_Name = COALESCE(
 -- 'False', defensiv mitgeführt).
 WHERE (l.Folder_Type IS NULL OR l.Folder_Type = 'False')
   AND NOT COALESCE(l.Is_Separator, FALSE);
+
+
+-- ============================================
+-- A.12: LayoutObjectConditions — Conditional-Formatting-Regeln (Schema 1.25.0)
+-- ============================================
+-- Eine Zeile pro CF-Regel, DEPTH-VERANKERT extrahiert: Object_XML jedes
+-- Layout-Objekts hat die Wurzel <LayoutObject>, die EIGENEN Regeln liegen exakt
+-- unter /LayoutObject/Conditions/Formatting/Condition. Container nesten die
+-- Kind-XML eine oder mehr LayoutObject-Ebenen tiefer — der depth-Pfad erfasst
+-- sie nicht (kein Leaf-Filter nötig; Container mit EIGENEN Regeln, die ein
+-- Leaf-Filter verlöre, werden korrekt gezählt). <Conditions> hat genau zwei
+-- mögliche Kinder, Formatting (CF) und Hide — der Pfad über Formatting schließt
+-- die Hide-Bedingung strukturell aus.
+--
+-- Korpus-verifizierte Struktur (Analyse-Doc analyse_conditional_formatting_c1.md):
+--   Condition/@type   0 = Formel-Bedingung; 1-13 = wertbasierter Operator
+--                     (fixture-verifiziert: 1 zwischen, 2 nicht zwischen,
+--                      3 gleich, 4 ungleich, 5 größer, 6 kleiner, 7 größer/
+--                      gleich, 8 kleiner/gleich, 9 enthält, 10 enthält nicht,
+--                      11 beginnt mit, 12 endet mit, 13 leer — "nicht leer"
+--                      existiert in der UI nicht). Wertbasierte Regeln
+--                     serialisiert FileMaker IMMER zusätzlich als äquivalente
+--                     Self-Formel in Calculation/Text — Calc_Text ist also
+--                     auch bei Condition_Kind='value' befüllt.
+--   Condition/@id     0-basierte Serialisierungsposition (redundant zu Rule_Index,
+--                     nicht persistiert); DDRREF-Suffix Condition_N = Rule_Index.
+--   Options           Bitmaske der Format-Auswahl (roh persistiert; Deutung ist
+--                     Anzeige-/Parser-Sache). Fixture-verifiziert: Bit0 = Regel
+--                     AKTIV (0 = im Dialog deaktiviert), Bit1 Textfarbe,
+--                     Bit2 Füllfarbe, Bit4 "Weitere Formatierung", Bit7 Icon-
+--                     Farbe; Stil-Toggles (Fett/Kursiv/Unterstrichen/Durch-
+--                     gestrichen) setzen KEIN Bit, nur LocalCSS-Properties.
+--   Range/Start|End   Operanden wertbasierter Regeln als roher Ausdruckstext
+--                     (Zahlen, zitierte Strings, auch Variablen/Ausdrücke).
+--                     FileMaker schreibt den Text selbst entity-VORkodiert
+--                     (&quot;aktiv&quot; als Textinhalt) — nach dem XML-Decode
+--                     von xml_extract_text bleibt diese Vorkodierung stehen,
+--                     daher der wa_entity_decode-gegatete html_unescape-Zweitpass
+--                     (Muster A.3; idempotent für unkodierte Werte).
+--                     Range ist NICHT typ-autoritativ: ein Operator-Wechsel im
+--                     Dialog kann ein Rest-Range an einer type-0-Regel hinterlassen.
+--   LocalCSS          angewandtes Format als roher CSS-Regelsatz (CDATA) — die
+--                     Aufbereitung in Anzeige-Eigenschaften macht bewusst die
+--                     API/das Frontend (Theme-Vokabular ohne Re-Import erweiterbar).
+--
+-- Calculation_UUID (FK auf CalculationsCatalog, Rolle 'conditional_format') wird
+-- in P4 NACH dem CalculationsCatalog-Aufbau gefüllt — Join über
+-- Calc_Kind_Raw = 'Condition_' || Rule_Index, NICHT über Index-Gleichheit:
+-- DDRREF-lose Regeln (wertbasiert ohne Anker, Dateien ohne DDR-Info) erzeugen
+-- Lücken in Calc_Index. Bleibt NULL für Regeln ohne CalculationsCatalog-Zeile.
+--
+-- Formatting_Membercount: @membercount des eigenen Formatting-Blocks (korpus-
+-- verifiziert == eigene Regelzahl bei 8.745/8.745 Objekten) — persistiert als
+-- Anti-Nesting-Guard-Basis für P6 (v_check_cf_rules), table-only auswertbar.
+-- DROP+CREATE (Muster VariableUsages/StepCalculations): Neuaufbau je P3-Lauf.
+
+DROP TABLE IF EXISTS LayoutObjectConditions;
+
+CREATE TABLE LayoutObjectConditions AS
+WITH lo AS (
+    -- Dedup analog P4 lo_rep: LayoutObjects kann Doppel-Zeilen je
+    -- (Object_UUID, File_Name) tragen — deterministischer Erst-Vertreter.
+    SELECT Object_UUID, File_Name, Layout_ID,
+           CAST(Object_XML AS VARCHAR) AS xml_str,
+           ROW_NUMBER() OVER (PARTITION BY Object_UUID, File_Name ORDER BY Object_ID) AS rn
+    FROM LayoutObjects
+    -- Grob-Vorfilter; Container ohne eigene Regeln matchen (genestete Kind-XML),
+    -- liefern aber am depth-Pfad eine leere Liste → keine Zeilen.
+    WHERE Object_XML LIKE '%<Condition type=%'
+),
+conds AS (
+    -- unnest und generate_subscripts über DIESELBE Listen-Spalte bleiben
+    -- zeilen-aligniert → Rule_Index = 1-basierte Serialisierungsreihenfolge
+    -- (== FileMaker-Dialogreihenfolge == Condition/@id + 1 == DDRREF-Suffix N).
+    SELECT
+        Object_UUID, File_Name, Layout_ID,
+        TRY_CAST(xml_extract_text(xml_str, '/LayoutObject/Conditions/Formatting/@membercount')[1] AS BIGINT) AS Formatting_Membercount,
+        unnest(xml_extract_elements(xml_str, '/LayoutObject/Conditions/Formatting/Condition')) AS cond_xml,
+        generate_subscripts(xml_extract_elements(xml_str, '/LayoutObject/Conditions/Formatting/Condition'), 1) AS Rule_Index
+    FROM lo
+    WHERE rn = 1
+)
+SELECT
+    -- Typ-getaggter synthetischer Schlüssel (docs/agents/synthetic-uuids.md);
+    -- File_Name im Schlüssel, weil Object_UUIDs nur je Datei eindeutig sind.
+    md5('CFRule::' || File_Name || '::' || Object_UUID || '::' || Rule_Index) AS Rule_UUID,
+    Object_UUID,
+    Layout_ID,
+    Rule_Index,
+    TRY_CAST(xml_extract_text(cond_xml, '/Condition/@type')[1] AS BIGINT)    AS Condition_Type,
+    CASE TRY_CAST(xml_extract_text(cond_xml, '/Condition/@type')[1] AS BIGINT)
+        WHEN 0 THEN 'formula'
+        ELSE 'value'
+    END                                                                      AS Condition_Kind,
+    TRY_CAST(xml_extract_text(cond_xml, '/Condition/Options')[1] AS BIGINT)  AS Options_Raw,
+    -- CDATA-Inhalt ist literal (keine FM-Vorkodierung) — kein Zweitpass nötig.
+    NULLIF(xml_extract_text(cond_xml, '/Condition/Calculation/Text')[1], '') AS Calc_Text,
+    NULLIF(xml_extract_text(cond_xml, '/Condition/Calculation/DDRREF/@hash')[1], '') AS Calc_Hash,
+    CAST(NULL AS VARCHAR)                                                    AS Calculation_UUID,  -- P4 füllt
+    CASE WHEN getvariable('wa_entity_decode')
+         THEN NULLIF(html_unescape(xml_extract_text(cond_xml, '/Condition/Range/Start')[1]), '')
+         ELSE NULLIF(xml_extract_text(cond_xml, '/Condition/Range/Start')[1], '') END AS Range_Start,
+    CASE WHEN getvariable('wa_entity_decode')
+         THEN NULLIF(html_unescape(xml_extract_text(cond_xml, '/Condition/Range/End')[1]), '')
+         ELSE NULLIF(xml_extract_text(cond_xml, '/Condition/Range/End')[1], '') END   AS Range_End,
+    Formatting_Membercount,
+    NULLIF(xml_extract_text(cond_xml, '/Condition/LocalCSS')[1], '')         AS Local_CSS,
+    File_Name
+FROM conds;
+
+CREATE INDEX idx_layoutobjectconditions_owner ON LayoutObjectConditions(Object_UUID, File_Name);
+
+
+-- ========================================
+-- A.13: LayoutObjectSymbols — Symbol-Inventar {{…}} (Schema 1.27.0)
+-- ========================================
+-- Symbole ({{CurrentDate}}, {{FoundCount}}, …) sind Laufzeit-Platzhalter im
+-- Textblock — semantisch das Ergebnis von Get(X) zur Anzeigezeit, aber KEINE
+-- Katalogobjekte: bewusst keine Where-used-Kanten (Minimal-Entscheid der
+-- Merge-Familien-Analyse), nur Inventar am tragenden Text-LayoutObject.
+-- Symbol_Norm (lower) als case-robuster Gruppierungsschlüssel — Symbole sind
+-- laut Claris-Doku case-insensitiv tippbar ({{currenttime}} ≡ {{CurrentTime}}).
+-- Dedup analog A.12/P4 lo_rep: LayoutObjects kann Doppel-Zeilen je
+-- (Object_UUID, File_Name) tragen.
+DROP TABLE IF EXISTS LayoutObjectSymbols;
+CREATE TABLE LayoutObjectSymbols AS
+WITH lo_dedup AS (
+    SELECT Object_UUID, Layout_ID, File_Name, Text_Content,
+           ROW_NUMBER() OVER (PARTITION BY Object_UUID, File_Name ORDER BY Object_ID) AS rn
+    FROM LayoutObjects
+    WHERE Text_Content LIKE '%{{%'
+),
+sym AS (
+    SELECT Object_UUID, Layout_ID, File_Name,
+           unnest(regexp_extract_all(Text_Content, '\{\{\s*([A-Za-z][A-Za-z0-9]*)\s*\}\}', 1)) AS Symbol_Text
+    FROM lo_dedup
+    WHERE rn = 1
+)
+SELECT
+    Object_UUID,
+    Layout_ID,
+    File_Name,
+    Symbol_Text,
+    lower(Symbol_Text) AS Symbol_Norm,
+    count(*)           AS Occurrence_Count
+FROM sym
+GROUP BY ALL;
+
+CREATE INDEX idx_layoutobjectsymbols_owner ON LayoutObjectSymbols(Object_UUID, File_Name);

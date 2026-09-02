@@ -3,33 +3,36 @@
 -- @params: file (optional), api_family (optional), ref_type (optional), step_name (optional), context (optional), source_type (optional), comment (optional), limit (optional, default 200)
 
 WITH
--- 1) Open URL / Insert from URL — Script-Step direkt mit URL (http-Filter)
+-- 1) Open URL / Insert from URL — der URL-Slot des Steps als Katalog-Instanz
+--    (CalculationsCatalog, Owner_UUID = Step_UUID). Erfasst auch Steps ohne
+--    DDR-Zeile, die der frühere DDR-Step-Text-Join verlor.
 script_url_steps AS (
     SELECT
         s.Script_UUID                                       AS script_uuid,
         s.Script_Name                                       AS name,
         s.File_Name                                         AS file,
         s.Step_Name                                         AS context,
-        s.Step_Index + 1                                        AS step_index,
+        s.Step_Index + 1                                    AS step_index,
         s.Step_UUID                                         AS step_uuid,
         s.Script_UUID                                       AS target_uuid,
         'Script'                                            AS target_type,
         NULL                                                AS layout_filter_types,
-        regexp_extract(ddr.Step_Text, 'https?://[^ "]+')    AS url,
+        regexp_extract(COALESCE(c.Formula_Text, c.Display_Text),
+                       'https?://[^ "<'']+')                AS url,
         'Script (URL Step)'                                 AS source_type,
-        ddr.Step_Text                                       AS calc_text
-    FROM StepsForScripts s
-    JOIN DDR_ScriptSteps ddr ON s.Step_UUID = ddr.Step_UUID AND ddr.File_Name = s.File_Name
+        COALESCE(c.Formula_Text, c.Display_Text)            AS calc_text
+    FROM CalculationsCatalog c
+    JOIN StepsForScripts s ON s.Step_UUID = c.Owner_UUID AND s.File_Name = c.File_Name
     WHERE s.Step_ID IN (111, 160)   -- Open URL / Insert from URL (Step_ID: locale-unabhängig)
-      AND ddr.Step_Text LIKE '%http%'
+      AND COALESCE(c.Formula_Text, c.Display_Text) LIKE '%http%'
       AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file'))
 ),
 
 -- 2) Import Records — alle, unabhängig von URL. Als Schnittstellen-Indikator
 --    behandeln, weil die Quelle häufig via Variable aufgebaut wird ($Pfad).
---    Die url-Spalte zeigt den Source-Pfad aus dem DDR-Step-Text (file:…,
---    $Variable, fmnet:…, http://…). Wenn keine Source-Phrase im Step_Text
---    steht (z.B. "Import Records [ ]"), bleibt url leer.
+--    Bewusst weiter DDR-basiert: die Import-Quelle ist KEIN Calc-Slot, sondern
+--    eine Step-Option — der Source-Pfad steht nur im DDR-Klartext. Wenn keine
+--    Source-Phrase im Step_Text steht (z.B. "Import Records [ ]"), bleibt url leer.
 import_records_all AS (
     SELECT
         s.Script_UUID                                       AS script_uuid,
@@ -55,6 +58,7 @@ import_records_all AS (
 ),
 
 -- 3) Script-Step-Calculations (Set Variable, Set Field, If, Show Custom Dialog, …)
+--    — alle übrigen Step-Instanzen des Katalogs
 script_calc_steps AS (
     SELECT
         s.Script_UUID                                              AS script_uuid,
@@ -66,70 +70,77 @@ script_calc_steps AS (
         s.Script_UUID                                              AS target_uuid,
         'Script'                                                   AS target_type,
         NULL                                                       AS layout_filter_types,
-        regexp_extract(s.Calculation_Text, 'https?://[^ "<'']+')   AS url,
+        regexp_extract(COALESCE(c.Formula_Text, c.Display_Text),
+                       'https?://[^ "<'']+')                       AS url,
         'Script (Calc Step)'                                       AS source_type,
-        s.Calculation_Text                                         AS calc_text
-    FROM StepsForScripts s
-    WHERE s.Calculation_Text LIKE '%http%'
+        COALESCE(c.Formula_Text, c.Display_Text)                   AS calc_text
+    FROM CalculationsCatalog c
+    JOIN StepsForScripts s ON s.Step_UUID = c.Owner_UUID AND s.File_Name = c.File_Name
+    WHERE COALESCE(c.Formula_Text, c.Display_Text) LIKE '%http%'
       AND s.Step_ID NOT IN (111, 160, 35)   -- nicht Open URL / Insert from URL / Import Records
       AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file'))
 ),
 
--- 3) Custom Function Bodies — via DDR_Hash auf DDR_Calculations.Chunk_Content
+-- 3) Custom Function Bodies — Katalog-Instanz mit vollem Formeltext
+--    (statt DDR-Chunks; findet auch chunk-fragmentierte URLs)
 custom_function_calcs AS (
-    SELECT DISTINCT
+    SELECT
         NULL                                                       AS script_uuid,
-        cf.CF_Name                                                 AS name,
-        cf.File_Name                                               AS file,
+        c.Owner_Name                                               AS name,
+        c.File_Name                                                AS file,
         'Custom Function'                                          AS context,
         NULL                                                       AS step_index,
         NULL                                                       AS step_uuid,
-        cf.CF_UUID                                                 AS target_uuid,
+        c.Owner_UUID                                               AS target_uuid,
         'CustomFunction'                                           AS target_type,
         NULL                                                       AS layout_filter_types,
-        regexp_extract(c.Chunk_Content, 'https?://[^ "<'']+')      AS url,
+        regexp_extract(COALESCE(c.Formula_Text, c.Display_Text),
+                       'https?://[^ "<'']+')                       AS url,
         'Custom Function'                                          AS source_type,
-        c.Chunk_Content                                            AS calc_text
-    FROM CustomFunctionsCatalog cf
-    JOIN DDR_Calculations c
-      ON c.Calc_Hash = cf.DDR_Hash
-     AND c.Chunk_Content LIKE '%http%'
-    WHERE (getvariable('file') IS NULL OR cf.File_Name = getvariable('file'))
+        COALESCE(c.Formula_Text, c.Display_Text)                   AS calc_text
+    FROM CalculationsCatalog c
+    WHERE c.Calc_Role = 'custom_function'
+      AND COALESCE(c.Formula_Text, c.Display_Text) LIKE '%http%'
+      AND (getvariable('file') IS NULL OR c.File_Name = getvariable('file'))
 ),
 
--- 4) Calculated Fields + AutoEnter-Calc Fields
+-- 4) Feld-Slots: Haupt-Calculation + AutoEnter — eine Zeile je Katalog-Instanz
 field_calcs AS (
     SELECT
         NULL                                                                     AS script_uuid,
-        f.Table_Name || '::' || f.Field_Name                                     AS name,
-        f.File_Name                                                              AS file,
-        CASE WHEN f.Field_Type = 'Calculated' THEN 'Calculated Field'
+        c.Owner_Name                                                             AS name,
+        c.File_Name                                                              AS file,
+        CASE c.Calc_Role WHEN 'field_calculation' THEN 'Calculated Field'
              ELSE 'AutoEnter Calc' END                                           AS context,
         NULL                                                                     AS step_index,
         NULL                                                                     AS step_uuid,
-        f.Field_UUID                                                             AS target_uuid,
+        c.Owner_UUID                                                             AS target_uuid,
         'Field'                                                                  AS target_type,
         NULL                                                                     AS layout_filter_types,
-        regexp_extract(COALESCE(NULLIF(f.Calculation_Text, ''), f.AE_Calc_Text),
+        regexp_extract(COALESCE(c.Formula_Text, c.Display_Text),
                        'https?://[^ "<'']+')                                     AS url,
         'Field'                                                                  AS source_type,
-        COALESCE(NULLIF(f.Calculation_Text, ''), f.AE_Calc_Text)                 AS calc_text
-    FROM FieldsForTables f
-    WHERE (f.Calculation_Text LIKE '%http%' OR f.AE_Calc_Text LIKE '%http%')
-      AND (getvariable('file') IS NULL OR f.File_Name = getvariable('file'))
+        COALESCE(c.Formula_Text, c.Display_Text)                                 AS calc_text
+    FROM CalculationsCatalog c
+    WHERE c.Calc_Role IN ('field_calculation', 'auto_enter')
+      AND COALESCE(c.Formula_Text, c.Display_Text) LIKE '%http%'
+      AND (getvariable('file') IS NULL OR c.File_Name = getvariable('file'))
 ),
 
--- 5) LayoutObject-Calcs — explizite Text-Spalten sowie URL-Literale im Object_XML
+-- 5) LayoutObject-Slots — ALLE Katalog-Rollen des Objekts (hide, tooltip,
+--    button_label, script_trigger_parameter, web_viewer_url, conditional_format,
+--    portal_filter, …). Leaf-genau: die frühere Object_XML-Suche zählte die
+--    URL eines Web Viewers auch auf jedem umschließenden Container mit.
 layout_object_calcs AS (
     SELECT
         NULL                                                       AS script_uuid,
         l.L_Name || ' / ' || lo.Object_Type                        AS name,
         lo.File_Name                                               AS file,
-        CASE
-            WHEN lo.Hide_Calculation_Text       LIKE '%http%' THEN 'Hide Calc'
-            WHEN lo.Tooltip_Calculation_Text    LIKE '%http%' THEN 'Tooltip'
-            WHEN lo.Label_Calculation_Text      LIKE '%http%' THEN 'Label Calc'
-            WHEN lo.ScriptTrigger_Parameter_Text LIKE '%http%' THEN 'Trigger Param'
+        CASE c.Calc_Role
+            WHEN 'hide'                     THEN 'Hide Calc'
+            WHEN 'tooltip'                  THEN 'Tooltip'
+            WHEN 'button_label'             THEN 'Label Calc'
+            WHEN 'script_trigger_parameter' THEN 'Trigger Param'
             ELSE lo.Object_Type
         END                                                        AS context,
         NULL                                                       AS step_index,
@@ -144,31 +155,14 @@ layout_object_calcs AS (
             WHEN lo.Object_Type = 'Web Viewer' THEN 'Container,Web Viewer'
             ELSE lo.Object_Type
         END                                                        AS layout_filter_types,
-        regexp_extract(
-            COALESCE(
-                NULLIF(lo.Hide_Calculation_Text,        ''),
-                NULLIF(lo.Tooltip_Calculation_Text,     ''),
-                NULLIF(lo.Label_Calculation_Text,       ''),
-                NULLIF(lo.ScriptTrigger_Parameter_Text, ''),
-                lo.Object_XML
-            ),
-            'https?://[^ "<'']+'
-        )                                                          AS url,
+        regexp_extract(COALESCE(c.Formula_Text, c.Display_Text),
+                       'https?://[^ "<'']+')                       AS url,
         'Layout Object'                                            AS source_type,
-        COALESCE(
-            NULLIF(lo.Hide_Calculation_Text,        ''),
-            NULLIF(lo.Tooltip_Calculation_Text,     ''),
-            NULLIF(lo.Label_Calculation_Text,       ''),
-            NULLIF(lo.ScriptTrigger_Parameter_Text, ''),
-            lo.Object_XML
-        )                                                          AS calc_text
-    FROM LayoutObjects lo
+        COALESCE(c.Formula_Text, c.Display_Text)                   AS calc_text
+    FROM CalculationsCatalog c
+    JOIN LayoutObjects lo ON lo.Object_UUID = c.Owner_UUID AND lo.File_Name = c.File_Name
     JOIN Layouts l ON l.L_ID = lo.Layout_ID AND l.File_Name = lo.File_Name
-    WHERE (lo.Hide_Calculation_Text       LIKE '%http%'
-        OR lo.Tooltip_Calculation_Text    LIKE '%http%'
-        OR lo.Label_Calculation_Text      LIKE '%http%'
-        OR lo.ScriptTrigger_Parameter_Text LIKE '%http%'
-        OR lo.Object_XML                   LIKE '%http%')
+    WHERE COALESCE(c.Formula_Text, c.Display_Text) LIKE '%http%'
       AND (getvariable('file') IS NULL OR lo.File_Name = getvariable('file'))
 ),
 
@@ -215,8 +209,10 @@ classified AS (
                      LIKE '%//%'
             )
         END                                               AS in_comment,
-        -- API-Familien-Klassifikation: Platzhalter → generierter CASE des gewählten
-        -- Filter-Sets (Param `api_set`, Default `generic`). Siehe api-sets/README.md.
+        -- API-Familien-Klassifikation: der Platzhalter wird vom Dataset-Resolver
+        -- durch den generierten CASE-Block des gewählten Filter-Sets ersetzt
+        -- (Param `api_set`, Default `generic`). Set-Definitionen: `api-sets/<id>.json`
+        -- im Bundle bzw. `.fmlab/dashboards/api-sets/` (installiert). Siehe api-sets/README.md.
         /*__API_SET_CLASSIFICATION__*/ AS api_family,
         CASE
             WHEN calc_text ILIKE '%CURL.%'  OR calc_text ILIKE '%MBS(%'

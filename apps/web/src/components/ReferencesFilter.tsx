@@ -6,6 +6,17 @@ type Props = {
   activeTypes: Set<string>;
   onToggleType: (type: string) => void;
   onClearTypes: () => void;
+  /**
+   * Kombinierte Rollen-Chips: Key = `<Link_Role>` bzw. `<Link_Role>~<Subrole_Class>`
+   * (Tilde-Separator, spiegelt den `roles=`-URL-Param). Die Reihe erscheint nur,
+   * wenn mehr als ein Chip existiert — sonst filtert sie nichts.
+   */
+  roleCounts: Map<string, number>;
+  activeRoles: Set<string>;
+  onToggleRole: (roleKey: string) => void;
+  onClearRoles: () => void;
+  /** Kurzlabel-Resolver für Slot-Klassen (eine Label-Quelle mit der Liste). */
+  subroleShort: (cls: string) => string;
   query: string;
   onQueryChange: (value: string) => void;
   matchCount: number;
@@ -24,6 +35,11 @@ export function ReferencesFilter({
   activeTypes,
   onToggleType,
   onClearTypes,
+  roleCounts,
+  activeRoles,
+  onToggleRole,
+  onClearRoles,
+  subroleShort,
   query,
   onQueryChange,
   matchCount,
@@ -40,8 +56,22 @@ export function ReferencesFilter({
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], i18n.language));
   }, [typeCounts, i18n.language]);
 
+  // Rollen-Chips: gleiche Ordnung wie die Typ-Pillen. Das Chip-Label spiegelt
+  // 1:1 die Zeilen-Anzeige (`reads_field · CF`).
+  const sortedRoles = useMemo(() => {
+    return Array.from(roleCounts.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], i18n.language));
+  }, [roleCounts, i18n.language]);
+
+  const roleChipLabel = (roleKey: string): string => {
+    const tildeAt = roleKey.indexOf('~');
+    if (tildeAt < 0) return roleKey;
+    return `${roleKey.slice(0, tildeAt)} · ${subroleShort(roleKey.slice(tildeAt + 1))}`;
+  };
+
   const hasAnyActive = activeTypes.size > 0;
-  const filterActive = hasAnyActive || query !== '';
+  const hasAnyActiveRole = activeRoles.size > 0;
+  const filterActive = hasAnyActive || hasAnyActiveRole || query !== '';
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // ESC bewusst NICHT lokal abfangen — der globale ESC-Stack auf View-Ebene
@@ -100,6 +130,40 @@ export function ReferencesFilter({
               title={t('detail:referencesFilter.clearTypesTitle') as string}
             >
               {t('detail:referencesFilter.clearTypesLabel')}
+            </button>
+          )}
+        </div>
+      )}
+      {sortedRoles.length > 1 && (
+        <div
+          className="references-filter-pills references-filter-roles"
+          role="group"
+          aria-label={t('detail:referencesFilter.rolesAria', { defaultValue: 'Nach Link-Rolle filtern' }) as string}
+        >
+          {sortedRoles.map(([roleKey, count]) => {
+            const active = activeRoles.has(roleKey);
+            const label = roleChipLabel(roleKey);
+            return (
+              <button
+                key={roleKey}
+                type="button"
+                className={`references-filter-pill${active ? ' active' : ''}`}
+                onClick={() => onToggleRole(roleKey)}
+                title={`${label} (${count})`}
+              >
+                {label}
+                <span className="references-filter-pill-count">({count})</span>
+              </button>
+            );
+          })}
+          {hasAnyActiveRole && (
+            <button
+              type="button"
+              className="references-filter-link"
+              onClick={onClearRoles}
+              title={t('detail:referencesFilter.clearRolesTitle', { defaultValue: 'Alle Rollen-Filter aufheben' }) as string}
+            >
+              {t('detail:referencesFilter.clearRolesLabel', { defaultValue: 'Rollen zurücksetzen' })}
             </button>
           )}
         </div>

@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { getTypeColor } from '../lib/graphColors';
 import { formatObjectDisplayName } from '../lib/objectName';
+import { useTriggerEventFormat } from '../lib/triggerEvents';
+import { triggerSubroleLabel } from '../lib/graphEdgeLabels';
 import type { GraphNode } from '../hooks/useSubgraph';
 
 /**
@@ -17,6 +19,8 @@ export type InspectNeighbor = {
   role: string;
   /** `out` = selected → neighbor (uses); `in` = neighbor → selected (used by). */
   direction: 'out' | 'in';
+  /** Distinct Subroles der gefalteten Parallel-Kanten (z. B. Trigger-Events). */
+  subroles: string[];
 };
 
 interface ExplorerInspectPanelProps {
@@ -38,6 +42,21 @@ interface ExplorerInspectPanelProps {
 export function ExplorerInspectPanel(props: ExplorerInspectPanelProps) {
   const { width, node, neighbors, expanding, onClose, onOpenDetails, onSetFocus, onExpand, onCollapse, onSelectNeighbor } = props;
   const { t } = useTranslation(['explorer', 'common', 'types']);
+  const formatTriggerEvent = useTriggerEventFormat();
+
+  // Rolle + (lokalisierte) Subrole-Details einer Nachbar-Zeile — Trigger-Events
+  // über die fm_spec-Referenz, andere Subroles roh.
+  const roleDisplay = (role: string, subroles: string[]): string => {
+    if (subroles.length === 0) return role;
+    const strings = {
+      buttonAction: t('edge.buttonAction', { defaultValue: 'Button-Aktion' }) as string,
+      represents: t('edge.represents', { defaultValue: 'repräsentiert' }) as string,
+    };
+    const parts = role === 'triggers_script'
+      ? subroles.map((s) => triggerSubroleLabel(s, formatTriggerEvent, strings))
+      : subroles;
+    return `${role} · ${parts.join(' · ')}`;
+  };
 
   return (
     <aside
@@ -85,7 +104,7 @@ export function ExplorerInspectPanel(props: ExplorerInspectPanelProps) {
           <p className="explorer-inspect-empty">{t('inspect.noNeighbors')}</p>
         ) : (
           <ul>
-            {neighbors.map(({ node: n, role, direction }) => (
+            {neighbors.map(({ node: n, role, direction, subroles }) => (
               <li key={`${direction}-${n.id}-${role}`}>
                 <button type="button" className="explorer-neighbor" onClick={() => onSelectNeighbor(n)}>
                   <span className="explorer-neighbor-dir" title={direction === 'out' ? t('inspect.uses') as string : t('inspect.usedBy') as string}>
@@ -93,7 +112,7 @@ export function ExplorerInspectPanel(props: ExplorerInspectPanelProps) {
                   </span>
                   <span className="explorer-type-dot" style={{ background: getTypeColor(n.type) }} />
                   <span className="explorer-neighbor-label" title={n.label}>{formatObjectDisplayName(n.type, n.label)}</span>
-                  <span className="explorer-neighbor-role">{role}</span>
+                  <span className="explorer-neighbor-role" title={roleDisplay(role, subroles)}>{roleDisplay(role, subroles)}</span>
                 </button>
               </li>
             ))}

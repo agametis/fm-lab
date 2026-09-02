@@ -19,7 +19,10 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
 from .db import Database, Reference
-from .textform import ParsedStep, render_canonical, render_ref, strip_strings
+from .textform import (ParsedStep, fixed_slot_extras, group_child_keys,
+                       group_item_defaults, group_item_keys, is_fixed_slot,
+                       render_canonical, render_ref, slot_families, slot_key,
+                       strip_strings)
 
 # One placeholder as the complete attribute value / element text:
 # {key}, {key|default}, {key:sub}, {key:sub?}
@@ -128,21 +131,39 @@ def _match(tpl: ET.Element, act: ET.Element, ex: _Extractor) -> None:
             ex.issues.append(
                 f"<{act.tag}> text: expected '{ttext}', found '{atext.strip()}'")
     elif atext.strip():
-        if ref_keys and not act.attrib:
+        tpl_attr_names = set(tpl.attrib)
+        if ref_keys and all(k in tpl_attr_names for k in act.attrib):
             # Variable collapse (see emit._collapse_variable_targets): the
             # template's reference attributes were replaced by plain text.
+            # A repetition attribute may survive alongside the variable
+            # (<Field repetition="3">$var</Field>, Tier-2 22.0.6).
             key = next(iter(ref_keys))
             ex.refparts.setdefault(key, {})["name"] = atext.strip()
             ex.refparts[key]["_form"] = "variable"
+            if act.attrib.get("repetition"):
+                ex.refparts[key]["repetition"] = act.attrib["repetition"]
         else:
             ex.issues.append(f"<{act.tag}> has unexpected text content")
 
     # --- children (pair by tag, in order) ---
     achildren = list(act)
     used = [False] * len(achildren)
+
+    def _literals_match(tc: ET.Element, a: ET.Element) -> bool:
+        """Same-tag siblings are disambiguated by their literal (non-
+        placeholder) attributes — 220 has <Field type="Messages"> and
+        <Field type="ToolCalls"> side by side (Tier-2 22.0.6)."""
+        for k, tv in tc.attrib.items():
+            if _PH_RE.match(tv.strip()):
+                continue
+            if a.attrib.get(k) not in (None, tv):
+                return False
+        return True
+
     for tc in list(tpl):
         ai = next(
-            (i for i, a in enumerate(achildren) if not used[i] and a.tag == tc.tag),
+            (i for i, a in enumerate(achildren)
+             if not used[i] and a.tag == tc.tag and _literals_match(tc, a)),
             None,
         )
         if ai is None:
@@ -158,7 +179,10 @@ def _finish_refs(ex: _Extractor, catalog: Database | None, file: str | None) -> 
     for key, parts in ex.refparts.items():
         form = parts.pop("_form", None)
         if form == "variable":
-            ex.options[key] = {"name": parts.get("name", ""), "_form": "variable"}
+            ref = {"name": parts.get("name", ""), "_form": "variable"}
+            if parts.get("repetition"):
+                ref["repetition"] = parts["repetition"]
+            ex.options[key] = ref
             continue
         ref: dict = {"name": parts.get("name", ""), "_form": "named"}
         if parts.get("table"):
@@ -242,40 +266,212 @@ def canonicalize_calc(text: str, ref: Reference) -> tuple[str, list[str]]:
     return text, notes
 
 
-# ------------------------------------------------------------- reverse hints
-# Mirror of textform.STEP_HINTS: dialog-only options (T4 excludes them from
-# the plain text form) render as extension labels the forward hints parse
-# back (`Button2: …`, `Input1: …`). Hint-injected defaults are dropped so
-# they do not surface as phantom parameters.
+# --------------------------------------------------- direction-bound defaults
+# Dialog-only options (T4 excludes them from the plain text form) render as
+# extension labels the parse side reads back (`Button2: …`, `Input1: …`);
+# injected defaults are dropped so they do not surface as phantom parameters.
 
-def _reverse_hint_custom_dialog(options: dict) -> list[str]:
-    extras: list[str] = []
-    if options.get("button1_label") == '"OK"' and options.get("button1_commit") in (None, "True"):
-        options.pop("button1_label", None)
-        options.pop("button1_commit", None)
-    for n in (1, 2, 3):
-        label = options.pop(f"button{n}_label", None)
-        if label is not None:
-            extras.append(f"Button{n}: {label}")
-        commit = options.pop(f"button{n}_commit", None)
-        if commit is not None:
-            extras.append(f"Button{n}Commit: {commit}")
-    for n in (1, 2, 3):
-        fld = options.pop(f"input{n}_field", None)
-        if fld is not None:
-            extras.append(f"Input{n}: {render_ref(fld) if isinstance(fld, dict) else fld}")
-        label = options.pop(f"input{n}_label", None)
-        if label is not None:
-            extras.append(f"Input{n}Label: {label}")
-        pw = options.pop(f"input{n}_use_password", None)
-        if pw is not None:
-            extras.append(f"Input{n}Password: {pw}")
-    return extras
+def _drop_default_slot_items(options: dict, ref: Reference, step_id: int,
+                             tpl: ET.Element) -> None:
+    """Direction-dependent default at item level (T9 fixed-slot rule): when a
+    fixed-slot group carries exactly its default item in slot 1 and nothing in
+    any other slot, that item is FileMaker's injected default (87: the OK
+    commit button) — the canonical text omits it and the emit side re-injects
+    it. Dropping it in any other constellation would lose FileMaker's commit
+    button and shift every Get(LastMessageChoice) by one, so the condition is
+    strict: sole slot, values equal to the default item's extraction."""
+    for g in ref.repeat_groups(step_id):
+        if not is_fixed_slot(g) or not g.get("default_item_template"):
+            continue
+        fams = slot_families(ref, step_id, g)
+        if not fams:
+            continue
+        n_max = int(g["max_items"])
+        per_slot = {
+            n: {slot_key(f, n): options[slot_key(f, n)]
+                for f in fams if slot_key(f, n) in options}
+            for n in range(1, n_max + 1)
+        }
+        if not per_slot[1] or any(per_slot[n] for n in range(2, n_max + 1)):
+            continue
+        container_tpl = tpl.find(g["container_path"])
+        if container_tpl is None:
+            continue
+        try:
+            default_item = ET.fromstring(g["default_item_template"])
+        except ET.ParseError:
+            continue
+        slots_tpl = [c for c in container_tpl if c.tag == default_item.tag]
+        if not slots_tpl:
+            continue
+        ex = _Extractor()
+        _match(slots_tpl[0], default_item, ex)
+        default_vals = {k: v for k, v in ex.options.items()
+                        if str(v) != ex.defaults.get(k, "\x00")}
+        if per_slot[1] == default_vals:
+            for k in per_slot[1]:
+                options.pop(k, None)
 
 
-REVERSE_HINTS = {
-    87: _reverse_hint_custom_dialog,
-}
+def _consume_text_marker(act: ET.Element) -> None:
+    """Consume the empty <Text/> marker of a variable-target-marker step
+    (step_xml_map.variable_target_marker, fm_spec 1.17.0 — one knowledge
+    source with emit._inject_text_marker) before template matching — the
+    templates carry no Text element; the emit side re-injects it for
+    variable-form targets. Consumed ONLY when a variable target is present:
+    a marker next to a plain field target (not derivable from any catalog
+    state) stays and surfaces as a lossy finding instead of being silently
+    dropped."""
+    has_var = any(
+        e.tag not in ("Text", "Calculation") and (e.text or "").lstrip().startswith("$")
+        for e in act.iter()
+    )
+    if not has_var:
+        return
+    for child in list(act):
+        if (child.tag == "Text" and not child.attrib and len(child) == 0
+                and not (child.text or "").strip()):
+            act.remove(child)
+            return
+
+
+# ------------------------------------------------------------- repeat groups
+# T9 inversion: the items of a declared group are matched one by one against
+# the group's item template ({#index} compared literally per position) and
+# collected into a list; the matched children are consumed so the main
+# template match sees the container in its pruned single-exemplar shape.
+# Anything beyond the item template stays a lossy finding — never a silent cut.
+
+def _item_root_tag(g: dict) -> str:
+    m = re.match(r"<([A-Za-z][A-Za-z0-9]*)", g["item_template"])
+    return m.group(1) if m else ""
+
+
+def _extract_repeat_groups(act: ET.Element, ref: Reference, step_id: int,
+                           catalog: Database | None, file: str | None,
+                           issues: list[str], notes: list[str]) -> dict:
+    groups = ref.repeat_groups(step_id)
+    if not groups:
+        return {}
+    by_key = {g["group_key"]: g for g in groups}
+    out: dict = {}
+    for g in groups:
+        if g["parent_group"]:
+            continue
+        if is_fixed_slot(g):
+            continue  # fixed-slot groups: the numbered main template extracts
+                      # the slots; empty hulls dissolve via default omission
+        container = act.find(g["container_path"])
+        if container is None:
+            continue
+        items = _extract_items(g, container, by_key, ref, step_id,
+                               catalog, file, issues, notes)
+        if items is None or not items:
+            continue
+        if g["count_attr"]:
+            declared = container.attrib.pop(g["count_attr"], None)
+            if declared is not None and declared != str(len(items)):
+                issues.append(
+                    f"<{container.tag}> {g['count_attr']}='{declared}' does not "
+                    f"match {len(items)} item(s)")
+        if g["item_form"] == "scalar":
+            vals = [item[g["group_key"]] for item in items if g["group_key"] in item]
+            if not vals:
+                continue
+            out[g["group_key"]] = vals[0] if len(vals) == 1 else vals
+        else:
+            out[g["group_key"]] = items
+    return out
+
+
+def _extract_items(g: dict, container: ET.Element, by_key: dict, ref: Reference,
+                   step_id: int, catalog: Database | None, file: str | None,
+                   issues: list[str], notes: list[str]) -> list[dict] | None:
+    item_tag = _item_root_tag(g)
+    children = [c for c in container if c.tag == item_tag]
+    if not children:
+        return None
+    meta = {o["option_key"]: o for o in ref.options(step_id)}
+    defaults = group_item_defaults(g)
+    items: list[dict] = []
+    for i, child in enumerate(children):
+        tpl_str = g["item_template"].replace("{#index}", str(i))
+        try:
+            tpl = ET.fromstring(tpl_str)
+        except ET.ParseError as e:
+            issues.append(f"item template of group '{g['group_key']}' not well-formed: {e}")
+            return None
+        item: dict = {}
+        # nested slots first: extract + consume the child group's items
+        for ck in group_child_keys(g):
+            cg = by_key.get(ck)
+            slot = next((e for e in tpl.iter()
+                         if (e.text or "").strip() == "{%s[]}" % ck), None)
+            if slot is None or cg is None:
+                continue
+            slot.text = None
+            subs = _extract_items(cg, child, by_key, ref, step_id,
+                                  catalog, file, issues, notes)
+            if subs:
+                item[ck] = subs
+        ex = _Extractor()
+        _match(tpl, child, ex)
+        _finish_refs(ex, catalog, file)
+        for msg in ex.issues:
+            issues.append(f"{g['group_label']} item {i + 1}: {msg}")
+        # per-item default omission (canonical form drops item defaults, T9)
+        for k, v in list(ex.options.items()):
+            if not isinstance(v, dict) and str(v) == defaults.get(k, "\x00"):
+                del ex.options[k]
+        # empty object references: identity-less refs carry no information
+        for k, v in list(ex.options.items()):
+            if isinstance(v, dict) and not (v.get("name") or "").strip() \
+                    and v.get("_form") != "variable":
+                del ex.options[k]
+        # calc canonicalization per item (localized exports)
+        for k, v in list(ex.options.items()):
+            o = meta.get(k)
+            if isinstance(v, str) and o and o.get("option_type") in ("calculation", "repetition"):
+                fixed, cnotes = canonicalize_calc(v, ref)
+                if cnotes:
+                    ex.options[k] = fixed
+                    notes.extend(cnotes)
+        item.update(ex.options)
+        if item:
+            items.append(item)
+        container_or_child_consumed = True
+    for child in children:
+        container.remove(child)
+    return items
+
+
+# ------------------------------------------------------------- known FM bugs
+# The bug registry in fm_spec.step_constraints (since 1.14.4) records
+# documented FileMaker serialization defects. On the decompile side they are
+# epistemic warnings about the INPUT — a clipboard snippet may already have
+# lost a slot before fmgen ever saw it — so they surface as notes (never
+# issues: the step is valid, the risk lies with FileMaker's serializer).
+# The emit side deliberately does NOT warn: fmgen's own emission writes the
+# full form and pastes intact (221: the snippet carries TemplateName), so a
+# warning there would point the wrong way.
+
+def _append_known_bug_notes(ds: DecompiledStep, ref: Reference, step_id: int) -> None:
+    # The kind -> lead-text mapping lives in fm_spec.constraint_kinds
+    # (consumer_note, since 1.17.0); only the bug-registry kinds carry one.
+    kinds = ref.constraint_kinds()
+    for c in ref.constraints():
+        if c["step_id"] != step_id:
+            continue
+        suffix = kinds.get(c["constraint_kind"])
+        if suffix is None:
+            continue
+        detail = (c.get("detail") or "").split(". ")[0].strip()
+        if len(detail) > 160:
+            detail = detail[:157] + "…"
+        version = c.get("verified_version") or "?"
+        ds.notes.append(
+            f"known FM bug ({c['constraint_kind']}, verified {version}): "
+            f"{detail} — {suffix}")
 
 
 def _display_order(options: dict, ref: Reference, step_id: int) -> dict:
@@ -283,8 +479,12 @@ def _display_order(options: dict, ref: Reference, step_id: int) -> dict:
     references/targets first, then unlabeled, then labeled options —
     each group in sort_order."""
     meta = {o["option_key"]: o for o in ref.options(step_id)}
+    group_keys = {g["group_key"] for g in ref.repeat_groups(step_id)}
+    position = {k: i for i, k in enumerate(options)}
 
     def rank(key: str) -> tuple:
+        if key in group_keys and isinstance(options.get(key), list):
+            return (3, position[key])
         o = meta.get(key, {})
         if o.get("option_type") in ("object_ref", "target"):
             group = 0
@@ -292,7 +492,8 @@ def _display_order(options: dict, ref: Reference, step_id: int) -> dict:
             group = 1
         else:
             group = 2
-        return (group, o.get("sort_order", 99))
+        sort_order = o.get("sort_order")
+        return (group, 99 if sort_order is None else sort_order)
 
     return {k: options[k] for k in sorted(options, key=rank)}
 
@@ -329,6 +530,10 @@ def decompile_step(
         ds.issues.append(f"reference template not well-formed: {e}")
         return ds
 
+    if (xmap or {}).get("variable_target_marker"):
+        _consume_text_marker(act)
+    group_opts = _extract_repeat_groups(act, ref, step_id, catalog, file,
+                                        ds.issues, ds.notes)
     ex = _Extractor()
     _match(tpl, act, ex)
     _finish_refs(ex, catalog, file)
@@ -348,6 +553,24 @@ def decompile_step(
         ):
             del ex.options[key]
 
+    # Empty object references: FileMaker emits reference elements with empty
+    # identity (213 <Table id="0" name=""/> in DataTable mode with no table
+    # selected) — an extracted ref without a name is no reference; the emit
+    # side reconstructs the empty form from template defaults.
+    for key, val in list(ex.options.items()):
+        if isinstance(val, dict) and not (val.get("name") or "").strip() \
+                and val.get("_form") != "variable":
+            del ex.options[key]
+
+    # Presence booleans (see emit._fix_presence_booleans): the template's
+    # element-text placeholder extracts '' from the empty present element —
+    # normalize to the boolean state True.
+    for key, val in list(ex.options.items()):
+        o = meta.get(key)
+        if (o and o.get("option_type") == "boolean"
+                and "/@" not in (o.get("xml_path") or "") and val == ""):
+            ex.options[key] = "True"
+
     # Calc canonicalization (localized exports): calculation-typed options
     # rewrite localized function / Get-parameter names to canonical EN.
     for key, val in list(ex.options.items()):
@@ -358,8 +581,11 @@ def decompile_step(
                 ex.options[key] = fixed
                 ds.notes += notes
 
-    reverse_hint = REVERSE_HINTS.get(step_id)
-    extras = reverse_hint(ex.options) if reverse_hint else []
+    ex.options.update(group_opts)
+
+    _drop_default_slot_items(ex.options, ref, step_id, tpl)
+    extras = fixed_slot_extras(ex.options, ref, step_id)
+    _append_known_bug_notes(ds, ref, step_id)
 
     ps = ParsedStep(
         line=index, step_id=step_id, canonical_name=ds.canonical_name,

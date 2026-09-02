@@ -2,10 +2,26 @@
 -- @title: Graph Depth Profile (Eccentricity + per-depth node counts)
 -- @description: Max. erreichbare Tiefe ab dem Fokus + Knotenzahl je Tiefe — richtungsabhängig, ungedeckelt bis hard_cap
 -- @params: focus (required, UUID), focus_file, direction, mode, include_builtins, roles, types, hard_cap
--- @version: 1.1.0
+-- @version: 1.6.0
 -- @author: Marcel / Claude
 -- @tags: graph, explorer, depth
 -- @note: Endpoint /api/graph/depth-profile. Spiegelt die CTEs 1–7 von graph_subgraph.sql
+--        1.6.0 (Anker-Durchgriff, gespiegelt aus graph_subgraph.sql v1.9.0):
+--        synthetische Walk-Kante Fokus → Trigger-Ziele des Anker-Felds
+--        (nur out/both) — hält die Tiefen-Slider-Zählung konsistent.
+--        1.5.0 (gespiegelt aus graph_subgraph.sql v1.8.0): Selbst-Enklave ohne
+--        triggers_script bei feld-gebundenem Fokus (das Feld ist der Sprecher).
+--        1.4.0 (Fokus-Selbst-Enklave, gespiegelt aus graph_subgraph.sql v1.7.0):
+--        alle rohen operationalen Kanten des Fokus; subsumiert die Sonderzweige
+--        trigger_script + Feld-Kandidaten (Whitelist bereinigt, Richtungs-
+--        Unabhängigkeit in der edges-CTE bleibt).
+--        1.3.0 (Owner-Enklave, gespiegelt aus graph_subgraph.sql v1.6.0): rohe
+--        operationale Kanten des Trigger-Owners (triggers_script ausgeschlossen) —
+--        hält die Tiefen-Slider-Zählung konsistent zum Subgraph.
+--        1.2.0 (Trigger-Fokus-Flanke, gespiegelt aus graph_subgraph.sql v1.5.0):
+--        Fokus-Brücke reicht die `trigger_script`-Kante + OnWindowTransaction-Feld-
+--        Kandidaten des Fokus-Triggers aus raw_links durch — LogicalLinks führt
+--        beide seit der Graph-Policy von Converter 2.17.0 nicht mehr.
 --        1.1.0: Fokus-Ausnahme im Typ-Filter (reached_f) — gespiegelt aus
 --        graph_subgraph.sql v1.3.0, hält die kumulative Last konsistent mit total_reachable.
 --        (Reuse des Walks), ERSETZT aber den Tiefen-Deckel `depth` durch `hard_cap`
@@ -44,7 +60,33 @@ base AS (
   FROM raw_links
   WHERE getvariable('mode') = 'logical'
     AND a = getvariable('focus')
-    AND Link_Role IN ('parent_layout', 'parent_script')
+    AND Link_Role IN ('parent_layout', 'parent_script', 'trigger_owner')
+  UNION ALL
+  -- Fokus-Selbst-Enklave (gespiegelt aus graph_subgraph.sql 1.7.0): alle rohen
+  -- operationalen Kanten des Fokus; Duplikate der logischen Basis falten weg.
+  -- Ausnahme (1.5.0): triggers_script eines feld-gebundenen Fokus — das Feld spricht.
+  SELECT rl.a, rl.a_file, rl.b, rl.b_file, rl.Link_Role, rl.Link_Subrole, rl.Link_Type, rl.Is_Cross_File
+  FROM raw_links rl
+  WHERE getvariable('mode') = 'logical'
+    AND rl.a = getvariable('focus')
+    AND rl.Link_Type = 'operational'
+    AND NOT (rl.Link_Role = 'triggers_script'
+             AND EXISTS (SELECT 1 FROM ObjectLinks fx
+                         WHERE fx.Source_UUID = rl.a
+                           AND fx.Source_File = rl.a_file
+                           AND fx.Link_Role = 'displays_field'))
+  UNION ALL
+  -- Owner-Enklave (gespiegelt aus graph_subgraph.sql 1.6.0): rohe operationale
+  -- Kanten des Owners des Fokus-Triggers, datei-genauer Tupel-Join;
+  -- triggers_script ausgeschlossen.
+  SELECT a, a_file, b, b_file, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
+  FROM raw_links
+  WHERE getvariable('mode') = 'logical'
+    AND (a, a_file) IN (SELECT b, b_file FROM raw_links
+                        WHERE a = getvariable('focus')
+                          AND Link_Role = 'trigger_owner')
+    AND Link_Type = 'operational'
+    AND Link_Role <> 'triggers_script'
   UNION ALL
   SELECT a, a_file, b, b_file, Link_Role, Link_Subrole, Link_Type, Is_Cross_File
   FROM raw_links
@@ -71,7 +113,25 @@ edges AS (
   SELECT a, a_file, b, b_file FROM base_f
   WHERE getvariable('mode') = 'logical'
     AND a = getvariable('focus')
-    AND Link_Type = 'structural'
+    -- Trigger-Fokus-Flanke: trigger_script + Feld-Kandidaten (operational) kommen
+    -- in base nur als Brücken-Zweig vor und bleiben wie die strukturellen
+    -- Parent-Kanten richtungsunabhängig.
+    AND (Link_Type = 'structural' OR Link_Role = 'trigger_script'
+         OR (Link_Role = 'reads_field'
+             AND Link_Subrole = 'transaction_parameter_field'))
+  UNION
+  -- Anker-Durchgriff (gespiegelt aus graph_subgraph.sql 1.9.0): synthetische
+  -- Walk-Kante Fokus → Trigger-Ziele des Anker-Felds (df roh = nur
+  -- LayoutObject-Quellen; ts gefiltert).
+  SELECT df.a, df.a_file, ts.b, ts.b_file
+  FROM raw_links df
+  JOIN base_f ts
+    ON ts.a = df.b AND ts.a_file IS NOT DISTINCT FROM df.b_file
+   AND ts.Link_Role = 'triggers_script'
+  WHERE getvariable('mode') = 'logical'
+    AND getvariable('direction') IN ('out', 'both')
+    AND df.a = getvariable('focus')
+    AND df.Link_Role = 'displays_field'
 ),
 -- 6) Fokus-Saat (UUID, File) — focus_file durchgereicht, sonst Katalog-Auflösung.
 focus_seed AS (
