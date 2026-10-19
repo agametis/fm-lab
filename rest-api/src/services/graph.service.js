@@ -7,6 +7,7 @@ const annotations = require('./annotations.service');
 const debugSession = require('./debug-session.service');
 const environment = require('../config/environment');
 const settingsStore = require('../plugins/settings-store');
+const { classifyIdTerm } = require('./object.service');
 
 /**
  * LRU-Cache für Subgraph-Antworten („LRU-Cache cacht (focus, depth,
@@ -703,10 +704,15 @@ async function getDepthProfile(ctx, p) {
  * @returns {Promise<{payload: Object, sql: string}>}
  */
 async function search(ctx, p) {
+  // Volle UUID bzw. Import-Schlüssel im Fokusfeld → direkter Treffer (nur als
+  // ganzer Begriff, s. classifyIdTerm). `id:<n>` bleibt der Objektsuche
+  // vorbehalten — eine Datei-lokale ID ist kein Fokus-Kandidat.
+  const id = classifyIdTerm(p.q);
+  const idTerm = id && id.kind !== 'object_id' ? id.value : null;
   const result = await templateService.executeTemplate(
     ctx,
     'graph_search',
-    { q: p.q, type: p.type ?? null, file: p.file ?? null, limit: p.limit },
+    { q: p.q, id_term: idTerm, type: p.type ?? null, file: p.file ?? null, limit: p.limit },
     'report'
   );
   const results = result.data.map(r => ({

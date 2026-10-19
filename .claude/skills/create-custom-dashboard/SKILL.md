@@ -1,7 +1,15 @@
 ---
 name: create-custom-dashboard
-version: 0.9.0
-description: Interactively creates a new custom dashboard bundle for the fm-lab dashboard system. Clarifies the goal, drafts SQL, confirms sample results with the user, recommends an interactive dashboard pattern (navigation, KPI filters, search), asks for a name, and generates the full bundle directory under `rest-api/templates/dashboards-custom/<id>/`. Triggers (English): "/create-custom-dashboard", "create a new dashboard for X", "new dashboard", "build a dashboard that shows X". Triggers (German): "erstelle ein neues Dashboard für X", "neues Dashboard", "baue ein Dashboard das X zeigt".
+description: >-
+  Interactively creates a new custom dashboard bundle for the fm-lab dashboard system. Clarifies
+  the goal, drafts SQL, confirms sample results with the user, recommends an interactive dashboard
+  pattern (navigation, KPI filters, search), asks for a name, and generates the full bundle
+  directory under `rest-api/templates/dashboards-custom/`. Triggers (English):
+  "/create-custom-dashboard", "create a new dashboard for X", "new dashboard", "build a dashboard
+  that shows X". Triggers (German): "erstelle ein neues Dashboard für X", "neues Dashboard", "baue
+  ein Dashboard das X zeigt". Also responds to equivalent requests in other languages.
+metadata:
+  version: "0.9.0"
 ---
 
 # Create a custom dashboard
@@ -227,3 +235,18 @@ params with an example URL, verification status, interactivity waivers).
    scripts.sql sharing the base CTE), manifest, layout (ids everywhere,
    `searchAutoThreshold: 3`, `openObject` with uuid+file), 10 locales.
 7. Validation gate V1–V6 → closing message with `/dashboard/scripts_without_comment?pattern=without`.
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "crea un nuevo dashboard para X", "nuevo dashboard", "construye un dashboard que muestre X".
+- **French:** "crée un nouveau tableau de bord pour X", "nouveau tableau de bord", "construis un tableau de bord qui affiche X".
+- **Italian:** "crea una nuova dashboard per X", "nuova dashboard", "costruisci una dashboard che mostri X".
+- **Dutch:** "maak een nieuw dashboard voor X", "nieuw dashboard", "bouw een dashboard dat X toont".
+- **Portuguese:** "crie um novo dashboard para X", "novo dashboard", "construa um dashboard que mostre X".
+- **Swedish:** "skapa en ny instrumentpanel för X", "ny instrumentpanel", "bygg en instrumentpanel som visar X".
+- **Japanese:** "Xのための新しいダッシュボードを作成して", "新しいダッシュボード", "Xを表示するダッシュボードを作って".
+- **Korean:** "X용 새 대시보드 만들어 줘", "새 대시보드", "X를 보여 주는 대시보드 만들어 줘".
+- **Chinese:** "为 X 创建一个新仪表板", "新仪表板", "构建一个显示 X 的仪表板".

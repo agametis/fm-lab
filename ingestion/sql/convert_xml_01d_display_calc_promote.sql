@@ -4,7 +4,9 @@
 -- files (profile saxml23) into the DDR tables — table-only, merged master.
 --
 -- Background: FileMaker 26 writes <DisplayCalculations membercount="12"> on
--- EVERY text object. Only the first n anchors are real layout calculations
+-- EVERY layout object with text that carries a layout calculation (text
+-- objects, and buttons or popover buttons whose label holds a typed
+-- <<ƒ:…>>). Only the first n anchors are real layout calculations
 -- (n = number of <<ƒ:…>> tokens in the object's text); the remaining anchors
 -- are padding — they repeat the hash of the first slot or carry chunks parsed
 -- from a foreign formula text. Read verbatim they became phantom calculation
@@ -15,8 +17,9 @@
 --
 -- Mechanics (decision "staging + promotion"): P1 (profile saxml23) reads all
 -- DisplayCalculations anchors into DDR_DisplayCalcAnchors23 instead of the DDR
--- tables (see convert_xml_01_extract.sql). This step joins them to their text
--- object (LayoutObjects.Text_Content lives in another turbo chunk — hence a
+-- tables (see convert_xml_01_extract.sql). This step joins them to their
+-- layout object (LayoutObjects.Text_Content — the text of a text object or the
+-- label of a button, schema 1.33.0 — lives in another turbo chunk — hence a
 -- master stage) and copies the slots below the token count into
 -- DDR_Calculations + DDR_ChunkListContexts; promoted rows are flagged
 -- (Promoted = TRUE), the padding stays visible in the staging table (P6
@@ -25,10 +28,18 @@
 -- re-import resets the staging rows in P1 (Promoted = FALSE) and promotes
 -- again. No-op for catalogs without saxml23 files (staging table empty).
 --
+-- The promotion also bounds the edges: the layout-object DDRREFs in
+-- Object_XML still name every padding anchor, with the hash of a real slot.
+-- P2 (_layout_obj_hashes) and P3 (A.3f variable usages) resolve layout
+-- formulas by hash, so they keep a DisplayCalculations anchor only if its name
+-- stands in DDR_ChunkListContexts — i.e. only the promoted slots yield field,
+-- function, custom-function, plug-in and variable references.
+--
 -- Placement: run_phase2() in ingestion/convert_fm_xml.sh, after the heal
 -- cascade (P1b) and the design-function retype (P1c), before any P2 statement
--- (P2 reads the DDR chunk stream). Soft-fail: without this step the padding
--- would surface as before — a visible P6/report finding, never wrong links.
+-- (P2 reads the DDR chunk stream). Soft-fail: without this step the saxml23
+-- display calculations stay unpromoted — no instances and no edges, a visible
+-- P6/report finding, never wrong links.
 */
 
 -- Guard: the staging table normally exists (P1 DDL). Without it the step is a
@@ -41,7 +52,7 @@ CREATE TABLE IF NOT EXISTS DDR_DisplayCalcAnchors23 (
     PRIMARY KEY (Calc_UUID, Chunk_Index, File_Name)
 );
 
--- Token count per text object: number of <<ƒ:…>> layout-calculation tokens
+-- Token count per layout object with text: number of <<ƒ:…>> layout-calculation tokens
 -- (plain merge fields <<Field>> carry no DisplayCalculations anchor — same
 -- token regex as the P2/P3/P4 display-calculation fallbacks).
 DROP TABLE IF EXISTS _dc_promote;

@@ -1,8 +1,8 @@
 {
   "id": "layout_invalid_symbol",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Invalid layout symbol",
-  "description": "Layout-quality rule — a text object carries a {{Symbol}} that is not a Get parameter. A symbol is the value of Get(<Symbol>) at display time; an unknown one is not dropped but rendered LITERALLY in browse and preview mode, so the raw {{Text}} shows up in the layout. Validity is decided against the standard reference (function_name_lookup, chunk_role 'getparameter') over all languages it covers — FileMaker also accepts the localized parameter name, so a localized symbol is valid, not a defect. Two limits keep this a warning: the reference's localized coverage is uneven (Spanish and Portuguese Get-parameter names are absent, German only partly covered), and bracket forms such as {{Get(FoundCount)}} never enter the symbol inventory at all, so the rule is blind to them.",
+  "description": "Layout-quality rule — a text object carries a {{Symbol}} that is not a Get parameter. A symbol is the value of Get(<Symbol>) at display time; an unknown one is not dropped but rendered LITERALLY in browse and preview mode, so the raw {{Text}} shows up in the layout. Validity is decided against the standard reference (function_name_lookup, chunk_role 'getparameter') over all languages it covers — FileMaker also accepts the localized parameter name, so a localized symbol is valid, not a defect. Two limits keep this a warning: the reference's localized coverage is uneven (Spanish and Portuguese Get-parameter names are absent, German only partly covered), and bracket forms such as {{Get(FoundCount)}} never enter the symbol inventory at all, so the rule is blind to them. Symbols in button labels are not evaluated by FileMaker at all; the rule layout_button_label_symbol reports them.",
   "author": "fm-lab rules",
   "icon": "text-quote",
   "category": "layout_quality",

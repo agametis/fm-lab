@@ -323,7 +323,11 @@
     "filterByCategory": "Filtrar por {{category}}",
     "graphButton": "Grafo",
     "valueListMatch": "Valores",
-    "spellingMatch": "Grafía"
+    "spellingMatch": "Grafía",
+    "uuidMatch": "Coincidencia por UUID",
+    "healedUuidMatch": "Coincidencia por UUID (duplicado)",
+    "healedUuidTitle": "FileMaker registra este objeto con el UUID buscado; como el UUID aparecía varias veces en la exportación, el catálogo lo guarda con un UUID de sustitución.",
+    "idMatch": "Coincidencia por ID {{id}}"
   },
   "scriptSearchFilter": {
     "searchAria": "Buscar referencias",

@@ -23,7 +23,7 @@ A skill is a directory under `.claude/skills/<name>/` with one required file, `S
 └── references/       # detail material the agent reads only when a step needs it
 ```
 
-The frontmatter is what the agent sees at all times: the skill's name and a description that states what it does and lists the natural-language phrases it responds to — in up to eleven languages. The body — the step-by-step workflow, ground rules, prepared queries and output format — is loaded only when the skill is triggered. Bundled scripts run without ever entering the context window. This progressive disclosure keeps the agent's context lean while still giving it deep procedural knowledge on demand.
+The frontmatter is what the agent sees at all times: the skill's name and a description that states what it does and lists the natural-language phrases it responds to in English and German; requests in other languages match as well, and most skills list example phrases for further languages in their body. The frontmatter follows the open [Agent Skills specification](https://agentskills.io/specification), so other agents that implement it load the skills too. The body — the step-by-step workflow, ground rules, prepared queries and output format — is loaded only when the skill is triggered. Bundled scripts run without ever entering the context window. This progressive disclosure keeps the agent's context lean while still giving it deep procedural knowledge on demand.
 
 Skills are a standard mechanism of [Claude Code](https://code.claude.com/docs/en/skills); FM-Lab uses it as the delivery format for everything agentic that goes beyond a free-form question.
 

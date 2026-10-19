@@ -13,13 +13,21 @@ def validate_skill(skill_path):
     """Basic validation of a skill"""
     skill_path = Path(skill_path)
 
-    # Check SKILL.md exists
+    # Check SKILL.md exists — by exact spelling: Path.exists() also matches a
+    # `skill.md` on case-insensitive filesystems, which strict loaders ignore.
     skill_md = skill_path / 'SKILL.md'
-    if not skill_md.exists():
+    try:
+        entries = os.listdir(skill_path)
+    except OSError:
+        entries = []
+    if 'SKILL.md' not in entries:
+        variants = [e for e in entries if e.lower() == 'skill.md']
+        if variants:
+            return False, f"File is named '{variants[0]}' — it must be exactly 'SKILL.md'"
         return False, "SKILL.md not found"
 
     # Read and validate frontmatter
-    content = skill_md.read_text()
+    content = skill_md.read_text(encoding='utf-8')
     if not content.startswith('---'):
         return False, "No YAML frontmatter found"
 
@@ -39,7 +47,7 @@ def validate_skill(skill_path):
         return False, f"Invalid YAML in frontmatter: {e}"
 
     # Define allowed properties
-    ALLOWED_PROPERTIES = {'name', 'description', 'license', 'allowed-tools', 'metadata'}
+    ALLOWED_PROPERTIES = {'name', 'description', 'license', 'compatibility', 'allowed-tools', 'metadata'}
 
     # Check for unexpected properties (excluding nested keys under metadata)
     unexpected_keys = set(frontmatter.keys()) - ALLOWED_PROPERTIES
@@ -82,6 +90,19 @@ def validate_skill(skill_path):
         # Check description length (max 1024 characters per spec)
         if len(description) > 1024:
             return False, f"Description is too long ({len(description)} characters). Maximum is 1024 characters."
+
+    # Optional compatibility (max 500 characters per spec)
+    if 'compatibility' in frontmatter:
+        compatibility = frontmatter['compatibility']
+        if not isinstance(compatibility, str) or not 1 <= len(compatibility.strip()) <= 500:
+            return False, "Compatibility must be a string of 1-500 characters"
+
+    # metadata: map from string keys to string values (spec)
+    metadata = frontmatter.get('metadata')
+    if metadata is not None:
+        if not isinstance(metadata, dict) or not all(
+                isinstance(k, str) and isinstance(v, str) for k, v in metadata.items()):
+            return False, "Metadata must map string keys to string values (quote versions: \"1.0\")"
 
     return True, "Skill is valid!"
 

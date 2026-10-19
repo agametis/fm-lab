@@ -1,10 +1,11 @@
 {
   "manifest": {
     "title": "Marcador TODO em um objeto de layout",
-    "description": "Regra da família “Trabalho inacabado”: um objeto de layout contém um marcador TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) no texto, na dica de ferramenta ou na fórmula do rótulo. Um TODO descreve trabalho planejado, não um defeito: severidade info, o semáforo permanece neutro. Endurecimento deliberado em relação à regra de origem: sem distinguir maiúsculas e tolerando separadores — só assim um objeto de texto com o conteúdo “TO DO” é encontrado.\n\nBaseado na verificação fmCheckMate “FIXME” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "description": "Regra da família “Trabalho inacabado”: um objeto de layout contém um marcador TODO (TODO, TO DO, TO-DO, TBD, to be done, to be defined) no texto (texto estático ou rótulo de botão), na dica de ferramenta ou na fórmula do rótulo ou do título. Um TODO descreve trabalho planejado, não um defeito: severidade info, o semáforo permanece neutro. Endurecimento deliberado em relação à regra de origem: sem distinguir maiúsculas e tolerando separadores — só assim um objeto de texto com o conteúdo “TO DO” é encontrado.\n\nBaseado na verificação fmCheckMate “FIXME” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
     "messages.text": "Marcador TODO no conteúdo de texto",
     "messages.tooltip": "Marcador TODO na fórmula da dica de ferramenta",
-    "messages.label": "Marcador TODO na fórmula do rótulo"
+    "messages.label": "Marcador TODO na fórmula do rótulo",
+    "messages.title": "Marcador TODO na fórmula do título"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Ocorrências",

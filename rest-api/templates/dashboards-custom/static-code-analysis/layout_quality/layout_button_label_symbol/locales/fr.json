@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Symbole dans le libellé d'un bouton",
+    "description": "Règle de qualité des layouts — un bouton ou un bouton de popover porte un {{Symbole}} dans son libellé. FileMaker n'évalue les symboles que dans les objets texte ; dans le libellé d'un bouton, le symbole n'est jamais remplacé et apparaît LITTÉRALEMENT en modes Utilisation et Prévisualisation, même un paramètre de Get valide comme {{CurrentDate}}. Les rubriques fusionnées, variables fusionnées et calculs de layout saisis dans le même libellé sont, eux, évalués — le symbole est donc le seul type d'ancre qui n'y fait silencieusement rien. Signalé à titre d'information, car le texte littéral peut être voulu.",
+    "messages.not-evaluated": "Les symboles ne sont pas évalués dans le libellé d'un bouton — il est rendu littéralement"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Constats",
+    "summary_kpi.props.items[1].label": "Symboles distincts",
+    "summary_kpi.props.items[2].label": "Layouts concernés",
+    "summary_kpi.props.items[3].label": "Fichiers concernés",
+    "findings_card.props.title": "Symbole dans le libellé d'un bouton",
+    "findings_table.props.searchPlaceholder": "Rechercher fichier, layout, objet ou symbole…",
+    "findings_table.props.empty.message": "Aucun symbole trouvé dans les libellés de boutons.",
+    "findings_table.props.columns[0].label": "Fichier",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objet",
+    "findings_table.props.columns[3].label": "Symbole",
+    "findings_table.props.columns[4].label": "Occurrences",
+    "findings_table.props.columns[7].label": "Largeur",
+    "findings_table.props.columns[8].label": "Hauteur"
+  }
+}

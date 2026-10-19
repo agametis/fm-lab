@@ -323,7 +323,11 @@
     "filterByCategory": "按 {{category}} 筛选",
     "graphButton": "关系图",
     "valueListMatch": "值",
-    "spellingMatch": "写法"
+    "spellingMatch": "写法",
+    "uuidMatch": "按 UUID 匹配",
+    "healedUuidMatch": "按 UUID 匹配(重复)",
+    "healedUuidTitle": "FileMaker 以所搜索的 UUID 记录此对象;由于该 UUID 在导出中出现多次,目录中以替代 UUID 保存。",
+    "idMatch": "按 ID {{id}} 匹配"
   },
   "scriptSearchFilter": {
     "searchAria": "搜索引用",

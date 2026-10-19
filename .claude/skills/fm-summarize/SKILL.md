@@ -1,7 +1,16 @@
 ---
 name: fm-summarize
-version: 0.8.5
-description: Generates a technical summary of a FileMaker object (Script, Field, Layout, CustomFunction, ValueList, BaseTable, TableOccurrence, Relationship, etc.) from the DuckDB database `db/fm_catalog.duckdb`. Uses ObjectCatalog/ObjectLinks for resolution and dependencies and produces a structured Markdown description. Supports two modes — Standard (complete with flow and dependencies) and Short (1-2 paragraphs of prose, via `--short` flag or trigger words). Triggers (English): "describe script X", "summarize field X", "/fm-summarize", "explain layout X technically". Triggers (German): "beschreibe Script X", "fasse das Feld X zusammen", "erkläre mir das Layout X technisch". Triggers (Spanish): "describe el script X", "resume el campo X". Triggers (French): "décris le script X", "résume le champ X". Triggers (Italian): "descrivi lo script X", "riassumi il campo X". Triggers (Dutch): "beschrijf script X", "vat veld X samen". Triggers (Portuguese): "descreva o script X", "resuma o campo X". Triggers (Swedish): "beskriv skript X", "sammanfatta fältet X". Triggers (Japanese): "スクリプトXを説明して", "フィールドXを要約して". Triggers (Korean): "스크립트 X 설명해 줘", "필드 X 요약해 줘". Triggers (Chinese): "描述脚本 X", "总结字段 X".
+description: >-
+  Generates a technical summary of a FileMaker object (Script, Field, Layout, CustomFunction,
+  ValueList, BaseTable, TableOccurrence, Relationship, etc.) from the DuckDB database
+  `db/fm_catalog.duckdb`. Uses ObjectCatalog/ObjectLinks for resolution and dependencies and
+  produces a structured Markdown description. Supports two modes — Standard (complete with flow
+  and dependencies) and Short (1-2 paragraphs of prose, via `--short` flag or trigger words).
+  Triggers (English): "describe script X", "summarize field X", "/fm-summarize", "explain layout X
+  technically". Triggers (German): "beschreibe Script X", "fasse das Feld X zusammen", "erkläre
+  mir das Layout X technisch". Also responds to equivalent requests in other languages.
+metadata:
+  version: "0.8.5"
 ---
 
 # FileMaker Object Summary
@@ -306,3 +315,17 @@ All four prompts activate short mode; the response is produced in the prompt's l
 2. LIKE fallback `%Kunde%anlegen%` → 1 match: "KundeAnlegen"
 3. **Output**: "A script named 'KundeAnlegenV2' does not exist. Did you perhaps mean 'KundeAnlegen'? Should I describe that one?"
 
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "describe el script X", "resume el campo X".
+- **French:** "décris le script X", "résume le champ X".
+- **Italian:** "descrivi lo script X", "riassumi il campo X".
+- **Dutch:** "beschrijf script X", "vat veld X samen".
+- **Portuguese:** "descreva o script X", "resuma o campo X".
+- **Swedish:** "beskriv skript X", "sammanfatta fältet X".
+- **Japanese:** "スクリプトXを説明して", "フィールドXを要約して".
+- **Korean:** "스크립트 X 설명해 줘", "필드 X 요약해 줘".
+- **Chinese:** "描述脚本 X", "总结字段 X".

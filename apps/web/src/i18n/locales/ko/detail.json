@@ -323,7 +323,11 @@
     "filterByCategory": "{{category}}로 필터링",
     "graphButton": "그래프",
     "valueListMatch": "값",
-    "spellingMatch": "표기"
+    "spellingMatch": "표기",
+    "uuidMatch": "UUID로 일치",
+    "healedUuidMatch": "UUID로 일치 (중복)",
+    "healedUuidTitle": "FileMaker는 이 오브젝트를 검색한 UUID로 관리합니다. 내보내기에서 이 UUID가 여러 번 나타나 카탈로그에는 대체 UUID로 저장되어 있습니다.",
+    "idMatch": "ID {{id}}로 일치"
   },
   "scriptSearchFilter": {
     "searchAria": "참조 검색",

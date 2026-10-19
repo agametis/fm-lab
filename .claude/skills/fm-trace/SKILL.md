@@ -1,25 +1,16 @@
 ---
 name: fm-trace
-version: 0.3.0
-description: >
-  Opens the selective flow graph (Trace) of a FileMaker Script or Layout in the
-  FM-Lab web frontend — call chain up/down, the objects the flow actually
-  touches, and the script triggers of entered layouts, as a deep link into the
-  Graph Explorer's trace mode. Layout starts offer entry-path presets
-  (runtime triggers / inbound navigators). Use fm-show --graph for the plain
-  neighborhood graph instead. Triggers (English): "/fm-trace", "trace this
-  script", "show the flow of this script", "what does this process touch",
-  "open the trace". Triggers (German): "trace dieses Script", "zeig den Ablauf
-  dieses Scripts", "was fasst dieser Prozess an", "öffne den Trace". Triggers
-  (Spanish): "traza este script", "muestra el flujo de este script". Triggers
-  (French): "trace ce script", "montre le flux de ce script". Triggers
-  (Italian): "traccia questo script", "mostra il flusso di questo script".
-  Triggers (Dutch): "trace dit script", "toon de flow van dit script".
-  Triggers (Portuguese): "trace este script", "mostre o fluxo deste script".
-  Triggers (Swedish): "trace det här skriptet", "visa skriptets flöde".
-  Triggers (Japanese): "このスクリプトをトレースして", "このスクリプトのフローを表示して".
-  Triggers (Korean): "이 스크립트를 트레이스해 줘", "이 스크립트의 흐름을 보여 줘".
-  Triggers (Chinese): "跟踪这个脚本", "显示这个脚本的流程".
+description: >-
+  Opens the selective flow graph (Trace) of a FileMaker Script or Layout in the FM-Lab web
+  frontend — call chain up/down, the objects the flow actually touches, and the script triggers of
+  entered layouts, as a deep link into the Graph Explorer's trace mode. Layout starts offer
+  entry-path presets (runtime triggers / inbound navigators). Use fm-show --graph for the plain
+  neighborhood graph instead. Triggers (English): "/fm-trace", "trace this script", "show the flow
+  of this script", "what does this process touch", "open the trace". Triggers (German): "trace
+  dieses Script", "zeig den Ablauf dieses Scripts", "was fasst dieser Prozess an", "öffne den
+  Trace". Also responds to equivalent requests in other languages.
+metadata:
+  version: "0.3.0"
 ---
 
 # fm-trace — Open the selective flow graph (Trace) of a FileMaker object
@@ -227,3 +218,18 @@ FM-Lab → Trace of Layout "Aufgabendetails" (layout_runtime, 5 seeds) opened at
 - `.claude/skills/_shared/scripts/open_url.sh` — the only open mechanism.
 - Backend contract: `GET /api/graph/trace` + `/api/graph/trace/entries`
   (templates `graph_trace.sql` / `graph_trace_entries.sql`).
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "traza este script", "muestra el flujo de este script".
+- **French:** "trace ce script", "montre le flux de ce script".
+- **Italian:** "traccia questo script", "mostra il flusso di questo script".
+- **Dutch:** "trace dit script", "toon de flow van dit script".
+- **Portuguese:** "trace este script", "mostre o fluxo deste script".
+- **Swedish:** "trace det här skriptet", "visa skriptets flöde".
+- **Japanese:** "このスクリプトをトレースして", "このスクリプトのフローを表示して".
+- **Korean:** "이 스크립트를 트레이스해 줘", "이 스크립트의 흐름을 보여 줘".
+- **Chinese:** "跟踪这个脚本", "显示这个脚本的流程".

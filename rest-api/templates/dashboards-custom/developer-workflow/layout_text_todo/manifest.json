@@ -1,8 +1,8 @@
 {
   "id": "layout_text_todo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "TODO marker on a layout object",
-  "description": "Unfinished-work rule — a layout object carries a TODO marker (TODO, TO DO, TO-DO, TBD, to be done, to be defined) in its text content, tooltip or label calculation. A TODO describes planned work, not a defect, so the severity is info: the rule counts with its own figure but never turns the traffic light yellow. The defect half of the family is layout_text_fixme.\n\nBased on the fmCheckMate check \"FIXME\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+  "description": "Unfinished-work rule — a layout object carries a TODO marker (TODO, TO DO, TO-DO, TBD, to be done, to be defined) in its text content (static text or button label), tooltip, label or title calculation. A TODO describes planned work, not a defect, so the severity is info: the rule counts with its own figure but never turns the traffic light yellow. The defect half of the family is layout_text_fixme.\n\nBased on the fmCheckMate check \"FIXME\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
   "author": "fm-lab rules",
   "icon": "list-todo",
   "category": "layout_quality",
@@ -23,7 +23,7 @@
       "author": "fm-lab rules",
       "source": "fmCheckMate-XSLT",
       "url": "https://github.com/mrwatson-de/fmCheckMate-XSLT",
-      "description": "Unfinished-work rule — a layout object carries a TODO marker in its text content, tooltip or label calculation. Detector canon of the family: (?i)(\\bto[\\s\\-_]?do|\\btbd\\b|\\bto[\\s\\-_]be[\\s\\-_](done|defined)\\b), verified by tools/tests/rules/unfinished_work_detector.sql; the family deliberately omits the trailing word boundary so plural markers (\"TO DOs\") still match. Deliberate deviation from the source rule, which matches case-sensitively without separator tolerance and therefore misses a text object reading \"TO DO\". Overlap with layout_text_fixme is intended.",
+      "description": "Unfinished-work rule — a layout object carries a TODO marker in its text content (static text or button label), tooltip, label or title calculation. Detector canon of the family: (?i)(\\bto[\\s\\-_]?do|\\btbd\\b|\\bto[\\s\\-_]be[\\s\\-_](done|defined)\\b), verified by tools/tests/rules/unfinished_work_detector.sql; the family deliberately omits the trailing word boundary so plural markers (\"TO DOs\") still match. Deliberate deviation from the source rule, which matches case-sensitively without separator tolerance and therefore misses a text object reading \"TO DO\". Overlap with layout_text_fixme is intended.",
       "created": "2026-08-16",
       "references": [
         {
@@ -95,6 +95,7 @@
   "messages": {
     "text": "TODO marker in the text content",
     "tooltip": "TODO marker in the tooltip calculation",
-    "label": "TODO marker in the label calculation"
+    "label": "TODO marker in the label calculation",
+    "title": "TODO marker in the title calculation"
   }
 }

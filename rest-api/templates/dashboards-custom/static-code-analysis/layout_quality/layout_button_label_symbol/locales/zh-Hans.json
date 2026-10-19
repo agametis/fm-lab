@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "按钮标签中的符号",
+    "description": "布局质量规则 — 按钮或弹出式按钮的标签中含有 {{符号}}。FileMaker 只在文本对象中计算符号；在按钮标签中符号永远不会被替换，在浏览和预览模式下按「原样」显示，即使是 {{CurrentDate}} 这样有效的 Get 参数也一样。在同一标签中输入的合并字段、合并变量和布局计算则会被计算——因此符号是那里唯一一种悄无声息地不起作用的锚点。由于原样文本可能是有意为之，故以信息级别报告。",
+    "messages.not-evaluated": "按钮标签中的符号不会被计算——按原样显示"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "发现",
+    "summary_kpi.props.items[1].label": "不同符号",
+    "summary_kpi.props.items[2].label": "受影响的布局",
+    "summary_kpi.props.items[3].label": "受影响的文件",
+    "findings_card.props.title": "按钮标签中的符号",
+    "findings_table.props.searchPlaceholder": "搜索文件、布局、对象或符号…",
+    "findings_table.props.empty.message": "未在按钮标签中发现符号。",
+    "findings_table.props.columns[0].label": "文件",
+    "findings_table.props.columns[1].label": "布局",
+    "findings_table.props.columns[2].label": "对象",
+    "findings_table.props.columns[3].label": "符号",
+    "findings_table.props.columns[4].label": "出现次数",
+    "findings_table.props.columns[7].label": "宽度",
+    "findings_table.props.columns[8].label": "高度"
+  }
+}

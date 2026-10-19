@@ -19,10 +19,10 @@ Matching is case-insensitive and tolerates separators, and covers the common not
 | Rule | Severity | What it flags | Source |
 |---|---|---|---|
 | FIXME marker in a script comment | warning | Comment steps carrying a FIXME-class marker | fm-lab |
-| FIXME marker on a layout object | warning | Layout text, tooltip or label calculation with a FIXME — often user-visible | fmCheckMate |
+| FIXME marker on a layout object | warning | Layout text or button label, tooltip, label or panel-title calculation with a FIXME — often user-visible | fmCheckMate |
 | FIXME marker in a calculation comment | warning | FIXMEs inside comments across all five calculation slots | fm-lab |
 | TODO marker in a script comment | info | Comment steps carrying a TODO-class marker | fm-lab |
-| TODO marker on a layout object | info | Layout text, tooltip or label calculation with a TODO | fmCheckMate |
+| TODO marker on a layout object | info | Layout text or button label, tooltip, label or panel-title calculation with a TODO | fmCheckMate |
 | TODO marker in a calculation comment | info | TODOs inside comments across all five calculation slots | fm-lab |
 | TO-DOs in scripts (explorer) | — | Inventory across three notations with click-to-filter counts | fm-lab |
 

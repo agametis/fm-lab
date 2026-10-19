@@ -530,6 +530,7 @@ const builtinLookupAvailable = new Map();
 
 function clearObjectServiceCaches() {
   builtinLookupAvailable.clear();
+  catalogRelationAvailable.clear();
 }
 
 /**
@@ -555,7 +556,278 @@ async function hasBuiltinTokenLookup(ctx) {
   return ok;
 }
 
-function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false, builtinLocalized = false }) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Suche nach Identität (UUID / numerische FileMaker-ID)
+//
+// Grundregel: eine ID trifft NUR als ganzer Begriff. Der ID-Zweig vergleicht
+// ausschließlich per `=`, nie per ILIKE — eine halbe UUID findet kein Objekt
+// über seine Identität (sie bleibt normaler Volltext für Namen/Step-Texte).
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FM_UUID_RE = /^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$/;
+const MD5_UUID_RE = /^[0-9A-Fa-f]{32}$/;
+const OBJECT_ID_RE = /^id:\s*(\d{1,15})$/i;
+// Zusammengesetzte Schlüssel des Imports (LayoutPart, Relationship,
+// ScriptTrigger, PasteIndexObject) — z. B. `rel_100_Adressen`. Bewusst auf die
+// bekannten Präfixe begrenzt: ein generischer Exakt-Vergleich kostete jede
+// normale Namenssuche einen zusätzlichen ObjectCatalog-Scan.
+const SYNTHETIC_KEY_RE = /^(?:part|rel|trig|paste)_\S/;
+
+/**
+ * Typen, deren `Object_ID` je Datei eindeutig ist (gemessen: `(File_Name,
+ * Object_ID)` distinct == Zeilen). Nur sie trifft `id:<n>` ohne Typ-Filter.
+ */
+const OBJECT_ID_UNIQUE_TYPES = [
+  'Script', 'Layout', 'TableOccurrence', 'Relationship', 'CustomMenu',
+  'PasteIndexObject', 'CustomFunction', 'ExternalDataSource', 'ValueList',
+  'ExtendedPrivilege', 'BaseTable', 'PrivilegeSet', 'Account', 'CustomMenuSet',
+  'Theme', 'BaseDirectory',
+];
+
+/**
+ * Zusätzlich per explizitem Typ-Filter: Field (ID je Tabelle eindeutig — der
+ * Name `Tabelle::Feld` unterscheidet die Treffer). Nicht aufgeführte Typen
+ * (LayoutObject, LayoutPart, CustomMenuItem, ScriptStep, ScriptTrigger) sind
+ * ausgeschlossen: ihre ID identifiziert ohne Container nichts bzw. ist eine
+ * Typ-/Event-ID.
+ */
+const OBJECT_ID_FILTER_TYPES = new Set([...OBJECT_ID_UNIQUE_TYPES, 'Field']);
+
+/**
+ * Klassifiziert einen Suchterm als Identität. Reine Funktion (unit-getestet).
+ *
+ * Das Frontend verpackt Terme ohne Wildcard als `%term%` — genau eine äußere
+ * `%`-Hülle wird abgezogen. Bleibt danach ein `%` übrig (Wildcard-Suche), gibt
+ * es keinen ID-Zweig.
+ *
+ * @param {string} name - Suchmuster wie an /api/search übergeben
+ * @returns {null | {kind: 'uuid'|'exact_key'|'object_id', value: string|number, fmUuid?: boolean}}
+ */
+function classifyIdTerm(name) {
+  if (typeof name !== 'string') return null;
+  let term = name.trim();
+  if (term.startsWith('%')) term = term.slice(1);
+  if (term.endsWith('%')) term = term.slice(0, -1);
+  term = term.trim();
+  if (!term || term.includes('%') || /[\u0000-\u001f]/.test(term)) return null;
+
+  const idMatch = OBJECT_ID_RE.exec(term);
+  if (idMatch) return { kind: 'object_id', value: Number(idMatch[1]) };
+
+  // Typische Kopierformen: {UUID}, "UUID", 'UUID', urn:uuid:UUID
+  let bare = term.replace(/^urn:uuid:/i, '');
+  const wrapped = /^([{"'])(.*)([}"'])$/.exec(bare);
+  if (wrapped && ({ '{': '}', '"': '"', "'": "'" })[wrapped[1]] === wrapped[3]) {
+    bare = wrapped[2].trim();
+  }
+  // FileMaker-UUIDs stehen im Katalog uppercase, synthetische md5-UUIDs
+  // lowercase — beide sind inhaltlich case-insensitiv.
+  if (FM_UUID_RE.test(bare)) return { kind: 'uuid', value: bare.toUpperCase(), fmUuid: true };
+  if (MD5_UUID_RE.test(bare)) return { kind: 'uuid', value: bare.toLowerCase() };
+
+  // Zusammengesetzter Schlüssel: exakt ohne Umformung (trägt Dateinamen mit
+  // Groß-/Kleinschreibung und Leerzeichen).
+  if (SYNTHETIC_KEY_RE.test(term)) return { kind: 'exact_key', value: term };
+  return null;
+}
+
+// Verfügbarkeit optionaler Katalog-Tabellen je Lösung (ältere Kataloge haben
+// sie nicht). Einmal pro Lösung geprüft, beim Reload geleert.
+const catalogRelationAvailable = new Map();
+
+async function hasCatalogTable(ctx, tableName) {
+  const key = `${ctx?.solution ?? ''}\u0000${tableName}`;
+  if (catalogRelationAvailable.has(key)) return catalogRelationAvailable.get(key);
+  let ok = false;
+  try {
+    const r = await db.executeQuery(
+      ctx,
+      'SELECT 1 AS ok FROM duckdb_tables() WHERE table_name = ? LIMIT 1',
+      [tableName]
+    );
+    ok = r.rows.length > 0;
+  } catch {
+    ok = false;
+  }
+  catalogRelationAvailable.set(key, ok);
+  return ok;
+}
+
+/**
+ * Löst den Suchterm in einen ID-Suchauftrag für buildSearchSql auf (inkl.
+ * Verfügbarkeit der optionalen Tabellen). null = keine ID-Suche.
+ */
+async function resolveIdSearch(ctx, name) {
+  const id = classifyIdTerm(name);
+  if (!id) return null;
+  if (id.kind === 'uuid' && id.fmUuid) {
+    return { ...id, healing: await hasCatalogTable(ctx, 'DuplicateAbsorptionDetails') };
+  }
+  if (id.kind === 'object_id') {
+    return {
+      ...id,
+      functionIds: await hasCatalogTable(ctx, 'BuiltinFunctionIdentity'),
+      layoutObjectSteps: await hasCatalogTable(ctx, 'LayoutObjectSteps'),
+    };
+  }
+  return id;
+}
+
+/** Spaltenliste eines ID-Treffers — deckungsgleich mit den übrigen Zweigen + Match_Kind. */
+function idHitColumns(matchKind, { withStep = true, matchedValues = 'CAST(NULL AS VARCHAR)' } = {}) {
+  return `
+    oc.Object_UUID, oc.Object_Type, oc.Object_Name, oc.File_Name,
+    oc.Source_Table, oc.Object_ID,
+    ${withStep ? `CASE WHEN oc.Object_Type = 'ScriptStep' THEN ${STEP_TEXT_EXPR} END` : 'CAST(NULL AS VARCHAR)'} AS Step_Text,
+    ${withStep ? 's.Script_Name' : 'CAST(NULL AS VARCHAR)'} AS Script_Name,
+    ${withStep ? 's.Step_Index' : 'CAST(NULL AS INTEGER)'} AS Step_Index,
+    ${matchedValues} AS Matched_Values,
+    '${matchKind}' AS Match_Kind`;
+}
+
+const STEP_ENRICH_JOINS = `
+    LEFT JOIN StepsForScripts s ON s.Step_UUID = oc.Object_UUID
+    LEFT JOIN DDR_ScriptSteps ddr ON ddr.Step_UUID = oc.Object_UUID`;
+
+/**
+ * SQL der ID-Treffer (ohne ORDER/LIMIT). Typ- und Datei-Filter gelten wie in
+ * den Namens-Zweigen.
+ *
+ * @param {Object} idSearch - Ergebnis von resolveIdSearch
+ * @param {Object} opts - {dbType, file}
+ * @returns {{sql: string, params: Array}}
+ */
+function buildIdSearchSql(idSearch, { dbType, file }) {
+  const params = [];
+  const typeFilter = dbType ? buildTypeFilter(dbType) : null;
+  const scope = (sql) => {
+    let s = sql;
+    if (typeFilter) {
+      s += ` AND ${typeFilter.sql}`;
+      params.push(...typeFilter.params);
+    }
+    if (file) {
+      s += ' AND oc.File_Name = ?';
+      params.push(file);
+    }
+    return s;
+  };
+  const internalTypes = "oc.Object_Type NOT IN ('DDR_ScriptStep', 'DDR_Calculation')";
+
+  if (idSearch.kind === 'object_id') {
+    const matched = { matchedValues: 'CAST(oc.Object_ID AS VARCHAR)' };
+    // Typ-IDs der Referenz: Function-ID → BuiltinFunction, Step-ID → ScriptStepType.
+    if (dbType === 'BuiltinFunction' && idSearch.functionIds) {
+      params.push(idSearch.value);
+      const sql = scope(`
+        SELECT ${idHitColumns('function_id', { withStep: false, matchedValues: 'CAST(bfi.Function_ID AS VARCHAR)' })}
+        FROM BuiltinFunctionIdentity bfi
+        JOIN ObjectCatalog oc ON oc.Object_UUID = bfi.Object_UUID
+        WHERE bfi.Function_ID = ?`);
+      return { sql, params };
+    }
+    if (dbType === 'ScriptStepType') {
+      // Die ScriptStepType-UUID hängt am Step-Namen (md5('ScriptStepType::'||Step_Name)),
+      // nicht an der ID → Brücke über die Step-Quellen der Lösung.
+      params.push(idSearch.value);
+      let stepSource = 'SELECT Step_ID, Step_Name FROM StepsForScripts WHERE Step_ID = ?';
+      if (idSearch.layoutObjectSteps) {
+        stepSource += ' UNION SELECT Step_ID, Step_Name FROM LayoutObjectSteps WHERE Step_ID = ?';
+        params.push(idSearch.value);
+      }
+      const sql = scope(`
+        SELECT ${idHitColumns('step_id', { withStep: false, matchedValues: 'CAST(st.Step_ID AS VARCHAR)' })}
+        FROM (SELECT DISTINCT Step_ID, Step_Name FROM (${stepSource})) st
+        JOIN ObjectCatalog oc ON oc.Object_UUID = md5('ScriptStepType::' || st.Step_Name)
+        WHERE oc.Object_Type = 'ScriptStepType'`);
+      return { sql, params };
+    }
+    let typeCond;
+    if (!dbType) {
+      typeCond = `oc.Object_Type IN (${OBJECT_ID_UNIQUE_TYPES.map(t => `'${t}'`).join(', ')})`;
+    } else if (OBJECT_ID_FILTER_TYPES.has(dbType)) {
+      typeCond = 'TRUE';
+    } else {
+      typeCond = 'FALSE'; // Typ ohne eigenständige ID → bewusst kein Treffer
+    }
+    params.push(idSearch.value);
+    const sql = scope(`
+      SELECT ${idHitColumns('object_id', { withStep: false, ...matched })}
+      FROM ObjectCatalog oc
+      WHERE oc.Object_ID = ? AND ${typeCond}`);
+    return { sql, params };
+  }
+
+  params.push(idSearch.value);
+  let sql = scope(`
+    SELECT ${idHitColumns('uuid')}
+    FROM ObjectCatalog oc${STEP_ENRICH_JOINS}
+    WHERE oc.Object_UUID = ? AND ${internalTypes}`);
+
+  // Geheilte Dubletten: FileMaker führt sie unter der Original-UUID, der
+  // Katalog unter einer md5-Ersatz-UUID. Wer die UUID aus FileMaker kopiert,
+  // sieht so alle Objekte — nicht nur das eine, das sie behalten hat.
+  if (idSearch.kind === 'uuid' && idSearch.fmUuid && idSearch.healing) {
+    params.push(idSearch.value);
+    sql += `
+    UNION ALL
+    ${scope(`
+    SELECT ${idHitColumns('healed_uuid')}
+    FROM DuplicateAbsorptionDetails d
+    JOIN ObjectCatalog oc ON oc.Object_UUID = d.Healed_UUID${STEP_ENRICH_JOINS}
+    WHERE d.Object_UUID = ? AND d.Heal_Status = 'healed' AND ${internalTypes}`)}`;
+  }
+  return { sql, params };
+}
+
+/**
+ * Gemeinsamer Abschluss aller Such-Pfade: Count bzw. sortierte, paginierte
+ * Liste. Ohne ID-Suche bleibt das SQL identisch zum bisherigen Stand.
+ *
+ * Mit ID-Suche: ID-Treffer (Match_Kind gesetzt) + Namens-/Volltext-Treffer
+ * (Match_Kind NULL) per UNION ALL BY NAME; ein Objekt, das in beiden auftaucht,
+ * bleibt einmal (als ID-Treffer). ID-Treffer stehen vorn. Bei `id:<n>` entfällt
+ * die Namenssuche (`inner` = null).
+ */
+// Reihenfolge: direkter UUID-/ID-Treffer, dann geheilte Geschwister, dann
+// Namens-/Volltext-Treffer.
+const MATCH_RANK_SQL = `CASE WHEN Match_Kind IS NULL THEN 2 WHEN Match_Kind = 'healed_uuid' THEN 1 ELSE 0 END`;
+
+function finalizeSearchSql({ inner, innerParams, orderBy, idSearch, dbType, file, countOnly, limit, offset }) {
+  let sql;
+  let params;
+  if (!idSearch) {
+    sql = countOnly
+      ? `SELECT COUNT(*) AS count FROM (${inner}) c`
+      : `SELECT * FROM (${inner}) c ORDER BY ${orderBy}`;
+    params = [...innerParams];
+  } else {
+    const ids = buildIdSearchSql(idSearch, { dbType, file });
+    const merged = inner
+      ? `
+      WITH id_hits AS (${ids.sql})
+      SELECT * FROM (
+        SELECT * FROM id_hits
+        UNION ALL BY NAME
+        SELECT * FROM (${inner}) b
+      ) u
+      QUALIFY row_number() OVER (
+        PARTITION BY Object_UUID, File_Name ORDER BY ${MATCH_RANK_SQL}
+      ) = 1`
+      : ids.sql;
+    params = inner ? [...ids.params, ...innerParams] : [...ids.params];
+    sql = countOnly
+      ? `SELECT COUNT(*) AS count FROM (${merged}) c`
+      : `SELECT * FROM (${merged}) c ORDER BY ${MATCH_RANK_SQL}, ${orderBy}`;
+  }
+  if (!countOnly && limit > 0) {
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+  }
+  return { sql, params };
+}
+
+function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false, builtinLocalized = false, idSearch = null }) {
   const params = [];
 
   // Pfad A0: expliziter ValueList-Filter → Wert-Branch (Name ODER Custom-Value).
@@ -566,15 +838,10 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false, 
       inner += ' AND oc.File_Name = ?';
       params.push(file);
     }
-    if (countOnly) {
-      return { sql: `SELECT COUNT(*) AS count FROM (${inner}) c`, params };
-    }
-    let sql = `SELECT * FROM (${inner}) c ORDER BY Object_Name`;
-    if (limit > 0) {
-      sql += ' LIMIT ? OFFSET ?';
-      params.push(limit, offset);
-    }
-    return { sql, params };
+    return finalizeSearchSql({
+      inner: idSearch?.kind === 'object_id' ? null : inner,
+      innerParams: params, orderBy: 'Object_Name', idSearch, dbType, file, countOnly, limit, offset,
+    });
   }
 
   // Pfad A: expliziter Type-Filter (nicht ScriptStep/ValueList — oben abgefangen)
@@ -605,15 +872,18 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false, 
       inner = `(${inner}) UNION ALL (${BUILTIN_LOCALIZED_SEARCH_BRANCH})`;
       params.push(name, name);
     }
-    if (countOnly) {
-      return { sql: `SELECT COUNT(*) AS count FROM (${inner}) c`, params };
-    }
-    let sql = `SELECT * FROM (${inner}) c ORDER BY Object_Name`;
-    if (limit > 0) {
-      sql += ' LIMIT ? OFFSET ?';
-      params.push(limit, offset);
-    }
-    return { sql, params };
+    return finalizeSearchSql({
+      inner: idSearch?.kind === 'object_id' ? null : inner,
+      innerParams: params, orderBy: 'Object_Name', idSearch, dbType, file, countOnly, limit, offset,
+    });
+  }
+
+  // `id:<n>` ohne Typ-Filter: eindeutige Absicht → nur der ID-Zweig, keine
+  // Namenssuche nach dem Literal 'id:42'.
+  if (idSearch?.kind === 'object_id') {
+    return finalizeSearchSql({
+      inner: null, innerParams: [], orderBy: 'Object_Name', idSearch, dbType, file, countOnly, limit, offset,
+    });
   }
 
   // Pfad B/C: kein Type-Filter
@@ -695,15 +965,9 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false, 
     combined += ` UNION ALL (${BUILTIN_LOCALIZED_SEARCH_BRANCH})`;
     params.push(name, name);
   }
-  if (countOnly) {
-    return { sql: `SELECT COUNT(*) AS count FROM (${combined}) c`, params };
-  }
-  let sql = `SELECT * FROM (${combined}) c ORDER BY Object_Name`;
-  if (limit > 0) {
-    sql += ' LIMIT ? OFFSET ?';
-    params.push(limit, offset);
-  }
-  return { sql, params };
+  return finalizeSearchSql({
+    inner: combined, innerParams: params, orderBy: 'Object_Name', idSearch, dbType, file, countOnly, limit, offset,
+  });
 }
 
 /**
@@ -721,8 +985,11 @@ async function searchObjects(ctx, searchOptions) {
 
     // ScriptStep-Spezialpfad: Volltextsuche im DDR_Step_Text + Comment-Inhalt
     // aus Parameters_XML, mit Script_Name/Step_Index/Step_Text in der Response.
+    // Identitäts-Suche (UUID / `id:<n>`) — additiv zu den Namens-Zweigen.
+    const idSearch = await resolveIdSearch(ctx, name);
+
     if (dbType === 'ScriptStep') {
-      return await searchScriptSteps(ctx, { name, file, limit, offset });
+      return await searchScriptSteps(ctx, { name, file, limit, offset, idSearch });
     }
 
     // Suchstrategie (ScriptStep-Filtering):
@@ -744,7 +1011,7 @@ async function searchObjects(ctx, searchOptions) {
     // Nachschlage-View trägt (Schema 1.32.0+). Wildcard-only-Suchen brauchen
     // den Zweig nicht — buildSearchSql lässt ihn dort weg.
     const builtinLocalized = await hasBuiltinTokenLookup(ctx);
-    const { sql, params } = buildSearchSql({ name, dbType, file, limit, offset, builtinLocalized });
+    const { sql, params } = buildSearchSql({ name, dbType, file, limit, offset, builtinLocalized, idSearch });
 
     const result = await db.executeQuery(ctx, sql, params);
 
@@ -796,7 +1063,36 @@ const SCRIPTSTEP_SEARCH_CTE = `
   )
 `;
 
-async function searchScriptSteps(ctx, { name, file, limit, offset }) {
+/**
+ * ScriptStep-Pfad mit ID-Suche: dieselbe Filterlogik, zusammengeführt über
+ * finalizeSearchSql (ID-Treffer vorn, Dedup). Liste und Count teilen sich den
+ * Builder, damit Count == List-Total bleibt.
+ */
+function buildScriptStepIdSearchSql({ name, file, idSearch, countOnly, limit, offset }) {
+  let inner = `${SCRIPTSTEP_SEARCH_CTE}
+    SELECT *
+    FROM script_steps
+    WHERE Step_Text ILIKE ?`;
+  const innerParams = [name];
+  if (file) {
+    inner += ' AND File_Name = ?';
+    innerParams.push(file);
+  }
+  return finalizeSearchSql({
+    inner: idSearch.kind === 'object_id' ? null : inner,
+    innerParams,
+    orderBy: 'File_Name, Script_Name, Step_Index',
+    idSearch, dbType: 'ScriptStep', file, countOnly, limit, offset,
+  });
+}
+
+async function searchScriptSteps(ctx, { name, file, limit, offset, idSearch = null }) {
+  if (idSearch) {
+    const { sql, params } = buildScriptStepIdSearchSql({ name, file, idSearch, countOnly: false, limit, offset });
+    const result = await db.executeQuery(ctx, sql, params);
+    return { data: convertBigInts(result.rows), meta: result.meta };
+  }
+
   // Filter NUR auf Step_Text. Object_Name enthält bei ScriptSteps auch den
   // Skriptnamen ("<Script> [<Index>] <StepType>") — wenn wir den mitdurch-
   // suchen würden, käme jeder Skriptnamen-Treffer als rauschende Step-Liste
@@ -826,7 +1122,12 @@ async function searchScriptSteps(ctx, { name, file, limit, offset }) {
   };
 }
 
-async function countScriptSteps(ctx, { name, file }) {
+async function countScriptSteps(ctx, { name, file, idSearch = null }) {
+  if (idSearch) {
+    const { sql, params } = buildScriptStepIdSearchSql({ name, file, idSearch, countOnly: true });
+    const result = await db.executeQuery(ctx, sql, params);
+    return { data: convertBigInts(result.rows), meta: result.meta };
+  }
   let sql = `${SCRIPTSTEP_SEARCH_CTE}
     SELECT COUNT(*) AS count
     FROM script_steps
@@ -860,8 +1161,10 @@ async function countSearchResults(ctx, searchOptions) {
 
     // ScriptStep-Spezialpfad: muss denselben WHERE-Filter wie searchScriptSteps
     // verwenden, sonst weicht der Total-Count von der gepaginierten Liste ab.
+    const idSearch = await resolveIdSearch(ctx, name);
+
     if (dbType === 'ScriptStep') {
-      return await countScriptSteps(ctx, { name, file });
+      return await countScriptSteps(ctx, { name, file, idSearch });
     }
 
     // Identische Filterlogik wie searchObjects (UNION ALL bei Volltextsuche
@@ -870,7 +1173,7 @@ async function countSearchResults(ctx, searchOptions) {
     // Schreibweisen: ohne dasselbe Flag zählte der Count weniger als die Liste
     // zeigt.
     const builtinLocalized = await hasBuiltinTokenLookup(ctx);
-    const { sql, params } = buildSearchSql({ name, dbType, file, countOnly: true, builtinLocalized });
+    const { sql, params } = buildSearchSql({ name, dbType, file, countOnly: true, builtinLocalized, idSearch });
 
     const result = await db.executeQuery(ctx, sql, params);
 
@@ -1823,4 +2126,8 @@ module.exports = {
   enrichSubroleEvents,
   // Für Unit-Tests exportiert — Konsumenten nutzen getReferences.
   subroleClassSql,
+  // Für Unit-Tests exportiert — Konsumenten nutzen searchObjects/countSearchResults.
+  classifyIdTerm,
+  buildSearchSql,
+  buildScriptStepIdSearchSql,
 };

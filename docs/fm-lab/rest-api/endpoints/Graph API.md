@@ -153,6 +153,8 @@ Focus autocomplete over `ObjectCatalog`.
 
 Response: `results[]` of `{ id, label, type, file }`.
 
+A full UUID or import key in `q` focuses that object directly and ranks it first — by equality only, so a UUID fragment never matches by identity (same rules as [identity search](Search%20API.md#identity-search); `id:<n>` is not supported here, since a per-file ID is no focus candidate).
+
 ## POST /api/graph/recluster
 
 Re-runs the graph clustering for the request's context solution and streams progress as **Server-Sent Events** (`text/event-stream`):

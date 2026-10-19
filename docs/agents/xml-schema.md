@@ -78,7 +78,7 @@ per file. **Never** import the FileMaker 22 and the FileMaker 26 export of the *
 file into one catalog: they share every object UUID.
 
 Vocabulary delta of **SaXML 2.3.0.0** (evidence: `ingestion/fixtures/saxml/
-fmlab_coverage__saxml_v2_3_0_0__fm_v26_0_2__ddr_info.xml` vs. the 2.2.3.0 export of the
+fmlab_coverage__saxml_v2_3_0_0__fm_v26_0_3__ddr_info.xml` vs. the 2.2.3.0 export of the
 same file):
 
 | Element / attribute | 2.2.x (`saxml22`) | 2.3.0.0 (`saxml23`) | Catalog target |
@@ -145,7 +145,7 @@ A field-bearing layout object carries its per-mode entry rule as a bitmask in
 `LayoutObject/Field/Options`, and the formula of the `by_calculation` state in a
 separate element `LayoutObject/CanEntryCalc/Calculation`. **Two bits per mode**
 encode four states; both SaXML profiles write the same values (verified against
-12 probes of the coverage file, FileMaker 22.0.6 and 26.0.2):
+12 probes of the coverage file, FileMaker 22.0.6 and 26.0.3):
 
 | Bits (Browse / Find) | State | `Entry_Browse` / `Entry_Find` |
 |---|---|---|
@@ -257,7 +257,7 @@ The location of a custom function's calculation body changed between SaXML versi
   `<Calculation>` is **embedded directly inside each `<CustomFunction>`** within
   `<CustomFunctionsCatalog>`. The embedded `<Calculation>` has **no `<ChunkList>`** —
   only `<DDRREF kind="ChunkList" hash="…">` (the chunks remain reachable via the hash in
-  `<DDR_INFO>`) and `<Text>`. *Verified at `ingestion/fixtures/saxml/fmlab_coverage__saxml_v2_3_0_0__fm_v26_0_2__ddr_info.xml`.*
+  `<DDR_INFO>`) and `<Text>`. *Verified at `ingestion/fixtures/saxml/fmlab_coverage__saxml_v2_3_0_0__fm_v26_0_3__ddr_info.xml`.*
 
 ```xml
 <!-- v2.3.0.0 (FM 26): Calculation embedded in CustomFunctionsCatalog -->

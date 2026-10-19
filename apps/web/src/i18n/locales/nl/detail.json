@@ -323,7 +323,11 @@
     "filterByCategory": "Filteren op {{category}}",
     "graphButton": "Graaf",
     "valueListMatch": "Waarden",
-    "spellingMatch": "Schrijfwijze"
+    "spellingMatch": "Schrijfwijze",
+    "uuidMatch": "Gevonden via UUID",
+    "healedUuidMatch": "Gevonden via UUID (duplicaat)",
+    "healedUuidTitle": "FileMaker kent dit object onder de gezochte UUID; omdat die UUID meerdere keren in de export voorkwam, staat het in de catalogus onder een vervangende UUID.",
+    "idMatch": "Gevonden via ID {{id}}"
   },
   "scriptSearchFilter": {
     "searchAria": "Zoek referenties",

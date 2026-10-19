@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Símbolo en la etiqueta de un botón",
+    "description": "Regla de calidad de layouts — un botón o botón de popover contiene un {{Símbolo}} en su etiqueta. FileMaker solo evalúa los símbolos en objetos de texto; en la etiqueta de un botón el símbolo nunca se sustituye y aparece LITERALMENTE en los modos Visualizar y Vista previa, incluso un parámetro de Get válido como {{CurrentDate}}. Los campos combinados, las variables combinadas y los cálculos de layout escritos en la misma etiqueta sí se evalúan, lo que convierte al símbolo en el único tipo de ancla que allí no hace nada sin avisar. Se notifica como información, porque el texto literal puede ser intencionado.",
+    "messages.not-evaluated": "Los símbolos no se evalúan en la etiqueta de un botón — se muestra literalmente"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Hallazgos",
+    "summary_kpi.props.items[1].label": "Símbolos distintos",
+    "summary_kpi.props.items[2].label": "Layouts afectados",
+    "summary_kpi.props.items[3].label": "Archivos afectados",
+    "findings_card.props.title": "Símbolo en la etiqueta de un botón",
+    "findings_table.props.searchPlaceholder": "Buscar archivo, layout, objeto o símbolo…",
+    "findings_table.props.empty.message": "No se encontraron símbolos en etiquetas de botones.",
+    "findings_table.props.columns[0].label": "Archivo",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objeto",
+    "findings_table.props.columns[3].label": "Símbolo",
+    "findings_table.props.columns[4].label": "Apariciones",
+    "findings_table.props.columns[7].label": "Ancho",
+    "findings_table.props.columns[8].label": "Alto"
+  }
+}

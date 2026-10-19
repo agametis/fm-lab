@@ -1,5 +1,5 @@
--- Merge-field anchors (<<Field>>) on a layout text object that FileMaker
--- cannot resolve.
+-- Merge-field anchors (<<Field>>) on a layout text object, button or popover
+-- button that FileMaker cannot resolve.
 --
 -- An unresolvable anchor is not dropped: it renders LITERALLY in browse and
 -- preview mode (screenshot-verified), so the user sees the raw <<Field>> where
@@ -16,9 +16,17 @@
 --               count as ONE anchor — FileMaker puts the repetition into the
 --               `repetition` attribute and the qualification into the nested
 --               TableOccurrenceReference, not into the name.
---   resolved  — <FieldReference> entries inside the object's structural
---               <FieldList>: exactly one per RESOLVED anchor (fixture-
---               verified), none for an anchor that resolves to nothing.
+--   resolved  — text objects: <FieldReference> entries inside the object's
+--               structural <FieldList>: exactly one per RESOLVED anchor
+--               (fixture-verified), none for an anchor that resolves to
+--               nothing. Buttons and popover buttons never get a FieldList,
+--               although FileMaker evaluates typed anchors in their label at
+--               runtime; the converter resolves those from the label text
+--               (one field row per resolved occurrence in XMLLayoutReferences,
+--               unqualified anchors against the layout's table occurrence).
+--               An anchor on an EXTERNAL table occurrence whose file is not
+--               part of the import keeps an open row (Ref_UUID NULL): it cannot
+--               be verified, so it counts as not literal — no finding.
 -- The difference is the number of anchors that render literally. Counting,
 -- not name matching, decides the finding: XML attribute values are entity-
 -- encoded (Stra&#xDF;e) while Text_Content is decoded, so a name comparison
@@ -29,23 +37,43 @@
 -- is worse than none. The count columns always hold.
 WITH lo AS (
     -- LayoutObjects can carry duplicate rows per (Object_UUID, File_Name).
-    -- Merge anchors live on text objects only (measured: no other object type
-    -- carries one), which also keeps container XML out of the comparison.
-    SELECT Object_UUID, Object_ID, Layout_ID, File_Name, Object_Name, Object_Type,
+    -- Merge anchors live in the text of text objects (kind 2) and in the labels
+    -- of buttons (kind 10) and popover buttons (kind 14) — Text_Content holds
+    -- exactly that text, so container XML stays out of the comparison. Dispatch
+    -- on @kind, because Object_Type comes from the localized @type.
+    SELECT Object_UUID, Object_ID, Layout_ID, File_Name, Object_Name, Object_Type, Object_Kind,
            Text_Content, Object_XML,
            Bounds_Left, Bounds_Top, Bounds_Right, Bounds_Bottom,
            ROW_NUMBER() OVER (PARTITION BY Object_UUID, File_Name ORDER BY Object_ID) AS rn
     FROM LayoutObjects
-    WHERE Object_Type = 'Text' AND Text_Content LIKE '%<<%'
+    WHERE Object_Kind IN (2, 10, 14) AND Text_Content LIKE '%<<%'
+),
+label_refs AS (
+    -- Button labels: every resolved anchor occurrence is one field row of the
+    -- button in XMLLayoutReferences (written from the label text). A button
+    -- carries neither a FieldList nor a field of its own, so all its field
+    -- rows are label-text rows — no need to name the column that says so,
+    -- which keeps the rule runnable on catalogs of older converters.
+    SELECT Object_UUID, File_Name, list(Ref_Name) AS names
+    FROM XMLLayoutReferences
+    WHERE Ref_Type = 'field'
+      AND Object_UUID IN (SELECT Object_UUID FROM lo WHERE Object_Kind IN (10, 14))
+    GROUP BY ALL
 ),
 anchored AS (
-    SELECT *,
-        list_filter(regexp_extract_all(Text_Content, '(?s)<<(.*?)>>', 1),
+    SELECT lo.*,
+        list_filter(regexp_extract_all(lo.Text_Content, '(?s)<<(.*?)>>', 1),
                     lambda a: NOT (starts_with(a, '$') OR starts_with(a, 'ƒ:'))) AS anchor_list,
-        regexp_extract_all(regexp_extract(Object_XML, '(?s)<FieldList>(.*?)</FieldList>', 1),
-                           '<FieldReference[^>]*name="([^"]*)"', 1) AS ref_names
+        CASE WHEN lo.Object_Kind = 2
+             THEN regexp_extract_all(regexp_extract(lo.Object_XML, '(?s)<FieldList>(.*?)</FieldList>', 1),
+                                     '<FieldReference[^>]*name="([^"]*)"', 1)
+             ELSE COALESCE(lr.names, CAST([] AS VARCHAR[]))
+        END AS ref_names
     FROM lo
-    WHERE rn = 1
+    LEFT JOIN label_refs lr
+           ON lr.Object_UUID = lo.Object_UUID
+          AND lr.File_Name   = lo.File_Name
+    WHERE lo.rn = 1
 ),
 counted AS (
     SELECT *,

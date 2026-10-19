@@ -11,8 +11,11 @@
 -- uses one detector in all three domains rather than a per-domain notation.
 --
 -- Slot sources: the text slot is LayoutObjects.Text_Content (static layout
--- text, not a calculation slot); the tooltip and label slots are the
--- CalculationsCatalog instances of the object (roles tooltip / button_label).
+-- text, not a calculation slot — since schema 1.33.0 also the label of a button
+-- or popover button); the tooltip, label and title slots are the
+-- CalculationsCatalog instances of the object (roles tooltip / button_label /
+-- popover_title and panel_title). The title of a popover panel used to arrive
+-- through Text_Content; it is a calculation and now has its own slot.
 --
 -- Marker class: FIXME only. The TODO half of the family lives in
 -- layout_text_todo; an object carrying both markers is reported by both rules.
@@ -27,11 +30,13 @@ WITH slots AS (
     UNION ALL
     SELECT lo.File_Name, lo.Layout_ID, lo.Object_UUID, lo.Object_Type, lo.Object_Name, lo.Part_Type,
            lo.Bounds_Left, lo.Bounds_Top, lo.Bounds_Right, lo.Bounds_Bottom,
-           CASE c.Calc_Role WHEN 'button_label' THEN 'label' ELSE 'tooltip' END AS slot,
+           CASE c.Calc_Role WHEN 'button_label' THEN 'label'
+                            WHEN 'tooltip' THEN 'tooltip'
+                            ELSE 'title' END AS slot,
            COALESCE(c.Formula_Text, c.Display_Text) AS content
     FROM CalculationsCatalog c
     JOIN LayoutObjects lo ON lo.Object_UUID = c.Owner_UUID AND lo.File_Name = c.File_Name
-    WHERE c.Calc_Role IN ('tooltip', 'button_label')
+    WHERE c.Calc_Role IN ('tooltip', 'button_label', 'popover_title', 'panel_title')
 )
 SELECT 'layout-text-fixme' AS rule_id, 'warning' AS severity,
     s.File_Name AS file_name, ly.L_UUID AS nav_uuid, ly.L_Name AS layout_name,
@@ -43,6 +48,7 @@ SELECT 'layout-text-fixme' AS rule_id, 'warning' AS severity,
     CASE s.slot
         WHEN 'text' THEN 'FIXME marker in the text content'
         WHEN 'tooltip' THEN 'FIXME marker in the tooltip calculation'
+        WHEN 'title' THEN 'FIXME marker in the title calculation'
         ELSE 'FIXME marker in the label calculation'
     END AS message,
     row_number() OVER (ORDER BY s.File_Name, ly.L_Name, s.Object_UUID, s.slot) AS row_key

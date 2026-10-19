@@ -475,13 +475,16 @@ SELECT
 -- unknown = weder saxml22 noch saxml23 → WARN). promoted_anchors/padding_anchors:
 -- DisplayCalculations-Anker der saxml23-Dateien, die P1d in die DDR-Tabellen
 -- übernommen hat bzw. als FM-26-Polster im Staging belassen hat (informational).
+-- Die Übernahme begrenzt auch die Kanten: P2 (_layout_obj_hashes) und P3 (A.3f)
+-- lösen DisplayCalculations-Anker nur auf, wenn sie in DDR_ChunkListContexts
+-- stehen — Polster liefern keine Referenzen und keine Variablennutzungen.
 -- staging_rows_outside_saxml23 / table_view_rows_outside_saxml23: Soll 0 — nur
 -- saxml23 speist DDR_DisplayCalcAnchors23 und LayoutTableViewColumns (Dispatch-
 -- Drift). cf_calc_rows = cf_functions (Soll): jede echte Custom Function hat
 -- genau eine Calc-Zeile, Ordner/Trenner keine. display_anchor_violations:
 -- DisplayCalculations-Anker in DDR_Calculations mit Slot ≥ <<ƒ:…>>-Token-Zahl
--- ihres Textobjekts (Soll 0 — > 0 heißt, P1d lief nicht oder das Muster hat
--- sich geändert).
+-- ihres Layoutobjekts mit Text (Textobjekt oder Button-Beschriftung, Schema
+-- 1.33.0; Soll 0 — > 0 heißt, P1d lief nicht oder das Muster hat sich geändert).
 CREATE OR REPLACE VIEW v_check_saxml_profile AS
 WITH owners AS (
     SELECT upper(Object_UUID) AS Owner_UUID, File_Name,
@@ -635,6 +638,82 @@ SELECT
 FROM DDR_ChunkListContexts
 WHERE Chunk_Count = 0
   AND Calc_UUID LIKE '%\_DisplayCalculations\_%' ESCAPE '\';
+
+-- Textpfade der Layoutobjekte (Schema 1.33.0). Text_Content,
+-- Label_Calculation_Text und Title_Calculation_Text lesen je @kind genau einen
+-- XML-Pfad (P1-Makros fm_layout_object_text/_label_calc/_title_calc). Die View
+-- prüft die Annahme gegen das Roh-XML, ohne XML-Parser (P6-Abfragen laufen ohne
+-- webbed): verglichen wird nur der objekteigene Kopf des Object_XML — alles vor
+-- dem ersten Kind-<LayoutObject>; Beschriftung und Titel stehen dort vor den
+-- Kindern, Container-Inhalte bleiben so außen vor.
+--   text_path_mismatch  — Kopf trägt einen nicht leeren Text-/Beschriftungstext
+--                         (<Text><StyledText><Data>), Text_Content ist aber NULL:
+--                         ein Typ, für den das Makro keinen Pfad kennt. Soll 0.
+--   label_text_and_calc — Button/Popover-Button mit Beschriftungstext UND
+--                         Beschriftungsformel (schließen sich aus). Soll 0.
+--   title_path_mismatch — Kopf trägt eine nicht leere Titelformel (<Title> bzw.
+--                         <TabPanel><Calculation>), Title_Calculation_Text ist
+--                         aber NULL. Soll 0.
+-- > 0 ⇒ WARN im Import-Report: Pfad-Dispatch der Makros prüfen.
+CREATE OR REPLACE VIEW v_check_layout_text_paths AS
+WITH lo AS (
+    SELECT Object_Kind, Object_Type, File_Name, Text_Content, Label_Calculation_Text,
+           Title_Calculation_Text,
+           regexp_replace(Object_XML, '(?s)^(<LayoutObject.*?)<LayoutObject\b.*$', '\1') AS head
+    FROM LayoutObjects
+    WHERE Object_XML LIKE '%<StyledText>%'
+       OR Object_XML LIKE '%<Title>%'
+       OR Object_XML LIKE '%<TabPanel%'
+),
+flags AS (
+    SELECT *,
+        regexp_matches(head, '(?s)<Text>\s*(?:<Options>[^<]*</Options>\s*)?<StyledText>\s*<Data>\s*(?:<!\[CDATA\[)?\s*[^\]<\s]') AS has_text,
+        regexp_matches(head, '(?s)(?:<Title>|<TabPanel\b[^>]*>\s*(?:<Options>[^<]*</Options>\s*)?<Calculation>)\s*(?:<DDRREF[^>]*>[^<]*</DDRREF>\s*)?<Text>\s*(?:<!\[CDATA\[)?\s*[^\]<\s]') AS has_title
+    FROM lo
+)
+SELECT
+    (SELECT COUNT(*) FROM flags WHERE has_text AND Text_Content IS NULL)            AS text_path_mismatch,
+    (SELECT COUNT(*) FROM LayoutObjects
+      WHERE Object_Kind IN (10, 14)
+        AND NULLIF(Text_Content, '') IS NOT NULL
+        AND NULLIF(Label_Calculation_Text, '') IS NOT NULL)                         AS label_text_and_calc,
+    (SELECT COUNT(*) FROM flags WHERE has_title AND Title_Calculation_Text IS NULL) AS title_path_mismatch,
+    (SELECT string_agg(DISTINCT Object_Kind || ':' || Object_Type, ', ')
+       FROM flags
+      WHERE (has_text AND Text_Content IS NULL)
+         OR (has_title AND Title_Calculation_Text IS NULL))                         AS mismatch_kinds;
+
+-- Getippte Merge-Felder in Button-Beschriftungen über externe TOs (Konverter
+-- 2.34.0). P2 schreibt dafür offene label_text-Zeilen (Ref_UUID NULL), P4 Phase A
+-- löst sie über die Heimatdatei der Basistabelle auf oder löscht sie (Feld fehlt
+-- dort). Was offen bleibt, hat keine Heimatdatei im Import.
+--   unverified        — offene Zeilen (Info): Anker auf eine nicht importierte
+--                       oder mehrdeutige Datei; keine Kante, kein Finding.
+--   open_on_local_to  — offene Zeile, deren TO nicht extern ist. Soll 0 (P2 löst
+--                       lokale TOs selbst auf oder schreibt keine Zeile).
+--   open_with_k1_home — offene Zeile, obwohl die BT_UUID der externen TO genau
+--                       eine importierte Datei trifft: Die P4-Auflösung hätte sie
+--                       aufgelöst oder gelöscht. Soll 0.
+CREATE OR REPLACE VIEW v_check_label_anchor_external AS
+WITH open_rows AS (
+    SELECT x.File_Name, x.TO_Ref_ID, t.TO_Type, t.BT_UUID
+    FROM XMLLayoutReferences x
+    LEFT JOIN TableOccurrenceCatalog t
+           ON t.File_Name = x.File_Name
+          AND t.TO_ID = x.TO_Ref_ID
+    WHERE x.Ref_Source = 'label_text' AND x.Ref_Type = 'field' AND x.Ref_UUID IS NULL
+),
+bt_files AS (
+    SELECT Table_UUID, count(DISTINCT File_Name) AS n
+    FROM FieldsForTables
+    WHERE Table_UUID IS NOT NULL
+    GROUP BY ALL
+)
+SELECT
+    (SELECT COUNT(*) FROM open_rows)                                                  AS unverified,
+    (SELECT COUNT(*) FROM open_rows WHERE TO_Type IS DISTINCT FROM 'External')         AS open_on_local_to,
+    (SELECT COUNT(*) FROM open_rows o JOIN bt_files b ON b.Table_UUID = o.BT_UUID
+      WHERE o.TO_Type = 'External' AND b.n = 1)                                       AS open_with_k1_home;
 
 -- unbekannte LayoutObject-Typen. `Object_Type` ist der lokalisierte
 -- /LayoutObject/@type-String; die P4-Locale-Normalisierung bildet die bekannten dt.

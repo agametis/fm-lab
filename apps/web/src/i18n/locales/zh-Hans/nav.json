@@ -50,11 +50,11 @@
     "tree": "层级"
   },
   "form": {
-    "searchLabel": "按名称搜索:",
+    "searchLabel": "按名称 / UUID 搜索:",
     "filterLabel": "筛选器:",
     "searchPlaceholder": "例如 Import、Email(留空 = 所有对象)",
     "filterPlaceholder": "按名称筛选层级",
-    "searchTitle": "通配符 * 匹配任意字符(例如 *Import、Email*)。留空表示所有对象。",
+    "searchTitle": "通配符 * 匹配任意字符(例如 *Import、Email*)。留空表示所有对象。完整的 UUID 可直接找到对象;id:42 按 FileMaker ID 搜索(仅在文件内唯一)。",
     "filterTitle": "包含此文本的条目将被高亮(包括父级文件夹)",
     "fileLabel": "文件:",
     "allFiles": "所有文件",

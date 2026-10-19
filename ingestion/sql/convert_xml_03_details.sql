@@ -329,16 +329,34 @@ WHERE NOT EXISTS (
 --
 -- Alle diese Kontexte verwenden DDRREF kind="ChunkList" hash="..." in Object_XML.
 -- Der Hash wird gegen DDR_Calculations aufgelöst um VariableReference-Chunks zu finden.
+--
+-- DisplayCalculations-Anker zählen nur, wenn ihr Ankername (DDRREF-Text, roh)
+-- in DDR_ChunkListContexts steht — wie _layout_obj_hashes in P2: Die Polster-
+-- Anker von FileMaker 26 tragen den Hash von Slot 0 und lieferten über den
+-- Hash-Join sonst je Polster eine weitere Variablennutzung. Übrige Anker
+-- unverändert (auch DDRREFs ohne UUID im Ankernamen).
 
 INSERT INTO VariableUsages
-WITH lo_hashes AS (
+WITH lo_refs AS (
     SELECT
         Object_UUID, Object_Type, Layout_ID, File_Name,
         unnest(regexp_extract_all(CAST(Object_XML AS VARCHAR),
-            'kind="ChunkList" hash="([A-F0-9]+)"', 1)) as calc_hash
+            'kind="ChunkList" hash="[A-F0-9]+"[^>]*>[^<]*')) as m
     FROM LayoutObjects
     WHERE Object_XML IS NOT NULL
       AND CAST(Object_XML AS VARCHAR) LIKE '%ChunkList%'
+),
+lo_hashes AS (
+    SELECT
+        r.Object_UUID, r.Object_Type, r.Layout_ID, r.File_Name,
+        regexp_extract(r.m, 'hash="([A-F0-9]+)"', 1) as calc_hash
+    FROM lo_refs r
+    WHERE regexp_extract(r.m, '>([^<]*)$', 1) NOT LIKE '%\_DisplayCalculations\_%' ESCAPE '\'
+       OR EXISTS (
+            SELECT 1 FROM DDR_ChunkListContexts ctx
+            WHERE ctx.Calc_UUID = regexp_extract(r.m, '>([^<]*)$', 1)
+              AND ctx.File_Name = r.File_Name
+       )
 )
 SELECT
     vr.Variable_Name,
@@ -724,6 +742,10 @@ WHERE Source = 'mbs_variable_call';
 -- ========================================
 -- A.6: Merge-Variables aus LayoutObjects → VariableUsages
 -- ========================================
+-- Textobjekte (kind 2) sowie Beschriftungen von Buttons (kind 10) und
+-- Popover-Buttons (kind 14, Schema 1.33.0): FileMaker wertet <<$var>> in allen
+-- dreien zur Laufzeit aus. Typ-Dispatch über @kind, weil Object_Type aus dem
+-- lokalisierten @type kanonisiert ist.
 
 INSERT INTO VariableUsages
 SELECT
@@ -746,7 +768,7 @@ JOIN Layouts l ON lo.Layout_ID = l.L_ID AND lo.File_Name = l.File_Name
 CROSS JOIN LATERAL unnest(
     regexp_extract_all(lo.Text_Content, '<<(\$\$?[^>]+)>>', 1)
 ) as t(var_name)
-WHERE lo.Object_Type = 'Text'
+WHERE lo.Object_Kind IN (2, 10, 14)
   AND lo.Text_Content LIKE '%<<%$%>>%';
 
 
@@ -825,6 +847,63 @@ formulas AS (
       ON upper(lo.Object_UUID) = e.Anchor_UUID
      AND lo.File_Name = e.File_Name
      AND lo.rn = 1
+)
+SELECT DISTINCT
+    v.var_name as Variable_Name,
+    CASE WHEN v.var_name LIKE '$$$%' THEN 'superglobal' WHEN v.var_name LIKE '$$%' THEN 'global' ELSE 'local' END as Variable_Scope,
+    'read' as Usage_Type,
+    'layout_object' as Context_Type,
+    f.Object_UUID as Context_UUID,
+    l.L_Name as Context_Name,
+    NULL as Script_Name,
+    NULL as Script_UUID,
+    NULL as Step_Index,
+    NULL as Table_Name,
+    NULL as Field_Name,
+    NULL as Calc_Hash,
+    'display_calc_recovery' as Source,
+    f.File_Name
+FROM formulas f
+JOIN Layouts l ON f.Layout_ID = l.L_ID AND l.File_Name = f.File_Name
+CROSS JOIN LATERAL unnest(
+    regexp_extract_all(f.formula_noliterals, '\$\$?\$?[\p{L}_][\p{L}\p{N}_]*')
+) as v(var_name)
+WHERE f.formula_noliterals IS NOT NULL;
+
+
+-- ========================================
+-- A.6d: Variablen aus Layoutformeln in Button-Beschriftungen (Schema 1.33.0)
+-- ========================================
+-- Getippte <<ƒ:…>>-Tokens in Beschriftungen von Buttons (kind 10) und
+-- Popover-Buttons (kind 14) ohne DisplayCalculations-Anker in
+-- DDR_ChunkListContexts: Variablen aus dem Formeltext (String-Literale entfernt).
+-- Kandidaten-Erkennung identisch zu P2 A.5.1e; Kanten entstehen generisch aus
+-- VariableUsages (P4 Block 28, reads_variable). Ohne DDR-Info gilt das für jedes
+-- Token, weil dann kein Anker existiert.
+INSERT INTO VariableUsages
+WITH tok AS (
+    SELECT lo.Object_UUID, lo.Layout_ID, lo.File_Name,
+           xml_extract_text(lo.Object_XML, '/LayoutObject/UUID')[1] AS Raw_UUID,
+           regexp_extract_all(lo.Text_Content, '(?s)<<ƒ:(.*?)>>', 1) AS formulas
+    FROM LayoutObjects lo
+    WHERE lo.Object_Kind IN (10, 14)
+      AND lo.Text_Content LIKE '%<<ƒ:%'
+),
+slots AS (
+    SELECT Object_UUID, Layout_ID, File_Name, Raw_UUID,
+           unnest(formulas) AS raw_formula,
+           unnest(range(len(formulas))) AS Disp_Index
+    FROM tok
+),
+formulas AS (
+    SELECT s.Object_UUID, s.Layout_ID, s.File_Name,
+           regexp_replace(regexp_replace(s.raw_formula, '^%[A-Z]+:', ''), '"[^"]*"', '', 'g') AS formula_noliterals
+    FROM slots s
+    WHERE NOT EXISTS (
+        SELECT 1 FROM DDR_ChunkListContexts ctx
+        WHERE ctx.Calc_UUID = '_' || s.Raw_UUID || '_DisplayCalculations_' || s.Disp_Index
+          AND ctx.File_Name = s.File_Name
+    )
 )
 SELECT DISTINCT
     v.var_name as Variable_Name,
@@ -1503,6 +1582,12 @@ CREATE INDEX idx_layoutobjectconditions_owner ON LayoutObjectConditions(Object_U
 -- laut Claris-Doku case-insensitiv tippbar ({{currenttime}} ≡ {{CurrentTime}}).
 -- Dedup analog A.12/P4 lo_rep: LayoutObjects kann Doppel-Zeilen je
 -- (Object_UUID, File_Name) tragen.
+-- Is_Evaluated (Schema 1.33.0): Seit Text_Content auch Button-Beschriftungen
+-- trägt, führt das Inventar auch deren Symbole. FileMaker wertet {{…}} aber nur
+-- im Textobjekt (kind 2) aus; in Buttons (kind 10) und Popover-Buttons (kind 14)
+-- bleibt das Symbol wörtlich stehen. P4 legt Kanten und Get-Knoten nur für
+-- ausgewertete Symbole an; die übrigen meldet die Testregel
+-- layout_button_label_symbol.
 -- FieldDisplayNames (Schema 1.29.0, SaXML 2.3.0.0 / FileMaker 26): die JSON-
 -- Elemente der Feld-Anzeigenamen-Formel (FieldsForTables.DisplayNames_Calc_Text),
 -- eine Zeile je Element. FileMaker schreibt die Formel im Dialog „Anzeigenamen"
@@ -1548,13 +1633,13 @@ WHERE m.k IS NOT NULL AND m.k <> '';
 DROP TABLE IF EXISTS LayoutObjectSymbols;
 CREATE TABLE LayoutObjectSymbols AS
 WITH lo_dedup AS (
-    SELECT Object_UUID, Layout_ID, File_Name, Text_Content,
+    SELECT Object_UUID, Layout_ID, File_Name, Text_Content, Object_Kind,
            ROW_NUMBER() OVER (PARTITION BY Object_UUID, File_Name ORDER BY Object_ID) AS rn
     FROM LayoutObjects
     WHERE Text_Content LIKE '%{{%'
 ),
 sym AS (
-    SELECT Object_UUID, Layout_ID, File_Name,
+    SELECT Object_UUID, Layout_ID, File_Name, Object_Kind,
            unnest(regexp_extract_all(Text_Content, '\{\{\s*([A-Za-z][A-Za-z0-9]*)\s*\}\}', 1)) AS Symbol_Text
     FROM lo_dedup
     WHERE rn = 1
@@ -1565,7 +1650,8 @@ SELECT
     File_Name,
     Symbol_Text,
     lower(Symbol_Text) AS Symbol_Norm,
-    count(*)           AS Occurrence_Count
+    count(*)           AS Occurrence_Count,
+    (Object_Kind = 2)  AS Is_Evaluated
 FROM sym
 GROUP BY ALL;
 

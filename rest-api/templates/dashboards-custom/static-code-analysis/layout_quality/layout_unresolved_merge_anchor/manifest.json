@@ -1,8 +1,8 @@
 {
   "id": "layout_unresolved_merge_anchor",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "Unresolved merge anchor",
-  "description": "Layout-quality rule — a text object carries a merge-field anchor (<<Field>>) that FileMaker cannot resolve. Such an anchor is not dropped: it renders LITERALLY in browse and preview mode, so the user sees the raw <<Field>> where a value belongs. It also leaves no trace in the catalog — no displays_field edge, no object of its own — which makes this rule the only place it becomes visible. Detection compares the anchors in the text (merge variables <<$…>> and layout calculations <<ƒ:…>> excluded, a repetition or a TO qualification counting as one anchor) against the FieldReference entries of the object's structural FieldList, which holds exactly one entry per resolved anchor. Counting decides the finding; the named suspects are a best effort and stay empty when the names cannot be matched safely.",
+  "description": "Layout-quality rule — a text object, button or popover button carries a merge-field anchor (<<Field>>) that FileMaker cannot resolve. Such an anchor is not dropped: it renders LITERALLY in browse and preview mode, so the user sees the raw <<Field>> where a value belongs. It also leaves no trace in the catalog — no displays_field edge, no object of its own — which makes this rule the only place it becomes visible. Detection compares the anchors in the text (merge variables <<$…>> and layout calculations <<ƒ:…>> excluded, a repetition or a TO qualification counting as one anchor) against the FieldReference entries of the object's structural FieldList, which holds exactly one entry per resolved anchor. Counting decides the finding; the named suspects are a best effort and stay empty when the names cannot be matched safely. Buttons and popover buttons never get a FieldList, but FileMaker evaluates typed anchors in their label at runtime; their anchors are therefore compared against the fields the converter resolves from the label text (unqualified anchors always against the layout's table occurrence).",
   "author": "fm-lab rules",
   "icon": "unlink",
   "category": "layout_quality",
@@ -23,7 +23,7 @@
       "author": "fm-lab rules",
       "source": "fm-lab",
       "url": null,
-      "description": "A <<Field>> merge anchor on a layout text object with no entry in the object's structural FieldList. Unresolved anchors render literally at runtime and are invisible in the catalog.",
+      "description": "A <<Field>> merge anchor on a layout text object, button or popover button that resolves to no field (text objects: no entry in the structural FieldList; buttons: no field resolved from the label text). Unresolved anchors render literally at runtime and are invisible in the catalog.",
       "created": "2026-09-12",
       "references": []
     }

@@ -1,7 +1,18 @@
 ---
 name: fm-graph-cluster
-version: 0.10.0
-description: Segments the FileMaker object graph in `db/fm_catalog.duckdb` into modules (communities) - sweeps candidate resolutions and scores them (modularity Q + distribution guardrails), runs the winner, names the communities semantically (`CommunityNames.Semantic_Name`), writes a run protocol to `output/` and syncs the named partition to the Graph Explorer. Use it to create or re-name the segmentation; for a solution-level research report (business context, architecture, findings, recommendations) use `fm-deep-research` instead. Orchestrates the existing tools/graph-export tooling (cluster.sh, cluster_louvain.mjs/cluster_leiden.py, cluster_load.sql); it does not replace it. Triggers (English) - "/fm-graph-cluster", "cluster the graph", "detect communities/modules", "name the clusters", "segment the solution into modules". Triggers (German) - "clustere den Graph", "finde die Module/Communities", "benenne die Cluster", "segmentiere die Lösung in Module". Triggers (Spanish) - "agrupa el grafo", "segmenta la solución en módulos". Triggers (French) - "regroupe le graphe", "segmente la solution en modules". Triggers (Italian) - "raggruppa il grafo", "segmenta la soluzione in moduli". Triggers (Dutch) - "cluster de graaf", "segmenteer de oplossing in modules". Triggers (Portuguese) - "agrupe o grafo", "segmente a solução em módulos". Triggers (Swedish) - "klustra grafen", "segmentera lösningen i moduler". Triggers (Japanese) - "グラフをクラスタリングして", "ソリューションをモジュールに分割して". Triggers (Korean) - "그래프를 클러스터링해 줘", "솔루션을 모듈로 분할해 줘". Triggers (Chinese) - "对图进行聚类", "将解决方案划分为模块".
+description: >-
+  Segments the FileMaker object graph in `db/fm_catalog.duckdb` into modules (communities): sweeps
+  candidate resolutions and scores them (modularity Q + distribution guardrails), runs the winner,
+  names the communities semantically (`CommunityNames.Semantic_Name`), writes a run protocol to
+  `output/` and syncs the named partition to the Graph Explorer. Orchestrates the existing
+  tools/graph-export tooling (cluster.sh, Louvain/Leiden, cluster_load.sql) rather than replacing
+  it. Use it to create or re-name the segmentation; for a solution-level research report use
+  `fm-deep-research` instead. Triggers (English): "/fm-graph-cluster", "cluster the graph",
+  "detect communities/modules", "name the clusters", "segment the solution into modules". Triggers
+  (German): "clustere den Graph", "finde die Module/Communities", "benenne die Cluster",
+  "segmentiere die Lösung in Module". Also responds to equivalent requests in other languages.
+metadata:
+  version: "0.9.14"
 ---
 
 # FileMaker Graph Clustering & Semantic Naming
@@ -203,3 +214,18 @@ winner; `Semantic_Name` filled for the dirty rest ≥ threshold via `UPDATE`; `c
 - `scripts/rule_names.sql` (E.1), `scripts/naming_hints.sql`, `scripts/hubs.sql`, `scripts/community_list.sql`, `scripts/write_cluster_json.sh`
 - `../_shared/scripts/cluster_state.sh`, `../_shared/scripts/cluster_run_named.sh`, `../_shared/scripts/community_members.sql` (shared with `fm-deep-research`)
 - `tools/graph-export/README.md` — engine, cache, `cluster.sh` env knobs
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "agrupa el grafo", "segmenta la solución en módulos".
+- **French:** "regroupe le graphe", "segmente la solution en modules".
+- **Italian:** "raggruppa il grafo", "segmenta la soluzione in moduli".
+- **Dutch:** "cluster de graaf", "segmenteer de oplossing in modules".
+- **Portuguese:** "agrupe o grafo", "segmente a solução em módulos".
+- **Swedish:** "klustra grafen", "segmentera lösningen i moduler".
+- **Japanese:** "グラフをクラスタリングして", "ソリューションをモジュールに分割して".
+- **Korean:** "그래프를 클러스터링해 줘", "솔루션을 모듈로 분할해 줘".
+- **Chinese:** "对图进行聚类", "将解决方案划分为模块".

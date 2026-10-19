@@ -1095,6 +1095,8 @@ const MERGE_ANCHOR_RE = /<<ƒ:([\s\S]*?)>>|<<(\$[^>]*?)>>|<<([^>]+?)>>|\{\{([^}]
  *   - symbols:     [{ text, norm, valid }]      LayoutObjectSymbols + Kanon-Check
  *   - toBaseTable: { lower(TO-Name) → BaseTable-Name } (File-skopiert)
  *   - layoutTOName: Kontext-TO des Layouts (qualifiziert unqualifizierte Anker)
+ *   - evaluateSymbols: false für Button-/Popover-Button-Beschriftungen — dort
+ *                  bleiben {{Symbole}} wörtlich und zählen nicht als Anker
  *
  * Feld-Match: qualifizierter Anker `TO::Feld` über TO→BaseTable, sonst über
  * das Kontext-TO des Layouts; Fallback genau EINE namensgleiche Kante.
@@ -1112,6 +1114,7 @@ function synthesizeMergeTextTokens(textContent, ctx) {
   const symbols = (ctx && Array.isArray(ctx.symbols)) ? ctx.symbols : [];
   const toBaseTable = (ctx && ctx.toBaseTable) || {};
   const layoutTOName = (ctx && ctx.layoutTOName) || null;
+  const evaluateSymbols = !(ctx && ctx.evaluateSymbols === false);
   const lower = (s) => String(s).toLowerCase();
 
   const tokens = [];
@@ -1190,7 +1193,12 @@ function synthesizeMergeTextTokens(textContent, ctx) {
       }
       continue;
     }
-    // {{Symbol}}
+    // {{Symbol}} — in Button-Beschriftungen wertet FileMaker Symbole nicht aus:
+    // dort bleiben sie wörtlicher Text und zählen nicht als Anker.
+    if (!evaluateSymbols) {
+      pushText(m[0]);
+      continue;
+    }
     anchorsTotal += 1;
     const symName = m[4].trim();
     const sym = symbols.find(s => s && s.norm != null && lower(s.norm) === lower(symName));

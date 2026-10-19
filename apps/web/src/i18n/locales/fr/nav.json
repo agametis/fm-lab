@@ -50,11 +50,11 @@
     "tree": "Hiérarchie"
   },
   "form": {
-    "searchLabel": "Rechercher par nom :",
+    "searchLabel": "Rechercher par nom / UUID :",
     "filterLabel": "Filtre :",
     "searchPlaceholder": "p. ex. Import, Email (vide = tous les objets)",
     "filterPlaceholder": "Filtrer la hiérarchie par nom",
-    "searchTitle": "Le caractère générique * correspond à n’importe quel caractère (p. ex. *Import, Email*). Laisser vide pour tous les objets.",
+    "searchTitle": "Le caractère générique * correspond à n’importe quel caractère (p. ex. *Import, Email*). Laisser vide pour tous les objets. Un UUID complet trouve directement l’objet ; id:42 recherche par ID FileMaker (unique uniquement par fichier).",
     "filterTitle": "Les éléments contenant ce texte sont mis en évidence (y compris les dossiers parents)",
     "fileLabel": "Fichier :",
     "allFiles": "Tous les fichiers",

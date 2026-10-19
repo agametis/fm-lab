@@ -323,7 +323,11 @@
     "filterByCategory": "Filtrera efter {{category}}",
     "graphButton": "Graf",
     "valueListMatch": "Värden",
-    "spellingMatch": "Stavning"
+    "spellingMatch": "Stavning",
+    "uuidMatch": "Träff via UUID",
+    "healedUuidMatch": "Träff via UUID (dubblett)",
+    "healedUuidTitle": "FileMaker för detta objekt under det sökta UUID:t; eftersom UUID:t förekom flera gånger i exporten ligger det i katalogen under ett ersättnings-UUID.",
+    "idMatch": "Träff via ID {{id}}"
   },
   "scriptSearchFilter": {
     "searchAria": "Sök referenser",

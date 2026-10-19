@@ -207,6 +207,7 @@ bash tools/stop-servers.sh     # stop servers
 
 - [`Documentation.md`](docs/fm-lab/Documentation.md) — Full project documentation (work in progress)
 - [`CLAUDE.md`](CLAUDE.md) — the agent guide (workflows, rules, skill routing); detailed references live in [`docs/agents/`](docs/agents/) (schema & link roles, query cookbook, pipeline internals, codegen workflows)
+- [Presentation "Building an AI Coding Harness for FileMaker"](https://youtu.be/vqk7O5w6gXw?si=wEVxCBPIb7l7JhO_) — EngageU 2026 Session recording on YouTube (60 minutes)
 
 ## Status
 
@@ -265,9 +266,27 @@ _One interface to rule them all — in your personal style of workflow:_
 - All possible extensions
 - All in one Interface
 
+## Learn more on YouTube
+
+Watch the full presentation:
+- What it is
+- How it works
+- Why it matters
+
+<a href="https://youtu.be/vqk7O5w6gXw">
+  <img
+    src="docs/fm-lab/Assets/Video-Thumbnail.jpg"
+    alt="Watch the full session on YouTube"
+    width="800"
+  >
+</a>
+
+**EngageU 2026 Conference Session:**  
+[Building an AI Coding Harness for FileMaker](https://youtu.be/vqk7O5w6gXw?si=wEVxCBPIb7l7JhO_) — YouTube (60 minutes)
+
 ## Recognition
 
-![FM-Lab](FMM-Award.jpg)
+![FM-Lab](docs/fm-lab/Assets/FMM-Award.jpg)
 
 🏆 Winner of the [FileMaker Magazin Award 2026](https://filemaker-magazin.de/magazin/fmm-award-preistraeger/) — Best FileMaker Tool
 

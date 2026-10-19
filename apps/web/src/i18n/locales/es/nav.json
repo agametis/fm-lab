@@ -50,11 +50,11 @@
     "tree": "Jerarquía"
   },
   "form": {
-    "searchLabel": "Buscar por nombre:",
+    "searchLabel": "Buscar por nombre / UUID:",
     "filterLabel": "Filtro:",
     "searchPlaceholder": "p. ej. Import, Email (vacío = todos los objetos)",
     "filterPlaceholder": "Filtrar la jerarquía por nombre",
-    "searchTitle": "El comodín * coincide con cualquier carácter (p. ej. *Import, Email*). Deja vacío para todos los objetos.",
+    "searchTitle": "El comodín * coincide con cualquier carácter (p. ej. *Import, Email*). Deja vacío para todos los objetos. Un UUID completo encuentra el objeto directamente; id:42 busca por ID de FileMaker (única solo por archivo).",
     "filterTitle": "Los elementos que contienen este texto se resaltan (incluidas las carpetas padre)",
     "fileLabel": "Archivo:",
     "allFiles": "Todos los archivos",

@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Symbol i knappetikett",
+    "description": "Layoutkvalitetsregel — en knapp eller popoverknapp har en {{Symbol}} i sin etikett. FileMaker utvärderar symboler bara i textobjekt; i en knappetikett ersätts symbolen aldrig utan visas BOKSTAVLIGT i bläddrings- och förhandsgranskningsläget, även en giltig Get-parameter som {{CurrentDate}}. Sammanfogningsfält, sammanfogningsvariabler och layoutberäkningar i samma etikett utvärderas däremot — symbolen är alltså den enda ankartyp som där tyst inte gör något. Rapporteras som information, eftersom den bokstavliga texten kan vara avsiktlig.",
+    "messages.not-evaluated": "Symboler utvärderas inte i en knappetikett — den återges bokstavligt"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Träffar",
+    "summary_kpi.props.items[1].label": "Olika symboler",
+    "summary_kpi.props.items[2].label": "Berörda layouter",
+    "summary_kpi.props.items[3].label": "Berörda filer",
+    "findings_card.props.title": "Symbol i knappetikett",
+    "findings_table.props.searchPlaceholder": "Sök fil, layout, objekt eller symbol…",
+    "findings_table.props.empty.message": "Inga symboler i knappetiketter hittades.",
+    "findings_table.props.columns[0].label": "Fil",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Symbol",
+    "findings_table.props.columns[4].label": "Förekomster",
+    "findings_table.props.columns[7].label": "Bredd",
+    "findings_table.props.columns[8].label": "Höjd"
+  }
+}

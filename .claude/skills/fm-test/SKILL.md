@@ -1,7 +1,17 @@
 ---
 name: fm-test
-version: 0.1.0
-description: Runs Analysis Tests (curated, declared collections of SCA rule dashboards and custom queries with a compact result model) against the DuckDB catalog `db/fm_catalog.duckdb` — in solution, file, object, object-list or cluster scope — and reports the default results plus severity-sorted findings. Also discovers matching tests without running them (`--find`). Prefers the REST API (`GET /api/tests/:id/run`), falls back to a direct duckdb path when no server runs. Triggers (English) - "/fm-test", "run the error checks on script X", "test this script", "is something wrong with X", "which tests exist for scripts". Triggers (German) - "/fm-test", "führe die Error-Checks auf Script X aus", "teste dieses Script", "stimmt mit X etwas nicht", "welche Tests gibt es für Scripts". Triggers (Spanish) - "ejecuta las pruebas en el script X", "¿qué pruebas existen para scripts?". Triggers (French) - "exécute les tests sur le script X", "quels tests existent pour les scripts ?". Triggers (Italian) - "esegui i test sullo script X", "quali test esistono per gli script?". Triggers (Dutch) - "voer de tests uit op script X", "welke tests bestaan er voor scripts?". Triggers (Portuguese) - "execute os testes no script X", "quais testes existem para scripts?". Triggers (Swedish) - "kör testerna på skript X", "vilka tester finns för skript?". Triggers (Japanese) - "スクリプトXのテストを実行して", "スクリプト用のテストは何がありますか". Triggers (Korean) - "스크립트 X 테스트 실행해 줘", "스크립트용 테스트는 무엇이 있나요". Triggers (Chinese) - "对脚本 X 运行测试", "有哪些针对脚本的测试".
+description: >-
+  Runs Analysis Tests (curated, declared collections of SCA rule dashboards and custom queries
+  with a compact result model) against the DuckDB catalog `db/fm_catalog.duckdb` — in solution,
+  file, object, object-list or cluster scope — and reports the default results plus
+  severity-sorted findings. Also discovers matching tests without running them (`--find`). Prefers
+  the REST API (`GET /api/tests/:id/run`), falls back to a direct duckdb path when no server runs.
+  Triggers (English): "/fm-test", "run the error checks on script X", "test this script", "is
+  something wrong with X", "which tests exist for scripts". Triggers (German): "/fm-test", "führe
+  die Error-Checks auf Script X aus", "teste dieses Script", "stimmt mit X etwas nicht", "welche
+  Tests gibt es für Scripts". Also responds to equivalent requests in other languages.
+metadata:
+  version: "0.1.0"
 ---
 
 # Analysis Tests Runner
@@ -184,3 +194,18 @@ Per test:
 Offer follow-ups where they fit: `fm-show <object> --references` (deep link),
 `fm-analyze <object>` (business interpretation), or the matching pattern from
 `docs/agents/analysis-patterns.md` for reconstruction questions.
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "ejecuta las pruebas en el script X", "¿qué pruebas existen para scripts?".
+- **French:** "exécute les tests sur le script X", "quels tests existent pour les scripts ?".
+- **Italian:** "esegui i test sullo script X", "quali test esistono per gli script?".
+- **Dutch:** "voer de tests uit op script X", "welke tests bestaan er voor scripts?".
+- **Portuguese:** "execute os testes no script X", "quais testes existem para scripts?".
+- **Swedish:** "kör testerna på skript X", "vilka tester finns för skript?".
+- **Japanese:** "スクリプトXのテストを実行して", "スクリプト用のテストは何がありますか".
+- **Korean:** "스크립트 X 테스트 실행해 줘", "스크립트용 테스트는 무엇이 있나요".
+- **Chinese:** "对脚本 X 运行测试", "有哪些针对脚本的测试".

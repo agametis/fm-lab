@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Simbolo nell'etichetta di un pulsante",
+    "description": "Regola di qualità dei layout — un pulsante o un pulsante popover contiene un {{Simbolo}} nella sua etichetta. FileMaker valuta i simboli solo negli oggetti di testo; nell'etichetta di un pulsante il simbolo non viene mai sostituito e compare LETTERALMENTE in modalità Usa e Anteprima, anche un parametro di Get valido come {{CurrentDate}}. I campi uniti, le variabili unite e i calcoli di layout digitati nella stessa etichetta vengono invece valutati: il simbolo è quindi l'unico tipo di ancora che lì non fa nulla senza avvisare. Segnalato come informazione, perché il testo letterale può essere voluto.",
+    "messages.not-evaluated": "I simboli non vengono valutati nell'etichetta di un pulsante — viene reso letteralmente"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Rilievi",
+    "summary_kpi.props.items[1].label": "Simboli distinti",
+    "summary_kpi.props.items[2].label": "Layout interessati",
+    "summary_kpi.props.items[3].label": "File interessati",
+    "findings_card.props.title": "Simbolo nell'etichetta di un pulsante",
+    "findings_table.props.searchPlaceholder": "Cerca file, layout, oggetto o simbolo…",
+    "findings_table.props.empty.message": "Nessun simbolo trovato nelle etichette dei pulsanti.",
+    "findings_table.props.columns[0].label": "File",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Oggetto",
+    "findings_table.props.columns[3].label": "Simbolo",
+    "findings_table.props.columns[4].label": "Occorrenze",
+    "findings_table.props.columns[7].label": "Larghezza",
+    "findings_table.props.columns[8].label": "Altezza"
+  }
+}

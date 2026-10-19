@@ -1,7 +1,15 @@
 ---
 name: fm-generate-script
-version: 0.9.12
-description: Generates FileMaker scripts as paste-ready fmxmlsnippet XML through a reference-driven pipeline - canonical text draft, deterministic lint, object-reference resolution against the DuckDB catalog (real IDs, machine-readable resolution report), table-driven XML emission from fm_spec.duckdb, and a three-layer validation gate. Successor of filemaker-script-erzeugen. Triggers (English) - "create a FileMaker script", "generate a script for X", "build an fmxmlsnippet". Triggers (German) - "erstelle ein FileMaker-Script", "generiere ein Script fuer X", "baue ein Script-Snippet".
+description: >-
+  Generates FileMaker scripts as paste-ready fmxmlsnippet XML through a reference-driven pipeline
+  - canonical text draft, deterministic lint, object-reference resolution against the DuckDB
+  catalog (real IDs, machine-readable resolution report), table-driven XML emission from
+  fm_spec.duckdb, and a three-layer validation gate. Successor of filemaker-script-erzeugen.
+  Triggers (English): "create a FileMaker script", "generate a script for X", "build an
+  fmxmlsnippet". Triggers (German): "erstelle ein FileMaker-Script", "generiere ein Script fuer
+  X", "baue ein Script-Snippet". Also responds to equivalent requests in other languages.
+metadata:
+  version: "0.9.12"
 ---
 
 # fm-generate-script — reference-driven FileMaker script generation
@@ -374,3 +382,18 @@ ActionScript / FMUpgradeTool), not part of this skill yet.
 - Function/step documentation: use the `filemaker-function-reference` and
   `mbs-function-reference` skills; grammar ad hoc via
   `duckdb reference/fm_spec.duckdb -c "..."`.
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "crea un script de FileMaker", "genera un script para X", "construye un fmxmlsnippet".
+- **French:** "crée un script FileMaker", "génère un script pour X", "construis un fmxmlsnippet".
+- **Italian:** "crea uno script FileMaker", "genera uno script per X", "costruisci un fmxmlsnippet".
+- **Dutch:** "maak een FileMaker-script", "genereer een script voor X", "bouw een fmxmlsnippet".
+- **Portuguese:** "crie um script do FileMaker", "gere um script para X", "construa um fmxmlsnippet".
+- **Swedish:** "skapa ett FileMaker-skript", "generera ett skript för X", "bygg ett fmxmlsnippet".
+- **Japanese:** "FileMakerスクリプトを作成して", "Xのスクリプトを生成して", "fmxmlsnippetを作って".
+- **Korean:** "FileMaker 스크립트 만들어 줘", "X용 스크립트 생성해 줘", "fmxmlsnippet 만들어 줘".
+- **Chinese:** "创建一个 FileMaker 脚本", "为 X 生成一个脚本", "构建一个 fmxmlsnippet".

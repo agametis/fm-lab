@@ -31,7 +31,10 @@ The `error` tier is reference-level breakage: broken field and value-list refere
 | Layout uses the Classic theme | warning | Legacy-metric layouts that miss modern style features and slow WebDirect | fmCheckMate |
 | Copied object name | warning | Named objects with copy/paste suffixes or duplicate names — name-based references hit the wrong object | fmCheckMate |
 | Object name wrapped in quotes | warning | Quoted names that break `GetLayoutObjectAttribute` / Go to Object | fmCheckMate |
+| Invalid layout symbol | warning | `{{Symbols}}` in a text object that name no Get parameter — they render literally | fm-lab |
+| Unresolved merge anchor | warning | `<<Field>>` anchors in a text object or button label that resolve to no field — they render literally. An anchor on an external table occurrence is checked against the file that holds the base table; if that file is not part of the import, the anchor is not reported | fm-lab |
 | Button without action | info | Buttons with neither a script call nor a single-step action — review by context | fmCheckMate |
+| Symbol in button label | info | `{{Symbols}}` in a button or popover-button label — FileMaker evaluates merge fields, merge variables and layout calculations there, but never a symbol | fm-lab |
 | Group with a single object | info | Groups grouping nothing — leftovers after deleting the other members | fmCheckMate |
 | Degenerate layout object | info | Empty texts, zero-extent objects, objects below minimum size (sliders; lines excluded) | fm-lab |
 | Local CSS overrides | info | The share of objects styled past the theme — a ratio dashboard per layout, not per object | fmCheckMate |

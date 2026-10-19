@@ -8,6 +8,7 @@ Two scope notes: this history covers the **solution catalog** (`db/fm_catalog.du
 
 | Schema version | fm-lab version | Date |
 |---|---|---|
+| [1.33.0](#1330) | 0.9.14 | 2026-10-11 |
 | [1.32.0](#1320) | 0.9.12 | 2026-09-12 |
 | [1.31.0](#1310) | 0.9.12 | 2026-09-12 |
 | [1.30.0](#1300) | 0.9.12 | 2026-09-10 |
@@ -48,6 +49,35 @@ Two scope notes: this history covers the **solution catalog** (`db/fm_catalog.du
 | [1.0.0](#100) | — | 2026-05-13 |
 
 ## Changes by version
+
+### 1.33.0
+
+Button and popover-button labels (converter 2.33.0). [LayoutObjects](catalog-tables/LayoutObjects.md) reads
+its text, label and title columns through exactly one XML path per `@kind`
+instead of a fallback chain: `Text_Content` now carries the label of buttons
+(kind 10) and popover buttons (kind 14) — it was NULL for them, although
+FileMaker evaluates anchors typed into a label at runtime — and the new column
+`Title_Calculation_Text` holds the title formula of popover panels and tab
+panels (the popover-panel title used to stand in `Text_Content`). The typed
+anchors now resolve like in a text object: merge fields from the label text
+(`XMLLayoutReferences.Ref_Source = 'label_text'`, `displays_field` with subrole
+`label_text`; FileMaker never writes a `FieldList` for buttons), merge
+variables, and layout calculations `<<ƒ:…>>` — through the DDR anchor where
+FileMaker wrote one, otherwise as a `display_calculation` instance with the
+subrole `LabelText_<i>` whose references are matched from the formula text.
+[LayoutObjectSymbols](catalog-tables/LayoutObjectSymbols.md) gains `Is_Evaluated`: a `{{symbol}}` in a label is
+listed but never evaluated, so it gets no `displays_symbol` edge. Panel-title
+instances carry their `Formula_Text`. New P6 check `v_check_layout_text_paths`.
+The same release (converter 2.32.0, no DDL) stops FileMaker 26's padded
+`DisplayCalculations` anchors from producing edges: the twelve anchors of a
+layout calculation repeat the first slot's hash, and the hash-based resolution
+gave every padding slot its own copy of the field and function edges.
+Converter 2.34.0 (no DDL) completes the labels for external table occurrences:
+a typed anchor whose table occurrence is external resolves into the file that
+holds the base table, found through the base table's UUID, the file names in the
+data source's path and its name. When that file is not part of the import, the
+anchor stays unresolved without an edge and without a finding (new P6 check
+`v_check_label_anchor_external`).
 
 ### 1.32.0
 

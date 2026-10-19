@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "버튼 레이블의 기호",
+    "description": "레이아웃 품질 규칙 — 버튼 또는 팝오버 버튼의 레이블에 {{기호}}가 들어 있습니다. FileMaker는 텍스트 개체 안에서만 기호를 평가합니다. 버튼 레이블에서는 기호가 대체되지 않고 탐색 모드와 미리보기 모드에서 그대로 표시되며, {{CurrentDate}} 같은 유효한 Get 매개변수도 마찬가지입니다. 같은 레이블에 입력한 병합 필드, 병합 변수, 레이아웃 계산은 평가되므로, 기호는 그곳에서 아무 경고 없이 동작하지 않는 유일한 앵커 유형입니다. 그대로의 텍스트가 의도된 것일 수 있으므로 정보로 보고합니다.",
+    "messages.not-evaluated": "버튼 레이블의 기호는 평가되지 않습니다 — 그대로 표시됩니다"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "발견 항목",
+    "summary_kpi.props.items[1].label": "서로 다른 기호",
+    "summary_kpi.props.items[2].label": "영향받는 레이아웃",
+    "summary_kpi.props.items[3].label": "영향받는 파일",
+    "findings_card.props.title": "버튼 레이블의 기호",
+    "findings_table.props.searchPlaceholder": "파일, 레이아웃, 개체 또는 기호 검색…",
+    "findings_table.props.empty.message": "버튼 레이블에서 기호를 찾지 못했습니다.",
+    "findings_table.props.columns[0].label": "파일",
+    "findings_table.props.columns[1].label": "레이아웃",
+    "findings_table.props.columns[2].label": "개체",
+    "findings_table.props.columns[3].label": "기호",
+    "findings_table.props.columns[4].label": "발생 횟수",
+    "findings_table.props.columns[7].label": "너비",
+    "findings_table.props.columns[8].label": "높이"
+  }
+}

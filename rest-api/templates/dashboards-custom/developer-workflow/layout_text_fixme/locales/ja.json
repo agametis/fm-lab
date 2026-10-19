@@ -1,10 +1,11 @@
 {
   "manifest": {
     "title": "レイアウトオブジェクトの FIXME マーカー",
-    "description": "「未完了作業」ファミリーのルール — レイアウトオブジェクトのテキスト、ツールチップ、またはラベル計算式に FIXME マーカー（FIXME, FIX ME, FIX IT, FIXIT）が含まれています。 FIXME は出荷済みの既知の不具合を示すため、重大度は warning です。 元ルールに対する意図的な強化です。大文字小文字を区別せず区切り文字も許容するため、内容が「TO DO」のテキストオブジェクトも検出できます。\n\nfmCheckMate チェック「FIXME」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "description": "「未完了作業」ファミリーのルール — レイアウトオブジェクトのテキスト（静的テキストまたはボタンラベル）、ツールチップ、ラベル計算式、またはタイトル計算式に FIXME マーカー（FIXME, FIX ME, FIX IT, FIXIT）が含まれています。 FIXME は出荷済みの既知の不具合を示すため、重大度は warning です。 元ルールに対する意図的な強化です。大文字小文字を区別せず区切り文字も許容するため、内容が「TO DO」のテキストオブジェクトも検出できます。\n\nfmCheckMate チェック「FIXME」 — https://github.com/mrwatson-de/fmCheckMate-XSLT",
     "messages.text": "テキスト内容の FIXME マーカー",
     "messages.tooltip": "ツールチップ計算式の FIXME マーカー",
-    "messages.label": "ラベル計算式の FIXME マーカー"
+    "messages.label": "ラベル計算式の FIXME マーカー",
+    "messages.title": "タイトル計算式の FIXME マーカー"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "検出数",

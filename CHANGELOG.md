@@ -12,6 +12,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ---
 
+## [0.9.14] — 2026-10-19
+
+<!-- components:auto --> *Components: schema 1.33.0 · xml-import 5.5.0 (converter 2.34.0) · fm-spec 2.9.0 · plugin-spec 1.2.0*
+
+Button labels become fully analyzable, objects can be found by UUID or FileMaker ID, and the skills follow the Agent Skills format so other agents load them too.
+
+- **Button & popover-button labels** — the XML import now reads what FileMaker actually shows and evaluates on a button (existing catalogs rebuild on the next import)
+  - **Labels in the catalog** — the label of buttons and popover buttons was missing from `LayoutObjects.Text_Content`; each layout-object type is now read through exactly one XML path, and the title formula of popover and tab panels moves into its own column `Title_Calculation_Text` instead of standing in for the text
+  - **Typed anchors resolve like in a text object** — FileMaker evaluates merge fields, merge variables and `<<ƒ:…>>` calculations typed into a label at runtime, although it writes no field list for buttons; they now produce where-used links (`displays_field` with subrole `label_text`) and calculation instances, including fields on external table occurrences resolved through the file that hosts them
+  - **New check** — `{{symbols}}` are *not* evaluated in button labels and render literally; the new rule *Symbol in button label* in the Layout Merge Anchors test reports them
+  - **Fix** — FileMaker 26 writes twelve display-calculation slots on every text object, of which only the first are real; the padding slots no longer produce phantom field, function and variable links
+- **Search by UUID or FileMaker ID** — the search field and `/api/search` find an object by its identity: a FileMaker UUID, the synthetic UUIDs fm-lab uses in deep links and API responses, import keys (`rel_…`, `part_…`, `trig_…`), or `id:<n>` for the numeric FileMaker ID. Identities match only as the whole term, never as a substring; the original UUID of a re-keyed duplicate finds all its siblings, and identity hits are listed first with a *Matched by UUID / ID* label
+- **Skills in the Agent Skills format** — every skill's frontmatter now follows the Agent Skills specification (a compact description with English and German triggers, further languages in the skill body, the version under `metadata`), so agents other than Claude Code load the fm-lab skills without dropping them
+
+---
+
 ## [0.9.13] — 2026-09-23
 
 <!-- components:auto --> *Components: schema 1.32.0 · xml-import 5.5.0 (converter 2.31.0) · fm-spec 2.9.0 · plugin-spec 1.2.0*
@@ -916,7 +932,8 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 <!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
      versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
      intentionally left unlinked and render as plain text. Add a line here per new tag. -->
-[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.13...HEAD
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.14...HEAD
+[0.9.14]: https://github.com/marcel-more/fm-lab/compare/v0.9.13...v0.9.14
 [0.9.13]: https://github.com/marcel-more/fm-lab/compare/v0.9.12...v0.9.13
 [0.9.12]: https://github.com/marcel-more/fm-lab/compare/v0.9.11...v0.9.12
 [0.9.11]: https://github.com/marcel-more/fm-lab/compare/v0.9.10...v0.9.11

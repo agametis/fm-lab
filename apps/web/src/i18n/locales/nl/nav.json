@@ -50,11 +50,11 @@
     "tree": "Hiërarchie"
   },
   "form": {
-    "searchLabel": "Zoeken op naam:",
+    "searchLabel": "Zoeken op naam / UUID:",
     "filterLabel": "Filter:",
     "searchPlaceholder": "bv. Import, Email (leeg = alle objecten)",
     "filterPlaceholder": "Hiërarchie filteren op naam",
-    "searchTitle": "Het wildcard * komt overeen met elk teken (bv. *Import, Email*). Laat leeg voor alle objecten.",
+    "searchTitle": "Het wildcard * komt overeen met elk teken (bv. *Import, Email*). Laat leeg voor alle objecten. Een volledige UUID vindt het object direct; id:42 zoekt op FileMaker-ID (alleen per bestand uniek).",
     "filterTitle": "Items die deze tekst bevatten worden gemarkeerd (inclusief bovenliggende mappen)",
     "fileLabel": "Bestand:",
     "allFiles": "Alle bestanden",

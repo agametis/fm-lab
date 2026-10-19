@@ -1,7 +1,14 @@
 ---
 name: filemaker-function-reference
-version: 0.8.9
-description: Lookup documentation for FileMaker functions and ScriptSteps via local DuckDB reference index and Claris-Online-Help mirror (or online fallback). Supports direct function lookup and thematic search. Triggers (English): "explain FileMaker function X", "what does X do", "show all FileMaker functions for [topic]". Triggers (German): "Was macht die Funktion X", "Erkläre mir die FileMaker Funktion X", "Welche FileMaker Funktionen gibt es für X". Triggers (Spanish): "¿Qué hace la función X?", "¿Qué funciones de FileMaker existen para X?". Triggers (French): "Que fait la fonction X ?", "Quelles fonctions FileMaker existent pour X ?". Triggers (Italian): "Cosa fa la funzione X?", "Quali funzioni FileMaker esistono per X?". Triggers (Dutch): "Wat doet de functie X?", "Welke FileMaker functies bestaan er voor X?". Triggers (Portuguese): "O que faz a função X?", "Quais funções do FileMaker existem para X?". Triggers (Swedish): "Vad gör funktionen X?", "Vilka FileMaker-funktioner finns för X?". Triggers (Japanese): "X関数は何をしますか", "Xに関するFileMaker関数を教えて". Triggers (Korean): "X 함수는 무엇을 하나요", "X 관련 FileMaker 함수 알려줘". Triggers (Chinese): "X 函数有什么作用", "有哪些关于 X 的 FileMaker 函数".
+description: >-
+  Lookup documentation for FileMaker functions and ScriptSteps via local DuckDB reference index
+  and Claris-Online-Help mirror (or online fallback). Supports direct function lookup and thematic
+  search. Triggers (English): "explain FileMaker function X", "what does X do", "show all
+  FileMaker functions for [topic]". Triggers (German): "Was macht die Funktion X", "Erkläre mir
+  die FileMaker Funktion X", "Welche FileMaker Funktionen gibt es für X". Also responds to
+  equivalent requests in other languages.
+metadata:
+  version: "0.8.9"
 ---
 
 You are an expert in FileMaker Pro and assist with the analysis of FileMaker functions and FileMaker scripts.
@@ -624,3 +631,18 @@ duckdb reference/fm_spec.duckdb -c "
 ```
 
 Reply to the user in their conversation language (here: English), the source is `docs/claris-help/en/content/patterncount.html`.
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "¿Qué hace la función X?", "¿Qué funciones de FileMaker existen para X?".
+- **French:** "Que fait la fonction X ?", "Quelles fonctions FileMaker existent pour X ?".
+- **Italian:** "Cosa fa la funzione X?", "Quali funzioni FileMaker esistono per X?".
+- **Dutch:** "Wat doet de functie X?", "Welke FileMaker functies bestaan er voor X?".
+- **Portuguese:** "O que faz a função X?", "Quais funções do FileMaker existem para X?".
+- **Swedish:** "Vad gör funktionen X?", "Vilka FileMaker-funktioner finns för X?".
+- **Japanese:** "X関数は何をしますか", "Xに関するFileMaker関数を教えて".
+- **Korean:** "X 함수는 무엇을 하나요", "X 관련 FileMaker 함수 알려줘".
+- **Chinese:** "X 函数有什么作用", "有哪些关于 X 的 FileMaker 函数".

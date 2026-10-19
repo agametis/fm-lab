@@ -92,9 +92,34 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
   //     englischen Namen; wer 'Seitennummer' sucht, landet auf
   //     'Get(PageNumber)' und soll sehen, warum.
   const matchedValues = (object.Object_Type === 'ValueList' || object.Object_Type === 'BuiltinFunction')
+    && !object.Match_Kind
     && typeof object.Matched_Values === 'string' && object.Matched_Values.length > 0
     ? object.Matched_Values
     : null;
+  // Treffer über die Identität (UUID / `id:<n>`) statt über den Namen — der
+  // Suchbegriff steht dann nicht im Namen, also wird gesagt, warum die Zeile da ist.
+  const identityMatch = (() => {
+    switch (object.Match_Kind) {
+      case 'uuid':
+        return { label: t('detail:objectListItem.uuidMatch'), title: undefined };
+      case 'healed_uuid':
+        return {
+          label: t('detail:objectListItem.healedUuidMatch'),
+          title: t('detail:objectListItem.healedUuidTitle') as string,
+        };
+      case 'object_id':
+      case 'function_id':
+      case 'step_id':
+        return { label: t('detail:objectListItem.idMatch', { id: object.Matched_Values ?? '' }), title: undefined };
+      default:
+        return null;
+    }
+  })();
+  const identityChip = identityMatch && (
+    <small className="object-value-match object-identity-match" title={identityMatch.title}>
+      <span className="value-match-label">{identityMatch.label}</span>
+    </small>
+  );
   // Lokalisierte Namensfassung eines Built-ins (nur mit ?lang= und nur, wenn
   // sie vom kanonischen Namen abweicht). Der kanonische Name bleibt der Titel —
   // er ist die Identität des Objekts.
@@ -234,10 +259,12 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
                 </>
               )}
             </small>
+            {identityChip}
           </div>
         ) : (
-          (object.File_Name || matchedValues) && (
+          (object.File_Name || matchedValues || identityChip) && (
             <div className="object-details">
+              {identityChip}
               {matchedValues && (
                 <small className="object-value-match" title={matchedValues}>
                   <span className="value-match-label">

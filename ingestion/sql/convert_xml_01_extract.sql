@@ -29,8 +29,25 @@
 --   die Namensmenge ändert; das würde jeden bestehenden Katalog grundlos als
 --   driftend melden. Die Retype-Logik selbst (convert_xml_01c_…) ist gelistet.
 
--- @SCHEMA_VERSION 1.32.0
--- @SCHEMA_VERSION_DATE 2026-09-12
+-- @SCHEMA_VERSION 1.33.0
+-- @SCHEMA_VERSION_DATE 2026-10-11
+-- @SCHEMA_CHANGELOG 1.33.0: Beschriftungen von Buttons und Popover-Buttons
+--   (Konverter 2.33.0): Text_Content, Label_Calculation_Text und die neue Spalte
+--   Title_Calculation_Text lesen je @kind genau einen XML-Pfad (Makros
+--   fm_layout_object_text/_label_calc/_title_calc, kein COALESCE-Fallback mehr).
+--   Text_Content trägt jetzt auch die Beschriftung von Buttons (kind 10) und
+--   Popover-Buttons (kind 14) — bisher NULL, obwohl FileMaker getippte Anker darin
+--   zur Laufzeit auswertet. Die Titelformel von PopoverPanel (kind 15) stand bisher
+--   per Fallback in Text_Content und steht jetzt in Title_Calculation_Text, zusammen
+--   mit der Titelformel der Tab-Panels (kind 12). Getippte Anker in Button-
+--   Beschriftungen wertet FileMaker zur Laufzeit aus und der Import löst sie
+--   jetzt auf: XMLLayoutReferences erhält Ref_Source ('field_list' |
+--   'label_text'; Merge-Felder aus dem Beschriftungstext, displays_field mit
+--   Subrole label_text), Merge-Variablen wie im Textobjekt, <<ƒ:…>>-Tokens ohne
+--   DDR-Anker als display_calculation-Instanz mit Calc_Kind_Raw/Edge_Subrole
+--   'LabelText_<i>'. LayoutObjectSymbols erhält Is_Evaluated (FALSE für Symbole
+--   in Beschriftungen — FileMaker wertet sie dort nicht aus; keine
+--   displays_symbol-Kante). Neue Spalten → MINOR-Bump (Master-Rebuild).
 -- @SCHEMA_CHANGELOG 1.32.0: Built-in-Funktionen auf die Standard-Referenz
 --   normalisiert (Konverter 2.29.0), neue Tabellen BuiltinFunctionIdentity
 --   (Object_UUID, Function_ID, Canonical_Name, Namespace — eine Zeile je
@@ -543,6 +560,43 @@ CREATE OR REPLACE MACRO fm_canon_layout_type(raw_type, kind, oxml) AS (
                                 ELSE 'Edit Box'
                             END
         ELSE raw_type
+    END
+);
+
+-- Sichtbarer Text eines Layoutobjekts (Schema 1.33.0): genau EIN Pfad je @kind,
+-- kein Fallback. Textobjekt, Button und Popover-Button tragen ihren Text in
+-- verschiedenen Wrappern; je kind existiert höchstens einer (korpus-verifiziert,
+-- 0 Überschneidungen). Gesteuert über @kind, weil @type lokalisiert ist. Getippte
+-- Anker in Button-Beschriftungen (<<Feld>>, <<$var>>, <<ƒ:…>>) wertet FileMaker
+-- zur Laufzeit aus wie im Textobjekt, deshalb gehören sie in dieselbe Spalte.
+--   2  Text            /LayoutObject/Text/StyledText/Data
+--   10 Button          /LayoutObject/Button/Label/Text/StyledText/Data
+--   14 Popover Button  /LayoutObject/PopoverButton/Label/Text/StyledText/Data
+CREATE OR REPLACE MACRO fm_layout_object_text(kind, oxml) AS (
+    CASE kind
+        WHEN 2  THEN xml_extract_text(oxml, '/LayoutObject/Text/StyledText/Data')[1]
+        WHEN 10 THEN xml_extract_text(oxml, '/LayoutObject/Button/Label/Text/StyledText/Data')[1]
+        WHEN 14 THEN xml_extract_text(oxml, '/LayoutObject/PopoverButton/Label/Text/StyledText/Data')[1]
+    END
+);
+
+-- Beschriftungsformel eines Layoutobjekts: Segmente einer Button-Leiste (kind 10)
+-- speichern ihre Beschriftung immer als Formel, auch statischen Text. Label-Text
+-- und Label-Formel schließen sich aus. Einen GroupedButton-Pfad gibt es nicht.
+CREATE OR REPLACE MACRO fm_layout_object_label_calc(kind, oxml) AS (
+    CASE kind
+        WHEN 10 THEN xml_extract_text(oxml, '/LayoutObject/Button/Label/Calculation/Text')[1]
+        WHEN 14 THEN xml_extract_text(oxml, '/LayoutObject/PopoverButton/Label/Calculation/Text')[1]
+    END
+);
+
+-- Titelformel von PopoverPanel (kind 15, Calc-Rolle popover_title) und
+-- Tab-Panel (kind 12, panel_title). Ein Popover-Segment einer Button-Leiste
+-- zeigt den Titel seines PopoverPanels als Beschriftung.
+CREATE OR REPLACE MACRO fm_layout_object_title_calc(kind, oxml) AS (
+    CASE kind
+        WHEN 15 THEN xml_extract_text(oxml, '/LayoutObject/Title/Text')[1]
+        WHEN 12 THEN xml_extract_text(oxml, '/LayoutObject/TabPanel/Calculation/Text')[1]
     END
 );
 
@@ -2500,7 +2554,7 @@ ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLU
 -- Identität aus den Knoten-Attributen (id/name) + <UUID>; Heilung im
 -- ValueListCatalog-Namensraum mit identischem Diskriminator (s. o.), damit die
 -- Options-Zeile eines geheilten Zwillings dieselbe Ersatz-UUID trägt.
--- Belegt an ingestion/fixtures/saxml/fmlab_coverage__saxml_v2_3_0_0__fm_v26_0_2__ddr_info.xml
+-- Belegt an ingestion/fixtures/saxml/fmlab_coverage__saxml_v2_3_0_0__fm_v26_0_3__ddr_info.xml
 -- (6 Wertelisten → 6 Zeilen; Konverter 2.23.0 lieferte 0).
 -- @P1_PROFILE:saxml23@
 WITH filename_normalized AS (
@@ -2895,7 +2949,7 @@ ON CONFLICT (CF_UUID, File_Name) DO UPDATE SET
 -- <CustomFunction> eingebettet; die separate <CalcsForCustomFunctions>-Sektion entfällt.
 -- Quelle ist das oben bereits geparste _cf_catalog_raw → KEIN zusätzlicher XML-Parse.
 -- Code_Chunks = NULL: das eingebettete <Calculation> trägt keine <ChunkList>
--- (ingestion/fixtures/saxml/fmlab_coverage__saxml_v2_3_0_0__fm_v26_0_2__ddr_info.xml) —
+-- (ingestion/fixtures/saxml/fmlab_coverage__saxml_v2_3_0_0__fm_v26_0_3__ddr_info.xml) —
 -- die Chunks bleiben über DDR_Hash → DDR_Calculations erreichbar. Ordner/Trenner
 -- werden über ihre Flags ausgeschlossen (ein fehlendes <Calculation> allein ist
 -- KEIN Ordner-Kriterium: leere Funktionen haben ebenfalls keins).
@@ -3670,8 +3724,8 @@ ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTH
 -- KEINE LayoutObjects (keine Bounds, keine eigene UUID) → Detailtabelle je
 -- (Layout, Spalte) + P4-Kante Layout→Field displays_field/table_view_column
 -- (Feldnutzung in der Tabellenansicht war bisher unsichtbar). Belegt an
--- ingestion/fixtures/saxml/fmlab_coverage__saxml_v2_3_0_0__fm_v26_0_2__ddr_info.xml
--- (20 Layouts mit TableView, 42 Spalten, davon 1 hidden).
+-- ingestion/fixtures/saxml/fmlab_coverage__saxml_v2_3_0_0__fm_v26_0_3__ddr_info.xml
+-- (26 Layouts mit TableView, 57 Spalten, davon 1 hidden).
 CREATE TABLE IF NOT EXISTS LayoutTableViewColumns (
     L_ID BIGINT,
     L_Name VARCHAR,
@@ -3933,6 +3987,7 @@ CREATE TABLE IF NOT EXISTS LayoutObjects (
     Hide_Calculation_Text VARCHAR,
     Tooltip_Calculation_Text VARCHAR,
     Label_Calculation_Text VARCHAR,
+    Title_Calculation_Text VARCHAR,     -- Titelformel PopoverPanel/Tab-Panel (Schema 1.33.0)
     ScriptTrigger_Parameter_Text VARCHAR,
     Entry_Options_Raw BIGINT,
     Entry_Browse VARCHAR,
@@ -4004,11 +4059,10 @@ root_objects AS (
         -- Calculation Text Extraction (CDATA aus XML)
         xml_extract_text(object_xml, '/LayoutObject/Conditions/Hide/Calculation/Text')[1] as Hide_Calculation_Text,
         xml_extract_text(object_xml, '/LayoutObject/Tooltip/Calculation/Text')[1] as Tooltip_Calculation_Text,
-        COALESCE(
-            xml_extract_text(object_xml, '/LayoutObject/Button/Label/Calculation/Text')[1],
-            xml_extract_text(object_xml, '/LayoutObject/GroupedButton/Label/Calculation/Text')[1],
-            xml_extract_text(object_xml, '/LayoutObject/PopoverButton/Label/Calculation/Text')[1]
-        ) as Label_Calculation_Text,
+        fm_layout_object_label_calc(
+            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::BIGINT, object_xml) as Label_Calculation_Text,
+        fm_layout_object_title_calc(
+            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::BIGINT, object_xml) as Title_Calculation_Text,
         array_to_string(
             xml_extract_text(object_xml, '/LayoutObject/ScriptTriggers/ScriptTrigger/ScriptReference/Calculation/Text'),
             E'\n'
@@ -4018,7 +4072,8 @@ root_objects AS (
         -- Formel steht NUR im 26er Export (SaXML 2.2.3.0 lässt sie weg).
         xml_extract_text(object_xml, '/LayoutObject/Field/Options')[1]::BIGINT as Entry_Options_Raw,
         xml_extract_text(object_xml, '/LayoutObject/CanEntryCalc/Calculation/Text')[1] as Entry_Calculation_Text,
-        xml_extract_text(object_xml, '/LayoutObject/Text/StyledText/Data')[1] as Text_Content,
+        fm_layout_object_text(
+            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::BIGINT, object_xml) as Text_Content,
         object_xml
     FROM parts_resolved
     CROSS JOIN LATERAL unnest(
@@ -4045,6 +4100,7 @@ nested_objects AS (
         Hide_Calculation_Text,
         Tooltip_Calculation_Text,
         Label_Calculation_Text,
+        Title_Calculation_Text,
         ScriptTrigger_Parameter_Text,
         Entry_Options_Raw,
         Entry_Calculation_Text,
@@ -4076,11 +4132,10 @@ nested_objects AS (
         -- Calculation Text Extraction (CDATA aus XML)
         xml_extract_text(child_xml, '/LayoutObject/Conditions/Hide/Calculation/Text')[1] as Hide_Calculation_Text,
         xml_extract_text(child_xml, '/LayoutObject/Tooltip/Calculation/Text')[1] as Tooltip_Calculation_Text,
-        COALESCE(
-            xml_extract_text(child_xml, '/LayoutObject/Button/Label/Calculation/Text')[1],
-            xml_extract_text(child_xml, '/LayoutObject/GroupedButton/Label/Calculation/Text')[1],
-            xml_extract_text(child_xml, '/LayoutObject/PopoverButton/Label/Calculation/Text')[1]
-        ) as Label_Calculation_Text,
+        fm_layout_object_label_calc(
+            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::BIGINT, child_xml) as Label_Calculation_Text,
+        fm_layout_object_title_calc(
+            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::BIGINT, child_xml) as Title_Calculation_Text,
         array_to_string(
             xml_extract_text(child_xml, '/LayoutObject/ScriptTriggers/ScriptTrigger/ScriptReference/Calculation/Text'),
             E'\n'
@@ -4090,12 +4145,8 @@ nested_objects AS (
         -- Formel steht NUR im 26er Export (SaXML 2.2.3.0 lässt sie weg).
         xml_extract_text(child_xml, '/LayoutObject/Field/Options')[1]::BIGINT as Entry_Options_Raw,
         xml_extract_text(child_xml, '/LayoutObject/CanEntryCalc/Calculation/Text')[1] as Entry_Calculation_Text,
-        -- PopoverPanel-Titel (Feldreferenzen) per Title/Text-Fallback
-        -- mitführen; reguläre Objekte haben nur StyledText/Data.
-        COALESCE(
-            xml_extract_text(child_xml, '/LayoutObject/Text/StyledText/Data')[1],
-            xml_extract_text(child_xml, '/LayoutObject/Title/Text')[1]
-        ) as Text_Content,
+        fm_layout_object_text(
+            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::BIGINT, child_xml) as Text_Content,
         child_xml as object_xml
     FROM nested_objects parent
     CROSS JOIN LATERAL unnest(
@@ -4177,6 +4228,7 @@ SELECT
     ws_restore(Hide_Calculation_Text) as Hide_Calculation_Text,
     ws_restore(Tooltip_Calculation_Text) as Tooltip_Calculation_Text,
     ws_restore(Label_Calculation_Text) as Label_Calculation_Text,
+    ws_restore(Title_Calculation_Text) as Title_Calculation_Text,
     ws_restore(ScriptTrigger_Parameter_Text) as ScriptTrigger_Parameter_Text,
     Entry_Options_Raw,
     -- Feld-Eingabe je Modus (Schema 1.31.0). Zwei Bits je Modus kodieren
@@ -4241,6 +4293,7 @@ ON CONFLICT (Object_UUID, File_Name) DO UPDATE SET
     Hide_Calculation_Text = EXCLUDED.Hide_Calculation_Text,
     Tooltip_Calculation_Text = EXCLUDED.Tooltip_Calculation_Text,
     Label_Calculation_Text = EXCLUDED.Label_Calculation_Text,
+    Title_Calculation_Text = EXCLUDED.Title_Calculation_Text,
     ScriptTrigger_Parameter_Text = EXCLUDED.ScriptTrigger_Parameter_Text,
     Entry_Options_Raw = EXCLUDED.Entry_Options_Raw,
     Entry_Browse = EXCLUDED.Entry_Browse,

@@ -26,7 +26,10 @@
 --      blind to them.
 --
 -- Never re-regex Text_Content for symbols: LayoutObjectSymbols (P3 A.13) is
--- the resolved inventory.
+-- the resolved inventory. Since the inventory also lists the symbols of button
+-- labels (which FileMaker never evaluates), the rule keeps to text objects —
+-- via Object_Kind, which every catalog carries, not via the newer
+-- LayoutObjectSymbols.Is_Evaluated column that says the same.
 --
 -- Why the comparison and not the edge: since converter 2.28.0 P4 writes a
 -- `displays_symbol` edge for every VALID symbol, so "symbol without edge" would
@@ -46,6 +49,11 @@ invalid AS (
     WHERE NOT EXISTS (SELECT 1 FROM ref.function_name_lookup f
                       WHERE f.chunk_role = 'getparameter'
                         AND lower(f.lookup_name) = s.Symbol_Norm)
+      -- Text objects only (kind 2): FileMaker evaluates symbols nowhere else;
+      -- in a button label every symbol stays literal (rule layout_button_label_symbol).
+      AND EXISTS (SELECT 1 FROM LayoutObjects k
+                  WHERE k.Object_UUID = s.Object_UUID AND k.File_Name = s.File_Name
+                    AND k.Object_Kind = 2)
 )
 SELECT 'layout-invalid-symbol' AS rule_id, 'warning' AS severity,
     i.File_Name AS file_name, ly.L_UUID AS nav_uuid, ly.L_Name AS layout_name,

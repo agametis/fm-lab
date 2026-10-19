@@ -1,7 +1,12 @@
 ---
 name: install-fmide-docs
-version: 0.8.5
-description: Download and install fmIDE documentation from the GitHub Wiki. Automatically checks for newer commits and prompts before replacing existing docs. Triggers (English): "install fmIDE docs", "update fmIDE documentation". Triggers (German): "installiere die fmIDE-Doku", "fmIDE-Dokumentation aktualisieren".
+description: >-
+  Download and install fmIDE documentation from the GitHub Wiki. Automatically checks for newer
+  commits and prompts before replacing existing docs. Triggers (English): "install fmIDE docs",
+  "update fmIDE documentation". Triggers (German): "installiere die fmIDE-Doku",
+  "fmIDE-Dokumentation aktualisieren". Also responds to equivalent requests in other languages.
+metadata:
+  version: "0.8.5"
 ---
 
 # fmIDE Documentation Installation Skill
@@ -164,3 +169,18 @@ ERROR: [specific error message]
 - The script is safe to run multiple times
 - Source: https://github.com/fmIDE/fmIDE/wiki
 - After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.py`, so the web home dashboard's Docs card can list it.
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "instalar la documentación de fmIDE", "actualizar la documentación de fmIDE".
+- **French:** "installer la documentation fmIDE", "mettre à jour la documentation fmIDE".
+- **Italian:** "installa la documentazione fmIDE", "aggiorna la documentazione fmIDE".
+- **Dutch:** "installeer de fmIDE-documentatie", "fmIDE-documentatie bijwerken".
+- **Portuguese:** "instalar a documentação do fmIDE", "atualizar a documentação do fmIDE".
+- **Swedish:** "installera fmIDE-dokumentationen", "uppdatera fmIDE-dokumentationen".
+- **Japanese:** "fmIDEドキュメントをインストール", "fmIDEドキュメントを更新".
+- **Korean:** "fmIDE 문서 설치", "fmIDE 문서 업데이트".
+- **Chinese:** "安装 fmIDE 文档", "更新 fmIDE 文档".

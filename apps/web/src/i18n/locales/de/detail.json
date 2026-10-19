@@ -339,7 +339,11 @@
     "filterByCategory": "Filter auf {{category}}",
     "graphButton": "Graph",
     "valueListMatch": "Werte",
-    "spellingMatch": "Schreibweise"
+    "spellingMatch": "Schreibweise",
+    "uuidMatch": "Treffer über UUID",
+    "healedUuidMatch": "Treffer über UUID (Dublette)",
+    "healedUuidTitle": "FileMaker führt dieses Objekt unter der gesuchten UUID; weil sie im Export mehrfach vorkam, steht es im Katalog unter einer Ersatz-UUID.",
+    "idMatch": "Treffer über ID {{id}}"
   },
   "scriptSearchFilter": {
     "searchAria": "Refs durchsuchen",

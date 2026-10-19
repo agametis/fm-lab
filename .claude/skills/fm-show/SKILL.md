@@ -1,25 +1,16 @@
 ---
 name: fm-show
-version: 0.8.9
-description: >
-  Opens a FileMaker object in the FM-Lab web frontend (browser deep link) —
-  detail view by default, references or graph view via flags; works from inside
-  the dev container by opening the browser on the host. Use fm-open instead to
-  jump to the object in FileMaker Pro itself. Triggers (English): "/fm-show",
-  "show this in FM-Lab", "open in the web frontend", "show the references in
-  the browser", "show the callers in FM-Lab", "show this in the graph".
-  Triggers (German): "zeig das in FM-Lab", "im Web-Frontend öffnen", "zeig die
-  Referenzen im Browser", "zeig die Aufrufer in FM-Lab", "zeig das im Graph".
-  Triggers (Spanish): "muestra esto en FM-Lab", "muestra las referencias en el
-  navegador". Triggers (French): "montre ça dans FM-Lab", "montre les
-  références dans le navigateur". Triggers (Italian): "mostra questo in
-  FM-Lab", "mostra i riferimenti nel browser". Triggers (Dutch): "toon dit in
-  FM-Lab", "toon de referenties in de browser". Triggers (Portuguese): "mostre
-  isto no FM-Lab", "mostre as referências no navegador". Triggers (Swedish):
-  "visa detta i FM-Lab", "visa referenserna i webbläsaren". Triggers
-  (Japanese): "これをFM-Labで表示して", "参照をブラウザで表示して". Triggers
-  (Korean): "이것을 FM-Lab에서 보여 줘", "참조를 브라우저에서 보여 줘".
-  Triggers (Chinese): "在 FM-Lab 中显示这个", "在浏览器中显示引用".
+description: >-
+  Opens a FileMaker object in the FM-Lab web frontend (browser deep link) — detail view by
+  default, references or graph view via flags; works from inside the dev container by opening the
+  browser on the host. Use fm-open instead to jump to the object in FileMaker Pro itself. Triggers
+  (English): "/fm-show", "show this in FM-Lab", "open in the web frontend", "show the references
+  in the browser", "show the callers in FM-Lab", "show this in the graph". Triggers (German):
+  "zeig das in FM-Lab", "im Web-Frontend öffnen", "zeig die Referenzen im Browser", "zeig die
+  Aufrufer in FM-Lab", "zeig das im Graph". Also responds to equivalent requests in other
+  languages.
+metadata:
+  version: "0.8.9"
 ---
 
 # fm-show — Show a FileMaker object in the FM-Lab web frontend
@@ -235,3 +226,18 @@ FM-Lab → Field "Status Umsatzsteuer Nr" (references) opened at http://localhos
 - `.claude/skills/_shared/resolve-object.md` — read before resolving (step 1).
 - `scripts/resolve_base_url.sh` — base-URL probe chain (step 2).
 - `.claude/skills/_shared/scripts/open_url.sh` — the only open mechanism (step 4).
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "muestra esto en FM-Lab", "muestra las referencias en el navegador".
+- **French:** "montre ça dans FM-Lab", "montre les références dans le navigateur".
+- **Italian:** "mostra questo in FM-Lab", "mostra i riferimenti nel browser".
+- **Dutch:** "toon dit in FM-Lab", "toon de referenties in de browser".
+- **Portuguese:** "mostre isto no FM-Lab", "mostre as referências no navegador".
+- **Swedish:** "visa detta i FM-Lab", "visa referenserna i webbläsaren".
+- **Japanese:** "これをFM-Labで表示して", "参照をブラウザで表示して".
+- **Korean:** "이것을 FM-Lab에서 보여 줘", "참조를 브라우저에서 보여 줘".
+- **Chinese:** "在 FM-Lab 中显示这个", "在浏览器中显示引用".

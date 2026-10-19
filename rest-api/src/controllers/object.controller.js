@@ -917,7 +917,11 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
     // und im Symbol-Inventar. Hier wird daraus eine typisierte Token-Zeile
     // synthetisiert (tokens.formatter.synthesizeMergeTextTokens); ƒ-Anker
     // bleiben Pass-through, ihre Formeln zeigen die calcSlots. Nur Text-
-    // Objekte (displays_field existiert auch an Feld-Platzierungen!), DDR-
+    // Objekte sowie Buttons und Popover-Buttons, deren Beschriftung getippte
+    // Anker trägt (Schema 1.33.0; Feld-Kanten Subrole label_text) — nicht
+    // Feld-Platzierungen, an denen displays_field ebenfalls existiert. In
+    // Button-Beschriftungen wertet FileMaker Symbole nicht aus: sie bleiben
+    // wörtlich (evaluateSymbols = false). DDR-
     // unabhängig, Best-Effort: Fehler → Feld fehlt. Symbol-Gültigkeit prüft
     // die Standard-Referenz über den GESAMTEN Get-Parameter-Namensraum, ohne
     // match_source-Filter: FileMaker akzeptiert und rendert auch den
@@ -929,7 +933,8 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
     // auch ungültige, unvalidiert wäre Get(…) eine falsche Aussage.
     try {
       const lo = payload.layoutObject;
-      if (lo && lo.type === 'Text' && lo.textContent) {
+      const isLabel = lo && (lo.type === 'Button' || lo.type === 'Popover Button');
+      if (lo && (lo.type === 'Text' || isLabel) && lo.textContent) {
         const db = require('../config/database');
         const tokensFormatter = require('../formatters/tokens.formatter');
 
@@ -966,7 +971,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
           }
         }
 
-        const symRes = await db.executeQuery(
+        const symRes = isLabel ? { rows: [] } : await db.executeQuery(
           ctx,
           `SELECT Symbol_Text, Symbol_Norm
            FROM LayoutObjectSymbols
@@ -1013,6 +1018,7 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
 
         const merge = tokensFormatter.synthesizeMergeTextTokens(lo.textContent, {
           fields, variables, symbols, toBaseTable, layoutTOName: layoutContextTO,
+          evaluateSymbols: !isLabel,
         });
         if (merge) {
           payload.mergeText = {

@@ -1,7 +1,13 @@
 ---
 name: install-mbs-docs
-version: 0.9.0
-description: Download and install MBS Plugin documentation from MonkeyBread Software. Automatically checks for newer versions and prompts before replacing existing docs. Triggers (English): "install MBS docs", "update MBS plugin documentation". Triggers (German): "installiere die MBS-Doku", "MBS-Plugin-Dokumentation aktualisieren". Triggers (Spanish): "instalar la documentación MBS", "actualizar la documentación MBS". Triggers (French): "installer la documentation MBS", "mettre à jour la documentation MBS". Triggers (Italian): "installa la documentazione MBS", "aggiorna la documentazione MBS". Triggers (Dutch): "installeer de MBS-documentatie", "MBS-documentatie bijwerken". Triggers (Portuguese): "instalar a documentação MBS", "atualizar a documentação MBS". Triggers (Swedish): "installera MBS-dokumentationen", "uppdatera MBS-dokumentationen". Triggers (Japanese): "MBSドキュメントをインストール", "MBSドキュメントを更新". Triggers (Korean): "MBS 문서 설치", "MBS 문서 업데이트". Triggers (Chinese): "安装 MBS 文档", "更新 MBS 文档".
+description: >-
+  Download and install MBS Plugin documentation from MonkeyBread Software. Automatically checks
+  for newer versions and prompts before replacing existing docs. Triggers (English): "install MBS
+  docs", "update MBS plugin documentation". Triggers (German): "installiere die MBS-Doku",
+  "MBS-Plugin-Dokumentation aktualisieren". Also responds to equivalent requests in other
+  languages.
+metadata:
+  version: "0.9.0"
 ---
 
 # MBS Documentation Installation Skill
@@ -216,3 +222,18 @@ ERROR: [specific error message]
 - The component table is used by the `mbs-function-reference` skill for improved function lookup, by the XML import (PluginComponent catalog entries) and by the doc-set browser (component pages under `/docs/mbs/<Component>`)
 - Python 3 is required for component parsing (gracefully skipped if not available)
 - After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.py`, so the web home dashboard's Docs card can list it.
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "instalar la documentación MBS", "actualizar la documentación MBS".
+- **French:** "installer la documentation MBS", "mettre à jour la documentation MBS".
+- **Italian:** "installa la documentazione MBS", "aggiorna la documentazione MBS".
+- **Dutch:** "installeer de MBS-documentatie", "MBS-documentatie bijwerken".
+- **Portuguese:** "instalar a documentação MBS", "atualizar a documentação MBS".
+- **Swedish:** "installera MBS-dokumentationen", "uppdatera MBS-dokumentationen".
+- **Japanese:** "MBSドキュメントをインストール", "MBSドキュメントを更新".
+- **Korean:** "MBS 문서 설치", "MBS 문서 업데이트".
+- **Chinese:** "安装 MBS 文档", "更新 MBS 文档".

@@ -197,6 +197,43 @@ export LC_NUMERIC=C
 # on the next --changed-only run, a full re-conversion is triggered. Bump it as soon
 # as the CONVERSION RESULT can change (new columns, changed
 # extraction/normalization) — independent of the header or @SCHEMA_VERSION.
+#   2.34.0 — typed anchors in button labels on EXTERNAL table occurrences
+#           (@SCHEMA_VERSION unchanged): the field lives in another file, which
+#           the file-partitioned P2 cannot see, so merge fields got no row (no
+#           displays_field edge, false "renders literally" finding) and
+#           anchor-less <<ƒ:…>> tokens lost their field references. P2 now writes
+#           an open label_text row (Ref_UUID NULL, TO_Ref_ID); P4 Phase A resolves
+#           it batch-wide through the home file of the base table (_ext_to_home:
+#           BT_UUID → data-source path lines / DS_Name → BT_Name), deletes it when
+#           the field is missing there, and adds the LabelText_<i> field
+#           references of external TOs. Rows without a home file in the import
+#           stay open (not verifiable; P6 v_check_label_anchor_external).
+#   2.33.0 — button and popover-button labels (@SCHEMA_VERSION 1.33.0, master
+#           rebuild): Text_Content, Label_Calculation_Text and the new
+#           Title_Calculation_Text read exactly one XML path per @kind (P1
+#           macros fm_layout_object_text/_label_calc/_title_calc) — button labels
+#           used to be missing from Text_Content, the popover-panel title formula
+#           stood in it instead. FileMaker evaluates typed anchors in a label at
+#           runtime, so they now resolve like in a text object: merge fields from
+#           the label text (XMLLayoutReferences.Ref_Source = 'label_text',
+#           displays_field subrole label_text, unqualified anchors against the
+#           layout's TO), merge variables, and <<ƒ:…>> tokens — through the DDR
+#           anchor where FileMaker wrote one (P1d now promotes it, because the
+#           token count reads the label), otherwise from the formula text
+#           (instance + references with subrole LabelText_<i>). Symbols in a
+#           label are not evaluated: LayoutObjectSymbols.Is_Evaluated, no
+#           displays_symbol edge, no BuiltinFunction node. Popover/tab-panel title
+#           instances carry their Formula_Text. P2 slices read Layouts as well.
+#   2.32.0 — FileMaker 26 display-calculation padding no longer yields edges
+#           (@SCHEMA_VERSION unchanged): FileMaker 26 writes 12 DisplayCalculations
+#           anchors on every text object, only the first n (= <<ƒ:…>> tokens) are
+#           real. P1d already kept the padding out of the DDR tables, but P2 and
+#           P3 resolve layout formulas by HASH, and a padding anchor repeats the
+#           hash of slot 0 — so every padding slot got its own field/function/
+#           variable edges (e.g. 36 instead of 3 edges on a text with a single
+#           token). P2 (_layout_obj_hashes) and P3 (A.3f) now keep a
+#           DisplayCalculations anchor only if its raw anchor name stands in
+#           DDR_ChunkListContexts. saxml22 catalogs stay bit-identical.
 #   2.30.0 — field-entry edges carry their slot (@SCHEMA_VERSION unchanged):
 #           the references of a field-entry formula kept the raw DDR suffix
 #           'Hide' as Link_Subrole (FileMaker files that formula under the hide
@@ -471,7 +508,7 @@ export LC_NUMERIC=C
 #           duplicates (same UUID, distinct object ids) separately from FileMaker's
 #           double serialization; the catmerge a2 dup report is persisted into the
 #           new MergeAbsorptions table (best-effort, s. convert_turbo.sh).
-CONVERTER_VERSION="2.31.0"
+CONVERTER_VERSION="2.34.0"
 PROJECT_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel 2>/dev/null || (cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd))"
 # Engine root: the ingestion/ directory this script lives in. ALL engine-internal
 # assets (sql/, engine/, lib/, fixtures/, version_check.json, gen_streamify_sql.sh)
@@ -2646,7 +2683,7 @@ _p2_worker() {
         # bare names and stays unchanged. Filter pushdown ensures xml_extract only
         # runs over the slice's portion.
         local t
-        for t in StepsForScripts LayoutObjects DDR_Calculations DDR_ChunkListContexts TableOccurrenceCatalog FieldsForTables CustomFunctionsCatalog PrivilegeSetRecordAccess CustomMenuCatalog CustomMenuItemCatalog ScriptTriggers; do
+        for t in StepsForScripts LayoutObjects Layouts DDR_Calculations DDR_ChunkListContexts TableOccurrenceCatalog FieldsForTables CustomFunctionsCatalog PrivilegeSetRecordAccess CustomMenuCatalog CustomMenuItemCatalog ScriptTriggers; do
             echo "CREATE VIEW $t AS SELECT * FROM src.$t WHERE File_Name IN ($infiles);"
         done
         cat "$P2_TEMPLATE"
@@ -3754,6 +3791,34 @@ postprocess_db() {
         add_finding consistency info "$disp_empty display calculation(s) with an empty DDR ChunkList: ${disp_empty_files:-?}" "DDR defect compensated: instance + field edges recovered from the layout text; function references of these formulas are missing in where-used"
     fi
 
+    # Layout text paths (schema 1.33.0): Text_Content / Label_Calculation_Text /
+    # Title_Calculation_Text read exactly one XML path per @kind. > 0 ⇒ an object
+    # carries a text, label or title the per-kind dispatch does not read.
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local ltp_text ltp_both ltp_title
+    ltp_text=$(pp_num "SELECT text_path_mismatch FROM v_check_layout_text_paths")
+    ltp_both=$(pp_num "SELECT label_text_and_calc FROM v_check_layout_text_paths")
+    ltp_title=$(pp_num "SELECT title_path_mismatch FROM v_check_layout_text_paths")
+    if [ "$ltp_text" -gt 0 ] || [ "$ltp_both" -gt 0 ] || [ "$ltp_title" -gt 0 ]; then
+        local ltp_kinds
+        ltp_kinds=$(pp_query "SELECT mismatch_kinds FROM v_check_layout_text_paths")
+        add_finding consistency warn "Layout text paths: $ltp_text text/label without Text_Content, $ltp_both label with text AND formula, $ltp_title title without Title_Calculation_Text (${ltp_kinds:-—})" "The P1 macros fm_layout_object_text/_label_calc/_title_calc read one path per @kind — extend the kind dispatch in convert_xml_01_extract.sql (and regenerate the streamify variant)"
+    fi
+
+    # Typed merge fields in button labels on external TOs (converter 2.34.0):
+    # open label_text rows have no home file in the import (info); an open row on
+    # a local TO or with an unambiguous home file is a resolver gap (warn).
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local lae_open lae_local lae_k1
+    lae_open=$(pp_num "SELECT unverified FROM v_check_label_anchor_external")
+    lae_local=$(pp_num "SELECT open_on_local_to FROM v_check_label_anchor_external")
+    lae_k1=$(pp_num "SELECT open_with_k1_home FROM v_check_label_anchor_external")
+    if [ "$lae_local" -gt 0 ] || [ "$lae_k1" -gt 0 ]; then
+        add_finding consistency warn "Button-label anchors on external TOs: $lae_local open row(s) on a local TO, $lae_k1 open row(s) with an unambiguous home file" "P2 label_text block (convert_xml_02_resolve.sql) or the P4 Phase A home-file cascade (_ext_to_home, convert_xml_04_catalog.sql) left rows unresolved"
+    elif [ "$lae_open" -gt 0 ]; then
+        add_finding consistency info "$lae_open typed merge-field anchor(s) in button labels point to a file outside this import (not verifiable, no edge)" "Import the referenced file to resolve them"
+    fi
+
     # unknown LayoutObject types (after the P4 locale normalization). > 0 ⇒
     # a new locale name (extend the mapping) or a genuine new FileMaker type (canon set).
     CHECKS_RUN=$((CHECKS_RUN + 1))
@@ -3828,7 +3893,7 @@ postprocess_db() {
         add_finding consistency info "$sp_dormant field(s) carry disabled definitions (FileMaker 26 export: auto-enter/lookup/validation with enable=\"False\") — instances kept with Is_Enabled = FALSE, no links" "Expected for SaXML 2.3.0.0; FileMaker <= 22 omits disabled definitions entirely"
     fi
     if [ "$sp_viol" -gt 0 ]; then
-        add_finding consistency warn "$sp_viol DisplayCalculations anchor(s) in DDR_Calculations exceed the <<ƒ:…>> token count of their text object" "Phase 1d (convert_xml_01d_display_calc_promote.sql) promotes only slots below the token count — check the P1d step in the log and the saxml23 staging block"
+        add_finding consistency warn "$sp_viol DisplayCalculations anchor(s) in DDR_Calculations exceed the <<ƒ:…>> token count of their layout object (text object or button label)" "Phase 1d (convert_xml_01d_display_calc_promote.sql) promotes only slots below the token count — check the P1d step in the log and the saxml23 staging block"
     elif [ "$sp_23" -gt 0 ]; then
         add_finding consistency info "SaXML profiles: saxml22=$sp_22 saxml23=$sp_23 — display-calc anchors promoted: $sp_promoted, FM 26 padding kept in staging: $sp_padding" "Expected for SaXML 2.3.0.0: membercount is always 12, real slots = <<ƒ:…>> tokens — see convert_xml_01d_display_calc_promote.sql"
     fi

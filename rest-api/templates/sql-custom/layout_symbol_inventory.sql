@@ -18,12 +18,19 @@
 -- @scope: solution, file, object, object-list, cluster
 -- @default_result: { "aggregate": "row_count", "type": "number", "name": "layout_symbols", "meaning": "Symbol placements on layout text objects in scope (inventory — not a defect count)" }
 -- @author: fm-lab core
--- @version: 1.0
+-- @version: 1.1
 -- @tags: layouts, merge, symbols, inventory
 --
 -- Companion of the merge-field, merge-variable and layout-calculation
 -- inventories: same shape, same scope model. Source is LayoutObjectSymbols
 -- (P3 A.13) — the resolved inventory; never re-regex Text_Content.
+--
+-- Text objects only (Object_Kind 2). Since schema 1.33.0 the inventory also
+-- lists the symbols of button and popover-button labels, which FileMaker never
+-- evaluates — they are no Get-parameter placement and belong to the rule
+-- "Symbol in button label". The filter runs on Object_Kind, not on the newer
+-- LayoutObjectSymbols.Is_Evaluated, so the query stays runnable on catalogs of
+-- older converters.
 --
 -- `status` is the same comparison the rule uses: Symbol_Norm against
 -- ref.function_name_lookup, chunk_role 'getparameter', over ALL languages the
@@ -70,6 +77,7 @@ WITH lo AS (
     SELECT Object_UUID, Object_ID, File_Name, Object_Name, Object_Type,
            ROW_NUMBER() OVER (PARTITION BY Object_UUID, File_Name ORDER BY Object_ID) AS rn
     FROM LayoutObjects
+    WHERE Object_Kind = 2
 ),
 -- Symbol_Norm → kanonischer Get-Parameter, über ALLE Referenzsprachen. Eine
 -- Zeile je Vergleichsschlüssel: innerhalb chunk_role 'getparameter' zeigt eine

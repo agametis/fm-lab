@@ -182,6 +182,221 @@ WHERE x.Ref_Type = 'field'
   AND (x.Ref_UUID IS NULL   -- Leere UUID jetzt NULL (statt '') → weiterhin auflösbar
        OR x.Ref_UUID NOT IN (SELECT Field_UUID FROM FieldsForTables WHERE Field_UUID IS NOT NULL));
 
+-- Getippte Anker in Button-Beschriftungen über EXTERNE TOs (Konverter 2.34.0).
+-- FileMaker wertet <<TO::Feld>> / <<Feld>> und <<ƒ:…>> in Beschriftungen von
+-- Buttons (kind 10) und Popover-Buttons (kind 14) auch dann aus, wenn die Ziel-TO
+-- (Layout-TO bzw. benannte TO) extern ist. Die Basistabelle liegt dann in einer
+-- anderen Datei, deren Felder P2 im dateipartitionierten Batch nicht sieht: P2
+-- schreibt für Merge-Felder OFFENE label_text-Zeilen (Ref_UUID NULL, Ref_Name =
+-- getippter Name, TO_Ref_ID = TO_ID), die Formel-Felder fehlen dort ganz. Beides
+-- löst dieser Block batch-weit auf.
+--
+-- Heimatdatei je externer TO (_ext_to_home), Kaskade:
+--   K1  BT_UUID trifft FieldsForTables.Table_UUID in genau EINER Datei.
+--   K2  BT_UUID trifft mehrere Dateien (Klon-Korpora mit geteilten UUIDs) →
+--       Schnittmenge mit den Dateinamen der Datenquelle, genau eine.
+--   K3  BT_UUID fehlt oder trifft nichts → Datei aus den Datenquellen-Namen, die
+--       eine Tabelle namens BT_Name führt, genau eine.
+--   K4  sonst keine Heimat (Datei nicht im Import oder mehrdeutig).
+-- Dateinamen der Datenquelle: jede Zeile von ExternalDataSourceCatalog.Path
+-- (Trenner chr(10); letzter Pfadteil ohne file:/fmnet:-Präfix und .fmp12) und
+-- DS_Name. Eine Datenquelle darf anders heißen als die Datei, und der Pfad kann
+-- mehrere Kandidaten tragen — FileMaker nimmt den ersten erreichbaren. Die
+-- bestehenden Resolver oben arbeiten nur mit DS_Name; für Beschriftungen reicht
+-- das nicht, weil dort keine Feld-UUID im XML steht.
+--
+-- Datei-fremde Treffer tragen Ref_ID NULL: Die UUID-Heilung unten ist datei-lokal
+-- (Discriminator über die TO der QUELLdatei) und würde in Klon-Korpora sonst eine
+-- Feld-UUID der Heimatdatei auf einen Zwilling der Quelldatei umschreiben.
+CREATE OR REPLACE TEMP TABLE _ext_to_home AS
+WITH ext AS (
+    SELECT DISTINCT File_Name, TO_ID, TO_UUID, TO_Name, BT_UUID, BT_Name, DS_Name, DS_UUID
+    FROM TableOccurrenceCatalog
+    WHERE TO_Type = 'External' AND TO_ID IS NOT NULL
+),
+ds_names AS (
+    SELECT e.File_Name, e.TO_ID,
+           lower(regexp_replace(regexp_replace(trim(p.line), '^.*[:/]', ''), '\.fmp12$', '', 'i')) AS cand
+    FROM ext e
+    JOIN ExternalDataSourceCatalog ds
+      ON ds.DS_UUID = e.DS_UUID
+     AND ds.File_Name = e.File_Name
+    CROSS JOIN LATERAL unnest(string_split(ds.Path, chr(10))) AS p(line)
+    WHERE NULLIF(trim(p.line), '') IS NOT NULL
+    UNION
+    SELECT e.File_Name, e.TO_ID, lower(regexp_replace(e.DS_Name, '\.fmp12$', '', 'i'))
+    FROM ext e
+    WHERE NULLIF(e.DS_Name, '') IS NOT NULL
+),
+tables AS (
+    SELECT DISTINCT File_Name, Table_UUID, Table_Name
+    FROM FieldsForTables
+    WHERE Table_UUID IS NOT NULL
+),
+bt_cand AS (
+    SELECT e.File_Name, e.TO_ID, t.File_Name AS home, t.Table_UUID AS home_table
+    FROM ext e
+    JOIN tables t ON t.Table_UUID = e.BT_UUID
+),
+bt_n AS (
+    SELECT File_Name, TO_ID, count(DISTINCT home) AS n
+    FROM bt_cand
+    GROUP BY ALL
+),
+k1 AS (
+    SELECT b.File_Name, b.TO_ID, any_value(b.home) AS home, any_value(b.home_table) AS home_table
+    FROM bt_cand b
+    JOIN bt_n n USING (File_Name, TO_ID)
+    WHERE n.n = 1
+    GROUP BY ALL
+),
+k2 AS (
+    SELECT b.File_Name, b.TO_ID, any_value(b.home) AS home, any_value(b.home_table) AS home_table
+    FROM bt_cand b
+    JOIN bt_n n USING (File_Name, TO_ID)
+    JOIN ds_names d
+      ON d.File_Name = b.File_Name
+     AND d.TO_ID = b.TO_ID
+     AND d.cand = lower(b.home)
+    WHERE n.n > 1
+    GROUP BY ALL
+    HAVING count(DISTINCT b.home) = 1
+),
+k3 AS (
+    SELECT e.File_Name, e.TO_ID, any_value(t.File_Name) AS home, any_value(t.Table_UUID) AS home_table
+    FROM ext e
+    JOIN ds_names d
+      ON d.File_Name = e.File_Name
+     AND d.TO_ID = e.TO_ID
+    JOIN tables t
+      ON lower(t.File_Name) = d.cand
+     AND t.Table_Name = e.BT_Name
+    WHERE NOT EXISTS (SELECT 1 FROM bt_cand b WHERE b.File_Name = e.File_Name AND b.TO_ID = e.TO_ID)
+    GROUP BY ALL
+    HAVING count(DISTINCT t.File_Name) = 1 AND count(DISTINCT t.Table_UUID) = 1
+),
+resolved AS (
+    SELECT *, 'K1' AS Stage FROM k1
+    UNION ALL SELECT *, 'K2' FROM k2
+    UNION ALL SELECT *, 'K3' FROM k3
+)
+SELECT e.File_Name, e.TO_ID, e.TO_UUID, e.TO_Name,
+       r.home AS Home_File, r.home_table AS Home_Table_UUID,
+       CASE WHEN r.home IS NOT NULL THEN r.Stage
+            WHEN COALESCE(n.n, 0) > 1 THEN 'ambiguous'
+            ELSE 'not_imported' END AS Stage
+FROM ext e
+LEFT JOIN resolved r USING (File_Name, TO_ID)
+LEFT JOIN bt_n n USING (File_Name, TO_ID);
+
+-- (a) Merge-Felder: offene label_text-Zeilen über die Heimatdatei auflösen.
+UPDATE XMLLayoutReferences x
+SET Ref_UUID = f.Field_UUID,
+    Ref_Name = f.Field_Name
+FROM _ext_to_home h, FieldsForTables f
+WHERE x.Ref_Source = 'label_text' AND x.Ref_Type = 'field' AND x.Ref_UUID IS NULL
+  AND h.File_Name = x.File_Name AND h.TO_ID = x.TO_Ref_ID
+  AND h.Home_File IS NOT NULL
+  AND f.File_Name = h.Home_File AND f.Table_UUID = h.Home_Table_UUID
+  AND lower(f.Field_Name) = lower(x.Ref_Name)
+  AND f.Field_UUID IS NOT NULL;
+
+-- Heimatdatei bekannt, Feld fehlt dort: FileMaker lässt den Anker wörtlich stehen
+-- wie bei einer lokalen TO → keine Zeile, die Regel layout_unresolved_merge_anchor
+-- meldet ihn. Ohne Heimatdatei (K4) bleibt die Zeile offen: nicht prüfbar, kein
+-- Finding, keine Kante (Block 20b filtert Ref_UUID IS NOT NULL).
+DELETE FROM XMLLayoutReferences x
+WHERE x.Ref_Source = 'label_text' AND x.Ref_Type = 'field' AND x.Ref_UUID IS NULL
+  AND EXISTS (SELECT 1 FROM _ext_to_home h
+              WHERE h.File_Name = x.File_Name AND h.TO_ID = x.TO_Ref_ID
+                AND h.Home_File IS NOT NULL);
+
+-- (c) Layoutformeln ohne DDR-Anker: Felder externer TOs aus dem Formeltext,
+-- Subrole 'LabelText_<i>'. Gegenstück zu P2 A.5.1e (lokale TOs, Custom Functions)
+-- mit denselben Trefferregeln; die Kandidaten-Erkennung ist identisch zu P2
+-- A.5.1e, P3 A.6d und P4 b_label zu halten.
+INSERT INTO XMLCalcReferences
+WITH tok AS (
+    SELECT lo.Object_UUID, lo.File_Name, lo.Layout_ID,
+           xml_extract_text(lo.Object_XML, '/LayoutObject/UUID')[1] AS Raw_UUID,
+           regexp_extract_all(lo.Text_Content, '(?s)<<ƒ:(.*?)>>', 1) AS formulas
+    FROM LayoutObjects lo
+    WHERE lo.Object_Kind IN (10, 14)
+      AND lo.Text_Content LIKE '%<<ƒ:%'
+      AND EXISTS (SELECT 1 FROM _ext_to_home h WHERE h.File_Name = lo.File_Name AND h.Home_File IS NOT NULL)
+),
+slots AS (
+    SELECT Object_UUID, File_Name, Layout_ID, Raw_UUID,
+           unnest(formulas) AS raw_formula,
+           unnest(range(len(formulas))) AS Disp_Index
+    FROM tok
+),
+f AS (
+    SELECT s.Object_UUID, s.File_Name,
+           'LabelText_' || s.Disp_Index AS Subrole,
+           regexp_replace(regexp_replace(s.raw_formula, '^%[A-Z]+:', ''), '"[^"]*"', '""', 'g') AS formula,
+           l.L_TO_UUID AS Context_TO_UUID
+    FROM slots s
+    LEFT JOIN Layouts l
+           ON l.L_ID = s.Layout_ID
+          AND l.File_Name = s.File_Name
+    WHERE NOT EXISTS (
+        SELECT 1 FROM DDR_ChunkListContexts ctx
+        WHERE ctx.Calc_UUID = '_' || s.Raw_UUID || '_DisplayCalculations_' || s.Disp_Index
+          AND ctx.File_Name = s.File_Name
+    )
+),
+cf_names AS (
+    SELECT File_Name, CF_Name
+    FROM CustomFunctionsCatalog
+    WHERE (Folder_Type IS NULL OR Folder_Type = 'False')
+      AND NOT COALESCE(Is_Separator, FALSE)
+),
+fld AS (
+    SELECT f.Object_UUID, f.File_Name, f.Subrole, f.formula,
+           h.TO_Name, h.TO_UUID, h.TO_ID,
+           fft.Field_Name, fft.Field_UUID,
+           (h.TO_UUID = f.Context_TO_UUID) AS is_ctx,
+           EXISTS (SELECT 1 FROM cf_names cn
+                    WHERE lower(cn.CF_Name) = lower(fft.Field_Name)
+                      AND cn.File_Name = f.File_Name) AS cf_collision
+    FROM f
+    JOIN _ext_to_home h
+      ON h.File_Name = f.File_Name
+     AND h.Home_File IS NOT NULL
+    JOIN FieldsForTables fft
+      ON fft.File_Name  = h.Home_File
+     AND fft.Table_UUID = h.Home_Table_UUID
+    WHERE NULLIF(f.formula, '') IS NOT NULL
+      AND strpos(lower(f.formula), lower(fft.Field_Name)) > 0
+),
+fld_hit AS (
+    SELECT fld.*,
+           CASE WHEN strpos(lower(fld.formula), lower(fld.TO_Name || '::' || fld.Field_Name)) > 0
+                THEN regexp_matches(fld.formula,
+                     '(?i)(^|[^\p{L}\p{N}_$])' || regexp_escape(fld.TO_Name) || '::'
+                     || regexp_escape(fld.Field_Name) || '($|[^\p{L}\p{N}_])')
+                ELSE FALSE END AS qual_hit,
+           fld.is_ctx AND strpos(lower(fld.formula), lower('${' || fld.Field_Name || '}')) > 0 AS quoted_hit,
+           fld.is_ctx AND NOT fld.cf_collision
+               AND regexp_matches(fld.formula,
+                   '(?i)(^|[^\p{L}\p{N}_$:{])' || regexp_escape(fld.Field_Name) || '($|[^\p{L}\p{N}_:])') AS plain_hit
+    FROM fld
+)
+SELECT DISTINCT
+    h.Object_UUID, 'LayoutObject', NULL, h.Subrole,
+    NULL, 'field',
+    h.Field_UUID,
+    h.Field_Name,
+    h.File_Name,
+    h.TO_Name, h.TO_UUID,
+    NULL, NULL,  -- Variable_Scope, Usage_Type (nur für Ref_Type='variable')
+    NULL,  -- Ref_SubName (nur für Ref_Type='pluginfunction' bei Container-Plugins)
+    NULL AS Ref_ID,  -- datei-fremdes Feld: von der datei-lokalen Heilung ausnehmen
+    h.TO_ID AS TO_Ref_ID
+FROM fld_hit h
+WHERE h.qual_hit OR h.quoted_hit OR h.plain_hit;
+
 -- Empty-String-Hygiene: unaufgelöste Referenzen müssen NULL sein, nie ''. Externe-TO-
 -- Feldrefs mit UUID="" (DDR-Calc-Chunks: regexp_extract liefert '' bei leerem Attribut;
 -- Step-Refs: xml_extract auf leerem @UUID) überleben die Resolver oben, wenn TO+Feld-id
@@ -1160,7 +1375,10 @@ FROM LayoutObjectSymbols s
 JOIN _builtin_canon k
   ON k.Namespace = 'getparameter'
  AND k.Name_Norm = s.Symbol_Norm
-WHERE NOT EXISTS (
+-- Nur ausgewertete Symbole (Textobjekte): ein Symbol in einer Button-Beschriftung
+-- bleibt wörtlich stehen und benennt kein Objekt (Schema 1.33.0).
+WHERE s.Is_Evaluated
+  AND NOT EXISTS (
     SELECT 1 FROM ObjectCatalog oc
     WHERE oc.Object_UUID = fm_builtin_uuid(k.Canonical_Name, TRUE)
 );
@@ -1208,6 +1426,7 @@ WITH ident AS (
     JOIN _builtin_canon k
       ON k.Namespace = 'getparameter'
      AND k.Name_Norm = s.Symbol_Norm
+    WHERE s.Is_Evaluated
 )
 SELECT i.Object_UUID, i.Function_ID, i.Canonical_Name, i.Namespace
 FROM ident i
@@ -1226,7 +1445,7 @@ CREATE INDEX IF NOT EXISTS idx_builtin_identity_fid
 -- Chunkliste von <CanEntryCalc> unter DEMSELBEN DDR-Schlüssel '_<ObjectUUID>_Hide'
 -- ab wie die der Ausblendungsformel und schreibt bei zwei Formeln nur EINE Liste
 -- (die der Eingabeformel; die Ausblendungs-Chunks fehlen dann ganz — belegt an der
--- Coverage-Datei, FileMaker 26.0.2). Ohne Unterscheidung landet die Eingabeformel
+-- Coverage-Datei, FileMaker 26.0.3). Ohne Unterscheidung landet die Eingabeformel
 -- als „Hide Condition" im Katalog, samt ihrer Feld-/Funktionskanten. Das Makro
 -- entscheidet anhand des rekonstruierten Chunk-Textes, zu welchem Slot der Anker
 -- gehört: nur Eingabeformel vorhanden ⇒ Eingabe; beide vorhanden ⇒ Textvergleich.
@@ -1342,6 +1561,7 @@ pra_rep AS (
 lo_rep AS (
     SELECT Object_UUID, File_Name, Hide_Calculation_Text, Tooltip_Calculation_Text,
            Label_Calculation_Text, ScriptTrigger_Parameter_Text, Entry_Calculation_Text,
+           Title_Calculation_Text, Object_Kind,
            ROW_NUMBER() OVER (PARTITION BY Object_UUID, File_Name ORDER BY Object_ID) AS rn
     FROM LayoutObjects
 ),
@@ -1362,7 +1582,7 @@ a_owner AS (
         -- Steps an Index 133) — eine owner-blinde Umbenennung an der Quelle
         -- würde einen Multi-Slot-Step an Index 4 auf Position 2 verschieben.
         -- Belegt an ingestion/fixtures/saxml/fmlab_coverage__saxml_v2_3_0_0__
-        -- fm_v26_0_2__ddr_info.xml (Feld ValCalc: Calculated → _4_2, MessageCalc → _4).
+        -- fm_v26_0_3__ddr_info.xml (Feld ValCalc: Calculated → _4_2, MessageCalc → _4).
         CASE WHEN oc.Object_Type = 'Field' AND di.Calc_Kind_Raw = '4_2' THEN '2'
              ELSE di.Calc_Kind_Raw END                AS Calc_Kind_Raw,
         di.Chunk_Count,
@@ -1415,6 +1635,9 @@ a_rows AS (
                            ELSE lo.Hide_Calculation_Text END
             WHEN a.Owner_Type = 'LayoutObject' AND a.Calc_Kind_Raw = 'Tooltip' THEN lo.Tooltip_Calculation_Text
             WHEN a.Owner_Type = 'LayoutObject' AND a.Calc_Kind_Raw = 'Label'   THEN lo.Label_Calculation_Text
+            -- Titelformel von PopoverPanel und Tab-Panel (Schema 1.33.0)
+            WHEN a.Owner_Type = 'LayoutObject' AND a.Calc_Kind_Raw IN ('PopoverPanel', 'TabPanel')
+                 THEN lo.Title_Calculation_Text
             -- Trigger-Parameter (alle 3 Owner-Ebenen): Klartext aus
             -- ScriptTriggers.Trigger_Parameter_Text (Schema 1.26.0)
             WHEN a.Calc_Kind_Raw LIKE 'ScriptTrigger\_%' ESCAPE '\'            THEN st.Trigger_Parameter_Text
@@ -1558,9 +1781,10 @@ b_cf AS (
                        WHERE a.Owner_UUID = cfc.CF_UUID AND a.File_Name = cfc.File_Name
                          AND a.Owner_Type = 'CustomFunction')
 ),
--- (B4) LayoutObject-Textslots ohne DDR-Anker (nur die 3 in P1 extrahierten
--- Klartext-Slots Hide/Tooltip/Label; alle übrigen LO-Slots existieren nur mit
--- DDR-Info — Trigger-Parameter kommen per-Trigger aus B4b)
+-- (B4) LayoutObject-Textslots ohne DDR-Anker (die in P1 extrahierten
+-- Klartext-Slots Hide/Tooltip/Label und seit Schema 1.33.0 die Titelformel von
+-- PopoverPanel/Tab-Panel; alle übrigen LO-Slots existieren nur mit DDR-Info —
+-- Trigger-Parameter kommen per-Trigger aus B4b)
 b_lo AS (
     SELECT * FROM (
         SELECT lo.File_Name, lo.Object_UUID AS Owner_UUID, 'LayoutObject' AS Owner_Type,
@@ -1610,6 +1834,19 @@ b_lo AS (
           AND NOT EXISTS (SELECT 1 FROM a_owner a
                            WHERE a.Owner_UUID = lo.Object_UUID AND a.File_Name = lo.File_Name
                              AND a.Calc_Kind_Raw = 'Label')
+        UNION ALL
+        -- Titelformel (Schema 1.33.0): Calc_Kind_Raw = DDR-Suffix des Slots
+        -- (PopoverPanel bzw. TabPanel), der Owner-Typ entscheidet über die Rolle.
+        SELECT lo.File_Name, lo.Object_UUID, 'LayoutObject', NULL,
+               CASE lo.Object_Kind WHEN 15 THEN 'popover_title' ELSE 'panel_title' END,
+               CASE lo.Object_Kind WHEN 15 THEN 'PopoverPanel' ELSE 'TabPanel' END,
+               NULL, lo.Title_Calculation_Text,
+               CASE lo.Object_Kind WHEN 15 THEN 'LayoutObject/Title' ELSE 'LayoutObject/TabPanel' END
+        FROM lo_rep lo
+        WHERE lo.rn = 1 AND NULLIF(lo.Title_Calculation_Text, '') IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM a_owner a
+                           WHERE a.Owner_UUID = lo.Object_UUID AND a.File_Name = lo.File_Name
+                             AND a.Calc_Kind_Raw IN ('PopoverPanel', 'TabPanel'))
     )
 ),
 -- (B4b) Trigger-Parameter ohne DDR-Anker — per Trigger aus ScriptTriggers
@@ -1686,6 +1923,49 @@ b_disp AS (
                        WHERE a.Owner_UUID = oc_lo.Object_UUID AND a.File_Name = ctx.File_Name
                          AND a.Calc_Kind_Raw = regexp_replace(ctx.Calc_UUID, '^_[0-9A-Fa-f-]{36}_?', ''))
 ),
+-- (B7) Layoutformeln in Button-Beschriftungen ohne DDR-Anker (Schema 1.33.0):
+-- getippte <<ƒ:…>>-Tokens in Buttons (kind 10) und Popover-Buttons (kind 14),
+-- für die DDR_ChunkListContexts keinen DisplayCalculations-Anker führt. FileMaker
+-- wertet sie zur Laufzeit aus; ohne diese Zeile gäbe es weder Instanz noch
+-- Formel. Calc_Kind_Raw = Edge_Subrole = 'LabelText_<i>' (Token-Index wie bei
+-- DisplayCalculations_<i>), Rolle display_calculation; Formula_Text, Result_Type
+-- und Kontext-TO (Layout-TO) füllt die Display-Anreicherung nach dem CTAS, die
+-- Referenzen legt P2 A.5.1e/A.6.10c an. Kandidaten-Erkennung identisch zu P2
+-- A.5.1e (Anker-Name aus der Roh-UUID).
+lbl_tok AS (
+    SELECT lo.Object_UUID, lo.File_Name, lo.Object_Kind,
+           xml_extract_text(lo.Object_XML, '/LayoutObject/UUID')[1] AS Raw_UUID,
+           len(regexp_extract_all(lo.Text_Content, '(?s)<<ƒ:(.*?)>>', 1)) AS n_tok
+    FROM LayoutObjects lo
+    WHERE lo.Object_Kind IN (10, 14)
+      AND lo.Text_Content LIKE '%<<ƒ:%'
+),
+lbl_slots AS (
+    SELECT t.Object_UUID, t.File_Name, t.Object_Kind, t.Raw_UUID,
+           unnest(range(t.n_tok)) AS Disp_Index
+    FROM lbl_tok t
+),
+b_label AS (
+    SELECT
+        s.File_Name,
+        s.Object_UUID AS Owner_UUID,
+        'LayoutObject' AS Owner_Type,
+        CAST(NULL AS VARCHAR) AS Owner_Name,
+        'display_calculation' AS Role_Override,
+        'LabelText_' || s.Disp_Index AS Calc_Kind_Raw,
+        CAST(NULL AS VARCHAR) AS Formula_Hash,
+        CAST(NULL AS VARCHAR) AS Formula_Text,
+        CASE s.Object_Kind
+            WHEN 14 THEN 'LayoutObject/PopoverButton/Label/Text'
+            ELSE 'LayoutObject/Button/Label/Text'
+        END AS Source_Path
+    FROM lbl_slots s
+    WHERE NOT EXISTS (
+        SELECT 1 FROM DDR_ChunkListContexts ctx
+        WHERE ctx.Calc_UUID = '_' || s.Raw_UUID || '_DisplayCalculations_' || s.Disp_Index
+          AND ctx.File_Name = s.File_Name
+    )
+),
 b_rows AS (
     SELECT File_Name, Owner_UUID, Owner_Type, Owner_Name, Role_Override,
            Calc_Kind_Raw, CAST(NULL AS VARCHAR) AS DDR_Calc_UUID, Formula_Hash,
@@ -1702,6 +1982,7 @@ b_rows AS (
         UNION ALL SELECT * FROM b_trig
         UNION ALL SELECT * FROM b_pra
         UNION ALL SELECT * FROM b_disp
+        UNION ALL SELECT * FROM b_label
     )
 ),
 -- B-Zeilen mit Hash: Chunk-Aggregate über den Hash-Repräsentanten anreichern
@@ -1912,7 +2193,10 @@ SET Calculation_UUID = (
 -- aus dem Präfix (kein Präfix = Text; unbekannte Präfixe bleiben roh sichtbar
 -- als '%<X>'), Kontext-TO aus DDR_ChunkListContexts (Anker-Join über den
 -- NAMEN — nie über den Hash: geteilte Hashes tragen je Anker eigene TOs).
--- Deckt A-Zeilen (DDR-Anker) UND b_disp-Fallback-Zeilen (leere ChunkList) ab.
+-- Deckt A-Zeilen (DDR-Anker) UND b_disp-Fallback-Zeilen (leere ChunkList) ab,
+-- seit Schema 1.33.0 auch die ankerlosen Button-Beschriftungsformeln (b_label,
+-- 'LabelText_<i>'): ihre Kontext-TO ist die TO des Layouts — so wertet FileMaker
+-- getippte Anker in Beschriftungen aus, auch in Portalzeilen.
 -- Index-Annahme: DisplayCalculations_<i> ↔ (i+1)-tes <<ƒ:…>>-Vorkommen in
 -- Dokumentreihenfolge (membercount>1 im Fixture noch unbelegt).
 ALTER TABLE CalculationsCatalog ADD COLUMN Result_Type VARCHAR;
@@ -1924,13 +2208,13 @@ SET Formula_Text    = COALESCE(src.formula_stripped, cc.Formula_Text),
     Context_TO_Name = COALESCE(cc.Context_TO_Name, src.Context_TO_Name)
 FROM (
     WITH lo1 AS (
-        SELECT Object_UUID, File_Name, Text_Content,
+        SELECT Object_UUID, File_Name, Text_Content, Layout_ID,
                ROW_NUMBER() OVER (PARTITION BY Object_UUID, File_Name ORDER BY Object_ID) AS rn
         FROM LayoutObjects
     ),
     disp AS (
         SELECT
-            c.Calculation_UUID, c.Owner_UUID, c.File_Name, c.Calc_Kind_Raw,
+            c.Calculation_UUID, c.Owner_UUID, c.File_Name, c.Calc_Kind_Raw, lo.Layout_ID,
             regexp_extract_all(lo.Text_Content, '(?s)<<ƒ:(.*?)>>', 1)
                 [TRY_CAST(regexp_extract(c.Calc_Kind_Raw, '_([0-9]+)$', 1) AS BIGINT) + 1] AS raw_formula
         FROM CalculationsCatalog c
@@ -1951,12 +2235,17 @@ FROM (
             WHEN ''  THEN 'Text'
             ELSE '%' || regexp_extract(d.raw_formula, '^%([A-Z]+):', 1)
         END AS result_type,
-        ctx.Context_TO_UUID,
-        ctx.Context_TO_Name
+        COALESCE(ctx.Context_TO_UUID,
+                 CASE WHEN d.Calc_Kind_Raw LIKE 'LabelText\_%' ESCAPE '\' THEN l.L_TO_UUID END) AS Context_TO_UUID,
+        COALESCE(ctx.Context_TO_Name,
+                 CASE WHEN d.Calc_Kind_Raw LIKE 'LabelText\_%' ESCAPE '\' THEN l.L_TO_Name END) AS Context_TO_Name
     FROM disp d
     LEFT JOIN DDR_ChunkListContexts ctx
            ON upper(ctx.Calc_UUID) = upper('_' || d.Owner_UUID || '_' || d.Calc_Kind_Raw)
           AND ctx.File_Name = d.File_Name
+    LEFT JOIN Layouts l
+           ON l.L_ID = d.Layout_ID
+          AND l.File_Name = d.File_Name
 ) src
 WHERE cc.Calculation_UUID = src.Calculation_UUID;
 
@@ -2885,6 +3174,29 @@ FROM XMLLayoutReferences xlr
 LEFT JOIN ObjectCatalog oc_target ON xlr.Ref_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Field'
 -- Kein displays_field aus NULL-UUID (unaufgelöste externe-TO-Feldref) — sonst Orphan-Link
 WHERE xlr.Ref_Type = 'field' AND xlr.Ref_UUID IS NOT NULL
+  AND xlr.Ref_Source IS DISTINCT FROM 'label_text'
+
+UNION ALL
+
+-- 20b. LayoutObject → Field, Subrole label_text (Schema 1.33.0): Merge-Feld als
+-- getippter Anker in einer Button-Beschriftung (P2, Ref_Source = 'label_text').
+-- P2 schreibt eine Zeile je Anker-Vorkommen (Zählbasis der Regel
+-- layout_unresolved_merge_anchor) — die Kante gibt es je (Objekt, Feld) einmal.
+SELECT DISTINCT
+    xlr.Object_UUID as Source_UUID,
+    'LayoutObject' as Source_Type,
+    xlr.Ref_UUID as Target_UUID,
+    'Field' as Target_Type,
+    'operational' as Link_Type,
+    'displays_field' as Link_Role,
+    'label_text' as Link_Subrole,
+    xlr.File_Name as Source_File,
+    oc_target.File_Name as Target_File,
+    (xlr.File_Name != oc_target.File_Name) as Is_Cross_File
+FROM XMLLayoutReferences xlr
+LEFT JOIN ObjectCatalog oc_target ON xlr.Ref_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Field'
+WHERE xlr.Ref_Type = 'field' AND xlr.Ref_UUID IS NOT NULL
+  AND xlr.Ref_Source = 'label_text'
 
 UNION ALL
 
@@ -3611,7 +3923,8 @@ UNION ALL
 -- nur Symbole mit einem Get-Parameter-Namen der Referenz bekommen eine Kante;
 -- ein unbekanntes Symbol rendert literal und bleibt kantenlos (die Regel
 -- layout_invalid_symbol macht es sichtbar). Ziel ist datei-unabhängig
--- → Is_Cross_File=FALSE.
+-- → Is_Cross_File=FALSE. Nur ausgewertete Symbole (Is_Evaluated, Schema 1.33.0):
+-- in Button-Beschriftungen bleibt {{…}} wörtlich stehen, also keine Nutzung.
 SELECT DISTINCT
     s.Object_UUID as Source_UUID,
     'LayoutObject' as Source_Type,
@@ -3627,6 +3940,7 @@ FROM LayoutObjectSymbols s
 JOIN _builtin_canon k
   ON k.Namespace = 'getparameter'
  AND k.Name_Norm = s.Symbol_Norm
+WHERE s.Is_Evaluated
 
 UNION ALL
 

@@ -1,10 +1,11 @@
 {
   "manifest": {
     "title": "TODO-markör på ett layoutobjekt",
-    "description": "Regel i familjen ”Ofärdigt arbete” — ett layoutobjekt innehåller en TODO-markör (TODO, TO DO, TO-DO, TBD, to be done, to be defined) i texten, i verktygstipset eller i etikettformeln. En TODO beskriver planerat arbete, inte ett fel — därav allvarlighetsgraden info: regeln räknas med eget tal men färgar aldrig trafikljuset gult. Medveten skärpning jämfört med källregeln: skiftlägesokänslig och avgränsartolerant — bara så hittas ett textobjekt vars innehåll är ”TO DO”.\n\nBaserad på fmCheckMate-kontrollen ”FIXME” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "description": "Regel i familjen ”Ofärdigt arbete” — ett layoutobjekt innehåller en TODO-markör (TODO, TO DO, TO-DO, TBD, to be done, to be defined) i texten (statisk text eller knappetikett), i verktygstipset, i etikettformeln eller i titelformeln. En TODO beskriver planerat arbete, inte ett fel — därav allvarlighetsgraden info: regeln räknas med eget tal men färgar aldrig trafikljuset gult. Medveten skärpning jämfört med källregeln: skiftlägesokänslig och avgränsartolerant — bara så hittas ett textobjekt vars innehåll är ”TO DO”.\n\nBaserad på fmCheckMate-kontrollen ”FIXME” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
     "messages.text": "TODO-markör i textinnehållet",
     "messages.tooltip": "TODO-markör i verktygstipsformeln",
-    "messages.label": "TODO-markör i etikettformeln"
+    "messages.label": "TODO-markör i etikettformeln",
+    "messages.title": "TODO-markör i titelformeln"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Träffar",

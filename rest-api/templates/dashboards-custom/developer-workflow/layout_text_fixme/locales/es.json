@@ -1,10 +1,11 @@
 {
   "manifest": {
     "title": "Marca FIXME en un objeto de layout",
-    "description": "Regla de la familia «Trabajo pendiente»: un objeto de layout contiene una marca FIXME (FIXME, FIX ME, FIX IT, FIXIT) en su texto, en la información sobre herramientas o en la fórmula de la etiqueta. Una marca FIXME señala un defecto conocido que se entregó, de ahí la severidad warning. Endurecimiento deliberado frente a la regla de origen: sin distinguir mayúsculas y tolerando separadores; solo así se encuentra un objeto de texto cuyo contenido es «TO DO».\n\nBasado en la comprobación de fmCheckMate «FIXME» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "description": "Regla de la familia «Trabajo pendiente»: un objeto de layout contiene una marca FIXME (FIXME, FIX ME, FIX IT, FIXIT) en su texto (texto estático o etiqueta de botón), en la información sobre herramientas o en la fórmula de la etiqueta o del título. Una marca FIXME señala un defecto conocido que se entregó, de ahí la severidad warning. Endurecimiento deliberado frente a la regla de origen: sin distinguir mayúsculas y tolerando separadores; solo así se encuentra un objeto de texto cuyo contenido es «TO DO».\n\nBasado en la comprobación de fmCheckMate «FIXME» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
     "messages.text": "Marca FIXME en el contenido de texto",
     "messages.tooltip": "Marca FIXME en la fórmula de información sobre herramientas",
-    "messages.label": "Marca FIXME en la fórmula de la etiqueta"
+    "messages.label": "Marca FIXME en la fórmula de la etiqueta",
+    "messages.title": "Marca FIXME en la fórmula del título"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Hallazgos",

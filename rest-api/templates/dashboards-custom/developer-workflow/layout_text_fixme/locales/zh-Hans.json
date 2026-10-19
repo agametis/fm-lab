@@ -1,10 +1,11 @@
 {
   "manifest": {
     "title": "布局对象上的 FIXME 标记",
-    "description": "“未完成工作”规则族 — 布局对象的文本内容、工具提示或标签计算式中含有 FIXME 标记（FIXME, FIX ME, FIX IT, FIXIT）。 FIXME 表示已随版本发布的已知缺陷，因此严重度为 warning。 相对源规则的有意收紧：不区分大小写并允许分隔符 —— 只有这样才能找到内容为“TO DO”的文本对象。\n\n基于 fmCheckMate 检查“FIXME” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "description": "“未完成工作”规则族 — 布局对象的文本内容（静态文本或按钮标签）、工具提示、标签计算式或标题计算式中含有 FIXME 标记（FIXME, FIX ME, FIX IT, FIXIT）。 FIXME 表示已随版本发布的已知缺陷，因此严重度为 warning。 相对源规则的有意收紧：不区分大小写并允许分隔符 —— 只有这样才能找到内容为“TO DO”的文本对象。\n\n基于 fmCheckMate 检查“FIXME” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
     "messages.text": "文本内容中的 FIXME 标记",
     "messages.tooltip": "工具提示计算式中的 FIXME 标记",
-    "messages.label": "标签计算式中的 FIXME 标记"
+    "messages.label": "标签计算式中的 FIXME 标记",
+    "messages.title": "标题计算式中的 FIXME 标记"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "发现数",

@@ -50,11 +50,11 @@
     "tree": "Hierarki"
   },
   "form": {
-    "searchLabel": "Sök efter namn:",
+    "searchLabel": "Sök efter namn / UUID:",
     "filterLabel": "Filter:",
     "searchPlaceholder": "t.ex. Import, Email (tomt = alla objekt)",
     "filterPlaceholder": "Filtrera hierarkin efter namn",
-    "searchTitle": "Jokertecknet * matchar valfria tecken (t.ex. *Import, Email*). Lämna tomt för alla objekt.",
+    "searchTitle": "Jokertecknet * matchar valfria tecken (t.ex. *Import, Email*). Lämna tomt för alla objekt. Ett fullständigt UUID hittar objektet direkt; id:42 söker på FileMaker-ID (unikt endast per fil).",
     "filterTitle": "Objekt som innehåller den här texten markeras (även överordnade mappar)",
     "fileLabel": "Fil:",
     "allFiles": "Alla filer",

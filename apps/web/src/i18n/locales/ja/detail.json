@@ -323,7 +323,11 @@
     "filterByCategory": "{{category}} で絞り込む",
     "graphButton": "グラフ",
     "valueListMatch": "値",
-    "spellingMatch": "表記"
+    "spellingMatch": "表記",
+    "uuidMatch": "UUID で一致",
+    "healedUuidMatch": "UUID で一致 (重複)",
+    "healedUuidTitle": "FileMaker はこのオブジェクトを検索した UUID で管理しています。エクスポート内でこの UUID が重複していたため、カタログでは代替 UUID で保持されています。",
+    "idMatch": "ID {{id}} で一致"
   },
   "scriptSearchFilter": {
     "searchAria": "参照を検索",

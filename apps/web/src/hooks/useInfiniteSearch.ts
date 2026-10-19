@@ -112,8 +112,9 @@ export const useInfiniteSearch = ({
     // Wildcard-Mapping: * → % (SQL-Wildcard)
     let pattern = searchName.trim().replace(/\*/g, '%');
 
-    // Wenn Pattern keine Wildcards enthält, füge sie automatisch hinzu
-    if (!pattern.includes('%')) {
+    // Wenn Pattern keine Wildcards enthält, füge sie automatisch hinzu —
+    // außer bei `id:<n>` (Suche nach der FileMaker-ID, kein Namensmuster).
+    if (!pattern.includes('%') && !/^id:/i.test(pattern)) {
       pattern = `%${pattern}%`;
     }
 

@@ -160,6 +160,33 @@ a lean body (< 200 lines; details into `references/`, deterministic work into
 cases before building. New FileMaker-codegen skills additionally register
 themselves in `codegen-registry.md` (A3).
 
+**Frontmatter (Agent Skills spec, agentskills.io).** Claude Code reads frontmatter
+leniently; strict loaders (other agents implementing the spec, `skills-ref`, the
+skill-creator validator) drop a skill on invalid YAML and silently ignore a `skill.md`. Every skill therefore uses
+exactly this form:
+
+```yaml
+---
+name: my-skill                 # = directory name; file is exactly SKILL.md
+description: >-
+  What it does and when to use it (two sentences). Triggers (English): "…", "…".
+  Triggers (German): "…", "…". Also responds to equivalent requests in other languages.
+metadata:
+  version: "0.9.0"             # quoted string; read/stamped by the version tools
+---
+```
+
+- `description` is always a folded block scalar `>-` (a plain scalar breaks on
+  `": "` or `" #"`), at most **1024 characters**, no `<`/`>` placeholders.
+- Trigger phrases in the description: English and German only. Further languages
+  go into a body section `## Triggers in other languages`.
+- Only spec fields (`name`, `description`, `license`, `compatibility`, `metadata`,
+  `allowed-tools`). The skill version lives in `metadata.version`, never top-level.
+- Keep SKILL.md under 500 lines (spec recommendation).
+
+Check with `npm run lint:skills` (`tools/skill-lint.py`); the publish pipeline runs
+the same lint as a gate.
+
 ## B4. Publishing hygiene
 
 Publicly published artifacts (Dockerfiles, compose files, public README, skills,

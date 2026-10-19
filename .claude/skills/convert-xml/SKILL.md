@@ -1,7 +1,13 @@
 ---
 name: convert-xml
-version: 0.9.0
-description: Convert FileMaker XML export to DuckDB database. Automatically handles UTF-8 encoding conversion and creates analyzed database tables. Triggers (English): "convert XML", "import the FileMaker XML", "/convert-xml", "batch import all XML files". Triggers (German): "konvertiere die XML", "importiere die FileMaker-XML", "alle XML-Dateien importieren". Triggers (Spanish): "convertir el XML", "importar el XML de FileMaker". Triggers (French): "convertir le XML", "importer le XML FileMaker". Triggers (Italian): "converti l'XML", "importa l'XML FileMaker". Triggers (Dutch): "converteer de XML", "importeer de FileMaker-XML". Triggers (Portuguese): "converter o XML", "importar o XML do FileMaker". Triggers (Swedish): "konvertera XML", "importera FileMaker-XML". Triggers (Japanese): "XMLを変換", "FileMaker XMLをインポート". Triggers (Korean): "XML 변환", "FileMaker XML 가져오기". Triggers (Chinese): "转换 XML", "导入 FileMaker XML".
+description: >-
+  Convert FileMaker XML export to DuckDB database. Automatically handles UTF-8 encoding conversion
+  and creates analyzed database tables. Triggers (English): "convert XML", "import the FileMaker
+  XML", "/convert-xml", "batch import all XML files". Triggers (German): "konvertiere die XML",
+  "importiere die FileMaker-XML", "alle XML-Dateien importieren". Also responds to equivalent
+  requests in other languages.
+metadata:
+  version: "0.9.0"
 ---
 
 # FileMaker XML to DuckDB Conversion Skill
@@ -305,3 +311,18 @@ Note: Universal catalogs were created for successfully imported files.
 - Performance log is created in `logs/batch_import_YYYYMMDD_HHMMSS.log`
 - Log contains per-file processing times, total duration, and summary
 - Log file location is displayed at the end of the batch import
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "convertir el XML", "importar el XML de FileMaker".
+- **French:** "convertir le XML", "importer le XML FileMaker".
+- **Italian:** "converti l'XML", "importa l'XML FileMaker".
+- **Dutch:** "converteer de XML", "importeer de FileMaker-XML".
+- **Portuguese:** "converter o XML", "importar o XML do FileMaker".
+- **Swedish:** "konvertera XML", "importera FileMaker-XML".
+- **Japanese:** "XMLを変換", "FileMaker XMLをインポート".
+- **Korean:** "XML 변환", "FileMaker XML 가져오기".
+- **Chinese:** "转换 XML", "导入 FileMaker XML".

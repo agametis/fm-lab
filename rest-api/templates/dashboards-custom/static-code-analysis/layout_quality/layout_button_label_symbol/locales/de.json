@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Symbol in Button-Beschriftung",
+    "description": "Layout-Qualitätsregel — ein Button oder Popover-Button trägt ein {{Symbol}} in seiner Beschriftung. FileMaker wertet Symbole nur in Textobjekten aus; in einer Button-Beschriftung wird das Symbol nie ersetzt und erscheint im Blätter- und Seitenansichtsmodus LITERAL, auch ein gültiger Get-Parameter wie {{CurrentDate}}. Merge-Felder, Merge-Variablen und Layoutformeln in derselben Beschriftung wertet FileMaker dagegen aus — das Symbol ist damit die einzige Ankerart, die dort lautlos wirkungslos bleibt. Gemeldet als Info, weil der wörtliche Text gewollt sein kann.",
+    "messages.not-evaluated": "Symbole werden in einer Button-Beschriftung nicht ausgewertet — es wird literal gerendert"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Treffer",
+    "summary_kpi.props.items[1].label": "Verschiedene Symbole",
+    "summary_kpi.props.items[2].label": "Betroffene Layouts",
+    "summary_kpi.props.items[3].label": "Betroffene Dateien",
+    "findings_card.props.title": "Symbol in Button-Beschriftung",
+    "findings_table.props.searchPlaceholder": "Datei, Layout, Objekt oder Symbol suchen…",
+    "findings_table.props.empty.message": "Keine Symbole in Button-Beschriftungen gefunden.",
+    "findings_table.props.columns[0].label": "Datei",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Objekt",
+    "findings_table.props.columns[3].label": "Symbol",
+    "findings_table.props.columns[4].label": "Vorkommen",
+    "findings_table.props.columns[7].label": "Breite",
+    "findings_table.props.columns[8].label": "Höhe"
+  }
+}

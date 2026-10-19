@@ -1,10 +1,11 @@
 {
   "manifest": {
     "title": "TODO-Marker an einem Layoutobjekt",
-    "description": "Regel der Familie „Unfertige Arbeit“ — ein Layoutobjekt trägt einen TODO-Marker (TODO, TO DO, TO-DO, TBD, to be done, to be defined) im Textinhalt, in der QuickInfo- oder in der Beschriftungs-Formel. Ein TODO beschreibt geplante Arbeit, keinen Defekt — deshalb Severity info: die Regel zählt mit eigener Zahl, färbt die Ampel aber nie gelb. Bewusste Verschärfung gegenüber der Quellregel: case-insensitiv und trennzeichentolerant — nur so wird etwa ein Textobjekt mit dem Inhalt „TO DO“ gefunden.\n\nAngelehnt an die fmCheckMate-Prüfung „FIXME“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "description": "Regel der Familie „Unfertige Arbeit“ — ein Layoutobjekt trägt einen TODO-Marker (TODO, TO DO, TO-DO, TBD, to be done, to be defined) im Textinhalt (statischer Text oder Button-Beschriftung), in der QuickInfo-, Beschriftungs- oder Titel-Formel. Ein TODO beschreibt geplante Arbeit, keinen Defekt — deshalb Severity info: die Regel zählt mit eigener Zahl, färbt die Ampel aber nie gelb. Bewusste Verschärfung gegenüber der Quellregel: case-insensitiv und trennzeichentolerant — nur so wird etwa ein Textobjekt mit dem Inhalt „TO DO“ gefunden.\n\nAngelehnt an die fmCheckMate-Prüfung „FIXME“ — https://github.com/mrwatson-de/fmCheckMate-XSLT",
     "messages.text": "TODO-Marker im Textinhalt",
     "messages.tooltip": "TODO-Marker in der QuickInfo-Formel",
-    "messages.label": "TODO-Marker in der Beschriftungs-Formel"
+    "messages.label": "TODO-Marker in der Beschriftungs-Formel",
+    "messages.title": "TODO-Marker in der Titel-Formel"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Treffer",

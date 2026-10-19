@@ -57,11 +57,10 @@ root_objects AS (
         t.z_order::BIGINT as Z_Order,
         xml_extract_text(object_xml, '/LayoutObject/Conditions/Hide/Calculation/Text')[1] as Hide_Calculation_Text,
         xml_extract_text(object_xml, '/LayoutObject/Tooltip/Calculation/Text')[1] as Tooltip_Calculation_Text,
-        COALESCE(
-            xml_extract_text(object_xml, '/LayoutObject/Button/Label/Calculation/Text')[1],
-            xml_extract_text(object_xml, '/LayoutObject/GroupedButton/Label/Calculation/Text')[1],
-            xml_extract_text(object_xml, '/LayoutObject/PopoverButton/Label/Calculation/Text')[1]
-        ) as Label_Calculation_Text,
+        fm_layout_object_label_calc(
+            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::BIGINT, object_xml) as Label_Calculation_Text,
+        fm_layout_object_title_calc(
+            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::BIGINT, object_xml) as Title_Calculation_Text,
         array_to_string(
             xml_extract_text(object_xml, '/LayoutObject/ScriptTriggers/ScriptTrigger/ScriptReference/Calculation/Text'),
             E'\n'
@@ -71,7 +70,8 @@ root_objects AS (
         -- Formel steht NUR im 26er Export (SaXML 2.2.3.0 lässt sie weg).
         xml_extract_text(object_xml, '/LayoutObject/Field/Options')[1]::BIGINT as Entry_Options_Raw,
         xml_extract_text(object_xml, '/LayoutObject/CanEntryCalc/Calculation/Text')[1] as Entry_Calculation_Text,
-        xml_extract_text(object_xml, '/LayoutObject/Text/StyledText/Data')[1] as Text_Content,
+        fm_layout_object_text(
+            xml_extract_text(object_xml, '/LayoutObject/@kind')[1]::BIGINT, object_xml) as Text_Content,
         object_xml
     FROM parts_resolved
     CROSS JOIN LATERAL unnest(
@@ -84,7 +84,7 @@ nested_objects AS (
         Object_Hash, Object_UUID, Bounds_Top, Bounds_Left, Bounds_Bottom, Bounds_Right,
         Parent_Object_ID, Nesting_Level, Z_Order,
         Hide_Calculation_Text, Tooltip_Calculation_Text, Label_Calculation_Text,
-        ScriptTrigger_Parameter_Text, Entry_Options_Raw, Entry_Calculation_Text,
+        Title_Calculation_Text, ScriptTrigger_Parameter_Text, Entry_Options_Raw, Entry_Calculation_Text,
         Text_Content, object_xml
     FROM root_objects
 
@@ -111,11 +111,10 @@ nested_objects AS (
         t.z_order::BIGINT as Z_Order,
         xml_extract_text(child_xml, '/LayoutObject/Conditions/Hide/Calculation/Text')[1] as Hide_Calculation_Text,
         xml_extract_text(child_xml, '/LayoutObject/Tooltip/Calculation/Text')[1] as Tooltip_Calculation_Text,
-        COALESCE(
-            xml_extract_text(child_xml, '/LayoutObject/Button/Label/Calculation/Text')[1],
-            xml_extract_text(child_xml, '/LayoutObject/GroupedButton/Label/Calculation/Text')[1],
-            xml_extract_text(child_xml, '/LayoutObject/PopoverButton/Label/Calculation/Text')[1]
-        ) as Label_Calculation_Text,
+        fm_layout_object_label_calc(
+            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::BIGINT, child_xml) as Label_Calculation_Text,
+        fm_layout_object_title_calc(
+            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::BIGINT, child_xml) as Title_Calculation_Text,
         array_to_string(
             xml_extract_text(child_xml, '/LayoutObject/ScriptTriggers/ScriptTrigger/ScriptReference/Calculation/Text'),
             E'\n'
@@ -125,10 +124,8 @@ nested_objects AS (
         -- Formel steht NUR im 26er Export (SaXML 2.2.3.0 lässt sie weg).
         xml_extract_text(child_xml, '/LayoutObject/Field/Options')[1]::BIGINT as Entry_Options_Raw,
         xml_extract_text(child_xml, '/LayoutObject/CanEntryCalc/Calculation/Text')[1] as Entry_Calculation_Text,
-        COALESCE(
-            xml_extract_text(child_xml, '/LayoutObject/Text/StyledText/Data')[1],
-            xml_extract_text(child_xml, '/LayoutObject/Title/Text')[1]
-        ) as Text_Content,
+        fm_layout_object_text(
+            xml_extract_text(child_xml, '/LayoutObject/@kind')[1]::BIGINT, child_xml) as Text_Content,
         child_xml as object_xml
     FROM nested_objects parent
     CROSS JOIN LATERAL unnest(
@@ -183,6 +180,7 @@ SELECT
     ws_restore(Hide_Calculation_Text) as Hide_Calculation_Text,
     ws_restore(Tooltip_Calculation_Text) as Tooltip_Calculation_Text,
     ws_restore(Label_Calculation_Text) as Label_Calculation_Text,
+    ws_restore(Title_Calculation_Text) as Title_Calculation_Text,
     ws_restore(ScriptTrigger_Parameter_Text) as ScriptTrigger_Parameter_Text,
     Entry_Options_Raw,
     -- Feld-Eingabe je Modus (Schema 1.31.0). Zwei Bits je Modus kodieren
@@ -242,6 +240,7 @@ ON CONFLICT (Object_UUID, File_Name) DO UPDATE SET
     Hide_Calculation_Text = EXCLUDED.Hide_Calculation_Text,
     Tooltip_Calculation_Text = EXCLUDED.Tooltip_Calculation_Text,
     Label_Calculation_Text = EXCLUDED.Label_Calculation_Text,
+    Title_Calculation_Text = EXCLUDED.Title_Calculation_Text,
     ScriptTrigger_Parameter_Text = EXCLUDED.ScriptTrigger_Parameter_Text,
     Entry_Options_Raw = EXCLUDED.Entry_Options_Raw,
     Entry_Browse = EXCLUDED.Entry_Browse,

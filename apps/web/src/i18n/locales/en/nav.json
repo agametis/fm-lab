@@ -53,11 +53,11 @@
     "tree": "Hierarchy"
   },
   "form": {
-    "searchLabel": "Search by name:",
+    "searchLabel": "Search by name / UUID:",
     "filterLabel": "Filter:",
     "searchPlaceholder": "e.g. Import, Email (empty = all objects)",
     "filterPlaceholder": "Filter the hierarchy by name",
-    "searchTitle": "Wildcard * matches any characters (e.g. *Import, Email*). Leave empty for all objects.",
+    "searchTitle": "Wildcard * matches any characters (e.g. *Import, Email*). Leave empty for all objects. A full UUID finds the object directly; id:42 searches by FileMaker ID (unique per file only).",
     "filterTitle": "Items containing this text are highlighted (including parent folders)",
     "fileLabel": "File:",
     "allFiles": "All files",

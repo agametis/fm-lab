@@ -1,7 +1,12 @@
 ---
 name: install-duckdb-docs
-version: 0.9.0
-description: Download and install DuckDB documentation from duckdb.org. Automatically checks for newer versions and prompts before replacing existing docs. Triggers (English): "install DuckDB docs", "update DuckDB documentation". Triggers (German): "installiere die DuckDB-Doku", "DuckDB-Dokumentation aktualisieren".
+description: >-
+  Download and install DuckDB documentation from duckdb.org. Automatically checks for newer
+  versions and prompts before replacing existing docs. Triggers (English): "install DuckDB docs",
+  "update DuckDB documentation". Triggers (German): "installiere die DuckDB-Doku",
+  "DuckDB-Dokumentation aktualisieren". Also responds to equivalent requests in other languages.
+metadata:
+  version: "0.9.0"
 ---
 
 # DuckDB Documentation Installation Skill
@@ -168,3 +173,18 @@ ERROR: [specific error message]
 - The script is safe to run multiple times
 - Documentation is a single Markdown file (~15 MB) containing the complete DuckDB docs
 - After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.py`, so the web home dashboard's Docs card can list it.
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "instalar la documentación de DuckDB", "actualizar la documentación de DuckDB".
+- **French:** "installer la documentation DuckDB", "mettre à jour la documentation DuckDB".
+- **Italian:** "installa la documentazione DuckDB", "aggiorna la documentazione DuckDB".
+- **Dutch:** "installeer de DuckDB-documentatie", "DuckDB-documentatie bijwerken".
+- **Portuguese:** "instalar a documentação do DuckDB", "atualizar a documentação do DuckDB".
+- **Swedish:** "installera DuckDB-dokumentationen", "uppdatera DuckDB-dokumentationen".
+- **Japanese:** "DuckDBドキュメントをインストール", "DuckDBドキュメントを更新".
+- **Korean:** "DuckDB 문서 설치", "DuckDB 문서 업데이트".
+- **Chinese:** "安装 DuckDB 文档", "更新 DuckDB 文档".

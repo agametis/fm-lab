@@ -63,11 +63,11 @@ Count objects, optionally grouped.
 
 ## GET /api/search
 
-Search objects by name pattern.
+Search objects by name pattern — or by identity (UUID, numeric FileMaker ID).
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `name` | string | — | **Required.** SQL `LIKE` pattern, e.g. `%Import%` (case-insensitive) |
+| `name` | string | — | **Required.** SQL `LIKE` pattern, e.g. `%Import%` (case-insensitive), or an identity term (see [Identity search](#identity-search)) |
 | `type` | enum | — | Optional type filter |
 | `file` | string | — | Optional file filter |
 | `limit` | integer | `100` | |
@@ -83,9 +83,51 @@ A built-in is catalogued under its canonical English name — that is its identi
 curl "http://localhost:3003/api/search?name=%25Invoice%25&type=script"
 ```
 
+### Identity search
+
+The same endpoint finds an object by its identity. An identity matches **only as the whole term** — it is compared for equality, never as a substring: `D9D61A5F` or a UUID missing its last character finds nothing by identity (it stays an ordinary name/full-text search). One outer `%…%` wrapper — the one the web client adds — is ignored; any further `%` turns identity matching off.
+
+| Term | Matches |
+|---|---|
+| FileMaker UUID (`D9D61A5F-9B96-462A-8A84-1CFDD2D737BA`) | The object with that UUID. Case-insensitive; `{…}`, quotes and `urn:uuid:` are tolerated |
+| 32-hex UUID (`0004a0f0c94ef720cc7a8794bee51759`) | The synthetic UUIDs fm-lab assigns to `Calculation`, `Variable`, `BuiltinFunction`, `PluginFunction`, `ScriptStepType`, … — the ones in fm-lab deep links and API responses. Found even for types the plain name search leaves out |
+| Import key (`rel_100_Adressen`, `part_…`, `trig_…`, `paste_…`) | `Relationship`, `LayoutPart`, `ScriptTrigger`, `PasteIndexObject` by their composite catalog key |
+| `id:<n>` (`id:42`) | The numeric FileMaker ID (`Object_ID`). Runs **no** name search |
+
+**Duplicated FileMaker UUIDs.** When an export carries the same UUID more than once, the import keeps it on one object and re-keys the others (`DuplicateAbsorptionDetails`). Searching the original UUID returns all of them: the object that kept it plus every re-keyed sibling.
+
+**`id:<n>` is unique per file only.** Without `type` it searches the types whose ID is unique within a file: `Script`, `Layout`, `TableOccurrence`, `Relationship`, `BaseTable`, `ValueList`, `CustomFunction`, `CustomMenu`, `CustomMenuSet`, `PasteIndexObject`, `ExternalDataSource`, `Account`, `PrivilegeSet`, `ExtendedPrivilege`, `Theme`, `BaseDirectory` — one hit per file that uses the number. Combine it with `file` (and `type`) to pin one object. With an explicit `type`:
+
+| `type` | `id:<n>` means |
+|---|---|
+| one of the types above | its FileMaker ID |
+| `field` | the field ID — unique per table, so expect one hit per table; `Object_Name` (`Table::Field`) tells them apart |
+| `builtinfunction` | the Function-ID of the native function (`id:338` → `Substitute`) |
+| `scriptsteptype` | the Step-ID of the script step (`id:141` → `Set Variable`, plus every localized step name the solution uses) |
+| `layoutobject`, `layoutpart`, `scriptstep`, `scripttrigger` and every other type | no hits — their number identifies nothing without its container (layout, menu) or is a type/event ID |
+
+A bare number (`42`) stays a name search, so names like `Print 2` never turn into ID hits.
+
+**Interplay with the name search.** An identity hit is added to the regular name and full-text hits — a script that contains the UUID as a literal is still found. Identity hits come first and carry `Match_Kind`; an object found both ways appears once, as identity hit. `type` and `file` filter identity hits like every other hit, and `/search/count` counts the same set.
+
+| `Match_Kind` | Meaning |
+|---|---|
+| `uuid` | The term equals the object's UUID or import key |
+| `healed_uuid` | The term is the original FileMaker UUID of a re-keyed duplicate |
+| `object_id` · `function_id` · `step_id` | Found via `id:<n>`; `Matched_Values` holds the number |
+
+Name and full-text hits carry no `Match_Kind`.
+
+```bash
+curl "http://localhost:3003/api/search?name=D9D61A5F-9B96-462A-8A84-1CFDD2D737BA"
+curl "http://localhost:3003/api/search?name=id:42&type=script&file=Contacts"
+```
+
+In the web frontend the same terms work in the search field (`/?q=<UUID>`, `/?q=id:42`); identity hits show a *Matched by UUID* / *Matched by ID* label below the name.
+
 ## GET /api/search/count
 
-Count of the same search predicate, without paging: parameters `name` (required), `type`, `file`; response `{ "count": 42 }`.
+Count of the same search predicate, without paging: parameters `name` (required, including [identity terms](#identity-search)), `type`, `file`; response `{ "count": 42 }`.
 
 ---
 

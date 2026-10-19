@@ -1,0 +1,93 @@
+{
+  "id": "layout_button_label_symbol",
+  "version": "1.0.0",
+  "title": "Symbol in button label",
+  "description": "Layout-quality rule — a button or popover button carries a {{Symbol}} in its label. FileMaker evaluates symbols only in text objects; in a button label the symbol is never replaced and shows up LITERALLY in browse and preview mode, even a valid Get parameter such as {{CurrentDate}}. Merge fields, merge variables and layout calculations typed into the same label are evaluated, which makes the symbol the one anchor kind that silently does nothing there. Reported as info, because the literal text may be intended.",
+  "author": "fm-lab rules",
+  "icon": "text-quote",
+  "category": "layout_quality",
+  "tags": [
+    "rule",
+    "layout_quality",
+    "merge",
+    "symbols",
+    "buttons"
+  ],
+  "entry": "layout.json",
+  "rule": {
+    "severity": "info",
+    "category": "layout_quality",
+    "rationale": "The label shows {{CurrentDate}} instead of today's date. Nothing errors and nothing logs; the author only notices it by looking at the layout in browse mode.",
+    "remediation": "Replace the symbol with a layout calculation (<<ƒ:Get ( CurrentDate )>>), which FileMaker does evaluate in a button label, or remove it if the value is not wanted.",
+    "meta": {
+      "name": "Symbol in button label",
+      "author": "fm-lab rules",
+      "source": "fm-lab",
+      "url": null,
+      "description": "A {{Symbol}} in the label of a button or popover button. FileMaker does not evaluate symbols there; the text renders literally.",
+      "created": "2026-10-11",
+      "references": []
+    }
+  },
+  "analysis": {
+    "objectTypes": [
+      "Layout"
+    ],
+    "outputTypes": [
+      "count",
+      "findings-table"
+    ],
+    "scope": {
+      "supported": [
+        "solution",
+        "file",
+        "object",
+        "object-list",
+        "cluster"
+      ],
+      "anchor": "nav_uuid",
+      "mode": {
+        "summary": "native",
+        "findings": "native"
+      }
+    },
+    "defaultResult": {
+      "dataset": "summary",
+      "column": "finding_count",
+      "type": "number",
+      "name": "finding_count",
+      "meaning": "Number of findings — Symbol in button label"
+    }
+  },
+  "datasets": [
+    {
+      "id": "summary",
+      "source": "bundle:data/summary.sql"
+    },
+    {
+      "id": "findings",
+      "source": "bundle:data/findings.sql"
+    }
+  ],
+  "params": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Optional file filter (from the app-level filter)."
+    },
+    {
+      "name": "limit",
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of findings returned (default 500)."
+    }
+  ],
+  "permissions": {
+    "read_only": true,
+    "allow_navigation": true
+  },
+  "messages": {
+    "not-evaluated": "Symbols are not evaluated in a button label — it renders literally"
+  }
+}

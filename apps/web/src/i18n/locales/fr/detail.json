@@ -323,7 +323,11 @@
     "filterByCategory": "Filtrer par {{category}}",
     "graphButton": "Graphe",
     "valueListMatch": "Valeurs",
-    "spellingMatch": "Orthographe"
+    "spellingMatch": "Orthographe",
+    "uuidMatch": "Trouvé par UUID",
+    "healedUuidMatch": "Trouvé par UUID (doublon)",
+    "healedUuidTitle": "FileMaker référence cet objet sous l’UUID recherché ; cet UUID apparaissant plusieurs fois dans l’export, le catalogue le conserve sous un UUID de remplacement.",
+    "idMatch": "Trouvé par ID {{id}}"
   },
   "scriptSearchFilter": {
     "searchAria": "Rechercher des références",

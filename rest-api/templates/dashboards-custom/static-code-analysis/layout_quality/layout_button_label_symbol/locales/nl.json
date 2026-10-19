@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "Symbool in knoplabel",
+    "description": "Layoutkwaliteitsregel — een knop of popoverknop bevat een {{Symbool}} in zijn label. FileMaker evalueert symbolen alleen in tekstobjecten; in een knoplabel wordt het symbool nooit vervangen en verschijnt het LETTERLIJK in de modi Bladeren en Voorbeeld, ook een geldige Get-parameter zoals {{CurrentDate}}. Samenvoegvelden, samenvoegvariabelen en layoutberekeningen in hetzelfde label worden wel geëvalueerd — het symbool is daarmee de enige ankersoort die daar stilletjes niets doet. Gemeld als informatie, omdat de letterlijke tekst bedoeld kan zijn.",
+    "messages.not-evaluated": "Symbolen worden in een knoplabel niet geëvalueerd — het wordt letterlijk weergegeven"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "Bevindingen",
+    "summary_kpi.props.items[1].label": "Verschillende symbolen",
+    "summary_kpi.props.items[2].label": "Getroffen layouts",
+    "summary_kpi.props.items[3].label": "Getroffen bestanden",
+    "findings_card.props.title": "Symbool in knoplabel",
+    "findings_table.props.searchPlaceholder": "Zoek bestand, layout, object of symbool…",
+    "findings_table.props.empty.message": "Geen symbolen in knoplabels gevonden.",
+    "findings_table.props.columns[0].label": "Bestand",
+    "findings_table.props.columns[1].label": "Layout",
+    "findings_table.props.columns[2].label": "Object",
+    "findings_table.props.columns[3].label": "Symbool",
+    "findings_table.props.columns[4].label": "Voorkomens",
+    "findings_table.props.columns[7].label": "Breedte",
+    "findings_table.props.columns[8].label": "Hoogte"
+  }
+}

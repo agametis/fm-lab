@@ -1,7 +1,18 @@
 ---
 name: fm-deep-research
-version: 0.9.0
-description: Writes a solution-level research report (executive summary, business context, architecture, technical build, findings, recommendations, segment appendix) from the clustered object graph in `db/fm_catalog.duckdb` and the member objects of its largest segments, rendered from a Markdown template into `output/`; the chat shows only a short summary with a link. Use it to understand a solution you did not build (onboarding, takeover, technical-debt review); use `fm-graph-cluster` to create or re-name the segmentation itself - this skill checks for a usable partition first and asks whether to run it. Triggers (English) - "/fm-deep-research", "deep research on this solution", "describe the architecture of this solution", "write a solution report", "what does this solution do as a whole". Triggers (German) - "Deep Research zur Lösung", "beschreibe die Architektur dieser Lösung", "erstelle einen Lösungsbericht", "was macht diese Lösung insgesamt". Triggers (Spanish) - "describe la arquitectura de esta solución", "informe de la solución". Triggers (French) - "décris l'architecture de cette solution", "rapport de la solution". Triggers (Italian) - "descrivi l'architettura di questa soluzione", "rapporto della soluzione". Triggers (Dutch) - "beschrijf de architectuur van deze oplossing", "oplossingsrapport". Triggers (Portuguese) - "descreva a arquitetura desta solução", "relatório da solução". Triggers (Swedish) - "beskriv lösningens arkitektur", "lösningsrapport". Triggers (Japanese) - "このソリューションのアーキテクチャを説明して", "ソリューションレポートを作成して". Triggers (Korean) - "이 솔루션의 아키텍처를 설명해 줘", "솔루션 보고서를 작성해 줘". Triggers (Chinese) - "描述这个解决方案的架构", "生成解决方案报告".
+description: >-
+  Writes a solution-level research report (business context, architecture, findings,
+  recommendations, segment appendix) from the clustered object graph in `db/fm_catalog.duckdb`,
+  rendered from a Markdown template into `output/`; the chat shows only a short summary with a
+  link. Use it to understand a solution you did not build (onboarding, takeover, technical-debt
+  review). To create or re-name the segmentation itself use `fm-graph-cluster` — this skill checks
+  for a usable partition first and offers to run it. Triggers (English): "/fm-deep-research",
+  "deep research on this solution", "describe the architecture of this solution", "write a
+  solution report", "what does this solution do as a whole". Triggers (German): "Deep Research zur
+  Lösung", "beschreibe die Architektur dieser Lösung", "erstelle einen Lösungsbericht", "was macht
+  diese Lösung insgesamt". Also responds to equivalent requests in other languages.
+metadata:
+  version: "0.9.0"
 ---
 
 # FileMaker Solution Deep Research
@@ -218,3 +229,18 @@ Protocol: readiness <level> · scanned <n_deep>/<K> · tests <n> run · write-ba
 - `scripts/solution_profile.sql`, `scripts/community_signals.sql`, `scripts/script_steps.sql`, `scripts/duplication.sql`, `scripts/segment_inventory.sql` (B.6), `scripts/session_usage.sh` + `session_usage.sql` (B.7 run metrics from the session transcript, DuckDB only)
 - `../_shared/scripts/cluster_state.sh`, `../_shared/scripts/community_members.sql`, `../_shared/scripts/cluster_run_named.sh`; `../fm-graph-cluster/scripts/hubs.sql`
 - `../_shared/response-language.md` — hedging vocabulary per language
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "describe la arquitectura de esta solución", "informe de la solución".
+- **French:** "décris l'architecture de cette solution", "rapport de la solution".
+- **Italian:** "descrivi l'architettura di questa soluzione", "rapporto della soluzione".
+- **Dutch:** "beschrijf de architectuur van deze oplossing", "oplossingsrapport".
+- **Portuguese:** "descreva a arquitetura desta solução", "relatório da solução".
+- **Swedish:** "beskriv lösningens arkitektur", "lösningsrapport".
+- **Japanese:** "このソリューションのアーキテクチャを説明して", "ソリューションレポートを作成して".
+- **Korean:** "이 솔루션의 아키텍처를 설명해 줘", "솔루션 보고서를 작성해 줘".
+- **Chinese:** "描述这个解决方案的架构", "生成解决方案报告".

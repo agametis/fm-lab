@@ -1,10 +1,11 @@
 {
   "manifest": {
     "title": "FIXME-markering op een lay-outobject",
-    "description": "Regel uit de familie “Onafgemaakt werk”: een lay-outobject bevat een FIXME-markering (FIXME, FIX ME, FIX IT, FIXIT) in de tekst, de knopinfo of de labelformule. Een FIXME benoemt een bekend defect dat is uitgeleverd — vandaar severity warning. Bewuste aanscherping ten opzichte van de bronregel: hoofdletterongevoelig en scheidingstekentolerant — alleen zo wordt een tekstobject met de inhoud “TO DO” gevonden.\n\nGebaseerd op de fmCheckMate-controle “FIXME” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "description": "Regel uit de familie “Onafgemaakt werk”: een lay-outobject bevat een FIXME-markering (FIXME, FIX ME, FIX IT, FIXIT) in de tekst (statische tekst of knoplabel), de knopinfo, de labelformule of de titelformule. Een FIXME benoemt een bekend defect dat is uitgeleverd — vandaar severity warning. Bewuste aanscherping ten opzichte van de bronregel: hoofdletterongevoelig en scheidingstekentolerant — alleen zo wordt een tekstobject met de inhoud “TO DO” gevonden.\n\nGebaseerd op de fmCheckMate-controle “FIXME” — https://github.com/mrwatson-de/fmCheckMate-XSLT",
     "messages.text": "FIXME-markering in de tekstinhoud",
     "messages.tooltip": "FIXME-markering in de knopinfoformule",
-    "messages.label": "FIXME-markering in de labelformule"
+    "messages.label": "FIXME-markering in de labelformule",
+    "messages.title": "FIXME-markering in de titelformule"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Bevindingen",

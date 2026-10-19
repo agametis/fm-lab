@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "title": "ボタンラベル内のシンボル",
+    "description": "レイアウト品質ルール — ボタンまたはポップオーバーボタンのラベルに {{シンボル}} が含まれています。FileMaker がシンボルを評価するのはテキストオブジェクトの中だけです。ボタンラベルではシンボルは置き換えられず、ブラウズモードとプレビューモードで「文字どおり」表示されます。{{CurrentDate}} のような有効な Get 引数でも同じです。同じラベルに入力したマージフィールド、マージ変数、レイアウト計算式は評価されるため、シンボルはそこで黙って何もしない唯一のアンカー種別です。文字どおりのテキストが意図されている場合もあるため、情報として報告します。",
+    "messages.not-evaluated": "ボタンラベル内のシンボルは評価されません — 文字どおり表示されます"
+  },
+  "layout": {
+    "summary_kpi.props.items[0].label": "検出数",
+    "summary_kpi.props.items[1].label": "シンボルの種類",
+    "summary_kpi.props.items[2].label": "影響を受けるレイアウト",
+    "summary_kpi.props.items[3].label": "影響を受けるファイル",
+    "findings_card.props.title": "ボタンラベル内のシンボル",
+    "findings_table.props.searchPlaceholder": "ファイル、レイアウト、オブジェクト、シンボルを検索…",
+    "findings_table.props.empty.message": "ボタンラベル内のシンボルは見つかりませんでした。",
+    "findings_table.props.columns[0].label": "ファイル",
+    "findings_table.props.columns[1].label": "レイアウト",
+    "findings_table.props.columns[2].label": "オブジェクト",
+    "findings_table.props.columns[3].label": "シンボル",
+    "findings_table.props.columns[4].label": "出現数",
+    "findings_table.props.columns[7].label": "幅",
+    "findings_table.props.columns[8].label": "高さ"
+  }
+}

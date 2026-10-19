@@ -50,11 +50,11 @@
     "tree": "階層"
   },
   "form": {
-    "searchLabel": "名前で検索:",
+    "searchLabel": "名前 / UUID で検索:",
     "filterLabel": "フィルター:",
     "searchPlaceholder": "例: Import、Email (空 = すべてのオブジェクト)",
     "filterPlaceholder": "階層を名前で絞り込む",
-    "searchTitle": "ワイルドカード * は任意の文字に一致します (例: *Import、Email*)。空のままにするとすべてのオブジェクトが対象です。",
+    "searchTitle": "ワイルドカード * は任意の文字に一致します (例: *Import、Email*)。空のままにするとすべてのオブジェクトが対象です。 完全な UUID でオブジェクトを直接検索できます。id:42 は FileMaker ID で検索します (ファイル内でのみ一意)。",
     "filterTitle": "このテキストを含む項目はハイライト表示されます (親フォルダーを含む)",
     "fileLabel": "ファイル:",
     "allFiles": "すべてのファイル",

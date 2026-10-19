@@ -951,6 +951,9 @@ export interface LayoutObjectDetailProps {
   objectType: string;
 }
 
+/** Objekttypen, deren sichtbarer Text in Text_Content steht (Text, Button-Beschriftung). */
+const TEXT_CONTENT_TYPES = new Set(['Text', 'Button', 'Popover Button']);
+
 /**
  * LayoutObject-Detail — Sektions-Rangfolge (daten-getrieben, kein Typ-Switch):
  *   1. Ziel-Leiste (Rücksprung + Chips)
@@ -993,8 +996,9 @@ export const LayoutObjectDetail: React.FC<LayoutObjectDetailProps> = ({ uuid }) 
       )}
       {/* Textinhalt: der Original-Textblock verbatim — die Layout-
           Wahrheit inkl. aller Merge-Anker und Fließtext (die Berechnungs-
-          Slots darunter zeigen nur die zerlegten Formeln). Nur Text-Objekte. */}
-      {data?.layoutObject?.type === 'Text' && data.layoutObject.textContent && (
+          Slots darunter zeigen nur die zerlegten Formeln). Text-Objekte sowie
+          die Beschriftung von Buttons und Popover-Buttons (Schema 1.33.0). */}
+      {TEXT_CONTENT_TYPES.has(data?.layoutObject?.type ?? '') && data?.layoutObject?.textContent && (
         <div className="object-detail layoutobject-textcontent" aria-label={t('detail:textContent.heading', { defaultValue: 'Text content' }) as string}>
           <h2 className="type-detail-heading">
             {t('detail:textContent.heading', { defaultValue: 'Text content' })}

@@ -1,27 +1,16 @@
 ---
 name: select-solution
-version: 0.9.0
-description: >
-  Switches the active fm-lab solution (the workspace default: pointer file +
-  db/ symlinks + running API) via tools/solution.sh. Use when the user wants to
-  change, switch or activate a solution — with an id given, a near-miss typo to
-  confirm, or no argument at all (then list and pick). Not for session-only pins
-  (FMLAB_SOLUTION) nor for creating solutions (solution.sh create). Triggers
-  (English): "/select-solution", "switch solution", "activate solution X",
-  "change the active solution", "which solution should be active". Triggers
-  (German): "/select-solution", "wechsle die Lösung", "aktiviere Lösung X",
-  "Lösung umschalten", "welche Lösung soll aktiv sein". Triggers (Spanish):
-  "cambia la solución", "activa la solución X", "cambiar la solución activa".
-  Triggers (French): "change de solution", "active la solution X", "changer la
-  solution active". Triggers (Italian): "cambia la soluzione", "attiva la
-  soluzione X", "cambiare la soluzione attiva". Triggers (Dutch): "wissel de
-  oplossing", "activeer oplossing X", "verander de actieve oplossing". Triggers
-  (Portuguese): "trocar a solução", "ativar a solução X", "mudar a solução
-  ativa". Triggers (Swedish): "byt lösning", "aktivera lösning X", "ändra aktiv
-  lösning". Triggers (Japanese): "ソリューションを切り替えて",
-  "ソリューションXを有効化", "アクティブなソリューションを変更". Triggers
-  (Korean): "솔루션 전환", "솔루션 X 활성화", "활성 솔루션 변경". Triggers
-  (Chinese): "切换解决方案", "激活解决方案 X", "更改活动解决方案".
+description: >-
+  Switches the active fm-lab solution (the workspace default: pointer file + db/ symlinks +
+  running API) via tools/solution.sh. Use when the user wants to change, switch or activate a
+  solution — with an id given, a near-miss typo to confirm, or no argument at all (then list and
+  pick). Not for session-only pins (FMLAB_SOLUTION) nor for creating solutions (solution.sh
+  create). Triggers (English): "/select-solution", "switch solution", "activate solution X",
+  "change the active solution", "which solution should be active". Triggers (German):
+  "/select-solution", "wechsle die Lösung", "aktiviere Lösung X", "Lösung umschalten", "welche
+  Lösung soll aktiv sein". Also responds to equivalent requests in other languages.
+metadata:
+  version: "0.9.0"
 ---
 
 # select-solution — Switch the active fm-lab solution
@@ -96,3 +85,18 @@ Respond in the user's language; keep solution ids verbatim.
 | `ERROR: unknown solution '<x>'`      | No such bundle        | Fall back to the near-match / list branch and ask the user.     |
 | Argument is empty or matches nothing | No usable id          | List branch: numbered list + ask (step 2, case 3).              |
 | Argument already active              | Chosen id carries `*` | Report "already active", do not switch.                         |
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "cambia la solución", "activa la solución X", "cambiar la solución activa".
+- **French:** "change de solution", "active la solution X", "changer la solution active".
+- **Italian:** "cambia la soluzione", "attiva la soluzione X", "cambiare la soluzione attiva".
+- **Dutch:** "wissel de oplossing", "activeer oplossing X", "verander de actieve oplossing".
+- **Portuguese:** "trocar a solução", "ativar a solução X", "mudar a solução ativa".
+- **Swedish:** "byt lösning", "aktivera lösning X", "ändra aktiv lösning".
+- **Japanese:** "ソリューションを切り替えて", "ソリューションXを有効化", "アクティブなソリューションを変更".
+- **Korean:** "솔루션 전환", "솔루션 X 활성화", "활성 솔루션 변경".
+- **Chinese:** "切换解决方案", "激活解决方案 X", "更改活动解决方案".

@@ -339,7 +339,11 @@
     "filterByCategory": "Filter by {{category}}",
     "graphButton": "Graph",
     "valueListMatch": "Values",
-    "spellingMatch": "Spelling"
+    "spellingMatch": "Spelling",
+    "uuidMatch": "Matched by UUID",
+    "healedUuidMatch": "Matched by UUID (duplicate)",
+    "healedUuidTitle": "FileMaker lists this object under the searched UUID; because the UUID occurred more than once in the export, the catalog keeps it under a replacement UUID.",
+    "idMatch": "Matched by ID {{id}}"
   },
   "scriptSearchFilter": {
     "searchAria": "Search references",

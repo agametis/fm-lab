@@ -1,22 +1,15 @@
 ---
 name: fm-open
-version: 0.8.9
-description: >
-  Opens a FileMaker object directly in FileMaker Pro via an fmIDE fmp:// URL,
-  after verifying through the FM-Lab REST API that the fmIDE plugin is enabled
-  and the fmIDE script exists in the target file. Use fm-show instead to display
-  the object in the FM-Lab web frontend (detail/references/graph). Triggers
-  (English): "/fm-open", "/fmide-open", "open this in FileMaker", "jump to the
-  script in FileMaker", "open in fmIDE". Triggers (German): "öffne das in
-  FileMaker", "spring zum Script in FileMaker", "in fmIDE öffnen". Triggers
-  (Spanish): "abre esto en FileMaker", "abrir en fmIDE". Triggers (French):
-  "ouvre ça dans FileMaker", "ouvrir dans fmIDE". Triggers (Italian): "apri
-  questo in FileMaker", "aprire in fmIDE". Triggers (Dutch): "open dit in
-  FileMaker", "openen in fmIDE". Triggers (Portuguese): "abra isto no
-  FileMaker", "abrir no fmIDE". Triggers (Swedish): "öppna detta i FileMaker",
-  "öppna i fmIDE". Triggers (Japanese): "これをFileMakerで開いて",
-  "fmIDEで開く". Triggers (Korean): "이것을 FileMaker에서 열어 줘", "fmIDE에서
-  열기". Triggers (Chinese): "在 FileMaker 中打开这个", "在 fmIDE 中打开".
+description: >-
+  Opens a FileMaker object directly in FileMaker Pro via an fmIDE fmp:// URL, after verifying
+  through the FM-Lab REST API that the fmIDE plugin is enabled and the fmIDE script exists in the
+  target file. Use fm-show instead to display the object in the FM-Lab web frontend
+  (detail/references/graph). Triggers (English): "/fm-open", "/fmide-open", "open this in
+  FileMaker", "jump to the script in FileMaker", "open in fmIDE". Triggers (German): "öffne das in
+  FileMaker", "spring zum Script in FileMaker", "in fmIDE öffnen". Also responds to equivalent
+  requests in other languages.
+metadata:
+  version: "0.8.9"
 ---
 
 # fm-open — Open a FileMaker object in FileMaker Pro
@@ -172,3 +165,18 @@ do not claim more than "opened".
 - `.claude/skills/_shared/scripts/open_url.sh` — the only open mechanism (step 4).
 - `references/build_fmp_url_local.md` — read ONLY when the REST API is down and
   the user opts into the degraded local URL construction.
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "abre esto en FileMaker", "abrir en fmIDE".
+- **French:** "ouvre ça dans FileMaker", "ouvrir dans fmIDE".
+- **Italian:** "apri questo in FileMaker", "aprire in fmIDE".
+- **Dutch:** "open dit in FileMaker", "openen in fmIDE".
+- **Portuguese:** "abra isto no FileMaker", "abrir no fmIDE".
+- **Swedish:** "öppna detta i FileMaker", "öppna i fmIDE".
+- **Japanese:** "これをFileMakerで開いて", "fmIDEで開く".
+- **Korean:** "이것을 FileMaker에서 열어 줘", "fmIDE에서 열기".
+- **Chinese:** "在 FileMaker 中打开这个", "在 fmIDE 中打开".

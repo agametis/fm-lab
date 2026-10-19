@@ -197,7 +197,19 @@ export interface paths {
         get: {
             parameters: {
                 query: {
-                    /** @description Name pattern (SQL LIKE, e.g. %Import%) */
+                    /**
+                     * @description Name pattern (SQL LIKE, e.g. %Import%). Also matches an object by its
+                     *     identity, but only as the WHOLE term (one outer `%…%` wrapper is
+                     *     ignored, any inner `%` disables identity matching):
+                     *     - a FileMaker UUID (`8-4-4-4-12`, case-insensitive; `{…}`, quotes and
+                     *       `urn:uuid:` are tolerated) or a synthetic 32-hex fm-lab UUID,
+                     *     - a composite import key (`part_…`, `rel_…`, `trig_…`, `paste_…`),
+                     *     - `id:<n>` — the numeric FileMaker ID, which is unique only per file.
+                     *       Without `type` it searches the per-file-unique types; with `type`
+                     *       also `field` (unique per table), `builtinfunction` (Function-ID) and
+                     *       `scriptsteptype` (Step-ID). `id:<n>` runs no name search.
+                     *     Identity hits come first and carry `Match_Kind`.
+                     */
                     name: string;
                     type?: components["schemas"]["ObjectType"];
                     /** @description Filter by filename */
@@ -254,7 +266,7 @@ export interface paths {
         get: {
             parameters: {
                 query: {
-                    /** @description Name pattern (SQL LIKE, e.g. %Import%) */
+                    /** @description Name pattern — same semantics as `/search`, including identity matching */
                     name: string;
                     type?: components["schemas"]["ObjectType"];
                     /** @description Filter by filename */
@@ -1140,8 +1152,21 @@ export interface components {
              *     is catalogued under its canonical English name, so a search for
              *     `Seitennummer` finds `Get(PageNumber)` and this field says why.
              *     The search-result UI displays it below the object name.
+             *     Identity hits (`Match_Kind` object_id/function_id/step_id): the
+             *     matched numeric ID.
              */
             Matched_Values?: string | null;
+            /**
+             * @description Set only on search results found by identity rather than by name
+             *     (absent/null for name and full-text hits):
+             *     `uuid` — the term equals the object's UUID or import key;
+             *     `healed_uuid` — the term is the original FileMaker UUID of a
+             *     duplicate that was re-keyed on import (the catalog lists it under a
+             *     replacement UUID); `object_id` / `function_id` / `step_id` — the
+             *     numeric ID given as `id:<n>`.
+             * @enum {string|null}
+             */
+            Match_Kind?: "uuid" | "healed_uuid" | "object_id" | "function_id" | "step_id" | null;
             /**
              * @description Localized spelling of a BuiltinFunction in the requested `lang`
              *     (e.g. `Hole ( Seitennummer )` for `Get(PageNumber)`). Present only

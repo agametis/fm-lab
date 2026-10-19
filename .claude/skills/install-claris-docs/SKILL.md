@@ -1,7 +1,15 @@
 ---
 name: install-claris-docs
-version: 0.8.5
-description: Download and install Claris FileMaker Pro online help (help.claris.com) as a local mirror in `docs/claris-help/`. Supports 11 languages with English as the always-included reference language. Maintains a manifest and per-language version markers and prompts before replacing existing language sets. Triggers (English): "install Claris docs", "install Claris help in German", "update the Claris help mirror". Triggers (German): "installiere die Claris-Hilfe", "Claris-Online-Hilfe auf Deutsch installieren", "Claris-Doku aktualisieren". Triggers (Spanish): "instalar la ayuda de Claris", "actualizar la ayuda Claris". Triggers (French): "installer l'aide Claris", "mettre à jour l'aide Claris". Triggers (Italian): "installa l'aiuto Claris", "aggiorna l'aiuto Claris". Triggers (Dutch): "installeer de Claris-help", "Claris-help bijwerken". Triggers (Portuguese): "instalar a ajuda Claris", "atualizar a ajuda Claris". Triggers (Swedish): "installera Claris-hjälpen", "uppdatera Claris-hjälpen". Triggers (Japanese): "Clarisヘルプをインストール", "Clarisヘルプを更新". Triggers (Korean): "Claris 도움말 설치", "Claris 도움말 업데이트". Triggers (Chinese): "安装 Claris 帮助", "更新 Claris 帮助".
+description: >-
+  Download and install Claris FileMaker Pro online help (help.claris.com) as a local mirror in
+  `docs/claris-help/`. Supports 11 languages with English as the always-included reference
+  language. Maintains a manifest and per-language version markers and prompts before replacing
+  existing language sets. Triggers (English): "install Claris docs", "install Claris help in
+  German", "update the Claris help mirror". Triggers (German): "installiere die Claris-Hilfe",
+  "Claris-Online-Hilfe auf Deutsch installieren", "Claris-Doku aktualisieren". Also responds to
+  equivalent requests in other languages.
+metadata:
+  version: "0.8.5"
 ---
 
 # Claris Online Help Installation Skill
@@ -276,3 +284,18 @@ ERROR: [specific error message]
 - The script is idempotent — running it multiple times is safe.
 - If only individual slugs are missing or outdated, a full reinstall is not necessary — the crawler uses Last-Modified headers per file (HEAD request) to update only changed files.
 - After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.py`, so the web home dashboard's Docs card can list it.
+
+## Triggers in other languages
+
+The frontmatter `description` carries the English and German trigger phrases.
+Equivalent phrases in further languages:
+
+- **Spanish:** "instalar la ayuda de Claris", "actualizar la ayuda Claris".
+- **French:** "installer l'aide Claris", "mettre à jour l'aide Claris".
+- **Italian:** "installa l'aiuto Claris", "aggiorna l'aiuto Claris".
+- **Dutch:** "installeer de Claris-help", "Claris-help bijwerken".
+- **Portuguese:** "instalar a ajuda Claris", "atualizar a ajuda Claris".
+- **Swedish:** "installera Claris-hjälpen", "uppdatera Claris-hjälpen".
+- **Japanese:** "Clarisヘルプをインストール", "Clarisヘルプを更新".
+- **Korean:** "Claris 도움말 설치", "Claris 도움말 업데이트".
+- **Chinese:** "安装 Claris 帮助", "更新 Claris 帮助".

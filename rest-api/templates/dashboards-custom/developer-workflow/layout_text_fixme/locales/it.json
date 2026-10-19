@@ -1,10 +1,11 @@
 {
   "manifest": {
     "title": "Marcatore FIXME su un oggetto del formato",
-    "description": "Regola della famiglia «Lavoro incompiuto»: un oggetto del formato contiene un marcatore FIXME (FIXME, FIX ME, FIX IT, FIXIT) nel testo, nel suggerimento o nella formula dell’etichetta. Un FIXME segnala un difetto noto già rilasciato: da qui la severità warning. Inasprimento voluto rispetto alla regola originale: senza distinzione di maiuscole e con tolleranza ai separatori — solo così si trova un oggetto testo il cui contenuto è «TO DO».\n\nBasato sul controllo fmCheckMate «FIXME» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
+    "description": "Regola della famiglia «Lavoro incompiuto»: un oggetto del formato contiene un marcatore FIXME (FIXME, FIX ME, FIX IT, FIXIT) nel testo (testo statico o etichetta del pulsante), nel suggerimento o nella formula dell’etichetta o del titolo. Un FIXME segnala un difetto noto già rilasciato: da qui la severità warning. Inasprimento voluto rispetto alla regola originale: senza distinzione di maiuscole e con tolleranza ai separatori — solo così si trova un oggetto testo il cui contenuto è «TO DO».\n\nBasato sul controllo fmCheckMate «FIXME» — https://github.com/mrwatson-de/fmCheckMate-XSLT",
     "messages.text": "Marcatore FIXME nel contenuto testuale",
     "messages.tooltip": "Marcatore FIXME nella formula del suggerimento",
-    "messages.label": "Marcatore FIXME nella formula dell’etichetta"
+    "messages.label": "Marcatore FIXME nella formula dell’etichetta",
+    "messages.title": "Marcatore FIXME nella formula del titolo"
   },
   "layout": {
     "summary_kpi.props.items[0].label": "Risultati",
