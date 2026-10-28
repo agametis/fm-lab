@@ -44,7 +44,7 @@ Or simply ask: *"import all XML files"*, *"konvertiere die XML"*. The agent pick
 | `--no-auto-heal` | On detected schema drift, abort instead of rebuilding automatically |
 | `--turbo` | Chunked Phase 1 (the default engine); combine with `--auto` for out-of-memory backoff and `--changed-only` to skip files unchanged since the last run |
 | `--streamify` | SAX streaming hybrid with lower parse memory (default when the patched webbed extension is present) |
-| `--split` | Chunk Phase 1 per file at top-level branch boundaries — lowers peak memory for very large files; not combinable with `--jobs` |
+| `--split` | Forces the classic engine and chunks Phase 1 per file at top-level branch boundaries; the result is identical to the unsplit run. For large files the default engine is the better choice — it chunks as well, needs less memory and backs off on out-of-memory |
 | `--jobs <N>` / `--jobs auto` | Run Phase 1 for N files in parallel, each into its own part database, then merge; results are identical to the sequential run |
 | `--solution <id>` | Target a specific solution bundle instead of the active one |
 | `--quiet` | NDJSON output for the REST API's progress stream — not meant for interactive use |

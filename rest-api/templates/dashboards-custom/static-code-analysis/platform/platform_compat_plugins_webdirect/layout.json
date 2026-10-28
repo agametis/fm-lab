@@ -53,7 +53,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Plug-in compatibility: FileMaker WebDirect"
+          "title": "Plug-in compatibility: FileMaker WebDirect",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -67,8 +68,11 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file, object or function…",
-              "chipFilter": "severity",
               "columns": [
                 {
                   "field": "severity",

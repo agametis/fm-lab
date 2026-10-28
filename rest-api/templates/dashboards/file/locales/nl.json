@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Bestandsweergave",
-    "description": "Detailweergave per bestand: metadata, bestandsopties, object-KPI's en de getriggerde scripts / startlay-out / aanmeldaccount."
+    "description": "Detailweergave per bestand: metadata, bestandsopties, objectkengetallen, wijzigingsstempels per catalogus en getriggerde scripts / startlay-out / aanmeldaccount."
   },
   "layout": {
     "file_not_found.props.title": "Bestand niet gevonden",
@@ -14,6 +14,11 @@
     "file_metrics_kpistrip.props.items[4].label": "Laatste import",
     "file_metrics_kpistrip.props.items[5].label": "Min. versie",
     "file_size_kpistrip.props.items[0].label": "Bestandsgrootte",
+    "file_change_kpistrip.props.items[0].label": "Laatste ontwerpwijziging",
+    "file_change_kpistrip.props.items[1].label": "Door",
+    "file_change_kpistrip.props.items[2].label": "Laatste massawijziging",
+    "file_change_kpistrip.props.items[3].label": "Massagebeurtenissen",
+    "file_change_kpistrip.props.items[4].label": "Afzonderlijke wijzigingen %",
     "file_settings_list.props.items[0].label": "Auto-login",
     "file_settings_list.props.items[1].label": "Inloggegevens opslaan",
     "file_settings_list.props.items[2].label": "Aanmeldvelden",
@@ -31,6 +36,17 @@
     "file_object_counts_kpistrip.props.items[6].label": "Waardelijsten",
     "file_object_counts_kpistrip.props.items[7].label": "Aangepaste fns",
     "file_object_counts_kpistrip.props.items[8].label": "Variabelen",
+    "file_catalog_changes.props.title": "Wijzigingen per catalogus",
+    "file_catalog_changes_md.props.content": "Elk object bewaart alleen zijn **laatste** wijzigingsstempel. *Laatste afzonderlijke wijziging* laat massagebeurtenissen (migraties, plakken, toolruns) en technische auteurs weg. De catalogusstempel volgt eigen regels: de teller stijgt bij elke bewaring van een object in de catalogus. Tijden zijn de lokale tijd van de bewerkende client.",
+    "file_change_trend.props.label": "Afzonderlijke wijzigingen per maand, laatste 12 maanden tot de gegevensstand",
+    "file_catalog_changes_table.props.columns[0].label": "Catalogus",
+    "file_catalog_changes_table.props.columns[1].label": "Laatste afzonderlijke wijziging",
+    "file_catalog_changes_table.props.columns[2].label": "Gebruiker",
+    "file_catalog_changes_table.props.columns[3].label": "Catalogusstempel",
+    "file_catalog_changes_table.props.columns[4].label": "Teller",
+    "file_catalog_changes_table.props.columns[5].label": "Objecten",
+    "file_catalog_changes_table.props.columns[6].label": "In massagebeurtenissen",
+    "file_catalog_changes_table.props.columns[7].label": "Veld verwijderd na laatste bewerking",
     "file_triggers.props.title": "Getriggerde scripts",
     "file_triggers_table.props.columns[0].label": "Gebeurtenis",
     "file_triggers_table.props.columns[1].label": "Script",

@@ -44,16 +44,11 @@ function prettyTheme(name: string | null): string | null {
     .join(' ');
 }
 
-/** ISO-Zeitstempel "2026-07-15T14:57:39" → "2026-07-15 14:57" (ohne Sekunden). */
-function formatTimestamp(ts: string | null): string | null {
-  if (!ts) return null;
-  return ts.replace('T', ' ').slice(0, 16);
-}
-
 /**
  * Eigenschaften-Panel der Layout-Detailansicht — 2-spaltig:
  *   links  = alle Einzel-Optionen (Kontext-TO, Design, Menüset, Breite, Ansichten,
- *            Standardansicht, Layout-Menü-Sichtbarkeit, Änderungs-Metadaten),
+ *            Standardansicht, Layout-Menü-Sichtbarkeit; der Änderungsstempel steht in der
+ *            Kopfzeile, ObjectChangeLine),
  *   rechts = die aktivierten Script-Trigger mit Link zum hinterlegten Script.
  * Bei zu schmaler Breite kollabieren die Spalten untereinander (CSS auto-fit).
  */
@@ -90,8 +85,6 @@ export const LayoutViewer: React.FC<LayoutViewerProps> = ({ meta, triggers, orig
   const defaultLabel = meta.default_view ? viewLabel[meta.default_view] : '—';
   const yes = t('detail:layoutViewer.yes') as string;
   const no = t('detail:layoutViewer.no') as string;
-  const modifiedAt = formatTimestamp(meta.modified_at);
-
   return (
     <div className="fm-layout-props" aria-label={t('detail:layoutViewer.propertiesHeading') as string}>
       <div className="fm-layout-cols">
@@ -192,15 +185,6 @@ export const LayoutViewer: React.FC<LayoutViewerProps> = ({ meta, triggers, orig
             </React.Fragment>
           ))}
 
-          {meta.modified_by && (
-            <>
-              <dt>{t('detail:layoutViewer.lastModified')}</dt>
-              <dd>
-                {meta.modified_by}
-                {modifiedAt && <span className="fm-layout-muted"> · {modifiedAt}</span>}
-              </dd>
-            </>
-          )}
         </dl>
 
         {/* Rechts: aktivierte Script-Trigger */}

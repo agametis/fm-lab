@@ -67,7 +67,7 @@ The *Source → Target* column lists the documented carrier types; a role can ha
 | `source_valuelist`     | ValueList → ValueList                                                         | External wrapper sources its values from a list in another file |
 | `summarizes_field`     | Field → Field                                                                 | Summary field aggregates this field                             |
 | `trigger_script`       | ScriptTrigger → Script                                                        | The script the trigger fires — granular navigation edge; **does not count for where-used** (the owner mirror `triggers_script` does) |
-| `triggers_script`      | LayoutObject/Layout/File → Script                                             | The owner performs the script — button actions and the counting mirror of every script trigger (subrole = event or `button_action`) |
+| `triggers_script`      | LayoutObject/Layout/File/CustomMenuItem → Script                              | The owner performs the script — button actions, custom-menu actions and the counting mirror of every script trigger (subrole = event, `button_action` or `menu_action`) |
 | `uses_menuset`         | Layout → CustomMenuSet                                                        | Layout-bound menu set                                           |
 | `uses_theme`           | Layout → Theme                                                                | The layout uses this theme                                      |
 | `uses_valuelist`       | LayoutObject/Field → ValueList                                                | Field control uses the list; field validation by list           |
@@ -110,7 +110,7 @@ Access limitations from Custom Privileges (`Access_Mode <> 'ReadWrite'` only). A
 |---|---|---|
 | `calls_script` | `on_server`, `on_server_callback` (since schema 1.20.0) · `MBS:FM.RunScript` | The call's execution context: the target of a *Perform Script on Server* step (164) / *… with Callback* (210) runs **server-side** — this is the platform-binding evidence for FileMaker Server. `MBS:FM.RunScript` marks plugin-mediated calls; `NULL` = ordinary Perform Script. "By name" callsites (runtime-computed target) have no static target and no edge |
 | `trigger_owner` | `OnFirstWindowOpen`, `OnRecordLoad`, `OnLayoutEnter`, `OnObjectSave`, … | The trigger event type |
-| `triggers_script` | canonical event name (`OnObjectSave`, …) · `button_action` | Trigger mirror vs. Button/GroupedButton/PopoverButton action |
+| `triggers_script` | canonical event name (`OnObjectSave`, …) · `button_action` · `menu_action` | Trigger mirror vs. Button/GroupedButton/PopoverButton action vs. custom-menu item that performs the script (converter 2.35.0) |
 | `reads_field` (ScriptTrigger-carried) | `transaction_parameter_field` | OnWindowTransaction parameter-field candidate (name-resolved, file-local) |
 | `parent_layout` (LayoutPart) | `Body`, `Header`, `Footer`, `Title Header`, `Leading Sub-summary`, `Trailing Grand Summary`, `Top Navigation`, … | The part type |
 | `breaks_on_field` | part type (e.g. `Leading Sub-summary`) | Which part breaks on the field |

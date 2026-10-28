@@ -4,8 +4,8 @@ import type { EdgeLabeler } from '../hooks/useSubgraph';
  * Display labelling for grouped graph edges.
  *
  * Trigger mirrors (`triggers_script`) carry their whole meaning in the subrole
- * (event vs. `button_action`); the bare role label hid it. The rules here make
- * the subrole the label, adaptively:
+ * (event vs. the UI actions `button_action` / `menu_action`); the bare role
+ * label hid it. The rules here make the subrole the label, adaptively:
  *   - one subrole            → its (localized) label
  *   - several, short enough  → joined with " · "
  *   - several, over budget   → compact `triggers_script ×N` (full list stays
@@ -21,17 +21,24 @@ export const EDGE_LABEL_MAX_CHARS = 40;
 export type EdgeLabelStrings = {
   /** Localized label for the `button_action` subrole. */
   buttonAction: string;
+  /** Localized label for the `menu_action` subrole (custom-menu item runs a script). */
+  menuAction: string;
   /** Localized label for the placement edge (LayoutObject →displays_field→ Field). */
   represents: string;
 };
 
-/** Localized display label for one triggers_script subrole. */
+/**
+ * Localized display label for one triggers_script subrole: the UI actions
+ * (button, custom-menu item) have fixed labels, every other subrole is an event.
+ */
 export function triggerSubroleLabel(
   subrole: string,
   formatEvent: (action: string) => string,
   strings: EdgeLabelStrings,
 ): string {
-  return subrole === 'button_action' ? strings.buttonAction : formatEvent(subrole);
+  if (subrole === 'button_action') return strings.buttonAction;
+  if (subrole === 'menu_action') return strings.menuAction;
+  return formatEvent(subrole);
 }
 
 export function makeEdgeLabeler(

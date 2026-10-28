@@ -22,5 +22,13 @@
     "body": "Die API war mit diesem Lösungs-Kontext nicht erreichbar. Falls die App vor dem Lösungswechsel funktioniert hat, setze die Auswahl auf den Server-Default zurück.",
     "action": "Auswahl zurücksetzen",
     "dismiss": "Ausblenden"
+  },
+  "storageVersion": {
+    "heading": "Der Katalog lässt sich nicht öffnen: DuckDB-Versionen passen nicht zusammen",
+    "body": "Der Katalog der Lösung „{{solution}}“ wurde mit DuckDB {{createdBy}} geschrieben (Storage-Version {{fileVersion}}). Die REST-API läuft mit DuckDB {{apiVersion}} und kann nur die Storage-Versionen {{range}} lesen.",
+    "fixNewer": "Abhilfe: Die XML mit der DuckDB-CLI {{apiLine}}.x neu importieren, die von diesem fm-lab-Release unterstützt wird, oder fm-lab auf ein Release aktualisieren, das DuckDB {{cliLine}} unterstützt.",
+    "fixOlder": "Abhilfe: Die XML mit der aktuellen DuckDB-CLI neu importieren.",
+    "unknown": "unbekannt",
+    "dismiss": "Ausblenden"
   }
 }

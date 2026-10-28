@@ -16,8 +16,9 @@ dup AS (
     FROM ObjectCatalog
     WHERE Object_UUID IS NOT NULL
       AND File_Name IS NOT NULL
-      -- Native FileMaker UUIDs only (8-4-4-4-12). FM-Lab's synthetic identities
-      -- (md5 variables/builtins/plugin components, rel_/part_/paste_ prefixes) are
+      -- Native FileMaker UUIDs only (8-4-4-4-12), relationships included. FM-Lab's
+      -- synthetic identities (md5 variables/builtins/plugin components, part_/trig_/
+      -- paste_ prefixes, rel_ fallback keys of relationships without <UUID>) are
       -- tool-internal and partly global by design - not solution metadata defects.
       AND regexp_matches(Object_UUID, '^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$')
     GROUP BY Object_UUID

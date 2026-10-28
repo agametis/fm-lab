@@ -9,8 +9,9 @@
 --        die READ_ONLY-API-Kopie). Dieses Template definiert NICHTS mehr —
 --        vormals trug es eine synchron zu haltende Kopie der Definition
 --        (Sync-Pflicht seit dem Kanonizitäts-Dreh entfallen). Design-Rationale,
---        Datenbefund und Versions-Historie (v1.1.0–v1.5.0: Promotion, Stufe C,
---        Graph-Policy, Feld-Verankerung, Spezialtypen) stehen am Kanon.
+--        Datenbefund und Versions-Historie (v1.1.0–v1.5.1: Promotion, Stufe C,
+--        Graph-Policy, Feld-Verankerung, Spezialtypen, NULL-sicherer
+--        Kandidaten-Filter) stehen am Kanon.
 --
 -- ZWECK dieses Stubs: ad-hoc-Einblick in den Kantensatz der "logischen Sicht"
 -- (mode=logical) über den generischen /api/query-Template-Pool — läuft read-only

@@ -40,6 +40,13 @@
   "docs.props.label": "ドキュメント",
   "docs.props.subtitle": "インストール済みのドキュメントソース",
   "tests.props.label": "テスト",
-  "tests.props.subtitle": "キュレーションされた分析テスト"
+  "tests.props.subtitle": "キュレーションされた分析テスト",
+  "recent_changes.props.title": "最近の変更",
+  "recent_changes_table.props.columns[0].label": "変更日時",
+  "recent_changes_table.props.columns[1].label": "タイプ",
+  "recent_changes_table.props.columns[2].label": "オブジェクト",
+  "recent_changes_table.props.columns[3].label": "ファイル",
+  "recent_changes_table.props.columns[4].label": "人物",
+  "recent_changes_all.props.label": "すべての変更"
  }
 }

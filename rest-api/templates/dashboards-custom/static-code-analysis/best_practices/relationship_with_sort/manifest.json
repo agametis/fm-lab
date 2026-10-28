@@ -57,7 +57,8 @@
     },
     {
       "id": "findings",
-      "source": "bundle:data/findings.sql"
+      "source": "bundle:data/findings.sql",
+      "pageSize": 500
     }
   ],
   "params": [
@@ -74,10 +75,10 @@
       "description": "Optional consumer filter: portals (at least one consumer portal), sorted-portals (at least one self-sorting consumer portal)."
     },
     {
-      "name": "limit",
-      "type": "number",
+      "name": "sorted_side",
+      "type": "string",
       "required": false,
-      "description": "Maximum number of findings returned (default 500)."
+      "description": "Optional chip filter on the sorted side: left, right, both sides."
     }
   ],
   "permissions": {

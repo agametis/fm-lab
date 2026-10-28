@@ -133,9 +133,17 @@ function runInstaller({ id, mode = 'install', extraArgs = [], onEvent, signal })
 
   return new Promise((resolve, reject) => {
     const args = [scriptPath, `--${mode}`, '--quiet', ...extraArgs];
+    // The installers run Node helpers (crawler, parser, registration): put this
+    // server's own node first on PATH, so they work even when the API was started
+    // through an absolute node path without node on PATH (launchd, services).
+    const nodeDir = path.dirname(process.execPath);
     const child = spawn('bash', args, {
       cwd: settingsStore.resolveRepoRoot(),
-      env: { ...process.env, FMLAB_INSTALL_QUIET: '1' },
+      env: {
+        ...process.env,
+        PATH: [nodeDir, process.env.PATH].filter(Boolean).join(path.delimiter),
+        FMLAB_INSTALL_QUIET: '1',
+      },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 

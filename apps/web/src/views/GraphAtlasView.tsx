@@ -10,6 +10,13 @@ import { StatusBar } from '../components/StatusBar';
 import { NoDataYet } from '../components/NoDataYet';
 import { isNoImportError } from '../lib/errors';
 import { AtlasNameStatus } from '../components/AtlasNameStatus';
+import {
+  AtlasActivityLegend,
+  activitySubLabel,
+  activityTooltip,
+  type ActivityItem,
+} from '../components/AtlasActivity';
+import { COLOR_MODES, type AtlasColorMode } from '../lib/activityColors';
 import type { PanelTarget } from '../components/AtlasInfoPanel';
 import type { TileInfoKind } from '../components/AtlasTreemap';
 import { useCommunityStats } from '../hooks/useCommunityStats';
@@ -37,7 +44,9 @@ import './GraphAtlasView.css';
  * Atlas rechnet fix mit dem Domänen-Grad (Gewichts-Schalter entfernt, E3).
  *
  * Der gesamte Navigationszustand lebt in der URL (`useSearchParams`) → Ebene,
- * Modus, Drill, Linsen sind deep-link- und reload-fest. visx-Treemap und
+ * Modus, Drill, Linsen sind deep-link- und reload-fest. Dazu gehört der Farbmodus
+ * (`color` = type | recency | saves, `bulk=include`): er ändert die Aussage des
+ * Bildes, und Dashboards verlinken direkt in die gefärbte Ansicht. visx-Treemap und
  * Cytoscape-Meta-Graph werden lazy geladen (eigene Bundle-Chunks).
  */
 
@@ -96,7 +105,14 @@ function leafParents(segmentBy: AtlasSegmentBy, segKey: string, subKey: string) 
   return { parentType: segKey, parentFile: subKey }; // type-Modus: seg=Typ, sub=Datei
 }
 
-type Lenses = { view: AtlasView; weight: AtlasWeight; excluded: string[]; topN: number };
+type Lenses = {
+  view: AtlasView;
+  weight: AtlasWeight;
+  excluded: string[];
+  topN: number;
+  colorMode: AtlasColorMode;
+  bulkIncluded: boolean;
+};
 
 /** Trichter-Selektion + Linsen → Endpoint-Query (limit = interaktiver Top-N). */
 function buildAtlasQuery(d: Drill, l: Lenses, isTopology: boolean): AtlasQuery {
@@ -104,6 +120,9 @@ function buildAtlasQuery(d: Drill, l: Lenses, isTopology: boolean): AtlasQuery {
     weight: l.weight,
     excludeTypes: l.excluded.length ? l.excluded : undefined,
     limit: l.topN,
+    // Aktivität nur in den Farbmodi mitrechnen (kostet ~10–15 ms je Ebene).
+    activity: l.colorMode !== 'type',
+    activityBulk: l.colorMode === 'recency' && l.bulkIncluded ? ('include' as const) : ('hide' as const),
   };
   if (isTopology) {
     return { view: 'topology', level: 'root', segmentBy: d.segmentBy, ...base };
@@ -163,6 +182,9 @@ export function GraphAtlasView() {
     'dim',
     ['dim', 'hide'],
   );
+  // Farbmodus aus der URL (Navigationszustand, s. Kopfkommentar).
+  const colorParam = oneOf(sp.get('color'), COLOR_MODES, 'type');
+  const bulkIncluded = sp.get('bulk') === 'include';
 
   // F5/F6: Community-Namen-Status + Cluster-Verfügbarkeit (ein leichter Fetch).
   // Bis der Status geladen ist, OPTIMISTISCH von vorhandenem Clustering ausgehen
@@ -224,7 +246,27 @@ export function GraphAtlasView() {
     }
   }, [clustersAvailable, segmentBy, rawView, patch]);
 
-  const lenses: Lenses = useMemo(() => ({ view, weight, excluded, topN }), [view, weight, excluded, topN]);
+  // Objekttyp-Universum für die Filterleiste — fixes Gewicht (Typ-Menge ist
+  // gewichts-unabhängig) → genau EIN gecachter Treffer, kein Refetch beim Toggle.
+  // Seine Antwort sagt außerdem, ob der Katalog Änderungsstempel trägt.
+  const typeUniverseQuery: AtlasQuery = useMemo(
+    () => ({ view: 'composition', level: 'root', segmentBy: 'type', weight: 'domain' }),
+    [],
+  );
+  const typeUniverse = useGraphOverview(typeUniverseQuery);
+
+  // Farbmodi brauchen Änderungsstempel. Bis die Antwort da ist, optimistisch
+  // (kein Aufflackern); ohne Stempel fällt der Atlas auf die Typ-Farben zurück.
+  const activityAvailable = typeUniverse.data ? typeUniverse.data.activity?.available !== false : true;
+  const colorMode: AtlasColorMode = activityAvailable ? colorParam : 'type';
+  useEffect(() => {
+    if (!activityAvailable && (colorParam !== 'type' || bulkIncluded)) patch({ color: null, bulk: null });
+  }, [activityAvailable, colorParam, bulkIncluded, patch]);
+
+  const lenses: Lenses = useMemo(
+    () => ({ view, weight, excluded, topN, colorMode, bulkIncluded }),
+    [view, weight, excluded, topN, colorMode, bulkIncluded],
+  );
   const query = useMemo<AtlasQuery>(() => buildAtlasQuery(drill, lenses, isTopology), [drill, lenses, isTopology]);
   const { data, loading, error, refetch } = useGraphOverview(query);
   // Kein Import vorhanden → die Cluster-/Graph-Views (ClusterEdges, …) existieren
@@ -252,13 +294,6 @@ export function GraphAtlasView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spString]);
 
-  // Objekttyp-Universum für die Filterleiste — fixes Gewicht (Typ-Menge ist
-  // gewichts-unabhängig) → genau EIN gecachter Treffer, kein Refetch beim Toggle.
-  const typeUniverseQuery: AtlasQuery = useMemo(
-    () => ({ view: 'composition', level: 'root', segmentBy: 'type', weight: 'domain' }),
-    [],
-  );
-  const typeUniverse = useGraphOverview(typeUniverseQuery);
   const globalTypes = useMemo(() => {
     const d = typeUniverse.data;
     if (!d || d.view !== 'composition') return [];
@@ -363,6 +398,7 @@ export function GraphAtlasView() {
         label: tile.label,
         type: tile.type,
         hidden: tile.hidden === true,
+        activity: tile.activity ?? null,
       });
     } else if (tile.kind === 'aggregate') {
       setPanelTarget({
@@ -373,6 +409,7 @@ export function GraphAtlasView() {
         userName: tile.user_name ?? '',
         userNotes: tile.user_notes ?? '',
         topMemberUuid: tile.top_member_uuid ?? null,
+        activity: tile.activity ?? null,
       });
     }
   }, []);
@@ -386,6 +423,7 @@ export function GraphAtlasView() {
       userName: node.user_name ?? '',
       userNotes: node.user_notes ?? '',
       topMemberUuid: node.top_member_uuid ?? null,
+      activity: node.activity ?? null,
     });
   }, []);
 
@@ -435,6 +473,23 @@ export function GraphAtlasView() {
   const metaNodes = topology ? (hideRest ? topology.nodes.filter((n) => n.kind !== 'rest') : topology.nodes) : [];
   const truncated = composition?.truncated ?? false;
   const hasContent = isTopology ? metaNodes.length > 0 : tiles.length > 0;
+
+  // Farbmodus: Legende über die SICHTBAREN Kacheln/Super-Nodes (die Rest-Kachel
+  // trägt das Aggregat der gefalteten). Erst zeigen, wenn die Antwort zum Modus passt.
+  const activityHead = (topology ?? composition)?.activity ?? null;
+  const showLegend = colorMode !== 'type' && !!activityHead?.requested;
+  const legendItems: ActivityItem[] = isTopology
+    ? metaNodes.map((n) => ({ nodes: n.member_count, activity: n.activity }))
+    : tiles.map((tl) => ({ nodes: tl.kind === 'leaf' ? 1 : tl.node_count, activity: tl.activity }));
+  const tooltipFor = useCallback(
+    (tile: AtlasTile) => activityTooltip(t, tile.label, colorMode, tile.activity),
+    [t, colorMode],
+  );
+  const subLabelFor = useCallback(
+    (tile: AtlasTile) =>
+      activitySubLabel(t, tile.kind === 'leaf' ? tile.file ?? '' : String(tile.node_count), colorMode, tile.activity),
+    [t, colorMode],
+  );
 
   return (
     <div className="atlas-view">
@@ -534,6 +589,36 @@ export function GraphAtlasView() {
             {t('hidden.manage')}
           </button>
         </div>
+        <div className="atlas-hiddenmode atlas-colormode" role="group" aria-label={t('color.label') as string}>
+          <span className="atlas-hiddenmode-label">{t('color.label')}</span>
+          {COLOR_MODES.map((m) => {
+            const off = m !== 'type' && !activityAvailable;
+            return (
+              <button
+                key={m}
+                type="button"
+                className={`atlas-segctl-btn${colorMode === m ? ' active' : ''}`}
+                aria-pressed={colorMode === m}
+                disabled={off}
+                title={t(off ? 'color.unavailable' : `color.${m}_hint`) as string}
+                onClick={() => patch({ color: m === 'type' ? null : m })}
+              >
+                {t(`color.${m}`)}
+              </button>
+            );
+          })}
+          {colorMode === 'recency' && (
+            <button
+              type="button"
+              className={`atlas-segctl-btn${bulkIncluded ? ' active' : ''}`}
+              aria-pressed={bulkIncluded}
+              title={t('color.bulk_hint') as string}
+              onClick={() => patch({ bulk: bulkIncluded ? null : 'include' })}
+            >
+              {t('color.bulk')}
+            </button>
+          )}
+        </div>
         <input
           type="search"
           className="atlas-search"
@@ -557,7 +642,7 @@ export function GraphAtlasView() {
                 onClick={() => toggleType(type)}
                 title={t(off ? 'types.show' : 'types.hide', { type }) as string}
               >
-                <span className="atlas-typeswatch" style={{ background: getTypeColor(type) }} />
+                {colorMode === 'type' && <span className="atlas-typeswatch" style={{ background: getTypeColor(type) }} />}
                 {type}
               </button>
             );
@@ -568,6 +653,15 @@ export function GraphAtlasView() {
             </button>
           )}
         </div>
+      )}
+
+      {showLegend && (
+        <AtlasActivityLegend
+          mode={colorMode}
+          head={activityHead}
+          items={legendItems}
+          onUseSaves={colorMode === 'recency' ? () => patch({ color: 'saves', bulk: null }) : undefined}
+        />
       )}
 
       <div className="atlas-body">
@@ -583,6 +677,7 @@ export function GraphAtlasView() {
               onNodeClick={onMetaNodeClick}
               onNodeInfo={onMetaNodeInfo}
               filterText={search}
+              colorMode={colorMode}
             />
           </Suspense>
         )}
@@ -597,6 +692,9 @@ export function GraphAtlasView() {
               infoKindFor={infoKindFor}
               filterText={search}
               hiddenMode={hiddenMode}
+              colorMode={colorMode}
+              tooltipFor={tooltipFor}
+              subLabelFor={subLabelFor}
             />
           </Suspense>
         )}
@@ -610,6 +708,7 @@ export function GraphAtlasView() {
             onChanged={() => { refetch(); refetchStats(); }}
             onOpenExplorer={openExplorer}
             onOpenDetail={openDetail}
+            activityHead={activityHead}
           />
         </Suspense>
       )}

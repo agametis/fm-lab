@@ -101,7 +101,23 @@
     "custom": "Personnalisé",
     "ok": "OK",
     "warnings": "Avertissements",
-    "errors": "Erreurs"
+    "errors": "Erreurs",
+    "Mass event": "Événement de masse",
+    "Mass action": "Action de masse",
+    "Paste / import": "Collage / import",
+    "Tool run": "Exécution d’un outil",
+    "Technical author": "Auteur technique",
+    "Solution-wide": "Toute la solution",
+    "Single file": "Fichier unique",
+    "Large session": "Grande session",
+    "Runtime change": "Modification à l’exécution",
+    "≤ 30 days": "≤ 30 jours",
+    "≤ 90 days": "≤ 90 jours",
+    "≤ 1 year": "≤ 1 an",
+    "≤ 2 years": "≤ 2 ans",
+    "> 2 years": "> 2 ans",
+    "Unknown": "Inconnu",
+    "No stamp": "Sans horodatage"
   },
   "semanticNames": {
     "structureLabel": "Structure",
@@ -183,5 +199,42 @@
   "featured": {
     "ruleCount_one": "{{count}} règle",
     "ruleCount_other": "{{count}} règles"
+  },
+  "select": {
+    "selectedCount": "{{count}} sélectionnés",
+    "clear": "Effacer la sélection"
+  },
+  "chart": {
+    "noData": "Aucune donnée sur cette période.",
+    "changes_one": "{{formatted}} modification",
+    "changes_other": "{{formatted}} modifications",
+    "actions_one": "{{formatted}} action",
+    "actions_other": "{{formatted}} actions",
+    "massEvent": "Événement de masse",
+    "massEvents": "Événements de masse",
+    "massEventsIn_one": "{{count}} événement de masse · {{objects}} objets",
+    "massEventsIn_other": "{{count}} événements de masse · {{objects}} objets",
+    "notCounted": "(non compté)",
+    "other_one": "Autres ({{formatted}})",
+    "other_other": "Autres ({{formatted}})",
+    "clickHint": "Cliquer pour afficher ces modifications dans la liste",
+    "heatmap": {
+      "aria": "Carte d’activité",
+      "less": "Moins",
+      "more": "Plus",
+      "none": "Aucune modification",
+      "summaryDay_one": "{{formatted}} jour actif · max. {{max}} par jour",
+      "summaryDay_other": "{{formatted}} jours actifs · max. {{max}} par jour",
+      "summaryHour_one": "{{formatted}} heure active · max. {{max}} par heure",
+      "summaryHour_other": "{{formatted}} heures actives · max. {{max}} par heure",
+      "summaryWeek_one": "{{formatted}} semaine active · max. {{max}} par semaine",
+      "summaryWeek_other": "{{formatted}} semaines actives · max. {{max}} par semaine"
+    },
+    "series": {
+      "aria": "Modifications au fil du temps",
+      "legend": "Séries",
+      "toggleHint": "Clic : afficher ou masquer · Maj ou Alt/Option + clic : n’afficher que cette série",
+      "reset": "Toutes les séries"
+    }
   }
 }

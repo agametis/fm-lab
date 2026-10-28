@@ -22,5 +22,13 @@
     "body": "API:et kunde inte nås med den här lösningskontexten. Om appen fungerade innan du bytte lösning kan du återställa valet till serverns standard.",
     "action": "Återställ valet",
     "dismiss": "Dölj"
+  },
+  "storageVersion": {
+    "heading": "Katalogen kan inte öppnas: DuckDB-versionerna stämmer inte överens",
+    "body": "Katalogen för lösningen ”{{solution}}” skrevs med DuckDB {{createdBy}} (lagringsversion {{fileVersion}}). REST-API:t kör DuckDB {{apiVersion}} och kan bara läsa lagringsversionerna {{range}}.",
+    "fixNewer": "Åtgärd: importera XML-filen igen med DuckDB-CLI {{apiLine}}.x, som denna fm-lab-version stöder, eller uppdatera fm-lab till en version som stöder DuckDB {{cliLine}}.",
+    "fixOlder": "Åtgärd: importera XML-filen igen med den aktuella DuckDB-CLI:n.",
+    "unknown": "okänd",
+    "dismiss": "Dölj"
   }
 }

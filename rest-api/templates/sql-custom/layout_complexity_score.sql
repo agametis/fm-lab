@@ -5,10 +5,15 @@
 -- @category: Layouts
 -- @display: table
 -- @chip_filter: default_view
--- @params: file (optional), limit (optional, default 500), min_score (optional, default 200)
+-- @chip_param: default_view
+-- @page_param: page
+-- @search_param: q
+-- @sort_param: sort
+-- @page_size: 500
+-- @params: file (optional), page (optional), page_size (optional, default 500), q (optional), sort (optional), dir (optional), min_score (optional, default 200)
 -- @click_action: openObject
 -- @click_args: uuid={{_nav_uuid}}&type=Layout&file={{file_name}}
--- @output_format: file_name, layout_name, default_view, complexity_score, objects, portals, panels, hide_calcs, cf_conditions, unstored_fields, related_fields, containers, script_links, _message
+-- @output_format: file_name, layout_name, default_view, complexity_score, objects, portals, panels, hide_calcs, cf_conditions, unstored_fields, related_fields, containers, script_links, _message, _chip_facets, _row_total, _page, _page_size
 -- @object_types: Layout
 -- @output_types: count, inventory-table
 -- @scope: solution, file, object, object-list, cluster
@@ -74,35 +79,67 @@ script_links AS (
     JOIN LayoutObjects lo ON src.Object_UUID = lo.Object_UUID
     WHERE ol.Link_Role = 'triggers_script'
     GROUP BY 1, 2
+),
+result AS MATERIALIZED (
+    SELECT
+        l.File_Name AS file_name,
+        l.L_UUID AS _nav_uuid,
+        l.L_Name AS layout_name,
+        l.Default_View AS default_view,
+        o.objects * 1 + o.portals * 15 + o.panels * 5 + o.hide_calcs * 3 + o.cf_conditions * 3
+          + COALESCE(p.unstored_fields, 0) * 4 + COALESCE(p.related_fields, 0) * 2
+          + COALESCE(p.containers, 0) * 5 + COALESCE(s.script_links, 0) * 1 AS complexity_score,
+        o.objects, o.portals, o.panels, o.hide_calcs, o.cf_conditions,
+        COALESCE(p.unstored_fields, 0) AS unstored_fields,
+        COALESCE(p.related_fields, 0) AS related_fields,
+        COALESCE(p.containers, 0) AS containers,
+        COALESCE(s.script_links, 0) AS script_links,
+        o.objects || ' objects, ' || o.portals || ' portal(s), '
+          || COALESCE(p.unstored_fields, 0) || ' unstored, '
+          || COALESCE(p.related_fields, 0) || ' related field placement(s)' AS _message
+    FROM Layouts l
+    JOIN ObjectCatalog oc ON l.L_UUID = oc.Object_UUID AND oc.Object_Type = 'Layout'
+    JOIN objs o ON o.File_Name = l.File_Name AND o.Layout_ID = l.L_ID
+    LEFT JOIN placements p ON p.File_Name = l.File_Name AND p.Layout_ID = l.L_ID
+    LEFT JOIN script_links s ON s.File_Name = l.File_Name AND s.Layout_ID = l.L_ID
+    WHERE o.objects * 1 + o.portals * 15 + o.panels * 5 + o.hide_calcs * 3 + o.cf_conditions * 3
+          + COALESCE(p.unstored_fields, 0) * 4 + COALESCE(p.related_fields, 0) * 2
+          + COALESCE(p.containers, 0) * 5 + COALESCE(s.script_links, 0) * 1
+          >= CAST(COALESCE(getvariable('min_score'), '200') AS INTEGER)
+      AND (getvariable('file') IS NULL OR l.File_Name = getvariable('file'))
+      AND (getvariable('scope_uuids') IS NULL
+           OR l.L_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
+),
+-- >>> shared paging search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) <> 'uuid'))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging search block
+filtered AS (
+    SELECT * FROM searched
+    WHERE (getvariable('default_view') IS NULL OR default_view = getvariable('default_view'))
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT
-    l.File_Name AS file_name,
-    l.L_UUID AS _nav_uuid,
-    l.L_Name AS layout_name,
-    l.Default_View AS default_view,
-    o.objects * 1 + o.portals * 15 + o.panels * 5 + o.hide_calcs * 3 + o.cf_conditions * 3
-      + COALESCE(p.unstored_fields, 0) * 4 + COALESCE(p.related_fields, 0) * 2
-      + COALESCE(p.containers, 0) * 5 + COALESCE(s.script_links, 0) * 1 AS complexity_score,
-    o.objects, o.portals, o.panels, o.hide_calcs, o.cf_conditions,
-    COALESCE(p.unstored_fields, 0) AS unstored_fields,
-    COALESCE(p.related_fields, 0) AS related_fields,
-    COALESCE(p.containers, 0) AS containers,
-    COALESCE(s.script_links, 0) AS script_links,
-    o.objects || ' objects, ' || o.portals || ' portal(s), '
-      || COALESCE(p.unstored_fields, 0) || ' unstored, '
-      || COALESCE(p.related_fields, 0) || ' related field placement(s)' AS _message
-FROM Layouts l
-JOIN ObjectCatalog oc ON l.L_UUID = oc.Object_UUID AND oc.Object_Type = 'Layout'
-JOIN objs o ON o.File_Name = l.File_Name AND o.Layout_ID = l.L_ID
-LEFT JOIN placements p ON p.File_Name = l.File_Name AND p.Layout_ID = l.L_ID
-LEFT JOIN script_links s ON s.File_Name = l.File_Name AND s.Layout_ID = l.L_ID
-WHERE o.objects * 1 + o.portals * 15 + o.panels * 5 + o.hide_calcs * 3 + o.cf_conditions * 3
-      + COALESCE(p.unstored_fields, 0) * 4 + COALESCE(p.related_fields, 0) * 2
-      + COALESCE(p.containers, 0) * 5 + COALESCE(s.script_links, 0) * 1
-      >= CAST(COALESCE(getvariable('min_score'), '200') AS INTEGER)
-  AND (getvariable('default_view') IS NULL OR l.Default_View = getvariable('default_view'))
-  AND (getvariable('file') IS NULL OR l.File_Name = getvariable('file'))
-  AND (getvariable('scope_uuids') IS NULL
-       OR l.L_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
-ORDER BY complexity_score DESC, file_name, layout_name
-LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.*,
+    -- Facets ordered by value, so every request returns the same text.
+    (SELECT to_json(map_from_entries(list((default_view, n) ORDER BY default_view)))
+       FROM (SELECT default_view, count(*) AS n FROM result GROUP BY 1)) AS _chip_facets,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ complexity_score DESC, file_name, layout_name, _nav_uuid, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

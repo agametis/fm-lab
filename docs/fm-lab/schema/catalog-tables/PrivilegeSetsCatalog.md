@@ -43,10 +43,15 @@ The privilege sets of each file with all class-level switches: record, layout, v
 | `Disconnect_Idle` | `BOOLEAN` |
 | `Commands` | `VARCHAR` |
 | `Password_Prohibit_Modification` | `BOOLEAN` |
+| `Modified_At` | `VARCHAR` |
+| `Modified_By` | `VARCHAR` |
+| `Modified_Account` | `VARCHAR` |
+| `Modifications` | `BIGINT` |
 | `File_Name` | `VARCHAR` |
 
 ## Notes
 
 - When a class uses **Custom privileges**, the class-level columns no longer reflect real access — the per-object detail then lives in [PrivilegeSetRecordAccess](PrivilegeSetRecordAccess.md), [PrivilegeSetFieldAccess](PrivilegeSetFieldAccess.md) and [PrivilegeSetObjectAccess](PrivilegeSetObjectAccess.md).
+- `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` are the raw change metadata of the object's `<UUID>` element: timestamp as text (local time of the editing client, no time zone), user name, account (empty → `NULL`) and change counter. [ObjectChangeMeta](ObjectChangeMeta.md) collects them across all object types with a typed timestamp.
 
 **See also:** [PrivilegeSetRecordAccess](PrivilegeSetRecordAccess.md) · [PrivilegeSetFieldAccess](PrivilegeSetFieldAccess.md) · [PrivilegeSetObjectAccess](PrivilegeSetObjectAccess.md) · [ExtendedPrivilegesCatalog](ExtendedPrivilegesCatalog.md) · [AccountsCatalog](AccountsCatalog.md)

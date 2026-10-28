@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "文件视图",
-    "description": "按文件的详情视图：元数据、文件选项、对象 KPI，以及触发的脚本／起始布局／登录账户。"
+    "description": "按文件的详细视图：元数据、文件选项、对象指标、各目录的修改标记以及触发的脚本 / 启动布局 / 登录账户。"
   },
   "layout": {
     "file_not_found.props.title": "未找到文件",
@@ -14,6 +14,11 @@
     "file_metrics_kpistrip.props.items[4].label": "最近导入",
     "file_metrics_kpistrip.props.items[5].label": "最低版本",
     "file_size_kpistrip.props.items[0].label": "文件大小",
+    "file_change_kpistrip.props.items[0].label": "最后设计修改",
+    "file_change_kpistrip.props.items[1].label": "修改者",
+    "file_change_kpistrip.props.items[2].label": "最后批量修改",
+    "file_change_kpistrip.props.items[3].label": "批量事件",
+    "file_change_kpistrip.props.items[4].label": "单独修改 %",
     "file_settings_list.props.items[0].label": "自动登录",
     "file_settings_list.props.items[1].label": "保存登录凭据",
     "file_settings_list.props.items[2].label": "登录字段",
@@ -31,6 +36,17 @@
     "file_object_counts_kpistrip.props.items[6].label": "值列表",
     "file_object_counts_kpistrip.props.items[7].label": "自定义函数",
     "file_object_counts_kpistrip.props.items[8].label": "变量",
+    "file_catalog_changes.props.title": "各目录的修改",
+    "file_catalog_changes_md.props.content": "每个对象只保留其**最后**的修改标记。*最后单独修改*不包括批量事件（迁移、粘贴、工具运行）和技术作者。目录标记遵循自身规则：目录中的对象每保存一次，其计数器就增加一次。时间为编辑客户端的本地时间。",
+    "file_change_trend.props.label": "每月的单项更改（截至数据状态的最近 12 个月）",
+    "file_catalog_changes_table.props.columns[0].label": "目录",
+    "file_catalog_changes_table.props.columns[1].label": "最后单独修改",
+    "file_catalog_changes_table.props.columns[2].label": "用户",
+    "file_catalog_changes_table.props.columns[3].label": "目录标记",
+    "file_catalog_changes_table.props.columns[4].label": "计数器",
+    "file_catalog_changes_table.props.columns[5].label": "对象",
+    "file_catalog_changes_table.props.columns[6].label": "在批量事件中",
+    "file_catalog_changes_table.props.columns[7].label": "最后编辑后删除了字段",
     "file_triggers.props.title": "触发的脚本",
     "file_triggers_table.props.columns[0].label": "事件",
     "file_triggers_table.props.columns[1].label": "脚本",

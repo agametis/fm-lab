@@ -122,6 +122,9 @@ Before the closing message, verify against the generated `layout.json`:
 - [ ] every node has an `id`; locale files use ID-form keys
 - [ ] no `:word` sequence anywhere in the SQL files
       (`grep -nE ':[A-Za-z0-9_]' data/*.sql` — hits need the split-literal fix)
+- [ ] every statement that joins tables qualifies every column with its alias,
+      no `SELECT *` / `t.*` over a join (sql-rules.md §1) — a bare column breaks
+      once a later schema version adds the same name to a joined table
 - [ ] if the manifest declares `analysis.scope.supported` with `object`/
       `object-list`/`cluster`: every native dataset carries the S-Block, the
       count of `getvariable('scope_uuids')` equals the count of

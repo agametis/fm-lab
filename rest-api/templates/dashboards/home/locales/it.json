@@ -40,6 +40,13 @@
   "docs.props.label": "Documentazione",
   "docs.props.subtitle": "Sorgenti di documentazione installate",
   "tests.props.label": "Test",
-  "tests.props.subtitle": "Test di analisi curati"
+  "tests.props.subtitle": "Test di analisi curati",
+  "recent_changes.props.title": "Modificato di recente",
+  "recent_changes_table.props.columns[0].label": "Modificato",
+  "recent_changes_table.props.columns[1].label": "Tipo",
+  "recent_changes_table.props.columns[2].label": "Oggetto",
+  "recent_changes_table.props.columns[3].label": "File",
+  "recent_changes_table.props.columns[4].label": "Persona",
+  "recent_changes_all.props.label": "Tutte le modifiche"
  }
 }

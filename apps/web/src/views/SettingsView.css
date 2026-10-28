@@ -378,3 +378,112 @@
 .fmspec-panel__details:hover {
   background: var(--color-accent-hover);
 }
+
+/* Authors of the change metadata (aliases per solution) */
+.change-authors-note {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--color-warning-border);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-fg);
+  border-radius: 4px;
+}
+
+.change-authors-scroll {
+  overflow-x: auto;
+}
+
+.change-authors-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.change-authors-table th,
+.change-authors-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.change-authors-table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.change-authors-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.change-authors-table tr.is-curated td:first-child {
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.change-authors-table select,
+.change-authors-table input[type="text"] {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
+  max-width: 11rem;
+}
+
+/* Fixed, narrow widths so the row fits the card and the actions stay
+ * reachable without scrolling sideways. */
+.change-authors-table input[type="text"] {
+  width: 9rem;
+}
+
+.change-authors-table select.change-authors-technical {
+  width: auto;
+}
+
+.change-authors-names {
+  color: var(--color-text-primary);
+}
+
+.change-authors-sub,
+.change-authors-time {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.change-authors-kind {
+  display: inline-block;
+  margin-top: 0.2rem;
+  padding: 0 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text-muted);
+}
+
+.change-authors-actions {
+  white-space: nowrap;
+}
+
+.change-authors-actions button + button {
+  margin-left: 0.35rem;
+}
+
+.change-authors-orphans h3 {
+  margin: 1rem 0 0.35rem;
+  font-size: 0.9rem;
+}
+
+.change-authors-orphans li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}

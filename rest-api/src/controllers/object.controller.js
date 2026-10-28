@@ -4,6 +4,7 @@ const formatters = require('../formatters');
 const { sendFormatted, buildSuccess } = require('../utils/response-builder');
 const { createError } = require('../middleware/error-handler');
 const referenceService = require('../services/reference.service');
+const referenceCandidatesService = require('../services/reference-candidates.service');
 
 // UUID-Erkennung: Standard-UUID v1–v5 mit Bindestrichen ODER 32 Hex-Chars ohne
 // Bindestriche (Pseudo-Type-UUIDs aus md5() wie ScriptStepType, BuiltinFunction,
@@ -11,9 +12,11 @@ const referenceService = require('../services/reference.service');
 const UUID_REGEX = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32})$/i;
 
 // Synthetische Katalog-Object_UUIDs für Sub-Knoten ohne native FM-UUID:
-// `trig_<id>_<owner>_<file>` (ScriptTrigger), `part_…` (LayoutPart), `rel_…`
-// (Relationship), `paste_…` (PasteIndexObject), `step_…` (ScriptStep). Gültige
-// Navigations-/Highlight-Ziele — nur das Format weicht ab.
+// `trig_<id>_<owner>_<file>` (ScriptTrigger), `part_…` (LayoutPart),
+// `paste_…` (PasteIndexObject), `step_…` (ScriptStep) sowie `rel_…` als
+// Ersatzschlüssel für Relationships aus Exporten ohne <UUID> (sonst trägt eine
+// Relationship ihre native UUID). Gültige Navigations-/Highlight-Ziele — nur das
+// Format weicht ab.
 const SYNTHETIC_ID_RE = /^(trig|part|rel|paste|step)_/;
 const isCatalogUuid = (s) => UUID_REGEX.test(s) || SYNTHETIC_ID_RE.test(s);
 
@@ -247,9 +250,11 @@ async function count(req, res, next) {
 async function search(req, res, next) {
   try {
     const ctx = req.solutionContext;
-    const { name, type, file, limit, offset, format = 'json', meta, debug, lang } = req.query;
+    const { name, type, file, limit, offset, format = 'json', meta, debug, lang, sort, modified_since } = req.query;
 
-    const result = await objectService.searchObjects(ctx, { name, type, file, limit, offset });
+    const result = await objectService.searchObjects(ctx, {
+      name, type, file, limit, offset, sort, modifiedSince: modified_since,
+    });
 
     // Lokalisierte Namen in der Trefferliste (s. /api/get). Ergänzt den
     // Such-Zweig, der Built-ins auch unter ihrer lokalisierten Schreibweise
@@ -280,9 +285,9 @@ async function search(req, res, next) {
 async function searchCount(req, res, next) {
   try {
     const ctx = req.solutionContext;
-    const { name, type, file, format = 'json', meta, debug } = req.query;
+    const { name, type, file, format = 'json', meta, debug, modified_since } = req.query;
 
-    const result = await objectService.countSearchResults(ctx, { name, type, file });
+    const result = await objectService.countSearchResults(ctx, { name, type, file, modifiedSince: modified_since });
 
     const formattedData = formatters.format(result.data, format);
 
@@ -321,6 +326,22 @@ async function references(req, res, next) {
       meta ? result.meta : null,
       debug ? `References query for ${direction} direction (SQL not shown for brevity)` : null
     );
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/references/candidates - Referenz-Kandidaten („Nicht referenziert“)
+ * Meta ist Teil des Vertrags (Fokus-Typ/-Subtyp, Aggregat, unterdrückte
+ * Kandidaten) und wird daher immer mitgeliefert.
+ */
+async function referenceCandidates(req, res, next) {
+  try {
+    const ctx = req.solutionContext;
+    const { uuid, file } = req.query;
+    const result = await referenceCandidatesService.getReferenceCandidates(ctx, { uuid, file });
+    res.json(buildSuccess(result.data, result.meta));
   } catch (error) {
     next(error);
   }
@@ -1420,26 +1441,14 @@ async function respondWithTokens(req, res, { uuid, file, meta, debug, enrich }) 
         crossFile: r.Is_Cross_File === true || r.Is_Cross_File === 'True',
       }));
 
-      // Display-Calculations: Variablen-Ziele ergänzen —
-      // Variablen-Kanten tragen keine Link_Subrole (Modell-Eigenschaft von
-      // Block 28), v_calculation_links kann sie daher nicht slot-zuordnen.
-      // Die slot-skopierten XMLCalcReferences-Zeilen (chunk-basiert bzw.
-      // A.6.10b-Rettung) liefern die Zuordnung; die Variable-Objekt-UUID folgt
-      // der Block-28-Formel md5(Scope::Anchor::Name) via VariablesCatalog.
+      // Display-Calculations: Variablen-Ziele ergänzen — slot-skopiert über
+      // XMLCalcReferences, Variablen-Objekt per Datei-Anker der Layoutformel
+      // (SQL + Begründung: objectService.DISPLAY_CALC_VARIABLES_SQL).
       if (inst.Calc_Role === 'display_calculation') {
         try {
           const varRes = await db.executeQuery(
             ctx,
-            `SELECT DISTINCT
-                    md5(vc.Variable_Scope || '::' || vc.Scope_Anchor || '::' || vc.Variable_Name) AS Var_UUID,
-                    vc.Variable_Name
-             FROM XMLCalcReferences x
-             JOIN VariablesCatalog vc
-               ON vc.Variable_Name  = x.Ref_Name
-              AND vc.Variable_Scope = x.Variable_Scope
-             WHERE x.Source_UUID = ? AND x.File_Name = ? AND x.Subrole = ?
-               AND x.Ref_Type = 'variable'
-             ORDER BY vc.Variable_Name`,
+            objectService.DISPLAY_CALC_VARIABLES_SQL,
             [inst.Owner_UUID, inst.File_Name, inst.Calc_Kind_Raw]
           );
           for (const r of varRes.rows) {
@@ -1895,9 +1904,10 @@ async function backReferences(req, res, next) {
     }
 
     // Destination muss eine (echte oder synthetische Katalog-) UUID sein und
-    // existieren. Sub-Knoten wie ScriptTrigger/LayoutPart/Relationship tragen
-    // synthetische Object_UUIDs (`trig_…`, `part_…`, `rel_…`, `paste_…`, `step_…`),
-    // die dennoch gültige Navigations-/Highlight-Ziele sind — Existenz prüft getByUUID.
+    // existieren. Sub-Knoten wie ScriptTrigger/LayoutPart tragen synthetische
+    // Object_UUIDs (`trig_…`, `part_…`, `paste_…`, `step_…`; `rel_…` nur bei
+    // Relationships ohne <UUID>), die dennoch gültige Navigations-/Highlight-Ziele
+    // sind — Existenz prüft getByUUID.
     if (!isCatalogUuid(destUuid)) {
       throw createError('VALIDATION_ERROR',
         '`destination` muss eine UUID sein.', { destination: destUuid });
@@ -2012,5 +2022,6 @@ module.exports = {
   search,
   searchCount,
   references,
+  referenceCandidates,
   backReferences,
 };

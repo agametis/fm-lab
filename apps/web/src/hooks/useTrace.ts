@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { API_BASE } from '../config/apiBase';
-import type { GraphNode, GraphEdge, SubgraphStats } from './useSubgraph';
+import type { GraphNode, GraphEdge, SubgraphStats, GraphActivityHead } from './useSubgraph';
 
 /**
  * Trace mode data layer — sister of {@link useSubgraph}.
@@ -95,6 +95,8 @@ export type TraceResponse = {
   };
   truncated: boolean;
   stats: TraceStats;
+  /** Change activity: stamps present + data state (colour lens "activity"). */
+  activity?: GraphActivityHead;
   nodes: GraphNode[];
   edges: GraphEdge[];
 };

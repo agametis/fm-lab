@@ -69,7 +69,7 @@ the scanned segments and never re-partitions on its own.
 | `--include-formulaic` | off | also scan/list scaffolding segments (access rights, menu overrides); default skips them |
 | `--max-steps=<N>` | 25 | step-text cap per anchor script |
 | `--write` / `--no-write` | `--write` | write `Semantic_Description` (scanned segments) and `Semantic_Name` (only where NULL) back to `CommunityNames`, then sync once. User names in the sidecar are never touched |
-| `--tests` / `--no-tests` | `--tests` | Analysis Tests in solution scope for §5 (`references/tests.md`) |
+| `--tests` / `--no-tests` | `--tests` | Analysis Tests in solution scope for §6 Findings (`references/tests.md`) |
 | `--auto-cluster` | off | at L0/L1 run `fm-graph-cluster` without asking |
 | `--no-cluster-check` | off | never ask; log the level and continue with what exists (batch use) |
 | `--no-sync` | off | skip the rest-api sync after write-back |
@@ -116,6 +116,8 @@ duckdb db/fm_catalog.duckdb -readonly -markdown -c "SET VARIABLE engine='<engine
 duckdb db/fm_catalog.duckdb -readonly -markdown -c ".read .claude/skills/fm-deep-research/scripts/duplication.sql"
 duckdb db/fm_catalog.duckdb -readonly -markdown -c "SET VARIABLE engine='<engine>'; SET VARIABLE \"limit\"=20;" \
   -c ".read .claude/skills/fm-graph-cluster/scripts/hubs.sql"
+duckdb db/fm_catalog.duckdb -readonly -markdown -c "SET VARIABLE engine='<engine>'; SET VARIABLE top=<top>;" \
+  -c ".read .claude/skills/fm-deep-research/scripts/community_activity.sql"         # section activity: 3 result sets
 sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' version.json | head -n1                  # {{fmlab_version}}
 ```
 
@@ -126,6 +128,11 @@ sources · #5 security (privilege sets, full-access/hidden scripts) · #6 plugin
 compatibility (WebDirect/Go No/Partial per file, fm_spec `trigger_compat`; attaches the reference
 read-only, 0 on references < 2.8.0). Duplication: same name in several files
 = per-file copies (node key `(uuid, file)`), never a shared hub — quantify, do not merge.
+Activity (section `activity`, rules in `references/template-guide.md`): #1 data state, share of
+mass/technical stamps, individual changes 90/365 days, persons, module classes, `mass_dominant`
+· #2 one row per Appendix A segment (same selection as `community_signals.sql`; pass
+`include_formulaic` too when set) · #3 timeline of the larger mass events. Same classes as the
+Graph Atlas and the dashboard "Module activity".
 
 ### R2. Segment scan (bounded, sequential)
 
@@ -220,13 +227,14 @@ Protocol: readiness <level> · scanned <n_deep>/<K> · tests <n> run · write-ba
 | sidecar locked / no server | annotations unavailable | continue, say so in Appendix B |
 | server down and `--tests` | no API | `fm-test` direct path; if that fails, "tests not run" in Appendix B |
 | `xml_convert.lock` held | import running | write report, skip write-back, say so |
+| `community_activity.sql`: "ObjectChangeMeta does not exist" | catalog imported before the change stamps were read | section `activity` = one paragraph "no signal from individual changes" + re-import hint; no activity lines in Appendix A |
 
 ## References
 
 - `references/report-template.md` — default template (read before R4)
 - `references/template-guide.md` — grammar, placeholders, section checklist, maturity scale (read before R4 and for any `--template`)
 - `references/tests.md` — default test set for R3 (read at R3)
-- `scripts/solution_profile.sql`, `scripts/community_signals.sql`, `scripts/script_steps.sql`, `scripts/duplication.sql`, `scripts/segment_inventory.sql` (B.6), `scripts/session_usage.sh` + `session_usage.sql` (B.7 run metrics from the session transcript, DuckDB only)
+- `scripts/solution_profile.sql`, `scripts/community_signals.sql`, `scripts/script_steps.sql`, `scripts/duplication.sql`, `scripts/community_activity.sql` (section activity, Appendix A activity lines), `scripts/segment_inventory.sql` (B.6), `scripts/session_usage.sh` + `session_usage.sql` (B.7 run metrics from the session transcript, DuckDB only)
 - `../_shared/scripts/cluster_state.sh`, `../_shared/scripts/community_members.sql`, `../_shared/scripts/cluster_run_named.sh`; `../fm-graph-cluster/scripts/hubs.sql`
 - `../_shared/response-language.md` — hedging vocabulary per language
 

@@ -135,7 +135,8 @@
         "id": "findings",
         "props": {
           "span": 12,
-          "title": "Touchpoints (call sites)"
+          "title": "Touchpoints (call sites)",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -148,6 +149,10 @@
               "rowKey": "row_key",
               "density": "compact",
               "sortable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "columns": [
                 {
                   "field": "api_group",
@@ -202,7 +207,8 @@
         "id": "fs_paths",
         "props": {
           "span": 12,
-          "title": "Path literals (where does it write / read?)"
+          "title": "Path literals (where does it write / read?)",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "fs_paths"
@@ -215,6 +221,10 @@
               "rowKey": "step_uuid",
               "density": "compact",
               "sortable": true,
+              "pageParam": "paths_page",
+              "searchParam": "paths_q",
+              "sortParam": "paths_sort",
+              "clientMode": true,
               "columns": [
                 {
                   "field": "path_literal",

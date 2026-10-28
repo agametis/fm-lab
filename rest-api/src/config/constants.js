@@ -155,6 +155,10 @@ const ERROR_CODES = {
   // Query referenziert Spalten/Tabellen, die es in dieser DB (noch) nicht gibt.
   // 409 (Conflict): behebbarer Zustands-Mismatch, Aktion = XML neu konvertieren.
   SCHEMA_DRIFT: { code: "SCHEMA_DRIFT", status: 409 },
+  // Katalog-Datei in einem Storage-Format, das die gebündelte DuckDB der REST-API
+  // nicht lesen kann (CLI und @duckdb/node-api auf verschiedenen Versionen).
+  // 503: die Lösung ist mit diesem API-Build nicht bedienbar, bis die Versionen passen.
+  STORAGE_VERSION_MISMATCH: { code: "STORAGE_VERSION_MISMATCH", status: 503 },
   FILE_NOT_FOUND: { code: "FILE_NOT_FOUND", status: 404 },
   IMPORT_ERROR: { code: "IMPORT_ERROR", status: 500 },
   INTERNAL_ERROR: { code: "INTERNAL_ERROR", status: 500 },

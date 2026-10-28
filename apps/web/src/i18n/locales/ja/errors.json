@@ -22,5 +22,13 @@
     "body": "このソリューション・コンテキストでは API に接続できませんでした。ソリューションを切り替える前は正常だった場合は、選択をサーバーの既定値にリセットしてください。",
     "action": "選択をリセット",
     "dismiss": "閉じる"
+  },
+  "storageVersion": {
+    "heading": "カタログを開けません: DuckDB のバージョンが一致しません",
+    "body": "ソリューション「{{solution}}」のカタログは DuckDB {{createdBy}}(ストレージバージョン {{fileVersion}})で書き込まれています。REST API は DuckDB {{apiVersion}} で動作しており、ストレージバージョン {{range}} しか読み込めません。",
+    "fixNewer": "対処: この fm-lab リリースが対応する DuckDB CLI {{apiLine}}.x で XML を再インポートするか、DuckDB {{cliLine}} に対応した fm-lab リリースに更新してください。",
+    "fixOlder": "対処: 現在の DuckDB CLI で XML を再インポートしてください。",
+    "unknown": "不明",
+    "dismiss": "閉じる"
   }
 }

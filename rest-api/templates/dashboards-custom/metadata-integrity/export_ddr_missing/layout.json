@@ -59,7 +59,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Files exported without DDR info"
+          "title": "Files exported without DDR info",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -73,6 +74,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": "auto",
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchAutoThreshold": 3,
               "searchPlaceholder": "Search file…",
               "columns": [

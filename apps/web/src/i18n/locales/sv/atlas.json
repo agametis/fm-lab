@@ -93,5 +93,62 @@
       "title": "Nod"
     },
     "cancel": "Avbryt"
+  },
+  "color": {
+    "label": "Färg",
+    "type": "Typ",
+    "recency": "Aktivitet",
+    "saves": "Sparningar",
+    "type_hint": "Färga rutorna efter objekttyp.",
+    "recency_hint": "Färga rutorna efter åldern på deras senaste enskilda ändring — massändringar räknas aldrig som unga.",
+    "saves_hint": "Färga rutorna efter medlemmarnas räknare för sparningar under hela livslängden (rang inom objekttypen) — robust mot massändringar.",
+    "unavailable": "Den här katalogen innehåller inga ändringsstämplar — importera lösningen igen för att färga efter aktivitet.",
+    "bulk": "Massändringar",
+    "bulk_hint": "Ta med massändringar: en massstämpel daterar då den senaste ändringen som en enskild ändring."
+  },
+  "activity": {
+    "class": {
+      "1": "≤ 30 dagar",
+      "2": "≤ 90 dagar",
+      "3": "≤ 1 år",
+      "4": "≤ 2 år",
+      "5": "> 2 år",
+      "6": "okänd",
+      "7": "ingen stämpel"
+    },
+    "savesShort": "sparningar {{level}}/5",
+    "savesFew": "få",
+    "savesMany": "många",
+    "legendRecency": "Senaste enskilda ändring",
+    "legendSaves": "Sparningar under livslängden (rang inom typen)",
+    "dataState": "Datastatus {{date}}",
+    "bulkIncluded": "massändringar medräknade",
+    "unknownHint": "För {{pct}} % av noderna är åldern på den senaste verkliga ändringen okänd — en ung massändring har skrivit över deras stämplar. Här skiljer sparningarna under livslängden modulerna bättre åt.",
+    "useSaves": "Färga efter sparningar",
+    "tooltip": {
+      "class": "Aktivitet: {{label}}",
+      "classLabel": "Aktivitet",
+      "newest": "Senaste ändring: {{date}} ({{days}} dagar före datastatus)",
+      "newestNone": "Ingen daterad ändring",
+      "active": "Ändrade inom 90 dagar: {{n}} av {{total}}",
+      "medianAge": "Medianålder: {{days}} dagar",
+      "medianSaves": "Median sparningar: {{n}}",
+      "saves": "Sparningar: {{n}}",
+      "undated": "Massstämplar: {{pct}} %",
+      "savesLevel": "Sparnivå {{level}} av 5"
+    },
+    "panel": {
+      "newest": "Senaste ändring",
+      "newestValue": "{{date}} · {{days}} dagar före datastatus",
+      "active": "Ändrade ≤ 90 dagar",
+      "activeValue": "{{n}} av {{total}}",
+      "medianAge": "Medianålder",
+      "days": "{{days}} dagar",
+      "medianSaves": "Median sparningar",
+      "saves": "Sparningar",
+      "undated": "Massstämplar",
+      "dataState": "Datastatus",
+      "openDashboard": "Ändringar i den här modulen"
+    }
   }
 }

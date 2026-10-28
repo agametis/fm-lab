@@ -93,5 +93,62 @@
       "title": "노드"
     },
     "cancel": "취소"
+  },
+  "color": {
+    "label": "색상",
+    "type": "유형",
+    "recency": "활동",
+    "saves": "저장 횟수",
+    "type_hint": "타일을 객체 유형별로 색칠합니다.",
+    "recency_hint": "타일을 가장 최근 개별 변경의 경과 기간으로 색칠합니다. 대량 이벤트는 최근 변경으로 보지 않습니다.",
+    "saves_hint": "타일을 멤버의 누적 저장 횟수(객체 유형 안의 순위)로 색칠합니다. 대량 이벤트에 강합니다.",
+    "unavailable": "이 카탈로그에는 변경 스탬프가 없습니다. 활동별로 색칠하려면 솔루션을 다시 가져오세요.",
+    "bulk": "대량 이벤트",
+    "bulk_hint": "대량 이벤트 포함: 대량 스탬프도 개별 변경처럼 마지막 변경 시점으로 봅니다."
+  },
+  "activity": {
+    "class": {
+      "1": "30일 이내",
+      "2": "90일 이내",
+      "3": "1년 이내",
+      "4": "2년 이내",
+      "5": "2년 초과",
+      "6": "알 수 없음",
+      "7": "스탬프 없음"
+    },
+    "savesShort": "저장 횟수 {{level}}/5",
+    "savesFew": "적음",
+    "savesMany": "많음",
+    "legendRecency": "가장 최근 개별 변경",
+    "legendSaves": "누적 저장 횟수(유형 내 순위)",
+    "dataState": "데이터 시점 {{date}}",
+    "bulkIncluded": "대량 이벤트 포함",
+    "unknownHint": "노드의 {{pct}} %는 마지막 실제 변경의 경과 기간을 알 수 없습니다. 최근 대량 이벤트가 스탬프를 덮어썼기 때문입니다. 여기서는 누적 저장 횟수가 모듈을 더 잘 구분합니다.",
+    "useSaves": "저장 횟수로 색칠",
+    "tooltip": {
+      "class": "활동: {{label}}",
+      "classLabel": "활동",
+      "newest": "최근 변경: {{date}} (데이터 시점 {{days}}일 전)",
+      "newestNone": "날짜가 있는 변경 없음",
+      "active": "90일 이내 변경: {{total}}개 중 {{n}}개",
+      "medianAge": "경과 기간 중앙값: {{days}}일",
+      "medianSaves": "저장 횟수 중앙값: {{n}}",
+      "saves": "저장 횟수: {{n}}",
+      "undated": "대량 스탬프: {{pct}} %",
+      "savesLevel": "저장 횟수 단계 {{level}}/5"
+    },
+    "panel": {
+      "newest": "최근 변경",
+      "newestValue": "{{date}} · 데이터 시점 {{days}}일 전",
+      "active": "90일 이내 변경",
+      "activeValue": "{{total}}개 중 {{n}}개",
+      "medianAge": "경과 기간 중앙값",
+      "days": "{{days}}일",
+      "medianSaves": "저장 횟수 중앙값",
+      "saves": "저장 횟수",
+      "undated": "대량 스탬프",
+      "dataState": "데이터 시점",
+      "openDashboard": "이 모듈의 변경"
+    }
   }
 }

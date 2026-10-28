@@ -114,23 +114,61 @@ ranked AS (
            MIN(CASE e.signal WHEN 'exclusive' THEN 1 WHEN 'dedicated' THEN 2 ELSE 3 END)
                OVER (PARTITION BY e.nav_uuid) AS binding_rank
     FROM evidence e
+),
+-- The finding rows; the keys of the default order travel along as hidden
+-- columns, so the page order does not hang on row_key alone.
+unkeyed AS MATERIALIZED (
+    SELECT 'platform-specific-ios' AS rule_id,
+        'info' AS severity,
+        file_name, nav_uuid, script_name,
+        CASE binding_rank WHEN 1 THEN 'exclusive' WHEN 2 THEN 'dedicated'
+             ELSE 'contextual' END AS binding,
+        evidence_kind, signal, feature, step_no, step_uuid, usage_count,
+        CASE evidence_kind
+             WHEN 'step'
+             THEN feature || ' runs ONLY on FileMaker Go (iOS) — exclusive step, fails on every other runtime'
+             ELSE feature || ' is iOS-dedicated — callable everywhere, meaningful results only on FileMaker Go (iOS); used ' || usage_count || '× in this script'
+        END AS message,
+        doc_slug,
+           binding_rank AS _ord_1
+    FROM ranked
+    WHERE (getvariable('file') IS NULL OR file_name = getvariable('file'))
+      AND (getvariable('scope_uuids') IS NULL
+           OR nav_uuid IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
+),
+-- row_key numbers the rows in the default order; the whole row breaks the
+-- remaining ties, so every request assigns the same key.
+result AS MATERIALIZED (
+    SELECT u.* EXCLUDE (_ord_1),
+           row_number() OVER (ORDER BY u._ord_1, u.file_name, u.script_name, u.evidence_kind, u.step_no NULLS LAST, u.feature, u) AS row_key
+    FROM unkeyed u
+),
+-- >>> shared paging table-search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) NOT IN ('uuid', 'nav_uuid', 'row_key')))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging table-search block
+filtered AS (
+    SELECT * FROM searched
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT 'platform-specific-ios' AS rule_id,
-    'info' AS severity,
-    file_name, nav_uuid, script_name,
-    CASE binding_rank WHEN 1 THEN 'exclusive' WHEN 2 THEN 'dedicated'
-         ELSE 'contextual' END AS binding,
-    evidence_kind, signal, feature, step_no, step_uuid, usage_count,
-    CASE evidence_kind
-         WHEN 'step'
-         THEN feature || ' runs ONLY on FileMaker Go (iOS) — exclusive step, fails on every other runtime'
-         ELSE feature || ' is iOS-dedicated — callable everywhere, meaningful results only on FileMaker Go (iOS); used ' || usage_count || '× in this script'
-    END AS message,
-    doc_slug,
-    row_number() OVER (ORDER BY binding_rank, file_name, script_name, evidence_kind, step_no NULLS LAST, feature) AS row_key
-FROM ranked
-WHERE (getvariable('file') IS NULL OR file_name = getvariable('file'))
-  AND (getvariable('scope_uuids') IS NULL
-       OR nav_uuid IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
-ORDER BY binding_rank, file_name, script_name, evidence_kind, step_no NULLS LAST, feature
-LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.*,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ row_key, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

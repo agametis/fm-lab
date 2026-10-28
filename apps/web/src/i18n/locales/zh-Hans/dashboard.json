@@ -101,7 +101,23 @@
     "custom": "自定义",
     "ok": "正常",
     "warnings": "警告",
-    "errors": "错误"
+    "errors": "错误",
+    "Mass event": "批量事件",
+    "Mass action": "批量操作",
+    "Paste / import": "粘贴 / 导入",
+    "Tool run": "工具运行",
+    "Technical author": "技术作者",
+    "Solution-wide": "整个解决方案",
+    "Single file": "单个文件",
+    "Large session": "大型会话",
+    "Runtime change": "运行时更改",
+    "≤ 30 days": "30 天以内",
+    "≤ 90 days": "90 天以内",
+    "≤ 1 year": "1 年以内",
+    "≤ 2 years": "2 年以内",
+    "> 2 years": "超过 2 年",
+    "Unknown": "未知",
+    "No stamp": "无更改戳"
   },
   "semanticNames": {
     "structureLabel": "结构",
@@ -183,5 +199,42 @@
   "featured": {
     "ruleCount_one": "{{count}} 条规则",
     "ruleCount_other": "{{count}} 条规则"
+  },
+  "select": {
+    "selectedCount": "已选 {{count}} 项",
+    "clear": "清除选择"
+  },
+  "chart": {
+    "noData": "此期间没有数据。",
+    "changes_one": "{{formatted}} 处更改",
+    "changes_other": "{{formatted}} 处更改",
+    "actions_one": "{{formatted}} 次操作",
+    "actions_other": "{{formatted}} 次操作",
+    "massEvent": "批量事件",
+    "massEvents": "批量事件",
+    "massEventsIn_one": "{{count}} 个批量事件 · {{objects}} 个对象",
+    "massEventsIn_other": "{{count}} 个批量事件 · {{objects}} 个对象",
+    "notCounted": "(未计入)",
+    "other_one": "其他 ({{formatted}})",
+    "other_other": "其他 ({{formatted}})",
+    "clickHint": "点击以在列表中显示这些更改",
+    "heatmap": {
+      "aria": "活动图",
+      "less": "少",
+      "more": "多",
+      "none": "无更改",
+      "summaryDay_one": "{{formatted}} 个活跃日 · 每天最多 {{max}}",
+      "summaryDay_other": "{{formatted}} 个活跃日 · 每天最多 {{max}}",
+      "summaryHour_one": "{{formatted}} 个活跃小时 · 每小时最多 {{max}}",
+      "summaryHour_other": "{{formatted}} 个活跃小时 · 每小时最多 {{max}}",
+      "summaryWeek_one": "{{formatted}} 个活跃周 · 每周最多 {{max}}",
+      "summaryWeek_other": "{{formatted}} 个活跃周 · 每周最多 {{max}}"
+    },
+    "series": {
+      "aria": "随时间变化的更改",
+      "legend": "系列",
+      "toggleHint": "单击：显示或隐藏 · Shift 或 Alt/Option + 单击：仅显示此系列",
+      "reset": "所有系列"
+    }
   }
 }

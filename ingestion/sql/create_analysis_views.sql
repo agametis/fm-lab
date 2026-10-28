@@ -103,8 +103,9 @@ SELECT
     GREATEST(0, loop_depth_after_raw)                    AS loop_depth_after,
     GREATEST(0, if_depth_after_raw)                      AS if_depth_after,
     -- Rohe (ungeclampte) laufende If-Tiefe nach dem Step: < 0 markiert ein End If
-    -- ohne offenes If. Die unbalanced-if-Rule braucht dieses negative Signal,
-    -- das if_depth_after (geclampt) bewusst verschluckt.
+    -- ohne offenes If — das negative Signal, das if_depth_after (geclampt) bewusst
+    -- verschluckt. Zählt ALLE Steps; die unbalanced-if-Rule rechnet die Bilanz
+    -- selbst nur über aktive Steps (deaktivierte Block-Reste laufen nicht).
     if_depth_after_raw                                   AS if_running_depth,
     loop_depth_before_raw + GREATEST(0, if_depth_before_raw) AS block_depth_before
 FROM acc;
@@ -183,6 +184,7 @@ SELECT
         WHEN c.Calc_Kind_Raw = 'Placeholder'        THEN 'Placeholder Text'
         WHEN c.Calc_Kind_Raw = 'TabPanel'           THEN 'Tab Title'
         WHEN c.Calc_Kind_Raw = 'PopoverPanel'       THEN 'Popover Title'
+        WHEN c.Calc_Kind_Raw = 'ButtonBar'          THEN 'Active Segment'
         WHEN c.Calc_Kind_Raw = 'Install'            THEN 'Install Condition'
         WHEN c.Calc_Kind_Raw = 'Title'              THEN 'Menu Title'
         WHEN c.Calc_Kind_Raw = 'Name'               THEN 'Calculated Name'

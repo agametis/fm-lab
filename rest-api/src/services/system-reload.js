@@ -35,6 +35,8 @@ async function performReload(solutionId) {
   // ein Re-Import kann das Katalog-Schema heben, dann muss die Suche den
   // lokalisierten Built-in-Branch wieder anbieten.
   require('./object.service').clearObjectServiceCaches();
+  // Kandidaten-Zeile: Typ-Bestand, LinkRoleRegistry und Subtyp-Spalten je Lösung.
+  require('./reference-candidates.service').clearReferenceCandidateCaches();
   helpService.clearCache();
   templateService.clearCache();
   graphService.clearCache();

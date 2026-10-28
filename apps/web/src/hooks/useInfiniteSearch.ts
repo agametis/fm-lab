@@ -25,6 +25,10 @@ interface UseInfiniteSearchOptions {
   searchName: string;
   selectedFile: string;
   objectType: string;
+  /** 'modified' = server-side order by the own change stamp (newest first). */
+  sort?: 'modified';
+  /** 'YYYY-MM-DD' — only objects whose own change stamp is on or after this day. */
+  modifiedSince?: string;
 }
 
 interface UseInfiniteSearchResult {
@@ -60,6 +64,8 @@ export const useInfiniteSearch = ({
   searchName,
   selectedFile,
   objectType,
+  sort,
+  modifiedSince = '',
 }: UseInfiniteSearchOptions): UseInfiniteSearchResult => {
   const [items, setItems] = useState<FMObject[]>([]);
   const [offset, setOffset] = useState(0);
@@ -86,13 +92,15 @@ export const useInfiniteSearch = ({
   // (oft sehr lange) Liste sichtbar ist und der Virtualizer seinen Range
   // basierend auf der alten Gesamthöhe rendert — sichtbar als "Fragmente".
   // Pattern: "Adjusting state when a prop changes" (React-Docs).
-  const [lastParams, setLastParams] = useState({ searchName, selectedFile, objectType });
+  const [lastParams, setLastParams] = useState({ searchName, selectedFile, objectType, sort, modifiedSince });
   if (
     lastParams.searchName !== searchName ||
     lastParams.selectedFile !== selectedFile ||
-    lastParams.objectType !== objectType
+    lastParams.objectType !== objectType ||
+    lastParams.sort !== sort ||
+    lastParams.modifiedSince !== modifiedSince
   ) {
-    setLastParams({ searchName, selectedFile, objectType });
+    setLastParams({ searchName, selectedFile, objectType, sort, modifiedSince });
     setItems([]);
     setOffset(0);
     setTotalCount(null);
@@ -125,8 +133,10 @@ export const useInfiniteSearch = ({
       limit: CHUNK_SIZE,
       offset: withOffset,
       lang,
+      sort,
+      modified_since: modifiedSince || undefined,
     };
-  }, [searchName, selectedFile, objectType, lang]);
+  }, [searchName, selectedFile, objectType, lang, sort, modifiedSince]);
 
   /**
    * Reset and load initial data
@@ -155,6 +165,7 @@ export const useInfiniteSearch = ({
           name: searchParams.name,
           file: searchParams.file,
           type: searchParams.type,
+          modified_since: searchParams.modified_since,
         }),
       ]);
 

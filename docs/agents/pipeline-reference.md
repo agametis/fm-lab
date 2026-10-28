@@ -137,12 +137,22 @@ sweep and semantic names (`CommunityNames.Semantic_Name`/`Semantic_Description`)
 rebuilds a *raw* partition on that same run, but re-run `fm-graph-cluster` afterwards for the
 resolution sweep + semantic naming.
 
-## `--split` (large files)
+## `--split` (classic DOM path)
 
-`convert-xml --batch --split` chunks each file's Phase 1 at top-level branch boundaries
-(the heavy `StepsForScripts` and `DDR_INFO` branches are split into their own chunks) to
-lower the peak DOM memory. P2–P6 are unaffected (table-only, batch-wide). The result is
-bit-identical to the unsplit run.
+`convert-xml --batch --split` forces the classic engine and chunks each file's Phase 1 at
+top-level branch boundaries (the heavy `StepsForScripts` and `DDR_INFO` branches get chunks
+of their own; `--subchunk N` additionally cuts `StepsForScripts`/`LayoutCatalog` into
+N-record pieces) to lower the peak DOM memory. Every chunk runs only the P1 sections of its
+own catalog — the main chunk also those of every branch without a chunk of its own — so the
+result is identical to the unsplit run (`FilesCatalog.XML_Path` aside, it names the chunk);
+`tools/tests/regression/classic_split_parity.sh` guards this for every chunked path.
+P2–P6 are unaffected (table-only, batch-wide). Combinable with `--jobs N` (parallel across
+files, chunked per file).
+
+Large files need no flag: the default engine (Turbo + `--auto`) chunks every file itself,
+has a lower memory floor (~2.5 GB, warning only, vs. 8 GB for the classic split, below which
+the classic path aborts), backs off on out-of-memory and supports `--changed-only`. Use
+`--split` only to force the classic DOM path (comparison runs, debugging).
 
 ## DB architecture (two files per solution)
 

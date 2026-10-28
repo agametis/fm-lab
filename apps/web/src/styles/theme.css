@@ -92,6 +92,58 @@
   --color-graph-rest:            #b4b8c2;
   --color-graph-tile-text:       #14141a;
   --color-graph-tile-stroke:     #d7dade;
+
+  /* Charts (dashboard primitives) — validated as a set against the card surface
+     (--color-bg-elevated): categorical slots 1–7 in fixed order (adjacent pairs
+     clear the colour-vision separation targets), a neutral gray for "Other", and a
+     one-hue sequential ramp for the activity map (0 = no change). */
+  --color-chart-1:     #2a78d6;
+  --color-chart-2:     #eb6834;
+  --color-chart-3:     #1baf7a;
+  --color-chart-4:     #eda100;
+  --color-chart-5:     #e87ba4;
+  --color-chart-6:     #4a3aa7;
+  --color-chart-7:     #e34948;
+  --color-chart-other: #878c96;
+  --color-chart-grid:  #ededed;
+  --color-chart-axis:  #c0c0c0;
+  --color-heat-0:      #e8ebef;
+  --color-heat-1:      #86b6ef;
+  --color-heat-2:      #3987e5;
+  --color-heat-3:      #1c5cab;
+  --color-heat-4:      #0d366b;
+
+  /* Graph Atlas colour modes — two one-hue ordinal ramps, validated with the
+     dataviz validator (--ordinal) against --color-bg-canvas in both themes.
+     Activity: 1 = change ≤ 30 days (strong) … 5 = > 2 years (pale); unknown =
+     neutral gray with a 45° hatch, none = no stamp (tile base). Saves: 1 = few
+     … 5 = many lifetime saves. Each fill carries its own ink so tile labels keep
+     ≥ 4.5:1 (light ink on the strong steps). */
+  --color-recency-1:              #0d366b;
+  --color-recency-2:              #184f95;
+  --color-recency-3:              #256abf;
+  --color-recency-4:              #3987e5;
+  --color-recency-5:              #6da7ec;
+  --color-recency-unknown:        #c5c9d1;
+  --color-recency-unknown-hatch:  #9aa0ab;
+  --color-recency-none:           #e8eaee;
+  --color-recency-ink-1:          #ffffff;
+  --color-recency-ink-2:          #ffffff;
+  --color-recency-ink-3:          #ffffff;
+  --color-recency-ink-4:          #14141a;
+  --color-recency-ink-5:          #14141a;
+  --color-recency-ink-unknown:    #14141a;
+  --color-recency-ink-none:       #14141a;
+  --color-saves-1:                #f97948;
+  --color-saves-2:                #d85a27;
+  --color-saves-3:                #b43e00;
+  --color-saves-4:                #8a2e00;
+  --color-saves-5:                #621d00;
+  --color-saves-ink-1:            #14141a;
+  --color-saves-ink-2:            #14141a;
+  --color-saves-ink-3:            #ffffff;
+  --color-saves-ink-4:            #ffffff;
+  --color-saves-ink-5:            #ffffff;
 }
 
 /* ---------- DARK ---------- */
@@ -180,6 +232,51 @@
   --color-graph-rest:            #5a5a66;
   --color-graph-tile-text:       #14141a;
   --color-graph-tile-stroke:     #1c1c22;
+
+  /* Charts — same roles, stepped for the dark card surface. */
+  --color-chart-1:     #3987e5;
+  --color-chart-2:     #d95926;
+  --color-chart-3:     #199e70;
+  --color-chart-4:     #c98500;
+  --color-chart-5:     #d55181;
+  --color-chart-6:     #9085e9;
+  --color-chart-7:     #e66767;
+  --color-chart-other: #7d838e;
+  --color-chart-grid:  #2a2f37;
+  --color-chart-axis:  #444a55;
+  --color-heat-0:      #30353e;
+  --color-heat-1:      #1c5cab;
+  --color-heat-2:      #2a78d6;
+  --color-heat-3:      #5598e7;
+  --color-heat-4:      #9ec5f4;
+
+  /* Graph Atlas colour modes — the anchor flips on the dark canvas: the strong
+     step is the bright one, old/few recede towards the surface. */
+  --color-recency-1:              #9ec5f4;
+  --color-recency-2:              #6da7ec;
+  --color-recency-3:              #3987e5;
+  --color-recency-4:              #256abf;
+  --color-recency-5:              #184f95;
+  --color-recency-unknown:        #4b515c;
+  --color-recency-unknown-hatch:  #68707c;
+  --color-recency-none:           #2a2f37;
+  --color-recency-ink-1:          #14141a;
+  --color-recency-ink-2:          #14141a;
+  --color-recency-ink-3:          #14141a;
+  --color-recency-ink-4:          #ffffff;
+  --color-recency-ink-5:          #ffffff;
+  --color-recency-ink-unknown:    #ffffff;
+  --color-recency-ink-none:       #e6e8eb;
+  --color-saves-1:                #8a2e00;
+  --color-saves-2:                #b43e00;
+  --color-saves-3:                #d85a27;
+  --color-saves-4:                #f97948;
+  --color-saves-5:                #ffa98a;
+  --color-saves-ink-1:            #ffffff;
+  --color-saves-ink-2:            #ffffff;
+  --color-saves-ink-3:            #14141a;
+  --color-saves-ink-4:            #14141a;
+  --color-saves-ink-5:            #14141a;
 }
 
 /* --- Shared result-state tokens (Result Envelope v1) ------------------------

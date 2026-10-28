@@ -7,7 +7,7 @@ Common behavior:
 - All GET routes accept the standard `format` / `meta` / `debug` parameters ([REST API Conventions](../REST%20API%20Conventions.md)).
 - Focus-based routes resolve the focus node clone-aware: optional `focus_file` disambiguates shared UUIDs, otherwise `409 AMBIGUOUS_UUID` (response details list the matching files).
 - Node identifiers in responses are composite `uuid::file` (`id`) plus the raw `uuid` — the composite key stays unique across cloned files.
-- Subgraph/overview responses are LRU-cached for 5 minutes per parameter set.
+- Subgraph/overview responses are LRU-cached for 5 minutes per parameter set. Writing an annotation or a change-author alias clears the caches.
 
 ---
 
@@ -45,6 +45,8 @@ Focus-centered k-hop subgraph.
 ```
 
 `community`/`communityName` are `null` when the solution has not been clustered yet. Errors: `404 OBJECT_NOT_FOUND`, `409 AMBIGUOUS_UUID`.
+
+**Change activity** (subgraph and trace): the response carries `activity: { available, dataState }` — whether the catalog has change stamps, and the data state the ages count back from — and every node `activity: { class, newestChange, newestAgeDays, saves, undated }` (`null` without change stamps). `class` follows the [activity classes](../../schema/catalog-tables/ObjectChangeMeta.md#activity-classes): `1` ≤ 30 days · `2` ≤ 90 days · `3` ≤ 1 year · `4` ≤ 2 years · `5` > 2 years · `6` unknown · `7` no stamp of its own.
 
 ### Standalone layout objects in the logical view
 
@@ -129,8 +131,12 @@ Top-down atlas entry point: treemap (composition) or meta-graph (topology) over 
 | `exclude_types` | string (CSV) | — | Object types to hide (applied before aggregation) |
 | `fold` | boolean | `true` | Top-K folding with a "rest" tile; `false` = all segments |
 | `limit` | integer | `50` | Top-N cutoff |
+| `activity` | boolean | `false` | Compute the change activity per tile or super-node (the Atlas colour modes *Activity* and *Saves*). Off by default: it adds about 10–15 ms per uncached request |
+| `activity_bulk` | enum | `hide` | `include` lets a mass stamp date the last change like an individual one |
 
 Composition responses return `tiles[]` (aggregate tiles with `key`, `label`, `node_count`, `weight`; leaf tiles with `uuid`, `file`, `type`; a folded tail becomes a `kind: "rest"` tile). Topology responses return super-`nodes[]` and undirected, de-duplicated `edges[]` with weights.
+
+Both carry `activity: { requested, available, data_state, bulk }` — `available` tells whether the catalog has change stamps at all, also without `activity=true`. With `activity=true` every tile and super-node carries `activity` with the [activity class](../../schema/catalog-tables/ObjectChangeMeta.md#activity-classes) of its youngest member (`class` 1–7), `class_counts` (members per class, adding up to the node count), `newest_change`, `newest_age_days`, `active_90`, `median_age_days`, `median_saves`, `stamped`, `undated`, `saves_level` (1–5) and `saves_sum`/`saves_n`. The rest tile and the rest super-node carry the sums of what they fold (medians `null`); the leaf rest tile carries the nodes beyond the cap.
 
 ## GET /api/graph/communities
 

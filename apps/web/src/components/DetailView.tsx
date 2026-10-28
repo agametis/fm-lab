@@ -57,7 +57,7 @@ export const DetailView: React.FC = () => {
   // er als `origin` die operationalen Referenzen eines Pseudo-Aggregats
   // (ScriptStepType) anreichert (Origin_Hit-Markierung der Zielfelder).
   const [refParam] = useUrlState<string>('ref', '');
-  const { object, references, loading, error, ambiguousFiles, retry } = useObjectDetail(uuid, fileParam || null, refParam || null);
+  const { object, references, candidates, loading, error, ambiguousFiles, retry } = useObjectDetail(uuid, fileParam || null, refParam || null);
   const hierarchyRef = useRef<HierarchyTreeHandle>(null);
   const graphPanelRef = useRef<ObjectGraphPanelHandle>(null);
   // Detail-Tab eines Layouts: eingebetteter LayoutCanvas. Der Handle wird in den
@@ -323,7 +323,7 @@ export const DetailView: React.FC = () => {
           />
         );
       case 'references':
-        return <HierarchyTree ref={hierarchyRef} references={references} />;
+        return <HierarchyTree ref={hierarchyRef} references={references} candidates={candidates} />;
       case 'graph':
         return <ObjectGraphPanel ref={graphPanelRef} object={object} />;
       case 'tests':

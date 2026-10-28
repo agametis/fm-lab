@@ -22,5 +22,13 @@
     "body": "使用此解决方案上下文无法连接到 API。如果切换解决方案之前应用正常，请将选择重置为服务器默认值。",
     "action": "重置选择",
     "dismiss": "隐藏"
+  },
+  "storageVersion": {
+    "heading": "无法打开目录:DuckDB 版本不匹配",
+    "body": "解决方案“{{solution}}”的目录由 DuckDB {{createdBy}} 写入(存储版本 {{fileVersion}})。REST API 运行的是 DuckDB {{apiVersion}},只能读取存储版本 {{range}}。",
+    "fixNewer": "解决办法:使用此 fm-lab 版本支持的 DuckDB CLI {{apiLine}}.x 重新导入 XML,或将 fm-lab 更新到支持 DuckDB {{cliLine}} 的版本。",
+    "fixOlder": "解决办法:使用当前的 DuckDB CLI 重新导入 XML。",
+    "unknown": "未知",
+    "dismiss": "隐藏"
   }
 }

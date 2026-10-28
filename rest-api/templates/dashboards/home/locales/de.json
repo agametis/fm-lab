@@ -40,6 +40,13 @@
   "docs.props.label": "Dokumentation",
   "docs.props.subtitle": "Installierte Doku-Quellen",
   "tests.props.label": "Tests",
-  "tests.props.subtitle": "Kuratierte Analyse-Tests"
+  "tests.props.subtitle": "Kuratierte Analyse-Tests",
+  "recent_changes.props.title": "Zuletzt geändert",
+  "recent_changes_table.props.columns[0].label": "Geändert",
+  "recent_changes_table.props.columns[1].label": "Typ",
+  "recent_changes_table.props.columns[2].label": "Objekt",
+  "recent_changes_table.props.columns[3].label": "Datei",
+  "recent_changes_table.props.columns[4].label": "Person",
+  "recent_changes_all.props.label": "Alle Änderungen"
  }
 }

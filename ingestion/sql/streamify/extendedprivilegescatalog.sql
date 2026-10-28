@@ -29,6 +29,11 @@ SELECT
     list(xml_extract_text(ps_xml, '/PrivilegeSetReference/@id')[1]::BIGINT) as PrivilegeSet_IDs,
     list(xml_extract_text(ps_xml, '/PrivilegeSetReference/@name')[1]) as PrivilegeSet_Names,
 
+    xml_extract_text(priv_xml, '/ExtendedPrivilege/UUID/@timestamp')[1] as Modified_At,
+    xml_unescape(xml_extract_text(priv_xml, '/ExtendedPrivilege/UUID/@userName')[1]) as Modified_By,
+    NULLIF(xml_unescape(xml_extract_text(priv_xml, '/ExtendedPrivilege/UUID/@accountName')[1]), '') as Modified_Account,
+    TRY_CAST(xml_extract_text(priv_xml, '/ExtendedPrivilege/UUID/@modifications')[1] AS BIGINT) as Modifications,
+
     fn.File_Name as File_Name
 
 FROM raw_privileges
@@ -36,10 +41,14 @@ CROSS JOIN filename_normalized fn
 LEFT JOIN LATERAL (
     SELECT unnest(xml_extract_elements(priv_xml, '//ObjectList/PrivilegeSetReference')) as ps_xml
 ) ps ON true
-GROUP BY EP_ID, EP_Name, EP_Description, EP_UUID, fn.File_Name
+GROUP BY EP_ID, EP_Name, EP_Description, EP_UUID, Modified_At, Modified_By, Modified_Account, Modifications, fn.File_Name
 ON CONFLICT (EP_UUID, File_Name) DO UPDATE SET
     EP_ID = EXCLUDED.EP_ID,
     EP_Name = EXCLUDED.EP_Name,
     EP_Description = EXCLUDED.EP_Description,
     PrivilegeSet_IDs = EXCLUDED.PrivilegeSet_IDs,
-    PrivilegeSet_Names = EXCLUDED.PrivilegeSet_Names;
+    PrivilegeSet_Names = EXCLUDED.PrivilegeSet_Names,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;

@@ -14,7 +14,7 @@ CustomMenuSet is an **exported** type: each `<CustomMenuSet>` element of [XML Cu
 | `@name` | `MenuSet_Name` | |
 | `@comment` | `Comment` | Developer comment |
 | `<UUID>` (text) | `MenuSet_UUID` | Stable identity, used for all joins |
-| `<UUID>/@accountName`, `@userName`, `@timestamp`, `@modifications` | — | Modification metadata — **not extracted** |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata, raw (`Modified_At` as text, empty account → `NULL`); typed per object in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
 | `<CustomMenuList>/<CustomMenuReference>` (`@id`, `@name`) | `Member_Menu_IDs` / `Member_Menu_Names` | Member menus in menu-bar order, as parallel arrays; references carry only file-local IDs (no UUID) |
 | `<TagList>` | — | Tags — **not extracted** |
 | Catalog-level `<CustomMenuSetReference>` | — | The file's *default* menu set, noted once at catalog level (e.g. `[Standard FileMaker Menus]`) — **not extracted** |

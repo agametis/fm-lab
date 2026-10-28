@@ -42,6 +42,8 @@ SOLUTIONS_ROOT="solutions"
 POINTER=".fmlab/active_solution.json"
 CONTEXTS_DIR=".fmlab/contexts"
 API_BASE="${FMLAB_API_BASE:-http://localhost:3003}"
+# JSON + zip helpers (Node stdlib only — solution.sh needs no python3)
+SOLUTION_OPS="$PROJECT_ROOT/tools/lib/solution_ops.mjs"
 
 . "$PROJECT_ROOT/tools/lib/resolve_solution.sh"
 
@@ -63,7 +65,7 @@ manifest_get() { # $1=manifest $2=key — first string value of a top-level key
 
 write_manifest() { # $1=id $2=display name — minimal manifest v1 (user block only)
     local uuid now
-    uuid=$( (command -v uuidgen >/dev/null && uuidgen) || python3 -c 'import uuid;print(uuid.uuid4())' )
+    uuid=$( (command -v uuidgen >/dev/null && uuidgen) || node "$SOLUTION_OPS" uuid )
     now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
     cat > "$SOLUTIONS_ROOT/$1/solution.json" <<EOF
 {
@@ -224,21 +226,7 @@ cmd_rename() { # bundle rename (folder/id) — the manifest UUID keeps the ident
         mv "$SOLUTIONS_ROOT/$old" "$SOLUTIONS_ROOT/$new"
         [ -d "rest-api/db/solutions/$old" ] && mv "rest-api/db/solutions/$old" "rest-api/db/solutions/$new"
     fi
-    SOL="$SOLUTIONS_ROOT/$new/solution.json" OLD_ID="$old" NEW_ID="$new" python3 - <<'PYEOF'
-import json, os
-p = os.environ["SOL"]
-try:
-    with open(p) as f:
-        m = json.load(f)
-except Exception:
-    m = {}
-m["id"] = os.environ["NEW_ID"]
-if m.get("display_name") == os.environ["OLD_ID"]:
-    m["display_name"] = os.environ["NEW_ID"]
-with open(p, "w") as f:
-    json.dump(m, f, indent=2, ensure_ascii=False)
-    f.write("\n")
-PYEOF
+    node "$SOLUTION_OPS" rename-manifest "$SOLUTIONS_ROOT/$new/solution.json" "$old" "$new" || exit 1
 
     # Invariant I1: renaming 'default' means "my working solution gets a real
     # name" — re-create an empty 'default' (new manifest, new UUID) right away.
@@ -269,43 +257,11 @@ cmd_export() {
         out="output/solution_${id}$( [ -n "$schema" ] && printf '_schema-%s' "$schema" )_$(date -u +%Y%m%d).zip"
     fi
     mkdir -p "$(dirname "$out")"
-    # python3 zipfile: portable (no zip binary in the container). Default
-    # excludes xml/ (large, often confidential) and the volatile state/ —
-    # package = manifest + catalog DB + annotations DB.
-    SOL_DIR="$SOLUTIONS_ROOT/$id" OUT="$out" INCLUDE_XML="$include_xml" python3 - <<'PYEOF'
-import os, sys, zipfile
-
-sol_dir = os.environ["SOL_DIR"]
-out = os.environ["OUT"]
-include_xml = os.environ["INCLUDE_XML"] == "true"
-
-with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
-    for root, dirs, files in os.walk(sol_dir):
-        rel_root = os.path.relpath(root, sol_dir)
-        parts = [] if rel_root == "." else rel_root.split(os.sep)
-        if parts and parts[0] == "state":
-            dirs[:] = []
-            continue
-        if parts and parts[0] == "xml" and not include_xml:
-            dirs[:] = []
-            continue
-        for f in files:
-            if f.endswith((".tmp", ".lock", ".wal")):
-                # A non-empty annotations WAL means the
-                # sidecar holds un-checkpointed writes (API keeps it RW) — the
-                # packaged fm_annotations.duckdb may be stale. Warn, don't fail.
-                full = os.path.join(root, f)
-                if f == "fm_annotations.duckdb.wal" and os.path.getsize(full) > 0:
-                    print(f"WARNING: skipping non-empty {f} ({os.path.getsize(full)} bytes) — "
-                          "annotations in the package may be stale. Stop the API "
-                          "(checkpoints the sidecar) and re-export for a current state.",
-                          file=sys.stderr)
-                continue
-            full = os.path.join(root, f)
-            arc = os.path.join(os.path.basename(sol_dir), rel_root, f) if parts else os.path.join(os.path.basename(sol_dir), f)
-            z.write(full, arc)
-print(f"Exported: {out} ({os.path.getsize(out) / 1024 / 1024:.1f} MB)")
-PYEOF
+    # Node zip writer (tools/lib/solution_ops.mjs): portable — no zip binary in
+    # the container, no python3 needed. Default excludes xml/ (large, often
+    # confidential) and the volatile state/ — package = manifest + catalog DB +
+    # annotations DB.
+    node "$SOLUTION_OPS" export "$SOLUTIONS_ROOT/$id" "$out" "$include_xml" || exit 1
     $include_xml && echo "Included xml/ — the package is re-convertible." \
                  || echo "Without xml/ and state/ (default) — analyzable, not re-convertible. Use --include-xml for a full package."
 }
@@ -368,18 +324,7 @@ cmd_context() { # named session contexts — identity + state anchor for agents
             [ -f "$CONTEXTS_DIR/$name.json" ] && { echo "ERROR: context '$name' already exists — delete it first (context delete $name)."; exit 1; }
             [ -z "$owner" ] && owner="user:${USER:-unknown}"
             mkdir -p "$CONTEXTS_DIR"
-            CTX_FILE="$CONTEXTS_DIR/$name.json" CTX_SOLUTION="$solution" CTX_OWNER="$owner" CTX_NOTE="$note" python3 - <<'PYEOF'
-import json, os, datetime
-with open(os.environ["CTX_FILE"], "w") as f:
-    json.dump({
-        "context_version": 1,
-        "solution": os.environ["CTX_SOLUTION"],
-        "owner": os.environ["CTX_OWNER"],
-        "created_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "note": os.environ["CTX_NOTE"],
-    }, f, indent=2, ensure_ascii=False)
-    f.write("\n")
-PYEOF
+            node "$SOLUTION_OPS" write-context "$CONTEXTS_DIR/$name.json" "$solution" "$owner" "$note" || exit 1
             echo "Created context '$name' → solution '$solution' (owner: $owner)"
             echo "Activate for a session: export FMLAB_CONTEXT=$name"
             ;;

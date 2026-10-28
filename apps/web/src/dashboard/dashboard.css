@@ -324,6 +324,8 @@
 .dash-table__td--right { text-align: right; }
 .dash-table__th--center,
 .dash-table__td--center { text-align: center; }
+.dash-table__th--nowrap,
+.dash-table__td--nowrap { white-space: nowrap; }
 .dash-table--compact td,
 .dash-table--compact th { padding: 3px 6px; }
 /* 'copy'-format cell — subtle clipboard button; the tooltip (title attr)
@@ -605,6 +607,93 @@
   border-color: var(--color-accent);
   outline: none;
 }
+/* Multi-select: trigger button (+ × to clear) and a checkbox popover. The
+ * popover is portalled into document.body and positioned via inline style
+ * (top/left), so it escapes the Card's overflow:hidden. */
+.dash-select__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.dash-select__trigger {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+.dash-select__trigger::after {
+  content: ' ▾';
+  color: var(--color-text-muted);
+}
+.dash-select__trigger--active {
+  border-color: var(--color-accent);
+}
+.dash-select__reset {
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+.dash-select__reset:hover,
+.dash-select__reset:focus-visible {
+  color: var(--color-text-primary);
+  background: var(--color-hover-bg);
+  outline: none;
+}
+.dash-select__popover {
+  position: fixed;
+  z-index: 1000;
+  min-width: 220px;
+  max-width: min(420px, calc(100vw - 16px));
+  max-height: min(420px, calc(100vh - 16px));
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+.dash-select__options {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dash-select__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+.dash-select__option:hover {
+  background: var(--color-hover-bg);
+}
+.dash-select__clear {
+  align-self: flex-start;
+  margin-bottom: 4px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  color: var(--color-accent);
+  background: none;
+  border: none;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+.dash-select__clear:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+}
 .dash-chip {
   display: inline-flex;
   align-items: center;
@@ -642,6 +731,21 @@
 .dash-chip--active .dash-chip__count {
   color: var(--color-accent-soft-fg);
   background: var(--color-bg-surface);
+}
+/* ToggleChips: one chip per on/off param — the dot shows the state, since
+ * there is no second chip to compare with (hollow = off, filled = on). */
+.dash-chip--toggle::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  opacity: 0.7;
+}
+.dash-chip--toggle.dash-chip--active::before {
+  background: currentColor;
+  opacity: 1;
 }
 
 .dash-autotable {
@@ -728,6 +832,11 @@
   padding: 8px 0 0 0;
   font-size: 0.8rem;
   color: var(--color-text-muted);
+}
+/* Top copy of the pager sits inside the count bar, between count and search. */
+.dash-autotable__pager--top {
+  padding: 0;
+  margin-left: auto;
 }
 .dash-autotable__pager button {
   background: var(--color-bg-surface);
@@ -1379,6 +1488,12 @@
   text-decoration: none;
 }
 .dash-markdown a:hover { text-decoration: underline; }
+/* Inline caption next to chips or buttons in a Row: no paragraph margins (they
+ * would make the row taller than its controls); the bottom gap matches the
+ * chip bar's, so the text sits on the chips' centre line. */
+.dash-row > .dash-markdown p {
+  margin: 0 0 8px;
+}
 
 /* --- Empty / Unknown --- */
 .dash-empty {
@@ -2198,4 +2313,274 @@
 }
 .xml-integrity__link:hover {
   text-decoration: underline;
+}
+
+/* ---------- Chart primitives (CalendarHeatmap, StackedTimeSeries, Sparkline) ----------
+ * Colours come from the --color-chart-* / --color-heat-* tokens (theme.css).
+ * SVG marks set them via `style`; chrome (axes, labels, rings) is styled here.
+ * Text never wears a series colour — labels use the text tokens. */
+.dash-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.dash-chart--loading {
+  opacity: 0.4;
+}
+.dash-chart--empty {
+  padding: 12px 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+.dash-chart__scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.dash-chart__fill {
+  width: 100%;
+  min-width: 0;
+}
+.dash-chart__canvas {
+  position: relative;
+}
+.dash-chart svg {
+  display: block;
+  overflow: visible;
+}
+.dash-chart__label {
+  fill: var(--color-text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.dash-chart__label--year {
+  fill: var(--color-text-secondary);
+  font-weight: 600;
+}
+.dash-chart__axis line,
+.dash-chart__axis path {
+  stroke: var(--color-chart-axis);
+}
+.dash-chart__grid {
+  stroke: var(--color-chart-grid);
+  stroke-width: 1;
+}
+.dash-chart__hit {
+  fill: transparent;
+  outline: none;
+}
+.dash-chart__hit--click {
+  cursor: pointer;
+}
+.dash-chart__hover-band {
+  fill: var(--color-bg-surface-2);
+}
+.dash-chart__bulk-ring {
+  fill: none;
+  stroke: var(--color-text-primary);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+.dash-chart__selected-ring {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+  pointer-events: none;
+}
+.dash-chart__focus-ring {
+  fill: none;
+  stroke: var(--color-focus-ring);
+  stroke-width: 2;
+  pointer-events: none;
+}
+.dash-chart__selected-mark {
+  fill: var(--color-accent);
+}
+.dash-chart__flag line {
+  stroke: var(--color-text-secondary);
+  stroke-width: 1.2;
+}
+.dash-chart__flag path {
+  fill: var(--color-text-secondary);
+}
+
+/* Legend: heat scale + summary below the map, series toggles above the columns. */
+.dash-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+.dash-chart__legend-scale,
+.dash-chart__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.dash-chart__legend-summary {
+  color: var(--color-text-muted);
+}
+.dash-chart__swatch {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  flex: none;
+}
+.dash-chart__swatch--ring {
+  background: var(--color-heat-0);
+  box-shadow: 0 0 0 1.5px var(--color-text-primary);
+}
+.dash-chart__swatch--hatch {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--color-chart-other) 0 2px,
+    var(--color-bg-surface-2) 2px 4px
+  );
+}
+.dash-chart__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  font: inherit;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.dash-chart__toggle:hover {
+  background: var(--color-hover-bg);
+}
+.dash-chart__toggle:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+.dash-chart__toggle--off {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+.dash-chart__toggle--off .dash-chart__swatch {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1.5px var(--color-text-muted);
+}
+.dash-chart__toggle-total {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.dash-chart__reset {
+  padding: 2px 4px;
+  font: inherit;
+  color: var(--color-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.dash-chart__reset:hover {
+  text-decoration: underline;
+}
+.dash-chart__reset:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+/* Sparkline */
+.dash-chart--sparkline {
+  gap: 2px;
+}
+.dash-chart__spark-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+.dash-chart__spark-head strong {
+  color: var(--color-text-primary);
+}
+.dash-chart--sparkline svg:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.dash-chart__spark-line {
+  fill: none;
+  stroke: var(--color-chart-1);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.dash-chart__spark-area {
+  fill: var(--color-chart-1);
+  fill-opacity: 0.1;
+  stroke: none;
+}
+.dash-chart__spark-dot {
+  fill: var(--color-chart-1);
+  stroke: var(--color-bg-elevated);
+  stroke-width: 2;
+}
+.dash-chart__crosshair {
+  stroke: var(--color-chart-axis);
+  stroke-width: 1;
+}
+
+/* Tooltip — rendered in a portal (position: absolute on the body), so the
+ * card's overflow: hidden cannot clip it. */
+.dash-chart-tip {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: none;
+  min-width: 140px;
+  max-width: 280px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  color: var(--color-text-primary);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+.dash-chart-tip__value {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.dash-chart-tip__title {
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.dash-chart-tip__rows {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dash-chart-tip__rows li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dash-chart-tip__rows strong {
+  min-width: 2.5em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.dash-chart-tip__rows span:last-child {
+  color: var(--color-text-secondary);
+}
+.dash-chart-tip__key {
+  display: inline-block;
+  width: 10px;
+  height: 2px;
+  border-radius: 1px;
+  flex: none;
+}
+.dash-chart-tip__note {
+  margin-top: 6px;
+  color: var(--color-text-muted);
 }

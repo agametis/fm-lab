@@ -1,0 +1,35 @@
+{
+  "id": "cochange",
+  "version": "1.0.0",
+  "title": "Changed together",
+  "description": "Which modules are changed together in one work session: the coupling between and within the modules of the cluster partition, and the work sessions that cross module boundaries.",
+  "author": "fm-lab core",
+  "icon": "git-merge",
+  "tags": ["changes"],
+  "entry": "layout.json",
+  "datasets": [
+    { "id": "view_state",     "source": "bundle:data/view_state.sql",     "params": { "days": "all" } },
+    { "id": "kpis",           "source": "bundle:data/kpis.sql",           "params": { "days": "all" } },
+    { "id": "module_pairs",   "source": "bundle:data/module_pairs.sql",   "params": { "days": "all" }, "pageSize": 500 },
+    { "id": "cross_sessions", "source": "bundle:data/cross_sessions.sql", "params": { "days": "all" }, "pageSize": 500, "pageParam": "spage", "sortParam": "ssort" },
+    { "id": "file_options",   "source": "bundle:data/file_options.sql" },
+    { "id": "person_options", "source": "bundle:data/person_options.sql" }
+  ],
+  "params": [
+    { "name": "file", "type": "string", "sticky": true,
+      "description": "File names, comma-separated (default: all files)." },
+    { "name": "person", "type": "string", "sticky": true,
+      "description": "Person key from v_change_meta_authors (spelling variants merged)." },
+    { "name": "days", "type": "string", "sticky": true,
+      "description": "Period counted back from the data state: 7, 30, 90, 365 or all (default)." },
+    { "name": "coupling", "type": "string",
+      "description": "Module coupling table: between (default, module pairs) or within (one module)." },
+    { "name": "mq", "type": "string",
+      "description": "Search term over the module names of the coupling table." },
+    { "name": "page", "type": "string",
+      "description": "Page of the coupling table (1-based, 100 rows per page)." },
+    { "name": "spage", "type": "string",
+      "description": "Page of the session list (1-based, 100 rows per page)." }
+  ],
+  "permissions": { "read_only": true, "allow_navigation": true }
+}

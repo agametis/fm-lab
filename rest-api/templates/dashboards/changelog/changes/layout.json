@@ -1,0 +1,766 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "changes_no_meta",
+        "props": {
+          "span": 12,
+          "title": "No change stamps",
+          "variant": "hero"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": false
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "changes_no_meta_md",
+            "props": {
+              "content": "This catalog carries no change stamps yet. They are read during the XML import — import the solution again to see who changed what and when."
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "changes_filters",
+        "props": {
+          "span": 12,
+          "title": "Filter"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "Select",
+                "id": "changes_type_select",
+                "data": {
+                  "dataset": "type_options"
+                },
+                "props": {
+                  "param": "type",
+                  "label": "Type",
+                  "emptyOptionLabel": "All types",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "multiple": true
+                }
+              },
+              {
+                "type": "Select",
+                "id": "changes_file_select",
+                "data": {
+                  "dataset": "file_options"
+                },
+                "props": {
+                  "param": "file",
+                  "label": "File",
+                  "emptyOptionLabel": "All files",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "multiple": true
+                }
+              },
+              {
+                "type": "Select",
+                "id": "changes_person_select",
+                "data": {
+                  "dataset": "person_options"
+                },
+                "props": {
+                  "param": "person",
+                  "label": "Person",
+                  "emptyOptionLabel": "All persons",
+                  "resetParams": [
+                    "page"
+                  ]
+                }
+              },
+              {
+                "type": "NavButton",
+                "id": "changes_filters_reset",
+                "props": {
+                  "label": "Reset filters",
+                  "variant": "link",
+                  "onClick": {
+                    "action": "navigate",
+                    "args": {
+                      "path": "/dashboard/changes"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "FilterChips",
+                "id": "changes_days_chips",
+                "props": {
+                  "param": "days",
+                  "default": "90",
+                  "resetParams": [
+                    "page",
+                    "from",
+                    "to"
+                  ],
+                  "options": [
+                    {
+                      "value": "7",
+                      "label": "7 days"
+                    },
+                    {
+                      "value": "30",
+                      "label": "30 days"
+                    },
+                    {
+                      "value": "90",
+                      "label": "90 days"
+                    },
+                    {
+                      "value": "365",
+                      "label": "365 days"
+                    },
+                    {
+                      "value": "all",
+                      "label": "All"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "FilterChips",
+                "id": "changes_anchor_chips",
+                "props": {
+                  "param": "anchor",
+                  "default": "data",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "options": [
+                    {
+                      "value": "data",
+                      "label": "From data state"
+                    },
+                    {
+                      "value": "today",
+                      "label": "From today"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Markdown",
+                "id": "changes_anchor_md",
+                "props": {
+                  "content": "Period ends **{{anchor_label}}**"
+                }
+              }
+            ]
+          },
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "ToggleChips",
+                "id": "changes_toggles",
+                "props": {
+                  "items": [
+                    {
+                      "param": "bulk",
+                      "label": "Mass events",
+                      "on": "include",
+                      "off": "hide",
+                      "default": "hide",
+                      "resetParams": [
+                        "page"
+                      ]
+                    },
+                    {
+                      "param": "technical",
+                      "label": "Technical authors",
+                      "on": "include",
+                      "off": "hide",
+                      "default": "hide",
+                      "resetParams": [
+                        "page"
+                      ]
+                    },
+                    {
+                      "param": "charts",
+                      "label": "Activity",
+                      "on": "show",
+                      "off": "hide",
+                      "default": "show"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "FilterChips",
+                "id": "changes_group_chips",
+                "props": {
+                  "param": "group",
+                  "default": "objects",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "options": [
+                    {
+                      "value": "objects",
+                      "label": "Single changes"
+                    },
+                    {
+                      "value": "sessions",
+                      "label": "Work sessions"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "data": {
+          "dataset": "view_state"
+        }
+      },
+      {
+        "type": "Card",
+        "id": "changes_window",
+        "props": {
+          "span": 12,
+          "title": "Time window"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_window",
+          "truthy": true
+        },
+        "data": {
+          "dataset": "view_state"
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "Markdown",
+                "id": "changes_window_md",
+                "props": {
+                  "content": "Showing **{{window_label}}** — the period chips do not apply while a window is set."
+                }
+              },
+              {
+                "type": "NavButton",
+                "id": "changes_window_clear",
+                "props": {
+                  "label": "Clear window",
+                  "variant": "link",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "changes"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "changes_overview",
+        "props": {
+          "span": 12
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "changes_kpistrip",
+            "data": {
+              "dataset": "kpis"
+            },
+            "props": {
+              "items": [
+                {
+                  "label": "Changes",
+                  "field": "changes",
+                  "format": "number"
+                },
+                {
+                  "label": "Actions",
+                  "field": "actions",
+                  "format": "number"
+                },
+                {
+                  "label": "Active days",
+                  "field": "active_days",
+                  "format": "number"
+                },
+                {
+                  "label": "Persons",
+                  "field": "persons",
+                  "format": "number"
+                },
+                {
+                  "label": "Files",
+                  "field": "files",
+                  "format": "number"
+                },
+                {
+                  "label": "Mass events",
+                  "field": "mass_events",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "changes_activity",
+        "props": {
+          "span": 12,
+          "title": "Activity"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "show_charts",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "FilterChips",
+                "id": "changes_stack_chips",
+                "props": {
+                  "param": "stack",
+                  "default": "type",
+                  "options": [
+                    {
+                      "value": "type",
+                      "label": "By type"
+                    },
+                    {
+                      "value": "file",
+                      "label": "By file"
+                    },
+                    {
+                      "value": "person",
+                      "label": "By person"
+                    },
+                    {
+                      "value": "module",
+                      "label": "By module"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "FilterChips",
+                "id": "changes_count_chips",
+                "props": {
+                  "param": "count",
+                  "default": "objects",
+                  "options": [
+                    {
+                      "value": "objects",
+                      "label": "Count objects"
+                    },
+                    {
+                      "value": "actions",
+                      "label": "Count actions"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "CalendarHeatmap",
+            "id": "changes_heatmap",
+            "data": {
+              "dataset": "activity_map"
+            },
+            "props": {
+              "ariaLabel": "Activity map: changes per day",
+              "onCellClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "changes",
+                  "from": "{{from_at}}",
+                  "to": "{{to_at}}",
+                  "bulk": "{{bulk_mode}}"
+                }
+              }
+            }
+          },
+          {
+            "type": "StackedTimeSeries",
+            "id": "changes_series",
+            "data": {
+              "dataset": "activity_series"
+            },
+            "props": {
+              "height": 220,
+              "ariaLabel": "Changes over time, stacked by series",
+              "onBarClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "changes",
+                  "from": "{{from_at}}",
+                  "to": "{{to_at}}",
+                  "bulk": "{{bulk_mode}}"
+                }
+              }
+            }
+          },
+          {
+            "type": "Markdown",
+            "id": "changes_activity_md",
+            "props": {
+              "content": "Click a cell or a column to show its changes in the list below. Mass events never count into the colour intensity of the map; a ring marks their days, a flag their columns. *Actions* counts bursts — a paste or a mass event counts once."
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "changes_list",
+        "props": {
+          "span": 12,
+          "title": "Changes"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "show_list",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "changes_table",
+            "data": {
+              "dataset": "changes"
+            },
+            "props": {
+              "density": "compact",
+              "rowKey": "uuid",
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortable": true,
+              "sortParam": "sort",
+              "searchable": true,
+              "searchPlaceholder": "Search object, type, file or person",
+              "columns": [
+                {
+                  "field": "at",
+                  "label": "Changed",
+                  "nowrap": true
+                },
+                {
+                  "field": "type",
+                  "label": "Type",
+                  "nowrap": true
+                },
+                {
+                  "field": "name",
+                  "label": "Object"
+                },
+                {
+                  "field": "file",
+                  "label": "File",
+                  "nowrap": true
+                },
+                {
+                  "field": "person",
+                  "label": "Person",
+                  "nowrap": true
+                },
+                {
+                  "field": "account",
+                  "label": "Account",
+                  "nowrap": true
+                },
+                {
+                  "field": "modifications",
+                  "label": "Saves",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "marker",
+                  "label": "Note",
+                  "format": "badge",
+                  "badgeTone": {
+                    "Mass event": "warning",
+                    "Technical author": "partial"
+                  },
+                  "nowrap": true
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{uuid}}",
+                  "file": "{{file}}",
+                  "type": "{{type}}"
+                }
+              },
+              "empty": {
+                "message": "No changes match the filters in this period."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "changes_sessions",
+        "props": {
+          "span": 12,
+          "title": "Work sessions"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "show_sessions",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "sessions_table",
+            "data": {
+              "dataset": "sessions"
+            },
+            "props": {
+              "density": "compact",
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortable": true,
+              "sortParam": "sort",
+              "searchable": true,
+              "searchPlaceholder": "Search object, type, file or person",
+              "columns": [
+                {
+                  "field": "started",
+                  "label": "Start",
+                  "nowrap": true
+                },
+                {
+                  "field": "ended",
+                  "label": "End",
+                  "nowrap": true
+                },
+                {
+                  "field": "minutes",
+                  "label": "Minutes",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "person",
+                  "label": "Person",
+                  "nowrap": true
+                },
+                {
+                  "field": "objects",
+                  "label": "Changes",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "files",
+                  "label": "Files",
+                  "nowrap": true
+                },
+                {
+                  "field": "types",
+                  "label": "Types"
+                }
+              ],
+              "onRowClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "changes",
+                  "from": "{{from_at}}",
+                  "to": "{{to_at}}",
+                  "person": "{{person_key}}",
+                  "bulk": "{{bulk_mode}}"
+                }
+              },
+              "empty": {
+                "message": "No work sessions match the filters in this period."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "changes_bulk",
+        "props": {
+          "span": 12,
+          "title": "Mass events",
+          "subtitle": "One action touching many objects at once (migration, paste, tool run) — open one to list its objects."
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "bulk_table",
+            "data": {
+              "dataset": "bulk_events"
+            },
+            "props": {
+              "density": "compact",
+              "searchable": false,
+              "columns": [
+                {
+                  "field": "started",
+                  "label": "Start",
+                  "nowrap": true
+                },
+                {
+                  "field": "ended",
+                  "label": "End",
+                  "nowrap": true
+                },
+                {
+                  "field": "scope",
+                  "label": "Scope",
+                  "format": "badge",
+                  "nowrap": true
+                },
+                {
+                  "field": "kind",
+                  "label": "Kind",
+                  "format": "badge",
+                  "nowrap": true
+                },
+                {
+                  "field": "files",
+                  "label": "Files",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "objects",
+                  "label": "Objects",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "objects_total",
+                  "label": "In event",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "types",
+                  "label": "Types"
+                },
+                {
+                  "field": "persons",
+                  "label": "Persons"
+                }
+              ],
+              "onRowClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "changes",
+                  "from": "{{from_at}}",
+                  "to": "{{to_at}}",
+                  "bulk": "include"
+                }
+              },
+              "empty": {
+                "message": "No mass events in this period."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "changes_basis",
+        "props": {
+          "span": 12,
+          "title": "Data basis"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "changes_basis_md",
+            "props": {
+              "content": "The **last** change stamp of each object — earlier changes of the same object are overwritten. Times are the local time of the editing client, without time zone. The data state is the newest individual change of the solution."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

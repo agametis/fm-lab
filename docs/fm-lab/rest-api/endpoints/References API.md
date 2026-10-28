@@ -1,8 +1,8 @@
 # References API
 
-Dependency lookups over the resolved link graph (`ObjectLinks`): what an object uses and where it is used (`/references`), and which objects inside an open container reference a given origin (`/back-references`).
+Dependency lookups over the resolved link graph (`ObjectLinks`): what an object uses and where it is used (`/references`), which references an object could have but does not (`/references/candidates`), and which objects inside an open container reference a given origin (`/back-references`).
 
-Both endpoints are clone-aware — see [Clone disambiguation](../REST%20API%20Conventions.md#clone-disambiguation-file-ambiguous_uuid).
+All endpoints are clone-aware — see [Clone disambiguation](../REST%20API%20Conventions.md#clone-disambiguation-file-ambiguous_uuid).
 
 ---
 
@@ -41,17 +41,73 @@ Link roles (`calls_script`, `sets_field`, `displays_field`, …) describe *how* 
 
 **Slot classes (`Subrole_Class` / `Subrole_Detail`, additive).** Where the underlying edge carries a subrole (the calc slot the reference lives in), each row also reports:
 
-- `Subrole_Class` — the slot class, normalized onto the calc_kind vocabulary of the calculation catalog: `hide`, `conditional_format`, `tooltip`, `button_action`, `portal_filter`, `web_viewer_url`, `placeholder`, `popover_title`, `script_trigger_parameter`, `auto_enter`, `validation`, `on_server` (Perform Script on Server), `mbs_runscript`, `menu_install`. `Condition_N` collapses into `conditional_format`; unknown subroles pass through raw (never swallowed). Positional script-slot indices (and `XML`/`XSL`) are suppressed to `null`, so script rows keep their aggregated form — a script that reads a field in N steps stays **one** row with `Call_Count` = N.
+- `Subrole_Class` — the slot class, normalized onto the calc_kind vocabulary of the calculation catalog: `hide`, `conditional_format`, `tooltip`, `button_action`, `portal_filter`, `web_viewer_url`, `placeholder`, `popover_title`, `active_segment` (button-bar active-segment formula), `script_trigger_parameter`, `auto_enter`, `validation`, `on_server` (Perform Script on Server), `mbs_runscript`, `menu_install`, `menu_action` (custom-menu item performs the script). `Condition_N` collapses into `conditional_format`; unknown subroles pass through raw (never swallowed). Positional script-slot indices (and `XML`/`XSL`) are suppressed to `null`, so script rows keep their aggregated form — a script that reads a field in N steps stays **one** row with `Call_Count` = N.
 - `Subrole_Detail` — the raw value(s) behind the class: for `direction=all` the aggregated distinct raw subroles of the row (e.g. `Condition_1, Condition_2`), in the ungrouped `child`/`parent` branches the single raw value. `null` whenever `Subrole_Class` is `null` (direction=all).
 - `Subrole_Event` — additive on rows of class `script_trigger_parameter`: the `ScriptTrigger_<id>` slot(s) resolved to canonical trigger event names via the curated reference database (fm_spec ≥ 1.18.0), e.g. `OnObjectValidate`; aggregated rows yield a distinct list in `Subrole_Detail` order. Complete-or-absent contract: the field is omitted when the reference database is not attached, predates 1.18.0, or any slot of the list cannot be resolved — clients degrade to the class label.
 
 This distinguishes e.g. a field that *hides* 52 layout objects (`reads_field` + `hide`) from one that *colors* 16 (`reads_field` + `conditional_format`). Structural rows benefit too: `has_calculation` children report their calc_kind, `trigger_owner` the event name, `parent_layout` the part type — passed through raw.
 
-**Trigger vs. button action on `triggers_script`.** The `triggers_script` edge (owner → Script; the owner is a layout object, a layout or the file) carries a subrole: the canonical trigger event (e.g. `OnObjectSave`, raw source passthrough), or `button_action` for Button/GroupedButton/PopoverButton actions. On the script's reference list the aggregate decomposes into named event rows plus separate `button_action` rows, each filterable via the role chips. The attribution is reconstructed per (owner, script) group as a multiset, not per individual edge; catalogs whose mirrors carry no subrole render unfiltered until re-imported.
+**Trigger vs. button action on `triggers_script`.** The `triggers_script` edge (owner → Script; the owner is a layout object, a layout or the file) carries a subrole: the canonical trigger event (e.g. `OnObjectSave`, raw source passthrough), or `button_action` for Button/GroupedButton/PopoverButton actions. A custom-menu item that performs the script carries `menu_action` (source type `CustomMenuItem`). On the script's reference list the aggregate decomposes into named event rows plus separate `button_action` rows, each filterable via the role chips. The attribution is reconstructed per (owner, script) group as a multiset, not per individual edge; catalogs whose mirrors carry no subrole render unfiltered until re-imported.
 
-**Trigger mirror consolidation (caller direction).** A trigger is stored twice in the link graph: as the granular `trigger_script` edge of its ScriptTrigger sub-node and as the `triggers_script · <event>` mirror edge of its owner — a deliberate two-layer model in which **only the owner mirror counts for where-used** (the granular `trigger_script` edge never does). To keep caller lists free of that duplication, the references endpoint suppresses the granular row whenever its mirror is visible in the list. Display layer only — `ObjectLinks` and the graph are untouched. Consolidated mirror rows carry `Trigger_UUID`: the address of the ScriptTrigger sub-node, so clients can still jump to the trigger's detail view (`null` on `button_action` rows and every other role).
+**Trigger mirror consolidation (caller direction).** A trigger is stored twice in the link graph: as the granular `trigger_script` edge of its ScriptTrigger sub-node and as the `triggers_script · <event>` mirror edge of its owner — a deliberate two-layer model in which **only the owner mirror counts for where-used** (the granular `trigger_script` edge never does). To keep caller lists free of that duplication, the references endpoint suppresses the granular row whenever its mirror is visible in the list. Display layer only — `ObjectLinks` and the graph are untouched. Consolidated mirror rows carry `Trigger_UUID`: the address of the ScriptTrigger sub-node, so clients can still jump to the trigger's detail view (`null` on `button_action` and `menu_action` rows and every other role).
 
 `format=mermaid` / `mermaid-raw` render the reference set as a diagram — see [mermaid](../REST%20API%20Output%20Formats.md#mermaid-mermaid-raw).
+
+## GET /api/references/candidates
+
+The reference types an object **could** have but does not — the "not referenced" row of the references tab. The endpoint evaluates a curated candidate matrix for the focus object and returns one status per candidate, so the web frontend, other clients and agents share the same answer.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `uuid` | string | — | **Required.** Object UUID |
+| `file` | string | — | Clone scoping of the focus object |
+
+**Candidate.** A candidate is a direction (`in` = the counterpart references the focus, `out` = the focus references the counterpart), a **type group** (one or more counterpart types that answer the same question) and a **role set**. It is met as soon as one edge in that direction connects the focus with a type of the group through one of the roles. Matching is role-exact, not type-exact: a layout's own layout objects reach it through `parent_layout` (containment), which never meets the candidate "something navigates to this layout" (`navigates_to_layout`).
+
+**Response `data`** — one entry per active candidate:
+
+```json
+[
+  { "direction": "in", "types": ["Script", "LayoutObject"], "roles": ["navigates_to_layout"],
+    "status": "present", "direct": 5, "indirect": 0 },
+  { "direction": "out", "types": ["Variable"], "roles": ["reads_variable", "displays_variable"],
+    "status": "missing", "direct": 0, "indirect": 0, "aggregate": true },
+  { "direction": "out", "types": ["ValueList"], "roles": ["uses_valuelist", "sorts_by_valuelist"],
+    "status": "indirect", "direct": 0, "indirect": 2, "aggregate": true, "via": "LayoutObject" }
+]
+```
+
+| Field | Meaning |
+|---|---|
+| `status` | `present` = a direct reference with a candidate role exists · `indirect` = met only through aggregate members (a layout's own layout objects) · `missing` = neither |
+| `direct` / `indirect` | Number of **distinct counterpart objects**, not edges — directly and through the aggregate members |
+| `aggregate` | `true` when the candidate also evaluates the aggregate members |
+| `via` | Aggregate member type, present when `indirect` > 0 |
+| `caveat` | Known blind spot: `scriptCallers` (incoming script candidates — dynamic calls such as Perform Script by name, fmp URLs and external calls are not resolved) · `toFieldAccess` (table occurrence ← layout — field access through a table occurrence creates no edge to the occurrence) |
+
+**Response `meta`** is always included:
+
+| Field | Meaning |
+|---|---|
+| `focus_type` / `focus_subtype` | Object type of the focus; subtype used for gating (layout object control type, variable scope) or `null` |
+| `aggregate` / `aggregate_members` | Aggregate member type (`LayoutObject` for layouts) and how many members were evaluated |
+| `suppressed[]` | Candidates that were dropped, each with `direction`, `types` and `reason`: `subtype` (gated out by the focus subtype), `not_in_solution` (none of the counterpart types exists in the solution), `roles_unregistered` (no candidate role is a registered where-used usage role) |
+| `execution_time_ms` | Total evaluation time |
+
+**Which object types have candidates.** Script, Layout, LayoutObject, Field, TableOccurrence, BaseTable, ValueList, CustomFunction, BuiltinFunction, PluginFunction, Variable, Theme, CustomMenuSet, CustomMenu, PrivilegeSet, ExtendedPrivilege and ExternalDataSource. All other types (Relationship, Account, File, Folder, LayoutPart, ScriptStep, ScriptTrigger, Calculation, CustomMenuItem, PluginComponent) return an empty list — they are structural sub-nodes or always carry their references. Outgoing candidates exist only for the logic carriers Script, Layout and LayoutObject; for every other type "no outgoing reference" is the normal case.
+
+**Rules behind the matrix.**
+
+- **Usage roles only.** Candidate roles are usage roles that count for where-used (`LinkRoleRegistry`); containment (`parent_*`, `has_calculation`, `trigger_owner`, …), restriction (`restricts_*`), singletons (`default_layout`, `auto_login_account`) and the satellite `trigger_script` are never candidates. The one marked exception is `contains_menu` for custom menus, which is containment but the actual use of a menu. Each role is checked against the solution's registry at runtime; a role missing there is dropped and logged.
+- **Type groups.** Counterpart types that answer the same question form one group, e.g. the surface entries of a script (layout object button, layout or file trigger, custom-menu item) — one hit meets the whole group.
+- **Layout aggregate.** For layouts, the outgoing candidates evaluate the layout plus its own layout objects (sources of `parent_layout` edges onto the layout, same file). Variables, custom functions and value lists of a layout live on its layout objects, so "this layout uses no variables" refers to the layout as a whole.
+- **Subtype gating.** A layout object gets `→ Field` only as a field control (Edit Box, Drop-down List, Pop-up Menu, Checkbox Set, Radio Button Set, Drop-down Calendar, Container, Concealed Edit Box) and `→ ValueList` only as a list control (Drop-down List, Pop-up Menu, Checkbox Set, Radio Button Set) — then "missing" is a real finding. A local `$` variable gets only `← Script`; global and superglobal variables also `← LayoutObject`. When the subtype source is absent from an older catalog, gating is skipped and the candidate stays active.
+- **Existence filter.** A candidate is dropped when none of its counterpart types exists in the solution (no plugin functions, no custom menu sets, …); it then appears in `meta.suppressed`.
+- **Pseudo types.** `BuiltinFunction` and `PluginFunction` have no file; for these foci the file scoping does not apply.
+
+"Missing" always means **no statically resolvable reference**, never "unused" — dead-code verdicts stay with the Analysis Tests ([Tests API](Tests%20API.md)).
+
+The matrix lives in `rest-api/src/config/reference-candidates.js`; adding or removing a candidate is a configuration change. The unit test `reference-candidates-config.test.js` checks it against the registry and the coverage fixtures and fails on usage roles that appear for a candidate pair without being listed (new converter roles).
 
 ## GET /api/back-references
 

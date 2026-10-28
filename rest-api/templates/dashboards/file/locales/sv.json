@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Filvy",
-    "description": "Detaljvy per fil: metadata, filalternativ, objekt-KPI:er och de utlösta skripten / startlayout / inloggningskonto."
+    "description": "Detaljvy per fil: metadata, filalternativ, objektnyckeltal, ändringsstämplar per katalog samt utlösta skript / startlayout / inloggningskonto."
   },
   "layout": {
     "file_not_found.props.title": "Filen hittades inte",
@@ -14,6 +14,11 @@
     "file_metrics_kpistrip.props.items[4].label": "Senaste import",
     "file_metrics_kpistrip.props.items[5].label": "Minsta version",
     "file_size_kpistrip.props.items[0].label": "Filstorlek",
+    "file_change_kpistrip.props.items[0].label": "Senaste designändring",
+    "file_change_kpistrip.props.items[1].label": "Av",
+    "file_change_kpistrip.props.items[2].label": "Senaste massändring",
+    "file_change_kpistrip.props.items[3].label": "Massändringar",
+    "file_change_kpistrip.props.items[4].label": "Enskilda ändringar %",
     "file_settings_list.props.items[0].label": "Autoinloggning",
     "file_settings_list.props.items[1].label": "Spara inloggningsuppgifter",
     "file_settings_list.props.items[2].label": "Inloggningsfält",
@@ -31,6 +36,17 @@
     "file_object_counts_kpistrip.props.items[6].label": "Värdelistor",
     "file_object_counts_kpistrip.props.items[7].label": "Anpassade fns",
     "file_object_counts_kpistrip.props.items[8].label": "Variabler",
+    "file_catalog_changes.props.title": "Ändringar per katalog",
+    "file_catalog_changes_md.props.content": "Varje objekt behåller bara sin **senaste** ändringsstämpel. *Senaste enskilda ändring* utelämnar massändringar (migreringar, inklistringar, verktygskörningar) och tekniska författare. Katalogstämpeln följer egna regler: dess räknare ökar vid varje sparning av ett objekt i katalogen. Tiderna är lokal tid hos den redigerande klienten.",
+    "file_change_trend.props.label": "Enskilda ändringar per månad, senaste 12 månaderna fram till datastatus",
+    "file_catalog_changes_table.props.columns[0].label": "Katalog",
+    "file_catalog_changes_table.props.columns[1].label": "Senaste enskilda ändring",
+    "file_catalog_changes_table.props.columns[2].label": "Användare",
+    "file_catalog_changes_table.props.columns[3].label": "Katalogstämpel",
+    "file_catalog_changes_table.props.columns[4].label": "Räknare",
+    "file_catalog_changes_table.props.columns[5].label": "Objekt",
+    "file_catalog_changes_table.props.columns[6].label": "I massändringar",
+    "file_catalog_changes_table.props.columns[7].label": "Fält raderat efter senaste redigering",
     "file_triggers.props.title": "Utlösta skript",
     "file_triggers_table.props.columns[0].label": "Händelse",
     "file_triggers_table.props.columns[1].label": "Skript",

@@ -203,7 +203,9 @@ export interface paths {
                      *     ignored, any inner `%` disables identity matching):
                      *     - a FileMaker UUID (`8-4-4-4-12`, case-insensitive; `{…}`, quotes and
                      *       `urn:uuid:` are tolerated) or a synthetic 32-hex fm-lab UUID,
-                     *     - a composite import key (`part_…`, `rel_…`, `trig_…`, `paste_…`),
+                     *     - a composite import key (`part_…`, `trig_…`, `paste_…`; `rel_…` only for
+                     *       a relationship from an export without `<UUID>` — relationships
+                     *       otherwise match by their FileMaker UUID),
                      *     - `id:<n>` — the numeric FileMaker ID, which is unique only per file.
                      *       Without `type` it searches the per-file-unique types; with `type`
                      *       also `field` (unique per table), `builtinfunction` (Function-ID) and
@@ -214,6 +216,19 @@ export interface paths {
                     type?: components["schemas"]["ObjectType"];
                     /** @description Filter by filename */
                     file?: components["parameters"]["FileFilter"];
+                    /**
+                     * @description `modified` — order by the object's own change stamp, newest first;
+                     *     objects without a stamp of their own (script steps, layout objects,
+                     *     built-ins, …) come last. Results then carry `Modified_At`. Without
+                     *     `sort` the result order is unchanged.
+                     */
+                    sort?: "modified";
+                    /**
+                     * @description Keep only objects whose own change stamp is on or after this day
+                     *     (`YYYY-MM-DD`, local time of the editing client). Objects without a stamp
+                     *     of their own drop out. Results then carry `Modified_At`.
+                     */
+                    modified_since?: components["parameters"]["ModifiedSince"];
                     /** @description Maximum number of results (0 = all) */
                     limit?: components["parameters"]["Limit"];
                     /** @description Number of results to skip (for pagination) */
@@ -271,6 +286,12 @@ export interface paths {
                     type?: components["schemas"]["ObjectType"];
                     /** @description Filter by filename */
                     file?: components["parameters"]["FileFilter"];
+                    /**
+                     * @description Keep only objects whose own change stamp is on or after this day
+                     *     (`YYYY-MM-DD`, local time of the editing client). Objects without a stamp
+                     *     of their own drop out. Results then carry `Modified_At`.
+                     */
+                    modified_since?: components["parameters"]["ModifiedSince"];
                     /**
                      * @description Output format
                      * @default json
@@ -405,6 +426,51 @@ export interface paths {
                         "application/json": components["schemas"]["ReferencesResponse"];
                     };
                 };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/references/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get reference candidates (types this object could reference but does not)
+         * @description Evaluates the curated candidate matrix for one focus object. A candidate is a direction (`in` = incoming, `out` = outgoing), a group of counterpart types answering the same question, and a set of link roles. It is met as soon as one edge in that direction connects the focus with a type of the group through one of the roles — role-exact, not type-exact. For layouts the outgoing candidates also evaluate the layout's own layout objects (status `indirect`). Candidates are gated by the focus subtype (LayoutObject control type, variable scope) and dropped when none of their counterpart types exists in the solution (`meta.suppressed`). "Missing" always means "no statically resolvable reference", never "unused".
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Object UUID */
+                    uuid: string;
+                    /** @description Clone disambiguation: exact source file (File_Name) of the object. Geklonte/modulare FileMaker-Dateien teilen sich dieselbe Object_UUID, d.h. eine bare UUID kann mehrdeutig sein. Mit `file` wird das Paar (UUID, File_Name) eindeutig aufgelöst. Fehlt der Param, gilt Graceful Downgrade (bare UUID, solange eindeutig; sonst 409 AMBIGUOUS_UUID). */
+                    file?: components["parameters"]["CloneFile"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Candidate statuses of the focus object */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReferenceCandidatesResponse"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
             };
         };
         put?: never;
@@ -1146,6 +1212,13 @@ export interface components {
              */
             Step_Index?: number | null;
             /**
+             * @description Own change stamp of the object (`YYYY-MM-DD HH:MM:SS`, local time of
+             *     the editing client, no time zone). Only present when `/search` runs
+             *     with `sort=modified` or `modified_since`; null for objects without a
+             *     stamp of their own.
+             */
+            Modified_At?: string | null;
+            /**
              * @description What matched the search term, when it was not the object's name.
              *     ValueList: the stored custom values that matched (max. 20).
              *     BuiltinFunction: the localized spelling(s) that matched — a built-in
@@ -1224,6 +1297,55 @@ export interface components {
                     parent?: components["schemas"]["ObjectReference"][];
                     child?: components["schemas"]["ObjectReference"][];
                 };
+            };
+        };
+        ReferenceCandidate: {
+            /**
+             * @description `in` = incoming (the counterpart references the focus), `out` = outgoing
+             * @enum {string}
+             */
+            direction: "in" | "out";
+            /** @description Counterpart type group — one hit on any type meets the candidate */
+            types: string[];
+            /** @description Candidate link roles (verified against LinkRoleRegistry) */
+            roles: string[];
+            /**
+             * @description `present` = direct reference with a candidate role; `indirect` = met only through aggregate members (a layout's own layout objects); `missing` = neither
+             * @enum {string}
+             */
+            status: "present" | "indirect" | "missing";
+            /** @description Distinct counterpart objects reached directly */
+            direct: number;
+            /** @description Distinct counterpart objects reached through aggregate members */
+            indirect: number;
+            /** @description True when the candidate also evaluates the aggregate members (`meta.aggregate`) */
+            aggregate?: boolean;
+            /** @description Aggregate member type (only when `indirect` > 0) */
+            via?: string;
+            /**
+             * @description Known blind spot of the candidate: `scriptCallers` = dynamic calls (Perform Script by name, fmp URLs, external calls) are not resolved; `toFieldAccess` = field access through a table occurrence creates no edge to the occurrence
+             * @enum {string}
+             */
+            caveat?: "scriptCallers" | "toFieldAccess";
+        };
+        ReferenceCandidatesResponse: components["schemas"]["ApiResponse"] & {
+            data?: components["schemas"]["ReferenceCandidate"][];
+            meta?: {
+                focus_type?: string;
+                /** @description LayoutObject control type or variable scope; null when ungated */
+                focus_subtype?: string | null;
+                /** @description Aggregate member type evaluated for outgoing candidates */
+                aggregate?: string | null;
+                /** @description Number of aggregate members (only for aggregating focus types) */
+                aggregate_members?: number;
+                suppressed?: {
+                    /** @enum {string} */
+                    direction?: "in" | "out";
+                    types?: string[];
+                    /** @enum {string} */
+                    reason?: "subtype" | "not_in_solution" | "roles_unregistered";
+                }[];
+                execution_time_ms?: number;
             };
         };
         QueryRequest: {
@@ -1364,6 +1486,12 @@ export interface components {
     parameters: {
         /** @description Filter by filename */
         FileFilter: string;
+        /**
+         * @description Keep only objects whose own change stamp is on or after this day
+         *     (`YYYY-MM-DD`, local time of the editing client). Objects without a stamp
+         *     of their own drop out. Results then carry `Modified_At`.
+         */
+        ModifiedSince: string;
         /** @description Clone disambiguation: exact source file (File_Name) of the object. Geklonte/modulare FileMaker-Dateien teilen sich dieselbe Object_UUID, d.h. eine bare UUID kann mehrdeutig sein. Mit `file` wird das Paar (UUID, File_Name) eindeutig aufgelöst. Fehlt der Param, gilt Graceful Downgrade (bare UUID, solange eindeutig; sonst 409 AMBIGUOUS_UUID). */
         CloneFile: string;
         /** @description Maximum number of results (0 = all) */

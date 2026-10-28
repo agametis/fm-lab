@@ -223,7 +223,8 @@
         "id": "url_details",
         "props": {
           "span": 12,
-          "title": "URL details"
+          "title": "URL details",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "url_details"
@@ -235,6 +236,9 @@
             "props": {
               "param": "comment",
               "default": "exclude",
+              "resetParams": [
+                "page"
+              ],
               "options": [
                 {
                   "value": "all",
@@ -264,6 +268,10 @@
               "rowKey": "url",
               "density": "compact",
               "sortable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "columns": [
                 {
                   "field": "api_family",
@@ -322,7 +330,8 @@
         "id": "url_hosts",
         "props": {
           "span": 12,
-          "title": "Consolidated URLs (by domain / IP)"
+          "title": "Consolidated URLs (by domain / IP)",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "url_hosts"
@@ -335,6 +344,10 @@
               "rowKey": "host",
               "density": "compact",
               "sortable": true,
+              "pageParam": "hosts_page",
+              "searchParam": "hosts_q",
+              "sortParam": "hosts_sort",
+              "clientMode": true,
               "columns": [
                 {
                   "field": "host",

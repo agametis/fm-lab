@@ -1,4 +1,4 @@
--- @template_type: object
+-- @template_type: report
 -- @title: Top MBS Plugin functions
 -- @description: MBS Plugin functions with the most operational call sites.
 -- @icon: plugin
@@ -7,7 +7,7 @@
 -- @params: limit (optional, default 100), file (optional)
 -- @click_action: openObject
 -- @click_args: uuid={{uuid}}&type=PluginFunction
--- @output_format: uuid, name, type, call_count, file_count
+-- @output_format: uuid, name, call_count, file_count
 -- @author: fm-lab core
 -- @version: 1.0
 -- @tags: mbs, plugin, top, ranking
@@ -30,7 +30,6 @@ SELECT
     oc.Object_UUID                              AS uuid,
     -- Anzeige = fachlicher SubName (hinter dem letzten '::'); vgl. utils/plugin-name.js.
     regexp_replace(oc.Object_Name, '^.*::', '') AS name,
-    'PluginFunction'                            AS type,
     COUNT(c.Target_UUID)                        AS call_count,
     COUNT(DISTINCT c.source_file)               AS file_count
 FROM ObjectCatalog oc

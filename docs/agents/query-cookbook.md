@@ -204,6 +204,128 @@ GROUP BY Object_Type, File_Name
 ORDER BY Object_Type, File_Name;
 ```
 
+## Change metadata (last modified)
+
+`ObjectChangeMeta` holds one row per object with its own `<UUID>` stamp (typed
+`Modified_At`, `Modified_By`, `Modified_Account`, `Modifications`, `Author_Key`,
+`Author_Kind`, `Burst_ID`, `Bulk_Event_ID`); `ChangeBulkEvents` the mass events,
+`CatalogChangeMeta` the catalog-level stamps. Semantics and pitfalls →
+`schema-reference.md`. Three rules for every change question:
+
+- The stamp is the **last** save only — distributions show last changes, not activity.
+- Anchor time windows at the **data state** (newest stamp), never at `now()` —
+  an export is weeks or months old.
+- **Mass actions dominate** real solutions (thousands of objects of one file in
+  the same minute: migrations, find & replace, pastes). Individual changes are
+  `Bulk_Event_ID IS NULL`, developer activity additionally `Author_Kind IS NULL`;
+  mark the events (`ChangeBulkEvents`) instead of silently dropping them.
+  `v_check_change_meta.bulk_pct` tells how much is at stake.
+
+**Recent changes, anchored at the data state** (newest individual change):
+```sql
+WITH anchor AS (SELECT max(Modified_At) AS a FROM ObjectChangeMeta WHERE Bulk_Event_ID IS NULL)
+SELECT m.Modified_At, m.Object_Type, m.Object_Name, m.File_Name, m.Modified_By
+FROM ObjectChangeMeta m, anchor
+WHERE m.Modified_At > anchor.a - INTERVAL 30 DAY
+  AND m.Bulk_Event_ID IS NULL
+  AND m.Author_Kind IS NULL
+ORDER BY m.Modified_At DESC;
+```
+
+**Activity per day without mass events** — `changes` counts objects, `actions`
+counts bursts (a quick series of saves counts once):
+```sql
+SELECT CAST(Modified_At AS DATE) AS day,
+       count(*) AS changes,
+       count(DISTINCT Burst_ID) AS actions,
+       count(DISTINCT Author_Key) AS authors
+FROM ObjectChangeMeta
+WHERE Bulk_Event_ID IS NULL
+  AND Author_Kind IS NULL
+GROUP BY ALL
+ORDER BY day DESC;
+```
+
+**Mass events — the solution's timeline** (migrations, pastes, tool runs):
+```sql
+SELECT Start_At, End_At, Scope, Kind, Files, Objects, Object_Types, Authors
+FROM ChangeBulkEvents
+ORDER BY Start_At;
+```
+`Kind = 'paste_import'` = pasted or imported objects (counter 1), `tool` = the
+Data Migration Tool, `mass_action` = the rest. To list the objects of an event,
+join `ObjectChangeMeta` on `Bulk_Event_ID` in the same query — the ID is
+renumbered on every import.
+
+**Authors** — group on `Author_Key` (case-folded user name); the account is
+stored as typed at login (`Admin` / `admin`), user names vary in case:
+```sql
+SELECT Author_Key, any_value(Author_Kind) AS author_kind, any_value(Modified_By) AS spelling,
+       count(*) AS objects, count(*) FILTER (WHERE Bulk_Event_ID IS NULL) AS individual,
+       count(DISTINCT Modified_Account) AS accounts, max(Modified_At) AS last_change
+FROM ObjectChangeMeta
+GROUP BY ALL
+ORDER BY objects DESC;
+```
+Spelling variants of one person (`Jane Doe` / `Jane Q. Doe`) stay separate keys
+in the catalog; the REST API merges them via curated aliases
+(`v_change_meta_authors.Person_Key`, API connection only).
+Accounts and authorizations are also stamped by **runtime** changes (a user's
+password change; WebDirect sessions are `Author_Kind = 'runtime'`) — exclude
+`Object_Type IN ('Account', 'Authorization')` from developer-activity questions.
+
+**Effective stamp of any object** — own stamp, else the container's (script
+steps, layout objects/parts, calculations, script triggers and menu items carry
+none; at most two hops, e.g. Calculation → ScriptStep → Script). Present a
+`container` result as "container changed", not as a change of the object:
+```sql
+WITH RECURSIVE up(uuid, file, hop) AS (
+    SELECT '<Object_UUID>', '<File>', 0
+    UNION ALL
+    SELECT CASE WHEN l.Link_Role = 'has_calculation' THEN l.Source_UUID ELSE l.Target_UUID END,
+           CASE WHEN l.Link_Role = 'has_calculation' THEN l.Source_File ELSE l.Target_File END,
+           up.hop + 1
+    FROM up
+    JOIN ObjectLinks l
+      ON (l.Link_Role IN ('parent_script', 'parent_layout', 'parent_menu', 'trigger_owner')
+          AND l.Source_UUID = up.uuid AND l.Source_File = up.file)
+      OR (l.Link_Role = 'has_calculation'
+          AND l.Target_UUID = up.uuid AND l.Target_File = up.file)
+    WHERE up.hop < 2
+      AND NOT EXISTS (SELECT 1 FROM ObjectChangeMeta m
+                      WHERE m.Object_UUID = up.uuid AND m.File_Name = up.file)
+)
+SELECT CASE WHEN up.hop = 0 THEN 'own' ELSE 'container' END AS Meta_Source,
+       m.Object_Type, m.Object_Name, m.Modified_At, m.Modified_By, m.Modifications
+FROM up
+JOIN ObjectChangeMeta m ON m.Object_UUID = up.uuid AND m.File_Name = up.file
+ORDER BY up.hop
+LIMIT 1;
+```
+Never inherit along `parent_folder`, `contains_menu` or `groups_into` — a folder's
+or menu set's stamp says nothing about its content.
+
+**Most-changed objects** (save counter = churn):
+```sql
+SELECT Object_Type, Object_Name, File_Name, Modifications, Modified_At
+FROM ObjectChangeMeta
+WHERE Object_Type NOT IN ('Account', 'Authorization')
+ORDER BY Modifications DESC
+LIMIT 20;
+```
+
+**Field deleted after the last field edit** — the only reliable deletion
+indicator among the catalog stamps (compare with a tolerance: catalog stamps
+trail their newest child by seconds):
+```sql
+SELECT c.File_Name, b.BT_Name AS Base_Table, c.Modified_At, c.Newest_Child_At
+FROM CatalogChangeMeta c
+LEFT JOIN BaseTableCatalog b ON b.BT_UUID = c.Scope_UUID AND b.File_Name = c.File_Name
+WHERE c.Catalog = 'FieldCatalog'
+  AND c.Modified_At > c.Newest_Child_At + INTERVAL 1 MINUTE
+ORDER BY c.Modified_At DESC;
+```
+
 ## Script dump
 
 **Read a script's steps — ordered, human-readable, with nesting and disabled flag.**
@@ -215,11 +337,16 @@ SELECT lpad(CAST(s.Step_Index + 1 AS VARCHAR), 3, ' ')            -- user-facing
        || coalesce(d.Step_Text, s.Step_Name)                       -- DDR text, else locale name
        || CASE WHEN s.Is_Enabled = false THEN '   <<disabled>>' ELSE '' END AS step
 FROM StepsForScripts s
-LEFT JOIN DDR_ScriptSteps     d ON d.Step_UUID = s.Step_UUID
-LEFT JOIN v_script_block_tree t ON t.Step_UUID = s.Step_UUID
+LEFT JOIN DDR_ScriptSteps     d ON d.Step_UUID = s.Step_UUID AND d.File_Name = s.File_Name
+LEFT JOIN v_script_block_tree t ON t.Step_UUID = s.Step_UUID AND t.File_Name = s.File_Name
 WHERE s.File_Name = '<File>' AND s.Script_Name = '<Script>'
 ORDER BY s.Step_Index;
 ```
+
+Both joins carry `File_Name`: a UUID is unique only **within** one file. Clone
+suites (copies of the same FileMaker file) share their step UUIDs across files,
+and a `Step_UUID`-only join multiplies every step by the number of copies.
+The same rule holds for every `*_UUID` join between catalog tables.
 
 The `coalesce` replaces the old DDR case distinction: without DDR-Info
 `Step_Text` is NULL and the query falls back to the (localized) `Step_Name` by

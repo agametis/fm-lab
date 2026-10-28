@@ -40,6 +40,13 @@
   "docs.props.label": "文档",
   "docs.props.subtitle": "已安装的文档来源",
   "tests.props.label": "测试",
-  "tests.props.subtitle": "精选分析测试"
+  "tests.props.subtitle": "精选分析测试",
+  "recent_changes.props.title": "最近更改",
+  "recent_changes_table.props.columns[0].label": "更改时间",
+  "recent_changes_table.props.columns[1].label": "类型",
+  "recent_changes_table.props.columns[2].label": "对象",
+  "recent_changes_table.props.columns[3].label": "文件",
+  "recent_changes_table.props.columns[4].label": "人员",
+  "recent_changes_all.props.label": "所有更改"
  }
 }

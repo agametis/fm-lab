@@ -13,7 +13,7 @@ Segments the solution's object graph into modules (communities) at a resolution 
 | **Prerequisites** | a catalog built with the graph views (`LogicalLinks`, `ClusterEdges`); Node.js with `graphology` (Louvain); optionally Python 3 with `igraph` (Leiden) |
 | **Under the hood** | orchestrates `tools/graph-export/` — `cluster.sh`, the Louvain/Leiden engines, `cluster_load.sql`, `sync_db.sh` — plus the sweep driver `scripts/sweep.mjs` and the shared readiness script `_shared/scripts/cluster_state.sh` |
 | **Skill directory** | `.claude/skills/fm-graph-cluster/` |
-| **Related** | [Skill fm-deep-research](Skill%20fm-deep-research.md) (solution report on this partition) · [Skill fm-test](Skill%20fm-test.md) (cluster scope) · [Skill fm-show](Skill%20fm-show.md) (`--graph`) · [Skill convert-xml](Skill%20convert-xml.md) |
+| **Related** | [Skill fm-deep-research](Skill%20fm-deep-research.md) (solution report on this partition) · [Skill fm-test](Skill%20fm-test.md) (cluster scope) · [dashboard *Changed together*](../schema/catalog-tables/ObjectChangeMeta.md#changed-together-dashboard) (work sessions against the modules) · [dashboard *Module activity*](../schema/catalog-tables/ObjectChangeMeta.md#module-activity-dashboard) (age of the newest change per module) · [Skill fm-show](Skill%20fm-show.md) (`--graph`) · [Skill convert-xml](Skill%20convert-xml.md) |
 
 ## What it adds to the automatic clustering
 
@@ -30,7 +30,7 @@ The winning granularity is persisted per solution in `cluster.json`, and the pip
 
 ## The run protocol
 
-`output/graph_cluster_run_<solution>_<timestamp>.md` is a protocol, not an analysis: the environment and solution size, the complete resolution ranking with the chosen candidate and why, the naming statistics (named, restored from cache, left heuristic), the top hubs by logical cluster degree, and the full community list. The chat shows a summary of at most eight lines with a link to the file. For the interpretation — what the modules mean, how the solution is built, what stands out — run [fm-deep-research](Skill%20fm-deep-research.md) on the same partition.
+`output/graph_cluster_run_<solution>_<timestamp>.md` is a protocol, not an analysis: the environment and solution size, the complete resolution ranking with the chosen candidate and why, the naming statistics (named, restored from cache, left heuristic), the top hubs by logical cluster degree — each with the number of objects that use it and the link role that makes up most of its edges, so a script nobody calls or an import script that maps hundreds of fields stands out instead of passing for a central module — and the full community list. The chat shows a summary of at most eight lines with a link to the file. For the interpretation — what the modules mean, how the solution is built, what stands out — run [fm-deep-research](Skill%20fm-deep-research.md) on the same partition.
 
 ## Before you run it
 

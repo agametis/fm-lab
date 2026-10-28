@@ -18,6 +18,10 @@ All custom functions with their parameter name list and the DDR hash of their fo
 | `Folder_Type` | `VARCHAR` |
 | `Is_Separator` | `BOOLEAN` |
 | `Sequence_ID` | `BIGINT` |
+| `Modified_At` | `VARCHAR` |
+| `Modified_By` | `VARCHAR` |
+| `Modified_Account` | `VARCHAR` |
+| `Modifications` | `BIGINT` |
 | `File_Name` | `VARCHAR` |
 
 ## Notes
@@ -25,5 +29,6 @@ All custom functions with their parameter name list and the DDR hash of their fo
 - `DDR_Hash` joins to [DDR_Calculations](DDR_Calculations.md) for chunk-level dependency analysis (which fields, functions and variables the CF references).
 - `Sequence_ID` preserves the display order of the Manage Custom Functions dialog; it is *not* `CF_ID`, which reflects creation order. The folder tree is a flat sequence (`Folder_Type = 'True'` opens a folder, `'Marker'` closes it), so reconstructing the nesting needs document order.
 - Folder and separator rows are excluded from the `CustomFunction` entries in [ObjectCatalog](../object-catalog/ObjectCatalog.md) — the folders appear there as [Folder](../object-types/Folder.md) objects instead. Filter them out (`Folder_Type IS NULL AND NOT Is_Separator`) whenever you count or measure custom functions directly on this table: a folder row carries no `Parameters`, so it is otherwise indistinguishable from a parameterless function.
+- `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` are the raw change metadata of the object's `<UUID>` element: timestamp as text (local time of the editing client, no time zone), user name, account (empty → `NULL`) and change counter. [ObjectChangeMeta](ObjectChangeMeta.md) collects them across all object types with a typed timestamp.
 
 **See also:** [CalcsForCustomFunctions](CalcsForCustomFunctions.md) · [DDR_Calculations](DDR_Calculations.md)

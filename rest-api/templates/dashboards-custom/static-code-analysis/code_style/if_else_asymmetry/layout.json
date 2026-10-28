@@ -53,7 +53,8 @@
         "id": "if_else_blocks",
         "props": {
           "span": 12,
-          "title": "Scripts with long If / short Else"
+          "title": "Scripts with long If / short Else",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "if_else_blocks"
@@ -65,6 +66,10 @@
             "props": {
               "rowKey": "row_key",
               "density": "comfortable",
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "columns": [
                 {
                   "field": "file",

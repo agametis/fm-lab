@@ -43,7 +43,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Hard-coded URL in Calculation"
+          "title": "Hard-coded URL in Calculation",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -57,9 +58,14 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file, script or URL…",
               "chipFilter": {
-                "field": "nav_type"
+                "field": "nav_type",
+                "param": "object_type"
               },
               "columns": [
                 {

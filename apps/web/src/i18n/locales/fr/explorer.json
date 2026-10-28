@@ -38,7 +38,11 @@
     "uses": "utilise",
     "usedBy": "utilisé par",
     "focus": "Focus",
-    "resizePanel": "Redimensionner le panneau de détails"
+    "resizePanel": "Redimensionner le panneau de détails",
+    "activity": "Activité",
+    "activityInherited": "horodatage de son modèle / menu",
+    "activityNone": "sans horodatage",
+    "activityAge": "{{days}} jours avant l’état des données"
   },
   "filter": {
     "ariaLabel": "Filtres du graphe",
@@ -77,11 +81,13 @@
     "colorMode": "Coloration",
     "colorModes": {
       "type": "Type",
-      "community": "Communauté"
+      "community": "Communauté",
+      "recency": "Activité"
     },
     "colorModeHints": {
       "type": "Colorer les nœuds par type d’objet",
-      "community": "Colorer les nœuds par module détecté (communauté)"
+      "community": "Colorer les nœuds par module détecté (communauté)",
+      "recency": "Colorer les nœuds selon l’âge de leur modification individuelle la plus récente (les classes de l’Atlas du graphe)"
     },
     "communityUnnamed": "Communauté {{id}}",
     "resizePanel": "Redimensionner le panneau de filtres",
@@ -120,7 +126,8 @@
   },
   "edge": {
     "represents": "représente",
-    "buttonAction": "Action de bouton"
+    "buttonAction": "Action de bouton",
+    "menuAction": "Action de menu"
   },
   "trace": {
     "exit": "Voisinage",

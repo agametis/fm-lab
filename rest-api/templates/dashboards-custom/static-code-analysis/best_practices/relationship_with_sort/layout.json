@@ -63,6 +63,7 @@
                 "props": {
                   "param": "consumer_filter",
                   "default": "",
+                  "resetParams": ["page"],
                   "options": [
                     {
                       "value": "",
@@ -95,9 +96,14 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search table occurrence…",
               "chipFilter": {
-                "field": "sorted_side"
+                "field": "sorted_side",
+                "param": "sorted_side"
               },
               "columns": [
                 {
@@ -133,7 +139,8 @@
                 "action": "openObject",
                 "args": {
                   "uuid": "{{nav_uuid}}",
-                  "type": "Relationship"
+                  "type": "Relationship",
+                  "file": "{{file_name}}"
                 }
               },
               "empty": {

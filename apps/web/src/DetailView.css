@@ -93,6 +93,70 @@
   border-color: var(--color-accent);
 }
 
+/* Third header row: change stamp (own or inherited from the container). */
+.detail-change-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.detail-change-icon {
+  font-size: 0.9rem;
+}
+
+.detail-change-time {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  cursor: help;
+}
+
+.detail-change-author {
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.detail-change-author:hover {
+  color: var(--color-accent-soft-fg);
+  text-decoration: underline;
+}
+
+a.detail-change-badge {
+  text-decoration: none;
+}
+
+a.detail-change-badge:hover {
+  filter: brightness(0.95);
+  text-decoration: underline;
+}
+
+.detail-change-container a {
+  color: var(--color-accent-soft-fg);
+}
+
+.detail-change-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: help;
+  white-space: nowrap;
+}
+
+/* Mass event: marked by shape (flag + frame), not by hue alone. */
+.detail-change-badge--bulk {
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-fg);
+}
+
 .detail-uuid-row {
   display: flex;
   align-items: center;
@@ -283,6 +347,76 @@
 
 .references-filter-link:hover {
   color: var(--color-accent-hover);
+}
+
+/* Zeile „Nicht referenziert“ — Abschluss der Filter-Box, per Hairline wie die
+   Rollen-Chips abgesetzt. Ghost-Stil (gestrichelt, gedämpft): beschreibt
+   Fehlendes und ist nicht klickbar. */
+.references-missing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 1rem;
+  row-gap: 0.3rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+/* Leerzustand: eigenständige Box unter „Keine Referenzen“. */
+.references-missing.is-standalone {
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg-surface);
+}
+
+.references-missing-segment,
+.references-missing-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.references-missing-segment {
+  column-gap: 0.75rem;
+}
+
+/* Segment-Trenner vor „über Layout-Objekte“. */
+.references-missing-segment + .references-missing-segment {
+  border-left: 1px solid var(--color-border-strong);
+  padding-left: 1rem;
+}
+
+.references-missing-label {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.references-missing-glyph {
+  font-weight: 700;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.references-missing-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  cursor: help;
+}
+
+.references-missing-segment.is-indirect .references-missing-item,
+.references-missing-segment.is-indirect .references-missing-label {
+  opacity: 0.75;
+  font-weight: 400;
 }
 
 /* Hierarchy Tree */

@@ -145,6 +145,17 @@
     "clearRolesLabel": "重置角色",
     "clearRolesTitle": "清除所有角色筛选"
   },
+  "referencesMissing": {
+    "label": "未被引用:",
+    "indirectLabel": "通过布局对象:",
+    "emptyLead": "可能的引用:",
+    "tooltipRoles": "可能的角色: {{roles}}",
+    "tooltipAggregate_one": "(包括该布局对象)",
+    "tooltipAggregate_other": "(包括 {{count}} 个布局对象)",
+    "caveatScriptCallers": "仅限可静态解析的调用。未涵盖: 按名称执行的 Perform Script、fmp URL、外部调用。",
+    "caveatToFieldAccess": "通过此 TO 访问字段不会生成对该 TO 的引用。",
+    "aria": "无引用的对象类型"
+  },
   "hierarchyTree": {
     "ariaLabel": "对象层级",
     "usedBy": "使用方 ({{count}})",
@@ -199,6 +210,10 @@
         "short": "Popover",
         "long": "弹出窗口标题"
       },
+      "active_segment": {
+        "short": "分段",
+        "long": "活动分段"
+      },
       "script_trigger_parameter": {
         "short": "Trigger",
         "long": "脚本触发器参数"
@@ -226,6 +241,10 @@
       "menu_install": {
         "short": "Install",
         "long": "菜单安装条件"
+      },
+      "menu_action": {
+        "short": "Menu",
+        "long": "菜单动作"
       }
     }
   },
@@ -237,9 +256,13 @@
     "sortName": "名称",
     "sortType": "类型",
     "sortFile": "文件",
+    "sortModified": "最后修改",
     "groupNone": "无",
     "groupType": "类型",
-    "groupFile": "文件"
+    "groupFile": "文件",
+    "modifiedSinceLabel": "修改起始日期",
+    "modifiedSinceHint": "仅显示自身修改标记在该日期当天或之后的对象 — 脚本步骤、布局对象和计算没有自身的标记",
+    "modifiedSinceClear": "重置"
   },
   "fieldViewer": {
     "ariaLabel": "字段详情",
@@ -327,7 +350,8 @@
     "uuidMatch": "按 UUID 匹配",
     "healedUuidMatch": "按 UUID 匹配(重复)",
     "healedUuidTitle": "FileMaker 以所搜索的 UUID 记录此对象;由于该 UUID 在导出中出现多次,目录中以替代 UUID 保存。",
-    "idMatch": "按 ID {{id}} 匹配"
+    "idMatch": "按 ID {{id}} 匹配",
+    "modifiedTooltip": "{{age}}修改 — 编辑客户端的本地时间，无时区"
   },
   "scriptSearchFilter": {
     "searchAria": "搜索引用",
@@ -422,13 +446,75 @@
       "menuLabel": "操作",
       "searchPlaceholder": "筛选解决方案…",
       "noMatches": "没有解决方案匹配筛选条件。"
+    },
+    "changeAuthors": {
+      "heading": "修改元数据的作者",
+      "desc": "合并同一人的不同写法，设置显示名称并标记技术作者。别名随解决方案保存，重建后仍保留，并立即作用于“最后修改”一行。",
+      "solution": "解决方案：{{name}}。",
+      "loading": "正在加载作者 …",
+      "empty": "此目录尚无修改元数据 — 请使用当前版本重新导入解决方案。",
+      "noSidecar": "此解决方案的注释数据库不可用（功能已禁用或被锁定）— 无法修改别名。",
+      "colUser": "用户",
+      "colUserTitle": "所有写法的用户名",
+      "colStamps": "标记",
+      "colLast": "最后修改",
+      "colPerson": "同一人",
+      "colDisplay": "显示名称",
+      "colTechnical": "技术",
+      "colActions": "操作",
+      "accountsTitle": "已登录账户",
+      "stampsTitle": "批量事件之外的单独修改 {{single}} 次 · {{files}} 个文件",
+      "ownPerson": "— 自身条目 —",
+      "technicalAutoYes": "自动（是）",
+      "technicalAutoNo": "自动（否）",
+      "technicalAuto": "自动",
+      "technicalYes": "是",
+      "technicalNo": "否",
+      "save": "保存",
+      "reset": "重置",
+      "orphanHeading": "当前目录中没有对应用户的别名",
+      "orphanDelete": "移除"
     }
   },
   "objectHeader": {
     "noName": "(无名称)",
     "source": "来源:",
     "relationshipGraphLink": "↗ 关系图",
-    "copyUuidAria": "将 UUID 复制到剪贴板"
+    "copyUuidAria": "将 UUID 复制到剪贴板",
+    "change": {
+      "modified": "最后修改",
+      "containerModified": "容器最后修改",
+      "timeTooltip": "{{age}} — 编辑客户端的本地时间，无时区",
+      "unknownAuthor": "未知用户",
+      "authorTooltip": "最后编辑者的 FileMaker 用户名",
+      "accountTooltip": "已登录账户",
+      "countTooltip": "自对象创建以来的保存次数",
+      "modifications_one": "{{count}} 次修改",
+      "modifications_other": "{{count}} 次修改",
+      "quotedName": "“{{name}}”",
+      "technical": {
+        "tool": "工具",
+        "toolTooltip": "由工具（FileMaker Data Migration Tool）而非开发者标记",
+        "runtime": "运行时",
+        "runtimeTooltip": "由最终用户在运行时修改（WebDirect 会话）— 非开发活动",
+        "other": "技术",
+        "otherTooltip": "在作者别名中标记为技术作者"
+      },
+      "bulk": {
+        "badge": "批量事件 {{date}}",
+        "kind": {
+          "mass_action": "批量操作：大量对象同时被标记（迁移、查找替换、新文件）",
+          "paste_import": "粘贴 / 导入：一起粘贴或导入的对象",
+          "tool": "工具运行（FileMaker Data Migration Tool）"
+        },
+        "scopeFile": "在一个文件中",
+        "scopeSolution_one": "跨 {{count}} 个文件",
+        "scopeSolution_other": "跨 {{count}} 个文件",
+        "objects_one": "{{count}} 个对象",
+        "objects_other": "{{count}} 个对象",
+        "hint": "该标记反映的是这次操作，而不是对象的单独编辑。"
+      }
+    }
   },
   "scriptLine": {
     "expand": "展开",
@@ -660,7 +746,6 @@
     "viewTable": "表格视图",
     "baseTheme": "基础主题",
     "inLayoutMenus": "在版面菜单中",
-    "lastModified": "最后修改",
     "triggersHeading": "脚本触发器",
     "noTriggers": "无脚本触发器",
     "yes": "是",
@@ -731,6 +816,7 @@
       "button_action": "按钮操作",
       "panel_title": "面板标题",
       "popover_title": "弹出窗口标题",
+      "active_segment": "活动分段",
       "display_calculation": "显示计算",
       "merge_text": "已解析的合并锚点",
       "chart_series": "图表系列",

@@ -197,6 +197,14 @@ button:disabled {
   color: var(--color-text-primary);
 }
 
+/* Own change stamp in the result list (sort "last modified" / filter "modified since"). */
+.object-modified {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .object-type {
   padding: 0.15rem 0.5rem;
   background-color: var(--color-accent);
@@ -577,7 +585,8 @@ mark.search-hit {
 /* Search Options Panel */
 .search-options-panel {
   display: flex;
-  gap: 2rem;
+  flex-wrap: wrap;
+  gap: 0.75rem 2rem;
   padding: 0.75rem 0;
   margin-top: 0.5rem;
   border-top: 1px dashed var(--color-border);
@@ -614,6 +623,31 @@ mark.search-hit {
   margin: 0;
   cursor: pointer;
   accent-color: var(--color-accent);
+}
+
+/* Filter "modified since" — date field on the object's own change stamp. */
+.search-options-date input[type="date"] {
+  font-size: 0.85rem;
+  padding: 0.1rem 0.3rem;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.search-options-clear {
+  font-size: 0.8rem;
+  padding: 0.1rem 0.5rem;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.search-options-clear:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 /* Group Header in Virtual List */

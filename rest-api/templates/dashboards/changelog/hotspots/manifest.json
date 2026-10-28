@@ -1,0 +1,37 @@
+{
+  "id": "hotspots",
+  "version": "1.0.0",
+  "title": "Hotspots & stale objects",
+  "description": "Where maintenance pays off: objects changed often and used widely (hotspots), and objects nobody references any more, by how long they have been left untouched (stale objects).",
+  "author": "fm-lab core",
+  "icon": "flame",
+  "tags": ["changes"],
+  "entry": "layout.json",
+  "datasets": [
+    { "id": "view_state",   "source": "bundle:data/view_state.sql" },
+    { "id": "kpis",         "source": "bundle:data/kpis.sql" },
+    { "id": "hotspots",     "source": "bundle:data/hotspots.sql", "pageSize": 500 },
+    { "id": "stale",        "source": "bundle:data/stale.sql", "pageSize": 500 },
+    { "id": "type_options", "source": "bundle:data/type_options.sql" },
+    { "id": "file_options", "source": "bundle:data/file_options.sql" }
+  ],
+  "params": [
+    { "name": "type", "type": "string", "sticky": true,
+      "description": "Object types, comma-separated (default: all nine types with a usage meaning)." },
+    { "name": "file", "type": "string", "sticky": true,
+      "description": "File names, comma-separated (default: all files)." },
+    { "name": "q", "type": "string", "sticky": true,
+      "description": "Search term over object name, type and file." },
+    { "name": "years", "type": "string", "sticky": true,
+      "description": "Age threshold of a cold object in years: 1, 2 (default) or 5." },
+    { "name": "view", "type": "string",
+      "description": "List shown: hotspots (default) or stale." },
+    { "name": "quadrant", "type": "string",
+      "description": "Quadrant of the ranking: hotspot (default), churn (changed often) or core (used widely)." },
+    { "name": "state", "type": "string",
+      "description": "State of the stale list: cold (default), unknown (age unknown), active or menu." },
+    { "name": "page", "type": "string",
+      "description": "Page of the list (1-based, 100 rows per page)." }
+  ],
+  "permissions": { "read_only": true, "allow_navigation": true }
+}

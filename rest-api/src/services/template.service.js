@@ -4,6 +4,7 @@ const { LRUCache } = require('lru-cache');
 const environment = require('../config/environment');
 const { createError } = require('../middleware/error-handler');
 const db = require('../config/database');
+const paging = require('./paging.service');
 
 /**
  * Template Service
@@ -37,6 +38,13 @@ function parseTemplateMetadata(templateContent) {
     row_action_label: null,
     chip_filter: null,
     chip_param: null,
+    // Server paging (opt-in): URL params of page, search and sort, the optional
+    // restriction of sortable columns and the declared page size (number or 'all').
+    page_param: null,
+    search_param: null,
+    sort_param: null,
+    sort_columns: [],
+    page_size: null,
     params: [],
     output_format: null,
     author: null,
@@ -118,6 +126,33 @@ function parseTemplateMetadata(templateContent) {
         // auswertet (`getvariable('<param>')`) und ihn unter `@params` führt.
         metadata.chip_param = value;
         break;
+      case 'page_param':
+        // Server paging: the URL param of the page. Requires the paging tail in
+        // the SQL (see paging.service) and the columns _row_total/_page/_page_size.
+        metadata.page_param = value || null;
+        break;
+      case 'search_param':
+        // URL param of the search term; the SQL filters on getvariable('q').
+        metadata.search_param = value || null;
+        break;
+      case 'sort_param':
+        // URL param of the sort column; the direction travels in `dir`
+        // (or `<sort_param>_dir` for any other name).
+        metadata.sort_param = value || null;
+        break;
+      case 'sort_columns':
+        // Optional restriction: only these output columns are sortable.
+        metadata.sort_columns = value.split(',').map(c => c.trim()).filter(Boolean);
+        break;
+      case 'page_size': {
+        // Rows per page (1…10000) or `all` (no pager, capped at 10000 rows).
+        const normalized = paging.normalizeDeclaredPageSize(value);
+        if (normalized == null) {
+          console.warn(`template metadata: invalid @page_size '${value}' — generic default applies`);
+        }
+        metadata.page_size = normalized;
+        break;
+      }
       case 'params':
         metadata.params = value.split(',').map(p => p.trim()).filter(Boolean);
         break;
@@ -434,8 +469,27 @@ async function executeTemplate(ctx, templateName, params = {}, source = 'query')
       template = await loadTemplate(templateName, foundDir);
     }
 
+    // Server paging: resolve the page window before interpolation, the sort
+    // marker after it (see paging.service). Templates without the paging tail
+    // run unchanged.
+    let effectiveParams = params;
+    let pagingInfo = null;
+    if (paging.isPagedTemplate(template.content)) {
+      const resolved = paging.resolvePaging(params, {
+        pageSize: template.metadata.page_size,
+        pageParam: template.metadata.page_param,
+        searchParam: template.metadata.search_param,
+      });
+      effectiveParams = resolved.params;
+      pagingInfo = { page: resolved.page, page_size: resolved.pageSize, paging_off: resolved.pagingOff };
+    }
+
     // Interpolate parameters
-    const sql = interpolateTemplate(template.content, params);
+    let sql = interpolateTemplate(template.content, effectiveParams);
+    sql = await paging.applySort(ctx, template.content, sql, params, {
+      sortParam: template.metadata.sort_param,
+      sortColumns: template.metadata.sort_columns,
+    });
 
     // Execute query
     const result = await db.executeQuery(ctx, sql);
@@ -464,7 +518,8 @@ async function executeTemplate(ctx, templateName, params = {}, source = 'query')
         template_type: template.metadata.template_type,
         template_name: templateName,
         template_description: template.metadata.description,
-        params_used: params,
+        params_used: effectiveParams,
+        ...(pagingInfo ? { paging: pagingInfo } : {}),
       },
       sql, // Return interpolated SQL for debug mode
     };
@@ -508,6 +563,12 @@ async function listTemplates(source = 'query') {
             click_args: template.metadata.click_args,
             chip_filter: template.metadata.chip_filter,
             chip_param: template.metadata.chip_param,
+            page_param: template.metadata.page_param,
+            search_param: template.metadata.search_param,
+            sort_param: template.metadata.sort_param,
+            sort_columns: template.metadata.sort_columns,
+            page_size: template.metadata.page_size,
+            paging_off: template.metadata.page_size === 'all',
             params: template.metadata.params,
             tags: template.metadata.tags,
             object_types: template.metadata.object_types,

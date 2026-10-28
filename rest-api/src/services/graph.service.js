@@ -46,6 +46,7 @@ function overviewCacheKey(ctx, p) {
     p.view, p.level, p.segment_by,
     p.parent_community ?? '', p.parent_file ?? '', p.parent_type ?? '',
     p.weight, p.include_builtins, p.exclude_types ?? '', p.fold, p.limit,
+    p.activity ? 1 : 0, p.activity_bulk ?? 'hide',
   ].join('|');
 }
 
@@ -213,6 +214,46 @@ async function enrichCommunities(ctx, nodes) {
 }
 
 /**
+ * Änderungs-Aktivität je Explorer-Knoten (Farbmodus „Aktivität" in Subgraph und
+ * Trace) — dieselbe Klassenlogik wie Atlas und Dashboard (graph_node_activity.sql
+ * mit dem shared activity block), über dieselbe UUID-IN-Liste wie die Community-
+ * Anreicherung. Setzt je Knoten `activity` = { class, newestChange, newestAgeDays,
+ * saves, undated } (null ohne Stempel-Katalog) und liefert den Kopf
+ * `{ available, dataState }` für die Payload. Kostet ~10–15 ms (Datenstand +
+ * Rang über alle Stempel) — bei Subgraphen von einigen 100 ms vernachlässigbar,
+ * daher ohne Gate. Nie fatal: ein Fehler lässt die Knoten ohne Aktivität.
+ */
+async function enrichActivity(ctx, nodes) {
+  const head = { available: await changeMetaPresent(ctx), dataState: null };
+  for (const n of nodes) n.activity = null;
+  if (!head.available || nodes.length === 0) return head;
+  const uuids = [...new Set(nodes.map((n) => n.uuid).filter(Boolean))];
+  if (uuids.length === 0) return head;
+  try {
+    const result = await templateService.executeTemplate(
+      ctx,
+      'graph_node_activity',
+      { uuids: uuids.join(','), activity: true, activity_bulk: 'hide' },
+      'report'
+    );
+    const byKey = new Map(result.data.map((r) => [r.node_key, r]));
+    for (const n of nodes) {
+      const r = byKey.get(`${n.uuid}::${n.file ?? ''}`);
+      if (!r) continue;
+      n.activity = {
+        class: numOf(r.activity_class),
+        newestChange: r.newest_change ?? null,
+        newestAgeDays: r.newest_age_days === null || r.newest_age_days === undefined ? null : numOf(r.newest_age_days),
+        saves: r.saves === null || r.saves === undefined ? null : numOf(r.saves),
+        undated: r.undated === true,
+      };
+      if (!head.dataState && r.data_state) head.dataState = r.data_state;
+    }
+  } catch { /* älterer Katalog / Stub — Knoten bleiben ohne Aktivität */ }
+  return head;
+}
+
+/**
  * Fokus-Auflösung im ObjectCatalog (clone-aware). Liefert den Existenz-/
  * Eindeutigkeits-Status, damit der Controller drei Fälle unterscheiden kann:
  *   - { exists:false }                    → Fokus unbekannt (404)
@@ -320,9 +361,11 @@ async function getSubgraph(ctx, p) {
 
   // P5-Naht: Community-Daten nachreichen (no-op ohne Cluster-Tabellen).
   await enrichCommunities(ctx, nodes);
+  const activity = await enrichActivity(ctx, nodes);
 
   const payload = {
     focus: p.focus,
+    activity,
     params: {
       depth: p.depth,
       direction: p.direction,
@@ -542,6 +585,7 @@ async function getTrace(ctx, p, startType) {
 
   // P5-Naht: Community-Daten nachreichen (no-op ohne Cluster-Tabellen).
   await enrichCommunities(ctx, nodes);
+  const activity = await enrichActivity(ctx, nodes);
 
   // Ausschlussliste katalog-aufgelöst (auch nicht mehr erreichte Einträge).
   const excluded = await resolveExcluded(ctx, p.exclude);
@@ -549,6 +593,7 @@ async function getTrace(ctx, p, startType) {
   const entry = startType === 'Script' ? 'script' : (p.entry ?? 'layout_runtime');
   const payload = {
     start: p.start,
+    activity,
     params: {
       entry,
       upDepth: p.up_depth,
@@ -753,6 +798,8 @@ const ATLAS_FOLD_K = { community: 30, file: 40, type: Infinity };
 /** Wählt Template + interpolierte Parameter aus den (Joi-validierten) Query-Params. */
 function overviewTemplateAndParams(p) {
   const exclude_types = p.exclude_types ?? null;
+  const activity = p.activity === true;
+  const activity_bulk = p.activity_bulk ?? 'hide';
   if (p.view === 'topology') {
     return {
       template: 'graph_overview_topology',
@@ -761,6 +808,8 @@ function overviewTemplateAndParams(p) {
         segment_by: p.segment_by,
         include_builtins: p.include_builtins,
         exclude_types,
+        activity,
+        activity_bulk,
       },
     };
   }
@@ -778,6 +827,8 @@ function overviewTemplateAndParams(p) {
         include_builtins: p.include_builtins,
         exclude_types,
         limit: p.limit,
+        activity,
+        activity_bulk,
       },
     };
   }
@@ -796,8 +847,109 @@ function overviewTemplateAndParams(p) {
   }
   return {
     template: 'graph_overview_aggregate',
-    params: { weight: p.weight, group_dim, parent_community, parent_file, parent_type, include_builtins: p.include_builtins, exclude_types },
+    params: {
+      weight: p.weight, group_dim, parent_community, parent_file, parent_type,
+      include_builtins: p.include_builtins, exclude_types, activity, activity_bulk,
+    },
   };
+}
+
+/**
+ * Änderungs-Aktivität einer Overview-Zeile (Spalten des shared activity block der
+ * Overview-Templates) → `activity`-Objekt der Kachel bzw. des Super-Nodes.
+ *   class          1–5 Altersstufe der jüngsten Mitglieds-Änderung (≤ 30 Tage · ≤ 90 Tage
+ *                  · ≤ 1 Jahr · ≤ 2 Jahre · > 2 Jahre), 6 = nur unbekannt (junger
+ *                  Massenstempel), 7 = kein Mitglied mit Stempel
+ *   class_counts   Mitglieder je Klasse 1…7 (Summe = Knoten der Kachel)
+ *   saves_level    1–5 aus dem mittleren Rang des Speicher-Zählers (Modus „Speicherungen“)
+ * null, wenn die Zeile keine Aktivitätsspalten trägt.
+ */
+function activityOf(r) {
+  if (r.activity_class === null || r.activity_class === undefined || r.data_state === null) return null;
+  const opt = (v) => (v === null || v === undefined ? null : numOf(v));
+  return {
+    class: numOf(r.activity_class),
+    class_counts: Array.from(r.class_counts ?? [], numOf),
+    newest_change: r.newest_change ?? null,
+    newest_age_days: opt(r.newest_age_days),
+    active_90: numOf(r.active_90),
+    median_age_days: opt(r.median_age_days),
+    median_saves: opt(r.median_saves),
+    stamped: numOf(r.stamped),
+    undated: numOf(r.undated),
+    saves_level: opt(r.saves_level),
+    saves_sum: r.saves_sum === null || r.saves_sum === undefined ? 0 : Number(r.saves_sum),
+    saves_n: numOf(r.saves_n),
+  };
+}
+
+/** Stufen-Grenzen des Modus „Speicherungen“ — dieselben wie im shared activity block. */
+const SAVES_LEVEL_LIMITS = [0.3, 0.4, 0.5, 0.6];
+
+/**
+ * Aktivität einer Sammelkachel aus den gefalteten Kacheln: Zähler addieren, die
+ * jüngste Klasse gewinnt (min über die Kachel-Klassen = min über alle Mitglieder),
+ * die Speicher-Stufe aus Rang-Summe/-Anzahl. Mediane lassen sich nicht
+ * zusammenführen → null.
+ */
+function mergeActivity(items) {
+  const acts = items.map((t) => t.activity).filter(Boolean);
+  if (acts.length === 0) return null;
+  const sum = (f) => acts.reduce((a, x) => a + x[f], 0);
+  const class_counts = Array.from({ length: 7 }, (_, i) =>
+    acts.reduce((a, x) => a + (x.class_counts[i] ?? 0), 0));
+  const newest = acts.map((x) => x.newest_change).filter(Boolean).sort();
+  const ages = acts.map((x) => x.newest_age_days).filter((v) => v !== null);
+  const saves_sum = sum('saves_sum');
+  const saves_n = sum('saves_n');
+  const mean = saves_n > 0 ? saves_sum / saves_n : null;
+  return {
+    class: Math.min(...acts.map((x) => x.class)),
+    class_counts,
+    newest_change: newest.length ? newest[newest.length - 1] : null,
+    newest_age_days: ages.length ? Math.min(...ages) : null,
+    active_90: sum('active_90'),
+    median_age_days: null,
+    median_saves: null,
+    stamped: sum('stamped'),
+    undated: sum('undated'),
+    saves_level: mean === null ? null : 1 + SAVES_LEVEL_LIMITS.filter((l) => mean > l).length,
+    saves_sum,
+    saves_n,
+  };
+}
+
+/**
+ * Payload-Kopf der Aktivität:
+ *   requested  die Aktivität wurde mitgerechnet (activity=true; nur die Farbmodi
+ *              „Aktivität“/„Speicherungen“ brauchen sie — sie kostet ~10–15 ms)
+ *   available  der Katalog trägt Änderungsstempel (sonst bleibt der Modus aus)
+ *   data_state Datenstand, auf den sich die Altersstufen beziehen (nur mit requested)
+ */
+async function activityHead(ctx, p, rows) {
+  const row = p.activity ? rows.find((r) => r.data_state !== undefined && r.data_state !== null) : null;
+  return {
+    requested: p.activity === true,
+    available: await changeMetaPresent(ctx),
+    data_state: row ? row.data_state : null,
+    bulk: p.activity_bulk ?? 'hide',
+  };
+}
+
+/** Trägt der Katalog Änderungsstempel? Memoisiert je Lösung (clearCache setzt zurück). */
+const _changeMetaPresent = new Map();
+async function changeMetaPresent(ctx) {
+  const key = ctx?.solution ?? '';
+  if (_changeMetaPresent.has(key)) return _changeMetaPresent.get(key);
+  let present = false;
+  try {
+    const r = await db.executeQuery(
+      ctx, 'SELECT EXISTS (SELECT 1 FROM ObjectChangeMeta WHERE Modified_At IS NOT NULL) AS present'
+    );
+    present = r.rows[0]?.present === true;
+  } catch { /* älterer Katalog ohne Tabelle (Stub fehlt) → Modus aus */ }
+  _changeMetaPresent.set(key, present);
+  return present;
 }
 
 /**
@@ -817,6 +969,7 @@ function foldTopK(tiles, k) {
     weight: tail.reduce((s, t) => s + t.weight, 0),
     color_type: null,
     segment_count: tail.length,
+    activity: mergeActivity(tail),
   };
   return { tiles: head, rest };
 }
@@ -830,6 +983,7 @@ function buildAggregatePayload(p, rows, groupDim) {
     node_count: numOf(r.node_count),
     weight: numOf(r.weight),
     color_type: r.color_type ?? null,
+    activity: activityOf(r),
   }));
   // fold=false faltet die „Rest"-Kachel wieder auf (zeigt alle Segmente).
   if (p.fold === false) {
@@ -847,7 +1001,10 @@ function buildAggregatePayload(p, rows, groupDim) {
 /** Composition-Blatt: rohe Zeilen → Leaf-Tiles + ehrliche „+N weitere"-Sammelkachel. */
 function buildLeafPayload(p, rows) {
   const total = rows.length > 0 ? numOf(rows[0].total_count) : 0;
-  const tiles = rows.map((r) => ({
+  // Die Knoten jenseits des Top-N-Deckels kommen als eine Zeile kind='rest' mit ihrem
+  // Aktivitäts-Aggregat (graph_overview_leaf.sql).
+  const restRow = rows.find((r) => r.kind === 'rest');
+  const tiles = rows.filter((r) => r.kind !== 'rest').map((r) => ({
     key: r.key,
     uuid: r.uuid,
     file: r.file,
@@ -856,10 +1013,14 @@ function buildLeafPayload(p, rows) {
     community: r.community === null || r.community === undefined ? null : Number(r.community),
     weight: numOf(r.weight),
     kind: 'leaf',
+    activity: activityOf(r),
   }));
   const remaining = total - tiles.length;
   const rest = remaining > 0
-    ? { key: '__rest__', label: `+ ${remaining} weitere`, kind: 'rest', node_count: remaining, weight: null }
+    ? {
+      key: '__rest__', label: `+ ${remaining} weitere`, kind: 'rest', node_count: remaining, weight: null,
+      activity: restRow ? activityOf(restRow) : null,
+    }
     : null;
   return {
     tiles: rest ? [...tiles, rest] : tiles,
@@ -885,6 +1046,7 @@ function buildTopologyPayload(p, rows) {
         color_type: r.color_type ?? null,
         top_member_uuid: r.top_member_uuid ?? null,
         top_member_file: r.top_member_file ?? null,
+        activity: activityOf(r),
       });
     } else if (r.row_kind === 'edge') {
       rawEdges.push({ source: String(r.source), target: String(r.target), weight: numOf(r.weight) });
@@ -906,6 +1068,7 @@ function buildTopologyPayload(p, rows) {
       weight: tail.reduce((s, n) => s + n.weight, 0),
       color_type: null,
       segment_count: tail.length,
+      activity: mergeActivity(tail),
     };
   }
 
@@ -1124,6 +1287,7 @@ async function executeOverview(ctx, p, cacheKey, dbg, enqueuedMs) {
       view: 'topology',
       segment_by: p.segment_by,
       weight: p.weight,
+      activity: await activityHead(ctx, p, result.data),
       nodes,
       edges,
     };
@@ -1135,6 +1299,7 @@ async function executeOverview(ctx, p, cacheKey, dbg, enqueuedMs) {
       segment_by: p.segment_by,
       parent: { community: params.parent_community, file: params.parent_file, type: params.parent_type },
       weight: p.weight,
+      activity: await activityHead(ctx, p, result.data),
       truncated,
       tiles,
     };
@@ -1146,6 +1311,7 @@ async function executeOverview(ctx, p, cacheKey, dbg, enqueuedMs) {
       segment_by: p.segment_by,
       parent: { community: params.parent_community, file: params.parent_file, type: params.parent_type },
       weight: p.weight,
+      activity: await activityHead(ctx, p, result.data),
       truncated,
       tiles,
     };
@@ -1389,6 +1555,7 @@ function clearCache() {
   traceEntriesCache.clear();
   _communityTablesPresent.clear(); // nach Reload neu erkennen (P5-Tabellen könnten neu sein)
   _activeEngine.clear();           // aktive Engine nach Reload neu bestimmen
+  _changeMetaPresent.clear();      // Änderungsstempel nach Reload/Re-Import neu erkennen
 }
 
 module.exports = {

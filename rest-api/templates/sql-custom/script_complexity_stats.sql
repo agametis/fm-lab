@@ -8,7 +8,7 @@
 -- @output_format: file_name, script_count, avg_steps, max_steps, total_steps
 -- @default_result: { "aggregate": "row_count", "type": "number", "name": "file_count", "meaning": "Files with script statistics (inventory — informational, not a defect count)" }
 -- @author: Marcel
--- @version: 1.1
+-- @version: 1.2
 -- @tags: scripts, statistics, complexity
 
 SELECT
@@ -19,10 +19,10 @@ SELECT
     SUM(step_counts.step_count) as total_steps
 FROM ScriptCatalog sc
 LEFT JOIN (
-    SELECT Script_UUID, COUNT(*) as step_count
+    SELECT File_Name, Script_UUID, COUNT(*) as step_count
     FROM StepsForScripts
-    GROUP BY Script_UUID
-) step_counts ON sc.Script_UUID = step_counts.Script_UUID
+    GROUP BY File_Name, Script_UUID
+) step_counts ON sc.Script_UUID = step_counts.Script_UUID AND sc.File_Name = step_counts.File_Name
 WHERE sc.Folder_Type IS NULL OR sc.Folder_Type = 'False'
 GROUP BY sc.File_Name
 ORDER BY total_steps DESC;

@@ -53,7 +53,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Invalid layout symbol"
+          "title": "Invalid layout symbol",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -67,6 +68,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file, layout, object or symbol…",
               "columns": [
                 {

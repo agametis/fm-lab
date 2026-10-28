@@ -77,6 +77,7 @@ FM-Lab ships the following skills with every release under `.claude/skills/`. Ea
 - [fm-test](Skill%20fm-test.md) — Run curated Analysis Tests in solution, file, object, list or cluster scope
 - [fm-graph-cluster](Skill%20fm-graph-cluster.md) — Segment the object graph into semantically named modules
 - [fm-deep-research](Skill%20fm-deep-research.md) — Describe a whole solution: purpose, architecture, technical build, findings and recommendations as a report
+- [fm-changes](Skill%20fm-changes.md) — Release notes from the change stamps: what changed since a date, in a work session or by a person, by file and module
 
 ### Navigation
 
@@ -100,6 +101,7 @@ FM-Lab ships the following skills with every release under `.claude/skills/`. Ea
 - `resolve-object.md` and `scripts/resolve_object.sql` — the object-resolution contract: input → exactly one `(Object_UUID, File_Name)` pair, selection lists on ambiguity, context detection from earlier skill outputs.
 - `response-language.md` — what is rendered in your language (section headers, prose, hedging vocabulary) and what never is (FileMaker identifiers, link roles, SQL, flags).
 - `short-mode.md` — the `--short` flag of the analysis skills and its natural-language trigger words in eleven languages.
+- `age-context.md` and `scripts/age_context.sql` — the age context of an object (last change, author, saves, mass event, container stamp) that `fm-summarize`, `fm-analyze` and `fm-changes` add, counted from the data state.
 - `scripts/type_queries.sql` and `scripts/call_chain.sql` — the per-type detail queries and the recursive call-chain queries behind `fm-summarize` and `fm-analyze`.
 - `scripts/resolve_duckdb_bin.sh` and `scripts/open_url.sh` — DuckDB binary resolution and the single mechanism that opens a URL on the host, also from inside a container.
 

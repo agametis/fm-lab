@@ -11,6 +11,7 @@ import cytoscape from 'cytoscape';
 import type { GraphNode, GraphEdge } from '../hooks/useSubgraph';
 import { subgraphToElements } from '../hooks/useSubgraph';
 import { getCommunityColor, readGraphThemeTokens } from '../lib/graphColors';
+import { resolveCssColor } from '../lib/activityColors';
 import { useTheme } from '../hooks/useTheme';
 import { useTriggerEventFormat } from '../lib/triggerEvents';
 import { makeEdgeLabeler, edgeTooltipLines, type EdgeLabelStrings } from '../lib/graphEdgeLabels';
@@ -29,8 +30,11 @@ import { makeEdgeLabeler, edgeTooltipLines, type EdgeLabelStrings } from '../lib
 
 /** How the soft filters (name / file) treat non-matching nodes. */
 export type FilterMode = 'dim' | 'hide';
-/** Node color lens: by object type (default) or by P5 community. */
-export type ColorMode = 'type' | 'community';
+/**
+ * Node color lens: by object type (default), by P5 community, or by change
+ * activity (age of the newest individual change — the classes of the Graph Atlas).
+ */
+export type ColorMode = 'type' | 'community' | 'recency';
 
 /**
  * Stable connectivity breakdown of the loaded subgraph — a topology property of
@@ -286,6 +290,24 @@ function buildExplorerStylesheet(): cytoscape.StylesheetStyle[] {
     style: {
       'background-color': 'data(communityColor)',
       'border-color': 'data(communityColor)',
+    } as unknown as cytoscape.Css.Node,
+  },
+  // Activity color lens — same placement as the community lens: only the fill and
+  // the resting border switch, so trace roles (border/opacity) and the state rings
+  // stay readable on top. Unknown age (only a young mass stamp) gets a dashed ring.
+  {
+    selector: 'node.color-recency',
+    style: {
+      'background-color': 'data(recencyColor)',
+      'border-color': 'data(recencyColor)',
+    } as unknown as cytoscape.Css.Node,
+  },
+  {
+    selector: 'node.color-recency[?recencyUnknown]',
+    style: {
+      'border-style': 'dashed',
+      'border-width': 2.5,
+      'border-color': resolveCssColor('--color-recency-unknown-hatch', '#9aa0ab'),
     } as unknown as cytoscape.Css.Node,
   },
   // ── Trace-Modus (Knoten) — Styling nach traceRole (Daten-Attribut aus
@@ -648,11 +670,35 @@ function drawCommunityHulls(
   }
 }
 
-/** Toggle the community color lens across all real nodes (halo + file-groups excluded). */
+/**
+ * Tooltip line of the activity: class + newest change (days before the data state).
+ * Layout objects and menu items carry no stamp of their own — they inherit the
+ * stamp of their layout/menu, which the line says instead of "no stamp".
+ */
+function recencyTooltipLine(
+  tt: (key: string, opts?: Record<string, unknown>) => string,
+  cls: number | null,
+  newest: string | null,
+  ageDays: number | null,
+  type: string,
+): string | null {
+  if (cls === null) return null;
+  if (cls === 7) {
+    const inherits = type === 'LayoutObject' || type === 'CustomMenuItem';
+    return `${tt('inspect.activity')}: ${escapeHtml(tt(inherits ? 'inspect.activityInherited' : 'inspect.activityNone'))}`;
+  }
+  const label = tt(`atlas:activity.class.${cls}`);
+  const when = newest ? ` · ${newest.slice(0, 10)} (${tt('inspect.activityAge', { days: ageDays ?? 0 })})` : '';
+  return `${tt('inspect.activity')}: ${escapeHtml(label + when)}`;
+}
+
+/** Toggle the color lenses across all real nodes (halo + file-groups excluded). */
 function applyColorMode(cy: cytoscape.Core, mode: ColorMode): void {
   const real = cy.nodes().not('.focus-halo').not(`.${FILE_GROUP_CLASS}`);
   if (mode === 'community') real.addClass('color-community');
   else real.removeClass('color-community');
+  if (mode === 'recency') real.addClass('color-recency');
+  else real.removeClass('color-recency');
 }
 
 /** Compound-Parent-id einer Datei (synthetische NULL-File → eigene „Ohne Datei"-Box). */
@@ -1007,6 +1053,7 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
     const formatTriggerEvent = useTriggerEventFormat();
     const edgeStrings = useMemo<EdgeLabelStrings>(() => ({
       buttonAction: t('edge.buttonAction', { defaultValue: 'Button-Aktion' }) as string,
+      menuAction: t('edge.menuAction', { defaultValue: 'Menü-Aktion' }) as string,
       represents: t('edge.represents', { defaultValue: 'repräsentiert' }) as string,
     }), [t]);
     const edgeLabeler = useMemo(
@@ -1111,7 +1158,17 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
     // Bei Theme-Wechsel das Stylesheet aus den neuen Tokens neu setzen (kein
     // Re-Layout — Positionen/Zoom bleiben). Initial setzt der Mount das Stylesheet.
     useEffect(() => {
-      cyRef.current?.style(buildExplorerStylesheet());
+      const cy = cyRef.current;
+      if (!cy) return;
+      cy.style(buildExplorerStylesheet());
+      // Aktivitätsfarben hängen am Theme (Tokens) → aus dem gespeicherten Token-
+      // Namen neu auflösen.
+      cy.batch(() => {
+        cy.nodes().forEach((n) => {
+          const v = n.data('recencyVar') as string | undefined;
+          if (v) n.data('recencyColor', resolveCssColor(v));
+        });
+      });
     }, [theme]);
 
     // Init once: register fcose, create the instance, bind handlers.
@@ -1198,6 +1255,9 @@ export const ExplorerGraph = forwardRef<ExplorerGraphHandle, ExplorerGraphProps>
               `${tt('inspect.type')}: ${escapeHtml(String(node.data('type') ?? ''))}`,
               file ? `${tt('inspect.file')}: ${escapeHtml(file)}` : null,
               community ? `${tt('inspect.community')}: ${escapeHtml(community)}` : null,
+              recencyTooltipLine(tt, node.data('recencyClass') as number | null,
+                node.data('newestChange') as string | null, node.data('newestAgeDays') as number | null,
+                String(node.data('type') ?? '')),
               roleLabel ? `${tt('inspect.role')}: ${escapeHtml(roleLabel)}` : null,
               `${tt('inspect.degree')}: ${node.data('degree') ?? 0}`,
             ].filter(Boolean);

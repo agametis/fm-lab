@@ -64,7 +64,8 @@
     },
     {
       "id": "findings",
-      "source": "bundle:data/findings.sql"
+      "source": "bundle:data/findings.sql",
+      "pageSize": 500
     }
   ],
   "params": [
@@ -79,12 +80,6 @@
       "type": "string",
       "required": false,
       "description": "Optional default-view filter (Form | List | Table), set by clicking a KPI. Empty = all."
-    },
-    {
-      "name": "limit",
-      "type": "number",
-      "required": false,
-      "description": "Maximum number of layouts returned (default 500)."
     }
   ],
   "permissions": {

@@ -130,6 +130,8 @@ Constraints for dashboard SQL (REST API layer):
   token in the SQL — avoid DuckDB slices (`list[1:3]`), `::`-casts written as `:type`,
   and regex patterns containing `:x`. Use `list_slice()`, `CAST(x AS type)` and
   character classes instead.
+- ⚠️ **Qualify every column once a statement joins tables** (alias on every table,
+  prefix on every column, no `SELECT *` / `t.*` over a join) — see B2.
 - The API DB runs in `READ_ONLY` mode with tight memory — avoid multi-evaluating
   expensive views (materialize or pre-aggregate; see `ClusterEdgesBaseMat` precedent).
 - Bundle IDs must be flat-unique across all dashboard folders.
@@ -146,6 +148,14 @@ Constraints for dashboard SQL (REST API layer):
   `docs/agents/sql/sample_queries.sql` (see `query-cookbook.md`).
 - Locale independence: never gate on `Step_Name`/`Step/@name` literals — use `Step_ID`
   (`ScriptStepRoleMap`, `step_metadata`).
+- **Persisted SQL** (dashboard datasets, `sql-custom` queries, API templates, analysis
+  tests): every statement or CTE with more than one table qualifies **every** column
+  with its table alias, even when the name is unique today; no `SELECT *` / `t.*` over a
+  join. New schema versions add columns — a bare name that a later version adds to a
+  second joined table fails with "Ambiguous reference to column name" after the next
+  import (the change-metadata columns `Modified_At/_By/_Account`, `Modifications` sit
+  on 19 tables). Before a schema change adds columns, smoke-run all template SQL
+  read-only against a rebuilt catalog (`:param` → `NULL`) and grep for `Ambiguous`.
 - Pipeline placement rules: P1 is the only XML reader; no schema changes/UPDATEs on
   source tables in P2 (partitioned read-only slices); volatile derived layers
   (analysis views, universal catalogs) are rebuilt every run. Details:

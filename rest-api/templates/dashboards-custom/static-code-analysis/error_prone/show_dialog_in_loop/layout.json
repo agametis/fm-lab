@@ -42,6 +42,9 @@
             "props": {
               "param": "scope",
               "default": "active",
+              "resetParams": [
+                "page"
+              ],
               "options": [
                 {
                   "value": "active",
@@ -66,7 +69,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Show Custom Dialog inside Loop"
+          "title": "Show Custom Dialog inside Loop",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -80,6 +84,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file or script…",
               "columns": [
                 {

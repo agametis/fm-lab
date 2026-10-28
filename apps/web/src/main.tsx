@@ -7,6 +7,7 @@ import { applyServerLanguage } from './i18n'; // initialises i18next before any 
 import { API_BASE } from './config/apiBase';
 import { installSolutionFetch } from './lib/solutionFetch';
 import { SolutionContextBanner } from './components/SolutionContextBanner';
+import { StorageVersionBanner } from './components/StorageVersionBanner';
 import './styles/theme.css';
 import './index.css';
 
@@ -40,6 +41,7 @@ function Root() {
     <FeaturesContext.Provider value={featuresState}>
       {/* Route-unabhängig: der Ausfall trifft jede Ansicht gleichzeitig. */}
       <SolutionContextBanner />
+      <StorageVersionBanner />
       <App />
     </FeaturesContext.Provider>
   );

@@ -2,25 +2,75 @@
   "schemaVersion": 1,
   "root": {
     "type": "Grid",
-    "props": { "columns": 12, "gap": 16 },
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
     "children": [
       {
         "type": "Card",
         "id": "summary",
-        "props": { "span": 12, "variant": "hero" },
-        "data": { "dataset": "summary" },
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
         "children": [
           {
             "type": "KPIStrip",
             "id": "summary_kpistrip",
             "props": {
               "items": [
-                { "label": "Send Mail steps", "field": "send_mail_steps", "format": "number" },
-                { "label": "via SMTP", "field": "via_smtp", "format": "number", "onClick": { "action": "openDashboard", "args": { "id": "email_integration", "params": { "mode": "SMTP" } } } },
-                { "label": "via Client", "field": "via_client", "format": "number", "onClick": { "action": "openDashboard", "args": { "id": "email_integration", "params": { "mode": "Client" } } } },
-                { "label": "Hard-coded credentials", "field": "hardcoded_credentials", "format": "number" },
-                { "label": "MBS mail calls", "field": "mbs_mail_calls", "format": "number" },
-                { "label": "Files affected", "field": "files_affected", "format": "number" }
+                {
+                  "label": "Send Mail steps",
+                  "field": "send_mail_steps",
+                  "format": "number"
+                },
+                {
+                  "label": "via SMTP",
+                  "field": "via_smtp",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "email_integration",
+                      "params": {
+                        "mode": "SMTP"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "via Client",
+                  "field": "via_client",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "email_integration",
+                      "params": {
+                        "mode": "Client"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Hard-coded credentials",
+                  "field": "hardcoded_credentials",
+                  "format": "number"
+                },
+                {
+                  "label": "MBS mail calls",
+                  "field": "mbs_mail_calls",
+                  "format": "number"
+                },
+                {
+                  "label": "Files affected",
+                  "field": "files_affected",
+                  "format": "number"
+                }
               ]
             }
           }
@@ -29,8 +79,13 @@
       {
         "type": "Card",
         "id": "by_mode",
-        "props": { "span": 12, "title": "By delivery mode" },
-        "data": { "dataset": "by_mode" },
+        "props": {
+          "span": 12,
+          "title": "By delivery mode"
+        },
+        "data": {
+          "dataset": "by_mode"
+        },
         "children": [
           {
             "type": "Table",
@@ -40,12 +95,36 @@
               "density": "compact",
               "sortable": true,
               "columns": [
-                { "field": "mode", "label": "Mode", "format": "badge" },
-                { "field": "callsites", "label": "Call sites", "align": "right" },
-                { "field": "files", "label": "Files", "align": "right" },
-                { "field": "with_hardcoded_auth", "label": "Hard-coded auth", "align": "right" }
+                {
+                  "field": "mode",
+                  "label": "Mode",
+                  "format": "badge"
+                },
+                {
+                  "field": "callsites",
+                  "label": "Call sites",
+                  "align": "right"
+                },
+                {
+                  "field": "files",
+                  "label": "Files",
+                  "align": "right"
+                },
+                {
+                  "field": "with_hardcoded_auth",
+                  "label": "Hard-coded auth",
+                  "align": "right"
+                }
               ],
-              "onRowClick": { "action": "openDashboard", "args": { "id": "email_integration", "params": { "mode": "{{mode}}" } } }
+              "onRowClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "email_integration",
+                  "params": {
+                    "mode": "{{mode}}"
+                  }
+                }
+              }
             }
           }
         ]
@@ -53,8 +132,14 @@
       {
         "type": "Card",
         "id": "findings",
-        "props": { "span": 12, "title": "Call sites" },
-        "data": { "dataset": "findings" },
+        "props": {
+          "span": 12,
+          "title": "Call sites",
+          "keepChildrenOnEmpty": true
+        },
+        "data": {
+          "dataset": "findings"
+        },
         "children": [
           {
             "type": "Table",
@@ -63,16 +148,54 @@
               "rowKey": "row_key",
               "density": "compact",
               "sortable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "columns": [
-                { "field": "mode", "label": "Mode", "format": "badge" },
-                { "field": "mechanism", "label": "Mechanism" },
-                { "field": "carrier", "label": "Script/Object" },
-                { "field": "smtp_host", "label": "SMTP host" },
-                { "field": "hardcoded_auth", "label": "Hard-coded auth", "format": "boolean" },
-                { "field": "file", "label": "File" },
-                { "field": "step_index", "label": "#", "align": "right" }
+                {
+                  "field": "mode",
+                  "label": "Mode",
+                  "format": "badge"
+                },
+                {
+                  "field": "mechanism",
+                  "label": "Mechanism"
+                },
+                {
+                  "field": "carrier",
+                  "label": "Script/Object"
+                },
+                {
+                  "field": "smtp_host",
+                  "label": "SMTP host"
+                },
+                {
+                  "field": "hardcoded_auth",
+                  "label": "Hard-coded auth",
+                  "format": "boolean"
+                },
+                {
+                  "field": "file",
+                  "label": "File"
+                },
+                {
+                  "field": "step_index",
+                  "label": "#",
+                  "align": "right"
+                }
               ],
-              "onRowClick": { "action": "openObject", "args": { "uuid": "{{nav_uuid}}", "type": "{{nav_type}}", "file": "{{file}}", "params": { "step": "{{step_uuid}}" } } }
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "{{nav_type}}",
+                  "file": "{{file}}",
+                  "params": {
+                    "step": "{{step_uuid}}"
+                  }
+                }
+              }
             }
           }
         ]

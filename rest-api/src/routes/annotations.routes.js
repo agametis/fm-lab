@@ -18,4 +18,11 @@ router.put('/annotations/node/visibility', validate('annotationNodeVisibility', 
 // GET /api/annotations/hidden — Recovery-Liste der ausgeblendeten Knoten
 router.get('/annotations/hidden', controller.getHidden);
 
+// Autoren der Änderungs-Metadaten + kuratierte Aliase (Sidecar ChangeAuthorAlias).
+// GET liefert Autoren (v_change_meta_authors) und Aliase; PUT setzt einen Alias,
+// DELETE entfernt ihn — danach baut die API das Autoren-Overlay der Lösung neu auf.
+router.get('/change-authors', controller.getChangeAuthors);
+router.put('/change-authors', validate('changeAuthorAlias', 'body'), controller.putChangeAuthor);
+router.delete('/change-authors', validate('changeAuthorAliasDelete', 'query'), controller.deleteChangeAuthor);
+
 module.exports = router;

@@ -13,6 +13,16 @@ const datasetSpec = Joi.object({
     .required(),
   params: Joi.object().unknown(true).optional(),
   description: Joi.string().optional(),
+  // Server paging (see paging.service): rows per page (1…10000) or 'all', the
+  // URL params of page/search/sort, and an optional restriction of sortable columns.
+  pageSize: Joi.alternatives().try(
+    Joi.number().integer().min(1).max(10000),
+    Joi.string().valid('all'),
+  ).optional(),
+  pageParam: Joi.string().pattern(/^[a-z][a-z0-9_]*$/).optional(),
+  searchParam: Joi.string().pattern(/^[a-z][a-z0-9_]*$/).optional(),
+  sortParam: Joi.string().pattern(/^[a-z][a-z0-9_]*$/).optional(),
+  sortColumns: Joi.array().items(Joi.string().pattern(/^[a-z][a-z0-9_]*$/)).optional(),
 });
 
 const manifestSchema = Joi.object({

@@ -6,10 +6,14 @@
 -- @display: table
 -- @chip_filter: theme
 -- @chip_param: theme
--- @params: file (optional), limit (optional, default 500), theme (optional), min_share (optional, percentage floor for the local-CSS share)
+-- @page_param: page
+-- @search_param: q
+-- @sort_param: sort
+-- @page_size: 500
+-- @params: file (optional), page (optional), page_size (optional, default 500), q (optional), sort (optional), dir (optional), theme (optional), min_share (optional, percentage floor for the local-CSS share)
 -- @click_action: openObject
 -- @click_args: uuid={{_nav_uuid}}&type=Layout&file={{file_name}}
--- @output_format: file_name, layout_name, theme, objects, css_overrides, css_share_pct, named_style_refs, _message, _chip_facets, _row_total
+-- @output_format: file_name, layout_name, theme, objects, css_overrides, css_share_pct, named_style_refs, _message, _chip_facets, _row_total, _page, _page_size
 -- @object_types: Layout
 -- @output_types: count, inventory-table
 -- @scope: solution, file, object, object-list, cluster
@@ -30,10 +34,10 @@
 --
 -- The theme chips switch SERVER-SIDE (`@chip_param: theme`) and carry the true
 -- counts of the whole scope, not of the loaded page. That takes two convention
--- columns: `_chip_facets` (one entry per theme, counted over `base` — which
--- carries every filter EXCEPT the theme itself, otherwise each chip would only
+-- columns: `_chip_facets` (one entry per theme, counted over `result` — which
+-- carries every filter EXCEPT the search and the theme itself, otherwise each chip would only
 -- ever show its own selection) and `_row_total` (rows before the LIMIT, counted
--- over `sel`, i.e. WITH the theme filter, so the header names the truncation
+-- over `filtered`, i.e. WITH the theme filter, so the header names the truncation
 -- and only then). Both are computed before the LIMIT and repeat in every row.
 WITH per_layout AS (
     SELECT lo.File_Name, lo.Layout_ID,
@@ -43,7 +47,7 @@ WITH per_layout AS (
     FROM LayoutObjects lo
     GROUP BY 1, 2
 ),
-base AS (
+result AS MATERIALIZED (
     SELECT
         ly.File_Name AS file_name,
         ly.L_UUID AS _nav_uuid,
@@ -67,14 +71,36 @@ base AS (
       AND (getvariable('scope_uuids') IS NULL
            OR ly.L_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
 ),
-sel AS (
-    SELECT * FROM base
+-- >>> shared paging search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) <> 'uuid'))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging search block
+filtered AS (
+    SELECT * FROM searched
     WHERE (getvariable('theme') IS NULL OR theme = getvariable('theme'))
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT s.*,
-    (SELECT json_group_object(theme, n)
-       FROM (SELECT theme, count(*) AS n FROM base GROUP BY 1)) AS _chip_facets,
-    (SELECT count(*) FROM sel) AS _row_total
-FROM sel s
-ORDER BY css_overrides DESC, objects DESC, file_name, layout_name
-LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.*,
+    -- Facets ordered by value, so every request returns the same text.
+    (SELECT to_json(map_from_entries(list((theme, n) ORDER BY theme)))
+       FROM (SELECT theme, count(*) AS n FROM result GROUP BY 1)) AS _chip_facets,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ css_overrides DESC, objects DESC, file_name, layout_name, _nav_uuid, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

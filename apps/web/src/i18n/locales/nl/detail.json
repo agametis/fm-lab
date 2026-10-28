@@ -145,6 +145,17 @@
     "clearRolesLabel": "Rollen herstellen",
     "clearRolesTitle": "Alle rolfilters wissen"
   },
+  "referencesMissing": {
+    "label": "Niet gerefereerd:",
+    "indirectLabel": "via lay-outobjecten:",
+    "emptyLead": "Mogelijke referenties:",
+    "tooltipRoles": "Mogelijke rollen: {{roles}}",
+    "tooltipAggregate_one": "(inclusief het lay-outobject)",
+    "tooltipAggregate_other": "(inclusief de {{count}} lay-outobjecten)",
+    "caveatScriptCallers": "Alleen statisch herleidbare aanroepen. Niet meegenomen: Perform Script op naam, fmp-URL's, externe aanroepen.",
+    "caveatToFieldAccess": "Veldtoegang via deze TO levert geen TO-referentie op.",
+    "aria": "Objecttypen zonder referenties"
+  },
   "hierarchyTree": {
     "ariaLabel": "Objecthiërarchie",
     "usedBy": "Gebruikt door ({{count}})",
@@ -199,6 +210,10 @@
         "short": "Popover",
         "long": "Popover-titel"
       },
+      "active_segment": {
+        "short": "Segment",
+        "long": "Actief segment"
+      },
       "script_trigger_parameter": {
         "short": "Trigger",
         "long": "Scripttrigger-parameter"
@@ -226,6 +241,10 @@
       "menu_install": {
         "short": "Install",
         "long": "Installatieconditie van menu"
+      },
+      "menu_action": {
+        "short": "Menu",
+        "long": "Menuactie"
       }
     }
   },
@@ -237,9 +256,13 @@
     "sortName": "Naam",
     "sortType": "Type",
     "sortFile": "Bestand",
+    "sortModified": "Laatst gewijzigd",
     "groupNone": "Geen",
     "groupType": "Type",
-    "groupFile": "Bestand"
+    "groupFile": "Bestand",
+    "modifiedSinceLabel": "Gewijzigd sinds",
+    "modifiedSinceHint": "Alleen objecten waarvan de eigen wijzigingsstempel op of na deze dag ligt — scriptstappen, lay-outobjecten en berekeningen hebben geen eigen stempel",
+    "modifiedSinceClear": "Herstellen"
   },
   "fieldViewer": {
     "ariaLabel": "Velddetails",
@@ -327,7 +350,8 @@
     "uuidMatch": "Gevonden via UUID",
     "healedUuidMatch": "Gevonden via UUID (duplicaat)",
     "healedUuidTitle": "FileMaker kent dit object onder de gezochte UUID; omdat die UUID meerdere keren in de export voorkwam, staat het in de catalogus onder een vervangende UUID.",
-    "idMatch": "Gevonden via ID {{id}}"
+    "idMatch": "Gevonden via ID {{id}}",
+    "modifiedTooltip": "Gewijzigd {{age}} — lokale tijd van de bewerkende client, zonder tijdzone"
   },
   "scriptSearchFilter": {
     "searchAria": "Zoek referenties",
@@ -422,13 +446,75 @@
       "menuLabel": "Acties",
       "searchPlaceholder": "Oplossingen filteren…",
       "noMatches": "Geen oplossing komt overeen met het filter."
+    },
+    "changeAuthors": {
+      "heading": "Auteurs van de wijzigingsmetadata",
+      "desc": "Voeg schrijfvarianten van één persoon samen, stel weergavenamen in en markeer technische auteurs. De aliassen worden bij de oplossing opgeslagen, overleven een herbouw en werken direct door in de regel ‘Laatst gewijzigd’.",
+      "solution": "Oplossing: {{name}}.",
+      "loading": "Auteurs laden …",
+      "empty": "Deze catalogus heeft nog geen wijzigingsmetadata — importeer de oplossing opnieuw met de huidige versie.",
+      "noSidecar": "De annotatiedatabase van deze oplossing is niet beschikbaar (functie uitgeschakeld of vergrendeld) — aliassen kunnen niet worden gewijzigd.",
+      "colUser": "Gebruiker",
+      "colUserTitle": "Gebruikersnaam in alle schrijfwijzen",
+      "colStamps": "Stempels",
+      "colLast": "Laatste wijziging",
+      "colPerson": "Dezelfde persoon als",
+      "colDisplay": "Weergavenaam",
+      "colTechnical": "Technisch",
+      "colActions": "Acties",
+      "accountsTitle": "Aangemelde accounts",
+      "stampsTitle": "{{single}} afzonderlijke wijzigingen buiten massagebeurtenissen · {{files}} bestanden",
+      "ownPerson": "— eigen vermelding —",
+      "technicalAutoYes": "Automatisch (ja)",
+      "technicalAutoNo": "Automatisch (nee)",
+      "technicalAuto": "auto",
+      "technicalYes": "Ja",
+      "technicalNo": "Nee",
+      "save": "Opslaan",
+      "reset": "Herstellen",
+      "orphanHeading": "Aliassen zonder passende gebruiker in de huidige catalogus",
+      "orphanDelete": "Verwijderen"
     }
   },
   "objectHeader": {
     "noName": "(geen naam)",
     "source": "Bron:",
     "relationshipGraphLink": "↗ Relatiegrafiek",
-    "copyUuidAria": "UUID kopiëren naar klembord"
+    "copyUuidAria": "UUID kopiëren naar klembord",
+    "change": {
+      "modified": "Laatst gewijzigd",
+      "containerModified": "Container laatst gewijzigd",
+      "timeTooltip": "{{age}} — lokale tijd van de bewerkende client, zonder tijdzone",
+      "unknownAuthor": "onbekende gebruiker",
+      "authorTooltip": "FileMaker-gebruikersnaam van de laatste bewerker",
+      "accountTooltip": "Aangemelde account",
+      "countTooltip": "Bewaringen sinds het object is aangemaakt",
+      "modifications_one": "{{count}} wijziging",
+      "modifications_other": "{{count}} wijzigingen",
+      "quotedName": "‘{{name}}’",
+      "technical": {
+        "tool": "Tool",
+        "toolTooltip": "Gestempeld door een tool (FileMaker Data Migration Tool), niet door een ontwikkelaar",
+        "runtime": "Runtime",
+        "runtimeTooltip": "Tijdens runtime gewijzigd door een eindgebruiker (WebDirect-sessie) — geen ontwikkelactiviteit",
+        "other": "Technisch",
+        "otherTooltip": "Als technische auteur gemarkeerd in de auteursaliassen"
+      },
+      "bulk": {
+        "badge": "Massagebeurtenis {{date}}",
+        "kind": {
+          "mass_action": "Massa-actie: veel objecten tegelijk gestempeld (migratie, zoeken en vervangen, nieuw bestand)",
+          "paste_import": "Plakken / importeren: samen geplakte of geïmporteerde objecten",
+          "tool": "Toolrun (FileMaker Data Migration Tool)"
+        },
+        "scopeFile": "in één bestand",
+        "scopeSolution_one": "over {{count}} bestand",
+        "scopeSolution_other": "over {{count}} bestanden",
+        "objects_one": "{{count}} object",
+        "objects_other": "{{count}} objecten",
+        "hint": "De stempel weerspiegelt deze actie, geen afzonderlijke bewerking van het object."
+      }
+    }
   },
   "scriptLine": {
     "expand": "Uitvouwen",
@@ -660,7 +746,6 @@
     "viewTable": "Tabelweergave",
     "baseTheme": "Basisthema",
     "inLayoutMenus": "In lay-outmenu's",
-    "lastModified": "Laatst gewijzigd",
     "triggersHeading": "Scripttriggers",
     "noTriggers": "Geen scripttriggers",
     "yes": "Ja",
@@ -731,6 +816,7 @@
       "button_action": "Knopactie",
       "panel_title": "Paneeltitel",
       "popover_title": "Popover-titel",
+      "active_segment": "Actief segment",
       "display_calculation": "Weergaveberekening",
       "merge_text": "Opgeloste samenvoegankers",
       "chart_series": "Diagramreeks",

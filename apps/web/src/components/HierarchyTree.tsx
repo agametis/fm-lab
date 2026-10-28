@@ -1,8 +1,9 @@
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { GroupedReferences, ReferenceItem } from '../types';
+import type { GroupedReferences, ReferenceCandidates, ReferenceItem } from '../types';
 import { ReferencesFilter } from './ReferencesFilter';
+import { ReferencesMissing } from './ReferencesMissing';
 import { useUrlState, stringSetCodec, type UrlStateCodec } from '../hooks/useUrlState';
 import { buildNavigablePath, buildObjectPath } from '../lib/navigation';
 import { useCurrentFile } from '../lib/currentFileContext';
@@ -27,6 +28,8 @@ const dirFilterCodec: UrlStateCodec<DirFilter> = {
 
 interface HierarchyTreeProps {
   references: GroupedReferences;
+  /** Kandidaten der Zeile „Nicht referenziert“ (null = nicht verfügbar). */
+  candidates?: ReferenceCandidates | null;
 }
 
 /**
@@ -63,8 +66,8 @@ function buildSearchText(ref: ReferenceItem, subroleLabels: string): string {
  * eigenen Filter-Chip prägen (Kardinalität 1 = sinnlose Filter-Dimension).
  */
 const CURATED_CHIP_CLASSES = new Set([
-  'auto_enter', 'button_action', 'conditional_format', 'hide', 'mbs_runscript',
-  'menu_install', 'on_server', 'placeholder', 'popover_title', 'portal_filter',
+  'active_segment', 'auto_enter', 'button_action', 'conditional_format', 'hide', 'mbs_runscript',
+  'menu_action', 'menu_install', 'on_server', 'placeholder', 'popover_title', 'portal_filter',
   'script_trigger_parameter', 'tooltip', 'transaction_parameter_field',
   'validation', 'web_viewer_url',
 ]);
@@ -130,7 +133,7 @@ function compareRefs(a: ReferenceItem, b: ReferenceItem, key: RefSortKey): numbe
  * Displays parent (upstream) and child (downstream) references as clickable lists.
  * Includes a type-filter pill bar and a live search input above the lists.
  */
-export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>(({ references }, externalRef) => {
+export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>(({ references, candidates = null }, externalRef) => {
   const { t } = useTranslation(['detail', 'types']);
   const navigate = useNavigate();
   const { uuid: currentUuid } = useParams<{ uuid: string }>();
@@ -316,6 +319,14 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
     }
     return m;
   }, [directionScopedRefs]);
+
+  // Gegentypen je Richtung, wie sie die Typ-Pillen zeigen (in = parent +
+  // structuralParent, out = child + structuralChild) — die Kandidaten-Zeile
+  // hängt bei Überschneidung die Kandidaten-Rolle ans Label.
+  const presentTypes = useMemo(() => ({
+    in: new Set([...references.parent, ...references.structuralParent].map(r => r.Object_Type)),
+    out: new Set([...references.child, ...references.structuralChild].map(r => r.Object_Type)),
+  }), [references]);
 
   const queryLower = query.trim().toLowerCase();
   const filterFn = useCallback((r: ReferenceItem) => {
@@ -718,6 +729,9 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
           matchCount={matchCount}
           totalCount={totalCount}
           onJumpToList={jumpToList}
+          footer={(
+            <ReferencesMissing candidates={candidates} dirFilter={dirFilter} presentTypes={presentTypes} />
+          )}
         />
       )}
       <nav
@@ -773,6 +787,14 @@ export const HierarchyTree = forwardRef<HierarchyTreeHandle, HierarchyTreeProps>
           <div className="no-references">
             {t('detail:hierarchyTree.noReferences')}
           </div>
+        )}
+
+        {/* Ohne jede Referenz entfällt die Filter-Box — die Kandidaten-Zeile
+            steht dann eigenständig unter dem Leerzustand. Beide Richtungen:
+            ohne Referenzen gibt es keine Richtungs-Leiste, ein übrig gebliebener
+            `rdir`-Param wäre dort nicht mehr umschaltbar. */}
+        {!hasAnyTotal && (
+          <ReferencesMissing candidates={candidates} dirFilter="both" presentTypes={presentTypes} standalone />
         )}
       </nav>
     </div>

@@ -65,6 +65,18 @@ All fields of all base tables, with the complete field definition: data type, st
 | `Storage_IndexLanguage_ID` | `BIGINT` |
 | `Summary_RestartEachGroup` | `BOOLEAN` |
 | `Summary_RepetitionMode` | `VARCHAR` |
+| `Field_Annotation` | `VARCHAR` |
+| `Field_DisplayNames_Enabled` | `BOOLEAN` |
+| `DisplayNames_Calc_Text` | `VARCHAR` |
+| `DisplayNames_Calc_Hash` | `VARCHAR` |
+| `AE_Calc_Enabled` | `BOOLEAN` |
+| `Lookup_Enabled` | `BOOLEAN` |
+| `Validation_Calc_Enabled` | `BOOLEAN` |
+| `Validation_Message_Calc_Enabled` | `BOOLEAN` |
+| `Modified_At` | `VARCHAR` |
+| `Modified_By` | `VARCHAR` |
+| `Modified_Account` | `VARCHAR` |
+| `Modifications` | `BIGINT` |
 | `File_Name` | `VARCHAR` |
 
 ## Notes
@@ -75,5 +87,7 @@ All fields of all base tables, with the complete field definition: data type, st
 - `Validation_MaxChars` is sentinel-normalized at import: FileMaker serializes "no character limit" as `4294967295` (UINT32_MAX, the unsigned form of an internal `-1`); the importer stores it as `NULL` — the same state as validation without a configured maximum. Real limits import verbatim. A guard check (`v_check_numeric_sentinels`) warns if a future export ships an unrecognized implausible value (> 10⁹) instead.
 - Summary fields describe their operation and target in the `Summary_*` columns (→ `summarizes_field` link).
 - `DDR_Hash`-family columns join to [DDR_Calculations](DDR_Calculations.md) via `Calc_Hash`.
+- `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` are the raw change metadata of the object's `<UUID>` element: timestamp as text (local time of the editing client, no time zone), user name, account (empty → `NULL`) and change counter. [ObjectChangeMeta](ObjectChangeMeta.md) collects them across all object types with a typed timestamp.
+- The per-table field catalog carries a stamp of its own (deleting a field updates it); it is in [CatalogChangeMeta](CatalogChangeMeta.md) with `Catalog = 'FieldCatalog'` and the base table in `Scope_UUID`.
 
 **See also:** [BaseTableCatalog](BaseTableCatalog.md) · [DDR_Calculations](DDR_Calculations.md) · [ValueListCatalog](ValueListCatalog.md)

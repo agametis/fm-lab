@@ -8,6 +8,10 @@ Two scope notes: this history covers the **solution catalog** (`db/fm_catalog.du
 
 | Schema version | fm-lab version | Date |
 |---|---|---|
+| [1.37.0](#1370) | 0.9.15 | 2026-10-28 |
+| [1.36.0](#1360) | 0.9.15 | 2026-10-23 |
+| [1.35.0](#1350) | 0.9.15 | 2026-10-23 |
+| [1.34.0](#1340) | 0.9.15 | 2026-10-21 |
 | [1.33.0](#1330) | 0.9.14 | 2026-10-11 |
 | [1.32.0](#1320) | 0.9.12 | 2026-09-12 |
 | [1.31.0](#1310) | 0.9.12 | 2026-09-12 |
@@ -50,6 +54,187 @@ Two scope notes: this history covers the **solution catalog** (`db/fm_catalog.du
 
 ## Changes by version
 
+### 1.37.0
+
+Calculation instances of copied objects (converter 2.41.0). Layout objects pasted
+in FileMaker and steps of duplicated scripts can share one UUID; the import keeps
+both copies and gives the copy a replacement UUID
+([UUID healing](UUID%20Healing%20and%20Duplicate%20Census.md)). Their formula anchors are still named after the original
+UUID, so [CalculationsCatalog](catalog-tables/CalculationsCatalog.md) attached every formula of the group to the
+original object: hide conditions, button actions, tooltips, step parameters and
+conditional formatting appeared on the wrong object, and rules in
+[LayoutObjectConditions](catalog-tables/LayoutObjectConditions.md) pointed to a foreign formula or to none. The owner is
+now the copy whose own XML carries the anchor with its hash — the same
+attribution [ObjectLinks](object-catalog/ObjectLinks.md) already used, so where-used results do not change.
+The active-segment formula of a button bar ("Active Segment → Specify") gets the
+calculation role `active_segment` instead of the unknown role `buttonbar`. New
+import check `v_check_calc_owner_hash`; `v_check_cf_rules` gains
+`empty_chunklist_n` and `fk_hash_mismatch_n`, and `hash_without_fk_n` no longer
+counts empty chunk lists.
+
+What this means for existing installations:
+
+- The first import after the update is a full rebuild (schema version change)
+  and takes correspondingly longer; clustering is rebuilt with it. For a
+  single-file import, run a batch import first.
+- Only solutions with healed copies change (see `DuplicateAbsorptionDetails`,
+  `Heal_Status = 'healed'`). The import warnings about `conditional_format`
+  instances without a rule, and about the unknown role `buttonbar`, disappear.
+
+Converter 2.42.0 (no DDL) completes the `active_segment` instances: they carry
+the formula as written in `Formula_Text`, and a file exported without DDR info
+gets the instance as well (no hash, no references), like the popover and panel
+titles. The next import corrects the catalog.
+
+### 1.36.0
+
+Mass events and technical authors in the change metadata (converter 2.39.0).
+[ObjectChangeMeta](catalog-tables/ObjectChangeMeta.md) gains three columns: `Burst_ID` groups the stamps of a file
+that follow each other with gaps of at most 10 seconds, `Bulk_Event_ID` links a
+stamp to its mass event, and `Author_Kind` marks authors that are not developers
+(`tool` for the FileMaker Data Migration Tool, `runtime` for WebDirect sessions).
+The new table [ChangeBulkEvents](catalog-tables/ChangeBulkEvents.md) lists every mass event — a burst of 25 objects
+or more, or a burst written only by a tool — with scope (`file`, or `solution`
+for events that span several files within 15 minutes) and kind (`mass_action`,
+`tool`, `paste_import`). The detection parameters are in `ChangeBulkConfig`, the
+author patterns in `ChangeTechnicalAuthors` (both described on the
+[ChangeBulkEvents](catalog-tables/ChangeBulkEvents.md) page). The import check `v_check_change_meta` warns about
+stamps without a burst and reports the number of mass events and the share of
+stamps inside them. [ScriptCatalog](catalog-tables/ScriptCatalog.md) no longer has the columns
+`Last_Modified_By` and `Last_Modified_At`.
+
+What this means for existing installations:
+
+- The first import after the update is a full rebuild (schema version change)
+  and takes correspondingly longer; clustering is rebuilt with it. For a
+  single-file import, run a batch import first.
+- Custom queries that still read `ScriptCatalog.Last_Modified_By` or
+  `Last_Modified_At` fail with "Referenced column not found" — use
+  `Modified_By` / `Modified_At`.
+- `Burst_ID` and `Bulk_Event_ID` are renumbered on every import; do not store
+  them in your own tables.
+
+Converter 2.40.0 (no DDL) keeps the local variables of clone files apart. Files
+created as copies of one another share their script UUIDs, and with them the
+scope anchor and the UUID of every local variable. [VariablesCatalog](catalog-tables/VariablesCatalog.md) merged
+such variables into one row, so the second file had no variable object of its
+own, and the edges of its scripts pointed to the variable of the first file
+while still marked as not cross-file. Local and Let-bound variables now get one
+row per file; the UUID is unchanged, the identity is `(Object_UUID, File_Name)`
+as for every clone object, and each variable edge in [ObjectLinks](object-catalog/ObjectLinks.md) points to
+the variable of its own file. Catalogs without clone files are unchanged. New
+P6 check `v_check_variable_identity`. The same release gives the steps
+Configure Machine Learning Model (202, `reads_field`: the container with the
+model file) and Insert Image Caption (241, `sets_field`: the field that receives
+the caption) their field role instead of `references_field`, and stops the graph
+views from dropping every `reads_field` edge without a subrole — field reads in
+calculations, custom functions and script steps were missing from the graph and
+the clustering input.
+
+What this means for existing installations:
+
+- The next import corrects the catalog. An incremental import keeps the current
+  clustering, which was computed without the recovered edges; rebuild it
+  ([fm-graph-cluster](../skills/Skill%20fm-graph-cluster.md) or the rebuild in the web client)
+  to include them.
+- Custom queries that join `VariablesCatalog` or `ObjectCatalog` to a variable
+  UUID alone return one row per clone file — join on the file as well.
+
+### 1.35.0
+
+Change metadata for every object type that carries it (converter 2.38.0). The
+`<UUID>` element of almost every object records when it was last changed, by
+which user and account, and how often. Until now only scripts, layouts and
+relationships kept these values. Fourteen more tables now carry them as raw
+columns `Modified_At`, `Modified_By`, `Modified_Account` and `Modifications`:
+[BaseTableCatalog](catalog-tables/BaseTableCatalog.md), [TableOccurrenceCatalog](catalog-tables/TableOccurrenceCatalog.md), [FieldsForTables](catalog-tables/FieldsForTables.md),
+[ValueListCatalog](catalog-tables/ValueListCatalog.md), [CustomFunctionsCatalog](catalog-tables/CustomFunctionsCatalog.md), [ExternalDataSourceCatalog](catalog-tables/ExternalDataSourceCatalog.md),
+[AccountsCatalog](catalog-tables/AccountsCatalog.md), [PrivilegeSetsCatalog](catalog-tables/PrivilegeSetsCatalog.md), [ExtendedPrivilegesCatalog](catalog-tables/ExtendedPrivilegesCatalog.md),
+[FileAccessAuthorizations](catalog-tables/FileAccessAuthorizations.md), [CustomMenuCatalog](catalog-tables/CustomMenuCatalog.md), [CustomMenuSetCatalog](catalog-tables/CustomMenuSetCatalog.md),
+[ThemeCatalog](catalog-tables/ThemeCatalog.md) and [BaseDirectoryCatalog](catalog-tables/BaseDirectoryCatalog.md). [ScriptCatalog](catalog-tables/ScriptCatalog.md) uses the same
+names now (`Modified_By`, `Modified_At`, plus the new `Modified_Account`) and
+keeps `Last_Modified_By` / `Last_Modified_At` as copies for one more schema
+version; [Layouts](catalog-tables/Layouts.md) gains `Modified_Account`. The new table [ObjectChangeMeta](catalog-tables/ObjectChangeMeta.md)
+collects the stamps across all types — one row per object, with a typed
+timestamp and a case-insensitive author key — and [CatalogChangeMeta](catalog-tables/CatalogChangeMeta.md) holds
+the stamps of the catalogs themselves (one per catalog and one per base table's
+field catalog), including the newest object stamp below each catalog. New P6
+check `v_check_change_meta`: objects without a stamp, unreadable timestamps and
+duplicate keys are warnings; stamps far after the import and the share of stamps
+in mass minutes are reported for information.
+
+What this means for existing installations:
+
+- The first import after the update is a full rebuild (schema version change)
+  and takes correspondingly longer; clustering is rebuilt with it. For a
+  single-file import, run a batch import first.
+- Custom queries that read `ScriptCatalog.Last_Modified_By` or
+  `Last_Modified_At` keep working; switch them to `Modified_By` /
+  `Modified_At` before the next schema version removes the copies.
+- Custom queries and dashboards that join two of these tables and select
+  `Modified_At`, `Modified_By`, `Modified_Account` or `Modifications` without a
+  table alias now fail with "Ambiguous reference to column name" — qualify the
+  column (`l.Modified_By`). The layout detail view of the web frontend needed
+  this fix itself.
+
+### 1.34.0
+
+Relationships carry their native FileMaker UUID (converter 2.36.0).
+[RelationshipCatalog](catalog-tables/RelationshipCatalog.md) reads `<Relationship>/<UUID>` into the new column
+`Rel_UUID` — constant across all predicate rows of a relationship — and keeps
+the change metadata of the same element as raw columns `Modified_At`,
+`Modified_By`, `Modified_Account` and `Modifications`. [ObjectCatalog](object-catalog/ObjectCatalog.md) and all
+relationship edges (`left_table`, `right_table`, `left_field`, `right_field`,
+`sort_field`, `sorts_by_valuelist`) are keyed on that UUID instead of the
+composite import key `rel_<Rel_ID>_<File_Name>`; the composite key remains only
+as fallback for exports without `<UUID>`, which no supported SaXML version
+produces. Identity is `(Object_UUID, File_Name)` as for every native type —
+clone files may share a relationship UUID. Two relationships with the same UUID
+inside one file are re-keyed like any other duplicate
+([UUID healing](UUID%20Healing%20and%20Duplicate%20Census.md), discriminator `rel_id=<n>`).
+The relationship detail view now shows the real UUID (it showed a key of the
+form `<Rel_ID>_<File_Name>`), and searching a relationship's FileMaker UUID
+finds it. New P6 check `v_check_relationship_uuid`.
+
+What this means for existing installations:
+
+- The first import after the update is a full rebuild (schema version change)
+  and takes correspondingly longer; clustering is rebuilt with it. For a
+  single-file import, run a batch import first — a single-file run against the
+  old catalog stops and asks for it.
+- Custom queries and dashboards that build `'rel_' || Rel_ID || '_' || File_Name`
+  no longer match [ObjectCatalog](object-catalog/ObjectCatalog.md) or [ObjectLinks](object-catalog/ObjectLinks.md). Use
+  `RelationshipCatalog.Rel_UUID`, or join `ObjectCatalog` on
+  `Object_Type = 'Relationship' AND Object_ID = Rel_ID AND File_Name = …`.
+- Saved links to relationships (`/object/rel_…`) no longer resolve. Open the
+  relationship again through the search (by name or by its UUID).
+
+Converter 2.37.0 (no DDL) makes every chunked import build the same catalog as
+an unsplit run. Where the chunks of a file are written into one database one
+after the other — `--split` on the classic path and the single-file import —
+later chunks reset results of the main chunk: [FileOptionsCatalog](catalog-tables/FileOptionsCatalog.md) lost its
+row (and with it the `auto_login_account` and `default_layout` edges), the
+duplicate census counted no records, and the original ↔ replacement mapping of
+[UUID healing](UUID%20Healing%20and%20Duplicate%20Census.md) stayed empty. Each chunk now
+writes only the tables of its own catalog. A turbo batch without sub-chunking
+(`FM_SUBCHUNK=0`) lost every layout; the turbo engine now always gives the
+layout catalog a chunk of its own. An incremental import (`--changed-only`)
+clears the census details of every catalog it reads again, not only those of
+scripts. Two new P6 checks report catalogs that still carry such gaps, both as
+warnings with a re-import hint: `v_check_census_integrity` (a catalog holds more
+rows than the census counted, or has no census row) and
+`v_check_file_options_coverage` (a file without a [FileOptionsCatalog](catalog-tables/FileOptionsCatalog.md) row).
+
+What this means for existing installations:
+
+- Catalogs built by the standard batch import (command line or web frontend)
+  did not lose rows. The first import after the update converts every file
+  again because the converter version changed; that also removes outdated
+  census details an earlier incremental import may have left.
+- Files last imported with `--split`, as a single file or with `FM_SUBCHUNK=0`
+  are repaired by that full conversion. A single-file import repairs only its
+  own file; the two new checks name every file that is still affected.
+
 ### 1.33.0
 
 Button and popover-button labels (converter 2.33.0). [LayoutObjects](catalog-tables/LayoutObjects.md) reads
@@ -78,6 +263,13 @@ holds the base table, found through the base table's UUID, the file names in the
 data source's path and its name. When that file is not part of the import, the
 anchor stays unresolved without an edge and without a finding (new P6 check
 `v_check_label_anchor_external`).
+Converter 2.35.0 (no DDL) links custom-menu items to the scripts they run: an
+item whose action performs a script gets the edge `triggers_script` with the
+subrole `menu_action`, so a script started only from a custom menu no longer
+looks unused. The target is found through the script ID in the file the data
+source names, because a cross-file reference carries a proxy UUID. Items with
+a constant overridden title are named after it. New P6 checks
+`v_check_menu_action_unresolved` and `v_report_menu_action_unlinked`.
 
 ### 1.32.0
 

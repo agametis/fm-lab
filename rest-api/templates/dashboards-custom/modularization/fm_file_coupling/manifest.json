@@ -20,9 +20,10 @@
     {
       "id": "coupling",
       "source": "bundle:data/coupling.sql",
-      "params": {
-        "limit": 300
-      }
+      "pageSize": 300,
+      "pageParam": "coupling_page",
+      "searchParam": "coupling_q",
+      "sortParam": "coupling_sort"
     },
     {
       "id": "by_role",
@@ -34,16 +35,18 @@
     {
       "id": "coupling_details",
       "source": "bundle:data/coupling_details.sql",
-      "params": {
-        "limit": 300
-      }
+      "pageSize": 300,
+      "pageParam": "details_page",
+      "searchParam": "details_q",
+      "sortParam": "details_sort"
     },
     {
       "id": "external_sources",
       "source": "bundle:data/external_sources.sql",
-      "params": {
-        "limit": 40
-      }
+      "pageSize": 40,
+      "pageParam": "sources_page",
+      "searchParam": "sources_q",
+      "sortParam": "sources_sort"
     }
   ],
   "params": [

@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "ファイル表示",
-    "description": "ファイルごとの詳細ビュー：メタデータ、ファイルオプション、オブジェクトの KPI、およびトリガされたスクリプト／開始レイアウト／ログインアカウント。"
+    "description": "ファイルごとの詳細ビュー：メタデータ、ファイルオプション、オブジェクト指標、カタログごとの変更スタンプ、トリガされたスクリプト / 開始レイアウト / ログインアカウント。"
   },
   "layout": {
     "file_not_found.props.title": "ファイルが見つかりません",
@@ -14,6 +14,11 @@
     "file_metrics_kpistrip.props.items[4].label": "最終インポート",
     "file_metrics_kpistrip.props.items[5].label": "最小バージョン",
     "file_size_kpistrip.props.items[0].label": "ファイルサイズ",
+    "file_change_kpistrip.props.items[0].label": "最終デザイン変更",
+    "file_change_kpistrip.props.items[1].label": "変更者",
+    "file_change_kpistrip.props.items[2].label": "最終一括変更",
+    "file_change_kpistrip.props.items[3].label": "一括イベント",
+    "file_change_kpistrip.props.items[4].label": "個別変更 %",
     "file_settings_list.props.items[0].label": "自動ログイン",
     "file_settings_list.props.items[1].label": "資格情報を保存",
     "file_settings_list.props.items[2].label": "サインインフィールド",
@@ -31,6 +36,17 @@
     "file_object_counts_kpistrip.props.items[6].label": "値一覧",
     "file_object_counts_kpistrip.props.items[7].label": "カスタム関数",
     "file_object_counts_kpistrip.props.items[8].label": "変数",
+    "file_catalog_changes.props.title": "カタログごとの変更",
+    "file_catalog_changes_md.props.content": "各オブジェクトは**最後**の変更スタンプのみを保持します。*最終個別変更*には一括イベント（移行、貼り付け、ツール実行）と技術的な作成者は含まれません。カタログのスタンプは独自の規則に従い、カタログ内のオブジェクトが保存されるたびにカウンタが増えます。時刻は編集したクライアントのローカル時刻です。",
+    "file_change_trend.props.label": "月ごとの個別変更 (データ時点までの直近 12 か月)",
+    "file_catalog_changes_table.props.columns[0].label": "カタログ",
+    "file_catalog_changes_table.props.columns[1].label": "最終個別変更",
+    "file_catalog_changes_table.props.columns[2].label": "ユーザ",
+    "file_catalog_changes_table.props.columns[3].label": "カタログスタンプ",
+    "file_catalog_changes_table.props.columns[4].label": "カウンタ",
+    "file_catalog_changes_table.props.columns[5].label": "オブジェクト",
+    "file_catalog_changes_table.props.columns[6].label": "一括イベント内",
+    "file_catalog_changes_table.props.columns[7].label": "最終編集後にフィールド削除",
     "file_triggers.props.title": "トリガされたスクリプト",
     "file_triggers_table.props.columns[0].label": "イベント",
     "file_triggers_table.props.columns[1].label": "スクリプト",

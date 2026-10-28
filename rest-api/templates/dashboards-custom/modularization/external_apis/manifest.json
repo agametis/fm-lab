@@ -23,9 +23,7 @@
     {
       "id": "url_details",
       "source": "bundle:data/url_details.sql",
-      "params": {
-        "limit": 200
-      }
+      "pageSize": 200
     },
     {
       "id": "url_comment_counts",
@@ -38,9 +36,10 @@
     {
       "id": "url_hosts",
       "source": "bundle:data/url_hosts.sql",
-      "params": {
-        "limit": 200
-      }
+      "pageSize": 200,
+      "pageParam": "hosts_page",
+      "searchParam": "hosts_q",
+      "sortParam": "hosts_sort"
     }
   ],
   "params": [

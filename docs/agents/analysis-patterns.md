@@ -30,18 +30,23 @@ start?", "escalating calls", "does this recurse?", symptom entries like
 **Procedure:**
 1. **Entry points are three roles, not one.** Collect callers via
    `ObjectLinks.Link_Role IN ('calls_script', 'trigger_script', 'triggers_script')`
-   — script→script calls, scripttrigger sources, and layout-object trigger
-   sources. Who only follows `calls_script` misses layout and object triggers.
-   (Structural containment `parent_script` is hierarchy, not a call.)
+   — script→script calls, scripttrigger sources, and the UI sources of
+   `triggers_script`: object/layout/file trigger mirrors, button actions and
+   custom-menu items (`Source_Type = 'CustomMenuItem'`, subrole `menu_action`,
+   converter 2.35.0). Who only follows `calls_script` misses triggers, buttons
+   and menu entries. (Structural containment `parent_script` is hierarchy, not
+   a call.)
 2. **Walk the chain** with a recursive CTE carrying a path array for cycle
    detection (no extension, no `CYCLE` clause needed).
-3. **The edge is context-free.** `ObjectLinks` has *no step anchor* and
-   `Link_Subrole` is NULL for all three roles — the edge cannot tell you which
-   step calls, whether it is `Perform Script` (Step_ID 1), `Perform Script on
-   Server` (164) or PSoS-with-callback (210), nor whether the call sits inside
-   a loop or under a condition. For execution context use the **step-based
-   second path**: `v_script_block_tree WHERE Step_ID IN (1, 164, 210)` (loop/If
-   depth per call site), callee resolved separately.
+3. **The edge has no step anchor.** `ObjectLinks` cannot tell you which step
+   calls, nor whether the call sits inside a loop or under a condition.
+   `Link_Subrole` only classifies the call: on `calls_script` NULL = ordinary
+   Perform Script, `on_server` / `on_server_callback` = PSoS (Step_ID 164 /
+   210), `MBS:FM.RunScript` = plugin-mediated; on `triggers_script` the trigger
+   event (e.g. `OnObjectSave`) or the UI action `button_action` /
+   `menu_action`; `trigger_script` has none. For execution context use the
+   **step-based second path**: `v_script_block_tree WHERE Step_ID IN (1, 164,
+   210)` (loop/If depth per call site), callee resolved separately.
 4. Step 164/210 marks a **server boundary** — the callee subtree runs
    server-side (relevant for the `platform-context` pattern).
 

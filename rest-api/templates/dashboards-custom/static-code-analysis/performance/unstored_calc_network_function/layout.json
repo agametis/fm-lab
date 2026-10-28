@@ -48,7 +48,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Unstored calculation with host round trip"
+          "title": "Unstored calculation with host round trip",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -62,6 +63,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file, table or field…",
               "columns": [
                 {

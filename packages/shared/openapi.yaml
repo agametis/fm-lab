@@ -123,7 +123,9 @@ paths:
             ignored, any inner `%` disables identity matching):
             - a FileMaker UUID (`8-4-4-4-12`, case-insensitive; `{…}`, quotes and
               `urn:uuid:` are tolerated) or a synthetic 32-hex fm-lab UUID,
-            - a composite import key (`part_…`, `rel_…`, `trig_…`, `paste_…`),
+            - a composite import key (`part_…`, `trig_…`, `paste_…`; `rel_…` only for
+              a relationship from an export without `<UUID>` — relationships
+              otherwise match by their FileMaker UUID),
             - `id:<n>` — the numeric FileMaker ID, which is unique only per file.
               Without `type` it searches the per-file-unique types; with `type`
               also `field` (unique per table), `builtinfunction` (Function-ID) and
@@ -134,6 +136,17 @@ paths:
           schema:
             $ref: '#/components/schemas/ObjectType'
         - $ref: '#/components/parameters/FileFilter'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [modified]
+          description: |
+            `modified` — order by the object's own change stamp, newest first;
+            objects without a stamp of their own (script steps, layout objects,
+            built-ins, …) come last. Results then carry `Modified_At`. Without
+            `sort` the result order is unchanged.
+        - $ref: '#/components/parameters/ModifiedSince'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Format'
@@ -164,6 +177,7 @@ paths:
           schema:
             $ref: '#/components/schemas/ObjectType'
         - $ref: '#/components/parameters/FileFilter'
+        - $ref: '#/components/parameters/ModifiedSince'
         - $ref: '#/components/parameters/Format'
         - $ref: '#/components/parameters/Debug'
         - $ref: '#/components/parameters/Meta'
@@ -244,6 +258,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReferencesResponse'
+
+  /references/candidates:
+    get:
+      summary: Get reference candidates (types this object could reference but does not)
+      description: >-
+        Evaluates the curated candidate matrix for one focus object. A candidate is
+        a direction (`in` = incoming, `out` = outgoing), a group of counterpart
+        types answering the same question, and a set of link roles. It is met as
+        soon as one edge in that direction connects the focus with a type of the
+        group through one of the roles — role-exact, not type-exact. For layouts
+        the outgoing candidates also evaluate the layout's own layout objects
+        (status `indirect`). Candidates are gated by the focus subtype
+        (LayoutObject control type, variable scope) and dropped when none of
+        their counterpart types exists in the solution (`meta.suppressed`).
+        "Missing" always means "no statically resolvable reference", never
+        "unused".
+      tags: [References]
+      parameters:
+        - name: uuid
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Object UUID
+        - $ref: '#/components/parameters/CloneFile'
+      responses:
+        '200':
+          description: Candidate statuses of the focus object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferenceCandidatesResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /query:
     get:
@@ -782,6 +830,17 @@ components:
         type: string
       description: Filter by filename
 
+    ModifiedSince:
+      name: modified_since
+      in: query
+      schema:
+        type: string
+        pattern: '^\d{4}-\d{2}-\d{2}$'
+      description: |
+        Keep only objects whose own change stamp is on or after this day
+        (`YYYY-MM-DD`, local time of the editing client). Objects without a stamp
+        of their own drop out. Results then carry `Modified_At`.
+
     CloneFile:
       name: file
       in: query
@@ -959,6 +1018,14 @@ components:
             Zero-based position of the step within its script (ScriptStep
             results only). The UI displays it 1-based to match FileMaker's
             script editor numbering.
+        Modified_At:
+          type: string
+          nullable: true
+          description: |
+            Own change stamp of the object (`YYYY-MM-DD HH:MM:SS`, local time of
+            the editing client, no time zone). Only present when `/search` runs
+            with `sort=modified` or `modified_since`; null for objects without a
+            stamp of their own.
         Matched_Values:
           type: string
           nullable: true
@@ -1124,6 +1191,95 @@ components:
                       type: array
                       items:
                         $ref: '#/components/schemas/ObjectReference'
+
+    ReferenceCandidate:
+      type: object
+      required: [direction, types, roles, status, direct, indirect]
+      properties:
+        direction:
+          type: string
+          enum: [in, out]
+          description: '`in` = incoming (the counterpart references the focus), `out` = outgoing'
+        types:
+          type: array
+          items:
+            type: string
+          description: Counterpart type group — one hit on any type meets the candidate
+        roles:
+          type: array
+          items:
+            type: string
+          description: Candidate link roles (verified against LinkRoleRegistry)
+        status:
+          type: string
+          enum: [present, indirect, missing]
+          description: >-
+            `present` = direct reference with a candidate role; `indirect` = met
+            only through aggregate members (a layout's own layout objects);
+            `missing` = neither
+        direct:
+          type: integer
+          description: Distinct counterpart objects reached directly
+        indirect:
+          type: integer
+          description: Distinct counterpart objects reached through aggregate members
+        aggregate:
+          type: boolean
+          description: True when the candidate also evaluates the aggregate members (`meta.aggregate`)
+        via:
+          type: string
+          description: Aggregate member type (only when `indirect` > 0)
+        caveat:
+          type: string
+          enum: [scriptCallers, toFieldAccess]
+          description: >-
+            Known blind spot of the candidate: `scriptCallers` = dynamic calls
+            (Perform Script by name, fmp URLs, external calls) are not resolved;
+            `toFieldAccess` = field access through a table occurrence creates no
+            edge to the occurrence
+
+    ReferenceCandidatesResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReferenceCandidate'
+            meta:
+              type: object
+              properties:
+                focus_type:
+                  type: string
+                focus_subtype:
+                  type: string
+                  nullable: true
+                  description: LayoutObject control type or variable scope; null when ungated
+                aggregate:
+                  type: string
+                  nullable: true
+                  description: Aggregate member type evaluated for outgoing candidates
+                aggregate_members:
+                  type: integer
+                  description: Number of aggregate members (only for aggregating focus types)
+                suppressed:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      direction:
+                        type: string
+                        enum: [in, out]
+                      types:
+                        type: array
+                        items:
+                          type: string
+                      reason:
+                        type: string
+                        enum: [subtype, not_in_solution, roles_unregistered]
+                execution_time_ms:
+                  type: integer
 
     QueryRequest:
       type: object

@@ -31,8 +31,8 @@ Rule of thumb: *what it does* → fm-summarize; *what it means* → fm-analyze. 
 1. **Identify** the object unambiguously (selection list on ambiguity — identical to fm-summarize).
 2. **Load the core data** — for scripts also the leading comment steps, which developers often use as a header; for fields the comment, the most direct source of purpose there is.
 3. **Collect semantic signals** — variables set and read ([VariableUsages](../schema/catalog-tables/VariableUsages.md)) and where else they appear; the backward call chain (who calls this, and who calls them — the business trigger) and the forward chain (what it touches); layout and object triggers ([ScriptTriggers](../schema/catalog-tables/ScriptTriggers.md)); touched fields with their table names and comments; layouts navigated to and their context tables; for custom functions, the callers.
-4. **Evaluate** — recurring terms in names (invoicing? master data? permissions?), the verbs in the script name and steps, the read/write balance, the trigger heuristic (called only from a trigger → a reaction, not a workflow), the reuse pattern (many callers across modules → a utility; one caller → a workflow step), and inconsistencies between name and behaviour.
-5. **Report** — presumed purpose, business context (module, role, trigger source), the signals that led there, the call chain in both directions, a table of touched objects, noteworthy observations and open questions that only the developer can answer.
+4. **Evaluate** — recurring terms in names (invoicing? master data? permissions?), the verbs in the script name and steps, the read/write balance, the trigger heuristic (called only from a trigger → a reaction, not a workflow), the reuse pattern (many callers across modules → a utility; one caller → a workflow step), inconsistencies between name and behaviour, and the lifecycle from the change stamp (many saves and a recent change → an active area; few saves and an old stamp → stable or abandoned, never concluded from age alone).
+5. **Report** — a *Last modified* line, presumed purpose, business context (module, role, trigger source, lifecycle), the signals that led there, the call chain in both directions, a table of touched objects, noteworthy observations and open questions that only the developer can answer.
 
 Interpretations are always marked as such — *presumably*, *indicates*, *suggests* in your language — and separated from what the catalog states as fact. Honest uncertainty is preferred over a confident wrong module.
 
@@ -51,6 +51,7 @@ Short mode (`--short` or words like *briefly*) yields one or two paragraphs with
 
 - **Without DDR-Info** the resolved step texts and calculation chunks are missing, so the semantic signals are weaker; the report states this limitation.
 - **Symptoms first.** When the question is really *"why does X hang / misbehave?"*, the skill proposes the matching [Analysis Tests](../Wiki/Analysis%20Tests.md) via [fm-test](Skill%20fm-test.md) alongside the free-form analysis — tests deliver reproducible findings the analysis can then interpret.
+- **Age context.** The last change, its author and the number of saves come from [ObjectChangeMeta](../schema/catalog-tables/ObjectChangeMeta.md), with the age counted from the data state. A stamp from a mass event carries no age signal — the report says so instead of calling the object young.
 - **Object identity** in the report header (`UUID` + `File`) is the context token the navigation skills read; "open this in FileMaker" works directly afterwards.
 
 ## See also

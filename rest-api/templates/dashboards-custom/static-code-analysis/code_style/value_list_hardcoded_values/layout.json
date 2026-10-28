@@ -43,7 +43,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Value list with hard-coded values"
+          "title": "Value list with hard-coded values",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -57,6 +58,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file or value list…",
               "columns": [
                 {

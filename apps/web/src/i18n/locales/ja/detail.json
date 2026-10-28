@@ -145,6 +145,17 @@
     "clearRolesLabel": "ロールをリセット",
     "clearRolesTitle": "すべてのロールフィルタを解除"
   },
+  "referencesMissing": {
+    "label": "参照なし:",
+    "indirectLabel": "レイアウトオブジェクト経由:",
+    "emptyLead": "可能な参照:",
+    "tooltipRoles": "可能なロール: {{roles}}",
+    "tooltipAggregate_one": "(レイアウトオブジェクトを含む)",
+    "tooltipAggregate_other": "({{count}} 個のレイアウトオブジェクトを含む)",
+    "caveatScriptCallers": "静的に解決できる呼び出しのみ。対象外: 名前による Perform Script、fmp URL、外部からの呼び出し。",
+    "caveatToFieldAccess": "この TO を介したフィールドアクセスでは TO への参照は作成されません。",
+    "aria": "参照のないオブジェクトタイプ"
+  },
   "hierarchyTree": {
     "ariaLabel": "オブジェクト階層",
     "usedBy": "使用元 ({{count}})",
@@ -199,6 +210,10 @@
         "short": "Popover",
         "long": "ポップオーバータイトル"
       },
+      "active_segment": {
+        "short": "セグメント",
+        "long": "アクティブセグメント"
+      },
       "script_trigger_parameter": {
         "short": "Trigger",
         "long": "スクリプトトリガパラメータ"
@@ -226,6 +241,10 @@
       "menu_install": {
         "short": "Install",
         "long": "メニューインストール条件"
+      },
+      "menu_action": {
+        "short": "Menu",
+        "long": "メニューアクション"
       }
     }
   },
@@ -237,9 +256,13 @@
     "sortName": "名前",
     "sortType": "種類",
     "sortFile": "ファイル",
+    "sortModified": "最終更新",
     "groupNone": "なし",
     "groupType": "種類",
-    "groupFile": "ファイル"
+    "groupFile": "ファイル",
+    "modifiedSinceLabel": "更新日以降",
+    "modifiedSinceHint": "自身の変更スタンプがこの日以降のオブジェクトのみ — スクリプトステップ、レイアウトオブジェクト、計算式には自身のスタンプがありません",
+    "modifiedSinceClear": "リセット"
   },
   "fieldViewer": {
     "ariaLabel": "フィールドの詳細",
@@ -327,7 +350,8 @@
     "uuidMatch": "UUID で一致",
     "healedUuidMatch": "UUID で一致 (重複)",
     "healedUuidTitle": "FileMaker はこのオブジェクトを検索した UUID で管理しています。エクスポート内でこの UUID が重複していたため、カタログでは代替 UUID で保持されています。",
-    "idMatch": "ID {{id}} で一致"
+    "idMatch": "ID {{id}} で一致",
+    "modifiedTooltip": "{{age}}に更新 — 編集したクライアントのローカル時刻（タイムゾーンなし）"
   },
   "scriptSearchFilter": {
     "searchAria": "参照を検索",
@@ -422,13 +446,75 @@
       "menuLabel": "アクション",
       "searchPlaceholder": "ソリューションを絞り込み…",
       "noMatches": "フィルターに一致するソリューションがありません。"
+    },
+    "changeAuthors": {
+      "heading": "変更メタデータの作成者",
+      "desc": "同一人物の表記ゆれをまとめ、表示名を設定し、技術的な作成者をマークします。エイリアスはソリューションと一緒に保存され、再構築後も残り、「最終更新」行にすぐ反映されます。",
+      "solution": "ソリューション：{{name}}。",
+      "loading": "作成者を読み込み中 …",
+      "empty": "このカタログにはまだ変更メタデータがありません — 現在のバージョンでソリューションを再インポートしてください。",
+      "noSidecar": "このソリューションの注釈データベースを利用できません（機能が無効またはロック中）— エイリアスを変更できません。",
+      "colUser": "ユーザ",
+      "colUserTitle": "すべての表記のユーザ名",
+      "colStamps": "スタンプ",
+      "colLast": "最終変更",
+      "colPerson": "同一人物",
+      "colDisplay": "表示名",
+      "colTechnical": "技術",
+      "colActions": "操作",
+      "accountsTitle": "サインイン中のアカウント",
+      "stampsTitle": "一括イベント以外の個別変更 {{single}} 件 · {{files}} ファイル",
+      "ownPerson": "— 自身のエントリ —",
+      "technicalAutoYes": "自動（はい）",
+      "technicalAutoNo": "自動（いいえ）",
+      "technicalAuto": "自動",
+      "technicalYes": "はい",
+      "technicalNo": "いいえ",
+      "save": "保存",
+      "reset": "リセット",
+      "orphanHeading": "現在のカタログに一致するユーザがいないエイリアス",
+      "orphanDelete": "削除"
     }
   },
   "objectHeader": {
     "noName": "(名前なし)",
     "source": "ソース:",
     "relationshipGraphLink": "↗ リレーショングラフ",
-    "copyUuidAria": "UUID をクリップボードにコピー"
+    "copyUuidAria": "UUID をクリップボードにコピー",
+    "change": {
+      "modified": "最終更新",
+      "containerModified": "コンテナの最終更新",
+      "timeTooltip": "{{age}} — 編集したクライアントのローカル時刻（タイムゾーンなし）",
+      "unknownAuthor": "不明なユーザ",
+      "authorTooltip": "最後に編集した FileMaker ユーザ名",
+      "accountTooltip": "サインイン中のアカウント",
+      "countTooltip": "オブジェクト作成以降の保存回数",
+      "modifications_one": "{{count}} 回の変更",
+      "modifications_other": "{{count}} 回の変更",
+      "quotedName": "「{{name}}」",
+      "technical": {
+        "tool": "ツール",
+        "toolTooltip": "開発者ではなくツール（FileMaker Data Migration Tool）が記録",
+        "runtime": "実行時",
+        "runtimeTooltip": "エンドユーザが実行時に変更（WebDirect セッション）— 開発作業ではありません",
+        "other": "技術",
+        "otherTooltip": "作成者エイリアスで技術的な作成者としてマーク"
+      },
+      "bulk": {
+        "badge": "一括イベント {{date}}",
+        "kind": {
+          "mass_action": "一括操作：多数のオブジェクトが同時に記録（移行、検索と置換、新規ファイル）",
+          "paste_import": "貼り付け / インポート：まとめて貼り付けまたはインポートされたオブジェクト",
+          "tool": "ツールの実行（FileMaker Data Migration Tool）"
+        },
+        "scopeFile": "1 つのファイル内",
+        "scopeSolution_one": "{{count}} 個のファイルにまたがる",
+        "scopeSolution_other": "{{count}} 個のファイルにまたがる",
+        "objects_one": "{{count}} 個のオブジェクト",
+        "objects_other": "{{count}} 個のオブジェクト",
+        "hint": "このスタンプはこの操作を示しており、オブジェクト個別の編集ではありません。"
+      }
+    }
   },
   "scriptLine": {
     "expand": "展開",
@@ -660,7 +746,6 @@
     "viewTable": "表ビュー",
     "baseTheme": "ベーステーマ",
     "inLayoutMenus": "レイアウトメニューに表示",
-    "lastModified": "最終更新",
     "triggersHeading": "スクリプトトリガ",
     "noTriggers": "スクリプトトリガなし",
     "yes": "はい",
@@ -731,6 +816,7 @@
       "button_action": "ボタンのアクション",
       "panel_title": "パネルのタイトル",
       "popover_title": "ポップオーバーのタイトル",
+      "active_segment": "アクティブセグメント",
       "display_calculation": "表示計算式",
       "merge_text": "解決済みマージアンカー",
       "chart_series": "グラフ系列",

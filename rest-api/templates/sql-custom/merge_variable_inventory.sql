@@ -4,13 +4,17 @@
 -- @icon: variable
 -- @category: Layouts
 -- @display: table
--- @params: file (optional), limit (optional, default 500)
+-- @page_param: page
+-- @search_param: q
+-- @sort_param: sort
+-- @page_size: 500
+-- @params: file (optional), page (optional), page_size (optional, default 500), q (optional), sort (optional), dir (optional)
 -- @click_action: openObject
 -- @click_args: uuid={{_object_uuid}}&ref={{_nav_uuid}}&file={{file_name}}
 -- @row_action: openObject
 -- @row_action_args: uuid={{_nav_uuid}}&type=Layout&file={{file_name}}&ref={{_object_uuid}}
 -- @row_action_label: Show in layout
--- @output_format: file_name, layout_name, object_name, variable, _message, _row_total
+-- @output_format: file_name, layout_name, object_name, variable, _message, _row_total, _page, _page_size
 -- @object_types: Layout
 -- @output_types: count, inventory-table
 -- @scope: solution, file, object, object-list, cluster
@@ -30,7 +34,7 @@
 -- local <<$x>>, or an MBS $$$superglobal — stay visible through the prefix
 -- the `variable` column carries anyway. `_row_total` still names the
 -- truncation when LIMIT cuts the list.
-WITH base AS (
+WITH result AS MATERIALIZED (
     SELECT
         ol.Source_File AS file_name,
         ly.L_UUID AS _nav_uuid,
@@ -51,9 +55,33 @@ WITH base AS (
       AND (getvariable('file') IS NULL OR ol.Source_File = getvariable('file'))
       AND (getvariable('scope_uuids') IS NULL
            OR ly.L_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
+),
+-- >>> shared paging search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) <> 'uuid'))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging search block
+filtered AS (
+    SELECT * FROM searched
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT b.*,
-    (SELECT count(*) FROM base) AS _row_total
-FROM base b
-ORDER BY file_name, layout_name, object_name, variable
-LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.*,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ file_name, layout_name, object_name, variable, _object_uuid, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

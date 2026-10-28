@@ -101,7 +101,23 @@
     "custom": "カスタム",
     "ok": "問題なし",
     "warnings": "警告あり",
-    "errors": "エラーあり"
+    "errors": "エラーあり",
+    "Mass event": "一括イベント",
+    "Mass action": "一括操作",
+    "Paste / import": "貼り付け / インポート",
+    "Tool run": "ツールの実行",
+    "Technical author": "技術的な作成者",
+    "Solution-wide": "ソリューション全体",
+    "Single file": "単一ファイル",
+    "Large session": "大規模セッション",
+    "Runtime change": "実行時の変更",
+    "≤ 30 days": "30 日以内",
+    "≤ 90 days": "90 日以内",
+    "≤ 1 year": "1 年以内",
+    "≤ 2 years": "2 年以内",
+    "> 2 years": "2 年超",
+    "Unknown": "不明",
+    "No stamp": "スタンプなし"
   },
   "semanticNames": {
     "structureLabel": "構造",
@@ -183,5 +199,42 @@
   "featured": {
     "ruleCount_one": "{{count}} 件のルール",
     "ruleCount_other": "{{count}} 件のルール"
+  },
+  "select": {
+    "selectedCount": "{{count}} 件選択",
+    "clear": "選択を解除"
+  },
+  "chart": {
+    "noData": "この期間のデータはありません。",
+    "changes_one": "{{formatted}} 件の変更",
+    "changes_other": "{{formatted}} 件の変更",
+    "actions_one": "{{formatted}} 件の操作",
+    "actions_other": "{{formatted}} 件の操作",
+    "massEvent": "一括イベント",
+    "massEvents": "一括イベント",
+    "massEventsIn_one": "一括イベント {{count}} 件 · {{objects}} オブジェクト",
+    "massEventsIn_other": "一括イベント {{count}} 件 · {{objects}} オブジェクト",
+    "notCounted": "(集計対象外)",
+    "other_one": "その他 ({{formatted}})",
+    "other_other": "その他 ({{formatted}})",
+    "clickHint": "クリックするとこれらの変更を一覧に表示します",
+    "heatmap": {
+      "aria": "アクティビティマップ",
+      "less": "少",
+      "more": "多",
+      "none": "変更なし",
+      "summaryDay_one": "アクティブな日 {{formatted}} 日 · 1 日最大 {{max}}",
+      "summaryDay_other": "アクティブな日 {{formatted}} 日 · 1 日最大 {{max}}",
+      "summaryHour_one": "アクティブな時間 {{formatted}} 時間 · 1 時間最大 {{max}}",
+      "summaryHour_other": "アクティブな時間 {{formatted}} 時間 · 1 時間最大 {{max}}",
+      "summaryWeek_one": "アクティブな週 {{formatted}} 週 · 1 週最大 {{max}}",
+      "summaryWeek_other": "アクティブな週 {{formatted}} 週 · 1 週最大 {{max}}"
+    },
+    "series": {
+      "aria": "時系列の変更",
+      "legend": "系列",
+      "toggleHint": "クリック: 表示/非表示 · Shift または Alt/Option + クリック: この系列のみ表示",
+      "reset": "すべての系列"
+    }
   }
 }

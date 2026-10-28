@@ -101,7 +101,23 @@
     "custom": "Personalizado",
     "ok": "Correcto",
     "warnings": "Advertencias",
-    "errors": "Errores"
+    "errors": "Errores",
+    "Mass event": "Evento masivo",
+    "Mass action": "Acción masiva",
+    "Paste / import": "Pegar / importar",
+    "Tool run": "Ejecución de herramienta",
+    "Technical author": "Autor técnico",
+    "Solution-wide": "En toda la solución",
+    "Single file": "Un solo archivo",
+    "Large session": "Sesión grande",
+    "Runtime change": "Cambio en ejecución",
+    "≤ 30 days": "≤ 30 días",
+    "≤ 90 days": "≤ 90 días",
+    "≤ 1 year": "≤ 1 año",
+    "≤ 2 years": "≤ 2 años",
+    "> 2 years": "> 2 años",
+    "Unknown": "Desconocida",
+    "No stamp": "Sin marca"
   },
   "semanticNames": {
     "structureLabel": "Estructura",
@@ -183,5 +199,42 @@
   "featured": {
     "ruleCount_one": "{{count}} regla",
     "ruleCount_other": "{{count}} reglas"
+  },
+  "select": {
+    "selectedCount": "{{count}} seleccionados",
+    "clear": "Borrar selección"
+  },
+  "chart": {
+    "noData": "No hay datos en este periodo.",
+    "changes_one": "{{formatted}} cambio",
+    "changes_other": "{{formatted}} cambios",
+    "actions_one": "{{formatted}} acción",
+    "actions_other": "{{formatted}} acciones",
+    "massEvent": "Evento masivo",
+    "massEvents": "Eventos masivos",
+    "massEventsIn_one": "{{count}} evento masivo · {{objects}} objetos",
+    "massEventsIn_other": "{{count}} eventos masivos · {{objects}} objetos",
+    "notCounted": "(no contado)",
+    "other_one": "Otros ({{formatted}})",
+    "other_other": "Otros ({{formatted}})",
+    "clickHint": "Haz clic para mostrar estos cambios en la lista",
+    "heatmap": {
+      "aria": "Mapa de actividad",
+      "less": "Menos",
+      "more": "Más",
+      "none": "Sin cambios",
+      "summaryDay_one": "{{formatted}} día activo · máx. {{max}} por día",
+      "summaryDay_other": "{{formatted}} días activos · máx. {{max}} por día",
+      "summaryHour_one": "{{formatted}} hora activa · máx. {{max}} por hora",
+      "summaryHour_other": "{{formatted}} horas activas · máx. {{max}} por hora",
+      "summaryWeek_one": "{{formatted}} semana activa · máx. {{max}} por semana",
+      "summaryWeek_other": "{{formatted}} semanas activas · máx. {{max}} por semana"
+    },
+    "series": {
+      "aria": "Cambios a lo largo del tiempo",
+      "legend": "Series",
+      "toggleHint": "Clic: mostrar u ocultar · Mayús o Alt/Opción + clic: mostrar solo esta serie",
+      "reset": "Todas las series"
+    }
   }
 }

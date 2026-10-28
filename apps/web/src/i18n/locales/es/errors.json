@@ -22,5 +22,13 @@
     "body": "No se pudo acceder a la API con este contexto de solución. Si la aplicación funcionaba antes de cambiar de solución, restablece la selección al valor predeterminado del servidor.",
     "action": "Restablecer selección",
     "dismiss": "Ocultar"
+  },
+  "storageVersion": {
+    "heading": "No se puede abrir el catálogo: las versiones de DuckDB no coinciden",
+    "body": "El catálogo de la solución «{{solution}}» fue escrito con DuckDB {{createdBy}} (versión de almacenamiento {{fileVersion}}). La API REST usa DuckDB {{apiVersion}} y solo puede leer las versiones de almacenamiento {{range}}.",
+    "fixNewer": "Solución: vuelva a importar el XML con la CLI de DuckDB {{apiLine}}.x, compatible con esta versión de fm-lab, o actualice fm-lab a una versión que admita DuckDB {{cliLine}}.",
+    "fixOlder": "Solución: vuelva a importar el XML con la CLI actual de DuckDB.",
+    "unknown": "desconocida",
+    "dismiss": "Ocultar"
   }
 }

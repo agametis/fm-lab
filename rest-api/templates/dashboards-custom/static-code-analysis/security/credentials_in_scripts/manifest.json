@@ -64,7 +64,8 @@
     },
     {
       "id": "credentials_findings",
-      "source": "bundle:data/credentials_findings.sql"
+      "source": "bundle:data/credentials_findings.sql",
+      "pageSize": 500
     }
   ],
   "params": [
@@ -73,6 +74,12 @@
       "type": "string",
       "required": false,
       "description": "Optional file filter — derived from the app-level filter."
+    },
+    {
+      "name": "step",
+      "type": "string",
+      "required": false,
+      "description": "Optional chip filter on the step (If and Else If share one chip)."
     }
   ],
   "permissions": {

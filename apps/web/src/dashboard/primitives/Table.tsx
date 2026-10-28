@@ -6,6 +6,8 @@ import { formatTableCell, formatKpiValue } from './_format';
 import { translateCellValue } from './_cellTranslate';
 import { badgeToneClass, type BadgeTone } from './_badgeTone';
 import { useRowSearch } from './_useRowSearch';
+import { Pager } from './_Pager';
+import { parseFacets } from './_chipFacets';
 import { dispatchAction } from '../actions';
 import { isActionActive } from '../actionState';
 import { useSelection } from '../selectionContext';
@@ -25,6 +27,9 @@ const LIVE_STATE_ICON: Record<XmlConvertFileState, string> = {
   failed:    '⚠️',
 };
 
+/** Delay before a typed server-side search term goes into the URL. */
+const SEARCH_DEBOUNCE_MS = 300;
+
 interface ColumnSpec {
   field: string;
   label: string;
@@ -37,6 +42,13 @@ interface ColumnSpec {
   // Semantic colour per badge value, overriding the value-derived class
   // (see _badgeTone.ts). Only meaningful with `format: 'badge'`.
   badgeTone?: BadgeTone;
+  // Keep the cell on one line (timestamps, names) — the remaining columns
+  // absorb the width and wrap instead.
+  nowrap?: boolean;
+  // Server sort: the output column the SQL sorts by (default: `field`);
+  // `sortable: false` keeps a column header unclickable.
+  sortKey?: string;
+  sortable?: boolean;
 }
 
 interface ChipFilterGroup {
@@ -52,13 +64,19 @@ interface ChipFilterSpec {
   // Gruppen würde mehrfach erscheinen — vermeiden. Werte, die in keiner
   // Gruppe stehen, erhalten weiterhin einen eigenen Chip.
   groups?: ChipFilterGroup[];
+  // Server chips: a click writes the value into this URL param, the SQL filters
+  // the whole result, and the counts come from the convention column
+  // `_chip_facets` ({value: count} over the result before the chip). Works in
+  // client and server mode alike; `groups` apply to client chips only.
+  param?: string;
 }
 
 interface ChipOption {
   // Stabile ID des Chips. Bei Gruppen: "group:<label>", sonst der Wert selbst.
   id: string;
   label: string;
-  count: number;
+  // null = unknown: a server chip without rows carries no facets.
+  count: number | null;
   // Welche Feld-Werte filtert dieser Chip? Bei Einzel-Chip: [value], bei Gruppe: alle Mitglieder.
   values: string[];
 }
@@ -82,10 +100,34 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
   const highlightField = props.highlightField as string | undefined;
   const { selection, toggle } = useSelection();
   const selectedValue = selectionKey ? (selection[selectionKey] ?? null) : null;
+  // Server-side paging (opt-in via `pageParam`): the SQL sorts and pages, and
+  // reports the window in convention columns of its rows — `_row_total` (rows
+  // before paging), `_page` (effective 1-based page after clamping) and
+  // `_page_size`. The pager writes `pageParam` into the URL (page 1 drops it).
+  // Client-side sorting and search would only reorder or filter the loaded
+  // page, so a paged table does not sort and searches only through
+  // `searchParam` (a URL param the SQL filters on; the table then does not
+  // filter the returned rows again). Without `pageParam`, a
+  // `_row_total` above the loaded rows only names the cut-off of a
+  // LIMIT-capped result, as in AutoTable.
+  const pageParam = props.pageParam as string | undefined;
+  const searchParam = props.searchParam as string | undefined;
   // Sortierung ist Opt-in. Default false, damit Bestands-Dashboards mit
   // bewusster Reihenfolge (z.B. die führende "Alle"-Zeile in api_families)
   // ihre Sortierung nicht verlieren, sobald sie einen Sort-State bekämen.
-  const sortable = (props.sortable as boolean) ?? false;
+  const sortableProp = (props.sortable as boolean) ?? false;
+  // Server sort (opt-in via `sortParam`): a header click writes the column into
+  // the URL and the SQL sorts the whole result; the direction travels in
+  // `dirParam` (default `dir`, or `<sortParam>_dir` for any other name).
+  const sortParam = props.sortParam as string | undefined;
+  const dirParam = (props.dirParam as string | undefined)
+    ?? (sortParam ? (sortParam === 'sort' ? 'dir' : `${sortParam}_dir`) : undefined);
+  // `clientMode` (opt-in): while the whole result fits on one page and neither
+  // a sort nor a search term sits in the URL, the table sorts and searches the
+  // loaded rows locally — natural order, no request. Opt-in because a dashboard
+  // may share its search param with other datasets (the change lists filter
+  // their KPIs and charts by the same term), which a local search would not reach.
+  const clientModeOptIn = (props.clientMode as boolean) ?? false;
   const chipFilter = props.chipFilter as ChipFilterSpec | undefined;
   // Opt-in: Live-Markierung der XML-Konvertierung. `liveHighlightField` (z.B.
   // "filename") wird gegen die `file_start`/`file`-Dateinamen abgeglichen und
@@ -141,28 +183,75 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
     return () => ro.disconnect();
   }, [measureTable]);
   const rows = dataset?.data ?? [];
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const firstRow = rows[0] as Record<string, unknown> | undefined;
+  const rowTotal = toCount(firstRow?._row_total);
+  const paged = !!pageParam && rowTotal != null;
+  const pageSize = paged ? (toCount(firstRow?._page_size) ?? rows.length) : 0;
+  const page = paged ? Math.max(1, toCount(firstRow?._page) ?? 1) : 1;
+  const pageCount = paged && pageSize > 0 ? Math.max(1, Math.ceil((rowTotal as number) / pageSize)) : 1;
+  const truncated = rowTotal != null && rowTotal > rows.length;
+
+  // The scroll position stays where it is (as in AutoTable): the next click on
+  // the same pager goes on paging instead of hunting for a moved button.
+  const goToPage = (next: number) => {
+    if (!pageParam) return;
+    setSearchParams(prev => {
+      const n = new URLSearchParams(prev);
+      if (next <= 1) n.delete(pageParam);
+      else n.set(pageParam, String(next));
+      return n;
+    }, { replace: true });
+  };
+
+  // Client or server mode. Without `clientMode` a paged table always works on
+  // the server, as before. With it, a one-page result without a sort or search
+  // term in the URL stays local; anything else goes to the server.
+  const urlSort = sortParam ? searchParams.get(sortParam) : null;
+  const urlDir = dirParam ? searchParams.get(dirParam) : null;
+  const urlQuery = searchParam ? (searchParams.get(searchParam) ?? '') : '';
+  const multiPage = paged && pageCount > 1;
+  const localMode = clientModeOptIn && !!pageParam && !multiPage && !urlSort && urlQuery.trim() === '';
+  const serverSide = !!pageParam && !localMode;
+  const serverSort = serverSide && !!sortParam && !!dirParam;
+  const sortable = serverSide ? sortableProp && serverSort : sortableProp;
+  // Server chips (`chipFilter.param`) filter in the SQL and count the whole
+  // result; a client-side chip would count and filter just the loaded page, so
+  // it is off in server mode.
+  const chipParam = chipFilter?.param;
+  const chipsActive = !!chipFilter && (!serverSide || !!chipParam);
+  const facets = useMemo(
+    () => (chipParam ? parseFacets(firstRow?._chip_facets) : null),
+    [chipParam, firstRow],
+  );
 
   // Chip-Filter: Werte des konfigurierten Felds plus Counts, sortiert nach
   // Häufigkeit. Wird VOR der Volltextsuche angewendet, damit Counts und
   // Suchresultate konsistent bleiben. `chipValue` hält die Chip-ID (nicht den
-  // Roh-Wert), damit Gruppen-Chips eindeutig adressierbar sind.
-  const [chipValue, setChipValue] = useState<string | null>(null);
+  // Roh-Wert), damit Gruppen-Chips eindeutig adressierbar sind; ein Server-Chip
+  // steht in der URL, damit Reload und Deep-Link denselben Filter zeigen.
+  const [localChipValue, setLocalChipValue] = useState<string | null>(null);
+  const chipValue = chipParam ? searchParams.get(chipParam) : localChipValue;
   const chipOptions = useMemo<ChipOption[]>(() => {
-    if (!chipFilter) return [];
+    if (!chipFilter || !chipsActive) return [];
 
-    // 1) Roh-Counts pro Wert.
+    // 1) Roh-Counts pro Wert — bei Server-Chips aus den Facetten der ganzen Menge.
     const counts = new Map<string, number>();
-    for (const row of rows) {
-      const v = row[chipFilter.field];
-      if (v == null) continue;
-      const key = String(v);
-      counts.set(key, (counts.get(key) ?? 0) + 1);
+    if (facets) {
+      for (const [value, count] of Object.entries(facets)) counts.set(value, count);
+    } else {
+      for (const row of rows) {
+        const v = row[chipFilter.field];
+        if (v == null) continue;
+        const key = String(v);
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
     }
 
     // 2) Gruppen vorne anstellen, alle gruppierten Werte aus counts entfernen.
     const grouped = new Set<string>();
-    const groupChips: ChipOption[] = (chipFilter.groups ?? []).map(g => {
+    const groupChips: ChipOption[] = (chipParam ? [] : chipFilter.groups ?? []).map(g => {
       const sum = g.values.reduce((acc, v) => {
         grouped.add(v);
         return acc + (counts.get(v) ?? 0);
@@ -174,43 +263,110 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
     const singleChips: ChipOption[] = Array.from(counts.entries())
       .filter(([value]) => !grouped.has(value))
       .map(([value, count]) => ({ id: value, label: value, count, values: [value] }));
+    // An active server chip stays selectable when a search leaves no rows (and
+    // so no facets), so it can be cleared; its count is unknown then.
+    if (chipParam && chipValue != null && !counts.has(chipValue)) {
+      singleChips.push({ id: chipValue, label: chipValue, count: null, values: [chipValue] });
+    }
 
     // 4) Sortierung: alle Chips gemeinsam nach Count (desc), bei Tie alphabetisch.
     return [...groupChips, ...singleChips].sort(
-      (a, b) => b.count - a.count || a.label.localeCompare(b.label, lang),
+      (a, b) => (b.count ?? 0) - (a.count ?? 0) || a.label.localeCompare(b.label, lang),
     );
-  }, [rows, chipFilter, lang]);
+  }, [rows, chipFilter, lang, chipsActive, facets, chipParam, chipValue]);
+  // Count on the "all" chip: with facets their sum (the result before search and
+  // chip), otherwise the loaded rows — unknown for a server chip without rows.
+  const chipAllCount = facets
+    ? Object.values(facets).reduce((a, b) => a + b, 0)
+    : chipParam && rows.length === 0 ? null : rows.length;
+
+  const selectChip = (id: string | null) => {
+    if (!chipParam) {
+      setLocalChipValue(id);
+      return;
+    }
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (id === null) next.delete(chipParam);
+      else next.set(chipParam, id);
+      // A new chip starts on page 1.
+      if (pageParam) next.delete(pageParam);
+      return next;
+    }, { replace: true });
+  };
 
   const chipFiltered = useMemo(() => {
-    if (!chipFilter || !chipValue) return rows;
+    // Server chip: the SQL has filtered already.
+    if (!chipFilter || !chipValue || chipParam) return rows;
     const active = chipOptions.find(c => c.id === chipValue);
     if (!active) return rows;
     const allowed = new Set(active.values);
     return rows.filter(r => allowed.has(String(r[chipFilter.field] ?? '')));
-  }, [rows, chipFilter, chipValue, chipOptions]);
+  }, [rows, chipFilter, chipValue, chipOptions, chipParam]);
 
   // Generischer Volltext-Filter — sichtbar je nach `searchable`-Prop (true /
   // false / 'auto', Default 'auto' → ab >10 Rows). Greift VOR Sortierung,
   // damit der sortierte Output dem Suchergebnis entspricht.
   const search = useRowSearch(chipFiltered, {
-    searchable: props.searchable as boolean | 'auto' | undefined,
+    searchable: serverSide && !searchParam ? false : props.searchable as boolean | 'auto' | undefined,
     autoThreshold: props.searchAutoThreshold as number | undefined,
     placeholder: props.searchPlaceholder as string | undefined,
+    // Local mode searches in component state; the URL term belongs to the server.
+    searchParam: localMode ? undefined : searchParam,
+    resetParams: serverSide ? [pageParam as string] : undefined,
+    // Paged + URL-bound term = server-side search: the SQL already matched,
+    // possibly on columns this table does not show.
+    clientFilter: !(serverSide && searchParam),
+    // Every URL change is a request: the term goes out after a short pause.
+    debounceMs: serverSide ? SEARCH_DEBOUNCE_MS : undefined,
   });
+  // A URL-bound term the SQL filters on can leave zero rows; the search field
+  // must stay so the term can be corrected.
+  const serverQuery = !!searchParam && search.query.trim() !== '';
+  const searchVisible = search.visible || serverQuery;
 
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  // Leaving local mode (e.g. a chip widened the result to several pages): the
+  // local sort and search move into the URL once, so the view keeps them.
+  const lastLocalQuery = useRef('');
+  if (localMode) lastLocalQuery.current = search.query;
+  const wasLocal = useRef(localMode);
+  useEffect(() => {
+    const leaving = wasLocal.current && !localMode;
+    wasLocal.current = localMode;
+    if (!leaving || !pageParam) return;
+    const column = sortField ? columns.find(c => c.field === sortField) : undefined;
+    const carrySort = !!column && column.sortable !== false && serverSort && !urlSort;
+    const term = lastLocalQuery.current.trim();
+    const carryQuery = !!searchParam && term !== '' && urlQuery.trim() === '';
+    if (!carrySort && !carryQuery) return;
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (carrySort && column && sortParam && dirParam) {
+        next.set(sortParam, column.sortKey ?? column.field);
+        next.set(dirParam, sortDir);
+      }
+      if (carryQuery && searchParam) next.set(searchParam, term);
+      next.delete(pageParam);
+      return next;
+    }, { replace: true });
+    // Only the mode transition triggers the hand-over.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localMode]);
   // 'copy'-format cells: id of the cell whose value was just copied (brief
   // checkmark feedback, auto-reset).
   const [copiedCell, setCopiedCell] = useState<string | null>(null);
 
   const sortedRows = useMemo(() => {
-    if (!sortField) return search.filtered;
+    // Server side: the SQL has sorted already.
+    if (serverSide || !sortField) return search.filtered;
     const dir = sortDir === 'asc' ? 1 : -1;
     return [...search.filtered].sort(
       (a, b) => compareValues(a[sortField], b[sortField], lang) * dir,
     );
-  }, [search.filtered, sortField, sortDir, lang]);
+  }, [search.filtered, sortField, sortDir, lang, serverSide]);
 
   // Summary-Kennzahlen über den aktuell sichtbaren (gefilterten) Zeilen, damit
   // sie konsistent zum angezeigten "N Einträge" bleiben.
@@ -237,9 +393,25 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
     }, 0);
   }, [sortedRows, summaryFlagField, summaryFlagValue, summaryFlagLabelKey]);
 
-  if (rows.length === 0) {
+  // A server chip can leave zero rows as well; the chip bar must stay to clear it.
+  if (rows.length === 0 && !serverQuery && !(chipParam && chipValue != null)) {
     return <div className="dash-table__empty">{empty?.message ?? t('common:noEntries')}</div>;
   }
+
+  const fmtNumber = (n: number) => formatKpiValue(n, 'number', lang);
+  const pageFrom = (page - 1) * pageSize + 1;
+  const countLabel = paged && pageCount > 1
+    ? `${t('detail:autoTable.rowCountTruncated', {
+        shown: `${fmtNumber(pageFrom)}–${fmtNumber(pageFrom + rows.length - 1)}`,
+        total: fmtNumber(rowTotal as number),
+      })} · ${t('detail:autoTable.page', { current: page, total: pageCount })}`
+    : truncated
+      ? t('detail:autoTable.rowCountTruncated', {
+          shown: fmtNumber(rows.length),
+          total: fmtNumber(rowTotal as number),
+        })
+      : t('detail:autoTable.rowCount', { count: sortedRows.length });
+  const showCountBar = alwaysShowCount || searchVisible || truncated || (paged && pageCount > 1);
 
   const selectable = !!(selectionKey && selectField);
   const clickable = !!onRowClick || selectable;
@@ -260,8 +432,21 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
     return String(raw).split(',').map(s => s.trim()).filter(Boolean).includes(selectedValue);
   };
 
-  const handleHeaderClick = (field: string) => {
-    if (!sortable) return;
+  const handleHeaderClick = (c: ColumnSpec) => {
+    if (!sortable || c.sortable === false) return;
+    if (serverSort && sortParam && dirParam) {
+      const key = c.sortKey ?? c.field;
+      const nextDir = urlSort === key && urlDir !== 'desc' ? 'desc' : 'asc';
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.set(sortParam, key);
+        next.set(dirParam, nextDir);
+        if (pageParam) next.delete(pageParam);
+        return next;
+      }, { replace: true });
+      return;
+    }
+    const field = c.field;
     if (sortField === field) {
       setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -272,33 +457,33 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
 
   return (
     <div className={`dash-table-wrap dash-table--${density}`}>
-      {chipFilter && chipOptions.length > 0 && (
+      {chipsActive && chipFilter && chipOptions.length > 0 && (
         <div className="dash-chip-bar" role="group" aria-label={chipFilter.allLabel ?? t('common:all') as string}>
           <button
             type="button"
             className={`dash-chip${chipValue === null ? ' dash-chip--active' : ''}`}
-            onClick={() => setChipValue(null)}
+            onClick={() => selectChip(null)}
           >
             {chipFilter.allLabel ?? (t('common:all') as string)}
-            <span className="dash-chip__count">{rows.length}</span>
+            {chipAllCount != null && <span className="dash-chip__count">{chipAllCount}</span>}
           </button>
           {chipOptions.map(opt => (
             <button
               key={opt.id}
               type="button"
               className={`dash-chip${chipValue === opt.id ? ' dash-chip--active' : ''}`}
-              onClick={() => setChipValue(opt.id)}
+              onClick={() => selectChip(opt.id)}
             >
               {opt.label}
-              <span className="dash-chip__count">{opt.count}</span>
+              {opt.count != null && <span className="dash-chip__count">{opt.count}</span>}
             </button>
           ))}
         </div>
       )}
-      {(alwaysShowCount || search.visible) && (
+      {showCountBar && (
         <div className="dash-search-bar">
           <span className="dash-search-bar__count">
-            {t('detail:autoTable.rowCount', { count: sortedRows.length })}
+            {countLabel}
             {hasQuery && sortedRows.length !== search.totalCount && (
               <> · {t('detail:autoTable.filteredFrom', { count: search.totalCount })}</>
             )}
@@ -325,7 +510,8 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
               </>
             )}
           </span>
-          {search.visible && (
+          {paged && <Pager page={page} pageCount={pageCount} onGo={goToPage} position="top" />}
+          {searchVisible && (
             <input
               type="search"
               className="dash-search-bar__input"
@@ -341,15 +527,18 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
           <tr>
             {columns.map(c => {
               const alignClass = c.align ? `dash-table__th--${c.align}` : '';
-              const sortClass = sortable ? 'dash-autotable__th--sortable' : '';
-              const className = [alignClass, sortClass].filter(Boolean).join(' ') || undefined;
-              const isSorted = sortField === c.field;
-              const indicator = isSorted ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+              const canSort = sortable && c.sortable !== false;
+              const sortClass = canSort ? 'dash-autotable__th--sortable' : '';
+              const wrapClass = c.nowrap ? 'dash-table__th--nowrap' : '';
+              const className = [alignClass, sortClass, wrapClass].filter(Boolean).join(' ') || undefined;
+              const isSorted = serverSort ? urlSort === (c.sortKey ?? c.field) : sortField === c.field;
+              const activeDir = serverSort ? (urlDir === 'desc' ? 'desc' : 'asc') : sortDir;
+              const indicator = isSorted ? (activeDir === 'asc' ? ' ▲' : ' ▼') : '';
               return (
                 <th
                   key={c.field}
                   className={className}
-                  onClick={sortable ? () => handleHeaderClick(c.field) : undefined}
+                  onClick={canSort ? () => handleHeaderClick(c) : undefined}
                 >
                   {c.label}{indicator}
                 </th>
@@ -436,7 +625,7 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
                     return (
                       <td
                         key={c.field}
-                        className={c.align ? `dash-table__td--${c.align}` : undefined}
+                        className={cellClass(c)}
                       >
                         {ci === 0 && fillOverlay}
                         {copyValue !== '' && (
@@ -490,7 +679,7 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
                   return (
                     <td
                       key={c.field}
-                      className={c.align ? `dash-table__td--${c.align}` : undefined}
+                      className={cellClass(c)}
                     >
                       {ci === 0 && fillOverlay}
                       {isBadge ? (
@@ -527,8 +716,21 @@ export function Table({ node, dataset, navigate }: PrimitiveProps) {
           {t('detail:autoTable.noMatches', { query: search.query })}
         </div>
       )}
+      {paged && <Pager page={page} pageCount={pageCount} onGo={goToPage} position="bottom" />}
     </div>
   );
+}
+
+function cellClass(c: ColumnSpec): string | undefined {
+  return [c.align ? `dash-table__td--${c.align}` : '', c.nowrap ? 'dash-table__td--nowrap' : '']
+    .filter(Boolean).join(' ') || undefined;
+}
+
+/** Non-negative integer from a convention column (number or numeric string), else null. */
+function toCount(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : null;
 }
 
 

@@ -1,0 +1,81 @@
+/*
+ * Change activity legend (Graph Atlas toolbar row and Graph Explorer side panel):
+ * stepped colour scale with the share of the visible nodes per step and the data
+ * state. Colours come only from the --color-recency-* / --color-saves-* tokens
+ * (theme.css); "unknown" carries the same 45° hatch as the Atlas tiles.
+ */
+.atlas-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.8rem;
+  padding: 0.4rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-primary);
+}
+.atlas-legend-title {
+  color: var(--color-text-secondary);
+}
+.atlas-legend-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+.atlas-legend-step.empty {
+  opacity: 0.45;
+}
+.atlas-legend-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--color-graph-tile-stroke);
+  flex-shrink: 0;
+  margin-right: 0.15rem;
+  vertical-align: -2px;
+}
+.atlas-legend-swatch.hatched {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--color-recency-unknown-hatch) 0 2px,
+    transparent 2px 5px
+  ) !important;
+  background-color: var(--color-recency-unknown);
+}
+.atlas-legend-share {
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.atlas-legend-state {
+  color: var(--color-text-secondary);
+  margin-left: auto;
+  white-space: nowrap;
+}
+.atlas-legend-hint {
+  flex-basis: 100%;
+  color: var(--color-text-secondary);
+}
+.atlas-legend-link {
+  margin-left: 0.4rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.atlas-legend.compact {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.3rem 0 0;
+  border-bottom: none;
+}
+.atlas-legend.compact .atlas-legend-state {
+  margin-left: 0;
+}

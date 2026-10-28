@@ -26,8 +26,8 @@ SELECT
     END AS Type,
     CASE WHEN Is_Hidden THEN 'Yes' ELSE 'No' END AS Hidden,
     CASE WHEN Full_Access THEN 'Yes' ELSE 'No' END AS Full_Access,
-    Last_Modified_By,
-    Last_Modified_At
+    Modified_By,
+    Modified_At
 FROM ScriptCatalog
 ;
 
@@ -38,8 +38,8 @@ SELECT
     Script_Name,
     --CASE WHEN Is_Hidden THEN 'Yes' ELSE 'No' END AS Hidden,
     --CASE WHEN Full_Access THEN 'Yes' ELSE 'No' END AS Full_Access,
-    Last_Modified_By,
-    Last_Modified_At
+    Modified_By,
+    Modified_At
 FROM ScriptCatalog
 WHERE (Folder_Type IS NULL OR Folder_Type = 'False')
   AND NOT Is_Separator

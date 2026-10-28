@@ -26,9 +26,9 @@ The tables below list the property surface of the `<Script>` element in the XML 
 | Property (XML) | In catalog | Notes |
 |---|---|---|
 | `@modifications` | `Modifications` | Modification count |
-| `@userName` | `Last_Modified_By` | |
-| `@timestamp` | `Last_Modified_At` | |
-| `@accountName` | — | Modifying account — **not extracted** |
+| `@userName` | `Modified_By` | FileMaker user name of the last editor |
+| `@timestamp` | `Modified_At` | Raw text, local time of the editing client; typed in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
+| `@accountName` | `Modified_Account` | Empty account → `NULL` |
 
 ### Options & the rest
 
@@ -86,6 +86,7 @@ Scripts are the busiest link *sources* of the catalog — every resolved step pa
 | `calls_script` | Script | usage | Another script performs this script |
 | `trigger_script` | [ScriptTrigger](ScriptTrigger.md) | usage | A trigger fires this script |
 | `triggers_script` | [LayoutObject](LayoutObject.md) | usage | A button (or trigger-carrying object) performs this script |
+| `triggers_script` | [CustomMenuItem](CustomMenuItem.md) | usage | A custom-menu item performs this script (subrole `menu_action`) |
 | `restricts_object` | [PrivilegeSet](PrivilegeSet.md) | restriction | Script-level custom privilege restriction — never counts as usage |
 | `parent_script` | [ScriptStep](ScriptStep.md) | containment | A step belongs to this script |
 

@@ -166,7 +166,8 @@ display_calc_counts AS (
   GROUP BY cc.Owner_UUID
 ),
 -- Belegte typspezifische Calc-Slot-Rollen (Slot-Zeile im Tooltip):
--- Placeholder, Button-Label, Panel-Title, Popover-Title, Portal-Filter, Web-Viewer-URL.
+-- Placeholder, Button-Label, Panel-Title, Popover-Title, Portal-Filter, Web-Viewer-URL,
+-- aktives Segment (Button Bar).
 other_calc_roles AS (
   SELECT lo_uuid, string_agg(Calc_Role, ',' ORDER BY role_rank) AS other_calc_roles
   FROM (
@@ -177,11 +178,13 @@ other_calc_roles AS (
         WHEN 'placeholder' THEN 0 WHEN 'button_label' THEN 1
         WHEN 'panel_title' THEN 2 WHEN 'popover_title' THEN 3
         WHEN 'portal_filter' THEN 4 WHEN 'web_viewer_url' THEN 5
-        ELSE 6 END AS role_rank
+        WHEN 'active_segment' THEN 6
+        ELSE 7 END AS role_rank
     FROM CalculationsCatalog cc
     JOIN layout_objects_raw lor ON cc.Owner_UUID = lor.Object_UUID AND cc.File_Name = lor.File_Name
     WHERE cc.Calc_Role IN ('placeholder', 'button_label', 'panel_title',
-                           'popover_title', 'portal_filter', 'web_viewer_url')
+                           'popover_title', 'portal_filter', 'web_viewer_url',
+                           'active_segment')
   )
   GROUP BY lo_uuid
 )

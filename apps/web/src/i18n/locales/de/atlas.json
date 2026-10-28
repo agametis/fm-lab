@@ -93,5 +93,62 @@
       "title": "Knoten"
     },
     "cancel": "Abbrechen"
+  },
+  "color": {
+    "label": "Farbe",
+    "type": "Typ",
+    "recency": "Aktivität",
+    "saves": "Speicherungen",
+    "type_hint": "Kacheln nach Objekttyp färben.",
+    "recency_hint": "Kacheln nach dem Alter ihrer neuesten Einzeländerung färben — Massenereignisse gelten nie als jung.",
+    "saves_hint": "Kacheln nach dem Lebenszeit-Zähler der Speicherungen ihrer Mitglieder färben (Rang innerhalb des Objekttyps) — robust gegen Massenereignisse.",
+    "unavailable": "Dieser Katalog trägt keine Änderungsstempel — importiere die Lösung erneut, um nach Aktivität zu färben.",
+    "bulk": "Massenereignisse",
+    "bulk_hint": "Massenereignisse einbeziehen: Ein Massenstempel datiert dann die letzte Änderung wie eine Einzeländerung."
+  },
+  "activity": {
+    "class": {
+      "1": "≤ 30 Tage",
+      "2": "≤ 90 Tage",
+      "3": "≤ 1 Jahr",
+      "4": "≤ 2 Jahre",
+      "5": "> 2 Jahre",
+      "6": "unbekannt",
+      "7": "kein Stempel"
+    },
+    "savesShort": "Speicherungen {{level}}/5",
+    "savesFew": "wenige",
+    "savesMany": "viele",
+    "legendRecency": "Neueste Einzeländerung",
+    "legendSaves": "Speicherungen über die Lebenszeit (Rang im Typ)",
+    "dataState": "Datenstand {{date}}",
+    "bulkIncluded": "Massenereignisse einbezogen",
+    "unknownHint": "Für {{pct}} % der Knoten ist das Alter der letzten echten Änderung unbekannt — ein junges Massenereignis hat ihre Stempel überschrieben. Die Speicherungen über die Lebenszeit trennen die Module hier besser.",
+    "useSaves": "Nach Speicherungen färben",
+    "tooltip": {
+      "class": "Aktivität: {{label}}",
+      "classLabel": "Aktivität",
+      "newest": "Neueste Änderung: {{date}} ({{days}} Tage vor dem Datenstand)",
+      "newestNone": "Keine datierte Änderung",
+      "active": "In 90 Tagen geändert: {{n}} von {{total}}",
+      "medianAge": "Median-Alter: {{days}} Tage",
+      "medianSaves": "Median Speicherungen: {{n}}",
+      "saves": "Speicherungen: {{n}}",
+      "undated": "Massenstempel: {{pct}} %",
+      "savesLevel": "Speicher-Stufe {{level}} von 5"
+    },
+    "panel": {
+      "newest": "Neueste Änderung",
+      "newestValue": "{{date}} · {{days}} Tage vor dem Datenstand",
+      "active": "Geändert ≤ 90 Tage",
+      "activeValue": "{{n}} von {{total}}",
+      "medianAge": "Median-Alter",
+      "days": "{{days}} Tage",
+      "medianSaves": "Median Speicherungen",
+      "saves": "Speicherungen",
+      "undated": "Massenstempel",
+      "dataState": "Datenstand",
+      "openDashboard": "Änderungen dieses Moduls"
+    }
   }
 }

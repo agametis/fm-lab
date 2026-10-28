@@ -39,6 +39,9 @@ router.get('/search/count', validate('searchCount'), objectController.searchCoun
 // GET /api/search - Search objects by name
 router.get('/search', validate('search'), objectController.search);
 
+// GET /api/references/candidates - Referenz-Kandidaten („Nicht referenziert“)
+router.get('/references/candidates', validate('referenceCandidates'), objectController.referenceCandidates);
+
 // GET /api/references - Get object references
 router.get('/references', validate('references'), objectController.references);
 

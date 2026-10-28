@@ -72,6 +72,8 @@ Search objects by name pattern — or by identity (UUID, numeric FileMaker ID).
 | `file` | string | — | Optional file filter |
 | `limit` | integer | `100` | |
 | `offset` | integer | `0` | Pagination |
+| `sort` | enum | — | `modified` — newest own change stamp first (see [Change stamps](#change-stamps)) |
+| `modified_since` | date | — | `YYYY-MM-DD` — only objects whose own change stamp is on or after this day |
 
 Beyond object names, the search also matches **value-list values** (hits report the matched values in `Matched_Values`), **script-step contents** (hits are `ScriptStep` rows carrying `Step_Text`, `Script_Name` and `Step_Index` for breadcrumb display) and the **localized spellings of built-in functions**. Results are ordered by name.
 
@@ -91,7 +93,7 @@ The same endpoint finds an object by its identity. An identity matches **only as
 |---|---|
 | FileMaker UUID (`D9D61A5F-9B96-462A-8A84-1CFDD2D737BA`) | The object with that UUID. Case-insensitive; `{…}`, quotes and `urn:uuid:` are tolerated |
 | 32-hex UUID (`0004a0f0c94ef720cc7a8794bee51759`) | The synthetic UUIDs fm-lab assigns to `Calculation`, `Variable`, `BuiltinFunction`, `PluginFunction`, `ScriptStepType`, … — the ones in fm-lab deep links and API responses. Found even for types the plain name search leaves out |
-| Import key (`rel_100_Adressen`, `part_…`, `trig_…`, `paste_…`) | `Relationship`, `LayoutPart`, `ScriptTrigger`, `PasteIndexObject` by their composite catalog key |
+| Import key (`part_…`, `trig_…`, `paste_…`) | `LayoutPart`, `ScriptTrigger`, `PasteIndexObject` by their composite catalog key. `rel_<id>_<file>` (e.g. `rel_100_Adressen`) only exists for a relationship from an export without `<UUID>` — relationships otherwise carry their FileMaker UUID |
 | `id:<n>` (`id:42`) | The numeric FileMaker ID (`Object_ID`). Runs **no** name search |
 
 **Duplicated FileMaker UUIDs.** When an export carries the same UUID more than once, the import keeps it on one object and re-keys the others (`DuplicateAbsorptionDetails`). Searching the original UUID returns all of them: the object that kept it plus every re-keyed sibling.
@@ -125,9 +127,21 @@ curl "http://localhost:3003/api/search?name=id:42&type=script&file=Contacts"
 
 In the web frontend the same terms work in the search field (`/?q=<UUID>`, `/?q=id:42`); identity hits show a *Matched by UUID* / *Matched by ID* label below the name.
 
+### Change stamps
+
+`sort=modified` orders the hits by the object's own change stamp, newest first ([ObjectChangeMeta](../../schema/catalog-tables/ObjectChangeMeta.md)); `modified_since=YYYY-MM-DD` keeps only hits stamped on or after that day. With either parameter every hit carries `Modified_At` (`YYYY-MM-DD HH:MM:SS`, the local time of the editing client without time zone, as text). Without them the order and the response are unchanged.
+
+Only the object's **own** stamp counts. Script steps, layout objects, layout parts, calculations, built-ins and the other types without a stamp of their own have `Modified_At = null`: they come last when sorting and drop out of the date filter. Identity hits stay in front of the other hits. Because sorting happens on the server, it holds across pages — the web frontend's other sort options (name, type, file) reorder only the hits loaded so far.
+
+```bash
+curl "http://localhost:3003/api/search?name=%25&type=layout&sort=modified&modified_since=2026-01-01"
+```
+
+In the web frontend: search options *Sort: Last modified* and *Modified since* (URL `?sort=modified&since=2026-01-01`).
+
 ## GET /api/search/count
 
-Count of the same search predicate, without paging: parameters `name` (required, including [identity terms](#identity-search)), `type`, `file`; response `{ "count": 42 }`.
+Count of the same search predicate, without paging: parameters `name` (required, including [identity terms](#identity-search)), `type`, `file`, `modified_since`; response `{ "count": 42 }`.
 
 ---
 

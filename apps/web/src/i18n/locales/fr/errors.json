@@ -22,5 +22,13 @@
     "body": "L’API n’a pas pu être atteinte avec ce contexte de solution. Si l’application fonctionnait avant le changement de solution, réinitialisez la sélection sur la valeur par défaut du serveur.",
     "action": "Réinitialiser la sélection",
     "dismiss": "Masquer"
+  },
+  "storageVersion": {
+    "heading": "Impossible d’ouvrir le catalogue : les versions de DuckDB ne correspondent pas",
+    "body": "Le catalogue de la solution « {{solution}} » a été écrit avec DuckDB {{createdBy}} (version de stockage {{fileVersion}}). L’API REST utilise DuckDB {{apiVersion}} et ne lit que les versions de stockage {{range}}.",
+    "fixNewer": "Solution : réimportez le XML avec la CLI DuckDB {{apiLine}}.x, prise en charge par cette version de fm-lab, ou mettez à jour fm-lab vers une version qui prend en charge DuckDB {{cliLine}}.",
+    "fixOlder": "Solution : réimportez le XML avec la CLI DuckDB actuelle.",
+    "unknown": "inconnue",
+    "dismiss": "Masquer"
   }
 }

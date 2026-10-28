@@ -145,6 +145,17 @@
     "clearRolesLabel": "Redefinir funções",
     "clearRolesTitle": "Limpar todos os filtros de função"
   },
+  "referencesMissing": {
+    "label": "Sem referências:",
+    "indirectLabel": "via objetos do layout:",
+    "emptyLead": "Referências possíveis:",
+    "tooltipRoles": "Funções possíveis: {{roles}}",
+    "tooltipAggregate_one": "(incluindo o objeto do layout)",
+    "tooltipAggregate_other": "(incluindo os {{count}} objetos do layout)",
+    "caveatScriptCallers": "Apenas chamadas resolúveis estaticamente. Não incluídas: Perform Script por nome, URLs fmp, chamadas externas.",
+    "caveatToFieldAccess": "O acesso a campos através desta TO não cria nenhuma referência à TO.",
+    "aria": "Tipos de objeto sem referências"
+  },
   "hierarchyTree": {
     "ariaLabel": "Hierarquia de objetos",
     "usedBy": "Usado por ({{count}})",
@@ -199,6 +210,10 @@
         "short": "Popover",
         "long": "Título do popover"
       },
+      "active_segment": {
+        "short": "Segmento",
+        "long": "Segmento ativo"
+      },
       "script_trigger_parameter": {
         "short": "Trigger",
         "long": "Parâmetro do acionador de script"
@@ -226,6 +241,10 @@
       "menu_install": {
         "short": "Install",
         "long": "Condição de instalação do menu"
+      },
+      "menu_action": {
+        "short": "Menu",
+        "long": "Ação de menu"
       }
     }
   },
@@ -237,9 +256,13 @@
     "sortName": "Nome",
     "sortType": "Tipo",
     "sortFile": "Ficheiro",
+    "sortModified": "Última modificação",
     "groupNone": "Nenhum",
     "groupType": "Tipo",
-    "groupFile": "Ficheiro"
+    "groupFile": "Ficheiro",
+    "modifiedSinceLabel": "Modificado desde",
+    "modifiedSinceHint": "Apenas objetos cujo carimbo de alteração próprio é deste dia ou posterior — etapas de script, objetos de layout e cálculos não têm carimbo próprio",
+    "modifiedSinceClear": "Redefinir"
   },
   "fieldViewer": {
     "ariaLabel": "Detalhes do campo",
@@ -327,7 +350,8 @@
     "uuidMatch": "Encontrado por UUID",
     "healedUuidMatch": "Encontrado por UUID (duplicado)",
     "healedUuidTitle": "O FileMaker registra este objeto com o UUID pesquisado; como o UUID aparecia mais de uma vez na exportação, o catálogo o mantém com um UUID substituto.",
-    "idMatch": "Encontrado por ID {{id}}"
+    "idMatch": "Encontrado por ID {{id}}",
+    "modifiedTooltip": "Modificado {{age}} — hora local do cliente que editou, sem fuso horário"
   },
   "scriptSearchFilter": {
     "searchAria": "Procurar referências",
@@ -422,13 +446,75 @@
       "menuLabel": "Ações",
       "searchPlaceholder": "Filtrar soluções…",
       "noMatches": "Nenhuma solução corresponde ao filtro."
+    },
+    "changeAuthors": {
+      "heading": "Autores dos metadados de alteração",
+      "desc": "Junte variantes de escrita da mesma pessoa, defina nomes de exibição e marque autores técnicos. Os aliases são salvos com a solução, sobrevivem a uma reconstrução e se aplicam imediatamente à linha “Última modificação”.",
+      "solution": "Solução: {{name}}.",
+      "loading": "Carregando autores …",
+      "empty": "Este catálogo ainda não tem metadados de alteração — importe a solução novamente com a versão atual.",
+      "noSidecar": "O banco de anotações desta solução não está disponível (recurso desativado ou bloqueado) — os aliases não podem ser alterados.",
+      "colUser": "Usuário",
+      "colUserTitle": "Nome de usuário em todas as grafias",
+      "colStamps": "Carimbos",
+      "colLast": "Última alteração",
+      "colPerson": "Mesma pessoa que",
+      "colDisplay": "Nome de exibição",
+      "colTechnical": "Técnico",
+      "colActions": "Ações",
+      "accountsTitle": "Contas conectadas",
+      "stampsTitle": "{{single}} alterações individuais fora de eventos em massa · {{files}} arquivos",
+      "ownPerson": "— entrada própria —",
+      "technicalAutoYes": "Automático (sim)",
+      "technicalAutoNo": "Automático (não)",
+      "technicalAuto": "auto",
+      "technicalYes": "Sim",
+      "technicalNo": "Não",
+      "save": "Salvar",
+      "reset": "Redefinir",
+      "orphanHeading": "Aliases sem usuário correspondente no catálogo atual",
+      "orphanDelete": "Remover"
     }
   },
   "objectHeader": {
     "noName": "(sem nome)",
     "source": "Origem:",
     "relationshipGraphLink": "↗ Grafo de relações",
-    "copyUuidAria": "Copiar UUID para a área de transferência"
+    "copyUuidAria": "Copiar UUID para a área de transferência",
+    "change": {
+      "modified": "Última modificação",
+      "containerModified": "Última modificação do contêiner",
+      "timeTooltip": "{{age}} — hora local do cliente que editou, sem fuso horário",
+      "unknownAuthor": "usuário desconhecido",
+      "authorTooltip": "Nome de usuário do FileMaker do último editor",
+      "accountTooltip": "Conta conectada",
+      "countTooltip": "Salvamentos desde a criação do objeto",
+      "modifications_one": "{{count}} alteração",
+      "modifications_other": "{{count}} alterações",
+      "quotedName": "“{{name}}”",
+      "technical": {
+        "tool": "Ferramenta",
+        "toolTooltip": "Carimbado por uma ferramenta (FileMaker Data Migration Tool), não por um desenvolvedor",
+        "runtime": "Execução",
+        "runtimeTooltip": "Alterado em tempo de execução por um usuário final (sessão WebDirect) — não é atividade de desenvolvimento",
+        "other": "Técnico",
+        "otherTooltip": "Marcado como autor técnico nos aliases de autor"
+      },
+      "bulk": {
+        "badge": "Evento em massa {{date}}",
+        "kind": {
+          "mass_action": "Ação em massa: muitos objetos carimbados de uma vez (migração, localizar e substituir, arquivo novo)",
+          "paste_import": "Colar / importar: objetos colados ou importados juntos",
+          "tool": "Execução de ferramenta (FileMaker Data Migration Tool)"
+        },
+        "scopeFile": "em um arquivo",
+        "scopeSolution_one": "em {{count}} arquivo",
+        "scopeSolution_other": "em {{count}} arquivos",
+        "objects_one": "{{count}} objeto",
+        "objects_other": "{{count}} objetos",
+        "hint": "O carimbo reflete esta ação, não uma edição individual do objeto."
+      }
+    }
   },
   "scriptLine": {
     "expand": "Expandir",
@@ -660,7 +746,6 @@
     "viewTable": "Visualização de tabela",
     "baseTheme": "Tema base",
     "inLayoutMenus": "Nos menus de layout",
-    "lastModified": "Última modificação",
     "triggersHeading": "Acionadores de script",
     "noTriggers": "Sem acionadores de script",
     "yes": "Sim",
@@ -731,6 +816,7 @@
       "button_action": "Ação do botão",
       "panel_title": "Título do painel",
       "popover_title": "Título do popover",
+      "active_segment": "Segmento ativo",
       "display_calculation": "Cálculo de exibição",
       "merge_text": "Âncoras de mesclagem resolvidas",
       "chart_series": "Série do gráfico",

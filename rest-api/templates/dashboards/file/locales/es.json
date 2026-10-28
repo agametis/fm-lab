@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Vista de archivo",
-    "description": "Vista detallada por archivo: metadatos, opciones de archivo, KPIs de objetos y los scripts activados / diseño inicial / cuenta de inicio de sesión."
+    "description": "Vista detallada por archivo: metadatos, opciones de archivo, indicadores de objetos, marcas de cambio por catálogo y guiones activados / formato inicial / cuenta de inicio de sesión."
   },
   "layout": {
     "file_not_found.props.title": "Archivo no encontrado",
@@ -14,6 +14,11 @@
     "file_metrics_kpistrip.props.items[4].label": "Última importación",
     "file_metrics_kpistrip.props.items[5].label": "Versión mínima",
     "file_size_kpistrip.props.items[0].label": "Tamaño del archivo",
+    "file_change_kpistrip.props.items[0].label": "Último cambio de diseño",
+    "file_change_kpistrip.props.items[1].label": "Por",
+    "file_change_kpistrip.props.items[2].label": "Último cambio masivo",
+    "file_change_kpistrip.props.items[3].label": "Eventos masivos",
+    "file_change_kpistrip.props.items[4].label": "Cambios individuales %",
     "file_settings_list.props.items[0].label": "Inicio automático",
     "file_settings_list.props.items[1].label": "Guardar credenciales",
     "file_settings_list.props.items[2].label": "Campos de inicio de sesión",
@@ -31,6 +36,17 @@
     "file_object_counts_kpistrip.props.items[6].label": "Listas de valores",
     "file_object_counts_kpistrip.props.items[7].label": "Funciones pers.",
     "file_object_counts_kpistrip.props.items[8].label": "Variables",
+    "file_catalog_changes.props.title": "Cambios por catálogo",
+    "file_catalog_changes_md.props.content": "Cada objeto conserva solo su **última** marca de cambio. *Último cambio individual* omite los eventos masivos (migraciones, pegados, ejecuciones de herramientas) y los autores técnicos. La marca del catálogo sigue sus propias reglas: su contador aumenta con cada guardado de un objeto del catálogo. Las horas son la hora local del cliente que editó.",
+    "file_change_trend.props.label": "Cambios individuales por mes, últimos 12 meses hasta el estado de los datos",
+    "file_catalog_changes_table.props.columns[0].label": "Catálogo",
+    "file_catalog_changes_table.props.columns[1].label": "Último cambio individual",
+    "file_catalog_changes_table.props.columns[2].label": "Usuario",
+    "file_catalog_changes_table.props.columns[3].label": "Marca del catálogo",
+    "file_catalog_changes_table.props.columns[4].label": "Contador",
+    "file_catalog_changes_table.props.columns[5].label": "Objetos",
+    "file_catalog_changes_table.props.columns[6].label": "En eventos masivos",
+    "file_catalog_changes_table.props.columns[7].label": "Campo eliminado tras la última edición",
     "file_triggers.props.title": "Scripts activados",
     "file_triggers_table.props.columns[0].label": "Evento",
     "file_triggers_table.props.columns[1].label": "Script",

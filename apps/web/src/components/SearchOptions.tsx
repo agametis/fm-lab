@@ -7,6 +7,9 @@ interface SearchOptionsProps {
   groupBy: GroupOption;
   onSortChange: (sort: SortOption) => void;
   onGroupChange: (group: GroupOption) => void;
+  /** 'YYYY-MM-DD' or '' — filter on the object's own change stamp. */
+  modifiedSince: string;
+  onModifiedSinceChange: (since: string) => void;
 }
 
 const SORT_VALUES: { value: SortOption; key: string }[] = [
@@ -14,6 +17,7 @@ const SORT_VALUES: { value: SortOption; key: string }[] = [
   { value: 'name',     key: 'sortName' },
   { value: 'type',     key: 'sortType' },
   { value: 'file',     key: 'sortFile' },
+  { value: 'modified', key: 'sortModified' },
 ];
 
 const GROUP_VALUES: { value: GroupOption; key: string }[] = [
@@ -27,6 +31,8 @@ export const SearchOptions: React.FC<SearchOptionsProps> = ({
   groupBy,
   onSortChange,
   onGroupChange,
+  modifiedSince,
+  onModifiedSinceChange,
 }) => {
   const { t } = useTranslation(['detail']);
   return (
@@ -60,6 +66,26 @@ export const SearchOptions: React.FC<SearchOptionsProps> = ({
             {t(`detail:searchOptions.${key}`)}
           </label>
         ))}
+      </fieldset>
+      <fieldset className="search-options-fieldset">
+        <legend>{t('detail:searchOptions.modifiedSinceLabel')}</legend>
+        <label className="search-options-date" title={t('detail:searchOptions.modifiedSinceHint') as string}>
+          <input
+            type="date"
+            value={modifiedSince}
+            onChange={(e) => onModifiedSinceChange(e.target.value)}
+            aria-label={t('detail:searchOptions.modifiedSinceLabel') as string}
+          />
+        </label>
+        {modifiedSince && (
+          <button
+            type="button"
+            className="search-options-clear"
+            onClick={() => onModifiedSinceChange('')}
+          >
+            {t('detail:searchOptions.modifiedSinceClear')}
+          </button>
+        )}
       </fieldset>
     </div>
   );

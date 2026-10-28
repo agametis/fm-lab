@@ -63,7 +63,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Colliding objects (UUID-precise)"
+          "title": "Colliding objects (UUID-precise)",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -77,6 +78,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": "auto",
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchAutoThreshold": 3,
               "searchPlaceholder": "Search file, container, text or UUID…",
               "columns": [

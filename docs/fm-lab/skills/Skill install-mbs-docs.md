@@ -10,8 +10,8 @@ Downloads the MBS FileMaker Plugin documentation (the vendor's Dash docset) into
 | **Input** | none |
 | **Reads** | `www.monkeybreadsoftware.com` (the `MBS.zip` docset) |
 | **Writes** | `docs/mbs/` (HTML pages plus the SQLite index `docSet.dsidx`), `reference/mbs_component_exceptions.csv`, a `.version` marker, the doc-set registry `.fmlab/docs.json` |
-| **Prerequisites** | `curl`, `unzip`, network access; Python 3 for the component parser; about 50 MB of free space during installation |
-| **Under the hood** | `.claude/skills/install-mbs-docs/scripts/install_mbs_docs.sh` with `parse_mbs_components.py`; registration via `tools/register_docs.py` |
+| **Prerequisites** | `curl`, `unzip`, network access; about 50 MB of free space during installation |
+| **Under the hood** | `.claude/skills/install-mbs-docs/scripts/install_mbs_docs.sh` with `parse_mbs_components.mjs`; registration via `tools/register_docs.mjs` |
 | **Skill directory** | `.claude/skills/install-mbs-docs/` |
 | **Related** | [Skill mbs-function-reference](Skill%20mbs-function-reference.md) · [Skill install-claris-docs](Skill%20install-claris-docs.md) |
 
@@ -21,7 +21,7 @@ The docset arrives as a ZIP with thousands of HTML pages and a SQLite search ind
 
 Two derived artifacts matter beyond the pages themselves:
 
-- **Component exceptions** — the parser walks every function page and records functions whose name prefix differs from their component, or that belong to more than one component. The resulting CSV is used by the lookup skill, by the XML import (plugin-component catalog entries) and by the docs browser's component pages under `/docs/mbs/<Component>`. Without Python the parse is skipped with a warning; the install still succeeds.
+- **Component exceptions** — the parser walks every function page and records functions whose name prefix differs from their component, or that belong to more than one component. The resulting CSV is used by the lookup skill, by the XML import (plugin-component catalog entries) and by the docs browser's component pages under `/docs/mbs/<Component>`. If the parse fails, it is skipped with a warning; the install still succeeds.
 - **Plug-in platform map** — `reference/plugin_spec.duckdb`, the structured per-function platform, deprecation and version data behind the plug-in platform tests and the platform badge in the object browser, **ships with FM-Lab** and is kept as is by this skill. It is derived by the maintainers from the docs mirror; a public installation never regenerates it.
 
 ## How to use it

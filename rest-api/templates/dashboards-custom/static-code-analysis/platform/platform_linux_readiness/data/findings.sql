@@ -77,9 +77,10 @@ plugin_evidence AS (
     JOIN no_linux_plugins nl
       ON nl.plugin_id = p.plugin_id
      AND nl.function_name = COALESCE(f.function_name, af.function_name)
+    -- The whole row breaks the remaining ties: every request picks the same row.
     QUALIFY row_number() OVER (
         PARTITION BY pc.nav_uuid, nl.function_name
-        ORDER BY (pc.via_custom_function IS NOT NULL), pc.via_custom_function) = 1
+        ORDER BY (pc.via_custom_function IS NOT NULL), pc.via_custom_function, pc, nl) = 1
 ),
 linux_unsupported_fns AS (
     SELECT function_id, note
@@ -151,11 +152,48 @@ evidence AS (
     SELECT * FROM plugin_evidence
     UNION ALL SELECT DISTINCT * FROM fn_evidence
     UNION ALL SELECT * FROM step_evidence
+),
+-- The finding rows; the keys of the default order travel along as hidden
+-- columns, so the page order does not hang on row_key alone.
+unkeyed AS MATERIALIZED (
+    SELECT nav_uuid, file_name AS file, script_name AS name,
+        source, feature, runs_on, message
+    FROM evidence
+    WHERE (getvariable('file') IS NULL OR getvariable('file') = '' OR file_name = getvariable('file'))
+),
+-- row_key numbers the rows in the default order; the whole row breaks the
+-- remaining ties, so every request assigns the same key.
+result AS MATERIALIZED (
+    SELECT u.*,
+           row_number() OVER (ORDER BY u.file, u.name, u.feature, u) AS row_key
+    FROM unkeyed u
+),
+-- >>> shared paging table-search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) NOT IN ('uuid', 'nav_uuid', 'row_key')))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging table-search block
+filtered AS (
+    SELECT * FROM searched
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT nav_uuid, file_name AS file, script_name AS name,
-    source, feature, runs_on, message,
-    row_number() OVER (ORDER BY file_name, script_name, feature) AS row_key
-FROM evidence
-WHERE (getvariable('file') IS NULL OR getvariable('file') = '' OR file_name = getvariable('file'))
-ORDER BY file, name, feature
-LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.*,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ row_key, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

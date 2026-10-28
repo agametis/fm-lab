@@ -93,5 +93,62 @@
       "title": "节点"
     },
     "cancel": "取消"
+  },
+  "color": {
+    "label": "颜色",
+    "type": "类型",
+    "recency": "活动",
+    "saves": "保存次数",
+    "type_hint": "按对象类型为图块着色。",
+    "recency_hint": "按最新单项更改的时长为图块着色——批量事件从不视为新近。",
+    "saves_hint": "按成员的终身保存次数（在对象类型内的排名）为图块着色——不受批量事件影响。",
+    "unavailable": "此目录没有更改戳——请重新导入解决方案，以按活动着色。",
+    "bulk": "批量事件",
+    "bulk_hint": "包含批量事件：批量更改戳将像单项更改一样标记最后一次更改的时间。"
+  },
+  "activity": {
+    "class": {
+      "1": "30 天以内",
+      "2": "90 天以内",
+      "3": "1 年以内",
+      "4": "2 年以内",
+      "5": "超过 2 年",
+      "6": "未知",
+      "7": "无更改戳"
+    },
+    "savesShort": "保存次数 {{level}}/5",
+    "savesFew": "少",
+    "savesMany": "多",
+    "legendRecency": "最新单项更改",
+    "legendSaves": "终身保存次数（类型内排名）",
+    "dataState": "数据时点 {{date}}",
+    "bulkIncluded": "已包含批量事件",
+    "unknownHint": "{{pct}} % 的节点最后一次实际更改的时长未知——新近的批量事件覆盖了它们的更改戳。此处终身保存次数能更好地区分模块。",
+    "useSaves": "按保存次数着色",
+    "tooltip": {
+      "class": "活动：{{label}}",
+      "classLabel": "活动",
+      "newest": "最新更改：{{date}}（数据时点前 {{days}} 天）",
+      "newestNone": "没有带日期的更改",
+      "active": "90 天内更改：{{total}} 个中的 {{n}} 个",
+      "medianAge": "时长中位数：{{days}} 天",
+      "medianSaves": "保存次数中位数：{{n}}",
+      "saves": "保存次数：{{n}}",
+      "undated": "批量更改戳：{{pct}} %",
+      "savesLevel": "保存次数等级 {{level}}/5"
+    },
+    "panel": {
+      "newest": "最新更改",
+      "newestValue": "{{date}} · 数据时点前 {{days}} 天",
+      "active": "90 天内更改",
+      "activeValue": "{{total}} 个中的 {{n}} 个",
+      "medianAge": "时长中位数",
+      "days": "{{days}} 天",
+      "medianSaves": "保存次数中位数",
+      "saves": "保存次数",
+      "undated": "批量更改戳",
+      "dataState": "数据时点",
+      "openDashboard": "此模块的更改"
+    }
   }
 }

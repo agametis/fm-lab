@@ -38,7 +38,11 @@
     "uses": "gebruikt",
     "usedBy": "gebruikt door",
     "focus": "Focus",
-    "resizePanel": "Breedte van het detailpaneel aanpassen"
+    "resizePanel": "Breedte van het detailpaneel aanpassen",
+    "activity": "Activiteit",
+    "activityInherited": "stempel van de lay-out / het menu",
+    "activityNone": "geen stempel",
+    "activityAge": "{{days}} dagen vóór de gegevensstand"
   },
   "filter": {
     "ariaLabel": "Graaffilters",
@@ -77,11 +81,13 @@
     "colorMode": "Kleuring",
     "colorModes": {
       "type": "Type",
-      "community": "Community"
+      "community": "Community",
+      "recency": "Activiteit"
     },
     "colorModeHints": {
       "type": "Knopen kleuren op objecttype",
-      "community": "Knopen kleuren op gedetecteerde module (community)"
+      "community": "Knopen kleuren op gedetecteerde module (community)",
+      "recency": "Knopen kleuren naar de leeftijd van hun nieuwste afzonderlijke wijziging (de klassen van de Grafiek-atlas)"
     },
     "communityUnnamed": "Community {{id}}",
     "resizePanel": "Breedte van het filterpaneel aanpassen",
@@ -120,7 +126,8 @@
   },
   "edge": {
     "represents": "representeert",
-    "buttonAction": "Knopactie"
+    "buttonAction": "Knopactie",
+    "menuAction": "Menuactie"
   },
   "trace": {
     "exit": "Omgeving",

@@ -38,7 +38,11 @@
     "uses": "uses",
     "usedBy": "used by",
     "focus": "Focus",
-    "resizePanel": "Resize the detail panel"
+    "resizePanel": "Resize the detail panel",
+    "activity": "Activity",
+    "activityInherited": "stamp of its layout / menu",
+    "activityNone": "no stamp",
+    "activityAge": "{{days}} days before the data state"
   },
   "filter": {
     "ariaLabel": "Graph filters",
@@ -77,11 +81,13 @@
     "colorMode": "Coloring",
     "colorModes": {
       "type": "Type",
-      "community": "Community"
+      "community": "Community",
+      "recency": "Activity"
     },
     "colorModeHints": {
       "type": "Color nodes by object type",
-      "community": "Color nodes by detected module (community)"
+      "community": "Color nodes by detected module (community)",
+      "recency": "Colour nodes by the age of their newest individual change (the classes of the Graph Atlas)"
     },
     "communityUnnamed": "Community {{id}}",
     "detailsShort": "Details",
@@ -128,7 +134,8 @@
   "unconnectedToggleHint": "Nodes with no path to the focus result from the type/depth filter — show or hide them",
   "edge": {
     "represents": "represents",
-    "buttonAction": "Button action"
+    "buttonAction": "Button action",
+    "menuAction": "Menu action"
   },
   "trace": {
     "exit": "Neighborhood",

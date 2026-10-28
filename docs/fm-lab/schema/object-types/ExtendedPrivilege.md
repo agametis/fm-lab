@@ -15,7 +15,7 @@ The table below lists the full property surface of the `<ExtendedPrivilege>` ele
 | `@id` | `EP_ID` | Numeric FileMaker ID — unique per file only, join with `File_Name` |
 | `@name` | `EP_Name` | The privilege keyword — see [Enumerations](#enumerations) |
 | `<UUID>` (text) | `EP_UUID` | Stable identity, used for all joins |
-| `<UUID>/@accountName`, `@userName`, `@timestamp`, `@modifications` | — | Modification metadata (who/when/count) — **not extracted** |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata, raw (`Modified_At` as text, empty account → `NULL`); typed per object in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
 | `<Description>` | `EP_Description` | Description (FileMaker pre-fills it for the reserved keywords) |
 | inner `<ObjectList>` of `<PrivilegeSetReference>` | `PrivilegeSet_IDs` / `PrivilegeSet_Names` (arrays) | The privilege sets granting this privilege — → incoming `grants_privilege` links |
 | `<TagList>` | — | Object tags — **not extracted** |

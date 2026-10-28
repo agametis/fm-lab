@@ -74,11 +74,13 @@ flag or natural-language trigger words in 11 languages) and the output prohibiti
 | Touched objects (table) | ✓ | ✗ |
 | Noteworthy observations | ✓ | only critical (e.g. "DDR-Info missing") |
 | Open questions | ✓ | ✗ |
+| Lifecycle (age, saves) | ✓ (header line + bullet in Business context) | at most a half-sentence, only when telling |
 
 **Reduced query list in short mode**: Instead of querying all context hops from Step 3, the following are sufficient:
 - Core data of the object (name, comment, type)
 - Aggregated caller/callee counts (1 hop, no recursive CTE)
 - Top-3 touched tables/layouts as a module hint
+- AC1 age context (one query, see Step 2a)
 - NO recursive call chains, NO per-variable aggregation, NO field-comment joins
 
 **Hedging remains mandatory**: Even in short mode, interpretations must be marked with "presumably" / "indicates" / "suggests". Better to give no module than a wrong one.
@@ -116,9 +118,21 @@ Depending on Object_Type, fetch the type-specific base data — the shared SQL t
 
 **Important for fm-analyze**: In contrast to fm-summarize, the **Field_Comment** is gold dust here — if present, it is the most direct source for the business purpose. Script comments in the first step (`Step_Type = 'Comment'`) should also be read, since developers often document scripts with a header comment.
 
+### Step 2a — Age context (both modes)
+
+Run **AC1** from [`_shared/scripts/age_context.sql`](../_shared/scripts/age_context.sql)
+with the resolved object (`SET VARIABLE uuid`/`file`, then `.read` — invocation in the contract) — one query: last change, author, lifetime saves, a
+mass event if any, all counted from the solution's data state. Wording and the
+lifecycle reading (active area · stable or abandoned · a mass stamp only as "unchanged since at least"):
+[`_shared/age-context.md`](../_shared/age-context.md). It is a signal for Step 4, never
+proof of "obsolete" — that needs the where-used evidence.
+
 ### Step 3 — Collect semantic signals (the core)
 
 Beyond Step 2, query the following context sources. Which are relevant depends on the Object_Type.
+Every query matches the object on its **UUID and file** (`<File>`) and joins the counterpart on
+its UUID and file too — clone and modular files share UUIDs, and a UUID-only match mixes in the
+links of the clone.
 
 #### 3a — Variable semantics
 
@@ -151,7 +165,7 @@ ORDER BY Context_Type, Context_Name;
 #### 3b — Script call chain (backward and forward)
 
 Two recursive queries in [`_shared/scripts/call_chain.sql`](../_shared/scripts/call_chain.sql)
-(substitute `<SCRIPT_UUID>`): **CC-FWD** (forward — what this script calls) and **CC-BWD**
+(substitute `<SCRIPT_UUID>` and `<FILE>`): **CC-FWD** (forward — what this script calls) and **CC-BWD**
 (backward — who calls it). Both cap depth at 5 hops and return a ready-to-render `Path`
 column (arrow-joined chain).
 
@@ -175,8 +189,9 @@ If the script is started via a trigger rather than a direct call, the trigger co
 SELECT ol.Link_Role, ol.Source_Type,
        oc.Object_Name AS Trigger_Source, oc.File_Name
 FROM ObjectLinks ol
-JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID
+JOIN ObjectCatalog oc ON oc.Object_UUID = ol.Source_UUID AND oc.File_Name = ol.Source_File
 WHERE ol.Target_UUID = '<Script_UUID>'
+  AND ol.Target_File = '<File>'
   AND ol.Link_Role IN ('triggers_script', 'trigger_script');
 ```
 
@@ -201,9 +216,9 @@ SELECT DISTINCT
     f.Field_Comment,
     ol.Link_Role
 FROM ObjectLinks ol
-JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID
-JOIN FieldsForTables f ON oc.Object_UUID = f.Field_UUID
+JOIN FieldsForTables f ON f.Field_UUID = ol.Target_UUID AND f.File_Name = ol.Target_File
 WHERE ol.Source_UUID = '<Script_UUID>'
+  AND ol.Source_File = '<File>'
   AND ol.Target_Type = 'Field'
   AND ol.Link_Role IN ('sets_field', 'navigates_to_field')
 ORDER BY f.Table_Name, f.Field_Name;
@@ -221,8 +236,9 @@ SELECT DISTINCT
     l.L_TO_Name AS Context_TO,
     l.File_Name
 FROM ObjectLinks ol
-JOIN Layouts l ON ol.Target_UUID = l.L_UUID
+JOIN Layouts l ON l.L_UUID = ol.Target_UUID AND l.File_Name = ol.Target_File
 WHERE ol.Source_UUID = '<Script_UUID>'
+  AND ol.Source_File = '<File>'
   AND ol.Link_Role = 'navigates_to_layout';
 ```
 
@@ -248,8 +264,9 @@ SELECT
     oc.File_Name,
     ol.Link_Role
 FROM ObjectLinks ol
-JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID
+JOIN ObjectCatalog oc ON oc.Object_UUID = ol.Source_UUID AND oc.File_Name = ol.Source_File
 WHERE ol.Target_UUID = '<CF_UUID>'
+  AND ol.Target_File = '<File>'
   AND ol.Link_Type = 'operational';
 ```
 
@@ -266,6 +283,7 @@ Derive conclusions from the collected signals. **Procedure**:
 5. **Module mapping**: From the touched tables and layouts, derive the business module (invoicing, CRM, inventory, accounting, permissions, master data, reporting, ...).
 6. **Recognize reuse**: If a script is called by many different callers in different modules → it is a utility/helper function. If it is called from only one place → it is a specific workflow step.
 7. **Flag inconsistencies**: If the name suggests something that the implementation does not reflect (e.g. script "Create Customer" that only switches a layout), report this as a hint.
+8. **Lifecycle** (Step 2a): many saves and a recent individual change suggest an active area; few saves and an old stamp suggest a stable or abandoned piece — combine with the callers, never conclude from age alone; a mass stamp carries no age signal.
 
 **Separation of facts and interpretation**:
 - Facts: "The script calls 4 sub-scripts and writes to the fields Invoices::Status and Invoices::Paid_on."
@@ -282,6 +300,7 @@ Standard format:
 
 **File**: <File_Name>
 **UUID**: `<Object_UUID>`
+**Last modified**: <age line per _shared/age-context.md — omit when AC1 returns no row>
 
 <!-- Conversation identity = the pair (UUID, File_Name). Always emit BOTH lines so
      downstream skills (fmide-show, fm-summarize) can resolve clone-shared UUIDs. -->
@@ -294,6 +313,7 @@ Standard format:
 - **Module / domain**: <e.g. invoicing, CRM, permissions — derived from touched tables/layouts/variables>
 - **Role**: <e.g. main workflow script, utility function, validation, trigger reaction, print preparation>
 - **Trigger source**: <How is the object typically started? Direct call, trigger, button, menu>
+- **Lifecycle**: <from Step 2a, hedged — e.g. "presumably an active area: 69 saves, last changed 3 weeks before the data state"; omit without a stamp>
 
 ### Semantic signals
 - **Meaningful variables**: $$SelectedCustomer, $invoiceAmount → indicate customer/invoice context
@@ -347,6 +367,7 @@ In short mode, the section structure above is completely omitted. Instead: **1-2
 1. **What is the object from a business perspective?** — type, name, file (inline) + 1-2 sentences on the presumed purpose
 2. **In which module / domain?** — at most one half-sentence (e.g. "in the invoicing module")
 3. **(Optional) How is it integrated?** — at most one half-sentence on the caller class, ONLY if it substantially explains the business purpose
+4. **(Optional) Lifecycle** — at most one half-sentence from Step 2a (e.g. "unchanged for about 4 years"), ONLY when telling; a mass stamp only as "unchanged since at least <date>"
 
 **Prohibitions**: see [`_shared/short-mode.md`](../_shared/short-mode.md) (no headers,
 lists, tables, code blocks or UUID). Additionally for analyses: **no call-chain paths**,
@@ -371,7 +392,7 @@ Output the report in the chat. Do not write to files.
 
 ## Important notes
 
-- **DDR availability**: Without DDR-Info (`XMLMetadata.Has_DDR_INFO = 'False'`), `DDR_ScriptSteps.Step_Text` and `DDR_Calculations.Chunk_Content` are empty. In that case the semantic analysis becomes significantly weaker because resolved field/variable references are missing. Mention this limitation explicitly in the report.
+- **DDR availability**: Without DDR-Info (`FilesCatalog.Has_DDR_INFO = false` for the object's `File_Name`), `DDR_ScriptSteps.Step_Text` and `DDR_Calculations.Chunk_Content` are empty. In that case the semantic analysis becomes significantly weaker because resolved field/variable references are missing. Mention this limitation explicitly in the report.
 - **Depth limit**: Always guard recursive CTEs with `c.Depth < 5` (or smaller) to avoid cycles and explosion.
 - **Performance**: For scripts with hundreds of touched fields, aggregate instead of listing individually.
 - **Hedging is mandatory**: This skill delivers interpretations. Mark as interpretation what is interpretation. False certainty is worse than honest uncertainty.

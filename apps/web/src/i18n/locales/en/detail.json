@@ -145,6 +145,17 @@
     "clearRolesLabel": "Reset roles",
     "clearRolesTitle": "Clear all role filters"
   },
+  "referencesMissing": {
+    "label": "Not referenced:",
+    "indirectLabel": "via layout objects:",
+    "emptyLead": "Possible references:",
+    "tooltipRoles": "Possible roles: {{roles}}",
+    "tooltipAggregate_one": "(including the layout object)",
+    "tooltipAggregate_other": "(including the {{count}} layout objects)",
+    "caveatScriptCallers": "Statically resolvable calls only. Not covered: Perform Script by name, fmp URLs, external calls.",
+    "caveatToFieldAccess": "Field access through this TO creates no TO reference.",
+    "aria": "Object types without references"
+  },
   "hierarchyTree": {
     "ariaLabel": "Object hierarchy",
     "usedBy": "Used by ({{count}})",
@@ -204,6 +215,10 @@
         "short": "Popover",
         "long": "Popover title"
       },
+      "active_segment": {
+        "short": "Segment",
+        "long": "Active segment"
+      },
       "script_trigger_parameter": {
         "short": "Trigger",
         "long": "Script trigger parameter"
@@ -231,6 +246,10 @@
       "menu_install": {
         "short": "Install",
         "long": "Menu install condition"
+      },
+      "menu_action": {
+        "short": "Menu",
+        "long": "Menu action"
       }
     }
   },
@@ -242,9 +261,13 @@
     "sortName": "Name",
     "sortType": "Type",
     "sortFile": "File",
+    "sortModified": "Last modified",
     "groupNone": "None",
     "groupType": "Type",
-    "groupFile": "File"
+    "groupFile": "File",
+    "modifiedSinceLabel": "Modified since",
+    "modifiedSinceHint": "Only objects whose own change stamp is on or after this day — script steps, layout objects and calculations have no stamp of their own",
+    "modifiedSinceClear": "Reset"
   },
   "fieldViewer": {
     "ariaLabel": "Field details",
@@ -343,7 +366,8 @@
     "uuidMatch": "Matched by UUID",
     "healedUuidMatch": "Matched by UUID (duplicate)",
     "healedUuidTitle": "FileMaker lists this object under the searched UUID; because the UUID occurred more than once in the export, the catalog keeps it under a replacement UUID.",
-    "idMatch": "Matched by ID {{id}}"
+    "idMatch": "Matched by ID {{id}}",
+    "modifiedTooltip": "Last modified {{age}} — local time of the editing client, without time zone"
   },
   "scriptSearchFilter": {
     "searchAria": "Search references",
@@ -461,6 +485,34 @@
       "menuLabel": "Actions",
       "searchPlaceholder": "Filter solutions…",
       "noMatches": "No solutions match the filter."
+    },
+    "changeAuthors": {
+      "heading": "Authors of the change metadata",
+      "desc": "Merge spelling variants of one person, set display names and mark technical authors. The aliases are stored with the solution, survive a rebuild and apply at once to the “Last modified” line.",
+      "solution": "Solution: {{name}}.",
+      "loading": "Loading authors …",
+      "empty": "This catalog has no change metadata yet — import the solution again with the current version.",
+      "noSidecar": "The annotations database of this solution is not available (feature disabled or locked) — aliases cannot be changed.",
+      "colUser": "User",
+      "colUserTitle": "User name in all spellings",
+      "colStamps": "Stamps",
+      "colLast": "Last change",
+      "colPerson": "Same person as",
+      "colDisplay": "Display name",
+      "colTechnical": "Technical",
+      "colActions": "Actions",
+      "accountsTitle": "Signed-in accounts",
+      "stampsTitle": "{{single}} individual changes outside mass events · {{files}} files",
+      "ownPerson": "— own entry —",
+      "technicalAutoYes": "Automatic (yes)",
+      "technicalAutoNo": "Automatic (no)",
+      "technicalAuto": "auto",
+      "technicalYes": "Yes",
+      "technicalNo": "No",
+      "save": "Save",
+      "reset": "Reset",
+      "orphanHeading": "Aliases without a matching user in the current catalog",
+      "orphanDelete": "Remove"
     }
   },
   "objectHeader": {
@@ -471,7 +523,41 @@
     "copyOriginalUuidAria": "Copy original UUID to clipboard (ambiguous in the source file)",
     "copySyntheticUuidAria": "Copy synthetic FM-Lab UUID to clipboard",
     "syntheticBadge": "FM-Lab",
-    "syntheticTooltip": "FM-Lab-internal replacement identity: the original UUID of this object was a duplicate in the source file and has been healed. Click to copy the synthetic UUID (catalog identity)."
+    "syntheticTooltip": "FM-Lab-internal replacement identity: the original UUID of this object was a duplicate in the source file and has been healed. Click to copy the synthetic UUID (catalog identity).",
+    "change": {
+      "modified": "Last modified",
+      "containerModified": "Container last modified",
+      "timeTooltip": "{{age}} — local time of the editing client, without time zone",
+      "unknownAuthor": "unknown user",
+      "authorTooltip": "FileMaker user name of the last editor",
+      "accountTooltip": "Signed-in account",
+      "countTooltip": "Saves since the object was created",
+      "modifications_one": "{{count}} change",
+      "modifications_other": "{{count}} changes",
+      "quotedName": "“{{name}}”",
+      "technical": {
+        "tool": "Tool",
+        "toolTooltip": "Stamped by a tool (FileMaker Data Migration Tool), not by a developer",
+        "runtime": "Runtime",
+        "runtimeTooltip": "Changed at runtime by an end user (WebDirect session) — no developer activity",
+        "other": "Technical",
+        "otherTooltip": "Marked as a technical author in the author aliases"
+      },
+      "bulk": {
+        "badge": "Mass event {{date}}",
+        "kind": {
+          "mass_action": "Mass action: many objects stamped at once (migration, find & replace, new file)",
+          "paste_import": "Paste / import: objects pasted or imported together",
+          "tool": "Tool run (FileMaker Data Migration Tool)"
+        },
+        "scopeFile": "in one file",
+        "scopeSolution_one": "across {{count}} file",
+        "scopeSolution_other": "across {{count}} files",
+        "objects_one": "{{count}} object",
+        "objects_other": "{{count}} objects",
+        "hint": "The stamp reflects this action, not an individual edit of the object."
+      }
+    }
   },
   "scriptLine": {
     "expand": "Expand",
@@ -703,7 +789,6 @@
     "viewTable": "Table view",
     "baseTheme": "Base theme",
     "inLayoutMenus": "In layout menus",
-    "lastModified": "Last modified",
     "triggersHeading": "Script triggers",
     "noTriggers": "No script triggers",
     "yes": "Yes",
@@ -774,6 +859,7 @@
       "button_action": "Button action",
       "panel_title": "Panel title",
       "popover_title": "Popover title",
+      "active_segment": "Active segment",
       "display_calculation": "Display calculation",
       "merge_text": "Resolved merge anchors",
       "chart_series": "Chart series",

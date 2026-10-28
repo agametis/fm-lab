@@ -48,7 +48,8 @@
         "id": "credentials_findings",
         "props": {
           "span": 12,
-          "title": "Findings"
+          "title": "Findings",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "credentials_findings"
@@ -60,17 +61,13 @@
             "props": {
               "rowKey": "uuid",
               "density": "comfortable",
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "chipFilter": {
-                "field": "step_name",
-                "groups": [
-                  {
-                    "label": "If / Else If",
-                    "values": [
-                      "If",
-                      "Else If"
-                    ]
-                  }
-                ]
+                "field": "_chip_step",
+                "param": "step"
               },
               "columns": [
                 {

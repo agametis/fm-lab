@@ -67,6 +67,7 @@ export function ExplorerInspectPanel(props: ExplorerInspectPanelProps) {
     if (subroles.length === 0) return role;
     const strings = {
       buttonAction: t('edge.buttonAction', { defaultValue: 'Button-Aktion' }) as string,
+      menuAction: t('edge.menuAction', { defaultValue: 'Menü-Aktion' }) as string,
       represents: t('edge.represents', { defaultValue: 'repräsentiert' }) as string,
     };
     const parts = role === 'triggers_script'

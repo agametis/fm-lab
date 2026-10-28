@@ -69,7 +69,8 @@
         "id": "script_comment_density",
         "props": {
           "span": 12,
-          "title": "Scripts by step count, comments and whitespace"
+          "title": "Scripts by step count, comments and whitespace",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "script_comment_density"
@@ -82,6 +83,10 @@
               "rowKey": "uuid",
               "density": "comfortable",
               "sortable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "columns": [
                 {
                   "field": "name",

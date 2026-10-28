@@ -59,6 +59,66 @@ Note on the name collision: theme-internal `<Metadata><namedstyles>` blocks (ins
 `ThemeCatalog`) are NOT the file-options branch — only a `<Metadata>` with an
 `<AddAction>` child counts (the P1 parser filters accordingly).
 
+## Change stamps (`<UUID>` attributes)
+
+```xml
+<Script id="12" name="…">
+  <UUID modifications="63" userName="Jane Doe" accountName="developer" timestamp="2026-01-19T11:21:44">2E4D…</UUID>
+```
+
+| Attribute | Meaning |
+|---|---|
+| `timestamp` | Last save, `YYYY-MM-DDTHH:MM:SS`, **local time of the editing client, no time zone** |
+| `userName` | FileMaker user name (`Get(UserName)`, preferences/OS user) |
+| `accountName` | Signed-in account, **as typed at login** (one account appears as `Admin` and `admin`); may be empty |
+| `modifications` | Save counter since creation |
+
+Identical in both SaXML profiles and with/without DDR-Info. Two levels carry them:
+
+- **Object level** — Script, Layout, CustomFunction (incl. their folders, separators and
+  end markers), Field, BaseTable, TableOccurrence, Relationship, ValueList,
+  ExternalDataSource, Account, PrivilegeSet, ExtendedPrivilege, CustomMenu,
+  CustomMenuSet, Theme, BaseDirectory, FileAccess `Authorization`. No stamp on steps,
+  layout objects/parts, triggers, menu items, value-list options. → raw columns
+  `Modified_At/_By/_Account`, `Modifications` on the source tables, typed in `ObjectChangeMeta`.
+- **Catalog level** — a `<UUID>` direct child of every catalog under `Structure/AddAction`
+  (usually the first child; `CustomMenuCatalog` puts `<PasteIndexList>` first;
+  `LibraryCatalog` has none) and of every `FieldsForTables/FieldCatalog` (scope =
+  `BaseTableReference`; large tables are split into several `<FieldCatalog>` blocks — only
+  the first carries the `<UUID>`). → `CatalogChangeMeta`. After `--split`/sub-chunking the
+  `LayoutCatalog` stamp sits in the first sub-chunk only.
+
+**What changes a stamp** — verified by edit experiments on a copy of the coverage
+solution (FileMaker Pro 22.0.6, one export per action, every `<UUID>` compared with the
+previous export):
+
+| Action | Object stamp | Catalog stamp |
+|---|---|---|
+| Edit a script step | script: new timestamp, counter +1 | ScriptCatalog: new timestamp, +1 |
+| Move / format a layout object | layout: new timestamp, +1 | LayoutCatalog: counter +1, **timestamp unchanged** |
+| Delete a field | field gone | its FieldCatalog: new timestamp, +1; **TableOccurrenceCatalog also +1** (BaseTableCatalog unchanged) |
+| Reorder scripts / drag a script into a folder | script and folder **unchanged** | ScriptCatalog: new timestamp, +1 |
+| Copy & paste a script (runs as a clipboard import, "… 2") | **new object**: new UUID, counter **1**, paste time, paster as author | ScriptCatalog: new timestamp, +1 |
+| Import a script from another file | **new object**: new UUID, counter 1, import time (source stamp not taken over) | ScriptCatalog: new timestamp, +1 |
+| End user changes their password at runtime | account: new timestamp, +1, `userName`/`accountName` = the end user | AccountsCatalog: counter +1, timestamp unchanged |
+| Move / rename a table occurrence | occurrence: new timestamp, +1 | TableOccurrenceCatalog: new timestamp, +1 |
+| Save as Clone · Developer Utility (no options) · Save compacted copy | **all stamps unchanged** | unchanged |
+
+Derived rules:
+
+- **No side effects:** opening files or dialogs stamps nothing; only the edited object and
+  its catalog change.
+- **"Touched" (new timestamp, same counter) occurred in none of these actions.** Clone,
+  Developer Utility and compaction do not produce it — mass events with that signature in
+  real solutions have another cause (open; a version upgrade is a candidate, the Data
+  Migration Tool was not tested).
+- **Catalog counters count child saves; catalog timestamps follow per-catalog rules:**
+  ScriptCatalog on every script action, LayoutCatalog/AccountsCatalog on structural
+  changes only, FieldCatalog on a field deletion, TableOccurrenceCatalog on every OK in
+  *Manage Database*. "Catalog newer than every child" is a deletion indicator only for
+  FieldCatalog; catalog stamps typically trail the newest child by seconds (dialog commit).
+- **A burst of counter-1 objects** with the paste time is the signature of a paste/import.
+
 ## SaXML profiles (version-explicit import)
 
 The converter reads the root attribute `FMSaveAsXML/@version` of every export and
@@ -219,6 +279,47 @@ side stores it analogously in `XMLStepReferences.TO_UUID`, not as a link). The s
 carried along in the additive column `XMLLayoutReferences.Step_ID` and carries the
 locale-independent field role. Closes the largest remaining where-used gap class (layouts
 reachable only via a button appeared as false positives in `unused_layout`).
+
+## Custom-menu actions (`CustomMenuItem > action > Step`)
+
+A custom-menu item can run a script step instead of a FileMaker command
+(`<Command id="0"/>`, `<Override action="True">`). The only step seen in practice with an
+object reference is Perform Script:
+
+```xml
+<CustomMenuItem index="4" isSubMenuItem="False" isSeparatorItem="False">
+  <UUID>29916F0D-…</UUID>
+  <action>
+    <Step index="0" id="1" name="Perform Script" enable="True">
+      <ParameterValues membercount="2">
+        <Parameter type="List">
+          <List name="From list" value="1">
+            <DataSourceReference id="18" name="Hauptmenu" UUID="DCE112A9-…"/>  ← only cross-file
+            <ScriptReference id="125" name="Module: Artikel" UUID="FC1CA3BF-…"/> ← proxy UUID cross-file
+          </List>
+        </Parameter>
+        <Parameter type="Parameter"><Parameter/></Parameter>
+      </ParameterValues>
+    </Step>
+  </action>
+  <Name><Calculation><Text><![CDATA["Artikel"]]></Text></Calculation></Name>
+  <Command id="0"/>
+  <Override name="True" action="True" Shortcut="True"/>
+</CustomMenuItem>
+```
+
+- **Cross-file targets carry a proxy UUID** in `ScriptReference/@UUID` (as with
+  cross-file Perform Script in script steps) — it is in no `ScriptCatalog`. The reliable
+  identity is the script `@id` in the target file named by the `DataSourceReference`;
+  `@name` may be stale after a rename. P4 therefore resolves (target file, `@id`) into
+  `triggers_script · menu_action`. `Item_XML` (`CustomMenuItemCatalog`) holds the whole
+  element, so no P1/P2 extraction is involved.
+- Other steps are possible (Paste occurs, without reference); layout/field/TO/value-list
+  references or formulas in an action are not wired and are listed by P6
+  `v_report_menu_action_unlinked`.
+- `<Name>` holds the overridden menu text as a formula. A pure string literal (as above)
+  names the item in `ObjectCatalog` (`Menu › Artikel`); a real formula stays
+  `Menu › (berechnet)`.
 
 ## External value lists (`<Source value="External">`)
 

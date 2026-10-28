@@ -11,18 +11,18 @@ count them in one line instead.
 
 | Test id | Type | Feeds |
 |---|---|---|
-| `script-error-checks` | error-check | F 5.1 — correctness risks in scripts |
-| `calc-variable-hygiene` | error-check | F 5.1 — calculation/variable defects |
-| `field-integrity` | error-check | F 5.1 — schema defects |
-| `uuid-integrity` | error-check | F 5.1 — catalog integrity (also a caveat for the report itself) |
-| `script-code-quality` | code-quality | §4 conventions, F 5.2 |
-| `naming-hygiene` | code-quality | §4 conventions |
-| `unfinished-work` | code-quality | §7 open questions, F 5.2 |
-| `script-plugin-maintenance` | code-quality | §4 APIs/plugins |
-| `script-performance-checks` | performance | §6 performance |
-| `schema-performance` | performance | §6 performance |
-| `sql-performance-checks` | performance | §6 performance (ExecuteSQL) |
-| `layout-render-performance` | performance | §4 UI, §6 |
+| `script-error-checks` | error-check | F 6.1 — correctness risks in scripts |
+| `calc-variable-hygiene` | error-check | F 6.1 — calculation/variable defects |
+| `field-integrity` | error-check | F 6.1 — schema defects |
+| `uuid-integrity` | error-check | F 6.1 — catalog integrity (also a caveat for the report itself) |
+| `script-code-quality` | code-quality | §5 conventions, F 6.2 |
+| `naming-hygiene` | code-quality | §5 conventions |
+| `unfinished-work` | code-quality | §8 open questions, F 6.2 |
+| `script-plugin-maintenance` | code-quality | §5 APIs/plugins |
+| `script-performance-checks` | performance | §7 performance |
+| `schema-performance` | performance | §7 performance |
+| `sql-performance-checks` | performance | §7 performance (ExecuteSQL) |
+| `layout-render-performance` | performance | §5 UI, §7 |
 
 On demand (not default — they need a stated target platform): `platform-server`,
 `platform-webdirect`, `platform-ios`, `platform-cloud`, `platform-dataapi`, `platform-odata`,

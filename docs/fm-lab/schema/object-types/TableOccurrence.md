@@ -20,7 +20,7 @@ Properties marked **not extracted** are visible in the raw XML only.
 | `@View` | `View_State` | Collapse state of the node on the canvas |
 | `@height` | `Box_Height` | Height of the node box |
 | `<UUID>` (text) | `TO_UUID` | Stable identity, used for all joins |
-| `<UUID>/@accountName`, `@userName`, `@timestamp`, `@modifications` | — | Modification metadata — **not extracted** |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata, raw (`Modified_At` as text, empty account → `NULL`); typed per object in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
 | `<BaseTableSourceReference>/@type` | — | Discriminator of the source wrapper; `BaseTableReference` / `ExternalDataSourceReference` *(fixture)* — redundant with `@type`, **not extracted** |
 | `<BaseTableReference>` `@id` / `@name` / `@UUID` | `BT_ID` / `BT_Name` / `BT_UUID` | The represented base table → `base_table` link |
 | Data-source reference (external occurrences) | `DS_ID` / `DS_Name` / `DS_UUID` | The external data source plus remote table → `data_source` link; in the test fixture the external occurrence's wrapper is empty |

@@ -39,7 +39,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || (cd "$SCRIPT_DIR/../../../.." && pwd))"
 DOCS_DIR="$PROJECT_ROOT/docs/claris-help"
 MANIFEST_FILE="$DOCS_DIR/manifest.json"
-CRAWLER="$SCRIPT_DIR/claris_crawler.py"
+CRAWLER="$SCRIPT_DIR/claris_crawler.mjs"
 
 # Read-only reference to the shipped reference DB. Not installed by this script;
 # only read — if present — for the doc-registry category/function counts shown
@@ -166,22 +166,24 @@ human_size() {
         return
     fi
     if [ "$bytes" -ge 1073741824 ]; then
-        echo "$(echo "scale=1; $bytes / 1073741824" | bc) GB"
+        echo "$(_fmlab_div1 "$bytes" 1073741824) GB"
     elif [ "$bytes" -ge 1048576 ]; then
-        echo "$(echo "scale=1; $bytes / 1048576" | bc) MB"
+        echo "$(_fmlab_div1 "$bytes" 1048576) MB"
     elif [ "$bytes" -ge 1024 ]; then
-        echo "$(echo "scale=1; $bytes / 1024" | bc) KB"
+        echo "$(_fmlab_div1 "$bytes" 1024) KB"
     else
         echo "$bytes B"
     fi
 }
 
-# Get the existing version of a language from .version file
+# Get the existing version of a language from .version file.
+# Pure sed (no python3): the marker is flat JSON written by this script, and
+# last_modified holds an HTTP date — no escaped quotes to worry about.
 get_local_version() {
     local lang="$1"
     local vfile="$DOCS_DIR/$lang/.version"
     if [ -f "$vfile" ]; then
-        python3 -c "import json,sys; d=json.load(open('$vfile')); print(d.get('last_modified',''))" 2>/dev/null
+        sed -n 's/.*"last_modified"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$vfile" 2>/dev/null | head -n1
     fi
 }
 
@@ -213,14 +215,11 @@ lang_display_name() {
 run_check_mode() {
     local installed="false" local_version="" remote_version="" update_available="false"
     local en_dir="$DOCS_DIR/$REFERENCE_LANG"
-    local en_version_file="$en_dir/.version"
 
     if [ -d "$en_dir/content" ] && [ "$(ls -A "$en_dir/content" 2>/dev/null | wc -l)" -gt 0 ]; then
         installed="true"
     fi
-    if [ -f "$en_version_file" ]; then
-        local_version=$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('last_modified',''))" "$en_version_file" 2>/dev/null || echo "")
-    fi
+    local_version=$(get_local_version "$REFERENCE_LANG")
     remote_version=$(get_remote_timestamp "$REFERENCE_LANG" || true)
 
     if [ "$installed" = "false" ]; then
@@ -263,10 +262,14 @@ fi
 
 phase_progress check 0 "Validating environment..."
 
-# Python 3 vorhanden?
-if ! command -v python3 >/dev/null 2>&1; then
-    color_red "ERROR: python3 not found in PATH" >&2
-    echo "Install Python 3 (macOS: 'brew install python3' or use system Python)." >&2
+# Node.js und curl vorhanden? (Crawler = Node, Transport = curl; Node ist
+# ohnehin fm-lab-Voraussetzung, Python wird nicht benötigt)
+if ! command -v node >/dev/null 2>&1; then
+    emit_error "node not found in PATH — the Claris crawler needs Node.js (>= 20), the same runtime fm-lab itself requires. Run tools/init.sh to check the setup."
+    exit 2
+fi
+if ! command -v curl >/dev/null 2>&1; then
+    emit_error "curl not found in PATH — the Claris crawler downloads with curl."
     exit 2
 fi
 
@@ -467,9 +470,9 @@ for lang in "${TARGET_LANGS[@]}"; do
     mkdir -p "$LANG_DIR"
 
     # Run crawler
-    PYTHON_ARGS=(--lang="$lang" --output="$DOCS_DIR" --max-workers="$MAX_WORKERS")
+    CRAWLER_ARGS=(--lang="$lang" --output="$DOCS_DIR" --max-workers="$MAX_WORKERS")
     if $DRY_RUN; then
-        PYTHON_ARGS+=(--dry-run)
+        CRAWLER_ARGS+=(--dry-run)
     fi
 
     CRAWL_OUTPUT_FILE=$(mktemp)
@@ -488,7 +491,7 @@ for lang in "${TARGET_LANGS[@]}"; do
         fi
     fi
 
-    if python3 "$CRAWLER" "${PYTHON_ARGS[@]}" 2>&1 | tee "$CRAWL_OUTPUT_FILE"; then
+    if node "$CRAWLER" "${CRAWLER_ARGS[@]}" 2>&1 | tee "$CRAWL_OUTPUT_FILE"; then
         CRAWL_RC=0
     else
         CRAWL_RC=$?
@@ -510,14 +513,16 @@ for lang in "${TARGET_LANGS[@]}"; do
         continue
     fi
 
-    # Parse with Python
-    HTML_PAGES=$(echo "$JSON_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('html_pages',0))")
-    ASSET_FILES=$(echo "$JSON_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('asset_files',0))")
-    SIZE_BYTES=$(echo "$JSON_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('total_size_bytes',0))")
-    DURATION=$(echo "$JSON_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('duration_seconds',0))")
-    INCOMPLETE=$(echo "$JSON_RESULT" | python3 -c "import json,sys; print(str(json.load(sys.stdin).get('incomplete',False)).lower())")
-    HTML_FAILURES=$(echo "$JSON_RESULT" | python3 -c "import json,sys; print(len(json.load(sys.stdin).get('html_failures',[])))")
-    ASSET_FAILURES=$(echo "$JSON_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('asset_failures_count',0))")
+    # Parse the result line (one node call; all fields are numbers/booleans)
+    read -r HTML_PAGES ASSET_FILES SIZE_BYTES DURATION INCOMPLETE HTML_FAILURES ASSET_FAILURES <<EOF
+$(printf '%s' "$JSON_RESULT" | node -e '
+let s = ""; process.stdin.on("data", (d) => { s += d; }).on("end", () => {
+  const r = JSON.parse(s.trim().split("\n").pop());
+  console.log([r.html_pages || 0, r.asset_files || 0, r.total_size_bytes || 0, r.duration_seconds || 0,
+    r.incomplete ? "true" : "false", (r.html_failures || []).length, r.asset_failures_count || 0].join(" "));
+});')
+EOF
+    : "${HTML_PAGES:=0}" "${ASSET_FILES:=0}" "${SIZE_BYTES:=0}" "${DURATION:=0}" "${INCOMPLETE:=true}" "${HTML_FAILURES:=0}" "${ASSET_FAILURES:=0}"
 
     TOTAL_FILES=$((TOTAL_FILES + HTML_PAGES + ASSET_FILES))
     TOTAL_BYTES=$((TOTAL_BYTES + SIZE_BYTES))
@@ -541,21 +546,20 @@ for lang in "${TARGET_LANGS[@]}"; do
 
     # Write per-language version marker (unless dry run)
     if ! $DRY_RUN; then
-        python3 -c "
-import json
-data = {
-    'last_modified': '''$REMOTE_TS''',
-    'fetched_at': __import__('datetime').datetime.utcnow().isoformat() + 'Z',
-    'html_pages': $HTML_PAGES,
-    'asset_files': $ASSET_FILES,
-    'total_size_bytes': $SIZE_BYTES,
-    'incomplete': '$INCOMPLETE' == 'true',
-    'html_failures_count': $HTML_FAILURES,
-    'asset_failures_count': $ASSET_FAILURES,
-}
-with open('''$LANG_DIR/.version''', 'w') as f:
-    json.dump(data, f, indent=2)
-"
+        VFILE="$LANG_DIR/.version" REMOTE_TS="$REMOTE_TS" HTML_PAGES="$HTML_PAGES" ASSET_FILES="$ASSET_FILES" \
+        SIZE_BYTES="$SIZE_BYTES" INCOMPLETE="$INCOMPLETE" HTML_FAILURES="$HTML_FAILURES" ASSET_FAILURES="$ASSET_FAILURES" \
+        node -e '
+const e = process.env;
+require("fs").writeFileSync(e.VFILE, JSON.stringify({
+  last_modified: e.REMOTE_TS,
+  fetched_at: new Date().toISOString(),
+  html_pages: Number(e.HTML_PAGES),
+  asset_files: Number(e.ASSET_FILES),
+  total_size_bytes: Number(e.SIZE_BYTES),
+  incomplete: e.INCOMPLETE === "true",
+  html_failures_count: Number(e.HTML_FAILURES),
+  asset_failures_count: Number(e.ASSET_FAILURES),
+}, null, 2) + "\n");'
     fi
 
     echo ""
@@ -569,55 +573,50 @@ phase_progress crawl 100 ""
 if ! $DRY_RUN; then
     color_cyan "Updating manifest..."
     phase_progress manifest 0 "Updating language manifest..."
-    python3 <<EOF
-import json, os, datetime
+    MANIFEST_FILE="$MANIFEST_FILE" DOCS_DIR="$DOCS_DIR" ALL_LANGS="${ALL_LANGS[*]}" node - <<'EOF'
+const fs = require("fs");
+const path = require("path");
+const manifestPath = process.env.MANIFEST_FILE;
+const docsDir = process.env.DOCS_DIR;
+const allLangs = process.env.ALL_LANGS.split(/\s+/).filter(Boolean);
 
-manifest_path = "$MANIFEST_FILE"
-docs_dir = "$DOCS_DIR"
-all_langs = "${ALL_LANGS[*]}".split()
+// Load existing manifest if present
+const manifest = fs.existsSync(manifestPath)
+  ? JSON.parse(fs.readFileSync(manifestPath, "utf8"))
+  : {
+      $schema_version: 1,
+      source: "Claris FileMaker Pro Online Help",
+      source_url: "https://help.claris.com",
+      fallback_language: "en",
+      languages: [],
+    };
 
-# Load existing manifest if present
-if os.path.exists(manifest_path):
-    with open(manifest_path) as f:
-        manifest = json.load(f)
-else:
-    manifest = {
-        "\$schema_version": 1,
-        "source": "Claris FileMaker Pro Online Help",
-        "source_url": "https://help.claris.com",
-        "fallback_language": "en",
-        "languages": [],
-    }
+manifest.fetched_at = new Date().toISOString();
 
-manifest["fetched_at"] = datetime.datetime.utcnow().isoformat() + "Z"
+// Rebuild languages list from per-language .version files
+const languages = [];
+for (const lang of allLangs) {
+  const vfile = path.join(docsDir, lang, ".version");
+  if (!fs.existsSync(vfile) || !fs.statSync(vfile).isFile()) continue;
+  const v = JSON.parse(fs.readFileSync(vfile, "utf8"));
+  languages.push({
+    code: lang,
+    url_lang_segment: lang,
+    url_root: `https://help.claris.com/${lang}/pro-help/`,
+    html_pages: v.html_pages ?? 0,
+    asset_files: v.asset_files ?? 0,
+    total_size_bytes: v.total_size_bytes ?? 0,
+    last_modified: v.last_modified ?? "",
+    fetched_at: v.fetched_at ?? "",
+    incomplete: v.incomplete ?? false,
+  });
+}
 
-# Rebuild languages list from per-language .version files
-languages = []
-for lang in all_langs:
-    vfile = os.path.join(docs_dir, lang, ".version")
-    if not os.path.isfile(vfile):
-        continue
-    with open(vfile) as f:
-        v = json.load(f)
-    languages.append({
-        "code": lang,
-        "url_lang_segment": lang,
-        "url_root": f"https://help.claris.com/{lang}/pro-help/",
-        "html_pages": v.get("html_pages", 0),
-        "asset_files": v.get("asset_files", 0),
-        "total_size_bytes": v.get("total_size_bytes", 0),
-        "last_modified": v.get("last_modified", ""),
-        "fetched_at": v.get("fetched_at", ""),
-        "incomplete": v.get("incomplete", False),
-    })
+manifest.languages = languages;
+fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
 
-manifest["languages"] = languages
-
-with open(manifest_path, "w") as f:
-    json.dump(manifest, f, indent=2, ensure_ascii=False)
-
-print(f"  Manifest written: {manifest_path}")
-print(f"  Languages registered: {len(languages)}")
+console.log(`  Manifest written: ${manifestPath}`);
+console.log(`  Languages registered: ${languages.length}`);
 EOF
     phase_progress manifest 100 ""
 fi
@@ -626,7 +625,7 @@ fi
 # Shared registry consumed by the web home dashboard via the REST API
 # builtin `list_docs`. Skipped in dry-run mode.
 
-REGISTER_SCRIPT="$PROJECT_ROOT/tools/register_docs.py"
+REGISTER_SCRIPT="$PROJECT_ROOT/tools/register_docs.mjs"
 if ! $DRY_RUN && [ -f "$REGISTER_SCRIPT" ]; then
     # Languages: every <code>/content/ directory that exists counts as installed.
     INSTALLED_LANGS=()
@@ -647,9 +646,7 @@ if ! $DRY_RUN && [ -f "$REGISTER_SCRIPT" ]; then
     CATEGORY_COUNT=""
     FUNCTION_COUNT=""
     if [ -f "$REFERENCE_DB" ]; then
-        DUCKDB_BIN=$(command -v duckdb || true)
-        [ -z "$DUCKDB_BIN" ] && [ -x "$HOME/.duckdb/cli/latest/duckdb" ] && DUCKDB_BIN="$HOME/.duckdb/cli/latest/duckdb"
-        [ -z "$DUCKDB_BIN" ] && [ -x "/opt/homebrew/bin/duckdb" ] && DUCKDB_BIN="/opt/homebrew/bin/duckdb"
+        DUCKDB_BIN=$(_fmlab_duckdb_bin || true)
         if [ -n "$DUCKDB_BIN" ]; then
             CATEGORY_COUNT=$("$DUCKDB_BIN" -readonly "$REFERENCE_DB" -noheader -csv -c \
                 "SELECT (SELECT COUNT(*) FROM function_categories) + (SELECT COUNT(*) FROM script_steps_categories);" 2>/dev/null || echo "")
@@ -660,7 +657,7 @@ if ! $DRY_RUN && [ -f "$REGISTER_SCRIPT" ]; then
 
     color_cyan "Updating .fmlab/docs.json..."
     phase_progress register 0 "Updating .fmlab/docs.json..."
-    python3 "$REGISTER_SCRIPT" \
+    node "$REGISTER_SCRIPT" \
         --id claris-help \
         --name "Claris FileMaker" \
         --description "Online help mirror for FileMaker Pro (help.claris.com)." \
@@ -670,7 +667,7 @@ if ! $DRY_RUN && [ -f "$REGISTER_SCRIPT" ]; then
         --categories "${CATEGORY_COUNT:-none}" \
         --functions "${FUNCTION_COUNT:-none}" \
         $LANG_ARGS \
-        || color_yellow "WARNING: register_docs.py failed (non-fatal)."
+        || color_yellow "WARNING: register_docs.mjs failed (non-fatal)."
     phase_progress register 100 ""
 fi
 

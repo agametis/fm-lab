@@ -6,10 +6,14 @@
 -- @display: table
 -- @chip_filter: relation
 -- @chip_param: relation
--- @params: file (optional), limit (optional, default 500), relation (optional: identical|contained|partial), same_type (optional: 1 = only pairs of the same object type), min_overlap_pct (optional, default 10)
+-- @page_param: page
+-- @search_param: q
+-- @sort_param: sort
+-- @page_size: 500
+-- @params: file (optional), page (optional), page_size (optional, default 500), q (optional), sort (optional), dir (optional), relation (optional: identical|contained|partial), same_type (optional: 1 = only pairs of the same object type), min_overlap_pct (optional, default 10)
 -- @click_action: openObject
 -- @click_args: uuid={{_nav_uuid}}&type=Layout&file={{file_name}}&ref={{_object_a_uuid}}&marks={{_object_b_uuid}}
--- @output_format: file_name, layout_name, part_type, object_a, type_a, z_a, object_b, type_b, z_b, overlap_px, overlap_pct, relation, _message, _chip_facets, _row_total
+-- @output_format: file_name, layout_name, part_type, object_a, type_a, z_a, object_b, type_b, z_b, overlap_px, overlap_pct, relation, _message, _chip_facets, _row_total, _page, _page_size
 -- @object_types: Layout
 -- @output_types: count, inventory-table
 -- @scope: solution, file, object, object-list, cluster
@@ -44,9 +48,9 @@
 -- The relation chips switch SERVER-SIDE (`@chip_param: relation`) and carry the
 -- true counts of the whole scope — which matters here more than anywhere else,
 -- since 93k pairs against a 500-row page would otherwise turn the chips into a
--- sample of half a percent. `_chip_facets` counts over `base` — every filter
--- EXCEPT the relation itself, otherwise each chip would only ever show its own
--- selection — while `_row_total` counts over `sel`, i.e. WITH that filter, so
+-- sample of half a percent. `_chip_facets` counts over `result` — every filter
+-- EXCEPT the search and the relation itself, otherwise each chip would only ever show its own
+-- selection — while `_row_total` counts over `filtered`, i.e. WITH that filter, so
 -- the header names the truncation and only then.
 --
 -- Row click highlights BOTH partners: `ref` carries the first object (which
@@ -100,7 +104,7 @@ classified AS (
 -- only to feed the row-click deep link, and the table primitive hides
 -- underscore-prefixed columns. Without that the widest columns in the result
 -- would be three opaque identifiers.
-, base AS (
+, result AS MATERIALIZED (
     SELECT
         c.File_Name AS file_name,
         ly.L_UUID AS _nav_uuid,
@@ -124,14 +128,36 @@ classified AS (
       AND (getvariable('scope_uuids') IS NULL
            OR ly.L_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
 ),
-sel AS (
-    SELECT * FROM base
+-- >>> shared paging search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) <> 'uuid'))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging search block
+filtered AS (
+    SELECT * FROM searched
     WHERE (getvariable('relation') IS NULL OR relation = getvariable('relation'))
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT s.*,
-    (SELECT json_group_object(relation, n)
-       FROM (SELECT relation, count(*) AS n FROM base GROUP BY 1)) AS _chip_facets,
-    (SELECT count(*) FROM sel) AS _row_total
-FROM sel s
-ORDER BY overlap_px DESC, overlap_pct DESC, file_name, layout_name
-LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.*,
+    -- Facets ordered by value, so every request returns the same text.
+    (SELECT to_json(map_from_entries(list((relation, n) ORDER BY relation)))
+       FROM (SELECT relation, count(*) AS n FROM result GROUP BY 1)) AS _chip_facets,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ overlap_px DESC, overlap_pct DESC, file_name, layout_name, _object_a_uuid, _object_b_uuid, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

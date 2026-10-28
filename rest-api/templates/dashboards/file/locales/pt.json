@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Vista de ficheiro",
-    "description": "Vista detalhada por ficheiro: metadados, opções de ficheiro, KPIs de objetos e os scripts acionados / esquema inicial / conta de início de sessão."
+    "description": "Visão detalhada por arquivo: metadados, opções do arquivo, indicadores de objetos, carimbos de alteração por catálogo e scripts acionados / layout inicial / conta de login."
   },
   "layout": {
     "file_not_found.props.title": "Ficheiro não encontrado",
@@ -14,6 +14,11 @@
     "file_metrics_kpistrip.props.items[4].label": "Última importação",
     "file_metrics_kpistrip.props.items[5].label": "Versão mínima",
     "file_size_kpistrip.props.items[0].label": "Tamanho do ficheiro",
+    "file_change_kpistrip.props.items[0].label": "Última alteração de design",
+    "file_change_kpistrip.props.items[1].label": "Por",
+    "file_change_kpistrip.props.items[2].label": "Última alteração em massa",
+    "file_change_kpistrip.props.items[3].label": "Eventos em massa",
+    "file_change_kpistrip.props.items[4].label": "Alterações individuais %",
     "file_settings_list.props.items[0].label": "Início automático",
     "file_settings_list.props.items[1].label": "Guardar credenciais",
     "file_settings_list.props.items[2].label": "Campos de início de sessão",
@@ -31,6 +36,17 @@
     "file_object_counts_kpistrip.props.items[6].label": "Listas de valores",
     "file_object_counts_kpistrip.props.items[7].label": "Funções pers.",
     "file_object_counts_kpistrip.props.items[8].label": "Variáveis",
+    "file_catalog_changes.props.title": "Alterações por catálogo",
+    "file_catalog_changes_md.props.content": "Cada objeto mantém apenas seu **último** carimbo de alteração. *Última alteração individual* deixa de fora os eventos em massa (migrações, colagens, execuções de ferramentas) e autores técnicos. O carimbo do catálogo segue regras próprias: seu contador aumenta a cada salvamento de um objeto do catálogo. Os horários são a hora local do cliente que editou.",
+    "file_change_trend.props.label": "Alterações individuais por mês, últimos 12 meses até o estado dos dados",
+    "file_catalog_changes_table.props.columns[0].label": "Catálogo",
+    "file_catalog_changes_table.props.columns[1].label": "Última alteração individual",
+    "file_catalog_changes_table.props.columns[2].label": "Usuário",
+    "file_catalog_changes_table.props.columns[3].label": "Carimbo do catálogo",
+    "file_catalog_changes_table.props.columns[4].label": "Contador",
+    "file_catalog_changes_table.props.columns[5].label": "Objetos",
+    "file_catalog_changes_table.props.columns[6].label": "Em eventos em massa",
+    "file_catalog_changes_table.props.columns[7].label": "Campo excluído após a última edição",
     "file_triggers.props.title": "Scripts acionados",
     "file_triggers_table.props.columns[0].label": "Evento",
     "file_triggers_table.props.columns[1].label": "Script",

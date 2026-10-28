@@ -112,6 +112,19 @@ export interface GroupedReferences {
 }
 
 /**
+ * Referenz-Kandidat aus `/api/references/candidates`: Richtung × Typgruppe ×
+ * Rollenmenge mit serverseitig abgeleitetem Status (present/indirect/missing).
+ * Speist die Zeile „Nicht referenziert“ unter den Referenz-Filtern.
+ */
+export type ReferenceCandidate = components['schemas']['ReferenceCandidate'];
+
+/** Kandidaten eines Objekts samt Meta (Fokus-Typ, Aggregat-Mitglieder, …). */
+export interface ReferenceCandidates {
+  items: ReferenceCandidate[];
+  meta: NonNullable<components['schemas']['ReferenceCandidatesResponse']['meta']>;
+}
+
+/**
  * Breadcrumb item for navigation.
  */
 export interface BreadcrumbItem {
@@ -120,7 +133,7 @@ export interface BreadcrumbItem {
 }
 
 // Sort & Group options (Phase 3)
-export type SortOption = 'standard' | 'name' | 'type' | 'file';
+export type SortOption = 'standard' | 'name' | 'type' | 'file' | 'modified';
 export type GroupOption = 'none' | 'type' | 'file';
 
 export interface GroupHeader {

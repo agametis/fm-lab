@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Vista file",
-    "description": "Vista dettagliata per file: metadati, opzioni file, KPI degli oggetti e gli script attivati / layout iniziale / account di accesso."
+    "description": "Vista dettagliata per file: metadati, opzioni del file, indicatori degli oggetti, timbri di modifica per catalogo e script attivati / formato iniziale / account di accesso."
   },
   "layout": {
     "file_not_found.props.title": "File non trovato",
@@ -14,6 +14,11 @@
     "file_metrics_kpistrip.props.items[4].label": "Ultimo import",
     "file_metrics_kpistrip.props.items[5].label": "Versione minima",
     "file_size_kpistrip.props.items[0].label": "Dimensione file",
+    "file_change_kpistrip.props.items[0].label": "Ultima modifica di design",
+    "file_change_kpistrip.props.items[1].label": "Da",
+    "file_change_kpistrip.props.items[2].label": "Ultima modifica di massa",
+    "file_change_kpistrip.props.items[3].label": "Eventi di massa",
+    "file_change_kpistrip.props.items[4].label": "Modifiche individuali %",
     "file_settings_list.props.items[0].label": "Login automatico",
     "file_settings_list.props.items[1].label": "Salva credenziali",
     "file_settings_list.props.items[2].label": "Campi di accesso",
@@ -31,6 +36,17 @@
     "file_object_counts_kpistrip.props.items[6].label": "Elenchi valori",
     "file_object_counts_kpistrip.props.items[7].label": "Funzioni pers.",
     "file_object_counts_kpistrip.props.items[8].label": "Variabili",
+    "file_catalog_changes.props.title": "Modifiche per catalogo",
+    "file_catalog_changes_md.props.content": "Ogni oggetto conserva solo il suo **ultimo** timbro di modifica. *Ultima modifica individuale* esclude gli eventi di massa (migrazioni, incollaggi, esecuzioni di strumenti) e gli autori tecnici. Il timbro del catalogo segue regole proprie: il suo contatore aumenta a ogni salvataggio di un oggetto del catalogo. Gli orari sono l’ora locale del client che ha modificato.",
+    "file_change_trend.props.label": "Modifiche singole al mese, ultimi 12 mesi fino allo stato dei dati",
+    "file_catalog_changes_table.props.columns[0].label": "Catalogo",
+    "file_catalog_changes_table.props.columns[1].label": "Ultima modifica individuale",
+    "file_catalog_changes_table.props.columns[2].label": "Utente",
+    "file_catalog_changes_table.props.columns[3].label": "Timbro del catalogo",
+    "file_catalog_changes_table.props.columns[4].label": "Contatore",
+    "file_catalog_changes_table.props.columns[5].label": "Oggetti",
+    "file_catalog_changes_table.props.columns[6].label": "In eventi di massa",
+    "file_catalog_changes_table.props.columns[7].label": "Campo eliminato dopo l’ultima modifica",
     "file_triggers.props.title": "Script attivati",
     "file_triggers_table.props.columns[0].label": "Evento",
     "file_triggers_table.props.columns[1].label": "Script",

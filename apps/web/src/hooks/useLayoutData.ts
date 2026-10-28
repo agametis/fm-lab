@@ -83,9 +83,6 @@ export type LayoutMeta = {
   show_current_record_list: boolean | null;
   quick_find_enabled: boolean | null;
   is_hidden: boolean | null;
-  modified_by: string | null;
-  modified_at: string | null;
-  modifications: number | null;
 };
 
 /**

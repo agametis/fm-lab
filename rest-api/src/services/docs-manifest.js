@@ -27,7 +27,7 @@ function manifestPath() {
 // Runtime install-state overlay. Split out of docs.json so the maintainer-curated
 // catalog[] can ship as a tracked file while installed[] — mutated on every install —
 // stays gitignored and never causes a `git pull` conflict. Written by
-// tools/register_docs.py; read here and merged over docs.json.
+// tools/register_docs.mjs; read here and merged over docs.json.
 function installedOverlayPath() {
   const repoRoot = settingsStore.resolveRepoRoot();
   return path.join(repoRoot, '.fmlab', 'docs.installed.json');

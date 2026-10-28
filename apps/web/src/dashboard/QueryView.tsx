@@ -36,7 +36,9 @@ export function QueryView() {
 
   const params: Record<string, unknown> = { query: queryName };
   for (const [k, v] of searchParams.entries()) {
-    if (k !== 'query') params[k] = v;
+    // `page_size` overrides the page size of a server-paged list via the API
+    // only; the page URL never sets it.
+    if (k !== 'query' && k !== 'page_size') params[k] = v;
   }
 
   const breadcrumbs = buildBreadcrumb(

@@ -16,7 +16,7 @@ ValueList is an **exported** type spread over two branches: [XML ValueListCatalo
 | `@name` | `VL_Name` | |
 | `<Source>/@value` | `Source_Type` | Source kind — see [Enumerations](#enumerations) |
 | `<UUID>` (text) | `VL_UUID` | Stable identity, used for all joins |
-| `<UUID>/@accountName`, `@userName`, `@timestamp`, `@modifications` | — | Modification metadata — **not extracted** |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata, raw (`Modified_At` as text, empty account → `NULL`); typed per object in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
 | `<TagList>` | — | Tags — **not extracted** |
 
 ### Definition (`<ValueList>` in the options branch)

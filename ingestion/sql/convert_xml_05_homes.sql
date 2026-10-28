@@ -186,6 +186,9 @@ CREATE INDEX IF NOT EXISTS idx_tor_file    ON TableOccurrenceResolution(File_Nam
 --   v1.4.0  Feld-Verankerung: Objekt-Trigger-Spiegel aufs angezeigte Feld
 --           umgelenkt (Existenz-Semantik; button_action bleibt Layout)
 --   v1.5.0  Spezialtypen Chart/Web Viewer nicht mehr gehoisted (s. Block unten)
+--   v1.5.1  Filter der OnWindowTransaction-Kandidaten NULL-sicher: reads_field-
+--           Kanten ohne Subrole (Formel-, CF- und Step-Lesezugriffe) fielen
+--           mit heraus
 
 -- LogicalLinks — operationale Referenz-Kanten, Sub-Objekte auf ihren Container
 -- hochgezogen, Containment-Gerüst + Waisen verworfen, (a,b)-dedupliziert. MIT
@@ -193,8 +196,10 @@ CREATE INDEX IF NOT EXISTS idx_tor_file    ON TableOccurrenceResolution(File_Nam
 --
 -- STUFE C: lokale Variablen ($x) werden hier
 -- ausgeschlossen. Ihr Knoten-UUID ist md5(Variable_Scope::Scope_Anchor::Name) und
--- der Scope_Anchor einer LOKALEN Variable ist das Script → sie ist an genau ein
--- Script gekettet ⇒ Degree-1-Pendant, kann NIE eine Brücke zwischen Modulen sein.
+-- der Scope_Anchor einer LOKALEN Variable ist das Script → sie ist je Datei an
+-- genau ein Script gekettet (Klon-Dateien teilen die UUID, Identität
+-- (Object_UUID, File_Name)) ⇒ Degree-1-Pendant, kann NIE eine Brücke zwischen
+-- Modulen sein.
 -- Strukturell inert fürs Clustering, reiner visueller Clutter im Explorer
 -- („farbige Bündel um Scripte"): 33,9 % aller Cluster-Knoten, 10,8 % der Kanten.
 -- GLOBALE ($$) und superglobale ($$$) Variablen BLEIBEN (Scope_Anchor=Datei bzw.
@@ -324,8 +329,11 @@ hoisted AS (
          -- und passiert den Link_Type-Filter oben. Jedes LayoutObject traegt genau
          -- eine solche Kante, auch verschachtelte (s. DATENBEFUND).
          OR (ol.Link_Role = 'parent_layout' AND sa.Object_UUID IS NOT NULL))
+    -- NULL-sicher: mit `= 'transaction_parameter_field'` würde der Ausdruck bei
+    -- Link_Subrole NULL selbst NULL, und NOT NULL verwirft die Zeile — jede
+    -- reads_field-Kante ohne Subrole fiele aus dem Graphen.
     AND NOT (ol.Link_Role = 'reads_field'
-             AND ol.Link_Subrole = 'transaction_parameter_field')
+             AND ol.Link_Subrole IS NOT DISTINCT FROM 'transaction_parameter_field')
     -- Waisen raus: beide Endpunkte müssen katalogisiert sein
     AND ol.Source_UUID IN (SELECT Object_UUID FROM ObjectCatalog)
     AND ol.Target_UUID IN (SELECT Object_UUID FROM ObjectCatalog)

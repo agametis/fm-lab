@@ -13,7 +13,7 @@ CustomMenu is an **exported** type: each `<CustomMenu>` element of [XML CustomMe
 | `@id` | `Menu_ID` | Numeric FileMaker ID — unique per file only, join with `File_Name` |
 | `@name` | `Menu_Name` | Stock menus use bracket names, e.g. `[Scripts]` |
 | `<UUID>` (text) | `Menu_UUID` | Stable identity, used for all joins |
-| `<UUID>/@accountName`, `@userName`, `@timestamp`, `@modifications` | — | Modification metadata — **not extracted** |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata, raw (`Modified_At` as text, empty account → `NULL`); typed per object in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
 | `<Base>` (`@name`, `@value`) | — | The built-in base menu the custom menu derives from — **not extracted** (raw `Menu_XML` only) |
 | `<Comment>` | — | Developer comment — **not extracted** (raw `Menu_XML` only) |
 | `<Conditions>/<Install>/<Calculation>` | — | Install condition — no dedicated column; its DDR anchor (`_<UUID>_Install`) resolves via [DDR_Calculations](../catalog-tables/DDR_Calculations.md) |

@@ -127,6 +127,17 @@ export function createApiClient(options: { baseUrl: string }) {
     },
 
     /**
+     * Get reference candidates (types the object could reference but does not)
+     */
+    async referenceCandidates(params: paths['/references/candidates']['get']['parameters']['query']) {
+      const { data, error } = await client.GET('/references/candidates', {
+        params: { query: params }
+      });
+      if (error) throw buildApiError(error);
+      return data;
+    },
+
+    /**
      * Execute custom SQL template (GET)
      */
     async query(params: paths['/query']['get']['parameters']['query']) {

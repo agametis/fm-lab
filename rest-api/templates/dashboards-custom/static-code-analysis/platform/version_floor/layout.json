@@ -68,7 +68,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Features above the declared minimum version"
+          "title": "Features above the declared minimum version",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -82,8 +83,11 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file, feature or object…",
-              "chipFilter": "axis",
               "columns": [
                 {
                   "field": "required_version",

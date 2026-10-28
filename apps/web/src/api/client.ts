@@ -41,6 +41,16 @@ api.client.use({
         } catch { /* non-JSON 404 — nicht unsere */ }
       }
     }
+    // Storage-Versions-Mismatch (gemischte DuckDB-Versionen) — gleiche Meldung
+    // wie im globalen Wrapper; doppelt gemeldet ist harmlos (gleicher Zustand).
+    if (response.status === 503) {
+      try {
+        const body = await response.clone().json();
+        const { storageMismatchDetails, announceStorageMismatch } = await import('../lib/storageVersion');
+        const details = storageMismatchDetails(body?.error);
+        if (details) announceStorageMismatch(details);
+      } catch { /* non-JSON 503 — nicht unsere */ }
+    }
     return response;
   },
 });

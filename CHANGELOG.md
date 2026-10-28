@@ -8,7 +8,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ## [Unreleased]
 
-*(Upcoming changes go here)*
+---
+
+## [0.9.15] — 2026-10-28
+
+<!-- components:auto --> *Components: schema 1.37.0 · xml-import 5.5.0 (converter 2.42.0) · fm-spec 2.9.0 · plugin-spec 1.2.0*
+
+Change history for every object type, server-side paging for all result lists, and a more robust XML import.
+
+- **Change history** — the import reads the change stamps (time, user, account, modification count) of every object type into `ObjectChangeMeta`; mass events such as migrations, pastes or tool runs are recognized and kept apart from individual edits
+  - **Web client** — a *Last modified* line on every detail view, change KPIs in the file view, sorting by last change in the search, and author aliases under *Settings*
+  - **Dashboard folder *Changelog*** — *Recent changes*, *Hotspots & stale objects*, *Changed together*, *Module activity*, *Security changes* and *Change metadata quality*
+  - **Graph** — activity colour mode in the Graph Atlas and the Graph Explorer
+  - **Skills** — new `fm-changes` skill for release notes from the change stamps; `fm-summarize`, `fm-analyze` and `fm-deep-research` include the change context
+  - **Schema** — `ScriptCatalog.Last_Modified_By` / `_At` are renamed to `Modified_By` / `_At`
+- **Server-side paging** — custom queries, rule findings and inventory lists page, sort and search on the server instead of being cut off silently
+- **Relationships with native UUID** — relationships use their FileMaker UUID instead of the synthetic `rel_<id>_<file>` key; old `rel_…` deep links no longer resolve
+- **Scripts started from custom menus** — menu items link to the script they perform, so these scripts no longer appear as unused and show up in call chains
+- **"Not referenced" row** — the references tab lists the object types an object could reference or be referenced by but is not
+- **XML import fixes** — chunked imports (`--split`, turbo) build the same catalog as unsplit ones; the turbo merge is atomic; local variables in clone files stay per file; calculations of healed UUID twins keep their owner; missing field-read edges are back in the cluster graph
+- **Analysis fixes** — no duplicate steps for scripts in clone files; *Unbalanced If block* ignores disabled steps; the `fm-graph-cluster` hub table shows callers and the dominant link role
+- **DuckDB version check** — a catalog written by a newer DuckDB CLI than the REST API supports now shows a clear banner instead of an IO error
+- **No Python needed** — the XML import, the documentation installers and `solution.sh` run on Node.js; Python 3 remains optional (code generation, Leiden clustering). The solution list now shows file and object counts on hosts without Python, and the Claris crawler honours proxy settings
+- **MBS doc-set installer** — entry counts work without the `sqlite3` CLI
+- **Runtime update** — Node.js 22.23.4, DuckDB 1.5.6, webbed v2.12.0; the XML import uses SAX streaming by default (lower memory, identical catalog)
+  - **Node.js security check** — `init.sh` warns when Node.js is below the October 2026 security release of its line (22.23.4, 24.22.1, 26.12.1) or on an end-of-life line such as 20.x; the setup summary marks recommendations with ⚠ instead of ✓
+- **Dev container** — the firewall allows the VS Code gallery and keeps CDN addresses current, so extension and documentation updates no longer stall
+
+Existing catalogs rebuild on the next import; re-cluster solutions segmented with `fm-graph-cluster` afterwards.
 
 ---
 
@@ -932,7 +959,8 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 <!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
      versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
      intentionally left unlinked and render as plain text. Add a line here per new tag. -->
-[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.14...HEAD
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.15...HEAD
+[0.9.15]: https://github.com/marcel-more/fm-lab/compare/v0.9.14...v0.9.15
 [0.9.14]: https://github.com/marcel-more/fm-lab/compare/v0.9.13...v0.9.14
 [0.9.13]: https://github.com/marcel-more/fm-lab/compare/v0.9.12...v0.9.13
 [0.9.12]: https://github.com/marcel-more/fm-lab/compare/v0.9.11...v0.9.12

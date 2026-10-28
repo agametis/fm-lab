@@ -5,6 +5,7 @@ import type { components } from '@packages/shared/types';
 import { Slot } from '../plugins';
 import { buildObjectPath } from '../lib/navigation';
 import { formatObjectDisplayName } from '../lib/objectName';
+import { formatStamp, formatStampAge } from '../lib/changeStamp';
 
 type FMObject = components['schemas']['FMObject'];
 
@@ -66,7 +67,7 @@ function highlightMatch(text: string, term?: string): React.ReactNode {
  * "Datei ▸ Skript ▸ Step N" (1-basiert wie im FileMaker-Editor).
  */
 export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, onClick, onCategoryClick, searchTerm }) => {
-  const { t } = useTranslation(['detail', 'common', 'types']);
+  const { t, i18n } = useTranslation(['detail', 'common', 'types']);
   const navigate = useNavigate();
   const aggObject = object as FMObjectWithAggregates;
   const noName = t('detail:objectListItem.noName') as string;
@@ -216,6 +217,18 @@ export const ObjectListItem: React.FC<ObjectListItemProps> = ({ object, style, o
             objectName={object.Object_Name || ''}
             fileName={object.File_Name || ''}
           />
+          {/* Eigener Änderungsstempel — nur gesetzt, wenn die Suche nach „Zuletzt
+              geändert" sortiert oder auf „geändert seit" filtert. */}
+          {object.Modified_At && (
+            <span
+              className="object-modified"
+              title={t('detail:objectListItem.modifiedTooltip', {
+                age: formatStampAge(object.Modified_At, i18n.language) ?? '',
+              }) as string}
+            >
+              {formatStamp(object.Modified_At)}
+            </span>
+          )}
           {/* Typ-Pille → mit `object-name { flex:1 }` rechtsbündig, unabhängig von
               Category-Pille/Usage-Badge/Slot. */}
           <span className="object-type">

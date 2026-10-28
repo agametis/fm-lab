@@ -145,6 +145,14 @@ check_version() {
                 emit_done true "Re-registered (already up to date)"
                 exit 0
             fi
+            # Self-heal: registered, but without counts (an earlier install had no
+            # SQLite reader) — re-register when the on-disk index can be counted now.
+            if ! docs_has_stats mbs functions && count_index_entries && [ "$FUNCTION_COUNT" -gt 0 ]; then
+                emit_log "Docs registered without index counts — re-registering (self-heal)."
+                register_docs
+                emit_done true "Re-registered with index counts (already up to date)"
+                exit 0
+            fi
             emit_log "Docs are up to date (version: $LOCAL_DATE). No action needed."
             emit_done true "Already up to date"
             exit 0
@@ -192,7 +200,7 @@ download_docs() {
         exit 2
     fi
 
-    phase_progress download 100 "Download complete ($(echo "scale=1; $FILE_SIZE / 1024 / 1024" | bc) MB)"
+    phase_progress download 100 "Download complete ($(_fmlab_div1 "$FILE_SIZE" 1048576) MB)"
 }
 
 # Function: Extract and validate archive
@@ -312,35 +320,74 @@ get_stats() {
     fi
 }
 
+# Function: Count categories and functions in the local SQLite index.
+# Sets CATEGORY_COUNT / FUNCTION_COUNT (empty when no reader is available).
+# Readers, first hit wins:
+#   1. node:sqlite — built into Node >= 22.13 (offline, no extra binary)
+#   2. DuckDB CLI + sqlite extension — DuckDB is an fm-lab prerequisite; the
+#      extension is installed from extensions.duckdb.org on first use
+#   3. sqlite3 CLI — missing in the devcontainer and on slim Linux hosts
+count_index_entries() {
+    CATEGORY_COUNT=""
+    FUNCTION_COUNT=""
+    local index="$DOCS_DIR/docSet.dsidx"
+    [ -f "$index" ] || return 1
+
+    read -r CATEGORY_COUNT FUNCTION_COUNT <<EOF
+$(node --no-warnings -e '
+const { DatabaseSync } = require("node:sqlite");
+const db = new DatabaseSync(process.argv[1], { readOnly: true });
+const q = db.prepare("SELECT COUNT(*) AS n FROM searchIndex WHERE type = ?");
+console.log(q.get("Category").n, q.get("Function").n);' "$index" 2>/dev/null)
+EOF
+
+    local duckdb_bin
+    if { [ -z "$CATEGORY_COUNT" ] || [ -z "$FUNCTION_COUNT" ]; } && duckdb_bin=$(_fmlab_duckdb_bin); then
+        read -r CATEGORY_COUNT FUNCTION_COUNT <<EOF
+$("$duckdb_bin" -noheader -csv -c "INSTALL sqlite; LOAD sqlite;
+ATTACH '${index//\'/\'\'}' AS idx (TYPE sqlite, READ_ONLY);
+SELECT count(*) FILTER (WHERE type = 'Category') || ' ' || count(*) FILTER (WHERE type = 'Function') FROM idx.searchIndex;" 2>/dev/null)
+EOF
+    fi
+
+    if { [ -z "$CATEGORY_COUNT" ] || [ -z "$FUNCTION_COUNT" ]; } && command -v sqlite3 >/dev/null 2>&1; then
+        CATEGORY_COUNT=$(sqlite3 "$index" \
+            "SELECT COUNT(*) FROM searchIndex WHERE type='Category';" 2>/dev/null || echo "")
+        FUNCTION_COUNT=$(sqlite3 "$index" \
+            "SELECT COUNT(*) FROM searchIndex WHERE type='Function';" 2>/dev/null || echo "")
+    fi
+
+    [ -n "$CATEGORY_COUNT" ] && [ -n "$FUNCTION_COUNT" ]
+}
+
 # Function: Register the installed docs in .fmlab/docs.json
 register_docs() {
-    REGISTER_SCRIPT="$PROJECT_ROOT/tools/register_docs.py"
+    REGISTER_SCRIPT="$PROJECT_ROOT/tools/register_docs.mjs"
     if [ ! -f "$REGISTER_SCRIPT" ]; then
-        echo "WARNING: register_docs.py not found at $REGISTER_SCRIPT — skipping manifest update."
-        return 0
-    fi
-    if ! command -v python3 &> /dev/null; then
-        echo "WARNING: python3 not available — skipping .fmlab/docs.json update."
+        echo "WARNING: register_docs.mjs not found at $REGISTER_SCRIPT — skipping manifest update."
         return 0
     fi
 
-    # Count categories from the SQLite index (type='Category').
-    CATEGORY_COUNT=$(sqlite3 "$DOCS_DIR/docSet.dsidx" \
-        "SELECT COUNT(*) FROM searchIndex WHERE type='Category';" 2>/dev/null || echo "")
-    FUNCTION_COUNT=$(sqlite3 "$DOCS_DIR/docSet.dsidx" \
-        "SELECT COUNT(*) FROM searchIndex WHERE type='Function';" 2>/dev/null || echo "")
+    count_index_entries
+    if [ -z "$CATEGORY_COUNT" ] || [ -z "$FUNCTION_COUNT" ]; then
+        emit_warn "Could not count the index entries in docSet.dsidx (no SQLite reader) — the docset header shows no counts."
+    fi
 
-    python3 "$REGISTER_SCRIPT" \
+    local version=""
+    [ -f "$VERSION_FILE" ] && version=$(cat "$VERSION_FILE")
+
+    node "$REGISTER_SCRIPT" \
         --id mbs \
         --name "MBS Plugin" \
         --description "MonkeyBread Software plugin function reference." \
         --directory "docs/mbs" \
         --skill install-mbs-docs \
         --source-url "https://www.monkeybreadsoftware.com" \
+        --version "${version:-none}" \
         --categories "${CATEGORY_COUNT:-none}" \
         --functions "${FUNCTION_COUNT:-none}" \
         --languages en \
-        || echo "WARNING: register_docs.py failed (non-fatal)."
+        || echo "WARNING: register_docs.mjs failed (non-fatal)."
 }
 
 # Function: Parse MBS components and create exceptions table
@@ -351,18 +398,11 @@ parse_components() {
     # Get the directory where this script is located
     # We need to handle the path relative to PROJECT_ROOT since BASH_SOURCE may be relative
     SKILL_SCRIPTS_DIR="$PROJECT_ROOT/.claude/skills/install-mbs-docs/scripts"
-    PARSER_SCRIPT="$SKILL_SCRIPTS_DIR/parse_mbs_components.py"
+    PARSER_SCRIPT="$SKILL_SCRIPTS_DIR/parse_mbs_components.mjs"
 
     # Verify parser script exists
     if [ ! -f "$PARSER_SCRIPT" ]; then
         echo "WARNING: Parser script not found at $PARSER_SCRIPT"
-        echo "Skipping component parsing."
-        return 1
-    fi
-
-    # Verify Python 3 is available
-    if ! command -v python3 &> /dev/null; then
-        echo "WARNING: python3 not found in PATH"
         echo "Skipping component parsing."
         return 1
     fi
@@ -372,7 +412,7 @@ parse_components() {
 
     # Run parser with PROJECT_ROOT as environment variable
     export PROJECT_ROOT
-    python3 "$PARSER_SCRIPT" 2>&1
+    node "$PARSER_SCRIPT" 2>&1
 
     if [ $? -eq 0 ]; then
         echo "Component parsing completed successfully"
@@ -408,8 +448,8 @@ derive_plugin_spec() {
         return 1
     fi
 
-    if ! command -v python3 &> /dev/null; then
-        echo "WARNING: python3 not found in PATH"
+    if ! _have_python3; then
+        echo "WARNING: no working python3 found"
         echo "Skipping plugin-spec derivation."
         return 1
     fi

@@ -17,7 +17,7 @@ The tables below list the full property surface of the `<PrivilegeSet>` element 
 | `@id` | `PrivilegeSet_ID` | Numeric FileMaker ID — unique per file only, join with `File_Name` |
 | `@name` | `PrivilegeSet_Name` | Bracketed names (`[Full Access]`, …) are FileMaker's built-in sets |
 | `<UUID>` (text) | `PrivilegeSet_UUID` | Stable identity, used for all joins |
-| `<UUID>/@accountName`, `@userName`, `@timestamp`, `@modifications` | — | Modification metadata (who/when/count) — **not extracted** |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata, raw (`Modified_At` as text, empty account → `NULL`); typed per object in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
 | `<Description>` | `Description` | Developer description |
 | `<access>/@default` | `Is_Default_Access` | Set on FileMaker's built-in default sets |
 | `<Records>` `@View` / `@Edit` / `@Create` / `@Delete` | `Records_View` / `Records_Edit` / `Records_Create` / `Records_Delete` | Class-level record access |

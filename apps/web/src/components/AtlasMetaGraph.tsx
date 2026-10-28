@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import cytoscape from 'cytoscape';
 import { getTypeColor, readGraphThemeTokens } from '../lib/graphColors';
+import { activityPaint, resolveCssColor, type AtlasColorMode } from '../lib/activityColors';
 import { useTheme } from '../hooks/useTheme';
 import type { AtlasMetaNode, AtlasMetaEdge } from '../hooks/useGraphOverview';
 
@@ -14,6 +15,10 @@ import type { AtlasMetaNode, AtlasMetaEdge } from '../hooks/useGraphOverview';
  * Click a super-node → the parent hands off to the Graph Explorer focused on the
  * segment's heaviest member (`top_member_uuid`/`file`). The grey „Rest" node has
  * no member → it is inert.
+ *
+ * Colour modes "recency"/"saves" repaint the nodes from their activity
+ * (activityColors.ts) without a re-layout; unknown activity gets a dashed ring
+ * (Cytoscape has no hatch fill).
  */
 
 // fcose has no bundled types; register it once, lazily (mirrors ExplorerGraph).
@@ -88,6 +93,23 @@ function buildStylesheet(): cytoscape.StylesheetStyle[] {
       selector: '.meta-dimmed',
       style: { opacity: 0.15 } as unknown as cytoscape.Css.Node,
     },
+    // Activity colour modes — after the rest rule so the fold node takes its
+    // aggregate colour too (it keeps its dashed border).
+    {
+      selector: 'node.meta-activity',
+      style: {
+        'background-color': 'data(fill)',
+        'border-color': 'data(fill)',
+      } as unknown as cytoscape.Css.Node,
+    },
+    {
+      selector: 'node.meta-unknown',
+      style: {
+        'border-style': 'dashed',
+        'border-width': 3,
+        'border-color': resolveCssColor('--color-recency-unknown-hatch', '#9aa0ab'),
+      } as unknown as cytoscape.Css.Node,
+    },
   ];
 }
 
@@ -146,9 +168,11 @@ type Props = {
   /** Sekundäre Aktion (Rechtsklick): „(...)"-Panel für die Super-Node öffnen. */
   onNodeInfo?: (node: AtlasMetaNode) => void;
   filterText?: string;
+  /** Farbmodus (URL `color`): Typ-Palette oder Aktivitäts-/Speicher-Rampe. */
+  colorMode?: AtlasColorMode;
 };
 
-export default function AtlasMetaGraph({ nodes, edges, onNodeClick, onNodeInfo, filterText }: Props) {
+export default function AtlasMetaGraph({ nodes, edges, onNodeClick, onNodeInfo, filterText, colorMode = 'type' }: Props) {
   const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<cytoscape.Core | null>(null);
@@ -234,6 +258,26 @@ export default function AtlasMetaGraph({ nodes, edges, onNodeClick, onNodeInfo, 
   useEffect(() => {
     cyRef.current?.style(buildStylesheet());
   }, [theme]);
+
+  // Farbmodus: Knoten aus ihrer Aktivität umfärben (Tokens je Theme aufgelöst),
+  // ohne Re-Layout. Läuft nach dem Element-Swap (Deklarationsreihenfolge) und
+  // erneut, wenn neue Daten dieselben Knoten mit anderer Aktivität liefern.
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    cy.batch(() => {
+      cy.nodes().forEach((n) => {
+        const paint = activityPaint(colorMode, nodeByKey.current.get(n.id())?.activity);
+        if (!paint) {
+          n.removeClass('meta-activity meta-unknown');
+          return;
+        }
+        n.data('fill', resolveCssColor(paint.fillVar));
+        n.addClass('meta-activity');
+        n.toggleClass('meta-unknown', paint.hatched);
+      });
+    });
+  }, [colorMode, nodes, theme, sig, ready]);
 
   // Local name filter (E6): dim non-matches without re-layout.
   useEffect(() => {

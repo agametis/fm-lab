@@ -10,8 +10,8 @@ Downloads the Claris FileMaker Pro online help as a local, offline-capable mirro
 | **Input** | the languages to install (interactive question, or named in the request) |
 | **Reads** | `help.claris.com` (crawled recursively, HTML plus CSS/JS/images) |
 | **Writes** | `docs/claris-help/<lang>/`, `docs/claris-help/manifest.json`, per-language `.version` markers, the doc-set registry `.fmlab/docs.json` |
-| **Prerequisites** | Python 3, `curl`, network access to `help.claris.com`, roughly 50 MB per language |
-| **Under the hood** | `.claude/skills/install-claris-docs/scripts/install_claris_docs.sh` with the crawler `claris_crawler.py`; registration via `tools/register_docs.py` |
+| **Prerequisites** | Node.js (the fm-lab runtime), `curl`, network access to `help.claris.com`, roughly 50 MB per language |
+| **Under the hood** | `.claude/skills/install-claris-docs/scripts/install_claris_docs.sh` with the crawler `claris_crawler.mjs`; registration via `tools/register_docs.mjs` |
 | **Skill directory** | `.claude/skills/install-claris-docs/` |
 | **Related** | [Skill filemaker-function-reference](Skill%20filemaker-function-reference.md) · [Skill install-mbs-docs](Skill%20install-mbs-docs.md) |
 

@@ -16,7 +16,7 @@ Properties marked **not extracted** are visible in the raw XML only.
 | `@name` | `DS_Name` | The name occurrences and value lists reference |
 | `@type` | `DS_Type` | Source type — see [Enumerations](#enumerations) |
 | `<UUID>` (text) | `DS_UUID` | Stable identity, used for all joins |
-| `<UUID>/@accountName`, `@userName`, `@timestamp`, `@modifications` | — | Modification metadata — **not extracted** |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata, raw (`Modified_At` as text, empty account → `NULL`); typed per object in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
 | `<File><UniversalPathList>` | `Path` | The path list, `file:`-prefixed; the fixtures show single-entry lists — FileMaker allows several fallback paths per source |
 | ODBC branch (DSN / driver details) | — | Only FileMaker-type sources appear in the fixtures and corpus — the ODBC-side XML structure and its catalog coverage are **undetermined** |
 | `<TagList>` | — | Object tags — **not extracted** |

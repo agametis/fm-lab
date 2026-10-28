@@ -1,0 +1,547 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "hotspots_no_meta",
+        "props": {
+          "span": 12,
+          "title": "No change stamps",
+          "variant": "hero"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": false
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "hotspots_no_meta_md",
+            "props": {
+              "content": "This catalog carries no change stamps yet. They are read during the XML import — import the solution again to see which objects are changed often and which are left unused."
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hotspots_filters",
+        "props": {
+          "span": 12,
+          "title": "Filter"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "data": {
+          "dataset": "view_state"
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "Select",
+                "id": "hotspots_type_select",
+                "data": {
+                  "dataset": "type_options"
+                },
+                "props": {
+                  "param": "type",
+                  "label": "Type",
+                  "emptyOptionLabel": "All types",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "multiple": true
+                }
+              },
+              {
+                "type": "Select",
+                "id": "hotspots_file_select",
+                "data": {
+                  "dataset": "file_options"
+                },
+                "props": {
+                  "param": "file",
+                  "label": "File",
+                  "emptyOptionLabel": "All files",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "multiple": true
+                }
+              },
+              {
+                "type": "NavButton",
+                "id": "hotspots_filters_reset",
+                "props": {
+                  "label": "Reset filters",
+                  "variant": "link",
+                  "onClick": {
+                    "action": "navigate",
+                    "args": {
+                      "path": "/dashboard/hotspots"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "FilterChips",
+                "id": "hotspots_view_chips",
+                "props": {
+                  "param": "view",
+                  "default": "hotspots",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "options": [
+                    {
+                      "value": "hotspots",
+                      "label": "Hotspots"
+                    },
+                    {
+                      "value": "stale",
+                      "label": "Stale objects"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Markdown",
+                "id": "hotspots_anchor_md",
+                "props": {
+                  "content": "Data state **{{anchor_label}}**"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hotspots_overview",
+        "props": {
+          "span": 12
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "hotspots_kpistrip",
+            "data": {
+              "dataset": "kpis"
+            },
+            "props": {
+              "items": [
+                {
+                  "label": "Hotspots",
+                  "field": "hotspots",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "hotspots",
+                      "params": {
+                        "view": "hotspots",
+                        "quadrant": "hotspot"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Changed often",
+                  "field": "churn",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "hotspots",
+                      "params": {
+                        "view": "hotspots",
+                        "quadrant": "churn"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Stable core",
+                  "field": "core",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "hotspots",
+                      "params": {
+                        "view": "hotspots",
+                        "quadrant": "core"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Cold & unused",
+                  "field": "cold",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "hotspots",
+                      "params": {
+                        "view": "stale",
+                        "state": "cold"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Unused, age unknown",
+                  "field": "age_unknown",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "hotspots",
+                      "params": {
+                        "view": "stale",
+                        "state": "unknown"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hotspots_ranking",
+        "props": {
+          "span": 12,
+          "title": "Hotspots",
+          "subtitle": "Top 10 % of their object type in saves and in references — fragile cores worth a review before the next change."
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "show_hotspots",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "FilterChips",
+            "id": "hotspots_quadrant_chips",
+            "data": {
+              "dataset": "kpis"
+            },
+            "props": {
+              "param": "quadrant",
+              "default": "hotspot",
+              "resetParams": [
+                "page"
+              ],
+              "options": [
+                {
+                  "value": "hotspot",
+                  "label": "Hotspots",
+                  "countField": "hotspots"
+                },
+                {
+                  "value": "churn",
+                  "label": "Changed often",
+                  "countField": "churn"
+                },
+                {
+                  "value": "core",
+                  "label": "Stable core",
+                  "countField": "core"
+                }
+              ]
+            }
+          },
+          {
+            "type": "Table",
+            "id": "hotspots_table",
+            "data": {
+              "dataset": "hotspots"
+            },
+            "props": {
+              "density": "compact",
+              "rowKey": "row_key",
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortable": true,
+              "sortParam": "sort",
+              "searchable": true,
+              "searchPlaceholder": "Search object, type or file",
+              "columns": [
+                {
+                  "field": "type",
+                  "label": "Type",
+                  "nowrap": true
+                },
+                {
+                  "field": "name",
+                  "label": "Object"
+                },
+                {
+                  "field": "file",
+                  "label": "File",
+                  "nowrap": true
+                },
+                {
+                  "field": "modifications",
+                  "label": "Saves",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "used_by",
+                  "label": "Used by",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "at",
+                  "label": "Last changed",
+                  "nowrap": true
+                },
+                {
+                  "field": "marker",
+                  "label": "Note",
+                  "format": "badge",
+                  "badgeTone": {
+                    "Mass event": "warning"
+                  },
+                  "nowrap": true
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{uuid}}",
+                  "file": "{{file}}",
+                  "type": "{{type}}"
+                }
+              },
+              "empty": {
+                "message": "No objects in this quadrant match the filters."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hotspots_stale",
+        "props": {
+          "span": 12,
+          "title": "Stale objects",
+          "subtitle": "Objects no other object references, by the age of their last stamp — candidates for a clean-up."
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "show_stale",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "FilterChips",
+                "id": "hotspots_state_chips",
+                "data": {
+                  "dataset": "kpis"
+                },
+                "props": {
+                  "param": "state",
+                  "default": "cold",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "options": [
+                    {
+                      "value": "cold",
+                      "label": "Cold",
+                      "countField": "cold"
+                    },
+                    {
+                      "value": "unknown",
+                      "label": "Age unknown",
+                      "countField": "age_unknown"
+                    },
+                    {
+                      "value": "active",
+                      "label": "Recently changed",
+                      "countField": "active"
+                    },
+                    {
+                      "value": "menu",
+                      "label": "In a menu",
+                      "countField": "in_menu"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "FilterChips",
+                "id": "hotspots_years_chips",
+                "props": {
+                  "param": "years",
+                  "default": "2",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "options": [
+                    {
+                      "value": "1",
+                      "label": "Older than 1 year"
+                    },
+                    {
+                      "value": "2",
+                      "label": "2 years"
+                    },
+                    {
+                      "value": "5",
+                      "label": "5 years"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "Table",
+            "id": "stale_table",
+            "data": {
+              "dataset": "stale"
+            },
+            "props": {
+              "density": "compact",
+              "rowKey": "row_key",
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortable": true,
+              "sortParam": "sort",
+              "searchable": true,
+              "searchPlaceholder": "Search object, type or file",
+              "columns": [
+                {
+                  "field": "at",
+                  "label": "Last changed",
+                  "nowrap": true
+                },
+                {
+                  "field": "age_years",
+                  "label": "Age (years)",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "type",
+                  "label": "Type",
+                  "nowrap": true
+                },
+                {
+                  "field": "name",
+                  "label": "Object"
+                },
+                {
+                  "field": "file",
+                  "label": "File",
+                  "nowrap": true
+                },
+                {
+                  "field": "modifications",
+                  "label": "Saves",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "marker",
+                  "label": "Note",
+                  "format": "badge",
+                  "badgeTone": {
+                    "Mass event": "warning"
+                  },
+                  "nowrap": true
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{uuid}}",
+                  "file": "{{file}}",
+                  "type": "{{type}}"
+                }
+              },
+              "empty": {
+                "message": "No unreferenced objects in this state match the filters."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "hotspots_basis",
+        "props": {
+          "span": 12,
+          "title": "Data basis"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "data": {
+          "dataset": "view_state"
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "hotspots_basis_md",
+            "props": {
+              "content": "**Used by** counts the distinct objects that reference an object through a where-used link — the same link roles as *Not referenced* in the references tab; self-references and privilege restrictions do not count. **Unused** therefore means *without a static reference*: names built by a formula, `ExecuteSQL` texts and calls from outside (server schedules, `fmp://` URLs, Data API) stay invisible. Layouts in the layout menu and scripts in the Scripts menu are reachable without a reference and appear under *In a menu*.\n\n**Saves** is the object's lifetime counter, robust against mass events; a paste or an import creates a new object with counter 1. A **high** value means the top 10 % of the object type, measured over the whole solution — filters do not move the thresholds. **Age** counts from the data state ({{anchor_label}}); when the last stamp is a younger mass event, the last real change is overwritten and the age is unknown. Ranked are scripts, fields, layouts, table occurrences, base tables, value lists, custom functions, external data sources and themes."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

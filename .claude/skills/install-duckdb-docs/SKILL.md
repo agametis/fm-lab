@@ -172,7 +172,7 @@ ERROR: [specific error message]
 - Multiple installations will overwrite the existing documentation
 - The script is safe to run multiple times
 - Documentation is a single Markdown file (~15 MB) containing the complete DuckDB docs
-- After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.py`, so the web home dashboard's Docs card can list it.
+- After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.mjs`, so the web home dashboard's Docs card can list it.
 
 ## Triggers in other languages
 

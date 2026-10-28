@@ -12,7 +12,7 @@ raw_dir AS (
         record_element='BaseDirectoryCatalog',
         maximum_file_size=getvariable('dom_threshold'),
         streaming=getvariable('use_streaming'),
-        columns={'BaseDirectory':'STRUCT("name" VARCHAR, "id" BIGINT, "relativeTo" VARCHAR, "UUID" STRUCT("#text" VARCHAR))[]'}
+        columns={'BaseDirectory':'STRUCT("name" VARCHAR, "id" BIGINT, "relativeTo" VARCHAR, "UUID" STRUCT("#text" VARCHAR, "accountName" VARCHAR, "modifications" BIGINT, "timestamp" VARCHAR, "userName" VARCHAR))[]'}
     )
     WHERE BaseDirectory IS NOT NULL
 )
@@ -22,6 +22,10 @@ SELECT
     d.id::BIGINT as BD_ID,
     d.relativeTo as BD_RelativeTo,
     d.UUID."#text" as BD_UUID,
+    d.UUID.timestamp as Modified_At,
+    xml_unescape(d.UUID.userName) as Modified_By,
+    NULLIF(xml_unescape(d.UUID.accountName), '') as Modified_Account,
+    d.UUID.modifications as Modifications,
     fn.File_Name as File_Name
 FROM raw_dir
 CROSS JOIN filename_normalized fn
@@ -29,4 +33,8 @@ WHERE d.id IS NOT NULL
 ON CONFLICT (BD_UUID, File_Name) DO UPDATE SET
     BD_Name = EXCLUDED.BD_Name,
     BD_ID = EXCLUDED.BD_ID,
-    BD_RelativeTo = EXCLUDED.BD_RelativeTo;
+    BD_RelativeTo = EXCLUDED.BD_RelativeTo,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;

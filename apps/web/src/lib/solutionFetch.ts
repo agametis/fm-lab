@@ -1,5 +1,6 @@
 import { API_BASE } from '../config/apiBase';
 import { getSelectedSolution, setSelectedSolution } from './solutionStore';
+import { announceStorageMismatch, storageMismatchDetails } from './storageVersion';
 
 /**
  * Global fetch instrumentation for the per-tab solution context (stage M).
@@ -19,6 +20,9 @@ import { getSelectedSolution, setSelectedSolution } from './solutionStore';
  *    never yields a response, so (2) can never fire and every view degrades to
  *    a bare "failed to fetch". The event emitted here lets the UI name the
  *    solution context as a suspect and offer a way back to the server default.
+ * 4. Storage-version mismatch (503/STORAGE_VERSION_MISMATCH): the catalog was
+ *    written by a DuckDB the REST API cannot read — announced once here so a
+ *    global notice names the cause instead of every view erroring separately.
  *
  * EventSource cannot carry headers — SSE endpoints take `?solution=` instead
  * (the XML import page already passes it explicitly).
@@ -152,6 +156,18 @@ export function installSolutionFetch(): void {
       }
 
       response = retried;
+    }
+
+    // Storage-version mismatch (mixed DuckDB versions): announce once per
+    // failing response to the global notice; callers keep their own handling.
+    if (response.status === 503) {
+      try {
+        const body = await response.clone().json();
+        const details = storageMismatchDetails(body?.error);
+        if (details) announceStorageMismatch(details);
+      } catch {
+        /* non-JSON 503 — not ours */
+      }
     }
 
     // Stale-selection recovery — only when OUR selection is the rejected one

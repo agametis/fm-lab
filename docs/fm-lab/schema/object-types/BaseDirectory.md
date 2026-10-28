@@ -16,7 +16,7 @@ Properties marked **not extracted** are visible in the raw XML only.
 | `@name` | `BD_Name` | Directory name; the fixture values end with a trailing `/` |
 | `@relativeTo` | `BD_RelativeTo` | Relative-to semantics of the definition; only `True` observed *(corpus)* |
 | `<UUID>` (text) | `BD_UUID` | Stable identity, used for all joins |
-| `<UUID>/@accountName`, `@userName`, `@timestamp`, `@modifications` | — | Modification metadata — **not extracted** |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata, raw (`Modified_At` as text, empty account → `NULL`); typed per object in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
 | `<TagList>` | — | Object tags — **not extracted** |
 | `<BaseDirectoryCatalog>/@generate`, `@temporary` (catalog-level) | — | Flags on the catalog element itself, not on the entries — **not extracted** |
 

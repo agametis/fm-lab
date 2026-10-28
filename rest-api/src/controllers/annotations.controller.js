@@ -1,4 +1,5 @@
 const annotationsService = require('../services/annotations.service');
+const changeAuthorsService = require('../services/change-authors.service');
 const annoDb = require('../config/annotations-db');
 const graphService = require('../services/graph.service');
 const environment = require('../config/environment');
@@ -72,6 +73,52 @@ async function getHidden(req, res, next) {
   }
 }
 
+/** GET /api/change-authors — Autoren der Änderungs-Metadaten + kuratierte Aliase. */
+async function getChangeAuthors(req, res, next) {
+  try {
+    const result = await changeAuthorsService.listChangeAuthors(req.solutionContext);
+    res.json(buildSuccess({ ...result, sidecar_available: await annoDb.isAvailable(req.solutionContext) }));
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** PUT /api/change-authors — Alias setzen (alle Werte leer ⇒ Alias entfällt). */
+async function putChangeAuthor(req, res, next) {
+  try {
+    if (!isAuthorized(req)) return unauthorized(res);
+    await assertAvailable(req.solutionContext);
+    const { raw_value, kind, author_key, display_name, is_technical } = req.body;
+    const result = await changeAuthorsService.setChangeAuthorAlias(req.solutionContext, {
+      rawValue: raw_value,
+      kind,
+      authorKey: author_key ?? null,
+      displayName: display_name ?? null,
+      isTechnical: is_technical ?? null,
+    });
+    // The technical flag moves the data state and the activity classes of the
+    // Graph Atlas and Explorer — their caches must not serve the old ones.
+    graphService.clearCache();
+    res.json(buildSuccess(result));
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** DELETE /api/change-authors — Alias entfernen. */
+async function deleteChangeAuthor(req, res, next) {
+  try {
+    if (!isAuthorized(req)) return unauthorized(res);
+    await assertAvailable(req.solutionContext);
+    const { raw_value, kind } = req.query;
+    const result = await changeAuthorsService.deleteChangeAuthorAlias(req.solutionContext, { rawValue: raw_value, kind });
+    graphService.clearCache(); // activity classes depend on the technical flag (see above)
+    res.json(buildSuccess(result));
+  } catch (error) {
+    next(error);
+  }
+}
+
 function unauthorized(res) {
   return res.status(401).json({
     success: false,
@@ -79,4 +126,4 @@ function unauthorized(res) {
   });
 }
 
-module.exports = { putCommunity, putNodeVisibility, getHidden };
+module.exports = { putCommunity, putNodeVisibility, getHidden, getChangeAuthors, putChangeAuthor, deleteChangeAuthor };

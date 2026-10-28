@@ -167,7 +167,7 @@ Refer to [Installation](/docs/fm-lab/Wiki/Installation.md) for a more detailed d
 ## Prerequisites
 
 - **Docker (ways a / b):** only **[Docker](https://docs.docker.com/get-docker/)** on the host — everything else is in the image.
-- **Native (way c):** [DuckDB CLI](https://duckdb.org/docs/installation/) ≥ 1.5.4 + the **webbed** community extension (the XML reader; `init.sh` installs it when missing); Node.js ≥ 20, npm ≥ 10.
+- **Native (way c):** [DuckDB CLI](https://duckdb.org/docs/installation/) ≥ 1.5.6 + the **webbed** community extension (the XML reader; `init.sh` installs it when missing); Node.js ≥ 20, npm ≥ 10.
 - **AI agent (optional):** [Claude Code](https://docs.claude.com/en/docs/claude-code) (bundled in the Docker agent variant) + the [duckdb-skills](https://github.com/duckdb/duckdb-skills) plugin (recommended).
 - **XML export:** FileMaker Pro for the SaXML export — SaXML v2.1.0.0+ (FileMaker 19–22) and v2.3.0.0 (FileMaker 26), each read under its own import profile. Later SaXML versions may require parser adjustments.
 

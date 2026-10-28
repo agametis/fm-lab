@@ -38,7 +38,11 @@
     "uses": "使用",
     "usedBy": "被使用",
     "focus": "焦点",
-    "resizePanel": "调整详情面板宽度"
+    "resizePanel": "调整详情面板宽度",
+    "activity": "活动",
+    "activityInherited": "所属布局 / 菜单的更改戳",
+    "activityNone": "无更改戳",
+    "activityAge": "数据时点前 {{days}} 天"
   },
   "filter": {
     "ariaLabel": "图谱筛选器",
@@ -77,11 +81,13 @@
     "colorMode": "着色",
     "colorModes": {
       "type": "类型",
-      "community": "社区"
+      "community": "社区",
+      "recency": "活动"
     },
     "colorModeHints": {
       "type": "按对象类型为节点着色",
-      "community": "按检测到的模块（社区）为节点着色"
+      "community": "按检测到的模块（社区）为节点着色",
+      "recency": "按最新单项更改的时长为节点着色（与图谱图集相同的分级）"
     },
     "communityUnnamed": "社区 {{id}}",
     "resizePanel": "调整筛选面板宽度",
@@ -120,7 +126,8 @@
   },
   "edge": {
     "represents": "代表",
-    "buttonAction": "按钮动作"
+    "buttonAction": "按钮动作",
+    "menuAction": "菜单动作"
   },
   "trace": {
     "exit": "邻域视图",

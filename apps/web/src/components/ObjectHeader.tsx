@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { FMObject } from '../types';
 import { parsePluginFunctionName, formatObjectDisplayName } from '../lib/objectName';
+import { ObjectChangeLine } from './ObjectChangeLine';
 
 interface ObjectHeaderProps {
   object: FMObject;
@@ -33,8 +34,10 @@ function displayObjectType(objectType: string, sourceTable?: string | null): str
  * Object Header Component
  * Two-column title box: left column carries the file name (top) and the
  * object title + type badge (bottom); the right column carries the source
- * table (top) and the UUID + copy button (bottom). The "Open in FileMaker"
- * action is rendered next to the tab navigation (see DetailView), not here.
+ * table (top) and the UUID + copy button (bottom). A third row shows the
+ * change stamp ("Last modified", own or inherited from the container — see
+ * ObjectChangeLine). The "Open in FileMaker" action is rendered next to the tab
+ * navigation (see DetailView), not here.
  */
 export const ObjectHeader: React.FC<ObjectHeaderProps> = ({ object }) => {
   const { t } = useTranslation(['common', 'detail', 'types']);
@@ -160,6 +163,7 @@ export const ObjectHeader: React.FC<ObjectHeaderProps> = ({ object }) => {
           </button>
         </div>
       </div>
+      <ObjectChangeLine object={object} />
     </div>
   );
 };

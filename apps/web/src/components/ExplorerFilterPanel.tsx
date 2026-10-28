@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getTypeColor } from '../lib/graphColors';
 import type { FilterMode, ColorMode, GraphPartition } from './ExplorerGraph';
+import { AtlasActivityLegend } from './AtlasActivity';
 import type { SubgraphDirection } from '../hooks/useSubgraph';
 import type { DepthBucket } from '../hooks/useDepthProfile';
 
@@ -68,10 +69,15 @@ export interface ExplorerFilterPanelProps {
   groupByFile: boolean;
   /** Verfeinerung C: ein server-seitiger Typ-Filter ist aktiv (committed). */
   serverTypesActive: boolean;
-  /** Show the Type↔Community color-lens toggle + legend (standalone only). */
+  /** Show the color-lens toggle + legend (standalone only). */
   showColorMode: boolean;
+  /** Color lenses offered: type always, community with a partition, recency with stamps. */
+  colorModes: ColorMode[];
   /** Active node color lens. */
   colorMode: ColorMode;
+  /** Recency lens: nodes per activity class 1…7 of the current graph + data state. */
+  recencyCounts?: number[];
+  activityDataState?: string | null;
   /** Communities present in the current graph (legend; only used in community mode). */
   communities: CommunityLegendItem[];
   /** Currently selected community (hull + dims others), or null. */
@@ -109,7 +115,6 @@ export interface ExplorerFilterPanelProps {
 
 const DIRECTIONS: SubgraphDirection[] = ['out', 'in', 'both'];
 const FILTER_MODES: FilterMode[] = ['dim', 'hide'];
-const COLOR_MODES: ColorMode[] = ['type', 'community'];
 
 export function ExplorerFilterPanel(props: ExplorerFilterPanelProps) {
   const {
@@ -118,7 +123,7 @@ export function ExplorerFilterPanel(props: ExplorerFilterPanelProps) {
     depth, depthMax, maxDepth, maxDepthHitCap, depthExtended, canExtendDepth, depthCumulative, nodeLimit,
     direction, partition,
     deselectedTypes, availableTypes, availableFiles, groupByFile, serverTypesActive,
-    showColorMode, colorMode, communities, selectedCommunity,
+    showColorMode, colorModes, colorMode, recencyCounts, activityDataState, communities, selectedCommunity,
     onOpenFocusDetails, onOpenTypeList,
     onNameFilterChange, onSelectedFileChange, onGroupByFileChange, onFilterModeChange, onColorModeChange,
     onSelectCommunity, onHoverCommunity,
@@ -361,7 +366,7 @@ export function ExplorerFilterPanel(props: ExplorerFilterPanelProps) {
             role="radiogroup"
             aria-label={t('filter.colorMode') as string}
           >
-            {COLOR_MODES.map((m) => (
+            {colorModes.map((m) => (
               <button
                 key={m}
                 type="button"
@@ -375,6 +380,16 @@ export function ExplorerFilterPanel(props: ExplorerFilterPanelProps) {
               </button>
             ))}
           </div>
+
+          {colorMode === 'recency' && recencyCounts && (
+            <AtlasActivityLegend
+              mode="recency"
+              head={{ requested: true, available: true, data_state: activityDataState ?? null, bulk: 'hide' }}
+              items={[]}
+              totals={recencyCounts}
+              compact
+            />
+          )}
 
           {colorMode === 'community' && visibleCommunities.length > 0 && (
             <ul className="explorer-community-legend" onMouseLeave={() => onHoverCommunity(null)}>

@@ -79,8 +79,10 @@ parse_install_modes() {
 # Doc installers that fetch from a CDN-fronted host call this right before their
 # first network op. It shells out to the privileged helper
 # /usr/local/bin/refresh-doc-domains.sh (baked into both devcontainer images with
-# a narrow NOPASSWD sudoers entry), which re-resolves a HARDCODED doc-domain list
-# and adds the current IPs to the ipset.
+# a narrow NOPASSWD sudoers entry), which re-resolves a HARDCODED CDN-domain list
+# and adds the current IPs to the ipset. In the devcontainers the same helper also
+# runs every few minutes via firewall-refresh-loop.sh — this call is the
+# just-in-time top-up on top of that (and the only refresh on the pure-compose path).
 #
 # Strictly best-effort and fully self-guarding:
 #   * No helper installed (bare-metal macOS, or a container without the firewall)
@@ -95,47 +97,135 @@ refresh_firewall_allowlist() {
 }
 
 # ---------------------------------------------------------------------------
-# JSON-safe encoding (uses python3 — required by the wider toolchain anyway)
+# python3 availability probe
 # ---------------------------------------------------------------------------
+#
+# Returns 0 when a WORKING python3 is available, else 1. Cached per shell.
+#
+# `command -v python3` alone is not enough: on macOS /usr/bin/python3 is a stub
+# that only works once the Command Line Tools are installed — without them it
+# fails (or pops the CLT install dialog). That case is detected via
+# `xcode-select -p` before the stub is ever run, so the probe stays silent.
+_have_python3() {
+    if [ -z "${_FMLAB_HAVE_PY3:-}" ]; then
+        _FMLAB_HAVE_PY3=no
+        local py
+        py=$(command -v python3 2>/dev/null || true)
+        if [ -n "$py" ]; then
+            if [ "$py" = /usr/bin/python3 ] && [ "$(uname -s)" = Darwin ] \
+                && ! xcode-select -p >/dev/null 2>&1; then
+                :   # macOS stub without Command Line Tools
+            elif python3 -c 'import sys' >/dev/null 2>&1; then
+                _FMLAB_HAVE_PY3=yes
+            fi
+        fi
+    fi
+    [ "$_FMLAB_HAVE_PY3" = yes ]
+}
 
-_json_string() {
-    # $1 = raw string. Prints a JSON-quoted string (incl. surrounding quotes).
-    python3 -c 'import json,sys; sys.stdout.write(json.dumps(sys.argv[1]))' "${1:-}"
+# _fmlab_div1 <number> <divisor> — quotient with one decimal ("1.5", "0.3"),
+# rounded. awk instead of bc (bc is missing on slim Linux images and in the
+# devcontainer); LC_ALL=C keeps the decimal point locale-independent.
+_fmlab_div1() {
+    LC_ALL=C awk -v n="${1:-0}" -v d="${2:-1}" 'BEGIN { printf "%.1f", (d == 0 ? 0 : n / d) }'
+}
+
+# Prints the DuckDB CLI path — PATH first, then the common install locations —
+# and returns 1 when none is found.
+_fmlab_duckdb_bin() {
+    local c
+    if c=$(command -v duckdb 2>/dev/null) && [ -n "$c" ]; then
+        printf '%s\n' "$c"
+        return 0
+    fi
+    for c in "$HOME/.duckdb/cli/latest/duckdb" /opt/homebrew/bin/duckdb /usr/local/bin/duckdb; do
+        if [ -x "$c" ]; then
+            printf '%s\n' "$c"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# ---------------------------------------------------------------------------
+# JSON encoding (pure bash — no python3 needed, bash 3.2 compatible)
+# ---------------------------------------------------------------------------
+#
+# The helpers write their result into _JSON_VAL instead of stdout so the emit
+# path does not fork a subshell per field.
+
+_json_quote() {
+    # $1 = raw string → _JSON_VAL = JSON-quoted string (incl. surrounding quotes).
+    # Escapes \ " \n \r \t, other control characters as \u00XX (same output as
+    # Python's json.dumps). Non-ASCII bytes (UTF-8) pass through unchanged.
+    # Pattern and replacement are quoted so that bash 5.2's patsub_replacement
+    # (`&`) and backslash handling cannot interfere.
+    local s="${1:-}" bs='\' dq='"'
+    s=${s//"$bs"/"$bs$bs"}
+    s=${s//"$dq"/"$bs$dq"}
+    s=${s//$'\n'/"${bs}n"}
+    s=${s//$'\r'/"${bs}r"}
+    s=${s//$'\t'/"${bs}t"}
+    case "$s" in
+        *[$'\001'-$'\037']*)
+            # Rare path (e.g. ANSI colour codes): walk the bytes.
+            local LC_ALL=C out="" c code i
+            for (( i = 0; i < ${#s}; i++ )); do
+                c="${s:i:1}"
+                case "$c" in
+                    [$'\001'-$'\037'])
+                        printf -v code '%d' "'$c"
+                        printf -v c '\\u%04x' "$code" ;;
+                esac
+                out="$out$c"
+            done
+            s="$out" ;;
+    esac
+    _JSON_VAL="\"$s\""
+}
+
+_json_int() {
+    # $1 = raw value → _JSON_VAL = JSON integer, or a JSON string if not an integer.
+    local v="${1:-}" sign=""
+    case "$v" in
+        -*) sign="-"; v="${v#-}" ;;
+        +*) v="${v#+}" ;;
+    esac
+    case "$v" in
+        ''|*[!0-9]*) _json_quote "${1:-}"; return ;;
+    esac
+    v="${v#"${v%%[!0]*}"}"                    # strip leading zeros
+    [ -n "$v" ] || { v=0; sign=""; }
+    _JSON_VAL="$sign$v"
 }
 
 _emit_json() {
     # Build a JSON line from key/value pairs, e.g.
     #   _emit_json event log level info msg "Hello"
     # The first arg is taken as the event type (`event` field). All remaining
-    # pairs become string fields. Pairs of the form `key:int=42` or `key:bool=true`
-    # type-hint the value.
+    # pairs become string fields; a trailing key without value is ignored.
+    # Value prefixes type-hint non-string fields: `int=42`, `bool=true`
+    # (1/true/yes/on, case-insensitive), `null=`.
     local event="$1"; shift
-    python3 - "$event" "$@" <<'PY'
-import json
-import sys
-
-def _typed(value: str):
-    # Allow "int=42" or "bool=true" prefixes for non-string fields.
-    if value.startswith("int="):
-        try:
-            return int(value[4:])
-        except ValueError:
-            return value[4:]
-    if value.startswith("bool="):
-        return value[5:].lower() in ("1", "true", "yes", "on")
-    if value.startswith("null="):
-        return None
-    return value
-
-event = sys.argv[1]
-data = {"event": event}
-args = sys.argv[2:]
-for i in range(0, len(args), 2):
-    if i + 1 >= len(args):
-        break
-    data[args[i]] = _typed(args[i + 1])
-sys.stdout.write(json.dumps(data, ensure_ascii=False) + "\n")
-PY
+    local line key
+    _json_quote "$event"
+    line="{\"event\": $_JSON_VAL"
+    while [ $# -ge 2 ]; do
+        _json_quote "$1"; key="$_JSON_VAL"
+        case "$2" in
+            int=*)  _json_int "${2#int=}" ;;
+            bool=*)
+                case "${2#bool=}" in
+                    1|[Tt][Rr][Uu][Ee]|[Yy][Ee][Ss]|[Oo][Nn]) _JSON_VAL=true ;;
+                    *) _JSON_VAL=false ;;
+                esac ;;
+            null=*) _JSON_VAL=null ;;
+            *)      _json_quote "$2" ;;
+        esac
+        line="$line, $key: $_JSON_VAL"
+        shift 2
+    done
+    printf '%s}\n' "$line"
 }
 
 # ---------------------------------------------------------------------------
@@ -461,31 +551,66 @@ confirm_or_quiet() {
 # loop forever. The installer should instead re-register from the on-disk files
 # (its register_docs() reads counts straight from the local index — no download).
 #
-# Fail-safe: a missing manifest, missing python3, or unreadable JSON returns 0
+# Fail-safe: a missing manifest, no node, or unreadable JSON returns 0
 # ("registered") so we never nag when we cannot check — or, for a missing
 # manifest, would risk clobbering the maintainer-curated catalog[] by recreating
 # the file from scratch. The real bug (entry lost, file+catalog intact) is the
 # case this heals.
-docs_is_registered() {
-    local id="$1"
-    # installed[] lives in the runtime overlay (.fmlab/docs.installed.json); fall back to
-    # a legacy single-file docs.json that still carries installed[]. Both are read the
-    # same way — the key is present in installed[] or it isn't.
+
+# Path of the install-state file to inspect (empty when there is none):
+# installed[] lives in the runtime overlay (.fmlab/docs.installed.json); fall back
+# to a legacy single-file docs.json that still carries installed[]. Both are read
+# the same way — the key is present in installed[] or it isn't.
+_docs_state_file() {
     local overlay="${PROJECT_ROOT}/.fmlab/docs.installed.json"
     local legacy="${PROJECT_ROOT}/.fmlab/docs.json"
-    local target=""
-    [ -f "$overlay" ] && target="$overlay"
-    [ -z "$target" ] && [ -f "$legacy" ] && target="$legacy"
+    if [ -f "$overlay" ]; then
+        printf '%s\n' "$overlay"
+    elif [ -f "$legacy" ]; then
+        printf '%s\n' "$legacy"
+    fi
+}
+
+# Runs a node check that exits 10 for "condition failed"; every other outcome
+# (node missing or broken, unreadable JSON, any exception) counts as passed.
+_docs_node_check() {
+    command -v node >/dev/null 2>&1 || return 0
+    local rc=0
+    node -e "$@" 2>/dev/null || rc=$?
+    [ "$rc" -ne 10 ]
+}
+
+docs_is_registered() {
+    local target
+    target=$(_docs_state_file)
     [ -n "$target" ] || return 0                     # nothing to check → don't nag
-    command -v python3 >/dev/null 2>&1 || return 0
-    python3 - "$target" "$id" <<'PY' 2>/dev/null
-import json, sys
-try:
-    data = json.load(open(sys.argv[1]))
-except Exception:
-    sys.exit(0)  # unreadable → don't nag / don't risk recreating the catalog
-installed = data.get("installed") or []
-hit = any(isinstance(e, dict) and e.get("id") == sys.argv[2] for e in installed)
-sys.exit(0 if hit else 1)
-PY
+    _docs_node_check '
+try {
+  const data = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+  const hit = (data.installed || []).some((e) => e && typeof e === "object" && e.id === process.argv[2]);
+  process.exit(hit ? 0 : 10);
+} catch { process.exit(0); }  // unreadable → do not nag / do not risk recreating the catalog
+' "$target" "$1"
+}
+
+# Returns 1 if docset <id> is registered in installed[] but stats.<field> is not
+# a number (e.g. an install without a SQLite reader registered null counts),
+# else 0.
+#
+# Installers combine this with their own index count to re-register a current
+# docset whose counts are missing — no download. Same fail-safe as
+# docs_is_registered: no manifest, no node, unreadable JSON or no entry at all
+# return 0 (the missing entry is docs_is_registered's case).
+docs_has_stats() {
+    local target
+    target=$(_docs_state_file)
+    [ -n "$target" ] || return 0
+    _docs_node_check '
+try {
+  const data = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+  const entry = (data.installed || []).find((e) => e && typeof e === "object" && e.id === process.argv[2]);
+  if (!entry) process.exit(0);
+  process.exit(Number.isInteger((entry.stats || {})[process.argv[3]]) ? 0 : 10);
+} catch { process.exit(0); }
+' "$target" "$1" "$2"
 }

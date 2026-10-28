@@ -57,6 +57,39 @@ SELECT count(*) AS rows, count(DISTINCT uuid || '|' || file) AS identities FROM 
 `rows > identities` (with non-NULL file) means the query fans out — fix the joins
 before showing the preview to the user.
 
+### ⚠️ Qualify every column once a statement has more than one table
+
+A bare column name binds only while exactly one table in scope carries it. The
+catalog schema grows with new versions: when a later version adds a column of the
+same name to a second table of the join, the bare reference fails with
+`Binder Error: Ambiguous reference to column name` — the dataset breaks after the
+next import although it ran fine when it was written. In a correlated subquery a
+bare name can even bind silently to the outer table. Names that already recur
+across catalog tables: `Modified_At` / `Modified_By` / `Modified_Account` /
+`Modifications` (19 tables), `Object_UUID`, `Object_Name`, `Object_Type`,
+`Step_Index`, `Layout_ID`, `Folder_Type` / `Is_Separator` / `Sequence_ID`
+(scripts, layouts, custom functions), `Is_Hidden`, `Description`, `Calc_Text` — and
+`File_Name` everywhere.
+
+Rules:
+- Every statement or CTE with more than one table (JOIN, comma join, correlated
+  subquery) gives each table an alias and prefixes **every** column — projection,
+  `ON`, `WHERE`, `GROUP BY`, `ORDER BY` — even when the name is unique today.
+- No `SELECT *` / `t.*` over a join; list the columns.
+- A single-table CTE may stay unqualified; qualify again wherever it is joined.
+
+```sql
+-- breaks as soon as both tables carry Modified_By (they do)
+SELECT L_Name, Modified_By, Theme_Display
+FROM Layouts l
+JOIN ThemeCatalog t ON t.Theme_UUID = l.L_Theme_UUID AND t.File_Name = l.File_Name;
+
+-- stable
+SELECT l.L_Name, l.Modified_By, t.Theme_Display
+FROM Layouts l
+JOIN ThemeCatalog t ON t.Theme_UUID = l.L_Theme_UUID AND t.File_Name = l.File_Name;
+```
+
 ## 2. Result contract for navigable datasets
 
 Every dataset whose rows represent catalog objects (scripts, layouts, fields,
@@ -86,7 +119,7 @@ detail view's search (`sq` param), etc. See `references/primitives.md` §Actions
 - Every `getvariable('p')` the SQL reads MUST be declared in `manifest.params`
   (type `string` / `number` / `boolean` — never `integer`/`int`/`float`/`bool`).
 - Per-dataset default values can additionally be set in
-  `manifest.datasets[].params` (e.g. `{ "limit": 200 }`); URL params override them.
+  `manifest.datasets[].params` (e.g. `{ "days": "all" }`); URL params override them.
 - **A param value arrives in three shapes — handle all three:**
   1. absent → `NULL`,
   2. URL param → escaped **string** (KPI reset tiles send the **empty string** `''`),
@@ -103,9 +136,59 @@ detail view's search (`sq` param), etc. See `references/primitives.md` §Actions
 
   -- numeric param with default:
   LIMIT CAST(COALESCE(NULLIF(CAST(getvariable('limit') AS VARCHAR), ''), '100') AS INTEGER)
+
+  -- multi-select param (Select "multiple": true → "Script,Layout"); a handful
+  -- of values, so list_contains is fine here (not for scope_uuids, below):
+  (NULLIF(CAST(getvariable('type') AS VARCHAR), '') IS NULL
+   OR list_contains(string_split(CAST(getvariable('type') AS VARCHAR), ','), t.Object_Type))
   ```
 - Defaults live **in the SQL** (and optionally `datasets[].params`), never in the
   frontend.
+- **Server-side paging** (Table `pageParam`, `references/primitives.md`) — every
+  list that can outgrow one page uses this frame; the page size comes from the
+  manifest (`datasets[].pageSize`, default 500), never from a `limit` param:
+
+  ```sql
+  WITH … CTEs …,
+  -- the former last SELECT; order keys that are no output column travel along
+  unkeyed AS MATERIALIZED (
+      SELECT …, oc.File_Name AS _ord_1, oc.Object_Name AS _ord_2
+      FROM … WHERE <all filters except search and chip>
+  ),
+  -- row_key in the default order; the whole row u breaks the remaining ties
+  result AS MATERIALIZED (
+      SELECT u.* EXCLUDE (_ord_1, _ord_2),
+             row_number() OVER (ORDER BY u._ord_1, u._ord_2, u) AS row_key
+      FROM unkeyed u
+  ),
+  -- >>> shared paging table-search block
+  …   -- copy verbatim from a paged bundle
+  -- <<< shared paging table-search block
+  filtered AS (
+      SELECT * FROM searched
+      WHERE (getvariable('<chip>') IS NULL OR <chip> = getvariable('<chip>'))   -- server chip only
+  ),
+  -- >>> shared paging window block
+  …   -- copy verbatim; its fallback page size = manifest pageSize
+  -- <<< shared paging window block
+  SELECT f.*,
+      (SELECT to_json(map_from_entries(list((<chip>, n) ORDER BY <chip>)))
+         FROM (SELECT <chip>, count(*) AS n FROM result GROUP BY 1)) AS _chip_facets,   -- server chip only
+      pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+  FROM filtered f, pg
+  ORDER BY /*@sort*/ row_key, f
+  LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);
+  ```
+
+  Copy both blocks from `dashboards-custom/static-code-analysis/unused_code/variable_set_never_read/data/findings.sql`.
+  `MATERIALIZED` is required (the frame reads `result` several times). The
+  backend replaces `/*@sort*/` with a column the user clicked — only names it
+  read from the query's own output — so never sort via `getvariable` or a
+  position. Chip counts (`_chip_facets`) count over `result`: without the
+  search and without the chip itself. Name a CTE of your own `filtered`,
+  `result`, `pg` or `searched` and the frame breaks — rename it. A unit test
+  (`rest-api/tests/unit/paging-templates.test.js`) checks the frame, the block
+  copies and the page size.
 
 ### Scope block (file filter + S-Block) — mandatory pattern for analysis datasets
 
@@ -143,15 +226,37 @@ AND (getvariable('scope_uuids') IS NULL
 
 ### ⚠️ The `:word` preprocessor trap
 
-Before the `getvariable` pass, the API replaces **every** `:word` token in the SQL
-text — including inside string literals and comments — with the matching request
-param or `NULL`. `'localhost:3000'` becomes `'localhostNULL'`; `'fn:1'` becomes
+Before the `getvariable` pass, the API replaces **every** `:word` token (regex
+`:(\w+)`) and then **every** `$n` (regex `\$(\d+)`, positional) in the SQL text —
+including inside string literals and comments — with the matching request param
+or `NULL`. `'localhost:3000'` becomes `'localhostNULL'`; `'fn:1'` becomes
 `'fnNULL'`. (`://` is safe — `/` is not a word character.)
 
 Rules:
 - Never rely on `:name`-style parameters in bundle SQL; use `getvariable` only.
 - Never write a `:` directly followed by `[A-Za-z0-9_]` anywhere in the file. If a
   string literal needs one, split it: `'fn' || ':' || '1'`. Check comments too.
+  The usual offenders:
+  - `x::VARCHAR` (the second colon) → `CAST(x AS VARCHAR)`;
+  - a list slice `lst[1:3]` → `list_slice(lst, 1, 3)`;
+  - a time format `'%H:00'` → `'%H' || ':' || '00'` (`'%H:%M'` is safe — `%`
+    is no word character).
+- Never write `$` followed by a digit (`regexp_replace(…, '$1')`, prepared-style
+  `$1` placeholders) — use `\1` in regex replacements.
+
+### Chart datasets (CalendarHeatmap, StackedTimeSeries, Sparkline)
+
+- Deliver the full frame: one row per cell/bucket from `generate_series`, empty
+  ones with `n = 0` — the primitive draws gaps only if the rows exist.
+- Return times as **text** (`strftime`) — a `TIMESTAMP` column reaches the
+  browser as UTC and is shifted by the viewer's time zone. The drill-down
+  window `from_at`/`to_at` is text, too.
+- The API converts `BIGINT` to a JSON number only in **top-level** columns. A
+  list of structs (`top_types = [{key, n}]`) with a `BIGINT` inside fails to
+  serialize → `CAST(count(*) AS INTEGER)` inside the struct.
+- Slots and levels belong in the SQL (stable slot per series, level 4 for the
+  busiest cell) — contract and reference SQL in `references/primitives.md`
+  §Chart primitives.
 
 ## 4. Locale independence
 
@@ -193,7 +298,10 @@ the filtered list MUST agree:
   ```
 
 - Always plan an optional `file` filter param for multi-file solutions.
-- Parameterised `LIMIT` on detail datasets (default 50–200); no LIMIT on
+- Lists page on the server (frame above, page size in the manifest). A
+  parameterised `LIMIT` remains only for Top-N rankings and short group lists,
+  each with an entry and a reason in the exception list of
+  `rest-api/tests/unit/paging-templates.test.js` ("no silent cap"); no LIMIT on
   single-row summary datasets.
 - Reference style: `rest-api/templates/dashboards/home/data/*.sql` (system),
   `rest-api/templates/dashboards-custom/developer-workflow/script_todos/data/*.sql` and

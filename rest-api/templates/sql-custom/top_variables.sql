@@ -1,4 +1,4 @@
--- @template_type: object
+-- @template_type: report
 -- @title: Top variables
 -- @description: Variables with the most set/read operations.
 -- @icon: variable
@@ -8,7 +8,7 @@
 -- @params: limit (optional, default 100), file (optional)
 -- @click_action: openObject
 -- @click_args: uuid={{uuid}}&type=Variable
--- @output_format: uuid, name, scope, type, file, usage_count
+-- @output_format: uuid, name, scope, file, usage_count
 -- @author: fm-lab core
 -- @version: 1.1
 -- @note: VariablesCatalog is aggregated and has no own UUID — we resolve the UUID
@@ -45,7 +45,6 @@ SELECT
     )                                       AS uuid,
     a.name                                  AS name,
     a.scope                                 AS scope,
-    'Variable'                              AS type,
     a.File_Name                             AS file,
     a.usage_count                           AS usage_count
 FROM agg a

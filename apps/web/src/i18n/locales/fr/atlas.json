@@ -93,5 +93,62 @@
       "title": "Nœud"
     },
     "cancel": "Annuler"
+  },
+  "color": {
+    "label": "Couleur",
+    "type": "Type",
+    "recency": "Activité",
+    "saves": "Enregistrements",
+    "type_hint": "Colorer les tuiles par type d’objet.",
+    "recency_hint": "Colorer les tuiles selon l’âge de leur modification individuelle la plus récente — les événements de masse ne comptent jamais comme récents.",
+    "saves_hint": "Colorer les tuiles selon le compteur d’enregistrements sur toute la durée de vie de leurs membres (rang au sein du type d’objet) — résiste aux événements de masse.",
+    "unavailable": "Ce catalogue ne contient aucun horodatage de modification — importez à nouveau la solution pour colorer par activité.",
+    "bulk": "Événements de masse",
+    "bulk_hint": "Inclure les événements de masse : un horodatage de masse date alors la dernière modification comme une modification individuelle."
+  },
+  "activity": {
+    "class": {
+      "1": "≤ 30 jours",
+      "2": "≤ 90 jours",
+      "3": "≤ 1 an",
+      "4": "≤ 2 ans",
+      "5": "> 2 ans",
+      "6": "inconnu",
+      "7": "sans horodatage"
+    },
+    "savesShort": "enregistrements {{level}}/5",
+    "savesFew": "peu",
+    "savesMany": "beaucoup",
+    "legendRecency": "Modification individuelle la plus récente",
+    "legendSaves": "Enregistrements sur la durée de vie (rang dans le type)",
+    "dataState": "État des données {{date}}",
+    "bulkIncluded": "événements de masse inclus",
+    "unknownHint": "Pour {{pct}} % des nœuds, l’âge de la dernière modification réelle est inconnu — un événement de masse récent a écrasé leurs horodatages. Ici, les enregistrements sur la durée de vie distinguent mieux les modules.",
+    "useSaves": "Colorer par enregistrements",
+    "tooltip": {
+      "class": "Activité : {{label}}",
+      "classLabel": "Activité",
+      "newest": "Modification la plus récente : {{date}} ({{days}} jours avant l’état des données)",
+      "newestNone": "Aucune modification datée",
+      "active": "Modifiés en 90 jours : {{n}} sur {{total}}",
+      "medianAge": "Âge médian : {{days}} jours",
+      "medianSaves": "Enregistrements médians : {{n}}",
+      "saves": "Enregistrements : {{n}}",
+      "undated": "Horodatages de masse : {{pct}} %",
+      "savesLevel": "Niveau d’enregistrements {{level}} sur 5"
+    },
+    "panel": {
+      "newest": "Modification la plus récente",
+      "newestValue": "{{date}} · {{days}} jours avant l’état des données",
+      "active": "Modifiés ≤ 90 jours",
+      "activeValue": "{{n}} sur {{total}}",
+      "medianAge": "Âge médian",
+      "days": "{{days}} jours",
+      "medianSaves": "Enregistrements médians",
+      "saves": "Enregistrements",
+      "undated": "Horodatages de masse",
+      "dataState": "État des données",
+      "openDashboard": "Modifications de ce module"
+    }
   }
 }

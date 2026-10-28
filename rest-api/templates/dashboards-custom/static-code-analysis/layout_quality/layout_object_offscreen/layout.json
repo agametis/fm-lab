@@ -65,7 +65,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Object outside the layout"
+          "title": "Object outside the layout",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -79,6 +80,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file, layout or object…",
               "columns": [
                 {

@@ -1,0 +1,631 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "security_no_meta",
+        "props": {
+          "span": 12,
+          "title": "No change stamps",
+          "variant": "hero"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": false
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "security_no_meta_md",
+            "props": {
+              "content": "This catalog carries no change stamps yet. They are read during the XML import — import the solution again to see who changed accounts and privileges and when."
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "security_filters",
+        "props": {
+          "span": 12,
+          "title": "Filter"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "data": {
+          "dataset": "view_state"
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "Select",
+                "id": "security_type_select",
+                "data": {
+                  "dataset": "type_options"
+                },
+                "props": {
+                  "param": "type",
+                  "label": "Type",
+                  "emptyOptionLabel": "All security types",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "multiple": true
+                }
+              },
+              {
+                "type": "Select",
+                "id": "security_file_select",
+                "data": {
+                  "dataset": "file_options"
+                },
+                "props": {
+                  "param": "file",
+                  "label": "File",
+                  "emptyOptionLabel": "All files",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "multiple": true
+                }
+              },
+              {
+                "type": "Select",
+                "id": "security_person_select",
+                "data": {
+                  "dataset": "person_options"
+                },
+                "props": {
+                  "param": "person",
+                  "label": "Person",
+                  "emptyOptionLabel": "All persons",
+                  "resetParams": [
+                    "page"
+                  ]
+                }
+              },
+              {
+                "type": "NavButton",
+                "id": "security_filters_reset",
+                "props": {
+                  "label": "Reset filters",
+                  "variant": "link",
+                  "onClick": {
+                    "action": "navigate",
+                    "args": {
+                      "path": "/dashboard/security_changes"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "FilterChips",
+                "id": "security_days_chips",
+                "props": {
+                  "param": "days",
+                  "default": "all",
+                  "resetParams": [
+                    "page",
+                    "from",
+                    "to"
+                  ],
+                  "options": [
+                    {
+                      "value": "7",
+                      "label": "7 days"
+                    },
+                    {
+                      "value": "30",
+                      "label": "30 days"
+                    },
+                    {
+                      "value": "90",
+                      "label": "90 days"
+                    },
+                    {
+                      "value": "365",
+                      "label": "365 days"
+                    },
+                    {
+                      "value": "all",
+                      "label": "All"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Markdown",
+                "id": "security_anchor_md",
+                "props": {
+                  "content": "Period ends **{{anchor_label}}**"
+                }
+              }
+            ]
+          },
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "FilterChips",
+                "id": "security_actor_chips",
+                "props": {
+                  "param": "actor",
+                  "default": "all",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "options": [
+                    {
+                      "value": "all",
+                      "label": "All authors",
+                      "countField": "by_all"
+                    },
+                    {
+                      "value": "developer",
+                      "label": "Developers",
+                      "countField": "by_developer"
+                    },
+                    {
+                      "value": "runtime",
+                      "label": "Runtime (end users)",
+                      "countField": "by_runtime"
+                    },
+                    {
+                      "value": "tool",
+                      "label": "Tools",
+                      "countField": "by_tool"
+                    }
+                  ]
+                },
+                "data": {
+                  "dataset": "kpis"
+                }
+              },
+              {
+                "type": "ToggleChips",
+                "id": "security_toggles",
+                "props": {
+                  "items": [
+                    {
+                      "param": "bulk",
+                      "label": "Mass events",
+                      "on": "include",
+                      "off": "hide",
+                      "default": "hide",
+                      "resetParams": [
+                        "page"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "security_window",
+        "props": {
+          "span": 12,
+          "title": "Time window"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_window",
+          "truthy": true
+        },
+        "data": {
+          "dataset": "view_state"
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "Markdown",
+                "id": "security_window_md",
+                "props": {
+                  "content": "Showing **{{window_label}}** — the period chips do not apply while a window is set."
+                }
+              },
+              {
+                "type": "NavButton",
+                "id": "security_window_clear",
+                "props": {
+                  "label": "Clear window",
+                  "variant": "link",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "security_changes"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "security_overview",
+        "props": {
+          "span": 12
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "security_kpistrip",
+            "data": {
+              "dataset": "kpis"
+            },
+            "props": {
+              "items": [
+                {
+                  "label": "Changes",
+                  "field": "changes",
+                  "format": "number"
+                },
+                {
+                  "label": "Accounts",
+                  "field": "accounts",
+                  "format": "number"
+                },
+                {
+                  "label": "Privilege sets",
+                  "field": "privilege_sets",
+                  "format": "number"
+                },
+                {
+                  "label": "Extended privileges",
+                  "field": "extended_privileges",
+                  "format": "number"
+                },
+                {
+                  "label": "Authorizations",
+                  "field": "authorizations",
+                  "format": "number"
+                },
+                {
+                  "label": "Mass events",
+                  "field": "mass_events",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "security_list",
+        "props": {
+          "span": 12,
+          "title": "Changes"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "security_table",
+            "data": {
+              "dataset": "changes"
+            },
+            "props": {
+              "density": "compact",
+              "rowKey": "row_key",
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortable": true,
+              "sortParam": "sort",
+              "searchable": true,
+              "searchPlaceholder": "Search object, type, file or person",
+              "columns": [
+                {
+                  "field": "at",
+                  "label": "Changed",
+                  "nowrap": true
+                },
+                {
+                  "field": "type",
+                  "label": "Type",
+                  "nowrap": true
+                },
+                {
+                  "field": "name",
+                  "label": "Object"
+                },
+                {
+                  "field": "file",
+                  "label": "File",
+                  "nowrap": true
+                },
+                {
+                  "field": "person",
+                  "label": "Person",
+                  "nowrap": true
+                },
+                {
+                  "field": "account",
+                  "label": "Account",
+                  "nowrap": true
+                },
+                {
+                  "field": "assigned",
+                  "label": "Assigned to"
+                },
+                {
+                  "field": "enabled",
+                  "label": "Active",
+                  "format": "badge",
+                  "nowrap": true
+                },
+                {
+                  "field": "modifications",
+                  "label": "Saves",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "marker",
+                  "label": "Note",
+                  "format": "badge",
+                  "badgeTone": {
+                    "Mass event": "warning",
+                    "Runtime change": "partial",
+                    "Technical author": "partial"
+                  },
+                  "nowrap": true
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{uuid}}",
+                  "file": "{{file}}",
+                  "type": "{{type}}"
+                }
+              },
+              "empty": {
+                "message": "No security changes match the filters in this period."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "security_bulk",
+        "props": {
+          "span": 12,
+          "title": "Mass events",
+          "subtitle": "Migrations, pastes or tool runs that also wrote accounts or privileges — open one to list its security objects."
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "security_bulk_table",
+            "data": {
+              "dataset": "bulk_events"
+            },
+            "props": {
+              "density": "compact",
+              "rowKey": "from_at",
+              "searchable": false,
+              "columns": [
+                {
+                  "field": "started",
+                  "label": "Start",
+                  "nowrap": true
+                },
+                {
+                  "field": "ended",
+                  "label": "End",
+                  "nowrap": true
+                },
+                {
+                  "field": "scope",
+                  "label": "Scope",
+                  "format": "badge",
+                  "nowrap": true
+                },
+                {
+                  "field": "kind",
+                  "label": "Kind",
+                  "format": "badge",
+                  "nowrap": true
+                },
+                {
+                  "field": "files",
+                  "label": "Files",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "objects",
+                  "label": "Security objects",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "objects_total",
+                  "label": "In event",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "types",
+                  "label": "Types"
+                },
+                {
+                  "field": "persons",
+                  "label": "Persons"
+                }
+              ],
+              "onRowClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "security_changes",
+                  "from": "{{from_at}}",
+                  "to": "{{to_at}}",
+                  "bulk": "include"
+                }
+              },
+              "empty": {
+                "message": "No mass event touched the security model in this period."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "security_catalogs",
+        "props": {
+          "span": 12,
+          "title": "Security catalogs",
+          "subtitle": "Each catalog keeps a stamp of its own. A catalog stamp newer than every object of the catalog points to a structural change after the last edit — for accounts a deleted account."
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "security_catalog_table",
+            "data": {
+              "dataset": "catalog_stamps"
+            },
+            "props": {
+              "density": "compact",
+              "rowKey": "row_key",
+              "searchable": false,
+              "columns": [
+                {
+                  "field": "file",
+                  "label": "File",
+                  "nowrap": true
+                },
+                {
+                  "field": "type",
+                  "label": "Type",
+                  "nowrap": true
+                },
+                {
+                  "field": "catalog_stamp",
+                  "label": "Catalog stamp",
+                  "nowrap": true
+                },
+                {
+                  "field": "person",
+                  "label": "Person",
+                  "nowrap": true
+                },
+                {
+                  "field": "counter",
+                  "label": "Counter",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "newest_object",
+                  "label": "Newest object",
+                  "nowrap": true
+                },
+                {
+                  "field": "after_last_edit",
+                  "label": "Catalog newer",
+                  "format": "badge",
+                  "badgeTone": {
+                    "yes": "warning"
+                  },
+                  "nowrap": true
+                }
+              ],
+              "empty": {
+                "message": "No security catalog stamps for the chosen files."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "security_basis",
+        "props": {
+          "span": 12,
+          "title": "Data basis"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "security_basis_md",
+            "props": {
+              "content": "The **last** change stamp of each account, privilege set, extended privilege and file access authorization — earlier changes of the same object are overwritten. **Runtime** changes come from end users while the solution runs, e.g. a password change in a WebDirect session; **tools** are the FileMaker Data Migration Tool and other authors marked technical in the author aliases. A changed password raises only the counter of the accounts catalog, not its timestamp; for the other security catalogs the timestamp rule is not verified. Times are the local time of the editing client."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

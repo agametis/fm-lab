@@ -86,6 +86,7 @@ when both used and unused rows exist).
   "sortable": true,
   "searchable": "auto", "searchAutoThreshold": 3, "searchPlaceholder": "Search …",
   "columns": [
+    { "field": "at",    "label": "Changed", "nowrap": true },
     { "field": "name",  "label": "Name" },
     { "field": "count", "label": "Count", "align": "right", "format": "number" }
   ],
@@ -96,10 +97,54 @@ when both used and unused rows exist).
   "empty": { "message": "…" }, "alwaysShowCount": true
 }}
 ```
-`chipFilter` renders value chips (with counts) above the table and filters
-**client-side** — i.e. only within the already-loaded, LIMIT-capped rows. For
-true-total filtering use `FilterChips` (server-side) instead; decision rule in
-`references/patterns.md`.
+`chipFilter` renders value chips (with counts) above the table. Without
+`param` it filters **client-side** — only within the loaded rows. With
+`"param": "<url param>"` it is a **server chip**: a click writes the param, the
+SQL filters the whole result and reports the counts in `_chip_facets` (decision
+rule in `references/patterns.md`). `groups` apply to client chips only; a server
+chip groups values in the SQL (a hidden chip column, e.g. `_chip_step`).
+
+`nowrap: true` keeps a column on one line (timestamps, names, counts); the
+remaining columns absorb the width and wrap instead.
+
+**Server-side paging** — for every list that can outgrow one page (the rule,
+not the exception; a fixed `LIMIT` is only for Top-N rankings and short group
+lists):
+
+```json
+{ "type": "Table", "props": {
+  "rowKey": "row_key", "sortable": true, "searchable": "auto",
+  "pageParam": "page", "searchParam": "q", "sortParam": "sort", "clientMode": true,
+  "chipFilter": { "field": "<col>", "param": "<col>" },
+  "columns": [ { "field": "step", "label": "Step", "sortKey": "step_no" },
+               { "field": "message", "label": "Message", "sortable": false } ]
+}}
+```
+- The SQL pages, sorts and searches (frame in `references/sql-rules.md`) and
+  reports the window on every row: `_row_total` (rows of the current selection),
+  `_page` (effective page after clamping) and `_page_size`. The pager shows
+  above and below the table; paging keeps the scroll position.
+- A header click writes `sortParam` (column name, or `sortKey`) and the
+  direction (`dir`, or `<sortParam>_dir`) and returns to page 1; the backend
+  sorts the whole result. `sortable: false` keeps a header unclickable.
+- `searchParam`: the term goes into the URL after a short pause; the SQL filters
+  on the same columns the client search covers.
+- `clientMode: true`: while the whole result fits on one page and neither a
+  sort nor a search term sits in the URL, the table sorts and searches locally
+  (natural order, no request). Set it only when the search param filters this
+  dataset alone (not when `q` also drives KPIs or charts).
+- Declare the same names in the manifest dataset entry (`pageSize`,
+  `pageParam`, `searchParam`, `sortParam`). Several paged tables on one
+  dashboard need their own names (`drivers_page`, `drivers_q`, `drivers_sort`).
+- The `Card` that binds the dataset sets `"keepChildrenOnEmpty": true`, so a
+  search without hits keeps the search field; `FilterChips` in that card set
+  `"resetParams": ["page"]`.
+- A `chipFilter` without `param` on a paged table is not allowed (it would count
+  one page); a unit test enforces this and the two rules above.
+- Without `pageParam`, a `_row_total` above the loaded rows only names the
+  cut-off of a LIMIT-capped result ("500 of 3,104").
+- Reference bundles: `dashboards-custom/static-code-analysis/unused_code/variable_set_never_read`
+  (FilterChips + paging), `…/best_practices/relationship_with_sort` (server chip).
 
 ### `AutoTable`
 Columns derived automatically from the dataset (columns prefixed `_` are always
@@ -131,11 +176,26 @@ Because the query re-runs, counts are true totals (not LIMIT-capped).
 
 | Primitive | Props | Use for |
 |---|---|---|
-| `FilterChips` | `param` (required), `default`, `options[]` of `{ value, label, countField? }`; bind a summary dataset — `countField` reads its first row | 2–5 named lenses (all / without X / only X) with true-total counts |
-| `Select` | `param` (required), `default`, `valueField` ("value"), `labelField` ("label"), `label`; options come from the bound dataset's rows | many options / data-driven option lists (e.g. classification sets, file pickers) |
+| `FilterChips` | `param` (required), `default`, `options[]` of `{ value, label, countField? }`, `resetParams[]`; bind a summary dataset — `countField` reads its first row | 2–5 named lenses (all / without X / only X) with true-total counts |
+| `Select` | `param` (required), `default`, `valueField` ("value"), `labelField` ("label"), `label`, `emptyOptionLabel`, `multiple`, `separator` (","), `resetParams[]`; options come from the bound dataset's rows | many options / data-driven option lists (e.g. classification sets, file pickers); `multiple: true` for "any of these types / files" |
 | `Slider` | `param` (required), `label`, `min` (0), `max` or `maxField` (from bound dataset), `step` (1), `default`, `valueSuffix` | numeric thresholds |
+| `ToggleChips` | `items[]` of `{ param, label, on, off, default, resetParams? }`, `resetParams[]` (shared); no dataset | several independent on/off switches in one chip bar (e.g. "Mass events", "Technical authors") — each chip flips its own param between `on` and `off` |
 
-All three keep the URL canonical: at the default value the param is removed.
+All four keep the URL canonical: at the default value the param is removed.
+`resetParams` (FilterChips, Select, ToggleChips) names URL params dropped
+together with every change — typically the page param of a server-paged `Table`.
+`FilterChips` chooses one of several values for **one** param; use
+`ToggleChips` when the chips are independent of each other. A chip whose param
+only changes the view (e.g. hides a card) needs no `resetParams`.
+
+**Multi-select** (`Select` with `"multiple": true`): a dropdown of checkboxes
+that writes the chosen values, joined by `separator`, into one param; nothing
+chosen = param absent = no filter. `emptyOptionLabel` captions that state ("All
+types"); an × next to the control and the dropdown's first entry clear the
+choice. The dropdown is rendered outside the card, so the card cannot clip it.
+SQL side (a handful of values, so `list_contains` is fine — unlike the
+`scope_uuids` block): see `references/sql-rules.md` §3. A value that contains the
+separator cannot be selected on its own — pick another `separator` then.
 
 **Sticky params.** By default a filter param is click-scoped: an `openDashboard`
 self-navigation replaces the whole query string, so any param the click args do
@@ -154,6 +214,41 @@ compatibility (`STICKY_DASHBOARD_PARAMS` in `apps/web/src/dashboard/actions.ts`)
 Truly click-scoped filters (the thing a KPI tile or drilldown row *sets*) must
 NOT be declared sticky — otherwise they can never be reset by a click that
 omits them.
+
+## Chart primitives (many rows, draw only)
+
+Verified against `apps/web/src/dashboard/primitives/charts/*.tsx` (2026-10-25).
+The charts compute nothing: the dataset delivers every bucket — empty ones
+included — plus levels, series slots, labels and the drill-down window as text.
+Each chart loads lazily on first use, has one tab stop (arrow keys move, Enter
+opens) and passes the clicked row's tokens to its click action. Reference
+bundle: `rest-api/templates/dashboards/changelog/changes/` (`activity_map.sql`,
+`activity_series.sql`) and the file view's `file/data/change_trend.sql`.
+
+| Primitive | Props | Dataset contract (one row per …) |
+|---|---|---|
+| `CalendarHeatmap` | `onCellClick` (ActionSpec), `ariaLabel` | **cell of the frame, empty cells included:** `grain` (`day` → `row` = weekday 0 = Monday, `col` = week; `hour` → `row` = day of the frame, `col` = hour, `row_label` names the day; `week` → one block per `year`, `row` = section of the month 0–4, `col` = month 0–11), `level` 0–4, `n`, `label`, `q1`/`q2`/`q3` (level thresholds for the legend), `bulk_objects`/`bulk_events` (ring marker, never a hue), `top_types`/`top_persons` (`[{key, n}]`, tooltip), `from_at`/`to_at`, `is_selected`, `count_mode` |
+| `StackedTimeSeries` | `onBarClick` (ActionSpec), `height` (220), `ariaLabel` | **bucket × series** (a bucket without data keeps one row with `series` NULL): `bucket_index`, `bucket_label`, `tick` (short axis label), `series`, `series_label`, `slot` (1–7 palette, 0 = other, −1 = mass events, hatched), `series_total`, `series_members`, `n`, `bucket_n`, `bulk_objects`/`bulk_events` (flag above the column), `from_at`/`to_at`, `is_selected`, `stack_by`, `count_mode`, `bulk_mode` |
+| `Sparkline` | `label` (names the single series), `valueField` (`n`), `labelField` (`month`), `onPointClick` (ActionSpec), `height` (40), `maxWidth` (360) | **point, in order:** the label column as text, the value column; any further columns feed the click tokens |
+
+- **Colours** come from the theme tokens: `--color-chart-1…7` and
+  `--color-chart-other` for the slots, `--color-heat-0…4` for the levels. The
+  SQL decides the slot, so a series keeps its colour and its stack position
+  whatever the filter — give a series a stable slot (fixed mapping or a rank
+  over the whole solution), never a rank inside the current filter.
+- **Levels:** 0 = empty cell, 1–4 = quartiles of the non-empty cells in view;
+  give the busiest cell level 4 (plain quartiles leave equal values in the
+  lightest level).
+- **Legend of `StackedTimeSeries`:** click toggles a series, Shift- or
+  Alt/Option-click isolates it, "All series" restores. The selection is not in
+  the URL.
+- **Drill-down:** the click action is usually a self-navigation with the cell's
+  window, e.g. `{ "action": "openDashboard", "args": { "id": "<this>",
+  "from": "{{from_at}}", "to": "{{to_at}}" } }`; keep the chart's frame
+  independent of `from`/`to`, otherwise it collapses to the clicked cell, and
+  mark the cell with `is_selected`.
+- SQL pitfalls for these datasets (times as text, `INTEGER` inside lists of
+  structs, `list_slice` instead of `[1:3]`): `references/sql-rules.md` §3.
 
 ## Content primitives
 
@@ -197,6 +292,19 @@ KPI tiles and aggregate-table rows filter the dashboard by navigating to
 
 The URL param reaches every dataset as `getvariable('pattern')`. A "Total/All"
 tile resets by sending the empty value `""`.
+
+- `""` is written into the URL as `pattern=` — it is *not* removed. The SQL
+  normalises it (`NULLIF(…, '')`), but a `FilterChips`/`Select` bound to the
+  same param then sees `''` instead of its `default` and marks no chip as
+  active. When a chip bar shows the same param, let the tile send the explicit
+  value (`"view": "hotspots"`), not `""`.
+- A click argument that is exactly one token (`"file": "{{file_filter}}"`)
+  keeps the row's native value; when that value is `NULL` the argument is left
+  out of the URL. Use this for optional pass-through filters in a drill-down —
+  an empty string would arrive as `file=` instead.
+- A dataset may need another default than the shared SQL block it carries
+  (e.g. period "all" instead of "90"): set it per dataset in
+  `manifest.datasets[].params` — URL params still win.
 
 ### Active state
 

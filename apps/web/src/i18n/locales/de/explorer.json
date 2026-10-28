@@ -38,7 +38,11 @@
     "uses": "verwendet",
     "usedBy": "verwendet von",
     "focus": "Fokus",
-    "resizePanel": "Breite des Detail-Panels ändern"
+    "resizePanel": "Breite des Detail-Panels ändern",
+    "activity": "Aktivität",
+    "activityInherited": "Stempel des Layouts / Menüs",
+    "activityNone": "kein Stempel",
+    "activityAge": "{{days}} Tage vor dem Datenstand"
   },
   "filter": {
     "ariaLabel": "Graph-Filter",
@@ -77,11 +81,13 @@
     "colorMode": "Färbung",
     "colorModes": {
       "type": "Typ",
-      "community": "Community"
+      "community": "Community",
+      "recency": "Aktivität"
     },
     "colorModeHints": {
       "type": "Knoten nach Objekttyp einfärben",
-      "community": "Knoten nach erkanntem Modul (Community) einfärben"
+      "community": "Knoten nach erkanntem Modul (Community) einfärben",
+      "recency": "Knoten nach dem Alter ihrer neuesten Einzeländerung einfärben (die Stufen des Graph-Atlas)"
     },
     "communityUnnamed": "Community {{id}}",
     "detailsShort": "Details",
@@ -128,7 +134,8 @@
   "unconnectedToggleHint": "Knoten ohne Pfad zum Fokus entstehen durch den Typ-/Tiefenfilter — ein- oder ausblenden",
   "edge": {
     "represents": "repräsentiert",
-    "buttonAction": "Button-Aktion"
+    "buttonAction": "Button-Aktion",
+    "menuAction": "Menü-Aktion"
   },
   "trace": {
     "exit": "Nachbarschaft",

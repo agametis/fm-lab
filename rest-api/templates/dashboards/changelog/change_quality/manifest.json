@@ -1,0 +1,27 @@
+{
+  "id": "change_quality",
+  "version": "1.0.0",
+  "title": "Change metadata quality",
+  "description": "How reliable the change stamps of a solution are: integrity checks of the import, signals such as mass events, technical authors, missing accounts and counter 0, persons with several names — per file and with the affected objects.",
+  "author": "fm-lab core",
+  "icon": "badge-check",
+  "tags": ["changes"],
+  "entry": "layout.json",
+  "datasets": [
+    { "id": "view_state",   "source": "bundle:data/view_state.sql" },
+    { "id": "kpis",         "source": "bundle:data/kpis.sql" },
+    { "id": "findings",     "source": "bundle:data/findings.sql", "pageSize": 500 },
+    { "id": "spellings",    "source": "bundle:data/spellings.sql" },
+    { "id": "per_file",     "source": "bundle:data/per_file.sql" },
+    { "id": "file_options", "source": "bundle:data/file_options.sql" }
+  ],
+  "params": [
+    { "name": "file", "type": "string", "sticky": true,
+      "description": "File names, comma-separated (default: all files)." },
+    { "name": "issue", "type": "string",
+      "description": "Check whose objects are listed: missing, unreadable, duplicate, future, unassigned, mass, technical, no_account, zero_counter or spelling." },
+    { "name": "page", "type": "string",
+      "description": "Page of the object list (1-based, 100 rows per page)." }
+  ],
+  "permissions": { "read_only": true, "allow_navigation": true }
+}

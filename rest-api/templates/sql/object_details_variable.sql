@@ -3,10 +3,13 @@
 -- @params: uuid (optional), name (optional), file (optional)
 -- @output_format: content
 -- @author: Marcel
--- @version: 1.0
+-- @version: 1.1
 -- @tags: variables, variable-usages, dependencies, cross-reference
 -- @note: Use generic parameters: uuid, name, file (consistent with REST API)
 -- @note: UUID is md5(Variable_Scope || '::' || Scope_Anchor || '::' || Variable_Name)
+-- @note: The UUID carries no file. Local variables of clone files (same script
+--        UUIDs) share it; VariablesCatalog keeps one row per file, so the UUID
+--        branch and the usages are scoped to the resolved file.
 
 WITH var_match AS (
     SELECT
@@ -26,9 +29,10 @@ WITH var_match AS (
         vc.File_Name
     FROM VariablesCatalog vc
     WHERE (
-        -- Match by UUID (preferred)
+        -- Match by UUID (preferred), scoped to the resolved file
         (getvariable('uuid') IS NOT NULL
-         AND md5(vc.Variable_Scope || '::' || vc.Scope_Anchor || '::' || vc.Variable_Name) = getvariable('uuid'))
+         AND md5(vc.Variable_Scope || '::' || vc.Scope_Anchor || '::' || vc.Variable_Name) = getvariable('uuid')
+         AND (getvariable('file') IS NULL OR vc.File_Name = getvariable('file')))
         OR
         -- Match by Name (with optional file filter)
         (getvariable('name') IS NOT NULL
@@ -53,6 +57,8 @@ usages AS (
         ON vu.Variable_Name  = vm.Variable_Name
        AND vu.Variable_Scope = vm.Variable_Scope
        AND vu.Scope_Anchor   = vm.Scope_Anchor
+       -- local/let_local: one catalog row per file (clone files share the anchor)
+       AND (vm.Variable_Scope NOT IN ('local', 'let_local') OR vu.File_Name = vm.File_Name)
     ORDER BY vu.Usage_Type DESC, vu.Context_Type, vu.Context_Name, vu.Step_Index
 ),
 header AS (

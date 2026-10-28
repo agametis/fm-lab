@@ -69,8 +69,13 @@
   // this postStartCommand. Without it the backgrounded servers stay in the exec's process
   // group and are killed when the lifecycle command's session is torn down (dead ports →
   // white page). The firewall + auth-preflight steps stay in the foreground (they must
-  // complete first); only the long-running server launch is handed off.
-  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh; /usr/local/bin/claude-auth-preflight.sh || true; setsid bash tools/start-servers.sh",
+  // complete first); only the long-running processes are handed off.
+  //
+  // firewall-refresh-loop.sh is handed off the same way (`setsid -f`): it re-pins the
+  // rotating CDN IPs (Claris help, DuckDB docs, VS Code gallery CDN) every few minutes, so
+  // doc installs and extension updates never hit stale pins. It no-ops when the firewall
+  // was not applied.
+  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh; setsid -f /usr/local/bin/firewall-refresh-loop.sh </dev/null >/dev/null 2>&1; /usr/local/bin/claude-auth-preflight.sh || true; setsid bash tools/start-servers.sh",
 
   // 5173 uses "notify" (clickable toast), NOT "openBrowser": openBrowser reopens the
   // browser on the HOST every time the forward is (re-)established — if Vite dies while

@@ -36,27 +36,67 @@ det AS (
           AND oc.File_Name = d.File_Name
     CROSS JOIN params p
     WHERE (p.file_filter IS NULL OR d.File_Name = p.file_filter)
+),
+-- The finding rows; the keys of the default order travel along as hidden
+-- columns, so the page order does not hang on row_key alone.
+unkeyed AS MATERIALIZED (
+    SELECT
+        'uuid-intrafile-duplicate' AS rule_id,
+        'warning' AS severity,
+        File_Name AS file,
+        Catalog AS catalog,
+        Object_UUID AS dup_uuid,
+        Object_Name AS name,
+        Object_Type AS type,
+        Occurrence_Seq AS occ,
+        Parent_Name AS parent,
+        Position AS position,
+        Display_Text AS display,
+        COALESCE(Heal_Status, 'absorbed') AS heal_status,
+        Healed_UUID AS healed_uuid,
+        Discriminator AS discriminator,
+        COALESCE(step_script_name, survivor_name) AS surviving,
+        COALESCE(step_script_uuid, CASE WHEN survivor_type IS NOT NULL THEN catalog_uuid END) AS nav_uuid,
+        COALESCE(CASE WHEN step_script_uuid IS NOT NULL THEN 'Script' END, survivor_type) AS nav_type,
+        CASE WHEN step_script_uuid IS NOT NULL THEN catalog_uuid END AS step_uuid,
+           File_Name AS _ord_1,
+           Object_UUID AS _ord_2,
+           Occurrence_Seq AS _ord_3
+    FROM det
+),
+-- row_key numbers the rows in the default order; the whole row breaks the
+-- remaining ties, so every request assigns the same key.
+result AS MATERIALIZED (
+    SELECT u.* EXCLUDE (_ord_1, _ord_2, _ord_3),
+           row_number() OVER (ORDER BY u._ord_1, u.catalog, u._ord_2, u._ord_3, u) AS row_key
+    FROM unkeyed u
+),
+-- >>> shared paging table-search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) NOT IN ('uuid', 'nav_uuid', 'row_key')))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging table-search block
+filtered AS (
+    SELECT * FROM searched
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT
-    'uuid-intrafile-duplicate' AS rule_id,
-    'warning' AS severity,
-    File_Name AS file,
-    Catalog AS catalog,
-    Object_UUID AS dup_uuid,
-    Object_Name AS name,
-    Object_Type AS type,
-    Occurrence_Seq AS occ,
-    Parent_Name AS parent,
-    Position AS position,
-    Display_Text AS display,
-    COALESCE(Heal_Status, 'absorbed') AS heal_status,
-    Healed_UUID AS healed_uuid,
-    Discriminator AS discriminator,
-    COALESCE(step_script_name, survivor_name) AS surviving,
-    COALESCE(step_script_uuid, CASE WHEN survivor_type IS NOT NULL THEN catalog_uuid END) AS nav_uuid,
-    COALESCE(CASE WHEN step_script_uuid IS NOT NULL THEN 'Script' END, survivor_type) AS nav_type,
-    CASE WHEN step_script_uuid IS NOT NULL THEN catalog_uuid END AS step_uuid,
-    row_number() OVER (ORDER BY File_Name, Catalog, Object_UUID, Occurrence_Seq) AS row_key
-FROM det
-ORDER BY File_Name, Catalog, Object_UUID, Occurrence_Seq
-LIMIT CAST(COALESCE(NULLIF(CAST(getvariable('limit') AS VARCHAR), ''), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.*,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ row_key, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

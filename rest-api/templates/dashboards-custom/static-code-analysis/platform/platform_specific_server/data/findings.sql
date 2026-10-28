@@ -78,30 +78,68 @@ targets AS (
            file_name, count(*), 'dynamic'
     FROM dynamic
     GROUP BY COALESCE(dyn_expr, '(calculated name)'), file_name
+),
+-- The finding rows; the keys of the default order travel along as hidden
+-- columns, so the page order does not hang on row_key alone.
+unkeyed AS MATERIALIZED (
+    SELECT 'platform-specific-server' AS rule_id,
+        'info' AS severity,
+        file_name, nav_uuid, script_name,
+        'contextual' AS binding,
+        'context' AS evidence_kind, 'contextual' AS signal,
+        CASE target_kind
+             WHEN 'resolved' THEN 'Perform Script on Server target'
+             WHEN 'external' THEN '<unresolved external target>'
+             ELSE '<dynamic target (by name)>' END AS feature,
+        CAST(NULL AS INTEGER) AS step_no, CAST(NULL AS VARCHAR) AS step_uuid,
+        usage_count,
+        CASE target_kind
+             WHEN 'resolved'
+             THEN script_name || ' is called via Perform Script on Server (' || usage_count || ' callsite' || CASE WHEN usage_count > 1 THEN 's' ELSE '' END || ') — built for server-side execution'
+             WHEN 'external'
+             THEN '"' || script_name || '" is a Perform Script on Server target outside the imported catalog (' || usage_count || ' callsite' || CASE WHEN usage_count > 1 THEN 's' ELSE '' END || ') — external file target, deliberately not resolved'
+             ELSE 'Perform Script on Server resolves its target by calculated name — ' || script_name || ' (' || usage_count || ' callsite' || CASE WHEN usage_count > 1 THEN 's' ELSE '' END || ') — server-bound execution, target not statically resolvable'
+        END AS message,
+        CAST(NULL AS VARCHAR) AS doc_slug,
+           CASE target_kind WHEN 'resolved' THEN 0 WHEN 'external' THEN 1 ELSE 2 END AS _ord_1
+    FROM targets
+    WHERE (getvariable('file') IS NULL OR file_name = getvariable('file'))
+      AND (getvariable('scope_uuids') IS NULL
+           OR nav_uuid IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
+),
+-- row_key numbers the rows in the default order; the whole row breaks the
+-- remaining ties, so every request assigns the same key.
+result AS MATERIALIZED (
+    SELECT u.* EXCLUDE (_ord_1),
+           row_number() OVER (ORDER BY u._ord_1, u.file_name, u.script_name, u) AS row_key
+    FROM unkeyed u
+),
+-- >>> shared paging table-search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) NOT IN ('uuid', 'nav_uuid', 'row_key')))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging table-search block
+filtered AS (
+    SELECT * FROM searched
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT 'platform-specific-server' AS rule_id,
-    'info' AS severity,
-    file_name, nav_uuid, script_name,
-    'contextual' AS binding,
-    'context' AS evidence_kind, 'contextual' AS signal,
-    CASE target_kind
-         WHEN 'resolved' THEN 'Perform Script on Server target'
-         WHEN 'external' THEN '<unresolved external target>'
-         ELSE '<dynamic target (by name)>' END AS feature,
-    CAST(NULL AS INTEGER) AS step_no, CAST(NULL AS VARCHAR) AS step_uuid,
-    usage_count,
-    CASE target_kind
-         WHEN 'resolved'
-         THEN script_name || ' is called via Perform Script on Server (' || usage_count || ' callsite' || CASE WHEN usage_count > 1 THEN 's' ELSE '' END || ') — built for server-side execution'
-         WHEN 'external'
-         THEN '"' || script_name || '" is a Perform Script on Server target outside the imported catalog (' || usage_count || ' callsite' || CASE WHEN usage_count > 1 THEN 's' ELSE '' END || ') — external file target, deliberately not resolved'
-         ELSE 'Perform Script on Server resolves its target by calculated name — ' || script_name || ' (' || usage_count || ' callsite' || CASE WHEN usage_count > 1 THEN 's' ELSE '' END || ') — server-bound execution, target not statically resolvable'
-    END AS message,
-    CAST(NULL AS VARCHAR) AS doc_slug,
-    row_number() OVER (ORDER BY CASE target_kind WHEN 'resolved' THEN 0 WHEN 'external' THEN 1 ELSE 2 END, file_name, script_name) AS row_key
-FROM targets
-WHERE (getvariable('file') IS NULL OR file_name = getvariable('file'))
-  AND (getvariable('scope_uuids') IS NULL
-       OR nav_uuid IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
-ORDER BY CASE target_kind WHEN 'resolved' THEN 0 WHEN 'external' THEN 1 ELSE 2 END, file_name, script_name
-LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.*,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ row_key, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

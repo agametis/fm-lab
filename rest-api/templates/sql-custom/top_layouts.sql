@@ -1,4 +1,4 @@
--- @template_type: object
+-- @template_type: report
 -- @title: Top layouts
 -- @description: Layouts with the most objects.
 -- @icon: layout
@@ -7,7 +7,7 @@
 -- @params: limit (optional, default 100), file (optional)
 -- @click_action: openObject
 -- @click_args: uuid={{uuid}}&type=Layout
--- @output_format: uuid, name, type, file, object_count
+-- @output_format: uuid, name, file, object_count
 -- @author: fm-lab core
 -- @version: 1.0
 -- @tags: layouts, top, ranking
@@ -16,7 +16,6 @@ WITH scored AS (
     SELECT
         l.L_UUID                  AS uuid,
         l.L_Name                  AS name,
-        'Layout'                  AS type,
         l.File_Name               AS file,
         COUNT(lo.Object_UUID)     AS object_count
     FROM Layouts l
@@ -25,7 +24,7 @@ WITH scored AS (
       AND (getvariable('file') IS NULL OR l.File_Name = getvariable('file'))
     GROUP BY ALL
 )
-SELECT uuid, name, type, file, object_count
+SELECT uuid, name, file, object_count
 FROM scored
 WHERE object_count > 0
 ORDER BY object_count DESC

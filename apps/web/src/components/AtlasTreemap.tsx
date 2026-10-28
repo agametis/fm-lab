@@ -1,7 +1,8 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
 import { Treemap, hierarchy, treemapSquarify } from '@visx/hierarchy';
 import { Group } from '@visx/group';
 import { getTypeColor } from '../lib/graphColors';
+import { activityPaint, type AtlasColorMode } from '../lib/activityColors';
 import type { AtlasTile } from '../hooks/useGraphOverview';
 
 /**
@@ -13,7 +14,10 @@ import type { AtlasTile } from '../hooks/useGraphOverview';
  * can `React.lazy()` it together with the visx bundle (like Cytoscape on /graph).
  *
  * Tile area = weight (domain/logical degree); colour = object-type palette
- * (shared with the Graph Explorer via graphColors.ts), grey for the "Rest" tile.
+ * (shared with the Graph Explorer via graphColors.ts), grey for the "Rest" tile —
+ * or, in the colour modes "recency"/"saves", the activity ramp of the tile
+ * (activityColors.ts), the "Rest" tile included (it carries the activity of the
+ * folded tiles). Unknown activity is hatched; labels take the ink of their fill.
  */
 
 // „Rest"-Sammelknoten + Aggregat-Fallback: theme-tokenisiert (F1). Als CSS-var-
@@ -33,7 +37,7 @@ function tileValue(t: AtlasTile): number {
   return 1;
 }
 
-function tileColor(t: AtlasTile): string {
+function typeColor(t: AtlasTile): string {
   if (t.kind === 'rest') return REST_COLOR;
   if (t.kind === 'aggregate') return t.color_type ? getTypeColor(t.color_type) : REST_COLOR;
   return getTypeColor(t.type);
@@ -70,13 +74,25 @@ type Props = {
   hideRestLabel?: string;
   /** Noise-Filter: ausgeblendete Blätter dimmen (Default) oder ganz entfernen. */
   hiddenMode?: 'dim' | 'hide';
+  /** Farbmodus (URL `color`): Typ-Palette oder Aktivitäts-/Speicher-Rampe. */
+  colorMode?: AtlasColorMode;
+  /** Tooltip-Text je Kachel (Parent kennt i18n + Aktivitäts-Format); Default: Label. */
+  tooltipFor?: (tile: AtlasTile) => string;
+  /** Sekundärzeile je Kachel; Default: Datei (Blatt) bzw. Knotenzahl. */
+  subLabelFor?: (tile: AtlasTile) => string;
 };
 
 const INFO_R = 8; // Radius des „(...)"-Buttons
 const HIDE_BTN_H = 22; // Höhe des zentrierten „ausblenden"-Buttons der Rest-Kachel
 
-export default function AtlasTreemap({ tiles, onTileClick, filterText, onTileInfo, infoKindFor, onHideRest, hideRestLabel, hiddenMode = 'dim' }: Props) {
+export default function AtlasTreemap({
+  tiles, onTileClick, filterText, onTileInfo, infoKindFor, onHideRest, hideRestLabel, hiddenMode = 'dim',
+  colorMode = 'type', tooltipFor, subLabelFor,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // Schraffur-Muster für „Alter unbekannt“ — id je Instanz eindeutig (useId enthält
+  // Doppelpunkte, die in url(#…) stören → entfernen).
+  const hatchId = `atlas-hatch-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const [size, setSize] = useState({ width: 0, height: 0 });
 
   useLayoutEffect(() => {
@@ -112,6 +128,12 @@ export default function AtlasTreemap({ tiles, onTileClick, filterText, onTileInf
     <div ref={containerRef} className="atlas-treemap">
       {ready && (
         <svg width={width} height={height} role="group" aria-label="Atlas treemap">
+          <defs>
+            <pattern id={hatchId} patternUnits="userSpaceOnUse" width={6} height={6} patternTransform="rotate(45)">
+              <rect width={6} height={6} style={{ fill: 'var(--color-recency-unknown)' }} />
+              <line x1={0} y1={0} x2={0} y2={6} strokeWidth={2.5} style={{ stroke: 'var(--color-recency-unknown-hatch)' }} />
+            </pattern>
+          </defs>
           <Treemap root={root} size={[width, height]} tile={treemapSquarify} round paddingInner={2}>
             {(tree) => (
               <Group>
@@ -134,6 +156,9 @@ export default function AtlasTreemap({ tiles, onTileClick, filterText, onTileInf
                     const showHideBtn = tile.kind === 'rest' && !!onHideRest && w >= MIN_LABEL_W && h >= MIN_LABEL_H;
                     const hideBtnLabel = hideRestLabel ?? 'ausblenden';
                     const hideBtnW = Math.min(w - 8, Math.max(60, hideBtnLabel.length * 6.8 + 22));
+                    const act = activityPaint(colorMode, tile.activity);
+                    const fill = act ? (act.hatched ? `url(#${hatchId})` : act.fill) : typeColor(tile);
+                    const ink = act ? act.ink : undefined; // undefined → Klasse .atlas-tile-text
                     return (
                       <Group key={`${tile.kind}-${tile.key}-${i}`} top={node.y0} left={node.x0}>
                         <rect
@@ -141,13 +166,13 @@ export default function AtlasTreemap({ tiles, onTileClick, filterText, onTileInf
                           height={h}
                           rx={3}
                           className={`atlas-tile-rect${hidden ? ' hidden' : ''}`}
-                          style={{ fill: tileColor(tile) }}
+                          style={{ fill }}
                           fillOpacity={dim ? 0.18 : 0.92}
                           strokeWidth={1}
                           strokeDasharray={hidden ? '3 2' : undefined}
                           onClick={() => onTileClick(tile)}
                         >
-                          <title>{`${tile.label}`}</title>
+                          <title>{tooltipFor ? tooltipFor(tile) : tile.label}</title>
                         </rect>
                         {showLabel && (
                           <text
@@ -157,7 +182,7 @@ export default function AtlasTreemap({ tiles, onTileClick, filterText, onTileInf
                             fontWeight={600}
                             className="atlas-tile-text"
                             fillOpacity={dim ? 0.4 : 1}
-                            style={{ pointerEvents: 'none', userSelect: 'none' }}
+                            style={{ pointerEvents: 'none', userSelect: 'none', ...(ink ? { fill: ink } : {}) }}
                           >
                             {tile.label.length > Math.floor(w / 6.5)
                               ? `${tile.label.slice(0, Math.max(0, Math.floor(w / 6.5) - 1))}…`
@@ -170,10 +195,10 @@ export default function AtlasTreemap({ tiles, onTileClick, filterText, onTileInf
                             y={29}
                             fontSize={9}
                             className="atlas-tile-text"
-                            fillOpacity={dim ? 0.3 : 0.65}
-                            style={{ pointerEvents: 'none', userSelect: 'none' }}
+                            fillOpacity={dim ? 0.3 : ink ? 0.85 : 0.65}
+                            style={{ pointerEvents: 'none', userSelect: 'none', ...(ink ? { fill: ink } : {}) }}
                           >
-                            {tileSubLabel(tile)}
+                            {subLabelFor ? subLabelFor(tile) : tileSubLabel(tile)}
                           </text>
                         )}
                         {showInfo && (

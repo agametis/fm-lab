@@ -53,7 +53,8 @@
         "id": "pairs_card",
         "props": {
           "span": 12,
-          "title": "File pairs sharing UUIDs"
+          "title": "File pairs sharing UUIDs",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "file_pairs"
@@ -67,6 +68,10 @@
               "density": "compact",
               "sortable": true,
               "searchable": "auto",
+              "pageParam": "pairs_page",
+              "searchParam": "pairs_q",
+              "sortParam": "pairs_sort",
+              "clientMode": true,
               "searchAutoThreshold": 3,
               "searchPlaceholder": "Search file…",
               "columns": [
@@ -108,7 +113,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Colliding objects"
+          "title": "Colliding objects",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -122,6 +128,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": "auto",
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchAutoThreshold": 3,
               "searchPlaceholder": "Search name, file or UUID…",
               "columns": [

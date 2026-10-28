@@ -68,18 +68,24 @@
     },
     {
       "id": "findings",
-      "source": "bundle:data/findings.sql"
+      "source": "bundle:data/findings.sql",
+      "pageSize": 500
     },
     {
       "id": "by_file",
-      "source": "bundle:data/by_file.sql"
+      "source": "bundle:data/by_file.sql",
+      "pageSize": 500,
+      "pageParam": "files_page",
+      "searchParam": "files_q",
+      "sortParam": "files_sort"
     },
     {
       "id": "drivers",
       "source": "bundle:data/drivers.sql",
-      "params": {
-        "limit": 100
-      }
+      "pageSize": 100,
+      "pageParam": "drivers_page",
+      "searchParam": "drivers_q",
+      "sortParam": "drivers_sort"
     }
   ],
   "params": [
@@ -95,12 +101,6 @@
       "required": false,
       "sticky": true,
       "description": "Installed plugin version to validate against (major.minor, from the header select). Empty = no check: the dashboard stays a neutral inventory."
-    },
-    {
-      "name": "limit",
-      "type": "number",
-      "required": false,
-      "description": "Maximum number of rows returned by the lists."
     }
   ],
   "permissions": {

@@ -242,7 +242,7 @@ download_docs() {
         exit 2
     fi
 
-    emit_progress download 80 "Download complete ($(echo "scale=1; $FILE_SIZE / 1024 / 1024" | bc) MB)"
+    emit_progress download 80 "Download complete ($(_fmlab_div1 "$FILE_SIZE" 1048576) MB)"
 }
 
 # Function: Save version marker
@@ -257,18 +257,15 @@ save_version() {
 
 # Function: Register the installed docs in .fmlab/docs.json
 register_docs() {
-    REGISTER_SCRIPT="$PROJECT_ROOT/tools/register_docs.py"
+    REGISTER_SCRIPT="$PROJECT_ROOT/tools/register_docs.mjs"
     if [ ! -f "$REGISTER_SCRIPT" ]; then
-        return 0
-    fi
-    if ! command -v python3 &> /dev/null; then
         return 0
     fi
 
     # H1 sections in the markdown doc = top-level chapters.
     H1_COUNT=$(grep -c '^# ' "$DOCS_TARGET/$DOCS_FILENAME" 2>/dev/null || echo "")
 
-    python3 "$REGISTER_SCRIPT" \
+    node "$REGISTER_SCRIPT" \
         --id duckdb \
         --name "DuckDB" \
         --description "DuckDB SQL reference, single-page documentation export." \
@@ -278,7 +275,7 @@ register_docs() {
         --categories "${H1_COUNT:-none}" \
         --functions none \
         --languages en \
-        || echo "WARNING: register_docs.py failed (non-fatal)."
+        || echo "WARNING: register_docs.mjs failed (non-fatal)."
 }
 
 # Function: Get installation statistics
@@ -286,7 +283,7 @@ get_stats() {
     if [ -f "$DOCS_TARGET/$DOCS_FILENAME" ]; then
         FILE_SIZE=$(stat -f%z "$DOCS_TARGET/$DOCS_FILENAME" 2>/dev/null || stat -c%s "$DOCS_TARGET/$DOCS_FILENAME" 2>/dev/null || echo "0")
         LINE_COUNT=$(wc -l < "$DOCS_TARGET/$DOCS_FILENAME" 2>/dev/null | tr -d ' ')
-        echo "($(echo "scale=1; $FILE_SIZE / 1024 / 1024" | bc) MB, $LINE_COUNT lines)"
+        echo "($(_fmlab_div1 "$FILE_SIZE" 1048576) MB, $LINE_COUNT lines)"
     fi
 }
 

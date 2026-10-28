@@ -197,6 +197,101 @@ export LC_NUMERIC=C
 # on the next --changed-only run, a full re-conversion is triggered. Bump it as soon
 # as the CONVERSION RESULT can change (new columns, changed
 # extraction/normalization) — independent of the header or @SCHEMA_VERSION.
+#   2.42.0 — active-segment formula text (no DDL, @SCHEMA_VERSION unchanged):
+#           P4 CalculationsCatalog reads the button bar's own
+#           /LayoutObject/ButtonBar/Select/Calculation/Text (kind 18, P4-local
+#           from Object_XML) — Formula_Text of the active_segment instance, and
+#           a structural instance for files without DDR info (Calc_Kind_Raw
+#           'ButtonBar', no hash), like the popover/panel title.
+#   2.41.0 — healing-aware owner of calculation instances + active-segment role
+#           (@SCHEMA_VERSION 1.37.0, master rebuild): P4 CalculationsCatalog
+#           resolves DDR anchors of a UUID-healing group (census
+#           DuplicateAbsorptionDetails, LayoutObjects/StepsForScripts) to the
+#           member whose own XML carries anchor name AND hash — previously every
+#           anchor of the group landed on the survivor (wrong owner, wrong or
+#           missing LayoutObjectConditions FK). The display-calc enrichment joins
+#           DDR_ChunkListContexts by the instance's anchor name. New calc role
+#           active_segment (DDR suffix 'ButtonBar'). P6: new view
+#           v_check_calc_owner_hash (WARN); v_check_cf_rules gains
+#           empty_chunklist_n and fk_hash_mismatch_n (WARN), hash_without_fk_n
+#           excludes empty chunk lists md5('').
+#   2.40.0 — variable identity in clone files + step roles + graph filter (no
+#           DDL, @SCHEMA_VERSION unchanged): P3 VariablesCatalog keeps local and
+#           let_local variables per file (grouping key + File_Name) — clone files
+#           share script/context UUIDs and thus the scope anchor; the variable
+#           UUID stays file-free, catalogs without clone files are bit-identical.
+#           P4 variable edges (blocks 24–28b) join the catalog row of the usage's
+#           own file (superglobal excepted) and derive Is_Cross_File from the
+#           files. New P6 view v_check_variable_identity (WARN). ScriptStepRoleMap
+#           curates 202 Configure Machine Learning Model (reads_field) and 241
+#           Insert Image Caption (sets_field). P5 LogicalLinks filters the
+#           OnWindowTransaction candidates NULL-safely: reads_field edges without
+#           a subrole are no longer dropped from the graph/cluster edge set.
+#   2.39.0 — mass events and author classification for the change metadata
+#           (@SCHEMA_VERSION 1.36.0, master rebuild): P4 writes ChangeBulkConfig
+#           (burst gap 10 s, mass event from 25 objects, cross-file window 15 min
+#           over at least 2 files, paste/import share 0.8) and ChangeTechnicalAuthors
+#           (LIKE patterns: FileMaker Data Migration → 'tool', WebDirect sessions →
+#           'runtime'); ObjectChangeMeta gains Author_Kind, Burst_ID (stamps of a
+#           file with gaps ≤ the burst gap) and Bulk_Event_ID; new table
+#           ChangeBulkEvents (Scope file|solution, Kind mass_action|tool|
+#           paste_import). P6 v_check_change_meta warns on stamps without a burst
+#           and reports the mass-event share. ScriptCatalog drops the compatibility
+#           columns Last_Modified_By/_At (use Modified_By/_At).
+#   2.38.0 — change metadata for every stamp-carrying object type
+#           (@SCHEMA_VERSION 1.35.0, master rebuild): P1 projects the <UUID>
+#           attributes (timestamp, userName, accountName, modifications) of 16
+#           more catalogs as raw columns Modified_At/_By/_Account, Modifications
+#           (ScriptCatalog keeps Last_Modified_By/_At as copies for one more
+#           schema minor; Layouts and CustomFunctionsCatalog gain the account).
+#           New P1 table CatalogChangeMeta: the catalog-level stamps (one per
+#           catalog, one per base-table FieldCatalog), fed by main AND the
+#           LayoutCatalog chunk — multi-fed in the turbo merge (provenance column
+#           Catalog), producer lists guarded by census_feeder_map.sh. P4 builds
+#           ObjectChangeMeta (one row per object with its own stamp, keyed like the
+#           ObjectCatalog; folders included, separators/markers not;
+#           Authorization rows without catalog counterpart) and fills
+#           CatalogChangeMeta.Newest_Child_At. P6 v_check_change_meta (warn on
+#           missing stamps, unreadable timestamps, duplicate keys; info on future
+#           stamps and the mass-minute share).
+#   2.37.0 — chunked P1 paths build the same catalog as the unsplit run
+#           (@SCHEMA_VERSION unchanged): every path that writes the chunks of a
+#           file into one DB (classic --split loop, turbo single-file import)
+#           passes the chunk's catalog to the section dispatch (FM_P1_CATALOG)
+#           plus the tags of the file's other chunks (FM_P1_SEPARATED); later
+#           chunks no longer run the full template and reset FileOptionsCatalog
+#           and the duplicate census (counters and details) of the main chunk.
+#           Turbo always cuts LayoutCatalog out, also without sub-chunking
+#           (FM_SUBCHUNK=0 dropped every layout). A chunk tag that no section
+#           marker names runs the template unfiltered with a NOTE in the error
+#           log. The incremental turbo merge clears the census details of all
+#           nine main-chunk producers (was ScriptCatalog only). P6
+#           v_check_census_integrity and v_check_file_options_coverage (warn,
+#           re-import hint).
+#   2.36.0 — relationships carry their native FileMaker UUID (@SCHEMA_VERSION
+#           1.34.0, master rebuild): P1 reads <Relationship>/<UUID> into the new
+#           RelationshipCatalog.Rel_UUID (plus the raw change metadata Modified_At/
+#           _By/_Account, Modifications); intra-file twins get a deterministic
+#           replacement UUID (fm_heal_pick, census in DuplicateAbsorptionDetails).
+#           P4 keys the Relationship catalog row and all its edges (left/right_table,
+#           left/right_field, sort_field, sorts_by_valuelist) on that UUID instead of
+#           the composite 'rel_<Rel_ID>_<File_Name>', which remains only as fallback
+#           for exports without <UUID>. P6 v_check_relationship_uuid (warn on
+#           fallback keys, info on healed twins).
+#   2.35.0 — custom-menu script actions (@SCHEMA_VERSION unchanged): a menu
+#           item whose <action> runs Perform Script now gets the edge
+#           CustomMenuItem →triggers_script·menu_action→ Script (P4, after the
+#           opens_menu block) — same role as the button action, so where-used
+#           (unused_script) and call-chain consumers see menu-launched scripts.
+#           Resolved via (target file, ScriptReference/@id): cross-file
+#           references mostly carry a proxy UUID; the target file comes from
+#           DataSourceFileMap. Unresolved actions are reported by P6
+#           v_check_menu_action_unresolved (warn when the target file is
+#           imported, info otherwise), other object references or formulas in
+#           menu actions by v_report_menu_action_unlinked (info). Menu items
+#           with an overridden constant name are named after it
+#           ("Menu › Artikel" instead of "Menu › (berechnet)"), in ObjectCatalog
+#           and in the P3 Context_Name of menu calculations.
 #   2.34.0 — typed anchors in button labels on EXTERNAL table occurrences
 #           (@SCHEMA_VERSION unchanged): the field lives in another file, which
 #           the file-partitioned P2 cannot see, so merge fields got no row (no
@@ -508,7 +603,7 @@ export LC_NUMERIC=C
 #           duplicates (same UUID, distinct object ids) separately from FileMaker's
 #           double serialization; the catmerge a2 dup report is persisted into the
 #           new MergeAbsorptions table (best-effort, s. convert_turbo.sh).
-CONVERTER_VERSION="2.34.0"
+CONVERTER_VERSION="2.42.0"
 PROJECT_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel 2>/dev/null || (cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd))"
 # Engine root: the ingestion/ directory this script lives in. ALL engine-internal
 # assets (sql/, engine/, lib/, fixtures/, version_check.json, gen_streamify_sql.sh)
@@ -615,6 +710,18 @@ fi
 if [ -z "$DUCKDB_BIN" ]; then
     echo "ERROR: DuckDB CLI not found. Install it from https://duckdb.org/docs/installation/"
     exit 1
+fi
+
+# Mixed DuckDB versions: warn (never abort) when this CLI writes a storage format
+# the REST API's bundled DuckDB may not read — see tools/lib/duckdb_binding.sh.
+[ -f "$PROJECT_ROOT/tools/lib/duckdb_binding.sh" ] && . "$PROJECT_ROOT/tools/lib/duckdb_binding.sh"
+if command -v fmlab_duckdb_binding_mismatch >/dev/null 2>&1 \
+   && fmlab_duckdb_binding_mismatch "$("$DUCKDB_BIN" --version 2>/dev/null | head -1)"; then
+    echo "WARNING: DuckDB CLI $FMLAB_DUCKDB_CLI_VER is newer than the REST API's DuckDB $FMLAB_DUCKDB_BINDING_VER (@duckdb/node-api)."
+    echo "         The catalog written now may use a storage format the REST API cannot read —"
+    echo "         the web frontend then reports STORAGE_VERSION_MISMATCH for this solution."
+    echo "         Align the versions: use DuckDB CLI ${FMLAB_DUCKDB_BINDING_VER%.*}.x, which this fm-lab release supports,"
+    echo "         or update fm-lab to a release that supports DuckDB ${FMLAB_DUCKDB_CLI_VER%.*}."
 fi
 
 # ============================================================================
@@ -1318,6 +1425,16 @@ if $TURBO_MODE && [ "$SUBCHUNK_SOURCE" = "default" ] && [ "${SUBCHUNK:-0}" -eq 0
     SUBCHUNK="$TURBO_SUBCHUNK_DEFAULT"
     echo "Note: turbo windowing default — --subchunk $SUBCHUNK (LayoutCatalog+StepsForScripts; lowers the P1 peak). Opt-out: FM_SUBCHUNK=0."
 fi
+# Branches the splitter cuts into chunks of their own (splitter -v separate).
+# Empty = the splitter's coarse default: StepsForScripts + DDR_INFO, LayoutCatalog
+# only when it is sub-chunked. Turbo cuts LayoutCatalog out in every case — also
+# without sub-chunking (FM_SUBCHUNK=0, --subchunk 0, a recmap without
+# LayoutCatalog): a turbo chunk worker runs only the P1 sections of its own
+# catalog, so layouts left inside the main chunk would never be extracted. The
+# classic path keeps the coarse default (its main chunk also runs the sections of
+# every branch that has no chunk of its own, see run_p1_on).
+SPLIT_SEPARATE=""
+$TURBO_MODE && SPLIT_SEPARATE="StepsForScripts DDR_INFO LayoutCatalog"
 # DDR_INFO split as the default in turbo mode (additive-identical).
 # Applies only when no explicit FM_NEST_MAP is set and FM_DDR_NEST≠0.
 if $TURBO_MODE && [ -z "$NEST_MAP" ] && [ "${FM_DDR_NEST:-1}" != "0" ]; then
@@ -1558,7 +1675,9 @@ SOLUTION_DIR="$PROJECT_ROOT/solutions/$SOLUTION"
 # silently (idempotent; API and tools/solution.sh do the same on their side).
 if [ "$SOLUTION" = "default" ] && [ ! -f "$SOLUTION_DIR/solution.json" ]; then
     mkdir -p "$SOLUTION_DIR/xml" "$SOLUTION_DIR/db" "$SOLUTION_DIR/state/logs" 2>/dev/null
-    _I1_UUID=$( (command -v uuidgen >/dev/null && uuidgen) || python3 -c 'import uuid;print(uuid.uuid4())' )
+    _I1_UUID=$( (command -v uuidgen >/dev/null && uuidgen) \
+        || node -e 'console.log(require("crypto").randomUUID())' 2>/dev/null \
+        || cat /proc/sys/kernel/random/uuid 2>/dev/null )
     printf '{\n  "manifest_version": 1,\n  "uuid": "%s",\n  "id": "default",\n  "display_name": "default",\n  "description": "",\n  "maintainer": "",\n  "url": "",\n  "contact": { "name": "", "email": "" },\n  "created_at": "%s",\n  "notes": ""\n}\n' \
         "$_I1_UUID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$SOLUTION_DIR/solution.json"
 fi
@@ -2053,6 +2172,7 @@ _stamp_on_exit() {
     if [ "$_rc" -ne 0 ] && [ "${LAST_RUN_STAMPED:-false}" = "false" ]; then
         stamp_last_run false "$_rc"
     fi
+    [ -n "${SQL_TEMPLATE_SNAPSHOT:-}" ] && rm -f "$SQL_TEMPLATE_SNAPSHOT"
     release_lock
 }
 
@@ -2174,8 +2294,8 @@ sync_to_rest_api() {
 stamp_solution_manifest() {
     $TEST_MODE && return 0
     [ -f "$DB_FILE" ] || return 0
-    if ! command -v python3 >/dev/null 2>&1; then
-        emit_warn "solution.json not stamped (python3 not available)"
+    if ! command -v node >/dev/null 2>&1; then
+        emit_warn "solution.json not stamped (node not available)"
         return 0
     fi
     local manifest="$SOLUTION_DIR/solution.json"
@@ -2202,41 +2322,45 @@ stamp_solution_manifest() {
     fi
     if MANIFEST_PATH="$manifest" SOL_ID="$SOLUTION" TECH_JSON="$tech_json" \
        METRICS_JSON="$metrics_json" SCHEMA_V="${SCHEMA_VERSION_EXPECTED:-}" \
-       CONV_V="$CONVERTER_VERSION" python3 - <<'PYEOF'
-import json, os, sys, uuid, datetime, tempfile
+       CONV_V="$CONVERTER_VERSION" node - <<'JSEOF'
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+const env = process.env;
 
-path = os.environ["MANIFEST_PATH"]
-now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-try:
-    with open(path) as f:
-        data = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
-    data = {
-        "manifest_version": 1,
-        "uuid": str(uuid.uuid4()),
-        "id": os.environ["SOL_ID"],
-        "display_name": os.environ["SOL_ID"],
-        "description": "",
-        "created_at": now,
-    }
+const file = env.MANIFEST_PATH;
+const now = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+let data;
+try {
+  data = JSON.parse(fs.readFileSync(file, "utf8"));
+} catch (err) {
+  if (err.code && err.code !== "ENOENT") throw err; // unreadable for other reasons → stamp fails
+  data = {
+    manifest_version: 1,
+    uuid: crypto.randomUUID(),
+    id: env.SOL_ID,
+    display_name: env.SOL_ID,
+    description: "",
+    created_at: now,
+  };
+}
+if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("solution.json is not a JSON object");
 
-tech = json.loads(os.environ["TECH_JSON"])
-tech["db_schema_version"] = os.environ["SCHEMA_V"]
-tech["converter_version"] = os.environ["CONV_V"]
-tech["last_import_at"] = now
-metrics = json.loads(os.environ["METRICS_JSON"])
-metrics["generated_at"] = now
+const tech = JSON.parse(env.TECH_JSON);
+tech.db_schema_version = env.SCHEMA_V;
+tech.converter_version = env.CONV_V;
+tech.last_import_at = now;
+const metrics = JSON.parse(env.METRICS_JSON);
+metrics.generated_at = now;
 
-# Key-scoped merge: replace ONLY the convert-owned blocks.
-data["technical"] = tech
-data["metrics"] = metrics
+// Key-scoped merge: replace ONLY the convert-owned blocks.
+data.technical = tech;
+data.metrics = metrics;
 
-fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path) or ".", suffix=".tmp")
-with os.fdopen(fd, "w") as f:
-    json.dump(data, f, indent=2, ensure_ascii=False)
-    f.write("\n")
-os.replace(tmp, path)
-PYEOF
+const tmp = path.join(path.dirname(file) || ".", `.solution.${process.pid}.tmp`);
+fs.writeFileSync(tmp, JSON.stringify(data, null, 2) + "\n");
+fs.renameSync(tmp, file);
+JSEOF
     then
         emit_log "solution.json stamped (technical + metrics)"
     else
@@ -2419,7 +2543,7 @@ read_template_schema_info() {
 
     if [ -z "$SCHEMA_VERSION_EXPECTED" ] || [ -z "$hash_files_raw" ]; then
         echo "ERROR: SQL template is missing @SCHEMA_VERSION or @SCHEMA_HASH_FILES in the header."
-        echo "       File: $SQL_TEMPLATE"
+        echo "       File: ${SQL_TEMPLATE_SOURCE:-$SQL_TEMPLATE}"
         exit 1
     fi
 
@@ -2967,7 +3091,7 @@ run_p1_on() {
     # ---- Profile dispatch (ALWAYS active, every mode) ----
     # `-- @P1_PROFILE:<p1[,p2]>@ … -- @END_P1_PROFILE@` blocks run only for the
     # file's profile; untagged SQL runs for every profile. Unlike the catalog
-    # section dispatch below (turbo chunk workers only) this filter is
+    # section dispatch below (chunked runs only) this filter is
     # unconditional — a saxml23 file must never execute a saxml22-only read and
     # vice versa (no double reads, no extract-then-discard). The catalog section
     # markers are passed through even inside a skipped profile block, so the two
@@ -2986,33 +3110,79 @@ run_p1_on() {
     ' "$tsql" > "$tsql.2"
     mv "$tsql.2" "$tsql"
 
-    # ---- Section dispatch (parse amplification) ----
-    # In turbo mode a chunk contains exactly ONE catalog branch (the chunk map knows
-    # it); nevertheless the FULL P1 script ran per chunk so far (~40 read_xml over
-    # every chunk — parse volume ~40× the corpus size). The @P1_SECTION:<cat,...>@
-    # markers in the template tag each extraction with its source catalogs —
-    # mirrored exactly on _turbo_catalog_owned() + multi-fed (ScriptTriggers:
-    # main+LayoutCatalog): the catalog-granular merge takes ONLY the owned tables
-    # from a chunk anyway, so skipped sections would have delivered empty/
-    # discarded results → the result is bit-identical by construction.
-    # CREATE TABLE/prelude/SchemaInfo are untagged (they always run, so the schema parity
-    # of the chunk DBs is preserved). Active ONLY when the caller sets FM_P1_CATALOG
-    # (turbo chunk worker); opt-out FM_P1_DISPATCH=0. Unknown catalogs
-    # run in full (fallback — the catalog-granular merge rejects them anyway).
+    # ---- Section dispatch (parse amplification + chunk ownership) ----
+    # A chunk contains exactly ONE catalog branch (main, StepsForScripts, DDR_INFO,
+    # LayoutCatalog, …). Every chunked path passes that tag as FM_P1_CATALOG: the
+    # turbo chunk worker, the turbo single-file path and the classic --split loop.
+    # The @P1_SECTION:<cat,...>@ markers in the template tag each extraction with
+    # its source catalogs — mirrored exactly on _turbo_catalog_owned() + multi-fed
+    # (ScriptTriggers: main+LayoutCatalog). The filter is required, not only an
+    # optimization:
+    #   (1) parse volume — the full template runs ~40 read_xml over every chunk;
+    #   (2) ownership — a few per-file statements are not chunk-safe (the
+    #       FileOptionsCatalog DELETE, the duplicate-census UPSERTs and the
+    #       census-detail DELETEs). When the chunks of a file are written into
+    #       the same DB one after the other, a chunk running the full template
+    #       overwrites the main chunk's results with empty ones.
+    # With the filter a chunk writes only the tables of its own sections — the
+    # ownership the catalog-granular merge relies on, so the result is identical
+    # to the unsplit run by construction. CREATE TABLE/prelude/SchemaInfo are
+    # untagged (they always run, so the schema parity of the chunk DBs is
+    # preserved). Without FM_P1_CATALOG (unsplit run) the full template runs;
+    # opt-out FM_P1_DISPATCH=0. A tag that no @P1_SECTION marker names would skip
+    # every tagged section (only the untagged SQL would remain) → such a chunk
+    # runs the template UNFILTERED and a NOTE goes to the error log, so a new
+    # splitter branch never loses data silently.
+    # A branch the splitter did not cut out stays in the main chunk (classic
+    # path: LayoutCatalog without --subchunk; any path: a branch the file does
+    # not contain at all). Callers that know the file's other chunks pass their
+    # tags as FM_P1_SEPARATED (space-separated, may be empty): the main chunk then
+    # also runs every section none of whose tags is separated — exactly the
+    # sections whose source branch sits in main. Without FM_P1_SEPARATED (turbo
+    # chunk worker) the main chunk runs only the sections tagged main; turbo
+    # therefore always cuts LayoutCatalog out (SPLIT_SEPARATE).
     if [ -n "${FM_P1_CATALOG:-}" ] && [ "${FM_P1_DISPATCH:-1}" != "0" ]; then
-        awk -v cat="$FM_P1_CATALOG" '
-            /^-- @P1_SECTION:/ {
-                spec = $0
-                sub(/^-- @P1_SECTION:/, "", spec); sub(/@.*/, "", spec)
-                # index() instead of ~ (no regex — match catalog names literally)
-                skip = (index("," spec ",", "," cat ",") > 0) ? 0 : 1
-                next
-            }
-            /^-- @END_P1_SECTION@/ { skip = 0; next }
-            skip { next }
-            { print }
-        ' "$tsql" > "$tsql.2"
-        mv "$tsql.2" "$tsql"
+        if awk -v cat="$FM_P1_CATALOG" '
+                /^-- @P1_SECTION:/ {
+                    spec = $0
+                    sub(/^-- @P1_SECTION:/, "", spec); sub(/@.*/, "", spec)
+                    if (index("," spec ",", "," cat ",") > 0) { found = 1; exit }
+                }
+                END { exit found ? 0 : 1 }
+            ' "$tsql"; then
+            local _have_sep=0; [ -n "${FM_P1_SEPARATED+set}" ] && _have_sep=1
+            awk -v cat="$FM_P1_CATALOG" -v have_sep="$_have_sep" -v sep=" ${FM_P1_SEPARATED:-} " '
+                # Does the section name a branch that has its own chunk?
+                function separated(spec,   n, i, t) {
+                    n = split(spec, t, ",")
+                    for (i = 1; i <= n; i++) if (index(sep, " " t[i] " ") > 0) return 1
+                    return 0
+                }
+                /^-- @P1_SECTION:/ {
+                    spec = $0
+                    sub(/^-- @P1_SECTION:/, "", spec); sub(/@.*/, "", spec)
+                    # index() instead of ~ (no regex — match catalog names literally)
+                    if (index("," spec ",", "," cat ",") > 0) skip = 0
+                    else if (cat == "main" && have_sep && !separated(spec)) skip = 0
+                    else skip = 1
+                    next
+                }
+                /^-- @END_P1_SECTION@/ { skip = 0; next }
+                skip { next }
+                { print }
+            ' "$tsql" > "$tsql.2"
+            mv "$tsql.2" "$tsql"
+        else
+            local _tag_note="NOTE: chunk tag '$FM_P1_CATALOG' is not named by any @P1_SECTION marker — running the full P1 template for $xfile"
+            echo "$_tag_note" >> "$elog"
+            # Also into the run's error log: the per-chunk log above only surfaces
+            # when the chunk fails.
+            if [ -n "${ERROR_LOG_FILE:-}" ]; then
+                mkdir -p "$(dirname "$ERROR_LOG_FILE")" 2>/dev/null
+                errlog_header_once
+                echo "$_tag_note" >> "$ERROR_LOG_FILE" 2>/dev/null
+            fi
+        fi
     fi
 
     # Inject the capability self-test at the @WEBBED_SELFTEST@ marker. Two independent parts:
@@ -3267,8 +3437,10 @@ process_single_file() {
 
     if $SPLIT_MODE; then
         # Split the XML into chunks (StepsForScripts + DDR_INFO separated out, the rest
-        # = main). Each chunk runs as a standalone P1 run; the base catalogs are
-        # chunk-safe (UPSERT or branch-guarded PrivilegeSet DELETE).
+        # = main). Each chunk runs as a standalone P1 run restricted to the sections
+        # of its own catalog (FM_P1_CATALOG, see the section dispatch in run_p1_on):
+        # the base catalogs are chunk-safe (UPSERT or branch-guarded PrivilegeSet
+        # DELETE), the FileOptionsCatalog DELETE and the duplicate census are not.
         echo "  Splitting XML into chunks (--split)..."
         local CHUNK_DIR="$TEMP_DIR/chunks"
         mkdir -p "$CHUNK_DIR"
@@ -3306,6 +3478,7 @@ process_single_file() {
         local CHUNKMAP_TSV=""
         $TURBO_MODE && CHUNKMAP_TSV="$CHUNK_DIR/chunkmap.tsv"
         NCHUNKS=$(awk -v outdir="$CHUNK_DIR" -v subchunk="$SUBCHUNK" -v recmap="$EFFECTIVE_RECMAP" \
+                      -v separate="$SPLIT_SEPARATE" \
                       -v nest="$NEST_MAP" \
                       -v chunkmap="$CHUNKMAP_TSV" \
                       -f "$KATANA_COMMON_AWK" -f "$SPLITTER_AWK" < "$PRE_OUTPUT" 2>>"$ERROR_LOG")
@@ -3355,18 +3528,32 @@ process_single_file() {
             # Phase D: parse chunkmap-driven sequentially into the master. Order by
             # chunk_path (main=chunk_000 first, like the glob on the classic path);
             # seq_offset NOW comes from the chunkmap row. UPSERT makes the order
-            # result-irrelevant, the master path is == classic.
-            local _coff _cp
-            while IFS=$'\t' read -r _coff _cp; do
+            # result-irrelevant, the master path is == classic. All chunks write
+            # into the same DB → FM_P1_CATALOG (the chunk's catalog) and
+            # FM_P1_SEPARATED (the file's other catalogs) are mandatory, see the
+            # section dispatch in run_p1_on.
+            local _coff _ccat _cp _sep
+            _sep=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c \
+                "SELECT COALESCE(string_agg(DISTINCT catalog, ' ' ORDER BY catalog), '') FROM chunkmap WHERE file_name='$_fn' AND catalog <> 'main';")
+            while IFS=$'\t' read -r _coff _ccat _cp; do
                 [ -z "$_cp" ] && continue
-                P1_SEQ_OFFSET="$_coff" run_p1_on "$(dirname "$_cp")" "$(basename "$_cp")" "$ERROR_LOG" || RESULT=$?
+                P1_SEQ_OFFSET="$_coff" FM_P1_CATALOG="$_ccat" FM_P1_SEPARATED="$_sep" \
+                    run_p1_on "$(dirname "$_cp")" "$(basename "$_cp")" "$ERROR_LOG" || RESULT=$?
             done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c \
-                "SELECT seq_offset::VARCHAR || chr(9) || chunk_path FROM chunkmap WHERE file_name='$_fn' ORDER BY chunk_path;")
+                "SELECT seq_offset::VARCHAR || chr(9) || catalog || chr(9) || chunk_path FROM chunkmap WHERE file_name='$_fn' ORDER BY chunk_path;")
         else
-        local chunk base ctag off _j _cur _found
+        local chunk base ctag off _j _cur _found _sep=""
         # _seqocc: ctag → occurrence count. bash-3.2-safe as parallel indexed arrays
         # (ctags are identifiers, small N) with a linear lookup; no associative array.
         local -a _seqocc_k _seqocc_v
+        # The file's separated branches (every chunk tag except main) — the main
+        # chunk runs the sections of all other branches, see run_p1_on.
+        for chunk in "$CHUNK_DIR"/chunk_*.xml; do
+            base="$(basename "$chunk" .xml)"
+            ctag="${base#chunk_[0-9][0-9][0-9]_}"
+            [ "$ctag" = "main" ] && continue
+            case " $_sep " in *" $ctag "*) ;; *) _sep="$_sep${_sep:+ }$ctag" ;; esac
+        done
         for chunk in "$CHUNK_DIR"/chunk_*.xml; do
             base="$(basename "$chunk" .xml)"
             ctag="${base#chunk_[0-9][0-9][0-9]_}"   # branch tag after chunk_NNN_
@@ -3384,7 +3571,10 @@ process_single_file() {
                         ;;
                 esac
             fi
-            P1_SEQ_OFFSET="$off" run_p1_on "$CHUNK_DIR" "$(basename "$chunk")" "$ERROR_LOG" || RESULT=$?
+            # All chunks write into the same DB → pass the branch tag (== the
+            # chunkmap catalog name) so the chunk runs only its own P1 sections.
+            P1_SEQ_OFFSET="$off" FM_P1_CATALOG="$ctag" FM_P1_SEPARATED="$_sep" \
+                run_p1_on "$CHUNK_DIR" "$(basename "$chunk")" "$ERROR_LOG" || RESULT=$?
         done
         fi
     else
@@ -3611,6 +3801,47 @@ postprocess_db() {
         add_finding relationship_fields info "Relationship predicate field resolution: ${relfield_detail}" "Unresolved = external TO targets without an imported file (partial corpus, expected)"
     fi
 
+    # Relationship identity: the catalog key is the native FileMaker UUID. A fallback
+    # key ('rel_<id>_<file>') means the export carried no <UUID> — every supported SaXML
+    # profile writes one, so a non-zero count is an extraction regression (warn).
+    # Healed intra-file twins are reported for visibility (info).
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local rel_fallback rel_healed
+    rel_fallback=$(pp_num "SELECT fallback_keys FROM v_check_relationship_uuid")
+    if [ "$rel_fallback" -gt 0 ]; then
+        add_finding relationship_uuid warn "$rel_fallback relationship(s) without a native UUID — catalog key falls back to rel_<id>_<file>" "Every SaXML 2.1+ export carries <Relationship>/<UUID>; check the RelationshipCatalog extraction in convert_xml_01_extract.sql"
+    fi
+    rel_healed=$(pp_num "SELECT healed FROM v_check_relationship_uuid")
+    if [ "$rel_healed" -gt 0 ]; then
+        add_finding relationship_uuid info "$rel_healed relationship(s) with a duplicate UUID inside their file received a replacement UUID" "Mapping original → replacement in DuplicateAbsorptionDetails (Catalog = 'RelationshipCatalog')"
+    fi
+
+    # Change metadata: every object of a stamp-carrying catalog has a stamp
+    # (<UUID> attributes in every supported SaXML profile) → missing stamps, unreadable
+    # timestamps, duplicate keys and stamps outside a burst are regressions (warn). Stamps
+    # far after the import (wrong client clock) and the mass-event shares are info.
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local cm_missing cm_cast cm_dup cm_unburst cm_future cm_stamped cm_mass cm_bulk cm_events cm_sol
+    cm_missing=$(pp_num "SELECT missing_objects FROM v_check_change_meta")
+    cm_cast=$(pp_num "SELECT cast_failures FROM v_check_change_meta")
+    cm_dup=$(pp_num "SELECT duplicate_keys FROM v_check_change_meta")
+    cm_unburst=$(pp_num "SELECT unassigned_bursts FROM v_check_change_meta")
+    if [ "$cm_missing" -gt 0 ] || [ "$cm_cast" -gt 0 ] || [ "$cm_dup" -gt 0 ] || [ "$cm_unburst" -gt 0 ]; then
+        add_finding change_meta warn "Change metadata: $cm_missing object(s) without a stamp, $cm_cast unreadable timestamp(s), $cm_dup duplicate key(s), $cm_unburst stamp(s) without a burst in ObjectChangeMeta" "Check the Modified_* projections of the catalog blocks in convert_xml_01_extract.sql and the ObjectChangeMeta build in convert_xml_04_catalog.sql"
+    fi
+    cm_future=$(pp_num "SELECT future_stamps FROM v_check_change_meta")
+    if [ "$cm_future" -gt 0 ]; then
+        add_finding change_meta info "$cm_future change stamp(s) more than one day after the import" "Stamps are the local time of the editing client — its clock was probably wrong"
+    fi
+    cm_stamped=$(pp_num "SELECT stamped_objects FROM v_check_change_meta")
+    if [ "$cm_stamped" -gt 0 ]; then
+        cm_mass=$(pp_query "SELECT COALESCE(CAST(mass_minute_pct AS VARCHAR), '0') FROM v_check_change_meta")
+        cm_bulk=$(pp_query "SELECT COALESCE(CAST(bulk_pct AS VARCHAR), '0') FROM v_check_change_meta")
+        cm_events=$(pp_num "SELECT bulk_events FROM v_check_change_meta")
+        cm_sol=$(pp_num "SELECT solution_events FROM v_check_change_meta")
+        add_finding change_meta info "Change stamps: $cm_stamped object(s), ${cm_bulk:-0} % in $cm_events mass event(s) ($cm_sol across files; ${cm_mass:-0} % in minutes with ≥ 50 stamps of one file)" "A high share means mass actions (migration, find & replace, paste) dominate — 'last modified' reflects them, not individual edits; see ChangeBulkEvents"
+    fi
+
     # Link-role registry completeness : every active role must be classified.
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local unreg_roles
@@ -3640,6 +3871,18 @@ postprocess_db() {
         local card_detail
         card_detail=$(pp_query "SELECT string_agg(rule || '=' || violation_n, ', ') FROM v_check_cardinality")
         add_finding consistency warn "Cardinality violation(s): ${card_detail:-?}" "Check the UUID scoping of the affected P4 link blocks (clone-fan-out class)"
+    fi
+
+    # variable identity (clone files) — local/let_local variables belong to
+    # exactly one file; a VariablesCatalog row spanning files means the
+    # variables of two clone files were merged (their edges cross files).
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local var_merged
+    var_merged=$(pp_num "SELECT merged_n FROM v_check_variable_identity")
+    if [ "$var_merged" -gt 0 ]; then
+        local var_detail
+        var_detail=$(pp_query "SELECT 'local ' || local_n || ', let_local ' || let_local_n || ' — e.g. ' || COALESCE(sample, '?') FROM v_check_variable_identity")
+        add_finding consistency warn "$var_merged local variable(s) merged across files: ${var_detail:-?}" "Check the VariablesCatalog grouping (File_Name for local/let_local) in convert_xml_03_details.sql"
     fi
 
     # phantom links (clone fan-out, all operational roles) — an edge fanning over
@@ -3691,6 +3934,37 @@ postprocess_db() {
           "Source defect (duplicate UUIDs in the FileMaker export) — check the export. The converter deduplicates deterministically (last-write-wins); the fix is only a source correction"
     fi
 
+    # Census integrity (opposite direction): stored rows can never exceed the
+    # parsed source records, and every censused catalog with rows has a census
+    # row. A violation means the census was overwritten or lost after P1 — the
+    # absorbed-duplicate check and the UUID-healing map of the file are then
+    # not trustworthy.
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local ci_bad
+    ci_bad=$(pp_num "SELECT COUNT(*) FROM v_check_census_integrity")
+    if [ "$ci_bad" -gt 0 ]; then
+        local ci_files ci_detail
+        ci_files=$(pp_query "SELECT string_agg(DISTINCT File_Name, ', ' ORDER BY File_Name) FROM v_check_census_integrity")
+        ci_detail=$(pp_query "SELECT string_agg(Catalog || '/' || File_Name || ' (' || COALESCE(Source_Records::VARCHAR, 'none') || ' < ' || Stored_Rows || ')', ', ' ORDER BY File_Name, Catalog) FROM (SELECT * FROM v_check_census_integrity LIMIT 10)")
+        add_finding consistency warn \
+          "Duplicate census incomplete for $ci_bad catalog/file combination(s) (census < stored rows): ${ci_detail:-?}" \
+          "Re-import the file(s): ${ci_files:-?} — absorbed duplicates and the UUID-healing map of these files are not reliable until then"
+    fi
+
+    # File options coverage: every imported file carries one FileOptionsCatalog
+    # row (Metadata branch). A gap means the row was lost after P1 — the
+    # auto_login_account/default_layout edges and the file view are missing.
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local fo_bad
+    fo_bad=$(pp_num "SELECT COUNT(*) FROM v_check_file_options_coverage")
+    if [ "$fo_bad" -gt 0 ]; then
+        local fo_detail
+        fo_detail=$(pp_query "SELECT string_agg(File_Name, ', ' ORDER BY File_Name) FROM v_check_file_options_coverage")
+        add_finding consistency warn \
+          "$fo_bad file(s) without a FileOptionsCatalog row: ${fo_detail:-?}" \
+          "Re-import the file(s) — file options (auto-login account, default layout) and their edges are missing from the catalog"
+    fi
+
     # Chunk_Type NULL in DDR_Calculations — P1-path drift detector.
     CHECKS_RUN=$((CHECKS_RUN + 1))
     local ct_null
@@ -3734,6 +4008,35 @@ postprocess_db() {
         local submenu_files
         submenu_files=$(pp_query "SELECT files FROM v_check_submenu_unresolved")
         add_finding registry info "$submenu_unres submenu item(s) without a resolvable target menu (opens_menu): ${submenu_files:-?}" "The target @id points to a built-in menu or a menu outside the corpus"
+    fi
+
+    # custom-menu script actions (converter 2.35.0): an item whose <action> performs a
+    # script gets triggers_script·menu_action, resolved via (target file, script @id).
+    # Target file outside the import = expected in a partial corpus (info); target file
+    # imported but the script ID unknown there = deleted script or resolver gap (warn).
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local ma_unres ma_missing_file ma_in_corpus
+    ma_unres=$(pp_num "SELECT unresolved_n FROM v_check_menu_action_unresolved")
+    ma_missing_file=$(pp_num "SELECT target_file_missing_n FROM v_check_menu_action_unresolved")
+    ma_in_corpus=$(pp_num "SELECT in_corpus_n FROM v_check_menu_action_unresolved")
+    if [ "$ma_unres" -gt 0 ]; then
+        local ma_files
+        ma_files=$(pp_query "SELECT files FROM v_check_menu_action_unresolved")
+        if [ "$ma_in_corpus" -gt 0 ]; then
+            add_finding registry warn "$ma_in_corpus custom-menu script action(s) without a triggers_script·menu_action edge although the target file is imported ($ma_missing_file more point outside the import): ${ma_files:-?}" "The ScriptReference @id is missing in the target file (deleted script?) — otherwise check the menu-action block after opens_menu in convert_xml_04_catalog.sql"
+        else
+            add_finding registry info "$ma_missing_file custom-menu script action(s) point to a file outside this import (no edge): ${ma_files:-?}" "Import the referenced file to resolve them"
+        fi
+    fi
+
+    # custom-menu actions with other object references or formulas — not wired (info).
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local ma_unlinked
+    ma_unlinked=$(pp_num "SELECT COUNT(*) FROM v_report_menu_action_unlinked")
+    if [ "$ma_unlinked" -gt 0 ]; then
+        local ma_unlinked_detail
+        ma_unlinked_detail=$(pp_query "SELECT string_agg(DISTINCT Step_Name, ', ') FROM v_report_menu_action_unlinked")
+        add_finding registry info "$ma_unlinked custom-menu action(s) with layout/field/TO/value-list references or formulas that get no edge (steps: ${ma_unlinked_detail:-?})" "Only Perform Script is wired for menu actions — see v_report_menu_action_unlinked"
     fi
 
     # „Function Missing" placeholder — a plugin function missing at export time.
@@ -3909,23 +4212,41 @@ postprocess_db() {
         add_finding consistency warn "$unk_roles unknown calc role(s): ${unkr_detail:-?}" "New DDR suffix — extend the role mapping in convert_xml_04_catalog.sql (CalculationsCatalog classification) and the vocabulary in v_check_calc_roles"
     fi
 
-    # Conditional-formatting rules (schema 1.25.0): membercount guard (anti-
-    # nesting/coverage, expected 0), reverse FK coverage (expected 0) and the
-    # informational foreign-anchor remainder (small >0 is a known FM copy
-    # artifact — the rule carries another object's DDRREF).
+    # Calc owner attribution: the formula hash of every DDR-anchored
+    # LayoutObject/ScriptStep instance must appear in its owner's own XML.
+    # Expected 0 — a hit means the instance sits on the wrong object (typically
+    # the survivor of a UUID-healing group instead of the copy that carries the
+    # anchor).
     CHECKS_RUN=$((CHECKS_RUN + 1))
-    local cf_mm cf_norule cf_nofk
+    local coh_n
+    coh_n=$(pp_num "SELECT COALESCE(SUM(n), 0) FROM v_check_calc_owner_hash")
+    if [ "$coh_n" -gt 0 ]; then
+        local coh_detail
+        coh_detail=$(pp_query "SELECT string_agg(Calc_Role || ' ×' || n, ', ' ORDER BY n DESC) FROM v_check_calc_owner_hash")
+        add_finding consistency warn "$coh_n calc instance(s) whose formula hash is missing from the owner's own XML: ${coh_detail:-?}" "Owner resolution of DDR anchors drifted — check heal_anchor_owner/a_owner (CalculationsCatalog) in convert_xml_04_catalog.sql against DuplicateAbsorptionDetails"
+    fi
+
+    # Conditional-formatting rules (schema 1.25.0): membercount guard (anti-
+    # nesting/coverage, expected 0), reverse FK coverage (expected 0), FK hash
+    # consistency (expected 0) and the hash-without-FK remainder (expected 0;
+    # empty chunk lists md5('') are excluded and only counted).
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    local cf_mm cf_norule cf_nofk cf_fkmm
     cf_mm=$(pp_num "SELECT membercount_mismatch_n FROM v_check_cf_rules")
     cf_norule=$(pp_num "SELECT calc_without_rule_n FROM v_check_cf_rules")
     cf_nofk=$(pp_num "SELECT hash_without_fk_n FROM v_check_cf_rules")
+    cf_fkmm=$(pp_num "SELECT fk_hash_mismatch_n FROM v_check_cf_rules")
     if [ "$cf_mm" -gt 0 ]; then
         add_finding consistency warn "$cf_mm layout object(s) with CF rule count ≠ Formatting/@membercount" "Depth-anchored extraction drifted (nested child rules counted, or own rules lost) — check LayoutObjectConditions in convert_xml_03_details.sql (A.12)"
     fi
     if [ "$cf_norule" -gt 0 ]; then
-        add_finding consistency warn "$cf_norule conditional_format calc instance(s) without LayoutObjectConditions row" "Reverse FK coverage gap — the rule extraction lost rules the DDR anchors still see"
+        add_finding consistency warn "$cf_norule conditional_format calc instance(s) without LayoutObjectConditions row" "The instance sits on an object without that rule — check v_check_calc_owner_hash (owner resolution) first, then the rule extraction in convert_xml_03_details.sql (A.12)"
+    fi
+    if [ "$cf_fkmm" -gt 0 ]; then
+        add_finding consistency warn "$cf_fkmm CF rule(s) whose Calculation_UUID FK points to an instance with a different formula hash" "The rule reads a foreign formula — check the owner resolution of the conditional_format instances (v_check_calc_owner_hash) and the FK update in convert_xml_04_catalog.sql"
     fi
     if [ "$cf_nofk" -gt 0 ]; then
-        add_finding consistency info "$cf_nofk CF rule(s) with DDRREF hash but no Calculation_UUID FK" "Expected small remainder: FM copy artifacts carrying a foreign object's DDRREF anchor"
+        add_finding consistency info "$cf_nofk CF rule(s) with DDRREF hash but no Calculation_UUID FK (empty chunk lists excluded)" "No CalculationsCatalog instance carries this rule's anchor — check v_check_calc_owner_hash and the uncovered_anchor_n count of v_check_calculations"
     fi
 
     # Owner-exact layout script refs (converter 2.15.0, P2 ancestor guard):
@@ -4183,6 +4504,7 @@ _maybe_auto_retry_oom() {
     # first, otherwise the re-invoked attempt sees its own still-held lock ("already
     # running"). The retry re-acquires it fresh.
     release_lock
+    [ -n "${SQL_TEMPLATE_SNAPSHOT:-}" ] && rm -f "$SQL_TEMPLATE_SNAPSHOT"   # the retry takes its own
     # Re-invoke through `bash` explicitly: the script is normally launched as
     # `bash <script>` (no +x bit), so `exec "$0"` would fail with 126 (cannot execute).
     FM_P2_THREADS=1 FM_P2_JOBS=1 exec "${BASH:-bash}" "$0" "${retry[@]}"
@@ -4338,6 +4660,23 @@ if [ ! -f "$_DFN_SEED" ]; then
     finalize_logs
     emit_done false "Reference seed missing (ingestion/gen_design_functions.sh)"
     exit 9
+fi
+
+# ----------------------------------------------------------------------------
+# P1 template snapshot (one per run)
+# ----------------------------------------------------------------------------
+# run_p1_on re-reads $SQL_TEMPLATE for EVERY file/chunk. A template replaced
+# during a run (checkout/merge, sync service, in-place update) would feed the
+# chunks of ONE run from two schemas — the merge then sees mixed tables. Freeze
+# the text once, BEFORE the schema markers are read, so the markers and every P1
+# run use the same template. The source path stays for messages.
+SQL_TEMPLATE_SOURCE="$SQL_TEMPLATE"
+if SQL_TEMPLATE_SNAPSHOT=$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX") \
+        && cp "$SQL_TEMPLATE_SOURCE" "$SQL_TEMPLATE_SNAPSHOT"; then
+    SQL_TEMPLATE="$SQL_TEMPLATE_SNAPSHOT"
+else
+    echo "ERROR: could not snapshot the SQL template ($SQL_TEMPLATE_SOURCE) — disk full or TMPDIR not writable?"
+    exit 1
 fi
 
 # ----------------------------------------------------------------------------
@@ -4505,6 +4844,7 @@ if [[ "$MODE" == "batch" ]]; then
             echo "ERROR: Turbo consolidation failed (rc=$TURBO_RC)"
             [ -f "$PARTDB_DIR/merge.log" ] && sed 's/^/    /' "$PARTDB_DIR/merge.log"
             [ -f "$PARTDB_DIR/catmerge.log" ] && { echo "    --- catmerge.log ---"; sed 's/^/    /' "$PARTDB_DIR/catmerge.log"; }
+            [ -f "$PARTDB_DIR/parquet_merge.log" ] && { echo "    --- parquet_merge.log ---"; sed 's/^/    /' "$PARTDB_DIR/parquet_merge.log"; }
             rm -rf "$PARTDB_DIR"
             exit 3
         fi
@@ -4536,6 +4876,7 @@ if [[ "$MODE" == "batch" ]]; then
             echo "ERROR: Merge of the part DBs failed (rc=$MERGE_RC)"
             [ -f "$PARTDB_DIR/merge.log" ] && sed 's/^/    /' "$PARTDB_DIR/merge.log"
             [ -f "$PARTDB_DIR/catmerge.log" ] && { echo "    --- catmerge.log ---"; sed 's/^/    /' "$PARTDB_DIR/catmerge.log"; }
+            [ -f "$PARTDB_DIR/parquet_merge.log" ] && { echo "    --- parquet_merge.log ---"; sed 's/^/    /' "$PARTDB_DIR/parquet_merge.log"; }
             rm -rf "$PARTDB_DIR"
             exit 3
         fi

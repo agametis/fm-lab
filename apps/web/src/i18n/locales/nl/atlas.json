@@ -93,5 +93,62 @@
       "title": "Node"
     },
     "cancel": "Annuleren"
+  },
+  "color": {
+    "label": "Kleur",
+    "type": "Type",
+    "recency": "Activiteit",
+    "saves": "Opslagbeurten",
+    "type_hint": "Tegels kleuren naar objecttype.",
+    "recency_hint": "Tegels kleuren naar de leeftijd van hun nieuwste afzonderlijke wijziging — massagebeurtenissen gelden nooit als jong.",
+    "saves_hint": "Tegels kleuren naar de teller van opslagbeurten over de hele levensduur van hun leden (rang binnen het objecttype) — bestand tegen massagebeurtenissen.",
+    "unavailable": "Deze catalogus bevat geen wijzigingsstempels — importeer de oplossing opnieuw om op activiteit te kleuren.",
+    "bulk": "Massagebeurtenissen",
+    "bulk_hint": "Massagebeurtenissen meenemen: een massastempel dateert dan de laatste wijziging zoals een afzonderlijke."
+  },
+  "activity": {
+    "class": {
+      "1": "≤ 30 dagen",
+      "2": "≤ 90 dagen",
+      "3": "≤ 1 jaar",
+      "4": "≤ 2 jaar",
+      "5": "> 2 jaar",
+      "6": "onbekend",
+      "7": "geen stempel"
+    },
+    "savesShort": "opslagbeurten {{level}}/5",
+    "savesFew": "weinig",
+    "savesMany": "veel",
+    "legendRecency": "Nieuwste afzonderlijke wijziging",
+    "legendSaves": "Opslagbeurten over de levensduur (rang binnen het type)",
+    "dataState": "Gegevensstand {{date}}",
+    "bulkIncluded": "massagebeurtenissen meegenomen",
+    "unknownHint": "Voor {{pct}} % van de knopen is de leeftijd van de laatste echte wijziging onbekend — een recente massagebeurtenis heeft hun stempels overschreven. De opslagbeurten over de levensduur onderscheiden de modules hier beter.",
+    "useSaves": "Kleuren op opslagbeurten",
+    "tooltip": {
+      "class": "Activiteit: {{label}}",
+      "classLabel": "Activiteit",
+      "newest": "Nieuwste wijziging: {{date}} ({{days}} dagen vóór de gegevensstand)",
+      "newestNone": "Geen gedateerde wijziging",
+      "active": "Gewijzigd binnen 90 dagen: {{n}} van {{total}}",
+      "medianAge": "Mediane leeftijd: {{days}} dagen",
+      "medianSaves": "Mediaan opslagbeurten: {{n}}",
+      "saves": "Opslagbeurten: {{n}}",
+      "undated": "Massastempels: {{pct}} %",
+      "savesLevel": "Opslagniveau {{level}} van 5"
+    },
+    "panel": {
+      "newest": "Nieuwste wijziging",
+      "newestValue": "{{date}} · {{days}} dagen vóór de gegevensstand",
+      "active": "Gewijzigd ≤ 90 dagen",
+      "activeValue": "{{n}} van {{total}}",
+      "medianAge": "Mediane leeftijd",
+      "days": "{{days}} dagen",
+      "medianSaves": "Mediaan opslagbeurten",
+      "saves": "Opslagbeurten",
+      "undated": "Massastempels",
+      "dataState": "Gegevensstand",
+      "openDashboard": "Wijzigingen van deze module"
+    }
   }
 }

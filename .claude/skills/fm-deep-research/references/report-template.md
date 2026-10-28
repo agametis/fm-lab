@@ -1,4 +1,4 @@
-<!-- template: fm-deep-research/1
+<!-- template: fm-deep-research/2
      Section markers: <!-- section:<id> --> … <!-- /section -->. Mandatory sections: summary, segments.
      Headings are English placeholders — the skill renders them in the report language.
      {{placeholders}} are filled from the run; instruction comments like this one are removed
@@ -49,12 +49,32 @@
      · File topology — single-file vs. multi-file, per-file duplication of utility scripts
      · Granularity and decoupling — K, size distribution, singletons, largest share, modularity Q
      · Intended vs. detected modularity — script/layout folders vs. communities (alignment)
-     · Hubs and cross-cutting nodes — top logical-degree nodes, ClusterGodNodes
+     · Hubs and cross-cutting nodes — top logical-degree nodes, ClusterGodNodes; a hub without
+       inbound users or dominated by imports_to_field is no central module — say so
      Every claim cites a metric or an object. Sources: R0, R1, R2. -->
 <!-- /section -->
 
+<!-- section:activity -->
+## 4 Development activity
+<!-- Optional. Which modules are alive and which rest — from the last change stamp of every
+     object (community_activity.sql). Cover:
+     · State — data state {{activity_data_state}}, share of mass/technical stamps
+       {{activity_mass_pct}} %, individual changes in 90/365 days, persons
+     · Module classes — active (≤ 90 days) / aging / resting (> 2 years) / unknown, with the
+       most telling segments of Appendix A by name
+     · Mass events — the timeline (kind, size, files) when they shape the picture
+     · Only the interplay with the findings: e.g. a resting hotspot, an active module without
+       comments, an unknown-age module that carries the core — no general remarks
+     Mass dominance (mass_dominant, > 80 % of the nodes of unknown age): no activity verdict per
+     module; say so in one sentence, then describe the lifetime save counters (median saves,
+     saves level) and the mass events instead. No change stamps: one paragraph "no signal from
+     individual changes" (and why: catalog imported before the stamps were read).
+     Ages count back from the data state, never from today. Each object keeps only its last
+     stamp — the section describes the last state, not a history. -->
+<!-- /section -->
+
 <!-- section:technical -->
-## 4 Technical description
+## 5 Technical description
 <!-- Micro view — how things are built, as far as the catalog shows it. Cover:
      · Conventions — naming, folder structure, comment/TODO practice
      · Script patterns — parameters/results, error handling, transactions, loops, windows
@@ -69,22 +89,22 @@
 <!-- /section -->
 
 <!-- section:findings -->
-## 5 Findings
+## 6 Findings
 <!-- Numbered F-01 …, most important first, in two sub-lists:
-     5.1 Measured — Analysis Tests (solution scope) and metrics: test id, count, severity, evidence
-     5.2 Interpreted — patterns/anti-patterns, comprehensibility, coupling: hedged
+     6.1 Measured — Analysis Tests (solution scope) and metrics: test id, count, severity, evidence
+     6.2 Interpreted — patterns/anti-patterns, comprehensibility, coupling: hedged
      Every finding carries one "Evidence:" line (object names / numbers) and one "Impact:" line. -->
 <!-- /section -->
 
 <!-- section:recommendations -->
-## 6 Recommendations
+## 7 Recommendations
 <!-- Numbered R-01 …; each cites ≥ 1 finding (F-nn), names a horizon (quick win / mid-term /
      strategic) and a theme (structure, security, performance, maintainability, extension stages).
      No recommendation without a finding. -->
 <!-- /section -->
 
 <!-- section:open -->
-## 7 Open questions and assumptions
+## 8 Open questions and assumptions
 <!-- What the catalog cannot answer (runtime behaviour, data volumes, business rules held outside
      the code) and what a human should verify. -->
 <!-- /section -->
@@ -93,7 +113,11 @@
 ## Appendix A — Segments (top {{top_n}})
 <!-- One entry per segment, largest first. Heading = display name (user name > semantic name),
      then: description (1–2 sentences), members, dominant file/type, anchor objects (top members
-     by logical degree), business domain. Segments beyond top_n appear only in Appendix B. -->
+     by logical degree), business domain, and one line "Activity: <class> · newest change <date>
+     · <n> members changed ≤ 90 days" (community_activity.sql #2; under mass dominance
+     "Activity: <class> (<mass_pct> % mass stamps) · median saves <n>" — the class only bounds
+     the last real change; omitted without change stamps). Segments beyond
+     top_n appear only in Appendix B. -->
 <!-- /section -->
 
 <!-- section:protocol -->
@@ -105,7 +129,9 @@
      B.3 Tests — ids executed (or why not), summary counts per test (the counters carry the
          statement), ≤ 5 findings per member, tooling-add-on rows filtered — say what was cut
      B.4 Catalog caveats — DDR-Info gaps, uuid-integrity, unavailable annotations
-     B.5 Hubs — top 20 by logical cluster degree
+     B.5 Hubs — top 20 by logical cluster degree, with Inbound_Users / Unreferenced and the
+         dominant link role + share (hubs.sql 1.1.0) — mark unreferenced hubs and import/migration
+         hubs (e.g. imports_to_field dominant) as such
      B.6 Segment inventory — ONLY segments that carry meaning (user name or Semantic_Name)
          and are not scaffolding: community, name, members, dominant file/type, described
          yes/no. Everything else — rule-named scaffolding (access rights, menu overrides) and

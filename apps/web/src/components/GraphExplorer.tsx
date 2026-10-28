@@ -554,12 +554,30 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
 
     // The lens is only meaningful when clustering data is present in this graph.
     const communityLensActive = enableCommunityLens && availableCommunities.length > 0;
-    const effectiveColorMode: ColorMode = communityLensActive ? colorMode : 'type';
+    // Activity lens: the catalog carries change stamps (backend head of the graph).
+    const recencyLensActive = enableCommunityLens && data?.activity?.available === true;
+    const colorModes = useMemo<ColorMode[]>(
+      () => [
+        'type',
+        ...(communityLensActive ? (['community'] as const) : []),
+        ...(recencyLensActive ? (['recency'] as const) : []),
+      ],
+      [communityLensActive, recencyLensActive],
+    );
+    const effectiveColorMode: ColorMode = colorModes.includes(colorMode) ? colorMode : 'type';
 
-    // Don't strand the lens on a graph without community data — revert to type.
+    // Nodes per activity class 1…7 of the loaded graph (legend of the recency lens).
+    const recencyCounts = useMemo(() => {
+      const counts = [0, 0, 0, 0, 0, 0, 0];
+      for (const n of data?.nodes ?? []) counts[(n.activity?.class ?? 7) - 1] += 1;
+      return counts;
+    }, [data]);
+
+    // Don't strand a lens on a graph without its data — revert to type (only once a
+    // graph is loaded, so a refetch does not reset the choice).
     useEffect(() => {
-      if (!communityLensActive && colorMode === 'community') setColorMode('type');
-    }, [communityLensActive, colorMode]);
+      if (data && !colorModes.includes(colorMode)) setColorMode('type');
+    }, [data, colorModes, colorMode]);
 
     // Leaving community color mode clears any community selection/hover.
     useEffect(() => {
@@ -654,8 +672,11 @@ export const GraphExplorer = forwardRef<GraphExplorerHandle, GraphExplorerProps>
           availableFiles={availableFiles}
           groupByFile={groupByFile}
           serverTypesActive={serverTypes !== null}
-          showColorMode={communityLensActive}
-          colorMode={colorMode}
+          showColorMode={colorModes.length > 1}
+          colorModes={colorModes}
+          colorMode={effectiveColorMode}
+          recencyCounts={recencyCounts}
+          activityDataState={data?.activity?.dataState ?? null}
           communities={availableCommunities}
           selectedCommunity={selectedCommunity}
           onOpenFocusDetails={onOpenDetails}

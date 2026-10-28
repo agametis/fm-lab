@@ -59,7 +59,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Works on macOS/Windows servers, not on Linux"
+          "title": "Works on macOS/Windows servers, not on Linux",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -73,8 +74,11 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file, script or feature…",
-              "chipFilter": "source",
               "columns": [
                 {
                   "field": "file",

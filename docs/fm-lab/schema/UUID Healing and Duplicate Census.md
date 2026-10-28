@@ -24,6 +24,7 @@ Replacement UUIDs are md5 hex strings — **32 characters, no dashes** — and t
 - **Clone files with an identical internal file name** — the twins are clones down to their internal IDs, so no discriminator exists. These remain monitoring-only in `MergeAbsorptions`.
 - **Script steps** are the one healed class with a positional discriminator: steps carry no per-instance ID in the export, so a healed step's replacement UUID is keyed by `(script identity, Step_Index)` — stable across re-imports only as long as the surrounding script is not restructured.
 - **DDR plain text** for healed steps resolves via the content hash instead of the step UUID (see [DDR_ScriptSteps](catalog-tables/DDR_ScriptSteps.md)); twins with *different* content share one DDR row in the source — a source-format limit.
+- **DDR formula anchors** are named after the original UUID (`_<UUID>_<Slot>`), so twins share them, and FileMaker writes one chunk list per name. The copy that owns it carries `DDRREF hash="<H>"` in its own XML, the others `hash=""`. Edges in [ObjectLinks](object-catalog/ObjectLinks.md) and the calculation instances in [CalculationsCatalog](catalog-tables/CalculationsCatalog.md) follow the copy whose own `DDRREF` carries anchor name and hash. The formula of a copy with `hash=""` has no chunks in the source: it gets no DDR instance and no references — a source-format limit.
 
 ## The census tables
 
@@ -38,6 +39,8 @@ Per-chunk counters: how many source records each catalog parsed and where UUID c
 | `PK_Columns` | `VARCHAR` | provenance, e.g. `Step_UUID,File_Name` |
 | `Chunk_Seq` | `BIGINT` | source chunk; `-1` = recorded at the merge point |
 | `Source_Records` | `BIGINT` | parsed source records of this chunk |
+
+The import report reads these counters against the stored catalog rows in both directions. `v_check_absorbed_dups` reports records the per-file upsert absorbed (the source has duplicate UUIDs). `v_check_census_integrity` reports a catalog that holds more rows than the census counted, or one without any census row — the census was lost after extraction, so the absorption figures and the healing mapping of that file are not reliable; re-import the file.
 
 ### DuplicateAbsorptionDetails
 

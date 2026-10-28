@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "파일 보기",
-    "description": "파일별 상세 보기: 메타데이터, 파일 옵션, 오브젝트 KPI 및 트리거된 스크립트 / 시작 레이아웃 / 로그인 계정."
+    "description": "파일별 상세 보기: 메타데이터, 파일 옵션, 객체 지표, 카탈로그별 변경 스탬프 및 트리거된 스크립트 / 시작 레이아웃 / 로그인 계정."
   },
   "layout": {
     "file_not_found.props.title": "파일을 찾을 수 없음",
@@ -14,6 +14,11 @@
     "file_metrics_kpistrip.props.items[4].label": "마지막 가져오기",
     "file_metrics_kpistrip.props.items[5].label": "최소 버전",
     "file_size_kpistrip.props.items[0].label": "파일 크기",
+    "file_change_kpistrip.props.items[0].label": "마지막 디자인 변경",
+    "file_change_kpistrip.props.items[1].label": "변경자",
+    "file_change_kpistrip.props.items[2].label": "마지막 대량 변경",
+    "file_change_kpistrip.props.items[3].label": "대량 이벤트",
+    "file_change_kpistrip.props.items[4].label": "개별 변경 %",
     "file_settings_list.props.items[0].label": "자동 로그인",
     "file_settings_list.props.items[1].label": "자격 증명 저장",
     "file_settings_list.props.items[2].label": "로그인 필드",
@@ -31,6 +36,17 @@
     "file_object_counts_kpistrip.props.items[6].label": "값 목록",
     "file_object_counts_kpistrip.props.items[7].label": "사용자 함수",
     "file_object_counts_kpistrip.props.items[8].label": "변수",
+    "file_catalog_changes.props.title": "카탈로그별 변경",
+    "file_catalog_changes_md.props.content": "각 객체는 **마지막** 변경 스탬프만 유지합니다. *마지막 개별 변경*은 대량 이벤트(마이그레이션, 붙여넣기, 도구 실행)와 기술 작성자를 제외합니다. 카탈로그 스탬프는 자체 규칙을 따르며, 카탈로그의 객체가 저장될 때마다 카운터가 증가합니다. 시간은 편집한 클라이언트의 로컬 시간입니다.",
+    "file_change_trend.props.label": "월별 개별 변경, 데이터 기준 시점까지 최근 12개월",
+    "file_catalog_changes_table.props.columns[0].label": "카탈로그",
+    "file_catalog_changes_table.props.columns[1].label": "마지막 개별 변경",
+    "file_catalog_changes_table.props.columns[2].label": "사용자",
+    "file_catalog_changes_table.props.columns[3].label": "카탈로그 스탬프",
+    "file_catalog_changes_table.props.columns[4].label": "카운터",
+    "file_catalog_changes_table.props.columns[5].label": "객체",
+    "file_catalog_changes_table.props.columns[6].label": "대량 이벤트 내",
+    "file_catalog_changes_table.props.columns[7].label": "마지막 편집 후 필드 삭제",
     "file_triggers.props.title": "트리거된 스크립트",
     "file_triggers_table.props.columns[0].label": "이벤트",
     "file_triggers_table.props.columns[1].label": "스크립트",

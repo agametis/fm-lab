@@ -93,5 +93,62 @@
       "title": "Nodo"
     },
     "cancel": "Cancelar"
+  },
+  "color": {
+    "label": "Color",
+    "type": "Tipo",
+    "recency": "Actividad",
+    "saves": "Guardados",
+    "type_hint": "Colorear los mosaicos por tipo de objeto.",
+    "recency_hint": "Colorear los mosaicos según la antigüedad de su cambio individual más reciente; los eventos masivos nunca cuentan como recientes.",
+    "saves_hint": "Colorear los mosaicos según el contador de guardados de toda la vida de sus miembros (rango dentro del tipo de objeto); robusto frente a eventos masivos.",
+    "unavailable": "Este catálogo no contiene marcas de cambio: vuelve a importar la solución para colorear por actividad.",
+    "bulk": "Eventos masivos",
+    "bulk_hint": "Incluir eventos masivos: una marca masiva fecha entonces el último cambio como uno individual."
+  },
+  "activity": {
+    "class": {
+      "1": "≤ 30 días",
+      "2": "≤ 90 días",
+      "3": "≤ 1 año",
+      "4": "≤ 2 años",
+      "5": "> 2 años",
+      "6": "desconocida",
+      "7": "sin marca"
+    },
+    "savesShort": "guardados {{level}}/5",
+    "savesFew": "pocos",
+    "savesMany": "muchos",
+    "legendRecency": "Cambio individual más reciente",
+    "legendSaves": "Guardados de toda la vida (rango en el tipo)",
+    "dataState": "Estado de los datos {{date}}",
+    "bulkIncluded": "eventos masivos incluidos",
+    "unknownHint": "Para el {{pct}} % de los nodos se desconoce la antigüedad del último cambio real: un evento masivo reciente sobrescribió sus marcas. Aquí los guardados de toda la vida distinguen mejor los módulos.",
+    "useSaves": "Colorear por guardados",
+    "tooltip": {
+      "class": "Actividad: {{label}}",
+      "classLabel": "Actividad",
+      "newest": "Cambio más reciente: {{date}} ({{days}} días antes del estado de los datos)",
+      "newestNone": "Ningún cambio fechado",
+      "active": "Modificados en 90 días: {{n}} de {{total}}",
+      "medianAge": "Antigüedad mediana: {{days}} días",
+      "medianSaves": "Mediana de guardados: {{n}}",
+      "saves": "Guardados: {{n}}",
+      "undated": "Marcas masivas: {{pct}} %",
+      "savesLevel": "Nivel de guardados {{level}} de 5"
+    },
+    "panel": {
+      "newest": "Cambio más reciente",
+      "newestValue": "{{date}} · {{days}} días antes del estado de los datos",
+      "active": "Modificados ≤ 90 días",
+      "activeValue": "{{n}} de {{total}}",
+      "medianAge": "Antigüedad mediana",
+      "days": "{{days}} días",
+      "medianSaves": "Mediana de guardados",
+      "saves": "Guardados",
+      "undated": "Marcas masivas",
+      "dataState": "Estado de los datos",
+      "openDashboard": "Cambios de este módulo"
+    }
   }
 }

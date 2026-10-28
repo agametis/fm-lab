@@ -117,7 +117,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "iOS-bound scripts"
+          "title": "iOS-bound scripts",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -131,8 +132,11 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file, script or feature…",
-              "chipFilter": "signal",
               "columns": [
                 {
                   "field": "binding",

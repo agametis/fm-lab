@@ -1,0 +1,480 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "cochange_no_meta",
+        "props": {
+          "span": 12,
+          "title": "No change stamps",
+          "variant": "hero"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": false
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "cochange_no_meta_md",
+            "props": {
+              "content": "This catalog carries no change stamps yet. They are read during the XML import — import the solution again to see which modules are changed together."
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "cochange_filters",
+        "props": {
+          "span": 12,
+          "title": "Filter"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "Select",
+                "id": "cochange_file_select",
+                "data": {
+                  "dataset": "file_options"
+                },
+                "props": {
+                  "param": "file",
+                  "label": "File",
+                  "emptyOptionLabel": "All files",
+                  "resetParams": [
+                    "page",
+                    "spage"
+                  ],
+                  "multiple": true
+                }
+              },
+              {
+                "type": "Select",
+                "id": "cochange_person_select",
+                "data": {
+                  "dataset": "person_options"
+                },
+                "props": {
+                  "param": "person",
+                  "label": "Person",
+                  "emptyOptionLabel": "All persons",
+                  "resetParams": [
+                    "page",
+                    "spage"
+                  ]
+                }
+              },
+              {
+                "type": "NavButton",
+                "id": "cochange_filters_reset",
+                "props": {
+                  "label": "Reset filters",
+                  "variant": "link",
+                  "onClick": {
+                    "action": "navigate",
+                    "args": {
+                      "path": "/dashboard/cochange"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "FilterChips",
+            "id": "cochange_days_chips",
+            "props": {
+              "param": "days",
+              "default": "all",
+              "resetParams": [
+                "page",
+                "spage"
+              ],
+              "options": [
+                {
+                  "value": "30",
+                  "label": "30 days"
+                },
+                {
+                  "value": "90",
+                  "label": "90 days"
+                },
+                {
+                  "value": "365",
+                  "label": "365 days"
+                },
+                {
+                  "value": "all",
+                  "label": "All"
+                }
+              ]
+            }
+          },
+          {
+            "type": "Markdown",
+            "id": "cochange_bias_md",
+            "props": {
+              "content": "Each object keeps only its **last** change stamp, so it counts only in its last work session. The view shows what was *last changed together*, not how often."
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "cochange_file_modules",
+        "props": {
+          "span": 12,
+          "title": "Files stand in for modules"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "module_is_file",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "cochange_file_modules_md",
+            "props": {
+              "content": "This catalog has no module partition — every file counts as one module. Segment the solution with the skill `fm-graph-cluster` to compare the work sessions with the modules of the object graph."
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "cochange_overview",
+        "props": {
+          "span": 12
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "cochange_kpistrip",
+            "data": {
+              "dataset": "kpis"
+            },
+            "props": {
+              "items": [
+                {
+                  "label": "Work sessions",
+                  "field": "sessions",
+                  "format": "number"
+                },
+                {
+                  "label": "Object pairs",
+                  "field": "pairs",
+                  "format": "number"
+                },
+                {
+                  "label": "Same module (%)",
+                  "field": "same_module_pct",
+                  "format": "number"
+                },
+                {
+                  "label": "By chance (%)",
+                  "field": "random_pct",
+                  "format": "number"
+                },
+                {
+                  "label": "Large sessions",
+                  "field": "large_sessions",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "cochange_coupling",
+        "props": {
+          "span": 12,
+          "title": "Module coupling",
+          "subtitle": "Weighted object pairs from the work sessions: every object spreads the weight 1 over the other objects of its session, so large sessions do not dominate."
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "FilterChips",
+            "id": "cochange_coupling_chips",
+            "props": {
+              "param": "coupling",
+              "default": "between",
+              "resetParams": [
+                "page"
+              ],
+              "options": [
+                {
+                  "value": "between",
+                  "label": "Between modules"
+                },
+                {
+                  "value": "within",
+                  "label": "Within a module"
+                }
+              ]
+            }
+          },
+          {
+            "type": "Table",
+            "id": "cochange_between_table",
+            "data": {
+              "dataset": "module_pairs"
+            },
+            "visibleWhen": {
+              "dataset": "view_state",
+              "field": "coupling_between",
+              "truthy": true
+            },
+            "props": {
+              "density": "compact",
+              "rowKey": "row_key",
+              "pageParam": "page",
+              "searchParam": "mq",
+              "sortable": true,
+              "sortParam": "sort",
+              "searchable": true,
+              "searchPlaceholder": "Search module",
+              "columns": [
+                {
+                  "field": "module_a",
+                  "label": "Module"
+                },
+                {
+                  "field": "module_b",
+                  "label": "Module"
+                },
+                {
+                  "field": "weight",
+                  "label": "Weight",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "pairs",
+                  "label": "Pairs",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "sessions",
+                  "label": "Sessions",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                }
+              ],
+              "empty": {
+                "message": "No work session in this period touched two modules."
+              }
+            }
+          },
+          {
+            "type": "Table",
+            "id": "cochange_within_table",
+            "data": {
+              "dataset": "module_pairs"
+            },
+            "visibleWhen": {
+              "dataset": "view_state",
+              "field": "coupling_within",
+              "truthy": true
+            },
+            "props": {
+              "density": "compact",
+              "rowKey": "row_key",
+              "pageParam": "page",
+              "searchParam": "mq",
+              "sortable": true,
+              "sortParam": "sort",
+              "searchable": true,
+              "searchPlaceholder": "Search module",
+              "columns": [
+                {
+                  "field": "module_a",
+                  "label": "Module"
+                },
+                {
+                  "field": "weight",
+                  "label": "Weight",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "pairs",
+                  "label": "Pairs",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "sessions",
+                  "label": "Sessions",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                }
+              ],
+              "empty": {
+                "message": "No work session in this period changed two objects of one module."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "cochange_sessions",
+        "props": {
+          "span": 12,
+          "title": "Sessions across modules",
+          "subtitle": "Work sessions that touched two or more modules — open one to list its changes."
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "cochange_sessions_table",
+            "data": {
+              "dataset": "cross_sessions"
+            },
+            "props": {
+              "density": "compact",
+              "rowKey": "row_key",
+              "pageParam": "spage",
+              "sortable": true,
+              "sortParam": "ssort",
+              "searchable": false,
+              "columns": [
+                {
+                  "field": "started",
+                  "label": "Start",
+                  "nowrap": true
+                },
+                {
+                  "field": "ended",
+                  "label": "End",
+                  "nowrap": true
+                },
+                {
+                  "field": "minutes",
+                  "label": "Minutes",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "person",
+                  "label": "Person",
+                  "nowrap": true
+                },
+                {
+                  "field": "objects",
+                  "label": "Changes",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "modules",
+                  "label": "Modules",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "module_names",
+                  "label": "Largest modules"
+                },
+                {
+                  "field": "marker",
+                  "label": "Note",
+                  "format": "badge",
+                  "badgeTone": {
+                    "Large session": "warning"
+                  },
+                  "nowrap": true
+                }
+              ],
+              "onRowClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "changes",
+                  "from": "{{from_at}}",
+                  "to": "{{to_at}}",
+                  "person": "{{person_key}}",
+                  "file": "{{file_filter}}"
+                }
+              },
+              "empty": {
+                "message": "No work session in this period crossed a module boundary."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "cochange_basis",
+        "props": {
+          "span": 12,
+          "title": "Data basis"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "data": {
+          "dataset": "kpis"
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "cochange_basis_md",
+            "props": {
+              "content": "A **work session** groups the individual changes of one person with gaps of at most 30 minutes, as in the dashboard *Recent changes* — without mass events and technical authors. **Modules** are the communities of the cluster partition, named by `fm-graph-cluster`; {{module_coverage_pct}} % of the session objects belong to one. The others are isolated nodes of the object graph: they count in the session size, their pairs are left out of the coupling. **Same module** is the weighted share of pairs within one module; **by chance** is the share a random pair of objects would reach (Σ p² over the module sizes). Sessions of more than 50 objects are marked as large."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

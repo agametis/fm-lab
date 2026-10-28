@@ -128,6 +128,111 @@ _oc_clause() { case " $2 " in *" $1 "*) printf ' ON CONFLICT DO NOTHING' ;; *) p
 # Boolean membership: is token $1 in the space-delimited set $2?
 _in_set() { case " $2 " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 
+# ============================================================================
+# Schema parity gate — every merge source (chunk DB / part DB) of one run must
+# carry the SAME P1 schema. A source without a column is not harmless: the
+# wildcard read_parquet fails when the column is missing in a LATER file of the
+# glob and silently drops it for ALL files when it is missing in the FIRST one;
+# INSERT … BY NAME from an attached DB silently fills NULL. Mixed schemas within
+# one run mean a mixed engine (template changed mid-run, stale engine copy) →
+# more than one column is suspect, so the merge aborts instead of reconciling.
+# Fingerprint = sorted "column:type" list per (source, table); a pure column
+# ORDER difference is no mismatch (all merges are BY NAME).
+# The emitters write SQL for a :memory: (or any) session; the verdict reads the
+# report the session wrote.
+_schema_fp_init_sql() {
+    echo "CREATE OR REPLACE TEMP TABLE _sfp (Unit VARCHAR, Catalog VARCHAR, File_Name VARCHAR, Table_Name VARCHAR, Cols VARCHAR, Schema_Version VARCHAR, Schema_Hash VARCHAR);"
+}
+# $1 = attached database alias, $2 = unit id (chunk id / part index), $3 = catalog, $4 = file
+# label, $5 = comma-quoted table IN list (the merge's table set).
+_schema_fp_sql() {
+    local cat="${3//\'/\'\'}" fn="${4//\'/\'\'}"
+    cat <<EOF
+INSERT INTO _sfp
+SELECT '$2', '$cat', '$fn', table_name,
+       string_agg(column_name || ':' || data_type, ',' ORDER BY column_name),
+       (SELECT any_value(Schema_Version) FROM "$1".SchemaInfo),
+       (SELECT any_value(Schema_Hash) FROM "$1".SchemaInfo)
+FROM duckdb_columns()
+WHERE database_name = '$1' AND schema_name = 'main' AND table_name IN ($5)
+GROUP BY table_name;
+EOF
+}
+# $1 = report file. One row per deviating (source, table) against the table's
+# majority variant; an empty report (header only) = parity holds.
+_schema_fp_report_sql() {
+    cat <<EOF
+COPY (
+    WITH v AS (SELECT Table_Name, Cols, count(*) AS n FROM _sfp GROUP BY ALL),
+    ref AS (
+        SELECT Table_Name, arg_max(Cols, n) AS Ref_Cols FROM v
+        GROUP BY Table_Name HAVING count(*) > 1
+    )
+    SELECT f.Table_Name, f.Unit, NULLIF(f.Catalog, ''), f.File_Name, f.Schema_Version, f.Schema_Hash,
+           NULLIF(array_to_string(list_filter(string_split(r.Ref_Cols, ','), lambda x: NOT list_contains(string_split(f.Cols, ','), x)), ' '), '') AS Missing,
+           NULLIF(array_to_string(list_filter(string_split(f.Cols, ','), lambda x: NOT list_contains(string_split(r.Ref_Cols, ','), x)), ' '), '') AS Extra
+    FROM _sfp f JOIN ref r USING (Table_Name)
+    WHERE f.Cols <> r.Ref_Cols
+    ORDER BY f.Table_Name, f.Unit
+) TO '$1' (FORMAT csv, DELIMITER '\t', HEADER);
+EOF
+}
+# $1 = report file, $2 = log file, $3 = label (what the units are, e.g. "chunk").
+# Returns 0 on parity, 1 on mismatch OR when the report is missing (fail-hard:
+# a gate whose evidence did not materialize must not wave the merge through).
+_schema_parity_verdict() {
+    local rep="$1" log="$2" label="$3" n
+    if [ ! -f "$rep" ]; then
+        echo "  ✗ schema parity gate: report missing ($rep) — merge aborted" >> "$log"
+        return 1
+    fi
+    n=$(($(wc -l < "$rep") - 1))
+    [ "$n" -le 0 ] && return 0
+    {
+        echo "  ✗ schema parity gate: $n $label table schema(s) deviate from the run's majority schema — merge aborted, master unchanged."
+        echo "    Mixed schemas within ONE run mean a mixed engine (SQL template changed during the run, or"
+        echo "    a stale second engine copy)."
+        [ "$label" = "chunk" ] && echo "    The chunk DBs stay in ${STREAMING_DIR:-the streaming dir} for inspection until the next run starts."
+        echo "    table | $label | catalog | file | schema version | schema hash | missing | extra"
+        tail -n +2 "$rep" | head -200 | awk -F'\t' '{ printf "    %s | %s | %s | %s | %s | %s | %s | %s\n", $1, $2, $3, $4, $5, $6, $7, $8 }'
+        [ "$n" -gt 200 ] && echo "    … $((n - 200)) more"
+    } >> "$log"
+    return 1
+}
+# Standalone gate over a list of DB files (part DBs, the chunks of one file):
+# ONE :memory: run, sequential ATTACH→fingerprint→DETACH. $1 = report file,
+# $2 = log, $3 = label, $4 = comma-quoted table IN list, $5.. = DB files.
+_turbo_schema_parity() {
+    local rep="$1" log="$2" label="$3" tin="$4"; shift 4
+    [ $# -le 1 ] && return 0
+    local psql db u=0; psql="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")"
+    _schema_fp_init_sql > "$psql"
+    for db in "$@"; do
+        echo "ATTACH '$db' AS s (READ_ONLY);" >> "$psql"
+        _schema_fp_sql s "$u" "" "$(basename "$db")" "$tin" >> "$psql"
+        echo "DETACH s;" >> "$psql"
+        u=$((u + 1))
+    done
+    _schema_fp_report_sql "$rep" >> "$psql"
+    rm -f "$rep"
+    "$DUCKDB_BIN" ":memory:" < "$psql" >> "$log" 2>&1
+    rm -f "$psql"
+    _schema_parity_verdict "$rep" "$log" "$label"
+}
+
+# Turn a newline table list into a comma-quoted IN list ('A','B',…).
+_sql_in_list() { printf '%s\n' "$1" | awk -v q="'" 'NF { gsub(q, q q); printf "%s%s%s%s", (n++ ? "," : ""), q, $0, q }'; }
+
+# Run a generated merge script atomically: .bail on stops at the first error and
+# the open transaction is never committed → the master stays exactly as before
+# (no half-merged state with a deleted-but-not-refilled table). ATTACH statements
+# may stay inside the transaction (DuckDB allows it). $1 = target DB, $2 = script,
+# $3 = log. Returns the DuckDB exit code.
+_duckdb_run_atomic() {
+    { echo ".bail on"; echo "BEGIN TRANSACTION;"; cat "$2"; echo "COMMIT;"; } \
+        | "$DUCKDB_BIN" "$1" >> "$3" 2>&1
+}
+
 # Schema-drift protection. Emits CREATE TABLE IF NOT EXISTS DDL (columns + NOT NULL + PRIMARY
 # KEY, reconstructed from the seed DB $1) for the tables named in $2 (a comma-quoted IN
 # list, e.g. "'A','B'"). Used before an incremental merge so a NEWLY-added part table
@@ -228,8 +333,8 @@ _turbo_catmerge_dup_report() {
         if [ "${FM_UUID_HEAL:-1}" != "0" ] && _turbo_heal_ident "$_t"; then
             _dcols="$_cols, $_hi_ident"
         fi
-        _q="SELECT (SELECT COUNT(*) FROM read_parquet('$_pqdir/$_t/*.parquet')) \
-             - (SELECT COUNT(*) FROM (SELECT DISTINCT $_dcols FROM read_parquet('$_pqdir/$_t/*.parquet')));"
+        _q="SELECT (SELECT COUNT(*) FROM read_parquet('$_pqdir/$_t/*.parquet', union_by_name=true)) \
+             - (SELECT COUNT(*) FROM (SELECT DISTINCT $_dcols FROM read_parquet('$_pqdir/$_t/*.parquet', union_by_name=true)));"
         n=$("$DUCKDB_BIN" ":memory:" -noheader -list -c "$_q" 2>/dev/null)
         if [ -n "$n" ] && [ "$n" -gt 0 ] 2>/dev/null; then
             emit_warn "katmerge: $n duplicate PK in '$_t' absorbed (chunk overlap/clone, a1) — data consistent, but worth checking."
@@ -239,7 +344,7 @@ _turbo_catmerge_dup_report() {
                 "$DUCKDB_BIN" "$DB_FILE" -c \
                     "INSERT INTO MergeAbsorptions \
                      SELECT '$_t', File_Name, COUNT(*) - COUNT(DISTINCT ($_dcols)), 'catmerge', (now() AT TIME ZONE 'UTC') \
-                     FROM read_parquet('$_pqdir/$_t/*.parquet') \
+                     FROM read_parquet('$_pqdir/$_t/*.parquet', union_by_name=true) \
                      GROUP BY File_Name HAVING COUNT(*) - COUNT(DISTINCT ($_dcols)) > 0;" \
                     >/dev/null 2>&1 \
                 || "$DUCKDB_BIN" "$DB_FILE" -c \
@@ -306,7 +411,7 @@ FROM (
     SELECT *,
         ($_hi_uuid IS NULL OR $_hi_idnull
          OR ($_hi_ident) = MIN(($_hi_ident)) OVER (PARTITION BY File_Name, $_hi_uuid)) AS _hm_surv
-    FROM read_parquet('$2/$1/*.parquet')
+    FROM read_parquet('$2/$1/*.parquet', union_by_name=true)
 )
 ON CONFLICT DO NOTHING;
 EOF
@@ -342,7 +447,7 @@ CREATE OR REPLACE TEMP TABLE _hm_census AS
 WITH occ AS (
     SELECT File_Name, $_hi_uuid AS Object_UUID, $_hi_ident,
            $_nm AS _cn_name, $_ty AS _cn_type, $_pa AS _cn_parent, $_po AS _cn_pos
-    FROM read_parquet('$2/$1/*.parquet')
+    FROM read_parquet('$2/$1/*.parquet', union_by_name=true)
     WHERE $_hi_uuid IS NOT NULL
     GROUP BY File_Name, $_hi_uuid, $_hi_ident
 ),
@@ -522,6 +627,25 @@ merge_part_dbs() {
     done
     [ ${#parts[@]} -eq 0 ] && return 0
 
+    # Table list from a PART DB (not from the master DB!). The part DBs only run
+    # P1 (extract) and carry exactly the mergeable tables. On an incremental run the
+    # master DB additionally contains all P2–P6 objects (e.g. GetSubparameterMap,
+    # MBS_SubnameMap) plus views (FolderHierarchy, v_check_*, v_*_stats) that are
+    # absent from the part DBs — if they ended up here the merge would fail
+    # ("Table does not exist" / "Can only delete from base table"). table_type='BASE
+    # TABLE' additionally filters out views. parts[0] is representative — the schema
+    # parity gate below enforces that all part DBs share the same P1 schema.
+    # SchemaInfo (version marker, one row) is omitted.
+    local seed_db="${parts[0]}"
+    local tables; tables=$("$DUCKDB_BIN" -readonly "$seed_db" -noheader -list -c \
+        "SELECT table_name FROM information_schema.tables WHERE table_schema='main' AND table_type='BASE TABLE' AND table_name <> 'SchemaInfo' ORDER BY table_name;" 2>/dev/null)
+
+    # Schema parity gate BEFORE the master is touched (incl. the seed copy).
+    if [ -n "$tables" ]; then
+        _turbo_schema_parity "$PARTDB_DIR/schema_parity.tsv" "$PARTDB_DIR/merge.log" "part" \
+            "$(_sql_in_list "$tables")" "${parts[@]}" || { MERGE_RC=4; return 4; }
+    fi
+
     # Seed the master schema: if the master DB does not yet exist (force_rebuild
     # deleted it), copy the first part DB as the base (full schema + data of the
     # first file). Otherwise (incremental) the master DB stays the base.
@@ -530,18 +654,6 @@ merge_part_dbs() {
         cp "${parts[0]}" "$DB_FILE" || { MERGE_RC=1; return 1; }
         start=1
     fi
-
-    # Table list from a PART DB (not from the master DB!). The part DBs only run
-    # P1 (extract) and carry exactly the mergeable tables. On an incremental run the
-    # master DB additionally contains all P2–P6 objects (e.g. GetSubparameterMap,
-    # MBS_SubnameMap) plus views (FolderHierarchy, v_check_*, v_*_stats) that are
-    # absent from the part DBs — if they ended up here the merge would fail
-    # ("Table does not exist" / "Can only delete from base table"). table_type='BASE
-    # TABLE' additionally filters out views. parts[0] is representative; all part DBs
-    # share the same P1 schema. SchemaInfo (version marker, one row) is omitted.
-    local seed_db="${parts[0]}"
-    local tables; tables=$("$DUCKDB_BIN" -readonly "$seed_db" -noheader -list -c \
-        "SELECT table_name FROM information_schema.tables WHERE table_schema='main' AND table_type='BASE TABLE' AND table_name <> 'SchemaInfo' ORDER BY table_name;" 2>/dev/null)
     [ -z "$tables" ] && { MERGE_RC=0; return 0; }
     # Which tables carry a File_Name column? (Only for the DELETE pre-stage; a
     # "File_Name" reference to a table without that column is a bind error — so
@@ -582,7 +694,7 @@ merge_part_dbs() {
     done
 
     if [ -s "$msql" ]; then
-        "$DUCKDB_BIN" "$DB_FILE" < "$msql" > "$PARTDB_DIR/merge.log" 2>&1 || MERGE_RC=$?
+        _duckdb_run_atomic "$DB_FILE" "$msql" "$PARTDB_DIR/merge.log" || MERGE_RC=$?
     fi
     rm -f "$msql"
     return $MERGE_RC
@@ -609,13 +721,18 @@ _turbo_merge_parquet() {
     # Incremental (master exists) not covered parquet-side in the prototype → fallback.
     [ -f "$DB_FILE" ] && { echo "  [parquet] master exists (incremental) → fallback merge_part_dbs" >&2; merge_part_dbs; return $?; }
 
-    # Seed: cp parts[0] (schema + SchemaInfo + part0 data) — identical to merge_part_dbs.
-    cp "${parts[0]}" "$DB_FILE" || { MERGE_RC=1; return 1; }
-    [ ${#parts[@]} -eq 1 ] && return 0
-
     local seed_db="${parts[0]}" tables
     tables=$("$DUCKDB_BIN" -readonly "$seed_db" -noheader -list -c \
         "SELECT table_name FROM information_schema.tables WHERE table_schema='main' AND table_type='BASE TABLE' AND table_name <> 'SchemaInfo' ORDER BY table_name;" 2>/dev/null)
+    # Schema parity gate before the seed copy (see merge_part_dbs).
+    if [ -n "$tables" ]; then
+        _turbo_schema_parity "$PARTDB_DIR/schema_parity.tsv" "$PARTDB_DIR/parquet_merge.log" "part" \
+            "$(_sql_in_list "$tables")" "${parts[@]}" || { MERGE_RC=4; return 4; }
+    fi
+
+    # Seed: cp parts[0] (schema + SchemaInfo + part0 data) — identical to merge_part_dbs.
+    cp "${parts[0]}" "$DB_FILE" || { MERGE_RC=1; return 1; }
+    [ ${#parts[@]} -eq 1 ] && return 0
     [ -z "$tables" ] && { MERGE_RC=0; return 0; }
 
     local pqdir="$PARTDB_DIR/pq"; mkdir -p "$pqdir"
@@ -639,9 +756,9 @@ _turbo_merge_parquet() {
     local msql; msql="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")"
     while IFS= read -r tbl; do
         [ -z "$tbl" ] && continue
-        echo "INSERT INTO \"$tbl\" BY NAME SELECT * FROM read_parquet('$pqdir/$tbl/*.parquet')$(_oc_clause "$tbl" "$pk_tables");" >> "$msql"
+        echo "INSERT INTO \"$tbl\" BY NAME SELECT * FROM read_parquet('$pqdir/$tbl/*.parquet', union_by_name=true)$(_oc_clause "$tbl" "$pk_tables");" >> "$msql"
     done <<< "$tables"
-    [ -s "$msql" ] && { "$DUCKDB_BIN" "$DB_FILE" < "$msql" >> "$PARTDB_DIR/parquet_merge.log" 2>&1 || MERGE_RC=$?; }
+    [ -s "$msql" ] && { _duckdb_run_atomic "$DB_FILE" "$msql" "$PARTDB_DIR/parquet_merge.log" || MERGE_RC=$?; }
     rm -f "$msql"
     return $MERGE_RC
 }
@@ -671,24 +788,32 @@ _turbo_catalog_owned() {
 # catmerge ownership does not apply. ScriptTriggers: file-level
 # (//Metadata, main chunk) + layout-/object-level (//LayoutCatalog, LayoutCatalog chunk).
 # As long as LayoutCatalog was NOT separated (old default SUBCHUNK=0), everything sat
-# in the main chunk → single-fed. The windowing default separates LayoutCatalog → the
-# layout/object triggers move into its chunk and were lost under single-owner catmerge.
+# in the main chunk → single-fed. Turbo now always separates LayoutCatalog
+# (SPLIT_SEPARATE in the driver) → the layout/object triggers sit in its chunk and
+# were lost under single-owner catmerge.
 # Fix: copy multi-fed tables from EVERY chunk (export below); the sources are
 # record-disjoint (different Owner_Type/Owner_UUID, collision-free PK) → union = complete.
 # DuplicateAbsorptions (Dup-Zensus): fed by main (typed catalog censuses) AND the two
 # heavy chunks (StepsForScripts, LayoutCatalog→LayoutObjects census). Record-disjoint
 # via PK (Catalog, File_Name, Chunk_Seq) — the Catalog column separates the feeders,
 # Chunk_Seq (= seq_offset) separates sub-chunks of the same heavy branch.
-# DuplicateAbsorptionDetails (1.17.0): fed by main (ScriptCatalog details) AND the two
-# heavy chunks (StepsForScripts, LayoutCatalog→Layouts/LayoutObjects details). Same
+# DuplicateAbsorptionDetails (1.17.0): fed by main (the typed catalog details: Script,
+# ExternalDataSource, BaseTable, TableOccurrence, Relationship, Field, ValueList,
+# CustomFunction, Account) AND the two heavy chunks (StepsForScripts,
+# LayoutCatalog→Layouts/LayoutObjects details). Same
 # provenance model as DuplicateAbsorptions (Catalog column + Chunk_Seq in the PK) —
 # without this registration the single-owner catmerge silently dropped every detail
 # row written outside the main chunk.
+# CatalogChangeMeta (catalog-level change stamps): fed by main (every main catalog +
+# one FieldCatalog row per base table) AND the LayoutCatalog chunk (its catalog stamp,
+# written only by the sub-chunk that carries the catalog <UUID>). Same provenance
+# model: Catalog column + Chunk_Seq in the PK.
 _turbo_table_multifed() {
     case "$1" in
         ScriptTriggers)              return 0 ;;
         DuplicateAbsorptions)        return 0 ;;
         DuplicateAbsorptionDetails)  return 0 ;;
+        CatalogChangeMeta)           return 0 ;;
         *)                           return 1 ;;
     esac
 }
@@ -715,6 +840,9 @@ _turbo_catalog_feeds_multifed() {
 # (prod verified). New provenance/feeder → add it here.
 # DuplicateAbsorptions uses the Catalog column as provenance (see _turbo_multifed_prov_col):
 # main feeds the typed catalog censuses, the heavy chunks feed their own catalog rows.
+# The census lists mirror the P1 census blocks per @P1_SECTION feeder exactly —
+# tools/tests/regression/census_feeder_map.sh fails on any drift. The CatalogChangeMeta
+# lists mirror the stamp_catalogs lists of its P1 producers (same guard).
 _turbo_multifed_delete_types() {
     local t="$1" seen=" $2 " types=""   # $2 = space-delimited set of catalogs reparsed this run
     case "$t" in
@@ -728,9 +856,13 @@ _turbo_multifed_delete_types() {
             case "$seen" in *" LayoutCatalog "*)  types="$types${types:+,}'LayoutObjects'" ;; esac
             ;;
         DuplicateAbsorptionDetails)
-            case "$seen" in *" main "*)            types="$types${types:+,}'ScriptCatalog'" ;; esac
+            case "$seen" in *" main "*)            types="$types${types:+,}'ScriptCatalog','ExternalDataSourceCatalog','BaseTableCatalog','TableOccurrenceCatalog','RelationshipCatalog','FieldsForTables','ValueListCatalog','CustomFunctionsCatalog','AccountsCatalog'" ;; esac
             case "$seen" in *" StepsForScripts "*) types="$types${types:+,}'StepsForScripts'" ;; esac
             case "$seen" in *" LayoutCatalog "*)   types="$types${types:+,}'Layouts','LayoutObjects'" ;; esac
+            ;;
+        CatalogChangeMeta)
+            case "$seen" in *" main "*)            types="$types${types:+,}'AccountsCatalog','BaseDirectoryCatalog','BaseTableCatalog','CustomFunctionsCatalog','CustomMenuCatalog','CustomMenuSetCatalog','ExtendedPrivilegesCatalog','ExternalDataSourceCatalog','FileAccessCatalog','PrivilegeSetsCatalog','RelationshipCatalog','ScriptCatalog','TableOccurrenceCatalog','ThemeCatalog','ValueListCatalog','FieldCatalog'" ;; esac
+            case "$seen" in *" LayoutCatalog "*)   types="$types${types:+,}'LayoutCatalog'" ;; esac
             ;;
     esac
     printf '%s' "$types"
@@ -741,6 +873,7 @@ _turbo_multifed_prov_col() {
     case "$1" in
         DuplicateAbsorptions)       printf 'Catalog' ;;
         DuplicateAbsorptionDetails) printf 'Catalog' ;;
+        CatalogChangeMeta)          printf 'Catalog' ;;
         *)                          printf 'Owner_Type' ;;
     esac
 }
@@ -868,9 +1001,15 @@ _turbo_merge_catalog() {
     # belong to main → only main chunks copy them).
     local pqdir="$PARTDB_DIR/pq"; mkdir -p "$pqdir"
     while IFS= read -r t; do [ -n "$t" ] && mkdir -p "$pqdir/$t"; done <<< "$tables"
+    # The same pass fingerprints every chunk's schema for the parity gate (no extra
+    # ATTACH round) — the report is judged right after the export, BEFORE anything
+    # touches the master.
     local esql; esql="$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")"
+    local tin parity_rep="$PARTDB_DIR/schema_parity.tsv"; tin="$(_sql_in_list "$tables")"
+    _schema_fp_init_sql >> "$esql"
     for i in "${!CID[@]}"; do
         echo "ATTACH '$STREAMING_DIR/chunk_${CID[$i]}.duckdb' AS k (READ_ONLY);" >> "$esql"
+        _schema_fp_sql k "${CID[$i]}" "${CCAT[$i]}" "${CFN[$i]}" "$tin" >> "$esql"
         while IFS= read -r t; do
             [ -z "$t" ] && continue
             # Owner chunk OR multi-fed (from every chunk; record-disjoint → union correct).
@@ -880,9 +1019,12 @@ _turbo_merge_catalog() {
         done <<< "$tables"
         echo "DETACH k;" >> "$esql"
     done
+    _schema_fp_report_sql "$parity_rep" >> "$esql"
+    rm -f "$parity_rep"
     [ -s "$esql" ] && { "$DUCKDB_BIN" ":memory:" < "$esql" >> "$PARTDB_DIR/catmerge.log" 2>&1 || MERGE_RC=$?; }
     rm -f "$esql"
     [ "$MERGE_RC" -ne 0 ] && return $MERGE_RC
+    _schema_parity_verdict "$parity_rep" "$PARTDB_DIR/catmerge.log" "chunk" || { MERGE_RC=4; return 4; }
 
     # UUID-healing gate (H2): MANDATORY duplicate count over the heal tables'
     # parquet unions. Fail-hard by design — the best-effort a2 contract would
@@ -896,7 +1038,7 @@ _turbo_merge_catalog() {
             ls "$pqdir/$_ht"/*.parquet >/dev/null 2>&1 || continue
             _turbo_heal_ident "$_ht" || continue
             [ -n "$_hq" ] && _hq="$_hq + "
-            _hq="${_hq}(SELECT COUNT(*) - COUNT(DISTINCT ($_hi_uuid, File_Name)) FROM read_parquet('$pqdir/$_ht/*.parquet'))"
+            _hq="${_hq}(SELECT COUNT(*) - COUNT(DISTINCT ($_hi_uuid, File_Name)) FROM read_parquet('$pqdir/$_ht/*.parquet', union_by_name=true))"
         done
         if [ -n "$_hq" ]; then
             heal_dups=$("$DUCKDB_BIN" ":memory:" -noheader -list -c "SELECT $_hq;" 2>>"$PARTDB_DIR/catmerge.log")
@@ -966,17 +1108,17 @@ _turbo_merge_catalog() {
             # Without a provenance map OR without the FilesCatalog parquet → conservatively File-scoped.
             dtypes="$(_turbo_multifed_delete_types "$t" "$_seencat")"
             if [ -n "$dtypes" ] && ls "$pqdir/FilesCatalog"/*.parquet >/dev/null 2>&1; then
-                echo "DELETE FROM \"$t\" WHERE \"File_Name\" IN (SELECT \"File_Name\" FROM read_parquet('$pqdir/FilesCatalog/*.parquet')) AND \"$(_turbo_multifed_prov_col "$t")\" IN ($dtypes);" >> "$msql"
+                echo "DELETE FROM \"$t\" WHERE \"File_Name\" IN (SELECT \"File_Name\" FROM read_parquet('$pqdir/FilesCatalog/*.parquet', union_by_name=true)) AND \"$(_turbo_multifed_prov_col "$t")\" IN ($dtypes);" >> "$msql"
             elif $has_pq; then
-                echo "DELETE FROM \"$t\" WHERE \"File_Name\" IN (SELECT DISTINCT \"File_Name\" FROM read_parquet('$pqdir/$t/*.parquet'));" >> "$msql"
+                echo "DELETE FROM \"$t\" WHERE \"File_Name\" IN (SELECT DISTINCT \"File_Name\" FROM read_parquet('$pqdir/$t/*.parquet', union_by_name=true));" >> "$msql"
             fi
         elif printf '%s\n' "$fn_tables" | grep -qxF "$t"; then
             owner_pq="$(_catmerge_owner_files_pq "$t")"
             [ -n "$owner_pq" ] && owner_pq="[$owner_pq]"
             if [ -n "$owner_pq" ]; then
-                echo "DELETE FROM \"$t\" WHERE \"File_Name\" IN (SELECT DISTINCT \"File_Name\" FROM read_parquet($owner_pq));" >> "$msql"
+                echo "DELETE FROM \"$t\" WHERE \"File_Name\" IN (SELECT DISTINCT \"File_Name\" FROM read_parquet($owner_pq, union_by_name=true));" >> "$msql"
             elif $has_pq; then
-                echo "DELETE FROM \"$t\" WHERE \"File_Name\" IN (SELECT DISTINCT \"File_Name\" FROM read_parquet('$pqdir/$t/*.parquet'));" >> "$msql"
+                echo "DELETE FROM \"$t\" WHERE \"File_Name\" IN (SELECT DISTINCT \"File_Name\" FROM read_parquet('$pqdir/$t/*.parquet', union_by_name=true));" >> "$msql"
             fi
         fi
         $has_pq || continue
@@ -986,7 +1128,7 @@ _turbo_merge_catalog() {
         if [ "${heal_dups:-0}" -gt 0 ] && _turbo_heal_ident "$t"; then
             _turbo_emit_heal_merge "$t" "$pqdir" >> "$msql"
         else
-            echo "INSERT INTO \"$t\" BY NAME SELECT * FROM read_parquet('$pqdir/$t/*.parquet')$(_oc_clause "$t" "$pk_tables");" >> "$msql"
+            echo "INSERT INTO \"$t\" BY NAME SELECT * FROM read_parquet('$pqdir/$t/*.parquet', union_by_name=true)$(_oc_clause "$t" "$pk_tables");" >> "$msql"
         fi
     done <<< "$tables"
     # H2: census completion for cross-chunk pairs (after all table merges — the
@@ -998,7 +1140,7 @@ _turbo_merge_catalog() {
             _turbo_emit_heal_census "$_hc" "$pqdir" >> "$msql"
         done
     fi
-    [ -s "$msql" ] && { "$DUCKDB_BIN" "$DB_FILE" < "$msql" >> "$PARTDB_DIR/catmerge.log" 2>&1 || MERGE_RC=$?; }
+    [ -s "$msql" ] && { _duckdb_run_atomic "$DB_FILE" "$msql" "$PARTDB_DIR/catmerge.log" || MERGE_RC=$?; }
     rm -f "$msql"
     # a2: surface any PK duplicates the a1 guard absorbed (best-effort, only on success).
     [ "$MERGE_RC" -eq 0 ] && _turbo_catmerge_dup_report "$seed_chunk" "$pqdir" "$tables"
@@ -1140,7 +1282,7 @@ _turbo_split_one_file() {
     # CR is kept (parser normalizes to LF). Default 1 (sentinel ON, conservative).
     local _ws_sentinel=1; [ "${WS_SENTINEL_ON:-true}" = "false" ] && _ws_sentinel=0
     NCHUNKS=$(LC_ALL=C "$AWK_BIN" -v outdir="$cdir" -v subchunk="$SUBCHUNK" -v recmap="$EFFECTIVE_RECMAP" \
-                  -v nest="$NEST_MAP" -v ws_sentinel="$_ws_sentinel" \
+                  -v separate="$SPLIT_SEPARATE" -v nest="$NEST_MAP" -v ws_sentinel="$_ws_sentinel" \
                   -v chunkmap="$cdir/chunkmap.tsv" -v counts="$cdir/counts.tsv" -v rules="$_rules" \
                   -f "$KATANA_COMMON_AWK" -f "$TURBO_FUSE_AWK" < "$UTF8" 2>>"$out")
     [ -n "$_t5_on" ] && echo "@T5 ${idx} fuse_end $(now_epoch)" >>"$out"
@@ -1552,10 +1694,14 @@ _turbo_build_part() {
     [ "$bad" -ne 0 ] && return 3
     [ ${#cdbs[@]} -eq 0 ] && return 3
 
-    cp "${cdbs[0]}" "$part" || return 3
-    [ ${#cdbs[@]} -eq 1 ] && return 0   # only main → done
-    local tables; tables=$("$DUCKDB_BIN" -readonly "$part" -noheader -list -c \
+    [ ${#cdbs[@]} -eq 1 ] && { cp "${cdbs[0]}" "$part" || return 3; return 0; }   # only main → done
+    local tables; tables=$("$DUCKDB_BIN" -readonly "${cdbs[0]}" -noheader -list -c \
         "SELECT table_name FROM information_schema.tables WHERE table_schema='main' AND table_type='BASE TABLE' AND table_name <> 'SchemaInfo' ORDER BY table_name;")
+    # Schema parity across the file's chunks (the INSERT BY NAME below would
+    # silently NULL-fill a column a chunk lacks).
+    _turbo_schema_parity "$PARTDB_DIR/${idx}.parity.tsv" "$PARTDB_DIR/${idx}.out" "chunk" \
+        "$(_sql_in_list "$tables")" "${cdbs[@]}" || return 3
+    cp "${cdbs[0]}" "$part" || return 3
     # a1: same record-disjoint assumption as the catmerge — a record present in >1 chunk of
     # this file would crash the plain INSERT. Guard PK/UNIQUE tables with ON CONFLICT DO NOTHING.
     local pk_tables; pk_tables=$(_pk_constrained_tables "$part")

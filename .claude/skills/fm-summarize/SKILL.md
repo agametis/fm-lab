@@ -58,6 +58,7 @@ defines both, plus the short-mode output prohibitions.
 | Uses | grouped by Link_Role | ✗ |
 | Used by | grouped | ✗ (at most "called from 3 places") |
 | Notes | ✓ | only critical (e.g. "DDR-Info missing") |
+| Age context (last modified, saves) | ✓ (header line) | at most a half-sentence, only when telling |
 
 **Query efficiency in short mode**: In short mode only the header query and an aggregation count for callers / callees are executed. The expensive detail queries (all steps with DDR_ScriptSteps, all field usages with comments, all lookup sources) are skipped — this saves runtime and tokens when reading the tool results.
 
@@ -115,9 +116,17 @@ each statement as `duckdb db/fm_catalog.duckdb -c "…"`. Every template filters
   per-slot detail resolution, never a where-used substitute.
 - **Any other type** [G0 basics, G1 incoming links, G2 outgoing links].
 
+### Step 2a — Age context (both modes)
+
+Run **AC1** from [`_shared/scripts/age_context.sql`](../_shared/scripts/age_context.sql)
+with the resolved object (`SET VARIABLE uuid`/`file`, then `.read` — invocation in the contract) — one query, also in short mode. It returns the
+object's own change stamp or, for steps, layout objects and calculations, the
+container's. Wording, the mass-event and container cases, and when to leave the line
+out: [`_shared/age-context.md`](../_shared/age-context.md).
+
 ### Step 3 — Dependencies (for all types)
 
-Standard query for incoming and outgoing links. **Important**: filter only on `Link_Type = 'operational'` to hide structural hierarchy noise (parent_object, parent_layout, parent_script). Include structural links only when they are substantively relevant for the object type.
+Standard query for incoming and outgoing links. **Important**: filter only on `Link_Type = 'operational'` to hide structural hierarchy noise (parent_object, parent_layout, parent_script). Include structural links only when they are substantively relevant for the object type. Match the object on **UUID and file** on its own side of the link and join the counterpart on its UUID and file too — clone and modular files share UUIDs, and a UUID-only match mixes in the links of the clone (e.g. 217 instead of 40 callers of a shared error-handling script).
 
 ```sql
 -- What this object uses (outgoing)
@@ -128,8 +137,10 @@ SELECT
     ol.Target_File,
     ol.Is_Cross_File
 FROM ObjectLinks ol
-LEFT JOIN ObjectCatalog oc ON ol.Target_UUID = oc.Object_UUID
+LEFT JOIN ObjectCatalog oc ON oc.Object_UUID = ol.Target_UUID
+                          AND oc.File_Name IS NOT DISTINCT FROM ol.Target_File
 WHERE ol.Source_UUID = '<UUID>'
+  AND ol.Source_File = '<FILE>'
   AND ol.Link_Type = 'operational'
 ORDER BY ol.Link_Role, oc.Object_Name;
 
@@ -141,8 +152,10 @@ SELECT
     ol.Source_File,
     ol.Is_Cross_File
 FROM ObjectLinks ol
-LEFT JOIN ObjectCatalog oc ON ol.Source_UUID = oc.Object_UUID
+LEFT JOIN ObjectCatalog oc ON oc.Object_UUID = ol.Source_UUID
+                          AND oc.File_Name IS NOT DISTINCT FROM ol.Source_File
 WHERE ol.Target_UUID = '<UUID>'
+  AND ol.Target_File = '<FILE>'
   AND ol.Link_Type = 'operational'
 ORDER BY ol.Link_Role, oc.Object_Name;
 ```
@@ -159,6 +172,7 @@ The standard output follows this schema. Omit sections without content.
 **File**: <File_Name>
 **UUID**: `<Object_UUID>`
 **Internal ID**: <Object_ID> (if relevant)
+**Last modified**: <age line per _shared/age-context.md — omit when AC1 returns no row>
 
 <!-- Conversation identity = the pair (UUID, File_Name). Always emit BOTH lines:
      clone/modular files share Object_UUID, so downstream skills (fmide-show,
@@ -208,6 +222,7 @@ In short mode the section structure above is dropped entirely. Instead: **1-2 pa
 1. **What is the object?** — type, name, file (inline, e.g. "The script **Accounting_PrintInvoice** in the file `Invoices`")
 2. **What does it do?** — 1-3 sentences, core function in your own words
 3. **(Optional) How is it embedded?** — at most one half-sentence about callers or sub-calls, ONLY if it materially illuminates the context
+4. **(Optional) How old is it?** — at most one half-sentence from AC1 (e.g. "unchanged for about 4 years"), ONLY when telling; a mass stamp only as "unchanged since at least <date>"
 
 **Prohibitions**: see [`_shared/short-mode.md`](../_shared/short-mode.md) (no headers,
 lists, tables, code blocks or UUID). Additionally for summaries: **no "Flow"** (not even
@@ -222,6 +237,8 @@ shortened).
 | Layout | Layouts + LayoutParts + LayoutObjects aggregation + triggers | Only Layouts + COUNT(*) of LayoutObjects |
 | CustomFunction | CustomFunctionsCatalog + CalcsForCustomFunctions + DDR + callers | Only CustomFunctionsCatalog + COUNT(*) callers |
 | Other | Type-specific queries + ObjectLinks bidirectional | Only ObjectCatalog entry + COUNT(*) incoming/outgoing links |
+
+AC1 (age context, one query) runs in both modes.
 
 **Example output (short mode, script)**:
 
@@ -239,7 +256,7 @@ Print the Markdown summary in chat. Do NOT write a file.
 
 ## Important notes
 
-- **Check DDR availability**: `SELECT Has_DDR_INFO FROM XMLMetadata WHERE Filename = '<File>';` If `False`, `DDR_ScriptSteps` and `DDR_Calculations` are empty and deliver no plain-text texts. In that case fall back to `Step_Name`, `Calculation_Text` and `Variable_Name`.
+- **Check DDR availability**: `SELECT Has_DDR_INFO FROM FilesCatalog WHERE File_Name = '<File>';` (boolean; `File_Name` without the `.fmp12` extension). If `false`, `DDR_ScriptSteps` and `DDR_Calculations` are empty and deliver no plain-text texts. In that case fall back to `Step_Name`, `Calculation_Text` and `Variable_Name`.
 - **Multi-file**: If the object has cross-file dependencies (`Is_Cross_File = TRUE`), call them out explicitly.
 - **Performance**: For layouts with hundreds of objects do NOT list all LayoutObjects individually — always aggregate.
 - **No speculation**: If the data is incomplete, note that honestly instead of guessing.

@@ -21,7 +21,7 @@ WITH layout_match AS (
     Default_View,
     Auto_Save_Changes, Show_Field_Frames, Frame_Current_Record_Only,
     Show_Current_Record_List, Quick_Find_Enabled,
-    Is_Hidden, Modified_By, Modified_At, Modifications
+    Is_Hidden
   FROM Layouts
   -- Klon-Scoping analog object_details_layout.sql: in JEDEM Zweig auf die aufgelöste
   -- Datei einschränken (getvariable('file')=NULL → Graceful Downgrade).
@@ -75,10 +75,7 @@ SELECT
   Frame_Current_Record_Only AS frame_current_record_only,
   Show_Current_Record_List  AS show_current_record_list,
   Quick_Find_Enabled        AS quick_find_enabled,
-  Is_Hidden             AS is_hidden,
-  Modified_By           AS modified_by,
-  Modified_At           AS modified_at,
-  Modifications         AS modifications
+  Is_Hidden             AS is_hidden
 FROM layout_match lm
 -- Join primär über die Referenz-UUID; bei Classic (leere Referenz → UUID NULL)
 -- über den Theme-NAMEN, damit auch dort der lokalisierte Anzeigename („Klassisch")

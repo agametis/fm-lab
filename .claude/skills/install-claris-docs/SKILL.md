@@ -193,8 +193,8 @@ If present, this skill reads the reference DB read-only for the function/ScriptS
 
 ## Prerequisites
 
-- **Python 3** (for the crawler, usually pre-installed on macOS)
-- **curl** (for version checks, pre-installed)
+- **Node.js** (>= 20, the fm-lab runtime — the crawler is a Node script; no Python needed)
+- **curl** (version checks and all downloads — honours `HTTPS_PROXY` / `NO_PROXY`; pre-installed)
 - **Internet connection** to `help.claris.com`
 - Write permissions on `docs/claris-help/`
 
@@ -211,7 +211,7 @@ With an existing cache (same version), re-downloading is skipped.
 ## Error handling
 
 ### Network errors
-- Curl/Python urllib reports detailed errors when `help.claris.com` is unreachable
+- curl reports detailed errors when `help.claris.com` is unreachable
 - Each file is retried up to 3× (with backoff)
 - On a persistent error for a file: the script continues and marks the language as `incomplete: true` in the manifest
 
@@ -283,7 +283,7 @@ ERROR: [specific error message]
 - This documentation is used by the `reference/fm_spec.duckdb` setup and the `/api/reference/...` endpoints as the HTML source for full-text extraction.
 - The script is idempotent — running it multiple times is safe.
 - If only individual slugs are missing or outdated, a full reinstall is not necessary — the crawler uses Last-Modified headers per file (HEAD request) to update only changed files.
-- After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.py`, so the web home dashboard's Docs card can list it.
+- After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.mjs`, so the web home dashboard's Docs card can list it.
 
 ## Triggers in other languages
 

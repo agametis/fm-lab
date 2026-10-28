@@ -4,7 +4,7 @@ Part of the [FileMaker object types](FileMaker%20Object%20Types.md) · semantic 
 
 A **relationship** is an edge of the relationship graph, connecting two [table occurrences](TableOccurrence.md) through one or more **join predicates** — each predicate compares a field of the left side with a field of the right side under an operator. Per side, the relationship additionally carries the cascade options (*allow creation of related records*, *delete related records*) and an optional **sort definition** that orders the related set, including the *custom sort by value list* case.
 
-Relationship is an **exported** type with two catalog particularities. First, [RelationshipCatalog](../catalog-tables/RelationshipCatalog.md) stores **one row per join predicate**, numbered by `Predicate_Index` — a multi-field join therefore spans several rows, and counting relationships means grouping by `Rel_ID` and `File_Name`. Second, the export's `<Relationship>` has no name, so the importer registers it in [ObjectCatalog](../object-catalog/ObjectCatalog.md) under a synthesized identity: `Object_UUID` follows the pattern `rel_<id>_<file>` and `Object_Name` reads `<left occurrence> → <right occurrence>`; the export's own `<UUID>` element is not carried over.
+Relationship is an **exported** type with two catalog particularities. First, [RelationshipCatalog](../catalog-tables/RelationshipCatalog.md) stores **one row per join predicate**, numbered by `Predicate_Index` — a multi-field join therefore spans several rows, and counting relationships means grouping by `Rel_ID` and `File_Name`. Second, the export's `<Relationship>` has no name, so the importer composes `Object_Name` as `<left occurrence> → <right occurrence>`. The identity is the export's own `<UUID>`: [ObjectCatalog](../object-catalog/ObjectCatalog.md) registers the relationship under that native UUID (`Rel_UUID`), unique per `(Object_UUID, File_Name)` like every native type. Only an export without `<UUID>` falls back to the composite key `rel_<id>_<file>`.
 
 ## Properties
 
@@ -15,7 +15,8 @@ Properties marked **not extracted** are visible in the raw XML only.
 | Property (XML) | In catalog | Notes |
 |---|---|---|
 | `@id` | `Rel_ID` | Shared by all predicate rows of the relationship; unique per file only |
-| `<UUID>` (text + attributes) | — | **Not extracted** — [ObjectCatalog](../object-catalog/ObjectCatalog.md) identifies the relationship by the synthesized `rel_<id>_<file>` key instead |
+| `<UUID>` (text) | `Rel_UUID` | Native FileMaker UUID, shared by all predicate rows; the `Object_UUID` in [ObjectCatalog](../object-catalog/ObjectCatalog.md). A duplicate inside one file is re-keyed (see [UUID Healing and Duplicate Census](../UUID%20Healing%20and%20Duplicate%20Census.md)) |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata of the relationship, raw (`Modified_At` as text, empty account → `NULL`); typed per relationship in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
 | `<TagList>` | — | Object tags — **not extracted** |
 
 ### Sides (`<LeftTable>` / `<RightTable>`)

@@ -16,29 +16,70 @@ dup AS (
     FROM ObjectCatalog
     WHERE Object_UUID IS NOT NULL
       AND File_Name IS NOT NULL
-      -- Native FileMaker UUIDs only (8-4-4-4-12). FM-Lab's synthetic identities
-      -- (md5 variables/builtins/plugin components, rel_/part_/paste_ prefixes) are
+      -- Native FileMaker UUIDs only (8-4-4-4-12), relationships included. FM-Lab's
+      -- synthetic identities (md5 variables/builtins/plugin components, part_/trig_/
+      -- paste_ prefixes, rel_ fallback keys of relationships without <UUID>) are
       -- tool-internal and partly global by design - not solution metadata defects.
       AND regexp_matches(Object_UUID, '^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$')
     GROUP BY Object_UUID
     HAVING COUNT(DISTINCT File_Name) > 1
+),
+-- The finding rows; the keys of the default order travel along as hidden
+-- columns, so the page order does not hang on row_key alone.
+unkeyed AS MATERIALIZED (
+    SELECT
+        'uuid-clone-collision' AS rule_id,
+        'warning' AS severity,
+        oc.Object_UUID AS nav_uuid,
+        oc.Object_Type AS type,
+        oc.Object_Name AS name,
+        oc.File_Name AS file,
+        d.file_count,
+        d.occurrences,
+        CASE WHEN d.type_count > 1 THEN 'type conflict' ELSE '' END AS type_conflict,
+           d.file_count AS _ord_1,
+           oc.Object_UUID AS _ord_2,
+           oc.File_Name AS _ord_3
+    FROM ObjectCatalog oc
+    JOIN dup d USING (Object_UUID)
+    CROSS JOIN params p
+    WHERE (p.file_filter IS NULL OR oc.File_Name = p.file_filter)
+      AND (p.scope_csv IS NULL
+           OR oc.Object_UUID IN (SELECT unnest(string_split(p.scope_csv, ','))))
+),
+-- row_key numbers the rows in the default order; the whole row breaks the
+-- remaining ties, so every request assigns the same key.
+result AS MATERIALIZED (
+    SELECT u.* EXCLUDE (_ord_1, _ord_2, _ord_3),
+           row_number() OVER (ORDER BY u._ord_1 DESC, u._ord_2, u._ord_3, u) AS row_key
+    FROM unkeyed u
+),
+-- >>> shared paging table-search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) NOT IN ('uuid', 'nav_uuid', 'row_key')))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging table-search block
+filtered AS (
+    SELECT * FROM searched
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT
-    'uuid-clone-collision' AS rule_id,
-    'warning' AS severity,
-    oc.Object_UUID AS nav_uuid,
-    oc.Object_Type AS type,
-    oc.Object_Name AS name,
-    oc.File_Name AS file,
-    d.file_count,
-    d.occurrences,
-    CASE WHEN d.type_count > 1 THEN 'type conflict' ELSE '' END AS type_conflict,
-    row_number() OVER (ORDER BY d.file_count DESC, oc.Object_UUID, oc.File_Name) AS row_key
-FROM ObjectCatalog oc
-JOIN dup d USING (Object_UUID)
-CROSS JOIN params p
-WHERE (p.file_filter IS NULL OR oc.File_Name = p.file_filter)
-  AND (p.scope_csv IS NULL
-       OR oc.Object_UUID IN (SELECT unnest(string_split(p.scope_csv, ','))))
-ORDER BY d.file_count DESC, oc.Object_UUID, oc.File_Name
-LIMIT CAST(COALESCE(NULLIF(CAST(getvariable('limit') AS VARCHAR), ''), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.*,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ row_key, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

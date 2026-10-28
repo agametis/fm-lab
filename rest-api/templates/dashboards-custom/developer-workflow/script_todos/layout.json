@@ -31,7 +31,10 @@
                     "action": "openDashboard",
                     "args": {
                       "id": "script_todos",
-                      "params": { "pattern": "", "file": "{{file}}" }
+                      "params": {
+                        "pattern": "",
+                        "file": "{{file}}"
+                      }
                     }
                   }
                 },
@@ -43,7 +46,10 @@
                     "action": "openDashboard",
                     "args": {
                       "id": "script_todos",
-                      "params": { "pattern": "todo", "file": "{{file}}" }
+                      "params": {
+                        "pattern": "todo",
+                        "file": "{{file}}"
+                      }
                     }
                   }
                 },
@@ -55,7 +61,10 @@
                     "action": "openDashboard",
                     "args": {
                       "id": "script_todos",
-                      "params": { "pattern": "fixit", "file": "{{file}}" }
+                      "params": {
+                        "pattern": "fixit",
+                        "file": "{{file}}"
+                      }
                     }
                   }
                 },
@@ -67,7 +76,10 @@
                     "action": "openDashboard",
                     "args": {
                       "id": "script_todos",
-                      "params": { "pattern": "tbd", "file": "{{file}}" }
+                      "params": {
+                        "pattern": "tbd",
+                        "file": "{{file}}"
+                      }
                     }
                   }
                 },
@@ -91,7 +103,8 @@
         "id": "todo_lines",
         "props": {
           "span": 12,
-          "title": "Flagged comment lines"
+          "title": "Flagged comment lines",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "todo_lines"
@@ -105,6 +118,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search comments …",
               "columns": [
                 {

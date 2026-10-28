@@ -1,0 +1,18 @@
+{
+  "title": "Changelog",
+  "icon": "history",
+  "description": "When and by whom the solution was changed: the newest change stamp of every object, mass events such as migrations, pastes and tool runs as separate entries, and the development activity over time.",
+  "order": 5,
+  "locales": {
+    "de": "Changelog",
+    "es": "Registro de cambios",
+    "fr": "Journal des modifications",
+    "it": "Registro delle modifiche",
+    "ja": "変更履歴",
+    "ko": "변경 내역",
+    "nl": "Wijzigingslogboek",
+    "pt": "Registro de alterações",
+    "sv": "Ändringslogg",
+    "zh-Hans": "变更日志"
+  }
+}

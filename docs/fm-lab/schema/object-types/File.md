@@ -54,7 +54,7 @@ The File object is the **owner anchor** at the top of the containment tree. It h
 - **File-level script triggers** (`OnFirstWindowOpen`, `OnLastWindowClose`, `OnWindowTransaction`, …) hang on the File via `trigger_owner` links, with the event type as subrole. Each trigger's target script is reachable twice: as the granular `trigger_script` edge of the [ScriptTrigger](ScriptTrigger.md) object (navigation, never counting) and as the File's own counting `triggers_script · <event>` mirror.
 - **Everything else** is file-scoped by convention rather than by explicit links: catalog rows reference their file through the `File_Name` column, not through graph edges — the graph stays free of one-edge-per-object noise.
 
-In the frontend there is no dedicated file view; the object opens with the generic detail view.
+In the frontend a file has a view of its own (`/file/<name>`): file info, file options, object counts, the change stamps per catalog with a sparkline of the last twelve months ([ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md#sparkline-in-the-file-view)), the triggered scripts, the start layout and the login account. Links to a File object open this view whenever the file name is known.
 
 ## References
 

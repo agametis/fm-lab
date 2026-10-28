@@ -839,6 +839,24 @@ SELECT
          ELSE 'function' END                                      AS Namespace
 FROM id;
 
+-- ========================================
+-- Relationship-Katalogschlüssel (_rel_key)
+-- ========================================
+-- EIN Schlüsselausdruck für den Relationship-Block im ObjectCatalog und die
+-- Relationship-Kantenblöcke im ObjectLinks-CTAS (left/right_table, left/right_field,
+-- sort_field, sorts_by_valuelist): die native FileMaker-UUID der Relation
+-- (RelationshipCatalog.Rel_UUID, in P1 bereits intra-file geheilt). Fallback NUR für
+-- Exporte ohne <UUID>: der Import-Schlüssel 'rel_<Rel_ID>_<File_Name>'.
+-- DISTINCT, weil RelationshipCatalog eine Zeile je Join-Prädikat führt (Rel_UUID ist je
+-- Relation konstant). Identität wie bei allen nativen Typen: (Rel_Key, File_Name) —
+-- Klon-Dateien können dieselbe UUID tragen. Lebensdauer: bis nach dem ObjectLinks-CTAS.
+CREATE OR REPLACE TEMP TABLE _rel_key AS
+SELECT DISTINCT
+    Rel_ID,
+    File_Name,
+    COALESCE(Rel_UUID, 'rel_' || Rel_ID::VARCHAR || '_' || File_Name) AS Rel_Key
+FROM RelationshipCatalog;
+
 -- ############################################################
 -- Phase B: ObjectCatalog
 -- ############################################################
@@ -876,17 +894,19 @@ FROM TableOccurrenceCatalog
 UNION ALL
 
 -- 3. RelationshipCatalog (Relationships)
--- HINWEIS: Relationships haben keine UUID, verwenden Rel_ID + File_Name als Composite Key.
+-- Object_UUID = native Relationship-UUID (Rel_UUID), Fallback 'rel_<Rel_ID>_<File_Name>'
+-- nur für Exporte ohne <UUID> — ein Schlüsselausdruck für Katalog und Kanten (_rel_key).
 -- DISTINCT, weil RelationshipCatalog seit Schema 1.2.0 eine Zeile pro Join-Prädikat führt
 -- (Mehrfeld-Joins) — als Objekt zählt die Relation aber genau einmal.
 SELECT DISTINCT
-    'rel_' || Rel_ID::VARCHAR || '_' || File_Name as Object_UUID,  -- Namespace-Präfix
+    rk.Rel_Key as Object_UUID,
     'Relationship' as Object_Type,
-    Left_TO_Name || ' → ' || Right_TO_Name as Object_Name,
-    File_Name,
+    rc.Left_TO_Name || ' → ' || rc.Right_TO_Name as Object_Name,
+    rc.File_Name,
     'RelationshipCatalog' as Source_Table,
-    Rel_ID as Object_ID
-FROM RelationshipCatalog
+    rc.Rel_ID as Object_ID
+FROM RelationshipCatalog rc
+JOIN _rel_key rk ON rk.Rel_ID = rc.Rel_ID AND rk.File_Name = rc.File_Name
 
 UNION ALL
 
@@ -1128,15 +1148,29 @@ UNION ALL
 -- 20c. CustomMenuItemCatalog (Menü-Items, AP-3/D-2)
 -- Eigene Objektidentität pro Item → die Install-/Name-Calc-Anker lösen in
 -- v_calc_anchors auf und Item-Formel-Bezüge bekommen ein echtes Quell-Objekt.
+-- Name-Vorrang (außer Separatoren): überschriebener Name als reines, nicht-leeres
+-- String-Literal (der sichtbare Menütext, z. B. "Artikel" bei Script-Aktionen ohne
+-- Befehl) → Befehlsname → (berechnet) für echte Name-Formeln. Literale mit Escape
+-- (\) bleiben bewusst (berechnet). P3 (Context_Name der Menü-Formeln) nutzt dieselbe
+-- Regel, damit Objekt- und Formelname gleich lauten.
 SELECT
     Item_UUID as Object_UUID,
     'CustomMenuItem' as Object_Type,
-    Menu_Name || ' › ' || COALESCE(NULLIF(Command_Name, ''),
-        CASE WHEN Is_SeparatorItem THEN '(Separator)' ELSE '(berechnet)' END) as Object_Name,
+    Menu_Name || ' › ' || CASE
+        WHEN NOT Is_SeparatorItem AND Name_Override = 'True'
+         AND regexp_full_match(Name_Text, '"[^"\\]+"') THEN trim(Name_Text, '"')
+        ELSE COALESCE(NULLIF(Command_Name, ''),
+            CASE WHEN Is_SeparatorItem THEN '(Separator)' ELSE '(berechnet)' END)
+    END as Object_Name,
     File_Name,
     'CustomMenuItemCatalog' as Source_Table,
     Menu_ID as Object_ID
-FROM CustomMenuItemCatalog
+FROM (
+    SELECT *,
+           xml_extract_text(Item_XML, '/CustomMenuItem/Override/@name')[1]       AS Name_Override,
+           xml_extract_text(Item_XML, '/CustomMenuItem/Name/Calculation/Text')[1] AS Name_Text
+    FROM CustomMenuItemCatalog
+)
 
 UNION ALL
 
@@ -1168,7 +1202,9 @@ FROM ExternalDataSourceCatalog
 UNION ALL
 
 -- 23. VariablesCatalog (alle Variablen)
--- UUID = md5(Scope || Scope_Anchor || Name) — eine Identität pro Scope-Instanz
+-- UUID = md5(Scope || Scope_Anchor || Name) — eine Identität pro Scope-Instanz.
+-- Lokale Variablen von Klon-Dateien teilen die UUID (gleicher Script-Anker);
+-- VariablesCatalog führt sie je Datei → eine Zeile je (Object_UUID, File_Name).
 SELECT
     md5(Variable_Scope || '::' || Scope_Anchor || '::' || Variable_Name) as Object_UUID,
     'Variable' as Object_Type,
@@ -1562,8 +1598,80 @@ lo_rep AS (
     SELECT Object_UUID, File_Name, Hide_Calculation_Text, Tooltip_Calculation_Text,
            Label_Calculation_Text, ScriptTrigger_Parameter_Text, Entry_Calculation_Text,
            Title_Calculation_Text, Object_Kind,
+           -- Formel des aktiven Segments einer Button Bar (kind 18, „Active
+           -- Segment → Specify"): einziger Leser, daher P4-lokal aus dem eigenen
+           -- Object_XML statt als P1-Spalte. Der absolute Pfad trifft nur die
+           -- eigene Auswahl — Button Bars in Popover-Segmenten liegen tiefer
+           -- (…/ObjectList/LayoutObject/…). Statische Auswahl (<Select><id>) und
+           -- „Keine" haben keinen Text → NULL.
+           CASE WHEN Object_Kind = 18
+                THEN NULLIF(xml_extract_text(Object_XML, '/LayoutObject/ButtonBar/Select/Calculation/Text')[1], '')
+           END AS ActiveSegment_Calculation_Text,
            ROW_NUMBER() OVER (PARTITION BY Object_UUID, File_Name ORDER BY Object_ID) AS rn
     FROM LayoutObjects
+),
+-- Heilungsbewusste Owner-Auflösung. Kopien mit identischer UUID (Copy/Paste von
+-- Layoutobjekten, Script-Duplikate → Steps) teilen sich die DDR-Ankernamen
+-- '_<UUID>_<Slot>'; FileMaker schreibt je Name EINE ChunkList, und nur die Kopie,
+-- deren Formel geschrieben wurde, trägt im eigenen XML DDRREF hash="<H>" (die
+-- anderen hash=""). Nach der P1-Heilung tragen die Zwillinge Ersatz-UUIDs — die
+-- UUID im Ankernamen zeigt dann immer auf den Survivor. Für Anker einer
+-- Heilungsgruppe (Zensus DuplicateAbsorptionDetails) entscheidet deshalb das
+-- eigene XML: Owner ist das Gruppenmitglied, dessen DDRREF Ankername UND Hash
+-- trägt — dieselbe Attribution wie P2 (_layout_obj_hashes/_step_hashes), wo die
+-- Kanten entstehen. Paare aus Container-XML (Kind-Anker) fallen über den
+-- Gruppen-Filter heraus. Mehrdeutig (mehrere Mitglieder mit gleichem Paar) →
+-- Survivor, dann kleinste UUID. Ohne Heilung leer → der Equi-Join unten trifft
+-- nichts, die Auflösung über die Anker-UUID bleibt unverändert.
+heal_members AS (
+    SELECT File_Name, Catalog,
+           upper(Object_UUID)                 AS Group_UUID,
+           COALESCE(Healed_UUID, Object_UUID) AS Member_UUID,
+           (Heal_Status = 'kept-original')    AS Is_Survivor
+    FROM DuplicateAbsorptionDetails
+    WHERE Heal_Status IN ('healed', 'kept-original')
+      AND Catalog IN ('LayoutObjects', 'StepsForScripts')
+),
+heal_member_xml AS (
+    SELECT m.File_Name, m.Group_UUID, m.Member_UUID, m.Is_Survivor, lo.Object_XML AS Own_XML
+    FROM heal_members m
+    JOIN LayoutObjects lo
+      ON lo.Object_UUID = m.Member_UUID AND lo.File_Name = m.File_Name
+    WHERE m.Catalog = 'LayoutObjects'
+    UNION ALL
+    SELECT m.File_Name, m.Group_UUID, m.Member_UUID, m.Is_Survivor, s.Parameters_XML
+    FROM heal_members m
+    JOIN StepsForScripts s
+      ON s.Step_UUID = m.Member_UUID AND s.File_Name = m.File_Name
+    WHERE m.Catalog = 'StepsForScripts'
+),
+heal_anchor_owner AS (
+    SELECT File_Name, Anchor_Name, Calc_Hash, upper(Member_UUID) AS Owner_Key
+    FROM (
+        SELECT File_Name, Group_UUID, Member_UUID, Is_Survivor,
+               regexp_extract(m, 'hash="([^"]+)"', 1)                 AS Calc_Hash,
+               regexp_extract(m, '>(_[0-9A-Fa-f-]{36}[^<]*)</DDRREF>', 1) AS Anchor_Name
+        FROM (
+            SELECT *, unnest(regexp_extract_all(Own_XML,
+                       'kind="ChunkList" hash="[^"]+"[^>]*>_[0-9A-Fa-f-]{36}[^<]*</DDRREF>')) AS m
+            FROM heal_member_xml
+            WHERE Own_XML LIKE '%DDRREF%'
+        )
+    )
+    WHERE upper(regexp_extract(Anchor_Name, '_([0-9A-Fa-f-]{36})', 1)) = Group_UUID
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY File_Name, Anchor_Name, Calc_Hash
+                               ORDER BY Is_Survivor DESC, Member_UUID) = 1
+),
+-- Owner-Schlüssel je Anker: geheilter Owner aus dem eigenen XML, sonst die
+-- Anker-UUID. Als eigene Spalte vorberechnet, damit der ObjectCatalog-Join in
+-- a_owner ein reiner Equi-Join bleibt (Blockwise-NL-Falle, s. Blockkopf).
+ddr_keyed AS (
+    SELECT di.*, COALESCE(h.Owner_Key, di.Anchor_UUID) AS Owner_Key
+    FROM ddr_inst di
+    LEFT JOIN heal_anchor_owner h
+           ON h.File_Name   = di.File_Name
+          AND h.Anchor_Name = di.Calc_UUID
+          AND h.Calc_Hash   = di.Calc_Hash
 ),
 -- (A) DDR-Anker mit Owner-Auflösung. Nicht auflösbare Anker bleiben erhalten
 -- (Owner_Type='unresolved', Owner_UUID=Anchor_UUID — P6-überwacht, Soll 0).
@@ -1600,9 +1708,9 @@ a_owner AS (
         -- über das Suffix-Muster — NIE über Calc_Index (positions-, nicht
         -- slot-basiert; bekannte Falle aus dem CF-FK).
         TRY_CAST(regexp_extract(di.Calc_Kind_Raw, '^ScriptTrigger_([0-9]+)$', 1) AS BIGINT) AS Trigger_Pos
-    FROM ddr_inst di
+    FROM ddr_keyed di
     LEFT JOIN ObjectCatalog oc
-           ON upper(oc.Object_UUID) = di.Anchor_UUID
+           ON upper(oc.Object_UUID) = di.Owner_Key
           AND oc.File_Name          = di.File_Name
     WHERE di.Anchor_UUID <> ''
 ),
@@ -1638,6 +1746,8 @@ a_rows AS (
             -- Titelformel von PopoverPanel und Tab-Panel (Schema 1.33.0)
             WHEN a.Owner_Type = 'LayoutObject' AND a.Calc_Kind_Raw IN ('PopoverPanel', 'TabPanel')
                  THEN lo.Title_Calculation_Text
+            WHEN a.Owner_Type = 'LayoutObject' AND a.Calc_Kind_Raw = 'ButtonBar'
+                 THEN lo.ActiveSegment_Calculation_Text
             -- Trigger-Parameter (alle 3 Owner-Ebenen): Klartext aus
             -- ScriptTriggers.Trigger_Parameter_Text (Schema 1.26.0)
             WHEN a.Calc_Kind_Raw LIKE 'ScriptTrigger\_%' ESCAPE '\'            THEN st.Trigger_Parameter_Text
@@ -1782,8 +1892,9 @@ b_cf AS (
                          AND a.Owner_Type = 'CustomFunction')
 ),
 -- (B4) LayoutObject-Textslots ohne DDR-Anker (die in P1 extrahierten
--- Klartext-Slots Hide/Tooltip/Label und seit Schema 1.33.0 die Titelformel von
--- PopoverPanel/Tab-Panel; alle übrigen LO-Slots existieren nur mit DDR-Info —
+-- Klartext-Slots Hide/Tooltip/Label, seit Schema 1.33.0 die Titelformel von
+-- PopoverPanel/Tab-Panel und seit Konverter 2.42.0 die Formel des aktiven
+-- Segments einer Button Bar; alle übrigen LO-Slots existieren nur mit DDR-Info —
 -- Trigger-Parameter kommen per-Trigger aus B4b)
 b_lo AS (
     SELECT * FROM (
@@ -1847,6 +1958,18 @@ b_lo AS (
           AND NOT EXISTS (SELECT 1 FROM a_owner a
                            WHERE a.Owner_UUID = lo.Object_UUID AND a.File_Name = lo.File_Name
                              AND a.Calc_Kind_Raw IN ('PopoverPanel', 'TabPanel'))
+        UNION ALL
+        -- Formel des aktiven Segments (Button Bar): Calc_Kind_Raw = DDR-Suffix,
+        -- damit Rolle, Edge_Subrole und Anti-Join dieselbe Vokabel sehen wie
+        -- die A-Zeile mit DDR-Info.
+        SELECT lo.File_Name, lo.Object_UUID, 'LayoutObject', NULL,
+               'active_segment', 'ButtonBar', NULL, lo.ActiveSegment_Calculation_Text,
+               'LayoutObject/ButtonBar'
+        FROM lo_rep lo
+        WHERE lo.rn = 1 AND lo.ActiveSegment_Calculation_Text IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM a_owner a
+                           WHERE a.Owner_UUID = lo.Object_UUID AND a.File_Name = lo.File_Name
+                             AND a.Calc_Kind_Raw = 'ButtonBar')
     )
 ),
 -- (B4b) Trigger-Parameter ohne DDR-Anker — per Trigger aus ScriptTriggers
@@ -2045,6 +2168,11 @@ classified AS (
                 WHEN cand.Calc_Kind_Raw = 'WebViewer'    THEN 'web_viewer_url'
                 WHEN cand.Calc_Kind_Raw = 'TabPanel'     THEN 'panel_title'
                 WHEN cand.Calc_Kind_Raw = 'PopoverPanel' THEN 'popover_title'
+                -- Formel des aktiven Segments einer Button Bar („Active Segment →
+                -- Specify", liefert den Objektnamen des Segments); der Suffix
+                -- benennt wie bei Portal/WebViewer das Element, unter dem die
+                -- Formel steht. Owner-gescopt wie 'Title'.
+                WHEN cand.Owner_Type = 'LayoutObject' AND cand.Calc_Kind_Raw = 'ButtonBar' THEN 'active_segment'
                 WHEN cand.Owner_Type = 'CustomMenu'     AND cand.Calc_Kind_Raw = 'Install' THEN 'menu_install'
                 WHEN cand.Owner_Type = 'CustomMenu'     AND cand.Calc_Kind_Raw = 'Title'   THEN 'menu_title'
                 WHEN cand.Owner_Type = 'CustomMenuItem' AND cand.Calc_Kind_Raw = 'Install' THEN 'menu_item_install'
@@ -2172,8 +2300,10 @@ CREATE INDEX idx_calculations_ddr   ON CalculationsCatalog(DDR_Calc_UUID);
 -- Rule_Index (DDRREF-Suffix == Serialisierungsposition, korpus-verifiziert 0
 -- Abweichungen), NICHT über Calc_Index: DDRREF-lose Regeln erzeugen dort Lücken.
 -- Bleibt NULL für Regeln ohne CalculationsCatalog-Zeile (wertbasiert ohne Anker,
--- Dateien ohne DDR-Info, Fremd-Anker-Kopierartefakte) — P6 v_check_cf_rules
--- meldet die Hash-tragenden Fälle darunter.
+-- leere ChunkList md5(''), Dateien ohne DDR-Info, Survivor-Regeln mit hash=""
+-- einer UUID-Heilungsgruppe — deren Anker gehört dem Zwilling, s.
+-- heal_anchor_owner) — P6 v_check_cf_rules meldet die Hash-tragenden Fälle
+-- darunter und prüft die FK-Hash-Konsistenz.
 UPDATE LayoutObjectConditions c
 SET Calculation_UUID = (
     SELECT cc.Calculation_UUID
@@ -2214,7 +2344,7 @@ FROM (
     ),
     disp AS (
         SELECT
-            c.Calculation_UUID, c.Owner_UUID, c.File_Name, c.Calc_Kind_Raw, lo.Layout_ID,
+            c.Calculation_UUID, c.Owner_UUID, c.File_Name, c.Calc_Kind_Raw, c.DDR_Calc_UUID, lo.Layout_ID,
             regexp_extract_all(lo.Text_Content, '(?s)<<ƒ:(.*?)>>', 1)
                 [TRY_CAST(regexp_extract(c.Calc_Kind_Raw, '_([0-9]+)$', 1) AS BIGINT) + 1] AS raw_formula
         FROM CalculationsCatalog c
@@ -2240,8 +2370,11 @@ FROM (
         COALESCE(ctx.Context_TO_Name,
                  CASE WHEN d.Calc_Kind_Raw LIKE 'LabelText\_%' ESCAPE '\' THEN l.L_TO_Name END) AS Context_TO_Name
     FROM disp d
+    -- Anker-Name der Instanz bevorzugt (geheilte Zwillinge: Owner_UUID ist die
+    -- Ersatz-UUID, der Anker trägt die Original-UUID); ankerlose Zeilen
+    -- rekonstruieren ihn aus Owner und Suffix.
     LEFT JOIN DDR_ChunkListContexts ctx
-           ON upper(ctx.Calc_UUID) = upper('_' || d.Owner_UUID || '_' || d.Calc_Kind_Raw)
+           ON upper(ctx.Calc_UUID) = upper(COALESCE(d.DDR_Calc_UUID, '_' || d.Owner_UUID || '_' || d.Calc_Kind_Raw))
           AND ctx.File_Name = d.File_Name
     LEFT JOIN Layouts l
            ON l.L_ID = d.Layout_ID
@@ -2316,6 +2449,7 @@ SELECT
                WHEN 'web_viewer_url'           THEN 'Web Viewer URL'
                WHEN 'panel_title'              THEN 'Tab Title'
                WHEN 'popover_title'            THEN 'Popover Title'
+               WHEN 'active_segment'           THEN 'Active Segment'
                WHEN 'conditional_format'       THEN 'Conditional Formatting'
                WHEN 'script_trigger_parameter' THEN 'Script Trigger Parameter'
                WHEN 'menu_install'             THEN 'Install Condition'
@@ -2398,6 +2532,7 @@ INSERT INTO ScriptStepRoleMap VALUES
     (214, 'Perform SQL Query by Natural Language', 'sets_field'),
     (215, 'Insert Embedding',             'sets_field'),
     (221, 'Perform Find by Natural Language', 'sets_field'),   -- Parameter type="Target": Ergebnisfeld
+    (241, 'Insert Image Caption',         'sets_field'),       -- Parameter type="Target": Feld für die Bildunterschrift (FileMaker 26)
     -- PDF-Familie (Konverter 2.24.0; Belege ingestion/fixtures/saxml/, 22 + 26):
     -- der Container unter Parameter type="Target" EMPFÄNGT das PDF
     (144, 'Save Records as PDF',          'sets_field'),       -- Target-Container (SaveResult "Currently open PDF"/Target)
@@ -2407,6 +2542,7 @@ INSERT INTO ScriptStepRoleMap VALUES
     (18,  'Check Selection',          'reads_field'),
     (157, 'Install Plug-In File',     'reads_field'),
     (219, 'Perform RAG Action',       'reads_field'),   -- FieldReference = RAG-Datenquelle (From Container/Field)
+    (202, 'Configure Machine Learning Model', 'reads_field'),   -- FieldReference = From: Container mit der Modelldatei
     (246, 'Open PDF',                 'reads_field'),   -- Target-Container ist die PDF-QUELLE (wird geöffnet)
     -- Export-Quelle: der Feldinhalt wird in eine Datei exportiert (Rolle wie
     -- Export Records; vorher reads_field — die Where-used-Semantik „exportiert
@@ -2513,7 +2649,7 @@ CREATE OR REPLACE TABLE ObjectLinks AS
 
 -- 1. Relationships → Table Occurrences (Left)
 SELECT
-    'rel_' || rc.Rel_ID::VARCHAR || '_' || rc.File_Name as Source_UUID,
+    rk.Rel_Key as Source_UUID,
     'Relationship' as Source_Type,
     rc.Left_TO_UUID as Target_UUID,
     'TableOccurrence' as Target_Type,
@@ -2525,13 +2661,14 @@ SELECT
     (rc.File_Name != oc_target.File_Name) as Is_Cross_File
 -- DISTINCT: ein left_table-Link je Relation, nicht je Join-Prädikat (Schema 1.2.0).
 FROM (SELECT DISTINCT Rel_ID, File_Name, Left_TO_UUID FROM RelationshipCatalog) rc
+JOIN _rel_key rk ON rk.Rel_ID = rc.Rel_ID AND rk.File_Name = rc.File_Name
 LEFT JOIN ObjectCatalog oc_target ON rc.Left_TO_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'TableOccurrence'
 
 UNION ALL
 
 -- 2. Relationships → Table Occurrences (Right)
 SELECT
-    'rel_' || rc.Rel_ID::VARCHAR || '_' || rc.File_Name as Source_UUID,
+    rk.Rel_Key as Source_UUID,
     'Relationship' as Source_Type,
     rc.Right_TO_UUID as Target_UUID,
     'TableOccurrence' as Target_Type,
@@ -2543,13 +2680,14 @@ SELECT
     (rc.File_Name != oc_target.File_Name) as Is_Cross_File
 -- DISTINCT: ein right_table-Link je Relation, nicht je Join-Prädikat (Schema 1.2.0).
 FROM (SELECT DISTINCT Rel_ID, File_Name, Right_TO_UUID FROM RelationshipCatalog) rc
+JOIN _rel_key rk ON rk.Rel_ID = rc.Rel_ID AND rk.File_Name = rc.File_Name
 LEFT JOIN ObjectCatalog oc_target ON rc.Right_TO_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'TableOccurrence'
 
 UNION ALL
 
 -- 3. Relationships → Fields (Left Field)
 SELECT
-    'rel_' || rc.Rel_ID::VARCHAR || '_' || rc.File_Name as Source_UUID,
+    rk.Rel_Key as Source_UUID,
     'Relationship' as Source_Type,
     rc.Left_Field_UUID as Target_UUID,
     'Field' as Target_Type,
@@ -2563,13 +2701,14 @@ SELECT
 -- Schema 1.2.0 ist RelationshipCatalog per-Prädikat — ein Feld, das in mehreren
 -- Prädikaten derselben Seite vorkommt, ergäbe sonst doppelte (identische) Links.
 FROM (SELECT DISTINCT Rel_ID, File_Name, Left_Field_UUID FROM RelationshipCatalog WHERE Left_Field_UUID IS NOT NULL) rc
+JOIN _rel_key rk ON rk.Rel_ID = rc.Rel_ID AND rk.File_Name = rc.File_Name
 LEFT JOIN ObjectCatalog oc_target ON rc.Left_Field_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Field'
 
 UNION ALL
 
 -- 4. Relationships → Fields (Right Field)
 SELECT
-    'rel_' || rc.Rel_ID::VARCHAR || '_' || rc.File_Name as Source_UUID,
+    rk.Rel_Key as Source_UUID,
     'Relationship' as Source_Type,
     rc.Right_Field_UUID as Target_UUID,
     'Field' as Target_Type,
@@ -2581,6 +2720,7 @@ SELECT
     (rc.File_Name != oc_target.File_Name) as Is_Cross_File
 -- DISTINCT: ein right_field-Link je (Relation, Feld), nicht je Join-Prädikat (s.o.).
 FROM (SELECT DISTINCT Rel_ID, File_Name, Right_Field_UUID FROM RelationshipCatalog WHERE Right_Field_UUID IS NOT NULL) rc
+JOIN _rel_key rk ON rk.Rel_ID = rc.Rel_ID AND rk.File_Name = rc.File_Name
 LEFT JOIN ObjectCatalog oc_target ON rc.Right_Field_UUID = oc_target.Object_UUID AND oc_target.Object_Type = 'Field'
 
 UNION ALL
@@ -2593,7 +2733,7 @@ UNION ALL
 -- (TO_UUID, Feld-id) auf die kanonische Feld-UUID auflösen (Feld-id entity-frei),
 -- Fallback = synthetische UUID. Schließt die zuvor 122 Phantom-sort_field-Links.
 SELECT
-    'rel_' || rc.Rel_ID::VARCHAR || '_' || rc.File_Name as Source_UUID,
+    rk.Rel_Key as Source_UUID,
     'Relationship' as Source_Type,
     COALESCE(f_canon.Field_UUID, rc.sort_field_uuid) as Target_UUID,
     'Field' as Target_Type,
@@ -2618,6 +2758,7 @@ FROM (
         FROM RelationshipCatalog WHERE Right_Sort_Field_UUIDs IS NOT NULL
     )
 ) rc
+JOIN _rel_key rk ON rk.Rel_ID = rc.Rel_ID AND rk.File_Name = rc.File_Name
 LEFT JOIN TableOccurrenceCatalog toc ON toc.TO_UUID = rc.sort_to_uuid AND toc.File_Name = rc.File_Name
 LEFT JOIN FieldsForTables f_canon
        ON f_canon.Table_Name = toc.BT_Name
@@ -2637,7 +2778,7 @@ UNION ALL
 -- Schließt die Where-used-Lücke für Wertelisten, die NUR als Relationship-
 -- Sortier-Referenz dienen (erschienen vorher als ungenutzt).
 SELECT
-    'rel_' || rc.Rel_ID::VARCHAR || '_' || rc.File_Name as Source_UUID,
+    rk.Rel_Key as Source_UUID,
     'Relationship' as Source_Type,
     rc.sort_vl_uuid as Target_UUID,
     'ValueList' as Target_Type,
@@ -2659,6 +2800,7 @@ FROM (
     )
     WHERE sort_vl_uuid IS NOT NULL AND sort_vl_uuid <> ''
 ) rc
+JOIN _rel_key rk ON rk.Rel_ID = rc.Rel_ID AND rk.File_Name = rc.File_Name
 LEFT JOIN ObjectCatalog oc_target ON rc.sort_vl_uuid = oc_target.Object_UUID AND oc_target.Object_Type = 'ValueList'
 
 UNION ALL
@@ -3541,6 +3683,13 @@ UNION ALL
 -- ========================================
 -- Variable Links (24-29)
 -- ========================================
+-- Ziel ist die VariablesCatalog-Zeile derselben Scope-Instanz IN DER DATEI DER
+-- VERWENDUNG: local/global sind datei-gebunden (VariablesCatalog führt local je
+-- Datei, global über den Anker = File_Name). Klon-Dateien teilen Script- und
+-- Kontext-UUIDs und damit Anker und Variablen-UUID — ohne die Datei im Join
+-- zeigte die Kante aus dem Klon auf die Variable der anderen Datei. Nur
+-- superglobale Variablen sind dateiübergreifend (eine Zeile für alle Dateien).
+-- Is_Cross_File folgt Source_File/Target_File.
 
 -- 24. Script → Variable (sets_variable)
 -- Script setzt eine Variable via Set Variable Schritt
@@ -3554,14 +3703,13 @@ SELECT DISTINCT
     NULL as Link_Subrole,
     vu.File_Name as Source_File,
     vc.File_Name as Target_File,
-    CASE WHEN vu.Variable_Scope IN ('local', 'global') THEN FALSE
-         ELSE (vu.File_Name != vc.File_Name)
-    END as Is_Cross_File
+    (vu.File_Name IS DISTINCT FROM vc.File_Name) as Is_Cross_File
 FROM VariableUsages vu
 JOIN VariablesCatalog vc
     ON vu.Variable_Name  = vc.Variable_Name
    AND vu.Variable_Scope = vc.Variable_Scope
    AND vu.Scope_Anchor   = vc.Scope_Anchor
+   AND (vu.Variable_Scope = 'superglobal' OR vc.File_Name = vu.File_Name)
 WHERE vu.Usage_Type = 'set'
   AND vu.Context_Type = 'script_step'
   AND vu.Variable_Scope IN ('global', 'local', 'superglobal')
@@ -3581,14 +3729,13 @@ SELECT DISTINCT
     NULL as Link_Subrole,
     vu.File_Name as Source_File,
     vc.File_Name as Target_File,
-    CASE WHEN vu.Variable_Scope IN ('local', 'global') THEN FALSE
-         ELSE (vu.File_Name != vc.File_Name)
-    END as Is_Cross_File
+    (vu.File_Name IS DISTINCT FROM vc.File_Name) as Is_Cross_File
 FROM VariableUsages vu
 JOIN VariablesCatalog vc
     ON vu.Variable_Name  = vc.Variable_Name
    AND vu.Variable_Scope = vc.Variable_Scope
    AND vu.Scope_Anchor   = vc.Scope_Anchor
+   AND (vu.Variable_Scope = 'superglobal' OR vc.File_Name = vu.File_Name)
 WHERE vu.Usage_Type = 'read'
   AND vu.Context_Type = 'script_step'
   AND vu.Variable_Scope IN ('global', 'local', 'superglobal')
@@ -3608,14 +3755,13 @@ SELECT DISTINCT
     NULL as Link_Subrole,
     vu.File_Name as Source_File,
     vc.File_Name as Target_File,
-    CASE WHEN vu.Variable_Scope IN ('local', 'global') THEN FALSE
-         ELSE (vu.File_Name != vc.File_Name)
-    END as Is_Cross_File
+    (vu.File_Name IS DISTINCT FROM vc.File_Name) as Is_Cross_File
 FROM VariableUsages vu
 JOIN VariablesCatalog vc
     ON vu.Variable_Name  = vc.Variable_Name
    AND vu.Variable_Scope = vc.Variable_Scope
    AND vu.Scope_Anchor   = vc.Scope_Anchor
+   AND (vu.Variable_Scope = 'superglobal' OR vc.File_Name = vu.File_Name)
 WHERE vu.Usage_Type = 'read'
   AND vu.Context_Type IN ('calculation', 'auto_enter_calc')
   AND vu.Variable_Scope IN ('global', 'local', 'superglobal')
@@ -3635,14 +3781,13 @@ SELECT DISTINCT
     NULL as Link_Subrole,
     vu.File_Name as Source_File,
     vc.File_Name as Target_File,
-    CASE WHEN vu.Variable_Scope IN ('local', 'global') THEN FALSE
-         ELSE (vu.File_Name != vc.File_Name)
-    END as Is_Cross_File
+    (vu.File_Name IS DISTINCT FROM vc.File_Name) as Is_Cross_File
 FROM VariableUsages vu
 JOIN VariablesCatalog vc
     ON vu.Variable_Name  = vc.Variable_Name
    AND vu.Variable_Scope = vc.Variable_Scope
    AND vu.Scope_Anchor   = vc.Scope_Anchor
+   AND (vu.Variable_Scope = 'superglobal' OR vc.File_Name = vu.File_Name)
 WHERE vu.Context_Type = 'custom_function'
   AND vu.Variable_Scope IN ('global', 'local', 'superglobal')
   AND vu.Context_UUID IS NOT NULL
@@ -3664,14 +3809,13 @@ SELECT DISTINCT
     NULL as Link_Subrole,
     vu.File_Name as Source_File,
     vc.File_Name as Target_File,
-    CASE WHEN vu.Variable_Scope IN ('local', 'global') THEN FALSE
-         ELSE (vu.File_Name != vc.File_Name)
-    END as Is_Cross_File
+    (vu.File_Name IS DISTINCT FROM vc.File_Name) as Is_Cross_File
 FROM VariableUsages vu
 JOIN VariablesCatalog vc
     ON vu.Variable_Name  = vc.Variable_Name
    AND vu.Variable_Scope = vc.Variable_Scope
    AND vu.Scope_Anchor   = vc.Scope_Anchor
+   AND (vu.Variable_Scope = 'superglobal' OR vc.File_Name = vu.File_Name)
 WHERE vu.Context_Type = 'layout_object'
   AND vu.Variable_Scope IN ('global', 'local')
   AND vu.Context_UUID IS NOT NULL
@@ -3699,14 +3843,13 @@ SELECT DISTINCT
     NULL as Link_Subrole,
     vu.File_Name as Source_File,
     vc.File_Name as Target_File,
-    CASE WHEN vu.Variable_Scope IN ('local', 'global') THEN FALSE
-         ELSE (vu.File_Name != vc.File_Name)
-    END as Is_Cross_File
+    (vu.File_Name IS DISTINCT FROM vc.File_Name) as Is_Cross_File
 FROM VariableUsages vu
 JOIN VariablesCatalog vc
     ON vu.Variable_Name  = vc.Variable_Name
    AND vu.Variable_Scope = vc.Variable_Scope
    AND vu.Scope_Anchor   = vc.Scope_Anchor
+   AND (vu.Variable_Scope = 'superglobal' OR vc.File_Name = vu.File_Name)
 WHERE vu.Context_Type = 'record_access_calc'
   AND vu.Variable_Scope IN ('global', 'local', 'superglobal')
   AND vu.Context_UUID IS NOT NULL
@@ -4064,6 +4207,8 @@ JOIN ObjectCatalog oc_target
 WHERE poa.Object_UUID IS NOT NULL
   AND poa.Access_Mode <> 'ReadWrite';
 
+DROP TABLE _rel_key;
+
 -- ========================================
 -- groups_into-Links: PluginFunction → PluginComponent (structural)
 -- ========================================
@@ -4182,6 +4327,55 @@ SELECT DISTINCT
 FROM submenu_refs r
 JOIN CustomMenuCatalog cm
   ON cm.Menu_ID = r.Target_Menu_ID AND cm.File_Name = r.File_Name;
+
+-- ========================================
+-- CustomMenuItem → Script (triggers_script · menu_action) — Custom-Menü-Aktion
+-- ========================================
+-- Ein Menü-Eintrag kann statt eines FileMaker-Befehls einen Script-Schritt ausführen:
+-- <action><Step id="1" name="Perform Script"> mit <ScriptReference id name UUID/>,
+-- dateiübergreifend mit vorangestellter <DataSourceReference>. Gleiche Semantik wie die
+-- Button-Aktion (die UI startet ein Script) → dieselbe Rolle triggers_script, die
+-- Subrole menu_action unterscheidet den Träger; keine neue Registry-Rolle, alle
+-- Where-used-Konsumenten (unused_script, Call-Chain) erfassen die Kante unverändert.
+-- Auflösung wie Phase A über (Zieldatei, ScriptReference/@id), NICHT über @UUID:
+-- dateiübergreifende Verweise tragen meist eine Proxy-UUID, die in keinem ScriptCatalog
+-- steht; die ID ist in FileMaker die maßgebliche Identität (auch nach Umbenennung, und
+-- sie trifft geheilte Duplikat-Zwillinge). Zieldatei: ohne DataSourceReference die
+-- Datei des Eintrags, sonst DataSourceFileMap(File_Name, DS_UUID), ersatzweise der
+-- DS-Name ohne .fmp12. Nicht auflösbare Verweise (Zieldatei nicht importiert, ID fehlt)
+-- bekommen keine Kante und meldet P6 v_check_menu_action_unresolved. Der LIKE-Vorfilter
+-- hält webbed auf den wenigen Einträgen mit Script-Aktion.
+INSERT INTO ObjectLinks (Source_UUID, Source_Type, Target_UUID, Target_Type,
+                          Link_Type, Link_Role, Link_Subrole,
+                          Source_File, Target_File, Is_Cross_File)
+WITH menu_script_refs AS (
+    SELECT Item_UUID, File_Name,
+           TRY_CAST(xml_extract_text(Item_XML, '/CustomMenuItem/action//ScriptReference/@id')[1] AS BIGINT) AS Script_ID,
+           NULLIF(xml_extract_text(Item_XML, '/CustomMenuItem/action//DataSourceReference/@UUID')[1], '') AS DS_UUID,
+           NULLIF(xml_extract_text(Item_XML, '/CustomMenuItem/action//DataSourceReference/@name')[1], '') AS DS_Name
+    FROM CustomMenuItemCatalog
+    WHERE Item_XML LIKE '%<ScriptReference%'
+)
+SELECT DISTINCT
+    r.Item_UUID       as Source_UUID,
+    'CustomMenuItem'  as Source_Type,
+    sc.Script_UUID    as Target_UUID,
+    'Script'          as Target_Type,
+    'operational'     as Link_Type,
+    'triggers_script' as Link_Role,
+    'menu_action'     as Link_Subrole,
+    r.File_Name       as Source_File,
+    sc.File_Name      as Target_File,
+    (sc.File_Name <> r.File_Name) as Is_Cross_File
+FROM menu_script_refs r
+LEFT JOIN DataSourceFileMap d
+       ON d.File_Name = r.File_Name AND d.DS_UUID = r.DS_UUID
+JOIN ScriptCatalog sc
+  ON sc.Script_ID = r.Script_ID
+ AND sc.File_Name = CASE
+        WHEN r.DS_UUID IS NULL AND r.DS_Name IS NULL THEN r.File_Name
+        ELSE COALESCE(d.Resolved_File, regexp_replace(r.DS_Name, '\.fmp12$', ''))
+     END;
 
 -- ========================================
 -- Portal → Field (sorts_by_field): Portal-Zeilensortierung
@@ -4861,6 +5055,319 @@ FROM (
     FROM resolved
 )
 WHERE xml_norm <> lower(Name_Decoded);
+
+-- ############################################################
+-- Phase C: Änderungs-Metadaten
+-- ############################################################
+
+-- ChangeBulkConfig — Parameter der Burst- und Massenereignis-Erkennung (genau eine Zeile,
+-- bei jedem Lauf mit den Defaults neu geschrieben). Die Defaults sind an zwei realen
+-- Lösungen kalibriert (eine fast vollständig von Massenereignissen geprägt, eine mit
+-- mehreren Entwicklern und überwiegend Einzeländerungen): G zwischen 5 und 10 s ändert
+-- die Massenquote praktisch nicht, ab 30 s verschmelzen Arbeitssitzungen zu Bursts von
+-- mehreren Minuten; Bursts mit 10–24 Objekten sind meist einzelne Entwickler-Aktionen
+-- (Felder einfügen, TO-Gruppe verschieben) und bleiben unter N; dateiübergreifende
+-- Ereignisse dauern höchstens zwei Minuten, auch schon über zwei Dateien; der Anteil
+-- Modifications = 1 trennt Einfügen/Import (≥ 0,94) scharf von übrigen Massenaktionen
+-- (≤ 0,38).
+CREATE OR REPLACE TABLE ChangeBulkConfig AS
+SELECT
+    CAST(10 AS INTEGER)   AS Burst_Gap_Seconds,        -- neuer Burst je Datei bei einer Lücke > G
+    CAST(25 AS INTEGER)   AS Mass_Min_Objects,         -- Burst ab N Objekten = Massenereignis
+    CAST(900 AS INTEGER)  AS Solution_Window_Seconds,  -- Datei-Ereignisse mit höchstens diesem Abstand …
+    CAST(2 AS INTEGER)    AS Solution_Min_Files,       -- … in mindestens so vielen Dateien = ein Ereignis
+    CAST(0.8 AS DOUBLE)   AS Paste_Min_Share;          -- Anteil Modifications = 1 ab dem Kind 'paste_import'
+
+-- ChangeTechnicalAuthors — Autoren, die keine Entwickler sind (LIKE-Muster gegen
+-- Author_Key). 'tool': Werkzeug, das massenhaft stempelt — seine Bursts sind unabhängig
+-- von der Größe ein Ereignis mit Kind 'tool'. 'runtime': Änderung zur Laufzeit durch einen
+-- Endanwender (z. B. Kontenpflege über WebDirect) — kein Ereignis, aber keine
+-- Entwickleraktivität. Kuratierte Aliase und Korrekturen legt die API darüber.
+CREATE OR REPLACE TABLE ChangeTechnicalAuthors AS
+SELECT * FROM (VALUES
+    ('fmdatamigration', 'tool',    'FileMaker Data Migration Tool'),
+    ('[webdirect-%]',   'runtime', 'WebDirect session (runtime change by an end user)')
+) t(Author_Pattern, Author_Kind, Description);
+
+-- ObjectChangeMeta — eine Zeile je Objekt mit eigenem Änderungs-Stempel, aus den
+-- Rohspalten Modified_At/_By/_Account/Modifications der Quellkataloge (Attribute am
+-- <UUID>-Element). Typ, Name und ID liefert der ObjectCatalog (geheilte UUIDs; Ordner von
+-- Scripts, Layouts und Custom Functions als 'Folder'); Trennlinien und Ordner-Endmarker
+-- haben keinen Katalogeintrag und fallen weg. FileAccessAuthorizations hat kein
+-- ObjectCatalog-Gegenstück → Object_Type 'Authorization'. Objekte ohne Stempel stehen
+-- nicht in der Tabelle (P6 v_check_change_meta zählt sie).
+-- Schlüssel: (Object_UUID, File_Name), eindeutig wie im ObjectCatalog (P6 prüft).
+-- Modified_At ist lokale Client-Zeit ohne Zone. Author_Key = lower(trim(Modified_By));
+-- kuratierte Aliase legt die API darüber. Typen ohne eigenen Stempel (ScriptStep,
+-- LayoutObject, LayoutPart, Calculation, ScriptTrigger, CustomMenuItem) erben den Stempel
+-- ihres Containers erst bei der Abfrage über die Containment-Kanten.
+-- Author_Kind: Treffer in ChangeTechnicalAuthors ('tool' | 'runtime'), NULL = Person.
+-- Burst_ID: Folge von Stempeln einer Datei mit Lücken ≤ Burst_Gap_Seconds, lösungsweit
+-- nummeriert nach (Start, Datei). Bulk_Event_ID → ChangeBulkEvents, NULL = Einzeländerung.
+-- Beide IDs sind flüchtig (jeder Lauf nummeriert neu) — nie als dauerhafter Schlüssel
+-- verwenden; ein Ereignis ist über (Scope, Start_At) wiedererkennbar.
+-- Vollständiger Neubau bei jedem Lauf — Single-File- und --changed-only-Läufe bleiben
+-- damit automatisch konsistent.
+CREATE OR REPLACE TABLE ObjectChangeMeta AS
+WITH stamped AS (
+    SELECT 'ScriptCatalog' AS Source_Table, Script_UUID AS Object_UUID, Script_ID AS Object_ID,
+           File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM ScriptCatalog
+    UNION ALL
+    SELECT 'Layouts', L_UUID, L_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM Layouts
+    UNION ALL
+    SELECT 'CustomFunctionsCatalog', CF_UUID, CF_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM CustomFunctionsCatalog
+    UNION ALL
+    SELECT 'FieldsForTables', Field_UUID, Field_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM FieldsForTables
+    UNION ALL
+    SELECT 'BaseTableCatalog', BT_UUID, BT_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM BaseTableCatalog
+    UNION ALL
+    SELECT 'TableOccurrenceCatalog', TO_UUID, TO_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM TableOccurrenceCatalog
+    UNION ALL
+    SELECT 'ValueListCatalog', VL_UUID, VL_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM ValueListCatalog
+    UNION ALL
+    SELECT 'ExternalDataSourceCatalog', DS_UUID, DS_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM ExternalDataSourceCatalog
+    UNION ALL
+    SELECT 'AccountsCatalog', Account_UUID, Account_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM AccountsCatalog
+    UNION ALL
+    SELECT 'PrivilegeSetsCatalog', PrivilegeSet_UUID, PrivilegeSet_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM PrivilegeSetsCatalog
+    UNION ALL
+    SELECT 'ExtendedPrivilegesCatalog', EP_UUID, EP_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM ExtendedPrivilegesCatalog
+    UNION ALL
+    SELECT 'CustomMenuCatalog', Menu_UUID, Menu_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM CustomMenuCatalog
+    UNION ALL
+    SELECT 'CustomMenuSetCatalog', MenuSet_UUID, MenuSet_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM CustomMenuSetCatalog
+    UNION ALL
+    SELECT 'ThemeCatalog', Theme_UUID, Theme_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM ThemeCatalog
+    UNION ALL
+    SELECT 'BaseDirectoryCatalog', BD_UUID, BD_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM BaseDirectoryCatalog
+),
+-- RelationshipCatalog führt eine Zeile je Join-Prädikat; die Metadaten sind je Relation
+-- konstant. Der ObjectCatalog-Schlüssel (native UUID bzw. Ersatzschlüssel) wird über
+-- (Rel_ID, File_Name) zugeordnet.
+rel_stamped AS (
+    SELECT DISTINCT Rel_ID, File_Name, Modified_At, Modified_By, Modified_Account, Modifications
+    FROM RelationshipCatalog
+),
+joined AS (
+    SELECT oc.Object_UUID, oc.File_Name, oc.Object_Type,
+           COALESCE(oc.Object_ID, s.Object_ID) AS Object_ID, oc.Object_Name, s.Source_Table,
+           s.Modified_At AS Modified_At_Raw, s.Modified_By, s.Modified_Account, s.Modifications
+    FROM stamped s
+    JOIN ObjectCatalog oc
+      ON oc.Object_UUID = s.Object_UUID
+     AND oc.File_Name = s.File_Name
+     AND oc.Source_Table = s.Source_Table
+    UNION ALL
+    SELECT oc.Object_UUID, oc.File_Name, oc.Object_Type, oc.Object_ID, oc.Object_Name,
+           'RelationshipCatalog', r.Modified_At, r.Modified_By, r.Modified_Account, r.Modifications
+    FROM rel_stamped r
+    JOIN ObjectCatalog oc
+      ON oc.Source_Table = 'RelationshipCatalog'
+     AND oc.Object_ID = r.Rel_ID
+     AND oc.File_Name = r.File_Name
+    UNION ALL
+    SELECT Auth_UUID, File_Name, 'Authorization', Auth_ID, Authorized_Name,
+           'FileAccessAuthorizations', Modified_At, Modified_By, Modified_Account, Modifications
+    FROM FileAccessAuthorizations
+),
+typed AS (
+    SELECT
+        Object_UUID, File_Name, Object_Type, Object_ID, Object_Name, Source_Table,
+        TRY_CAST(Modified_At_Raw AS TIMESTAMP) AS Modified_At,
+        Modified_At_Raw, Modified_By, Modified_Account, Modifications,
+        lower(trim(Modified_By)) AS Author_Key
+    FROM joined
+    WHERE Modified_At_Raw IS NOT NULL
+),
+authored AS (
+    -- Mehrere Muster-Treffer: der alphabetisch kleinste Wert (deterministisch).
+    SELECT t.*,
+           (SELECT min(a.Author_Kind) FROM ChangeTechnicalAuthors a
+            WHERE t.Author_Key LIKE a.Author_Pattern) AS Author_Kind
+    FROM typed t
+),
+gaps AS (
+    -- Stempel derselben Sekunde haben die Lücke 0 und landen unabhängig von ihrer
+    -- Reihenfolge im selben Burst; der Tiebreaker macht die Fensterreihenfolge trotzdem
+    -- eindeutig. Stempel ohne lesbaren Zeitpunkt bleiben ohne Burst.
+    SELECT a.*,
+           CASE WHEN a.Modified_At IS NULL THEN NULL
+                WHEN lag(a.Modified_At) OVER w IS NULL
+                  OR epoch(a.Modified_At) - epoch(lag(a.Modified_At) OVER w) > c.Burst_Gap_Seconds
+                THEN 1 ELSE 0 END AS burst_start
+    FROM authored a
+    CROSS JOIN ChangeBulkConfig c
+    WINDOW w AS (PARTITION BY a.File_Name, a.Modified_At IS NULL
+                 ORDER BY a.Modified_At, a.Object_UUID, a.Source_Table, a.Object_ID)
+),
+local_bursts AS (
+    SELECT g.*,
+           CASE WHEN g.Modified_At IS NOT NULL THEN
+               sum(g.burst_start) OVER (PARTITION BY g.File_Name, g.Modified_At IS NULL
+                                        ORDER BY g.Modified_At, g.Object_UUID, g.Source_Table, g.Object_ID
+                                        ROWS UNBOUNDED PRECEDING)
+           END AS local_burst
+    FROM gaps g
+),
+bursts AS (
+    SELECT File_Name, local_burst,
+           min(Modified_At) AS Start_At,
+           max(Modified_At) AS End_At,
+           count(*) AS Objects,
+           bool_and(COALESCE(Author_Kind = 'tool', false)) AS Is_Tool
+    FROM local_bursts
+    WHERE local_burst IS NOT NULL
+    GROUP BY ALL
+),
+burst_ids AS (
+    -- Bursts einer Datei überlappen nie → (Start_At, File_Name) ist eindeutig.
+    SELECT b.*, row_number() OVER (ORDER BY b.Start_At, b.File_Name) AS Burst_ID
+    FROM bursts b
+),
+file_events AS (
+    -- Massenereignis einer Datei: ein Burst ab Mass_Min_Objects Objekten oder ein Burst,
+    -- dessen Stempel ausschließlich von Werkzeug-Autoren stammen.
+    SELECT bi.*
+    FROM burst_ids bi
+    CROSS JOIN ChangeBulkConfig c
+    WHERE bi.Objects >= c.Mass_Min_Objects OR bi.Is_Tool
+),
+chained AS (
+    -- Datei-Ereignisse derselben Klasse (Werkzeug bzw. nicht) bilden eine Kette, solange
+    -- ein Start höchstens Solution_Window_Seconds nach dem bisher spätesten Ende liegt.
+    SELECT fe.*,
+           max(fe.End_At) OVER (PARTITION BY fe.Is_Tool ORDER BY fe.Start_At, fe.File_Name
+                                ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_end
+    FROM file_events fe
+),
+chain_ids AS (
+    SELECT ch.*,
+           sum(CASE WHEN ch.prev_end IS NULL
+                      OR epoch(ch.Start_At) - epoch(ch.prev_end) > c.Solution_Window_Seconds
+                    THEN 1 ELSE 0 END)
+               OVER (PARTITION BY ch.Is_Tool ORDER BY ch.Start_At, ch.File_Name
+                     ROWS UNBOUNDED PRECEDING) AS chain
+    FROM chained ch
+    CROSS JOIN ChangeBulkConfig c
+),
+chain_files AS (
+    SELECT Is_Tool, chain, count(DISTINCT File_Name) AS Files
+    FROM chain_ids
+    GROUP BY ALL
+),
+event_map AS (
+    -- Eine Kette über mindestens Solution_Min_Files Dateien ist EIN lösungsweites
+    -- Ereignis, sonst bleibt jedes Datei-Ereignis für sich. Schlüssel ist die kleinste
+    -- Burst_ID des Ereignisses — sie ordnet die Ereignisse nach (Start, Datei).
+    SELECT ci.Burst_ID,
+           CASE WHEN cf.Files >= greatest(c.Solution_Min_Files, 2)
+                THEN min(ci.Burst_ID) OVER (PARTITION BY ci.Is_Tool, ci.chain)
+                ELSE ci.Burst_ID
+           END AS Event_Key
+    FROM chain_ids ci
+    JOIN chain_files cf ON cf.Is_Tool = ci.Is_Tool AND cf.chain = ci.chain
+    CROSS JOIN ChangeBulkConfig c
+),
+event_ids AS (
+    SELECT Burst_ID, dense_rank() OVER (ORDER BY Event_Key) AS Bulk_Event_ID
+    FROM event_map
+)
+SELECT
+    lb.Object_UUID,
+    lb.File_Name,
+    lb.Object_Type,
+    lb.Object_ID,
+    lb.Object_Name,
+    lb.Source_Table,
+    lb.Modified_At,
+    lb.Modified_At_Raw,
+    lb.Modified_By,
+    lb.Modified_Account,
+    lb.Modifications,
+    lb.Author_Key,
+    lb.Author_Kind,
+    bi.Burst_ID,
+    ei.Bulk_Event_ID
+FROM local_bursts lb
+LEFT JOIN burst_ids bi ON bi.File_Name = lb.File_Name AND bi.local_burst = lb.local_burst
+LEFT JOIN event_ids ei ON ei.Burst_ID = bi.Burst_ID;
+
+-- ChangeBulkEvents — ein Massenereignis je Zeile: eine Aktion, die viele Objekte auf
+-- einmal stempelt (Migration, Einfügen/Import, Suchen/Ersetzen, Werkzeuglauf). Kein
+-- Rauschen — Sichten blenden die Ereignisse standardmäßig aus und zeigen sie als Marker.
+-- Scope: 'file' (ein Burst einer Datei) | 'solution' (zeitnahe Datei-Ereignisse über
+-- mehrere Dateien). Kind: 'tool' (nur Werkzeug-Autoren) | 'paste_import' (Anteil
+-- Modifications = 1 ≥ Paste_Min_Share — eingefügte oder importierte Objekte starten mit
+-- Zähler 1) | 'mass_action' (übrige). Zeiten lokal ohne Zone; ein lösungsweites Fenster
+-- kann bei Teams in mehreren Zeitzonen zerfallen.
+CREATE OR REPLACE TABLE ChangeBulkEvents AS
+SELECT
+    m.Bulk_Event_ID,
+    CASE WHEN count(DISTINCT m.File_Name) > 1 THEN 'solution' ELSE 'file' END AS Scope,
+    CASE WHEN bool_and(COALESCE(m.Author_Kind = 'tool', false)) THEN 'tool'
+         WHEN avg(CASE WHEN m.Modifications = 1 THEN 1.0 ELSE 0.0 END) >= any_value(c.Paste_Min_Share)
+         THEN 'paste_import'
+         ELSE 'mass_action'
+    END AS Kind,
+    min(m.Modified_At) AS Start_At,
+    max(m.Modified_At) AS End_At,
+    count(DISTINCT m.File_Name) AS Files,
+    count(*) AS Objects,
+    count(DISTINCT m.Burst_ID) AS Bursts,
+    round(avg(CASE WHEN m.Modifications = 1 THEN 1.0 ELSE 0.0 END), 3) AS Mod1_Share,
+    list_sort(list_distinct(list(m.File_Name))) AS File_Names,
+    list_sort(list_distinct(list(m.Object_Type))) AS Object_Types,
+    list_sort(list_distinct(list(m.Author_Key))) AS Authors
+FROM ObjectChangeMeta m
+CROSS JOIN ChangeBulkConfig c
+WHERE m.Bulk_Event_ID IS NOT NULL
+GROUP BY m.Bulk_Event_ID
+ORDER BY m.Bulk_Event_ID;
+
+-- CatalogChangeMeta.Newest_Child_At: jüngster Objekt-Stempel unter dem Katalog (beim
+-- FieldCatalog je Basistabelle). Ein Katalog-Stempel jünger als jedes Kind zeigt eine
+-- strukturelle Änderung nach dem letzten Objekt-Edit an. Belastbar als Löschindikator ist
+-- das nur beim FieldCatalog — ScriptCatalog stempelt auch Umordnen/Verschieben,
+-- TableOccurrenceCatalog jedes OK im Dialog „Datenbank verwalten".
+UPDATE CatalogChangeMeta SET Newest_Child_At = NULL;
+
+UPDATE CatalogChangeMeta c
+SET Newest_Child_At = x.Newest
+FROM (
+    SELECT m.File_Name,
+           CASE m.Source_Table
+               WHEN 'Layouts' THEN 'LayoutCatalog'
+               WHEN 'FieldsForTables' THEN 'FieldCatalog'
+               WHEN 'FileAccessAuthorizations' THEN 'FileAccessCatalog'
+               ELSE m.Source_Table
+           END AS Catalog,
+           CASE WHEN m.Source_Table = 'FieldsForTables' THEN COALESCE(f.Table_UUID, '') ELSE '' END AS Scope_Key,
+           max(m.Modified_At) AS Newest
+    FROM ObjectChangeMeta m
+    LEFT JOIN FieldsForTables f
+      ON m.Source_Table = 'FieldsForTables'
+     AND f.Field_UUID = m.Object_UUID
+     AND f.File_Name = m.File_Name
+    GROUP BY ALL
+) x
+WHERE c.File_Name = x.File_Name
+  AND c.Catalog = x.Catalog
+  AND c.Scope_Key = x.Scope_Key;
 
 -- ========================================
 -- Statistik-Views für Monitoring

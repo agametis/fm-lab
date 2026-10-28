@@ -5,8 +5,8 @@ Read this before rendering (R4) and whenever a custom template is passed with `-
 ## Grammar
 
 - **Section markers** — `<!-- section:<id> -->` … `<!-- /section -->`. Known ids: `header`,
-  `toc`, `summary`, `business`, `architecture`, `technical`, `findings`, `recommendations`,
-  `open`, `segments`, `protocol`. **Mandatory:** `summary` and `segments` — a template without
+  `toc`, `summary`, `business`, `architecture`, `activity`, `technical`, `findings`,
+  `recommendations`, `open`, `segments`, `protocol`. **Mandatory:** `summary` and `segments` — a template without
   them is rejected (name the missing marker, stop).
 - **Instruction comments** — any `<!-- … -->` inside a section tells the writer what the
   section must contain. They are **removed** from the rendered report.
@@ -37,6 +37,7 @@ Read this before rendering (R4) and whenever a custom template is passed with `-
 | `{{template_id}}` | template first line |
 | `{{lang}}` | report language code |
 | `{{top_n}}` | `--top` |
+| `{{activity_data_state}}`, `{{activity_mass_pct}}` | `community_activity.sql` #1: `data_state`, `mass_or_technical_pct` |
 | `{{run_duration}}`, `{{fresh_tokens}}` | `session_usage.sh` (wall-clock of the run window; output + cache writes + uncached input) — used in B.7 and the chat protocol line |
 
 ## Section checklist (what the writer must not skip)
@@ -46,11 +47,12 @@ Read this before rendering (R4) and whenever a custom template is passed with `-
 | summary | purpose · value · maturity + evidence · 3–5 findings (F-ids) · headline recommendation (R-id) | all | ≤ 1 page |
 | business | core entities · actors/roles · core workflows · integrations · presumed purpose (hedged) | R1 #3–#6, R2 | — |
 | architecture | module map · file topology · granularity (K, sizes, singletons, largest share, Q) · folders vs. communities (alignment %) · hubs/god-nodes | R0, R1 #7–#11, R2, hubs | metrics cited |
+| activity | data state · mass/technical share · individual changes 90/365 d · module classes · telling segments by name · mass-event timeline · interplay with findings only; mass dominance → no per-module verdict (save counters + mass events instead); no stamps → one paragraph | `community_activity.sql` #1–#3 | ≤ ½ page; one line per Appendix A segment |
 | technical | conventions · script patterns · UI · data · APIs/plugins · security · platform footprint | R1, R2, script_steps | — |
-| findings | 5.1 measured (tests + metrics) · 5.2 interpreted; each with Evidence + Impact | R3 | top 15 in body, rest in Appendix B; ≤ 5 findings per test member, tooling noise filtered |
-| recommendations | R-nn → F-nn · horizon · theme | 5 | — |
+| findings | 6.1 measured (tests + metrics) · 6.2 interpreted; each with Evidence + Impact | R3 | top 15 in body, rest in Appendix B; ≤ 5 findings per test member, tooling noise filtered |
+| recommendations | R-nn → F-nn · horizon · theme | 6 | — |
 | open | what the catalog cannot show · verification tasks | 2–6 | — |
-| segments | per segment: name · description · members · dominant file/type · anchors · domain | R2 | `--top` |
+| segments | per segment: name · description · members · dominant file/type · anchors · domain · activity line | R2, `community_activity.sql` #2 | `--top` |
 | protocol | B.1 level/flags · B.2 caps + scanned/skipped · B.3 tests · B.4 caveats · B.5 hubs · B.6 **segment inventory** (semantic segments row by row, long tail as one aggregate per dominant type + totals line) · B.7 **run metrics** (wall-clock per phase, API/tool calls, tokens) · B.8 sources/versions | R0–R3, `segment_inventory.sql`, `session_usage.sh` | no heuristic-only rows |
 
 ## Maturity scale (qualitative, evidence-backed)
@@ -81,6 +83,29 @@ and the heuristic long tail — into one aggregate row per layer and dominant ty
 members, size range, files) and one totals line (segments total, semantic segments, semantic
 share of members). Nothing is dropped silently — the counts are there — but the noise never
 fills pages. The complete list lives in the cluster overview (`/cluster`) and in `CommunityNames`.
+
+## Activity rules (section `activity`)
+
+- **Classes** are those of the Graph Atlas, the Explorer and the dashboard "Module activity":
+  the youngest individual change of a member, counted back from the data state — ≤ 30 days ·
+  ≤ 90 days · ≤ 1 year · ≤ 2 years · > 2 years · unknown (only a mass stamp or a stamp of a
+  technical author younger than two years — never "young") · no stamp.
+- **Mass dominance** (`mass_dominant`, > 80 % of the graph nodes of unknown age): the class
+  says little per module → no verdict "alive / resting" per module; describe the lifetime save
+  counters (median saves, saves level) and the mass events instead, and say why in one
+  sentence. A segment may still show a class (from its few individual changes) — print it
+  with its mass share in the Appendix A line, never as the segment's state. The dashboard and
+  the Atlas show the same hint.
+- **Wording** relative to the data state ("in the last 90 days before the data state"), never
+  "today"; the stamps keep only the last change of every object — the section describes the
+  last state, not a history.
+- **Comment only the interplay with the findings** (a resting hotspot, an active module
+  without comments, a core module of unknown age) — no general remarks on activity.
+- **Technical authors** come from `Author_Kind`; curated aliases of the REST API are not read
+  by the script. When aliases mark further technical authors, say that a few classes can
+  differ from the Atlas.
+- **Budget:** one result row per Appendix A segment (`SET VARIABLE top=<--top>`), the mass-event
+  timeline is capped at 15 rows.
 
 ## Context budget rules (apply while collecting, not while writing)
 

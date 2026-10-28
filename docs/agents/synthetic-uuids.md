@@ -22,29 +22,31 @@ homes → validate).
 ## Group A — real FileMaker objects without a native UUID
 
 These elements exist as discrete objects in a solution, but FileMaker gives them
-only a local `id` in the XML, not a UUID. The key is composed from the local id
-plus disambiguating context.
+only a local `id` in the XML, not a UUID. The key is a type prefix plus the local
+id plus disambiguating context.
 
 | Object type | `Object_UUID` form | XML element |
 |---|---|---|
-| **ScriptTrigger** | `Trigger_ID _ Owner_UUID _ File_Name` | `<ScriptTrigger id=…>` (no UUID) |
-| **Relationship** | `Rel_ID _ File_Name` | `<Relationship id="…">` (no UUID) |
-| **LayoutPart** | `Layout_ID _ Part_Kind _ File_Name` | `<Part type="…" kind="…">` (no UUID) |
-| **PasteIndexObject** | `Object_ID _ File_Name` | PasteIndexList entry (no UUID) |
+| **ScriptTrigger** | `trig_ Trigger_ID _ Owner_UUID _ File_Name` | `<ScriptTrigger id=…>` (no UUID) |
+| **LayoutPart** | `part_ Layout_ID _ Part_Kind _ Part_Seq _ File_Name` | `<Part type="…" kind="…">` (no UUID) |
+| **PasteIndexObject** | `paste_ Object_ID _ File_Name` | PasteIndexList entry (no UUID) |
 
 Example (ScriptTrigger):
 
 ```
-101_4F1C2A8B-7D90-4E62-AC31-2B5E9F0A6D74_MyFile
-│   └────────────── Owner_UUID ──────────────┘ └─┬─┘
-│                                              File_Name
-└─ Trigger_ID (event slot)
+trig_101_4F1C2A8B-7D90-4E62-AC31-2B5E9F0A6D74_MyFile
+│    │   └────────────── Owner_UUID ──────────────┘ └─┬─┘
+│    │                                              File_Name
+│    └─ Trigger_ID (event slot)
+└─ type prefix
 ```
 
 ### Why ScriptTrigger needs an extra Owner segment
 
-Relationship, LayoutPart and PasteIndexObject use `id _ File_Name` because their
-local `id` is **unique within the file** — that alone identifies them.
+PasteIndexObject uses `id _ File_Name` because its local `id` is **unique within
+the file** — that alone identifies it. LayoutPart composes the layout id, the
+part kind and a sequence number, because a layout can hold several parts of the
+same kind.
 
 ScriptTrigger is the exception. Its `id` is only an **event slot** (for example
 the slot for OnObjectSave) and repeats identically across many owner objects: it
@@ -84,7 +86,7 @@ defining parts.
 
 | Object type | `Object_UUID` form | Notes |
 |---|---|---|
-| **Variable** | `md5(Scope :: Scope_Anchor :: Name)` | one identity per scope instance |
+| **Variable** | `md5(Scope :: Scope_Anchor :: Name)` | one identity per scope instance. The UUID carries no file: the anchor of a local variable is its script (`__file::<File_Name>` outside scripts), of a `let_local` variable its context, of a global variable the file, of a superglobal `__global`. Clone files share script and context UUIDs, so their local variables share the UUID — identity is `(Object_UUID, File_Name)` as for native clone objects; superglobal variables are one object for all files |
 | **PluginFunction** | `md5('PluginFunction::' \|\| Name :: SubName)` | per (function, SubName); container plugins split per SubName |
 | **BuiltinFunction** | `md5('BuiltinFunction::' \|\| Name [:: SubParam])` | solution-independent → `File_Name = NULL`; `Get(<x>)` splits per sub-parameter |
 | **ScriptStepType** | `md5('ScriptStepType::' \|\| Step_Name)` | one entry per distinct step type |
@@ -96,12 +98,21 @@ defining parts.
 The following object types carry a real `UUID` / `@UUID` from the XML and are
 adopted unchanged:
 
-BaseTable, TableOccurrence, Field, ValueList, CustomFunction, Script, ScriptStep,
-Layout, **LayoutObject**, Account, PrivilegeSet, ExtendedPrivilege, CustomMenu,
-Theme, ExternalDataSource, BaseDirectory, File.
+BaseTable, TableOccurrence, **Relationship**, Field, ValueList, CustomFunction,
+Script, ScriptStep, Layout, **LayoutObject**, Account, PrivilegeSet,
+ExtendedPrivilege, CustomMenu, Theme, ExternalDataSource, BaseDirectory, File.
 
 > Note: **LayoutObject** has a native UUID — which is exactly why it can serve as
 > the `Owner_UUID` segment in a ScriptTrigger key.
+
+> Note: **Relationship** takes its UUID from `<Relationship>/<UUID>`
+> (`RelationshipCatalog.Rel_UUID`, since schema 1.34.0). Only an export without
+> that element falls back to the composite key `rel_ Rel_ID _ File_Name`.
+
+Native UUIDs are unique per file only: clone or module files can carry the same
+UUID, so identity is `(Object_UUID, File_Name)`. A UUID that occurs twice inside
+one file is re-keyed during import (UUID healing, census in
+`DuplicateAbsorptionDetails`) — the replacement is a 32-hex `md5` value.
 
 ## Design rules for synthetic UUIDs
 

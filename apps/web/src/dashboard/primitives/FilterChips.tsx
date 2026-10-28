@@ -24,6 +24,8 @@ interface ChipOption {
  *   param    URL/getvariable name to drive (required, e.g. "comment")
  *   default  value selected when the param is absent from the URL
  *   options  [{ value, label, countField }]
+ *   resetParams  URL params dropped together with every change (e.g. the page
+ *            param of a server-paged table, so a new filter starts on page 1)
  */
 export function FilterChips({ node, dataset }: PrimitiveProps) {
   const { i18n } = useTranslation();
@@ -31,6 +33,7 @@ export function FilterChips({ node, dataset }: PrimitiveProps) {
   const param = props.param as string | undefined;
   const fallback = (props.default as string) ?? '';
   const options = (props.options as ChipOption[]) ?? [];
+  const resetParams = (props.resetParams as string[] | undefined) ?? [];
   const [searchParams, setSearchParams] = useSearchParams();
 
   if (!param || options.length === 0) return null;
@@ -44,6 +47,7 @@ export function FilterChips({ node, dataset }: PrimitiveProps) {
       // Keep the URL canonical: drop the param at its default.
       if (value === fallback) n.delete(param);
       else n.set(param, value);
+      for (const key of resetParams) n.delete(key);
       return n;
     }, { replace: true });
   };

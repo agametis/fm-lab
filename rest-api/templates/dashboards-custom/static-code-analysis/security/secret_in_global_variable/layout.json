@@ -43,7 +43,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Secret in global variable"
+          "title": "Secret in global variable",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -57,9 +58,14 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search variable…",
               "chipFilter": {
-                "field": "scope"
+                "field": "scope",
+                "param": "variable_scope"
               },
               "columns": [
                 {

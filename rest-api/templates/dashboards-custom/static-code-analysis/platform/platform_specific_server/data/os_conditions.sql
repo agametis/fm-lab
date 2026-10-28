@@ -57,21 +57,58 @@ os_condition AS (
     WHERE pf.platform = 'server' AND pf.supported
     GROUP BY pf.plugin_id, pf.function_name
     HAVING NOT bool_and(COALESCE(osf.supported, false))
+),
+-- The finding rows; the keys of the default order travel along as hidden
+-- columns, so the page order does not hang on row_key alone.
+unkeyed AS MATERIALIZED (
+    SELECT n.canonical_name AS function_name,
+        fc.component,
+        oc.os_condition, oc.os_missing,
+        COUNT(DISTINCT n.nav_uuid) AS script_count,
+        COUNT(DISTINCT n.file_name) AS affected_files
+    FROM named n
+    JOIN os_condition oc
+      ON oc.plugin_id = n.plugin_id AND oc.function_name = n.canonical_name
+    LEFT JOIN plugref.plugin_functions fc
+      ON fc.plugin_id = n.plugin_id AND fc.function_name = n.canonical_name
+    WHERE (getvariable('file') IS NULL OR n.file_name = getvariable('file'))
+      AND (getvariable('scope_uuids') IS NULL
+           OR n.nav_uuid IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
+    GROUP BY n.canonical_name, fc.component, oc.os_condition, oc.os_missing
+),
+-- row_key numbers the rows in the default order; the whole row breaks the
+-- remaining ties, so every request assigns the same key.
+result AS MATERIALIZED (
+    SELECT u.*,
+           row_number() OVER (ORDER BY u.script_count DESC, u.function_name, u) AS row_key
+    FROM unkeyed u
+),
+-- >>> shared paging table-search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) NOT IN ('uuid', 'nav_uuid', 'row_key')))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging table-search block
+filtered AS (
+    SELECT * FROM searched
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT n.canonical_name AS function_name,
-    fc.component,
-    oc.os_condition, oc.os_missing,
-    COUNT(DISTINCT n.nav_uuid) AS script_count,
-    COUNT(DISTINCT n.file_name) AS affected_files,
-    row_number() OVER (ORDER BY COUNT(DISTINCT n.nav_uuid) DESC, n.canonical_name) AS row_key
-FROM named n
-JOIN os_condition oc
-  ON oc.plugin_id = n.plugin_id AND oc.function_name = n.canonical_name
-LEFT JOIN plugref.plugin_functions fc
-  ON fc.plugin_id = n.plugin_id AND fc.function_name = n.canonical_name
-WHERE (getvariable('file') IS NULL OR n.file_name = getvariable('file'))
-  AND (getvariable('scope_uuids') IS NULL
-       OR n.nav_uuid IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
-GROUP BY n.canonical_name, fc.component, oc.os_condition, oc.os_missing
-ORDER BY script_count DESC, function_name
-LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.*,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ row_key, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

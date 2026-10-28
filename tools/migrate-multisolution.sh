@@ -60,7 +60,9 @@ doit mkdir -p "$SOL_DIR/xml" "$SOL_DIR/db" "$SOL_DIR/state/logs" "$SOL_DIR/state
 # ── 2. Manifest (schema v1) — only the user-owned root block; convert-xml
 #       stamps the technical/metrics blocks on the next import. ──────────────
 if [ ! -f "$SOL_DIR/solution.json" ]; then
-    UUID=$( (command -v uuidgen >/dev/null && uuidgen) || python3 -c 'import uuid;print(uuid.uuid4())' )
+    UUID=$( (command -v uuidgen >/dev/null && uuidgen) \
+        || node -e 'console.log(require("crypto").randomUUID())' 2>/dev/null \
+        || cat /proc/sys/kernel/random/uuid 2>/dev/null )
     NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
     log "creating $SOL_DIR/solution.json (uuid=$UUID)"
     if ! $DRY_RUN; then

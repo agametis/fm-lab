@@ -48,7 +48,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Auto-enter calculation crossing relationships"
+          "title": "Auto-enter calculation crossing relationships",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -62,6 +63,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file, table or field…",
               "columns": [
                 {

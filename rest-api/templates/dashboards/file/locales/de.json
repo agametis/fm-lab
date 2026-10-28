@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Datei-Ansicht",
-    "description": "Detailansicht pro Datei: Metadaten, Datei-Optionen, Objekt-Kennzahlen sowie getriggerte Skripte / Start-Layout / Anmelde-Konto."
+    "description": "Detailansicht pro Datei: Metadaten, Datei-Optionen, Objekt-Kennzahlen, Änderungsstempel je Katalog sowie getriggerte Skripte / Start-Layout / Anmelde-Konto."
   },
   "layout": {
     "file_not_found.props.title": "Datei nicht gefunden",
@@ -14,6 +14,11 @@
     "file_metrics_kpistrip.props.items[4].label": "Letzter Import",
     "file_metrics_kpistrip.props.items[5].label": "Mindestversion",
     "file_size_kpistrip.props.items[0].label": "Dateigröße",
+    "file_change_kpistrip.props.items[0].label": "Letzte Designänderung",
+    "file_change_kpistrip.props.items[1].label": "Von",
+    "file_change_kpistrip.props.items[2].label": "Letzte Massenänderung",
+    "file_change_kpistrip.props.items[3].label": "Massenereignisse",
+    "file_change_kpistrip.props.items[4].label": "Einzeländerungen %",
     "file_settings_list.props.items[0].label": "Auto-Login",
     "file_settings_list.props.items[1].label": "Anmeldeinfos speichern",
     "file_settings_list.props.items[2].label": "Anmeldefelder",
@@ -31,6 +36,17 @@
     "file_object_counts_kpistrip.props.items[6].label": "Wertelisten",
     "file_object_counts_kpistrip.props.items[7].label": "Custom Fns",
     "file_object_counts_kpistrip.props.items[8].label": "Variablen",
+    "file_catalog_changes.props.title": "Änderungen je Katalog",
+    "file_catalog_changes_md.props.content": "Jedes Objekt behält nur seinen **letzten** Änderungsstempel. *Letzte Einzeländerung* lässt Massenereignisse (Migrationen, Einfügen, Werkzeugläufe) und technische Autoren weg. Der Katalog-Stempel folgt eigenen Regeln: sein Zähler steigt mit jeder Speicherung eines Objekts im Katalog. Zeiten sind die lokale Zeit des ändernden Clients.",
+    "file_change_trend.props.label": "Einzeländerungen pro Monat, letzte 12 Monate bis zum Datenstand",
+    "file_catalog_changes_table.props.columns[0].label": "Katalog",
+    "file_catalog_changes_table.props.columns[1].label": "Letzte Einzeländerung",
+    "file_catalog_changes_table.props.columns[2].label": "Benutzer",
+    "file_catalog_changes_table.props.columns[3].label": "Katalog-Stempel",
+    "file_catalog_changes_table.props.columns[4].label": "Zähler",
+    "file_catalog_changes_table.props.columns[5].label": "Objekte",
+    "file_catalog_changes_table.props.columns[6].label": "In Massenereignissen",
+    "file_catalog_changes_table.props.columns[7].label": "Feld nach letztem Edit gelöscht",
     "file_triggers.props.title": "Getriggerte Skripte",
     "file_triggers_table.props.columns[0].label": "Ereignis",
     "file_triggers_table.props.columns[1].label": "Skript",

@@ -145,6 +145,17 @@
     "clearRolesLabel": "Réinitialiser les rôles",
     "clearRolesTitle": "Effacer tous les filtres de rôle"
   },
+  "referencesMissing": {
+    "label": "Non référencé :",
+    "indirectLabel": "via les objets de la mise en page :",
+    "emptyLead": "Références possibles :",
+    "tooltipRoles": "Rôles possibles : {{roles}}",
+    "tooltipAggregate_one": "(y compris l’objet de la mise en page)",
+    "tooltipAggregate_other": "(y compris les {{count}} objets de la mise en page)",
+    "caveatScriptCallers": "Uniquement les appels résolubles statiquement. Non pris en compte : Perform Script par nom, URL fmp, appels externes.",
+    "caveatToFieldAccess": "L’accès aux champs via cette TO ne crée aucune référence à la TO.",
+    "aria": "Types d’objets sans référence"
+  },
   "hierarchyTree": {
     "ariaLabel": "Hiérarchie des objets",
     "usedBy": "Utilisé par ({{count}})",
@@ -199,6 +210,10 @@
         "short": "Popover",
         "long": "Titre de la fenêtre popover"
       },
+      "active_segment": {
+        "short": "Segment",
+        "long": "Segment actif"
+      },
       "script_trigger_parameter": {
         "short": "Trigger",
         "long": "Paramètre de déclencheur de script"
@@ -226,6 +241,10 @@
       "menu_install": {
         "short": "Install",
         "long": "Condition d'installation du menu"
+      },
+      "menu_action": {
+        "short": "Menu",
+        "long": "Action de menu"
       }
     }
   },
@@ -237,9 +256,13 @@
     "sortName": "Nom",
     "sortType": "Type",
     "sortFile": "Fichier",
+    "sortModified": "Dernière modification",
     "groupNone": "Aucun",
     "groupType": "Type",
-    "groupFile": "Fichier"
+    "groupFile": "Fichier",
+    "modifiedSinceLabel": "Modifié depuis",
+    "modifiedSinceHint": "Uniquement les objets dont l’horodatage propre est à cette date ou après — les pas de script, objets de modèle et calculs n’ont pas d’horodatage propre",
+    "modifiedSinceClear": "Réinitialiser"
   },
   "fieldViewer": {
     "ariaLabel": "Détails du champ",
@@ -327,7 +350,8 @@
     "uuidMatch": "Trouvé par UUID",
     "healedUuidMatch": "Trouvé par UUID (doublon)",
     "healedUuidTitle": "FileMaker référence cet objet sous l’UUID recherché ; cet UUID apparaissant plusieurs fois dans l’export, le catalogue le conserve sous un UUID de remplacement.",
-    "idMatch": "Trouvé par ID {{id}}"
+    "idMatch": "Trouvé par ID {{id}}",
+    "modifiedTooltip": "Modifié {{age}} — heure locale du client ayant modifié, sans fuseau horaire"
   },
   "scriptSearchFilter": {
     "searchAria": "Rechercher des références",
@@ -422,13 +446,75 @@
       "menuLabel": "Actions",
       "searchPlaceholder": "Filtrer les solutions…",
       "noMatches": "Aucune solution ne correspond au filtre."
+    },
+    "changeAuthors": {
+      "heading": "Auteurs des métadonnées de modification",
+      "desc": "Regroupez les variantes d’écriture d’une même personne, définissez des noms d’affichage et marquez les auteurs techniques. Les alias sont enregistrés avec la solution, survivent à une reconstruction et s’appliquent immédiatement à la ligne « Dernière modification ».",
+      "solution": "Solution : {{name}}.",
+      "loading": "Chargement des auteurs …",
+      "empty": "Ce catalogue n’a pas encore de métadonnées de modification — réimportez la solution avec la version actuelle.",
+      "noSidecar": "La base d’annotations de cette solution n’est pas disponible (fonction désactivée ou verrouillée) — les alias ne peuvent pas être modifiés.",
+      "colUser": "Utilisateur",
+      "colUserTitle": "Nom d’utilisateur dans toutes ses variantes",
+      "colStamps": "Horodatages",
+      "colLast": "Dernière modification",
+      "colPerson": "Même personne que",
+      "colDisplay": "Nom d’affichage",
+      "colTechnical": "Technique",
+      "colActions": "Actions",
+      "accountsTitle": "Comptes connectés",
+      "stampsTitle": "{{single}} modifications individuelles hors événements de masse · {{files}} fichiers",
+      "ownPerson": "— entrée propre —",
+      "technicalAutoYes": "Automatique (oui)",
+      "technicalAutoNo": "Automatique (non)",
+      "technicalAuto": "auto",
+      "technicalYes": "Oui",
+      "technicalNo": "Non",
+      "save": "Enregistrer",
+      "reset": "Réinitialiser",
+      "orphanHeading": "Alias sans utilisateur correspondant dans le catalogue actuel",
+      "orphanDelete": "Supprimer"
     }
   },
   "objectHeader": {
     "noName": "(sans nom)",
     "source": "Source :",
     "relationshipGraphLink": "↗ Graphe de relations",
-    "copyUuidAria": "Copier l’UUID dans le presse-papiers"
+    "copyUuidAria": "Copier l’UUID dans le presse-papiers",
+    "change": {
+      "modified": "Dernière modification",
+      "containerModified": "Dernière modification du conteneur",
+      "timeTooltip": "{{age}} — heure locale du client ayant modifié, sans fuseau horaire",
+      "unknownAuthor": "utilisateur inconnu",
+      "authorTooltip": "Nom d’utilisateur FileMaker du dernier éditeur",
+      "accountTooltip": "Compte connecté",
+      "countTooltip": "Enregistrements depuis la création de l’objet",
+      "modifications_one": "{{count}} modification",
+      "modifications_other": "{{count}} modifications",
+      "quotedName": "« {{name}} »",
+      "technical": {
+        "tool": "Outil",
+        "toolTooltip": "Horodaté par un outil (FileMaker Data Migration Tool), pas par un développeur",
+        "runtime": "Exécution",
+        "runtimeTooltip": "Modifié à l’exécution par un utilisateur final (session WebDirect) — pas une activité de développement",
+        "other": "Technique",
+        "otherTooltip": "Marqué comme auteur technique dans les alias d’auteur"
+      },
+      "bulk": {
+        "badge": "Événement de masse {{date}}",
+        "kind": {
+          "mass_action": "Action de masse : de nombreux objets horodatés d’un coup (migration, rechercher et remplacer, nouveau fichier)",
+          "paste_import": "Collage / import : objets collés ou importés ensemble",
+          "tool": "Exécution d’un outil (FileMaker Data Migration Tool)"
+        },
+        "scopeFile": "dans un fichier",
+        "scopeSolution_one": "sur {{count}} fichier",
+        "scopeSolution_other": "sur {{count}} fichiers",
+        "objects_one": "{{count}} objet",
+        "objects_other": "{{count}} objets",
+        "hint": "L’horodatage reflète cette action, pas une modification individuelle de l’objet."
+      }
+    }
   },
   "scriptLine": {
     "expand": "Développer",
@@ -660,7 +746,6 @@
     "viewTable": "Vue tableau",
     "baseTheme": "Thème de base",
     "inLayoutMenus": "Dans les menus de modèle",
-    "lastModified": "Dernière modification",
     "triggersHeading": "Déclencheurs de script",
     "noTriggers": "Aucun déclencheur de script",
     "yes": "Oui",
@@ -731,6 +816,7 @@
       "button_action": "Action du bouton",
       "panel_title": "Titre du panneau",
       "popover_title": "Titre du popover",
+      "active_segment": "Segment actif",
       "display_calculation": "Calcul d'affichage",
       "merge_text": "Ancres de fusion résolues",
       "chart_series": "Série du graphique",

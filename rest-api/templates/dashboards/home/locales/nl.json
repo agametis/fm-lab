@@ -40,6 +40,13 @@
   "docs.props.label": "Documentatie",
   "docs.props.subtitle": "Geïnstalleerde documentatiebronnen",
   "tests.props.label": "Tests",
-  "tests.props.subtitle": "Samengestelde analysetests"
+  "tests.props.subtitle": "Samengestelde analysetests",
+  "recent_changes.props.title": "Onlangs gewijzigd",
+  "recent_changes_table.props.columns[0].label": "Gewijzigd",
+  "recent_changes_table.props.columns[1].label": "Type",
+  "recent_changes_table.props.columns[2].label": "Object",
+  "recent_changes_table.props.columns[3].label": "Bestand",
+  "recent_changes_table.props.columns[4].label": "Persoon",
+  "recent_changes_all.props.label": "Alle wijzigingen"
  }
 }

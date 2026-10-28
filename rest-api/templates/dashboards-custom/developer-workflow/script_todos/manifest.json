@@ -35,7 +35,8 @@
     },
     {
       "id": "todo_lines",
-      "source": "bundle:data/todo_lines.sql"
+      "source": "bundle:data/todo_lines.sql",
+      "pageSize": 500
     }
   ],
   "params": [

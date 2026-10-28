@@ -65,7 +65,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Plug-in calls without reference"
+          "title": "Plug-in calls without reference",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -79,6 +80,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": "auto",
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchAutoThreshold": 3,
               "searchPlaceholder": "Search file, object or formula…",
               "columns": [
@@ -133,7 +138,8 @@
               "alwaysShowCount": true,
               "chipFilter": {
                 "field": "cause",
-                "allLabel": "All causes"
+                "allLabel": "All causes",
+                "param": "cause"
               }
             }
           }

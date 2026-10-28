@@ -22,5 +22,13 @@
     "body": "De API was niet bereikbaar met deze oplossingscontext. Als de app werkte voordat je van oplossing wisselde, zet de selectie dan terug op de serverstandaard.",
     "action": "Selectie herstellen",
     "dismiss": "Verbergen"
+  },
+  "storageVersion": {
+    "heading": "De catalogus kan niet worden geopend: DuckDB-versies komen niet overeen",
+    "body": "De catalogus van oplossing “{{solution}}” is geschreven met DuckDB {{createdBy}} (opslagversie {{fileVersion}}). De REST API draait op DuckDB {{apiVersion}} en kan alleen opslagversies {{range}} lezen.",
+    "fixNewer": "Oplossing: importeer de XML opnieuw met DuckDB-CLI {{apiLine}}.x, die deze fm-lab-release ondersteunt, of werk fm-lab bij naar een release die DuckDB {{cliLine}} ondersteunt.",
+    "fixOlder": "Oplossing: importeer de XML opnieuw met de huidige DuckDB-CLI.",
+    "unknown": "onbekend",
+    "dismiss": "Verbergen"
   }
 }

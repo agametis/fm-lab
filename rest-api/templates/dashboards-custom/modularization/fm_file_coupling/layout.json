@@ -125,7 +125,8 @@
         "id": "coupling",
         "props": {
           "span": 12,
-          "title": "Coupling matrix (source → target)"
+          "title": "Coupling matrix (source → target)",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "coupling"
@@ -138,6 +139,10 @@
               "rowKey": "source_file",
               "density": "compact",
               "sortable": true,
+              "pageParam": "coupling_page",
+              "searchParam": "coupling_q",
+              "sortParam": "coupling_sort",
+              "clientMode": true,
               "columns": [
                 {
                   "field": "source_file",
@@ -181,7 +186,8 @@
         "id": "coupling_details",
         "props": {
           "span": 12,
-          "title": "Coupling details (individual links)"
+          "title": "Coupling details (individual links)",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "coupling_details"
@@ -194,6 +200,10 @@
               "rowKey": "target_uuid",
               "density": "compact",
               "sortable": true,
+              "pageParam": "details_page",
+              "searchParam": "details_q",
+              "sortParam": "details_sort",
+              "clientMode": true,
               "columns": [
                 {
                   "field": "source_file",
@@ -244,7 +254,8 @@
         "id": "external_sources",
         "props": {
           "span": 12,
-          "title": "External FileMaker data sources (declared coupling)"
+          "title": "External FileMaker data sources (declared coupling)",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "external_sources"
@@ -257,6 +268,10 @@
               "rowKey": "sample_to_uuid",
               "density": "compact",
               "sortable": true,
+              "pageParam": "sources_page",
+              "searchParam": "sources_q",
+              "sortParam": "sources_sort",
+              "clientMode": true,
               "columns": [
                 {
                   "field": "from_file",

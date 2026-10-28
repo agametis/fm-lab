@@ -38,7 +38,11 @@
     "uses": "använder",
     "usedBy": "används av",
     "focus": "Fokus",
-    "resizePanel": "Ändra bredd på detaljpanelen"
+    "resizePanel": "Ändra bredd på detaljpanelen",
+    "activity": "Aktivitet",
+    "activityInherited": "layoutens / menyns stämpel",
+    "activityNone": "ingen stämpel",
+    "activityAge": "{{days}} dagar före datastatus"
   },
   "filter": {
     "ariaLabel": "Graffilter",
@@ -77,11 +81,13 @@
     "colorMode": "Färgläggning",
     "colorModes": {
       "type": "Typ",
-      "community": "Community"
+      "community": "Community",
+      "recency": "Aktivitet"
     },
     "colorModeHints": {
       "type": "Färglägg noder efter objekttyp",
-      "community": "Färglägg noder efter upptäckt modul (community)"
+      "community": "Färglägg noder efter upptäckt modul (community)",
+      "recency": "Färga noder efter åldern på deras senaste enskilda ändring (Grafatlasens klasser)"
     },
     "communityUnnamed": "Community {{id}}",
     "resizePanel": "Ändra bredd på filterpanelen",
@@ -120,7 +126,8 @@
   },
   "edge": {
     "represents": "representerar",
-    "buttonAction": "Knappåtgärd"
+    "buttonAction": "Knappåtgärd",
+    "menuAction": "Menyåtgärd"
   },
   "trace": {
     "exit": "Grannskap",

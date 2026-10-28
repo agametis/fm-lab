@@ -49,12 +49,15 @@ async function version(req, res, next) {
       api_name: packageJson.description,
       node_version: process.version,
       uptime_seconds: Math.floor(process.uptime()),
-      health: 'healthy',
+      health: dbStats.error ? 'degraded' : 'healthy',
       database: {
         connected: dbStats.connected,
         path: dbStats.database_path,
         size_mb: dbStats.size_mb ? parseFloat(dbStats.size_mb.toFixed(2)) : 0,
         table_count: dbStats.table_count,
+        // Nur gesetzt, wenn der Katalog nicht geöffnet werden kann (z. B.
+        // STORAGE_VERSION_MISMATCH bei gemischten DuckDB-Versionen).
+        ...(dbStats.error ? { error: dbStats.error } : {}),
       },
       features,
     };

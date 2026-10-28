@@ -145,6 +145,17 @@
     "clearRolesLabel": "Återställ roller",
     "clearRolesTitle": "Rensa alla rollfilter"
   },
+  "referencesMissing": {
+    "label": "Inte refererad:",
+    "indirectLabel": "via layoutobjekt:",
+    "emptyLead": "Möjliga referenser:",
+    "tooltipRoles": "Möjliga roller: {{roles}}",
+    "tooltipAggregate_one": "(inklusive layoutobjektet)",
+    "tooltipAggregate_other": "(inklusive de {{count}} layoutobjekten)",
+    "caveatScriptCallers": "Endast statiskt upplösbara anrop. Ingår inte: Perform Script via namn, fmp-URL:er, externa anrop.",
+    "caveatToFieldAccess": "Fältåtkomst via denna TO skapar ingen TO-referens.",
+    "aria": "Objekttyper utan referenser"
+  },
   "hierarchyTree": {
     "ariaLabel": "Objekthierarki",
     "usedBy": "Används av ({{count}})",
@@ -199,6 +210,10 @@
         "short": "Popover",
         "long": "Popover-titel"
       },
+      "active_segment": {
+        "short": "Segment",
+        "long": "Aktivt segment"
+      },
       "script_trigger_parameter": {
         "short": "Trigger",
         "long": "Scriptutlösarparameter"
@@ -226,6 +241,10 @@
       "menu_install": {
         "short": "Install",
         "long": "Menyinstallationsvillkor"
+      },
+      "menu_action": {
+        "short": "Menu",
+        "long": "Menyåtgärd"
       }
     }
   },
@@ -237,9 +256,13 @@
     "sortName": "Namn",
     "sortType": "Typ",
     "sortFile": "Fil",
+    "sortModified": "Senast ändrad",
     "groupNone": "Ingen",
     "groupType": "Typ",
-    "groupFile": "Fil"
+    "groupFile": "Fil",
+    "modifiedSinceLabel": "Ändrad sedan",
+    "modifiedSinceHint": "Endast objekt vars egen ändringsstämpel är denna dag eller senare — skriptsteg, layoutobjekt och beräkningar har ingen egen stämpel",
+    "modifiedSinceClear": "Återställ"
   },
   "fieldViewer": {
     "ariaLabel": "Fältdetaljer",
@@ -327,7 +350,8 @@
     "uuidMatch": "Träff via UUID",
     "healedUuidMatch": "Träff via UUID (dubblett)",
     "healedUuidTitle": "FileMaker för detta objekt under det sökta UUID:t; eftersom UUID:t förekom flera gånger i exporten ligger det i katalogen under ett ersättnings-UUID.",
-    "idMatch": "Träff via ID {{id}}"
+    "idMatch": "Träff via ID {{id}}",
+    "modifiedTooltip": "Ändrad {{age}} — lokal tid hos den redigerande klienten, utan tidszon"
   },
   "scriptSearchFilter": {
     "searchAria": "Sök referenser",
@@ -422,13 +446,75 @@
       "menuLabel": "Åtgärder",
       "searchPlaceholder": "Filtrera lösningar…",
       "noMatches": "Ingen lösning matchar filtret."
+    },
+    "changeAuthors": {
+      "heading": "Författare i ändringsmetadata",
+      "desc": "Slå ihop stavningsvarianter för samma person, ange visningsnamn och markera tekniska författare. Aliasen sparas med lösningen, överlever en ombyggnad och gäller direkt för raden ”Senast ändrad”.",
+      "solution": "Lösning: {{name}}.",
+      "loading": "Läser in författare …",
+      "empty": "Den här katalogen har ännu inga ändringsmetadata — importera lösningen igen med aktuell version.",
+      "noSidecar": "Lösningens annoteringsdatabas är inte tillgänglig (funktionen avstängd eller låst) — alias kan inte ändras.",
+      "colUser": "Användare",
+      "colUserTitle": "Användarnamn i alla stavningar",
+      "colStamps": "Stämplar",
+      "colLast": "Senaste ändring",
+      "colPerson": "Samma person som",
+      "colDisplay": "Visningsnamn",
+      "colTechnical": "Teknisk",
+      "colActions": "Åtgärder",
+      "accountsTitle": "Inloggade konton",
+      "stampsTitle": "{{single}} enskilda ändringar utanför massändringar · {{files}} filer",
+      "ownPerson": "— egen post —",
+      "technicalAutoYes": "Automatiskt (ja)",
+      "technicalAutoNo": "Automatiskt (nej)",
+      "technicalAuto": "auto",
+      "technicalYes": "Ja",
+      "technicalNo": "Nej",
+      "save": "Spara",
+      "reset": "Återställ",
+      "orphanHeading": "Alias utan matchande användare i aktuell katalog",
+      "orphanDelete": "Ta bort"
     }
   },
   "objectHeader": {
     "noName": "(inget namn)",
     "source": "Källa:",
     "relationshipGraphLink": "↗ Relationsdiagram",
-    "copyUuidAria": "Kopiera UUID till urklipp"
+    "copyUuidAria": "Kopiera UUID till urklipp",
+    "change": {
+      "modified": "Senast ändrad",
+      "containerModified": "Behållaren senast ändrad",
+      "timeTooltip": "{{age}} — lokal tid hos den redigerande klienten, utan tidszon",
+      "unknownAuthor": "okänd användare",
+      "authorTooltip": "FileMaker-användarnamn för den senaste redigeraren",
+      "accountTooltip": "Inloggat konto",
+      "countTooltip": "Sparningar sedan objektet skapades",
+      "modifications_one": "{{count}} ändring",
+      "modifications_other": "{{count}} ändringar",
+      "quotedName": "”{{name}}”",
+      "technical": {
+        "tool": "Verktyg",
+        "toolTooltip": "Stämplad av ett verktyg (FileMaker Data Migration Tool), inte av en utvecklare",
+        "runtime": "Körtid",
+        "runtimeTooltip": "Ändrad under körning av en slutanvändare (WebDirect-session) — ingen utvecklaraktivitet",
+        "other": "Teknisk",
+        "otherTooltip": "Markerad som teknisk författare i författaraliasen"
+      },
+      "bulk": {
+        "badge": "Massändring {{date}}",
+        "kind": {
+          "mass_action": "Massåtgärd: många objekt stämplade på en gång (migrering, sök och ersätt, ny fil)",
+          "paste_import": "Klistra in / importera: objekt som klistrats in eller importerats tillsammans",
+          "tool": "Verktygskörning (FileMaker Data Migration Tool)"
+        },
+        "scopeFile": "i en fil",
+        "scopeSolution_one": "i {{count}} fil",
+        "scopeSolution_other": "i {{count}} filer",
+        "objects_one": "{{count}} objekt",
+        "objects_other": "{{count}} objekt",
+        "hint": "Stämpeln speglar denna åtgärd, inte en enskild redigering av objektet."
+      }
+    }
   },
   "scriptLine": {
     "expand": "Expandera",
@@ -660,7 +746,6 @@
     "viewTable": "Tabellvy",
     "baseTheme": "Bastema",
     "inLayoutMenus": "I layoutmenyer",
-    "lastModified": "Senast ändrad",
     "triggersHeading": "Skriptutlösare",
     "noTriggers": "Inga skriptutlösare",
     "yes": "Ja",
@@ -731,6 +816,7 @@
       "button_action": "Knappåtgärd",
       "panel_title": "Panelrubrik",
       "popover_title": "Popover-rubrik",
+      "active_segment": "Aktivt segment",
       "display_calculation": "Visningsberäkning",
       "merge_text": "Upplösta merge-ankare",
       "chart_series": "Diagramserie",

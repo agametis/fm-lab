@@ -1,7 +1,7 @@
 {
   "manifest": {
     "title": "Vue fichier",
-    "description": "Vue détaillée par fichier : métadonnées, options de fichier, indicateurs d'objets et les scripts déclenchés / modèle de départ / compte de connexion."
+    "description": "Vue détaillée par fichier : métadonnées, options du fichier, indicateurs d’objets, horodatages par catalogue et scripts déclenchés / modèle de démarrage / compte de connexion."
   },
   "layout": {
     "file_not_found.props.title": "Fichier introuvable",
@@ -14,6 +14,11 @@
     "file_metrics_kpistrip.props.items[4].label": "Dernier import",
     "file_metrics_kpistrip.props.items[5].label": "Version min.",
     "file_size_kpistrip.props.items[0].label": "Taille du fichier",
+    "file_change_kpistrip.props.items[0].label": "Dernière modification de conception",
+    "file_change_kpistrip.props.items[1].label": "Par",
+    "file_change_kpistrip.props.items[2].label": "Dernière modification de masse",
+    "file_change_kpistrip.props.items[3].label": "Événements de masse",
+    "file_change_kpistrip.props.items[4].label": "Modifications individuelles %",
     "file_settings_list.props.items[0].label": "Connexion auto",
     "file_settings_list.props.items[1].label": "Enregistrer les identifiants",
     "file_settings_list.props.items[2].label": "Champs de connexion",
@@ -31,6 +36,17 @@
     "file_object_counts_kpistrip.props.items[6].label": "Listes de valeurs",
     "file_object_counts_kpistrip.props.items[7].label": "Fonctions pers.",
     "file_object_counts_kpistrip.props.items[8].label": "Variables",
+    "file_catalog_changes.props.title": "Modifications par catalogue",
+    "file_catalog_changes_md.props.content": "Chaque objet ne conserve que son **dernier** horodatage. *Dernière modification individuelle* ignore les événements de masse (migrations, collages, exécutions d’outils) et les auteurs techniques. L’horodatage du catalogue suit ses propres règles : son compteur augmente à chaque enregistrement d’un objet du catalogue. Les heures sont l’heure locale du client ayant modifié.",
+    "file_change_trend.props.label": "Modifications individuelles par mois, 12 derniers mois jusqu’à l’état des données",
+    "file_catalog_changes_table.props.columns[0].label": "Catalogue",
+    "file_catalog_changes_table.props.columns[1].label": "Dernière modification individuelle",
+    "file_catalog_changes_table.props.columns[2].label": "Utilisateur",
+    "file_catalog_changes_table.props.columns[3].label": "Horodatage du catalogue",
+    "file_catalog_changes_table.props.columns[4].label": "Compteur",
+    "file_catalog_changes_table.props.columns[5].label": "Objets",
+    "file_catalog_changes_table.props.columns[6].label": "Dans des événements de masse",
+    "file_catalog_changes_table.props.columns[7].label": "Rubrique supprimée après la dernière modification",
     "file_triggers.props.title": "Scripts déclenchés",
     "file_triggers_table.props.columns[0].label": "Événement",
     "file_triggers_table.props.columns[1].label": "Script",

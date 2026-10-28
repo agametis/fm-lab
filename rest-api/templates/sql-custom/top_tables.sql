@@ -1,4 +1,4 @@
--- @template_type: object
+-- @template_type: report
 -- @title: Top tables
 -- @description: Base tables with the most fields.
 -- @icon: table
@@ -7,7 +7,7 @@
 -- @params: limit (optional, default 100), file (optional)
 -- @click_action: openObject
 -- @click_args: uuid={{uuid}}&type=BaseTable
--- @output_format: uuid, name, type, file, field_count
+-- @output_format: uuid, name, file, field_count
 -- @author: fm-lab core
 -- @version: 1.0
 -- @tags: tables, top, ranking
@@ -15,7 +15,6 @@
 SELECT
     bt.BT_UUID                AS uuid,
     bt.BT_Name                AS name,
-    'BaseTable'               AS type,
     bt.File_Name              AS file,
     COUNT(f.Field_UUID)       AS field_count
 FROM BaseTableCatalog bt

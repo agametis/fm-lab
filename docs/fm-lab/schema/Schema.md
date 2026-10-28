@@ -134,6 +134,18 @@ The [XML export](../xml/XML.md) represents each object type as its own dictionar
 | [LibraryReferences](catalog-tables/LibraryReferences.md) | Embedded-library references (metadata only) |
 | [XMLMetadata](catalog-tables/XMLMetadata.md) | Root attributes of the XML export: format version, locale, DDR flag |
 
+### Change metadata
+
+Most object tables above carry the raw change stamp of each object (`Modified_At`, `Modified_By`, `Modified_Account`, `Modifications`). These tables collect the stamps for analyses across types:
+
+| Table | Content |
+|---|---|
+| [ObjectChangeMeta](catalog-tables/ObjectChangeMeta.md) | Last change per object across all types: typed timestamp, user, account, change counter, technical author, burst and mass event |
+| [ChangeBulkEvents](catalog-tables/ChangeBulkEvents.md) | Mass events — one action that stamps many objects at once (migration, paste/import, tool run), per file or across files |
+| [ChangeBulkConfig](catalog-tables/ChangeBulkEvents.md#changebulkconfig) | Parameters of the burst and mass-event detection (one row) |
+| [ChangeTechnicalAuthors](catalog-tables/ChangeBulkEvents.md#changetechnicalauthors) | Patterns of authors that are not developers (`tool`, `runtime`) |
+| [CatalogChangeMeta](catalog-tables/CatalogChangeMeta.md) | Change stamps of the catalogs themselves — one per catalog, one per base table's field catalog |
+
 ### Internal & auxiliary tables
 
 Beyond the documented surface, the catalog contains working tables the pipeline and the tooling use internally: raw reference extractions before resolution (`XMLStepReferences`, `XMLLayoutReferences`, `XMLCalcReferences`, `LayoutObjectSteps`), resolver helpers (`TableOccurrenceResolution`, `ObjectHomes`, `ScriptStepRoleMap`, `GetSubparameterMap`, `MBS_SubnameMap`, `DataSourceFileMap`, `step_metadata`, `sql_name_wrappers`), import monitoring and the [duplicate census](UUID%20Healing%20and%20Duplicate%20Census.md) (`DuplicateAbsorptions`, `DuplicateAbsorptionDetails`, `MergeAbsorptions` — since schema 1.19.0 also the UUID-healing mapping), bookkeeping (`PasteIndexList`, `SchemaInfo`) and the graph-clustering layer (`ObjectClusters`, `CommunityNames`, `ClusterNodeUniverse`, `ClusterEdgesBaseMat`). A set of `v_check_*` views implements the import quality gate, and analysis views (`v_calculation_links`, `v_script_block_tree`, `v_cross_file_dependencies`, `LogicalLinks`, `FolderHierarchy`, …) provide prepared perspectives for common queries — `v_calc_anchors` lives on as a materialized compatibility facade over [CalculationsCatalog](catalog-tables/CalculationsCatalog.md) (a table, not a view, since schema 1.22.0). They are stable enough to query, but their shape follows the pipeline's needs and may change between releases — treat the tables above as the documented contract.

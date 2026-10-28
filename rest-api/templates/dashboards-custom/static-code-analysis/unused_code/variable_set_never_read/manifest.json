@@ -1,6 +1,6 @@
 {
   "id": "variable_set_never_read",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Variable set but never read",
   "description": "Unused-code rule — a variable is written but never read anywhere in the catalog. Dead weight at best; at worst the reading side was renamed and the write now goes nowhere. Known false-positive classes: values handed on as script parameters, variable names assembled at runtime, and reads that happen outside the exported files — the rule is therefore informational, not an error.\n\nBased on the fmCheckMate check \"ListVarsDefinedButUnused\" — https://github.com/mrwatson-de/fmCheckMate-XSLT",
   "author": "fm-lab rules",
@@ -71,7 +71,8 @@
     },
     {
       "id": "findings",
-      "source": "bundle:data/findings.sql"
+      "source": "bundle:data/findings.sql",
+      "pageSize": 500
     }
   ],
   "params": [

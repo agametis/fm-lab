@@ -59,6 +59,7 @@ The following groups exist to support the FM-Lab web frontend and are **not** co
 - `/plugin-spec/*` — plug-in platform metadata derived from the installed MBS docs (see [plugin-spec](../schema/plugin-spec.md))
 - `/plugins/*`, `/fmide/*`, `/graphify/*` — plugin management and optional plugins (disabled by default)
 - `/annotations/*` — user annotations for the Graph Explorer
+- `/change-authors` — curated author aliases of the change metadata (settings page; stored with the user annotations)
 - `/debug/session*` — frontend debug-session ingestion
 
 ## Multi-solution workspaces

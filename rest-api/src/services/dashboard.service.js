@@ -7,6 +7,7 @@ const environment = require('../config/environment');
 const { createError } = require('../middleware/error-handler');
 const db = require('../config/database');
 const templateService = require('./template.service');
+const paging = require('./paging.service');
 const dashboardI18nService = require('./dashboard-i18n.service');
 const { schemas: dashboardSchemas } = require('./dashboard-schemas');
 const settingsStore = require('../plugins/settings-store');
@@ -381,16 +382,32 @@ async function resolveApiSet(bundle, setId) {
       || (await loadApiSetFile(path.join(bundle.dir, 'api-sets'), setId));
 }
 
-async function runBundleQuery(ctx, bundle, relPath, params) {
+async function runBundleQuery(ctx, bundle, relPath, params, datasetSpec = {}) {
   const sqlTemplate = await loadBundleSql(bundle, relPath);
-  let sql = templateService.interpolateTemplate(sqlTemplate, params);
+  // Server paging (see paging.service): the page window comes from the request,
+  // then the manifest (`pageSize`, `pageParam`, `searchParam`), then the generic
+  // default. Datasets without the paging tail run unchanged.
+  let effectiveParams = params;
+  if (paging.isPagedTemplate(sqlTemplate)) {
+    effectiveParams = paging.resolvePaging(params, {
+      pageSize: datasetSpec.pageSize,
+      pageParam: datasetSpec.pageParam,
+      searchParam: datasetSpec.searchParam,
+    }).params;
+  }
+  let sql = templateService.interpolateTemplate(sqlTemplate, effectiveParams);
   // API-Filter-Set injizieren (nur Datasets mit Platzhalter; alle anderen Bundles
   // unberührt). NACH interpolateTemplate → generierte SQL ist präprozessor-sicher.
+  // VOR der Sortierung: deren DESCRIBE braucht das vollständige SQL.
   if (sql.includes(API_SET_PLACEHOLDER)) {
     const setId = (params && params.api_set && String(params.api_set)) || 'generic';
     const set = (await resolveApiSet(bundle, setId)) || (await resolveApiSet(bundle, 'generic'));
     sql = sql.split(API_SET_PLACEHOLDER).join(buildClassificationCase(set || {}));
   }
+  sql = await paging.applySort(ctx, sqlTemplate, sql, params, {
+    sortParam: datasetSpec.sortParam,
+    sortColumns: datasetSpec.sortColumns,
+  });
   const result = await db.executeQuery(ctx, sql);
   return {
     data: convertBigInts(result.rows),
@@ -473,6 +490,12 @@ async function builtinQueryMeta(params = {}) {
       row_action_label: null,
       chip_filter: null,
       chip_param: null,
+      page_param: null,
+      search_param: null,
+      sort_param: null,
+      sort_columns: [],
+      page_size: null,
+      paging_off: false,
     }];
   }
   return [{
@@ -490,6 +513,12 @@ async function builtinQueryMeta(params = {}) {
     row_action_label: t.row_action_label || null,
     chip_filter: t.chip_filter || null,
     chip_param: t.chip_param || null,
+    page_param: t.page_param || null,
+    search_param: t.search_param || null,
+    sort_param: t.sort_param || null,
+    sort_columns: t.sort_columns || [],
+    page_size: t.page_size ?? null,
+    paging_off: t.page_size === 'all',
     object_types: t.object_types || [],
     output_types: t.output_types || [],
     scope: t.scope || [],
@@ -1631,7 +1660,7 @@ async function executeDataset(ctx, bundle, datasetSpec, requestParams = {}) {
 
   switch (scheme) {
     case 'bundle':
-      return runBundleQuery(ctx, bundle, ref, params);
+      return runBundleQuery(ctx, bundle, ref, params, datasetSpec);
     case 'custom':
       return runCustomTemplate(ctx, ref, params);
     case 'report':

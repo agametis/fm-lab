@@ -63,7 +63,8 @@
     },
     {
       "id": "findings",
-      "source": "bundle:data/findings.sql"
+      "source": "bundle:data/findings.sql",
+      "pageSize": 500
     }
   ],
   "params": [
@@ -74,10 +75,10 @@
       "description": "Optional file filter (from the app-level filter)."
     },
     {
-      "name": "limit",
-      "type": "number",
+      "name": "variable_scope",
+      "type": "string",
       "required": false,
-      "description": "Maximum number of findings returned (default 500)."
+      "description": "Optional chip filter on scope."
     }
   ],
   "permissions": {

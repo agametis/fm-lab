@@ -20,7 +20,7 @@ The tables below list the property surface of the `<Theme>` element and where ea
 | `@defaultTheme` | — | Marks the file's default theme — **not extracted** |
 | `@version`, `@locale`, `@platform` | — | Theme version, locale and platform code (`1`, `2` observed *(corpus)*, meaning undocumented) — **not extracted** |
 | `<UUID>` (text) | `Theme_UUID` | Stable identity, used for all joins |
-| `<UUID>/@accountName`, `@userName`, `@timestamp`, `@modifications` | — | Modification metadata — **not extracted** |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata, raw (`Modified_At` as text, empty account → `NULL`); typed per object in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
 | `<CSS>` (CDATA) | — | The complete CSS rule set — **not extracted** as a column of its own (contained in `Theme_XML`) |
 | `<Image>` | — | Theme image resource — **not extracted** |
 | `<Metadata>` (`<namedstyles>`, part paddings/min-sizes, color scheme, charting defaults, `<layoutbuilder>`) | — | Theme-internal named styles and layout-builder defaults — **not extracted**; unrelated to the file-level [XML Metadata](../../xml/catalogs/XML%20Metadata.md) branch |

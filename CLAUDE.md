@@ -25,7 +25,7 @@ Standard loop for every question: *understand the question → pick the table(s)
 
 Use the **`convert-xml` skill** — it runs the full pipeline (P1 extract → P6 validate, plus analysis views and P7 auto-clustering):
 
-- Single file: `convert-xml "MyDatabase.xml"` · all files in the active solution's inbox `solutions/<id>/xml/`: `convert-xml --batch` · another solution: `--batch --solution <id>` · large files: `--batch --split`
+- Single file: `convert-xml "MyDatabase.xml"` · all files in the active solution's inbox `solutions/<id>/xml/`: `convert-xml --batch` · another solution: `--batch --solution <id>` · large files need no flag: the default engine (Turbo + auto) chunks them itself; `--split` forces the classic DOM path (only on explicit request)
 - Supported input: SaXML v2.1.0.0+ (FileMaker 19+, root `<FMSaveAsXML>`). The older v2.0.0.0 format (`<FMDynamicTemplate>`) is skipped with a warning. Every file is imported under an explicit **SaXML profile** read from the root version — `saxml22` (2.1–2.2.x, FileMaker 19–22) or `saxml23` (2.3.0.0+, FileMaker 26) — persisted in `FilesCatalog.SaXML_Profile`; never mix the FileMaker 22 and 26 export of the *same* file in one bundle (identical object UUIDs).
 - After a successful run the master DB is synced to the REST-API copy automatically. CLI and the web import button share a lock file — the second caller fails fast (HTTP 409 / exit 7).
 
@@ -53,6 +53,7 @@ The DuckDB tables mirror the XML object catalogs. Most-used tables:
 | `VariableUsages` / `VariablesCatalog` | Every variable usage / aggregated per variable |
 | `DDR_Calculations` | Formula chunks for dependency analysis (needs DDR-Info) |
 | `AccountsCatalog` / `PrivilegeSetsCatalog` / `PrivilegeSet*Access` | Security model |
+| `ObjectChangeMeta` / `ChangeBulkEvents` / `CatalogChangeMeta` | Last change per object (typed `Modified_At`, `Modified_By`, `Modified_Account`, `Modifications`, `Author_Key`, `Author_Kind`; local client time, no time zone) / mass events (migrations, pastes, tool runs — per file or across files) / change stamps of the catalogs themselves — only the **last** save survives and mass actions dominate real solutions (individual changes: `Bulk_Event_ID IS NULL`); steps, layout objects, calculations inherit their container's stamp (pitfalls → `schema-reference.md`, queries → `query-cookbook.md`) |
 | `LinkRoleRegistry` | Link-role classification & where-used flag (columns: `Link_Kind` = usage/containment/restriction, `Counts_For_Where_Used`) — the prose meaning of each role lives in `schema-reference.md`, not as a column |
 
 Full reference — all tables, column details (AutoEnter/Lookup, LayoutObjects, privilege access, variables, DDR-Info) and all 61 link roles: → `docs/agents/schema-reference.md`

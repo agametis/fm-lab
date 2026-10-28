@@ -114,6 +114,7 @@ function SearchView() {
   const [files, setFiles] = useState<FileInfo[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>((searchParams.get('sort') as SortOption) || 'standard');
   const [groupBy, setGroupBy] = useState<GroupOption>((searchParams.get('group') as GroupOption) || 'none');
+  const [modifiedSince, setModifiedSince] = useState<string>(searchParams.get('since') || '');
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -130,6 +131,10 @@ function SearchView() {
     searchName: debouncedSearchName || '*',
     selectedFile,
     objectType,
+    // 'modified' sorts on the server (the list is paginated); the other sorts
+    // reorder the loaded items on the client.
+    sort: sortBy === 'modified' ? 'modified' : undefined,
+    modifiedSince,
   });
 
   // Zwei-Wege-Sync zwischen URL und Filter-State. Die Implementierung muss zwei
@@ -190,6 +195,7 @@ function SearchView() {
       if (objectType) params.set('type', objectType);
       if (sortBy !== 'standard') params.set('sort', sortBy);
       if (groupBy !== 'none') params.set('group', groupBy);
+      if (modifiedSince) params.set('since', modifiedSince);
       // Externe Deep-Link-Params (kommen aus Dashboard-Action-URLs, z.B. von
       // den Counter-Pills im docset_home) durchreichen, damit der State→URL-
       // Effekt sie nicht beim ersten Tick wieder strippt. PseudoTokenView /
@@ -207,7 +213,7 @@ function SearchView() {
       setSearchParams(params, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, treeSubtype, debouncedSearchName, selectedFile, objectType, sortBy, groupBy]);
+  }, [mode, treeSubtype, debouncedSearchName, selectedFile, objectType, sortBy, groupBy, modifiedSince]);
 
   // Load available files on mount
   useEffect(() => {
@@ -255,7 +261,7 @@ function SearchView() {
   const unknownLabel = t('common:unknown');
   const processedRows: VirtualListRow[] = useMemo(() => {
     let sorted: FMObject[];
-    if (sortBy === 'standard') {
+    if (sortBy === 'standard' || sortBy === 'modified') {
       sorted = items;
     } else {
       sorted = [...items].sort((a, b) => {
@@ -460,6 +466,8 @@ function SearchView() {
       groupBy={groupBy}
       onSortChange={setSortBy}
       onGroupChange={setGroupBy}
+      modifiedSince={modifiedSince}
+      onModifiedSinceChange={setModifiedSince}
     />
   ) : null;
 

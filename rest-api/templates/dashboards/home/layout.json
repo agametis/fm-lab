@@ -305,6 +305,47 @@
       },
       {
         "type": "Card",
+        "id": "recent_changes",
+        "props": {
+          "span": 12,
+          "title": "Recently changed"
+        },
+        "visibleWhen": { "dataset": "recent_changes", "field": "uuid", "truthy": true },
+        "children": [
+          {
+            "type": "Table",
+            "id": "recent_changes_table",
+            "data": { "dataset": "recent_changes" },
+            "props": {
+              "rowKey": "uuid",
+              "density": "compact",
+              "searchable": false,
+              "columns": [
+                { "field": "at", "label": "Changed", "nowrap": true },
+                { "field": "type", "label": "Type", "nowrap": true },
+                { "field": "name", "label": "Object" },
+                { "field": "file", "label": "File", "nowrap": true },
+                { "field": "person", "label": "Person", "nowrap": true }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": { "uuid": "{{uuid}}", "file": "{{file}}", "type": "{{type}}" }
+              }
+            }
+          },
+          {
+            "type": "NavButton",
+            "id": "recent_changes_all",
+            "props": {
+              "label": "All changes",
+              "variant": "link",
+              "onClick": { "action": "openDashboard", "args": { "id": "changes" } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
         "props": {
           "span": 3,
           "variant": "navtile"

@@ -30,6 +30,8 @@ header() { echo -e "\n${BOLD}$1${NC}"; }
 # Summary tracking
 SUMMARY=()
 summary_add() { SUMMARY+=("$1"); }
+# Advisory entries (recommendations, missing optional parts) — rendered with ⚠
+summary_warn() { SUMMARY+=("!$1"); }
 
 # ─── Error handling ───────────────────────────────────────────
 # On any uncaught failure (set -e), report which phase broke, where the logs are, and
@@ -90,6 +92,42 @@ version_cmp() {
   echo 0
 }
 
+# Node.js security floor per supported release line: the version of the latest
+# security release on each line. Update on every Node.js security release —
+# release lines missing here are end-of-life (no more security fixes).
+# Source: https://nodejs.org/en/blog/vulnerability/october-2026-security-releases
+NODE_SECURITY_RELEASE="2026-10-21"
+NODE_SECURITY_FLOOR="22.23.4 24.22.1 26.12.1"
+
+# Warn (recommendation only — never aborts) when Node.js is below the security
+# floor of its release line, or on a line that no longer receives security fixes.
+check_node_security() {
+  local installed v floor="" newest_major=0 maj lines=""
+  installed=$(printf '%s' "$1" | sed -E 's/^[^0-9]*([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+  case "$installed" in
+    ''|*[!0-9.]*) return 0 ;;   # unparsable → the prerequisite check already reported it
+  esac
+  maj=${installed%%.*}
+  for v in $NODE_SECURITY_FLOOR; do
+    [ "${v%%.*}" = "$maj" ] && floor="$v"
+    [ "${v%%.*}" -gt "$newest_major" ] && newest_major="${v%%.*}"
+    lines="${lines:+$lines, }${v%%.*}.x ≥ $v"
+  done
+
+  if [ -n "$floor" ]; then
+    [ "$(version_cmp "$installed" "$floor")" = "-1" ] || return 0
+    warn "Node.js $installed misses security fixes — the $maj.x line is patched in $floor (security release $NODE_SECURITY_RELEASE)."
+    echo  "    Recommended: update Node.js to ≥ $floor → https://nodejs.org/en/download   (init continues; this is a recommendation)"
+    summary_warn "Node.js security  v$installed < v$floor (security update recommended — see above)"
+  elif [ "$maj" -lt "$newest_major" ]; then
+    warn "Node.js $installed: the $maj.x line is end-of-life and no longer receives security fixes."
+    echo  "    Recommended: switch to a supported line ($lines) → https://nodejs.org/en/download"
+    echo  "    (init continues; this is a recommendation)"
+    summary_warn "Node.js security  v$installed: $maj.x is end-of-life (update recommended — see above)"
+  fi
+  # A major newer than every listed line is unknown here → stay silent.
+}
+
 # Leading major number of a --version string ("v22.17.0" → 22, "10.9.2" → 10).
 # Echoes empty when there is nothing numeric to read, so the caller can tell
 # "too old" apart from "unreadable" — a bare `[ "$x" -ge N ]` on an empty value
@@ -107,8 +145,8 @@ check_duckdb_baseline() {
     base_url=$(jq -r '.tested_baseline.update_url // empty' "$VERSION_MANIFEST" 2>/dev/null)
   fi
   # Fallback if the manifest or jq is unavailable — never let the check itself fail.
-  [ -n "$base_duckdb" ] || base_duckdb="1.5.4"
-  [ -n "$base_webbed" ] || base_webbed="2.2.1"
+  [ -n "$base_duckdb" ] || base_duckdb="1.5.6"
+  [ -n "$base_webbed" ] || base_webbed="2.12.0"
   [ -n "$base_url" ]    || base_url="https://duckdb.org/docs/installation/"
 
   # Extract the numeric version, e.g. "1.5.4" from "v1.5.4 (Variegata) 08e34c447b".
@@ -121,8 +159,23 @@ check_duckdb_baseline() {
     warn "DuckDB $installed is older than the tested fm-lab baseline (v$base_duckdb + webbed $base_webbed)."
     echo  "    Recommended: update DuckDB to ≥ $base_duckdb — the validated setup for webbed $base_webbed."
     echo  "    → $base_url   (init continues; this is a recommendation, not a requirement)"
-    summary_add "DuckDB baseline   v$installed < v$base_duckdb (update recommended — see above)"
+    summary_warn "DuckDB baseline   v$installed < v$base_duckdb (update recommended — see above)"
   fi
+}
+
+# Warn (recommendation only) when the CLI is on a newer DuckDB than the REST API's
+# bundled @duckdb/node-api: catalogs it writes may use a storage format the REST API
+# cannot open (web frontend: STORAGE_VERSION_MISMATCH). See tools/lib/duckdb_binding.sh.
+check_duckdb_binding() {
+  # Advisory only — a missing helper must never abort init (set -e).
+  [ -f "$PROJECT_ROOT/tools/lib/duckdb_binding.sh" ] || return 0
+  . "$PROJECT_ROOT/tools/lib/duckdb_binding.sh"
+  fmlab_duckdb_binding_mismatch "$1" || return 0
+  warn "DuckDB CLI $FMLAB_DUCKDB_CLI_VER is newer than the REST API's DuckDB $FMLAB_DUCKDB_BINDING_VER (@duckdb/node-api)."
+  echo  "    Catalogs written by this CLI may be unreadable for the REST API / web frontend."
+  echo  "    Recommended: use DuckDB CLI ${FMLAB_DUCKDB_BINDING_VER%.*}.x, which this fm-lab release supports, or update"
+  echo  "    fm-lab to a release that supports DuckDB ${FMLAB_DUCKDB_CLI_VER%.*}.   (init continues; this is a recommendation)"
+  summary_warn "DuckDB binding    CLI v$FMLAB_DUCKDB_CLI_VER > REST API v$FMLAB_DUCKDB_BINDING_VER (storage mismatch risk — see above)"
 }
 
 # Ensure the webbed community extension is loadable for the ACTIVE DuckDB version.
@@ -147,7 +200,7 @@ check_webbed_extension() {
     error "webbed extension could not be installed — the XML conversion needs it (read_xml)."
     echo  "    Fix manually (needs internet):  \"$DUCKDB_BIN\" -c \"FORCE INSTALL webbed FROM community;\""
     echo  "    Note: DuckDB stores extensions per version — reinstall webbed after every DuckDB upgrade."
-    summary_add "webbed            MISSING — run: FORCE INSTALL webbed FROM community;"
+    summary_warn "webbed            MISSING — run: FORCE INSTALL webbed FROM community;"
     ok=false
   fi
 }
@@ -252,7 +305,7 @@ check_resources() {
     if [ "$ram_gb" -lt "$RAM_MIN_GB" ]; then
       warn "Only ${ram_gb} GB RAM detected — ≥ ${RAM_MIN_GB} GB recommended for large solutions."
       echo  "    Conversion still works (adaptive OOM-backoff), but large catalogs run slower."
-      summary_add "RAM               ${ram_gb} GB (< ${RAM_MIN_GB} GB recommended)"
+      summary_warn "RAM               ${ram_gb} GB (< ${RAM_MIN_GB} GB recommended)"
     else
       info "RAM: ${ram_gb} GB"
     fi
@@ -265,7 +318,7 @@ check_resources() {
     if [ "$disk_gb" -lt "$DISK_MIN_GB" ]; then
       warn "Only ${disk_gb} GB free disk on the project volume — ≥ ${DISK_MIN_GB} GB recommended."
       echo  "    The DuckDB catalog + spill can reach double-digit GB on large solutions."
-      summary_add "Disk              ${disk_gb} GB free (< ${DISK_MIN_GB} GB recommended)"
+      summary_warn "Disk              ${disk_gb} GB free (< ${DISK_MIN_GB} GB recommended)"
     else
       info "Disk: ${disk_gb} GB free"
     fi
@@ -320,6 +373,7 @@ if [ -n "$DUCKDB_BIN" ]; then
   DUCKDB_DIR=$(dirname "$DUCKDB_BIN")
   info "DuckDB: $DUCKDB_VER ($DUCKDB_BIN)"
   check_duckdb_baseline "$DUCKDB_VER"
+  check_duckdb_binding "$DUCKDB_VER"
   check_webbed_extension
 else
   error "DuckDB CLI not found. Install it from https://duckdb.org/docs/installation/"
@@ -336,6 +390,7 @@ if command -v node &>/dev/null; then
     ok=false
   elif [ "$NODE_MAJOR" -ge 20 ]; then
     info "Node.js: $NODE_VER"
+    check_node_security "$NODE_VER"
   else
     error "Node.js $NODE_VER found, but ≥20 is required."
     diagnose_tool_path node 20
@@ -368,6 +423,26 @@ else
   echo  "    → https://docs.npmjs.com/downloading-and-installing-node-js-and-npm"
   diagnose_tool_path npm 10
   ok=false
+fi
+
+# Python 3 (optional) — import, analysis, the doc installers and solution.sh run
+# on Node; Python serves code generation (fm-generate-script) and Leiden
+# clustering (Louvain fallback without it).
+# On macOS /usr/bin/python3 is a stub that only works with the Command Line Tools,
+# so check xcode-select before running it (avoids the CLT install dialog).
+PY3_BIN=$(command -v python3 2>/dev/null || true)
+if [ "$PY3_BIN" = /usr/bin/python3 ] && [ "$(uname -s)" = Darwin ] \
+   && ! xcode-select -p >/dev/null 2>&1; then
+  PY3_BIN=""
+fi
+if [ -n "$PY3_BIN" ] && PY3_VER=$(python3 --version 2>/dev/null); then
+  info "Python: ${PY3_VER#Python } (optional)"
+else
+  warn "Python 3 not found (optional) — import, analysis and the doc installers work without it."
+  echo  "    Needed for code generation (fm-generate-script); graph clustering uses Louvain"
+  echo  "    instead of Leiden."
+  echo  "    macOS: xcode-select --install (or brew install python3) · Linux: apt install python3"
+  summary_warn "python3           not found (optional — code generation, Leiden clustering)"
 fi
 
 if [ "$ok" = false ]; then
@@ -433,10 +508,10 @@ if [ ! -f "$SETTINGS_FILE" ]; then
 }
 SETTINGSEOF
   info "Created .claude/settings.json"
-  summary_add "Claude settings    .claude/settings.json created"
+  summary_add "Claude settings   .claude/settings.json created"
 else
   info ".claude/settings.json already exists"
-  summary_add "Claude settings    already present (skipped)"
+  summary_add "Claude settings   already present (skipped)"
 fi
 
 # ─── DuckDB path → .claude/settings.json ─────────────────────
@@ -463,7 +538,7 @@ if (!existingPath.split(':').includes(duckdbDir)) {
 fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
 NODEEOF
   info "DuckDB path written to .claude/settings.json"
-  summary_add "Claude Code PATH   $DUCKDB_DIR added to .claude/settings.json"
+  summary_add "Claude Code PATH  $DUCKDB_DIR added to .claude/settings.json"
 fi
 
 # ─── Logs directory ───────────────────────────────────────────
@@ -493,7 +568,10 @@ print_summary() {
   echo -e "${BOLD}fm-lab setup complete (${elapsed}s)${NC}"
   echo ""
   for line in "${SUMMARY[@]}"; do
-    echo -e "  ${GREEN}✓${NC} $line"
+    case "$line" in
+      '!'*) echo -e "  ${YELLOW}⚠${NC} ${line#!}" ;;
+      *)    echo -e "  ${GREEN}✓${NC} $line" ;;
+    esac
   done
   echo -e "${BOLD}══════════════════════════════════════${NC}"
 }

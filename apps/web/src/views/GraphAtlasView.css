@@ -496,3 +496,28 @@
   font-size: 0.75rem;
   color: var(--color-text-secondary);
 }
+
+/* ── Farbmodi „Aktivität“/„Speicherungen“ ─────────────────────────────────
+   Umschalter in der Werkzeugleiste und Kennzahlen im „(...)“-Panel. Die Legende
+   teilt sich der Atlas mit dem Graph Explorer → components/AtlasActivity.css. */
+.atlas-colormode {
+  flex-wrap: wrap;
+}
+.atlas-panel-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.2rem 0.8rem;
+  margin: 0.2rem 0 0.8rem;
+  font-size: 0.82rem;
+}
+.atlas-panel-facts dt {
+  color: var(--color-text-secondary);
+}
+.atlas-panel-facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.atlas-panel-link {
+  margin: 0 0 0.8rem;
+  font-size: 0.85rem;
+}

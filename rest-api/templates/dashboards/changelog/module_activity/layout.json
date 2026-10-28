@@ -1,0 +1,693 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "ma_no_meta",
+        "props": {
+          "span": 12,
+          "title": "No change stamps",
+          "variant": "hero"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": false
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "ma_no_meta_md",
+            "props": {
+              "content": "This catalog carries no change stamps yet. They are read during the XML import — import the solution again to see which modules are alive and which rest."
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "ma_filters",
+        "props": {
+          "span": 12,
+          "title": "Filter"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "Select",
+                "id": "ma_file_select",
+                "data": {
+                  "dataset": "file_options"
+                },
+                "props": {
+                  "param": "file",
+                  "label": "File",
+                  "emptyOptionLabel": "All files",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "multiple": true
+                }
+              },
+              {
+                "type": "Select",
+                "id": "ma_person_select",
+                "data": {
+                  "dataset": "person_options"
+                },
+                "props": {
+                  "param": "person",
+                  "label": "Person",
+                  "emptyOptionLabel": "All persons",
+                  "resetParams": [
+                    "page"
+                  ]
+                }
+              },
+              {
+                "type": "NavButton",
+                "id": "ma_filters_reset",
+                "props": {
+                  "label": "Reset filters",
+                  "variant": "link",
+                  "onClick": {
+                    "action": "navigate",
+                    "args": {
+                      "path": "/dashboard/module_activity"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "FilterChips",
+                "id": "ma_days_chips",
+                "props": {
+                  "param": "days",
+                  "default": "365",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "options": [
+                    {
+                      "value": "30",
+                      "label": "30 days"
+                    },
+                    {
+                      "value": "90",
+                      "label": "90 days"
+                    },
+                    {
+                      "value": "365",
+                      "label": "365 days"
+                    },
+                    {
+                      "value": "all",
+                      "label": "All"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "ToggleChips",
+                "id": "ma_toggles",
+                "props": {
+                  "items": [
+                    {
+                      "param": "bulk",
+                      "label": "Mass events",
+                      "on": "include",
+                      "off": "hide",
+                      "default": "hide",
+                      "resetParams": [
+                        "page"
+                      ]
+                    },
+                    {
+                      "param": "technical",
+                      "label": "Technical authors",
+                      "on": "include",
+                      "off": "hide",
+                      "default": "hide",
+                      "resetParams": [
+                        "page"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "ma_file_modules",
+        "props": {
+          "span": 12,
+          "title": "Files stand in for modules"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "module_is_file",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "ma_file_modules_md",
+            "props": {
+              "content": "This catalog has no module partition — every file counts as one module. Segment the solution with the skill `fm-graph-cluster` to see the activity of the modules of the object graph."
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "ma_mass_hint",
+        "props": {
+          "span": 12,
+          "title": "Mass events dominate"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "mass_dominant",
+          "truthy": true
+        },
+        "data": {
+          "dataset": "view_state"
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "ma_mass_hint_md",
+            "props": {
+              "content": "For {{unknown_pct}} % of the module members the age of the last real change is unknown: their newest stamp comes from a mass event younger than two years, which overwrote the individual stamps. The class therefore says little per module. Sort the table *by saves* — the lifetime save counter is robust against mass events and shows where the work went."
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "ma_overview",
+        "props": {
+          "span": 12
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "ma_kpistrip",
+            "data": {
+              "dataset": "kpis"
+            },
+            "props": {
+              "items": [
+                {
+                  "label": "Modules",
+                  "field": "modules",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "module_activity",
+                      "params": {
+                        "state": "all"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Active ≤ 90 days",
+                  "field": "active",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "module_activity",
+                      "params": {
+                        "state": "active"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Resting > 2 years",
+                  "field": "resting",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "module_activity",
+                      "params": {
+                        "state": "resting"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Unknown",
+                  "field": "unknown",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "module_activity",
+                      "params": {
+                        "state": "unknown"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Objects without module",
+                  "field": "without_module",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "ma_selected",
+        "props": {
+          "span": 12,
+          "title": "Selected module"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "module_selected",
+          "truthy": true
+        },
+        "data": {
+          "dataset": "module_detail"
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "Markdown",
+                "id": "ma_selected_md",
+                "props": {
+                  "content": "**{{module_name}}** — {{members}} members in {{file_count}} file(s). Click *Members* to open the module in the Graph Atlas, *Changes* to list the changes of its files."
+                }
+              },
+              {
+                "type": "NavButton",
+                "id": "ma_selected_clear",
+                "props": {
+                  "label": "Clear selection",
+                  "variant": "link",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "module_activity",
+                      "params": {
+                        "module": ""
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "KPIStrip",
+            "id": "ma_selected_kpis",
+            "props": {
+              "items": [
+                {
+                  "label": "Activity",
+                  "field": "activity",
+                  "format": "badge",
+                  "badgeTone": {
+                    "≤ 30 days": "ok",
+                    "≤ 90 days": "ok",
+                    "≤ 1 year": "partial",
+                    "Unknown": "warning",
+                    "> 2 years": "none",
+                    "No stamp": "none"
+                  }
+                },
+                {
+                  "label": "Newest change",
+                  "field": "newest_date"
+                },
+                {
+                  "label": "Members",
+                  "field": "members",
+                  "format": "number",
+                  "onClick": {
+                    "action": "navigate",
+                    "args": {
+                      "path": "{{atlas_path}}"
+                    }
+                  }
+                },
+                {
+                  "label": "Changes",
+                  "field": "changes",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "changes",
+                      "params": {
+                        "file": "{{module_files}}",
+                        "days": "{{days}}",
+                        "anchor": "{{anchor}}",
+                        "technical": "{{technical}}",
+                        "bulk": "{{bulk}}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Active ≤ 90 days (%)",
+                  "field": "active_90_pct",
+                  "format": "number"
+                },
+                {
+                  "label": "Median age (days)",
+                  "field": "median_age_days",
+                  "format": "number"
+                },
+                {
+                  "label": "Median saves",
+                  "field": "median_saves",
+                  "format": "number"
+                },
+                {
+                  "label": "Mass stamps (%)",
+                  "field": "undated_pct",
+                  "format": "number"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "ma_modules",
+        "props": {
+          "span": 12,
+          "title": "Modules",
+          "subtitle": "Every module of the cluster partition, classed by the newest individual change of a member. Click a module to see its figures and links."
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "FilterChips",
+                "id": "ma_state_chips",
+                "props": {
+                  "param": "state",
+                  "default": "all",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "options": [
+                    {
+                      "value": "all",
+                      "label": "All"
+                    },
+                    {
+                      "value": "active",
+                      "label": "≤ 90 days"
+                    },
+                    {
+                      "value": "aging",
+                      "label": "≤ 2 years"
+                    },
+                    {
+                      "value": "resting",
+                      "label": "> 2 years"
+                    },
+                    {
+                      "value": "unknown",
+                      "label": "Unknown"
+                    },
+                    {
+                      "value": "none",
+                      "label": "No stamp"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "FilterChips",
+                "id": "ma_sort_chips",
+                "props": {
+                  "param": "sort",
+                  "default": "activity",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "options": [
+                    {
+                      "value": "activity",
+                      "label": "By activity"
+                    },
+                    {
+                      "value": "saves",
+                      "label": "By saves"
+                    },
+                    {
+                      "value": "changes",
+                      "label": "By changes"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "Table",
+            "id": "ma_modules_table",
+            "data": {
+              "dataset": "modules"
+            },
+            "props": {
+              "density": "compact",
+              "rowKey": "row_key",
+              "pageParam": "page",
+              "searchParam": "mq",
+              "sortable": true,
+              "sortParam": "msort",
+              "searchable": true,
+              "searchPlaceholder": "Search module",
+              "columns": [
+                {
+                  "field": "module_name",
+                  "label": "Module"
+                },
+                {
+                  "field": "members",
+                  "label": "Members",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "activity",
+                  "label": "Activity",
+                  "format": "badge",
+                  "badgeTone": {
+                    "≤ 30 days": "ok",
+                    "≤ 90 days": "ok",
+                    "≤ 1 year": "partial",
+                    "Unknown": "warning",
+                    "> 2 years": "none",
+                    "No stamp": "none"
+                  },
+                  "nowrap": true
+                },
+                {
+                  "field": "newest_date",
+                  "label": "Newest change",
+                  "nowrap": true
+                },
+                {
+                  "field": "changes",
+                  "label": "Changes",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "person_label",
+                  "label": "Persons"
+                },
+                {
+                  "field": "active_90_pct",
+                  "label": "Active ≤ 90 days (%)",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "median_saves",
+                  "label": "Median saves",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "undated_pct",
+                  "label": "Mass stamps (%)",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                }
+              ],
+              "onRowClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "module_activity",
+                  "params": {
+                    "module": "{{module_key}}"
+                  }
+                }
+              },
+              "empty": {
+                "message": "No module matches these filters."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "ma_activity",
+        "props": {
+          "span": 12,
+          "title": "Changes by module"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "FilterChips",
+            "id": "ma_count_chips",
+            "props": {
+              "param": "count",
+              "default": "objects",
+              "options": [
+                {
+                  "value": "objects",
+                  "label": "Count objects"
+                },
+                {
+                  "value": "actions",
+                  "label": "Count actions"
+                }
+              ]
+            }
+          },
+          {
+            "type": "StackedTimeSeries",
+            "id": "ma_series",
+            "data": {
+              "dataset": "activity_series"
+            },
+            "props": {
+              "height": 220,
+              "ariaLabel": "Changes over time, stacked by module",
+              "onBarClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "changes",
+                  "from": "{{from_at}}",
+                  "to": "{{to_at}}",
+                  "bulk": "{{bulk_mode}}"
+                }
+              }
+            }
+          },
+          {
+            "type": "Markdown",
+            "id": "ma_activity_md",
+            "props": {
+              "content": "The seven modules with the most individual changes of the solution keep their colour in every period; the others are summed up. Click a column to list its changes in *Recent changes*."
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "ma_basis",
+        "props": {
+          "span": 12,
+          "title": "Data basis"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "data": {
+          "dataset": "view_state"
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "ma_basis_md",
+            "props": {
+              "content": "The **activity** of a module is the age of its newest individual change, counted back from the data state ({{data_state}}): ≤ 30 days, ≤ 90 days, ≤ 1 year, ≤ 2 years or > 2 years — the same classes as in the Graph Atlas. Mass events and technical authors overwrite the last real stamp: such a stamp younger than two years leaves the age **unknown**, never young; an older one still proves > 2 years. With *Mass events* switched on, every stamp counts as a change. Each object keeps only its last stamp, so the classes show the last state, not a history. **Median saves** is the median of the lifetime save counter of the members; *by saves* ranks the modules by the mean rank of that counter within each object type. *Changes* and *Persons* count the stamps of the period with the filters applied."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

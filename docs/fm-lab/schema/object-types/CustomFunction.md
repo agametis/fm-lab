@@ -17,7 +17,7 @@ CustomFunction is an **exported** type. In SaXML v2.2 (FileMaker 22) the export 
 | `@access` | — | Availability option — **not extracted**; only `All` observed *(corpus)* |
 | `@isFolder` | — | `True` = folder entry, `Marker` = separator line *(corpus)* — **not extracted**; folder/marker rows are only distinguishable by their empty formula |
 | `<UUID>` (text) | `CF_UUID` | Stable identity, used for all joins |
-| `<UUID>/@accountName`, `@userName`, `@timestamp`, `@modifications` | — | Modification metadata (who/when/count) — **not extracted** |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata, raw (`Modified_At` as text, empty account → `NULL`); typed per object in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
 | `<Display>` | `CF_Display` | Display signature incl. parameter list, e.g. `GFN ( field )` |
 | `<TagList>` | — | Tags — **not extracted** |
 | `<ObjectList>/<Parameter @name>` | `Parameters` | Ordered parameter name list (`VARCHAR[]`) |

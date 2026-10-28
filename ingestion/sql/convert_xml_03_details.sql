@@ -463,8 +463,17 @@ JOIN (
     JOIN (
         SELECT upper(Menu_UUID) AS Anchor_UUID, File_Name, Menu_UUID AS Src_UUID, Menu_Name FROM CustomMenuCatalog
         UNION ALL
+        -- Item-Name wie ObjectCatalog Block 20c (P4): Literal-Name vor Befehlsname
         SELECT upper(Item_UUID), File_Name, Item_UUID,
-               Menu_Name || ' › ' || COALESCE(NULLIF(Command_Name, ''), '(Item)') FROM CustomMenuItemCatalog
+               Menu_Name || ' › ' || CASE
+                   WHEN NOT Is_SeparatorItem
+                    AND xml_extract_text(Item_XML, '/CustomMenuItem/Override/@name')[1] = 'True'
+                    AND regexp_full_match(xml_extract_text(Item_XML, '/CustomMenuItem/Name/Calculation/Text')[1], '"[^"\\]+"')
+                       THEN trim(xml_extract_text(Item_XML, '/CustomMenuItem/Name/Calculation/Text')[1], '"')
+                   ELSE COALESCE(NULLIF(Command_Name, ''),
+                       CASE WHEN Is_SeparatorItem THEN '(Separator)' ELSE '(berechnet)' END)
+               END
+        FROM CustomMenuItemCatalog
     ) o ON o.Anchor_UUID = upper(regexp_extract(d.Calc_UUID, '_([0-9A-Fa-f-]{36})', 1))
        AND o.File_Name = d.File_Name
 ) mo ON vr.Calc_Hash = mo.Calc_Hash AND vr.File_Name = mo.File_Name;
@@ -1059,6 +1068,14 @@ END;
 -- ========================================
 -- A.8: VariablesCatalog (Aggregation)
 -- ========================================
+-- Eine Zeile je Scope-Instanz: (Variable_Name, Variable_Scope, Scope_Anchor),
+-- für local/let_local zusätzlich je File_Name. Klon-Dateien (eine Datei als
+-- Kopie einer anderen angelegt) tragen dieselben Script- und Kontext-UUIDs —
+-- der Anker allein trennt ihre lokalen Variablen nicht. Die Identität ist wie
+-- bei allen Klon-Objekten (Object_UUID, File_Name); die UUID (P4, md5 über
+-- Scope::Anker::Name) bleibt dateifrei und damit in klonfreien Katalogen
+-- unverändert. global ist über den Anker (= File_Name) ohnehin datei-lokal,
+-- superglobal bewusst dateiübergreifend.
 
 DROP TABLE IF EXISTS VariablesCatalog;
 
@@ -1099,17 +1116,16 @@ SELECT
     END as Source_Reliability,
     -- File_Name = Datei, in der diese Scope-Instanz wohnt:
     --   global: Anker = File_Name (datei-lokal)
-    --   local mit Script-Anker: einzige Datei dieses Scripts (durch mode garantiert)
-    --   local ohne Script (Fallback '__file::X'): X
+    --   local/let_local: die Gruppen-Datei (File_Name ist Teil des
+    --     Gruppierschlüssels, je Gruppe genau eine Datei)
     --   superglobal: häufigste Datei (informativ)
     CASE
         WHEN Variable_Scope = 'global' THEN Scope_Anchor
-        WHEN Variable_Scope = 'local' AND Scope_Anchor LIKE '__file::%'
-            THEN substr(Scope_Anchor, 9)
+        WHEN Variable_Scope IN ('local', 'let_local') THEN min(File_Name)
         -- Deterministisch (A-1): mode() bricht Häufigkeits-Gleichstände
         -- reihenfolge-abhängig (nicht reproduzierbar bei parallelem Import).
         -- Stattdessen: häufigste Datei, Gleichstand alphabetisch (nur für
-        -- superglobale Variablen relevant — sonst greift Scope_Anchor oben).
+        -- superglobale Variablen relevant — die übrigen Scopes greifen oben).
         ELSE (SELECT fn FROM (
                   SELECT File_Name fn, COUNT(*) c
                   FROM VariableUsages vc_inner
@@ -1121,7 +1137,8 @@ SELECT
                   LIMIT 1))
     END as File_Name
 FROM VariableUsages vc_src
-GROUP BY Variable_Name, Variable_Scope, Scope_Anchor;
+GROUP BY Variable_Name, Variable_Scope, Scope_Anchor,
+         CASE WHEN Variable_Scope IN ('local', 'let_local') THEN File_Name END;
 
 -- Indizes für VariableUsages/VariablesCatalog
 CREATE INDEX IF NOT EXISTS idx_varusages_name ON VariableUsages(Variable_Name);

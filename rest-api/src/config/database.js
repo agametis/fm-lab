@@ -51,11 +51,19 @@ async function createEntry(solutionId) {
   await ensurePlaceholderDb(dbPath);
   console.log(`Connecting to DuckDB at: ${dbPath} (solution: ${solutionId})`);
 
-  const instance = await DuckDBInstance.create(dbPath, {
-    access_mode: 'READ_ONLY',
-    max_memory: environment.duckdb.maxMemory,
-    threads: String(environment.duckdb.threads),
-  });
+  let instance;
+  try {
+    instance = await DuckDBInstance.create(dbPath, {
+      access_mode: 'READ_ONLY',
+      max_memory: environment.duckdb.maxMemory,
+      threads: String(environment.duckdb.threads),
+    });
+  } catch (err) {
+    // Gemischte DuckDB-Versionen (CLI schreibt ein Storage-Format, das die
+    // gebündelte Node-Bindung nicht lesen kann) → sprechender Fehler statt
+    // rohem IO-Error, für jede Anfrage an diese Lösung.
+    throw require('../utils/storage-version').classifyStorageVersion(err, { solution: solutionId, dbPath }) || err;
+  }
   const connection = await instance.connect();
 
   // Scan-heavy analytische Queries (z.B. /api/graph/subgraph: Recursive CTE über
@@ -96,6 +104,7 @@ async function createEntry(solutionId) {
 
   const entry = { solutionId, dbPath, instance, connection };
   await ensureCoreStubs(entry);
+  await require('./change-author-overlay').install(entry);
   await attachReferenceDb(entry);
   await attachPluginSpecDb(entry);
   return entry;
@@ -168,8 +177,19 @@ function evictOverflow(keepId) {
 
 /** Boot-Pfad: Server-Default-Lösung öffnen (wie bisher initialize()). */
 async function initialize() {
-  const slot = await acquireSlot(solutions.getActiveSolutionId());
-  return slot.entry.connection;
+  try {
+    const slot = await acquireSlot(solutions.getActiveSolutionId());
+    return slot.entry.connection;
+  } catch (err) {
+    // Storage-Mismatch ist kein Startabbruch: die API läuft weiter, damit das
+    // Frontend die Ursache anzeigen kann (jede Anfrage an die Lösung liefert
+    // STORAGE_VERSION_MISMATCH; die Pool-Factory versucht es je Zugriff neu).
+    if (err && err.code === 'STORAGE_VERSION_MISMATCH') {
+      console.error(`[database] ${err.message}`);
+      return null;
+    }
+    throw err;
+  }
 }
 
 /**
@@ -239,6 +259,26 @@ const CORE_STUB_DDL = {
   v_calculation_links: `CREATE TEMP TABLE v_calculation_links (
      Calculation_UUID VARCHAR, Link_Role VARCHAR, Target_UUID VARCHAR,
      Target_Type VARCHAR, Target_File VARCHAR, Is_Cross_File BOOLEAN
+   )`,
+  // Änderungs-Metadaten (Schema 1.35.0 / 1.36.0) — Kopfzeile „Zuletzt geändert",
+  // Suchsortierung und Datei-Ansicht laufen auf älteren Katalogen leer statt in
+  // „Table … does not exist". Ein 1.35.0-Katalog hat ObjectChangeMeta ohne die
+  // Burst-/Ereignis-Spalten: Abfragen, die sie lesen, scheitern dort weiterhin.
+  ObjectChangeMeta: `CREATE TEMP TABLE ObjectChangeMeta (
+     Object_UUID VARCHAR, File_Name VARCHAR, Object_Type VARCHAR, Object_ID BIGINT,
+     Object_Name VARCHAR, Source_Table VARCHAR, Modified_At TIMESTAMP, Modified_At_Raw VARCHAR,
+     Modified_By VARCHAR, Modified_Account VARCHAR, Modifications BIGINT, Author_Key VARCHAR,
+     Author_Kind VARCHAR, Burst_ID BIGINT, Bulk_Event_ID BIGINT
+   )`,
+  CatalogChangeMeta: `CREATE TEMP TABLE CatalogChangeMeta (
+     File_Name VARCHAR, Catalog VARCHAR, Scope_UUID VARCHAR, Scope_Key VARCHAR, Chunk_Seq BIGINT,
+     Catalog_UUID VARCHAR, Modified_At TIMESTAMP, Modified_At_Raw VARCHAR, Modified_By VARCHAR,
+     Modified_Account VARCHAR, Modifications BIGINT, Newest_Child_At TIMESTAMP
+   )`,
+  ChangeBulkEvents: `CREATE TEMP TABLE ChangeBulkEvents (
+     Bulk_Event_ID BIGINT, Scope VARCHAR, Kind VARCHAR, Start_At TIMESTAMP, End_At TIMESTAMP,
+     Files BIGINT, Objects BIGINT, Bursts BIGINT, Mod1_Share DOUBLE,
+     File_Names VARCHAR[], Object_Types VARCHAR[], Authors VARCHAR[]
    )`,
 };
 
@@ -581,7 +621,18 @@ async function getDatabaseStats(ctx) {
     stats.max_memory = environment.duckdb.maxMemory;
     stats.threads = environment.duckdb.threads;
   } catch (error) {
-    console.error('Error getting database stats:', error);
+    // Den diagnostizierten Storage-Mismatch für /api/version mitliefern — das
+    // Frontend zeigt daraus den globalen Hinweis (Dashboards betten Fehler
+    // sonst nur als Text in 200-Antworten ein). Einzeiler statt Stacktrace:
+    // das Frontend fragt /api/version bei jedem Laden ab.
+    if (error && error.code === 'STORAGE_VERSION_MISMATCH') {
+      console.warn(`Database stats unavailable: ${error.message}`);
+      stats.solution = solution;
+      stats.connected = false;
+      stats.error = { code: error.code, message: error.message, details: error.details };
+    } else {
+      console.error('Error getting database stats:', error);
+    }
   }
 
   return stats;
@@ -632,10 +683,31 @@ function poolStatus() {
   };
 }
 
+/**
+ * Autoren-Overlay der Lösung neu aufbauen (TEMP-Spiegel der Sidecar-Aliase +
+ * v_change_meta_authors, s. config/change-author-overlay.js) — nach jedem
+ * Schreiben in ChangeAuthorAlias, damit Templates und Dashboards sofort die
+ * neuen Aliase sehen. Ohne geöffneten Pool-Eintrag nichts zu tun: die nächste
+ * Pool-Factory installiert das Overlay ohnehin frisch.
+ */
+async function refreshChangeAuthorOverlay(ctx) {
+  const { solution } = normalizeContext(ctx, 'refreshChangeAuthorOverlay');
+  if (!pool.has(solution)) return 'skipped';
+  const slot = await acquireSlot(solution);
+  slot.pending += 1;
+  try {
+    return await require('./change-author-overlay').install(slot.entry);
+  } finally {
+    slot.pending -= 1;
+    slot.lastUsed = Date.now();
+  }
+}
+
 module.exports = {
   initialize,
   getConnection,
   executeQuery,
+  refreshChangeAuthorOverlay,
   probeMemory,
   close,
   reload,

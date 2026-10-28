@@ -18,6 +18,38 @@ export type AtlasLevel = 'root' | 'segment' | 'leaf';
 export type AtlasSegmentBy = 'community' | 'file' | 'type' | 'hubs';
 export type AtlasWeight = 'domain' | 'logical';
 
+/**
+ * Change activity of a tile or super-node (only with `activity=true`, i.e. the
+ * colour modes "activity" and "saves"). Classes count back from the data state:
+ * 1 ≤ 30 days · 2 ≤ 90 days · 3 ≤ 1 year · 4 ≤ 2 years · 5 > 2 years ·
+ * 6 unknown (only a young mass stamp) · 7 no stamp. `class` is the youngest class
+ * among the members; `class_counts` holds the members per class 1…7.
+ */
+export type AtlasActivity = {
+  class: number;
+  class_counts: number[];
+  newest_change: string | null;
+  newest_age_days: number | null;
+  active_90: number;
+  median_age_days: number | null;
+  median_saves: number | null;
+  stamped: number;
+  undated: number;
+  /** 1 (few) … 5 (many lifetime saves), null without a stamped member. */
+  saves_level: number | null;
+  saves_sum: number;
+  saves_n: number;
+};
+
+/** Activity head of a response: whether it was computed and its data state. */
+export type AtlasActivityHead = {
+  requested: boolean;
+  /** The catalog carries change stamps (else the colour modes stay off). */
+  available: boolean;
+  data_state: string | null;
+  bulk: 'hide' | 'include';
+};
+
 /** Aggregate tile (root/segment): one segment, area = Σ weight. */
 export type AtlasAggregateTile = {
   kind: 'aggregate';
@@ -33,6 +65,7 @@ export type AtlasAggregateTile = {
   user_notes?: string | null;
   /** Schwerstes Member der Community (für „Im Graph Explorer öffnen" aus dem Panel). */
   top_member_uuid?: string | null;
+  activity?: AtlasActivity | null;
 };
 
 /** Leaf tile: a single graph node → click hands off to the Graph Explorer. */
@@ -47,6 +80,7 @@ export type AtlasLeafTile = {
   weight: number;
   /** User-Sichtbarkeit (Noise-Filter): true = vom Nutzer ausgeblendet. */
   hidden?: boolean;
+  activity?: AtlasActivity | null;
 };
 
 /** Grey "Rest" collecting tile (Top-K fold / leaf truncation). */
@@ -58,6 +92,8 @@ export type AtlasRestTile = {
   weight: number | null;
   color_type?: null;
   segment_count?: number;
+  /** Activity of the folded tiles / the nodes beyond the leaf cap. */
+  activity?: AtlasActivity | null;
 };
 
 export type AtlasTile = AtlasAggregateTile | AtlasLeafTile | AtlasRestTile;
@@ -68,6 +104,7 @@ export type AtlasCompositionResponse = {
   segment_by: AtlasSegmentBy;
   parent: { community: number | null; file: string | null; type: string | null };
   weight: AtlasWeight;
+  activity: AtlasActivityHead;
   truncated: boolean;
   tiles: AtlasTile[];
 };
@@ -86,6 +123,7 @@ export type AtlasMetaNode = {
   engine?: string;
   user_name?: string | null;
   user_notes?: string | null;
+  activity?: AtlasActivity | null;
 };
 
 export type AtlasMetaEdge = { source: string; target: string; weight: number };
@@ -94,6 +132,7 @@ export type AtlasTopologyResponse = {
   view: 'topology';
   segment_by: AtlasSegmentBy;
   weight: AtlasWeight;
+  activity: AtlasActivityHead;
   nodes: AtlasMetaNode[];
   edges: AtlasMetaEdge[];
 };
@@ -115,6 +154,10 @@ export type AtlasQuery = {
   /** false → Top-K/„Rest"-Faltung der Aggregat-Ebenen aufheben (alle Segmente). */
   fold?: boolean;
   limit?: number;
+  /** Compute the change activity per tile (colour modes "activity"/"saves"). */
+  activity?: boolean;
+  /** Mass stamps date the last change like individual ones ("include mass events"). */
+  activityBulk?: 'hide' | 'include';
 };
 
 type ApiEnvelope<T> = {
@@ -142,6 +185,8 @@ function buildQuery(q: AtlasQuery): string {
   if (q.excludeTypes && q.excludeTypes.length > 0) p.set('exclude_types', q.excludeTypes.join(','));
   if (q.fold === false) p.set('fold', 'false');
   if (q.limit) p.set('limit', String(q.limit));
+  if (q.activity) p.set('activity', 'true');
+  if (q.activity && q.activityBulk === 'include') p.set('activity_bulk', 'include');
   return p.toString();
 }
 

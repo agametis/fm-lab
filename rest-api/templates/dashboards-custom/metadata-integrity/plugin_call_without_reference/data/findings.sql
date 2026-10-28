@@ -79,29 +79,77 @@ owner AS (
     FROM classified k
     LEFT JOIN StepsForScripts s ON s.Step_UUID = k.Owner_UUID AND s.File_Name = k.File_Name
     WHERE k.in_code AND (NOT k.has_link OR k.has_dynamic)
+),
+-- The finding rows; the keys of the default order travel along as hidden
+-- columns, so the page order does not hang on row_key alone.
+unkeyed AS MATERIALIZED (
+    SELECT
+        'plugin-call-without-reference' AS rule_id,
+        CASE o.cause WHEN 'dynamic-name' THEN 'info' ELSE 'warning' END AS severity,
+        o.nav_uuid,
+        o.nav_type AS type,
+        o.nav_name AS name,
+        o.File_Name AS file,
+        o.cause,
+        o.Owner_Type AS owner_type,
+        o.Calc_Role AS calc_role,
+        o.step_no,
+        o.step_uuid,
+        o.step_uuid AS marks,
+        substr(regexp_replace(o.Formula_Text, '\s+', ' ', 'g'), 1, 120) AS formula_excerpt,
+        CASE o.cause
+          WHEN 'dynamic-name' THEN 'Plug-in call with a dynamic function name (MBS($name; …)) — the target cannot be resolved, the call is missing from the object graph'
+          ELSE 'Plug-in call in the formula text but no reference in the catalog although DDR info exists — converter blind spot, please report the formula'
+        END || CASE WHEN o.step_no IS NOT NULL THEN ' (' || o.Calc_Role || ', step ' || o.step_no || ')' ELSE ' (' || o.Calc_Role || ')' END AS message,
+           o.cause AS _ord_1,
+           o.File_Name AS _ord_2,
+           o.nav_name AS _ord_3,
+           o.step_no AS _ord_4,
+           o.Calc_Role AS _ord_5
+    FROM owner o
+    WHERE (getvariable('file') IS NULL OR o.File_Name = getvariable('file'))
+      AND (getvariable('scope_uuids') IS NULL
+           OR o.nav_uuid IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
+),
+-- row_key numbers the rows in the default order; the whole row breaks the
+-- remaining ties, so every request assigns the same key.
+result AS MATERIALIZED (
+    SELECT u.* EXCLUDE (_ord_1, _ord_2, _ord_3, _ord_4, _ord_5),
+           row_number() OVER (ORDER BY u._ord_1 DESC, u._ord_2, u._ord_3, u._ord_4, u._ord_5, u) AS row_key
+    FROM unkeyed u
+),
+-- >>> shared paging table-search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) NOT IN ('uuid', 'nav_uuid', 'row_key')))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging table-search block
+-- Chip filter: narrows the whole result; its counts (_chip_facets) leave out
+-- the search and the chip itself.
+filtered AS (
+    SELECT * FROM searched
+    WHERE (getvariable('cause') IS NULL OR cause = getvariable('cause'))
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT
-    'plugin-call-without-reference' AS rule_id,
-    CASE o.cause WHEN 'dynamic-name' THEN 'info' ELSE 'warning' END AS severity,
-    o.nav_uuid,
-    o.nav_type AS type,
-    o.nav_name AS name,
-    o.File_Name AS file,
-    o.cause,
-    o.Owner_Type AS owner_type,
-    o.Calc_Role AS calc_role,
-    o.step_no,
-    o.step_uuid,
-    o.step_uuid AS marks,
-    substr(regexp_replace(o.Formula_Text, '\s+', ' ', 'g'), 1, 120) AS formula_excerpt,
-    CASE o.cause
-      WHEN 'dynamic-name' THEN 'Plug-in call with a dynamic function name (MBS($name; …)) — the target cannot be resolved, the call is missing from the object graph'
-      ELSE 'Plug-in call in the formula text but no reference in the catalog although DDR info exists — converter blind spot, please report the formula'
-    END || CASE WHEN o.step_no IS NOT NULL THEN ' (' || o.Calc_Role || ', step ' || o.step_no || ')' ELSE ' (' || o.Calc_Role || ')' END AS message,
-    row_number() OVER (ORDER BY o.cause DESC, o.File_Name, o.nav_name, o.step_no, o.Calc_Role) AS row_key
-FROM owner o
-WHERE (getvariable('file') IS NULL OR o.File_Name = getvariable('file'))
-  AND (getvariable('scope_uuids') IS NULL
-       OR o.nav_uuid IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
-ORDER BY o.cause DESC, o.File_Name, o.nav_name, o.step_no, o.Calc_Role
-LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.*,
+    -- Facets ordered by value, so every request returns the same text.
+    (SELECT to_json(map_from_entries(list((cause, n) ORDER BY cause)))
+       FROM (SELECT cause, count(*) AS n FROM result GROUP BY 1)) AS _chip_facets,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ row_key, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

@@ -93,5 +93,62 @@
       "title": "Nodo"
     },
     "cancel": "Annulla"
+  },
+  "color": {
+    "label": "Colore",
+    "type": "Tipo",
+    "recency": "Attività",
+    "saves": "Salvataggi",
+    "type_hint": "Colora i riquadri per tipo di oggetto.",
+    "recency_hint": "Colora i riquadri in base all’età della loro modifica singola più recente: gli eventi di massa non contano mai come recenti.",
+    "saves_hint": "Colora i riquadri in base al contatore dei salvataggi di tutta la vita dei loro membri (rango nel tipo di oggetto): resiste agli eventi di massa.",
+    "unavailable": "Questo catalogo non contiene timbri di modifica: importa di nuovo la soluzione per colorare per attività.",
+    "bulk": "Eventi di massa",
+    "bulk_hint": "Includi gli eventi di massa: un timbro di massa data allora l’ultima modifica come una modifica singola."
+  },
+  "activity": {
+    "class": {
+      "1": "≤ 30 giorni",
+      "2": "≤ 90 giorni",
+      "3": "≤ 1 anno",
+      "4": "≤ 2 anni",
+      "5": "> 2 anni",
+      "6": "sconosciuta",
+      "7": "senza timbro"
+    },
+    "savesShort": "salvataggi {{level}}/5",
+    "savesFew": "pochi",
+    "savesMany": "molti",
+    "legendRecency": "Modifica singola più recente",
+    "legendSaves": "Salvataggi di tutta la vita (rango nel tipo)",
+    "dataState": "Stato dei dati {{date}}",
+    "bulkIncluded": "eventi di massa inclusi",
+    "unknownHint": "Per il {{pct}} % dei nodi l’età dell’ultima modifica reale è sconosciuta: un evento di massa recente ne ha sovrascritto i timbri. Qui i salvataggi di tutta la vita distinguono meglio i moduli.",
+    "useSaves": "Colora per salvataggi",
+    "tooltip": {
+      "class": "Attività: {{label}}",
+      "classLabel": "Attività",
+      "newest": "Modifica più recente: {{date}} ({{days}} giorni prima dello stato dei dati)",
+      "newestNone": "Nessuna modifica datata",
+      "active": "Modificati in 90 giorni: {{n}} su {{total}}",
+      "medianAge": "Età mediana: {{days}} giorni",
+      "medianSaves": "Salvataggi mediani: {{n}}",
+      "saves": "Salvataggi: {{n}}",
+      "undated": "Timbri di massa: {{pct}} %",
+      "savesLevel": "Livello di salvataggi {{level}} su 5"
+    },
+    "panel": {
+      "newest": "Modifica più recente",
+      "newestValue": "{{date}} · {{days}} giorni prima dello stato dei dati",
+      "active": "Modificati ≤ 90 giorni",
+      "activeValue": "{{n}} su {{total}}",
+      "medianAge": "Età mediana",
+      "days": "{{days}} giorni",
+      "medianSaves": "Salvataggi mediani",
+      "saves": "Salvataggi",
+      "undated": "Timbri di massa",
+      "dataState": "Stato dei dati",
+      "openDashboard": "Modifiche di questo modulo"
+    }
   }
 }

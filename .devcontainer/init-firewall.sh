@@ -95,15 +95,22 @@ done < <(echo "$gh_ranges" | jq -r '(.web + .api + .git)[]' | aggregate -q)
 #   marketplace.visualstudio.com   — VS Code extension install (dev container)
 #   vscode.blob.core.windows.net   — VS Code extension assets
 #   update.code.visualstudio.com   — VS Code server/update
+#   <publisher>.gallery.vsassets.io / <publisher>.gallerycdn.vsassets.io
+#                                  — VS Code extension downloads/updates, one pair per
+#                                    publisher of the claude variant's extensions
+#                                    (no wildcard possible: the ipset holds IPs; a new
+#                                    publisher needs a pair here AND in refresh-doc-domains.sh)
 #   community-extensions.duckdb.org / extensions.duckdb.org — webbed extension updates
 #   duckdb.org / blobs.duckdb.org  — DuckDB documentation mirror (install-duckdb-docs)
 #   help.claris.com                — Claris FileMaker help mirror (install-claris-docs)
 #   www.monkeybreadsoftware.com    — MBS plugin documentation (install-mbs-docs)
-# NOTE: help.claris.com (Akamai) and duckdb.org (Cloudflare) are CDN-fronted with
-# rotating IPs. This loop pins the IPs resolved at init time — if a doc install runs
-# much later and the CDN has rotated, the crawl may still be blocked. If that happens,
-# re-run this script (sudo /usr/local/bin/init-firewall.sh) shortly before the install
-# to refresh the pinned IPs. www.monkeybreadsoftware.com is a single stable host.
+# NOTE: help.claris.com and *.gallerycdn.vsassets.io (Akamai) and duckdb.org
+# (Cloudflare) are CDN-fronted with rotating IPs. This loop pins the IPs resolved at
+# init time; firewall-refresh-loop.sh (started by the claude devcontainer's
+# postStartCommand) re-pins them every few minutes via refresh-doc-domains.sh, and the
+# doc installers additionally refresh just-in-time. Without the loop (pure docker
+# compose), re-run this script shortly before a doc install if the crawl is blocked.
+# www.monkeybreadsoftware.com is a single stable host.
 for domain in \
     "registry.npmjs.org" \
     "api.anthropic.com" \
@@ -112,6 +119,12 @@ for domain in \
     "marketplace.visualstudio.com" \
     "vscode.blob.core.windows.net" \
     "update.code.visualstudio.com" \
+    "anthropic.gallery.vsassets.io" \
+    "anthropic.gallerycdn.vsassets.io" \
+    "dbaeumer.gallery.vsassets.io" \
+    "dbaeumer.gallerycdn.vsassets.io" \
+    "esbenp.gallery.vsassets.io" \
+    "esbenp.gallerycdn.vsassets.io" \
     "community-extensions.duckdb.org" \
     "extensions.duckdb.org" \
     "duckdb.org" \

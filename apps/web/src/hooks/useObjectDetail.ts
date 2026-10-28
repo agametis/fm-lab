@@ -2,11 +2,17 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { ApiError } from '@packages/shared';
 import { api } from '../api/client';
 import { useApiLang } from './useApiLang';
-import type { FMObject, ReferenceItem, GroupedReferences } from '../types';
+import type { FMObject, ReferenceItem, GroupedReferences, ReferenceCandidate, ReferenceCandidates } from '../types';
 
 interface UseObjectDetailResult {
   object: FMObject | null;
   references: GroupedReferences;
+  /**
+   * Referenz-Kandidaten („Nicht referenziert“-Zeile). `null`, solange nicht
+   * geladen oder wenn der Kandidaten-Endpoint fehlschlägt — der Referenzen-Tab
+   * bleibt dann unverändert, nur ohne die Zeile.
+   */
+  candidates: ReferenceCandidates | null;
   loading: boolean;
   error: string | null;
   /**
@@ -22,7 +28,11 @@ interface UseObjectDetailResult {
 // Key = `${uuid}::${file ?? ''}` — Klon-Disambiguierung: zwei Objekte mit
 // geteilter UUID aus verschiedenen Dateien dürfen sich nicht den Cache-Eintrag
 // teilen. Ohne `file` (Graceful Downgrade) bleibt der Key bare-UUID-äquivalent.
-const cache = new Map<string, { object: FMObject; references: GroupedReferences }>();
+const cache = new Map<string, {
+  object: FMObject;
+  references: GroupedReferences;
+  candidates: ReferenceCandidates | null;
+}>();
 
 // `origin` (?ref=) fließt in den Key ein, weil es die operationalen Referenzen
 // eines Pseudo-Aggregats (ScriptStepType) verändert (Origin_Hit-Markierung).
@@ -53,6 +63,7 @@ export const useObjectDetail = (
 ): UseObjectDetailResult => {
   const [object, setObject] = useState<FMObject | null>(null);
   const [references, setReferences] = useState<GroupedReferences>(EMPTY_REFS);
+  const [candidates, setCandidates] = useState<ReferenceCandidates | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ambiguousFiles, setAmbiguousFiles] = useState<string[] | null>(null);
@@ -67,6 +78,7 @@ export const useObjectDetail = (
     if (cached) {
       setObject(cached.object);
       setReferences(cached.references);
+      setCandidates(cached.candidates);
       setLoading(false);
       setError(null);
       return;
@@ -91,10 +103,16 @@ export const useObjectDetail = (
       // `origin` nur am operationalen Call — er beeinflusst nur die Pseudo-Aggregat-
       // Zielliste (Origin_Hit). Strukturelle Refs sind davon unberührt.
       const originParam = origin || undefined;
-      const [objectResponse, opRefsResponse, structRefsResponse] = await Promise.all([
+      // Kandidaten („Nicht referenziert“) als 4. Aufruf: ein Fehler ist nicht
+      // fatal — er setzt nur `candidates = null`, der Tab bleibt funktionsfähig.
+      const [objectResponse, opRefsResponse, structRefsResponse, candidatesResponse] = await Promise.all([
         api.get({ uuid, file: fileParam, lang }),
         api.references({ uuid, file: fileParam, origin: originParam, direction: 'all', link_type: 'operational', limit: REFS_LIMIT }),
         api.references({ uuid, file: fileParam, direction: 'all', link_type: 'structural', limit: REFS_LIMIT }),
+        api.referenceCandidates({ uuid, file: fileParam }).catch((err) => {
+          console.warn('Reference candidates fetch failed:', err);
+          return null;
+        }),
       ]);
 
       // Extract object data
@@ -150,11 +168,18 @@ export const useObjectDetail = (
         ),
       };
 
+      const candidateData: ReferenceCandidates | null = candidatesResponse?.data && candidatesResponse.meta
+        ? { items: candidatesResponse.data as ReferenceCandidate[], meta: candidatesResponse.meta as ReferenceCandidates['meta'] }
+        : null;
+
       // Cache the result
-      cache.set(cacheKeyFor(uuid, file, origin, lang), { object: objectData, references: grouped });
+      cache.set(cacheKeyFor(uuid, file, origin, lang), {
+        object: objectData, references: grouped, candidates: candidateData,
+      });
 
       setObject(objectData);
       setReferences(grouped);
+      setCandidates(candidateData);
     } catch (err) {
       // Sicherheitsnetz: bare-UUID-Navigation auf ein in mehreren Dateien
       // existierendes Objekt → 409 AMBIGUOUS_UUID. Statt eines harten Fehlers
@@ -177,9 +202,10 @@ export const useObjectDetail = (
   useEffect(() => {
     setObject(null);
     setReferences(EMPTY_REFS);
+    setCandidates(null);
     setAmbiguousFiles(null);
     fetchData();
   }, [fetchData]);
 
-  return { object, references, loading, error, ambiguousFiles, retry: fetchData };
+  return { object, references, candidates, loading, error, ambiguousFiles, retry: fetchData };
 };

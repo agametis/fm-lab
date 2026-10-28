@@ -4,10 +4,14 @@
 -- @icon: plug
 -- @category: Metadata Integrity
 -- @display: table
--- @params: file (optional), limit (optional, default 500)
+-- @page_param: page
+-- @search_param: q
+-- @sort_param: sort
+-- @page_size: 500
+-- @params: file (optional), page (optional), page_size (optional, default 500), q (optional), sort (optional), dir (optional)
 -- @click_action: openObject
 -- @click_args: uuid={{_nav_uuid}}&type=File&file={{file}}
--- @output_format: file, has_ddr_info, saxml_profile, plugin_text_formulas, function_missing_formulas, plugin_ref_chunks, plugin_usages, dynamic_usages, plugin_edges, plugin_objects, verdict, _message, _nav_uuid
+-- @output_format: file, has_ddr_info, saxml_profile, plugin_text_formulas, function_missing_formulas, plugin_ref_chunks, plugin_usages, dynamic_usages, plugin_edges, plugin_objects, verdict, _message, _nav_uuid, _row_total, _page, _page_size
 -- @object_types:
 -- @output_types: count, inventory-table
 -- @scope: solution, file
@@ -96,19 +100,48 @@ judged AS (
                 WHEN c.plugin_text_formulas > 0 AND c.plugin_edges = 0    THEN 'mismatch'
                 ELSE 'ok' END AS verdict
     FROM census c
+),
+result AS MATERIALIZED (
+    SELECT j.file, j.has_ddr_info, j.saxml_profile,
+           j.plugin_text_formulas, j.function_missing_formulas, j.plugin_ref_chunks,
+           j.plugin_usages, j.dynamic_usages, j.plugin_edges, j.plugin_objects,
+           j.verdict,
+           CASE j.verdict
+             WHEN 'no-ddr-info'      THEN 'Exported without DDR info — ' || j.plugin_text_formulas || ' plug-in formula(s) without any reference; re-export with "Include details for analysis tools"'
+             WHEN 'function-missing' THEN j.function_missing_formulas || ' formula(s) with <Function Missing> — a plug-in was not loaded on the exporting client'
+             WHEN 'dynamic-only'     THEN 'Plug-in calls resolved only with dynamic function names — no plug-in object or edge'
+             WHEN 'mismatch'         THEN j.plugin_text_formulas || ' plug-in formula(s) in the text but no edge although DDR info exists — converter blind spot'
+             ELSE 'Plug-in evidence consistent: ' || j.plugin_edges || ' edge(s) to ' || j.plugin_objects || ' plug-in object(s)'
+           END AS _message,
+           j._nav_uuid
+    FROM judged j
+),
+-- >>> shared paging search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) <> 'uuid'))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging search block
+filtered AS (
+    SELECT * FROM searched
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT j.file, j.has_ddr_info, j.saxml_profile,
-       j.plugin_text_formulas, j.function_missing_formulas, j.plugin_ref_chunks,
-       j.plugin_usages, j.dynamic_usages, j.plugin_edges, j.plugin_objects,
-       j.verdict,
-       CASE j.verdict
-         WHEN 'no-ddr-info'      THEN 'Exported without DDR info — ' || j.plugin_text_formulas || ' plug-in formula(s) without any reference; re-export with "Include details for analysis tools"'
-         WHEN 'function-missing' THEN j.function_missing_formulas || ' formula(s) with <Function Missing> — a plug-in was not loaded on the exporting client'
-         WHEN 'dynamic-only'     THEN 'Plug-in calls resolved only with dynamic function names — no plug-in object or edge'
-         WHEN 'mismatch'         THEN j.plugin_text_formulas || ' plug-in formula(s) in the text but no edge although DDR info exists — converter blind spot'
-         ELSE 'Plug-in evidence consistent: ' || j.plugin_edges || ' edge(s) to ' || j.plugin_objects || ' plug-in object(s)'
-       END AS _message,
-       j._nav_uuid
-FROM judged j
-ORDER BY (j.verdict <> 'ok') DESC, j.verdict, j.file
-LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.*,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ (verdict <> 'ok') DESC, verdict, file, _nav_uuid, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

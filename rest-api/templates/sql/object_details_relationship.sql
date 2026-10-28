@@ -1,6 +1,6 @@
 -- @template_type: report
 -- @description: Structured detail of a Relationship — two TO boxes, per-predicate join conditions, cascade-create/delete + record-sort options per side
--- @params: uuid (required)  — composite Object_UUID  "<Rel_ID>_<File_Name>"
+-- @params: uuid (required), file (optional, clone-scoping) — uuid = ObjectCatalog.Object_UUID (native FileMaker UUID; rel_<Rel_ID>_<File_Name> only for exports without <UUID>)
 -- @output_format: json
 -- @author: Marcel
 -- @version: 1.0
@@ -14,16 +14,16 @@
 --        picks any single predicate row (cascade/sort cols are constant per relationship).
 
 WITH rel AS (
-  -- Composite-UUID → (Rel_ID, File_Name) via ObjectCatalog (file names may contain '_').
+  -- Object_UUID → (Rel_ID, File_Name) via ObjectCatalog.
   -- Clone-Scoping: UUID ist nur je (UUID, File_Name) eindeutig → optional auf 'file' einschränken.
-  SELECT Object_ID AS Rel_ID, File_Name
+  SELECT Object_UUID, Object_ID AS Rel_ID, File_Name
   FROM ObjectCatalog
   WHERE Object_UUID = getvariable('uuid') AND Object_Type = 'Relationship'
     AND (getvariable('file') IS NULL OR File_Name = getvariable('file'))
   LIMIT 1
 ),
 preds AS (
-  SELECT rc.*
+  SELECT rc.*, rel.Object_UUID AS Catalog_UUID
   FROM RelationshipCatalog rc
   JOIN rel ON rc.Rel_ID = rel.Rel_ID AND rc.File_Name = rel.File_Name
 )
@@ -35,7 +35,7 @@ SELECT * FROM (
     0 AS order_hint,
     NULL AS predicate_index,
     m.Rel_ID AS rel_id,
-    CAST(m.Rel_ID AS VARCHAR) || '_' || m.File_Name AS object_uuid,
+    m.Catalog_UUID AS object_uuid,
     m.Left_TO_Name || ' → ' || m.Right_TO_Name AS rel_name,
     m.File_Name AS file_name,
     m.Left_TO_Name  AS left_to_name,  m.Left_TO_UUID  AS left_to_uuid,

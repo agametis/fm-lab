@@ -38,7 +38,11 @@
     "uses": "使用する",
     "usedBy": "使用される",
     "focus": "フォーカス",
-    "resizePanel": "詳細パネルの幅を変更"
+    "resizePanel": "詳細パネルの幅を変更",
+    "activity": "アクティビティ",
+    "activityInherited": "レイアウト / メニューのスタンプ",
+    "activityNone": "スタンプなし",
+    "activityAge": "データ時点の {{days}} 日前"
   },
   "filter": {
     "ariaLabel": "グラフフィルター",
@@ -77,11 +81,13 @@
     "colorMode": "配色",
     "colorModes": {
       "type": "タイプ",
-      "community": "コミュニティ"
+      "community": "コミュニティ",
+      "recency": "アクティビティ"
     },
     "colorModeHints": {
       "type": "オブジェクトタイプでノードを配色",
-      "community": "検出されたモジュール（コミュニティ）でノードを配色"
+      "community": "検出されたモジュール（コミュニティ）でノードを配色",
+      "recency": "ノードを最新の個別変更の経過期間で色分けします（グラフアトラスと同じ分類）"
     },
     "communityUnnamed": "コミュニティ {{id}}",
     "resizePanel": "フィルターパネルの幅を変更",
@@ -120,7 +126,8 @@
   },
   "edge": {
     "represents": "表す",
-    "buttonAction": "ボタンアクション"
+    "buttonAction": "ボタンアクション",
+    "menuAction": "メニューアクション"
   },
   "trace": {
     "exit": "近傍表示",

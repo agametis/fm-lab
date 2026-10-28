@@ -567,10 +567,12 @@ async function hasBuiltinTokenLookup(ctx) {
 const FM_UUID_RE = /^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$/;
 const MD5_UUID_RE = /^[0-9A-Fa-f]{32}$/;
 const OBJECT_ID_RE = /^id:\s*(\d{1,15})$/i;
-// Zusammengesetzte Schlüssel des Imports (LayoutPart, Relationship,
-// ScriptTrigger, PasteIndexObject) — z. B. `rel_100_Adressen`. Bewusst auf die
-// bekannten Präfixe begrenzt: ein generischer Exakt-Vergleich kostete jede
-// normale Namenssuche einen zusätzlichen ObjectCatalog-Scan.
+// Zusammengesetzte Schlüssel des Imports (LayoutPart, ScriptTrigger,
+// PasteIndexObject) — z. B. `part_…`, `trig_…`. `rel_<Rel_ID>_<Datei>` tragen nur
+// noch Relationships aus Exporten ohne <UUID> (Ersatzschlüssel); Relationships
+// mit UUID treffen über FM_UUID_RE. Bewusst auf die bekannten Präfixe begrenzt:
+// ein generischer Exakt-Vergleich kostete jede normale Namenssuche einen
+// zusätzlichen ObjectCatalog-Scan.
 const SYNTHETIC_KEY_RE = /^(?:part|rel|trig|paste)_\S/;
 
 /**
@@ -793,17 +795,42 @@ function buildIdSearchSql(idSearch, { dbType, file }) {
 // Namens-/Volltext-Treffer.
 const MATCH_RANK_SQL = `CASE WHEN Match_Kind IS NULL THEN 2 WHEN Match_Kind = 'healed_uuid' THEN 1 ELSE 0 END`;
 
-function finalizeSearchSql({ inner, innerParams, orderBy, idSearch, dbType, file, countOnly, limit, offset }) {
-  let sql;
-  let params;
-  if (!idSearch) {
-    sql = countOnly
-      ? `SELECT COUNT(*) AS count FROM (${inner}) c`
-      : `SELECT * FROM (${inner}) c ORDER BY ${orderBy}`;
-    params = [...innerParams];
-  } else {
+/**
+ * Änderungs-Metadaten in der Suche: `sort = 'modified'` sortiert nach dem eigenen
+ * Stempel (neueste zuerst), `modifiedSince` ('YYYY-MM-DD') behält nur Objekte,
+ * deren eigener Stempel an oder nach dem Tag liegt. Objekte ohne eigenen Stempel
+ * (ScriptSteps, LayoutObjects, Built-ins, …) stehen beim Sortieren am Ende und
+ * fallen beim Filter heraus. Inaktiv bleibt das Such-SQL unverändert.
+ */
+const NO_CHANGE = { active: false, bySort: false, since: null };
+
+function changeOptions({ sort, modifiedSince } = {}) {
+  const bySort = sort === 'modified';
+  const since = modifiedSince || null;
+  return { active: bySort || !!since, bySort, since };
+}
+
+// Hängt `Modified_At` an die Suchmenge — als Text (lokale Client-Zeit ohne Zone;
+// ein TIMESTAMP käme als Date-Objekt an und würde beim Serialisieren als UTC
+// gelesen). Der Aufrufer schachtelt das Ergebnis noch einmal, damit ORDER BY auf
+// eindeutige Spaltennamen trifft (ObjectChangeMeta trägt Object_Name & Co. auch).
+function withChangeMeta(base, change) {
+  const where = change.since ? '\n      WHERE m.Modified_At >= CAST(? AS TIMESTAMP)' : '';
+  return {
+    sql: `SELECT c.*, CAST(m.Modified_At AS VARCHAR) AS Modified_At
+      FROM (${base}) c
+      LEFT JOIN ObjectChangeMeta m ON m.Object_UUID = c.Object_UUID AND m.File_Name = c.File_Name${where}`,
+    params: change.since ? [change.since] : [],
+  };
+}
+
+function finalizeSearchSql({ inner, innerParams, orderBy, idSearch, dbType, file, countOnly, limit, offset, change = NO_CHANGE }) {
+  let base = inner;
+  let params = [...innerParams];
+  let order = orderBy;
+  if (idSearch) {
     const ids = buildIdSearchSql(idSearch, { dbType, file });
-    const merged = inner
+    base = inner
       ? `
       WITH id_hits AS (${ids.sql})
       SELECT * FROM (
@@ -816,10 +843,20 @@ function finalizeSearchSql({ inner, innerParams, orderBy, idSearch, dbType, file
       ) = 1`
       : ids.sql;
     params = inner ? [...ids.params, ...innerParams] : [...ids.params];
-    sql = countOnly
-      ? `SELECT COUNT(*) AS count FROM (${merged}) c`
-      : `SELECT * FROM (${merged}) c ORDER BY ${MATCH_RANK_SQL}, ${orderBy}`;
+    order = `${MATCH_RANK_SQL}, ${orderBy}`;
   }
+  if (change.active) {
+    const wrapped = withChangeMeta(base, change);
+    base = wrapped.sql;
+    params.push(...wrapped.params);
+    if (change.bySort) {
+      order = [idSearch ? MATCH_RANK_SQL : null, 'Modified_At DESC NULLS LAST', orderBy]
+        .filter(Boolean).join(', ');
+    }
+  }
+  let sql = countOnly
+    ? `SELECT COUNT(*) AS count FROM (${base}) c`
+    : `SELECT * FROM (${base}) c ORDER BY ${order}`;
   if (!countOnly && limit > 0) {
     sql += ' LIMIT ? OFFSET ?';
     params.push(limit, offset);
@@ -827,7 +864,7 @@ function finalizeSearchSql({ inner, innerParams, orderBy, idSearch, dbType, file
   return { sql, params };
 }
 
-function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false, builtinLocalized = false, idSearch = null }) {
+function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false, builtinLocalized = false, idSearch = null, change = NO_CHANGE }) {
   const params = [];
 
   // Pfad A0: expliziter ValueList-Filter → Wert-Branch (Name ODER Custom-Value).
@@ -840,7 +877,7 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false, 
     }
     return finalizeSearchSql({
       inner: idSearch?.kind === 'object_id' ? null : inner,
-      innerParams: params, orderBy: 'Object_Name', idSearch, dbType, file, countOnly, limit, offset,
+      innerParams: params, orderBy: 'Object_Name', idSearch, dbType, file, countOnly, limit, offset, change,
     });
   }
 
@@ -874,7 +911,7 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false, 
     }
     return finalizeSearchSql({
       inner: idSearch?.kind === 'object_id' ? null : inner,
-      innerParams: params, orderBy: 'Object_Name', idSearch, dbType, file, countOnly, limit, offset,
+      innerParams: params, orderBy: 'Object_Name', idSearch, dbType, file, countOnly, limit, offset, change,
     });
   }
 
@@ -882,7 +919,7 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false, 
   // Namenssuche nach dem Literal 'id:42'.
   if (idSearch?.kind === 'object_id') {
     return finalizeSearchSql({
-      inner: null, innerParams: [], orderBy: 'Object_Name', idSearch, dbType, file, countOnly, limit, offset,
+      inner: null, innerParams: [], orderBy: 'Object_Name', idSearch, dbType, file, countOnly, limit, offset, change,
     });
   }
 
@@ -917,6 +954,12 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false, 
   // Wildcard-only ('%' bzw. nur Wildcards): ScriptStep- und ValueList-Wert-Branch
   // weglassen, sonst landen 196k Steps bzw. teure Wert-Scans in der Default-Liste.
   if (isWildcardOnly) {
+    if (change.active) {
+      return finalizeSearchSql({
+        inner: nonStepInner, innerParams: params, orderBy: 'Object_Name',
+        idSearch: null, dbType, file, countOnly, limit, offset, change,
+      });
+    }
     if (countOnly) {
       return { sql: `SELECT COUNT(*) AS count FROM (${nonStepInner}) c`, params };
     }
@@ -966,7 +1009,7 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false, 
     params.push(name, name);
   }
   return finalizeSearchSql({
-    inner: combined, innerParams: params, orderBy: 'Object_Name', idSearch, dbType, file, countOnly, limit, offset,
+    inner: combined, innerParams: params, orderBy: 'Object_Name', idSearch, dbType, file, countOnly, limit, offset, change,
   });
 }
 
@@ -979,6 +1022,7 @@ function buildSearchSql({ name, dbType, file, limit, offset, countOnly = false, 
 async function searchObjects(ctx, searchOptions) {
   try {
     const { name, type, file, limit = environment.api.defaultLimit, offset = 0 } = searchOptions;
+    const change = changeOptions(searchOptions);
 
     // Normalize type to PascalCase for database
     const dbType = type ? (OBJECT_TYPE_MAP[type] || type) : null;
@@ -989,7 +1033,7 @@ async function searchObjects(ctx, searchOptions) {
     const idSearch = await resolveIdSearch(ctx, name);
 
     if (dbType === 'ScriptStep') {
-      return await searchScriptSteps(ctx, { name, file, limit, offset, idSearch });
+      return await searchScriptSteps(ctx, { name, file, limit, offset, idSearch, change });
     }
 
     // Suchstrategie (ScriptStep-Filtering):
@@ -1011,7 +1055,7 @@ async function searchObjects(ctx, searchOptions) {
     // Nachschlage-View trägt (Schema 1.32.0+). Wildcard-only-Suchen brauchen
     // den Zweig nicht — buildSearchSql lässt ihn dort weg.
     const builtinLocalized = await hasBuiltinTokenLookup(ctx);
-    const { sql, params } = buildSearchSql({ name, dbType, file, limit, offset, builtinLocalized, idSearch });
+    const { sql, params } = buildSearchSql({ name, dbType, file, limit, offset, builtinLocalized, idSearch, change });
 
     const result = await db.executeQuery(ctx, sql, params);
 
@@ -1068,7 +1112,7 @@ const SCRIPTSTEP_SEARCH_CTE = `
  * finalizeSearchSql (ID-Treffer vorn, Dedup). Liste und Count teilen sich den
  * Builder, damit Count == List-Total bleibt.
  */
-function buildScriptStepIdSearchSql({ name, file, idSearch, countOnly, limit, offset }) {
+function buildScriptStepIdSearchSql({ name, file, idSearch, countOnly, limit, offset, change = NO_CHANGE }) {
   let inner = `${SCRIPTSTEP_SEARCH_CTE}
     SELECT *
     FROM script_steps
@@ -1079,16 +1123,16 @@ function buildScriptStepIdSearchSql({ name, file, idSearch, countOnly, limit, of
     innerParams.push(file);
   }
   return finalizeSearchSql({
-    inner: idSearch.kind === 'object_id' ? null : inner,
+    inner: idSearch?.kind === 'object_id' ? null : inner,
     innerParams,
     orderBy: 'File_Name, Script_Name, Step_Index',
-    idSearch, dbType: 'ScriptStep', file, countOnly, limit, offset,
+    idSearch, dbType: 'ScriptStep', file, countOnly, limit, offset, change,
   });
 }
 
-async function searchScriptSteps(ctx, { name, file, limit, offset, idSearch = null }) {
-  if (idSearch) {
-    const { sql, params } = buildScriptStepIdSearchSql({ name, file, idSearch, countOnly: false, limit, offset });
+async function searchScriptSteps(ctx, { name, file, limit, offset, idSearch = null, change = NO_CHANGE }) {
+  if (idSearch || change.active) {
+    const { sql, params } = buildScriptStepIdSearchSql({ name, file, idSearch, countOnly: false, limit, offset, change });
     const result = await db.executeQuery(ctx, sql, params);
     return { data: convertBigInts(result.rows), meta: result.meta };
   }
@@ -1122,9 +1166,9 @@ async function searchScriptSteps(ctx, { name, file, limit, offset, idSearch = nu
   };
 }
 
-async function countScriptSteps(ctx, { name, file, idSearch = null }) {
-  if (idSearch) {
-    const { sql, params } = buildScriptStepIdSearchSql({ name, file, idSearch, countOnly: true });
+async function countScriptSteps(ctx, { name, file, idSearch = null, change = NO_CHANGE }) {
+  if (idSearch || change.active) {
+    const { sql, params } = buildScriptStepIdSearchSql({ name, file, idSearch, countOnly: true, change });
     const result = await db.executeQuery(ctx, sql, params);
     return { data: convertBigInts(result.rows), meta: result.meta };
   }
@@ -1154,7 +1198,9 @@ async function countScriptSteps(ctx, { name, file, idSearch = null }) {
  */
 async function countSearchResults(ctx, searchOptions) {
   try {
-    const { name, type, file } = searchOptions;
+    const { name, type, file, modifiedSince } = searchOptions;
+    // Nur der Filter verändert die Treffermenge — die Sortierung nicht.
+    const change = changeOptions({ modifiedSince });
 
     // Normalize type to PascalCase for database
     const dbType = type ? (OBJECT_TYPE_MAP[type] || type) : null;
@@ -1164,7 +1210,7 @@ async function countSearchResults(ctx, searchOptions) {
     const idSearch = await resolveIdSearch(ctx, name);
 
     if (dbType === 'ScriptStep') {
-      return await countScriptSteps(ctx, { name, file, idSearch });
+      return await countScriptSteps(ctx, { name, file, idSearch, change });
     }
 
     // Identische Filterlogik wie searchObjects (UNION ALL bei Volltextsuche
@@ -1173,7 +1219,7 @@ async function countSearchResults(ctx, searchOptions) {
     // Schreibweisen: ohne dasselbe Flag zählte der Count weniger als die Liste
     // zeigt.
     const builtinLocalized = await hasBuiltinTokenLookup(ctx);
-    const { sql, params } = buildSearchSql({ name, dbType, file, countOnly: true, builtinLocalized, idSearch });
+    const { sql, params } = buildSearchSql({ name, dbType, file, countOnly: true, builtinLocalized, idSearch, change });
 
     const result = await db.executeQuery(ctx, sql, params);
 
@@ -1186,6 +1232,13 @@ async function countSearchResults(ctx, searchOptions) {
     throw createError('DATABASE_ERROR', error.message, searchOptions);
   }
 }
+
+/**
+ * `triggers_script`-Subroles, die eine UI-Aktion benennen (Button, Custom-Menü-
+ * Eintrag) statt eines Trigger-Events — als SQL-Liste für `IN`/`NOT IN`. Jede
+ * andere Subrole dieser Rolle ist ein Event-Name.
+ */
+const ACTION_SUBROLES_SQL = `('button_action', 'menu_action')`;
 
 /**
  * Subrole-Normalisierung für Referenzlisten.
@@ -1210,6 +1263,8 @@ async function countSearchResults(ctx, searchOptions) {
  * Popover-Titel-Calc (CalculationsCatalog: Calc_Kind_Raw='PopoverPanel' →
  * Calc_Role='popover_title'); Tab-Panel-Titel haben das eigene Raw-Kind
  * 'TabPanel' und treten als Kanten-Subrole nicht auf.
+ * `ButtonBar` → `active_segment`: Formel des aktiven Segments einer Button Bar
+ * (CalculationsCatalog: Calc_Kind_Raw='ButtonBar' → Calc_Role='active_segment').
  *
  * @param {string} col - SQL-Spaltenreferenz auf die rohe Subrole (z.B. 'ol.Link_Subrole')
  * @returns {string} CASE-Ausdruck, der den Klassen-Key (oder NULL) liefert
@@ -1225,6 +1280,7 @@ function subroleClassSql(col) {
     WHEN ${col} = 'WebViewer' THEN 'web_viewer_url'
     WHEN ${col} = 'Placeholder' THEN 'placeholder'
     WHEN ${col} = 'PopoverPanel' THEN 'popover_title'
+    WHEN ${col} = 'ButtonBar' THEN 'active_segment'
     WHEN starts_with(${col}, 'ScriptTrigger_') THEN 'script_trigger_parameter'
     WHEN ${col} = 'MBS:FM.RunScript' THEN 'mbs_runscript'
     WHEN ${col} = 'Install' THEN 'menu_install'
@@ -1282,6 +1338,96 @@ async function enrichSubroleEvents(ctx, rows) {
   }
   return rows;
 }
+
+/**
+ * SQL der Ziel-Variablen (child) eines ScriptStepType — Zweig (C) in
+ * getPseudoTypeReferences. Die geschriebene Variable lebt in VariableUsages;
+ * ihre Objekt-UUID folgt md5(scope::anchor::name) wie convert_xml_04_catalog.sql
+ * Block 24. Step und Variablen-Objekt werden in der Datei der Verwendung
+ * aufgelöst — Klon-Dateien teilen Script- und Variablen-UUIDs.
+ * Parameter: [origin, uuid] (+ limit bei limit > 0).
+ *
+ * @param {number} limit - 0 = ohne LIMIT
+ * @returns {string} SQL
+ */
+function buildStepTypeVariableSql(limit) {
+  return `
+    SELECT
+      'child' as direction,
+      uuid,
+      Object_Type,
+      Object_Name,
+      File_Name,
+      'sets_variable' as Link_Role,
+      NULL as Subrole_Class,
+      NULL as Subrole_Detail,
+      FALSE as Is_Cross_File,
+      NULL as Container_UUID,
+      NULL as Container_Type,
+      TRUE as navigable,
+      COUNT(*) as Call_Count,
+      BOOL_OR(is_origin) as Origin_Hit
+    FROM (
+      SELECT
+        vc.Object_UUID as uuid,
+        vc.Object_Type as Object_Type,
+        vc.Object_Name as Object_Name,
+        vc.File_Name as File_Name,
+        COALESCE(vu.Script_UUID = ?, FALSE) as is_origin
+      FROM VariableUsages vu
+      JOIN ObjectCatalog oc ON oc.Object_UUID = ?
+      JOIN StepsForScripts s
+        ON s.Script_UUID = vu.Script_UUID
+       AND s.Step_Index = vu.Step_Index
+       AND s.File_Name = vu.File_Name
+       AND s.Step_Name = oc.Object_Name
+      -- Variablen-Objekt der eigenen Datei: Klon-Dateien teilen Script-UUIDs und
+      -- damit die Variablen-UUID (eine ObjectCatalog-Zeile je Datei); nur
+      -- superglobale Variablen sind ein Objekt für alle Dateien.
+      JOIN ObjectCatalog vc
+        ON vc.Object_UUID = md5(vu.Variable_Scope || '::' || vu.Scope_Anchor || '::' || vu.Variable_Name)
+       AND vc.Object_Type LIKE '%Variable%'
+       AND (vu.Variable_Scope = 'superglobal' OR vc.File_Name = vu.File_Name)
+      WHERE vu.Usage_Type = 'set'
+        AND vu.Context_Type = 'script_step'
+        AND vu.Script_UUID IS NOT NULL
+        AND vu.Step_Index IS NOT NULL
+    )
+    GROUP BY uuid, Object_Type, Object_Name, File_Name
+    ORDER BY Origin_Hit DESC, Call_Count DESC, Object_Name ASC
+    ${limit > 0 ? 'LIMIT ?' : ''}
+  `;
+}
+
+/**
+ * SQL der Variablen-Ziele einer Display-Calculation (Layoutformel) für die
+ * Calculation-Detailansicht. Variablen-Kanten tragen keine Link_Subrole
+ * (Block 28), v_calculation_links kann sie daher nicht slot-zuordnen; die
+ * slot-skopierten XMLCalcReferences-Zeilen liefern die Zuordnung, die
+ * Objekt-UUID folgt md5(scope::anchor::name) via VariablesCatalog.
+ * Eine Layoutformel hat kein Script — ihre Variablen tragen den Datei-Anker:
+ * superglobal '__global', global File_Name, local '__file::' || File_Name.
+ * Name + Scope allein träfen auch die gleichnamigen lokalen Variablen jedes
+ * Scripts; die Datei-Bedingung hält Klon-Dateien auseinander.
+ * Parameter: [Owner_UUID, File_Name, Calc_Kind_Raw].
+ */
+const DISPLAY_CALC_VARIABLES_SQL = `
+  SELECT DISTINCT
+         md5(vc.Variable_Scope || '::' || vc.Scope_Anchor || '::' || vc.Variable_Name) AS Var_UUID,
+         vc.Variable_Name
+  FROM XMLCalcReferences x
+  JOIN VariablesCatalog vc
+    ON vc.Variable_Name  = x.Ref_Name
+   AND vc.Variable_Scope = x.Variable_Scope
+   AND vc.Scope_Anchor   = CASE x.Variable_Scope
+                             WHEN 'superglobal' THEN '__global'
+                             WHEN 'global'      THEN x.File_Name
+                             ELSE '__file::' || x.File_Name
+                           END
+   AND (vc.Variable_Scope = 'superglobal' OR vc.File_Name = x.File_Name)
+  WHERE x.Source_UUID = ? AND x.File_Name = ? AND x.Subrole = ?
+    AND x.Ref_Type = 'variable'
+  ORDER BY vc.Variable_Name`;
 
 /**
  * Pseudo-Type Reference-Resolver.
@@ -1489,51 +1635,12 @@ async function getPseudoTypeReferences(ctx, uuid, direction, link_type, limit, o
     // XMLStepReferences (Variablen-Refs dort haben Ref_UUID=NULL). Die geschriebene
     // Variable lebt aber in VariableUsages (Usage_Type='set', Source u.a.
     // 'target_variable_step'/'set_variable_step'). Wir mappen sie per
-    // (Script_UUID, Step_Index) → StepsForScripts.Step_Name auf den Step-Typ und
-    // lösen die Variable über ihre kanonische UUID md5(scope::anchor::name) in
-    // ObjectCatalog auf (= identische Bildung wie convert_xml_04_catalog.sql Block
-    // 24, daher mit dem `sets_variable`-Graph konsistent). REINER LESEPFAD.
-    const variableSql = `
-      SELECT
-        'child' as direction,
-        uuid,
-        Object_Type,
-        Object_Name,
-        File_Name,
-        'sets_variable' as Link_Role,
-        NULL as Subrole_Class,
-        NULL as Subrole_Detail,
-        FALSE as Is_Cross_File,
-        NULL as Container_UUID,
-        NULL as Container_Type,
-        TRUE as navigable,
-        COUNT(*) as Call_Count,
-        BOOL_OR(is_origin) as Origin_Hit
-      FROM (
-        SELECT
-          vc.Object_UUID as uuid,
-          vc.Object_Type as Object_Type,
-          vc.Object_Name as Object_Name,
-          vc.File_Name as File_Name,
-          COALESCE(vu.Script_UUID = ?, FALSE) as is_origin
-        FROM VariableUsages vu
-        JOIN ObjectCatalog oc ON oc.Object_UUID = ?
-        JOIN StepsForScripts s
-          ON s.Script_UUID = vu.Script_UUID
-         AND s.Step_Index = vu.Step_Index
-         AND s.Step_Name = oc.Object_Name
-        JOIN ObjectCatalog vc
-          ON vc.Object_UUID = md5(vu.Variable_Scope || '::' || vu.Scope_Anchor || '::' || vu.Variable_Name)
-         AND vc.Object_Type LIKE '%Variable%'
-        WHERE vu.Usage_Type = 'set'
-          AND vu.Context_Type = 'script_step'
-          AND vu.Script_UUID IS NOT NULL
-          AND vu.Step_Index IS NOT NULL
-      )
-      GROUP BY uuid, Object_Type, Object_Name, File_Name
-      ORDER BY Origin_Hit DESC, Call_Count DESC, Object_Name ASC
-      ${limit > 0 ? 'LIMIT ?' : ''}
-    `;
+    // (Script_UUID, Step_Index, File_Name) → StepsForScripts.Step_Name auf den
+    // Step-Typ und lösen die Variable über ihre kanonische UUID
+    // md5(scope::anchor::name) in ObjectCatalog derselben Datei auf (= identische
+    // Bildung wie convert_xml_04_catalog.sql Block 24, daher mit dem
+    // `sets_variable`-Graph konsistent). REINER LESEPFAD.
+    const variableSql = buildStepTypeVariableSql(limit);
     const variableParams = limit > 0 ? [origin, uuid, limit] : [origin, uuid];
 
     const [scriptResult, targetResult, variableResult] = await Promise.all([
@@ -1810,7 +1917,7 @@ async function getReferences(ctx, refOptions) {
              AND mirror.Source_File = owner_edge.Target_File
              AND mirror.Link_Role = 'triggers_script'
              AND mirror.Link_Subrole IS NOT NULL
-             AND mirror.Link_Subrole <> 'button_action'
+             AND mirror.Link_Subrole NOT IN ${ACTION_SUBROLES_SQL}
              AND mirror.Target_UUID = ol.Target_UUID
              AND mirror.Target_File IS NOT DISTINCT FROM ol.Target_File
             WHERE owner_edge.Source_UUID = ol.Source_UUID
@@ -1828,12 +1935,13 @@ async function getReferences(ctx, refOptions) {
     // (trigger_owner + trigger_script): die Subroles beider Kanten stammen
     // aus demselben Trigger_Action-Passthrough, der Join ist damit
     // locale-konsistent; (Owner, Event) ist je Owner eindeutig (FileMaker:
-    // ein Script pro Event-Slot), LIMIT 1 ist defensiv. button_action-Zeilen
-    // und alle anderen Rollen liefern NULL ohne Subquery-Evaluation.
+    // ein Script pro Event-Slot), LIMIT 1 ist defensiv. Aktions-Zeilen
+    // (button_action, menu_action) und alle anderen Rollen liefern NULL ohne
+    // Subquery-Evaluation.
     const TRIGGER_UUID_SELECT = `CASE
           WHEN ol.Link_Role = 'triggers_script'
            AND ol.Link_Subrole IS NOT NULL
-           AND ol.Link_Subrole <> 'button_action'
+           AND ol.Link_Subrole NOT IN ${ACTION_SUBROLES_SQL}
           THEN (
             SELECT own.Source_UUID
             FROM ObjectLinks own
@@ -2130,4 +2238,8 @@ module.exports = {
   classifyIdTerm,
   buildSearchSql,
   buildScriptStepIdSearchSql,
+  // Für Unit-Tests exportiert — Konsumenten nutzen getReferences.
+  buildStepTypeVariableSql,
+  // Calculation-Detailansicht (object.controller getCalc) + Unit-Tests.
+  DISPLAY_CALC_VARIABLES_SQL,
 };

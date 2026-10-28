@@ -40,6 +40,13 @@
   "docs.props.label": "Dokumentation",
   "docs.props.subtitle": "Installerade dokumentationskällor",
   "tests.props.label": "Tester",
-  "tests.props.subtitle": "Utvalda analystester"
+  "tests.props.subtitle": "Utvalda analystester",
+  "recent_changes.props.title": "Nyligen ändrat",
+  "recent_changes_table.props.columns[0].label": "Ändrad",
+  "recent_changes_table.props.columns[1].label": "Typ",
+  "recent_changes_table.props.columns[2].label": "Objekt",
+  "recent_changes_table.props.columns[3].label": "Fil",
+  "recent_changes_table.props.columns[4].label": "Person",
+  "recent_changes_all.props.label": "Alla ändringar"
  }
 }

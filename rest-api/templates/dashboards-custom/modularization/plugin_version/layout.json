@@ -71,7 +71,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Version check"
+          "title": "Version check",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -85,6 +86,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file, object or function…",
               "columns": [
                 {
@@ -135,7 +140,8 @@
         "id": "by_file_card",
         "props": {
           "span": 12,
-          "title": "Requirement per file"
+          "title": "Requirement per file",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "by_file"
@@ -148,6 +154,10 @@
               "rowKey": "file_name",
               "density": "compact",
               "sortable": true,
+              "pageParam": "files_page",
+              "searchParam": "files_q",
+              "sortParam": "files_sort",
+              "clientMode": true,
               "columns": [
                 {
                   "field": "file_name",
@@ -186,7 +196,8 @@
         "id": "drivers_card",
         "props": {
           "span": 12,
-          "title": "Driver functions"
+          "title": "Driver functions",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "drivers"
@@ -200,6 +211,10 @@
               "density": "compact",
               "sortable": true,
               "searchable": true,
+              "pageParam": "drivers_page",
+              "searchParam": "drivers_q",
+              "sortParam": "drivers_sort",
+              "clientMode": true,
               "searchPlaceholder": "Search function or component…",
               "columns": [
                 {

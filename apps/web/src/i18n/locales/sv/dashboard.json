@@ -101,7 +101,23 @@
     "custom": "Egen",
     "ok": "OK",
     "warnings": "Varningar",
-    "errors": "Fel"
+    "errors": "Fel",
+    "Mass event": "Massändring",
+    "Mass action": "Massåtgärd",
+    "Paste / import": "Klistra in / importera",
+    "Tool run": "Verktygskörning",
+    "Technical author": "Teknisk författare",
+    "Solution-wide": "Hela lösningen",
+    "Single file": "Enskild fil",
+    "Large session": "Stor session",
+    "Runtime change": "Ändring under körning",
+    "≤ 30 days": "≤ 30 dagar",
+    "≤ 90 days": "≤ 90 dagar",
+    "≤ 1 year": "≤ 1 år",
+    "≤ 2 years": "≤ 2 år",
+    "> 2 years": "> 2 år",
+    "Unknown": "Okänd",
+    "No stamp": "Ingen stämpel"
   },
   "semanticNames": {
     "structureLabel": "Struktur",
@@ -183,5 +199,42 @@
   "featured": {
     "ruleCount_one": "{{count}} regel",
     "ruleCount_other": "{{count}} regler"
+  },
+  "select": {
+    "selectedCount": "{{count}} valda",
+    "clear": "Rensa urval"
+  },
+  "chart": {
+    "noData": "Inga data under den här perioden.",
+    "changes_one": "{{formatted}} ändring",
+    "changes_other": "{{formatted}} ändringar",
+    "actions_one": "{{formatted}} åtgärd",
+    "actions_other": "{{formatted}} åtgärder",
+    "massEvent": "Massändring",
+    "massEvents": "Massändringar",
+    "massEventsIn_one": "{{count}} massändring · {{objects}} objekt",
+    "massEventsIn_other": "{{count}} massändringar · {{objects}} objekt",
+    "notCounted": "(räknas inte)",
+    "other_one": "Övrigt ({{formatted}})",
+    "other_other": "Övrigt ({{formatted}})",
+    "clickHint": "Klicka för att visa ändringarna i listan",
+    "heatmap": {
+      "aria": "Aktivitetskarta",
+      "less": "Mindre",
+      "more": "Mer",
+      "none": "Ingen ändring",
+      "summaryDay_one": "{{formatted}} aktiv dag · max {{max}} per dag",
+      "summaryDay_other": "{{formatted}} aktiva dagar · max {{max}} per dag",
+      "summaryHour_one": "{{formatted}} aktiv timme · max {{max}} per timme",
+      "summaryHour_other": "{{formatted}} aktiva timmar · max {{max}} per timme",
+      "summaryWeek_one": "{{formatted}} aktiv vecka · max {{max}} per vecka",
+      "summaryWeek_other": "{{formatted}} aktiva veckor · max {{max}} per vecka"
+    },
+    "series": {
+      "aria": "Ändringar över tid",
+      "legend": "Serier",
+      "toggleHint": "Klick: visa eller dölj · Skift- eller Alt/Option-klick: visa bara den här serien",
+      "reset": "Alla serier"
+    }
   }
 }

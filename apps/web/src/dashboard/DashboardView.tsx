@@ -37,7 +37,9 @@ export function DashboardView() {
 
   const params: Record<string, unknown> = {};
   for (const [k, v] of searchParams.entries()) {
-    params[k] = v;
+    // `page_size` overrides the page size of a server-paged list via the API
+    // only; the page URL never sets it.
+    if (k !== 'page_size') params[k] = v;
   }
 
   // Title + description are rendered by DashboardHost (TitleBox); the crumb

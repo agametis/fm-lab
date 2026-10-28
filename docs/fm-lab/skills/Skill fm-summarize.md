@@ -13,7 +13,7 @@ Produces a structured, technical description of one FileMaker object — what it
 | **Prerequisites** | a converted catalog ([Skill convert-xml](Skill%20convert-xml.md)) |
 | **Under the hood** | the shared object-resolution contract, the per-type query templates in `_shared/scripts/type_queries.sql`, and the dependency queries on [ObjectLinks](../schema/object-catalog/ObjectLinks.md) |
 | **Skill directory** | `.claude/skills/fm-summarize/` |
-| **Related** | [Skill fm-analyze](Skill%20fm-analyze.md) · [Skill fm-test](Skill%20fm-test.md) · [Skill fm-show](Skill%20fm-show.md) |
+| **Related** | [Skill fm-analyze](Skill%20fm-analyze.md) · [Skill fm-test](Skill%20fm-test.md) · [Skill fm-show](Skill%20fm-show.md) · [Skill fm-changes](Skill%20fm-changes.md) |
 
 ## What it does
 
@@ -50,6 +50,7 @@ describe the last of those fields                # from the conversation context
 | Flow (scripts) | numbered, complete | at most a half-sentence |
 | Uses / Used by | grouped by link role | at most a count |
 | Notes | ✓ | only critical ones |
+| Age context | a *Last modified* line | at most a half-sentence |
 
 Short mode is one or two paragraphs of prose without headers, lists, tables or code, activated by `--short` or by words such as *briefly*, *kurz*, *TL;DR* in any of eleven languages. It runs only the header query and two counts, which makes it cheap to use as a first look.
 
@@ -58,6 +59,7 @@ Short mode is one or two paragraphs of prose without headers, lists, tables or c
 - **Response language** follows your prompt; object names, link roles and SQL stay original.
 - **DDR-Info matters.** Without it the flow falls back to step names and raw calculation text; the summary says so. Check the `Has_DDR_INFO` flag in [FilesCatalog](../schema/object-catalog/FilesCatalog.md) if a summary looks thin.
 - **Facts, not guesses.** The Purpose section is derived from the stored comment where one exists; otherwise the skill says that it was inferred from behaviour. Everything else is reported from the catalog.
+- **Age context.** A *Last modified* line names the last change, its author and the number of saves since the object was created, with the age counted from the data state ([ObjectChangeMeta](../schema/catalog-tables/ObjectChangeMeta.md)). Script steps, layout objects and calculations show the stamp of their script or layout as *Container last modified*; a stamp from a mass event is reported as such, because the real last change is then unknown.
 - **Downstream skills read the header.** The `UUID` and `File` lines of a summary are the context token the navigation skills pick up — "show this in FM-Lab" right after a summary needs no further arguments.
 - For *is something wrong with this object?* the skill points you to [fm-test](Skill%20fm-test.md) instead of guessing.
 

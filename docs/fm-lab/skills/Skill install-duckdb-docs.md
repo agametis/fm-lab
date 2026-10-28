@@ -11,7 +11,7 @@ Downloads the official DuckDB documentation as a single Markdown file into `docs
 | **Reads** | `blobs.duckdb.org/docs/duckdb-docs.md` |
 | **Writes** | `docs/duckdb/Documents/duckdb-docs.md`, the marker `docs/duckdb/.version`, the doc-set registry `.fmlab/docs.json` |
 | **Prerequisites** | `curl`, network access to `duckdb.org` |
-| **Under the hood** | `.claude/skills/install-duckdb-docs/scripts/install_duckdb_docs.sh`; registration via `tools/register_docs.py` |
+| **Under the hood** | `.claude/skills/install-duckdb-docs/scripts/install_duckdb_docs.sh`; registration via `tools/register_docs.mjs` |
 | **Skill directory** | `.claude/skills/install-duckdb-docs/` |
 | **Related** | [Skill create-custom-dashboard](Skill%20create-custom-dashboard.md) (SQL authoring) |
 

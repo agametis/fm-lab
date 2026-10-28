@@ -64,7 +64,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Server-bound scripts (PSoS targets)"
+          "title": "Server-bound scripts (PSoS targets)",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -78,6 +79,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file or script…",
               "columns": [
                 {
@@ -118,7 +123,8 @@
         "id": "callsites_card",
         "props": {
           "span": 12,
-          "title": "PSoS callsites (caller → target)"
+          "title": "PSoS callsites (caller → target)",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "callsites"
@@ -132,6 +138,10 @@
               "density": "compact",
               "sortable": true,
               "searchable": true,
+              "pageParam": "calls_page",
+              "searchParam": "calls_q",
+              "sortParam": "calls_sort",
+              "clientMode": true,
               "searchPlaceholder": "Search caller or target…",
               "columns": [
                 {
@@ -177,7 +187,8 @@
         "id": "os_conditions_card",
         "props": {
           "span": 12,
-          "title": "Conditional on server OS (plug-in functions)"
+          "title": "Conditional on server OS (plug-in functions)",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "os_conditions"
@@ -190,6 +201,10 @@
               "rowKey": "row_key",
               "density": "comfortable",
               "sortable": true,
+              "pageParam": "conditions_page",
+              "searchParam": "conditions_q",
+              "sortParam": "conditions_sort",
+              "clientMode": true,
               "columns": [
                 {
                   "field": "function_name",

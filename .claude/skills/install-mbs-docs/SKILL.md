@@ -64,7 +64,7 @@ This skill uses bundled scripts that handle all operations:
   - Downloads and installs MBS documentation
   - Executes component parsing automatically
   - Usage: Execute with optional `--force` flag
-- **Component Parser**: `scripts/parse_mbs_components.py`
+- **Component Parser**: `scripts/parse_mbs_components.mjs`
   - Analyzes MBS function HTML documentation
   - Records functions whose prefix ≠ component and those listed under more
     than one component (columns `Funktionsname,Component,Components` —
@@ -142,7 +142,7 @@ The installation requires approximately 50MB of free space:
 - 13MB for final documentation
 
 ### Component Parsing Failures
-If component parsing fails (missing Python 3 or parsing errors):
+If component parsing fails (parsing errors):
 - A warning is displayed but installation continues
 - The script completes successfully without the exceptions table
 - The `mbs-function-reference` skill will work but with slightly reduced accuracy
@@ -220,8 +220,10 @@ ERROR: [specific error message]
 - Documentation is required by the `mbs-function-reference` skill
 - Component parsing creates `reference/mbs_component_exceptions.csv` automatically
 - The component table is used by the `mbs-function-reference` skill for improved function lookup, by the XML import (PluginComponent catalog entries) and by the doc-set browser (component pages under `/docs/mbs/<Component>`)
-- Python 3 is required for component parsing (gracefully skipped if not available)
-- After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.py`, so the web home dashboard's Docs card can list it.
+- Component parsing runs on Node.js (the fm-lab runtime) — no Python needed
+- After a successful install/update the script registers this source in `.fmlab/docs.json` via `tools/register_docs.mjs`, so the web home dashboard's Docs card can list it.
+- The registration carries the version from `.version` and the category/function counts of `docSet.dsidx`, read through Node's built-in `node:sqlite` (Node >= 22.13), else the DuckDB CLI's `sqlite` extension, else the `sqlite3` command-line tool. If the index cannot be read, the script warns and registers without counts.
+- Re-running the script on current docs repairs a registration whose counts are missing, without downloading again.
 
 ## Triggers in other languages
 

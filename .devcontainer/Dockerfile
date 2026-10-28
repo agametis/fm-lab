@@ -20,7 +20,10 @@
 # never changes (the agent-agnostic core).
 
 # ---- Stage: base ----------------------------------------------------------------
-FROM node:22.17.0 AS base
+# Debian release pinned explicitly (-bookworm): the bare node:<version> tag follows the
+# official images' default Debian, which moved on to trixie — that would silently swap
+# the OS (apt packages, glibc) on the next version bump.
+FROM node:22.23.4-bookworm AS base
 
 ARG TZ=Etc/UTC
 ENV TZ="$TZ"
@@ -112,7 +115,7 @@ RUN ARCH=$(dpkg --print-architecture) && \
 # → tested_baseline.duckdb_min_version; keep this ARG in sync). Single
 # static binary per arch in a zip; the arch suffix matches dpkg --print-architecture
 # directly, so no name mapping is needed.
-ARG DUCKDB_VERSION=1.5.4
+ARG DUCKDB_VERSION=1.5.6
 RUN ARCH=$(dpkg --print-architecture) && \
   wget "https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/duckdb_cli-linux-${ARCH}.zip" && \
   unzip "duckdb_cli-linux-${ARCH}.zip" -d /usr/local/bin && \
@@ -134,7 +137,7 @@ RUN ARCH=$(dpkg --print-architecture) && \
 # NOTE: this is the SIGNED STOCK webbed only — the maintainer's unsigned SAX-patched
 # build (a dev streaming optimization) is intentionally NOT shipped here. Without it
 # the conversion safely falls back to the stock DOM path (bit-identical, no streaming).
-ARG WEBBED_REFRESH=2026-06-27
+ARG WEBBED_REFRESH=2026-10-27
 RUN ARCH=$(dpkg --print-architecture) && \
   echo "webbed refresh token: ${WEBBED_REFRESH}" && \
   EXT_DIR="/home/node/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${ARCH}" && \
@@ -202,8 +205,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Egress firewall script + a narrowly-scoped NOPASSWD sudoers entry (alongside the
 # init-node-modules entry inherited from base). The script is opt-in: it no-ops
 # gracefully when NET_ADMIN is absent, so it never blocks container start.
-COPY init-firewall.sh refresh-doc-domains.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/init-firewall.sh /usr/local/bin/refresh-doc-domains.sh && \
+# firewall-refresh-loop.sh runs unprivileged (no sudoers entry): it only triggers
+# refresh-doc-domains.sh periodically.
+COPY init-firewall.sh refresh-doc-domains.sh firewall-refresh-loop.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/init-firewall.sh /usr/local/bin/refresh-doc-domains.sh /usr/local/bin/firewall-refresh-loop.sh && \
   echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/node-firewall && \
   echo "node ALL=(root) NOPASSWD: /usr/local/bin/refresh-doc-domains.sh" > /etc/sudoers.d/node-refresh-doc-domains && \
   chmod 0440 /etc/sudoers.d/node-firewall /etc/sudoers.d/node-refresh-doc-domains

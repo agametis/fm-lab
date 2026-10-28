@@ -174,18 +174,12 @@ if [ -d "$OVERRIDE_DIR" ]; then
   done
 fi
 
-# Schema-Hash-Härtung: die streamify-
-# Variante an ihren @SCHEMA_HASH_FILES-Header zusätzlich SICH SELBST + den Renamer
-# anhängen. Die Override-Inhalte (ingestion/sql/streamify/*.sql) sind in diese Datei eingebacken,
-# also deckt ihr Hash die Overrides mit ab; der Renamer wirkt auf den Input und kommt
-# separat dazu. Die Rename-Logik lebt in
-# katana_common.awk (parse_rules/rename_line) — die Common-Datei gehört daher mit
-# ins Gate. Damit lösen Edits an Overrides/Renamer/Common/Generat einen Schema-
-# Drift → Rebuild aus (im DOM-Pfad bleibt der Hash unverändert = nur Basis-Dateien).
-# Pfade ENGINE-relativ (so wie read_template_schema_info gegen ENGINE_ROOT auflöst).
-sed -e 's#^\(-- @SCHEMA_HASH_FILES .*\)$#\1 sql/convert_xml_01_extract.streamify.sql engine/streamify_fm_xml.awk engine/katana_common.awk#' \
-    "$tmp" > "$tmp.2"
-mv "$tmp.2" "$tmp"
+# Schema-Hash: die @SCHEMA_HASH_FILES-Zeile wird unverändert aus der Basis
+# übernommen. Sie listet bereits dieses Generat, den Renamer und die Katana-
+# Common-Datei (die Override-Inhalte aus ingestion/sql/streamify/*.sql sind ins
+# Generat eingebacken) — für BEIDE Policies, damit der erwartete Hash nicht von
+# der Parser-Policy abhängt (ein DOM↔SAX-Wechsel meldete sonst Hash-Drift).
+# Edits an Overrides/Renamer/Common/Generat lösen den Drift unter beiden aus.
 
 if $CHECK_MODE; then
   # Freshness-Gate: Regenerat gegen das committete Generat vergleichen, nichts schreiben.

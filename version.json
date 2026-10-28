@@ -1,8 +1,8 @@
 {
   "manifest_schema": "1.0",
-  "version": "0.9.14",
-  "generated_at": "2026-10-19T18:52:01.212Z",
-  "source_commit": "cf7521ab",
+  "version": "0.9.15",
+  "generated_at": "2026-10-28T18:10:00.453Z",
+  "source_commit": "6879d027",
   "components": {
     "rest_api": {
       "scheme": "A",
@@ -30,14 +30,14 @@
     },
     "schema": {
       "scheme": "B",
-      "version": "1.33.0",
+      "version": "1.37.0",
       "source": "ingestion/sql/convert_xml_01_extract.sql",
       "on_change": "force_rebuild_db"
     },
     "xml_import": {
       "scheme": "B",
       "version": "5.5.0",
-      "engine_version": "2.34.0",
+      "engine_version": "2.42.0",
       "source": "ingestion/convert_fm_xml.sh",
       "on_change": "reconvert_xml"
     },
@@ -113,6 +113,10 @@
       "version": "0.9.0"
     },
     {
+      "name": "fm-changes",
+      "version": "0.1.0"
+    },
+    {
       "name": "fm-open",
       "version": "0.8.9"
     },
@@ -146,7 +150,7 @@
     }
   ],
   "engine_baseline": {
-    "duckdb_min": "1.5.4",
-    "webbed_min": "2.4.0"
+    "duckdb_min": "1.5.6",
+    "webbed_min": "2.12.0"
   }
 }

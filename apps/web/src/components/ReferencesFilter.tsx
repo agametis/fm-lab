@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type Props = {
@@ -22,6 +22,8 @@ type Props = {
   matchCount: number;
   totalCount: number;
   onJumpToList?: (direction: 'first' | 'last') => void;
+  /** Abschlusszeile unter Pillen und Chips (z.B. „Nicht referenziert“). */
+  footer?: ReactNode;
 };
 
 /**
@@ -45,6 +47,7 @@ export function ReferencesFilter({
   matchCount,
   totalCount,
   onJumpToList,
+  footer,
 }: Props) {
   const { t, i18n } = useTranslation(['detail']);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -168,6 +171,7 @@ export function ReferencesFilter({
           )}
         </div>
       )}
+      {footer}
     </div>
   );
 }

@@ -145,6 +145,17 @@
     "clearRolesLabel": "Rollen zurücksetzen",
     "clearRolesTitle": "Alle Rollen-Filter aufheben"
   },
+  "referencesMissing": {
+    "label": "Nicht referenziert:",
+    "indirectLabel": "über Layout-Objekte:",
+    "emptyLead": "Möglich wären:",
+    "tooltipRoles": "Mögliche Rollen: {{roles}}",
+    "tooltipAggregate_one": "(einschließlich des Layout-Objekts)",
+    "tooltipAggregate_other": "(einschließlich der {{count}} Layout-Objekte)",
+    "caveatScriptCallers": "Nur statisch auflösbare Aufrufe. Nicht erfasst: Perform Script per Name, fmp-URLs, externe Aufrufe.",
+    "caveatToFieldAccess": "Feldzugriffe über diese TO erzeugen keine TO-Referenz.",
+    "aria": "Nicht referenzierte Objekttypen"
+  },
   "hierarchyTree": {
     "ariaLabel": "Objekt-Hierarchie",
     "usedBy": "Wird verwendet von ({{count}})",
@@ -204,6 +215,10 @@
         "short": "Popover",
         "long": "Popover-Titel"
       },
+      "active_segment": {
+        "short": "Segment",
+        "long": "Aktives Segment"
+      },
       "script_trigger_parameter": {
         "short": "Trigger",
         "long": "Script-Trigger-Parameter"
@@ -231,6 +246,10 @@
       "menu_install": {
         "short": "Install",
         "long": "Menü-Installations-Bedingung"
+      },
+      "menu_action": {
+        "short": "Menu",
+        "long": "Menü-Aktion"
       }
     }
   },
@@ -242,9 +261,13 @@
     "sortName": "Name",
     "sortType": "Typ",
     "sortFile": "Datei",
+    "sortModified": "Zuletzt geändert",
     "groupNone": "Keine",
     "groupType": "Typ",
-    "groupFile": "Datei"
+    "groupFile": "Datei",
+    "modifiedSinceLabel": "Geändert seit",
+    "modifiedSinceHint": "Nur Objekte, deren eigener Änderungsstempel an oder nach diesem Tag liegt — Script-Schritte, Layout-Objekte und Formeln haben keinen eigenen Stempel",
+    "modifiedSinceClear": "Zurücksetzen"
   },
   "fieldViewer": {
     "ariaLabel": "Feld-Details",
@@ -343,7 +366,8 @@
     "uuidMatch": "Treffer über UUID",
     "healedUuidMatch": "Treffer über UUID (Dublette)",
     "healedUuidTitle": "FileMaker führt dieses Objekt unter der gesuchten UUID; weil sie im Export mehrfach vorkam, steht es im Katalog unter einer Ersatz-UUID.",
-    "idMatch": "Treffer über ID {{id}}"
+    "idMatch": "Treffer über ID {{id}}",
+    "modifiedTooltip": "Zuletzt geändert {{age}} — lokale Zeit des ändernden Clients, ohne Zeitzone"
   },
   "scriptSearchFilter": {
     "searchAria": "Refs durchsuchen",
@@ -461,6 +485,34 @@
       "menuLabel": "Aktionen",
       "searchPlaceholder": "Lösungen filtern…",
       "noMatches": "Keine Lösung passt zum Filter."
+    },
+    "changeAuthors": {
+      "heading": "Autoren der Änderungs-Metadaten",
+      "desc": "Schreibvarianten derselben Person zusammenführen, Anzeigenamen setzen und technische Autoren markieren. Die Aliase werden mit der Lösung gespeichert, überleben einen Neuaufbau und wirken sofort auf die Zeile „Zuletzt geändert“.",
+      "solution": "Lösung: {{name}}.",
+      "loading": "Autoren werden geladen …",
+      "empty": "Dieser Katalog hat noch keine Änderungs-Metadaten — die Lösung mit der aktuellen Version neu importieren.",
+      "noSidecar": "Die Annotations-Datenbank dieser Lösung ist nicht verfügbar (Funktion deaktiviert oder gesperrt) — Aliase lassen sich nicht ändern.",
+      "colUser": "Benutzer",
+      "colUserTitle": "Benutzername in allen Schreibweisen",
+      "colStamps": "Stempel",
+      "colLast": "Letzte Änderung",
+      "colPerson": "Dieselbe Person wie",
+      "colDisplay": "Anzeigename",
+      "colTechnical": "Technisch",
+      "colActions": "Aktionen",
+      "accountsTitle": "Angemeldete Konten",
+      "stampsTitle": "{{single}} Einzeländerungen außerhalb von Massenereignissen · {{files}} Dateien",
+      "ownPerson": "— eigener Eintrag —",
+      "technicalAutoYes": "Automatisch (ja)",
+      "technicalAutoNo": "Automatisch (nein)",
+      "technicalAuto": "auto",
+      "technicalYes": "Ja",
+      "technicalNo": "Nein",
+      "save": "Speichern",
+      "reset": "Zurücksetzen",
+      "orphanHeading": "Aliase ohne passenden Benutzer im aktuellen Katalog",
+      "orphanDelete": "Entfernen"
     }
   },
   "objectHeader": {
@@ -471,7 +523,41 @@
     "copyOriginalUuidAria": "Original-UUID in Zwischenablage kopieren (im Quell-File mehrdeutig)",
     "copySyntheticUuidAria": "Synthetische FM-Lab-UUID in Zwischenablage kopieren",
     "syntheticBadge": "FM-Lab",
-    "syntheticTooltip": "FM-Lab-interne Ersatz-Identität: die Original-UUID dieses Objekts war im Quell-File doppelt vergeben und wurde beim Import geheilt. Klick kopiert die synthetische UUID (Katalog-Identität)."
+    "syntheticTooltip": "FM-Lab-interne Ersatz-Identität: die Original-UUID dieses Objekts war im Quell-File doppelt vergeben und wurde beim Import geheilt. Klick kopiert die synthetische UUID (Katalog-Identität).",
+    "change": {
+      "modified": "Zuletzt geändert",
+      "containerModified": "Container zuletzt geändert",
+      "timeTooltip": "{{age}} — lokale Zeit des ändernden Clients, ohne Zeitzone",
+      "unknownAuthor": "unbekannter Benutzer",
+      "authorTooltip": "FileMaker-Benutzername des letzten Bearbeiters",
+      "accountTooltip": "Angemeldetes Konto",
+      "countTooltip": "Speicherungen seit dem Anlegen des Objekts",
+      "modifications_one": "{{count}} Änderung",
+      "modifications_other": "{{count}} Änderungen",
+      "quotedName": "„{{name}}“",
+      "technical": {
+        "tool": "Werkzeug",
+        "toolTooltip": "Von einem Werkzeug gestempelt (FileMaker Data Migration Tool), nicht von einem Entwickler",
+        "runtime": "Laufzeit",
+        "runtimeTooltip": "Zur Laufzeit von einem Endanwender geändert (WebDirect-Sitzung) — keine Entwickleraktivität",
+        "other": "Technisch",
+        "otherTooltip": "In den Autoren-Aliasen als technischer Autor markiert"
+      },
+      "bulk": {
+        "badge": "Massenereignis {{date}}",
+        "kind": {
+          "mass_action": "Massenaktion: viele Objekte auf einmal gestempelt (Migration, Suchen & Ersetzen, neue Datei)",
+          "paste_import": "Einfügen / Import: gemeinsam eingefügte oder importierte Objekte",
+          "tool": "Werkzeuglauf (FileMaker Data Migration Tool)"
+        },
+        "scopeFile": "in einer Datei",
+        "scopeSolution_one": "über {{count}} Datei",
+        "scopeSolution_other": "über {{count}} Dateien",
+        "objects_one": "{{count}} Objekt",
+        "objects_other": "{{count}} Objekte",
+        "hint": "Der Stempel zeigt diese Aktion, keine einzelne Bearbeitung des Objekts."
+      }
+    }
   },
   "scriptLine": {
     "expand": "Aufklappen",
@@ -703,7 +789,6 @@
     "viewTable": "Tabellenansicht",
     "baseTheme": "Basis-Design",
     "inLayoutMenus": "In Layout-Menüs",
-    "lastModified": "Zuletzt geändert",
     "triggersHeading": "Script-Trigger",
     "noTriggers": "Keine Script-Trigger",
     "yes": "Ja",
@@ -774,6 +859,7 @@
       "button_action": "Tastenaktion",
       "panel_title": "Register-Titel",
       "popover_title": "Popover-Titel",
+      "active_segment": "Aktives Segment",
       "display_calculation": "Anzeige-Berechnung",
       "merge_text": "Aufgelöste Platzhalter",
       "chart_series": "Diagramm-Datenreihe",

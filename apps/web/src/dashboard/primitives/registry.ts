@@ -12,6 +12,7 @@ import { Table } from './Table';
 import { AutoTable } from './AutoTable';
 import { Slider } from './Slider';
 import { FilterChips } from './FilterChips';
+import { ToggleChips } from './ToggleChips';
 import { Select } from './Select';
 import { MarkdownBlock } from './MarkdownBlock';
 import { HtmlContent } from './HtmlContent';
@@ -27,6 +28,7 @@ import { XmlConvertLog } from './XmlConvertLog';
 import { XmlEmptyStateCard } from './XmlEmptyStateCard';
 import { SemanticNamesStatus } from './SemanticNamesStatus';
 import { XmlImportIntegrity } from './XmlImportIntegrity';
+import { CalendarHeatmap, StackedTimeSeries, Sparkline } from './Charts';
 import { registerInlineControl } from './inlineControls';
 
 const registry = new Map<string, PrimitiveComponent>();
@@ -53,6 +55,7 @@ registerPrimitive('Table', Table);
 registerPrimitive('AutoTable', AutoTable);
 registerPrimitive('Slider', Slider);
 registerPrimitive('FilterChips', FilterChips);
+registerPrimitive('ToggleChips', ToggleChips);
 registerPrimitive('Select', Select);
 registerPrimitive('Markdown', MarkdownBlock);
 registerPrimitive('HtmlContent', HtmlContent);
@@ -66,6 +69,9 @@ registerPrimitive('XmlConvertLog', XmlConvertLog);
 registerPrimitive('XmlEmptyStateCard', XmlEmptyStateCard);
 registerPrimitive('SemanticNamesStatus', SemanticNamesStatus);
 registerPrimitive('XmlImportIntegrity', XmlImportIntegrity);
+registerPrimitive('CalendarHeatmap', CalendarHeatmap);
+registerPrimitive('StackedTimeSeries', StackedTimeSeries);
+registerPrimitive('Sparkline', Sparkline);
 
 // Inline-Controls (rendered inside List rows when rowTemplate.inlineControl is set)
 registerInlineControl('docsInstall', DocsetInstallControl);

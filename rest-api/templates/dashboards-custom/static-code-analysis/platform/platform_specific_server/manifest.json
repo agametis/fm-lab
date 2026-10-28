@@ -56,15 +56,24 @@
     },
     {
       "id": "findings",
-      "source": "bundle:data/findings.sql"
+      "source": "bundle:data/findings.sql",
+      "pageSize": 500
     },
     {
       "id": "callsites",
-      "source": "bundle:data/callsites.sql"
+      "source": "bundle:data/callsites.sql",
+      "pageSize": 500,
+      "pageParam": "calls_page",
+      "searchParam": "calls_q",
+      "sortParam": "calls_sort"
     },
     {
       "id": "os_conditions",
-      "source": "bundle:data/os_conditions.sql"
+      "source": "bundle:data/os_conditions.sql",
+      "pageSize": 500,
+      "pageParam": "conditions_page",
+      "searchParam": "conditions_q",
+      "sortParam": "conditions_sort"
     }
   ],
   "params": [
@@ -73,12 +82,6 @@
       "type": "string",
       "required": false,
       "description": "Optional file filter (from the app-level filter)."
-    },
-    {
-      "name": "limit",
-      "type": "number",
-      "required": false,
-      "description": "Maximum number of findings returned (default 500)."
     }
   ],
   "permissions": {

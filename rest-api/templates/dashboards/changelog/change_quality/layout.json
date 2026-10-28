@@ -1,0 +1,626 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "Grid",
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
+    "children": [
+      {
+        "type": "Card",
+        "id": "quality_no_meta",
+        "props": {
+          "span": 12,
+          "title": "No change stamps",
+          "variant": "hero"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": false
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "quality_no_meta_md",
+            "props": {
+              "content": "This catalog carries no change stamps yet. They are read during the XML import — import the solution again to check their quality."
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "quality_filters",
+        "props": {
+          "span": 12,
+          "title": "Filter"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "data": {
+          "dataset": "view_state"
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "Select",
+                "id": "quality_file_select",
+                "data": {
+                  "dataset": "file_options"
+                },
+                "props": {
+                  "param": "file",
+                  "label": "File",
+                  "emptyOptionLabel": "All files",
+                  "resetParams": [
+                    "page"
+                  ],
+                  "multiple": true
+                }
+              },
+              {
+                "type": "NavButton",
+                "id": "quality_filters_reset",
+                "props": {
+                  "label": "Reset filters",
+                  "variant": "link",
+                  "onClick": {
+                    "action": "navigate",
+                    "args": {
+                      "path": "/dashboard/change_quality"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "Markdown",
+            "id": "quality_state_md",
+            "props": {
+              "content": "Data state **{{data_state}}** · imported **{{imported}}** — the export is {{gap_days}} days older than the import."
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "quality_integrity",
+        "props": {
+          "span": 12,
+          "title": "Integrity",
+          "subtitle": "Checks of the import — after a healthy import every value is 0. Click a value to list the objects."
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "quality_integrity_kpis",
+            "data": {
+              "dataset": "kpis"
+            },
+            "props": {
+              "items": [
+                {
+                  "label": "Objects without stamp",
+                  "field": "missing",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "change_quality",
+                      "params": {
+                        "issue": "missing"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Unreadable times",
+                  "field": "unreadable",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "change_quality",
+                      "params": {
+                        "issue": "unreadable"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Duplicate stamps",
+                  "field": "duplicate",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "change_quality",
+                      "params": {
+                        "issue": "duplicate"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Stamps after the import",
+                  "field": "future",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "change_quality",
+                      "params": {
+                        "issue": "future"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Stamps without burst",
+                  "field": "unassigned",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "change_quality",
+                      "params": {
+                        "issue": "unassigned"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "quality_signals",
+        "props": {
+          "span": 12,
+          "title": "Signals",
+          "subtitle": "How far the stamps speak for the individual object. High values are no error, they limit what the change views can tell."
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "KPIStrip",
+            "id": "quality_signal_kpis",
+            "data": {
+              "dataset": "kpis"
+            },
+            "props": {
+              "items": [
+                {
+                  "label": "In mass events",
+                  "field": "mass",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "change_quality",
+                      "params": {
+                        "issue": "mass"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Share in mass events (%)",
+                  "field": "mass_pct",
+                  "format": "number"
+                },
+                {
+                  "label": "Technical authors",
+                  "field": "technical",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "change_quality",
+                      "params": {
+                        "issue": "technical"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Without account",
+                  "field": "no_account",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "change_quality",
+                      "params": {
+                        "issue": "no_account"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Counter 0",
+                  "field": "zero_counter",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "change_quality",
+                      "params": {
+                        "issue": "zero_counter"
+                      }
+                    }
+                  }
+                },
+                {
+                  "label": "Persons with several names",
+                  "field": "spelling",
+                  "format": "number",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "change_quality",
+                      "params": {
+                        "issue": "spelling"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "quality_findings",
+        "props": {
+          "span": 12,
+          "title": "Affected objects"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "show_findings",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "Markdown",
+                "id": "quality_findings_md",
+                "props": {
+                  "content": "Objects behind the chosen value, oldest stamp first."
+                }
+              },
+              {
+                "type": "NavButton",
+                "id": "quality_findings_clear",
+                "props": {
+                  "label": "Close list",
+                  "variant": "link",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "change_quality"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "Table",
+            "id": "quality_findings_table",
+            "data": {
+              "dataset": "findings"
+            },
+            "props": {
+              "density": "compact",
+              "rowKey": "row_key",
+              "pageParam": "page",
+              "sortable": true,
+              "sortParam": "sort",
+              "searchable": false,
+              "columns": [
+                {
+                  "field": "at",
+                  "label": "Stamp",
+                  "nowrap": true
+                },
+                {
+                  "field": "type",
+                  "label": "Type",
+                  "nowrap": true
+                },
+                {
+                  "field": "name",
+                  "label": "Object"
+                },
+                {
+                  "field": "file",
+                  "label": "File",
+                  "nowrap": true
+                },
+                {
+                  "field": "person",
+                  "label": "Person",
+                  "nowrap": true
+                },
+                {
+                  "field": "account",
+                  "label": "Account",
+                  "nowrap": true
+                },
+                {
+                  "field": "modifications",
+                  "label": "Saves",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "marker",
+                  "label": "Note",
+                  "format": "badge",
+                  "badgeTone": {
+                    "Mass event": "warning",
+                    "Technical author": "partial"
+                  },
+                  "nowrap": true
+                }
+              ],
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{uuid}}",
+                  "file": "{{file}}",
+                  "type": "{{type}}"
+                }
+              },
+              "empty": {
+                "message": "No objects for this value."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "quality_spellings",
+        "props": {
+          "span": 12,
+          "title": "Persons with several names"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "show_spellings",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Row",
+            "props": {
+              "gap": 16,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "Markdown",
+                "id": "quality_spellings_md",
+                "props": {
+                  "content": "User names of one person — merge the variants of one person in the author aliases on the settings page."
+                }
+              },
+              {
+                "type": "NavButton",
+                "id": "quality_spellings_clear",
+                "props": {
+                  "label": "Close list",
+                  "variant": "link",
+                  "onClick": {
+                    "action": "openDashboard",
+                    "args": {
+                      "id": "change_quality"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "Table",
+            "id": "quality_spellings_table",
+            "data": {
+              "dataset": "spellings"
+            },
+            "props": {
+              "density": "compact",
+              "rowKey": "row_key",
+              "searchable": false,
+              "columns": [
+                {
+                  "field": "person",
+                  "label": "Person",
+                  "nowrap": true
+                },
+                {
+                  "field": "spelling",
+                  "label": "User name",
+                  "nowrap": true
+                },
+                {
+                  "field": "accounts",
+                  "label": "Accounts"
+                },
+                {
+                  "field": "stamps",
+                  "label": "Stamps",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "last_at",
+                  "label": "Last stamp",
+                  "nowrap": true
+                }
+              ],
+              "empty": {
+                "message": "No person writes under several names."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "quality_files",
+        "props": {
+          "span": 12,
+          "title": "Per file",
+          "subtitle": "The data state of a file is its newest individual change by a developer; a file stamped only by mass events has none."
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Table",
+            "id": "quality_files_table",
+            "data": {
+              "dataset": "per_file"
+            },
+            "props": {
+              "density": "compact",
+              "rowKey": "file",
+              "searchable": false,
+              "columns": [
+                {
+                  "field": "file",
+                  "label": "File",
+                  "nowrap": true
+                },
+                {
+                  "field": "stamps",
+                  "label": "Stamps",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "mass_pct",
+                  "label": "In mass events (%)",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "technical",
+                  "label": "Technical authors",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "no_account",
+                  "label": "Without account",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "zero_counter",
+                  "label": "Counter 0",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "issues",
+                  "label": "Integrity issues",
+                  "align": "right",
+                  "format": "number",
+                  "nowrap": true
+                },
+                {
+                  "field": "data_state",
+                  "label": "Data state",
+                  "nowrap": true
+                },
+                {
+                  "field": "imported",
+                  "label": "Imported",
+                  "nowrap": true
+                }
+              ],
+              "onRowClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "change_quality",
+                  "params": {
+                    "file": "{{file}}"
+                  }
+                }
+              },
+              "empty": {
+                "message": "No stamps for the chosen files."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "quality_basis",
+        "props": {
+          "span": 12,
+          "title": "Data basis"
+        },
+        "visibleWhen": {
+          "dataset": "view_state",
+          "field": "has_change_meta",
+          "truthy": true
+        },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "quality_basis_md",
+            "props": {
+              "content": "**Objects without stamp:** objects of the types that carry a stamp in the export (scripts, layouts, fields and 13 more) without a row in ObjectChangeMeta. **Unreadable times:** a timestamp text the import could not read. **Duplicate stamps:** two rows for one object (UUID and file). **Stamps after the import:** newer than the file's import plus one day — usually a wrong clock on an editing client. **Stamps without burst:** a readable stamp outside every burst.\n\n**In mass events:** stamps of a migration, a find & replace, a paste or a tool run; such a stamp says little about the individual object, and its age is unknown. **Technical authors:** the FileMaker Data Migration Tool, WebDirect sessions and authors marked technical in the aliases. **Without account:** the export names no signed-in account. **Counter 0:** the export reports no save since the object was created. **Persons with several names:** user names in different spelling, or author keys merged by the aliases. A history of changes across imports — and with it the check for stamps that change without a counter — is not part of the catalog."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

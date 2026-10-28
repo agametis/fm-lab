@@ -6,13 +6,17 @@
 -- @display: table
 -- @chip_filter: result_type
 -- @chip_param: result_type
--- @params: file (optional), limit (optional, default 500), result_type (optional)
+-- @page_param: page
+-- @search_param: q
+-- @sort_param: sort
+-- @page_size: 500
+-- @params: file (optional), page (optional), page_size (optional, default 500), q (optional), sort (optional), dir (optional), result_type (optional)
 -- @click_action: openObject
 -- @click_args: uuid={{_object_uuid}}&ref={{_nav_uuid}}&file={{file_name}}
 -- @row_action: openObject
 -- @row_action_args: uuid={{_nav_uuid}}&type=Layout&file={{file_name}}&ref={{_object_uuid}}
 -- @row_action_label: Show in layout
--- @output_format: file_name, layout_name, object_name, formula, result_type, context_to, anchor, recovered, _message, _chip_facets, _row_total
+-- @output_format: file_name, layout_name, object_name, formula, result_type, context_to, anchor, recovered, _message, _chip_facets, _row_total, _page, _page_size
 -- @object_types: Layout
 -- @output_types: count, inventory-table
 -- @scope: solution, file, object, object-list, cluster
@@ -37,10 +41,10 @@
 -- the layout text at import. Honest provenance, not a defect count.
 --
 -- The result-type chips switch SERVER-SIDE (`@chip_param: result_type`) over
--- the whole scope. `_chip_facets` counts over `base` — every filter EXCEPT the
--- result type itself — while `_row_total` counts over `sel` (WITH that
+-- the whole scope. `_chip_facets` counts over `result` — every filter EXCEPT the search and the
+-- result type itself — while `_row_total` counts over `filtered` (WITH that
 -- filter), so the header names the truncation and only then.
-WITH base AS (
+WITH result AS MATERIALIZED (
     SELECT
         cc.File_Name AS file_name,
         ly.L_UUID AS _nav_uuid,
@@ -77,14 +81,36 @@ WITH base AS (
       AND (getvariable('scope_uuids') IS NULL
            OR ly.L_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
 ),
-sel AS (
-    SELECT * FROM base
+-- >>> shared paging search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) <> 'uuid'))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging search block
+filtered AS (
+    SELECT * FROM searched
     WHERE (getvariable('result_type') IS NULL OR result_type = getvariable('result_type'))
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT s.* EXCLUDE (_calc_order),
-    (SELECT json_group_object(result_type, n)
-       FROM (SELECT result_type, count(*) AS n FROM base GROUP BY 1)) AS _chip_facets,
-    (SELECT count(*) FROM sel) AS _row_total
-FROM sel s
-ORDER BY file_name, layout_name, object_name, _object_uuid, _calc_order
-LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.* EXCLUDE (_calc_order),
+    -- Facets ordered by value, so every request returns the same text.
+    (SELECT to_json(map_from_entries(list((result_type, n) ORDER BY result_type)))
+       FROM (SELECT result_type, count(*) AS n FROM result GROUP BY 1)) AS _chip_facets,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ file_name, layout_name, object_name, _object_uuid, _calc_order, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

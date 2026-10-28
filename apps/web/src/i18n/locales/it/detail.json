@@ -145,6 +145,17 @@
     "clearRolesLabel": "Reimposta ruoli",
     "clearRolesTitle": "Rimuovi tutti i filtri di ruolo"
   },
+  "referencesMissing": {
+    "label": "Non referenziato:",
+    "indirectLabel": "tramite oggetti del layout:",
+    "emptyLead": "Riferimenti possibili:",
+    "tooltipRoles": "Ruoli possibili: {{roles}}",
+    "tooltipAggregate_one": "(incluso l’oggetto del layout)",
+    "tooltipAggregate_other": "(inclusi i {{count}} oggetti del layout)",
+    "caveatScriptCallers": "Solo chiamate risolvibili staticamente. Non rilevate: Perform Script per nome, URL fmp, chiamate esterne.",
+    "caveatToFieldAccess": "L’accesso ai campi tramite questa TO non crea alcun riferimento alla TO.",
+    "aria": "Tipi di oggetto senza riferimenti"
+  },
   "hierarchyTree": {
     "ariaLabel": "Gerarchia degli oggetti",
     "usedBy": "Usato da ({{count}})",
@@ -199,6 +210,10 @@
         "short": "Popover",
         "long": "Titolo del popover"
       },
+      "active_segment": {
+        "short": "Segmento",
+        "long": "Segmento attivo"
+      },
       "script_trigger_parameter": {
         "short": "Trigger",
         "long": "Parametro del trigger di script"
@@ -226,6 +241,10 @@
       "menu_install": {
         "short": "Install",
         "long": "Condizione di installazione del menu"
+      },
+      "menu_action": {
+        "short": "Menu",
+        "long": "Azione di menu"
       }
     }
   },
@@ -237,9 +256,13 @@
     "sortName": "Nome",
     "sortType": "Tipo",
     "sortFile": "File",
+    "sortModified": "Ultima modifica",
     "groupNone": "Nessuno",
     "groupType": "Tipo",
-    "groupFile": "File"
+    "groupFile": "File",
+    "modifiedSinceLabel": "Modificato dal",
+    "modifiedSinceHint": "Solo oggetti il cui timbro di modifica proprio è in questo giorno o successivo — passi di script, oggetti di formato e calcoli non hanno un timbro proprio",
+    "modifiedSinceClear": "Reimposta"
   },
   "fieldViewer": {
     "ariaLabel": "Dettagli del campo",
@@ -327,7 +350,8 @@
     "uuidMatch": "Trovato tramite UUID",
     "healedUuidMatch": "Trovato tramite UUID (duplicato)",
     "healedUuidTitle": "FileMaker registra questo oggetto con l’UUID cercato; poiché l’UUID compariva più volte nell’esportazione, il catalogo lo conserva con un UUID sostitutivo.",
-    "idMatch": "Trovato tramite ID {{id}}"
+    "idMatch": "Trovato tramite ID {{id}}",
+    "modifiedTooltip": "Modificato {{age}} — ora locale del client che ha modificato, senza fuso orario"
   },
   "scriptSearchFilter": {
     "searchAria": "Cerca riferimenti",
@@ -422,13 +446,75 @@
       "menuLabel": "Azioni",
       "searchPlaceholder": "Filtra soluzioni…",
       "noMatches": "Nessuna soluzione corrisponde al filtro."
+    },
+    "changeAuthors": {
+      "heading": "Autori dei metadati di modifica",
+      "desc": "Unisci le varianti di scrittura di una stessa persona, imposta i nomi visualizzati e contrassegna gli autori tecnici. Gli alias vengono salvati con la soluzione, sopravvivono a una ricostruzione e si applicano subito alla riga «Ultima modifica».",
+      "solution": "Soluzione: {{name}}.",
+      "loading": "Caricamento autori …",
+      "empty": "Questo catalogo non ha ancora metadati di modifica: reimporta la soluzione con la versione attuale.",
+      "noSidecar": "Il database delle annotazioni di questa soluzione non è disponibile (funzione disattivata o bloccata): gli alias non possono essere modificati.",
+      "colUser": "Utente",
+      "colUserTitle": "Nome utente in tutte le varianti",
+      "colStamps": "Timbri",
+      "colLast": "Ultima modifica",
+      "colPerson": "Stessa persona di",
+      "colDisplay": "Nome visualizzato",
+      "colTechnical": "Tecnico",
+      "colActions": "Azioni",
+      "accountsTitle": "Account connessi",
+      "stampsTitle": "{{single}} modifiche individuali fuori dagli eventi di massa · {{files}} file",
+      "ownPerson": "— voce propria —",
+      "technicalAutoYes": "Automatico (sì)",
+      "technicalAutoNo": "Automatico (no)",
+      "technicalAuto": "auto",
+      "technicalYes": "Sì",
+      "technicalNo": "No",
+      "save": "Salva",
+      "reset": "Reimposta",
+      "orphanHeading": "Alias senza utente corrispondente nel catalogo attuale",
+      "orphanDelete": "Rimuovi"
     }
   },
   "objectHeader": {
     "noName": "(senza nome)",
     "source": "Origine:",
     "relationshipGraphLink": "↗ Grafo delle relazioni",
-    "copyUuidAria": "Copia UUID negli appunti"
+    "copyUuidAria": "Copia UUID negli appunti",
+    "change": {
+      "modified": "Ultima modifica",
+      "containerModified": "Ultima modifica del contenitore",
+      "timeTooltip": "{{age}} — ora locale del client che ha modificato, senza fuso orario",
+      "unknownAuthor": "utente sconosciuto",
+      "authorTooltip": "Nome utente FileMaker dell’ultimo editor",
+      "accountTooltip": "Account connesso",
+      "countTooltip": "Salvataggi dalla creazione dell’oggetto",
+      "modifications_one": "{{count}} modifica",
+      "modifications_other": "{{count}} modifiche",
+      "quotedName": "«{{name}}»",
+      "technical": {
+        "tool": "Strumento",
+        "toolTooltip": "Marcato da uno strumento (FileMaker Data Migration Tool), non da uno sviluppatore",
+        "runtime": "Runtime",
+        "runtimeTooltip": "Modificato in fase di esecuzione da un utente finale (sessione WebDirect) — nessuna attività di sviluppo",
+        "other": "Tecnico",
+        "otherTooltip": "Contrassegnato come autore tecnico negli alias autore"
+      },
+      "bulk": {
+        "badge": "Evento di massa {{date}}",
+        "kind": {
+          "mass_action": "Azione di massa: molti oggetti marcati insieme (migrazione, trova e sostituisci, nuovo file)",
+          "paste_import": "Incolla / importa: oggetti incollati o importati insieme",
+          "tool": "Esecuzione di uno strumento (FileMaker Data Migration Tool)"
+        },
+        "scopeFile": "in un file",
+        "scopeSolution_one": "su {{count}} file",
+        "scopeSolution_other": "su {{count}} file",
+        "objects_one": "{{count}} oggetto",
+        "objects_other": "{{count}} oggetti",
+        "hint": "Il timbro riflette questa azione, non una modifica individuale dell’oggetto."
+      }
+    }
   },
   "scriptLine": {
     "expand": "Espandi",
@@ -660,7 +746,6 @@
     "viewTable": "Vista tabella",
     "baseTheme": "Tema base",
     "inLayoutMenus": "Nei menu layout",
-    "lastModified": "Ultima modifica",
     "triggersHeading": "Trigger di script",
     "noTriggers": "Nessun trigger di script",
     "yes": "Sì",
@@ -731,6 +816,7 @@
       "button_action": "Azione del pulsante",
       "panel_title": "Titolo del pannello",
       "popover_title": "Titolo del popover",
+      "active_segment": "Segmento attivo",
       "display_calculation": "Calcolo di visualizzazione",
       "merge_text": "Ancore di fusione risolte",
       "chart_series": "Serie del grafico",

@@ -38,7 +38,11 @@
     "uses": "usa",
     "usedBy": "usado por",
     "focus": "Foco",
-    "resizePanel": "Redimensionar o painel de detalhes"
+    "resizePanel": "Redimensionar o painel de detalhes",
+    "activity": "Atividade",
+    "activityInherited": "carimbo do seu layout / menu",
+    "activityNone": "sem carimbo",
+    "activityAge": "{{days}} dias antes do estado dos dados"
   },
   "filter": {
     "ariaLabel": "Filtros do grafo",
@@ -77,11 +81,13 @@
     "colorMode": "Coloração",
     "colorModes": {
       "type": "Tipo",
-      "community": "Comunidade"
+      "community": "Comunidade",
+      "recency": "Atividade"
     },
     "colorModeHints": {
       "type": "Colorir nós por tipo de objeto",
-      "community": "Colorir nós por módulo detetado (comunidade)"
+      "community": "Colorir nós por módulo detetado (comunidade)",
+      "recency": "Colorir os nós pela idade da sua alteração individual mais recente (as classes do Atlas do grafo)"
     },
     "communityUnnamed": "Comunidade {{id}}",
     "resizePanel": "Redimensionar o painel de filtros",
@@ -120,7 +126,8 @@
   },
   "edge": {
     "represents": "representa",
-    "buttonAction": "Ação de botão"
+    "buttonAction": "Ação de botão",
+    "menuAction": "Ação de menu"
   },
   "trace": {
     "exit": "Vizinhança",

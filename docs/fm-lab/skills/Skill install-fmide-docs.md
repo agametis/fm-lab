@@ -11,7 +11,7 @@ Installs the fmIDE documentation — the project's GitHub wiki — as Markdown p
 | **Reads** | the fmIDE wiki repository on GitHub |
 | **Writes** | `docs/fmIDE/*.md`, a `.version` marker (commit hash and date), the doc-set registry `.fmlab/docs.json` |
 | **Prerequisites** | `git`, network access to GitHub |
-| **Under the hood** | `.claude/skills/install-fmide-docs/scripts/install_fmide_docs.sh`; registration via `tools/register_docs.py` |
+| **Under the hood** | `.claude/skills/install-fmide-docs/scripts/install_fmide_docs.sh`; registration via `tools/register_docs.mjs` |
 | **Skill directory** | `.claude/skills/install-fmide-docs/` |
 | **Related** | [Skill fm-open](Skill%20fm-open.md) · [Skill fm-generate-script](Skill%20fm-generate-script.md) |
 

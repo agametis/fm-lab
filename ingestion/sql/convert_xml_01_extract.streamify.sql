@@ -31,9 +31,63 @@
 --   sein Provenienz-Kopf ändert sich mit jedem Referenz-Pull, ohne dass sich
 --   die Namensmenge ändert; das würde jeden bestehenden Katalog grundlos als
 --   driftend melden. Die Retype-Logik selbst (convert_xml_01c_…) ist gelistet.
+--   Die Liste ist für BEIDE Parser-Policies dieselbe: sie enthält auch die
+--   streamify-Variante, den Renamer und die Katana-Common-Datei, obwohl der
+--   DOM-Pfad die SAX-Dateien nicht ausführt. So hängt der erwartete Hash nur am
+--   Engine-Stand, nicht an der Policy — ein Policy-Wechsel (DOM ↔ SAX) meldet
+--   keinen Hash-Drift mehr, und eine Engine-Änderung meldet ihn unter beiden.
+--   gen_streamify_sql.sh übernimmt die Zeile unverändert.
 
--- @SCHEMA_VERSION 1.33.0
--- @SCHEMA_VERSION_DATE 2026-10-11
+-- @SCHEMA_VERSION 1.37.0
+-- @SCHEMA_VERSION_DATE 2026-10-28
+-- @SCHEMA_CHANGELOG 1.37.0: Heilungsbewusste Owner-Auflösung der Berechnungs-Instanzen
+--   (Konverter 2.41.0): CalculationsCatalog ordnet DDR-Anker einer UUID-Heilungsgruppe
+--   (Zensus DuplicateAbsorptionDetails, LayoutObjects/StepsForScripts) dem Mitglied zu,
+--   dessen eigenes XML Ankername UND Hash trägt — bisher landeten alle Anker beim
+--   Survivor (falscher Owner, falscher bzw. fehlender LayoutObjectConditions-FK). Neue
+--   Calc_Role 'active_segment' (DDR-Suffix 'ButtonBar', Formel des aktiven Segments
+--   einer Button Bar). P6: neue View v_check_calc_owner_hash; v_check_cf_rules erhält
+--   empty_chunklist_n und fk_hash_mismatch_n, hash_without_fk_n zählt die leeren
+--   ChunkLists md5('') nicht mehr. Inhaltliche Korrektur + neue View/Rolle →
+--   MINOR-Bump (Master-Rebuild korrigiert bestehende Kataloge).
+-- @SCHEMA_CHANGELOG 1.36.0: Massenereignisse und Autoren-Klassifikation der
+--   Änderungs-Metadaten (Konverter 2.39.0): neue P4-Tabellen ChangeBulkConfig (Parameter
+--   der Burst- und Ereigniserkennung, eine Zeile), ChangeTechnicalAuthors (LIKE-Muster
+--   technischer Autoren: 'tool' | 'runtime') und ChangeBulkEvents (ein Massenereignis je
+--   Zeile; Scope 'file' | 'solution', Kind 'mass_action' | 'tool' | 'paste_import');
+--   ObjectChangeMeta erhält Author_Kind, Burst_ID und Bulk_Event_ID (beide IDs flüchtig).
+--   P6 v_check_change_meta erhält unassigned_bursts, bulk_events, solution_events und
+--   bulk_pct. ScriptCatalog verliert die Kompatibilitätsspalten Last_Modified_By/_At
+--   (Ersatz: Modified_By/_At). Neue Spalten und Tabellen, entfernte Spalten →
+--   MINOR-Bump (Master-Rebuild).
+-- @SCHEMA_CHANGELOG 1.35.0: Änderungs-Metadaten für alle stempeltragenden Objekttypen
+--   (Konverter 2.38.0): die Attribute timestamp/userName/accountName/modifications des
+--   <UUID>-Elements stehen als Rohspalten Modified_At (Text), Modified_By, Modified_Account
+--   ('' → NULL) und Modifications an ExternalDataSourceCatalog, BaseTableCatalog,
+--   TableOccurrenceCatalog, FieldsForTables, ValueListCatalog, CustomFunctionsCatalog,
+--   AccountsCatalog, PrivilegeSetsCatalog, BaseDirectoryCatalog, ExtendedPrivilegesCatalog,
+--   CustomMenuCatalog, FileAccessAuthorizations, CustomMenuSetCatalog und ThemeCatalog;
+--   ScriptCatalog erhält Modified_At/_By/_Account (Last_Modified_By/_At bleiben als
+--   Kopien bis Schema 1.36.0), Layouts Modified_Account. Neue P1-Tabelle
+--   CatalogChangeMeta (Stempel je Katalog und je tabellenweisem FieldCatalog; gespeist aus
+--   main UND LayoutCatalog, PK mit Chunk_Seq). Neue P4-Tabelle ObjectChangeMeta (eine
+--   Zeile je Objekt mit eigenem Stempel, typisierter Zeitstempel, Author_Key) und
+--   CatalogChangeMeta.Newest_Child_At. Neue P6-View v_check_change_meta. Neue Spalten und
+--   Tabellen → MINOR-Bump (Master-Rebuild).
+-- @SCHEMA_CHANGELOG 1.34.0: Native Relationship-UUID (Konverter 2.36.0):
+--   RelationshipCatalog erhält Rel_UUID aus <Relationship>/<UUID> (je Relation
+--   konstant über alle Predicate_Index-Zeilen) sowie die Änderungs-Metadaten als
+--   Rohspalten Modified_At/Modified_By/Modified_Account/Modifications (Attribute am
+--   <UUID>-Element). UUID-Healing wie bei den übrigen nativen Katalogen:
+--   Intra-File-Zwillinge (gleiche UUID, verschiedene Rel_ID) erhalten über
+--   fm_heal_pick eine deterministische Ersatz-UUID (Survivor = kleinste Rel_ID,
+--   Diskriminator 'rel_id=N', Zensus DuplicateAbsorptionDetails). P4 schlüsselt den
+--   Relationship-Eintrag im ObjectCatalog und alle Relationship-Kanten über diese
+--   UUID statt über den Import-Schlüssel 'rel_<Rel_ID>_<File_Name>' — der bleibt
+--   nur als Fallback für Exporte ohne <UUID>. Identität wie bei allen nativen
+--   Typen: (Object_UUID, File_Name). Neue P6-View v_check_relationship_uuid.
+--   Neue Spalten + geänderte Katalogschlüssel → MINOR-Bump (Master-Rebuild; Re-
+--   Clustering übernimmt der Auto-Heal-Neuaufbau).
 -- @SCHEMA_CHANGELOG 1.33.0: Beschriftungen von Buttons und Popover-Buttons
 --   (Konverter 2.33.0): Text_Content, Label_Calculation_Text und die neue Spalte
 --   Title_Calculation_Text lesen je @kind genau einen XML-Pfad (Makros
@@ -926,6 +980,117 @@ CREATE TABLE IF NOT EXISTS MergeAbsorptions (
     Run_Timestamp TIMESTAMP            -- Zeitpunkt des Merge-Laufs (UTC)
 );
 
+-- CatalogChangeMeta — Änderungs-Stempel auf KATALOG-Ebene. Jeder Katalog unter
+-- Structure/AddAction trägt als direktes Kind ein eigenes <UUID> mit den Attributen
+-- timestamp/userName/accountName/modifications (meist das erste Kind; CustomMenuCatalog
+-- stellt <PasteIndexList> voran), ebenso jeder tabellenweise <FieldCatalog> unter
+-- FieldsForTables (Scope = Basistabelle; die Fortsetzungsblöcke großer Tabellen tragen
+-- keinen <UUID>). Gemessen in FileMaker 22: der Zähler steigt mit jeder Speicherung eines
+-- Kindobjekts; der Zeitstempel folgt je Katalog eigenen Regeln — ScriptCatalog bei jeder
+-- Script-Aktion (Ändern, Umordnen, in Ordner ziehen, Anlegen), LayoutCatalog und
+-- AccountsCatalog nur bei strukturellen Änderungen, FieldCatalog beim Löschen eines Felds,
+-- TableOccurrenceCatalog bei jedem OK im Dialog „Datenbank verwalten".
+-- Chunk-Eigentümerschaft: drei Produzenten, jeder im Abschnitt seines Quellzweigs —
+-- main (die main-Kataloge), main (FieldCatalog je Basistabelle) und LayoutCatalog. Beim
+-- Sub-Chunking von LayoutCatalog trägt nur der erste Sub-Chunk den Katalog-<UUID>; nur er
+-- schreibt eine Zeile (Chunk_Seq = seq_offset im PK, Muster DuplicateAbsorptions). Jeder
+-- Produzent nennt seine Kataloge in einer stamp_catalogs-Liste; dieselben Werte stehen in
+-- der Merge-Löschliste des Turbo-Merge (tools/tests/regression/census_feeder_map.sh).
+-- Newest_Child_At füllt P4 (jüngster Objekt-Stempel unter dem Katalog).
+CREATE TABLE IF NOT EXISTS CatalogChangeMeta (
+    File_Name VARCHAR NOT NULL,
+    Catalog VARCHAR NOT NULL,          -- Katalog-Element, z. B. 'ScriptCatalog', 'FieldCatalog'
+    Scope_UUID VARCHAR,                -- nur FieldCatalog: UUID der Basistabelle; sonst NULL
+    Scope_Key VARCHAR NOT NULL,        -- COALESCE(Scope_UUID, '') — PK-tauglich
+    Chunk_Seq BIGINT NOT NULL DEFAULT 0,
+    Catalog_UUID VARCHAR,              -- Text des Katalog-<UUID>
+    Modified_At TIMESTAMP,             -- TRY_CAST(@timestamp): lokale Client-Zeit, ohne Zone
+    Modified_At_Raw VARCHAR,           -- @timestamp roh
+    Modified_By VARCHAR,               -- @userName
+    Modified_Account VARCHAR,          -- @accountName ('' → NULL)
+    Modifications BIGINT,              -- @modifications
+    Newest_Child_At TIMESTAMP,         -- P4: max(Modified_At) der Objekte des Katalogs
+    PRIMARY KEY (Catalog, File_Name, Scope_Key, Chunk_Seq)
+);
+
+-- @P1_SECTION:main@
+-- Katalog-Stempel der main-Kataloge: EIN XPath-Zugriff liefert alle Katalog-<UUID>
+-- samt Attributen; element_path nennt den Katalog. Den UUID-Text liefert ein zweiter
+-- Zugriff auf dieselbe Knotenmenge (Dokumentreihenfolge) — zugeordnet über die erste
+-- Position des Elements in der Attributliste, nur bei gleicher Elementanzahl.
+WITH stamp_catalogs(Catalog) AS (
+    VALUES
+        ('AccountsCatalog'),
+        ('BaseDirectoryCatalog'),
+        ('BaseTableCatalog'),
+        ('CustomFunctionsCatalog'),
+        ('CustomMenuCatalog'),
+        ('CustomMenuSetCatalog'),
+        ('ExtendedPrivilegesCatalog'),
+        ('ExternalDataSourceCatalog'),
+        ('FileAccessCatalog'),
+        ('PrivilegeSetsCatalog'),
+        ('RelationshipCatalog'),
+        ('ScriptCatalog'),
+        ('TableOccurrenceCatalog'),
+        ('ThemeCatalog'),
+        ('ValueListCatalog')
+),
+cat_doc AS (
+    SELECT
+        xml_extract_attributes(xml, '/FMSaveAsXML/Structure/*/*/UUID') AS attrs,
+        xml_extract_text(xml, '/FMSaveAsXML/Structure/*/*/UUID') AS uuids
+    FROM read_xml_objects(getvariable('fm_xml'), maximum_file_size=getvariable('max_filesize'))
+),
+cat_attrs AS (
+    SELECT d.uuids, t.a.element_path, t.a.attribute_name, t.a.attribute_value, t.a.pos
+    FROM cat_doc d,
+         UNNEST(list_transform(d.attrs, lambda x, i: struct_insert(x, pos := i))) AS t(a)
+),
+cat_stamps AS (
+    SELECT
+        string_split(element_path, '/')[-2] AS Catalog,
+        min(pos) AS first_pos,
+        any_value(uuids) AS uuids,
+        max(attribute_value) FILTER (WHERE attribute_name = 'timestamp') AS ts,
+        max(attribute_value) FILTER (WHERE attribute_name = 'userName') AS user_name,
+        max(attribute_value) FILTER (WHERE attribute_name = 'accountName') AS account_name,
+        max(attribute_value) FILTER (WHERE attribute_name = 'modifications') AS mods
+    FROM cat_attrs
+    GROUP BY element_path
+),
+cat_ordered AS (
+    SELECT cs.*,
+           ROW_NUMBER() OVER (ORDER BY first_pos) AS ord,
+           COUNT(*) OVER () AS n_elems
+    FROM cat_stamps cs
+)
+INSERT INTO CatalogChangeMeta
+    (File_Name, Catalog, Scope_UUID, Scope_Key, Chunk_Seq, Catalog_UUID,
+     Modified_At, Modified_At_Raw, Modified_By, Modified_Account, Modifications)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    sc.Catalog,
+    NULL AS Scope_UUID,
+    '' AS Scope_Key,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    CASE WHEN len(co.uuids) = co.n_elems THEN co.uuids[co.ord] END AS Catalog_UUID,
+    TRY_CAST(co.ts AS TIMESTAMP) AS Modified_At,
+    co.ts AS Modified_At_Raw,
+    xml_unescape(co.user_name) AS Modified_By,
+    NULLIF(xml_unescape(co.account_name), '') AS Modified_Account,
+    TRY_CAST(co.mods AS BIGINT) AS Modifications
+FROM cat_ordered co
+JOIN stamp_catalogs sc ON sc.Catalog = co.Catalog
+ON CONFLICT (Catalog, File_Name, Scope_Key, Chunk_Seq) DO UPDATE SET
+    Scope_UUID = EXCLUDED.Scope_UUID,
+    Catalog_UUID = EXCLUDED.Catalog_UUID,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_At_Raw = EXCLUDED.Modified_At_Raw,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
+
 -- ExternalDataSourceCatalog
 -- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS ExternalDataSourceCatalog (
@@ -934,6 +1099,13 @@ CREATE TABLE IF NOT EXISTS ExternalDataSourceCatalog (
     DS_Type VARCHAR,
     Path VARCHAR,
     DS_UUID VARCHAR,
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh wie RelationshipCatalog:
+    -- Modified_At = @timestamp (Text), Modified_By = @userName, Modified_Account =
+    -- @accountName ('' → NULL), Modifications = @modifications (Änderungszähler).
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (DS_UUID, File_Name)
 );
@@ -980,6 +1152,10 @@ SELECT
     dr.File.UniversalPathList AS Path,
     fm_heal_pick(dr.is_survivor, 'ExternalDataSourceCatalog', fn.File_Name,
                  dr.UUID->>'#text', 'ds_id=' || dr.id::VARCHAR) AS DS_UUID,
+    dr.UUID.timestamp AS Modified_At,
+    xml_unescape(dr.UUID.userName) AS Modified_By,
+    NULLIF(xml_unescape(dr.UUID.accountName), '') AS Modified_Account,
+    dr.UUID.modifications AS Modifications,
     fn.File_Name as File_Name
 FROM ds_healed dr
 CROSS JOIN filename_normalized fn
@@ -987,7 +1163,11 @@ ON CONFLICT (DS_UUID, File_Name) DO UPDATE SET
     DS_ID = EXCLUDED.DS_ID,
     DS_Name = EXCLUDED.DS_Name,
     DS_Type = EXCLUDED.DS_Type,
-    Path = EXCLUDED.Path;
+    Path = EXCLUDED.Path,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 -- Zensus (Dup-Absorption): geparste Quell-Records, minimaler Re-Read (nur id).
 INSERT INTO DuplicateAbsorptions
@@ -1087,6 +1267,11 @@ CREATE TABLE IF NOT EXISTS BaseTableCatalog (
     BT_Name VARCHAR,
     BT_UUID VARCHAR,
     BT_Comment VARCHAR,   -- <BaseTable comment="…"> (Tabellenkommentar; leer → NULL)
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh — Semantik wie ExternalDataSourceCatalog
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (BT_UUID, File_Name)
 );
@@ -1130,13 +1315,21 @@ SELECT
     fm_heal_pick(br.is_survivor, 'BaseTableCatalog', fn.File_Name,
                  br.UUID->>'#text', 'table_id=' || br.id::VARCHAR) AS BT_UUID,
     NULLIF(ws_restore(xml_unescape(br.comment)), '') AS BT_Comment,
+    br.UUID.timestamp AS Modified_At,
+    xml_unescape(br.UUID.userName) AS Modified_By,
+    NULLIF(xml_unescape(br.UUID.accountName), '') AS Modified_Account,
+    br.UUID.modifications AS Modifications,
     fn.File_Name as File_Name
 FROM bt_healed br
 CROSS JOIN filename_normalized fn
 ON CONFLICT (BT_UUID, File_Name) DO UPDATE SET
     BT_ID = EXCLUDED.BT_ID,
     BT_Name = EXCLUDED.BT_Name,
-    BT_Comment = EXCLUDED.BT_Comment;
+    BT_Comment = EXCLUDED.BT_Comment,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 -- Zensus (Dup-Absorption): geparste Quell-Records, minimaler Re-Read (nur id).
 INSERT INTO DuplicateAbsorptions
@@ -1251,6 +1444,11 @@ CREATE TABLE IF NOT EXISTS TableOccurrenceCatalog (
     Color_G BIGINT,
     Color_B BIGINT,
     Color_Alpha DOUBLE,
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh — Semantik wie ExternalDataSourceCatalog
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (TO_UUID, File_Name)
 );
@@ -1313,6 +1511,7 @@ INSERT INTO TableOccurrenceCatalog (
     View_State, Box_Height,
     Coord_Top, Coord_Left, Coord_Bottom, Coord_Right,
     Color_R, Color_G, Color_B, Color_Alpha,
+    Modified_At, Modified_By, Modified_Account, Modifications,
     File_Name
 )
 SELECT
@@ -1337,6 +1536,10 @@ SELECT
     tr.Color.green AS Color_G,
     tr.Color.blue AS Color_B,
     tr.Color.alpha AS Color_Alpha,
+    tr.UUID.timestamp AS Modified_At,
+    xml_unescape(tr.UUID.userName) AS Modified_By,
+    NULLIF(xml_unescape(tr.UUID.accountName), '') AS Modified_Account,
+    tr.UUID.modifications AS Modifications,
     fn.File_Name as File_Name
 FROM to_healed tr
 CROSS JOIN filename_normalized fn
@@ -1359,7 +1562,11 @@ ON CONFLICT (TO_UUID, File_Name) DO UPDATE SET
     Color_R = EXCLUDED.Color_R,
     Color_G = EXCLUDED.Color_G,
     Color_B = EXCLUDED.Color_B,
-    Color_Alpha = EXCLUDED.Color_Alpha;
+    Color_Alpha = EXCLUDED.Color_Alpha,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 -- Zensus (Dup-Absorption): geparste Quell-Records, minimaler Re-Read (nur id).
 INSERT INTO DuplicateAbsorptions
@@ -1458,6 +1665,12 @@ ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTH
 -- @END_P1_SECTION@
 CREATE TABLE IF NOT EXISTS RelationshipCatalog (
     Rel_ID BIGINT,
+    -- Rel_UUID: native FileMaker-UUID der Relation (<Relationship>/<UUID>), pro Relation
+    -- konstant über alle Predicate_Index-Zeilen. Intra-File-Zwillinge (gleiche UUID,
+    -- verschiedene Rel_ID) tragen die deterministische Ersatz-UUID (fm_heal_pick).
+    -- NULL nur bei Exporten ohne <UUID> — P4 fällt dann auf 'rel_<Rel_ID>_<File_Name>'
+    -- als Katalogschlüssel zurück.
+    Rel_UUID VARCHAR,
     Left_TO_Name VARCHAR,
     Left_TO_ID BIGINT,
     Left_TO_UUID VARCHAR,
@@ -1511,6 +1724,13 @@ CREATE TABLE IF NOT EXISTS RelationshipCatalog (
     Right_Sort_Field_IDs BIGINT[],
     Right_Sort_Field_TO_UUIDs VARCHAR[],
     Right_Sort_ValueList_UUIDs VARCHAR[],
+    -- Änderungs-Metadaten der Relation (Attribute am <UUID>-Element), roh:
+    -- Modified_At = @timestamp (Text), Modified_By = @userName, Modified_Account =
+    -- @accountName ('' → NULL), Modifications = @modifications (Änderungszähler).
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (Rel_ID, File_Name, Predicate_Index)
 );
@@ -1518,10 +1738,88 @@ CREATE TABLE IF NOT EXISTS RelationshipCatalog (
 -- @P1_SECTION:main@
 WITH filename_normalized AS (
     SELECT getvariable('fm_file') as File_Name
+),
+rel_records AS (
+    SELECT *
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='RelationshipCatalog',
+        record_element='Relationship',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'id': 'BIGINT',
+            'UUID': 'STRUCT("#text" VARCHAR, "accountName" VARCHAR, "modifications" BIGINT, "timestamp" VARCHAR, "userName" VARCHAR)',
+            'LeftTable': 'STRUCT(
+                cascadeCreate BOOLEAN,
+                cascadeDelete BOOLEAN,
+                "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR),
+                "SortSpecification" STRUCT(
+                    value BOOLEAN,
+                    "SortList" STRUCT(
+                        "Sort" STRUCT(
+                            type VARCHAR,
+                            "PrimaryField" STRUCT(FieldReference STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR,
+                                "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR))),
+                            "ValueListReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
+                        )[]
+                    )
+                )
+            )',
+            'RightTable': 'STRUCT(
+                cascadeCreate BOOLEAN,
+                cascadeDelete BOOLEAN,
+                "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR),
+                "SortSpecification" STRUCT(
+                    value BOOLEAN,
+                    "SortList" STRUCT(
+                        "Sort" STRUCT(
+                            type VARCHAR,
+                            "PrimaryField" STRUCT(FieldReference STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR,
+                                "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR))),
+                            "ValueListReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
+                        )[]
+                    )
+                )
+            )',
+            'JoinPredicateList': 'STRUCT(
+                "JoinPredicate" STRUCT(
+                    type VARCHAR,
+                    "LeftField" STRUCT(
+                        FieldReference STRUCT(
+                            id BIGINT, name VARCHAR, UUID VARCHAR,
+                            "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
+                        )
+                    ),
+                    "RightField" STRUCT(
+                        FieldReference STRUCT(
+                            id BIGINT, name VARCHAR, UUID VARCHAR,
+                            "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
+                        )
+                    )
+                )[]
+            )'
+        }
+    )
+),
+rel_healed AS (
+    -- UUID-Healing: Survivor = kleinste Rel_ID je UUID behält die Original-UUID,
+    -- weitere Zwillinge erhalten im INSERT unten die deterministische Ersatz-UUID
+    -- (fm_heal_pick, Prelude). Das Window läuft auf Record-Ebene VOR dem Prädikat-
+    -- UNNEST — eine Relation ist hier genau ein Record, Mehrfeld-Joins erzeugen also
+    -- keine Scheinduplikate. Keine andere P1-Tabelle führt die Relationship-UUID als
+    -- Fremdschlüssel → keine Kaskade nötig.
+    SELECT rr.*,
+           (rr.UUID->>'#text' IS NULL OR rr.id IS NULL  -- NULL-id: kein Diskriminator → nie heilen
+            OR rr.id = MIN(rr.id) OVER (PARTITION BY rr.UUID->>'#text')) AS is_survivor
+    FROM rel_records rr
 )
 INSERT INTO RelationshipCatalog
 SELECT
     id AS Rel_ID,
+    fm_heal_pick(rr.is_survivor, 'RelationshipCatalog', fn.File_Name,
+                 rr.UUID->>'#text', 'rel_id=' || rr.id::VARCHAR) AS Rel_UUID,
     xml_unescape(LeftTable.TableOccurrenceReference.name) AS Left_TO_Name,
     LeftTable.TableOccurrenceReference.id AS Left_TO_ID,
     LeftTable.TableOccurrenceReference.UUID AS Left_TO_UUID,
@@ -1602,67 +1900,12 @@ SELECT
                 lambda s: s.ValueListReference.UUID IS NOT NULL),
                 lambda s: s.ValueListReference.UUID)
          ELSE NULL END AS Right_Sort_ValueList_UUIDs,
+    rr.UUID.timestamp AS Modified_At,
+    xml_unescape(rr.UUID.userName) AS Modified_By,
+    NULLIF(xml_unescape(rr.UUID.accountName), '') AS Modified_Account,
+    rr.UUID.modifications AS Modifications,
     fn.File_Name as File_Name
-FROM read_xml(
-    getvariable('fm_xml'),
-    root_element='RelationshipCatalog',
-    record_element='Relationship',
-    max_depth=10,
-    maximum_file_size=getvariable('dom_threshold'),
-    streaming=getvariable('use_streaming'),
-    columns={
-        'id': 'BIGINT',
-        'LeftTable': 'STRUCT(
-            cascadeCreate BOOLEAN,
-            cascadeDelete BOOLEAN,
-            "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR),
-            "SortSpecification" STRUCT(
-                value BOOLEAN,
-                "SortList" STRUCT(
-                    "Sort" STRUCT(
-                        type VARCHAR,
-                        "PrimaryField" STRUCT(FieldReference STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR,
-                            "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR))),
-                        "ValueListReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
-                    )[]
-                )
-            )
-        )',
-        'RightTable': 'STRUCT(
-            cascadeCreate BOOLEAN,
-            cascadeDelete BOOLEAN,
-            "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR),
-            "SortSpecification" STRUCT(
-                value BOOLEAN,
-                "SortList" STRUCT(
-                    "Sort" STRUCT(
-                        type VARCHAR,
-                        "PrimaryField" STRUCT(FieldReference STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR,
-                            "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR))),
-                        "ValueListReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
-                    )[]
-                )
-            )
-        )',
-        'JoinPredicateList': 'STRUCT(
-            "JoinPredicate" STRUCT(
-                type VARCHAR,
-                "LeftField" STRUCT(
-                    FieldReference STRUCT(
-                        id BIGINT, name VARCHAR, UUID VARCHAR,
-                        "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
-                    )
-                ),
-                "RightField" STRUCT(
-                    FieldReference STRUCT(
-                        id BIGINT, name VARCHAR, UUID VARCHAR,
-                        "TableOccurrenceReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)
-                    )
-                )
-            )[]
-        )'
-    }
-)
+FROM rel_healed rr
 -- list_transform hängt jedem Prädikat seinen 1-basierten Listenindex an, bevor
 -- UNNEST die Liste in Zeilen auflöst → ein Mehrfeld-Join (membercount > 1) liefert
 -- jetzt N Zeilen mit eindeutigem Predicate_Index statt einer (vgl. Schema-PK).
@@ -1676,6 +1919,7 @@ CROSS JOIN filename_normalized fn
 WHERE pe.jp.LeftField.FieldReference.id IS NOT NULL
   AND pe.jp.RightField.FieldReference.id IS NOT NULL
 ON CONFLICT (Rel_ID, File_Name, Predicate_Index) DO UPDATE SET
+    Rel_UUID = EXCLUDED.Rel_UUID,
     Left_TO_Name = EXCLUDED.Left_TO_Name,
     Left_TO_ID = EXCLUDED.Left_TO_ID,
     Left_TO_UUID = EXCLUDED.Left_TO_UUID,
@@ -1711,7 +1955,11 @@ ON CONFLICT (Rel_ID, File_Name, Predicate_Index) DO UPDATE SET
     Right_Sort_Field_UUIDs = EXCLUDED.Right_Sort_Field_UUIDs,
     Right_Sort_Field_IDs = EXCLUDED.Right_Sort_Field_IDs,
     Right_Sort_Field_TO_UUIDs = EXCLUDED.Right_Sort_Field_TO_UUIDs,
-    Right_Sort_ValueList_UUIDs = EXCLUDED.Right_Sort_ValueList_UUIDs;
+    Right_Sort_ValueList_UUIDs = EXCLUDED.Right_Sort_ValueList_UUIDs,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 -- Zensus (Dup-Absorption): Quell-Rowset = ein Record je Join-Prädikat (UNNEST) mit
 -- demselben UUID-Filter wie der Katalog-INSERT; minimaler Re-Read (nur Prädikat-UUIDs).
@@ -1741,6 +1989,82 @@ FROM (
 WHERE jp.LeftField.FieldReference.id IS NOT NULL
   AND jp.RightField.FieldReference.id IS NOT NULL
 ON CONFLICT (Catalog, File_Name, Chunk_Seq) DO UPDATE SET Source_Records = EXCLUDED.Source_Records;
+
+-- Dup-Absorption-DETAILS (RelationshipCatalog): Relationen je doppelt vergebener UUID.
+-- Zähleinheit ist die Relation (ein Record je <Relationship>), NICHT die Prädikat-Zeile —
+-- Mehrfeld-Joins sind keine Duplikate. Liest denselben Record-Satz wie das Healing-
+-- Window des Katalog-INSERTs oben (kein Zeilenfilter). DELETE-vor-INSERT hält den
+-- Detail-Satz je (Katalog, Datei) beim Re-Import frisch.
+DELETE FROM DuplicateAbsorptionDetails
+WHERE Catalog = 'RelationshipCatalog'
+  AND File_Name = getvariable('fm_file')
+  AND Chunk_Seq = COALESCE(getvariable('seq_offset'), 0)::BIGINT;
+
+INSERT INTO DuplicateAbsorptionDetails
+    (File_Name, Catalog, Object_UUID, Object_Name, Object_Type, Occurrence_Seq, Chunk_Seq,
+     Parent_Name, Position, Display_Text, Payload_XML, Healed_UUID, Heal_Status, Discriminator)
+WITH src AS (
+    SELECT
+        id,
+        UUID->>'#text' AS Object_UUID,
+        xml_unescape(LeftTable.TableOccurrenceReference.name) || ' → '
+            || xml_unescape(RightTable.TableOccurrenceReference.name) AS Object_Name,
+        'Relationship' AS Object_Type,
+        ROW_NUMBER() OVER () AS xml_ord
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='RelationshipCatalog',
+        record_element='Relationship',
+        max_depth=10,
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'id': 'BIGINT',
+            'UUID': 'STRUCT("#text" VARCHAR)',
+            'LeftTable': 'STRUCT("TableOccurrenceReference" STRUCT(name VARCHAR))',
+            'RightTable': 'STRUCT("TableOccurrenceReference" STRUCT(name VARCHAR))'
+        }
+    )
+),
+dups AS (
+    SELECT Object_UUID FROM src
+    WHERE Object_UUID IS NOT NULL
+    GROUP BY Object_UUID HAVING COUNT(*) > 1
+),
+-- UUID-Healing: Survivor-/Heal-Markierung, identische Logik wie im Katalog-INSERT
+-- oben (Survivor = kleinste Rel_ID; Doppel-Serialisierung — gleiche UUID+ID — bleibt
+-- 'absorbed', nur das jeweils erste Vorkommen einer (UUID, ID)-Identität trägt den
+-- Katalog-Status).
+marked AS (
+    SELECT s.*,
+           (s.id IS NULL  -- NULL-id: kein Diskriminator → wie Survivor behandeln (nie 'healed')
+            OR s.id = MIN(s.id) OVER (PARTITION BY s.Object_UUID)) AS is_min_id,
+           ROW_NUMBER() OVER (PARTITION BY s.Object_UUID, s.id ORDER BY s.xml_ord) AS occ_within_id
+    FROM src s
+    JOIN dups d USING (Object_UUID)
+)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    'RelationshipCatalog' AS Catalog,
+    s.Object_UUID,
+    s.Object_Name,
+    s.Object_Type,
+    ROW_NUMBER() OVER (PARTITION BY s.Object_UUID ORDER BY s.xml_ord) AS Occurrence_Seq,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    NULL AS Parent_Name,
+    'List position ' || s.xml_ord::VARCHAR AS Position,
+    left(s.Object_Name, 500) AS Display_Text,
+    NULL AS Payload_XML,
+    CASE WHEN fm_heal_enabled() AND NOT s.is_min_id AND s.occ_within_id = 1
+         THEN fm_heal_uuid('RelationshipCatalog', getvariable('fm_file'), s.Object_UUID,
+                           'rel_id=' || s.id::VARCHAR) END AS Healed_UUID,
+    CASE WHEN NOT fm_heal_enabled() THEN 'absorbed'
+         WHEN s.occ_within_id > 1   THEN 'absorbed'
+         WHEN s.is_min_id           THEN 'kept-original'
+         ELSE 'healed' END AS Heal_Status,
+    'rel_id=' || s.id::VARCHAR AS Discriminator
+FROM marked s
+ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
 
 
 -- FieldsForTables
@@ -1830,6 +2154,13 @@ CREATE TABLE IF NOT EXISTS FieldsForTables (
     Lookup_Enabled BOOLEAN,              -- <AutoEnter><Looked_up @enable>
     Validation_Calc_Enabled BOOLEAN,     -- <Validation><Calculated @enable>
     Validation_Message_Calc_Enabled BOOLEAN, -- <Validation><MessageCalc @enable>
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element des Felds), roh — Semantik wie
+    -- ExternalDataSourceCatalog. Der Stempel des tabellenweisen <FieldCatalog> steht in
+    -- CatalogChangeMeta (Catalog = 'FieldCatalog').
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (Field_UUID, File_Name)
 );
@@ -1859,7 +2190,7 @@ field_records AS (
                     "fieldtype" VARCHAR,
                     "datatype" VARCHAR,
                     "comment" VARCHAR,
-                    "UUID" STRUCT("#text" VARCHAR),
+                    "UUID" STRUCT("#text" VARCHAR, "accountName" VARCHAR, "modifications" BIGINT, "timestamp" VARCHAR, "userName" VARCHAR),
                     "Storage" STRUCT(
                         "global" BOOLEAN,
                         "maxRepetitions" BIGINT,
@@ -2039,6 +2370,10 @@ SELECT
     f.AutoEnter.Looked_up.enable AS Lookup_Enabled,
     f.Validation.Calculated.enable AS Validation_Calc_Enabled,
     f.Validation.MessageCalc.enable AS Validation_Message_Calc_Enabled,
+    f.UUID.timestamp AS Modified_At,
+    xml_unescape(f.UUID.userName) AS Modified_By,
+    NULLIF(xml_unescape(f.UUID.accountName), '') AS Modified_Account,
+    f.UUID.modifications AS Modifications,
     fn.File_Name as File_Name
 FROM field_healed
 CROSS JOIN filename_normalized fn
@@ -2105,7 +2440,11 @@ ON CONFLICT (Field_UUID, File_Name) DO UPDATE SET
     AE_Calc_Enabled = EXCLUDED.AE_Calc_Enabled,
     Lookup_Enabled = EXCLUDED.Lookup_Enabled,
     Validation_Calc_Enabled = EXCLUDED.Validation_Calc_Enabled,
-    Validation_Message_Calc_Enabled = EXCLUDED.Validation_Message_Calc_Enabled;
+    Validation_Message_Calc_Enabled = EXCLUDED.Validation_Message_Calc_Enabled,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 -- Zensus (Dup-Absorption): Quell-Rowset = ein Record je Feld (UNNEST je FieldCatalog)
 -- mit demselben id-Filter wie der Katalog-INSERT; minimaler Re-Read (nur Feld-id).
@@ -2207,6 +2546,55 @@ SELECT
 FROM marked s
 ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTHING;
 
+-- Katalog-Stempel je Basistabelle (<FieldCatalog>/<UUID>, Scope = BaseTableReference).
+-- Minimaler Re-Read (nur UUID + BaseTableReference, Muster Zensus). Große Tabellen
+-- verteilen ihre Felder auf mehrere <FieldCatalog>-Blöcke; nur der erste trägt den
+-- <UUID> → die übrigen fallen über den UUID-Filter weg.
+WITH stamp_catalogs(Catalog) AS (
+    VALUES
+        ('FieldCatalog')
+),
+fc_records AS (
+    SELECT UUID, BaseTableReference
+    FROM read_xml(
+        getvariable('fm_xml'),
+        root_element='FieldsForTables',
+        record_element='FieldCatalog',
+        maximum_file_size=getvariable('dom_threshold'),
+        streaming=getvariable('use_streaming'),
+        columns={
+            'UUID': 'STRUCT("#text" VARCHAR, "accountName" VARCHAR, "modifications" BIGINT, "timestamp" VARCHAR, "userName" VARCHAR)',
+            'BaseTableReference': 'STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR)'
+        }
+    )
+    WHERE UUID."#text" IS NOT NULL
+)
+INSERT INTO CatalogChangeMeta
+    (File_Name, Catalog, Scope_UUID, Scope_Key, Chunk_Seq, Catalog_UUID,
+     Modified_At, Modified_At_Raw, Modified_By, Modified_Account, Modifications)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    sc.Catalog,
+    fc.BaseTableReference.UUID AS Scope_UUID,
+    COALESCE(fc.BaseTableReference.UUID, '') AS Scope_Key,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    fc.UUID."#text" AS Catalog_UUID,
+    TRY_CAST(fc.UUID.timestamp AS TIMESTAMP) AS Modified_At,
+    fc.UUID.timestamp AS Modified_At_Raw,
+    xml_unescape(fc.UUID.userName) AS Modified_By,
+    NULLIF(xml_unescape(fc.UUID.accountName), '') AS Modified_Account,
+    fc.UUID.modifications AS Modifications
+FROM fc_records fc
+CROSS JOIN stamp_catalogs sc
+ON CONFLICT (Catalog, File_Name, Scope_Key, Chunk_Seq) DO UPDATE SET
+    Scope_UUID = EXCLUDED.Scope_UUID,
+    Catalog_UUID = EXCLUDED.Catalog_UUID,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_At_Raw = EXCLUDED.Modified_At_Raw,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
+
 
 -- ValueListCatalog
 -- @END_P1_SECTION@
@@ -2215,6 +2603,11 @@ CREATE TABLE IF NOT EXISTS ValueListCatalog (
     VL_Name VARCHAR,
     Source_Type VARCHAR,
     VL_UUID VARCHAR,
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh — Semantik wie ExternalDataSourceCatalog
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (VL_UUID, File_Name)
 );
@@ -2263,13 +2656,21 @@ SELECT
     vr.Source.value AS Source_Type,
     fm_heal_pick(vr.is_survivor, 'ValueListCatalog', fn.File_Name,
                  vr.UUID."#text", 'vl_id=' || vr.id::VARCHAR) AS VL_UUID,
+    vr.UUID.timestamp AS Modified_At,
+    xml_unescape(vr.UUID.userName) AS Modified_By,
+    NULLIF(xml_unescape(vr.UUID.accountName), '') AS Modified_Account,
+    vr.UUID.modifications AS Modifications,
     fn.File_Name as File_Name
 FROM vl_healed vr
 CROSS JOIN filename_normalized fn
 ON CONFLICT (VL_UUID, File_Name) DO UPDATE SET
     VL_ID = EXCLUDED.VL_ID,
     VL_Name = EXCLUDED.VL_Name,
-    Source_Type = EXCLUDED.Source_Type;
+    Source_Type = EXCLUDED.Source_Type,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 -- Zensus (Dup-Absorption): geparste Quell-Records mit demselben id-Filter
 -- wie der Katalog-INSERT; minimaler Re-Read (nur id).
@@ -2705,6 +3106,11 @@ CREATE TABLE IF NOT EXISTS CustomFunctionsCatalog (
     Folder_Type VARCHAR,
     Is_Separator BOOLEAN,
     Sequence_ID BIGINT,
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh — Semantik wie ExternalDataSourceCatalog
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (CF_UUID, File_Name)
 );
@@ -2737,6 +3143,10 @@ WITH cf_records AS (
         COALESCE(isSeparatorItem, False) AS Is_Separator,
         ROW_NUMBER() OVER () + COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Sequence_ID,
         Calculation,
+        UUID.timestamp AS Modified_At,
+        xml_unescape(UUID.userName) AS Modified_By,
+        NULLIF(xml_unescape(UUID.accountName), '') AS Modified_Account,
+        UUID.modifications AS Modifications,
         getvariable('fm_file') AS File_Name
     FROM read_xml(
         getvariable('fm_xml'),
@@ -2751,7 +3161,7 @@ WITH cf_records AS (
             'Display': 'VARCHAR',
             'isFolder': 'VARCHAR',
             'isSeparatorItem': 'BOOLEAN',
-            'UUID': 'STRUCT("#text" VARCHAR, "modifications" BIGINT, "userName" VARCHAR, "timestamp" VARCHAR)',
+            'UUID': 'STRUCT("#text" VARCHAR, "modifications" BIGINT, "userName" VARCHAR, "accountName" VARCHAR, "timestamp" VARCHAR)',
             'ObjectList': 'STRUCT(Parameter STRUCT(name VARCHAR)[])',
             'Calculation': 'STRUCT("Text" VARCHAR, "DDRREF" STRUCT("kind" VARCHAR, "hash" VARCHAR, "#text" VARCHAR))'
         }
@@ -2784,6 +3194,10 @@ SELECT
     Folder_Type,
     Is_Separator,
     Sequence_ID,
+    Modified_At,
+    Modified_By,
+    Modified_Account,
+    Modifications,
     File_Name
 FROM _cf_catalog_raw
 ON CONFLICT (CF_UUID, File_Name) DO UPDATE SET
@@ -2794,7 +3208,11 @@ ON CONFLICT (CF_UUID, File_Name) DO UPDATE SET
     DDR_Hash = EXCLUDED.DDR_Hash,
     Folder_Type = EXCLUDED.Folder_Type,
     Is_Separator = EXCLUDED.Is_Separator,
-    Sequence_ID = EXCLUDED.Sequence_ID;
+    Sequence_ID = EXCLUDED.Sequence_ID,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 -- Zensus (Dup-Absorption): liest aus der bereits materialisierten TEMP-Stufe
 -- _cf_catalog_raw (kein zweiter XML-Parse; der Katalog-INSERT hat keinen Filter).
@@ -3004,12 +3422,15 @@ CREATE TABLE IF NOT EXISTS ScriptCatalog (
     Is_Separator BOOLEAN,
     Script_UUID VARCHAR,
     Modifications BIGINT,
-    Last_Modified_By VARCHAR,
-    Last_Modified_At VARCHAR,
     Option_Bitmask BIGINT,
     Is_Hidden BOOLEAN,
     Full_Access BOOLEAN,
     Sequence_ID BIGINT,
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh — Semantik wie
+    -- ExternalDataSourceCatalog; der Änderungszähler steht in Modifications (oben).
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
     File_Name VARCHAR,
     PRIMARY KEY (Script_UUID, File_Name)
 );
@@ -3062,12 +3483,13 @@ SELECT
     fm_heal_pick(sr.is_survivor, 'ScriptCatalog', fn.File_Name,
                  sr.UUID."#text", 'script_id=' || sr.id::VARCHAR) AS Script_UUID,
     sr.UUID.modifications AS Modifications,
-    sr.UUID.userName AS Last_Modified_By,
-    sr.UUID.timestamp AS Last_Modified_At,
     sr.Options."#text" AS Option_Bitmask,
     sr.Options.hidden AS Is_Hidden,
     sr.Options.runwithfullaccess AS Full_Access,
     sr.Sequence_ID,
+    sr.UUID.timestamp AS Modified_At,
+    xml_unescape(sr.UUID.userName) AS Modified_By,
+    NULLIF(xml_unescape(sr.UUID.accountName), '') AS Modified_Account,
     fn.File_Name as File_Name
 FROM script_healed sr
 CROSS JOIN filename_normalized fn
@@ -3077,12 +3499,13 @@ ON CONFLICT (Script_UUID, File_Name) DO UPDATE SET
     Folder_Type = EXCLUDED.Folder_Type,
     Is_Separator = EXCLUDED.Is_Separator,
     Modifications = EXCLUDED.Modifications,
-    Last_Modified_By = EXCLUDED.Last_Modified_By,
-    Last_Modified_At = EXCLUDED.Last_Modified_At,
     Option_Bitmask = EXCLUDED.Option_Bitmask,
     Is_Hidden = EXCLUDED.Is_Hidden,
     Full_Access = EXCLUDED.Full_Access,
-    Sequence_ID = EXCLUDED.Sequence_ID;
+    Sequence_ID = EXCLUDED.Sequence_ID,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account;
 
 -- Dup-Absorption-DETAILS (ScriptCatalog): Typ + Name der kollidierenden Scripts je
 -- doppelt vergebener UUID. Liest denselben Quell-Rowset wie der Katalog-
@@ -3480,6 +3903,7 @@ CREATE TABLE IF NOT EXISTS Layouts (
     Modified_By VARCHAR,      -- <UUID @userName> — zuletzt geändert von
     Modified_At VARCHAR,      -- <UUID @timestamp> — ISO-Zeitstempel (roh als Text)
     Modifications BIGINT,    -- <UUID @modifications> — Änderungszähler
+    Modified_Account VARCHAR, -- <UUID @accountName> — angemeldetes Konto ('' → NULL)
     Folder_Type VARCHAR,
     Is_Separator BOOLEAN,
     Sequence_ID BIGINT,
@@ -3511,7 +3935,7 @@ layout_records AS (
             'isFolder': 'VARCHAR',
             'isSeparatorItem': 'BOOLEAN',
             -- UUID trägt Autoren-Metadaten als Attribute (bare names, kein "@"-Präfix)
-            'UUID': 'STRUCT("#text" VARCHAR, userName VARCHAR, timestamp VARCHAR, modifications BIGINT)',
+            'UUID': 'STRUCT("#text" VARCHAR, userName VARCHAR, accountName VARCHAR, timestamp VARCHAR, modifications BIGINT)',
             'TableOccurrenceReference': 'STRUCT(name VARCHAR, UUID VARCHAR)',
             'LayoutThemeReference': 'STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR, Base VARCHAR)',
             'MenuSet': 'STRUCT("CustomMenuSetReference" STRUCT(id BIGINT, name VARCHAR, UUID VARCHAR))',
@@ -3547,7 +3971,7 @@ INSERT INTO Layouts (
     Options_Raw, View_Form_Available, View_List_Available, View_Table_Available,
     Default_View, Auto_Save_Changes, Show_Field_Frames, Frame_Current_Record_Only,
     Show_Current_Record_List, Quick_Find_Enabled, Is_Hidden, L_Theme_Base,
-    Modified_By, Modified_At, Modifications,
+    Modified_By, Modified_At, Modifications, Modified_Account,
     Folder_Type, Is_Separator, Sequence_ID, File_Name
 )
 SELECT
@@ -3599,6 +4023,7 @@ SELECT
     xml_unescape(lr.UUID.userName) AS Modified_By,
     lr.UUID.timestamp AS Modified_At,
     lr.UUID.modifications AS Modifications,
+    NULLIF(xml_unescape(lr.UUID.accountName), '') AS Modified_Account,
     lr.isFolder AS Folder_Type,
     COALESCE(lr.isSeparatorItem, False) AS Is_Separator,
     lr.Sequence_ID,
@@ -3632,6 +4057,7 @@ ON CONFLICT (L_UUID, File_Name) DO UPDATE SET
     Modified_By = EXCLUDED.Modified_By,
     Modified_At = EXCLUDED.Modified_At,
     Modifications = EXCLUDED.Modifications,
+    Modified_Account = EXCLUDED.Modified_Account,
     Folder_Type = EXCLUDED.Folder_Type,
     Is_Separator = EXCLUDED.Is_Separator,
     Sequence_ID = EXCLUDED.Sequence_ID;
@@ -3716,6 +4142,56 @@ ON CONFLICT (Catalog, File_Name, Object_UUID, Occurrence_Seq, Chunk_Seq) DO NOTH
 -- Hinweis: Layout-Ebene Script-Trigger liegen bereits in der vorhandenen Tabelle
 -- ScriptTriggers (Owner_Type='Layout', Owner_UUID=L_UUID; multi-fed Merge via
 -- convert_turbo.sh). Keine eigene Layout-Trigger-Tabelle nötig.
+
+-- Katalog-Stempel des LayoutCatalog (<LayoutCatalog>/<UUID>). Beim Sub-Chunking trägt
+-- nur der erste Sub-Chunk den Katalog-<UUID>; die übrigen finden keinen Knoten und
+-- schreiben keine Zeile. CatalogChangeMeta ist damit aus main UND LayoutCatalog gespeist
+-- (Turbo-Merge: _turbo_table_multifed, Provenienz-Spalte Catalog).
+WITH stamp_catalogs(Catalog) AS (
+    VALUES
+        ('LayoutCatalog')
+),
+lc_doc AS (
+    SELECT
+        xml_extract_attributes(xml, '/FMSaveAsXML/Structure/*/LayoutCatalog/UUID') AS attrs,
+        xml_extract_text(xml, '/FMSaveAsXML/Structure/*/LayoutCatalog/UUID') AS uuids
+    FROM read_xml_objects(getvariable('fm_xml'), maximum_file_size=getvariable('max_filesize'))
+),
+lc_stamp AS (
+    SELECT
+        any_value(d.uuids) AS uuids,
+        max(t.a.attribute_value) FILTER (WHERE t.a.attribute_name = 'timestamp') AS ts,
+        max(t.a.attribute_value) FILTER (WHERE t.a.attribute_name = 'userName') AS user_name,
+        max(t.a.attribute_value) FILTER (WHERE t.a.attribute_name = 'accountName') AS account_name,
+        max(t.a.attribute_value) FILTER (WHERE t.a.attribute_name = 'modifications') AS mods
+    FROM lc_doc d, UNNEST(d.attrs) AS t(a)
+    HAVING count(*) > 0
+)
+INSERT INTO CatalogChangeMeta
+    (File_Name, Catalog, Scope_UUID, Scope_Key, Chunk_Seq, Catalog_UUID,
+     Modified_At, Modified_At_Raw, Modified_By, Modified_Account, Modifications)
+SELECT
+    getvariable('fm_file') AS File_Name,
+    sc.Catalog,
+    NULL AS Scope_UUID,
+    '' AS Scope_Key,
+    COALESCE(getvariable('seq_offset'), 0)::BIGINT AS Chunk_Seq,
+    CASE WHEN len(ls.uuids) = 1 THEN ls.uuids[1] END AS Catalog_UUID,
+    TRY_CAST(ls.ts AS TIMESTAMP) AS Modified_At,
+    ls.ts AS Modified_At_Raw,
+    xml_unescape(ls.user_name) AS Modified_By,
+    NULLIF(xml_unescape(ls.account_name), '') AS Modified_Account,
+    TRY_CAST(ls.mods AS BIGINT) AS Modifications
+FROM lc_stamp ls
+CROSS JOIN stamp_catalogs sc
+ON CONFLICT (Catalog, File_Name, Scope_Key, Chunk_Seq) DO UPDATE SET
+    Scope_UUID = EXCLUDED.Scope_UUID,
+    Catalog_UUID = EXCLUDED.Catalog_UUID,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_At_Raw = EXCLUDED.Modified_At_Raw,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 -- LayoutTableViewColumns (Schema 1.28.0, SaXML 2.3.0.0 / FileMaker 26+)
 -- @END_P1_SECTION@
@@ -4427,6 +4903,13 @@ CREATE TABLE IF NOT EXISTS AccountsCatalog (
     Password_Encrypted VARCHAR,
     PrivilegeSet_ID BIGINT,
     PrivilegeSet_Name VARCHAR,
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh — Semantik wie
+    -- ExternalDataSourceCatalog. Auch Laufzeitänderungen stempeln das Konto (z. B. eine
+    -- Passwortänderung durch den Endanwender: Modified_By/_Account = dessen Benutzer/Konto).
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (Account_UUID, File_Name)
 );
@@ -4494,6 +4977,10 @@ SELECT
     a.Authentication.PasswordEncrypted AS Password_Encrypted,
     a.PrivilegeSetReference.id AS PrivilegeSet_ID,
     a.PrivilegeSetReference.name AS PrivilegeSet_Name,
+    a.UUID.timestamp AS Modified_At,
+    xml_unescape(a.UUID.userName) AS Modified_By,
+    NULLIF(xml_unescape(a.UUID.accountName), '') AS Modified_Account,
+    a.UUID.modifications AS Modifications,
     fn.File_Name as File_Name
 FROM account_healed
 CROSS JOIN filename_normalized fn
@@ -4506,7 +4993,11 @@ ON CONFLICT (Account_UUID, File_Name) DO UPDATE SET
     Account_Name = EXCLUDED.Account_Name,
     Password_Encrypted = EXCLUDED.Password_Encrypted,
     PrivilegeSet_ID = EXCLUDED.PrivilegeSet_ID,
-    PrivilegeSet_Name = EXCLUDED.PrivilegeSet_Name;
+    PrivilegeSet_Name = EXCLUDED.PrivilegeSet_Name,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 -- Zensus (Dup-Absorption): Quell-Rowset = ein Record je Account (UNNEST) mit
 -- demselben id-Filter wie der Katalog-INSERT; minimaler Re-Read (nur Account-id).
@@ -4644,6 +5135,11 @@ CREATE TABLE IF NOT EXISTS PrivilegeSetsCatalog (
     Disconnect_Idle BOOLEAN,
     Commands VARCHAR,
     Password_Prohibit_Modification BOOLEAN,
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh — Semantik wie ExternalDataSourceCatalog
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (PrivilegeSet_UUID, File_Name)
 );
@@ -4694,6 +5190,10 @@ SELECT
     xml_extract_text(ps_xml, '/PrivilegeSet/access/Other/@disconnectIdle')[1] = 'True' as Disconnect_Idle,
     xml_extract_text(ps_xml, '/PrivilegeSet/access/Other/@commands')[1] as Commands,
     xml_extract_text(ps_xml, '/PrivilegeSet/access/Other/Password/@prohibitModification')[1] = 'True' as Password_Prohibit_Modification,
+    xml_extract_text(ps_xml, '/PrivilegeSet/UUID/@timestamp')[1] as Modified_At,
+    xml_unescape(xml_extract_text(ps_xml, '/PrivilegeSet/UUID/@userName')[1]) as Modified_By,
+    NULLIF(xml_unescape(xml_extract_text(ps_xml, '/PrivilegeSet/UUID/@accountName')[1]), '') as Modified_Account,
+    TRY_CAST(xml_extract_text(ps_xml, '/PrivilegeSet/UUID/@modifications')[1] AS BIGINT) as Modifications,
     fn.File_Name as File_Name
 FROM privilege_sets
 CROSS JOIN filename_normalized fn
@@ -4731,7 +5231,11 @@ ON CONFLICT (PrivilegeSet_UUID, File_Name) DO UPDATE SET
     Allow_Open_Quickly = EXCLUDED.Allow_Open_Quickly,
     Disconnect_Idle = EXCLUDED.Disconnect_Idle,
     Commands = EXCLUDED.Commands,
-    Password_Prohibit_Modification = EXCLUDED.Password_Prohibit_Modification;
+    Password_Prohibit_Modification = EXCLUDED.Password_Prohibit_Modification,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 
 -- ========================================
@@ -5440,6 +5944,11 @@ CREATE TABLE IF NOT EXISTS BaseDirectoryCatalog (
     BD_ID BIGINT,
     BD_RelativeTo VARCHAR,
     BD_UUID VARCHAR,
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh — Semantik wie ExternalDataSourceCatalog
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (BD_UUID, File_Name)
 );
@@ -5460,7 +5969,7 @@ raw_dir AS (
         record_element='BaseDirectoryCatalog',
         maximum_file_size=getvariable('dom_threshold'),
         streaming=getvariable('use_streaming'),
-        columns={'BaseDirectory':'STRUCT("name" VARCHAR, "id" BIGINT, "relativeTo" VARCHAR, "UUID" STRUCT("#text" VARCHAR))[]'}
+        columns={'BaseDirectory':'STRUCT("name" VARCHAR, "id" BIGINT, "relativeTo" VARCHAR, "UUID" STRUCT("#text" VARCHAR, "accountName" VARCHAR, "modifications" BIGINT, "timestamp" VARCHAR, "userName" VARCHAR))[]'}
     )
     WHERE BaseDirectory IS NOT NULL
 )
@@ -5470,6 +5979,10 @@ SELECT
     d.id::BIGINT as BD_ID,
     d.relativeTo as BD_RelativeTo,
     d.UUID."#text" as BD_UUID,
+    d.UUID.timestamp as Modified_At,
+    xml_unescape(d.UUID.userName) as Modified_By,
+    NULLIF(xml_unescape(d.UUID.accountName), '') as Modified_Account,
+    d.UUID.modifications as Modifications,
     fn.File_Name as File_Name
 FROM raw_dir
 CROSS JOIN filename_normalized fn
@@ -5477,7 +5990,11 @@ WHERE d.id IS NOT NULL
 ON CONFLICT (BD_UUID, File_Name) DO UPDATE SET
     BD_Name = EXCLUDED.BD_Name,
     BD_ID = EXCLUDED.BD_ID,
-    BD_RelativeTo = EXCLUDED.BD_RelativeTo;
+    BD_RelativeTo = EXCLUDED.BD_RelativeTo,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 
 -- ============================================
@@ -5688,6 +6205,11 @@ CREATE TABLE IF NOT EXISTS ExtendedPrivilegesCatalog (
     EP_UUID VARCHAR,
     PrivilegeSet_IDs BIGINT[],
     PrivilegeSet_Names VARCHAR[],
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh — Semantik wie ExternalDataSourceCatalog
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (EP_UUID, File_Name)
 );
@@ -5725,6 +6247,11 @@ SELECT
     list(xml_extract_text(ps_xml, '/PrivilegeSetReference/@id')[1]::BIGINT) as PrivilegeSet_IDs,
     list(xml_extract_text(ps_xml, '/PrivilegeSetReference/@name')[1]) as PrivilegeSet_Names,
 
+    xml_extract_text(priv_xml, '/ExtendedPrivilege/UUID/@timestamp')[1] as Modified_At,
+    xml_unescape(xml_extract_text(priv_xml, '/ExtendedPrivilege/UUID/@userName')[1]) as Modified_By,
+    NULLIF(xml_unescape(xml_extract_text(priv_xml, '/ExtendedPrivilege/UUID/@accountName')[1]), '') as Modified_Account,
+    TRY_CAST(xml_extract_text(priv_xml, '/ExtendedPrivilege/UUID/@modifications')[1] AS BIGINT) as Modifications,
+
     fn.File_Name as File_Name
 
 FROM raw_privileges
@@ -5732,13 +6259,17 @@ CROSS JOIN filename_normalized fn
 LEFT JOIN LATERAL (
     SELECT unnest(xml_extract_elements(priv_xml, '//ObjectList/PrivilegeSetReference')) as ps_xml
 ) ps ON true
-GROUP BY EP_ID, EP_Name, EP_Description, EP_UUID, fn.File_Name
+GROUP BY EP_ID, EP_Name, EP_Description, EP_UUID, Modified_At, Modified_By, Modified_Account, Modifications, fn.File_Name
 ON CONFLICT (EP_UUID, File_Name) DO UPDATE SET
     EP_ID = EXCLUDED.EP_ID,
     EP_Name = EXCLUDED.EP_Name,
     EP_Description = EXCLUDED.EP_Description,
     PrivilegeSet_IDs = EXCLUDED.PrivilegeSet_IDs,
-    PrivilegeSet_Names = EXCLUDED.PrivilegeSet_Names;
+    PrivilegeSet_Names = EXCLUDED.PrivilegeSet_Names,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 
 -- ============================================
@@ -5752,6 +6283,11 @@ CREATE TABLE IF NOT EXISTS CustomMenuCatalog (
     Menu_Name VARCHAR,
     Menu_UUID VARCHAR,
     Menu_XML VARCHAR,
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh — Semantik wie ExternalDataSourceCatalog
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (Menu_UUID, File_Name)
 );
@@ -5777,6 +6313,11 @@ SELECT
     -- Item_XML (CustomMenuItemCatalog) liest aus DIESER Spalte → transitiv restauriert.
     ws_restore(menu_xml::VARCHAR) as Menu_XML,
 
+    xml_extract_text(menu_xml, '/CustomMenu/UUID/@timestamp')[1] as Modified_At,
+    xml_unescape(xml_extract_text(menu_xml, '/CustomMenu/UUID/@userName')[1]) as Modified_By,
+    NULLIF(xml_unescape(xml_extract_text(menu_xml, '/CustomMenu/UUID/@accountName')[1]), '') as Modified_Account,
+    TRY_CAST(xml_extract_text(menu_xml, '/CustomMenu/UUID/@modifications')[1] AS BIGINT) as Modifications,
+
     fn.File_Name as File_Name
 
 FROM raw_menus
@@ -5785,7 +6326,11 @@ WHERE xml_extract_text(menu_xml, '/CustomMenu/@id')[1] IS NOT NULL
 ON CONFLICT (Menu_UUID, File_Name) DO UPDATE SET
     Menu_ID = EXCLUDED.Menu_ID,
     Menu_Name = EXCLUDED.Menu_Name,
-    Menu_XML = EXCLUDED.Menu_XML;
+    Menu_XML = EXCLUDED.Menu_XML,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 
 -- ============================================
@@ -5869,6 +6414,11 @@ CREATE TABLE IF NOT EXISTS FileAccessAuthorizations (
     Source_CreationTimestamp VARCHAR,
     Catalog_Required BOOLEAN,           -- FileAccessCatalog/@required (pro Datei konstant)
     Catalog_SameHost BOOLEAN,           -- FileAccessCatalog/@sameHost
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh — Semantik wie ExternalDataSourceCatalog
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (Auth_UUID, File_Name)
 );
@@ -5896,6 +6446,10 @@ SELECT
     xml_extract_text(auth_xml, '/Authorization/Source/@CreationTimestamp')[1] as Source_CreationTimestamp,
     (lower(coalesce(cat_required, '')) = 'true') as Catalog_Required,
     (lower(coalesce(cat_samehost, '')) = 'true') as Catalog_SameHost,
+    xml_extract_text(auth_xml, '/Authorization/UUID/@timestamp')[1] as Modified_At,
+    xml_unescape(xml_extract_text(auth_xml, '/Authorization/UUID/@userName')[1]) as Modified_By,
+    NULLIF(xml_unescape(xml_extract_text(auth_xml, '/Authorization/UUID/@accountName')[1]), '') as Modified_Account,
+    TRY_CAST(xml_extract_text(auth_xml, '/Authorization/UUID/@modifications')[1] AS BIGINT) as Modifications,
     fn.File_Name as File_Name
 FROM raw_auth
 CROSS JOIN filename_normalized fn
@@ -5909,7 +6463,11 @@ ON CONFLICT (Auth_UUID, File_Name) DO UPDATE SET
     Source_CreationAccountName = EXCLUDED.Source_CreationAccountName,
     Source_CreationTimestamp = EXCLUDED.Source_CreationTimestamp,
     Catalog_Required = EXCLUDED.Catalog_Required,
-    Catalog_SameHost = EXCLUDED.Catalog_SameHost;
+    Catalog_SameHost = EXCLUDED.Catalog_SameHost,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 
 -- ============================================
@@ -5930,6 +6488,11 @@ CREATE TABLE IF NOT EXISTS CustomMenuSetCatalog (
     MenuSet_UUID VARCHAR,
     Member_Menu_IDs BIGINT[],
     Member_Menu_Names VARCHAR[],
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh — Semantik wie ExternalDataSourceCatalog
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (MenuSet_UUID, File_Name)
 );
@@ -5953,6 +6516,10 @@ SELECT
         FILTER (WHERE ref_xml IS NOT NULL) as Member_Menu_IDs,
     list(xml_extract_text(ref_xml, '/CustomMenuReference/@name')[1])
         FILTER (WHERE ref_xml IS NOT NULL) as Member_Menu_Names,
+    xml_extract_text(ms_xml, '/CustomMenuSet/UUID/@timestamp')[1] as Modified_At,
+    xml_unescape(xml_extract_text(ms_xml, '/CustomMenuSet/UUID/@userName')[1]) as Modified_By,
+    NULLIF(xml_unescape(xml_extract_text(ms_xml, '/CustomMenuSet/UUID/@accountName')[1]), '') as Modified_Account,
+    TRY_CAST(xml_extract_text(ms_xml, '/CustomMenuSet/UUID/@modifications')[1] AS BIGINT) as Modifications,
     fn.File_Name as File_Name
 FROM raw_menusets
 CROSS JOIN filename_normalized fn
@@ -5960,13 +6527,17 @@ LEFT JOIN LATERAL (
     SELECT unnest(xml_extract_elements(ms_xml, '/CustomMenuSet/CustomMenuList/CustomMenuReference')) as ref_xml
 ) r ON true
 WHERE xml_extract_text(ms_xml, '/CustomMenuSet/UUID/text()')[1] IS NOT NULL
-GROUP BY MenuSet_ID, MenuSet_Name, Comment, MenuSet_UUID, fn.File_Name
+GROUP BY MenuSet_ID, MenuSet_Name, Comment, MenuSet_UUID, Modified_At, Modified_By, Modified_Account, Modifications, fn.File_Name
 ON CONFLICT (MenuSet_UUID, File_Name) DO UPDATE SET
     MenuSet_ID = EXCLUDED.MenuSet_ID,
     MenuSet_Name = EXCLUDED.MenuSet_Name,
     Comment = EXCLUDED.Comment,
     Member_Menu_IDs = EXCLUDED.Member_Menu_IDs,
-    Member_Menu_Names = EXCLUDED.Member_Menu_Names;
+    Member_Menu_Names = EXCLUDED.Member_Menu_Names,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 
 -- ============================================
@@ -6025,6 +6596,11 @@ CREATE TABLE IF NOT EXISTS ThemeCatalog (
     Theme_Display VARCHAR,   -- <Theme @Display>: lokalisierter Anzeigename (z.B. „Apex Blau")
     Theme_UUID VARCHAR,
     Theme_XML VARCHAR,
+    -- Änderungs-Metadaten (Attribute am <UUID>-Element), roh — Semantik wie ExternalDataSourceCatalog
+    Modified_At VARCHAR,
+    Modified_By VARCHAR,
+    Modified_Account VARCHAR,
+    Modifications BIGINT,
     File_Name VARCHAR,
     PRIMARY KEY (Theme_UUID, File_Name)
 );
@@ -6049,6 +6625,11 @@ SELECT
     -- ws_restore: Sentinel darf nicht in gespeichertem Roh-XML persistieren.
     ws_restore(theme_xml::VARCHAR) as Theme_XML,
 
+    xml_extract_text(theme_xml, '/Theme/UUID/@timestamp')[1] as Modified_At,
+    xml_unescape(xml_extract_text(theme_xml, '/Theme/UUID/@userName')[1]) as Modified_By,
+    NULLIF(xml_unescape(xml_extract_text(theme_xml, '/Theme/UUID/@accountName')[1]), '') as Modified_Account,
+    TRY_CAST(xml_extract_text(theme_xml, '/Theme/UUID/@modifications')[1] AS BIGINT) as Modifications,
+
     fn.File_Name as File_Name
 
 FROM raw_themes
@@ -6058,7 +6639,11 @@ ON CONFLICT (Theme_UUID, File_Name) DO UPDATE SET
     Theme_ID = EXCLUDED.Theme_ID,
     Theme_Name = EXCLUDED.Theme_Name,
     Theme_Display = EXCLUDED.Theme_Display,
-    Theme_XML = EXCLUDED.Theme_XML;
+    Theme_XML = EXCLUDED.Theme_XML,
+    Modified_At = EXCLUDED.Modified_At,
+    Modified_By = EXCLUDED.Modified_By,
+    Modified_Account = EXCLUDED.Modified_Account,
+    Modifications = EXCLUDED.Modifications;
 
 
 -- ============================================

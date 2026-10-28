@@ -27,16 +27,15 @@
     {
       "id": "findings",
       "source": "bundle:data/findings.sql",
-      "params": {
-        "limit": 400
-      }
+      "pageSize": 400
     },
     {
       "id": "fs_paths",
       "source": "bundle:data/fs_paths.sql",
-      "params": {
-        "limit": 200
-      }
+      "pageSize": 200,
+      "pageParam": "paths_page",
+      "searchParam": "paths_q",
+      "sortParam": "paths_sort"
     }
   ],
   "params": [

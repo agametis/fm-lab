@@ -15,12 +15,13 @@ All scripts of the solution, including the folder tree of the Script Workspace: 
 | `Is_Separator` | `BOOLEAN` |
 | `Script_UUID` | `VARCHAR` |
 | `Modifications` | `BIGINT` |
-| `Last_Modified_By` | `VARCHAR` |
-| `Last_Modified_At` | `VARCHAR` |
 | `Option_Bitmask` | `BIGINT` |
 | `Is_Hidden` | `BOOLEAN` |
 | `Full_Access` | `BOOLEAN` |
 | `Sequence_ID` | `BIGINT` |
+| `Modified_At` | `VARCHAR` |
+| `Modified_By` | `VARCHAR` |
+| `Modified_Account` | `VARCHAR` |
 | `File_Name` | `VARCHAR` |
 
 ## Notes
@@ -28,5 +29,7 @@ All scripts of the solution, including the folder tree of the Script Workspace: 
 - `Full_Access` = the script runs with full access privileges; `Is_Hidden` = excluded from the Scripts menu.
 - `Sequence_ID` preserves the display order of the Script Workspace.
 - The steps of each script live in [StepsForScripts](StepsForScripts.md), joined via `Script_UUID`.
+- `Modified_At` / `Modified_By` / `Modified_Account` (with the counter `Modifications`) are the raw change metadata of the script's `<UUID>` element, as described in [ObjectChangeMeta](ObjectChangeMeta.md).
+- The catalog itself has a stamp too ([CatalogChangeMeta](CatalogChangeMeta.md)): FileMaker renews it with every script action — editing, reordering, moving into a folder, creating.
 
 **See also:** [StepsForScripts](StepsForScripts.md) · [DDR_ScriptSteps](DDR_ScriptSteps.md) · [ScriptTriggers](ScriptTriggers.md)

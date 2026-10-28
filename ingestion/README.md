@@ -46,7 +46,9 @@ Two version axes live here:
 - **Schema** — `@SCHEMA_VERSION` in `sql/convert_xml_01_extract.sql`
   (structure of the produced catalog; a bump triggers force-rebuild via the
   drift guard). `@SCHEMA_HASH_FILES` (engine-relative paths) is the secondary
-  content-hash drift indicator (warn-level). The generated seed
+  content-hash drift indicator (warn-level). The list is the same for both
+  parser policies (it includes the streamify variant, the renamer and the
+  Katana common file), so a DOM↔SAX policy switch never reports drift. The generated seed
   `sql/generated/design_functions_seed.sql` is deliberately not part of the
   hash list — its provenance header changes with every reference pull while
   the name set does not.

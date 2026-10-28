@@ -69,7 +69,10 @@ duckdb db/fm_catalog.duckdb \
   a declared list are universal.
 - Object-list scope: CSV in `scope_uuids`; set `file` only when all objects
   come from one file.
-- The `limit` variable stays unset (SQL default 500) unless the user asks.
+- Paged datasets: `page` and `page_size` stay unset — the window block falls
+  back to the declared page size (manifest `pageSize` / `@page_size`), so the
+  direct path sees page 1, the same rows as an API test run. Set
+  `page_size` only when the user asks for more rows (up to 10000).
 
 ## 4. Cluster expansion (cluster scope)
 

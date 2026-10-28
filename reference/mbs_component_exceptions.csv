@@ -839,6 +839,7 @@ PageSetupDialog.SetPaperWidth,PrintDialog,PrintDialog
 PageSetupDialog.SetPrinterName,PrintDialog,PrintDialog
 PageSetupDialog.SetScalingFactor,PrintDialog,PrintDialog
 Platform,Plugin,Plugin
+Plugin.LibXSLTVersion,XML,XML
 ProcessActivity.List,Process,Process
 ProcessActivity.Options,Process,Process
 ProcessActivity.Reason,Process,Process

@@ -134,17 +134,20 @@ ORDER BY Calc_Role, Calc_Index;
 SELECT * FROM ObjectCatalog WHERE Object_UUID = '<UUID>' AND File_Name = '<FILE>';
 
 -- G1 — incoming links (what uses the object)
+-- (UUID and file on both sides — clone and modular files share UUIDs)
 SELECT Source_Type, Source_File, Link_Role,
-       (SELECT Object_Name FROM ObjectCatalog WHERE Object_UUID = ol.Source_UUID) AS Source_Name
+       (SELECT Object_Name FROM ObjectCatalog
+         WHERE Object_UUID = ol.Source_UUID AND File_Name IS NOT DISTINCT FROM ol.Source_File) AS Source_Name
 FROM ObjectLinks ol
-WHERE Target_UUID = '<UUID>'
+WHERE Target_UUID = '<UUID>' AND Target_File = '<FILE>'
 ORDER BY Source_Type;
 
 -- G2 — outgoing links (what the object uses)
 SELECT Target_Type, Target_File, Link_Role,
-       (SELECT Object_Name FROM ObjectCatalog WHERE Object_UUID = ol.Target_UUID) AS Target_Name
+       (SELECT Object_Name FROM ObjectCatalog
+         WHERE Object_UUID = ol.Target_UUID AND File_Name IS NOT DISTINCT FROM ol.Target_File) AS Target_Name
 FROM ObjectLinks ol
-WHERE Source_UUID = '<UUID>'
+WHERE Source_UUID = '<UUID>' AND Source_File = '<FILE>'
 ORDER BY Target_Type;
 
 -- ============================================================ Optional: DDR calc chunks

@@ -38,7 +38,11 @@
     "uses": "사용함",
     "usedBy": "사용됨",
     "focus": "포커스",
-    "resizePanel": "세부 정보 패널 너비 조절"
+    "resizePanel": "세부 정보 패널 너비 조절",
+    "activity": "활동",
+    "activityInherited": "레이아웃 / 메뉴의 스탬프",
+    "activityNone": "스탬프 없음",
+    "activityAge": "데이터 시점 {{days}}일 전"
   },
   "filter": {
     "ariaLabel": "그래프 필터",
@@ -77,11 +81,13 @@
     "colorMode": "색상 지정",
     "colorModes": {
       "type": "유형",
-      "community": "커뮤니티"
+      "community": "커뮤니티",
+      "recency": "활동"
     },
     "colorModeHints": {
       "type": "객체 유형별로 노드 색상 지정",
-      "community": "감지된 모듈(커뮤니티)별로 노드 색상 지정"
+      "community": "감지된 모듈(커뮤니티)별로 노드 색상 지정",
+      "recency": "노드를 가장 최근 개별 변경의 경과 기간으로 색칠합니다(그래프 아틀라스와 같은 분류)"
     },
     "communityUnnamed": "커뮤니티 {{id}}",
     "resizePanel": "필터 패널 너비 조절",
@@ -120,7 +126,8 @@
   },
   "edge": {
     "represents": "나타냄",
-    "buttonAction": "버튼 동작"
+    "buttonAction": "버튼 동작",
+    "menuAction": "메뉴 동작"
   },
   "trace": {
     "exit": "이웃 보기",

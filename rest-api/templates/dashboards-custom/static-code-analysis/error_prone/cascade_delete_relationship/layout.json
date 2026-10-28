@@ -43,7 +43,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Cascading delete relationship"
+          "title": "Cascading delete relationship",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -57,9 +58,14 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search table occurrence…",
               "chipFilter": {
-                "field": "cascade"
+                "field": "cascade",
+                "param": "cascade"
               },
               "columns": [
                 {
@@ -83,7 +89,8 @@
                 "action": "openObject",
                 "args": {
                   "uuid": "{{nav_uuid}}",
-                  "type": "Relationship"
+                  "type": "Relationship",
+                  "file": "{{file_name}}"
                 }
               },
               "empty": {

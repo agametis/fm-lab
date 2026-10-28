@@ -20,7 +20,7 @@ The tables below list the full property surface of the `<Field>` element in the 
 | `@datatype` | `Data_Type` | Result/data type; `Binary` = container |
 | `@comment` | `Field_Comment` | Developer comment |
 | `<UUID>` (text) | `Field_UUID` | Stable identity, used for all joins |
-| `<UUID>/@accountName`, `@userName`, `@timestamp`, `@modifications` | — | Modification metadata (who/when/count) — **not extracted** |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata, raw (`Modified_At` as text, empty account → `NULL`); typed per object in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md); the stamp of the per-table field catalog is in [CatalogChangeMeta](../catalog-tables/CatalogChangeMeta.md) |
 | `<TagList>` | — | Field tags incl. `@primary` — **not extracted** |
 
 ### Auto-enter block (`<AutoEnter>`)

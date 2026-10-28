@@ -93,5 +93,62 @@
       "title": "Nó"
     },
     "cancel": "Cancelar"
+  },
+  "color": {
+    "label": "Cor",
+    "type": "Tipo",
+    "recency": "Atividade",
+    "saves": "Salvamentos",
+    "type_hint": "Colorir os blocos por tipo de objeto.",
+    "recency_hint": "Colorir os blocos pela idade da sua alteração individual mais recente — eventos em massa nunca contam como recentes.",
+    "saves_hint": "Colorir os blocos pelo contador de salvamentos de toda a vida dos seus membros (posto dentro do tipo de objeto) — robusto contra eventos em massa.",
+    "unavailable": "Este catálogo não contém carimbos de alteração — importe a solução novamente para colorir por atividade.",
+    "bulk": "Eventos em massa",
+    "bulk_hint": "Incluir eventos em massa: um carimbo em massa passa a datar a última alteração como uma individual."
+  },
+  "activity": {
+    "class": {
+      "1": "≤ 30 dias",
+      "2": "≤ 90 dias",
+      "3": "≤ 1 ano",
+      "4": "≤ 2 anos",
+      "5": "> 2 anos",
+      "6": "desconhecida",
+      "7": "sem carimbo"
+    },
+    "savesShort": "salvamentos {{level}}/5",
+    "savesFew": "poucos",
+    "savesMany": "muitos",
+    "legendRecency": "Alteração individual mais recente",
+    "legendSaves": "Salvamentos de toda a vida (posto no tipo)",
+    "dataState": "Estado dos dados {{date}}",
+    "bulkIncluded": "eventos em massa incluídos",
+    "unknownHint": "Para {{pct}} % dos nós, a idade da última alteração real é desconhecida — um evento em massa recente sobrescreveu os seus carimbos. Aqui os salvamentos de toda a vida distinguem melhor os módulos.",
+    "useSaves": "Colorir por salvamentos",
+    "tooltip": {
+      "class": "Atividade: {{label}}",
+      "classLabel": "Atividade",
+      "newest": "Alteração mais recente: {{date}} ({{days}} dias antes do estado dos dados)",
+      "newestNone": "Nenhuma alteração datada",
+      "active": "Alterados em 90 dias: {{n}} de {{total}}",
+      "medianAge": "Idade mediana: {{days}} dias",
+      "medianSaves": "Mediana de salvamentos: {{n}}",
+      "saves": "Salvamentos: {{n}}",
+      "undated": "Carimbos em massa: {{pct}} %",
+      "savesLevel": "Nível de salvamentos {{level}} de 5"
+    },
+    "panel": {
+      "newest": "Alteração mais recente",
+      "newestValue": "{{date}} · {{days}} dias antes do estado dos dados",
+      "active": "Alterados ≤ 90 dias",
+      "activeValue": "{{n}} de {{total}}",
+      "medianAge": "Idade mediana",
+      "days": "{{days}} dias",
+      "medianSaves": "Mediana de salvamentos",
+      "saves": "Salvamentos",
+      "undated": "Carimbos em massa",
+      "dataState": "Estado dos dados",
+      "openDashboard": "Alterações deste módulo"
+    }
   }
 }

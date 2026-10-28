@@ -24,12 +24,13 @@ Real analyses usually combine two (P2 + P3 is the normal case).
 
 | Need | Mechanism |
 |---|---|
-| Counts and filtering over the **full** data (beyond the LIMIT) | KPI hero tiles (`openDashboard` self-nav param) or `FilterChips` / `Select` / `Slider` → URL param → `getvariable` → SQL re-runs |
-| Quick visual partition **within** the loaded rows only | `Table.chipFilter` (client-side chips with counts) |
-| Free-text narrowing of loaded rows | built-in search (I3) |
+| Counts and filtering over the **full** data (beyond one page) | KPI hero tiles (`openDashboard` self-nav param) or `FilterChips` / `Select` / `Slider` → URL param → `getvariable` → SQL re-runs |
+| Value chips over a column of a paged list | `Table.chipFilter` with `param` (server chip, counts from `_chip_facets`) |
+| Quick visual partition of a small, unpaged list | `Table.chipFilter` without `param` (client-side chips) |
+| Free-text narrowing | built-in search (I3); on a paged table via `searchParam` (server-side) |
 
-When in doubt: server-side. A client-side chip over a LIMIT-capped dataset shows
-capped counts and hides rows beyond the cap.
+When in doubt: server-side. A client-side chip on a paged table would count and
+filter one page only — it is not allowed there.
 
 ⚠️ Params are click-scoped by default: an `openDashboard` self-navigation drops
 every param the click args don't carry. Mode/lens params (classification set,

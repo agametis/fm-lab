@@ -27,7 +27,7 @@ The conversation runs through **three gates**, each an explicit question you ans
 | **G2** | the pattern recommendation | how it is presented |
 | **G3** | the name proposal | id and title |
 
-Between the gates the skill classifies the intent (a work list? counts per trait? a two-level drill-down? lenses with thresholds?), drafts the dataset SQL under the house rules (object identity is the pair `(UUID, File_Name)`, parameters via `getvariable`, locale-independent step ids instead of step-name literals, a plausibility check when counts look round or inflated), recommends one of the interactive patterns — navigator, segmented overview with KPI tiles that filter the list, aggregate plus drill-down, lens, multi-facet, static — and proposes a lowercase ASCII id and an English title.
+Between the gates the skill classifies the intent (a work list? counts per trait? a two-level drill-down? lenses with thresholds?), drafts the dataset SQL under the house rules (object identity is the pair `(UUID, File_Name)`, every column qualified with its table alias as soon as a query joins tables, parameters via `getvariable`, locale-independent step ids instead of step-name literals, a plausibility check when counts look round or inflated), recommends one of the interactive patterns — navigator, segmented overview with KPI tiles that filter the list, aggregate plus drill-down, lens, multi-facet, static — and proposes a lowercase ASCII id and an English title.
 
 **Interactivity is not optional.** Object rows navigate to their object; meaningful partitions become clickable filter tiles or chips; any list that typically exceeds a few rows is searchable. G2 asks *how* to present, never *whether* rows are clickable.
 
@@ -57,6 +57,7 @@ The **verification gate** then reloads the template cache, fetches the dashboard
 
 - The bundle's SQL, manifest and layout are English; translations live in the locale files.
 - The `:param` preprocessor of the API treats every `:word` sequence as a parameter placeholder — the SQL rules reference explains how to avoid it in string literals and casts.
+- Unqualified column names in a join stop working when a later catalog schema adds the same column name to a second joined table ("Ambiguous reference to column name") — the skill qualifies every column, and the same rule applies to dataset SQL written by hand.
 - Rule dashboards created this way can be promoted into [Analysis Tests](../Wiki/Analysis%20Tests.md) by referencing them from a `test.json`.
 - The same skill scaffolds full **rule bundles** for static code analysis; see [SCA collection](../Wiki/Static%20Code%20Analysis.md#a-curated-growing-collection).
 

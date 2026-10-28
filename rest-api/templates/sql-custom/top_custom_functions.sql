@@ -1,4 +1,4 @@
--- @template_type: object
+-- @template_type: report
 -- @title: Top custom functions
 -- @description: Custom functions with the most operational references (via ObjectLinks).
 -- @icon: function
@@ -7,7 +7,7 @@
 -- @params: limit (optional, default 100), file (optional)
 -- @click_action: openObject
 -- @click_args: uuid={{uuid}}&type=CustomFunction
--- @output_format: uuid, name, type, file, reference_count
+-- @output_format: uuid, name, file, reference_count
 -- @author: fm-lab core
 -- @version: 1.0
 -- @tags: custom-functions, top, ranking
@@ -15,7 +15,6 @@
 SELECT
     cf.CF_UUID                AS uuid,
     cf.CF_Name                AS name,
-    'CustomFunction'          AS type,
     cf.File_Name              AS file,
     COUNT(ol.Source_UUID)     AS reference_count
 FROM CustomFunctionsCatalog cf

@@ -73,7 +73,8 @@
     },
     {
       "id": "findings",
-      "source": "bundle:data/findings.sql"
+      "source": "bundle:data/findings.sql",
+      "pageSize": 500
     }
   ],
   "params": [
@@ -90,10 +91,10 @@
       "description": "CSV of Object_UUIDs supplied by the Analysis-Tests run boundary."
     },
     {
-      "name": "limit",
-      "type": "number",
+      "name": "cause",
+      "type": "string",
       "required": false,
-      "description": "Maximum number of finding rows returned (default 500)."
+      "description": "Optional chip filter on cause."
     }
   ],
   "permissions": {

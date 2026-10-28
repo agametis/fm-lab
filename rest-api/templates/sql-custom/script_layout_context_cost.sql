@@ -4,10 +4,14 @@
 -- @icon: route
 -- @category: Scripts
 -- @display: table
--- @params: file (optional), limit (optional, default 500), min_objects (optional, default 100)
+-- @page_param: page
+-- @search_param: q
+-- @sort_param: sort
+-- @page_size: 500
+-- @params: file (optional), page (optional), page_size (optional, default 500), q (optional), sort (optional), dir (optional), min_objects (optional, default 100)
 -- @click_action: openObject
 -- @click_args: uuid={{_nav_uuid}}&type=Script&file={{file_name}}
--- @output_format: file_name, script_name, layout_name, layout_file, objects, portals, unstored_fields, related_fields, _message
+-- @output_format: file_name, script_name, layout_name, layout_file, objects, portals, unstored_fields, related_fields, _message, _row_total, _page, _page_size
 -- @object_types: Script
 -- @output_types: count, inventory-table
 -- @scope: solution, file, object, object-list, cluster
@@ -44,28 +48,58 @@ field_cost AS (
     LEFT JOIN TableOccurrenceCatalog toc ON l.L_TO_UUID = toc.TO_UUID
     WHERE ol.Link_Role = 'displays_field'
     GROUP BY 1, 2
+),
+result AS MATERIALIZED (
+    SELECT
+        s.File_Name AS file_name,
+        s.Object_UUID AS _nav_uuid,
+        t.Object_UUID AS _layout_uuid,
+        s.Object_Name AS script_name,
+        lc.L_Name AS layout_name,
+        lc.File_Name AS layout_file,
+        lc.objects,
+        lc.portals,
+        COALESCE(fc.unstored_fields, 0) AS unstored_fields,
+        COALESCE(fc.related_fields, 0) AS related_fields,
+        'Navigates to "' || lc.L_Name || '" (' || lc.objects || ' objects, ' || lc.portals
+          || ' portal(s), ' || COALESCE(fc.unstored_fields, 0) || ' unstored)' AS _message
+    FROM ObjectLinks ol
+    JOIN ObjectCatalog s ON ol.Source_UUID = s.Object_UUID AND s.Object_Type = 'Script'
+    JOIN ObjectCatalog t ON ol.Target_UUID = t.Object_UUID AND t.Object_Type = 'Layout'
+    JOIN layout_cost lc ON lc.L_UUID = t.Object_UUID
+    LEFT JOIN field_cost fc ON fc.File_Name = lc.File_Name AND fc.Layout_ID = lc.L_ID
+    WHERE ol.Link_Role = 'navigates_to_layout'
+      AND lc.objects >= CAST(COALESCE(getvariable('min_objects'), '100') AS INTEGER)
+      AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file'))
+      AND (getvariable('scope_uuids') IS NULL
+           OR s.Object_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
+),
+-- >>> shared paging search block
+haystack AS (
+    SELECT *, lower(concat_ws(chr(31),
+              *COLUMNS(lambda c: NOT starts_with(c, '_') AND lower(c) <> 'uuid'))) AS _pg_hay
+    FROM result
+),
+searched AS (
+    SELECT * EXCLUDE (_pg_hay) FROM haystack
+    WHERE NULLIF(CAST(getvariable('q') AS VARCHAR), '') IS NULL
+       OR contains(_pg_hay, lower(CAST(getvariable('q') AS VARCHAR)))
+),
+-- <<< shared paging search block
+filtered AS (
+    SELECT * FROM searched
+),
+-- >>> shared paging window block
+pg AS (
+    SELECT s._pg_size, t._pg_total,
+           LEAST(GREATEST(COALESCE(TRY_CAST(NULLIF(CAST(getvariable('page') AS VARCHAR), '') AS INTEGER), 1), 1),
+                 GREATEST(CAST(ceil(t._pg_total / s._pg_size) AS INTEGER), 1)) AS _pg_page
+    FROM (SELECT LEAST(GREATEST(COALESCE(TRY_CAST(CAST(getvariable('page_size') AS VARCHAR) AS INTEGER), 500), 1), 10000) AS _pg_size) s,
+         (SELECT count(*) AS _pg_total FROM filtered) t
 )
-SELECT
-    s.File_Name AS file_name,
-    s.Object_UUID AS _nav_uuid,
-    s.Object_Name AS script_name,
-    lc.L_Name AS layout_name,
-    lc.File_Name AS layout_file,
-    lc.objects,
-    lc.portals,
-    COALESCE(fc.unstored_fields, 0) AS unstored_fields,
-    COALESCE(fc.related_fields, 0) AS related_fields,
-    'Navigates to "' || lc.L_Name || '" (' || lc.objects || ' objects, ' || lc.portals
-      || ' portal(s), ' || COALESCE(fc.unstored_fields, 0) || ' unstored)' AS _message
-FROM ObjectLinks ol
-JOIN ObjectCatalog s ON ol.Source_UUID = s.Object_UUID AND s.Object_Type = 'Script'
-JOIN ObjectCatalog t ON ol.Target_UUID = t.Object_UUID AND t.Object_Type = 'Layout'
-JOIN layout_cost lc ON lc.L_UUID = t.Object_UUID
-LEFT JOIN field_cost fc ON fc.File_Name = lc.File_Name AND fc.Layout_ID = lc.L_ID
-WHERE ol.Link_Role = 'navigates_to_layout'
-  AND lc.objects >= CAST(COALESCE(getvariable('min_objects'), '100') AS INTEGER)
-  AND (getvariable('file') IS NULL OR s.File_Name = getvariable('file'))
-  AND (getvariable('scope_uuids') IS NULL
-       OR s.Object_UUID IN (SELECT unnest(string_split(getvariable('scope_uuids'), ','))))
-ORDER BY lc.objects DESC, file_name, script_name
-LIMIT CAST(COALESCE(getvariable('limit'), '500') AS INTEGER);
+-- <<< shared paging window block
+SELECT f.*,
+    pg._pg_total AS _row_total, pg._pg_page AS _page, pg._pg_size AS _page_size
+FROM filtered f, pg
+ORDER BY /*@sort*/ objects DESC, file_name, script_name, layout_file, layout_name, _nav_uuid, _layout_uuid, f
+LIMIT (SELECT _pg_size FROM pg) OFFSET (SELECT (_pg_page - 1) * _pg_size FROM pg);

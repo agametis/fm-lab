@@ -19,6 +19,15 @@ The user accounts of each file with type, enabled state, description and the pri
 | `Password_Encrypted` | `VARCHAR` |
 | `PrivilegeSet_ID` | `BIGINT` |
 | `PrivilegeSet_Name` | `VARCHAR` |
+| `Modified_At` | `VARCHAR` |
+| `Modified_By` | `VARCHAR` |
+| `Modified_Account` | `VARCHAR` |
+| `Modifications` | `BIGINT` |
 | `File_Name` | `VARCHAR` |
+
+## Notes
+
+- `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` are the raw change metadata of the object's `<UUID>` element: timestamp as text (local time of the editing client, no time zone), user name, account (empty → `NULL`) and change counter. [ObjectChangeMeta](ObjectChangeMeta.md) collects them across all object types with a typed timestamp.
+- Runtime changes stamp an account too: when a user changes their password, `Modified_By` / `Modified_Account` name that user and account — not a developer.
 
 **See also:** [PrivilegeSetsCatalog](PrivilegeSetsCatalog.md) · [FileOptionsCatalog](FileOptionsCatalog.md)

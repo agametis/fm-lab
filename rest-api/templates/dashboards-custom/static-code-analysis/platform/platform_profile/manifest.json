@@ -18,7 +18,8 @@
     },
     {
       "id": "os_findings",
-      "source": "bundle:data/os_findings.sql"
+      "source": "bundle:data/os_findings.sql",
+      "pageSize": 500
     }
   ],
   "params": [
@@ -27,12 +28,6 @@
       "type": "string",
       "required": false,
       "description": "Optional file filter (from the app-level filter)."
-    },
-    {
-      "name": "limit",
-      "type": "number",
-      "required": false,
-      "description": "Maximum number of matrix rows returned (default 500)."
     },
     {
       "name": "os",

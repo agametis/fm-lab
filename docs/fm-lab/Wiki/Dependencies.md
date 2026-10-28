@@ -89,26 +89,27 @@ Both engines run with fixed seeds and resolutions so cluster assignments stay st
 
 ## Python
 
-Python 3 plays a supporting role and is not required for the core workflow:
+Python 3 plays a supporting role and is not required for the core workflow (XML import and analysis). The documentation installers and `tools/solution.sh` run on Node.js and need no Python. Python serves:
 
-- optional **Leiden clustering** via python-igraph (see [Graph analysis](#graph-analysis))
-- utility scripts under `tools/` (documentation registration, wiki-link conversion for publishing)
+- optional **Leiden clustering** via python-igraph (see [Graph analysis](#graph-analysis)); without it, clustering uses Louvain
 - code generation tooling inside Claude skills (e.g. the `fm-generate-script` pipeline)
 
-Apart from python-igraph, these scripts rely on the Python standard library only.
+Apart from python-igraph, these scripts rely on the Python standard library only. `tools/init.sh` reports Python 3 as an optional prerequisite and warns when it is missing. On macOS, `/usr/bin/python3` only works once the Command Line Tools are installed (`xcode-select --install`).
 
 ---
 
 ## Version baseline
 
-The tested reference setup (checked by `tools/init.sh` at first run):
+The tested reference setup (checked by `tools/init.sh` at first run). *Required* versions stop the setup; below a *recommended* version `init.sh` warns and continues:
 
-| Component | Minimum version |
-|---|---|
-| DuckDB CLI | 1.5.4 |
-| webbed extension | 2.4.0 |
-| Node.js | 20 |
-| npm | 10 |
-| Python 3 | optional (Leiden, utility scripts) |
+| Component | Required | Recommended |
+|---|---|---|
+| DuckDB CLI | any | 1.5.6 |
+| webbed extension | loadable | 2.12.0 |
+| Node.js | 20 | a supported release line at its latest security release: 22.x ≥ 22.23.4, 24.x ≥ 24.22.1, 26.x ≥ 26.12.1 (security release of 2026-10-21) |
+| npm | 10 | — |
+| Python 3 | — | optional (code generation, Leiden clustering) |
+
+Node.js 20.x and the odd-numbered lines (23.x, 25.x) are end-of-life and receive no security fixes; `init.sh` recommends switching to a supported line.
 
 See [Installation](Installation.md) for setup instructions.

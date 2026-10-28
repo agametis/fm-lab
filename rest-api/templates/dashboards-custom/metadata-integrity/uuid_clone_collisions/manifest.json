@@ -63,11 +63,16 @@
     },
     {
       "id": "findings",
-      "source": "bundle:data/findings.sql"
+      "source": "bundle:data/findings.sql",
+      "pageSize": 500
     },
     {
       "id": "file_pairs",
-      "source": "bundle:data/file_pairs.sql"
+      "source": "bundle:data/file_pairs.sql",
+      "pageSize": 100,
+      "pageParam": "pairs_page",
+      "searchParam": "pairs_q",
+      "sortParam": "pairs_sort"
     }
   ],
   "params": [
@@ -82,12 +87,6 @@
       "type": "string",
       "required": false,
       "description": "CSV of Object_UUIDs supplied by the Analysis-Tests run boundary."
-    },
-    {
-      "name": "limit",
-      "type": "number",
-      "required": false,
-      "description": "Maximum number of finding rows returned (default 500)."
     }
   ],
   "permissions": {

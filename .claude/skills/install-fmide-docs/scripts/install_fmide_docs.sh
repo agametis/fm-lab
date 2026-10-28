@@ -248,18 +248,15 @@ get_stats() {
 
 # Function: Register the installed docs in .fmlab/docs.json
 register_docs() {
-    REGISTER_SCRIPT="$PROJECT_ROOT/tools/register_docs.py"
+    REGISTER_SCRIPT="$PROJECT_ROOT/tools/register_docs.mjs"
     if [ ! -f "$REGISTER_SCRIPT" ]; then
-        return 0
-    fi
-    if ! command -v python3 &> /dev/null; then
         return 0
     fi
 
     # Markdown pages double as "rubrics" for the wiki.
     MD_COUNT=$(find "$DOCS_DIR" -maxdepth 1 -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
 
-    python3 "$REGISTER_SCRIPT" \
+    node "$REGISTER_SCRIPT" \
         --id fmide \
         --name "fmIDE" \
         --description "fmIDE GitHub Wiki — Deep Linking, Name-that-Thing API and conventions." \
@@ -269,7 +266,7 @@ register_docs() {
         --categories "${MD_COUNT:-none}" \
         --functions none \
         --languages en \
-        || echo "WARNING: register_docs.py failed (non-fatal)."
+        || echo "WARNING: register_docs.mjs failed (non-fatal)."
 }
 
 # Main workflow

@@ -175,7 +175,11 @@ tool). It is a **protocol, not an analysis** — numbers and tables only:
    rename-all yes/no.
 4. **Hubs** — top 20 by logical cluster degree (`scripts/hubs.sql`, `SET VARIABLE engine`,
    `"limit"`, `-markdown`). Note "degree = logical cluster degree (v2)". Builtins/Calculation instances never
-   appear (excluded from `ClusterEdges`). **Same name ≠ same object**: a name recurring across files
+   appear (excluded from `ClusterEdges`). Degree is connectedness, not importance — keep the
+   annotation columns in the table: `Inbound_Users` (distinct where-used users) with
+   `Unreferenced` (no user — e.g. a script nobody calls) and `Dominant_Role` + share (a hub made
+   of 95 % `imports_to_field` is a migration/import script, not a central module). Say so for
+   such rows instead of presenting them as core logic. **Same name ≠ same object**: a name recurring across files
    is per-file copies (node key `(uuid, file)`), i.e. duplication — quantify with
    `COUNT(DISTINCT File_Name)`, never call it a shared hub.
 5. **Community list** — all communities (`scripts/community_list.sql`): name, semantic yes/no,

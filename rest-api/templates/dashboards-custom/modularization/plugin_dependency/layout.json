@@ -2,24 +2,52 @@
   "schemaVersion": 1,
   "root": {
     "type": "Grid",
-    "props": { "columns": 12, "gap": 16 },
+    "props": {
+      "columns": 12,
+      "gap": 16
+    },
     "children": [
       {
         "type": "Card",
         "id": "summary",
-        "props": { "span": 12, "variant": "hero" },
-        "data": { "dataset": "summary" },
+        "props": {
+          "span": 12,
+          "variant": "hero"
+        },
+        "data": {
+          "dataset": "summary"
+        },
         "children": [
           {
             "type": "KPIStrip",
             "id": "summary_kpistrip",
             "props": {
               "items": [
-                { "label": "Plugin call sites", "field": "callsites", "format": "number" },
-                { "label": "Components", "field": "components", "format": "number" },
-                { "label": "Functions", "field": "functions", "format": "number" },
-                { "label": "Files affected", "field": "files_affected", "format": "number" },
-                { "label": "Install Plug-In steps", "field": "install_plugin_steps", "format": "number" }
+                {
+                  "label": "Plugin call sites",
+                  "field": "callsites",
+                  "format": "number"
+                },
+                {
+                  "label": "Components",
+                  "field": "components",
+                  "format": "number"
+                },
+                {
+                  "label": "Functions",
+                  "field": "functions",
+                  "format": "number"
+                },
+                {
+                  "label": "Files affected",
+                  "field": "files_affected",
+                  "format": "number"
+                },
+                {
+                  "label": "Install Plug-In steps",
+                  "field": "install_plugin_steps",
+                  "format": "number"
+                }
               ]
             }
           }
@@ -28,8 +56,14 @@
       {
         "type": "Card",
         "id": "components",
-        "props": { "span": 12, "title": "Components" },
-        "data": { "dataset": "components" },
+        "props": {
+          "span": 12,
+          "title": "Components",
+          "keepChildrenOnEmpty": true
+        },
+        "data": {
+          "dataset": "components"
+        },
         "children": [
           {
             "type": "Table",
@@ -38,14 +72,46 @@
               "rowKey": "component",
               "density": "compact",
               "sortable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "columns": [
-                { "field": "plugin", "label": "Plugin", "format": "badge" },
-                { "field": "component", "label": "Component", "format": "badge" },
-                { "field": "callsites", "label": "Call sites", "align": "right" },
-                { "field": "functions", "label": "Functions", "align": "right" },
-                { "field": "files", "label": "Files", "align": "right" }
+                {
+                  "field": "plugin",
+                  "label": "Plugin",
+                  "format": "badge"
+                },
+                {
+                  "field": "component",
+                  "label": "Component",
+                  "format": "badge"
+                },
+                {
+                  "field": "callsites",
+                  "label": "Call sites",
+                  "align": "right"
+                },
+                {
+                  "field": "functions",
+                  "label": "Functions",
+                  "align": "right"
+                },
+                {
+                  "field": "files",
+                  "label": "Files",
+                  "align": "right"
+                }
               ],
-              "onRowClick": { "action": "openDashboard", "args": { "id": "plugin_dependency", "params": { "component": "{{component}}" } } }
+              "onRowClick": {
+                "action": "openDashboard",
+                "args": {
+                  "id": "plugin_dependency",
+                  "params": {
+                    "component": "{{component}}"
+                  }
+                }
+              }
             }
           }
         ]
@@ -53,8 +119,13 @@
       {
         "type": "Card",
         "id": "top_functions",
-        "props": { "span": 12, "title": "Most-used functions" },
-        "data": { "dataset": "top_functions" },
+        "props": {
+          "span": 12,
+          "title": "Most-used functions"
+        },
+        "data": {
+          "dataset": "top_functions"
+        },
         "children": [
           {
             "type": "Table",
@@ -64,12 +135,33 @@
               "density": "compact",
               "sortable": true,
               "columns": [
-                { "field": "function_name", "label": "Function" },
-                { "field": "component", "label": "Component", "format": "badge" },
-                { "field": "callsites", "label": "Call sites", "align": "right" },
-                { "field": "files", "label": "Files", "align": "right" }
+                {
+                  "field": "function_name",
+                  "label": "Function"
+                },
+                {
+                  "field": "component",
+                  "label": "Component",
+                  "format": "badge"
+                },
+                {
+                  "field": "callsites",
+                  "label": "Call sites",
+                  "align": "right"
+                },
+                {
+                  "field": "files",
+                  "label": "Files",
+                  "align": "right"
+                }
               ],
-              "onRowClick": { "action": "openObject", "args": { "uuid": "{{nav_uuid}}", "type": "PluginFunction" } }
+              "onRowClick": {
+                "action": "openObject",
+                "args": {
+                  "uuid": "{{nav_uuid}}",
+                  "type": "PluginFunction"
+                }
+              }
             }
           }
         ]

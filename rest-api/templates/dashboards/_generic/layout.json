@@ -19,7 +19,7 @@
       },
       {
         "type": "Card",
-        "props": { "span": 12 },
+        "props": { "span": 12, "keepChildrenOnEmpty": true },
         "data": { "dataset": "results" },
         "children": [
           {

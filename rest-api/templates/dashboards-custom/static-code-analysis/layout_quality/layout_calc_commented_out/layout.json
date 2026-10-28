@@ -68,6 +68,9 @@
                 "props": {
                   "param": "calc_slot",
                   "default": "",
+                  "resetParams": [
+                    "page"
+                  ],
                   "options": [
                     {
                       "value": "",
@@ -123,6 +126,10 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file, layout or object…",
               "columns": [
                 {

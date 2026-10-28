@@ -93,5 +93,62 @@
       "title": "Node"
     },
     "cancel": "Cancel"
+  },
+  "color": {
+    "label": "Colour",
+    "type": "Type",
+    "recency": "Activity",
+    "saves": "Saves",
+    "type_hint": "Colour the tiles by object type.",
+    "recency_hint": "Colour the tiles by the age of their newest individual change — mass events never count as young.",
+    "saves_hint": "Colour the tiles by the lifetime save counter of their members (rank within the object type) — robust against mass events.",
+    "unavailable": "This catalog carries no change stamps — import the solution again to colour by activity.",
+    "bulk": "Mass events",
+    "bulk_hint": "Include mass events: a mass stamp then dates the last change like an individual one."
+  },
+  "activity": {
+    "class": {
+      "1": "≤ 30 days",
+      "2": "≤ 90 days",
+      "3": "≤ 1 year",
+      "4": "≤ 2 years",
+      "5": "> 2 years",
+      "6": "unknown",
+      "7": "no stamp"
+    },
+    "savesShort": "saves {{level}}/5",
+    "savesFew": "few",
+    "savesMany": "many",
+    "legendRecency": "Newest individual change",
+    "legendSaves": "Lifetime saves (rank within the type)",
+    "dataState": "Data state {{date}}",
+    "bulkIncluded": "mass events included",
+    "unknownHint": "For {{pct}} % of the nodes the age of the last real change is unknown — a young mass event overwrote their stamps. The lifetime saves separate the modules here.",
+    "useSaves": "Colour by saves",
+    "tooltip": {
+      "class": "Activity: {{label}}",
+      "classLabel": "Activity",
+      "newest": "Newest change: {{date}} ({{days}} days before the data state)",
+      "newestNone": "No dated change",
+      "active": "Changed within 90 days: {{n}} of {{total}}",
+      "medianAge": "Median age: {{days}} days",
+      "medianSaves": "Median saves: {{n}}",
+      "saves": "Saves: {{n}}",
+      "undated": "Mass stamps: {{pct}} %",
+      "savesLevel": "Saves level {{level}} of 5"
+    },
+    "panel": {
+      "newest": "Newest change",
+      "newestValue": "{{date}} · {{days}} days before the data state",
+      "active": "Changed ≤ 90 days",
+      "activeValue": "{{n}} of {{total}}",
+      "medianAge": "Median age",
+      "days": "{{days}} days",
+      "medianSaves": "Median saves",
+      "saves": "Saves",
+      "undated": "Mass stamps",
+      "dataState": "Data state",
+      "openDashboard": "Changes of this module"
+    }
   }
 }

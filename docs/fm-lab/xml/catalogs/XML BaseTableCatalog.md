@@ -17,6 +17,6 @@ The base tables of the file — the schema-level table definitions. Only identit
 
 ## Notes
 
-- The `<UUID>` element carries modification metadata as attributes (`modifications`, `accountName`, `timestamp`) — a pattern repeated on almost every object element in the export.
+- The `<UUID>` element carries modification metadata as attributes (`modifications`, `userName`, `accountName`, `timestamp`) — a pattern repeated on almost every object element in the export.
 
 **Extracted into:** [BaseTableCatalog](../../schema/catalog-tables/BaseTableCatalog.md) — column details in the [schema reference](../../schema/Schema.md).

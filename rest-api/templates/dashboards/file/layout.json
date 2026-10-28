@@ -53,6 +53,21 @@
                     { "label": "File size", "field": "size_bytes", "format": "filesize" }
                   ]
                 }
+              },
+              {
+                "type": "KPIStrip",
+                "id": "file_change_kpistrip",
+                "data": { "dataset": "change_kpis" },
+                "visibleWhen": { "dataset": "file_guard", "field": "has_change_meta", "truthy": true },
+                "props": {
+                  "items": [
+                    { "label": "Last design change", "field": "last_design_change" },
+                    { "label": "By", "field": "last_design_author" },
+                    { "label": "Last mass change", "field": "last_mass_change" },
+                    { "label": "Mass events", "field": "mass_events", "format": "number" },
+                    { "label": "Individual changes %", "field": "individual_pct", "format": "number" }
+                  ]
+                }
               }
             ]
           },
@@ -103,6 +118,54 @@
                   "onClick": { "action": "applyFilter", "args": { "type": "CustomFunction", "file": "{{File_Name}}" } } },
                 { "label": "Variables", "field": "variables",
                   "onClick": { "action": "applyFilter", "args": { "type": "Variable", "file": "{{File_Name}}" } } }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "Card",
+        "id": "file_catalog_changes",
+        "props": { "span": 12, "title": "Changes per catalog" },
+        "visibleWhen": { "dataset": "file_guard", "field": "has_change_meta", "truthy": true },
+        "data": { "dataset": "catalog_changes" },
+        "children": [
+          {
+            "type": "Markdown",
+            "id": "file_catalog_changes_md",
+            "props": { "content": "Each object keeps only its **last** change stamp. *Last individual change* leaves out mass events (migrations, pastes, tool runs) and technical authors. The catalog stamp has its own rules: its counter rises with every save of an object in the catalog. Times are the local time of the editing client." }
+          },
+          {
+            "type": "Sparkline",
+            "id": "file_change_trend",
+            "data": { "dataset": "change_trend" },
+            "props": {
+              "label": "Individual changes per month, last 12 months up to the data state",
+              "valueField": "n",
+              "labelField": "month",
+              "height": 40,
+              "maxWidth": 360,
+              "onPointClick": {
+                "action": "openDashboard",
+                "args": { "id": "changes", "file": "{{file}}", "from": "{{from_at}}", "to": "{{to_at}}" }
+              }
+            }
+          },
+          {
+            "type": "Table",
+            "id": "file_catalog_changes_table",
+            "props": {
+              "rowKey": "catalog",
+              "density": "comfortable",
+              "columns": [
+                { "field": "catalog", "label": "Catalog" },
+                { "field": "last_single_change", "label": "Last individual change" },
+                { "field": "last_single_author", "label": "User" },
+                { "field": "catalog_stamp", "label": "Catalog stamp" },
+                { "field": "catalog_counter", "label": "Counter", "format": "number", "align": "right" },
+                { "field": "stamped", "label": "Objects", "format": "number", "align": "right" },
+                { "field": "in_mass", "label": "In mass events", "format": "count", "align": "right" },
+                { "field": "deleted_hint", "label": "Field deleted after last edit", "format": "count", "align": "right" }
               ]
             }
           }

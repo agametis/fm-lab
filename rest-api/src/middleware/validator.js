@@ -101,6 +101,11 @@ const schemas = {
     // Aktive UI-Sprache: liefert BuiltinFunction-Zeilen zusätzlich
     // `Localized_Name` (lokalisierte Fassung neben dem kanonischen Namen).
     lang: Joi.string().optional(),
+    // Änderungs-Metadaten: 'modified' sortiert nach dem eigenen Stempel (neueste
+    // zuerst, ohne Stempel am Ende); modified_since behält nur Objekte, deren
+    // eigener Stempel an oder nach dem Tag liegt. Beide liefern Modified_At mit.
+    sort: Joi.string().lowercase().valid('modified').optional(),
+    modified_since: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).optional(),
   }),
 
   // GET /api/search/count
@@ -108,6 +113,7 @@ const schemas = {
     name: Joi.string().required(),
     type: Joi.string().lowercase().valid(...OBJECT_TYPES.map(t => t.toLowerCase())).optional(),
     file: Joi.string().optional(),
+    modified_since: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).optional(),
     format: Joi.string().lowercase().valid(...Object.values(OUTPUT_FORMATS)).default('json'),
     meta: Joi.boolean().default(false),
     debug: Joi.boolean().default(false),
@@ -124,6 +130,12 @@ const schemas = {
     format: Joi.string().lowercase().valid(...Object.values(OUTPUT_FORMATS)).default('json'),
     meta: Joi.boolean().default(false),
     debug: Joi.boolean().default(false),
+  }),
+
+  // GET /api/references/candidates
+  referenceCandidates: Joi.object({
+    uuid: Joi.string().required(),
+    file: Joi.string().optional(), // Clone-Scoping der Fokus-Seite (s. get-Schema)
   }),
 
   // GET /api/back-references - Cross-Reference Highlight Lookup
@@ -326,6 +338,11 @@ const schemas = {
     // false → alle Segmente, keine Rest-Kachel.
     fold: Joi.boolean().default(true),
     limit: Joi.number().integer().min(1).max(environment.api.maxLimit).default(50),
+    // Änderungs-Aktivität je Kachel mitrechnen (Farbmodi „Aktivität“/„Speicherungen“).
+    activity: Joi.boolean().default(false),
+    // Farbmodus „Aktivität“: include → ein Massenstempel datiert die letzte Änderung
+    // wie eine Einzeländerung (Schalter „Massenereignisse einbeziehen“).
+    activity_bulk: Joi.string().lowercase().valid('hide', 'include').default('hide'),
     format: Joi.string().lowercase().valid(...Object.values(OUTPUT_FORMATS)).default('json'),
     meta: Joi.boolean().default(false),
     debug: Joi.boolean().default(false),
@@ -360,6 +377,23 @@ const schemas = {
     community: Joi.number().integer().required(),
     user_name: Joi.string().allow('', null).max(200).optional(),
     user_notes: Joi.string().allow('', null).max(4000).optional(),
+  }),
+
+  // PUT /api/change-authors - Alias eines Autors der Änderungs-Metadaten setzen.
+  // raw_value = Benutzername wie im Export (bzw. Author_Key); author_key = Ziel-Person
+  // (Schreibvarianten zusammenführen), display_name, is_technical — je null = Import-Wert.
+  changeAuthorAlias: Joi.object({
+    raw_value: Joi.string().trim().min(1).max(500).required(),
+    kind: Joi.string().valid('user', 'account').default('user'),
+    author_key: Joi.string().trim().allow('', null).max(500).optional(),
+    display_name: Joi.string().trim().allow('', null).max(200).optional(),
+    is_technical: Joi.boolean().allow(null).optional(),
+  }),
+
+  // DELETE /api/change-authors?raw_value=…&kind=…
+  changeAuthorAliasDelete: Joi.object({
+    raw_value: Joi.string().trim().min(1).max(500).required(),
+    kind: Joi.string().valid('user', 'account').default('user'),
   }),
 
   // PUT /api/annotations/node/visibility - Node als sichtbar/ausgeblendet markieren

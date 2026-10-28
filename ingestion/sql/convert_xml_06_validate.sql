@@ -158,6 +158,25 @@ FROM (
     LIMIT 20
 );
 
+-- Variablen-Identität (Klon-Dateien) — lokale Variablen (local, let_local)
+-- gehören genau einer Datei: P3 führt sie in VariablesCatalog je (Name, Scope,
+-- Anker, Datei). Klon-Dateien teilen Script- und Kontext-UUIDs und damit den
+-- Anker; eine Zeile mit File_Count > 1 heißt, die Variablen zweier Dateien
+-- sind zu einer Katalogzeile zusammengelegt — ihre Kanten zeigten dann auf die
+-- Variable der anderen Datei. Soll 0.
+CREATE OR REPLACE VIEW v_check_variable_identity AS
+WITH merged AS (
+    SELECT Variable_Name, Variable_Scope, Files
+    FROM VariablesCatalog
+    WHERE Variable_Scope IN ('local', 'let_local') AND File_Count > 1
+)
+SELECT
+    (SELECT COUNT(*) FROM merged) AS merged_n,
+    (SELECT COUNT(*) FROM merged WHERE Variable_Scope = 'local') AS local_n,
+    (SELECT COUNT(*) FROM merged WHERE Variable_Scope = 'let_local') AS let_local_n,
+    (SELECT string_agg(Variable_Name || ' [' || Variable_Scope || '] (' || array_to_string(Files, ', ') || ')', '; ')
+     FROM (SELECT * FROM merged ORDER BY Variable_Name, Variable_Scope LIMIT 10)) AS sample;
+
 -- Kardinalitäts-Wächter (Klon-Fan-out) — strukturelle 1:1-Beziehungen,
 -- die durch UUID-Mehrdeutigkeit (Klon-Korpora) auffächern würden:
 --   TableOccurrence → base_table  genau 1
@@ -276,6 +295,57 @@ LEFT JOIN stored_counts t ON t.Catalog = s.Catalog AND t.File_Name = s.File_Name
 WHERE s.Source_Records - COALESCE(t.Stored_Rows, 0) > 0
 ORDER BY Absorbed DESC;
 
+-- Zensus-Integrität — Gegenrichtung zu v_check_absorbed_dups. Der P1-Zensus zählt die
+-- GEPARSTEN Quell-Records, gespeichert wird nach dem Upsert-Dedup: auf einem korrekten
+-- Katalog gilt daher je (Katalog, Datei) Stored_Rows <= Source_Records, und jede Datei
+-- mit gespeicherten Zeilen eines zensierten Katalogs trägt eine Zensus-Zeile. Ein
+-- Verstoß bedeutet, dass der Zensus nach der Extraktion überschrieben oder verloren
+-- wurde (z. B. ein Chunk ohne den Katalog hat den Zähler auf 0 gesetzt) — dann sind
+-- auch v_check_absorbed_dups und die Heilungs-Zuordnung (DuplicateAbsorptionDetails)
+-- dieser Datei nicht belastbar. Behebung: Re-Import der Datei. ScriptCatalog/Layouts
+-- fehlen bewusst: sie haben keinen P1-Zensus (MAX(Sequence_ID) ist ihr Zähler).
+CREATE OR REPLACE VIEW v_check_census_integrity AS
+WITH source_counts AS (
+    SELECT Catalog, File_Name, SUM(Source_Records) AS Source_Records
+    FROM DuplicateAbsorptions GROUP BY Catalog, File_Name
+),
+stored_counts AS (
+              SELECT 'ExternalDataSourceCatalog' AS Catalog, File_Name, COUNT(*) AS Stored_Rows FROM ExternalDataSourceCatalog GROUP BY File_Name
+    UNION ALL SELECT 'BaseTableCatalog',        File_Name, COUNT(*) FROM BaseTableCatalog        GROUP BY File_Name
+    UNION ALL SELECT 'TableOccurrenceCatalog',  File_Name, COUNT(*) FROM TableOccurrenceCatalog  GROUP BY File_Name
+    UNION ALL SELECT 'RelationshipCatalog',     File_Name, COUNT(*) FROM RelationshipCatalog     GROUP BY File_Name
+    UNION ALL SELECT 'FieldsForTables',         File_Name, COUNT(*) FROM FieldsForTables         GROUP BY File_Name
+    UNION ALL SELECT 'ValueListCatalog',        File_Name, COUNT(*) FROM ValueListCatalog        GROUP BY File_Name
+    UNION ALL SELECT 'OptionsForValueLists',    File_Name, COUNT(*) FROM OptionsForValueLists    GROUP BY File_Name
+    UNION ALL SELECT 'CustomFunctionsCatalog',  File_Name, COUNT(*) FROM CustomFunctionsCatalog  GROUP BY File_Name
+    UNION ALL SELECT 'AccountsCatalog',         File_Name, COUNT(*) FROM AccountsCatalog         GROUP BY File_Name
+    UNION ALL SELECT 'StepsForScripts',         File_Name, COUNT(*) FROM StepsForScripts         GROUP BY File_Name
+    UNION ALL SELECT 'LayoutObjects',           File_Name, COUNT(*) FROM LayoutObjects           GROUP BY File_Name
+)
+SELECT
+    t.Catalog,
+    t.File_Name,
+    s.Source_Records,
+    t.Stored_Rows,
+    CASE WHEN s.Source_Records IS NULL THEN 'no census row'
+         ELSE 'census below stored rows' END AS Problem
+FROM stored_counts t
+LEFT JOIN source_counts s ON s.Catalog = t.Catalog AND s.File_Name = t.File_Name
+WHERE t.Stored_Rows > 0
+  AND (s.Source_Records IS NULL OR t.Stored_Rows > s.Source_Records)
+ORDER BY t.File_Name, t.Catalog;
+
+-- Datei-Optionen-Abdeckung — jede importierte Datei trägt genau eine
+-- FileOptionsCatalog-Zeile (Metadata-Branch, in jedem SaXML-Export vorhanden). Eine
+-- Lücke heißt: die Zeile ist nach der Extraktion verloren gegangen; mit ihr fehlen die
+-- Kanten auto_login_account/default_layout und die Datei-Ansicht bleibt leer.
+-- Behebung: Re-Import der Datei.
+CREATE OR REPLACE VIEW v_check_file_options_coverage AS
+SELECT f.File_Name
+FROM FilesCatalog f
+WHERE NOT EXISTS (SELECT 1 FROM FileOptionsCatalog o WHERE o.File_Name = f.File_Name)
+ORDER BY f.File_Name;
+
 -- External-Wertelisten-Auflösung: Wrapper-VLs (Source_Type='External') sollen in P4
 -- einen source_valuelist-Link auf die Ziel-VL der Quelldatei erhalten. Nicht auflösbare
 -- Ziele (Zieldatei nicht im Korpus, VL-ID/Name dort unbekannt, Datenquelle fehlt) werden
@@ -315,6 +385,72 @@ WHERE cmi.Is_SubMenuItem
         AND ol.Source_File = cmi.File_Name
         AND ol.Link_Role = 'opens_menu'
   );
+
+-- Menü-Aktions-Auflösung — ein Menü-Eintrag mit <action>…<ScriptReference> bekommt in
+-- P4 eine Kante triggers_script·menu_action, aufgelöst über (Zieldatei, Script-@id).
+-- Einträge ohne Kante werden hier ausgewiesen statt still verschluckt. Aufgeteilt nach
+-- Ursache: target_file_missing_n = Zieldatei nicht in diesem Import (Teil-Korpus,
+-- erwartbar); in_corpus_n = Zieldatei importiert, Script-ID dort aber unbekannt
+-- (gelöschtes Script oder Resolver-Lücke). Reine String-Funktionen auf dem
+-- <action>-Ausschnitt (P6-Views laufen ohne webbed).
+CREATE OR REPLACE VIEW v_check_menu_action_unresolved AS
+WITH actions AS (
+    SELECT cmi.Item_UUID, cmi.File_Name,
+           regexp_extract(cmi.Item_XML, '(?s)<action>(.*)</action>', 1) AS Action_XML
+    FROM CustomMenuItemCatalog cmi
+    WHERE cmi.Item_XML LIKE '%<ScriptReference%'
+),
+refs AS (
+    SELECT a.Item_UUID, a.File_Name,
+           NULLIF(regexp_extract(a.Action_XML, '<DataSourceReference [^>]*UUID="([^"]*)"', 1), '') AS DS_UUID,
+           NULLIF(regexp_extract(a.Action_XML, '<DataSourceReference [^>]*name="([^"]*)"', 1), '') AS DS_Name
+    FROM actions a
+    WHERE a.Action_XML LIKE '%<ScriptReference%'
+      AND NOT EXISTS (
+          SELECT 1 FROM ObjectLinks ol
+          WHERE ol.Source_UUID = a.Item_UUID
+            AND ol.Source_File = a.File_Name
+            AND ol.Link_Role = 'triggers_script'
+            AND ol.Link_Subrole = 'menu_action'
+      )
+),
+classified AS (
+    SELECT r.File_Name,
+           CASE WHEN r.DS_UUID IS NULL AND r.DS_Name IS NULL THEN r.File_Name
+                ELSE COALESCE(d.Resolved_File, regexp_replace(r.DS_Name, '\.fmp12$', ''))
+           END AS Target_File
+    FROM refs r
+    LEFT JOIN DataSourceFileMap d ON d.File_Name = r.File_Name AND d.DS_UUID = r.DS_UUID
+)
+SELECT
+    COUNT(*) AS unresolved_n,
+    COUNT(*) FILTER (WHERE fc.File_Name IS NULL)     AS target_file_missing_n,
+    COUNT(*) FILTER (WHERE fc.File_Name IS NOT NULL) AS in_corpus_n,
+    string_agg(DISTINCT c.File_Name, ', ') AS files
+FROM classified c
+LEFT JOIN FilesCatalog fc ON fc.File_Name = c.Target_File;
+
+-- Menü-Aktionen mit nicht verdrahteten Bezügen (Report, KEIN Gate): P4 verdrahtet nur
+-- Perform Script. Andere Objektbezüge in <action> (Layout, Feld, TO, Werteliste) und
+-- Formeln in der Aktion (Script-Parameter, Step-Formeln) bekommen keine Kante — hier
+-- sichtbar, damit neue Fälle in fremden Korpora nicht verschluckt werden.
+CREATE OR REPLACE VIEW v_report_menu_action_unlinked AS
+WITH actions AS (
+    SELECT cmi.File_Name, cmi.Item_UUID, cmi.Menu_Name,
+           regexp_extract(cmi.Item_XML, '(?s)<action>(.*)</action>', 1) AS Action_XML
+    FROM CustomMenuItemCatalog cmi
+    WHERE cmi.Item_XML LIKE '%<action>%'
+)
+SELECT
+    File_Name,
+    Item_UUID,
+    Menu_Name,
+    regexp_extract(Action_XML, '<Step [^>]*name="([^"]*)"', 1) AS Step_Name,
+    regexp_matches(Action_XML, '<(LayoutReference|FieldReference|TableOccurrenceReference|ValueListReference)[ />]') AS Has_Object_Ref,
+    Action_XML LIKE '%<Calculation%' AS Has_Calculation
+FROM actions
+WHERE regexp_matches(Action_XML, '<(LayoutReference|FieldReference|TableOccurrenceReference|ValueListReference)[ />]')
+   OR Action_XML LIKE '%<Calculation%';
 
 -- Chunk_Type-NULL-Wächter — der P3-Backfill für Chunk_Type läuft NACH
 -- seinem P2-Konsumenten (toter Verteidigungscode); taucht hier je ein NULL auf,
@@ -579,6 +715,90 @@ SELECT
 FROM slots
 GROUP BY side;
 
+-- Relationship-Identität: Object_UUID einer Relationship ist ihre native FileMaker-UUID
+-- (RelationshipCatalog.Rel_UUID). Zähleinheit = Relation (DISTINCT über die Prädikat-
+-- Zeilen).
+--   fallback_keys    — Relationen ohne <UUID> im Export; Katalogschlüssel fällt auf
+--                      'rel_<Rel_ID>_<File_Name>' zurück. Soll 0: alle unterstützten
+--                      SaXML-Profile (ab 2.1.0.0) schreiben die UUID.
+--   healed           — Intra-File-Zwillinge (gleiche UUID, verschiedene Rel_ID) mit
+--                      deterministischer Ersatz-UUID (Zensus DuplicateAbsorptionDetails).
+--   multi_file_uuids — native UUIDs, die in mehreren Dateien vorkommen (Klon-/Modul-
+--                      Dateien). Nur Info: Identität ist (Object_UUID, File_Name).
+CREATE OR REPLACE VIEW v_check_relationship_uuid AS
+WITH rel AS (
+    SELECT DISTINCT Rel_ID, File_Name, Rel_UUID FROM RelationshipCatalog
+)
+SELECT
+    COUNT(*)                                                    AS relationships,
+    COUNT(*) FILTER (WHERE Rel_UUID IS NULL)                    AS fallback_keys,
+    (SELECT COUNT(*) FROM DuplicateAbsorptionDetails
+     WHERE Catalog = 'RelationshipCatalog' AND Heal_Status = 'healed') AS healed,
+    (SELECT COUNT(*) FROM (
+        SELECT Rel_UUID FROM rel
+        WHERE Rel_UUID IS NOT NULL
+        GROUP BY Rel_UUID
+        HAVING COUNT(DISTINCT File_Name) > 1))                  AS multi_file_uuids
+FROM rel;
+
+-- Änderungs-Metadaten (ObjectChangeMeta / CatalogChangeMeta):
+--   stamped_objects   — Objekte mit eigenem Stempel (Info)
+--   missing_objects   — ObjectCatalog-Objekte stempeltragender Quellkataloge (inkl.
+--                       Ordner) ohne Zeile in ObjectChangeMeta. Soll 0: jede unterstützte
+--                       SaXML-Version schreibt die Attribute an jedes <UUID>.
+--   cast_failures     — Rohstempel, die nicht als TIMESTAMP lesbar sind (Objekt + Katalog). Soll 0.
+--   duplicate_keys    — (Object_UUID, File_Name) mehrfach in ObjectChangeMeta. Soll 0.
+--   future_stamps     — Stempel mehr als einen Tag nach dem Import (Uhr des ändernden
+--                       Clients falsch; Stempel sind lokale Zeit ohne Zone → Toleranz 1 Tag). Info.
+--   catalog_rows      — Zeilen in CatalogChangeMeta (Info).
+--   mass_minute_pct   — Anteil der Objekt-Stempel in Minuten mit ≥ 50 Stempeln derselben
+--                       Datei (grobe Massenereignis-Quote, Info; Vergleichswert zu bulk_pct).
+--   unassigned_bursts — Stempel mit lesbarem Zeitpunkt ohne Burst_ID. Soll 0.
+--   bulk_events       — Zeilen in ChangeBulkEvents (Info).
+--   solution_events   — davon dateiübergreifend (Scope 'solution', Info).
+--   bulk_pct          — Anteil der Objekt-Stempel in einem Massenereignis (Info).
+CREATE OR REPLACE VIEW v_check_change_meta AS
+WITH meta_sources(Source_Table) AS (
+    VALUES ('ScriptCatalog'), ('Layouts'), ('CustomFunctionsCatalog'), ('FieldsForTables'),
+           ('BaseTableCatalog'), ('TableOccurrenceCatalog'), ('RelationshipCatalog'),
+           ('ValueListCatalog'), ('ExternalDataSourceCatalog'), ('AccountsCatalog'),
+           ('PrivilegeSetsCatalog'), ('ExtendedPrivilegesCatalog'), ('CustomMenuCatalog'),
+           ('CustomMenuSetCatalog'), ('ThemeCatalog'), ('BaseDirectoryCatalog')
+),
+minute_buckets AS (
+    SELECT File_Name, date_trunc('minute', Modified_At) AS m, COUNT(*) AS n
+    FROM ObjectChangeMeta
+    WHERE Modified_At IS NOT NULL
+    GROUP BY ALL
+)
+SELECT
+    (SELECT COUNT(*) FROM ObjectChangeMeta)                                  AS stamped_objects,
+    (SELECT COUNT(*) FROM ObjectCatalog oc
+     JOIN meta_sources ms ON ms.Source_Table = oc.Source_Table
+     WHERE NOT EXISTS (SELECT 1 FROM ObjectChangeMeta m
+                       WHERE m.Object_UUID = oc.Object_UUID
+                         AND m.File_Name = oc.File_Name))                    AS missing_objects,
+    (SELECT COUNT(*) FROM ObjectChangeMeta
+     WHERE Modified_At IS NULL AND Modified_At_Raw IS NOT NULL)
+  + (SELECT COUNT(*) FROM CatalogChangeMeta
+     WHERE Modified_At IS NULL AND Modified_At_Raw IS NOT NULL)              AS cast_failures,
+    (SELECT COUNT(*) FROM (
+        SELECT Object_UUID, File_Name FROM ObjectChangeMeta
+        GROUP BY ALL HAVING COUNT(*) > 1))                                   AS duplicate_keys,
+    (SELECT COUNT(*) FROM ObjectChangeMeta m
+     JOIN FilesCatalog f ON f.File_Name = m.File_Name
+     WHERE m.Modified_At > f.Import_Timestamp + INTERVAL 1 DAY)              AS future_stamps,
+    (SELECT COUNT(*) FROM CatalogChangeMeta)                                 AS catalog_rows,
+    (SELECT round(100.0 * COALESCE(SUM(n) FILTER (WHERE n >= 50), 0)
+                  / NULLIF(SUM(n), 0), 1) FROM minute_buckets)               AS mass_minute_pct,
+    -- Jeder Stempel mit lesbarem Zeitpunkt gehört zu genau einem Burst (Soll 0).
+    (SELECT COUNT(*) FROM ObjectChangeMeta
+     WHERE Modified_At IS NOT NULL AND Burst_ID IS NULL)                     AS unassigned_bursts,
+    (SELECT COUNT(*) FROM ChangeBulkEvents)                                  AS bulk_events,
+    (SELECT COUNT(*) FROM ChangeBulkEvents WHERE Scope = 'solution')         AS solution_events,
+    (SELECT round(100.0 * COUNT(Bulk_Event_ID) / NULLIF(COUNT(*), 0), 1)
+     FROM ObjectChangeMeta)                                                  AS bulk_pct;
+
 -- Dateien ohne DDR-Info — der Export lief ohne „Details für Analysewerkzeuge
 -- einschließen" (Root-Attribut Has_DDR_INFO="False"). Der Import ist trotzdem
 -- vollständig (Objekte, Formeltexte), aber der DDR-Chunk-Strom ist die EINZIGE
@@ -787,6 +1007,7 @@ WHERE Owner_Type <> 'unresolved'
     'record_access',
     'hide', 'field_entry', 'tooltip', 'placeholder', 'conditional_format', 'portal_filter',
     'web_viewer_url', 'button_label', 'button_action', 'panel_title', 'popover_title',
+    'active_segment',
     'display_calculation',
     'chart_series', 'chart_title', 'chart_xaxis_title', 'chart_yaxis_title',
     'script_trigger_parameter',
@@ -797,18 +1018,22 @@ GROUP BY Calc_Role
 ORDER BY n DESC;
 
 -- Conditional-Formatting-Regeln (LayoutObjectConditions, Schema 1.25.0) —
--- drei table-only Kennzahlen, Bewertung macht die Shell:
+-- table-only Kennzahlen, Bewertung macht die Shell:
 --   membercount_mismatch_n — Objekte, deren extrahierte Regelzahl vom
 --     Formatting/@membercount des eigenen Blocks abweicht. Korpus-verifiziert
 --     0 (8.745/8.745); > 0 ⇒ die depth-verankerte Extraktion zählt Kind-Regeln
 --     mit (Nesting-Regression) oder verliert eigene Regeln. WARN.
 --   calc_without_rule_n — CalculationsCatalog-Instanzen der Rolle
 --     conditional_format ohne zugehörige Regel-Zeile (FK-Rückrichtung).
---     Soll 0; > 0 ⇒ Coverage-Lücke der Regel-Extraktion. WARN.
+--     Soll 0; > 0 ⇒ die Instanz hängt am falschen Owner (Owner-Auflösung,
+--     s. v_check_calc_owner_hash) oder die Regel-Extraktion verlor Regeln. WARN.
 --   hash_without_fk_n — Regeln mit DDRREF-Hash, aber ohne aufgelösten
---     Calculation_UUID-FK. Erwartbar KLEIN > 0: Fremd-Anker-Kopierartefakte
---     (Regel trägt den DDRREF eines anderen Objekts; Referenz-Korpus: 1) — INFO,
---     kein Gate.
+--     Calculation_UUID-FK, OHNE die leeren ChunkLists. Soll 0 — INFO, kein Gate.
+--   empty_chunklist_n — Regeln mit Hash md5('') ohne FK: FileMaker schreibt für
+--     die leere ChunkList (typisch Wertregeln) keine Chunks, also gibt es keine
+--     DDR-Instanz und keinen FK. Erwartbar > 0, nur Statistik.
+--   fk_hash_mismatch_n — Regeln, deren FK auf eine Instanz mit ANDEREM Hash
+--     zeigt (Regel liest eine fremde Formel). Soll 0; WARN.
 CREATE OR REPLACE VIEW v_check_cf_rules AS
 SELECT
     (SELECT COUNT(*) FROM (
@@ -824,9 +1049,41 @@ SELECT
                         WHERE c.Calculation_UUID = cc.Calculation_UUID))
                                                               AS calc_without_rule_n,
     (SELECT COUNT(*) FROM LayoutObjectConditions c
-     WHERE c.Calc_Hash IS NOT NULL AND c.Calculation_UUID IS NULL)
+     WHERE c.Calc_Hash IS NOT NULL AND c.Calculation_UUID IS NULL
+       AND c.Calc_Hash <> upper(md5('')))
                                                               AS hash_without_fk_n,
+    (SELECT COUNT(*) FROM LayoutObjectConditions c
+     WHERE c.Calc_Hash = upper(md5('')) AND c.Calculation_UUID IS NULL)
+                                                              AS empty_chunklist_n,
+    (SELECT COUNT(*) FROM LayoutObjectConditions c
+     JOIN CalculationsCatalog cc ON cc.Calculation_UUID = c.Calculation_UUID
+     WHERE c.Calc_Hash IS DISTINCT FROM cc.Formula_Hash)
+                                                              AS fk_hash_mismatch_n,
     (SELECT COUNT(*) FROM LayoutObjectConditions)             AS rules_n;
+
+-- Owner-Attribution der DDR-verankerten Berechnungs-Instanzen: der Formel-Hash
+-- einer LayoutObject-/ScriptStep-Instanz muss im EIGENEN XML des Owners stehen
+-- (DDRREF hash="<H>"). Ein Treffer heißt: die Instanz hängt am falschen Objekt —
+-- typisch nach einer UUID-Heilung, wenn der Anker dem Survivor statt dem
+-- Zwilling zugeordnet wurde (P4 heal_anchor_owner). Gilt für alle Rollen,
+-- nicht nur CF. Baseline ohne Heilung korpusweit 0; Soll 0, WARN.
+-- Eine Zeile je (Owner_Type, Calc_Role); leer = sauber.
+CREATE OR REPLACE VIEW v_check_calc_owner_hash AS
+SELECT cc.Owner_Type, cc.Calc_Role, COUNT(*) AS n,
+       string_agg(DISTINCT cc.File_Name, ', ') AS files
+FROM CalculationsCatalog cc
+LEFT JOIN LayoutObjects lo
+       ON lo.Object_UUID = cc.Owner_UUID AND lo.File_Name = cc.File_Name
+LEFT JOIN StepsForScripts s
+       ON s.Step_UUID = cc.Owner_UUID AND s.File_Name = cc.File_Name
+WHERE cc.DDR_Calc_UUID IS NOT NULL
+  AND cc.Formula_Hash IS NOT NULL
+  AND cc.Owner_Type IN ('LayoutObject', 'ScriptStep')
+  AND strpos(COALESCE(CASE cc.Owner_Type WHEN 'LayoutObject' THEN lo.Object_XML
+                                         ELSE s.Step_XML END, ''),
+             'hash="' || cc.Formula_Hash || '"') = 0
+GROUP BY cc.Owner_Type, cc.Calc_Role
+ORDER BY n DESC;
 
 -- unbekannte LayoutPart-Typen (nach der P4-Locale-Normalisierung). Analog
 -- v_check_unknown_object_types: jeder Part_Type außerhalb des kanonischen englischen

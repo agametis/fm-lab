@@ -16,7 +16,7 @@ The `<BaseTable>` element is flat; the field definitions follow separately in th
 | `@name`                                                            | `BT_Name`  |                                                                                                 |
 | `@comment`                                                         | —          | Developer comment on the table — **not extracted**                                              |
 | `<UUID>` (text)                                                    | `BT_UUID`  | Stable identity, used for all joins                                                             |
-| `<UUID>/@accountName`, `@userName`, `@timestamp`, `@modifications` | —          | Modification metadata (who/when/count) — **not extracted**                                      |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata, raw (`Modified_At` as text, empty account → `NULL`); typed per object in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
 | `<TagList>`                                                        | —          | Object tags — **not extracted**                                                                 |
 | `<SourceUUID>`, `<OwnerID>`                                        | —          | Observed in the test fixtures on a SaXML-delivered table only; undocumented — **not extracted** |
 

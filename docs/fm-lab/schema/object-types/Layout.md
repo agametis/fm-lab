@@ -20,8 +20,7 @@ The tables below list the property surface of the `<Layout>` element (header lev
 | `@isFolder` | `Folder_Type` | `True` = folder row, `Marker` = folder-closing marker row |
 | `@isSeparatorItem` | `Is_Separator` | Separator entry of the layout list |
 | `<UUID>` (text) | `L_UUID` | Stable identity, used for all joins |
-| `<UUID>/@userName`, `@timestamp`, `@modifications` | `Modified_By`, `Modified_At`, `Modifications` | Modification metadata |
-| `<UUID>/@accountName` | — | Modifying account name — **not extracted** (the user name is kept) |
+| `<UUID>` `@timestamp` / `@userName` / `@accountName` / `@modifications` | `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` | Change metadata, raw (`Modified_At` as text, empty account → `NULL`); typed per object in [ObjectChangeMeta](../catalog-tables/ObjectChangeMeta.md) |
 | `<OwnerID>` | — (link) | Folder membership — resolved into the `parent_folder` link, not a column |
 | position in the catalog | `Sequence_ID` | Order within the layout list |
 

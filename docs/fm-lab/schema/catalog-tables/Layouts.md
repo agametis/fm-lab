@@ -36,6 +36,7 @@ All layouts including the layout folder tree (folders and separators appear as r
 | `Modified_By` | `VARCHAR` |
 | `Modified_At` | `VARCHAR` |
 | `Modifications` | `BIGINT` |
+| `Modified_Account` | `VARCHAR` |
 | `Folder_Type` | `VARCHAR` |
 | `Is_Separator` | `BOOLEAN` |
 | `Sequence_ID` | `BIGINT` |
@@ -48,6 +49,7 @@ All layouts including the layout folder tree (folders and separators appear as r
 - The view flags and `Default_View` are decoded from the packed `Options_Raw` bitmask at import.
 - `L_ID` is only unique per file — join with `File_Name`, or use `L_UUID`.
 - Theme and menu-set references also exist as graph links (`uses_theme`, `uses_menuset`).
-- The `L_Theme_*` columns are raw export values — SaXML writes the Classic theme as an *empty* `<LayoutThemeReference/>`, so they are NULL on every Classic layout. `L_Theme_Resolved_Name`/`_UUID` (schema 1.21.0) close that gap (empty reference → `com.filemaker.theme.classic`, resolved by theme name); the `uses_theme` edge and the P6 expectation are built from the resolved UUID, not from `L_Theme_UUID`.
+- The `L_Theme_*` columns are raw export values — SaXML writes the Classic theme as an *empty* `<LayoutThemeReference/>`, so they are NULL on every Classic layout. `L_Theme_Resolved_Name`/`_UUID` close that gap (empty reference → `com.filemaker.theme.classic`, resolved by theme name); the `uses_theme` edge and the P6 expectation are built from the resolved UUID, not from `L_Theme_UUID`.
+- `Modified_At` / `Modified_By` / `Modified_Account` / `Modifications` are the raw change metadata of the layout's `<UUID>` element, as described in [ObjectChangeMeta](ObjectChangeMeta.md). The layout catalog's own stamp ([CatalogChangeMeta](CatalogChangeMeta.md)) moves only on structural changes; editing a layout raises just its counter.
 
 **See also:** [LayoutParts](LayoutParts.md) · [LayoutObjects](LayoutObjects.md) · [ThemeCatalog](ThemeCatalog.md) · [CustomMenuSetCatalog](CustomMenuSetCatalog.md)

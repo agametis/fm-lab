@@ -23,7 +23,7 @@ result is a complete bundle directory under
 
 | File | Content | Read before |
 |---|---|---|
-| `references/sql-rules.md` | join matrix (UUID+file), params, `:word` trap, locale independence, count consistency | step 2 (first SQL draft) |
+| `references/sql-rules.md` | join matrix (UUID+file), qualified columns in joins, params, `:word` trap, locale independence, count consistency | step 2 (first SQL draft) |
 | `references/patterns.md` | patterns P1–P6, intent matrix, interactivity duties in full | step 3 (recommendation) |
 | `references/primitives.md` | all primitives/props, actions, tokens, formats, manifest schema | step 5 (writing files) |
 | `references/localization.md` | locale files, ID-form overrides | step 5.5 |
@@ -99,8 +99,9 @@ intent needs a summary dataset and a filter param from the start.
 ### Step 2 — Draft the SQL, execute, preview
 
 **Read `references/sql-rules.md` now.** Draft the dataset SQL accordingly
-(identity rule, result contract with `uuid`/`file`/`name`, `getvariable` params,
-no `:word` sequences, `Step_ID` instead of step-name literals).
+(identity rule, every column alias-qualified once a statement joins tables,
+result contract with `uuid`/`file`/`name`, `getvariable` params, no `:word`
+sequences, `Step_ID` instead of step-name literals).
 
 Execute with a preview limit:
 
@@ -186,8 +187,9 @@ actions, manifest schema constraints) and keep `references/patterns.md`'s skelet
 for the chosen pattern at hand.
 
 1. **`data/<dataset>.sql`** — final SQL per sql-rules.md (`@template_type` /
-   `@description` / `@params` header; parameterised LIMIT instead of the preview
-   LIMIT). Separate files for logically separate datasets (summary KPI + detail
+   `@description` / `@params` header; lists end in the server-paging frame
+   instead of the preview LIMIT — a parameterised LIMIT only for Top-N rankings
+   and short group lists). Separate files for logically separate datasets (summary KPI + detail
    list). Shared base population = shared CTE text in both files (sql-rules §5).
 2. **`manifest.json`** — schema constraints per primitives.md §Manifest.
    Declare every `getvariable` param under `params`; icon from the Lucide list;

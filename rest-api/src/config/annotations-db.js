@@ -22,6 +22,7 @@ const environment = require('./environment');
  *   - NodeVisibility            — objekt-genaue Sichtbarkeit (uuid::file), stabil
  *   - CommunityAnnotation       — Name/Notiz je (Engine, Community) — Live-Overlay
  *   - CommunityAnnotationMembers— Member-Snapshot für P4-Offline-Survival (Votum)
+ *   - ChangeAuthorAlias         — kuratierte Autoren-Aliase der Änderungs-Metadaten
  *
  * Guarded: lässt sich ein Sidecar nicht öffnen (oder ANNOTATIONS_ENABLED=false),
  * bleibt `isAvailable(ctx)` für diese Lösung false und alle Overlays/Schreiber
@@ -75,6 +76,19 @@ const SCHEMA = [
      Semantic_Name        VARCHAR,
      Semantic_Description VARCHAR,
      Updated_At           TIMESTAMP DEFAULT now()
+   )`,
+  // Kuratierte Autoren-Aliase der Änderungs-Metadaten. Raw_Value: Benutzername
+  // (Kind 'user') bzw. Konto (Kind 'account', reserviert) wie im Export — verglichen
+  // ohne Groß-/Kleinschreibung und Randleerzeichen. Author_Key: Ziel-Person (NULL =
+  // unverändert), Display_Name, Is_Technical (NULL = Klassifikation des Imports).
+  // Die API spiegelt die Tabelle in die Katalogverbindung (config/change-author-overlay.js).
+  `CREATE TABLE IF NOT EXISTS ChangeAuthorAlias (
+     Raw_Value    VARCHAR NOT NULL,
+     Kind         VARCHAR NOT NULL DEFAULT 'user',
+     Author_Key   VARCHAR,
+     Display_Name VARCHAR,
+     Is_Technical BOOLEAN,
+     Updated_At   TIMESTAMP DEFAULT now()
    )`,
 ];
 

@@ -53,7 +53,8 @@
         "id": "findings_card",
         "props": {
           "span": 12,
-          "title": "Web-only error-code literal"
+          "title": "Web-only error-code literal",
+          "keepChildrenOnEmpty": true
         },
         "data": {
           "dataset": "findings"
@@ -67,8 +68,11 @@
               "density": "comfortable",
               "sortable": true,
               "searchable": true,
+              "pageParam": "page",
+              "searchParam": "q",
+              "sortParam": "sort",
+              "clientMode": true,
               "searchPlaceholder": "Search file, script or event…",
-              "chipFilter": "severity",
               "columns": [
                 {
                   "field": "severity",

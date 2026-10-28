@@ -70,7 +70,23 @@
     "custom": "Custom",
     "ok": "OK",
     "warnings": "Warnings",
-    "errors": "Errors"
+    "errors": "Errors",
+    "Mass event": "Mass event",
+    "Mass action": "Mass action",
+    "Paste / import": "Paste / import",
+    "Tool run": "Tool run",
+    "Technical author": "Technical author",
+    "Solution-wide": "Solution-wide",
+    "Single file": "Single file",
+    "Large session": "Large session",
+    "Runtime change": "Runtime change",
+    "≤ 30 days": "≤ 30 days",
+    "≤ 90 days": "≤ 90 days",
+    "≤ 1 year": "≤ 1 year",
+    "≤ 2 years": "≤ 2 years",
+    "> 2 years": "> 2 years",
+    "Unknown": "Unknown",
+    "No stamp": "No stamp"
   },
   "list": {
     "badgeFilter": "used",
@@ -202,5 +218,42 @@
   "featured": {
     "ruleCount_one": "{{count}} rule",
     "ruleCount_other": "{{count}} rules"
+  },
+  "select": {
+    "selectedCount": "{{count}} selected",
+    "clear": "Clear selection"
+  },
+  "chart": {
+    "noData": "No data in this period.",
+    "changes_one": "{{formatted}} change",
+    "changes_other": "{{formatted}} changes",
+    "actions_one": "{{formatted}} action",
+    "actions_other": "{{formatted}} actions",
+    "massEvent": "Mass event",
+    "massEvents": "Mass events",
+    "massEventsIn_one": "{{count}} mass event · {{objects}} objects",
+    "massEventsIn_other": "{{count}} mass events · {{objects}} objects",
+    "notCounted": "(not counted)",
+    "other_one": "Other ({{formatted}})",
+    "other_other": "Other ({{formatted}})",
+    "clickHint": "Click to show these changes in the list",
+    "heatmap": {
+      "aria": "Activity map",
+      "less": "Less",
+      "more": "More",
+      "none": "No change",
+      "summaryDay_one": "{{formatted}} active day · max {{max}} per day",
+      "summaryDay_other": "{{formatted}} active days · max {{max}} per day",
+      "summaryHour_one": "{{formatted}} active hour · max {{max}} per hour",
+      "summaryHour_other": "{{formatted}} active hours · max {{max}} per hour",
+      "summaryWeek_one": "{{formatted}} active week · max {{max}} per week",
+      "summaryWeek_other": "{{formatted}} active weeks · max {{max}} per week"
+    },
+    "series": {
+      "aria": "Changes over time",
+      "legend": "Series",
+      "toggleHint": "Click: show or hide · Shift- or Alt/Option-click: show only this series",
+      "reset": "All series"
+    }
   }
 }
