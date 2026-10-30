@@ -48,7 +48,7 @@ writes **exclusively** to `dashboards-custom/`.
   active session pin (`FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2) run
   draft/sample queries against the literal bundle path
   `solutions/<id>/db/fm_catalog.duckdb`.
-- **DuckDB invocation**: bare `duckdb db/fm_catalog.duckdb -c "…"` per
+- **DuckDB invocation**: bare `duckdb -readonly db/fm_catalog.duckdb -c "…"` per
   CLAUDE.md §2; never install DuckDB yourself.
 - **Read-only**: never UPDATE/INSERT/DELETE on the database.
 - **Identity rule (memorise):** an object's identity is **(UUID, File_Name)** —
@@ -106,7 +106,7 @@ sequences, `Step_ID` instead of step-name literals).
 Execute with a preview limit:
 
 ```bash
-duckdb db/fm_catalog.duckdb -c "<SQL with LIMIT 10>"
+duckdb -readonly db/fm_catalog.duckdb -c "<SQL with LIMIT 10>"
 ```
 
 On error: correct once and re-run. After two failures, take the error to the user

@@ -191,6 +191,14 @@ if [ -n "${LC_ALL:-}" ]; then
 fi
 export LC_NUMERIC=C
 
+# DuckDB CLI agent mode (2.0+): with an AI-agent variable set (AI_AGENT, as in every
+# Claude Code session), stdout not a terminal and no output-mode flag, the CLI
+# switches to markdown tables, JSON errors on stderr and truncation (1000 rows / 500
+# chars per cell). That reshapes the logs and breaks classify_error(), which matches
+# the plain "Invalid Input Error: …" wording. Pinned off for this script and every
+# child it spawns; DuckDB 1.x ignores the variable.
+export DUCKDB_AGENT_MODE=0
+
 # CONVERTER_VERSION is NOT the display version (that lives in the header line 3 and
 # feeds version.json → xml_import), but the OPERATIVE invalidation token
 # of the turbo manifest: it is persisted per file in manifest_file; if it differs
@@ -692,21 +700,12 @@ for _fm_lib in webbed_caps convert_preprocess convert_turbo convert_report; do
 done
 unset _fm_lib
 
-# Locate DuckDB binary — check PATH first, then common install locations
-DUCKDB_BIN=""
-if command -v duckdb &>/dev/null; then
-    DUCKDB_BIN=$(command -v duckdb)
-else
-    for _candidate in \
-        "$HOME/.duckdb/cli/latest/duckdb" \
-        "/opt/homebrew/bin/duckdb" \
-        "/usr/local/bin/duckdb"; do
-        if [ -x "$_candidate" ]; then
-            DUCKDB_BIN="$_candidate"
-            break
-        fi
-    done
-fi
+# DuckDB helpers: CLI lookup, binding comparison, storage format (tools/lib/duckdb_binding.sh)
+[ -f "$PROJECT_ROOT/tools/lib/duckdb_binding.sh" ] || { echo "ERROR: Module missing: tools/lib/duckdb_binding.sh" >&2; exit 1; }
+. "$PROJECT_ROOT/tools/lib/duckdb_binding.sh"
+
+# Locate DuckDB binary — PATH first, then the installer's locations
+DUCKDB_BIN=$(fmlab_find_duckdb || true)
 if [ -z "$DUCKDB_BIN" ]; then
     echo "ERROR: DuckDB CLI not found. Install it from https://duckdb.org/docs/installation/"
     exit 1
@@ -714,7 +713,6 @@ fi
 
 # Mixed DuckDB versions: warn (never abort) when this CLI writes a storage format
 # the REST API's bundled DuckDB may not read — see tools/lib/duckdb_binding.sh.
-[ -f "$PROJECT_ROOT/tools/lib/duckdb_binding.sh" ] && . "$PROJECT_ROOT/tools/lib/duckdb_binding.sh"
 if command -v fmlab_duckdb_binding_mismatch >/dev/null 2>&1 \
    && fmlab_duckdb_binding_mismatch "$("$DUCKDB_BIN" --version 2>/dev/null | head -1)"; then
     echo "WARNING: DuckDB CLI $FMLAB_DUCKDB_CLI_VER is newer than the REST API's DuckDB $FMLAB_DUCKDB_BINDING_VER (@duckdb/node-api)."
@@ -723,6 +721,31 @@ if command -v fmlab_duckdb_binding_mismatch >/dev/null 2>&1 \
     echo "         Align the versions: use DuckDB CLI ${FMLAB_DUCKDB_BINDING_VER%.*}.x, which this fm-lab release supports,"
     echo "         or update fm-lab to a release that supports DuckDB ${FMLAB_DUCKDB_CLI_VER%.*}."
 fi
+
+# Every DuckDB CLI call of the converter goes through duckdb_cli, which pins the
+# storage format of each file the call creates — the catalog, chunk/part DBs, chunk
+# map, manifest and files ATTACHed from SQL (ingestion/version_check.json →
+# tested_baseline.storage_compatibility_version, see tools/lib/duckdb_binding.sh).
+# DuckDB 2.0 would otherwise write storage 69, which no 1.x CLI can open. It has to
+# be the start flag: a SET inside the session is too late for the database the CLI
+# opens at start. Read-only opens and existing files are unaffected.
+DUCKDB_STORAGE_VERSION=$(fmlab_duckdb_storage_version 2>/dev/null)
+DUCKDB_STORAGE_VERSION="${DUCKDB_STORAGE_VERSION:-v1.0.0}"
+duckdb_cli() { "$DUCKDB_BIN" -storage-version "$DUCKDB_STORAGE_VERSION" "$@"; }
+
+# True when DuckDB file $1 exists but this CLI cannot open it because another
+# DuckDB version wrote it in a storage format outside its readable range (e.g.
+# DuckDB 2.0 → storage 69, read by 1.5.x). Matches the 1.x and the 2.0 wording
+# ("[storage] version number N"); a lock or I/O error is NOT this case.
+duckdb_storage_unreadable() {
+    local err
+    [ -f "$1" ] || return 1
+    err=$(duckdb_cli -readonly "$1" -c "SELECT 1;" 2>&1 >/dev/null) && return 1
+    case "$err" in
+        *"Trying to read a database file with"*"version number"*) return 0 ;;
+    esac
+    return 1
+}
 
 # ============================================================================
 # SAX streaming via a patched webbed extension
@@ -1952,7 +1975,7 @@ MANIFEST_DB="$STREAMING_DIR/manifest_${_DB_BASE}.duckdb"
 POLICY_CHANGE_DIAG=""
 _RUN_POLICY=$($STREAMIFY_MODE && echo sax || echo dom)
 if [ -f "$MANIFEST_DB" ]; then
-    _prev_fp=$("$DUCKDB_BIN" -readonly "$MANIFEST_DB" -noheader -list -c \
+    _prev_fp=$(duckdb_cli -readonly "$MANIFEST_DB" -noheader -list -c \
         "SELECT parser_policy || '|' || ws_sentinel FROM manifest_run WHERE id=1;" 2>/dev/null)
     if [ -n "$_prev_fp" ]; then
         _prev_pol="${_prev_fp%%|*}"; _prev_ws="${_prev_fp#*|}"
@@ -2223,10 +2246,10 @@ sync_to_rest_api() {
     # /api/info,/count,/list return HTTP 500. Refuse the sync loudly instead of poisoning the
     # read copy. (With a1 the catmerge no longer half-builds; this is defense-in-depth.)
     local _oc_exists _oc_rows
-    _oc_exists=$("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c \
+    _oc_exists=$(duckdb_cli -readonly "$DB_FILE" -noheader -list -c \
         "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='ObjectCatalog';" 2>/dev/null)
     if [ "${_oc_exists:-0}" = "1" ]; then
-        _oc_rows=$("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c \
+        _oc_rows=$(duckdb_cli -readonly "$DB_FILE" -noheader -list -c \
             "SELECT COUNT(*) FROM ObjectCatalog;" 2>/dev/null)
     else
         _oc_rows=0
@@ -2300,7 +2323,7 @@ stamp_solution_manifest() {
     fi
     local manifest="$SOLUTION_DIR/solution.json"
     local tech_json metrics_json
-    tech_json=$("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c "
+    tech_json=$(duckdb_cli -readonly "$DB_FILE" -noheader -list -c "
         SELECT to_json({
             filemaker_versions: (SELECT COALESCE(list(DISTINCT FileMaker_Version ORDER BY FileMaker_Version), []) FROM FilesCatalog WHERE FileMaker_Version IS NOT NULL),
             xml_versions:       (SELECT COALESCE(list(DISTINCT XML_Version ORDER BY XML_Version), []) FROM XMLMetadata WHERE XML_Version IS NOT NULL),
@@ -2308,7 +2331,7 @@ stamp_solution_manifest() {
             has_ddr_info:       (SELECT COALESCE(bool_or(Has_DDR_INFO), false) FROM FilesCatalog),
             files_without_ddr_info: (SELECT COUNT(*) FROM FilesCatalog WHERE NOT COALESCE(Has_DDR_INFO, false))
         });" 2>/dev/null)
-    metrics_json=$("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c "
+    metrics_json=$(duckdb_cli -readonly "$DB_FILE" -noheader -list -c "
         SELECT to_json({
             files:   (SELECT COUNT(*) FROM FilesCatalog),
             objects: (SELECT COUNT(*) FROM ObjectCatalog),
@@ -2453,7 +2476,7 @@ run_phase7_clustering() {
         _from_scratch=true
     fi
     local _oc_rows
-    _oc_rows=$("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c \
+    _oc_rows=$(duckdb_cli -readonly "$DB_FILE" -noheader -list -c \
         "SELECT COUNT(*) FROM ObjectClusters;" 2>/dev/null)
     [ -z "$_oc_rows" ] && _oc_rows=0
 
@@ -2573,7 +2596,7 @@ read_db_schema_info() {
     fi
 
     local row
-    row=$("$DUCKDB_BIN" -readonly "$DB_FILE" -csv -noheader -c \
+    row=$(duckdb_cli -readonly "$DB_FILE" -csv -noheader -c \
         "SELECT Schema_Version, Schema_Hash FROM SchemaInfo ORDER BY Schema_Built_At DESC LIMIT 1" \
         2>/dev/null) || row=""
 
@@ -2594,7 +2617,11 @@ compute_schema_state() {
         SCHEMA_REASON="DB file does not exist — normal initial import"
     elif [ -z "$SCHEMA_VERSION_DB" ]; then
         SCHEMA_ACTION="rebuild"
-        SCHEMA_REASON="DB without a SchemaInfo table (pre-versioning state or file corrupt)"
+        if duckdb_storage_unreadable "$DB_FILE"; then
+            SCHEMA_REASON="DB written by another DuckDB version in a storage format this CLI cannot read"
+        else
+            SCHEMA_REASON="DB without a SchemaInfo table (pre-versioning state or file corrupt)"
+        fi
     elif [ "$SCHEMA_VERSION_DB" != "$SCHEMA_VERSION_EXPECTED" ]; then
         SCHEMA_ACTION="rebuild"
         SCHEMA_REASON="Schema version $SCHEMA_VERSION_DB → $SCHEMA_VERSION_EXPECTED"
@@ -2667,7 +2694,7 @@ delete_db_for_rebuild() {
     # the persistent manifest carries stale cross-run state. No-op when the manifest
     # doesn't exist yet (non-turbo runs); missing tables are tolerated.
     if [ -n "${MANIFEST_DB:-}" ] && [ -f "$MANIFEST_DB" ]; then
-        "$DUCKDB_BIN" "$MANIFEST_DB" -c "
+        duckdb_cli "$MANIFEST_DB" -c "
             DELETE FROM manifest_catalog;
             DELETE FROM manifest_file;
             DELETE FROM pipeline_state;" >/dev/null 2>&1 \
@@ -2720,7 +2747,7 @@ memory_limit_prefix() {
 # ============================================================================
 run_phase2_resolve() {
     local logfile="$1"
-    { memory_limit_prefix; cat "$P2_TEMPLATE"; } | "$DUCKDB_BIN" "$DB_FILE" > "$logfile" 2>&1
+    { memory_limit_prefix; cat "$P2_TEMPLATE"; } | duckdb_cli "$DB_FILE" > "$logfile" 2>&1
 }
 
 # ============================================================================
@@ -2771,7 +2798,7 @@ _p2_effective_jobs() {
         [ "$want" -gt "$kcap" ] && want="$kcap"
     fi
     local nfiles
-    nfiles=$("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list \
+    nfiles=$(duckdb_cli -readonly "$DB_FILE" -noheader -list \
         -c "SELECT count(*) FROM FilesCatalog;" 2>/dev/null)
     case "$nfiles" in ''|*[!0-9]*) nfiles=1 ;; esac
     [ "$want" -gt "$nfiles" ] && want="$nfiles"
@@ -2812,7 +2839,7 @@ _p2_worker() {
         done
         cat "$P2_TEMPLATE"
     } > "$ssql"
-    "$DUCKDB_BIN" "$pdb" < "$ssql" > "$partdir/${idx}.log" 2>&1
+    duckdb_cli "$pdb" < "$ssql" > "$partdir/${idx}.log" 2>&1
     echo $? > "$partdir/${idx}.rc"
     rm -f "$ssql"
 }
@@ -2828,7 +2855,7 @@ run_phase2_partitioned() {
     # 1) File partition by weight (LayoutObjects + StepsForScripts = the
     #    xml_extract-heavy sources). Greedy LPT: heaviest file first into the
     #    currently lightest bin. With files ≥ K each bin gets ≥ 1 file.
-    "$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c "
+    duckdb_cli -readonly "$DB_FILE" -noheader -list -c "
         SELECT f.File_Name || chr(9) || (COALESCE(lo.c,0)+COALESCE(s.c,0))
         FROM FilesCatalog f
         LEFT JOIN (SELECT File_Name fn,count(*) c FROM LayoutObjects   GROUP BY 1) lo ON lo.fn=f.File_Name
@@ -2893,7 +2920,7 @@ run_phase2_partitioned() {
             for s in "${slices[@]}"; do echo "INSERT INTO $tbl BY NAME SELECT * FROM s${j}.$tbl;"; j=$((j+1)); done
         done
     } > "$msql"
-    { memory_limit_prefix; cat "$msql"; } | "$DUCKDB_BIN" "$DB_FILE" >> "$logfile" 2>&1; rc=$?
+    { memory_limit_prefix; cat "$msql"; } | duckdb_cli "$DB_FILE" >> "$logfile" 2>&1; rc=$?
     rm -f "$msql"
     rm -rf "$partdir"
     # The merge is the last stage in a pipe → rc is DuckDB's own exit; a memory kill
@@ -3223,7 +3250,7 @@ run_p1_on() {
         mv "$tsql.2" "$tsql"
     fi
 
-    { memory_limit_prefix; cat "$tsql"; } | FM_XML_DIR="$xdir" "$DUCKDB_BIN" "${duck_flags[@]}" "$target" >> "$elog" 2>&1
+    { memory_limit_prefix; cat "$tsql"; } | FM_XML_DIR="$xdir" duckdb_cli "${duck_flags[@]}" "$target" >> "$elog" 2>&1
     local rc=$?
     rm -f "$tsql"
     return $rc
@@ -3502,7 +3529,7 @@ process_single_file() {
             # est_bytes until the dispatch-weight step. chunk_id globally continuous.
             local _fn="${BASENAME//\'/\'\'}"
             local _pol; _pol=$($STREAMIFY_MODE && echo sax || echo dom)
-            if ! "$DUCKDB_BIN" "$CHUNKMAP_DB" -c "
+            if ! duckdb_cli "$CHUNKMAP_DB" -c "
                 INSERT INTO chunkmap
                 SELECT
                     (SELECT COALESCE(MAX(chunk_id),0) FROM chunkmap) + ROW_NUMBER() OVER () AS chunk_id,
@@ -3533,13 +3560,13 @@ process_single_file() {
             # FM_P1_SEPARATED (the file's other catalogs) are mandatory, see the
             # section dispatch in run_p1_on.
             local _coff _ccat _cp _sep
-            _sep=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c \
+            _sep=$(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c \
                 "SELECT COALESCE(string_agg(DISTINCT catalog, ' ' ORDER BY catalog), '') FROM chunkmap WHERE file_name='$_fn' AND catalog <> 'main';")
             while IFS=$'\t' read -r _coff _ccat _cp; do
                 [ -z "$_cp" ] && continue
                 P1_SEQ_OFFSET="$_coff" FM_P1_CATALOG="$_ccat" FM_P1_SEPARATED="$_sep" \
                     run_p1_on "$(dirname "$_cp")" "$(basename "$_cp")" "$ERROR_LOG" || RESULT=$?
-            done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c \
+            done < <(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c \
                 "SELECT seq_offset::VARCHAR || chr(9) || catalog || chr(9) || chunk_path FROM chunkmap WHERE file_name='$_fn' ORDER BY chunk_path;")
         else
         local chunk base ctag off _j _cur _found _sep=""
@@ -3607,7 +3634,7 @@ CHECKS_RUN=0
 # Single scalar read against the master DB (read-only). Empty output on a
 # missing table/error → treated as 0 by the caller.
 pp_query() {
-    "$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -csv -c "$1" 2>/dev/null | head -n1
+    duckdb_cli -readonly "$DB_FILE" -noheader -csv -c "$1" 2>/dev/null | head -n1
 }
 
 # Like pp_query, but guaranteed to return a non-negative integer (else 0).
@@ -3646,7 +3673,7 @@ postprocess_db() {
     # CREATE OR REPLACE VIEW is idempotent; needs write access (master DB).
     # The views stay in the DB and are thus usable for REST-API/ad-hoc too.
     if [ -f "$VALIDATE_TEMPLATE" ]; then
-        { memory_limit_prefix; cat "$VALIDATE_TEMPLATE"; } | "$DUCKDB_BIN" "$DB_FILE" >/dev/null 2>&1 \
+        { memory_limit_prefix; cat "$VALIDATE_TEMPLATE"; } | duckdb_cli "$DB_FILE" >/dev/null 2>&1 \
             || emit_warn "Phase-6 check views could not be created (post-checks may be incomplete)"
     fi
 
@@ -4391,7 +4418,7 @@ run_pipeline_step() {
     local templog; templog=$(mktemp "${TMPDIR:-/tmp}/fmlab.XXXXXX")
     local rc=0
     PIPELINE_STEP_OK=true
-    if (cd "$PROJECT_ROOT" && { memory_limit_prefix; cat "$@"; } | "$DUCKDB_BIN" "$DB_FILE") > "$templog" 2>&1; then
+    if (cd "$PROJECT_ROOT" && { memory_limit_prefix; cat "$@"; } | duckdb_cli "$DB_FILE") > "$templog" 2>&1; then
         echo "✓ $label"
     else
         PIPELINE_STEP_OK=false
@@ -5285,7 +5312,7 @@ if [[ "$MODE" == "batch" ]]; then
     echo "Failed: ${#FAILED_FILES[@]}"
     # SaXML profiles of the imported files (FilesCatalog; converter 2.24.0).
     if [ -f "$DB_FILE" ]; then
-        _prof_line=$("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c "SELECT string_agg(p || '=' || n, ' ' ORDER BY p) FROM (SELECT COALESCE(SaXML_Profile, '?') AS p, COUNT(*) AS n FROM FilesCatalog GROUP BY 1);" 2>/dev/null)
+        _prof_line=$(duckdb_cli -readonly "$DB_FILE" -noheader -list -c "SELECT string_agg(p || '=' || n, ' ' ORDER BY p) FROM (SELECT COALESCE(SaXML_Profile, '?') AS p, COUNT(*) AS n FROM FilesCatalog GROUP BY 1);" 2>/dev/null)
         [ -n "$_prof_line" ] && echo "SaXML profiles: $_prof_line"
     fi
     awk -v m="$BATCH_MINUTES" -v s="$BATCH_SECONDS" -v d="$BATCH_DURATION" \

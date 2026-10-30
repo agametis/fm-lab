@@ -717,9 +717,13 @@ function runConverter({ onEvent, signal, changedOnly = true, solution } = {}) {
     const args = [SCRIPT_PATH, '--batch', '--quiet', '--turbo',
       '--solution', targetSolution];
     if (changedOnly) args.push('--changed-only');
+    // DUCKDB_AGENT_MODE=0: Wurde der Server aus einer Claude-Sitzung gestartet,
+    // erbt der Lauf AI_AGENT. Die DuckDB-2.0-CLI schaltet dann ohne Format-Flag in
+    // den Agent-Modus (Markdown, JSON-Fehler, Kürzung) — das verfälscht Logs und
+    // die Fehlerklassifizierung des Converters. DuckDB 1.x ignoriert die Variable.
     const child = spawn('bash', args, {
       cwd: REPO_ROOT,
-      env: { ...process.env, FMLAB_CONVERT_QUIET: '1' },
+      env: { ...process.env, FMLAB_CONVERT_QUIET: '1', DUCKDB_AGENT_MODE: '0' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 

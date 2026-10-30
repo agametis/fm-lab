@@ -24,6 +24,7 @@ import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 // ── Rubric constants (justierbar, an echter DB kalibrieren) ─────────────────
 const W = { Q: 1.0, big: 1.5, frag: 1.0, band: 0.5 };  // term weights
@@ -45,12 +46,15 @@ function parseArgs(argv) {
 }
 const args = parseArgs(process.argv);
 
-const DB_FILE = args.db;
-const TOOLS_DIR = args.tools;
-if (!DB_FILE || !TOOLS_DIR) {
+if (!args.db || !args.tools) {
   console.error('usage: node sweep.mjs --db=<path> --tools=<dir> [--candidates=…] [--seed=42] [--engine=auto]');
   process.exit(2);
 }
+// duckdb runs with cwd = WORKDIR, so relative paths must be anchored here.
+const DB_FILE = path.resolve(args.db);
+const TOOLS_DIR = path.resolve(args.tools);
+// DuckDB 2.0 CLI: no agent output mode (markdown/JSON errors) in the child processes.
+process.env.DUCKDB_AGENT_MODE = '0';
 const SEED = args.seed ? Number(args.seed) : 42;
 const CANDIDATES = args.candidates
   ? args.candidates.split(',').map((s) => Number(s.trim())).filter((n) => Number.isFinite(n) && n > 0)
@@ -61,17 +65,12 @@ const EXPORT_SQL = path.join(TOOLS_DIR, 'graph_export_logical.sql');
 const LOUVAIN = path.join(TOOLS_DIR, 'cluster_louvain.mjs');
 const LEIDEN = path.join(TOOLS_DIR, 'cluster_leiden.py');
 
-// ── Locate duckdb (docs/agents/tooling.md well-known locations) ─────────────
+// ── Locate duckdb (shared fallback chain, docs/agents/tooling.md) ───────────
 function findDuckdb() {
-  const which = spawnSync('bash', ['-lc', 'command -v duckdb'], { encoding: 'utf8' });
-  if (which.status === 0 && which.stdout.trim()) return which.stdout.trim();
-  const candidates = [
-    path.join(os.homedir(), '.duckdb/cli/latest/duckdb'),
-    '/opt/homebrew/bin/duckdb',
-    '/usr/local/bin/duckdb',
-  ];
-  for (const c of candidates) if (fs.existsSync(c)) return c;
-  return null;
+  const resolver = path.join(path.dirname(fileURLToPath(import.meta.url)),
+    '../../_shared/scripts/resolve_duckdb_bin.sh');
+  const r = spawnSync('bash', [resolver], { encoding: 'utf8' });
+  return (r.status === 0 && r.stdout.trim()) ? r.stdout.trim() : null;
 }
 const DUCKDB = findDuckdb();
 if (!DUCKDB) {

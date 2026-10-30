@@ -1,9 +1,8 @@
 // `marked` is ESM-only since v15+ (package.json "type":"module", no CommonJS build).
-// A top-level `require('marked')` therefore throws ERR_REQUIRE_ESM on Node 20 (the
-// project's declared floor) — it only "worked" on Node 22, which permits require(ESM).
-// So we load it lazily via dynamic import() and initialize once at server startup
-// (initMarked, awaited in src/index.js before the HTTP server binds). The render
-// helpers below stay synchronous; they run at request time, long after init.
+// It is loaded lazily via dynamic import() — independent of require(ESM) support —
+// and initialized once at server startup (initMarked, awaited in src/index.js
+// before the HTTP server binds). The render helpers below stay synchronous; they
+// run at request time, long after init.
 let marked = null;
 
 /**

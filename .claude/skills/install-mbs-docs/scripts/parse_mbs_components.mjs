@@ -24,7 +24,7 @@
  *   PROJECT_ROOT kann auch über die Umgebungsvariable PROJECT_ROOT gesetzt werden.
  *   Fallback: aktuelles Verzeichnis
  *
- * Nur Node-Standardbibliothek (Node >= 20) — kein Python nötig.
+ * Nur Node-Standardbibliothek (Node >= 22) — kein Python nötig.
  */
 
 import fs from 'node:fs';

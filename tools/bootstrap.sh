@@ -115,7 +115,12 @@ mkdir -p rest-api/db
 if [ ! -f rest-api/db/fm_catalog.duckdb ]; then
   _duckdb="${DUCKDB_BIN:-}"
   if [ -z "$_duckdb" ] && command -v duckdb >/dev/null 2>&1; then _duckdb="duckdb"; fi
-  if [ -n "$_duckdb" ] && "$_duckdb" rest-api/db/fm_catalog.duckdb -c "SELECT 1;" >/dev/null 2>&1; then
+  # Storage format pinned like every fm-lab-created DuckDB file (see
+  # tools/lib/duckdb_binding.sh) — DuckDB 2.0 would otherwise write storage 69.
+  # shellcheck source=lib/duckdb_binding.sh
+  . "$ROOT/tools/lib/duckdb_binding.sh"
+  _storage=$(PROJECT_ROOT="$ROOT" fmlab_duckdb_storage_version)
+  if [ -n "$_duckdb" ] && "$_duckdb" -storage-version "$_storage" rest-api/db/fm_catalog.duckdb -c "SELECT 1;" >/dev/null 2>&1; then
     echo "Seeded empty placeholder catalog DB (no XML converted yet)."
   else
     echo "⚠  Could not seed placeholder catalog DB (duckdb not found) — convert one XML first." >&2

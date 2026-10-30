@@ -9,7 +9,7 @@
  *
  * Transport is curl (one process per file, run in parallel): it honours
  * HTTP(S)_PROXY / NO_PROXY on every platform and Node version, which Node's
- * built-in fetch does not. Node standard library only (Node >= 20) — no Python.
+ * built-in fetch does not. Node standard library only (Node >= 22) — no Python.
  *
  * Usage:
  *     node claris_crawler.mjs --lang=<code> --output=<dir> [--max-workers=N] [--dry-run] [--quiet]

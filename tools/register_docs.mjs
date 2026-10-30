@@ -26,7 +26,7 @@
  * `installed[]` are replaced (not merged) so installers stay the single source
  * of truth for their own runtime metadata. Other entries are left untouched.
  *
- * Node standard library only (Node >= 20) — no Python required.
+ * Node standard library only (Node >= 22) — no Python required.
  */
 
 import { execFileSync } from 'node:child_process';

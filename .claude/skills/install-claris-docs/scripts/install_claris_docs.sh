@@ -265,7 +265,7 @@ phase_progress check 0 "Validating environment..."
 # Node.js und curl vorhanden? (Crawler = Node, Transport = curl; Node ist
 # ohnehin fm-lab-Voraussetzung, Python wird nicht benötigt)
 if ! command -v node >/dev/null 2>&1; then
-    emit_error "node not found in PATH — the Claris crawler needs Node.js (>= 20), the same runtime fm-lab itself requires. Run tools/init.sh to check the setup."
+    emit_error "node not found in PATH — the Claris crawler needs Node.js (>= 22), the same runtime fm-lab itself requires. Run tools/init.sh to check the setup."
     exit 2
 fi
 if ! command -v curl >/dev/null 2>&1; then

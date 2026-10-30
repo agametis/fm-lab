@@ -7,7 +7,8 @@
 >   scripts, custom functions, schema (tables/fields), layouts, value lists, snippets.
 >   Skill availability varies per installation → capability discovery.
 > - **Axis B — fm-lab extensions** (§B): code that extends *the workbench itself* —
->   custom dashboards, analysis queries/datasets, new skills. Project-owned tooling,
+>   custom dashboards, analysis queries/datasets, new skills, Node code (REST API,
+>   tools, scripts). Project-owned tooling,
 >   always available → fixed, deterministic workflows.
 >
 > Litmus test: *Where does the output run?* In FileMaker → Axis A. In fm-lab
@@ -202,6 +203,32 @@ the same lint as a gate.
 Publicly published artifacts (Dockerfiles, compose files, public README, skills,
 templates) must not contain internal planning references, bug-report numbers or
 tester/customer names. Use the **`comment-cleaner`** skill before publishing.
+
+## B5. Node.js baseline (REST API, tools, scripts)
+
+The workbench's Node code — `rest-api/`, `tools/`, skill scripts, build scripts — runs
+on **every** Node.js that `engines.node` in `package.json` admits (today
+`>=22.13.0`), not only on the Node of the Docker image. Native installs may stay on the
+lowest supported line until its end-of-life.
+
+- **API:** write against the floor. A newer built-in (`RegExp.escape`, `Temporal`,
+  `Promise.try`, `Map#getOrInsertComputed`, `crypto.randomUUIDv7`, …) only behind
+  feature detection, with a fallback that runs on the floor; mark the line:
+  ```js
+  // node-compat: feature-detected
+  const escapeRe = typeof RegExp.escape === 'function' ? RegExp.escape : (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  ```
+- **Syntax:** nothing the floor cannot parse (`using`, `await using`) — one such line
+  keeps the whole module from loading, and the REST API has no transpile step.
+- **No ABI-bound native add-ons** — N-API packages (`@duckdb/node-api`) or built-ins
+  (`node:sqlite`) only, so a Node switch never needs `npm rebuild`.
+- **Types:** `@types/node` never above the floor's major, so the editor offers no
+  newer APIs. Exception `apps/vscode`: it runs on the Node bundled with VS Code.
+
+Maintainer gate: `tools/tests/node-compat.sh` — syntax check, API lint (reference-only
+built-ins without the marker) and Jest under the image's Node and the floor
+(`--static` ≈ 1 s, `--quick` ≈ 12 s, full ≈ 13 min). The floor Node comes from
+`NODE_COMPAT_FLOOR`.
 
 ---
 

@@ -47,6 +47,18 @@
   "recent_changes_table.props.columns[2].label": "Objekt",
   "recent_changes_table.props.columns[3].label": "Datei",
   "recent_changes_table.props.columns[4].label": "Person",
-  "recent_changes_all.props.label": "Alle Änderungen"
+  "recent_changes_all.props.label": "Alle Änderungen",
+  "recent_change_trend.props.label": "Einzeländerungen pro Monat, letzte 12 Monate bis zum Datenstand",
+  "recent_view_chips.props.options[0].label": "Einzeländerungen",
+  "recent_view_chips.props.options[1].label": "Arbeitssitzungen",
+  "recent_sessions_table.props.columns[0].label": "Beginn",
+  "recent_sessions_table.props.columns[1].label": "Ende",
+  "recent_sessions_table.props.columns[2].label": "Minuten",
+  "recent_sessions_table.props.columns[3].label": "Person",
+  "recent_sessions_table.props.columns[4].label": "Änderungen",
+  "recent_sessions_table.props.columns[5].label": "Dateien",
+  "recent_sessions_table.props.columns[6].label": "Typen",
+  "recent_sessions_table.props.empty.message": "Noch keine Arbeitssitzungen.",
+  "recent_sessions_all.props.label": "Alle Arbeitssitzungen"
  }
 }

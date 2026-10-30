@@ -5,7 +5,7 @@
 # workspace node_modules directory is backed by its own Docker named volume, so the
 # host's (macOS/Windows) node_modules is NOT bind-mounted into the Linux container
 # (which would drag in wrong-platform native bindings — @duckdb/node-bindings,
-# @rollup/rollup-*, @esbuild/*, better-sqlite3, @unrs/resolver, ...). npm-workspaces
+# @rollup/rollup-*, @esbuild/*, @unrs/resolver, ...). npm-workspaces
 # hoisting is incomplete: native binaries live in BOTH the root node_modules AND
 # rest-api/node_modules, so isolating only the root is not enough — every workspace
 # gets its own volume.

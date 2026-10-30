@@ -1368,7 +1368,13 @@ export interface components {
             data?: {
                 version?: string;
                 api_name?: string;
-                duckdb_version?: string;
+                /** @description DuckDB bundled with the REST API (@duckdb/node-api) — reads the catalogs */
+                duckdb_version?: string | null;
+                /** @description DuckDB CLI the XML import uses (same lookup as the converter); null when none is found */
+                duckdb_cli?: {
+                    path?: string;
+                    version?: string | null;
+                } | null;
                 node_version?: string;
                 uptime_seconds?: number;
                 /** @enum {string} */

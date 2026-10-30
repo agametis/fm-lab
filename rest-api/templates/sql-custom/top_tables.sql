@@ -22,5 +22,5 @@ LEFT JOIN FieldsForTables f
        ON f.Table_Name = bt.BT_Name AND f.File_Name = bt.File_Name
 WHERE (getvariable('file') IS NULL OR bt.File_Name = getvariable('file'))
 GROUP BY ALL
-ORDER BY field_count DESC
+ORDER BY field_count DESC, name, file, uuid   -- tie-breakers: stable rows at the LIMIT
 LIMIT CAST(COALESCE(getvariable('limit'), '100') AS INTEGER);

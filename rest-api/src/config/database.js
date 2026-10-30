@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const environment = require('./environment');
 const solutions = require('./solutions');
+const { storageOptions } = require('./duckdb-storage');
 
 /**
  * Ausbaustufe M: LRU-Connection-Pool statt Singleton.
@@ -41,7 +42,7 @@ async function ensurePlaceholderDb(dbPath) {
   if (fs.existsSync(dbPath)) return;
   console.log(`Database not found — creating empty placeholder at: ${dbPath}`);
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-  const tmp = await DuckDBInstance.create(dbPath);
+  const tmp = await DuckDBInstance.create(dbPath, storageOptions());
   tmp.closeSync();
 }
 

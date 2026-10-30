@@ -67,7 +67,7 @@ If the DuckDB binary is reachable (resolution per CLAUDE.md §2 /
 behaviour for absent params, so the plain query must already work:
 
 ```bash
-duckdb db/fm_catalog.duckdb -csv -c \
+duckdb -readonly db/fm_catalog.duckdb -csv -c \
   "$(cat rest-api/templates/dashboards-custom/<id>/data/<file>.sql)" | head -5
 ```
 
@@ -75,7 +75,7 @@ duckdb db/fm_catalog.duckdb -csv -c \
 `getvariable('p')` textually; the CLI equivalent is `SET VARIABLE`:
 
 ```bash
-duckdb db/fm_catalog.duckdb -csv -c \
+duckdb -readonly db/fm_catalog.duckdb -csv -c \
   "SET VARIABLE <param> = '<example value>';
    $(cat rest-api/templates/dashboards-custom/<id>/data/<file>.sql)" | head -5
 ```

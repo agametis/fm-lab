@@ -8,6 +8,12 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 INIT_START=$SECONDS
 
+# DuckDB CLI agent mode (2.0+) off for init and everything it starts (bootstrap.sh,
+# the servers — and through the REST API the web import): with AI_AGENT set and
+# stdout not a terminal, the CLI would print markdown tables and JSON errors.
+# DuckDB 1.x ignores the variable.
+export DUCKDB_AGENT_MODE=0
+
 VERBOSE=false
 for arg in "$@"; do
   case "$arg" in
@@ -136,30 +142,66 @@ major_of() {
   printf '%s' "$1" | sed -E 's/^[^0-9]*([0-9]+).*/\1/' | tr -cd '0-9'
 }
 
-# Warn (recommendation only) when DuckDB is older than the tested baseline.
-check_duckdb_baseline() {
-  local installed_raw="$1" base_duckdb="" base_webbed="" base_url="" installed
-  if [ -f "$VERSION_MANIFEST" ] && command -v jq >/dev/null 2>&1; then
-    base_duckdb=$(jq -r '.tested_baseline.duckdb_min_version // empty' "$VERSION_MANIFEST" 2>/dev/null)
-    base_webbed=$(jq -r '.tested_baseline.webbed_min_version // empty' "$VERSION_MANIFEST" 2>/dev/null)
-    base_url=$(jq -r '.tested_baseline.update_url // empty' "$VERSION_MANIFEST" 2>/dev/null)
+# Value of tested_baseline.<key> from the version manifest: jq when present, else a
+# sed scrape (the keys are unique in the file, stock macOS has no jq). Empty when
+# unreadable — the caller supplies a fallback, so the check itself never fails.
+baseline_get() {
+  local v=""
+  [ -f "$VERSION_MANIFEST" ] || return 0
+  if command -v jq >/dev/null 2>&1; then
+    v=$(jq -r --arg k "$1" '.tested_baseline[$k] // empty' "$VERSION_MANIFEST" 2>/dev/null)
   fi
-  # Fallback if the manifest or jq is unavailable — never let the check itself fail.
-  [ -n "$base_duckdb" ] || base_duckdb="1.5.6"
-  [ -n "$base_webbed" ] || base_webbed="2.12.0"
-  [ -n "$base_url" ]    || base_url="https://duckdb.org/docs/installation/"
+  [ -n "$v" ] || v=$(sed -n 's/.*"'"$1"'"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$VERSION_MANIFEST" | head -1)
+  printf '%s' "$v"
+}
+
+# Node.js version advice (recommendation only, never aborts): on a supported release
+# line below the Docker image's Node (tested_baseline.node_recommended_version) a hint,
+# from the image's major on nothing. End-of-life lines are left to check_node_security,
+# which already recommends switching.
+check_node_recommended() {
+  local installed rec rec_maj maj
+  rec=$(baseline_get node_recommended_version)
+  rec_maj=$(major_of "$rec")
+  [ -n "$rec_maj" ] || return 0
+  installed=$(printf '%s' "$1" | sed -E 's/^[^0-9]*([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+  maj=$(major_of "$installed")
+  [ -n "$maj" ] && [ "$maj" -lt "$rec_maj" ] || return 0
+  case " $NODE_SECURITY_FLOOR " in
+    *" $maj."*) ;;
+    *) return 0 ;;
+  esac
+  info "Node.js $installed is supported; recommended is Node.js $rec_maj (the version of the Docker image, $rec)."
+  echo  "    → https://nodejs.org/en/download   (init continues; this is a recommendation)"
+  summary_warn "Node.js version   v$installed supported, $rec_maj.x recommended (see above)"
+}
+
+# DuckDB version advice (recommendation only, never aborts): below the oldest
+# supported version a warning, from there up to the recommended version an update
+# hint with the standard installer command, at or above it nothing.
+check_duckdb_baseline() {
+  local installed rec sup webbed url cmd
+  rec=$(baseline_get duckdb_min_version);           [ -n "$rec" ]    || rec="2.0.0"
+  sup=$(baseline_get duckdb_supported_min_version); [ -n "$sup" ]    || sup="1.5.6"
+  webbed=$(baseline_get webbed_min_version);        [ -n "$webbed" ] || webbed="2.13.0"
+  url=$(baseline_get update_url);                   [ -n "$url" ]    || url="https://duckdb.org/docs/installation/"
+  cmd=$(baseline_get install_command);              [ -n "$cmd" ]    || cmd="curl https://install.duckdb.org | sh"
 
   # Extract the numeric version, e.g. "1.5.4" from "v1.5.4 (Variegata) 08e34c447b".
-  installed=$(printf '%s' "$installed_raw" | sed -E 's/^[^0-9]*([0-9]+(\.[0-9]+)*).*/\1/')
+  installed=$(printf '%s' "$1" | sed -E 's/^[^0-9]*([0-9]+(\.[0-9]+)*).*/\1/')
   case "$installed" in
     ''|*[!0-9.]*) return 0 ;;   # couldn't parse a version → stay silent
   esac
 
-  if [ "$(version_cmp "$installed" "$base_duckdb")" = "-1" ]; then
-    warn "DuckDB $installed is older than the tested fm-lab baseline (v$base_duckdb + webbed $base_webbed)."
-    echo  "    Recommended: update DuckDB to ≥ $base_duckdb — the validated setup for webbed $base_webbed."
-    echo  "    → $base_url   (init continues; this is a recommendation, not a requirement)"
-    summary_warn "DuckDB baseline   v$installed < v$base_duckdb (update recommended — see above)"
+  if [ "$(version_cmp "$installed" "$sup")" = "-1" ]; then
+    warn "DuckDB $installed is older than the oldest version fm-lab supports (v$sup)."
+    echo  "    Recommended: DuckDB $rec (validated with webbed $webbed) — standard installer:  $cmd"
+    echo  "    → $url   (init continues; this is a recommendation, not a requirement)"
+    summary_warn "DuckDB version    v$installed < supported v$sup (update recommended — see above)"
+  elif [ "$(version_cmp "$installed" "$rec")" = "-1" ]; then
+    info "DuckDB $installed is supported; recommended is $rec (validated with webbed $webbed)."
+    echo  "    Update with the standard installer:  $cmd"
+    summary_warn "DuckDB version    v$installed supported, v$rec recommended (see above)"
   fi
 }
 
@@ -351,22 +393,12 @@ header "Checking prerequisites"
 
 ok=true
 
-# DuckDB — check PATH first, then common install locations
+# DuckDB — PATH first, then the installer's locations (see fmlab_find_duckdb)
 DUCKDB_BIN=""
 DUCKDB_DIR=""
-if command -v duckdb &>/dev/null; then
-  DUCKDB_BIN=$(command -v duckdb)
-else
-  for candidate in \
-    "$HOME/.duckdb/cli/latest/duckdb" \
-    "/opt/homebrew/bin/duckdb" \
-    "/usr/local/bin/duckdb"; do
-    if [ -x "$candidate" ]; then
-      DUCKDB_BIN="$candidate"
-      break
-    fi
-  done
-fi
+# shellcheck source=lib/duckdb_binding.sh
+. "$PROJECT_ROOT/tools/lib/duckdb_binding.sh"
+DUCKDB_BIN=$(fmlab_find_duckdb || true)
 
 if [ -n "$DUCKDB_BIN" ]; then
   DUCKDB_VER=$("$DUCKDB_BIN" --version 2>/dev/null | head -1 || echo "unknown")
@@ -380,25 +412,26 @@ else
   ok=false
 fi
 
-# Node.js (≥20)
+# Node.js (≥22 — 20.x is end-of-life; the MBS docs reader needs node:sqlite from 22.13)
 if command -v node &>/dev/null; then
   NODE_VER=$(node --version)
   NODE_MAJOR=$(major_of "$NODE_VER")
   if [ -z "$NODE_MAJOR" ]; then
-    error "Node.js reported an unreadable version: '$NODE_VER' (expected e.g. v22.17.0)."
-    diagnose_tool_path node 20
+    error "Node.js reported an unreadable version: '$NODE_VER' (expected e.g. v22.23.4)."
+    diagnose_tool_path node 22
     ok=false
-  elif [ "$NODE_MAJOR" -ge 20 ]; then
+  elif [ "$NODE_MAJOR" -ge 22 ]; then
     info "Node.js: $NODE_VER"
     check_node_security "$NODE_VER"
+    check_node_recommended "$NODE_VER"
   else
-    error "Node.js $NODE_VER found, but ≥20 is required."
-    diagnose_tool_path node 20
+    error "Node.js $NODE_VER found, but ≥22 is required."
+    diagnose_tool_path node 22
     ok=false
   fi
 else
   error "Node.js not found. Install it from https://nodejs.org/"
-  diagnose_tool_path node 20
+  diagnose_tool_path node 22
   ok=false
 fi
 
@@ -517,28 +550,43 @@ fi
 # ─── DuckDB path → .claude/settings.json ─────────────────────
 # VS Code / Claude Code inherits a restricted PATH and may not find DuckDB.
 # We write the resolved binary directory into env.PATH so Claude Code can
-# always locate duckdb without trying to install it.
+# always locate duckdb without trying to install it. The resolved directory goes
+# first, and every other DuckDB-installer directory (~/.duckdb/cli/<version>,
+# ~/.duckdb/cli/latest) is dropped — otherwise each init run with another version
+# stacked one more entry and an old version folder could shadow the current one.
 
 if [ -n "$DUCKDB_DIR" ] && [ -f "$SETTINGS_FILE" ]; then
   export DUCKDB_DIR PROJECT_ROOT
-  node - <<'NODEEOF'
+  path_result=$(node - <<'NODEEOF'
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const settingsPath = process.env.PROJECT_ROOT + '/.claude/settings.json';
 const duckdbDir   = process.env.DUCKDB_DIR;
 const settings    = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
 settings.env      = settings.env || {};
 const existingPath = settings.env.PATH || '';
-if (!existingPath.split(':').includes(duckdbDir)) {
-  // Prepend duckdb dir; keep the rest of the explicit PATH if already set,
-  // otherwise fall back to common system dirs so other tools still work.
-  const base = existingPath || '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin';
-  settings.env.PATH = duckdbDir + ':' + base;
+// Keep the rest of an explicit PATH; without one fall back to common system dirs
+// so other tools still work.
+const base = (existingPath || '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin').split(':').filter(Boolean);
+const installerRoot = path.join(os.homedir(), '.duckdb', 'cli') + path.sep;
+const rest = base.filter((p) => p !== duckdbDir && !p.startsWith(installerRoot));
+const next = [duckdbDir, ...rest].join(':');
+if (next !== existingPath) {
+  settings.env.PATH = next;
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+  process.stdout.write('changed');
+} else {
+  process.stdout.write('unchanged');
 }
-fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
 NODEEOF
-  info "DuckDB path written to .claude/settings.json"
-  summary_add "Claude Code PATH  $DUCKDB_DIR added to .claude/settings.json"
+)
+  if [ "$path_result" = "changed" ]; then
+    info "DuckDB path written to .claude/settings.json"
+    summary_add "Claude Code PATH  $DUCKDB_DIR set first in .claude/settings.json"
+  else
+    info "DuckDB path already set in .claude/settings.json"
+  fi
 fi
 
 # ─── Logs directory ───────────────────────────────────────────

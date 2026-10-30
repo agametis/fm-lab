@@ -110,10 +110,17 @@ function resolveDuckdb() {
   return null;
 }
 
-/** Run the duckdb binary, capturing stdout/stderr. Resolves with { code, stdout, stderr }. */
+/**
+ * Run the duckdb binary, capturing stdout/stderr. Resolves with { code, stdout, stderr }.
+ * DUCKDB_AGENT_MODE=0 keeps the 2.0 CLI out of agent mode (JSON errors, markdown
+ * output) when the server inherited AI_AGENT; DuckDB 1.x ignores it.
+ */
 function runDuck(duckBin, duckArgs) {
   return new Promise((resolve) => {
-    const child = spawn(duckBin, duckArgs, { cwd: REPO_ROOT });
+    const child = spawn(duckBin, duckArgs, {
+      cwd: REPO_ROOT,
+      env: { ...process.env, DUCKDB_AGENT_MODE: '0' },
+    });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (d) => { stdout += d.toString(); });

@@ -19,7 +19,7 @@ Produce a structured, technical description of a FileMaker object based on the D
 
 ## Ground rules
 
-- **Database**: read-only against the master catalog `db/fm_catalog.duckdb` via a plain `duckdb db/fm_catalog.duckdb -c "<SQL>"` (Bash). With an active session pin (`FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2) use the literal bundle path `duckdb solutions/<id>/db/fm_catalog.duckdb` instead (resolve once via `tools/solution.sh current`). Invocation rules, DuckDB-binary resolution and the "never read the `rest-api/db` copy" caveat are in CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`) — don't restate them here, and never install DuckDB.
+- **Database**: read-only against the master catalog `db/fm_catalog.duckdb` via a plain `duckdb -readonly db/fm_catalog.duckdb -c "<SQL>"` (Bash). With an active session pin (`FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2) use the literal bundle path `duckdb -readonly solutions/<id>/db/fm_catalog.duckdb` instead (resolve once via `tools/solution.sh current`). Invocation rules, DuckDB-binary resolution and the "never read the `rest-api/db` copy" caveat are in CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`) — don't restate them here, and never install DuckDB.
 - **SQL identifiers**: English DDL names — never translate table/column names of the catalog
 - **File references**: Markdown links (e.g. `[Script_Name](db/fm_catalog.duckdb)`)
 - **Before every DB query**: make sure the object is uniquely identified (see Step 1)
@@ -84,7 +84,9 @@ identification does the type-specific workflow (Step 2) start.
 Based on `Object_Type` pick the matching template. **The SQL lives in
 [`_shared/scripts/type_queries.sql`](../_shared/scripts/type_queries.sql)** (query IDs in
 brackets below) — substitute the `<UUID>` / `<FILE>` / `<L_ID>` / `<HASH>` tokens and run
-each statement as `duckdb db/fm_catalog.duckdb -c "…"`. Every template filters on
+each statement as `duckdb -readonly -markdown db/fm_catalog.duckdb -c "…"`. `-markdown` keeps
+long scripts and formulas complete: without an output mode DuckDB 2.0 cuts results above
+10,000 bytes and cells above 500 characters (CLAUDE.md §2). Every template filters on
 `File_Name` AND the type UUID, because names and numeric FM IDs are only unique per file.
 
 - **Script** [S1 header, S2 steps]: the step-by-step flow is the centrepiece of the

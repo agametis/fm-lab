@@ -9,14 +9,15 @@ FROM (
 WITH
 -- One regex from the reference: every spelling of Get(LastError) the reference
 -- knows (11 locales, Get keyword and parameter name; 'Hole ( LetzteFehlerNr )'
--- included), followed by a comparison operator and a numeric literal. Literals
+-- included; longest spelling first, so a prefix never shadows a longer one),
+-- followed by a comparison operator and a numeric literal. Literals
 -- are not resolved in ObjectLinks, so the calc text (StepCalculations.Calc_Text,
 -- plain text - never *_XML) is the only source; Case/Choose forms and reversed
 -- comparisons (0 = Get(LastError)) are deliberately out of scope.
 pattern AS (
-    SELECT '(?i)(?:' || (SELECT string_agg(DISTINCT regexp_extract(lookup_name, '^([^\s(]+)', 1), '|')
+    SELECT '(?i)(?:' || (SELECT string_agg(DISTINCT regexp_extract(lookup_name, '^([^\s(]+)', 1), '|' ORDER BY length(regexp_extract(lookup_name, '^([^\s(]+)', 1)) DESC, regexp_extract(lookup_name, '^([^\s(]+)', 1))
                           FROM ref.function_name_lookup WHERE function_id = 139 AND chunk_role = 'getfunction')
-        || ')\s*\(\s*(?:' || (SELECT string_agg(DISTINCT lookup_name, '|')
+        || ')\s*\(\s*(?:' || (SELECT string_agg(DISTINCT lookup_name, '|' ORDER BY length(lookup_name) DESC, lookup_name)
                                  FROM ref.function_name_lookup WHERE function_id = 139 AND chunk_role = 'getparameter')
         || ')\s*\)\s*(?:=|≠|<>|<=|>=|≤|≥|<|>)\s*(-?\d+)' AS re
 ),

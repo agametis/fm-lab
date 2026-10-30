@@ -413,7 +413,10 @@
       "xmlConverter": "XML Converter",
       "xmlEngine": "Engine",
       "dbSchema": "DB Schema",
-      "fmSpec": "fm-spec"
+      "fmSpec": "fm-spec",
+      "duckdb": "DuckDB",
+      "duckdbCli": "DuckDB CLI",
+      "duckdbCliMissing": "not found"
     },
     "api": {
       "heading": "REST API connection",

@@ -37,7 +37,7 @@ findings stays with you (offer `fm-analyze` for the "why").
 
 ## Ground rules
 
-- **Database**: read-only against the master catalog `db/fm_catalog.duckdb` via a plain `duckdb db/fm_catalog.duckdb -c "<SQL>"` (Bash). With an active session pin (`FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2) use the literal bundle path `duckdb solutions/<id>/db/fm_catalog.duckdb` instead (resolve once via `tools/solution.sh current`). Never read the `rest-api/db` copies directly; never install DuckDB.
+- **Database**: read-only against the master catalog `db/fm_catalog.duckdb` via a plain `duckdb -readonly db/fm_catalog.duckdb -c "<SQL>"` (Bash). With an active session pin (`FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2) use the literal bundle path `duckdb -readonly solutions/<id>/db/fm_catalog.duckdb` instead (resolve once via `tools/solution.sh current`). Never read the `rest-api/db` copies directly; never install DuckDB.
 - **Read-only**: never UPDATE/INSERT/DELETE.
 - **Locale independence**: filter on `Step_ID`/UUIDs, never on localized names.
 - **Step numbers are 1-based in prose**: render `Step_Index + 1`.

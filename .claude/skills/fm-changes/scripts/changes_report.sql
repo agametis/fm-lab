@@ -178,7 +178,7 @@ SELECT
         CASE r.Object_Type WHEN 'Script' THEN 1 WHEN 'CustomFunction' THEN 2
                            WHEN 'Layout' THEN 3 WHEN 'Field' THEN 4 ELSE 5 END,
         COALESCE(r.Modifications, 0) <= 1 DESC, r.Modifications DESC NULLS LAST,
-        r.Object_Name, r.File_Name)                                AS detail_rank,
+        r.Object_Name, r.File_Name, r.Object_Type, r.Object_UUID)  AS detail_rank,
     r.Object_UUID
 FROM rows r
 LEFT JOIN used_by ub ON ub.Target_UUID = r.Object_UUID AND ub.Target_File = r.File_Name

@@ -14,8 +14,10 @@
 {
   "name": "fm-lab",
 
-  // Single source of truth — reuse the repo-root compose definition.
-  "dockerComposeFile": ["../docker-compose.yml"],
+  // Single source of truth — reuse the repo-root compose definition. The second file is a
+  // Dev-Container-only overlay: a reopen starts the existing image instead of rebuilding
+  // it from the extension's temp Dockerfile (see its header).
+  "dockerComposeFile": ["../docker-compose.yml", "docker-compose.devcontainer.yml"],
 
   // Attach to the API service (it carries the full toolchain: DuckDB CLI, webbed,
   // Node/npm, the conversion harness). Its command is overridden so the container stays

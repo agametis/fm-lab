@@ -27,13 +27,17 @@ elif [ -n "${ANTHROPIC_API_KEY:-}" ]; then
   printf '%b\n' "${G}🤖 Claude Code ready${NC} — API key found (ANTHROPIC_API_KEY, API-key billing)."
   printf '%b\n' "   Start the agent:  ${B}docker compose exec -it api claude${NC}"
 elif [ -s "$CREDS_FILE" ]; then
+  # Only the file is checked — whether the login is still valid shows in the session.
   printf '%b\n' "${G}🤖 Claude Code ready${NC} — saved login found (persisted from a previous sign-in)."
   printf '%b\n' "   Start the agent:  ${B}docker compose exec -it api claude${NC}"
+  printf '%s\n' "   If the session reports \"Login expired\", run /login there."
 else
   printf '%b\n' "${Y}🔑 Claude Code: one-time sign-in required${NC} — no credentials found yet."
   printf '%b\n' "   Run:  ${B}docker compose exec -it api claude${NC}"
   printf '%s\n' "        → choose \"Claude account with subscription\" and complete the browser sign-in."
-  printf '%s\n' "   NOTE: the sign-in URL wraps across terminal lines — copy it with 'c' (OSC-52"
+  printf '%s\n' "   Started via 'bash tools/fmlab.sh up --claude' (or 'agent'), the sign-in page opens"
+  printf '%s\n' "         in your browser; paste the code it shows at the \"Paste code here\" prompt."
+  printf '%s\n' "   Otherwise the sign-in URL wraps across terminal lines — copy it with 'c' (OSC-52"
   printf '%s\n' "         terminals such as iTerm2) or repair the line breaks in an editor first;"
   printf '%s\n' "         a truncated URL fails with \"Invalid response_type\" / \"Unknown scope\"."
   printf '%s\n' "   No browser? Put ANTHROPIC_API_KEY=… or CLAUDE_CODE_OAUTH_TOKEN=… in a .env"

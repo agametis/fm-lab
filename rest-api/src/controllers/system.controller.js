@@ -5,6 +5,8 @@ const appSettings = require('../config/app-settings');
 const environment = require('../config/environment');
 const packageJson = require('../../package.json');
 const { getLoadedPlugins } = require('../plugins/loader');
+const { apiDuckdbVersion } = require('../utils/storage-version');
+const { duckdbCliInfo } = require('../utils/duckdb-cli');
 const {
   DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
@@ -28,7 +30,10 @@ function bigIntToNumber(value) {
  */
 async function version(req, res, next) {
   try {
-    const dbStats = await db.getDatabaseStats(req.solutionContext);
+    const [dbStats, duckdbCli] = await Promise.all([
+      db.getDatabaseStats(req.solutionContext),
+      duckdbCliInfo(),
+    ]);
 
     // Build features object from loaded plugins
     const plugins = getLoadedPlugins();
@@ -48,6 +53,10 @@ async function version(req, res, next) {
       version: packageJson.version,
       api_name: packageJson.description,
       node_version: process.version,
+      // DuckDB der REST-API (liest die Kataloge) und die CLI des XML-Imports
+      // (schreibt sie) — beide zeigt die Versionszeile unter Einstellungen.
+      duckdb_version: apiDuckdbVersion(),
+      duckdb_cli: duckdbCli,
       uptime_seconds: Math.floor(process.uptime()),
       health: dbStats.error ? 'degraded' : 'healthy',
       database: {

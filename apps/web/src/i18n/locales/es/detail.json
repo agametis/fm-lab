@@ -414,7 +414,10 @@
       "colVersion": "Versión"
     },
     "versions": {
-      "fmSpec": "fm-spec"
+      "fmSpec": "fm-spec",
+      "duckdb": "DuckDB",
+      "duckdbCli": "DuckDB CLI",
+      "duckdbCliMissing": "no encontrada"
     },
     "solutions": {
       "heading": "Soluciones",

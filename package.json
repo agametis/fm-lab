@@ -1,6 +1,6 @@
 {
   "name": "fm-lab",
-  "version": "0.9.15",
+  "version": "0.9.16",
   "description": "FM-Lab - Open Source framework for agentic FileMaker development",
   "private": true,
   "workspaces": [
@@ -33,7 +33,7 @@
     "graphology-communities-louvain": "^2.0.2"
   },
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=22.13.0",
     "npm": ">=10.0.0"
   }
 }

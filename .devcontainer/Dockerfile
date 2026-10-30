@@ -23,6 +23,9 @@
 # Debian release pinned explicitly (-bookworm): the bare node:<version> tag follows the
 # official images' default Debian, which moved on to trixie — that would silently swap
 # the OS (apt packages, glibc) on the next version bump.
+# The Node version is derived: ingestion/version_check.json → tested_baseline.
+# node_recommended_version, written by tools/build-container-env.mjs (tools/init.sh
+# recommends the same version). Edit it there, never here.
 FROM node:22.23.4-bookworm AS base
 
 ARG TZ=Etc/UTC
@@ -35,8 +38,8 @@ ENV TZ="$TZ"
 #   iproute2, dnsutils,
 #   aggregate
 #   gh                       → maintainer convenience
-# Kept: the conversion harness's runtime deps (unzip for the DuckDB zip, jq, awk via
-# the base image's mawk, rsync, git) + editors/search niceties.
+# Kept: the conversion harness's runtime deps (unzip for solution-bundle imports and
+# the MBS docset, jq, awk via the base image's mawk, rsync, git) + editors/search niceties.
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
   curl \
@@ -111,40 +114,39 @@ RUN ARCH=$(dpkg --print-architecture) && \
   dpkg -i "git-delta_${GIT_DELTA_VERSION}_${ARCH}.deb" && \
   rm "git-delta_${GIT_DELTA_VERSION}_${ARCH}.deb"
 
-# DuckDB CLI — pinned to the tested baseline (tools/katana-xml/version_check.json
-# → tested_baseline.duckdb_min_version; keep this ARG in sync). Single
-# static binary per arch in a zip; the arch suffix matches dpkg --print-architecture
+# DuckDB CLI — pinned to the tested baseline (ingestion/version_check.json
+# → tested_baseline.duckdb_min_version; tools/build-container-env.mjs keeps this ARG
+# in sync). Single static binary per arch in a tar.gz (duckdb-cli-linux-<arch>.tar.gz,
+# the asset name since DuckDB 2.0); the arch suffix matches dpkg --print-architecture
 # directly, so no name mapping is needed.
-ARG DUCKDB_VERSION=1.5.6
+ARG DUCKDB_VERSION=2.0.0
 RUN ARCH=$(dpkg --print-architecture) && \
-  wget "https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/duckdb_cli-linux-${ARCH}.zip" && \
-  unzip "duckdb_cli-linux-${ARCH}.zip" -d /usr/local/bin && \
-  rm "duckdb_cli-linux-${ARCH}.zip" && \
+  wget "https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/duckdb-cli-linux-${ARCH}.tar.gz" && \
+  tar -xzf "duckdb-cli-linux-${ARCH}.tar.gz" -C /usr/local/bin duckdb && \
+  rm "duckdb-cli-linux-${ARCH}.tar.gz" && \
   chmod +x /usr/local/bin/duckdb
 
 # DuckDB community extension: webbed (XML/HTML reader — provides xml_extract_text,
 # used by the LayoutObjects analysis + several SQL templates). Community extensions
 # are version-locked to the DuckDB binary, so the extension version MUST equal
-# DUCKDB_VERSION. The community URL is NOT versioned for webbed itself: the
-# v${DUCKDB_VERSION} path serves the CURRENT webbed build published for that DuckDB
-# version. We bake the signed stock extension into the image and `LOAD webbed` picks
-# it up offline. The platform suffix (linux_arm64 / linux_amd64) matches
-# dpkg --print-architecture directly. Installed into the node user's ~/.duckdb (the
+# DUCKDB_VERSION. The community repository pins no webbed version: INSTALL
+# always fetches the CURRENT webbed build published for this DuckDB version. We bake the signed stock extension into the image and `LOAD webbed` picks
+# it up offline. Installed into the node user's ~/.duckdb (the
 # default extension home), so it persists across rebuilds.
 #
-# WEBBED_REFRESH: cache-bust token. Because the URL has no webbed version, bumping
+# WEBBED_REFRESH: cache-bust token. Because INSTALL pins no webbed version, bumping
 # this date invalidates the layer and forces a re-pull of the current build.
 # NOTE: this is the SIGNED STOCK webbed only — the maintainer's unsigned SAX-patched
 # build (a dev streaming optimization) is intentionally NOT shipped here. Without it
 # the conversion safely falls back to the stock DOM path (bit-identical, no streaming).
-ARG WEBBED_REFRESH=2026-10-27
-RUN ARCH=$(dpkg --print-architecture) && \
-  echo "webbed refresh token: ${WEBBED_REFRESH}" && \
-  EXT_DIR="/home/node/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${ARCH}" && \
-  mkdir -p "$EXT_DIR" && \
-  wget -O "$EXT_DIR/webbed.duckdb_extension.gz" \
-    "http://community-extensions.duckdb.org/v${DUCKDB_VERSION}/linux_${ARCH}/webbed.duckdb_extension.gz" && \
-  gunzip "$EXT_DIR/webbed.duckdb_extension.gz" && \
+ARG WEBBED_REFRESH=2026-10-29
+# Installed through the CLI, not fetched with wget: since DuckDB 2.0 a community
+# extension only loads with the .info metadata file INSTALL writes next to it (it
+# names the community repository, whose signing key LOAD then accepts) — a bare
+# downloaded file fails the signature check. HOME points the default extension
+# directory at the node user.
+RUN echo "webbed refresh token: ${WEBBED_REFRESH}" && \
+  HOME=/home/node DUCKDB_AGENT_MODE=0 duckdb :memory: -c "FORCE INSTALL webbed FROM community; LOAD webbed;" && \
   chown -R node:node /home/node/.duckdb
 
 # Copy the node_modules-volume init script (chowns the root-owned empty named

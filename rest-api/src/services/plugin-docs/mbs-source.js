@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const { LRUCache } = require('lru-cache');
-const Database = require('better-sqlite3');
 
 const htmlExtractor = require('./html-extractor');
 const pluginDocsConfig = require('../../config/plugin-docs.config');
@@ -16,6 +15,9 @@ const pluginDocsConfig = require('../../config/plugin-docs.config');
  * Architektur-Hinweis: Der Server läuft in `READ_ONLY`-Modus auf einer
  * Kopie der DuckDB. Hier öffnen wir einen davon unabhängigen SQLite-Reader
  * auf `docs/mbs/docSet.dsidx` (read-only). Kein DuckDB-Touch.
+ *
+ * Der Reader ist das eingebaute `node:sqlite` (ab Node 22.13), kein natives
+ * Addon — ein Wechsel der Node-Version braucht deshalb kein `npm rebuild`.
  */
 
 // ─── Cache-Setup ─────────────────────────────────────────────────────────
@@ -31,7 +33,7 @@ const docCache = new LRUCache({
   ttl: pluginDocsConfig.cacheTTL,
 });
 
-let dbHandle = null; // better-sqlite3 Database (lazy init)
+let dbHandle = null; // node:sqlite DatabaseSync (lazy init)
 let dbInitTried = false;
 let dbInitError = null;
 
@@ -82,6 +84,11 @@ function isAvailable() {
  * Lazy-init der SQLite-Verbindung. Im Fehlerfall (z.B. Datei fehlt) wird
  * `dbInitError` gesetzt und alle nachfolgenden Lookups werfen einen
  * deklarativen Error mit `code: 'PLUGIN_DOC_NOT_INSTALLED'`.
+ *
+ * `node:sqlite` wird erst hier geladen: Node 22 meldet beim Laden eine
+ * ExperimentalWarning, die so nur bei tatsächlicher Nutzung der MBS-Doku
+ * erscheint. Fehlt das Modul (Node < 22.13), landet das im selben Fehlerpfad,
+ * statt den Server-Start abzubrechen.
  */
 function getDb() {
   if (dbHandle) return dbHandle;
@@ -101,7 +108,8 @@ function getDb() {
   }
 
   try {
-    dbHandle = new Database(indexPath, { readonly: true, fileMustExist: true });
+    const { DatabaseSync } = require('node:sqlite');
+    dbHandle = new DatabaseSync(indexPath, { readOnly: true });
     return dbHandle;
   } catch (e) {
     const err = new Error(`SQLite-Index konnte nicht geöffnet werden: ${e.message}`);

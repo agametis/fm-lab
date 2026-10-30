@@ -47,6 +47,18 @@
   "recent_changes_table.props.columns[2].label": "객체",
   "recent_changes_table.props.columns[3].label": "파일",
   "recent_changes_table.props.columns[4].label": "사람",
-  "recent_changes_all.props.label": "모든 변경"
+  "recent_changes_all.props.label": "모든 변경",
+  "recent_change_trend.props.label": "월별 개별 변경, 데이터 기준 시점까지 최근 12개월",
+  "recent_view_chips.props.options[0].label": "개별 변경",
+  "recent_view_chips.props.options[1].label": "작업 세션",
+  "recent_sessions_table.props.columns[0].label": "시작",
+  "recent_sessions_table.props.columns[1].label": "종료",
+  "recent_sessions_table.props.columns[2].label": "분",
+  "recent_sessions_table.props.columns[3].label": "사람",
+  "recent_sessions_table.props.columns[4].label": "변경",
+  "recent_sessions_table.props.columns[5].label": "파일",
+  "recent_sessions_table.props.columns[6].label": "유형",
+  "recent_sessions_table.props.empty.message": "아직 작업 세션이 없습니다.",
+  "recent_sessions_all.props.label": "모든 작업 세션"
  }
 }

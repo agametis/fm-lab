@@ -44,7 +44,7 @@ _probe_webbed_caps() {
     # silently derail the value match below.
     if [ "$_tgt" = "webbed" ]; then _load="LOAD webbed;"; else _load="LOAD '$_tgt';"; _flags+=(-unsigned); fi
     # #98 nested-attr-SAX + streaming param (single source: $_vc_nested_probe_sql)
-    _out=$("$DUCKDB_BIN" "${_flags[@]}" :memory: -no-init -noheader -list -c "${_load} ${_vc_nested_probe_sql};" 2>&1)
+    _out=$(duckdb_cli "${_flags[@]}" :memory: -no-init -noheader -list -c "${_load} ${_vc_nested_probe_sql};" 2>&1)
     # Expose the raw LOAD+probe output so the driver, on a non-classifiable
     # error (→ streaming-param=unknown, e.g. `LOAD webbed` fails), can show the
     # real webbed message instead of just "unknown".
@@ -71,7 +71,7 @@ _probe_webbed_caps() {
     # policy instead of silently flipping (policy-lock, sticky fallback).
     # WEBBED_PROBE_ERRORS collects the raw error text (analog WEBBED_PROBE_RAW),
     # newline-collapsed so warnings stay single-line (NDJSON-safe).
-    _cr_out=$("$DUCKDB_BIN" "${_flags[@]}" :memory: -no-init -noheader -list -c "${_load} ${_vc_cr_probe_sql};" 2>&1)
+    _cr_out=$(duckdb_cli "${_flags[@]}" :memory: -no-init -noheader -list -c "${_load} ${_vc_cr_probe_sql};" 2>&1)
     _cr=$(_last_value_line "$_cr_out")
     case "$_cr" in
         1) WEBBED_HAS_CR_PARITY=true ;;
@@ -81,7 +81,7 @@ _probe_webbed_caps() {
     esac
     # #73 whitespace preservation ($_vc_ws_probe_sql): 1 = linebreak preserved
     # natively (DOM-faithful) → true; same three-state mapping as #109.
-    _ws_out=$("$DUCKDB_BIN" "${_flags[@]}" :memory: -no-init -noheader -list -c "${_load} ${_vc_ws_probe_sql};" 2>&1)
+    _ws_out=$(duckdb_cli "${_flags[@]}" :memory: -no-init -noheader -list -c "${_load} ${_vc_ws_probe_sql};" 2>&1)
     _ws=$(_last_value_line "$_ws_out")
     case "$_ws" in
         1) WEBBED_HAS_WS_PRESERVE=true ;;
@@ -94,7 +94,7 @@ _probe_webbed_caps() {
     # dev-patch path (loaded by file path); a failed LOAD yields error text →
     # sanity-gate to a version-shaped token, else "unknown".
     local _wv
-    _wv=$(_last_value_line "$("$DUCKDB_BIN" "${_flags[@]}" :memory: -no-init -noheader -list -c "${_load} SELECT extension_version FROM duckdb_extensions() WHERE extension_name LIKE '%webbed%' AND loaded LIMIT 1;" 2>&1)")
+    _wv=$(_last_value_line "$(duckdb_cli "${_flags[@]}" :memory: -no-init -noheader -list -c "${_load} SELECT extension_version FROM duckdb_extensions() WHERE extension_name LIKE '%webbed%' AND loaded LIMIT 1;" 2>&1)")
     if [ -n "$_wv" ] && [[ "$_wv" =~ ^[0-9A-Za-z._+-]+$ ]]; then
         WEBBED_VERSION_DETECTED="$_wv"
     else

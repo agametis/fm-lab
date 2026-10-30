@@ -47,6 +47,18 @@
   "recent_changes_table.props.columns[2].label": "Objekt",
   "recent_changes_table.props.columns[3].label": "Fil",
   "recent_changes_table.props.columns[4].label": "Person",
-  "recent_changes_all.props.label": "Alla ändringar"
+  "recent_changes_all.props.label": "Alla ändringar",
+  "recent_change_trend.props.label": "Enskilda ändringar per månad, senaste 12 månaderna fram till datastatus",
+  "recent_view_chips.props.options[0].label": "Enskilda ändringar",
+  "recent_view_chips.props.options[1].label": "Arbetspass",
+  "recent_sessions_table.props.columns[0].label": "Början",
+  "recent_sessions_table.props.columns[1].label": "Slut",
+  "recent_sessions_table.props.columns[2].label": "Minuter",
+  "recent_sessions_table.props.columns[3].label": "Person",
+  "recent_sessions_table.props.columns[4].label": "Ändringar",
+  "recent_sessions_table.props.columns[5].label": "Filer",
+  "recent_sessions_table.props.columns[6].label": "Typer",
+  "recent_sessions_table.props.empty.message": "Inga arbetspass ännu.",
+  "recent_sessions_all.props.label": "Alla arbetspass"
  }
 }

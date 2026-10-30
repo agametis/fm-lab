@@ -24,7 +24,14 @@
 #   K0 existence is deliberately NOT enforced here: whether an explicit id may
 #   create its bundle (convert does) is the caller's decision.
 #
+# Side effect on sourcing: exports DUCKDB_AGENT_MODE=0. Every CLI tool sources this
+# file, and none of them wants the DuckDB 2.0 CLI agent mode (markdown tables, JSON
+# errors, truncation once an AI-agent variable such as AI_AGENT is set and stdout is
+# not a terminal). DuckDB 1.x ignores the variable.
+#
 # bash-3.2 compatible (macOS system bash): no case in $(…), no bash-4+ features.
+
+export DUCKDB_AGENT_MODE=0
 
 _fmlab_valid_id() {
     case "$1" in

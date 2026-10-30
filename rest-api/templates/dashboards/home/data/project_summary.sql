@@ -2,7 +2,7 @@
 -- @description: Projekt-Header-Kennzahlen aus FilesCatalog und ObjectCatalog.
 -- @params: none
 --
--- Hinweis zum leeren Zustand (PRD prd_frontend_xml_convert.md §4.1.1):
+-- Hinweis zum leeren Zustand:
 -- Bei leerer FilesCatalog liefern die Aggregate NULL statt 0/'none'. Der
 -- Frontend-Formatter rendert NULL automatisch als "—" — dadurch entsteht
 -- der "noch nichts importiert"-Look im Project-overview-KPI-Strip.
@@ -10,7 +10,9 @@
 WITH meta AS (
     SELECT
         COUNT(*)                                                    AS file_count,
-        string_agg(DISTINCT FileMaker_Version, ', ')                 AS fm_versions,
+        string_agg(DISTINCT FileMaker_Version, ', '
+                   ORDER BY [TRY_CAST(x AS INTEGER) FOR x IN string_split(FileMaker_Version, '.')])
+                                                                    AS fm_versions,
         bool_or(Has_DDR_INFO)                                        AS any_ddr,
         bool_and(Has_DDR_INFO)                                       AS all_ddr,
         max(Import_Timestamp)                                        AS last_import

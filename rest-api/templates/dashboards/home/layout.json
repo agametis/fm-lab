@@ -310,12 +310,41 @@
           "span": 12,
           "title": "Recently changed"
         },
-        "visibleWhen": { "dataset": "recent_changes", "field": "uuid", "truthy": true },
+        "visibleWhen": { "dataset": "recent_state", "field": "has_changes", "truthy": true },
         "children": [
+          {
+            "type": "Sparkline",
+            "id": "recent_change_trend",
+            "data": { "dataset": "change_trend" },
+            "props": {
+              "label": "Individual changes per month, last 12 months up to the data state",
+              "valueField": "n",
+              "labelField": "month",
+              "height": 40,
+              "maxWidth": 360,
+              "onPointClick": {
+                "action": "openDashboard",
+                "args": { "id": "changes", "from": "{{from_at}}", "to": "{{to_at}}" }
+              }
+            }
+          },
+          {
+            "type": "FilterChips",
+            "id": "recent_view_chips",
+            "props": {
+              "param": "recent",
+              "default": "objects",
+              "options": [
+                { "value": "objects", "label": "Single changes" },
+                { "value": "sessions", "label": "Work sessions" }
+              ]
+            }
+          },
           {
             "type": "Table",
             "id": "recent_changes_table",
             "data": { "dataset": "recent_changes" },
+            "visibleWhen": { "dataset": "recent_state", "field": "show_list", "truthy": true },
             "props": {
               "rowKey": "uuid",
               "density": "compact",
@@ -334,12 +363,50 @@
             }
           },
           {
+            "type": "Table",
+            "id": "recent_sessions_table",
+            "data": { "dataset": "recent_sessions" },
+            "visibleWhen": { "dataset": "recent_state", "field": "show_sessions", "truthy": true },
+            "props": {
+              "rowKey": "session_key",
+              "density": "compact",
+              "searchable": false,
+              "columns": [
+                { "field": "started", "label": "Start", "nowrap": true },
+                { "field": "ended", "label": "End", "nowrap": true },
+                { "field": "minutes", "label": "Minutes", "align": "right", "format": "number", "nowrap": true },
+                { "field": "person", "label": "Person", "nowrap": true },
+                { "field": "objects", "label": "Changes", "align": "right", "format": "number", "nowrap": true },
+                { "field": "files", "label": "Files", "nowrap": true },
+                { "field": "types", "label": "Types" }
+              ],
+              "onRowClick": {
+                "action": "openDashboard",
+                "args": { "id": "changes", "from": "{{from_at}}", "to": "{{to_at}}", "person": "{{person_key}}" }
+              },
+              "empty": {
+                "message": "No work sessions yet."
+              }
+            }
+          },
+          {
             "type": "NavButton",
             "id": "recent_changes_all",
+            "visibleWhen": { "dataset": "recent_state", "field": "show_list", "truthy": true },
             "props": {
               "label": "All changes",
               "variant": "link",
               "onClick": { "action": "openDashboard", "args": { "id": "changes" } }
+            }
+          },
+          {
+            "type": "NavButton",
+            "id": "recent_sessions_all",
+            "visibleWhen": { "dataset": "recent_state", "field": "show_sessions", "truthy": true },
+            "props": {
+              "label": "All work sessions",
+              "variant": "link",
+              "onClick": { "action": "openDashboard", "args": { "id": "changes", "group": "sessions" } }
             }
           }
         ]

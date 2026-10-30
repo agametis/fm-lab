@@ -28,5 +28,5 @@ WHERE (getvariable('file') IS NULL OR cf.File_Name = getvariable('file'))
   AND (cf.Folder_Type IS NULL OR cf.Folder_Type = 'False')
   AND NOT COALESCE(cf.Is_Separator, FALSE)
 GROUP BY ALL
-ORDER BY reference_count DESC
+ORDER BY reference_count DESC, name, file, uuid   -- tie-breakers: stable rows at the LIMIT
 LIMIT CAST(COALESCE(getvariable('limit'), '100') AS INTEGER);

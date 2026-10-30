@@ -1,0 +1,25 @@
+# fm-lab — VS Code Dev Container overlay (listed last by both devcontainer variants).
+#
+# The base compose sets `pull_policy: build`, so a plain `docker compose up` rebuilds the
+# image after every `git pull` (cache-fast) — right for the pure-docker path, which never
+# reads this file.
+#
+# In the Dev Container path the same policy breaks reopening an existing container. The
+# Dev Containers extension builds `api` from a generated `Dockerfile-with-features` in the
+# host's temp folder and records that path in a compose override it keeps in its own
+# storage. Every reopen runs `docker compose up` with that override, and `pull_policy:
+# build` makes Compose rebuild `api` from the recorded path — which the OS has cleaned up
+# by then (restart; macOS also purges temp files unused for a few days):
+#   failed to read dockerfile: open …/Dockerfile-with-features: no such file or directory
+#
+# `missing` keeps the image the extension built: a reopen starts the existing container
+# without building. Only "Dev Containers: Rebuild Container" builds `api` again, and it
+# regenerates the Dockerfile first — so after a `git pull` that changes the container
+# definition, rebuild. `setup` keeps `pull_policy: build`: it builds from the repo's own
+# Dockerfile (no temp path involved).
+#
+# Sets no paths, so Compose's project directory (the first -f file) is unaffected.
+
+services:
+  api:
+    pull_policy: missing

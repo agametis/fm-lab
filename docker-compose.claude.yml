@@ -14,11 +14,12 @@
 #
 # Auth: the ONLY manual step is providing credentials. Pick one (each persists in the
 # fmlab-claude volume; no secret is ever baked into the image):
-#   - sign in interactively: `docker compose exec -it api claude`, choose the subscription
-#     option, and complete the browser sign-in once. The terminal sign-in URL wraps across
-#     lines — copy it with `c` (OSC-52 terminals) or repair it in an editor (see README
-#     Quickstart). This is the reliable path; the credentials are then recognised on every
-#     restart.
+#   - sign in interactively: `bash tools/fmlab.sh up --claude` (or `agent`), choose the
+#     subscription option, and complete the sign-in once — the wrapper opens the sign-in
+#     page in your host browser; paste the code it shows back into the session. Started
+#     with a raw `docker compose exec -it api claude`, the terminal sign-in URL wraps
+#     across lines — copy it via OSC 52 (e.g. iTerm2) or repair it in an editor (see
+#     Troubleshooting). The credentials are then recognised on every restart.
 #   - or set ANTHROPIC_API_KEY (API-key billing) / CLAUDE_CODE_OAUTH_TOKEN (subscription
 #     token from `claude setup-token`) in your environment or a `.env` next to the files.
 #

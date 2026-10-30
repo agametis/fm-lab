@@ -381,7 +381,7 @@ ActionScript / FMUpgradeTool), not part of this skill yet.
 - `references/worked-example.md` — full pipeline walkthrough with artifacts.
 - Function/step documentation: use the `filemaker-function-reference` and
   `mbs-function-reference` skills; grammar ad hoc via
-  `duckdb reference/fm_spec.duckdb -c "..."`.
+  `duckdb -readonly reference/fm_spec.duckdb -c "..."`.
 
 ## Triggers in other languages
 

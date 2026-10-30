@@ -13,6 +13,8 @@ Health probe and feature discovery. The endpoint answering with `200` is the liv
   "version": "0.9.4",
   "api_name": "FM-Lab REST API",
   "node_version": "v22.x",
+  "duckdb_version": "v2.0.0",
+  "duckdb_cli": { "path": "/usr/local/bin/duckdb", "version": "v2.0.0" },
   "uptime_seconds": 1234,
   "health": "healthy",
   "database": { "connected": true, "path": "…", "size_mb": 412.5, "table_count": 68 },
@@ -23,6 +25,8 @@ Health probe and feature discovery. The endpoint answering with `200` is the liv
 ```
 
 Honors `X-Solution` — `database` describes the requested solution's catalog copy.
+
+`duckdb_version` is the DuckDB bundled with the REST API (`@duckdb/node-api`), which reads the catalogs. `duckdb_cli` is the DuckDB CLI the XML import writes them with — `{ path, version }`, found the same way the converter finds it (`PATH`, then the installer's `~/.duckdb/cli/…`, then Homebrew and `/usr/local`), or `null` when there is none. The CLI lookup runs in the server's environment and is cached for a minute; a conversion started from a terminal with a different `PATH` can find another CLI. The web client's version line under Settings shows both.
 
 ## GET /api/info
 

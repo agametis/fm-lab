@@ -49,6 +49,8 @@ Two bookkeeping structures make this safe and fast:
 - **Chunk map** (transient, rebuilt per run) — one row per chunk with its source file, catalog, split number, record count, byte size, content hash, parser policy (`dom` or `sax`) and a dispatch status. It is the work queue of the run: the dispatcher pulls pending chunks from it, and the memory backoff writes retry attempts back into it.
 - **Import manifest** (persistent, survives runs) — one row per source XML (mtime, size and an authoritative SHA-256 content hash — computed with `sha256sum`, `shasum` or `openssl`, whichever the host provides; without any of them the run warns once and writes no catalog rows, so nothing is ever skipped by mistake — plus converter and schema version stamps and the parser-policy fingerprint of the run that wrote the hashes) and one row per *file × catalog* (a hash over the ordered chunk hashes of that catalog). Converter, schema or policy drift invalidates the manifest and forces a clean rebuild — so a skip can never hide a stale format.
 
+Like every DuckDB file Katana creates — the catalog, the chunk and part databases, chunk map and manifest — both are written in a pinned storage format (`tested_baseline.storage_compatibility_version` in `ingestion/version_check.json`, by default storage 64). The files therefore stay readable by every DuckDB CLI from 1.0 on, even when DuckDB 2.0 writes them. If a chunk map or manifest comes from another DuckDB version in a format the running CLI cannot read, Katana discards it with a warning and rebuilds it: both only exist to save work, so losing them costs one full run, never correctness.
+
 ---
 
 ## Deep dive: Phase 1 + 2

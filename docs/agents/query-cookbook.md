@@ -7,10 +7,10 @@
 
 ```bash
 # Execute a query
-duckdb db/fm_catalog.duckdb -c "SELECT * FROM ScriptCatalog"
+duckdb -readonly db/fm_catalog.duckdb -c "SELECT * FROM ScriptCatalog"
 
 # Execute a prepared query file
-duckdb db/fm_catalog.duckdb < docs/agents/sql/sample_queries.sql
+duckdb -readonly db/fm_catalog.duckdb < docs/agents/sql/sample_queries.sql
 ```
 
 Reminder (rule from CLAUDE.md §2): one plain command per call — no subshells,
@@ -329,7 +329,10 @@ ORDER BY c.Modified_At DESC;
 ## Script dump
 
 **Read a script's steps — ordered, human-readable, with nesting and disabled flag.**
-This is the canonical way to look at a script; do not hand-roll a variant.
+This is the canonical way to look at a script; do not hand-roll a variant. Run it as
+`duckdb -readonly -markdown db/fm_catalog.duckdb -c "…"`: without an output mode DuckDB 2.0
+shows a script above ~150 steps only as its first and last 20 (`tooling.md` → Agent output
+mode).
 
 ```sql
 SELECT lpad(CAST(s.Step_Index + 1 AS VARCHAR), 3, ' ')            -- user-facing numbering

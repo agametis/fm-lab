@@ -7,7 +7,7 @@
  *   node solution_ops.mjs write-context <file> <solution> <owner> <note>
  *   node solution_ops.mjs export <bundle-dir> <out.zip> <include-xml: true|false>
  *
- * Node standard library only (Node >= 20) — no Python, no zip binary. The zip
+ * Node standard library only (Node >= 22) — no Python, no zip binary. The zip
  * writer streams every file through zlib (bundles reach several GB) and switches
  * to Zip64 records at the same thresholds as Python's zipfile (2 GiB - 1), so
  * archives open in every common unzip tool.
@@ -60,25 +60,6 @@ function writeContext(file, solution, owner, note) {
 
 const ZIP64_LIMIT = 2 ** 31 - 1; // same threshold as Python's zipfile
 const U32_MAX = 0xffffffff;
-
-const CRC_TABLE = (() => {
-  const t = new Int32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    t[n] = c;
-  }
-  return t;
-})();
-
-// zlib.crc32 exists from Node 20.15 / 22.2; table fallback for older runtimes.
-const crc32 = typeof zlib.crc32 === 'function'
-  ? (buf, prev) => zlib.crc32(buf, prev)
-  : (buf, prev) => {
-    let c = (prev ^ -1) | 0;
-    for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
-    return (c ^ -1) >>> 0;
-  };
 
 function dosDateTime(mtime) {
   const d = mtime.getFullYear() < 1980 ? new Date(1980, 0, 1) : mtime;
@@ -137,7 +118,7 @@ class ZipWriter {
     let csize = 0;
     const tap = new Transform({
       transform(chunk, _enc, cb) {
-        crc = crc32(chunk, crc);
+        crc = zlib.crc32(chunk, crc);
         usize += chunk.length;
         cb(null, chunk);
       },

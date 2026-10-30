@@ -54,7 +54,7 @@ label_refs AS (
     -- carries neither a FieldList nor a field of its own, so all its field
     -- rows are label-text rows — no need to name the column that says so,
     -- which keeps the rule runnable on catalogs of older converters.
-    SELECT Object_UUID, File_Name, list(Ref_Name) AS names
+    SELECT Object_UUID, File_Name, list(Ref_Name ORDER BY Ref_Name) AS names
     FROM XMLLayoutReferences
     WHERE Ref_Type = 'field'
       AND Object_UUID IN (SELECT Object_UUID FROM lo WHERE Object_Kind IN (10, 14))

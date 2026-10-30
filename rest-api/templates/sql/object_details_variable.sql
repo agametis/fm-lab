@@ -3,7 +3,7 @@
 -- @params: uuid (optional), name (optional), file (optional)
 -- @output_format: content
 -- @author: Marcel
--- @version: 1.1
+-- @version: 1.2
 -- @tags: variables, variable-usages, dependencies, cross-reference
 -- @note: Use generic parameters: uuid, name, file (consistent with REST API)
 -- @note: UUID is md5(Variable_Scope || '::' || Scope_Anchor || '::' || Variable_Name)
@@ -51,7 +51,11 @@ usages AS (
         vu.Table_Name,
         vu.Field_Name,
         vu.Source,
-        vu.File_Name
+        vu.File_Name,
+        -- line order of the sections (string_agg needs an explicit ORDER BY:
+        -- the REST connection runs with preserve_insertion_order=false)
+        row_number() OVER (ORDER BY vu.Usage_Type DESC, vu.Context_Type, vu.Context_Name,
+                                    vu.Step_Index, vu.Script_Name, vu.File_Name, vu.Source) AS ord
     FROM VariableUsages vu
     JOIN var_match vm
         ON vu.Variable_Name  = vm.Variable_Name
@@ -59,37 +63,37 @@ usages AS (
        AND vu.Scope_Anchor   = vm.Scope_Anchor
        -- local/let_local: one catalog row per file (clone files share the anchor)
        AND (vm.Variable_Scope NOT IN ('local', 'let_local') OR vu.File_Name = vm.File_Name)
-    ORDER BY vu.Usage_Type DESC, vu.Context_Type, vu.Context_Name, vu.Step_Index
 ),
 header AS (
-    SELECT string_agg(line, chr(10)) as content FROM (
-        SELECT '# Variable: ' || vm.Display_Name as line FROM var_match vm
-        UNION ALL SELECT '' FROM var_match
+    SELECT string_agg(line, chr(10) ORDER BY ord) as content FROM (
+        SELECT 1 AS ord, '# Variable: ' || vm.Display_Name as line FROM var_match vm
+        UNION ALL SELECT 2, '' FROM var_match
         UNION ALL
-        SELECT 'Scope: ' || vm.Variable_Scope
+        SELECT 3, 'Scope: ' || vm.Variable_Scope
             || '  |  Sets: ' || vm.Set_Count
             || '  |  Reads: ' || vm.Read_Count
             || '  |  Scripts: ' || vm.Script_Count
             || '  |  Dateien: ' || vm.File_Count
         FROM var_match vm
-        UNION ALL SELECT '' FROM var_match
+        UNION ALL SELECT 4, '' FROM var_match
         UNION ALL
-        SELECT 'Quelle: ' || vm.Source_Reliability
+        SELECT 5, 'Quelle: ' || vm.Source_Reliability
             || CASE WHEN vm.Has_Spaces THEN '  |  Leerzeichen im Namen' ELSE '' END
         FROM var_match vm
         UNION ALL
-        SELECT 'Dateien: ' || array_to_string(vm.Files, ', ') FROM var_match vm
-        UNION ALL SELECT '' FROM var_match
-        UNION ALL SELECT '---' FROM var_match
-        UNION ALL SELECT '' FROM var_match
+        SELECT 6, 'Dateien: ' || array_to_string(vm.Files, ', ') FROM var_match vm
+        UNION ALL SELECT 7, '' FROM var_match
+        UNION ALL SELECT 8, '---' FROM var_match
+        UNION ALL SELECT 9, '' FROM var_match
     )
 ),
 set_section AS (
-    SELECT string_agg(line, chr(10)) as content FROM (
-        SELECT '## Zuweisungen (Set)' as line
-        UNION ALL SELECT ''
+    SELECT string_agg(line, chr(10) ORDER BY ord) as content FROM (
+        SELECT -1 AS ord, '## Zuweisungen (Set)' as line
+        UNION ALL SELECT 0, ''
         UNION ALL
         SELECT
+            u.ord,
             CASE u.Context_Type
                 WHEN 'script_step' THEN '  ' || u.Script_Name || ' [Schritt ' || u.Step_Index || ']'
                 WHEN 'layout_object' THEN '  Layout: ' || u.Context_Name
@@ -101,11 +105,12 @@ set_section AS (
     )
 ),
 read_section AS (
-    SELECT string_agg(line, chr(10)) as content FROM (
-        SELECT '## Lesezugriffe (Read)' as line
-        UNION ALL SELECT ''
+    SELECT string_agg(line, chr(10) ORDER BY ord) as content FROM (
+        SELECT -1 AS ord, '## Lesezugriffe (Read)' as line
+        UNION ALL SELECT 0, ''
         UNION ALL
         SELECT
+            u.ord,
             CASE u.Context_Type
                 WHEN 'script_step' THEN '  ' || u.Script_Name || ' [Schritt ' || u.Step_Index || ']'
                 WHEN 'calculation' THEN '  Feld: ' || u.Context_Name

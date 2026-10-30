@@ -1,8 +1,8 @@
 {
   "manifest_schema": "1.0",
-  "version": "0.9.15",
-  "generated_at": "2026-10-28T18:10:00.453Z",
-  "source_commit": "6879d027",
+  "version": "0.9.16",
+  "generated_at": "2026-10-30T19:35:04.119Z",
+  "source_commit": "3fb6d304",
   "components": {
     "rest_api": {
       "scheme": "A",
@@ -150,7 +150,7 @@
     }
   ],
   "engine_baseline": {
-    "duckdb_min": "1.5.6",
-    "webbed_min": "2.12.0"
+    "duckdb_min": "2.0.0",
+    "webbed_min": "2.13.0"
   }
 }

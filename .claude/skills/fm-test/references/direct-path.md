@@ -53,7 +53,7 @@ For each `members[]` entry of the chosen `test.json`:
 ## 3. Scope params → `SET VARIABLE`
 
 ```bash
-duckdb db/fm_catalog.duckdb \
+duckdb -readonly db/fm_catalog.duckdb \
   -c "SET VARIABLE file = 'MyDatabase'" \
   -c "SET VARIABLE scope_uuids = '<uuid1>,<uuid2>'" \
   -c ".mode markdown" \
@@ -106,7 +106,7 @@ The platform bundles read `ref.step_compat` / `ref.script_steps`. The API
 attaches the reference DB automatically; on the direct path attach it first:
 
 ```bash
-duckdb db/fm_catalog.duckdb \
+duckdb -readonly db/fm_catalog.duckdb \
   -c "ATTACH 'reference/fm_spec.duckdb' AS ref (READ_ONLY)" \
   -c "SET VARIABLE scope_uuids = '<uuid>'" -c "SET VARIABLE file = '<file>'" \
   -c ".read rest-api/templates/dashboards-custom/static-code-analysis/platform/platform_compat_server/data/summary.sql"
@@ -133,7 +133,7 @@ member needs BOTH since v7: its Server × OS cross-refinement reads
 `ref.runtime_os_matrix`):
 
 ```bash
-duckdb db/fm_catalog.duckdb \
+duckdb -readonly db/fm_catalog.duckdb \
   -c "ATTACH 'reference/fm_spec.duckdb' AS ref (READ_ONLY)" \
   -c "ATTACH 'reference/plugin_spec.duckdb' AS plugref (READ_ONLY)" \
   -c ".read rest-api/templates/dashboards-custom/static-code-analysis/platform/platform_compat_plugins_server/data/summary.sql"

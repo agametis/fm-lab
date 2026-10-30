@@ -1341,18 +1341,21 @@ async function executeOverview(ctx, p, cacheKey, dbg, enqueuedMs) {
  * `--`.
  */
 /**
- * Liest die persistierte Cluster-Run-Summary (`.fmlab/cluster_run.json`, von
- * cluster.sh je Lauf geschrieben) plus den „letzter Run"-
+ * Liest die persistierte Cluster-Run-Summary (`solutions/<id>/state/cluster_run.json`,
+ * von cluster.sh je Lauf geschrieben) der LÖSUNG DES REQUESTS plus den „letzter Run"-
  * Zeitstempel. Fehlt die Datei (noch nie geclustert / alter Stand) → `run:null`.
  * `last_run` bevorzugt `cluster_run.json.finished_at`, fällt sonst auf
  * `cluster.json.updated_at` (Config-für-Reuse) zurück. Best-effort, wirft nie.
  */
-function fmlabFilePath(name) {
-  // Per-Solution-State (solutions/<id>/state/); Fallback auf das alte flache
-  // .fmlab/ für unmigrierte Workspaces.
+function fmlabFilePath(name, solutionId) {
+  // Per-Solution-State (solutions/<id>/state/) der Request-Lösung (X-Solution /
+  // ?solution=), sonst der aktiven; Fallback auf das alte flache .fmlab/ nur für
+  // die aktive Lösung eines unmigrierten Workspaces.
   const solutions = require('../config/solutions');
-  const p = path.join(solutions.resolveStateDir(), name);
-  if (fs.existsSync(p)) return p;
+  const active = solutions.getActiveSolutionId();
+  const id = solutionId || active;
+  const p = path.join(solutions.stateDir(id), name);
+  if (fs.existsSync(p) || id !== active) return p;
   return path.join(settingsStore.resolveRepoRoot(), '.fmlab', name);
 }
 
@@ -1362,11 +1365,11 @@ function numOrNull(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-function readClusterRunSummary() {
+function readClusterRunSummary(solutionId) {
   let run = null;
   let lastRun = null;
   try {
-    const raw = JSON.parse(fs.readFileSync(fmlabFilePath('cluster_run.json'), 'utf-8'));
+    const raw = JSON.parse(fs.readFileSync(fmlabFilePath('cluster_run.json', solutionId), 'utf-8'));
     run = {
       n_nodes: numOrNull(raw.n_nodes),
       n_edges: numOrNull(raw.n_edges),
@@ -1380,7 +1383,7 @@ function readClusterRunSummary() {
   } catch { /* fehlend/ungültig → run bleibt null */ }
   if (!lastRun) {
     try {
-      const cfg = JSON.parse(fs.readFileSync(fmlabFilePath('cluster.json'), 'utf-8'));
+      const cfg = JSON.parse(fs.readFileSync(fmlabFilePath('cluster.json', solutionId), 'utf-8'));
       if (cfg.updated_at) lastRun = String(cfg.updated_at);
     } catch { /* fehlend → null */ }
   }
@@ -1389,7 +1392,7 @@ function readClusterRunSummary() {
 
 async function getCommunityStats(ctx) {
   const engine = await activeEngine(ctx);
-  const { run, lastRun } = readClusterRunSummary();
+  const { run, lastRun } = readClusterRunSummary(ctx && ctx.solution);
   if (!engine) {
     return {
       engine: '',

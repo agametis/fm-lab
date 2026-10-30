@@ -135,7 +135,7 @@ The catalog (`db/`), conversions and settings live in the cloned repo **on the h
 ### b) VS Code Dev Container (easy start)
 
 Open the repository in VS Code with the **Dev Containers** extension installed, select **“Reopen in Container”** → pick **`fm-lab`** or **`fm-lab + Claude Code`**. Everything starts automatically — bootstrap, both servers, and the browser opens the web client. In the Claude variant the egress firewall and a credentials preflight run on start, and you reach the agent through the **Claude Code for VS Code** extension — no terminal steps required.
-Recommended if you already work in VS Code.
+Recommended if you already work in VS Code. After a `git pull`, run **Dev Containers: Rebuild Container** instead of a plain reopen; if the container does not come up, see [Troubleshooting](docs/fm-lab/Wiki/Troubleshooting.md#dev-container-fails-to-reopen--dockerfile-with-features-not-found).
 
 ### c) Native (no Docker, macOS / Linux)
 
@@ -158,7 +158,7 @@ docker compose -f docker-compose.yml -f docker-compose.claude.yml up
 docker compose exec -it api claude  # sign in once; login then persists
 ```
 
-On first launch choose **“Claude account with subscription”** and complete the browser sign-in once — persisted in a named volume, so it survives restarts.
+On first launch choose **“Claude account with subscription”** and complete the browser sign-in once — persisted in a named volume, so it survives restarts. Started via `bash tools/fmlab.sh up --claude`, the sign-in page opens in your browser on its own; paste the code it shows at the `Paste code here` prompt. Started any other way, the sign-in URL wraps across terminal lines — see [Troubleshooting](docs/fm-lab/Wiki/Troubleshooting.md#claude-code-sign-in-in-the-terminal).
 
 The agent stack also grants an **opt-in egress firewall** (restricted allowlist applied automatically in the Dev Container).
 
@@ -167,7 +167,7 @@ Refer to [Installation](/docs/fm-lab/Wiki/Installation.md) for a more detailed d
 ## Prerequisites
 
 - **Docker (ways a / b):** only **[Docker](https://docs.docker.com/get-docker/)** on the host — everything else is in the image.
-- **Native (way c):** [DuckDB CLI](https://duckdb.org/docs/installation/) ≥ 1.5.6 + the **webbed** community extension (the XML reader; `init.sh` installs it when missing); Node.js ≥ 20, npm ≥ 10.
+- **Native (way c):** [DuckDB CLI](https://duckdb.org/docs/installation/) ≥ 1.5.6 + the **webbed** community extension (the XML reader; `init.sh` installs it when missing); Node.js ≥ 22, npm ≥ 10.
 - **AI agent (optional):** [Claude Code](https://docs.claude.com/en/docs/claude-code) (bundled in the Docker agent variant) + the [duckdb-skills](https://github.com/duckdb/duckdb-skills) plugin (recommended).
 - **XML export:** FileMaker Pro for the SaXML export — SaXML v2.1.0.0+ (FileMaker 19–22) and v2.3.0.0 (FileMaker 26), each read under its own import profile. Later SaXML versions may require parser adjustments.
 
@@ -229,6 +229,7 @@ The project has grown along a clear arc — from a solid foundation toward an in
 - **v0.9.7 – v0.9.8** · _Tests_ — providing structured tools for users and agents to apply static code analysis at different scopes. With a growing collection of rules and dashboards.
 - **v0.9.9 – v0.9.11** · _Closing gaps + flow analysis_ — calculations, script triggers, conditional-formatting rules, merge fields, and layout variables join the object catalog. A new Trace view and a research skill for enhanced analysis.
 - **v0.9.12** · _FileMaker 26 support_ — across the whole stack: XML import, object catalog, web client, FileMaker reference, and code generation.
+- **v0.9.15 – v0.9.16** · _Version updates + change history_ — DuckDB 2.0 and Node.js 22. The catalog imports the last change of every object, shown in the web client dashboards.
 
 - More details in [`CHANGELOG.md`](CHANGELOG.md) — release history
 

@@ -1325,6 +1325,18 @@ components:
                   type: string
                 duckdb_version:
                   type: string
+                  nullable: true
+                  description: DuckDB bundled with the REST API (@duckdb/node-api) — reads the catalogs
+                duckdb_cli:
+                  type: object
+                  nullable: true
+                  description: DuckDB CLI the XML import uses (same lookup as the converter); null when none is found
+                  properties:
+                    path:
+                      type: string
+                    version:
+                      type: string
+                      nullable: true
                 node_version:
                   type: string
                 uptime_seconds:

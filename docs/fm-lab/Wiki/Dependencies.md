@@ -104,12 +104,15 @@ The tested reference setup (checked by `tools/init.sh` at first run). *Required*
 
 | Component | Required | Recommended |
 |---|---|---|
-| DuckDB CLI | any | 1.5.6 |
-| webbed extension | loadable | 2.12.0 |
-| Node.js | 20 | a supported release line at its latest security release: 22.x ≥ 22.23.4, 24.x ≥ 24.22.1, 26.x ≥ 26.12.1 (security release of 2026-10-21) |
+| DuckDB CLI | any — supported from 1.5.6, below that `init.sh` warns | 2.0.x — between 1.5.6 and 2.0 `init.sh` shows an update hint with the standard installer command |
+| webbed extension | loadable | 2.13.0 |
+| DuckDB of the REST API (`@duckdb/node-api`) | bundled | 2.0.0 — reads catalogs of every DuckDB CLI from 1.0 on |
+| Node.js | 22 | the Node.js of the Docker image (22.23.4) — on a supported line below its major `init.sh` shows a hint; in any case a supported release line at its latest security release: 22.x ≥ 22.23.4, 24.x ≥ 24.22.1, 26.x ≥ 26.12.1 (security release of 2026-10-21) |
 | npm | 10 | — |
 | Python 3 | — | optional (code generation, Leiden clustering) |
 
-Node.js 20.x and the odd-numbered lines (23.x, 25.x) are end-of-life and receive no security fixes; `init.sh` recommends switching to a supported line.
+Node.js 20.x is end-of-life and stops the setup. The odd-numbered lines (23.x, 25.x) are end-of-life as well and receive no security fixes; `init.sh` recommends switching to a supported line. The recommended Node.js — the one in the Docker image — is recorded once, as `tested_baseline.node_recommended_version` in `ingestion/version_check.json`: `tools/build-container-env.mjs` writes it into the image's Dockerfile, `init.sh` reads it. The REST API reads the MBS documentation index with the SQLite module built into Node.js from 22.13 on (`node:sqlite`) — no native add-on, so a switch between Node.js versions needs no `npm rebuild`.
+
+Every DuckDB file fm-lab creates — catalogs, import caches, the annotations database — is written in storage version 64 (`tested_baseline.storage_compatibility_version` in `ingestion/version_check.json`). DuckDB 1.x CLIs can therefore open files written under DuckDB 2.0, and a switch between the two needs no re-import.
 
 See [Installation](Installation.md) for setup instructions.

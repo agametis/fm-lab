@@ -29,5 +29,5 @@ WITH scored AS (
 SELECT uuid, name, file, step_count
 FROM scored
 WHERE step_count > 0
-ORDER BY step_count DESC
+ORDER BY step_count DESC, name, file, uuid   -- tie-breakers: stable rows at the LIMIT
 LIMIT CAST(COALESCE(getvariable('limit'), '100') AS INTEGER);

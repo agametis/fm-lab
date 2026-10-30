@@ -19,6 +19,31 @@ match and makes Claude Code prompt for approval on every single query. Quoting i
 `-c "…"` is fine: a `;` or `(` inside the SQL string is **not** a shell separator and does
 **not** cause a prompt — so the bare form covers arbitrary SQL.
 
+**Reads always carry `-readonly`:** `duckdb -readonly db/fm_catalog.duckdb -c "…"` (the
+first token stays `duckdb`, so the allow-list still matches). A read-write open of a missing
+path — a typo, or a `db/` symlink whose bundle is gone — silently **creates** an empty
+database file; with DuckDB 2.0 that file even gets a storage format no 1.x CLI can open. A
+read-write open also takes the exclusive lock, so no other process can open the catalog
+meanwhile — not even a second read-only session. A read-only open fails loudly on a missing
+file, and read-only sessions share their lock with each other.
+Drop `-readonly` only for commands that write on purpose (pipeline phases, the naming step of
+`fm-graph-cluster`).
+
+**Agent output mode (DuckDB 2.0+):** in a Claude Code session (`AI_AGENT` is set) a call
+without an output-mode flag prints compact markdown tables with a footer (row count, an
+order-independent hash of the result), JSON errors and a start line on stderr — and
+**truncates**: a result above 1,000 rows **or 10,000 bytes** shows only its first and last 20
+rows (`… N rows omitted …`), and every cell is cut at 500 characters (`…(+N chars)`). 10,000
+bytes is roughly 150 rows: a where-used list of a busy field or the dump of a long script
+already exceeds it, and so do many custom-function formulas. For analysis queries keep result
+sets small (aggregate, `LIMIT`, filter). When you need every row or a long text value (a
+formula, a script dump, `Step_XML`), pass an explicit mode such as `-markdown`, `-csv`,
+`-json` or `-line`: it switches the agent mode off and works with every DuckDB version. The
+2.0 dot commands `.maxrows -1`, `.maxbytes 0` and `.maxcellwidth 0` lift the limits too (rows
+need both of the first two), but DuckDB 1.x rejects `.maxbytes`/`.maxcellwidth` and then runs
+nothing. The fm-lab shell tools and the REST API pin `DUCKDB_AGENT_MODE=0` themselves; DuckDB
+1.x has no agent mode.
+
 If `which duckdb` fails (some native setups do not inherit the user's shell PATH), the fix is
 **PATH, not an absolute-path prefix**: `tools/init.sh` resolves the binary once and writes its
 directory into `.claude/settings.json → env.PATH`, so Claude Code always finds `duckdb` and the

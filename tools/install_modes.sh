@@ -30,6 +30,13 @@
 #   question as YES (the caller of the installer is responsible for confirming
 #   in advance; the frontend SSE bridge already ran "--check" first).
 
+# DuckDB CLI agent mode (2.0+) off for every sourcing script: with an AI-agent
+# variable set (AI_AGENT) and stdout not a terminal, a duckdb call without an
+# output-mode flag prints markdown tables and JSON errors and truncates long
+# results. The installers and the converter parse plain CLI output. DuckDB 1.x
+# ignores the variable.
+export DUCKDB_AGENT_MODE=0
+
 # ---------------------------------------------------------------------------
 # Mode parsing
 # ---------------------------------------------------------------------------
@@ -130,21 +137,15 @@ _fmlab_div1() {
     LC_ALL=C awk -v n="${1:-0}" -v d="${2:-1}" 'BEGIN { printf "%.1f", (d == 0 ? 0 : n / d) }'
 }
 
-# Prints the DuckDB CLI path — PATH first, then the common install locations —
-# and returns 1 when none is found.
+# Prints the DuckDB CLI path — PATH first, then the installer's locations
+# (fmlab_find_duckdb in tools/lib/duckdb_binding.sh) — and returns 1 when none
+# is found.
 _fmlab_duckdb_bin() {
-    local c
-    if c=$(command -v duckdb 2>/dev/null) && [ -n "$c" ]; then
-        printf '%s\n' "$c"
-        return 0
+    if ! command -v fmlab_find_duckdb >/dev/null 2>&1; then
+        # shellcheck source=lib/duckdb_binding.sh
+        . "$(dirname "${BASH_SOURCE[0]}")/lib/duckdb_binding.sh" 2>/dev/null || return 1
     fi
-    for c in "$HOME/.duckdb/cli/latest/duckdb" /opt/homebrew/bin/duckdb /usr/local/bin/duckdb; do
-        if [ -x "$c" ]; then
-            printf '%s\n' "$c"
-            return 0
-        fi
-    done
-    return 1
+    fmlab_find_duckdb
 }
 
 # ---------------------------------------------------------------------------

@@ -414,7 +414,10 @@
       "colVersion": "版本"
     },
     "versions": {
-      "fmSpec": "fm-spec"
+      "fmSpec": "fm-spec",
+      "duckdb": "DuckDB",
+      "duckdbCli": "DuckDB CLI",
+      "duckdbCliMissing": "未找到"
     },
     "solutions": {
       "heading": "解决方案",

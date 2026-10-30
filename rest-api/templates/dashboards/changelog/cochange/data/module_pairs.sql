@@ -252,7 +252,9 @@ coupled AS (
     SELECT pr.key_a, pr.key_b,
            any_value(pr.name_a) AS name_a,
            any_value(pr.name_b) AS name_b,
-           sum(pr.weight)       AS weight,
+           -- rounded: float sums differ in the last bits between runs (parallel
+           -- aggregation) and would swap the rank of visually equal weights
+           round(sum(pr.weight), 9) AS weight,
            sum(pr.pairs)        AS pairs,
            count(*)             AS sessions
     FROM pair_rows pr

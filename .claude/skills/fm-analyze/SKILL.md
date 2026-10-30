@@ -35,7 +35,7 @@ The two skills are not mutually exclusive: fm-analyze internally uses many of th
 
 ## Ground rules
 
-- **Database**: read-only against the master catalog `db/fm_catalog.duckdb` via a plain `duckdb db/fm_catalog.duckdb -c "<SQL>"` (Bash). With an active session pin (`FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2) use the literal bundle path `duckdb solutions/<id>/db/fm_catalog.duckdb` instead (resolve once via `tools/solution.sh current`). Invocation rules, DuckDB-binary resolution and the "never read the `rest-api/db` copy" caveat are in CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`) — don't restate them here, and never install DuckDB.
+- **Database**: read-only against the master catalog `db/fm_catalog.duckdb` via a plain `duckdb -readonly db/fm_catalog.duckdb -c "<SQL>"` (Bash). With an active session pin (`FMLAB_SOLUTION`/`FMLAB_CONTEXT`, CLAUDE.md §2) use the literal bundle path `duckdb -readonly solutions/<id>/db/fm_catalog.duckdb` instead (resolve once via `tools/solution.sh current`). Invocation rules, DuckDB-binary resolution and the "never read the `rest-api/db` copy" caveat are in CLAUDE.md §2 (binary not on PATH → `docs/agents/tooling.md`) — don't restate them here, and never install DuckDB.
 - **SQL identifiers**: English DDL names — never translate table/column names of the catalog
 - **Read-only**: Never UPDATE/INSERT/DELETE
 - **Before every analysis**: Uniquely identify the object (see Step 1)
@@ -103,7 +103,7 @@ across clones. Only after unique identification does the analysis proceed.
 
 ### Step 2 — Load core data of the object
 
-Depending on Object_Type, fetch the type-specific base data — the shared SQL templates in [`_shared/scripts/type_queries.sql`](../_shared/scripts/type_queries.sql) (query IDs S1/F1/L1…). Usually this is sufficient:
+Depending on Object_Type, fetch the type-specific base data — the shared SQL templates in [`_shared/scripts/type_queries.sql`](../_shared/scripts/type_queries.sql) (query IDs S1/F1/L1…), run as `duckdb -readonly -markdown db/fm_catalog.duckdb -c "…"` so long scripts and formulas arrive complete (without an output mode DuckDB 2.0 cuts results above 10,000 bytes and cells above 500 characters, CLAUDE.md §2). Usually this is sufficient:
 
 - **Script**: ScriptCatalog + StepsForScripts JOIN DDR_ScriptSteps (Step_Text preferred)
 - **Field**: FieldsForTables (incl. Field_Comment, Calculation_Text, AE_Calc_Text)

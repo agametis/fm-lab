@@ -47,6 +47,18 @@
   "recent_changes_table.props.columns[2].label": "对象",
   "recent_changes_table.props.columns[3].label": "文件",
   "recent_changes_table.props.columns[4].label": "人员",
-  "recent_changes_all.props.label": "所有更改"
+  "recent_changes_all.props.label": "所有更改",
+  "recent_change_trend.props.label": "每月的单项更改（截至数据状态的最近 12 个月）",
+  "recent_view_chips.props.options[0].label": "单项更改",
+  "recent_view_chips.props.options[1].label": "工作会话",
+  "recent_sessions_table.props.columns[0].label": "开始",
+  "recent_sessions_table.props.columns[1].label": "结束",
+  "recent_sessions_table.props.columns[2].label": "分钟",
+  "recent_sessions_table.props.columns[3].label": "人员",
+  "recent_sessions_table.props.columns[4].label": "更改",
+  "recent_sessions_table.props.columns[5].label": "文件",
+  "recent_sessions_table.props.columns[6].label": "类型",
+  "recent_sessions_table.props.empty.message": "暂无工作会话。",
+  "recent_sessions_all.props.label": "所有工作会话"
  }
 }

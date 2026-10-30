@@ -414,7 +414,10 @@
       "colVersion": "버전"
     },
     "versions": {
-      "fmSpec": "fm-spec"
+      "fmSpec": "fm-spec",
+      "duckdb": "DuckDB",
+      "duckdbCli": "DuckDB CLI",
+      "duckdbCliMissing": "찾을 수 없음"
     },
     "solutions": {
       "heading": "솔루션",

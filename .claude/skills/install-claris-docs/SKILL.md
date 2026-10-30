@@ -193,7 +193,7 @@ If present, this skill reads the reference DB read-only for the function/ScriptS
 
 ## Prerequisites
 
-- **Node.js** (>= 20, the fm-lab runtime — the crawler is a Node script; no Python needed)
+- **Node.js** (>= 22, the fm-lab runtime — the crawler is a Node script; no Python needed)
 - **curl** (version checks and all downloads — honours `HTTPS_PROXY` / `NO_PROXY`; pre-installed)
 - **Internet connection** to `help.claris.com`
 - Write permissions on `docs/claris-help/`

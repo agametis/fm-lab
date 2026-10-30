@@ -49,5 +49,5 @@ SELECT
     a.usage_count                           AS usage_count
 FROM agg a
 WHERE a.usage_count > 0
-ORDER BY a.usage_count DESC
+ORDER BY a.usage_count DESC, a.name, a.File_Name, a.scope   -- tie-breakers: stable rows at the LIMIT
 LIMIT CAST(COALESCE(getvariable('limit'), '100') AS INTEGER);

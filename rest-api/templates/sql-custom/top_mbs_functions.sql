@@ -40,5 +40,5 @@ WHERE oc.Object_Type = 'PluginFunction'
   AND oc.Object_Name LIKE 'MBS:%'
 GROUP BY ALL
 HAVING COUNT(c.Target_UUID) > 0
-ORDER BY call_count DESC
+ORDER BY call_count DESC, name, uuid   -- tie-breakers: stable rows at the LIMIT
 LIMIT CAST(COALESCE(getvariable('limit'), '100') AS INTEGER);

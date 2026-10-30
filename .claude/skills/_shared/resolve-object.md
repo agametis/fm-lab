@@ -16,7 +16,7 @@ Resolution MUST produce all four fields before the calling skill continues:
 | `File_Name` | ObjectCatalog — **mandatory**: clone/modular files share the same Object_UUID, only the File_Name makes the target unambiguous |
 
 Parameterized lookup queries live in `scripts/resolve_object.sql` (substitute the
-`<PLACEHOLDER>` tokens, run each statement as a plain `duckdb db/fm_catalog.duckdb -c "…"` command).
+`<PLACEHOLDER>` tokens, run each statement as a plain `duckdb -readonly db/fm_catalog.duckdb -c "…"` command).
 
 ## Priority order
 

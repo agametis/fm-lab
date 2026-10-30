@@ -2,6 +2,7 @@ const { DuckDBInstance } = require('@duckdb/node-api');
 const path = require('path');
 const fs = require('fs');
 const environment = require('./environment');
+const { storageOptions } = require('./duckdb-storage');
 
 /**
  * Sidecar-DB für User-Annotationen (Noise-Filter & semantische Anreicherung).
@@ -108,7 +109,9 @@ async function openEntry(solutionId) {
   const dir = path.dirname(p);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  const instance = await DuckDBInstance.create(p, { access_mode: 'READ_WRITE' });
+  // storageOptions(): eine neu angelegte Sidecar-DB muss auch eine CLI 1.x lesen
+  // können (cluster_state.sh) — siehe duckdb-storage.js.
+  const instance = await DuckDBInstance.create(p, { access_mode: 'READ_WRITE', ...storageOptions() });
   const connection = await instance.connect();
   for (const ddl of SCHEMA) {
     await (await connection.prepare(ddl)).run();

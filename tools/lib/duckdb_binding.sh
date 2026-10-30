@@ -14,6 +14,20 @@
 #     FMLAB_DUCKDB_BINDING_VER  e.g. 1.5.6
 #   return 1 otherwise — also when either version is unreadable (never a false alarm).
 #
+# fmlab_find_duckdb echoes the DuckDB CLI to use and returns 1 when there is none:
+# PATH first, then the installer's ~/.duckdb/cli/latest, then its newest version
+# folder ~/.duckdb/cli/<x.y.z> (a pinned install via DUCKDB_VERSION=… leaves `latest`
+# alone and may be the only install), then Homebrew and /usr/local. The installer
+# writes no PATH entry into shell profiles, so terminal runs often land in the
+# fallbacks. Does not need PROJECT_ROOT.
+#
+# fmlab_duckdb_storage_version echoes the storage format fm-lab writes for every
+# DuckDB file it creates: FMLAB_DUCKDB_STORAGE_VERSION if set, else
+# ingestion/version_check.json → tested_baseline.storage_compatibility_version,
+# else v1.0.0 (storage 64, readable by every DuckDB ≥ 1.0). Callers pass it as the
+# CLI start flag `-storage-version` — a SET inside the session comes too late for
+# the database the CLI opens at start. Existing files keep their format.
+#
 # bash-3.2 compatible (macOS system bash): no bash-4+ features.
 
 # First dotted version in a string: "v1.5.6 (Variegata) 069cc9f9b5" → 1.5.6,
@@ -53,5 +67,33 @@ fmlab_duckdb_binding_mismatch() {
         FMLAB_DUCKDB_BINDING_VER="$binding"
         return 0
     fi
+    return 1
+}
+
+fmlab_duckdb_storage_version() {
+    local v="${FMLAB_DUCKDB_STORAGE_VERSION:-}" f="$PROJECT_ROOT/ingestion/version_check.json"
+    if [ -z "$v" ] && [ -f "$f" ]; then
+        v=$(sed -n 's/.*"storage_compatibility_version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$f" | head -1)
+    fi
+    printf '%s' "${v:-v1.0.0}"
+}
+
+fmlab_find_duckdb() {
+    local c v dir="${HOME:-/nonexistent}/.duckdb/cli"
+    if c=$(command -v duckdb 2>/dev/null) && [ -n "$c" ]; then
+        printf '%s\n' "$c"; return 0
+    fi
+    if [ -x "$dir/latest/duckdb" ]; then
+        printf '%s\n' "$dir/latest/duckdb"; return 0
+    fi
+    v=$(ls -1 "$dir" 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' \
+        | sort -t. -k1,1n -k2,2n -k3,3n \
+        | while read -r d; do [ -x "$dir/$d/duckdb" ] && echo "$d"; done | tail -1)
+    if [ -n "$v" ]; then
+        printf '%s\n' "$dir/$v/duckdb"; return 0
+    fi
+    for c in /opt/homebrew/bin/duckdb /usr/local/bin/duckdb; do
+        if [ -x "$c" ]; then printf '%s\n' "$c"; return 0; fi
+    done
     return 1
 }

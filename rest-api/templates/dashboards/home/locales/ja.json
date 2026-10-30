@@ -47,6 +47,18 @@
   "recent_changes_table.props.columns[2].label": "オブジェクト",
   "recent_changes_table.props.columns[3].label": "ファイル",
   "recent_changes_table.props.columns[4].label": "人物",
-  "recent_changes_all.props.label": "すべての変更"
+  "recent_changes_all.props.label": "すべての変更",
+  "recent_change_trend.props.label": "月ごとの個別変更 (データ時点までの直近 12 か月)",
+  "recent_view_chips.props.options[0].label": "個別の変更",
+  "recent_view_chips.props.options[1].label": "作業セッション",
+  "recent_sessions_table.props.columns[0].label": "開始",
+  "recent_sessions_table.props.columns[1].label": "終了",
+  "recent_sessions_table.props.columns[2].label": "分",
+  "recent_sessions_table.props.columns[3].label": "人物",
+  "recent_sessions_table.props.columns[4].label": "変更",
+  "recent_sessions_table.props.columns[5].label": "ファイル",
+  "recent_sessions_table.props.columns[6].label": "タイプ",
+  "recent_sessions_table.props.empty.message": "作業セッションはまだありません。",
+  "recent_sessions_all.props.label": "すべての作業セッション"
  }
 }

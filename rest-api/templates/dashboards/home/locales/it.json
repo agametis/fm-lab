@@ -47,6 +47,18 @@
   "recent_changes_table.props.columns[2].label": "Oggetto",
   "recent_changes_table.props.columns[3].label": "File",
   "recent_changes_table.props.columns[4].label": "Persona",
-  "recent_changes_all.props.label": "Tutte le modifiche"
+  "recent_changes_all.props.label": "Tutte le modifiche",
+  "recent_change_trend.props.label": "Modifiche singole al mese, ultimi 12 mesi fino allo stato dei dati",
+  "recent_view_chips.props.options[0].label": "Modifiche singole",
+  "recent_view_chips.props.options[1].label": "Sessioni di lavoro",
+  "recent_sessions_table.props.columns[0].label": "Inizio",
+  "recent_sessions_table.props.columns[1].label": "Fine",
+  "recent_sessions_table.props.columns[2].label": "Minuti",
+  "recent_sessions_table.props.columns[3].label": "Persona",
+  "recent_sessions_table.props.columns[4].label": "Modifiche",
+  "recent_sessions_table.props.columns[5].label": "File",
+  "recent_sessions_table.props.columns[6].label": "Tipi",
+  "recent_sessions_table.props.empty.message": "Ancora nessuna sessione di lavoro.",
+  "recent_sessions_all.props.label": "Tutte le sessioni di lavoro"
  }
 }

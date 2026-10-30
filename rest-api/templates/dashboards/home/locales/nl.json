@@ -47,6 +47,18 @@
   "recent_changes_table.props.columns[2].label": "Object",
   "recent_changes_table.props.columns[3].label": "Bestand",
   "recent_changes_table.props.columns[4].label": "Persoon",
-  "recent_changes_all.props.label": "Alle wijzigingen"
+  "recent_changes_all.props.label": "Alle wijzigingen",
+  "recent_change_trend.props.label": "Afzonderlijke wijzigingen per maand, laatste 12 maanden tot de gegevensstand",
+  "recent_view_chips.props.options[0].label": "Afzonderlijke wijzigingen",
+  "recent_view_chips.props.options[1].label": "Werksessies",
+  "recent_sessions_table.props.columns[0].label": "Begin",
+  "recent_sessions_table.props.columns[1].label": "Einde",
+  "recent_sessions_table.props.columns[2].label": "Minuten",
+  "recent_sessions_table.props.columns[3].label": "Persoon",
+  "recent_sessions_table.props.columns[4].label": "Wijzigingen",
+  "recent_sessions_table.props.columns[5].label": "Bestanden",
+  "recent_sessions_table.props.columns[6].label": "Typen",
+  "recent_sessions_table.props.empty.message": "Nog geen werksessies.",
+  "recent_sessions_all.props.label": "Alle werksessies"
  }
 }

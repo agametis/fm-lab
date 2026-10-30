@@ -7,9 +7,10 @@ const fs = require('fs');
  * gebündelte DuckDB — unabhängig von der DuckDB-CLI, mit der der Converter die
  * Datei geschrieben hat. Das Storage-Format ist nur rückwärts lesbar: eine von
  * einer neueren CLI angelegte Datei (z. B. DuckDB 2.0 → Storage-Version 69)
- * kann eine ältere Bindung (1.5.x liest 64–68) nicht öffnen. DuckDB quittiert
- * das beim Öffnen mit „Trying to read a database file with version number …",
- * was bisher als roher IO-Fehler bzw. als Startabbruch der API endete.
+ * kann eine ältere Bindung (1.5.x liest 64–68, 2.0 liest 64–69) nicht öffnen.
+ * DuckDB quittiert das beim Öffnen mit „Trying to read a database file with
+ * [storage] version number …", was bisher als roher IO-Fehler bzw. als
+ * Startabbruch der API endete.
  *
  * Der Klassifikator veredelt genau diesen Fehler zu STORAGE_VERSION_MISMATCH:
  * Storage-Version und Schreiber-Version stammen aus dem Datei-Header, der
@@ -18,11 +19,12 @@ const fs = require('fs');
  * Kontrakt wie SCHEMA_DRIFT), damit das Frontend sie sprachunabhängig erkennt.
  */
 
-// DuckDB emittiert die Meldung locale-unabhängig auf Englisch. Zwei Formen:
-//   „… with version number 69, but we can only read versions between 64 and 68."
-//   „… with version number 39, but we can only read version 64."   (ältere Builds)
+// DuckDB emittiert die Meldung locale-unabhängig auf Englisch. Formen:
+//   1.x: „… with version number 69, but we can only read versions between 64 and 68."
+//   2.0: „… with storage version number 70, but we can only read storage versions between 64 and 69."
+//   alt: „… with version number 39, but we can only read version 64."
 const STORAGE_MISMATCH_RE =
-  /Trying to read a database file with version number (\d+), but we can only read versions? (?:between (\d+) and (\d+)|(\d+))/i;
+  /Trying to read a database file with (?:storage )?version number (\d+), but we can only read (?:storage )?versions? (?:between (\d+) and (\d+)|(\d+))/i;
 
 // Layout des Haupt-Headers (Block 0): 8 Byte Prüfsumme, 4 Byte Magic „DUCK",
 // 8 Byte Storage-Version (LE), 4 × 8 Byte Flags, 32 Byte Schreiber-Version
@@ -31,14 +33,43 @@ const MAGIC_OFFSET = 8;
 const VERSION_OFFSET = 12;
 const CREATOR_OFFSET = 52;
 const CREATOR_LENGTH = 32;
-const HEADER_BYTES = CREATOR_OFFSET + CREATOR_LENGTH;
+
+// Ab DuckDB 2.0 trägt der Haupt-Header bei neuen Formaten (≥ 69) den Platzhalter
+// 999; die echte Storage-Version steht dann im aktiven der beiden Datenbank-Header
+// (Block 1 bei 4096, Block 2 bei 8192; aktiv = höhere Iteration bei +8) im Feld
+// +56. DuckDB 1.5 und 2.0 lesen sie dort ebenso. Bei Dateien mit echter Version
+// im Haupt-Header bedeutet dasselbe Feld etwas anderes (Serialisierungsstufe) —
+// es wird nur hinter dem Platzhalter ausgewertet.
+const EXTENDED_VERSION_MARKER = 999;
+const DB_HEADER_OFFSETS = [4096, 8192];
+const DB_HEADER_ITERATION = 8;
+const DB_HEADER_STORAGE_VERSION = 56;
+const HEADER_BYTES = DB_HEADER_OFFSETS[1] + DB_HEADER_STORAGE_VERSION + 8;
 
 /**
- * Storage-Version und Schreiber-Version aus dem Datei-Header lesen.
+ * Storage-Version hinter dem 999-Platzhalter: Feld +56 des aktiven
+ * Datenbank-Headers. null, wenn die Datei zu kurz ist.
+ */
+function readExtendedStorageVersion(buf, read) {
+  let best = null;
+  for (const base of DB_HEADER_OFFSETS) {
+    if (read < base + DB_HEADER_STORAGE_VERSION + 8) continue;
+    const iteration = buf.readBigUInt64LE(base + DB_HEADER_ITERATION);
+    if (!best || iteration > best.iteration) {
+      best = { iteration, version: Number(buf.readBigUInt64LE(base + DB_HEADER_STORAGE_VERSION)) };
+    }
+  }
+  return best ? best.version : null;
+}
+
+/**
+ * Storage-Version und Schreiber-Version aus dem Datei-Header lesen. Den
+ * 999-Platzhalter neuer Formate (DuckDB 2.0+) löst die Funktion auf die echte
+ * Version aus dem Datenbank-Header auf.
  * Nie werfen: fehlende/fremde Datei → null.
  *
  * @param {string} dbPath
- * @returns {{ storageVersion: number, createdBy: string|null }|null}
+ * @returns {{ storageVersion: number|null, createdBy: string|null }|null}
  */
 function readStorageHeader(dbPath) {
   let fd = null;
@@ -46,9 +77,12 @@ function readStorageHeader(dbPath) {
     fd = fs.openSync(dbPath, 'r');
     const buf = Buffer.alloc(HEADER_BYTES);
     const read = fs.readSync(fd, buf, 0, HEADER_BYTES, 0);
-    if (read < HEADER_BYTES) return null;
+    if (read < CREATOR_OFFSET + CREATOR_LENGTH) return null;
     if (buf.toString('latin1', MAGIC_OFFSET, MAGIC_OFFSET + 4) !== 'DUCK') return null;
-    const storageVersion = Number(buf.readBigUInt64LE(VERSION_OFFSET));
+    let storageVersion = Number(buf.readBigUInt64LE(VERSION_OFFSET));
+    if (storageVersion === EXTENDED_VERSION_MARKER) {
+      storageVersion = readExtendedStorageVersion(buf, read);
+    }
     const raw = buf.toString('latin1', CREATOR_OFFSET, CREATOR_OFFSET + CREATOR_LENGTH);
     const createdBy = raw.split('\0')[0].trim();
     return {

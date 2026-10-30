@@ -192,9 +192,9 @@ async function start() {
     await require('./config/annotations-db').initialize();
 
     // Load `marked` (ESM-only) before serving any request. Done here — not via a
-    // top-level require in docs-content.js — because require(ESM) throws
-    // ERR_REQUIRE_ESM on Node 20 (the project's supported floor). Awaiting it here
-    // guarantees the synchronous docs render helpers have marked ready.
+    // top-level require in docs-content.js — so the module loads through import()
+    // independent of require(ESM) support. Awaiting it here guarantees the
+    // synchronous docs render helpers have marked ready.
     await require('./services/docs-content').initMarked();
 
     // Load the last persisted fmIDE scan into memory (no DB query). The scan

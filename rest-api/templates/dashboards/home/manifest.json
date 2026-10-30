@@ -1,6 +1,6 @@
 {
   "id": "home",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "title": "Project overview",
   "description": "Landing page with key metrics, file overview and navigation to dashboards, custom queries and docs.",
   "author": "fm-lab core",
@@ -11,7 +11,10 @@
     { "id": "project_summary",       "source": "bundle:data/project_summary.sql" },
     { "id": "object_counts",         "source": "bundle:data/object_counts.sql" },
     { "id": "files_overview",        "source": "bundle:data/files_overview.sql" },
+    { "id": "recent_state",          "source": "bundle:data/recent_state.sql" },
     { "id": "recent_changes",        "source": "bundle:data/recent_changes.sql" },
+    { "id": "recent_sessions",       "source": "bundle:data/recent_sessions.sql" },
+    { "id": "change_trend",          "source": "bundle:data/change_trend.sql" },
     { "id": "xml_directory_listing", "source": "builtin:xml_directory_listing" },
     { "id": "xml_directory_meta",    "source": "builtin:xml_directory_meta" },
     { "id": "cluster_count",         "source": "builtin:cluster_count" },
@@ -23,7 +26,9 @@
   ],
   "params": [
     { "name": "file", "type": "string", "required": false,
-      "description": "Optional file filter — derived from the app-level filter." }
+      "description": "Optional file filter — derived from the app-level filter." },
+    { "name": "recent", "type": "string", "required": false,
+      "description": "View of the card \"Recently changed\": objects (single changes, default) or sessions (work sessions)." }
   ],
   "permissions": { "read_only": true, "allow_navigation": true }
 }

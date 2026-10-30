@@ -9,7 +9,7 @@
 # standalone per-component images + compose `profiles` are future work.
 #
 # Runtime overrides (env, all optional — sane defaults baked in):
-#   FMLAB_DUCKDB_VERSION   DuckDB CLI / webbed version baked into the image (1.5.6)
+#   FMLAB_DUCKDB_VERSION   DuckDB CLI / webbed version baked into the image (default: ingestion/version_check.json)
 #   FMLAB_DUCKDB_THREADS   DuckDB thread cap (default 4; raise on big hosts)
 #   FMLAB_MEM_LIMIT        per-container RAM cap for api+ingestion (default 8g)
 # Put them in a `.env` next to this file or `export` them before `docker compose up`.
@@ -23,7 +23,7 @@ x-fmlab-build: &fmlab-build
   dockerfile: Dockerfile
   target: base
   args:
-    DUCKDB_VERSION: "${FMLAB_DUCKDB_VERSION:-1.5.6}"
+    DUCKDB_VERSION: "${FMLAB_DUCKDB_VERSION:-2.0.0}"
 
 # Repo arrives as a bind mount (NOT copied into the image) so `git pull` keeps the
 # code current without a rebuild. node_modules are platform-

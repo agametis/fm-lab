@@ -152,6 +152,11 @@ function SearchView() {
   const prevLabelRef = useRef('');
   const searchParamsString = searchParams.toString();
 
+  // URL-Params, die das Home-Dashboard selbst auswertet (Ansicht der Karte
+  // „Zuletzt geändert“: Einzeländerungen | Arbeitssitzungen).
+  const recentView = searchParams.get('recent') || '';
+  const homeParams = useMemo(() => (recentView ? { recent: recentView } : undefined), [recentView]);
+
   // URL → State
   useEffect(() => {
     const qName = searchParams.get('q') || '';
@@ -202,6 +207,8 @@ function SearchView() {
       // andere Konsumenten lesen sie direkt aus der URL.
       const pseudoCategory = searchParams.get('category');
       if (pseudoCategory) params.set('category', pseudoCategory);
+      // Umschalter der Home-Karte „Zuletzt geändert“ (FilterChips → ?recent=).
+      if (recentView) params.set('recent', recentView);
     }
     const nextString = params.toString();
     // ?label=... ist ein externer Dekorations-Param (kommt aus Dashboard-Navigation),
@@ -546,7 +553,7 @@ function SearchView() {
 
       {/* Search mode: Default-Dashboard — sichtbar wenn KEINE Filter aktiv */}
       {!isTreeMode && !debouncedSearchName && !selectedFile && !objectType && (
-        <DashboardHost id="home" />
+        <DashboardHost id="home" params={homeParams} />
       )}
 
       {/* Search mode: Virtual list — nur wenn Filter aktiv und kein Spezial-Typ */}

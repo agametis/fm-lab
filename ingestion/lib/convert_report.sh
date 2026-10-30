@@ -115,7 +115,7 @@ P1_OBJECT_TABLES=(
 # value itself contains commas (e.g. dynamically built SQL expressions), which the CSV
 # writer would otherwise wrap in quotes and thereby break the follow-up query.
 pp_query_raw() {
-    "$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c "$1" 2>/dev/null | head -n1
+    duckdb_cli -readonly "$DB_FILE" -noheader -list -c "$1" 2>/dev/null | head -n1
 }
 
 # _sql_inlist <names...> → "'a','b',...".
@@ -154,7 +154,7 @@ load_per_file_objects() {
     while IFS=$'\t' read -r cnt fn; do
         [ -z "$fn" ] && continue
         FO_NAME+=("$fn"); FO_COUNT+=("$cnt")
-    done < <("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c \
+    done < <(duckdb_cli -readonly "$DB_FILE" -noheader -list -c \
         "WITH per_file AS ($unionexpr),
               mapped AS (
                 SELECT p.c AS c,
@@ -235,7 +235,7 @@ collect_duckdb_settings() {
     local row
     row=$( { memory_limit_prefix
              echo "SELECT current_setting('threads')||chr(9)||current_setting('memory_limit')||chr(9)||current_setting('temp_directory')||chr(9)||current_setting('max_temp_directory_size')||chr(9)||current_setting('preserve_insertion_order');"
-           } | "$DUCKDB_BIN" -noheader -list 2>/dev/null | head -1 )
+           } | duckdb_cli -noheader -list 2>/dev/null | head -1 )
     IFS=$'\t' read -r ENV_DUCKDB_THREADS ENV_DUCKDB_MEM ENV_SPILL_DIR ENV_SPILL_MAX ENV_PRESERVE_ORDER <<< "$row"
     [ -z "$ENV_DUCKDB_THREADS" ] && ENV_DUCKDB_THREADS="n/a"
     [ -z "$ENV_DUCKDB_MEM" ]     && ENV_DUCKDB_MEM="n/a"
@@ -452,7 +452,7 @@ write_json_sidecar() {
        J_PRESERVE_ORDER="$ENV_PRESERVE_ORDER" \
        J_SPILL_DIR="$ENV_SPILL_DIR" J_SPILL_MAX="$ENV_SPILL_MAX" J_SPILL_DEDICATED="$ENV_SPILL_DEDICATED" \
        J_AWK_BIN="$ENV_AWK_BIN" J_AWK_FLAVOR="$ENV_AWK_FLAVOR" \
-       "$DUCKDB_BIN" <<SQL >/dev/null 2>&1
+       duckdb_cli <<SQL >/dev/null 2>&1
 $ph_create
 $fl_create
 COPY (

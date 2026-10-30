@@ -5,8 +5,23 @@
 # Module of ingestion/convert_fm_xml.sh (shell split) — pure code movement,
 # behavior unchanged. NOT independently executable: it is sourced by the driver
 # (existence check there, A-B10) and uses its globals
-# (DB_FILE, JOBS, TURBO_*, SUBCHUNK/RECMAP/NEST_MAP, AWK_BIN, …).
+# (DB_FILE, JOBS, TURBO_*, SUBCHUNK/RECMAP/NEST_MAP, AWK_BIN, …) and helpers
+# (duckdb_cli — every DuckDB CLI call, duckdb_storage_unreadable, emit_*).
 # bash-3.2 discipline (macOS system bash): no `case` in $(…), no bash-4+.
+
+# Drop a turbo cache DB (chunk map/manifest) that this DuckDB CLI cannot open
+# because another DuckDB version wrote it in a storage format outside its readable
+# range — e.g. a run with DuckDB 2.0 (storage 69), then a switch back to 1.5.x.
+# Both files are pure caches: the chunk map is rebuilt every run, and without a
+# manifest the next run simply converts every file. Dropping them is safe; the
+# exit 3 they used to cause was not. Only the storage-version error triggers the
+# drop (duckdb_storage_unreadable) — a lock or I/O problem still fails loudly at
+# the CREATE that follows.
+_drop_unreadable_cache_db() {
+    duckdb_storage_unreadable "$1" || return 0
+    rm -f "$1" "$1.wal"
+    emit_warn "$2 written by another DuckDB version in a storage format this CLI cannot read — discarded and rebuilt: $1"
+}
 
 # Turbo DB initialization (chunk map/manifest). Called as a function AFTER lock
 # acquisition (A-B2): the earlier top-level `CREATE OR REPLACE TABLE chunkmap` ran
@@ -15,8 +30,9 @@
 init_turbo_dbs() {
     $TURBO_MODE || return 0
     mkdir -p "$STREAMING_DIR"
+    _drop_unreadable_cache_db "$CHUNKMAP_DB" "Turbo chunk map"
     # Fresh chunkmap per run (transient plan). Schema = core + operative columns.
-    "$DUCKDB_BIN" "$CHUNKMAP_DB" -c "
+    duckdb_cli "$CHUNKMAP_DB" -c "
         CREATE OR REPLACE TABLE chunkmap (
             chunk_id      BIGINT,        -- globally unique within the run
             file_name     VARCHAR,       -- FileMaker file (without .xml)
@@ -41,10 +57,11 @@ init_turbo_dbs() {
 # without the transient chunkmap. Idempotent (CREATE IF NOT EXISTS).
 init_manifest_db() {
     mkdir -p "$STREAMING_DIR"
+    _drop_unreadable_cache_db "$MANIFEST_DB" "Turbo manifest"
     # Manifest (PERSISTENT): one row per source XML (key = XML base name).
     # internal_file_name = the internal FileMaker File_Name (multiple XML exports of the
     # same FileMaker file share it → Phase R must treat them as a group; collision case).
-    "$DUCKDB_BIN" "$MANIFEST_DB" -c "
+    duckdb_cli "$MANIFEST_DB" -c "
         CREATE TABLE IF NOT EXISTS manifest_file (
             file_name          VARCHAR PRIMARY KEY,  -- XML base name without .xml
             internal_file_name VARCHAR,              -- internal FileMaker File_Name
@@ -67,7 +84,7 @@ init_manifest_db() {
     # Gates the (expensive) P1 parse per catalog: same
     # hash → chunks skipped_unchanged. The key is the XML base name (like manifest_file),
     # NOT the internal File_Name — collision groups fall back to whole-file anyway.
-    "$DUCKDB_BIN" "$MANIFEST_DB" -c "
+    duckdb_cli "$MANIFEST_DB" -c "
         CREATE TABLE IF NOT EXISTS manifest_catalog (
             file_name      VARCHAR,       -- XML base name without .xml
             catalog        VARCHAR,       -- branch/catalog (main, LayoutCatalog, …)
@@ -84,7 +101,7 @@ init_manifest_db() {
     # silent hash mismatch. Additive migration (CREATE IF NOT EXISTS): manifests
     # from older versions simply lack the row → the diagnosis stays silent
     # until the first successful run writes it (deliberate, no version bump).
-    "$DUCKDB_BIN" "$MANIFEST_DB" -c "
+    duckdb_cli "$MANIFEST_DB" -c "
         CREATE TABLE IF NOT EXISTS manifest_run (
             id                INTEGER PRIMARY KEY,  -- always 1 (single-row fingerprint)
             parser_policy     VARCHAR,              -- sax | dom
@@ -97,7 +114,7 @@ init_manifest_db() {
     # = 'ok' as soon as P2–P6 ran COMPLETELY for the current manifest state.
     # Gate for the "no changes" short-circuit (safe against an abort between
     # Phase C [manifest written] and P6 [catalogs done]).
-    "$DUCKDB_BIN" "$MANIFEST_DB" -c "
+    duckdb_cli "$MANIFEST_DB" -c "
         CREATE TABLE IF NOT EXISTS pipeline_state (
             key   VARCHAR PRIMARY KEY,
             value VARCHAR
@@ -117,7 +134,7 @@ init_manifest_db() {
 # applied ONLY to constrained tables; everything else stays a plain INSERT. Bit-identical on
 # clean data (no conflicts → no-op), verified by the catmerge identity test.
 _pk_constrained_tables() {
-    "$DUCKDB_BIN" -readonly "$1" -noheader -list -c \
+    duckdb_cli -readonly "$1" -noheader -list -c \
         "SELECT DISTINCT table_name FROM duckdb_constraints() WHERE constraint_type IN ('PRIMARY KEY','UNIQUE');" 2>/dev/null \
         | tr '\n' ' '
 }
@@ -215,7 +232,7 @@ _turbo_schema_parity() {
     done
     _schema_fp_report_sql "$rep" >> "$psql"
     rm -f "$rep"
-    "$DUCKDB_BIN" ":memory:" < "$psql" >> "$log" 2>&1
+    duckdb_cli ":memory:" < "$psql" >> "$log" 2>&1
     rm -f "$psql"
     _schema_parity_verdict "$rep" "$log" "$label"
 }
@@ -230,7 +247,7 @@ _sql_in_list() { printf '%s\n' "$1" | awk -v q="'" 'NF { gsub(q, q q); printf "%
 # $3 = log. Returns the DuckDB exit code.
 _duckdb_run_atomic() {
     { echo ".bail on"; echo "BEGIN TRANSACTION;"; cat "$2"; echo "COMMIT;"; } \
-        | "$DUCKDB_BIN" "$1" >> "$3" 2>&1
+        | duckdb_cli "$1" >> "$3" 2>&1
 }
 
 # Schema-drift protection. Emits CREATE TABLE IF NOT EXISTS DDL (columns + NOT NULL + PRIMARY
@@ -243,7 +260,7 @@ _duckdb_run_atomic() {
 # type can never break the parse. DEFAULT clauses are omitted — the merge supplies every
 # column explicitly. UNIQUE-only tables (no PK) are not reconstructed (none in the schema).
 _turbo_missing_table_ddl() {
-    "$DUCKDB_BIN" -readonly "$1" -noheader -list -c "
+    duckdb_cli -readonly "$1" -noheader -list -c "
 WITH pk AS (
   SELECT table_name, string_agg('\"'||col||'\"', ',') AS cols
   FROM (SELECT table_name, unnest(constraint_column_names) AS col
@@ -269,7 +286,7 @@ GROUP BY c.table_name, pk.cols;" 2>/dev/null
 _turbo_seed_missing_tables() {
     local seed="$1" master="$2" log="$3" tbls="$4"
     local have part_pk master_pk missing="" repair="" t2 ddl rt rddl
-    have=$("$DUCKDB_BIN" -readonly "$master" -noheader -list -c \
+    have=$(duckdb_cli -readonly "$master" -noheader -list -c \
         "SELECT table_name FROM information_schema.tables WHERE table_schema='main';" 2>/dev/null)
     part_pk=$(_pk_constrained_tables "$seed")
     master_pk=$(_pk_constrained_tables "$master")
@@ -285,13 +302,13 @@ _turbo_seed_missing_tables() {
     # (1) create absent tables WITH their PK
     if [ -n "$missing" ]; then
         ddl=$(_turbo_missing_table_ddl "$seed" "$missing")
-        [ -n "$ddl" ] && { "$DUCKDB_BIN" "$master" -c "$ddl" >> "$log" 2>&1 || MERGE_RC=$?; }
+        [ -n "$ddl" ] && { duckdb_cli "$master" -c "$ddl" >> "$log" 2>&1 || MERGE_RC=$?; }
     fi
     # (2) repair PK-less tables in place (row-preserving, deduping)
     for rt in $repair; do
         rddl=$(_turbo_missing_table_ddl "$seed" "'$rt'")
         [ -z "$rddl" ] && continue
-        "$DUCKDB_BIN" "$master" -c \
+        duckdb_cli "$master" -c \
             "ALTER TABLE \"$rt\" RENAME TO \"${rt}__pkfix_old\"; $rddl INSERT INTO \"$rt\" SELECT * FROM \"${rt}__pkfix_old\" ON CONFLICT DO NOTHING; DROP TABLE \"${rt}__pkfix_old\";" \
             >> "$log" 2>&1 || MERGE_RC=$?
     done
@@ -312,18 +329,18 @@ _turbo_seed_missing_tables() {
 # point; the table records the event, the dashboard labels it accordingly.
 _turbo_catmerge_dup_report() {
     local _seed="$1" _pqdir="$2" _tables="$3" _map _t _cols _dcols _q n
-    _map=$("$DUCKDB_BIN" -readonly "$_seed" -noheader -list -c \
+    _map=$(duckdb_cli -readonly "$_seed" -noheader -list -c \
         "SELECT table_name || chr(9) || '\"' || array_to_string(constraint_column_names, '\",\"') || '\"' \
          FROM duckdb_constraints() WHERE constraint_type = 'PRIMARY KEY';" 2>/dev/null) || return 0
     # DDL guard: P1 creates the table since 1.17.0; older incremental masters get it here.
-    [ -n "${DB_FILE:-}" ] && "$DUCKDB_BIN" "$DB_FILE" -c \
+    [ -n "${DB_FILE:-}" ] && duckdb_cli "$DB_FILE" -c \
         "CREATE TABLE IF NOT EXISTS MergeAbsorptions (Table_Name VARCHAR NOT NULL, File_Name VARCHAR, Absorbed_Count BIGINT, Merge_Path VARCHAR, Run_Timestamp TIMESTAMP);" \
         >/dev/null 2>&1
     while IFS=$'\t' read -r _t _cols; do
         [ -z "$_t" ] && continue
         case "$_tables" in *"$_t"*) ;; *) continue ;; esac
         ls "$_pqdir/$_t"/*.parquet >/dev/null 2>&1 || continue
-        [ -n "${DB_FILE:-}" ] && "$DUCKDB_BIN" "$DB_FILE" -c \
+        [ -n "${DB_FILE:-}" ] && duckdb_cli "$DB_FILE" -c \
             "DELETE FROM MergeAbsorptions WHERE Table_Name = '$_t' AND Merge_Path = 'catmerge';" >/dev/null 2>&1
         # H2: for heal tables with active healing, PK duplicates with DISTINCT
         # identity were REDISTRIBUTED (replacement UUIDs), not absorbed — count
@@ -335,19 +352,19 @@ _turbo_catmerge_dup_report() {
         fi
         _q="SELECT (SELECT COUNT(*) FROM read_parquet('$_pqdir/$_t/*.parquet', union_by_name=true)) \
              - (SELECT COUNT(*) FROM (SELECT DISTINCT $_dcols FROM read_parquet('$_pqdir/$_t/*.parquet', union_by_name=true)));"
-        n=$("$DUCKDB_BIN" ":memory:" -noheader -list -c "$_q" 2>/dev/null)
+        n=$(duckdb_cli ":memory:" -noheader -list -c "$_q" 2>/dev/null)
         if [ -n "$n" ] && [ "$n" -gt 0 ] 2>/dev/null; then
             emit_warn "katmerge: $n duplicate PK in '$_t' absorbed (chunk overlap/clone, a1) — data consistent, but worth checking."
             if [ -n "${DB_FILE:-}" ]; then
                 # Per-file attribution when the PK carries File_Name (all catalog tables do);
                 # falls back to one unattributed row with the total.
-                "$DUCKDB_BIN" "$DB_FILE" -c \
+                duckdb_cli "$DB_FILE" -c \
                     "INSERT INTO MergeAbsorptions \
                      SELECT '$_t', File_Name, COUNT(*) - COUNT(DISTINCT ($_dcols)), 'catmerge', (now() AT TIME ZONE 'UTC') \
                      FROM read_parquet('$_pqdir/$_t/*.parquet', union_by_name=true) \
                      GROUP BY File_Name HAVING COUNT(*) - COUNT(DISTINCT ($_dcols)) > 0;" \
                     >/dev/null 2>&1 \
-                || "$DUCKDB_BIN" "$DB_FILE" -c \
+                || duckdb_cli "$DB_FILE" -c \
                     "INSERT INTO MergeAbsorptions VALUES ('$_t', NULL, $n, 'catmerge', (now() AT TIME ZONE 'UTC'));" \
                     >/dev/null 2>&1
             fi
@@ -637,7 +654,7 @@ merge_part_dbs() {
     # parity gate below enforces that all part DBs share the same P1 schema.
     # SchemaInfo (version marker, one row) is omitted.
     local seed_db="${parts[0]}"
-    local tables; tables=$("$DUCKDB_BIN" -readonly "$seed_db" -noheader -list -c \
+    local tables; tables=$(duckdb_cli -readonly "$seed_db" -noheader -list -c \
         "SELECT table_name FROM information_schema.tables WHERE table_schema='main' AND table_type='BASE TABLE' AND table_name <> 'SchemaInfo' ORDER BY table_name;" 2>/dev/null)
 
     # Schema parity gate BEFORE the master is touched (incl. the seed copy).
@@ -659,7 +676,7 @@ merge_part_dbs() {
     # "File_Name" reference to a table without that column is a bind error — so
     # decide per table up front.) Also from the part DB, so the DELETE pre-stage and
     # INSERT operate on the same set of tables.
-    local fn_tables; fn_tables=$("$DUCKDB_BIN" -readonly "$seed_db" -noheader -list -c \
+    local fn_tables; fn_tables=$(duckdb_cli -readonly "$seed_db" -noheader -list -c \
         "SELECT DISTINCT table_name FROM information_schema.columns WHERE table_schema='main' AND column_name='File_Name';" 2>/dev/null)
 
     # Schema-drift protection (incremental): create a NEWLY-introduced part table that is
@@ -722,7 +739,7 @@ _turbo_merge_parquet() {
     [ -f "$DB_FILE" ] && { echo "  [parquet] master exists (incremental) → fallback merge_part_dbs" >&2; merge_part_dbs; return $?; }
 
     local seed_db="${parts[0]}" tables
-    tables=$("$DUCKDB_BIN" -readonly "$seed_db" -noheader -list -c \
+    tables=$(duckdb_cli -readonly "$seed_db" -noheader -list -c \
         "SELECT table_name FROM information_schema.tables WHERE table_schema='main' AND table_type='BASE TABLE' AND table_name <> 'SchemaInfo' ORDER BY table_name;" 2>/dev/null)
     # Schema parity gate before the seed copy (see merge_part_dbs).
     if [ -n "$tables" ]; then
@@ -746,7 +763,7 @@ _turbo_merge_parquet() {
             echo "COPY (SELECT * FROM p${k}.\"$tbl\") TO '$pqdir/$tbl/${k}.parquet' (FORMAT parquet);" >> "$esql"
         done
     done <<< "$tables"
-    "$DUCKDB_BIN" ":memory:" < "$esql" > "$PARTDB_DIR/parquet_merge.log" 2>&1 || MERGE_RC=$?
+    duckdb_cli ":memory:" < "$esql" > "$PARTDB_DIR/parquet_merge.log" 2>&1 || MERGE_RC=$?
     rm -f "$esql"
     [ "$MERGE_RC" -ne 0 ] && return $MERGE_RC
 
@@ -887,7 +904,7 @@ _turbo_file_chunks_ok() {
     while IFS= read -r cid; do
         [ -z "$cid" ] && continue
         { [ "$(cat "$STREAMING_DIR/chunk_${cid}.rc" 2>/dev/null)" = "0" ] && [ -f "$STREAMING_DIR/chunk_${cid}.duckdb" ]; } || return 1
-    done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id FROM chunkmap WHERE file_name='${fn//\'/\'\'}' AND status<>'skipped_unchanged';")
+    done < <(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id FROM chunkmap WHERE file_name='${fn//\'/\'\'}' AND status<>'skipped_unchanged';")
     return 0
 }
 
@@ -905,7 +922,7 @@ _turbo_append_chunk_errs() {
         [ -z "$cid" ] && continue
         [ "$(cat "$STREAMING_DIR/chunk_${cid}.rc" 2>/dev/null)" = "0" ] && continue
         [ -s "$STREAMING_DIR/chunk_${cid}.out" ] && cat "$STREAMING_DIR/chunk_${cid}.out" >> "$PARTDB_DIR/${idx}.out"
-    done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id FROM chunkmap WHERE file_name='${fn//\'/\'\'}' AND status<>'skipped_unchanged';")
+    done < <(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id FROM chunkmap WHERE file_name='${fn//\'/\'\'}' AND status<>'skipped_unchanged';")
 }
 
 # Did any chunk of file $1 die from an OOM signal? A memory kill leaves the chunk with
@@ -916,7 +933,7 @@ _turbo_append_chunk_errs() {
 _turbo_file_has_oom() {
     local idx="$1" fn n
     fn="$(basename "${XML_FILES[$idx]}")"; fn="${fn%.xml}"
-    n=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c \
+    n=$(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c \
         "SELECT count(*) FROM chunkmap WHERE file_name='${fn//\'/\'\'}' AND status IN ('oom','oom_error');" 2>/dev/null)
     [ "${n:-0}" -gt 0 ]
 }
@@ -950,16 +967,16 @@ _turbo_merge_catalog() {
         [ "$(cat "$STREAMING_DIR/chunk_${cid}.rc" 2>/dev/null)" = "0" ] || continue
         [ -f "$STREAMING_DIR/chunk_${cid}.duckdb" ] || continue
         CID+=("$cid"); CCAT+=("$cat"); CFN+=("$cfn")
-    done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id||chr(9)||catalog||chr(9)||file_name FROM chunkmap ORDER BY catalog, chunk_id;")
+    done < <(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id||chr(9)||catalog||chr(9)||file_name FROM chunkmap ORDER BY catalog, chunk_id;")
     [ ${#CID[@]} -eq 0 ] && return 0
 
     # P1 tables + File_Name tables from ONE chunk (NOT from the master — on incremental
     # the master additionally carries P2–P6 tables/views that must not be merged here).
     local seed_chunk="$STREAMING_DIR/chunk_${CID[0]}.duckdb" t
-    local tables; tables=$("$DUCKDB_BIN" -readonly "$seed_chunk" -noheader -list -c \
+    local tables; tables=$(duckdb_cli -readonly "$seed_chunk" -noheader -list -c \
         "SELECT table_name FROM information_schema.tables WHERE table_schema='main' AND table_type='BASE TABLE' AND table_name<>'SchemaInfo' ORDER BY table_name;")
     [ -z "$tables" ] && { MERGE_RC=0; return 0; }
-    local fn_tables; fn_tables=$("$DUCKDB_BIN" -readonly "$seed_chunk" -noheader -list -c \
+    local fn_tables; fn_tables=$(duckdb_cli -readonly "$seed_chunk" -noheader -list -c \
         "SELECT DISTINCT table_name FROM information_schema.columns WHERE table_schema='main' AND column_name='File_Name';")
 
     # Ownership: known non-main catalogs → their tables; main → the rest. (The
@@ -986,7 +1003,7 @@ _turbo_merge_catalog() {
         cp "$seed_chunk" "$DB_FILE" || { MERGE_RC=1; return 1; }
         local del=""
         while IFS= read -r t; do [ -n "$t" ] && del="$del DELETE FROM \"$t\";"; done <<< "$tables"
-        "$DUCKDB_BIN" "$DB_FILE" -c "$del" >/dev/null 2>&1
+        duckdb_cli "$DB_FILE" -c "$del" >/dev/null 2>&1
     fi
 
     # Schema-drift protection (incremental): if a chunk table is missing in the EXISTING
@@ -1021,7 +1038,7 @@ _turbo_merge_catalog() {
     done
     _schema_fp_report_sql "$parity_rep" >> "$esql"
     rm -f "$parity_rep"
-    [ -s "$esql" ] && { "$DUCKDB_BIN" ":memory:" < "$esql" >> "$PARTDB_DIR/catmerge.log" 2>&1 || MERGE_RC=$?; }
+    [ -s "$esql" ] && { duckdb_cli ":memory:" < "$esql" >> "$PARTDB_DIR/catmerge.log" 2>&1 || MERGE_RC=$?; }
     rm -f "$esql"
     [ "$MERGE_RC" -ne 0 ] && return $MERGE_RC
     _schema_parity_verdict "$parity_rep" "$PARTDB_DIR/catmerge.log" "chunk" || { MERGE_RC=4; return 4; }
@@ -1041,7 +1058,7 @@ _turbo_merge_catalog() {
             _hq="${_hq}(SELECT COUNT(*) - COUNT(DISTINCT ($_hi_uuid, File_Name)) FROM read_parquet('$pqdir/$_ht/*.parquet', union_by_name=true))"
         done
         if [ -n "$_hq" ]; then
-            heal_dups=$("$DUCKDB_BIN" ":memory:" -noheader -list -c "SELECT $_hq;" 2>>"$PARTDB_DIR/catmerge.log")
+            heal_dups=$(duckdb_cli ":memory:" -noheader -list -c "SELECT $_hq;" 2>>"$PARTDB_DIR/catmerge.log")
             case "$heal_dups" in ''|*[!0-9]*)
                 emit_warn "katmerge: mandatory heal dup-count failed — aborting catalog merge (heal gate is fail-hard)."
                 MERGE_RC=1; return 1 ;;
@@ -1065,7 +1082,7 @@ _turbo_merge_catalog() {
     # Chunks the catalog gate left untouched this run (unchanged catalog of a changed
     # file): their master rows must survive. Absent catalog (not in the export at all,
     # e.g. DDR_INFO of a DDR-less re-export) = no chunkmap row = rows ARE deleted.
-    local _gate_skipped; _gate_skipped=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c \
+    local _gate_skipped; _gate_skipped=$(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c \
         "SELECT DISTINCT file_name||chr(9)||catalog FROM chunkmap WHERE status='skipped_unchanged';" 2>/dev/null)
     # Static owner catalogs of a table (from the ownership map — NOT only the catalogs
     # seen this run: a table whose owner catalog was skipped for every file must not
@@ -1161,7 +1178,7 @@ _turbo_catmerge_ok() {
     while IFS= read -r c; do
         [ -z "$c" ] && continue
         [ "$(_turbo_catalog_owned "$c")" = "?" ] && return 1
-    done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT DISTINCT catalog FROM chunkmap;" 2>/dev/null)
+    done < <(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT DISTINCT catalog FROM chunkmap;" 2>/dev/null)
 
     # (2) Collect the internal File_Name per main chunk (= per physical XML file) and
     # check for duplicates. ONE duckdb run (sequential ATTACH→SELECT→DETACH, max. 1 DB
@@ -1173,10 +1190,10 @@ _turbo_catmerge_ok() {
         [ -f "$STREAMING_DIR/chunk_${cid}.duckdb" ] || continue
         printf "ATTACH '%s' AS k (READ_ONLY); SELECT File_Name FROM k.FilesCatalog LIMIT 1; DETACH k;\n" \
             "$STREAMING_DIR/chunk_${cid}.duckdb" >> "$esql"
-    done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id FROM chunkmap WHERE catalog='main' ORDER BY chunk_id;" 2>/dev/null)
+    done < <(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id FROM chunkmap WHERE catalog='main' ORDER BY chunk_id;" 2>/dev/null)
     local dup=0
     if [ -s "$esql" ]; then
-        dup=$("$DUCKDB_BIN" ":memory:" -noheader -list < "$esql" 2>/dev/null \
+        dup=$(duckdb_cli ":memory:" -noheader -list < "$esql" 2>/dev/null \
               | grep -v '^$' | sort | uniq -d | head -1 | wc -l | tr -d ' ')
     fi
     rm -f "$esql"
@@ -1332,7 +1349,7 @@ _turbo_load_chunkmap_one() {
     local BASENAME="${FILENAME%.xml}"
     local _fn="${BASENAME//\'/\'\'}"
     local _pol; _pol=$($STREAMIFY_MODE && echo sax || echo dom)
-    if ! "$DUCKDB_BIN" "$CHUNKMAP_DB" -c "
+    if ! duckdb_cli "$CHUNKMAP_DB" -c "
         INSERT INTO chunkmap
         SELECT
             (SELECT COALESCE(MAX(chunk_id),0) FROM chunkmap) + ROW_NUMBER() OVER () AS chunk_id,
@@ -1416,7 +1433,7 @@ _turbo_resplit_chunk() {
     local K="${FM_AUTO_MAX_ATTEMPT:-4}"
     # sub_m is NOT held in the chunkmap (only in the sidecar) — the finer granularity
     # derives from record_count (chunkmap column): mp = ⌈record_count/2⌉ halves the chunk.
-    local row; row=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c \
+    local row; row=$(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c \
         "SELECT file_name||chr(9)||catalog||chr(9)||chunk_path||chr(9)||seq_offset||chr(9)||COALESCE(record_count,0)||chr(9)||attempt||chr(9)||COALESCE(parser_policy,'dom') FROM chunkmap WHERE chunk_id=$cid;")
     [ -z "$row" ] && return 1
     local fn cat cpath off rc att pol
@@ -1458,7 +1475,7 @@ _turbo_resplit_chunk() {
     local fnq="${fn//\'/\'\'}" catq="${cat//\'/\'\'}" polq="${pol//\'/\'\'}"
     # Atomic (transaction): if INSERT/UPDATE fails, the OOM row is kept
     # (the caller escalates), rather than deleting it without inserting a replacement.
-    "$DUCKDB_BIN" "$CHUNKMAP_DB" -c "
+    duckdb_cli "$CHUNKMAP_DB" -c "
         BEGIN TRANSACTION;
         INSERT INTO chunkmap
         SELECT (SELECT COALESCE(MAX(chunk_id),0) FROM chunkmap) + ROW_NUMBER() OVER (),
@@ -1521,7 +1538,7 @@ _turbo_dispatch() {
             fi
             _D_total[$_d_slot]=$(( _D_total[$_d_slot] + 1 ))
             _D_chunkslot[$_d_cid]=$_d_slot
-        done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c \
+        done < <(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c \
             "SELECT chunk_id::VARCHAR || chr(9) || file_name FROM chunkmap WHERE status<>'skipped_unchanged' ORDER BY chunk_id;")
     fi
 
@@ -1533,7 +1550,7 @@ _turbo_dispatch() {
         while IFS=$'\t' read -r cid cpath coff ccat catt crc; do
             [ -z "$cid" ] && continue
             CID+=("$cid"); CPATH+=("$cpath"); COFF+=("$coff"); CCAT+=("$ccat"); CATT+=("$catt"); CRC+=("$crc")
-        done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c \
+        done < <(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c \
             "SELECT chunk_id::VARCHAR || chr(9) || chunk_path || chr(9) || seq_offset::VARCHAR || chr(9) || catalog || chr(9) || attempt::VARCHAR || chr(9) || COALESCE(record_count,0)::VARCHAR
              FROM chunkmap WHERE status='pending' ORDER BY est_bytes DESC NULLS LAST, chunk_id;")
         local n=${#CID[@]}
@@ -1629,7 +1646,7 @@ _turbo_dispatch() {
         done
         # A-B8: check rc — a silently swallowed status UPDATE would let --auto
         # re-dispatch the same 'oom' chunks forever (the chunk map stays stale).
-        if [ -n "$upd" ] && ! "$DUCKDB_BIN" "$CHUNKMAP_DB" -c "$upd" >/dev/null 2>&1; then
+        if [ -n "$upd" ] && ! duckdb_cli "$CHUNKMAP_DB" -c "$upd" >/dev/null 2>&1; then
             echo "  ✗ Chunk status UPDATE failed (chunk map not writable?) — dispatch round aborted." >&2
             echo "chunk-map UPDATE failed: $CHUNKMAP_DB" | log_error_section "Phase D chunk-status UPDATE failed"
             break
@@ -1638,7 +1655,7 @@ _turbo_dispatch() {
         $AUTO_MODE || break    # without backoff: one round
 
         local -a ooms; ooms=()
-        while IFS= read -r cid; do [ -n "$cid" ] && ooms+=("$cid"); done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id FROM chunkmap WHERE status='oom';")
+        while IFS= read -r cid; do [ -n "$cid" ] && ooms+=("$cid"); done < <(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id FROM chunkmap WHERE status='oom';")
         [ ${#ooms[@]} -eq 0 ] && break
         local progress=false diag
         for cid in "${ooms[@]}"; do
@@ -1647,11 +1664,11 @@ _turbo_dispatch() {
                 if $QUIET_MODE; then emit_log "Auto-backoff: chunk $cid OOM → split finer"
                 else echo "  ↯ Auto-backoff: chunk $cid OOM → split-group finer (M halved), re-dispatch"; fi
             else
-                diag=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT file_name||' / '||catalog||' (records='||COALESCE(record_count,0)||', attempt='||attempt||', est_bytes='||COALESCE(est_bytes,0)||')' FROM chunkmap WHERE chunk_id=$cid;")
+                diag=$(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT file_name||' / '||catalog||' (records='||COALESCE(record_count,0)||', attempt='||attempt||', est_bytes='||COALESCE(est_bytes,0)||')' FROM chunkmap WHERE chunk_id=$cid;")
                 # Terminal OOM status (distinct from a plain 'error'): the resplit list
                 # only re-picks status='oom', so this both stops the re-dispatch loop AND
                 # keeps the cause visible to _turbo_file_has_oom (→ oom, not sql_error).
-                "$DUCKDB_BIN" "$CHUNKMAP_DB" -c "UPDATE chunkmap SET status='oom_error' WHERE chunk_id=$cid;" >/dev/null 2>&1
+                duckdb_cli "$CHUNKMAP_DB" -c "UPDATE chunkmap SET status='oom_error' WHERE chunk_id=$cid;" >/dev/null 2>&1
                 echo "  ✗ Auto-backoff exhausted: $diag — does not fit into the memory band (not further divisible or K reached)." >&2
                 {
                     echo "Auto-backoff exhausted (not further divisible or K=${FM_AUTO_MAX_ATTEMPT:-4} attempts reached)."
@@ -1689,13 +1706,13 @@ _turbo_build_part() {
             continue
         fi
         cdbs+=("$STREAMING_DIR/chunk_${cid}.duckdb")
-    done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c \
+    done < <(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c \
         "SELECT chunk_id FROM chunkmap WHERE file_name = '${fn//\'/\'\'}' ORDER BY chunk_id;")
     [ "$bad" -ne 0 ] && return 3
     [ ${#cdbs[@]} -eq 0 ] && return 3
 
     [ ${#cdbs[@]} -eq 1 ] && { cp "${cdbs[0]}" "$part" || return 3; return 0; }   # only main → done
-    local tables; tables=$("$DUCKDB_BIN" -readonly "${cdbs[0]}" -noheader -list -c \
+    local tables; tables=$(duckdb_cli -readonly "${cdbs[0]}" -noheader -list -c \
         "SELECT table_name FROM information_schema.tables WHERE table_schema='main' AND table_type='BASE TABLE' AND table_name <> 'SchemaInfo' ORDER BY table_name;")
     # Schema parity across the file's chunks (the INSERT BY NAME below would
     # silently NULL-fill a column a chunk lacks).
@@ -1719,7 +1736,7 @@ _turbo_build_part() {
         k=$((k + 1))
     done
     local prc=0
-    [ -s "$msql" ] && { "$DUCKDB_BIN" "$part" < "$msql" >> "$PARTDB_DIR/${idx}.out" 2>&1 || prc=3; }
+    [ -s "$msql" ] && { duckdb_cli "$part" < "$msql" >> "$PARTDB_DIR/${idx}.out" 2>&1 || prc=3; }
     rm -f "$msql"
     return $prc
 }
@@ -1758,7 +1775,7 @@ _turbo_phase_r() {
     $CHANGED_ONLY || return 0
     $FORCE_REBUILD && { echo "  --changed-only + --force-rebuild → full build (manifest ignored)"; return 0; }
     [ -f "$DB_FILE" ] || { echo "  --changed-only: master missing → full build (no skip)"; return 0; }
-    local mcount; mcount=$("$DUCKDB_BIN" -readonly "$MANIFEST_DB" -noheader -list -c "SELECT COUNT(*) FROM manifest_file;" 2>/dev/null)
+    local mcount; mcount=$(duckdb_cli -readonly "$MANIFEST_DB" -noheader -list -c "SELECT COUNT(*) FROM manifest_file;" 2>/dev/null)
     [ "${mcount:-0}" -eq 0 ] && { echo "  --changed-only: empty manifest → full build"; return 0; }
 
     local i fn mt sz rec m_mt m_sz m_hash m_conv m_schema m_internal h
@@ -1771,7 +1788,7 @@ _turbo_phase_r() {
         fn="$(basename "${XML_FILES[$i]}")"; fn="${fn%.xml}"
         mt=$(stat -c%Y "${XML_FILES[$i]}" 2>/dev/null || stat -f%m "${XML_FILES[$i]}" 2>/dev/null)
         sz=$(stat -c%s "${XML_FILES[$i]}" 2>/dev/null || stat -f%z "${XML_FILES[$i]}" 2>/dev/null)
-        rec=$("$DUCKDB_BIN" -readonly "$MANIFEST_DB" -noheader -list -c \
+        rec=$(duckdb_cli -readonly "$MANIFEST_DB" -noheader -list -c \
             "SELECT file_mtime||chr(31)||file_size||chr(31)||COALESCE(file_hash,'')||chr(31)||COALESCE(converter_version,'')||chr(31)||COALESCE(schema_version,'')||chr(31)||COALESCE(internal_file_name,'') FROM manifest_file WHERE file_name='${fn//\'/\'\'}';")
         [ -z "$rec" ] && continue   # new file → treat as changed (no skip)
         # Separator is chr(31) (unit separator), NOT tab: tab is IFS whitespace, so
@@ -1816,9 +1833,9 @@ _turbo_catalog_gate() {
     while IFS= read -r c; do
         [ -z "$c" ] && continue
         _turbo_catalog_feeds_multifed "$c" && _excl="$_excl${_excl:+,}'${c//\'/\'\'}'"
-    done < <("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT DISTINCT catalog FROM chunkmap;" 2>/dev/null)
+    done < <(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT DISTINCT catalog FROM chunkmap;" 2>/dev/null)
     [ -z "$_excl" ] && _excl="''"
-    "$DUCKDB_BIN" "$CHUNKMAP_DB" -c "
+    duckdb_cli "$CHUNKMAP_DB" -c "
         ATTACH '$MANIFEST_DB' AS mf (READ_ONLY);
         UPDATE chunkmap SET status='skipped_unchanged'
         FROM (
@@ -1866,7 +1883,7 @@ _manifest_write_run() {
     _pol=$($STREAMIFY_MODE && echo sax || echo dom)
     _wv=$(printf '%s' "${WEBBED_VERSION_DETECTED:-unknown}" | sed "s/'/''/g")
     _cv=$(printf '%s' "${CONVERTER_VERSION:-unknown}" | sed "s/'/''/g")
-    "$DUCKDB_BIN" "$MANIFEST_DB" -c "
+    duckdb_cli "$MANIFEST_DB" -c "
         CREATE TABLE IF NOT EXISTS manifest_run (
             id INTEGER PRIMARY KEY, parser_policy VARCHAR, ws_sentinel VARCHAR,
             webbed_version VARCHAR, converter_version VARCHAR, ts TIMESTAMP);
@@ -1891,18 +1908,18 @@ _turbo_write_manifest() {
         # granular path builds no parts). Both carry the file's FilesCatalog/XMLMetadata.
         part="$PARTDB_DIR/part_${i}.duckdb"
         if [ ! -f "$part" ]; then
-            mcid=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id FROM chunkmap WHERE file_name='${fn//\'/\'\'}' AND catalog='main' ORDER BY chunk_id LIMIT 1;" 2>/dev/null)
+            mcid=$(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT chunk_id FROM chunkmap WHERE file_name='${fn//\'/\'\'}' AND catalog='main' ORDER BY chunk_id LIMIT 1;" 2>/dev/null)
             [ -n "$mcid" ] && part="$STREAMING_DIR/chunk_${mcid}.duckdb"
         fi
         [ -f "$part" ] || continue                                # neither part nor main chunk → skip
-        internal=$("$DUCKDB_BIN" -readonly "$part" -noheader -list -c "SELECT File_Name FROM FilesCatalog LIMIT 1;" 2>/dev/null)
-        fmver=$("$DUCKDB_BIN" -readonly "$part" -noheader -list -c "SELECT FileMaker_Version FROM FilesCatalog LIMIT 1;" 2>/dev/null)
-        ddr=$("$DUCKDB_BIN" -readonly "$part" -noheader -list -c "SELECT Has_DDR_INFO FROM FilesCatalog LIMIT 1;" 2>/dev/null)
+        internal=$(duckdb_cli -readonly "$part" -noheader -list -c "SELECT File_Name FROM FilesCatalog LIMIT 1;" 2>/dev/null)
+        fmver=$(duckdb_cli -readonly "$part" -noheader -list -c "SELECT FileMaker_Version FROM FilesCatalog LIMIT 1;" 2>/dev/null)
+        ddr=$(duckdb_cli -readonly "$part" -noheader -list -c "SELECT Has_DDR_INFO FROM FilesCatalog LIMIT 1;" 2>/dev/null)
         mt=$(stat -c%Y "${XML_FILES[$i]}" 2>/dev/null || stat -f%m "${XML_FILES[$i]}" 2>/dev/null)
         sz=$(stat -c%s "${XML_FILES[$i]}" 2>/dev/null || stat -f%z "${XML_FILES[$i]}" 2>/dev/null)
         h=$(_turbo_file_hash "${XML_FILES[$i]}")
         esc() { printf '%s' "$1" | sed "s/'/''/g"; }
-        "$DUCKDB_BIN" "$MANIFEST_DB" -c "
+        duckdb_cli "$MANIFEST_DB" -c "
             INSERT INTO manifest_file
               (file_name, internal_file_name, file_mtime, file_size, file_hash,
                fm_version, has_ddr_info, converter_version, schema_version, last_ingest_ts)
@@ -1938,7 +1955,7 @@ _turbo_write_manifest() {
         # reported as such, so it can never be mistaken for a memory problem. The
         # "backoff: catalog … excluded from manifest" wording is parsed by the
         # regression gate backoff_manifest_exclusion.sh — keep it verbatim.
-        _boff=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c \
+        _boff=$(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c \
             "SELECT catalog || chr(31) || CASE WHEN max(attempt) > 1 THEN 'backoff' ELSE 'nohash' END
                FROM chunkmap WHERE file_name='$(esc "$fn")' AND (content_hash IS NULL OR attempt > 1)
               GROUP BY catalog ORDER BY catalog;" 2>/dev/null)
@@ -1955,7 +1972,7 @@ _turbo_write_manifest() {
             done <<< "$_boff"
         fi
         [ -z "$_excl_sql" ] && _excl_sql="''"
-        "$DUCKDB_BIN" "$MANIFEST_DB" -c "
+        duckdb_cli "$MANIFEST_DB" -c "
             ATTACH '$CHUNKMAP_DB' AS cm (READ_ONLY);
             DELETE FROM manifest_catalog
              WHERE file_name='$(esc "$fn")' AND catalog IN ($_excl_sql);
@@ -1996,11 +2013,11 @@ _manifest_write_single() {
     mt=$(stat -c%Y "$xml" 2>/dev/null || stat -f%m "$xml" 2>/dev/null)
     sz=$(stat -c%s "$xml" 2>/dev/null || stat -f%z "$xml" 2>/dev/null)
     h=$(_turbo_file_hash "$xml")
-    IFS=$'\t' read -r internal fmver ddr < <("$DUCKDB_BIN" -readonly "$DB_FILE" -noheader -list -c \
+    IFS=$'\t' read -r internal fmver ddr < <(duckdb_cli -readonly "$DB_FILE" -noheader -list -c \
         "SELECT File_Name || chr(9) || COALESCE(FileMaker_Version,'') || chr(9) || COALESCE(Has_DDR_INFO::VARCHAR,'')
          FROM FilesCatalog ORDER BY Import_Timestamp DESC LIMIT 1;" 2>/dev/null)
     esc() { printf '%s' "$1" | sed "s/'/''/g"; }
-    "$DUCKDB_BIN" "$MANIFEST_DB" -c "
+    duckdb_cli "$MANIFEST_DB" -c "
         INSERT INTO manifest_file
           (file_name, internal_file_name, file_mtime, file_size, file_hash,
            fm_version, has_ddr_info, converter_version, schema_version, last_ingest_ts)
@@ -2024,13 +2041,13 @@ _manifest_write_single() {
 # Read echoes the value (empty if the DB/table/row is missing → conservatively "not ok").
 _catalogs_state() {
     [ -f "$MANIFEST_DB" ] || { echo ""; return 0; }
-    "$DUCKDB_BIN" -readonly "$MANIFEST_DB" -noheader -list -c \
+    duckdb_cli -readonly "$MANIFEST_DB" -noheader -list -c \
         "SELECT value FROM pipeline_state WHERE key='catalogs_built';" 2>/dev/null
 }
 # _catalogs_state_set <ok|building> — idempotent upsert (errors not fatal).
 _catalogs_state_set() {
     [ -f "$MANIFEST_DB" ] || return 0
-    "$DUCKDB_BIN" "$MANIFEST_DB" -c \
+    duckdb_cli "$MANIFEST_DB" -c \
         "INSERT INTO pipeline_state VALUES ('catalogs_built', '$1') ON CONFLICT (key) DO UPDATE SET value=excluded.value;" \
         >/dev/null 2>&1 || true
 }
@@ -2155,7 +2172,7 @@ run_turbo_pipeline() {
     _turbo_catalog_gate
     if $CHANGED_ONLY && ! $FORCE_REBUILD; then
         local _nskipcat
-        _nskipcat=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT COUNT(*) FROM chunkmap WHERE status='skipped_unchanged';" 2>/dev/null)
+        _nskipcat=$(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT COUNT(*) FROM chunkmap WHERE status='skipped_unchanged';" 2>/dev/null)
         if [ "${_nskipcat:-0}" -gt 0 ]; then
             if $QUIET_MODE; then emit_log "Phase S: $_nskipcat catalog chunk(s) unchanged → skipped (manifest_catalog)"
             else echo "  Phase S: $_nskipcat catalog chunk(s) unchanged → skipped (manifest_catalog)"; fi
@@ -2171,7 +2188,7 @@ run_turbo_pipeline() {
     # between Phase C and P6). --force-rebuild deliberately overrides this.
     if $CHANGED_ONLY && ! $FORCE_REBUILD; then
         local _pending
-        _pending=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT COUNT(*) FROM chunkmap WHERE status='pending';" 2>/dev/null)
+        _pending=$(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT COUNT(*) FROM chunkmap WHERE status='pending';" 2>/dev/null)
         [[ "$_pending" =~ ^[0-9]+$ ]] || _pending=1   # query error → do NOT skip, to be safe
         if [ "$_pending" -eq 0 ] && [ "$(_catalogs_state)" = "ok" ]; then
             TURBO_NO_CHANGES=true
@@ -2194,7 +2211,7 @@ run_turbo_pipeline() {
     local _max_chunks="${FM_MAX_TOTAL_CHUNKS:-10000}"
     if [ "${_max_chunks:-0}" -gt 0 ]; then
         local _tot_chunks
-        _tot_chunks=$("$DUCKDB_BIN" -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT COUNT(*) FROM chunkmap;" 2>/dev/null)
+        _tot_chunks=$(duckdb_cli -readonly "$CHUNKMAP_DB" -noheader -list -c "SELECT COUNT(*) FROM chunkmap;" 2>/dev/null)
         [[ "$_tot_chunks" =~ ^[0-9]+$ ]] || _tot_chunks=0
         if [ "$_tot_chunks" -gt "$_max_chunks" ]; then
             { echo "✗ Phase S abort: $_tot_chunks planned chunks exceed the safety cap FM_MAX_TOTAL_CHUNKS=$_max_chunks."

@@ -8,6 +8,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version
 
 ## [Unreleased]
 
+*(Upcoming changes go here)*
+
+---
+
+## [0.9.16] — 2026-10-30
+
+<!-- components:auto --> *Components: schema 1.37.0 · xml-import 5.5.0 (converter 2.42.0) · fm-spec 2.9.0 · plugin-spec 1.2.0*
+
+fm-lab moves to DuckDB 2.0 and Node.js 22, the home page shows what changed recently, and query results come back in a stable order. Dev Containers no longer break on reopen.
+
+- **DuckDB 2.0** — fm-lab runs on DuckDB 2.0.0 (LTS) with webbed v2.13.0. The REST API bundles DuckDB 2.0 and reads catalogs written by every DuckDB CLI from 1.0 on, so no re-import is needed
+  - **Compatible storage format** — every DuckDB file fm-lab creates (catalogs, import caches, annotations) uses storage version 64, which DuckDB 1.x can still read; switching back to DuckDB 1.5.6 needs no re-import
+  - **Supported versions** — DuckDB 2.0.x is recommended (`curl https://install.duckdb.org | sh`), 1.5.6 is the minimum; `init.sh` shows an update hint between the two and a warning below 1.5.6
+  - **Switching DuckDB versions** — import caches the running CLI cannot read are discarded and rebuilt instead of aborting the import
+  - **Faster queries** — dashboards and custom queries run about 20 % faster in total, with identical results
+  - **Finding DuckDB** — `init.sh`, the XML import and the tools also find a DuckDB installed only into a version folder of the installer (`~/.duckdb/cli/<version>`), and the Claude Code `PATH` keeps only the DuckDB directory in use
+  - **Agent output mode** — the DuckDB 2.0 CLI shortens large results when it detects an AI agent. The import and all tools switch this off, so logs and error detection stay unchanged; ad-hoc agent queries keep the compact output, and script dumps, formulas, `fm-summarize` and `fm-analyze` ask for complete results (`-markdown`)
+  - **DuckDB versions under Settings** — the version line also shows the DuckDB of the REST API, which reads the catalogs, and the DuckDB CLI the XML import writes them with (path as tooltip, *not found* without a CLI). `/api/version` reports both as `duckdb_version` and `duckdb_cli`, so a container whose image is older than its updated packages shows up at a glance
+- **Node.js 22 required** — fm-lab needs Node.js 22.13 or newer; Node.js 20 is end-of-life and now stops `init.sh` instead of only drawing a warning
+  - **No native SQLite add-on** — the REST API reads the MBS documentation index with the SQLite module built into Node.js (`node:sqlite`) instead of `better-sqlite3`, so switching Node.js versions no longer needs `npm rebuild` and a mismatched add-on can no longer stop the API from starting. On Node.js 22 the API log shows a one-time notice that the module is experimental
+- **Recent changes on the home page** — a *Recently changed* block with a switch between individual changes and work sessions (start, end, duration, person, files, object types), a twelve-month sparkline of individual changes, and a link to the full list
+- **Stable result order** — top lists of the custom queries, *Changed together*, the project summary and `fm-changes` return the same rows on every run instead of picking among ties at random; the header of a variable's detail view keeps its line order, and every list aggregate in dashboards and queries carries a fixed order, guarded by a unit test
+- **Fixes**
+  - **Graph Atlas** — the cluster-run details in the status bar come from the solution the request names (`X-Solution`), no longer always from the active one
+  - **Read-only agent queries** — `CLAUDE.md` and the skills open catalogs with `duckdb -readonly`, so a mistyped path no longer creates an empty database file
+- **Claude Code sign-in opens in the browser** — started via `bash tools/fmlab.sh up --claude` or `agent`, the sign-in page of Claude Code opens in the host browser instead of a link that wraps across terminal lines and could not be copied in terminals without OSC 52 (macOS Terminal); paste the code the page shows back into the session
+  - **Start message** — *saved login found* now adds that an expired login is renewed with `/login` in the session
+  - **Troubleshooting** — new entry *Claude Code sign-in in the terminal*
+- **VS Code Dev Container: reopening no longer rebuilds** — a reopen starts the existing image instead of rebuilding from the temporary Dockerfile the Dev Containers extension generated at the last build; once the operating system had cleaned up that file (restart, or on macOS after a few days), every reopen failed with `Dockerfile-with-features: no such file or directory`
+  - **Existing containers** benefit from the next reopen on, without a rebuild. *Rebuild Container* is the step after every `git pull`, because a reopen no longer picks up changes to the container definition; VS Code offers it in a short-lived *Configuration file(s) changed* notification
+  - **Plain Docker unchanged** — `tools/fmlab.sh` and `docker compose up` still rebuild on every start, so updates arrive without an extra step
+  - **Troubleshooting** — two new entries: the error above (fix: *Rebuild Container*), and a build that Docker Compose aborts with `additional privileges requested` (plain Docker start as an alternative, `BUILDX_BAKE_ENTITLEMENTS_FS=0` as a temporary workaround)
+
 ---
 
 ## [0.9.15] — 2026-10-28
@@ -959,7 +992,8 @@ Initial release: XML conversion pipeline, core database structure, and first AI 
 <!-- Link references. compare-ranges span adjacent tagged releases; documentation-only
      versions that were never tagged (e.g. 0.8.7, 0.8.1, 0.8.0, 0.7.5–0.7.7, …) are
      intentionally left unlinked and render as plain text. Add a line here per new tag. -->
-[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.15...HEAD
+[Unreleased]: https://github.com/marcel-more/fm-lab/compare/v0.9.16...HEAD
+[0.9.16]: https://github.com/marcel-more/fm-lab/compare/v0.9.15...v0.9.16
 [0.9.15]: https://github.com/marcel-more/fm-lab/compare/v0.9.14...v0.9.15
 [0.9.14]: https://github.com/marcel-more/fm-lab/compare/v0.9.13...v0.9.14
 [0.9.13]: https://github.com/marcel-more/fm-lab/compare/v0.9.12...v0.9.13

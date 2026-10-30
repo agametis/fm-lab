@@ -43,6 +43,9 @@ CLAUDE_COMPOSE="docker-compose.claude.yml"
 WEB_URL="http://localhost:5173"
 API_URL="http://localhost:3003"
 PREFLIGHT="/usr/local/bin/claude-auth-preflight.sh"   # path INSIDE the api container
+# $BROWSER of the agent session, path INSIDE the api container (repo bind mount): hands
+# URLs — incl. the Claude Code sign-in page — to the open-bridge below.
+CLAUDE_BROWSER="/workspaces/fm-lab/tools/lib/claude-browser.sh"
 
 # --- Colours (only on a TTY) -------------------------------------------------------
 if [ -t 1 ]; then
@@ -94,8 +97,9 @@ ${C_BOLD}Commands:${C_RESET}
                 • native (No to Docker) → hand off to tools/init.sh on this host
   agent         (Re)attach the Claude Code agent to a running stack.
   open-bridge   Run the host open-URL bridge standalone (auto-started during
-                'up --claude' / 'agent'): opens URLs requested by the agent in
-                your host browser. --check-url <url> tests the whitelist.
+                'up --claude' / 'agent'): opens URLs requested by the agent —
+                the Claude Code sign-in page included — in your host browser.
+                --check-url <url> tests the whitelist.
   down          Stop and remove the stack.
   logs          Follow the stack logs (opt-in; not shown during 'up').
   help          Show this help.
@@ -161,6 +165,8 @@ bridge_log() { printf '%s %s\n' "$(date '+%H:%M:%S')" "$*"; }
 
 # Whitelist: URL must start with one of these prefixes. Built once at watcher start:
 #   - localhost/127.0.0.1 (http/https) + fmp:// / fmps:// (FileMaker via fmIDE)
+#   - the Claude Code sign-in pages (subscription and Console), sent by the session's
+#     $BROWSER helper (tools/lib/claude-browser.sh) — the link wraps in the terminal
 #   - FMLAB_OPEN_BRIDGE_ALLOW  (comma-separated extra prefixes, e.g. "http://192.168.1.20:3003")
 #   - FMLAB_WEB_URL            (origin of a configured remote frontend)
 #   - any http(s) URL value found in .fmlab/settings.json (server-side settings store;
@@ -169,7 +175,9 @@ bridge_build_allow_list() {
     printf '%s\n' \
         "http://localhost" "https://localhost" \
         "http://127.0.0.1" "https://127.0.0.1" \
-        "fmp://" "fmps://"
+        "fmp://" "fmps://" \
+        "https://claude.com/cai/oauth/authorize?" \
+        "https://platform.claude.com/oauth/authorize?"
     if [ -n "${FMLAB_OPEN_BRIDGE_ALLOW:-}" ]; then
         printf '%s\n' "$FMLAB_OPEN_BRIDGE_ALLOW" | tr ',' '\n' | sed -e 's/^ *//' -e 's/ *$//'
     fi
@@ -311,7 +319,9 @@ enter_agent() {
     trap 'bridge_stop' EXIT INT TERM
     info "Opening Claude Code inside the container — exit with ${C_BOLD}Ctrl-D${C_RESET}; the stack keeps running."
     echo "${C_DIM}──────────────────────────────────────────────────────────────${C_RESET}"
-    "${COMPOSE[@]}" -f "$BASE_COMPOSE" -f "$CLAUDE_COMPOSE" exec -it api claude || true
+    # BROWSER only for this session — the bridge above is what it talks to. The Dev
+    # Container path never comes here; there VS Code supplies its own $BROWSER.
+    "${COMPOSE[@]}" -f "$BASE_COMPOSE" -f "$CLAUDE_COMPOSE" exec -it -e BROWSER="$CLAUDE_BROWSER" api claude || true
     bridge_stop
     trap - EXIT INT TERM
     echo
@@ -461,4 +471,7 @@ main() {
     esac
 }
 
-main "$@"
+# Run only when executed; sourcing (tests) just defines the functions.
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+    main "$@"
+fi

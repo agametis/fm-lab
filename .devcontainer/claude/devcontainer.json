@@ -10,15 +10,19 @@
 // `claude auth login` once inside the container (the token persists in the fmlab-claude
 // volume across rebuilds). No secret is ever baked into the image.
 //
-// This file targets the PUBLISHED layout: it lives at .devcontainer/claude/ and the
-// compose files sit at the repo root (../../).
+// This file targets the PUBLISHED layout: it lives at .devcontainer/claude/, the
+// compose files sit at the repo root (../../) and the Dev Container overlay next to the
+// base devcontainer.json (../).
 {
   "name": "fm-lab + Claude Code",
 
-  // Base compose + the Claude overlay (claude image, login volume, firewall caps).
+  // Base compose + the Claude overlay (claude image, login volume, firewall caps) + the
+  // Dev-Container-only overlay (a reopen starts the existing image instead of rebuilding
+  // it, see ../docker-compose.devcontainer.yml).
   "dockerComposeFile": [
     "../../docker-compose.yml",
-    "../../docker-compose.claude.yml"
+    "../../docker-compose.claude.yml",
+    "../docker-compose.devcontainer.yml"
   ],
   "service": "api",
   "overrideCommand": true,

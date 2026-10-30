@@ -130,7 +130,7 @@ When the user asks about **functions on a topic**:
 2. **Language-agnostic lookup** via the `_name_lookup` tables:
 
    ```bash
-   duckdb reference/fm_spec.duckdb -c "
+   duckdb -readonly reference/fm_spec.duckdb -c "
      SELECT f.canonical_name, f.url_slug, l.match_source, l.chunk_role
      FROM function_name_lookup l
      JOIN functions f ON l.function_id = f.function_id
@@ -139,7 +139,7 @@ When the user asks about **functions on a topic**:
    ```
 
    ```bash
-   duckdb reference/fm_spec.duckdb -c "
+   duckdb -readonly reference/fm_spec.duckdb -c "
      SELECT s.canonical_name, s.url_slug, l.match_source
      FROM script_step_name_lookup l
      JOIN script_steps s ON l.step_id = s.step_id
@@ -150,7 +150,7 @@ When the user asks about **functions on a topic**:
    No hits → case-insensitive fuzzy with `ilike`:
 
    ```bash
-   duckdb reference/fm_spec.duckdb -c "
+   duckdb -readonly reference/fm_spec.duckdb -c "
      SELECT DISTINCT f.canonical_name, l.lookup_name, l.match_source
      FROM function_name_lookup l
      JOIN functions f ON l.function_id = f.function_id
@@ -163,7 +163,7 @@ When the user asks about **functions on a topic**:
 3. **Fetch metadata and URL in the target language**:
 
    ```bash
-   duckdb reference/fm_spec.duckdb -c "
+   duckdb -readonly reference/fm_spec.duckdb -c "
      SELECT
        f.canonical_name, f.return_type, f.origin_version,
        l.display_name, l.signature, l.purpose, l.url
@@ -177,7 +177,7 @@ When the user asks about **functions on a topic**:
    Plus parameters:
 
    ```bash
-   duckdb reference/fm_spec.duckdb -c "
+   duckdb -readonly reference/fm_spec.duckdb -c "
      SELECT p.position, p.is_optional, p.is_variadic, pl.name, pl.description
      FROM function_parameters p
      LEFT JOIN function_parameters_lang pl
@@ -201,7 +201,7 @@ When the user asks about **functions on a topic**:
 2. **Find categories** (in target language + English):
 
    ```bash
-   duckdb reference/fm_spec.duckdb -c "
+   duckdb -readonly reference/fm_spec.duckdb -c "
      SELECT c.category_id, c.category_name AS en, l.name AS localized, l.url
      FROM function_categories c
      LEFT JOIN function_categories_lang l
@@ -213,7 +213,7 @@ When the user asks about **functions on a topic**:
 3. **Pattern search across multiple fields** of the functions (canonical name, localised display name, aliases, description, purpose, notes):
 
    ```bash
-   duckdb reference/fm_spec.duckdb -c "
+   duckdb -readonly reference/fm_spec.duckdb -c "
      WITH q AS (SELECT '%JSON%' AS pat, 'de' AS lang)
      SELECT DISTINCT f.canonical_name, fl.display_name, c.category_name
      FROM functions f
@@ -236,7 +236,7 @@ When the user asks about **functions on a topic**:
 4. **Search script steps in parallel** (with identical logic; the `de` language may use diverging terms — therefore also check `en`):
 
    ```bash
-   duckdb reference/fm_spec.duckdb -c "
+   duckdb -readonly reference/fm_spec.duckdb -c "
      WITH q AS (SELECT '%Datensatz%' AS pat)
      SELECT DISTINCT s.canonical_name, sl.display_name, sc.category_name_en
      FROM script_steps s
@@ -262,7 +262,7 @@ When the user asks about **functions on a topic**:
 
 **Number of entries per domain:**
 ```bash
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT 'functions'       AS domain, COUNT(*) FROM functions
   UNION ALL SELECT 'script_steps',         COUNT(*) FROM script_steps
   UNION ALL SELECT 'function_categories',  COUNT(*) FROM function_categories
@@ -272,7 +272,7 @@ duckdb reference/fm_spec.duckdb -c "
 
 **All 19 function categories in the target language:**
 ```bash
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT c.category_id, l.name AS de, c.category_name AS en
   FROM function_categories c
   LEFT JOIN function_categories_lang l
@@ -283,7 +283,7 @@ duckdb reference/fm_spec.duckdb -c "
 
 **All 13 script step categories in the target language:**
 ```bash
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT c.category_id, l.name AS de, c.category_name_en AS en
   FROM script_steps_categories c
   LEFT JOIN script_steps_categories_lang l
@@ -294,7 +294,7 @@ duckdb reference/fm_spec.duckdb -c "
 
 **Function exists (exact name, any language):**
 ```bash
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT f.canonical_name, f.url_slug, l.match_source
   FROM function_name_lookup l
   JOIN functions f ON l.function_id = f.function_id
@@ -304,7 +304,7 @@ duckdb reference/fm_spec.duckdb -c "
 
 **All functions of a category (e.g. JSON):**
 ```bash
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT f.canonical_name, fl.display_name, fl.signature
   FROM functions f
   LEFT JOIN functions_lang fl
@@ -316,7 +316,7 @@ duckdb reference/fm_spec.duckdb -c "
 
 **All script steps of a category (e.g. Records):**
 ```bash
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT s.canonical_name, sl.display_name
   FROM script_steps s
   LEFT JOIN script_steps_lang sl
@@ -328,7 +328,7 @@ duckdb reference/fm_spec.duckdb -c "
 
 **List Get functions (status functions):**
 ```bash
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT f.canonical_name, fl.display_name, fl.signature
   FROM functions f
   LEFT JOIN functions_lang fl
@@ -340,7 +340,7 @@ duckdb reference/fm_spec.duckdb -c "
 
 **Full-text search in descriptions of a language:**
 ```bash
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT f.canonical_name, fl.display_name, fl.purpose
   FROM functions_lang fl
   JOIN functions f ON fl.function_id = f.function_id
@@ -495,7 +495,7 @@ Feature introduction versions ("since which version do card windows exist?") liv
 1. **Exact match in `_name_lookup`** (already done — step 2 above).
 2. **Fuzzy / ILIKE match**:
    ```bash
-   duckdb reference/fm_spec.duckdb -c "
+   duckdb -readonly reference/fm_spec.duckdb -c "
      SELECT DISTINCT f.canonical_name, l.lookup_name, l.match_source
      FROM function_name_lookup l JOIN functions f ON l.function_id = f.function_id
      WHERE l.lookup_name ILIKE '%partialname%'
@@ -514,7 +514,7 @@ Feature introduction versions ("since which version do card windows exist?") liv
 
 1. **Broaden the search term** — pattern search with synonyms (`list` ↔ `values` ↔ `elements`, `date` ↔ `day` ↔ `month` ↔ `year`, `container` ↔ `media` ↔ `image` ↔ `Base64`):
    ```bash
-   duckdb reference/fm_spec.duckdb -c "
+   duckdb -readonly reference/fm_spec.duckdb -c "
      SELECT DISTINCT f.canonical_name, fl.display_name
      FROM functions f
      LEFT JOIN functions_lang fl
@@ -541,7 +541,7 @@ Feature introduction versions ("since which version do card windows exist?") liv
 
 ```bash
 # 1) Resolve the name
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT f.url_slug, f.canonical_name
   FROM function_name_lookup l JOIN functions f ON l.function_id = f.function_id
   WHERE l.lookup_name='Austauschen';
@@ -549,7 +549,7 @@ duckdb reference/fm_spec.duckdb -c "
 # → substitute | Substitute
 
 # 2) Metadata in the target language
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT l.display_name, l.signature, l.purpose, l.url
   FROM functions f JOIN functions_lang l ON f.function_id = l.function_id
   WHERE f.url_slug='substitute' AND l.language='de';
@@ -564,7 +564,7 @@ duckdb reference/fm_spec.duckdb -c "
 
 ```bash
 # Category + all functions of a category
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT f.canonical_name, fl.display_name, fl.signature
   FROM functions f
   LEFT JOIN functions_lang fl ON f.function_id=fl.function_id AND fl.language='de'
@@ -577,7 +577,7 @@ duckdb reference/fm_spec.duckdb -c "
 **The user asks**: "Which functions exist for value lists?"
 
 ```bash
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   WITH q AS (SELECT '%Werteliste%' AS pat)
   SELECT DISTINCT f.canonical_name, fl.display_name, fl.purpose
   FROM functions f
@@ -595,7 +595,7 @@ duckdb reference/fm_spec.duckdb -c "
 **The user asks**: "Which script steps exist for records?"
 
 ```bash
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT s.canonical_name, sl.display_name
   FROM script_steps s
   LEFT JOIN script_steps_lang sl ON s.step_id=sl.step_id AND sl.language='de'
@@ -608,7 +608,7 @@ duckdb reference/fm_spec.duckdb -c "
 **The user asks**: "Which function categories exist?"
 
 ```bash
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT c.category_id, l.name AS de, c.category_name AS en
   FROM function_categories c
   LEFT JOIN function_categories_lang l ON c.category_id=l.category_id AND l.language='de'
@@ -623,7 +623,7 @@ Returns all **19 function categories**: Aggregate functions, Artificial intellig
 
 ```bash
 # function_name_lookup contains both 'PatternCount' (canonical_en) and 'MusterAnzahl' (fmstrs_eid)
-duckdb reference/fm_spec.duckdb -c "
+duckdb -readonly reference/fm_spec.duckdb -c "
   SELECT f.canonical_name, l.lookup_name, l.match_source
   FROM function_name_lookup l JOIN functions f ON l.function_id = f.function_id
   WHERE l.lookup_name IN ('PatternCount','MusterAnzahl');

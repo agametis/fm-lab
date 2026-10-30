@@ -7,7 +7,7 @@ WITH lo AS (
 ),
 label_refs AS (
     -- Button labels: one field row per resolved anchor occurrence (see findings.sql).
-    SELECT Object_UUID, File_Name, list(Ref_Name) AS names
+    SELECT Object_UUID, File_Name, list(Ref_Name ORDER BY Ref_Name) AS names
     FROM XMLLayoutReferences
     WHERE Ref_Type = 'field'
       AND Object_UUID IN (SELECT Object_UUID FROM lo WHERE Object_Kind IN (10, 14))
